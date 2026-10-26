@@ -262,3 +262,13 @@ it("website profile save rejects missing or false Remember me without a request"
     expect(request).toHaveBeenCalledTimes(2);
   }
 });
+
+it("all-device signout reports an actionable failure without claiming success", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(Response.json({}, { status: 503 })),
+  );
+  await expect(
+    createLiveIdentityService().signOut(new AbortController().signal, true),
+  ).rejects.toThrow("Could not sign out all devices. Please try again.");
+});

@@ -14,7 +14,7 @@ SimplyBook owns services, schedules, eligible instructors, customer/booking/invo
 
 Email proof precedes protected existing-customer lookup/prefill. Missing, duplicate or shared-email identities must not leak another customer's details. Guests use server-issued protected capabilities; browser storage/URLs are not credentials or ownership evidence. Turnstile, email challenge limits, expiry, signed/session authority and revocation remain enforced. Resend delivers verification codes; SimplyBook handles booking notifications on final payment in the accepted account configuration. These are separate email flows.
 
-D1 foundation identity must match the configured account, environment, database and coordinator. Missing/mismatched bindings fail closed; no automatic claim of an unknown database. Provider credentials remain Worker secrets. Returning contact profiles require explicit remember consent and current verified identity; sign-out revokes access without deleting retained contact evidence. Identity proof remains memory-only for at most 30 seconds, bounded by token validity. Revalidate authorization for receipts/downloads and legacy recovery.
+D1 foundation identity must match the configured account, environment, database and coordinator. Missing/mismatched bindings fail closed; no automatic claim of an unknown database. Provider credentials remain Worker secrets. Returning contact profiles require explicit remember consent and current verified identity; sign-out revokes access without deleting retained contact evidence. All-device sign-out accepts any current server-verified email session, including remembered restoration, without a five-minute re-verification requirement; guest, expired and revoked authority cannot revoke identities. Identity proof remains memory-only for at most 30 seconds, bounded by token validity. Revalidate authorization for receipts/downloads and legacy recovery.
 
 Developer and client accounts, merchants, origins, mappings, secrets and data must stay isolated. Existing source still pins developer account/database/environment values, sandbox HitPay hosts, provider safety exclusions, sender settings and repository paths. Moving repositories is not yet configuration-only. Client portability must replace those pins with validated configuration, not remove account/host guards.
 
@@ -269,6 +269,10 @@ Current position: M4.4–M4.6/M5 hardening, M6 preparation; M7 UAT, M8 launch/ha
 [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m94--ongoing-changes-and-eventual-exit).
 
 ## Part 2 — Dated changes and evidence
+
+### 26 October 2026 — All-device sign-out from valid remembered sessions
+
+Owner reports a flicker with the signed-in email retained. Inspection found the button available while the server required verification within five minutes and rejected remembered restoration; the reported request itself was not captured. Owner authorizes removing that extra requirement. Retain authenticated access and atomic current email/owner/expiry/revocation checks; report sign-out failures explicitly and prevent competing identity actions while busy. Test-impact review updates the obsolete freshness expectation and adds expiry, guest, UI failure/retry and service-error coverage. No live sign-outs or browser experiments performed; final-commit CI and deployed owner acceptance remain separate.
 
 ### 22 October 2026 — Client staging and production delivery plan
 

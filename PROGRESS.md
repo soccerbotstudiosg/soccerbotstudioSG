@@ -1,6 +1,10 @@
 # SoccerBotStudioSG current progress
 
-## Current checkpoint — 22 October 2026 SGT
+## Sign-out repair — 26 October 2026 SGT
+
+All-device sign-out now accepts valid restored/older verified sessions and retains expiry, owner and revocation checks. Local verification passed 25 Worker identity tests and 21 frontend/service tests, source/policy checks, Worker source/types, frontend types and lint. Final-commit CI remains pending; the reported live request was not captured. See the dated Service Contracts entry for scope and evidence.
+
+## Previous checkpoint — 22 October 2026 SGT
 
 PR82–88 are merged. Current main is `fabaea571d366ea7dfb584e61eaa7344c9fc3974`. PR88's three PR gates passed; its [main run 39729470052](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/39729470052) passed frontend/backend but failed live-email (80/81): the tablet-WebKit failed-readback case exceeded its 30-second test limit. The saved trace shows roughly ten seconds of fixture startup and slow execution; the exact cause is unresolved. Cloudflare deployment was skipped; Pages deployment passed. Do not treat the successful PR run as merged-release acceptance.
 

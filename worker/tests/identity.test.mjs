@@ -476,7 +476,7 @@ test("remembered logout fences concurrent restore and a delayed issued cookie ca
     "access_denied",
   );
 });
-test("remembered all-device signout requires fresh non-restored verification and invalidates older challenges", async () => {
+test("remembered all-device signout accepts restored and older valid sessions and invalidates older challenges", async () => {
   const r = await remembered(),
     later = r.now + 61000;
   const pendingGuest = await guestAt(later);
@@ -493,11 +493,11 @@ test("remembered all-device signout requires fresh non-restored verification and
   );
   assert.equal(
     (await call(other, { action: "all-signout", now: later })).error,
-    "fresh_verification_required",
+    undefined,
   );
   assert.equal(
-    (await call(r.guest, { action: "all-signout", now: later + 1 })).error,
-    undefined,
+    (await call(r.guest, { action: "read", now: later + 1 })).error,
+    "access_denied",
   );
   assert.equal(
     (
@@ -516,7 +516,7 @@ test("remembered all-device signout requires fresh non-restored verification and
   assert.equal(
     (await call(old.guest, { action: "all-signout", now: old.now + 300000 }))
       .error,
-    "fresh_verification_required",
+    undefined,
   );
   assert.equal(
     (
@@ -525,7 +525,42 @@ test("remembered all-device signout requires fresh non-restored verification and
         .bind(old.id)
         .first()
     ).revoked_ms,
+    old.now + 300000,
+  );
+  assert.equal(
+    (
+      await call(await guestAt(old.now), {
+        action: "all-signout",
+        now: old.now,
+      })
+    ).error,
+    "identity_unavailable",
+  );
+});
+test("all-device signout rejects expired identity and preserves another email", async () => {
+  const r = await remembered();
+  const other = await remembered();
+  await db
+    .prepare("UPDATE verified_identity SET expires_ms=? WHERE email=?")
+    .bind(r.now, r.email)
+    .run();
+  assert.equal(
+    (await call(r.guest, { action: "all-signout", now: r.now + 1 })).error,
+    "identity_unavailable",
+  );
+  assert.equal(
+    (
+      await db
+        .prepare("SELECT revoked_ms FROM remembered_identity WHERE id=?")
+        .bind(r.id)
+        .first()
+    ).revoked_ms,
     null,
+  );
+  assert.equal(
+    (await call(other.guest, { action: "read", now: other.now + 1 })).result
+      .email,
+    other.email,
   );
 });
 test("remembered malformed duplicate foreign and missing credentials cannot disclose identity", async () => {
