@@ -1,11 +1,11 @@
 // Opt-in loopback fixture only. No remote bindings, credentials, or provider I/O.
 import { build } from "esbuild";
 import { Miniflare, convertV4MiniflareOptions, Log, LogLevel } from "miniflare";
-import { readFileSync, readdirSync, mkdtempSync, rmSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import ts from "typescript";
-import { seedFoundation } from "../worker/tests/foundation-fixture.mjs";
+import { initializeFixture } from "../worker/tests/foundation-fixture.mjs";
 /** Create an isolated local checkout fixture that forbids provider traffic. */
 export async function createExperimentPreview() {
   const config = ts.parseConfigFileTextToJson(
@@ -51,15 +51,7 @@ export async function createExperimentPreview() {
   });
   await mf.ready;
   const db = await mf.getD1Database("STATE");
-  for (const name of readdirSync("migrations")
-    .sort()
-    .filter((n) => !n.startsWith("0005")))
-    await db.exec(
-      readFileSync(`migrations/${name}`, "utf8")
-        .replace(/^--.*$/gm, "")
-        .replace(/\n/g, " "),
-    );
-  await seedFoundation(mf, db);
+  await initializeFixture(mf, db);
   return {
     mf,
     db,

@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { build } from "esbuild";
 import ts from "typescript";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
-import { seedFoundation } from "./foundation-fixture.mjs";
+import { seedFoundation, initializeFixture } from "./foundation-fixture.mjs";
 const config = ts.parseConfigFileTextToJson(
   "wrangler.jsonc",
   readFileSync("wrangler.jsonc", "utf8"),
@@ -198,11 +198,11 @@ beforeEach(async () => {
   now = Date.now();
   outbound = 0;
   await start();
-  for (const name of migrations.filter(
-    (n) => !n.startsWith("0005") && !n.startsWith("0006"),
-  ))
-    await migrate(name);
-  await seedFoundation(mf, db);
+  await initializeFixture(
+    mf,
+    db,
+    migrations.filter((name) => !name.startsWith("0006")),
+  );
   await migrate("0006_recovery_work.sql");
 });
 afterEach(async () => {
