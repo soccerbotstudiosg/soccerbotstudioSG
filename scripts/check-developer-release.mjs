@@ -87,6 +87,8 @@ try {
     .map((f) => f.slice(11))
     .sort();
   for (const name of names.slice(0, 5)) await migrate(name);
+  if (config.vars.ENVIRONMENT === "production")
+    await migrate("0035_portable_foundation_identity.sql");
   const ns = await mf.getDurableObjectNamespace("COORDINATOR");
   await db
     .prepare("INSERT INTO foundation_identity VALUES(1,?,?,?,?)")
@@ -423,6 +425,12 @@ try {
   await migrate("0032_completed_checkout_history.sql");
   await migrate("0033_checkout_progress.sql");
   await migrate("0034_checkout_windows.sql");
+  if (config.vars.ENVIRONMENT !== "production")
+    await migrate("0035_portable_foundation_identity.sql");
+  assert.deepEqual(
+    await db.prepare("SELECT * FROM foundation_identity").first(),
+    identity,
+  );
   assert.deepEqual(
     (
       await db

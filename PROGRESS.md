@@ -1,5 +1,11 @@
 # SoccerBotStudioSG current progress
 
+## PR92 CI repair — 26 October 2026 SGT
+
+Run `40302693256` at `d600c123fe5249ea760595a9f654b6f1f1479dd7` failed the same two Worker cases in backend/live-email (445 passed, two failed): the old malformed-configuration case incorrectly rejected a valid configurable campaign name, and the client Pages fixture exposed the developer-only foundation SQL constraint. Frontend was cancelled after the 20-minute job limit during Ubuntu dependency downloads; no browser cases ran and no frontend receipt was produced. No timeout/retry/assertion relaxation was made.
+
+Added migration 0035 to preserve existing foundation rows and immutable triggers while allowing explicit production registration; accepted migration 0005 is unchanged. Three local SQLite checks pass for populated upgrade, empty/unclaimed client registration and transactional interruption/rollback. Updated the malformed-input case and added valid campaign coverage; target packaging now applies/checks the new schema in its isolated database. CI's fresh remembered-login regression passed for both consent choices while old families remained revoked. The reported live-browser failure remains unconfirmed.
+
 ## Deployment scaffold and account follow-up — 26 October 2026 SGT
 
 Prepared from merged PR91 main `5e77cc2f91d969e124fbbe041b00c06e061d7c46`: validated target configuration, separate manual staging/client workflows, three target CI gates, exact artifact checks, closed client Pages packaging and account/resource preflight. The README owns the configuration checklist. No external configuration, provisioning, migration, deployment or client-repository copy occurred. Client live runtime mappings/activation, immutable foundation registration and first-install/interruption acceptance remain pending; this is a scaffold, not client UAT readiness.

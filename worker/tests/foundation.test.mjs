@@ -131,7 +131,7 @@ test("foundation missing and malformed configuration denies before protected rea
     { DEPLOYMENT_ACCOUNT_ID: "other" },
     { STATE_DATABASE_ID: "other" },
     { APP_ORIGIN: "http://soccerbot.test" },
-    { CAMPAIGN_ID: "new-budget" },
+    { CAMPAIGN_ID: "INVALID budget" },
     { CAMPAIGN_END_MS: "not-a-time" },
     { ACCESS_LIFETIME_MS: "0" },
   ])
@@ -146,6 +146,12 @@ test("foundation missing and malformed configuration denies before protected rea
     "ASSETS",
   ])
     deniedBeforeProtected(await call({ missing }));
+});
+test("foundation accepts a validated campaign name without changing retained account identity", async () => {
+  assert.equal(
+    (await call({ vars: { CAMPAIGN_ID: "new-budget" } })).status,
+    200,
+  );
 });
 test("foundation foreign database and coordinator namespace identities fail closed", async () => {
   deniedBeforeProtected(await call({ foreign: true }));

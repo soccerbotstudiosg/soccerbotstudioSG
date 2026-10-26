@@ -72,6 +72,7 @@ test("Pages service binding reaches the actual Worker with guest cookie continui
     for (const file of [
       "0001_developer_journal.sql",
       "0005_foundation_identity.sql",
+      "0035_portable_foundation_identity.sql",
     ])
       await db.exec(
         readFileSync("migrations/" + file, "utf8")
