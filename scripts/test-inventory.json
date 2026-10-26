@@ -113,10 +113,6 @@
   },
   {
     "file": "src/domain/confirmation.test.ts",
-    "title": "recorded confirmation checks historical proof but authenticates current access"
-  },
-  {
-    "file": "src/domain/confirmation.test.ts",
     "title": "refuses fractional negative unsafe coerced and nonfinite financial inputs"
   },
   {
@@ -193,10 +189,6 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "all-device signout shows failure, permits retry and clears the signed-in email on success"
-  },
-  {
-    "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "leaving saved-contact form discards delayed save acknowledgement"
   },
   {
@@ -208,12 +200,12 @@
     "title": "signed-in customer manages saved contact on Account without entering unavailable booking steps"
   },
   {
-    "file": "src/features/booking/account-step.test.tsx",
-    "title": "email form rejects a wrong verification code and accepts the corrected code"
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "all-device signout shows failure, permits retry and clears the signed-in email on success"
   },
   {
     "file": "src/features/booking/account-step.test.tsx",
-    "title": "guest loading remains until the destination commits without exposing the previous form"
+    "title": "email form rejects a wrong verification code and accepts the corrected code"
   },
   {
     "file": "src/features/booking/account-step.test.tsx",
@@ -277,14 +269,6 @@
   },
   {
     "file": "src/features/booking/async-booking.test.tsx",
-    "title": "rebooking clears the view immediately but gates new checkout on background dismissal and preserves failures"
-  },
-  {
-    "file": "src/features/booking/async-booking.test.tsx",
-    "title": "reload resumes an interrupted completed exit without restoring that confirmation or suppressing another attempt"
-  },
-  {
-    "file": "src/features/booking/async-booking.test.tsx",
     "title": "reordered dates and player revisions discard old replies even when the adapter ignores abort"
   },
   {
@@ -312,16 +296,16 @@
     "title": "unsupported live mode exposes unavailable state and cannot restore a paid demo receipt"
   },
   {
-    "file": "src/features/booking/booking-loading.test.tsx",
-    "title": "display loading leaves navigation interactive while payment loading still locks the page"
+    "file": "src/features/booking/async-booking.test.tsx",
+    "title": "rebooking clears the view immediately but gates new checkout on background dismissal and preserves failures"
   },
   {
-    "file": "src/features/booking/booking-loading.test.tsx",
-    "title": "overlapping booking reads share one full-page loader and preserve the mounted form"
+    "file": "src/features/booking/async-booking.test.tsx",
+    "title": "reload resumes an interrupted completed exit without restoring that confirmation or suppressing another attempt"
   },
   {
-    "file": "src/features/booking/booking-loading.test.tsx",
-    "title": "unmounting a pending booking screen releases the overlay and existing page inert state"
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "Details aborts an explicitly opened month and calendar return retains loaded months"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
@@ -337,26 +321,6 @@
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "cold calendar entry and refresh select an available day while retaining a valid chosen day"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "Details aborts an explicitly opened month and calendar return retains loaded months"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "Details opens local Review without waiting for unavailable providers"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "failed checkout preparation retains cached calendar and contact without refetching"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "failed public calendar releases full-page loading and leaves refresh available"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
     "title": "fresh calendar receipts render before the minute clock ticks and expire at their own deadline"
   },
   {
@@ -365,31 +329,15 @@
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "live booking selection does not initialize an unrelated provider session"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "live calendar removes selections rejected at checkout and retains contact details"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
     "title": "live session preserves demo product player and inclusion presentation using provider labels"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "preloaded browser slots survive edits and checkout rejects changed availability"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "prewarmed calendar remains visible until its original display deadline without refetching"
+    "title": "live booking selection does not initialize an unrelated provider session"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
     "title": "reservation conflict removes its session locally and returns to calendar with contact preserved"
-  },
-  {
-    "file": "src/features/booking/confirmation-checking.test.tsx",
-    "title": "a return at minute seven keeps six minutes of checking and makes one final read without renewing on reload"
   },
   {
     "file": "src/features/booking/confirmation-checking.test.tsx",
@@ -405,14 +353,6 @@
   },
   {
     "file": "src/features/booking/confirmation-checking.test.tsx",
-    "title": "catches up a hidden hold expiry on focus and stops after authorization denial"
-  },
-  {
-    "file": "src/features/booking/confirmation-checking.test.tsx",
-    "title": "checks once at the original hold expiry after polling ends and preserves that check across reload"
-  },
-  {
-    "file": "src/features/booking/confirmation-checking.test.tsx",
     "title": "coalesces manual and duplicate-page reads and preserves the deadline across reload"
   },
   {
@@ -425,15 +365,7 @@
   },
   {
     "file": "src/features/booking/confirmation-checking.test.tsx",
-    "title": "rechecks unresolved status on focus without renewing the window and coalesces duplicate events"
-  },
-  {
-    "file": "src/features/booking/confirmation-checking.test.tsx",
     "title": "stops a hung read at the original deadline without claiming cancellation"
-  },
-  {
-    "file": "src/features/booking/confirmation-checking.test.tsx",
-    "title": "uses a server-granted early check without extending the deadline or resetting the shared count"
   },
   {
     "file": "src/features/booking/details-step.test.tsx",
@@ -453,15 +385,15 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "cancelled checkout ignores a late saved URL handoff"
+    "title": "restored editable Review avoids background catalogue and calendar reads"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "HitPay HTTP conflict preserves the hold and shows payment failure without selection recovery"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "cancelled direct checkout never navigates"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "checkout readback uses slot-specific messaging only for verified unavailability"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -473,55 +405,11 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "expired Review releases only an authoritatively unpaid attempt and preserves contact on calendar return"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "HitPay HTTP conflict preserves the hold and shows payment failure without selection recovery"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "holds once before review and starts payment without preparing or checking availability again"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "live checkout validates direct handoff scope expiry and destination without persisting the URL"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "live reservation response distinguishes a rejected selection from an uncertain write"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "lost hold response cannot adopt a different attempt returned by recovery"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "lost hold response restores only the same verified attempt without repeating the write"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "proven unstarted checkout stays editable without entering payment recovery"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "queue rejection keeps the original attempt on Review for an explicit retry"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "rejected checkout window retains its attempt and displays the readback without payment confirmation polling"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "restored editable Review avoids background catalogue and calendar reads"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "Review performs no provider reads and checkout verifies one booking before HitPay"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "saved URL from checkout navigates once without a context request"
   },
   {
     "file": "src/features/booking/email-bot-proof.test.tsx",
@@ -553,14 +441,6 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "authoritative unpaid expiry releases the original attempt before returning to the calendar"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "Back to home starts the shared background exit and navigates without awaiting dismissal"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "booking restoration does not restart a protected confirmation read"
   },
   {
@@ -569,47 +449,11 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "expired checking shows authenticated recorded payment without confirming or exporting stale booking evidence"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "failed booking restoration does not block independent protected confirmation"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "manual review supersedes an earlier customer confirmation without exposing downloads"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "pending checkout context uses the compact confirmation shell without checkout or success"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "pending confirmation retains the final detail layout while hiding success and every action"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "poll-confirmed payment retains its displayed proof while the final receipt is delayed"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "reopening an expired paid booking shows the saved full confirmation without polling or granting exports"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "restoring a held attempt blocks background calendar work before and after restoration"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "retains verified customer confirmation across pending responses that omit proof"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "shows checking before the protected server result and confirms only verified evidence"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "shows payment received feedback with details while current booking evidence is pending"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -621,7 +465,11 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "verified payment shows confirmation before reconciliation and only the requested download waits"
+    "title": "expired checking shows authenticated recorded payment without confirming or exporting stale booking evidence"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "restoring a held attempt blocks background calendar work before and after restoration"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
@@ -681,10 +529,6 @@
   },
   {
     "file": "src/services/async-booking.test.ts",
-    "title": "holding progress only accepts the matching server milestone and stops without replaying the write"
-  },
-  {
-    "file": "src/services/async-booking.test.ts",
     "title": "invalid inputs are rejected before the adapter and malformed foreign-date duplicate replies are refused"
   },
   {
@@ -702,14 +546,6 @@
   {
     "file": "src/services/async-booking.test.ts",
     "title": "native restore reads the authenticated snapshot and cannot manufacture a paid browser receipt"
-  },
-  {
-    "file": "src/services/async-booking.test.ts",
-    "title": "queue busy returns clear retained-attempt feedback without an automatic retry"
-  },
-  {
-    "file": "src/services/async-booking.test.ts",
-    "title": "single holding request retains its local identity before dispatch and never makes a separate preparation request"
   },
   {
     "file": "src/services/async-booking.test.ts",
@@ -754,10 +590,6 @@
   {
     "file": "src/services/booking.test.ts",
     "title": "keeps payment checking for exactly five seconds and preserves the deadline through storage"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "live draft reload preserves edits but never restores consent or payment authority"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -821,11 +653,11 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
+    "title": "uses Singapore instants across month and year boundaries regardless of UTC date"
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "uses Singapore instants across month and year boundaries regardless of UTC date"
+    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -876,14 +708,6 @@
     "title": "homepage catalogue cache shares in-flight reads and survives authentication until five-minute expiry"
   },
   {
-    "file": "src/services/customer-catalogue.test.ts",
-    "title": "scheduled display catalogue retains original expiry and rejects renewed or overdue snapshots"
-  },
-  {
-    "file": "src/services/identity.test.ts",
-    "title": "all-device signout reports an actionable failure without claiming success"
-  },
-  {
     "file": "src/services/identity.test.ts",
     "title": "live identity authenticates guest and verifies through same-origin server reads without browser storage"
   },
@@ -924,76 +748,8 @@
     "title": "website profile save rejects missing or false Remember me without a request"
   },
   {
-    "file": "tests/customer.spec.ts",
-    "title": "50-minute cadence, automatic instructors, contact validation and final-slot conflict"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "Back during hero entry stays on home even when the previous page was Studio"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "declined and pending payments remain controlled through retry and refresh"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "elapsed selections block checkout on an open page and remain removable before a future multi-session payment"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "email verification rejects an incorrect code and continues after correction"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "enquiry and assistant work without external submission"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "first visit offers the Player App and dismissal persists while the navbar download remains"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "guest multi-date booking survives reload and exports calendar and PDF"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "header blue and the typography hierarchy stay consistent across every booking step"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "hero completes naturally and reduced motion bypasses both transition surfaces"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "hero entry restores the arena scene and click-to-skip without a logo overlay"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "hero location opens its map only on demand without entering booking and header hover stays navy"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "home navigation offer and studio booking buttons display the branded loader"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "late payment has a contact path without another payment"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "leave booking uses equal-width sentence-case actions with home left and stay right"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "oracle booking sizing and rotation disclaimers persist through checkout"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "protected confirmation waits for server evidence and rejects a tampered return"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "public routes remove staff access and fit the viewport"
+    "file": "src/services/identity.test.ts",
+    "title": "all-device signout reports an actionable failure without claiming success"
   },
   {
     "file": "tests/experiment.spec.ts",
@@ -1024,12 +780,104 @@
     "title": "the Payment preview entry and temporary checking failure retain customer selections and contact"
   },
   {
-    "file": "tests/live-email.spec.ts",
-    "title": "concurrent browser tabs reuse one hold and payment and reject revoked access"
+    "file": "src/features/booking/booking-loading.test.tsx",
+    "title": "display loading leaves navigation interactive while payment loading still locks the page"
   },
   {
-    "file": "tests/live-email.spec.ts",
-    "title": "live email requires the supplied widget proof before protected requests"
+    "file": "src/features/booking/booking-loading.test.tsx",
+    "title": "overlapping booking reads share one full-page loader and preserve the mounted form"
+  },
+  {
+    "file": "src/features/booking/booking-loading.test.tsx",
+    "title": "unmounting a pending booking screen releases the overlay and existing page inert state"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "failed public calendar releases full-page loading and leaves refresh available"
+  },
+  {
+    "file": "src/domain/confirmation.test.ts",
+    "title": "recorded confirmation checks historical proof but authenticates current access"
+  },
+  {
+    "file": "src/features/booking/account-step.test.tsx",
+    "title": "guest loading remains until the destination commits without exposing the previous form"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "reopening an expired paid booking shows the saved full confirmation without polling or granting exports"
+  },
+  {
+    "file": "src/services/async-booking.test.ts",
+    "title": "single holding request retains its local identity before dispatch and never makes a separate preparation request"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "public routes remove staff access and fit the viewport"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "guest multi-date booking survives reload and exports calendar and PDF"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "declined and pending payments remain controlled through retry and refresh"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "late payment has a contact path without another payment"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "50-minute cadence, automatic instructors, contact validation and final-slot conflict"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "email verification rejects an incorrect code and continues after correction"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "enquiry and assistant work without external submission"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "hero entry restores the arena scene and click-to-skip without a logo overlay"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "home navigation offer and studio booking buttons display the branded loader"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "hero completes naturally and reduced motion bypasses both transition surfaces"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "oracle booking sizing and rotation disclaimers persist through checkout"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "leave booking uses equal-width sentence-case actions with home left and stay right"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "first visit offers the Player App and dismissal persists while the navbar download remains"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "header blue and the typography hierarchy stay consistent across every booking step"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "elapsed selections block checkout on an open page and remain removable before a future multi-session payment"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "protected confirmation waits for server evidence and rejects a tampered return"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "hero location opens its map only on demand without entering booking and header hover stays navy"
   },
   {
     "file": "tests/live-email.spec.ts",
@@ -1037,91 +885,11 @@
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "native guest journey preserves players contact and one checkout across refresh"
+    "title": "live email requires the supplied widget proof before protected requests"
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "real API 409 preparation rejection stays on Review without payment verification"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API batch checkout uses creation evidence and restores one complete unpaid reservation"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API catalogue outage exposes retry without inventing sessions or renewing provider calls"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API creation price drift retains booking evidence and blocks payment without changing the approved total"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API editable Review creates nothing and checkout waits for verified creation before HitPay"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API exhausted browser checking window retains the original deadline and uncertain booking without payment"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API expired unpaid Review retains its hold through the grace window without recreating or losing contact"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API failed booking readback retains created references and blocks checkout"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API failed completed dismissal opens the first step and explicit retry retains the saved receipt"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API failed identity warming stays on Review without booking or payment effects"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API lost successful hold response restores the existing reservation without recreating it"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API optimistic Review preserves the original attempt when booking readback fails"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API payment creation failure preserves the hold and never returns to slot selection"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API public authentication outage before creation keeps Review editable without booking or payment"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API rejected creation retains contact and original attempt without payment or replay"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API rejected second batch creation retains the first booking without checkout or recreation"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API revoked access at checkout retains the draft and denies protected access without provider creation"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API unknown creation response retains one attempt across reload without replay"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API unknown second batch creation retains both effect outcomes across reload without payment"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real API unpaid return shows the pending confirmation layout without claiming payment or allowing downloads"
-  },
-  {
-    "file": "tests/live-email.spec.ts",
-    "title": "real payment recovery confirms the browser return from verified provider state"
+    "title": "synthetic live verification reads server identity and keeps native booking unavailable"
   },
   {
     "file": "tests/live-email.spec.ts",
@@ -1129,6 +897,238 @@
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "synthetic live verification reads server identity and keeps native booking unavailable"
+    "title": "native guest journey preserves players contact and one checkout across refresh"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real payment recovery confirms the browser return from verified provider state"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "concurrent browser tabs reuse one hold and payment and reject revoked access"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API rejected creation retains contact and original attempt without payment or replay"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API creation price drift retains booking evidence and blocks payment without changing the approved total"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API public authentication outage before creation keeps Review editable without booking or payment"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API unknown creation response retains one attempt across reload without replay"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API failed booking readback retains created references and blocks checkout"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API revoked access at checkout retains the draft and denies protected access without provider creation"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API lost successful hold response restores the existing reservation without recreating it"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API payment creation failure preserves the hold and never returns to slot selection"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API failed completed dismissal opens the first step and explicit retry retains the saved receipt"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API catalogue outage exposes retry without inventing sessions or renewing provider calls"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API batch checkout uses creation evidence and restores one complete unpaid reservation"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API rejected second batch creation retains the first booking without checkout or recreation"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API unknown second batch creation retains both effect outcomes across reload without payment"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API exhausted browser checking window retains the original deadline and uncertain booking without payment"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API editable Review creates nothing and checkout waits for verified creation before HitPay"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API optimistic Review preserves the original attempt when booking readback fails"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API unpaid return shows the pending confirmation layout without claiming payment or allowing downloads"
+  },
+  {
+    "file": "src/services/async-booking.test.ts",
+    "title": "holding progress only accepts the matching server milestone and stops without replaying the write"
+  },
+  {
+    "file": "src/features/booking/confirmation-checking.test.tsx",
+    "title": "uses a server-granted early check without extending the deadline or resetting the shared count"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "pending checkout context uses the compact confirmation shell without checkout or success"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "lost hold response restores only the same verified attempt without repeating the write"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "lost hold response cannot adopt a different attempt returned by recovery"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "pending confirmation retains the final detail layout while hiding success and every action"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "Back to home starts the shared background exit and navigates without awaiting dismissal"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "Back during hero entry stays on home even when the previous page was Studio"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expired Review releases only an authoritatively unpaid attempt and preserves contact on calendar return"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "authoritative unpaid expiry releases the original attempt before returning to the calendar"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "verified payment shows confirmation before reconciliation and only the requested download waits"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "manual review supersedes an earlier customer confirmation without exposing downloads"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "poll-confirmed payment retains its displayed proof while the final receipt is delayed"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "retains verified customer confirmation across pending responses that omit proof"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "Details opens local Review without waiting for unavailable providers"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "failed checkout preparation retains cached calendar and contact without refetching"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "live calendar removes selections rejected at checkout and retains contact details"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "preloaded browser slots survive edits and checkout rejects changed availability"
+  },
+  {
+    "file": "src/features/booking/confirmation-checking.test.tsx",
+    "title": "a return at minute seven keeps six minutes of checking and makes one final read without renewing on reload"
+  },
+  {
+    "file": "src/features/booking/confirmation-checking.test.tsx",
+    "title": "rechecks unresolved status on focus without renewing the window and coalesces duplicate events"
+  },
+  {
+    "file": "src/features/booking/confirmation-checking.test.tsx",
+    "title": "checks once at the original hold expiry after polling ends and preserves that check across reload"
+  },
+  {
+    "file": "src/features/booking/confirmation-checking.test.tsx",
+    "title": "catches up a hidden hold expiry on focus and stops after authorization denial"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "Review performs no provider reads and checkout verifies one booking before HitPay"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "live draft reload preserves edits but never restores consent or payment authority"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API expired unpaid Review retains its hold through the grace window without recreating or losing contact"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API failed identity warming stays on Review without booking or payment effects"
+  },
+  {
+    "file": "src/services/customer-catalogue.test.ts",
+    "title": "scheduled display catalogue retains original expiry and rejects renewed or overdue snapshots"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "prewarmed calendar remains visible until its original display deadline without refetching"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "saved URL from checkout navigates once without a context request"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "cancelled checkout ignores a late saved URL handoff"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "live checkout validates direct handoff scope expiry and destination without persisting the URL"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "proven unstarted checkout stays editable without entering payment recovery"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "shows payment received feedback with details while current booking evidence is pending"
+  },
+  {
+    "file": "src/services/async-booking.test.ts",
+    "title": "queue busy returns clear retained-attempt feedback without an automatic retry"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "queue rejection keeps the original attempt on Review for an explicit retry"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "rejected checkout window retains its attempt and displays the readback without payment confirmation polling"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "checkout readback uses slot-specific messaging only for verified unavailability"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "cold calendar entry and refresh select an available day while retaining a valid chosen day"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "real API 409 preparation rejection stays on Review without payment verification"
   }
 ]
