@@ -1,10 +1,12 @@
 # SoccerBotStudioSG current progress
 
-## Current checkpoint — 22 October 2026 SGT
+## Current checkpoint — 26 October 2026 SGT
 
-PR82–88 are merged. Current main is `fabaea571d366ea7dfb584e61eaa7344c9fc3974`. PR88's three PR gates passed; its [main run 39729470052](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/39729470052) passed frontend/backend but failed live-email (80/81): the tablet-WebKit failed-readback case exceeded its 30-second test limit. The saved trace shows roughly ten seconds of fixture startup and slow execution; the exact cause is unresolved. Cloudflare deployment was skipped; Pages deployment passed. Do not treat the successful PR run as merged-release acceptance.
+PR89 is merged; preparation starts from main `96814c08ecef31bfb7b988477803fcba3ebe8d6d`. Its [main run 39741087700](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/39741087700) passed. The earlier PR88 main live-email timeout remains historical evidence, not the current release-gate status.
 
-This follow-up clarifies document ownership and removes repeated engineering instructions. It changes documentation only and requires its own final-commit CI. The original failure remains retained; no timeout, retry or assertion was changed.
+Client GitHub and Cloudflare access are verified. The private client repository is empty; the supplied Cloudflare account has no Pages projects, Workers or D1 databases. The [hosting setup contract](docs/SERVICE_CONTRACTS.md#client-hosting-setup-prepared-not-deployed) owns the account/repository inventory, proposed resource names and external-DNS plan.
+
+This branch prepares the isolated Pages routing entry and synthetic integration tests against the actual application Worker. Local checks passed: 445 Worker tests, four final-entry routing checks and full non-browser application verification. Final-commit CI is pending. It is not yet packaged into release artifacts or deployed. Next: integrate environment validation and first-install handling into the existing release owners, test rerun/interruption/account mismatch, then review concrete resource provisioning. Keep client access closed and preserve developer staging state. No cloud resources, secrets, DNS or client-repository contents were changed.
 
 | Acceptance                  | Current evidence and limit                                                                                                                                                                                                                                                                                                                                       |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,12 +27,12 @@ Owner waived the separate real-checkout regional comparison. No test deployments
 
 ## Remaining work
 
-- Diagnose the main live-email timeout and obtain all merged-revision gates before claiming a verified Cloudflare release.
+- Obtain all three final-commit gates for the client routing preparation; retain independent merged-revision verification before deployment.
 
 - Security maintenance and scanning (planned): verify/enable Dependabot alerts and security-update PRs; weekly grouped npm/GitHub Actions updates and the owner's weekly security-email digest; dependency vulnerability checks (npm audit), CodeQL/code scanning, and secret scanning/push protection where supported. Retain targeted authentication/payment/configuration security tests and review; Grafana does not replace vulnerability scanning. Review pinned Node and Worker compatibility updates deliberately. Preserve exact pins/lockfile; require review and all three final-commit CI gates before merge/deployment, with no automatic merge of unreviewed updates. Repository scan found no Dependabot/CodeQL workflow or explicit npm audit command; account-level security settings were not exposed by the connector, so their current state remains unverified. This task enables nothing.
 
 - Client setup/portability: follow the [initial placement strategy](docs/SERVICE_CONTRACTS.md#client-initial-placement-strategy-planned): create D1 with `apac`, verify its primary location, choose the nearby initial DO hint and verify actual execution before checkout acceptance. Owner creates accounts/resources first; remove developer-specific pins through validated configuration and test safe first-install/rerun handling before client GitHub delivery.
-- Implement the agreed [client delivery topology](docs/Architecture/diagram.md#planned-client-delivery-topology) after account setup; validate environment protection support and shared-staging controls. Documentation only so far.
+- Implement the agreed [client delivery topology](docs/Architecture/diagram.md#planned-client-delivery-topology) after account setup; validate environment protection support and shared-staging controls. Pages routing preparation is in progress; release packaging and environment protection remain pending.
 - Client rollout/UAT: account and identity mappings, schedules, payment destination, notification configuration and legacy receipt/recovery continuity.
 - Grafana: create stack, configure securely, activate and validate ingestion, dashboards, correlation, privacy and overhead. Export remains disabled.
 - Planned production UI/UX and email-response refinement, followed by affected regression checks and final-commit CI. SimplyBook notification on final payment is already owner-accepted for the tested account.

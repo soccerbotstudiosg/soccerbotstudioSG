@@ -66,6 +66,7 @@ flowchart TB
   Main["Main · three merged-revision CI gates"]
   Approval["GitHub production environment · owner approval"]
   Prod["Client Cloudflare account · separate Worker / D1 / DO"]
+  ClientPages["Cloudflare Pages · book.soccerbotsg.com · external DNS CNAME"]
   LiveProviders["Client SimplyBook · HitPay live"]
   StageSecrets["Staging configuration / scoped credentials"]
   ProdSecrets["Production configuration / scoped credentials"]
@@ -75,6 +76,8 @@ flowchart TB
   Stage <--> TestProviders
   Stage --> Review --> Main --> Approval
   Approval -->|verified production artifact| Prod
+  Approval -->|verified frontend / routing artifact| ClientPages
+  ClientPages -->|same-origin /api · service binding| Prod
   ProdSecrets --> Prod
   Prod <--> LiveProviders
 ```

@@ -53,6 +53,7 @@ const commands = [
       "worker/tests/hitpay.test.mjs",
       "worker/tests/combined-hold.test.mjs",
       "worker/tests/telemetry.test.mjs",
+      "worker/tests/pages.test.mjs",
     ],
   ],
 ];

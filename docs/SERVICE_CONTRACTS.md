@@ -70,6 +70,14 @@ Bounded synthetic load is accepted for 1/3/5 baseline/fault cohorts and separate
 
 Owner accepts normal payment/recovery/dismissal, 15-minute timeout and the observed long-open confirmation remaining confirmed. Deployed logs prove public-token SQLite restoration outside memory; HAR08 measured one 4.87-second checkout including a 0.992-second token miss. HAR09 is identical and proves no fresh network read. Batch later-item rollback/failed closure and in-flight late settlement remain unproven owner-accepted risks. Keep financial policies unchanged. Remaining: client rollout/UAT, Grafana validation, and regression checks after UI/UX/email refinements; further warm/batch performance and sustained-capacity work are optional follow-ups, not blanket milestone closure.
 
+### Client hosting setup (prepared, not deployed)
+
+The client target is `book.soccerbotsg.com` on Cloudflare Pages, with its same-origin `/api` forwarded through a service binding to the application Worker in the same account. The existing DNS vendor retains authoritative DNS. Register the subdomain in Pages, then provide the vendor a CNAME from `book` to the actual project's assigned `*.pages.dev` hostname; no nameserver transfer or full DNS-zone copy is required. The apex website and email records are unaffected. Pages and the backend must share the canonical `APP_ORIGIN`; default/preview hostnames must not become alternate authenticated booking origins. Preserve raw webhook bodies, cookies, authorization, response headers and manual redirects without replaying failed writes. `worker/pages.ts` is the prepared routing entry, not an activated deployment.
+
+Client setup inventory: private repository `soccerbotstudiosg/soccerbotstudioSG`; Cloudflare account `0b36822648e6905c681a90b6bec5ca7f`. Proposed resource names are Pages `soccerbot-booking`, Worker `soccerbot-production` and D1 `soccerbot-production-state`; availability and IDs remain pending provisioning. Do not send the proposed Pages hostname to the DNS vendor as an assigned target. Create D1 using the placement strategy below before initializing the coordinator. New provisioning, secret installation and production activation remain separate reviewed actions. Existing developer deployment scripts deliberately reject other accounts and require an existing Worker: adapt their validated configuration, first-install handling and exact-artifact checks before client delivery; never run them unchanged against the client account. Preserve developer staging identities and data.
+
+For preparation, the owner will use client SimplyBook and Resend accounts and retain the developer HitPay sandbox. This is not approval to enable real customer checkout or live settlement. Validate SimplyBook API entitlements and account-specific service/instructor mappings; verify the Resend sender domain with vendor-managed DNS and install credentials through secrets. Keep the existing separate SimplyBook test account for staging. Client live HitPay credentials and merchant destination remain a later explicit cutover.
+
 ### Client initial placement strategy (planned)
 
 Choose database and coordinator placement together before the client account Durable Object is first used:
@@ -269,6 +277,12 @@ Current position: M4.4–M4.6/M5 hardening, M6 preparation; M7 UAT, M8 launch/ha
 [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m94--ongoing-changes-and-eventual-exit).
 
 ## Part 2 — Dated changes and evidence
+
+### 26 October 2026 — Client account verification and Pages routing preparation
+
+Read-only connector checks verified access to the private, empty client repository and the supplied Cloudflare account; Pages, Worker and D1 lists were empty. No resources, secrets, DNS or repository contents were provisioned. The owner selected `book.soccerbotsg.com` with externally managed DNS and retained HitPay sandbox during preparation; current setup details belong to the hosting contract above.
+
+Prepared an isolated Pages entry forwarding same-origin API requests over a service binding. Four synthetic runtime tests passed, including actual application Worker health/guest-session integration with one retained guest record, backend origin enforcement, raw body/cookie/header preservation, redirects, foreign origins and failed-write no-retry behavior. Provider transport was blocked. Added the cases to the full Worker runner/inventory and negative source-boundary fixtures. Non-browser application verification passed; an initial anonymous-default-export lint warning was repaired without changing assertions. Full Worker regression passed 445/445 with no skips or failures; the final named-export Pages entry separately passed all four routing cases. Final-commit CI remains required. Release packaging, first-install configuration and owner browser acceptance remain pending; this is not a deployed Pages site.
 
 ### 22 October 2026 — Client staging and production delivery plan
 

@@ -109,6 +109,9 @@ export function checkWorker(root) {
   if ((graph.get("telemetry.ts") || []).length)
     errors.push("Telemetry cannot import booking modules");
   dfs("telemetry.ts");
+  if (visited.has("pages.ts") || (graph.get("pages.ts") || []).length)
+    errors.push("Pages routing must remain separate from booking modules");
+  dfs("pages.ts");
   for (const name of names)
     if (!visited.has(name)) errors.push(`Unreachable Worker module: ${name}`);
   const config = ts.parseConfigFileTextToJson(
