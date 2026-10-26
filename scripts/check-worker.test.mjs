@@ -28,6 +28,18 @@ function fixture(change) {
 }
 test("accepts the reviewed Worker graph and deployment boundary", () =>
   assert.deepEqual(checkWorker(process.cwd()), []));
+test("rejects imports between Pages routing and booking modules", () => {
+  for (const [file, imported] of [
+    ["worker/index.ts", "./pages"],
+    ["worker/pages.ts", "./access"],
+  ])
+    assert.ok(
+      fixture((root) => {
+        const p = path.join(root, file);
+        writeFileSync(p, readFileSync(p, "utf8") + `\nimport "${imported}";`);
+      }).some((e) => e.includes("Pages routing must remain separate")),
+    );
+});
 test("rejects Worker orphan cycle and UI imports", () => {
   for (const [content, expected] of [
     ["export const value=1", "Unreachable"],
