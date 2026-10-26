@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## PR92 final inventory repair — 26 October 2026 SGT
+
+Run `40332376078` at `e9a81df5f510184cc90b4840377cef4dedbfaff2` passed frontend. Backend and live-email each passed all 448 Worker tests with no failures, cancellations, skips or TODOs, then the exact inventory check rejected two omitted entries: configurable campaign validation and fresh remembered login after all-device sign-out. Added those two existing tests to the inventory in observed order, preserving every prior entry and strict outcome checks. Both independent CI logs agree. The shared fixture correction now has actual CI execution evidence; corrected-commit frontend, backend and live-email gates remain required before readiness.
+
 ## Email account-path audit — 26 October 2026 SGT
 
 Audited Manage saved contact, Use another email and Sign out all devices, including back/forward, expired identity, failed saves/retry, delayed work and fresh login with both Remember me choices. Fixed stale signed-in UI after expiry, reset previous account entry/contact state after acknowledged sign-out, open the email form directly for Use another email, retain freshly verified identity if subsequent profile loading fails, and prevent cancelled challenge completion from clearing a newer bot proof. Errors now distinguish missing/rejected security proof, throttling, expired access, invalid/expired/used codes and single-browser sign-out failures; no provider error bodies are displayed. No rate limit, revocation or cookie protection was relaxed. Local targeted identity/component checks: 23 passed. Added CI browser traversal and updated the exact inventory; real browser reproduction of the owner's original failure remains outstanding.
