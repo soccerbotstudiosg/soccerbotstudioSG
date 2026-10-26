@@ -149,19 +149,15 @@ test("signed-in customer manages saved contact on Account without entering unava
   });
   expect(saveProfile).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Save contact details" }));
-  await waitFor(() =>
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Contact details saved",
-    ),
-  );
+  await screen.findByRole("heading", { name: "Start your booking" });
+  expect(
+    screen.queryByRole("heading", { name: "Saved contact details" }),
+  ).not.toBeInTheDocument();
   expect(saveProfile).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({ name: "Updated Contact", email: verified.email }),
     expect.any(AbortSignal),
   );
   expect(navigation.push).not.toHaveBeenCalled();
-  fireEvent.click(
-    screen.getByRole("button", { name: "Back to booking options" }),
-  );
   expect(
     screen.getByRole("heading", { name: "Start your booking" }),
   ).toBeInTheDocument();

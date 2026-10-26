@@ -62,7 +62,7 @@ Defaults: 10% deterministic successful-correlation sampling; recognized failures
 
 ### Deployment, migration and acceptance
 
-Current main CI requires frontend, backend and live-email gates. Cloudflare deployment consumes the tested artifact without rebuilding, applies pending D1 migrations and checks the resulting revision/settings. Existing deployment assumes a healthy prior Worker and existing D1/secrets; it is not a fresh-client provisioning workflow. Worker/DO configuration is declared, but client resource creation and safe interrupted setup are not yet implemented or proven idempotent. GitHub Pages is a separate demo export, not the client live payment site.
+Current main CI requires frontend, backend and live-email gates. The legacy main deployment remains in place until a reviewed switch to portable mode. The target scaffold adds separate manual staging and production workflows, distinct account credentials, exact-revision/target artifact verification and existing-resource preflight. Production uses an explicit manual workflow compatible with GitHub Free private repositories, not assumed paid environment protection. Client uploads remain closed; first upload may create only the configured Worker, after D1/Pages exist. It does not self-register foundation identity. Pending migrations are determined by D1's migration ledger, not a hardcoded developer migration/version checkpoint. The README owns configuration and operator steps. Automatic trusted PR staging, remote interrupted-install acceptance and client activation remain pending.
 
 Owner will create client accounts/resources first. Then prepare portable configuration, validate/reuse those resources, test first install/rerun/interruption/account mismatch in isolation, report results and integrate before pushing to client GitHub. Keep access disabled through preparation; validate client provider entitlements, service/instructor mappings, shared capacity, schedules, notification configuration, merchant/payment destination, domain/email verification and legacy receipt/recovery continuity before UAT/cutover. A credential swap or green CI alone is not production acceptance.
 
@@ -3508,3 +3508,9 @@ Supporting sections not repeated in the narrative remain available at the exact 
 - [Resend source preparation — 9 October continuation](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#resend-source-preparation--9-october-continuation).
 
 </details>
+
+### 26 October 2026 — deployment scaffold and account follow-up
+
+Prepared target manifests, separate manual developer/client deployment workflows and target verification gates on the PR91 merged baseline. External vendor setup remains paused. The client manifest intentionally lacks unconfirmed IDs/origin/widget key and rejects activation; no resources, secrets, DNS, client repository or deployed state changed. Runtime account/database/coordinator validation now accepts explicit target identities while retaining immutable foundation checks. Developer identities are preserved. Legacy developer payment/provider runtime scope is not generalized to client live operation by this scaffold.
+
+Owner reported email verification unavailable after all-device sign-out with Remember me selected, but proceeding when unticked. Root cause remains unconfirmed; added an isolated fresh-login/revoked-family regression without changing revocation or rate limits. Saved-contact management now returns to booking options only after successful save; failed/aborted saves remain guarded. Local component checks pass; full Worker/browser evidence remains CI-owned.

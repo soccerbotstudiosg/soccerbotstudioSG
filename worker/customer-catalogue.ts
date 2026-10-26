@@ -28,7 +28,7 @@ export async function customerCatalogue(
   if (liveCustomerAccess(env))
     return customerCatalogueSchema.parse(
       unwrapRpcOutcome(
-        await env.COORDINATOR.getByName(coordinatorName).windowCatalogue(
+        await env.COORDINATOR.getByName(coordinatorName(env)).windowCatalogue(
           traceId(),
         ),
       ),
@@ -37,7 +37,7 @@ export async function customerCatalogue(
   if (hasPublicCalendarWindow(env)) {
     const result = customerCatalogueSchema.parse(
       unwrapRpcOutcome(
-        await env.COORDINATOR.getByName(coordinatorName).windowCatalogue(
+        await env.COORDINATOR.getByName(coordinatorName(env)).windowCatalogue(
           traceId(),
         ),
       ),
@@ -81,7 +81,7 @@ export async function customerCatalogue(
   if (!claimed) throw new ApiError(503, "catalogue_unavailable");
   try {
     const result = customerCatalogueSchema.parse(
-      await env.COORDINATOR.getByName(coordinatorName).customerCatalogue(
+      await env.COORDINATOR.getByName(coordinatorName(env)).customerCatalogue(
         { ...scope, expiresMs: grant.expires_ms },
         traceId(),
       ),

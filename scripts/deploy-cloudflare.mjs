@@ -1,12 +1,17 @@
 // GitHub main deployment consumes the verified artifact; it never builds it.
 import assert from "node:assert/strict";
+import {
+  releaseConfig,
+  loadTarget,
+  targetDigest,
+} from "./deployment-target.mjs";
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { exportInventory } from "./check-export.mjs";
 /** Verify sealed release bytes and receipts before allowing deployment. */
-export function validateDeployment(directory, revision) {
+export function validateDeployment(directory, revision, target = null) {
   assert.match(revision, /^[a-f0-9]{40}$/);
   const read = (file) =>
     JSON.parse(readFileSync(`${directory}/${file}`, "utf8"));
@@ -33,35 +38,44 @@ export function validateDeployment(directory, revision) {
   assert.equal(artifact.testedCheckout, revision);
   const closed = read("developer-release/wrangler.json");
   const config = read("developer-release/wrangler-live.json");
-  assert.deepEqual(config, {
-    ...closed,
-    triggers: { crons: ["* * * * *"] },
-    vars: {
-      ...closed.vars,
-      PROVIDER_ACCESS: "trusted-reads",
-      LIVE_CUSTOMER_ACCESS: "enabled",
-      PUBLIC_DISPLAY_WARMING: "enabled",
-      PUBLIC_TOKEN_REFRESH_AHEAD: "enabled",
-      PREMIUM_SERVICE_ID: "3",
-      IDENTITY_DELIVERY: "ongoing",
-      LIVE_READBACK: "enabled",
-      CHECKOUT_PAYMENT_ROUTE: "hitpay",
-      HITPAY_CHECKOUT: "enabled",
-      HITPAY_RECOVERY: "enabled",
-      HITPAY_WEBHOOK: "enabled",
-      HITPAY_MERCHANT: "app404",
-      HITPAY_BUSINESS_ID: "a2d2119d-79f1-41fa-9d65-6e311d06da35",
-      HITPAY_CONTRACT_ACCEPTED: "sandbox-reviewed",
-      SIMPLYBOOK_EXTERNAL_PAYMENT: "sandbox-reviewed",
-      SIMPLYBOOK_EXTERNAL_PROCESSOR: "manual",
-    },
-  });
-  assert.equal(config.name, "soccerbot-dev");
-  assert.equal(config.account_id, "517f4f85eb8f982b483dbc05b797fd88");
-  assert.equal(
-    config.d1_databases[0].database_id,
-    "297a991b-70a7-438d-a0e3-39fa3a7f2cee",
+  assert.deepEqual(
+    config,
+    releaseConfig(closed, target || loadTarget("staging")),
   );
+  if (target) {
+    assert.deepEqual(manifest.target, target);
+    assert.equal(manifest.targetDigest, targetDigest(target));
+    assert.equal(config.name, target.workerName);
+    assert.equal(config.account_id, target.accountId);
+    assert.equal(config.d1_databases[0].database_id, target.databaseId);
+    assert.equal(config.d1_databases[0].database_name, target.databaseName);
+    assert.equal(config.vars.DEPLOYMENT_ACCOUNT_ID, target.accountId);
+    assert.equal(config.vars.STATE_DATABASE_ID, target.databaseId);
+    assert.equal(config.vars.APP_ORIGIN, target.origin);
+    assert.equal(config.vars.ENVIRONMENT, target.environment);
+    assert.equal(config.vars.COORDINATOR_NAME, target.coordinatorName);
+    assert.equal(manifest.turnstileSitekey, target.turnstileSitekey);
+    assert.equal(browser.turnstileSitekey, target.turnstileSitekey);
+    if (target.access === "closed") {
+      for (const key of [
+        "PROVIDER_ACCESS",
+        "LIVE_CUSTOMER_ACCESS",
+        "IDENTITY_DELIVERY",
+        "HITPAY_CHECKOUT",
+        "HITPAY_RECOVERY",
+        "HITPAY_WEBHOOK",
+      ])
+        assert.equal(config.vars[key], "disabled");
+      assert.ok(!config.triggers);
+    }
+  } else {
+    assert.equal(config.name, "soccerbot-dev");
+    assert.equal(config.account_id, "517f4f85eb8f982b483dbc05b797fd88");
+    assert.equal(
+      config.d1_databases[0].database_id,
+      "297a991b-70a7-438d-a0e3-39fa3a7f2cee",
+    );
+  }
   assert.equal(config.vars.SOURCE_REVISION, revision);
   assert.equal(config.no_bundle, true);
   assert.equal(config.main, "./worker/index.js");
@@ -78,6 +92,7 @@ export async function awaitDeploymentHealth({
   previousRevision,
   read,
   pause,
+  closed = false,
 }) {
   const observedRevisions = [];
   for (let observation = 0; observation < 16; observation++) {
@@ -85,9 +100,12 @@ export async function awaitDeploymentHealth({
     assert.match(health.revision, /^[a-f0-9]{40}$/);
     observedRevisions.push(health.revision);
     if (health.revision === revision) {
-      assert.equal(health.liveCustomerAccess, "enabled");
-      assert.equal(health.effectiveProviderAccess, "trusted-reads");
-      assert.equal(health.providerCredentialsPresent, true);
+      assert.equal(health.liveCustomerAccess, closed ? "disabled" : "enabled");
+      assert.equal(
+        health.effectiveProviderAccess,
+        closed ? "disabled" : "trusted-reads",
+      );
+      if (!closed) assert.equal(health.providerCredentialsPresent, true);
       return { health, observedRevisions };
     }
     assert.equal(
@@ -161,8 +179,69 @@ async function deploy() {
     "Configure the repository CLOUDFLARE_API_TOKEN secret",
   );
   const directory = "work/deploy-evidence";
-  const revision = process.env.GITHUB_SHA;
-  const config = validateDeployment(directory, revision);
+  const target = process.env.RELEASE_TARGET
+    ? loadTarget(process.env.RELEASE_TARGET)
+    : null;
+  const revision = target
+    ? process.env.RELEASE_REVISION
+    : process.env.GITHUB_SHA;
+  if (target) {
+    assert.ok(
+      process.env.VERIFIED_TARGET_RUN,
+      "Require verified workflow evidence",
+    );
+    assert.equal(target.repository, process.env.GITHUB_REPOSITORY);
+    assert.equal(
+      target.accountId,
+      process.env.CLOUDFLARE_ACCOUNT_ID,
+      "Selected account mismatch",
+    );
+  }
+  const config = validateDeployment(directory, revision, target);
+  const closed = target?.access === "closed";
+  // Verify existing resources in the selected account before any migration/write.
+  if (target) {
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${target.accountId}/d1/database/${target.databaseId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+        },
+        redirect: "error",
+        signal: AbortSignal.timeout(15000),
+      },
+    );
+    assert.equal(response.status, 200, "Target database/account access failed");
+    const database = await response.json();
+    assert.equal(database.success, true);
+    assert.equal(database.result.uuid, target.databaseId);
+    assert.equal(database.result.name, target.databaseName);
+    if (target.pagesProject) {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${target.accountId}/pages/projects/${target.pagesProject}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+          },
+          redirect: "error",
+          signal: AbortSignal.timeout(15000),
+        },
+      );
+      assert.equal(
+        response.status,
+        200,
+        "Provision the target Pages project separately",
+      );
+      const project = await response.json();
+      assert.equal(project.success, true);
+      assert.equal(project.result.name, target.pagesProject);
+      assert.equal(
+        project.result.production_branch,
+        target.pagesBranch,
+        "Pages production branch mismatch",
+      );
+    }
+  }
   const configPath = resolve(directory, "developer-release/wrangler-live.json");
   const wrangler = (args) =>
     execFileSync(
@@ -178,14 +257,55 @@ async function deploy() {
         env: { ...process.env, WRANGLER_SEND_METRICS: "false" },
       },
     );
-  const previous = await readHealth(config.vars.APP_ORIGIN);
-  assert.match(previous.revision, /^[a-f0-9]{40}$/);
+  // Closed first install needs no healthy predecessor. Open staging still requires one.
+  const previous = closed ? null : await readHealth(config.vars.APP_ORIGIN);
+  if (previous) assert.match(previous.revision, /^[a-f0-9]{40}$/);
+  const checkpoint = (phase) =>
+    writeFileSync(
+      `${directory}/deployment.json`,
+      JSON.stringify(
+        {
+          status: "incomplete",
+          phase,
+          sourceRevision: revision,
+          target: target?.target || "legacy-developer",
+          accountId: config.account_id,
+          databaseId: config.d1_databases[0].database_id,
+        },
+        null,
+        2,
+      ),
+    );
+  checkpoint("preflight-passed");
   // Applied migrations are skipped by D1; only reviewed artifact SQL is supplied.
   wrangler(["d1", "migrations", "apply", "STATE", "--remote"]);
+  checkpoint("migrations-applied");
   wrangler(["deploy", "--no-bundle"]);
+  checkpoint("worker-uploaded");
+  if (target?.pagesProject) {
+    execFileSync(
+      process.execPath,
+      [
+        "node_modules/wrangler/bin/wrangler.js",
+        "pages",
+        "deploy",
+        "--config",
+        resolve(directory, "developer-release/wrangler-pages.json"),
+        "--project-name",
+        target.pagesProject,
+        "--branch",
+        target.pagesBranch,
+        "--commit-hash",
+        revision,
+        "--no-bundle",
+      ],
+      { stdio: "inherit", env: process.env },
+    );
+  }
   const { health, observedRevisions } = await awaitDeploymentHealth({
     revision,
-    previousRevision: previous.revision,
+    previousRevision: previous?.revision,
+    closed,
     read: () => readHealth(config.vars.APP_ORIGIN),
     pause: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   });
@@ -203,7 +323,15 @@ async function deploy() {
   assert.equal(settingsResponse.status, 200, "Deployed settings read failed");
   const settings = await settingsResponse.json();
   assert.equal(settings.success, true);
-  verifySandboxSettings(settings.result, config);
+  if (!closed) verifySandboxSettings(settings.result, config);
+  else
+    for (const [name, value] of Object.entries(config.vars))
+      assert.equal(
+        settings.result.bindings.find(
+          (b) => b.name === name && b.type === "plain_text",
+        )?.text,
+        value,
+      );
   writeFileSync(
     `${directory}/deployment.json`,
     JSON.stringify(
@@ -213,8 +341,10 @@ async function deploy() {
         observedRevisions,
         versionId: health.versionId,
         origin: config.vars.APP_ORIGIN,
-        liveCustomerAccess: "enabled",
-        sandboxSettingsVerified: true,
+        liveCustomerAccess: closed ? "disabled" : "enabled",
+        sandboxSettingsVerified: !closed,
+        target: target?.target || "legacy-developer",
+        foundationRegistration: closed ? "separate-reviewed-step" : "existing",
         verifiedAt: new Date().toISOString(),
       },
       null,

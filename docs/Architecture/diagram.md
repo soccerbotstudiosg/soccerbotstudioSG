@@ -53,7 +53,7 @@ Reconciliation verifies provider state before confirmation; arrows do not imply 
 
 ## Planned client delivery topology
 
-Agreed target, not configured yet. The runtime components above apply independently to each environment.
+Target topology; workflow scaffold prepared, external setup paused. The runtime components above apply independently to each environment.
 
 ```mermaid
 flowchart TB
@@ -64,14 +64,14 @@ flowchart TB
   TestProviders["Separate SimplyBook test account · HitPay sandbox"]
   Review["Owner staging acceptance · merge"]
   Main["Main · three merged-revision CI gates"]
-  Approval["GitHub production environment · owner approval"]
+  Approval["Manual production dispatch · verified current main"]
   Prod["Client Cloudflare account · separate Worker / D1 / DO"]
   ClientPages["Cloudflare Pages · book.soccerbotsg.com · external DNS CNAME"]
   LiveProviders["Client SimplyBook · HitPay live"]
   StageSecrets["Staging configuration / scoped credentials"]
   ProdSecrets["Production configuration / scoped credentials"]
   Repo --> PR --> StageGate
-  StageGate -->|automatic staging deployment| Stage
+  StageGate -->|reserved candidate dispatch| Stage
   StageSecrets --> Stage
   Stage <--> TestProviders
   Stage --> Review --> Main --> Approval

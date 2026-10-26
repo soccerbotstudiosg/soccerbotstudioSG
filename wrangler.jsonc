@@ -34,6 +34,7 @@
     "STATE_DATABASE_ID": "297a991b-70a7-438d-a0e3-39fa3a7f2cee",
     "APP_ORIGIN": "https://soccerbot-dev.limyousheng-94.workers.dev",
     "ENVIRONMENT": "developer",
+    "COORDINATOR_NAME": "simplybook-developer-account",
     "PROVIDER_ACCESS": "disabled",
     "LIVE_CUSTOMER_ACCESS": "disabled",
     "PUBLIC_DISPLAY_WARMING": "disabled",

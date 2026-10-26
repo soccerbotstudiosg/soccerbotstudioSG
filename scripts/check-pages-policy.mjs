@@ -152,7 +152,7 @@ export function checkPagesPolicy(doc) {
   require(same(doc.jobs?.cloudflare, {
     name: "deploy / Cloudflare",
     needs: ["frontend", "backend", "live-email"],
-    if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request'",
+    if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOYMENT_MODE != 'portable'",
     "runs-on": "ubuntu-latest",
     "timeout-minutes": 10,
     permissions: {

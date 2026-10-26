@@ -7,8 +7,20 @@ import {
   readFileSync,
   writeFileSync,
   existsSync,
+  readdirSync,
 } from "node:fs";
 import ts from "typescript";
+import { buildSync } from "esbuild";
+import {
+  releaseConfig,
+  loadTarget,
+  targetConfig,
+  targetDigest,
+  pagesConfig,
+} from "./deployment-target.mjs";
+const target = process.env.RELEASE_TARGET
+  ? loadTarget(process.env.RELEASE_TARGET)
+  : null;
 import { checkExport, exportInventory } from "./check-export.mjs";
 import { releaseProfile } from "./release-profile.mjs";
 const profile = releaseProfile();
@@ -42,7 +54,7 @@ assert.equal(browser.browserExecuted, true);
 assert.equal(backend.status, "passed");
 assert.deepEqual(exportInventory("out"), browser.export.files);
 checkExport("out", "");
-const config = ts.parseConfigFileTextToJson(
+let config = ts.parseConfigFileTextToJson(
   "wrangler.jsonc",
   readFileSync("wrangler.jsonc", "utf8"),
 ).config;
@@ -51,6 +63,7 @@ assert.equal(config.account_id, "517f4f85eb8f982b483dbc05b797fd88");
 assert.equal(config.vars.PROVIDER_ACCESS, "disabled");
 assert.equal(config.vars.CAMPAIGN_END_MS, "0");
 assert.equal(config.vars.IDENTITY_DELIVERY, "disabled");
+if (target) config = targetConfig(config, target);
 const directory = "test-results/developer-release";
 assert.equal(
   existsSync(directory),
@@ -89,34 +102,32 @@ writeFileSync(
 writeFileSync(
   `${directory}/wrangler-live.json`,
   JSON.stringify(
-    {
-      ...config,
-      triggers: { crons: ["* * * * *"] },
-      vars: {
-        ...config.vars,
-        PROVIDER_ACCESS: "trusted-reads",
-        LIVE_CUSTOMER_ACCESS: "enabled",
-        PUBLIC_DISPLAY_WARMING: "enabled",
-        PUBLIC_TOKEN_REFRESH_AHEAD: "enabled",
-        PREMIUM_SERVICE_ID: "3",
-        IDENTITY_DELIVERY: "ongoing",
-        LIVE_READBACK: "enabled",
-        CHECKOUT_PAYMENT_ROUTE: "hitpay",
-        HITPAY_CHECKOUT: "enabled",
-        HITPAY_RECOVERY: "enabled",
-        HITPAY_WEBHOOK: "enabled",
-        HITPAY_MERCHANT: "app404",
-        HITPAY_BUSINESS_ID: "a2d2119d-79f1-41fa-9d65-6e311d06da35",
-        HITPAY_CONTRACT_ACCEPTED: "sandbox-reviewed",
-        SIMPLYBOOK_EXTERNAL_PAYMENT: "sandbox-reviewed",
-        SIMPLYBOOK_EXTERNAL_PROCESSOR: "manual",
-      },
-    },
+    releaseConfig(config, target || loadTarget("staging")),
     null,
     2,
   ) + "\n",
 );
+if (target?.pagesProject) {
+  cpSync("out", `${directory}/pages`, { recursive: true });
+  buildSync({
+    entryPoints: ["worker/pages.ts"],
+    outfile: `${directory}/pages/_worker.js`,
+    bundle: true,
+    format: "esm",
+    platform: "browser",
+    target: "es2022",
+  });
+  writeFileSync(
+    `${directory}/pages/_routes.json`,
+    JSON.stringify({ version: 1, include: ["/*"], exclude: [] }),
+  );
+  writeFileSync(
+    `${directory}/wrangler-pages.json`,
+    JSON.stringify(pagesConfig(target, config.compatibility_date), null, 2),
+  );
+}
 const manifest = {
+  ...(target ? { target, targetDigest: targetDigest(target) } : {}),
   format: 1,
   sourceRevision: source,
   testedCheckout: checkout,
@@ -128,17 +139,9 @@ const manifest = {
   identityDelivery: "disabled",
   providerAccess: "disabled",
   campaignEndMs: 0,
-  pendingRemoteMigrations: [
-    "0027_ongoing_identity_delivery.sql",
-    "0028_ongoing_native_readback.sql",
-    "0029_direct_hitpay.sql",
-    "0030_hitpay_webhook_recovery.sql",
-    "0031_rejected_checkout_history.sql",
-    "0032_completed_checkout_history.sql",
-    "0033_checkout_progress.sql",
-    "0034_checkout_windows.sql",
-  ],
-  priorWorkerVersion: "fdd603d2-ce9f-4c89-b1be-e20b6be1e1c8",
+  migrationInventory: readdirSync("migrations")
+    .filter((name) => name.endsWith(".sql"))
+    .sort(),
   acceptance:
     profile.name === "live-email"
       ? "synthetic live-email frontend; delivery closed; no provider or mailbox acceptance"

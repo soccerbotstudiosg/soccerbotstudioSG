@@ -192,7 +192,9 @@ export function DetailsStep({
         onSubmit={(event) => {
           event.preventDefault();
           if (profileOnly) {
-            void save();
+            void save().then((saved) => {
+              if (saved && mounted.current) onClose?.();
+            });
             return;
           }
           const next = contactErrors(

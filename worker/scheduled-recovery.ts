@@ -43,7 +43,7 @@ export async function runScheduledRecovery(
       .bind(now)
       .first<{ attempt_id: string }>();
     if (due)
-      await env.COORDINATOR.getByName(coordinatorName).hitpayRecovery(
+      await env.COORDINATOR.getByName(coordinatorName(env)).hitpayRecovery(
         due.attempt_id,
         crypto.randomUUID(),
       );
@@ -52,7 +52,7 @@ export async function runScheduledRecovery(
     await verifyBindings(env);
     const due = await ongoingReadbackDue(env, now);
     if (!due) return { state: "idle" };
-    await env.COORDINATOR.getByName(coordinatorName).ongoingRecovery(
+    await env.COORDINATOR.getByName(coordinatorName(env)).ongoingRecovery(
       due.id,
       crypto.randomUUID(),
     );
@@ -100,7 +100,7 @@ export async function runScheduledRecovery(
       correlationId,
       "scheduled",
       async () =>
-        await env.COORDINATOR.getByName(coordinatorName).nativeRecovery(
+        await env.COORDINATOR.getByName(coordinatorName(env)).nativeRecovery(
           {
             ...scope,
             expiresMs: row.expires_ms,

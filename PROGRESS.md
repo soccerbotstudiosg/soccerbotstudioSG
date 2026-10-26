@@ -1,5 +1,11 @@
 # SoccerBotStudioSG current progress
 
+## Deployment scaffold and account follow-up — 26 October 2026 SGT
+
+Prepared from merged PR91 main `5e77cc2f91d969e124fbbe041b00c06e061d7c46`: validated target configuration, separate manual staging/client workflows, three target CI gates, exact artifact checks, closed client Pages packaging and account/resource preflight. The README owns the configuration checklist. No external configuration, provisioning, migration, deployment or client-repository copy occurred. Client live runtime mappings/activation, immutable foundation registration and first-install/interruption acceptance remain pending; this is a scaffold, not client UAT readiness.
+
+Saved-contact management now returns to booking options after successful save. Owner's Remember me login failure after all-device sign-out remains under investigation; unticking reportedly succeeds. A fresh-login regression was added without relaxing revocation or challenge limits. Local identity/component checks passed (17 tests), as did targeted deployment/release tooling, source and policy checks. Full local non-browser verifier stopped at tooling; the original receipt is retained. Direct diagnosis found missing esbuild/Worker dependencies and blocked localhost listeners/subprocess output. Standalone typecheck also reports Playwright-type errors with this incomplete dependency tree. The inherited network proxy is unreachable. Final-commit CI remains required; browser/provider acceptance is owner/CI-operated.
+
 ## Sign-out repair — 26 October 2026 SGT
 
 PR90 is merged as `7f23873617430f06ea66b6f0a651e57b416fed08` after all three final-commit gates passed. All-device sign-out accepts valid restored/older verified sessions while retaining expiry, owner and revocation checks. The earlier browser stalls remain unexplained; the subsequent setup-interrupted attempt and original failure evidence are retained. Main verification and deployed owner acceptance remain separate. PR91's original three gates passed at `878b1a0`; this integration preserves both changes and requires fresh combined-revision CI.

@@ -1,0 +1,17 @@
+{
+  "target": "production",
+  "repository": "soccerbotstudiosg/soccerbotstudioSG",
+  "accountId": "",
+  "workerName": "soccerbot-production",
+  "databaseName": "soccerbot-production-state",
+  "databaseId": "",
+  "origin": "",
+  "coordinatorName": "simplybook-production-account",
+  "environment": "production",
+  "campaignId": "production",
+  "turnstileSitekey": "",
+  "access": "closed",
+  "pagesProject": "soccerbot-booking",
+  "pagesBranch": "main",
+  "sandbox": null
+}

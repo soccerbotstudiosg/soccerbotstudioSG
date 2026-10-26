@@ -19,6 +19,13 @@ test("Pages service binding reaches the actual Worker with guest cookie continui
     "wrangler.jsonc",
     readFileSync("wrangler.jsonc", "utf8"),
   ).config;
+  config.vars = {
+    ...config.vars,
+    ENVIRONMENT: "production",
+    DEPLOYMENT_ACCOUNT_ID: "b".repeat(32),
+    STATE_DATABASE_ID: "11111111-1111-4111-8111-111111111111",
+    COORDINATOR_NAME: "client-coordinator",
+  };
   const app = await build({
     entryPoints: ["worker/index.ts"],
     bundle: true,
@@ -78,7 +85,7 @@ test("Pages service binding reaches the actual Worker with guest cookie continui
         config.vars.DEPLOYMENT_ACCOUNT_ID,
         config.vars.ENVIRONMENT,
         config.vars.STATE_DATABASE_ID,
-        ns.idFromName("simplybook-developer-account").toString(),
+        ns.idFromName(config.vars.COORDINATOR_NAME).toString(),
       )
       .run();
     const health = await mf.dispatchFetch(origin + "/api/health");

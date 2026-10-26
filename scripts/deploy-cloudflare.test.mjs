@@ -244,3 +244,33 @@ test("deployment checks actual sandbox flags and secret presence without requiri
     rmSync(f.root, { recursive: true, force: true });
   }
 });
+
+test("closed first-install health does not require provider credentials or an old revision", async () => {
+  const result = await awaitDeploymentHealth({
+    revision,
+    previousRevision: undefined,
+    closed: true,
+    read: async () => ({
+      revision,
+      liveCustomerAccess: "disabled",
+      effectiveProviderAccess: "disabled",
+      providerCredentialsPresent: false,
+    }),
+    pause: async () => {
+      throw new Error("No propagation retry required");
+    },
+  });
+  assert.equal(result.health.revision, revision);
+  await assert.rejects(
+    awaitDeploymentHealth({
+      revision,
+      closed: true,
+      read: async () => ({
+        revision,
+        liveCustomerAccess: "enabled",
+        effectiveProviderAccess: "disabled",
+      }),
+      pause: async () => {},
+    }),
+  );
+});

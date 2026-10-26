@@ -1,5 +1,11 @@
 import { ApiError } from "./policy";
-export const coordinatorName = "simplybook-developer-account";
+/** Resolve the configured coordinator without silently creating a replacement. */
+export function coordinatorName(env: Env) {
+  const value: unknown = Reflect.get(env, "COORDINATOR_NAME");
+  if (typeof value === "string" && /^[a-z][a-z0-9-]{1,62}$/.test(value))
+    return value;
+  throw new ApiError(503, "environment_unavailable");
+}
 // Management-owned metadata. Never self-register against an arbitrary binding.
 /** Reject missing runtime bindings before protected operations. */
 export function assertBindingShape(env: Env) {
@@ -35,7 +41,7 @@ export function assertFoundation(
     identity.environment !== env.ENVIRONMENT ||
     identity.database_id !== env.STATE_DATABASE_ID ||
     identity.coordinator_id !==
-      env.COORDINATOR.idFromName(coordinatorName).toString()
+      env.COORDINATOR.idFromName(coordinatorName(env)).toString()
   )
     throw new ApiError(503, "environment_unavailable");
 }

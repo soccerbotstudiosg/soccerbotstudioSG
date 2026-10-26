@@ -335,12 +335,10 @@ test("remembered live account edits and rereads contact while native booking sta
   await expect(
     page.getByRole("status", { name: "Saving contact details…", exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator("#details-form").getByRole("status")).toHaveText(
-    "Contact details saved for your next visit.",
-  );
-  await page
-    .getByRole("button", { name: "Back to booking options", exact: true })
-    .click();
+  await expect(
+    page.getByRole("heading", { name: "Start your booking", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#details-form")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Manage saved contact", exact: true })
     .click();

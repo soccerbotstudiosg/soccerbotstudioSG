@@ -1,5 +1,11 @@
 // Inspect the exact packaged bytes with isolated workerd/D1. No remote bindings.
 import assert from "node:assert/strict";
+import {
+  releaseConfig,
+  loadTarget,
+  targetDigest,
+  pagesConfig,
+} from "./deployment-target.mjs";
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -12,29 +18,20 @@ const read = (file) => JSON.parse(readFileSync(`${directory}/${file}`, "utf8"));
 const manifest = read("manifest.json"),
   config = read("wrangler.json");
 const liveConfig = read("wrangler-live.json");
-assert.deepEqual(liveConfig, {
-  ...config,
-  triggers: { crons: ["* * * * *"] },
-  vars: {
-    ...config.vars,
-    PROVIDER_ACCESS: "trusted-reads",
-    LIVE_CUSTOMER_ACCESS: "enabled",
-    PUBLIC_DISPLAY_WARMING: "enabled",
-    PUBLIC_TOKEN_REFRESH_AHEAD: "enabled",
-    PREMIUM_SERVICE_ID: "3",
-    IDENTITY_DELIVERY: "ongoing",
-    LIVE_READBACK: "enabled",
-    CHECKOUT_PAYMENT_ROUTE: "hitpay",
-    HITPAY_CHECKOUT: "enabled",
-    HITPAY_RECOVERY: "enabled",
-    HITPAY_WEBHOOK: "enabled",
-    HITPAY_MERCHANT: "app404",
-    HITPAY_BUSINESS_ID: "a2d2119d-79f1-41fa-9d65-6e311d06da35",
-    HITPAY_CONTRACT_ACCEPTED: "sandbox-reviewed",
-    SIMPLYBOOK_EXTERNAL_PAYMENT: "sandbox-reviewed",
-    SIMPLYBOOK_EXTERNAL_PROCESSOR: "manual",
-  },
-});
+assert.deepEqual(
+  liveConfig,
+  releaseConfig(config, manifest.target || loadTarget("staging")),
+);
+if (manifest.target) {
+  const target = loadTarget(process.env.RELEASE_TARGET);
+  assert.deepEqual(manifest.target, target);
+  assert.equal(manifest.targetDigest, targetDigest(target));
+  if (target.pagesProject)
+    assert.deepEqual(
+      read("wrangler-pages.json"),
+      pagesConfig(target, config.compatibility_date),
+    );
+}
 const files = exportInventory(directory);
 delete files["manifest.json"];
 assert.deepEqual(files, manifest.files);
@@ -95,9 +92,13 @@ try {
     .prepare("INSERT INTO foundation_identity VALUES(1,?,?,?,?)")
     .bind(
       config.account_id,
-      "developer",
+      config.vars.ENVIRONMENT,
       config.vars.STATE_DATABASE_ID,
-      ns.idFromName("simplybook-developer-account").toString(),
+      ns
+        .idFromName(
+          config.vars.COORDINATOR_NAME || "simplybook-developer-account",
+        )
+        .toString(),
     )
     .run();
   const identity = await db
@@ -161,16 +162,7 @@ try {
     .run();
   const grants = (await db.prepare("SELECT * FROM developer_operations").all())
     .results;
-  assert.deepEqual(manifest.pendingRemoteMigrations, [
-    "0027_ongoing_identity_delivery.sql",
-    "0028_ongoing_native_readback.sql",
-    "0029_direct_hitpay.sql",
-    "0030_hitpay_webhook_recovery.sql",
-    "0031_rejected_checkout_history.sql",
-    "0032_completed_checkout_history.sql",
-    "0033_checkout_progress.sql",
-    "0034_checkout_windows.sql",
-  ]);
+  assert.deepEqual(manifest.migrationInventory, names);
   // Old-state compatibility remains tested locally, never re-applied remotely.
   for (const name of names.slice(5, 8)) await migrate(name);
   const appliedEight = {

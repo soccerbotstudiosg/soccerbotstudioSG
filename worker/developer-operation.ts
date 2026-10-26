@@ -30,7 +30,9 @@ export async function developerOperation(
       state: row.state,
       result: row.result_json ? (JSON.parse(row.result_json) as unknown) : null,
       ...(operation === "native_field_discovery"
-        ? await env.COORDINATOR.getByName(coordinatorName).discoveryReadiness()
+        ? await env.COORDINATOR.getByName(
+            coordinatorName(env),
+          ).discoveryReadiness()
         : {}),
     };
   if (String(env.PROVIDER_ACCESS) !== "trusted-reads")
@@ -50,12 +52,12 @@ export async function developerOperation(
   try {
     result = await measure("coordinator_rpc", () =>
       operation === "native_field_discovery" && row.result_json !== null
-        ? env.COORDINATOR.getByName(coordinatorName).nativeDiscoveryProbe(
+        ? env.COORDINATOR.getByName(coordinatorName(env)).nativeDiscoveryProbe(
             JSON.parse(row.result_json) as unknown,
             row.expires_ms,
             traceId(),
           )
-        : env.COORDINATOR.getByName(coordinatorName).providerRead(
+        : env.COORDINATOR.getByName(coordinatorName(env)).providerRead(
             operation,
             traceId(),
             row.expires_ms,

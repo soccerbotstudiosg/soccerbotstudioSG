@@ -2,8 +2,8 @@ import { z } from "zod";
 const duration = (minimum: number, maximum: number) =>
   z.coerce.number().int().min(minimum).max(maximum);
 const schema = z.object({
-  DEPLOYMENT_ACCOUNT_ID: z.literal("517f4f85eb8f982b483dbc05b797fd88"),
-  STATE_DATABASE_ID: z.literal("297a991b-70a7-438d-a0e3-39fa3a7f2cee"),
+  DEPLOYMENT_ACCOUNT_ID: z.string().regex(/^[a-f0-9]{32}$/),
+  STATE_DATABASE_ID: z.string().uuid(),
   APP_ORIGIN: z
     .string()
     .url()
@@ -16,10 +16,10 @@ const schema = z.object({
         !url.password
       );
     }),
-  CAMPAIGN_ID: z.literal("developer-20261008"),
+  CAMPAIGN_ID: z.string().regex(/^[a-z][a-z0-9-]{1,62}$/),
   CAMPAIGN_END_MS: duration(0, Number.MAX_SAFE_INTEGER),
   SOURCE_REVISION: z.string().regex(/^(unpublished|[a-f0-9]{40})$/),
-  ENVIRONMENT: z.literal("developer"),
+  ENVIRONMENT: z.enum(["developer", "production"]),
   PREMIUM_SERVICE_ID: z
     .string()
     .regex(/^(?:[1-9]\d{0,14})?$/)
@@ -39,7 +39,7 @@ const schema = z.object({
   POLL_INTERVAL_MS: duration(1000, 30000),
   CHECKING_DEADLINE_MS: duration(60000, 1800000),
 });
-/** Validate environment configuration against the supported developer policy. */
+/** Validate environment configuration against the supported deployment policy. */
 export function policy(env: Env) {
   return schema.parse(env);
 }
