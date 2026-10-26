@@ -12,7 +12,7 @@ import { nativeValidationReason } from "./provider-normalization";
 import { safeNativeFailure } from "./native-residual";
 import { z } from "zod";
 import { authenticate, type Access } from "./access";
-import { ApiError, digest, policy, liveCustomerAccess } from "./policy";
+import { ApiError, digest, sandboxPolicy, liveCustomerAccess } from "./policy";
 import {
   intentSchema,
   associationSchema,
@@ -124,7 +124,7 @@ export async function executeNativeCheckout(options: {
 }) {
   const { request, env, attemptId, provider } = options;
   z.string().uuid().parse(attemptId);
-  const p = policy(env),
+  const p = sandboxPolicy(env),
     now = Date.now();
   if (
     p.PROVIDER_ACCESS !== "trusted-reads" ||
@@ -1028,7 +1028,7 @@ async function customerNativeWindow(
   verifiedAccess?: Access,
   retainedGrant?: Grant,
 ) {
-  const p = policy(env),
+  const p = sandboxPolicy(env),
     now = Date.now();
   const access = verifiedAccess ?? (await authenticate(request, env, now));
   const grant =

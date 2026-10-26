@@ -43,6 +43,13 @@ const schema = z.object({
 export function policy(env: Env) {
   return schema.parse(env);
 }
+/** Keep provider workflows closed outside the currently reviewed developer contract. */
+export function sandboxPolicy(env: Env) {
+  const p = policy(env);
+  if (p.ENVIRONMENT !== "developer")
+    throw new ApiError(503, "provider_access_disabled");
+  return { ...p, ENVIRONMENT: p.ENVIRONMENT };
+}
 // Ongoing customer operations have no campaign expiry. Operator experiments
 // retain their separately installed grants, deadlines and cumulative budgets.
 /** Require explicit provider and customer access for a published revision. */
