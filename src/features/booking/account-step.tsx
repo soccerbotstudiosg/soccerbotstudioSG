@@ -52,6 +52,17 @@ export function AccountStep() {
     setBotToken("");
     setBotGeneration((value) => value + 1);
   }
+  /** Clear the previous account's entry state after acknowledged sign-out. */
+  function resetIdentityEntry() {
+    setIdentity(null);
+    setEmail("");
+    setCode("");
+    setChallenge(null);
+    setRemember(false);
+    setBotToken("");
+    setBotGeneration((value) => value + 1);
+    update({ mode: "guest", accountEmail: "", contact: blankContact() });
+  }
   /** Run an identity action with shared busy and error handling. */
   async function perform(work: (signal: AbortSignal) => Promise<void>) {
     if (active.current) return;
@@ -63,8 +74,10 @@ export function AccountStep() {
     try {
       await work(controller.signal);
     } catch (e) {
-      if (!controller.signal.aborted)
+      if (!controller.signal.aborted) {
+        if (!identityService.current()) setIdentity(null);
         setError(e instanceof Error ? e.message : "Please try again.");
+      }
     } finally {
       if (active.current === controller) {
         active.current = null;
@@ -100,8 +113,10 @@ export function AccountStep() {
       try {
         next = await identityService.challenge(email, signal, botToken);
       } finally {
-        setBotToken("");
-        setBotGeneration((value) => value + 1);
+        if (!signal.aborted) {
+          setBotToken("");
+          setBotGeneration((value) => value + 1);
+        }
       }
       if (signal.aborted) return;
       setChallenge(next);
@@ -169,6 +184,8 @@ export function AccountStep() {
                 identity
                   ? void perform(async (signal) => {
                       const current = await identityService.refresh(signal);
+                      if (signal.aborted) return;
+                      setIdentity(current);
                       if (!current) throw new Error("Verify your email again.");
                       await proceed(signal, current.email);
                     })
@@ -207,7 +224,10 @@ export function AccountStep() {
                   onClick={() => {
                     void perform(async (signal) => {
                       await identityService.signOut(signal);
-                      if (!signal.aborted) setIdentity(null);
+                      if (!signal.aborted) {
+                        resetIdentityEntry();
+                        setView("email");
+                      }
                     });
                   }}
                 >
@@ -220,7 +240,7 @@ export function AccountStep() {
                     onClick={() => {
                       void perform(async (signal) => {
                         await identityService.signOut(signal, true);
-                        if (!signal.aborted) setIdentity(null);
+                        if (!signal.aborted) resetIdentityEntry();
                       });
                     }}
                   >
@@ -269,6 +289,8 @@ export function AccountStep() {
                 remember,
                 signal,
               );
+              if (signal.aborted) return;
+              setIdentity(signedIn);
               await proceed(signal, signedIn.email);
             });
         }}
@@ -359,6 +381,9 @@ export function AccountStep() {
                 className="text-link"
                 onClick={() => {
                   cancel();
+                  setChallenge(null);
+                  setCode("");
+                  setError("");
                   setView("email");
                 }}
               >
@@ -373,6 +398,8 @@ export function AccountStep() {
           onClick={() => {
             cancel();
             setView("choice");
+            setChallenge(null);
+            setCode("");
             setError("");
           }}
         >

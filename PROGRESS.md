@@ -1,5 +1,11 @@
 # SoccerBotStudioSG current progress
 
+## Email account-path audit — 26 October 2026 SGT
+
+Audited Manage saved contact, Use another email and Sign out all devices, including back/forward, expired identity, failed saves/retry, delayed work and fresh login with both Remember me choices. Fixed stale signed-in UI after expiry, reset previous account entry/contact state after acknowledged sign-out, open the email form directly for Use another email, retain freshly verified identity if subsequent profile loading fails, and prevent cancelled challenge completion from clearing a newer bot proof. Errors now distinguish missing/rejected security proof, throttling, expired access, invalid/expired/used codes and single-browser sign-out failures; no provider error bodies are displayed. No rate limit, revocation or cookie protection was relaxed. Local targeted identity/component checks: 23 passed. Added CI browser traversal and updated the exact inventory; real browser reproduction of the owner's original failure remains outstanding.
+
+Run `40324391604` exposed another fixture ordering error: the browser mechanism deferred creating foundation identity until after all migrations, so migration 0035 had no table to upgrade. The fixture now seeds the synthetic foundation first; a full-chain SQLite regression passes. This is a test-fixture correction, not a remote migration or data reset. All final-commit CI gates remain required.
+
 ## PR92 CI repair — 26 October 2026 SGT
 
 Run `40302693256` at `d600c123fe5249ea760595a9f654b6f1f1479dd7` failed the same two Worker cases in backend/live-email (445 passed, two failed): the old malformed-configuration case incorrectly rejected a valid configurable campaign name, and the client Pages fixture exposed the developer-only foundation SQL constraint. Frontend was cancelled after the 20-minute job limit during Ubuntu dependency downloads; no browser cases ran and no frontend receipt was produced. No timeout/retry/assertion relaxation was made.

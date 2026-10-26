@@ -9,7 +9,7 @@ import {
 } from "@playwright/test";
 
 // CI-only synthetic transports. No widget script, email or provider is contacted.
-const sitekey = "0x4AAAAAAFSTbdgbJQsvM5vy";
+const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 const challengeId = "10000000-0000-4000-8000-000000000001";
 async function fixture(
   page: Page,
@@ -100,6 +100,17 @@ async function fixture(
     ) {
       status = 200;
       result = null;
+    } else if (
+      delivery &&
+      url.pathname === "/api/identity/all-devices" &&
+      method === "DELETE"
+    ) {
+      status = verified ? 200 : 401;
+      if (verified) {
+        verified = false;
+        remember = false;
+      }
+      result = { access: "revoked" };
     } else if (delivery && url.pathname === "/api/access") {
       status = method === "DELETE" ? 200 : 201;
       if (method === "DELETE") verified = false;
@@ -176,7 +187,7 @@ test("live email requires the supplied widget proof before protected requests", 
     .getByRole("button", { name: "Continue with email", exact: true })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Email verification is unavailable. You can continue as a guest.",
+    "Complete the email security check, then try again.",
   );
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
     { path: "/api/access", method: "POST", body: null },
@@ -2670,4 +2681,69 @@ test("real API 409 preparation rejection stays on Review without payment verific
   } finally {
     await stopMechanism(page, mechanism, transport);
   }
+});
+
+test("email account actions return through booking options and sign in again with either remember choice", async ({
+  page,
+}) => {
+  const evidence = await fixture(page, true, true);
+  await page
+    .getByRole("button", { name: "Use another email", exact: true })
+    .click();
+  await expect(page.getByLabel("Email address", { exact: true })).toHaveValue(
+    "",
+  );
+  await expect(
+    page.getByLabel("Remember me", { exact: true }),
+  ).not.toBeChecked();
+  await page
+    .getByRole("button", { name: "Back to booking options", exact: true })
+    .click();
+  for (const remember of [true, false]) {
+    await page
+      .getByRole("button", { name: "Continue with email", exact: true })
+      .click();
+    await page
+      .getByLabel("Email address", { exact: true })
+      .fill("synthetic@example.test");
+    await page.getByLabel("Remember me", { exact: true }).setChecked(remember);
+    await page
+      .getByRole("button", {
+        name: "Complete synthetic email check",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("button", { name: "Continue with email", exact: true })
+      .click();
+    await page.getByLabel("Verification code", { exact: true }).fill("123456");
+    await page
+      .getByRole("button", { name: "Verify and continue", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/book\/session\/$/);
+    await page.goBack();
+    await expect(
+      page.getByRole("button", { name: "Continue signed in", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Manage saved contact", exact: true }),
+    ).toHaveCount(remember ? 1 : 0);
+    await page
+      .getByRole("button", { name: "Sign out all devices", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Continue with email", exact: true }),
+    ).toBeVisible();
+  }
+  expect(
+    evidence.calls
+      .filter((c) => c.path === "/api/identity/verify")
+      .map((c) => (c.body as { remember: boolean }).remember),
+  ).toEqual([true, false]);
+  expect(
+    evidence.calls.filter(
+      (c) => c.path === "/api/identity/all-devices" && c.method === "DELETE",
+    ),
+  ).toHaveLength(2);
+  expect(evidence.unexpected).toEqual([]);
 });

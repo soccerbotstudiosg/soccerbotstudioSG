@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 const oldSchema = readFileSync(
   "migrations/0005_foundation_identity.sql",
   "utf8",
@@ -96,6 +96,40 @@ test("interrupted transactional foundation migration rolls back without orphanin
       before,
     );
     immutable(db);
+  } finally {
+    db.close();
+  }
+});
+
+test("browser fixture migration chain upgrades a pre-seeded foundation without missing or replacing it", () => {
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec(oldSchema);
+    db.prepare("INSERT INTO foundation_identity VALUES(1,?,?,?,?)").run(
+      "fixture-account",
+      "developer",
+      "fixture-db",
+      "d".repeat(64),
+    );
+    const before = db.prepare("SELECT * FROM foundation_identity").get();
+    const sql = readdirSync("migrations")
+      .sort()
+      .filter((name) => !name.startsWith("0005"))
+      .map((name) => readFileSync(`migrations/${name}`, "utf8"))
+      .join("\n");
+    db.exec(sql);
+    assert.deepEqual(
+      db.prepare("SELECT * FROM foundation_identity").get(),
+      before,
+    );
+    immutable(db);
+    assert.ok(
+      db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE name='identity_revocations'",
+        )
+        .get(),
+    );
   } finally {
     db.close();
   }

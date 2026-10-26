@@ -359,6 +359,8 @@ export async function createBookingMechanism(options = {}) {
   try {
     await mf.ready;
     const db = await mf.getD1Database("STATE");
+    // Register the synthetic foundation before later migrations upgrade its schema.
+    await seedFoundation(mf, db);
     // Preserve migration order and every statement while avoiding one host/RPC
     // round trip per migration for each independent browser fixture.
     await db.exec(
@@ -372,7 +374,6 @@ export async function createBookingMechanism(options = {}) {
         )
         .join(" "),
     );
-    await seedFoundation(mf, db);
     return {
       mf,
       db,
