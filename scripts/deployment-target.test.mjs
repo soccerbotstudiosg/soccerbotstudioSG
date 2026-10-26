@@ -149,6 +149,12 @@ test("target workflows isolate credentials and require manual verified-revision 
   assert.equal(JSON.stringify(verify).includes("secrets."), false);
   for (const job of Object.values(verify.jobs)) {
     assert.ok(!job["continue-on-error"]);
+    assert.equal(
+      job.container.image,
+      `mcr.microsoft.com/playwright:v${JSON.parse(readFileSync("package.json", "utf8")).devDependencies["@playwright/test"]}-noble`,
+    );
+    assert.equal(job["timeout-minutes"], 20);
+    assert.ok(!job.steps.some((s) => s.run?.includes("playwright install")));
     assert.ok(
       job.steps.some((s) => s.run === "node scripts/deployment-target.mjs"),
     );

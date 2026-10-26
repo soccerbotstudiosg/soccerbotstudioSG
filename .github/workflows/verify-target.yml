@@ -18,6 +18,9 @@ jobs:
     name: verify / frontend
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
     env:
       NEXT_PUBLIC_BASE_PATH: /SoccerBotStudioSG
       RELEASE_TARGET: ${{ inputs.target }}
@@ -29,9 +32,11 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
-      - run: npx playwright install --with-deps chromium webkit
       - run: npm run verify
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
@@ -44,6 +49,9 @@ jobs:
     name: verify / backend
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
     env:
       NEXT_PUBLIC_BASE_PATH: ""
       WRANGLER_SEND_METRICS: "false"
@@ -57,11 +65,13 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
       - run: npm run verify:worker
       - run: npm run test:load:smoke
-      - run: npx playwright install --with-deps chromium webkit
       - run: npm run verify:browser
       - name: Package and check the exact closed developer release
         env:
@@ -80,6 +90,9 @@ jobs:
     name: verify / live-email
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
     env:
       NEXT_PUBLIC_BASE_PATH: ""
       RELEASE_PROFILE: live-email
@@ -95,11 +108,13 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
       - run: npm run verify:worker
       - run: npm run test:load:smoke
-      - run: npx playwright install --with-deps chromium webkit
       - run: npm run verify:browser
       - name: Package and check the exact closed developer release
         env:

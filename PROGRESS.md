@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## CI dependency-download repair — 26 October 2026 SGT
+
+Run `40333912734` at `91218176887e6063d1523de95991bea304a5d3f6` passed the complete backend gate. Both Worker suites passed the corrected 448-case inventory and load smoke checks. Frontend and live-email hit the 20-minute job limit while downloading system packages from `azure.archive.ubuntu.com`, before browser execution (frontend before any verification); live-email artifact `12657396507` retains its earlier checks. Both runners used Ubuntu 24.04. Prepared matching official Playwright 1.58.2 Noble containers for regular/target verification, retaining the local Node pin and explicitly providing Python 3.12. Removed only redundant browser/system installation; all test commands, three gates, outcome inventories, zero retries and 20-minute limits remain required. Policy checks enforce image/package agreement. Final-commit CI remains required.
+
 ## PR92 final inventory repair — 26 October 2026 SGT
 
 Run `40332376078` at `e9a81df5f510184cc90b4840377cef4dedbfaff2` passed frontend. Backend and live-email each passed all 448 Worker tests with no failures, cancellations, skips or TODOs, then the exact inventory check rejected two omitted entries: configurable campaign validation and fresh remembered login after all-device sign-out. Added those two existing tests to the inventory in observed order, preserving every prior entry and strict outcome checks. Both independent CI logs agree. The shared fixture correction now has actual CI execution evidence; corrected-commit frontend, backend and live-email gates remain required before readiness.

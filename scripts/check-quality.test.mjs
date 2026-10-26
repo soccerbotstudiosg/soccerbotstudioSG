@@ -9,6 +9,22 @@ test("accepts the reviewed runtime lock and CI policy", () =>
   assert.deepEqual(checkPolicy(inputs()), []));
 for (const [name, mutate] of [
   [
+    "browser image version drift",
+    (p) =>
+      (p.workflow = p.workflow.replace(
+        "playwright:v1.58.2-noble",
+        "playwright:v1.57.0-noble",
+      )),
+  ],
+  [
+    "missing Python verification runtime",
+    (p) =>
+      (p.workflow = p.workflow.replace(
+        'python-version: "3.12"',
+        'python-version: "3.10"',
+      )),
+  ],
+  [
     "stale generated types",
     (p) => (p.pkg.scripts.typecheck = "next typegen && tsc --noEmit"),
   ],
