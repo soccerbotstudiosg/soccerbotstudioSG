@@ -200,6 +200,10 @@
     "title": "signed-in customer manages saved contact on Account without entering unavailable booking steps"
   },
   {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "all-device signout shows failure, permits retry and clears the signed-in email on success"
+  },
+  {
     "file": "src/features/booking/account-step.test.tsx",
     "title": "email form rejects a wrong verification code and accepts the corrected code"
   },
@@ -742,6 +746,10 @@
   {
     "file": "src/services/identity.test.ts",
     "title": "website profile save rejects missing or false Remember me without a request"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "all-device signout reports an actionable failure without claiming success"
   },
   {
     "file": "tests/experiment.spec.ts",

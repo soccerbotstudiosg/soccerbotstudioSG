@@ -197,15 +197,14 @@ export async function revokeAllIdentities(
   // Authority is rechecked in the first write, not merely in a preceding read.
   const results = await env.STATE.batch([
     env.STATE.prepare(
-      "INSERT INTO identity_revocations(email,cutoff_ms,operation_id) SELECT email,?,? FROM verified_identity WHERE access_hash=? AND revoked_ms IS NULL AND verified_ms<=? AND verified_ms>? AND expires_ms>? AND NOT EXISTS(SELECT 1 FROM remembered_access WHERE access_hash=? AND restored=1) AND EXISTS(SELECT 1 FROM guest_access WHERE capability_hash=? AND revoked_ms IS NULL AND expires_ms>?) ON CONFLICT(email) DO UPDATE SET cutoff_ms=MAX(cutoff_ms,excluded.cutoff_ms),operation_id=excluded.operation_id RETURNING email",
+      "INSERT INTO identity_revocations(email,cutoff_ms,operation_id) SELECT email,?,? FROM verified_identity WHERE access_hash=? AND revoked_ms IS NULL AND verified_ms<=? AND owner_id=? AND expires_ms>? AND EXISTS(SELECT 1 FROM guest_access WHERE capability_hash=? AND revoked_ms IS NULL AND expires_ms>?) ON CONFLICT(email) DO UPDATE SET cutoff_ms=MAX(cutoff_ms,excluded.cutoff_ms),operation_id=excluded.operation_id RETURNING email",
     ).bind(
       now,
       operation,
       access.capability_hash,
       now,
-      now - 300000,
+      access.owner_id,
       now,
-      access.capability_hash,
       access.capability_hash,
       now,
     ),
@@ -220,5 +219,5 @@ export async function revokeAllIdentities(
     ).bind(now, operation, access.capability_hash),
   ]);
   if (results[0].meta.changes !== 1)
-    throw new ApiError(401, "fresh_verification_required");
+    throw new ApiError(401, "identity_unavailable");
 }
