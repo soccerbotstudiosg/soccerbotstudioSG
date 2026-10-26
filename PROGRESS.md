@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Chromium intercepted-response completion — 26 October 2026 SGT
+
+Run `40342618737` at `addfac4ac278d113b52526978469e8d35347a14b` passed frontend/backend and 83/84 live-email browser cases. Both WebKit concurrency cases passed. Artifact `12660379225` shows Chromium received the startup responses in milliseconds but waited indefinitely on `response.finished()` before submitting any holds. Startup validation now consumes the existing transport adapter's captured real Worker bodies (identity null and the original prepared attempt), avoiding the browser's cancelled-resource completion promise. Nested cleanup guarantees fixture disposal after navigation/drain errors. Assertions, request concurrency, timeouts and inventories are retained. Final-commit CI remains required.
+
 ## Final policy/browser fixture repair — 26 October 2026 SGT
 
 Run `40338957054` at `8f20df2495adbc4168e062e988fbb923b23ae5ba` passed backend. Frontend found a stale numeric workflow-step selector in a policy test; related policy tests now select the intended upload/verification action or command, with 21 targeted checks passing locally. Live-email passed 83/84 browser cases, including email navigation with both Remember me choices on all three profiles. Phone WebKit's duplicate-hold case returned `provider_queue_busy`; retained artifact `12659097293` shows concurrent holds overlapping both tabs' access/current/identity/restore startup traffic, with the queued hold exceeding the existing 15-second queue limit. The concurrency fixture now awaits both tabs' actual identity/current startup responses before issuing the same simultaneous hold requests. Assertions still require two 200 responses, one booking and one payment, plus revocation enforcement; no queue limit, test timeout, concurrency setting, retry or inventory reduction. Final-commit CI remains required.

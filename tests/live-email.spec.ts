@@ -1239,7 +1239,16 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
           currentReady,
         ])) {
           expect(response.status()).toBe(200);
-          await response.finished();
+          // The adapter retains the complete Worker body before route.fulfill.
+          // Chromium can leave response.finished pending after app cancellation.
+          const captured = (tab === page ? transport : secondTransport).json(
+            response,
+          );
+          expect(captured).toEqual(
+            new URL(response.url()).pathname === "/api/identity"
+              ? null
+              : expect.objectContaining({ attemptId, state: "prepared" }),
+          );
         }
       }),
     );
@@ -1306,10 +1315,20 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
     expect(mechanism.calls).toHaveLength(providerCalls);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
-    await Promise.all([page.goto("about:blank"), other.goto("about:blank")]);
-    await Promise.all([transport.drain(), secondTransport.drain()]);
-    await other.close();
-    await mechanism.close();
+    try {
+      await Promise.all(
+        [page, other].map(async (tab) => {
+          if (!tab.isClosed()) await tab.goto("about:blank");
+        }),
+      );
+    } finally {
+      try {
+        await Promise.all([transport.drain(), secondTransport.drain()]);
+      } finally {
+        await other.close();
+        await mechanism.close();
+      }
+    }
   }
 });
 
