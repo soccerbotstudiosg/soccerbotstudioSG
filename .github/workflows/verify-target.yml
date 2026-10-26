@@ -1,0 +1,134 @@
+name: Verify deployment target
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        required: true
+        options:
+          - staging
+          - production
+permissions:
+  contents: read
+concurrency:
+  group: target-verify-${{ inputs.target }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  frontend:
+    name: verify / frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
+    env:
+      NEXT_PUBLIC_BASE_PATH: /SoccerBotStudioSG
+      RELEASE_TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: node scripts/deployment-target.mjs
+      - run: npm run verify
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: frontend-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: error
+  backend:
+    name: verify / backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
+    env:
+      NEXT_PUBLIC_BASE_PATH: ""
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: test-results/wrangler-logs
+      RELEASE_TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: node scripts/deployment-target.mjs
+      - run: npm run verify:worker
+      - run: npm run test:load:smoke
+      - run: npm run verify:browser
+      - name: Package and check the exact closed developer release
+        env:
+          RELEASE_SOURCE_REVISION: ${{ github.sha }}
+        run: |
+          node scripts/prepare-developer-release.mjs
+          node scripts/check-developer-release.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: backend-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: error
+  live-email:
+    name: verify / live-email
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
+    env:
+      NEXT_PUBLIC_BASE_PATH: ""
+      RELEASE_PROFILE: live-email
+      NEXT_PUBLIC_BOOKING_MODE: live
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: test-results/wrangler-logs
+      RELEASE_TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: node scripts/deployment-target.mjs
+      - run: npm run verify:worker
+      - run: npm run test:load:smoke
+      - run: npm run verify:browser
+      - name: Package and check the exact closed developer release
+        env:
+          RELEASE_SOURCE_REVISION: ${{ github.sha }}
+        run: |
+          node scripts/prepare-developer-release.mjs
+          node scripts/check-developer-release.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: live-email-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: error

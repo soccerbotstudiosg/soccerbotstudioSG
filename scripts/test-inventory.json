@@ -1130,5 +1130,33 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "real API 409 preparation rejection stays on Review without payment verification"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "expired continue-signed-in state returns a usable email choice instead of trapping the account menu"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "failed profile saves keep the form and retry returns to booking options only after success"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "invalid code can change email or return to guest options without carrying an old error"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "switching email clears the old account and supports back guest and fresh remembered sign-in paths"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "a challenge superseded by signout cannot dispatch email after delayed guest access"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "identity failures distinguish throttling expired access bad codes and security checks without exposing response bodies"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "email account actions return through booking options and sign in again with either remember choice"
   }
 ]

@@ -53,10 +53,10 @@ export function checkPagesPolicy(doc) {
   require(same(
     (backend.steps || []).filter((s) => s.run).map((s) => s.run),
     [
+      'git config --global --add safe.directory "$GITHUB_WORKSPACE"',
       "npm ci",
       "npm run verify:worker",
       "npm run test:load:smoke",
-      "npx playwright install --with-deps chromium webkit",
       "npm run verify:browser",
       releaseCommand,
     ],
@@ -112,7 +112,7 @@ export function checkPagesPolicy(doc) {
     ), "Pages upload precedes verification");
   const setup = steps.filter((s) => s.uses?.startsWith("actions/setup-node@"));
   const checkout = steps.filter((s) => s.uses?.startsWith("actions/checkout@"));
-  require(steps.length === 7 &&
+  require(steps.length === 8 &&
     setup.length === 1 &&
     checkout.length === 1 &&
     !setup[0].if &&
@@ -152,7 +152,7 @@ export function checkPagesPolicy(doc) {
   require(same(doc.jobs?.cloudflare, {
     name: "deploy / Cloudflare",
     needs: ["frontend", "backend", "live-email"],
-    if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request'",
+    if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOYMENT_MODE != 'portable'",
     "runs-on": "ubuntu-latest",
     "timeout-minutes": 10,
     permissions: {

@@ -9,7 +9,7 @@ import {
 } from "@playwright/test";
 
 // CI-only synthetic transports. No widget script, email or provider is contacted.
-const sitekey = "0x4AAAAAAFSTbdgbJQsvM5vy";
+const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 const challengeId = "10000000-0000-4000-8000-000000000001";
 async function fixture(
   page: Page,
@@ -100,6 +100,17 @@ async function fixture(
     ) {
       status = 200;
       result = null;
+    } else if (
+      delivery &&
+      url.pathname === "/api/identity/all-devices" &&
+      method === "DELETE"
+    ) {
+      status = verified ? 200 : 401;
+      if (verified) {
+        verified = false;
+        remember = false;
+      }
+      result = { access: "revoked" };
     } else if (delivery && url.pathname === "/api/access") {
       status = method === "DELETE" ? 200 : 201;
       if (method === "DELETE") verified = false;
@@ -176,7 +187,7 @@ test("live email requires the supplied widget proof before protected requests", 
     .getByRole("button", { name: "Continue with email", exact: true })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Email verification is unavailable. You can continue as a guest.",
+    "Complete the email security check, then try again.",
   );
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
     { path: "/api/access", method: "POST", body: null },
@@ -335,12 +346,10 @@ test("remembered live account edits and rereads contact while native booking sta
   await expect(
     page.getByRole("status", { name: "Saving contact details…", exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator("#details-form").getByRole("status")).toHaveText(
-    "Contact details saved for your next visit.",
-  );
-  await page
-    .getByRole("button", { name: "Back to booking options", exact: true })
-    .click();
+  await expect(
+    page.getByRole("heading", { name: "Start your booking", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("#details-form")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Manage saved contact", exact: true })
     .click();
@@ -1208,10 +1217,41 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
   const secondTransport = await mechanismTransport(other, mechanism);
   try {
     const { attemptId } = await prepareBrowserAttempt(page, mechanism);
-    await Promise.all([
-      page.goto("/book/account/"),
-      other.goto("/book/account/"),
-    ]);
+    // Finish both tabs' real account bootstrap before measuring competing holds.
+    // Refresh reads identity, restores the cookie, then rereads identity. Racing
+    // those unrelated startup requests obscures the duplicate-write contract.
+    await Promise.all(
+      [page, other].map(async (tab) => {
+        let identityReads = 0;
+        const identityReady = tab.waitForResponse(
+          (response) =>
+            new URL(response.url()).pathname === "/api/identity" &&
+            response.request().method() === "GET" &&
+            ++identityReads === 2,
+        );
+        const currentReady = tab.waitForResponse(
+          (response) =>
+            new URL(response.url()).pathname === "/api/booking/current",
+        );
+        await tab.goto("/book/account/");
+        for (const response of await Promise.all([
+          identityReady,
+          currentReady,
+        ])) {
+          expect(response.status()).toBe(200);
+          // The adapter retains the complete Worker body before route.fulfill.
+          // Chromium can leave response.finished pending after app cancellation.
+          const captured = (tab === page ? transport : secondTransport).json(
+            response,
+          );
+          expect(captured).toEqual(
+            new URL(response.url()).pathname === "/api/identity"
+              ? null
+              : expect.objectContaining({ attemptId, state: "prepared" }),
+          );
+        }
+      }),
+    );
     const submit = (tab: Page, path: string, body?: unknown) =>
       tab.evaluate(
         async ({ path, body }) => {
@@ -1228,7 +1268,10 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
       submit(page, `/api/booking/native/${attemptId}?hold=1`),
       submit(other, `/api/booking/native/${attemptId}?hold=1`),
     ]);
-    expect(holds.map((result) => result.status)).toEqual([200, 200]);
+    expect(
+      holds.map((result) => result.status),
+      holds.map((result) => result.body.error ?? "ok").join(", "),
+    ).toEqual([200, 200]);
     expect(holds.some((result) => result.body.state === "associated")).toBe(
       true,
     );
@@ -1272,10 +1315,20 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
     expect(mechanism.calls).toHaveLength(providerCalls);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
-    await Promise.all([page.goto("about:blank"), other.goto("about:blank")]);
-    await Promise.all([transport.drain(), secondTransport.drain()]);
-    await other.close();
-    await mechanism.close();
+    try {
+      await Promise.all(
+        [page, other].map(async (tab) => {
+          if (!tab.isClosed()) await tab.goto("about:blank");
+        }),
+      );
+    } finally {
+      try {
+        await Promise.all([transport.drain(), secondTransport.drain()]);
+      } finally {
+        await other.close();
+        await mechanism.close();
+      }
+    }
   }
 });
 
@@ -2672,4 +2725,69 @@ test("real API 409 preparation rejection stays on Review without payment verific
   } finally {
     await stopMechanism(page, mechanism, transport);
   }
+});
+
+test("email account actions return through booking options and sign in again with either remember choice", async ({
+  page,
+}) => {
+  const evidence = await fixture(page, true, true);
+  await page
+    .getByRole("button", { name: "Use another email", exact: true })
+    .click();
+  await expect(page.getByLabel("Email address", { exact: true })).toHaveValue(
+    "",
+  );
+  await expect(
+    page.getByLabel("Remember me", { exact: true }),
+  ).not.toBeChecked();
+  await page
+    .getByRole("button", { name: "Back to booking options", exact: true })
+    .click();
+  for (const remember of [true, false]) {
+    await page
+      .getByRole("button", { name: "Continue with email", exact: true })
+      .click();
+    await page
+      .getByLabel("Email address", { exact: true })
+      .fill("synthetic@example.test");
+    await page.getByLabel("Remember me", { exact: true }).setChecked(remember);
+    await page
+      .getByRole("button", {
+        name: "Complete synthetic email check",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("button", { name: "Continue with email", exact: true })
+      .click();
+    await page.getByLabel("Verification code", { exact: true }).fill("123456");
+    await page
+      .getByRole("button", { name: "Verify and continue", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/book\/session\/$/);
+    await page.goBack();
+    await expect(
+      page.getByRole("button", { name: "Continue signed in", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Manage saved contact", exact: true }),
+    ).toHaveCount(remember ? 1 : 0);
+    await page
+      .getByRole("button", { name: "Sign out all devices", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Continue with email", exact: true }),
+    ).toBeVisible();
+  }
+  expect(
+    evidence.calls
+      .filter((c) => c.path === "/api/identity/verify")
+      .map((c) => (c.body as { remember: boolean }).remember),
+  ).toEqual([true, false]);
+  expect(
+    evidence.calls.filter(
+      (c) => c.path === "/api/identity/all-devices" && c.method === "DELETE",
+    ),
+  ).toHaveLength(2);
+  expect(evidence.unexpected).toEqual([]);
 });

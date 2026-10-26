@@ -1,0 +1,21 @@
+{
+  "target": "staging",
+  "repository": "LimYouSheng/SoccerBotStudioSG",
+  "accountId": "517f4f85eb8f982b483dbc05b797fd88",
+  "workerName": "soccerbot-dev",
+  "databaseName": "soccerbot-dev-state",
+  "databaseId": "297a991b-70a7-438d-a0e3-39fa3a7f2cee",
+  "origin": "https://soccerbot-dev.limyousheng-94.workers.dev",
+  "coordinatorName": "simplybook-developer-account",
+  "environment": "developer",
+  "campaignId": "developer-20261008",
+  "turnstileSitekey": "0x4AAAAAAFSTbdgbJQsvM5vy",
+  "access": "developer-sandbox",
+  "pagesProject": "",
+  "pagesBranch": "main",
+  "sandbox": {
+    "premiumServiceId": "3",
+    "merchant": "app404",
+    "businessId": "a2d2119d-79f1-41fa-9d65-6e311d06da35"
+  }
+}

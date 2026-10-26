@@ -88,6 +88,21 @@ export function checkPolicy({
     !doc.on?.push?.["paths-ignore"], "Workflow path bypass refused");
   require(JSON.stringify(doc.permissions) ===
     '{"contents":"read"}', "Workflow must be read-only");
+  for (const name of ["frontend", "backend", "live-email"]) {
+    const gate = doc.jobs?.[name];
+    require(JSON.stringify(gate?.container) ===
+      JSON.stringify({
+        image: `mcr.microsoft.com/playwright:v${pkg.devDependencies["@playwright/test"]}-noble`,
+        options: "--ipc=host",
+      }), "CI browser image must match the locked Playwright version");
+    const python = gate?.steps?.find((step) =>
+      step.uses?.startsWith("actions/setup-python@"),
+    );
+    require(python?.uses ===
+      "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1" &&
+      python?.with?.["python-version"] === "3.12" &&
+      !python.if, "CI must retain pinned Python setup for installer verification");
+  }
   const job = doc.jobs?.frontend;
   require(!!job &&
     job["runs-on"] === "ubuntu-latest" &&
@@ -99,8 +114,8 @@ export function checkPolicy({
   const steps = job?.steps || [];
   require(JSON.stringify(steps.filter((s) => s.run).map((s) => s.run)) ===
     JSON.stringify([
+      'git config --global --add safe.directory "$GITHUB_WORKSPACE"',
       "npm ci",
-      "npx playwright install --with-deps chromium webkit",
       "npm run verify",
     ]), "Required gate order/commands changed");
   for (const step of steps) {
@@ -112,7 +127,7 @@ export function checkPolicy({
           "working-directory"
         ], "Conditional or redirected required gate refused");
     if (step.uses)
-      require(/^actions\/(?:checkout|setup-node|upload-artifact|upload-pages-artifact)@[a-f0-9]{40}$/.test(
+      require(/^actions\/(?:checkout|setup-node|setup-python|upload-artifact|upload-pages-artifact)@[a-f0-9]{40}$/.test(
         step.uses,
       ), "Actions must be pinned to commit SHAs");
   }

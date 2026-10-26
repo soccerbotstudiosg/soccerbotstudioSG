@@ -1,11 +1,11 @@
 import { test, before, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { createHash, createHmac } from "node:crypto";
 import { build } from "esbuild";
 import ts from "typescript";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
-import { seedFoundation } from "./foundation-fixture.mjs";
+import { initializeFixture } from "./foundation-fixture.mjs";
 const config = ts.parseConfigFileTextToJson(
   "wrangler.jsonc",
   readFileSync("wrangler.jsonc", "utf8"),
@@ -147,15 +147,7 @@ beforeEach(async () => {
   );
   await mf.ready;
   db = await mf.getD1Database("STATE");
-  for (const name of readdirSync("migrations")
-    .sort()
-    .filter((n) => !n.startsWith("0005")))
-    await db.exec(
-      readFileSync(`migrations/${name}`, "utf8")
-        .replace(/^--.*$/gm, "")
-        .replace(/\n/g, " "),
-    );
-  await seedFoundation(mf, db);
+  await initializeFixture(mf, db);
   await db
     .prepare(
       "INSERT INTO attempts(id,owner_id,idempotency_key,intent_json,intent_hash,created_ms,deadline_ms,state,association_json) VALUES(?,?,?,?,?,?,?,'dispatching',?)",

@@ -53,6 +53,24 @@ async function identityRequest(
       );
     if (path === "/api/identity/all-devices")
       throw new Error("Could not sign out all devices. Please try again.");
+    if (path === "/api/access" && method === "DELETE")
+      throw new Error("Could not sign out this browser. Please try again.");
+    if (response.status === 429)
+      throw new Error(
+        "Too many verification requests. Wait a few minutes before requesting another code.",
+      );
+    if (response.status === 401)
+      throw new Error(
+        "Your session has expired. Go back to booking options and verify your email again.",
+      );
+    if (path === "/api/identity/verify" && response.status === 400)
+      throw new Error(
+        "This code is incorrect, expired or already used. Check it or request a new code.",
+      );
+    if (path === "/api/identity/challenges" && response.status === 400)
+      throw new Error(
+        "The email security check was not accepted. Complete the new check and try again.",
+      );
     throw unavailable();
   }
   if (!response.body) throw unavailable();
@@ -125,17 +143,23 @@ export function createLiveIdentityService(): CustomerIdentityService {
     },
     challenge: async (email, signal, botToken) => {
       const normalized = z.email().parse(email.trim().toLowerCase());
-      if (!botToken || botToken.length > 2048) throw unavailable();
-      ++generation;
+      if (!botToken || botToken.length > 2048)
+        throw new Error("Complete the email security check, then try again.");
+      const own = ++generation;
       current = null;
       await identityRequest("/api/access", "POST", signal);
+      if (signal.aborted || own !== generation) throw unavailable();
       const response = challengeSchema.parse(
         await identityRequest("/api/identity/challenges", "POST", signal, {
           email: normalized,
           botToken,
         }),
       );
-      if (signal.aborted || response.expiresAt <= Date.now())
+      if (
+        signal.aborted ||
+        own !== generation ||
+        response.expiresAt <= Date.now()
+      )
         throw unavailable();
       return { ...response, email: normalized };
     },

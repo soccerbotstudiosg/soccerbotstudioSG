@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
+import { loadTarget } from "./deployment-target.mjs";
 
 // Public build inputs only. Neither profile grants delivery or provider access.
-export const emailSitekey = "0x4AAAAAAFSTbdgbJQsvM5vy";
+export const emailSitekey = loadTarget("staging").turnstileSitekey;
 /** Validate public build inputs for the selected release composition. */
 export function releaseProfile(env = process.env) {
   const name = env.RELEASE_PROFILE || "closed-demo";
@@ -20,7 +21,9 @@ export function releaseProfile(env = process.env) {
     );
     assert.equal(
       sitekey,
-      emailSitekey,
+      env.RELEASE_TARGET
+        ? loadTarget(env.RELEASE_TARGET).turnstileSitekey
+        : emailSitekey,
       "Live email requires the supplied public sitekey",
     );
   } else {

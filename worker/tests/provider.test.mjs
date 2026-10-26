@@ -1,7 +1,7 @@
-import { seedFoundation } from "./foundation-fixture.mjs";
+import { initializeFixture } from "./foundation-fixture.mjs";
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, mkdtempSync, rmSync, readdirSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
@@ -149,26 +149,22 @@ async function fixture({
   await mf.ready;
   const db = await mf.getD1Database("STATE");
   if (!persistence)
-    for (const name of full
-      ? readdirSync("migrations")
-          .sort()
-          .filter((name) => !name.startsWith("0005"))
-      : [
-          "0001_developer_journal.sql",
-          "0002_developer_operations.sql",
-          ...(!legacy
-            ? [
-                "0004_operator_read_scopes.sql",
-                "0008_native_field_discovery.sql",
-              ]
-            : []),
-        ])
-      await db.exec(
-        readFileSync("migrations/" + name, "utf8")
-          .replace(/^--.*$/gm, "")
-          .replace(/\n/g, " "),
-      );
-  if (!persistence) await seedFoundation(mf, db);
+    await initializeFixture(
+      mf,
+      db,
+      full
+        ? undefined
+        : [
+            "0001_developer_journal.sql",
+            "0002_developer_operations.sql",
+            ...(!legacy
+              ? [
+                  "0004_operator_read_scopes.sql",
+                  "0008_native_field_discovery.sql",
+                ]
+              : []),
+          ],
+    );
   const storage = await mf.unsafeGetDurableObjectStorage(
     "provider-test",
     "SoccerBotAccountCoordinator",

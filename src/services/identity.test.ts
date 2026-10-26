@@ -17,7 +17,7 @@ it("live identity requires a fresh bot proof and sends it only after guest acces
   const service = createLiveIdentityService(),
     signal = new AbortController().signal;
   await expect(service.challenge(identity.email, signal)).rejects.toThrow(
-    "unavailable",
+    "Complete the email security check",
   );
   expect(request).not.toHaveBeenCalled();
   request
@@ -271,4 +271,63 @@ it("all-device signout reports an actionable failure without claiming success", 
   await expect(
     createLiveIdentityService().signOut(new AbortController().signal, true),
   ).rejects.toThrow("Could not sign out all devices. Please try again.");
+});
+
+it("identity failures distinguish throttling expired access bad codes and security checks without exposing response bodies", async () => {
+  const request = vi.fn();
+  vi.stubGlobal("fetch", request);
+  const signal = new AbortController().signal;
+  for (const [status, message] of [
+    [429, "Too many verification requests"],
+    [401, "Your session has expired"],
+    [400, "This code is incorrect"],
+    [503, "Email verification is unavailable"],
+  ] as const) {
+    request.mockResolvedValueOnce(
+      Response.json({ private: "must not appear" }, { status }),
+    );
+    await expect(
+      createLiveIdentityService().verify(challenge, "123456", true, signal),
+    ).rejects.toThrow(message);
+  }
+  request
+    .mockResolvedValueOnce(Response.json({ access: "guest" }))
+    .mockResolvedValueOnce(
+      Response.json({ private: "must not appear" }, { status: 400 }),
+    );
+  await expect(
+    createLiveIdentityService().challenge(
+      identity.email,
+      signal,
+      "synthetic-token",
+    ),
+  ).rejects.toThrow("The email security check was not accepted");
+  request.mockResolvedValueOnce(Response.json({}, { status: 503 }));
+  await expect(createLiveIdentityService().signOut(signal)).rejects.toThrow(
+    "Could not sign out this browser",
+  );
+});
+
+it("a challenge superseded by signout cannot dispatch email after delayed guest access", async () => {
+  let finish!: (value: Response) => void;
+  const request = vi
+    .fn()
+    .mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+    )
+    .mockResolvedValueOnce(Response.json({ access: "revoked" }));
+  vi.stubGlobal("fetch", request);
+  const service = createLiveIdentityService(),
+    signal = new AbortController().signal;
+  const pending = service.challenge(identity.email, signal, "synthetic-token");
+  await service.signOut(signal);
+  finish(Response.json({ access: "guest" }));
+  await expect(pending).rejects.toThrow("unavailable");
+  expect(request.mock.calls.map((call) => [call[0], call[1].method])).toEqual([
+    ["/api/access", "POST"],
+    ["/api/access", "DELETE"],
+  ]);
 });

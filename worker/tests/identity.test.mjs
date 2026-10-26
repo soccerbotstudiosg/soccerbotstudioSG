@@ -537,6 +537,54 @@ test("remembered all-device signout accepts restored and older valid sessions an
     "identity_unavailable",
   );
 });
+test("fresh remembered login after all-device signout keeps old families revoked", async () => {
+  for (const remember of [false, true]) {
+    const old = await remembered();
+    const signedOutAt = old.now + 1000;
+    assert.equal(
+      (await call(old.guest, { action: "all-signout", now: signedOutAt }))
+        .error,
+      undefined,
+    );
+    // Respect the unchanged per-email challenge cooldown.
+    const now = old.now + 61000;
+    const fresh = await guestAt(now);
+    const next = await challenge(fresh, {
+      now,
+      email: old.email,
+      source: `fresh-after-signout-${sequence}`,
+    });
+    assert.equal(next.error, undefined);
+    const verified = await call(fresh, {
+      ...verification(next, now),
+      remember,
+    });
+    assert.equal(verified.error, undefined);
+    assert.equal(verified.result.email, old.email);
+    assert.equal(verified.result.remember, remember);
+    assert.equal(
+      (await call(old.guest, { action: "read", now })).error,
+      "access_denied",
+    );
+    assert.equal(
+      (
+        await call(`${await guestAt(now)}; ${old.cookie}`, {
+          action: "restore",
+          now,
+        })
+      ).error,
+      "identity_unavailable",
+    );
+    if (remember) {
+      const restored = await call(
+        `${await guestAt(now)}; ${verified.cookies[0].split(";")[0]}`,
+        { action: "restore", now: now + 1 },
+      );
+      assert.equal(restored.error, undefined);
+      assert.equal(restored.result.email, old.email);
+    }
+  }
+});
 test("all-device signout rejects expired identity and preserves another email", async () => {
   const r = await remembered();
   const other = await remembered();

@@ -1,13 +1,13 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, mkdtempSync, rmSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { build } from "esbuild";
 import ts from "typescript";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
-import { seedFoundation } from "./foundation-fixture.mjs";
+import { initializeFixture } from "./foundation-fixture.mjs";
 const config = ts.parseConfigFileTextToJson(
   "wrangler.jsonc",
   readFileSync("wrangler.jsonc", "utf8"),
@@ -69,15 +69,7 @@ before(async () => {
   });
   await mf.ready;
   db = await mf.getD1Database("STATE");
-  for (const name of readdirSync("migrations")
-    .filter((name) => !name.startsWith("0005"))
-    .sort())
-    await db.exec(
-      readFileSync(`migrations/${name}`, "utf8")
-        .replace(/^--.*$/gm, "")
-        .replace(/\n/g, " "),
-    );
-  await seedFoundation(mf, db, config);
+  await initializeFixture(mf, db);
 });
 after(async () => {
   await mf?.dispose();

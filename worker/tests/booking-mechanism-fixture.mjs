@@ -2,11 +2,11 @@
 // code are production code. No network request is forwarded to a provider.
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { build } from "esbuild";
 import ts from "typescript";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
-import { seedFoundation } from "./foundation-fixture.mjs";
+import { initializeFixture } from "./foundation-fixture.mjs";
 // Cache only immutable compiled source within this test process. Every call
 // still owns a new runtime, database, provider state and effect history.
 let compiledWorker;
@@ -359,20 +359,7 @@ export async function createBookingMechanism(options = {}) {
   try {
     await mf.ready;
     const db = await mf.getD1Database("STATE");
-    // Preserve migration order and every statement while avoiding one host/RPC
-    // round trip per migration for each independent browser fixture.
-    await db.exec(
-      readdirSync("migrations")
-        .sort()
-        .filter((name) => !name.startsWith("0005"))
-        .map((name) =>
-          readFileSync(`migrations/${name}`, "utf8")
-            .replace(/^--.*$/gm, "")
-            .replace(/\n/g, " "),
-        )
-        .join(" "),
-    );
-    await seedFoundation(mf, db);
+    await initializeFixture(mf, db);
     return {
       mf,
       db,

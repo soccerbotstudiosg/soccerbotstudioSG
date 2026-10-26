@@ -12,7 +12,7 @@ import { discoveryFields } from "./field-discovery";
 import { CatalogueReads } from "./catalogue";
 import { NativePrebooking, type NativeAccountContract } from "./prebooking";
 import { measure } from "./diagnostics";
-import { ApiError, policy, liveCustomerAccess } from "./policy";
+import { ApiError, sandboxPolicy, liveCustomerAccess } from "./policy";
 import { historicalComparison } from "./provider-normalization";
 import {
   providerRequest,
@@ -109,7 +109,7 @@ export class ProviderSession {
   private catalogueReads = new CatalogueReads();
   private boundScope: string | undefined;
   invalidateCatalogue(env: Env) {
-    const p = policy(env),
+    const p = sandboxPolicy(env),
       secrets = this.bindScope(env);
     this.catalogueReads.invalidate({
       accountId: p.DEPLOYMENT_ACCOUNT_ID,
@@ -151,7 +151,7 @@ export class ProviderSession {
     fresh = false,
     cacheOnly = false,
   ) {
-    const p = policy(env),
+    const p = sandboxPolicy(env),
       secrets = this.bindScope(env);
     if (
       p.PROVIDER_ACCESS !== "trusted-reads" ||
@@ -184,7 +184,7 @@ export class ProviderSession {
     contract?: NativeAccountContract,
     observe?: (operation: NativeRequest["kind"], body?: unknown) => void,
   ) {
-    const p = policy(env),
+    const p = sandboxPolicy(env),
       secrets = this.bindScope(env);
     return new NativePrebooking(
       {
@@ -214,7 +214,7 @@ export class ProviderSession {
   // never a URL, method, service ID or a browser assertion of verification.
   /** Read required booking-field definitions under the discovery scope. */
   async discoverFields(env: Env, control: ProviderControl) {
-    const p = policy(env);
+    const p = sandboxPolicy(env);
     if (
       p.PROVIDER_ACCESS !== "trusted-reads" ||
       (p.CAMPAIGN_END_MS <= Date.now() &&
@@ -374,7 +374,7 @@ export class ProviderSession {
     if (
       !control.liveCustomer ||
       !liveCustomerAccess(env) ||
-      policy(env).PROVIDER_ACCESS !== "trusted-reads" ||
+      sandboxPolicy(env).PROVIDER_ACCESS !== "trusted-reads" ||
       secrets.company.toLowerCase() === "soccerbotstudio"
     )
       throw new ApiError(503, "provider_access_disabled");
@@ -393,7 +393,7 @@ export class ProviderSession {
   // contract does not establish that two token generations remain valid.
   /** Retire and replace an eligible public token within the serialized workflow. */
   async refreshPublicTokenAhead(env: Env, control: ProviderControl) {
-    if (policy(env).PUBLIC_TOKEN_REFRESH_AHEAD !== "enabled") return;
+    if (sandboxPolicy(env).PUBLIC_TOKEN_REFRESH_AHEAD !== "enabled") return;
     const secrets = this.bindScope(env);
     if (
       !control.liveCustomer ||
@@ -430,7 +430,7 @@ export class ProviderSession {
     onReserved?: (id: string) => Promise<void>,
     creationOnly = false,
   ) {
-    const p = policy(env);
+    const p = sandboxPolicy(env);
     if (
       p.PROVIDER_ACCESS !== "trusted-reads" ||
       (p.CAMPAIGN_END_MS <= Date.now() &&

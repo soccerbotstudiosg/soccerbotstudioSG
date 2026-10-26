@@ -89,7 +89,7 @@ export default {
     try {
       if (liveCustomerAccess(env)) {
         await verifyBindings(env);
-        await env.COORDINATOR.getByName(coordinatorName).bookingComments();
+        await env.COORDINATOR.getByName(coordinatorName(env)).bookingComments();
       }
     } catch {
       console.error(JSON.stringify({ event: "booking_comments_deferred" }));
@@ -97,7 +97,7 @@ export default {
     try {
       if (policy(env).PUBLIC_DISPLAY_WARMING === "enabled") {
         await verifyBindings(env);
-        await env.COORDINATOR.getByName(coordinatorName).warmDisplay();
+        await env.COORDINATOR.getByName(coordinatorName(env)).warmDisplay();
       }
     } catch {
       console.error(JSON.stringify({ event: "display_refresh_unavailable" }));
@@ -235,7 +235,7 @@ export default {
               STATE: instrumentStorage(env.STATE, "d1"),
             });
           const outcome = await env.COORDINATOR.getByName(
-            coordinatorName,
+            coordinatorName(env),
           ).holdCustomer(
             {
               attemptId: holdMatch[2],
@@ -258,7 +258,9 @@ export default {
           await verifyBindings(env);
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(coordinatorName).prepareCustomer(
+              await env.COORDINATOR.getByName(
+                coordinatorName(env),
+              ).prepareCustomer(
                 {
                   cookie: request.headers.get("cookie") || "",
                   value: await inputBody(request),
@@ -285,7 +287,9 @@ export default {
           await authenticate(request, env, Date.now());
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(coordinatorName).hitpayPayment(
+              await env.COORDINATOR.getByName(
+                coordinatorName(env),
+              ).hitpayPayment(
                 {
                   attemptId: hitpayPayment[1],
                   cookie: request.headers.get("cookie") || "",
@@ -338,7 +342,9 @@ export default {
             throw new ApiError(405, "operation_unavailable");
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(coordinatorName).expireCheckout({
+              await env.COORDINATOR.getByName(
+                coordinatorName(env),
+              ).expireCheckout({
                 attemptId: expire[1],
                 cookie: request.headers.get("Cookie") ?? "",
               }),
@@ -353,7 +359,9 @@ export default {
             throw new ApiError(405, "operation_unavailable");
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(coordinatorName).dismissCompleted(
+              await env.COORDINATOR.getByName(
+                coordinatorName(env),
+              ).dismissCompleted(
                 {
                   attemptId: dismiss[1],
                   cookie: request.headers.get("cookie") || "",
@@ -374,10 +382,9 @@ export default {
         if (publicMonth && request.method === "GET")
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(coordinatorName).publicCalendar(
-                publicMonth[1],
-                correlationId,
-              ),
+              await env.COORDINATOR.getByName(
+                coordinatorName(env),
+              ).publicCalendar(publicMonth[1], correlationId),
             ),
           );
         const calendarMatch =
@@ -390,7 +397,9 @@ export default {
           await authenticate(request, env, Date.now());
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(coordinatorName).nativeCalendar(
+              await env.COORDINATOR.getByName(
+                coordinatorName(env),
+              ).nativeCalendar(
                 {
                   serviceId: calendarMatch[1],
                   month: calendarMatch[2],
@@ -412,7 +421,7 @@ export default {
           return json(
             unwrapRpcOutcome(
               await env.COORDINATOR.getByName(
-                coordinatorName,
+                coordinatorName(env),
               ).nativeAvailability(
                 {
                   serviceId: availabilityMatch[1],
@@ -436,7 +445,9 @@ export default {
           await authenticate(request, env, Date.now());
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(coordinatorName).nativeCheckout(
+              await env.COORDINATOR.getByName(
+                coordinatorName(env),
+              ).nativeCheckout(
                 {
                   attemptId,
                   holding: url.searchParams.get("hold") === "1",
@@ -458,7 +469,7 @@ export default {
           return json(
             unwrapRpcOutcome(
               await env.COORDINATOR.getByName(
-                coordinatorName,
+                coordinatorName(env),
               ).webhookSubscription(
                 await digest(bearer.slice(7)),
                 subscriptionOperation[1] === "create" ? "create" : "cleanup",
