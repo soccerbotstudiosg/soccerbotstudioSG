@@ -2,7 +2,7 @@
 
 ## Sign-out repair — 26 October 2026 SGT
 
-All-device sign-out now accepts valid restored/older verified sessions and retains expiry, owner and revocation checks. Local verification passed 25 Worker identity tests and 21 frontend/service tests, source/policy checks, Worker source/types, frontend types and lint. Final-commit CI remains pending; the reported live request was not captured. See the dated Service Contracts entry for scope and evidence.
+All-device sign-out now accepts valid restored/older verified sessions and retains expiry, owner and revocation checks. Local verification passed 25 Worker identity tests and 21 frontend/service tests, source/policy checks, Worker source/types, frontend types and lint. PR90 CI run `40278282678` passed frontend but both remaining jobs rejected the stale Worker inventory after 442/442 runtime tests passed. The renamed/added inventory entries are corrected and the complete local Worker verifier passes 442/442 tests with zero provider requests; new final-commit CI remains pending. The reported live request was not captured. See the dated Service Contracts entry for scope and evidence.
 
 ## Previous checkpoint — 22 October 2026 SGT
 

@@ -270,6 +270,10 @@ Current position: M4.4–M4.6/M5 hardening, M6 preparation; M7 UAT, M8 launch/ha
 
 ## Part 2 — Dated changes and evidence
 
+### 26 October 2026 — PR90 Worker inventory correction
+
+PR90 run `40278282678` passed frontend. Both backend and live-email jobs completed all 442 Worker runtime tests with zero failures/skips/cancellations, then the strict verifier rejected the unchanged Worker inventory: the sign-out test title changed and one expiry regression was added without updating `scripts/worker-test-inventory.json`. The live-email job therefore did not reach browser acceptance. Preserve the original run and artifacts as failure evidence. Correct only those two inventory entries; retain exact inventory comparison and all outcome checks. Test-impact review covers both application and Worker inventories. The complete local Worker verifier now passes 442/442 tests with zero provider requests; source/policy and formatting checks also pass. New final-commit CI remains required.
+
 ### 26 October 2026 — All-device sign-out from valid remembered sessions
 
 Owner reports a flicker with the signed-in email retained. Inspection found the button available while the server required verification within five minutes and rejected remembered restoration; the reported request itself was not captured. Owner authorizes removing that extra requirement. Retain authenticated access and atomic current email/owner/expiry/revocation checks; report sign-out failures explicitly and prevent competing identity actions while busy. Test-impact review updates the obsolete freshness expectation and adds expiry, guest, UI failure/retry and service-error coverage. No live sign-outs or browser experiments performed; final-commit CI and deployed owner acceptance remain separate.
