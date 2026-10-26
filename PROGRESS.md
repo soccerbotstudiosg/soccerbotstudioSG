@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Final policy/browser fixture repair — 26 October 2026 SGT
+
+Run `40338957054` at `8f20df2495adbc4168e062e988fbb923b23ae5ba` passed backend. Frontend found a stale numeric workflow-step selector in a policy test; related policy tests now select the intended upload/verification action or command, with 21 targeted checks passing locally. Live-email passed 83/84 browser cases, including email navigation with both Remember me choices on all three profiles. Phone WebKit's duplicate-hold case returned `provider_queue_busy`; retained artifact `12659097293` shows concurrent holds overlapping both tabs' access/current/identity/restore startup traffic, with the queued hold exceeding the existing 15-second queue limit. The concurrency fixture now awaits both tabs' actual identity/current startup responses before issuing the same simultaneous hold requests. Assertions still require two 200 responses, one booking and one payment, plus revocation enforcement; no queue limit, test timeout, concurrency setting, retry or inventory reduction. Final-commit CI remains required.
+
 ## Container checkout repair — 26 October 2026 SGT
 
 Run `40337530997` at `ec3ec6879392eb1f405b05fa31dfd8a1415bb908` passed frontend and both 448-case Worker suites. Smoke setup then failed before execution because Git refused the mounted container checkout's ownership. Added a scoped `safe.directory` entry for the exact `GITHUB_WORKSPACE` in verification jobs; no wildcard trust or application changes. This also covers release tooling's subsequent Git fingerprint checks. All final-commit gates remain required.

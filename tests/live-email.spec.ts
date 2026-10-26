@@ -1217,10 +1217,32 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
   const secondTransport = await mechanismTransport(other, mechanism);
   try {
     const { attemptId } = await prepareBrowserAttempt(page, mechanism);
-    await Promise.all([
-      page.goto("/book/account/"),
-      other.goto("/book/account/"),
-    ]);
+    // Finish both tabs' real account bootstrap before measuring competing holds.
+    // Refresh reads identity, restores the cookie, then rereads identity. Racing
+    // those unrelated startup requests obscures the duplicate-write contract.
+    await Promise.all(
+      [page, other].map(async (tab) => {
+        let identityReads = 0;
+        const identityReady = tab.waitForResponse(
+          (response) =>
+            new URL(response.url()).pathname === "/api/identity" &&
+            response.request().method() === "GET" &&
+            ++identityReads === 2,
+        );
+        const currentReady = tab.waitForResponse(
+          (response) =>
+            new URL(response.url()).pathname === "/api/booking/current",
+        );
+        await tab.goto("/book/account/");
+        for (const response of await Promise.all([
+          identityReady,
+          currentReady,
+        ])) {
+          expect(response.status()).toBe(200);
+          await response.finished();
+        }
+      }),
+    );
     const submit = (tab: Page, path: string, body?: unknown) =>
       tab.evaluate(
         async ({ path, body }) => {
@@ -1237,7 +1259,10 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
       submit(page, `/api/booking/native/${attemptId}?hold=1`),
       submit(other, `/api/booking/native/${attemptId}?hold=1`),
     ]);
-    expect(holds.map((result) => result.status)).toEqual([200, 200]);
+    expect(
+      holds.map((result) => result.status),
+      holds.map((result) => result.body.error ?? "ok").join(", "),
+    ).toEqual([200, 200]);
     expect(holds.some((result) => result.body.state === "associated")).toBe(
       true,
     );

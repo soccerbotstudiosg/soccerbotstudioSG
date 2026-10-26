@@ -186,8 +186,17 @@ test("requires backend runtime and root browser checks without deployment permis
   for (const change of [
     (d) => delete d.jobs.backend,
     (d) => (d.jobs.backend.permissions = { contents: "write" }),
-    (d) => d.jobs.backend.steps.splice(3, 1),
-    (d) => (d.jobs.backend.steps[3].if = "false"),
+    (d) =>
+      d.jobs.backend.steps.splice(
+        d.jobs.backend.steps.findIndex(
+          (step) => step.run === "npm run verify:worker",
+        ),
+        1,
+      ),
+    (d) =>
+      (d.jobs.backend.steps.find(
+        (step) => step.run === "npm run verify:worker",
+      ).if = "false"),
     (d) => (d.jobs.backend.env.NEXT_PUBLIC_BASE_PATH = "/other"),
   ]) {
     const changed = structuredClone(original);

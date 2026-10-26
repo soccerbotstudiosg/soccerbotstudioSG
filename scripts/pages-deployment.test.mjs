@@ -42,12 +42,32 @@ for (const [name, mutate] of [
     "PR write permissions",
     (d) => (d.jobs.frontend.permissions = { pages: "write" }),
   ],
-  ["wrong export directory", (d) => (d.jobs.frontend.steps[5].with.path = ".")],
+  [
+    "wrong export directory",
+    (d) =>
+      (d.jobs.frontend.steps.find((step) =>
+        step.uses?.startsWith("actions/upload-pages-artifact@"),
+      ).with.path = "."),
+  ],
   [
     "upload before testing",
-    (d) => d.jobs.frontend.steps.unshift(d.jobs.frontend.steps.splice(5, 1)[0]),
+    (d) =>
+      d.jobs.frontend.steps.unshift(
+        d.jobs.frontend.steps.splice(
+          d.jobs.frontend.steps.findIndex((step) =>
+            step.uses?.startsWith("actions/upload-pages-artifact@"),
+          ),
+          1,
+        )[0],
+      ),
   ],
-  ["upload on failed test", (d) => (d.jobs.frontend.steps[5].if = "always()")],
+  [
+    "upload on failed test",
+    (d) =>
+      (d.jobs.frontend.steps.find((step) =>
+        step.uses?.startsWith("actions/upload-pages-artifact@"),
+      ).if = "always()"),
+  ],
   [
     "unverified rebuild during deployment",
     (d) => d.jobs.deploy.steps.unshift({ run: "npm run build" }),
@@ -70,7 +90,9 @@ for (const [name, mutate] of [
   ],
   [
     "combined gate replaced",
-    (d) => (d.jobs.frontend.steps[4].run = "npm run build"),
+    (d) =>
+      (d.jobs.frontend.steps.find((step) => step.run === "npm run verify").run =
+        "npm run build"),
   ],
   [
     "alternate checkout revision",

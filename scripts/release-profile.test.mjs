@@ -93,7 +93,13 @@ test("live CI cannot omit gates change the sitekey or gain deployment permission
         (step) => step.run === "npm run test:load:smoke",
       )["continue-on-error"] = true;
     },
-    (d) => d.jobs["live-email"].steps.splice(3, 1),
+    (d) =>
+      d.jobs["live-email"].steps.splice(
+        d.jobs["live-email"].steps.findIndex(
+          (step) => step.run === "npm run verify:worker",
+        ),
+        1,
+      ),
     (d) =>
       (d.jobs["live-email"].env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "foreign"),
     (d) => (d.jobs["live-email"].permissions = { contents: "write" }),
