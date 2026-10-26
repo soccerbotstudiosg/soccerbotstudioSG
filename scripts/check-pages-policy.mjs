@@ -53,6 +53,7 @@ export function checkPagesPolicy(doc) {
   require(same(
     (backend.steps || []).filter((s) => s.run).map((s) => s.run),
     [
+      'git config --global --add safe.directory "$GITHUB_WORKSPACE"',
       "npm ci",
       "npm run verify:worker",
       "npm run test:load:smoke",
@@ -111,7 +112,7 @@ export function checkPagesPolicy(doc) {
     ), "Pages upload precedes verification");
   const setup = steps.filter((s) => s.uses?.startsWith("actions/setup-node@"));
   const checkout = steps.filter((s) => s.uses?.startsWith("actions/checkout@"));
-  require(steps.length === 7 &&
+  require(steps.length === 8 &&
     setup.length === 1 &&
     checkout.length === 1 &&
     !setup[0].if &&

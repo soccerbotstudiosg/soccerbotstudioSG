@@ -114,6 +114,7 @@ export function checkPolicy({
   const steps = job?.steps || [];
   require(JSON.stringify(steps.filter((s) => s.run).map((s) => s.run)) ===
     JSON.stringify([
+      'git config --global --add safe.directory "$GITHUB_WORKSPACE"',
       "npm ci",
       "npm run verify",
     ]), "Required gate order/commands changed");

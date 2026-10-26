@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Container checkout repair — 26 October 2026 SGT
+
+Run `40337530997` at `ec3ec6879392eb1f405b05fa31dfd8a1415bb908` passed frontend and both 448-case Worker suites. Smoke setup then failed before execution because Git refused the mounted container checkout's ownership. Added a scoped `safe.directory` entry for the exact `GITHUB_WORKSPACE` in verification jobs; no wildcard trust or application changes. This also covers release tooling's subsequent Git fingerprint checks. All final-commit gates remain required.
+
 ## CI dependency-download repair — 26 October 2026 SGT
 
 Run `40333912734` at `91218176887e6063d1523de95991bea304a5d3f6` passed the complete backend gate. Both Worker suites passed the corrected 448-case inventory and load smoke checks. Frontend and live-email hit the 20-minute job limit while downloading system packages from `azure.archive.ubuntu.com`, before browser execution (frontend before any verification); live-email artifact `12657396507` retains its earlier checks. Both runners used Ubuntu 24.04. Prepared matching official Playwright 1.58.2 Noble containers for regular/target verification, retaining the local Node pin and explicitly providing Python 3.12. Removed only redundant browser/system installation; all test commands, three gates, outcome inventories, zero retries and 20-minute limits remain required. Policy checks enforce image/package agreement. Final-commit CI remains required.
