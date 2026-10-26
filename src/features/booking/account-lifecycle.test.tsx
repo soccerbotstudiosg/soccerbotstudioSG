@@ -248,3 +248,45 @@ test("leaving saved-contact form discards delayed save acknowledgement", async (
     screen.getByRole("heading", { name: "Start your booking" }),
   ).toBeInTheDocument();
 });
+
+test("all-device signout shows failure, permits retry and clears the signed-in email on success", async () => {
+  const identity = {
+    email: "signout@example.invalid",
+    expiresAt: Date.now() + 600000,
+    remember: true,
+  };
+  const signOut = vi
+    .fn()
+    .mockRejectedValueOnce(
+      new Error("Could not sign out all devices. Please try again."),
+    )
+    .mockResolvedValueOnce(undefined);
+  render(
+    <BookingProvider
+      identityService={{
+        ...demoCustomerIdentity,
+        mode: "live",
+        current: () => identity,
+        refresh: async () => identity,
+        signOut,
+      }}
+    >
+      <AccountStep />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
+  await waitFor(() =>
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Could not sign out all devices",
+    ),
+  );
+  expect(screen.getByText(identity.email)).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
+  await waitFor(() =>
+    expect(screen.queryByText(identity.email)).not.toBeInTheDocument(),
+  );
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(signOut).toHaveBeenCalledTimes(2);
+  expect(signOut).toHaveBeenLastCalledWith(expect.any(AbortSignal), true);
+});

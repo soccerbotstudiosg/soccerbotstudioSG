@@ -49,8 +49,10 @@ async function identityRequest(
   if (!response.ok) {
     if (path === "/api/identity/all-devices" && response.status === 401)
       throw new Error(
-        "Verify your email again before signing out all devices.",
+        "Your session has expired. Sign in again to sign out all devices.",
       );
+    if (path === "/api/identity/all-devices")
+      throw new Error("Could not sign out all devices. Please try again.");
     throw unavailable();
   }
   if (!response.body) throw unavailable();

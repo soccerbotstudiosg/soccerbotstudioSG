@@ -203,6 +203,7 @@ export function AccountStep() {
                 )}
                 <button
                   className="button secondary"
+                  disabled={busy}
                   onClick={() => {
                     void perform(async (signal) => {
                       await identityService.signOut(signal);

@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Sign-out repair — 26 October 2026 SGT
+
+PR90 is merged as `7f23873617430f06ea66b6f0a651e57b416fed08` after all three final-commit gates passed. All-device sign-out accepts valid restored/older verified sessions while retaining expiry, owner and revocation checks. The earlier browser stalls remain unexplained; the subsequent setup-interrupted attempt and original failure evidence are retained. Main verification and deployed owner acceptance remain separate. PR91's original three gates passed at `878b1a0`; this integration preserves both changes and requires fresh combined-revision CI.
+
 ## Current checkpoint — 26 October 2026 SGT
 
 PR89 is merged; preparation starts from main `96814c08ecef31bfb7b988477803fcba3ebe8d6d`. Its [main run 39741087700](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/39741087700) passed. The earlier PR88 main live-email timeout remains historical evidence, not the current release-gate status.
