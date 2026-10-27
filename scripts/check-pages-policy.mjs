@@ -9,7 +9,19 @@ export function checkPagesPolicy(doc) {
   const require = (condition, message) => {
     if (!condition) errors.push(message);
   };
-  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  // Workflow files own action revisions; policy owns action identity and shape.
+  const normalizePin = (key, value) =>
+    key === "uses" && typeof value === "string"
+      ? value.replace(/@[a-f0-9]{40}$/, "@<commit-sha>")
+      : value;
+  const same = (a, b) =>
+    JSON.stringify(a, normalizePin) === JSON.stringify(b, normalizePin);
+  for (const job of Object.values(doc.jobs || {}))
+    for (const step of job.steps || [])
+      if (step.uses)
+        require(/^actions\/(?:checkout|setup-node|setup-python|upload-artifact|upload-pages-artifact|deploy-pages)@[a-f0-9]{40}$/.test(
+          step.uses,
+        ), "Workflow actions must use approved action names and full commit SHAs");
   require(same(Object.keys(doc.on || {}).sort(), [
     "pull_request",
     "push",
@@ -100,8 +112,7 @@ export function checkPagesPolicy(doc) {
     s.uses?.startsWith("actions/upload-pages-artifact@"),
   );
   require(upload.length === 1 &&
-    upload[0].uses ===
-      "actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9" &&
+    /^actions\/upload-pages-artifact@[a-f0-9]{40}$/.test(upload[0].uses) &&
     upload[0].if === mainOnly &&
     same(upload[0].with, { path: "out/" }) &&
     !upload[0]
@@ -146,7 +157,7 @@ export function checkPagesPolicy(doc) {
     {
       name: "Deploy the verified site",
       id: "deployment",
-      uses: "actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128",
+      uses: "actions/deploy-pages@<commit-sha>",
     },
   ]), "Deployment must consume the same-run artifact without rebuilds or extra commands");
   require(same(doc.jobs?.cloudflare, {
@@ -165,10 +176,10 @@ export function checkPagesPolicy(doc) {
     },
     steps: [
       {
-        uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        uses: "actions/checkout@<commit-sha>",
       },
       {
-        uses: "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+        uses: "actions/setup-node@<commit-sha>",
         with: {
           "node-version-file": ".nvmrc",
           cache: "npm",
@@ -194,7 +205,7 @@ export function checkPagesPolicy(doc) {
         run: "node scripts/deploy-cloudflare.mjs",
       },
       {
-        uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+        uses: "actions/upload-artifact@<commit-sha>",
         if: "always()",
         with: {
           name: "cloudflare-deployment-${{ github.run_id }}-${{ github.run_attempt }}",

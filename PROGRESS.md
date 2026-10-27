@@ -1,5 +1,11 @@
 # SoccerBotStudioSG current progress
 
+## Dependency update policy repair — 27 October 2026 SGT
+
+PR93 merged as `f9ccf138b65f48a32c4f6ac959943e7115aead94`; main run `40455781906` passed all three gates and both deployment jobs. Initial Dependabot update generation succeeded, but PR94 run `40455902599` failed duplicated action-hash expectations and PR95 run `40456130062` failed source/Worker checks after the bundled TypeScript 7 update removed the expected compiler API; lint peer constraints also reject that version. Neither dependency PR deployed.
+
+Repair separates major upgrades and coordinated tooling from routine minor/patch groups. Workflow files own action revisions; policy retains approved names, full SHA pins, exact commands, permission scopes and artifact/gate checks. Existing update PRs remain blocked until regenerated/rebased on the merged configuration and verified; this repair does not adopt their package upgrades. Local verification passed 79 policy, deployment, release-profile and Worker-source checks with no failures/skips; source/policy, affected lint/format and diff checks passed. The actual PR94 workflow passes the repaired checker. Final-revision CI remains required.
+
 ## SaaS Worker entry preparation — 27 October 2026 SGT
 
 PR93 placement commit `3347b211e035d396d253c4bf147ba877bd329705` passed all three CI gates in run `40445624075`. The next combined candidate selects SaaS-to-Worker hosting for the client test origin `https://booking.standardsoftwares.com`, seals the dedicated SaaS zone/route and asset routing into the target artifact, verifies account/zone/fallback/DNS/route ownership before deployment, and rejects alternate production origins before serving static assets. This is source preparation only; no Worker, DO, DNS or custom hostname was changed.

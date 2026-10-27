@@ -9,8 +9,17 @@ updates:
       timezone: Asia/Singapore
     open-pull-requests-limit: 5
     groups:
-      npm-updates:
+      npm-routine:
         patterns: ["*"]
+        update-types: [minor, patch]
+        # These tools require coordinated runtime, image or compiler changes.
+        exclude-patterns:
+          - "@playwright/test"
+          - "@types/node"
+          - "typescript"
+          - "eslint"
+          - "miniflare"
+          - "wrangler"
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -20,5 +29,6 @@ updates:
       timezone: Asia/Singapore
     open-pull-requests-limit: 5
     groups:
-      action-updates:
+      action-routine:
         patterns: ["*"]
+        update-types: [minor, patch]

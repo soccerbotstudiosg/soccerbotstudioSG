@@ -98,8 +98,7 @@ export function checkPolicy({
     const python = gate?.steps?.find((step) =>
       step.uses?.startsWith("actions/setup-python@"),
     );
-    require(python?.uses ===
-      "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1" &&
+    require(/^actions\/setup-python@[a-f0-9]{40}$/.test(python?.uses || "") &&
       python?.with?.["python-version"] === "3.12" &&
       !python.if, "CI must retain pinned Python setup for installer verification");
   }
