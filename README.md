@@ -6,11 +6,15 @@ Development entry point for the SoccerBotStudioSG customer booking website. See 
 
 Use Node/npm pinned by `.nvmrc` and `package.json`, Python 3.11+ and Git. On initial setup, install the reviewed lockfile with `npm ci`; routine work reuses matching dependencies and browser caches. Browser dependencies are installed deliberately by the owner or CI.
 
+The Worker test runtime is pinned to Miniflare `5.20261023.0-beta`, matching Wrangler `4.153.0` and its patched Sharp/Undici dependencies. Keep the package/lockfile and reviewed prerelease policy pin aligned; validate the full Worker suite before changing this runtime.
+
 CI uses the official Playwright Noble image matching the locked Playwright version, with browsers/system libraries already installed. Node remains pinned by `.nvmrc`; the pinned setup-python action supplies Python 3.12 for installer checks. Update the image alongside Playwright when upgrading. This avoids repeated Ubuntu mirror downloads without changing test gates or job limits.
 
 `npm run dev` starts local development; `npm run build` creates `out/`; `npm run preview` serves that export locally. The default base path is `/SoccerBotStudioSG`; root hosting uses a separately verified empty-prefix build. Client provisioning and portability requirements live in [Service Contracts](docs/SERVICE_CONTRACTS.md#deployment-migration-and-acceptance).
 
 ## Verification commands
+
+Full/code verification includes `npm audit --audit-level=high`: known high/critical advisories or an unavailable audit service fail the gate. Audit output is retained in the normal verification receipt/logs. Alerts and security-update PRs complement this gate; a clean audit is not proof against unknown vulnerabilities.
 
 | Command                                     | Scope                                                           |
 | ------------------------------------------- | --------------------------------------------------------------- |

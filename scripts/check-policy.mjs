@@ -31,7 +31,7 @@ export function checkPolicy({
   for (const group of ["dependencies", "devDependencies"])
     for (const [name, version] of Object.entries(pkg[group] || {})) {
       require(name === "miniflare"
-        ? version === "5.20261006.0-alpha"
+        ? version === "5.20261023.0-beta"
         : /^\d+\.\d+\.\d+$/.test(version), `Dependency must be exact: ${name}`);
       require(lock.packages?.[`node_modules/${name}`]?.version ===
         version, `Locked direct version mismatch: ${name}`);
