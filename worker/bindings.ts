@@ -6,6 +6,16 @@ export function coordinatorName(env: Env) {
     return value;
   throw new ApiError(503, "environment_unavailable");
 }
+/** Apply the reviewed first-use placement without changing coordinator identity. */
+export function coordinatorStub(env: Env) {
+  const hint: unknown = Reflect.get(env, "COORDINATOR_LOCATION_HINT");
+  const name = coordinatorName(env);
+  if (hint === "apac-ne" || hint === "apac-se")
+    return env.COORDINATOR.getByName(name, { locationHint: hint });
+  if (env.ENVIRONMENT === "developer" && (hint === undefined || hint === ""))
+    return env.COORDINATOR.getByName(name);
+  throw new ApiError(503, "environment_unavailable");
+}
 // Management-owned metadata. Never self-register against an arbitrary binding.
 /** Reject missing runtime bindings before protected operations. */
 export function assertBindingShape(env: Env) {

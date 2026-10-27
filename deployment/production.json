@@ -1,10 +1,10 @@
 {
   "target": "production",
   "repository": "soccerbotstudiosg/soccerbotstudioSG",
-  "accountId": "",
+  "accountId": "0b36822648e6905c681a90b6bec5ca7f",
   "workerName": "soccerbot-production",
   "databaseName": "soccerbot-production-state",
-  "databaseId": "",
+  "databaseId": "e2a21801-0107-4db5-8551-ca1ff338df53",
   "origin": "",
   "coordinatorName": "simplybook-production-account",
   "environment": "production",
@@ -13,5 +13,6 @@
   "access": "closed",
   "pagesProject": "soccerbot-booking",
   "pagesBranch": "main",
-  "sandbox": null
+  "sandbox": null,
+  "coordinatorLocationHint": "apac-ne"
 }

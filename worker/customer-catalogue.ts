@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { authenticate } from "./access";
-import { coordinatorName } from "./bindings";
+import { coordinatorStub } from "./bindings";
 import {
   ApiError,
   policy,
@@ -27,20 +27,12 @@ export async function customerCatalogue(
   // Historical finite catalogue grants still require their customer identity.
   if (liveCustomerAccess(env))
     return customerCatalogueSchema.parse(
-      unwrapRpcOutcome(
-        await env.COORDINATOR.getByName(coordinatorName(env)).windowCatalogue(
-          traceId(),
-        ),
-      ),
+      unwrapRpcOutcome(await coordinatorStub(env).windowCatalogue(traceId())),
     );
   const access = await authenticate(request, env, now);
   if (hasPublicCalendarWindow(env)) {
     const result = customerCatalogueSchema.parse(
-      unwrapRpcOutcome(
-        await env.COORDINATOR.getByName(coordinatorName(env)).windowCatalogue(
-          traceId(),
-        ),
-      ),
+      unwrapRpcOutcome(await coordinatorStub(env).windowCatalogue(traceId())),
     );
     await authenticate(request, env, Date.now());
     return result;
@@ -81,7 +73,7 @@ export async function customerCatalogue(
   if (!claimed) throw new ApiError(503, "catalogue_unavailable");
   try {
     const result = customerCatalogueSchema.parse(
-      await env.COORDINATOR.getByName(coordinatorName(env)).customerCatalogue(
+      await coordinatorStub(env).customerCatalogue(
         { ...scope, expiresMs: grant.expires_ms },
         traceId(),
       ),

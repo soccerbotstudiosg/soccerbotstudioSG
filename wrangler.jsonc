@@ -35,6 +35,7 @@
     "APP_ORIGIN": "https://soccerbot-dev.limyousheng-94.workers.dev",
     "ENVIRONMENT": "developer",
     "COORDINATOR_NAME": "simplybook-developer-account",
+    "COORDINATOR_LOCATION_HINT": "",
     "PROVIDER_ACCESS": "disabled",
     "LIVE_CUSTOMER_ACCESS": "disabled",
     "PUBLIC_DISPLAY_WARMING": "disabled",

@@ -21,6 +21,7 @@ const production = {
   databaseName: "client-state",
   origin: "https://booking.example.com",
   coordinatorName: "client-account",
+  coordinatorLocationHint: "apac-ne",
   environment: "production",
   campaignId: "client-production",
   pagesProject: "client-entry",
@@ -33,6 +34,8 @@ test("deployment targets reject incomplete identities, secret fields and product
   assert.deepEqual(validateTarget(production), production);
   for (const change of [
     { accountId: "" },
+    { coordinatorLocationHint: "" },
+    { coordinatorLocationHint: "invalid" },
     { databaseId: "" },
     { origin: "https://booking.example.com/path" },
     { origin: "http://example.com" },
@@ -55,6 +58,12 @@ test("target rendering has no developer identity fallback and seals every public
   assert.equal(config.account_id, production.accountId);
   assert.equal(config.d1_databases[0].database_id, production.databaseId);
   assert.equal(config.vars.COORDINATOR_NAME, production.coordinatorName);
+  assert.equal(config.vars.COORDINATOR_LOCATION_HINT, "apac-ne");
+  assert.equal(targetConfig(base, staging).vars.COORDINATOR_LOCATION_HINT, "");
+  assert.notEqual(
+    targetDigest(production),
+    targetDigest({ ...production, coordinatorLocationHint: "apac-se" }),
+  );
   assert.equal(config.vars.PROVIDER_ACCESS, "disabled");
   assert.equal(config.workers_dev, false);
   assert.equal(JSON.stringify(config).includes("old-"), false);

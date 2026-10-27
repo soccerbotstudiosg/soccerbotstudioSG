@@ -29,7 +29,7 @@ For a local live frontend build, supply the public `NEXT_PUBLIC_TURNSTILE_SITE_K
 
 ## Portable deployment scaffold
 
-`deployment/staging.json` owns the existing developer resource identity and sandbox mapping. `deployment/production.json` is deliberately incomplete: fill the reviewed client account ID, D1 ID, canonical HTTPS origin and public Turnstile key after resource/domain decisions. Neither file accepts secret fields. Missing values fail validation; production cannot inherit staging identities or enable customer/provider access.
+`deployment/staging.json` owns the existing developer resource identity and sandbox mapping. `deployment/production.json` records the verified client account and D1 IDs but remains deliberately incomplete: supply the canonical HTTPS origin and public Turnstile key after the remaining resource/domain decisions. The required `coordinatorLocationHint` is empty for existing developer staging and `apac-ne` for the client KIX database. Production rejects an empty or unsupported hint. `worker/bindings.ts` owns all application coordinator acquisition and supplies the hint on first use; hints do not relocate existing objects or establish actual location. Neither file accepts secret fields. Missing values fail validation; production cannot inherit staging identities or enable customer/provider access.
 
 The prepared workflows are:
 

@@ -28,6 +28,20 @@ function fixture(change) {
 }
 test("accepts the reviewed Worker graph and deployment boundary", () =>
   assert.deepEqual(checkWorker(process.cwd()), []));
+test("rejects coordinator access that bypasses first-use placement", () => {
+  for (const access of ['getByName("client")', "get(id)"])
+    assert.ok(
+      fixture((root) => {
+        const p = path.join(root, "worker/scheduled-recovery.ts");
+        writeFileSync(
+          p,
+          readFileSync(p, "utf8") + `\nenv.COORDINATOR.${access};`,
+        );
+      }).some((e) =>
+        e.includes("Coordinator placement must use bindings owner"),
+      ),
+    );
+});
 test("rejects imports between Pages routing and booking modules", () => {
   for (const [file, imported] of [
     ["worker/index.ts", "./pages"],

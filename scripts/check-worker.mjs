@@ -57,6 +57,15 @@ export function checkWorker(root) {
       errors.push(`Worker suppression/unsafe type: ${name}`);
     /** Inspect Worker syntax for prohibited runtime dependencies and patterns. */
     function visit(node) {
+      if (
+        name !== "bindings.ts" &&
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        ["get", "getByName"].includes(node.expression.name.text) &&
+        ts.isPropertyAccessExpression(node.expression.expression) &&
+        node.expression.expression.name.text === "COORDINATOR"
+      )
+        errors.push(`Coordinator placement must use bindings owner: ${name}`);
       if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
         const spec = node.moduleSpecifier?.text;
         if (spec?.startsWith(".")) {

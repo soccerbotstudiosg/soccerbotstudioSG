@@ -26,6 +26,7 @@ const schema = z.strictObject({
   databaseId: z.string().uuid(),
   origin,
   coordinatorName: name,
+  coordinatorLocationHint: z.enum(["", "apac-ne", "apac-se"]),
   environment: z.enum(["developer", "production"]),
   campaignId: name,
   turnstileSitekey: z.string().regex(/^0x[a-zA-Z0-9_-]{10,100}$/),
@@ -47,6 +48,10 @@ export function validateTarget(value) {
       "Client activation requires separate provider acceptance",
     );
     assert.equal(target.sandbox, null);
+    assert.ok(
+      target.coordinatorLocationHint,
+      "Client coordinator requires explicit placement",
+    );
     assert.ok(target.pagesProject, "Client entry requires a Pages project");
   }
   if (target.access === "developer-sandbox") assert.ok(target.sandbox);
@@ -90,6 +95,7 @@ export function targetConfig(base, target) {
       ENVIRONMENT: target.environment,
       CAMPAIGN_ID: target.campaignId,
       COORDINATOR_NAME: target.coordinatorName,
+      COORDINATOR_LOCATION_HINT: target.coordinatorLocationHint,
     },
   };
 }

@@ -54,6 +54,10 @@ export function validateDeployment(directory, revision, target = null) {
     assert.equal(config.vars.APP_ORIGIN, target.origin);
     assert.equal(config.vars.ENVIRONMENT, target.environment);
     assert.equal(config.vars.COORDINATOR_NAME, target.coordinatorName);
+    assert.equal(
+      config.vars.COORDINATOR_LOCATION_HINT,
+      target.coordinatorLocationHint,
+    );
     assert.equal(manifest.turnstileSitekey, target.turnstileSitekey);
     assert.equal(browser.turnstileSitekey, target.turnstileSitekey);
     if (target.access === "closed") {

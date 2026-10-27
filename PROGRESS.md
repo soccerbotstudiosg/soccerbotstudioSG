@@ -1,5 +1,15 @@
 # SoccerBotStudioSG current progress
 
+## Coordinator first-use placement preparation — 27 October 2026 SGT
+
+All production coordinator acquisition paths now use `coordinatorStub` in `worker/bindings.ts`, which passes the configured `apac-ne`/`apac-se` hint with the unchanged coordinator name. Missing/invalid client hints reject before acquisition; developer staging retains its existing no-hint behavior. Target validation requires explicit client placement, artifact digests include it, and deployment verifies the rendered binding. A source rule rejects direct production acquisition outside the binding owner. Local focused regression checks passed (25 tests); Worker types passed. Full Worker verification passed all 448 runtime cases with strict inventory/outcome checks; source/policy, generated Worker types, affected lint and formatting checks passed. Final-commit CI and deployment remain pending. No remote coordinator was created.
+
+## Client D1 provisioning — 27 October 2026 SGT
+
+Owner authorized assistant resource creation with deliberate placement. Created `soccerbot-production-state` in client account `0b36822648e6905c681a90b6bec5ca7f`; public target records its verified database ID. A read-only primary probe reports KIX (Osaka), APAC. The client target now selects `apac-ne`; source preparation is described below, with deployment and actual DO placement still pending. See [provisioning evidence](docs/SERVICE_CONTRACTS.md#27-october-2026--client-d1-created-and-primary-placement-verified).
+
+Worker/DO creation remains dependent on the reviewed application deployment: the client target still requires Pages. Prepare SaaS Worker routing and complete first-use placement verification before deployment; do not initialize an unhinted production object. No schema migration, foundation registration, Worker, DO, provider activation or DNS change occurred in this provisioning step. Production origin and Turnstile configuration remain incomplete and closed.
+
 ## Chromium intercepted-response completion — 26 October 2026 SGT
 
 Run `40342618737` at `addfac4ac278d113b52526978469e8d35347a14b` passed frontend/backend and 83/84 live-email browser cases. Both WebKit concurrency cases passed. Artifact `12660379225` shows Chromium received the startup responses in milliseconds but waited indefinitely on `response.finished()` before submitting any holds. Startup validation now consumes the existing transport adapter's captured real Worker bodies (identity null and the original prepared attempt), avoiding the browser's cancelled-resource completion promise. Nested cleanup guarantees fixture disposal after navigation/drain errors. Assertions, request concurrency, timeouts and inventories are retained. Final-commit CI remains required.
