@@ -10,9 +10,22 @@ updates:
     open-pull-requests-limit: 1
     groups:
       npm-routine:
+        applies-to: version-updates
         patterns: ["*"]
         update-types: [minor, patch]
         # These tools require coordinated runtime, image or compiler changes.
+        exclude-patterns:
+          - "@playwright/test"
+          - "@types/node"
+          - "typescript"
+          - "eslint"
+          - "miniflare"
+          - "wrangler"
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+        # Major and coordinated tooling security fixes remain individual PRs.
         exclude-patterns:
           - "@playwright/test"
           - "@types/node"
@@ -30,5 +43,6 @@ updates:
     open-pull-requests-limit: 1
     groups:
       action-routine:
+        applies-to: version-updates
         patterns: ["*"]
         update-types: [minor, patch]
