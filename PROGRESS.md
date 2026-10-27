@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Dependency queue cleanup — 27 October 2026 SGT
+
+Owner requested cancellation and cleanup after the regenerated update proposals occupied CI. Reduce version-update limits from five to one per ecosystem (two total); security updates have separate GitHub limits. Close the eight unmerged proposals, preserving their branches and failure evidence. Main verification remains separate and must not be cancelled. The GitHub connector has no cancellation action and the CLI cancellation request was denied (`Forbidden`); running/queued checks require an owner cancellation unless GitHub stops them after closure. No dependency upgrade is included.
+
 ## Dependency update policy repair — 27 October 2026 SGT
 
 PR93 merged as `f9ccf138b65f48a32c4f6ac959943e7115aead94`; main run `40455781906` passed all three gates and both deployment jobs. Initial Dependabot update generation succeeded, but PR94 run `40455902599` failed duplicated action-hash expectations and PR95 run `40456130062` failed source/Worker checks after the bundled TypeScript 7 update removed the expected compiler API; lint peer constraints also reject that version. Neither dependency PR deployed.
