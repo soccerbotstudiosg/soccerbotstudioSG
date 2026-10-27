@@ -75,6 +75,48 @@ test("target rendering has no developer identity fallback and seals every public
     { binding: "BACKEND", service: production.workerName },
   ]);
 });
+test("SaaS target seals its dedicated zone and routes all assets through the origin guard", () => {
+  const saas = {
+    ...production,
+    pagesProject: "",
+    saasZone: {
+      id: "c".repeat(32),
+      name: "hosting.example.com",
+      fallbackOrigin: "fallback.hosting.example.com",
+    },
+  };
+  assert.deepEqual(validateTarget(saas), saas);
+  const config = targetConfig(
+    {
+      d1_databases: [{}],
+      vars: {},
+      assets: { binding: "ASSETS", directory: "./out" },
+    },
+    saas,
+  );
+  assert.deepEqual(config.routes, [
+    { pattern: "*/*", zone_id: saas.saasZone.id },
+  ]);
+  assert.equal(config.workers_dev, false);
+  assert.equal(config.preview_urls, false);
+  assert.equal(config.assets.run_worker_first, true);
+  assert.equal(config.assets.binding, "ASSETS");
+  assert.notEqual(
+    targetDigest(saas),
+    targetDigest({
+      ...saas,
+      saasZone: { ...saas.saasZone, id: "d".repeat(32) },
+    }),
+  );
+  for (const patch of [
+    { pagesProject: "client-entry" },
+    { origin: "https://hosting.example.com" },
+    { saasZone: { ...saas.saasZone, id: "invalid" } },
+    { saasZone: { ...saas.saasZone, fallbackOrigin: "foreign.example.com" } },
+  ])
+    assert.throws(() => validateTarget({ ...saas, ...patch }));
+  assert.throws(() => validateTarget({ ...staging, saasZone: saas.saasZone }));
+});
 const revision = "a".repeat(40);
 const run = {
   id: 42,

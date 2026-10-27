@@ -33,6 +33,13 @@ const schema = z.strictObject({
   access: z.enum(["closed", "developer-sandbox"]),
   pagesProject: z.union([name, z.literal("")]),
   pagesBranch: name,
+  saasZone: z
+    .strictObject({
+      id: z.string().regex(/^[a-f0-9]{32}$/),
+      name: z.string().regex(/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/),
+      fallbackOrigin: z.string(),
+    })
+    .nullable(),
 });
 /** Reject incomplete target identities and unsupported production activation. */
 export function validateTarget(value) {
@@ -52,7 +59,22 @@ export function validateTarget(value) {
       target.coordinatorLocationHint,
       "Client coordinator requires explicit placement",
     );
-    assert.ok(target.pagesProject, "Client entry requires a Pages project");
+    assert.ok(
+      Boolean(target.pagesProject) !== Boolean(target.saasZone),
+      "Client entry requires exactly one Pages or SaaS target",
+    );
+  }
+  if (target.saasZone) {
+    assert.equal(target.target, "production", "SaaS routing is client-only");
+    assert.equal(
+      target.saasZone.fallbackOrigin,
+      `fallback.${target.saasZone.name}`,
+    );
+    assert.notEqual(
+      new URL(target.origin).hostname,
+      target.saasZone.name,
+      "Custom hostname cannot be the SaaS zone apex",
+    );
   }
   if (target.access === "developer-sandbox") assert.ok(target.sandbox);
   return target;
@@ -79,7 +101,14 @@ export function targetConfig(base, target) {
     ...base,
     name: target.workerName,
     account_id: target.accountId,
-    workers_dev: !target.pagesProject,
+    workers_dev: target.target === "staging" && !target.pagesProject,
+    preview_urls: false,
+    ...(target.saasZone
+      ? {
+          routes: [{ pattern: "*/*", zone_id: target.saasZone.id }],
+          assets: { ...base.assets, run_worker_first: true },
+        }
+      : {}),
     d1_databases: [
       {
         ...base.d1_databases[0],

@@ -149,7 +149,16 @@ export default {
     };
     return traced(correlationId, "http", async () => {
       try {
-        if (!url.pathname.startsWith("/api")) return env.ASSETS.fetch(request);
+        if (!url.pathname.startsWith("/api")) {
+          if (String(env.ENVIRONMENT) === "production") {
+            policy(env);
+            if (url.origin !== env.APP_ORIGIN)
+              throw new ApiError(403, "origin_denied");
+            if (request.method !== "GET" && request.method !== "HEAD")
+              throw new ApiError(405, "method_not_allowed");
+          }
+          return env.ASSETS.fetch(request);
+        }
         const configuration = policy(env);
         if (url.protocol !== "https:")
           throw new ApiError(400, "secure_transport_required");
