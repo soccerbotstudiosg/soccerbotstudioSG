@@ -1,12 +1,40 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ESLint } from "eslint";
+import YAML from "yaml";
 import { checkPolicy, policyInputs } from "./check-policy.mjs";
 import { validateResults } from "./verify-test-results.mjs";
 import { checkCss } from "./check-css.mjs";
 const inputs = () => structuredClone(policyInputs(process.cwd()));
 test("accepts the reviewed runtime lock and CI policy", () =>
   assert.deepEqual(checkPolicy(inputs()), []));
+test("accepts updated full action pins without duplicating workflow revisions", () => {
+  const p = inputs();
+  p.workflow = p.workflow.replace(/@[a-f0-9]{40}/g, `@${"a".repeat(40)}`);
+  assert.deepEqual(checkPolicy(p), []);
+});
+for (const replacement of ["main", "v7", "abcdef", "<commit-sha>"])
+  test(`rejects non-SHA action revision ${replacement} in every job`, () => {
+    for (const job of [
+      "frontend",
+      "backend",
+      "live-email",
+      "deploy",
+      "cloudflare",
+    ]) {
+      const p = inputs();
+      const doc = YAML.parse(p.workflow);
+      const step = doc.jobs[job].steps.find((step) => step.uses);
+      step.uses = step.uses.replace(/@.*$/, `@${replacement}`);
+      p.workflow = YAML.stringify(doc);
+      assert.ok(checkPolicy(p).length, job);
+    }
+  });
+test("rejects a foreign action owner even with a full commit pin", () => {
+  const p = inputs();
+  p.workflow = p.workflow.replaceAll("actions/", "foreign/");
+  assert.ok(checkPolicy(p).length);
+});
 for (const [name, mutate] of [
   [
     "browser image version drift",
