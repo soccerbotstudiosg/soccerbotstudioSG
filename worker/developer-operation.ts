@@ -1,5 +1,5 @@
 import { measure, traceId } from "./diagnostics";
-import { coordinatorName } from "./bindings";
+import { coordinatorStub } from "./bindings";
 import { ApiError, digest } from "./policy";
 import { runScheduledRecovery } from "./scheduled-recovery";
 
@@ -30,9 +30,7 @@ export async function developerOperation(
       state: row.state,
       result: row.result_json ? (JSON.parse(row.result_json) as unknown) : null,
       ...(operation === "native_field_discovery"
-        ? await env.COORDINATOR.getByName(
-            coordinatorName(env),
-          ).discoveryReadiness()
+        ? await coordinatorStub(env).discoveryReadiness()
         : {}),
     };
   if (String(env.PROVIDER_ACCESS) !== "trusted-reads")
@@ -52,12 +50,12 @@ export async function developerOperation(
   try {
     result = await measure("coordinator_rpc", () =>
       operation === "native_field_discovery" && row.result_json !== null
-        ? env.COORDINATOR.getByName(coordinatorName(env)).nativeDiscoveryProbe(
+        ? coordinatorStub(env).nativeDiscoveryProbe(
             JSON.parse(row.result_json) as unknown,
             row.expires_ms,
             traceId(),
           )
-        : env.COORDINATOR.getByName(coordinatorName(env)).providerRead(
+        : coordinatorStub(env).providerRead(
             operation,
             traceId(),
             row.expires_ms,

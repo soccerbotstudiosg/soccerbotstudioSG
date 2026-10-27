@@ -90,6 +90,7 @@
   "foundation bounds stalled bodies with a fixed one-second deadline",
   "foundation invalid customer access never reaches attempt or operator data",
   "foundation concurrent requests isolate correlations and redact injected failures",
+  "production static entry serves only its canonical HTTPS origin and safe methods",
   "HitPay ingress verifies untouched bytes before parsing or durable effects",
   "HitPay receipts deduplicate concurrent delivery and preserve payment evidence",
   "HitPay ingress rejects foreign references and bounded receipt exhaustion atomically",

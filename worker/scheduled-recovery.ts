@@ -1,7 +1,7 @@
 import { hitpayRecoveryEnabled } from "./hitpay-contract";
 import { ongoingReadbackDue, ongoingReadbackEnabled } from "./ongoing-readback";
 import { z } from "zod";
-import { coordinatorName, verifyBindings } from "./bindings";
+import { coordinatorStub, verifyBindings } from "./bindings";
 import { policy } from "./policy";
 import { traced } from "./diagnostics";
 import { residualSchema, safeNativeFailure } from "./native-residual";
@@ -43,7 +43,7 @@ export async function runScheduledRecovery(
       .bind(now)
       .first<{ attempt_id: string }>();
     if (due)
-      await env.COORDINATOR.getByName(coordinatorName(env)).hitpayRecovery(
+      await coordinatorStub(env).hitpayRecovery(
         due.attempt_id,
         crypto.randomUUID(),
       );
@@ -52,10 +52,7 @@ export async function runScheduledRecovery(
     await verifyBindings(env);
     const due = await ongoingReadbackDue(env, now);
     if (!due) return { state: "idle" };
-    await env.COORDINATOR.getByName(coordinatorName(env)).ongoingRecovery(
-      due.id,
-      crypto.randomUUID(),
-    );
+    await coordinatorStub(env).ongoingRecovery(due.id, crypto.randomUUID());
     return { state: "complete" };
   }
   if (p.PROVIDER_ACCESS !== "trusted-reads" || now >= p.CAMPAIGN_END_MS)
@@ -100,7 +97,7 @@ export async function runScheduledRecovery(
       correlationId,
       "scheduled",
       async () =>
-        await env.COORDINATOR.getByName(coordinatorName(env)).nativeRecovery(
+        await coordinatorStub(env).nativeRecovery(
           {
             ...scope,
             expiresMs: row.expires_ms,

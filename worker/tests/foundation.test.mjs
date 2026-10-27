@@ -253,3 +253,25 @@ test("foundation concurrent requests isolate correlations and redact injected fa
     !JSON.stringify({ results, bad, logs }).includes("SYNTHETIC_PRIVATE"),
   );
 });
+test("production static entry serves only its canonical HTTPS origin and safe methods", async () => {
+  const vars = { ENVIRONMENT: "production" };
+  for (const method of ["GET", "HEAD"]) {
+    const result = await call({ path: "/", method, vars });
+    assert.equal(result.status, 200);
+    assert.equal(result.body, method === "HEAD" ? "" : "synthetic-asset");
+    assert.deepEqual(result.queries, []);
+  }
+  for (const host of [
+    "https://alternate.example.com",
+    "https://fallback.hosting.example.com",
+    "http://soccerbot.test",
+  ]) {
+    const result = await call({ path: "/", host, vars });
+    assert.equal(result.status, 403);
+    assert.deepEqual(JSON.parse(result.body), { error: "origin_denied" });
+    assert.deepEqual(result.queries, []);
+  }
+  const post = await call({ path: "/", method: "POST", vars });
+  assert.equal(post.status, 405);
+  assert.deepEqual(post.queries, []);
+});

@@ -10,7 +10,7 @@ import { bookingReceipt } from "./receipt";
 import { webhookRoute } from "./webhook-contract";
 import { captureWebhook } from "./webhook";
 import { nativeCheckoutStatus, currentCustomerNative } from "./native-checkout";
-import { coordinatorName } from "./bindings";
+import { coordinatorStub } from "./bindings";
 import { runScheduledRecovery } from "./scheduled-recovery";
 import { customerCatalogue } from "./customer-catalogue";
 import {
@@ -89,7 +89,7 @@ export default {
     try {
       if (liveCustomerAccess(env)) {
         await verifyBindings(env);
-        await env.COORDINATOR.getByName(coordinatorName(env)).bookingComments();
+        await coordinatorStub(env).bookingComments();
       }
     } catch {
       console.error(JSON.stringify({ event: "booking_comments_deferred" }));
@@ -97,7 +97,7 @@ export default {
     try {
       if (policy(env).PUBLIC_DISPLAY_WARMING === "enabled") {
         await verifyBindings(env);
-        await env.COORDINATOR.getByName(coordinatorName(env)).warmDisplay();
+        await coordinatorStub(env).warmDisplay();
       }
     } catch {
       console.error(JSON.stringify({ event: "display_refresh_unavailable" }));
@@ -149,7 +149,16 @@ export default {
     };
     return traced(correlationId, "http", async () => {
       try {
-        if (!url.pathname.startsWith("/api")) return env.ASSETS.fetch(request);
+        if (!url.pathname.startsWith("/api")) {
+          if (String(env.ENVIRONMENT) === "production") {
+            policy(env);
+            if (url.origin !== env.APP_ORIGIN)
+              throw new ApiError(403, "origin_denied");
+            if (request.method !== "GET" && request.method !== "HEAD")
+              throw new ApiError(405, "method_not_allowed");
+          }
+          return env.ASSETS.fetch(request);
+        }
         const configuration = policy(env);
         if (url.protocol !== "https:")
           throw new ApiError(400, "secure_transport_required");
@@ -234,9 +243,7 @@ export default {
               ...env,
               STATE: instrumentStorage(env.STATE, "d1"),
             });
-          const outcome = await env.COORDINATOR.getByName(
-            coordinatorName(env),
-          ).holdCustomer(
+          const outcome = await coordinatorStub(env).holdCustomer(
             {
               attemptId: holdMatch[2],
               checkoutAccess,
@@ -258,9 +265,7 @@ export default {
           await verifyBindings(env);
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).prepareCustomer(
+              await coordinatorStub(env).prepareCustomer(
                 {
                   cookie: request.headers.get("cookie") || "",
                   value: await inputBody(request),
@@ -287,9 +292,7 @@ export default {
           await authenticate(request, env, Date.now());
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).hitpayPayment(
+              await coordinatorStub(env).hitpayPayment(
                 {
                   attemptId: hitpayPayment[1],
                   cookie: request.headers.get("cookie") || "",
@@ -342,9 +345,7 @@ export default {
             throw new ApiError(405, "operation_unavailable");
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).expireCheckout({
+              await coordinatorStub(env).expireCheckout({
                 attemptId: expire[1],
                 cookie: request.headers.get("Cookie") ?? "",
               }),
@@ -359,9 +360,7 @@ export default {
             throw new ApiError(405, "operation_unavailable");
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).dismissCompleted(
+              await coordinatorStub(env).dismissCompleted(
                 {
                   attemptId: dismiss[1],
                   cookie: request.headers.get("cookie") || "",
@@ -382,9 +381,10 @@ export default {
         if (publicMonth && request.method === "GET")
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).publicCalendar(publicMonth[1], correlationId),
+              await coordinatorStub(env).publicCalendar(
+                publicMonth[1],
+                correlationId,
+              ),
             ),
           );
         const calendarMatch =
@@ -397,9 +397,7 @@ export default {
           await authenticate(request, env, Date.now());
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).nativeCalendar(
+              await coordinatorStub(env).nativeCalendar(
                 {
                   serviceId: calendarMatch[1],
                   month: calendarMatch[2],
@@ -420,9 +418,7 @@ export default {
           await authenticate(request, env, Date.now());
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).nativeAvailability(
+              await coordinatorStub(env).nativeAvailability(
                 {
                   serviceId: availabilityMatch[1],
                   date: availabilityMatch[2],
@@ -445,9 +441,7 @@ export default {
           await authenticate(request, env, Date.now());
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).nativeCheckout(
+              await coordinatorStub(env).nativeCheckout(
                 {
                   attemptId,
                   holding: url.searchParams.get("hold") === "1",
@@ -468,9 +462,7 @@ export default {
             throw new ApiError(401, "operator_access_denied");
           return json(
             unwrapRpcOutcome(
-              await env.COORDINATOR.getByName(
-                coordinatorName(env),
-              ).webhookSubscription(
+              await coordinatorStub(env).webhookSubscription(
                 await digest(bearer.slice(7)),
                 subscriptionOperation[1] === "create" ? "create" : "cleanup",
                 correlationId,

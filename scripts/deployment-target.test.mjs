@@ -21,6 +21,7 @@ const production = {
   databaseName: "client-state",
   origin: "https://booking.example.com",
   coordinatorName: "client-account",
+  coordinatorLocationHint: "apac-ne",
   environment: "production",
   campaignId: "client-production",
   pagesProject: "client-entry",
@@ -33,6 +34,8 @@ test("deployment targets reject incomplete identities, secret fields and product
   assert.deepEqual(validateTarget(production), production);
   for (const change of [
     { accountId: "" },
+    { coordinatorLocationHint: "" },
+    { coordinatorLocationHint: "invalid" },
     { databaseId: "" },
     { origin: "https://booking.example.com/path" },
     { origin: "http://example.com" },
@@ -55,6 +58,12 @@ test("target rendering has no developer identity fallback and seals every public
   assert.equal(config.account_id, production.accountId);
   assert.equal(config.d1_databases[0].database_id, production.databaseId);
   assert.equal(config.vars.COORDINATOR_NAME, production.coordinatorName);
+  assert.equal(config.vars.COORDINATOR_LOCATION_HINT, "apac-ne");
+  assert.equal(targetConfig(base, staging).vars.COORDINATOR_LOCATION_HINT, "");
+  assert.notEqual(
+    targetDigest(production),
+    targetDigest({ ...production, coordinatorLocationHint: "apac-se" }),
+  );
   assert.equal(config.vars.PROVIDER_ACCESS, "disabled");
   assert.equal(config.workers_dev, false);
   assert.equal(JSON.stringify(config).includes("old-"), false);
@@ -65,6 +74,48 @@ test("target rendering has no developer identity fallback and seals every public
   assert.deepEqual(pagesConfig(production, "2026-10-08").services, [
     { binding: "BACKEND", service: production.workerName },
   ]);
+});
+test("SaaS target seals its dedicated zone and routes all assets through the origin guard", () => {
+  const saas = {
+    ...production,
+    pagesProject: "",
+    saasZone: {
+      id: "c".repeat(32),
+      name: "hosting.example.com",
+      fallbackOrigin: "fallback.hosting.example.com",
+    },
+  };
+  assert.deepEqual(validateTarget(saas), saas);
+  const config = targetConfig(
+    {
+      d1_databases: [{}],
+      vars: {},
+      assets: { binding: "ASSETS", directory: "./out" },
+    },
+    saas,
+  );
+  assert.deepEqual(config.routes, [
+    { pattern: "*/*", zone_id: saas.saasZone.id },
+  ]);
+  assert.equal(config.workers_dev, false);
+  assert.equal(config.preview_urls, false);
+  assert.equal(config.assets.run_worker_first, true);
+  assert.equal(config.assets.binding, "ASSETS");
+  assert.notEqual(
+    targetDigest(saas),
+    targetDigest({
+      ...saas,
+      saasZone: { ...saas.saasZone, id: "d".repeat(32) },
+    }),
+  );
+  for (const patch of [
+    { pagesProject: "client-entry" },
+    { origin: "https://hosting.example.com" },
+    { saasZone: { ...saas.saasZone, id: "invalid" } },
+    { saasZone: { ...saas.saasZone, fallbackOrigin: "foreign.example.com" } },
+  ])
+    assert.throws(() => validateTarget({ ...saas, ...patch }));
+  assert.throws(() => validateTarget({ ...staging, saasZone: saas.saasZone }));
 });
 const revision = "a".repeat(40);
 const run = {

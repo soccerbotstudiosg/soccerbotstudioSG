@@ -11,11 +11,87 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { exportInventory } from "./check-export.mjs";
 import {
+  loadTarget,
+  targetConfig,
+  targetDigest,
+} from "./deployment-target.mjs";
+import {
   validateDeployment,
   verifySandboxSettings,
   awaitDeploymentHealth,
+  verifySaasResources,
 } from "./deploy-cloudflare.mjs";
 const revision = "a".repeat(40);
+test("SaaS preflight rejects foreign identity, inactive fallback, DNS mismatch and competing routes", () => {
+  const target = {
+    accountId: "a".repeat(32),
+    workerName: "client-worker",
+    saasZone: {
+      id: "c".repeat(32),
+      name: "hosting.example.com",
+      fallbackOrigin: "fallback.hosting.example.com",
+    },
+  };
+  const resources = {
+    zone: {
+      id: target.saasZone.id,
+      name: target.saasZone.name,
+      account: { id: target.accountId },
+      status: "active",
+      paused: false,
+    },
+    fallback: { origin: target.saasZone.fallbackOrigin, status: "active" },
+    dns: [
+      {
+        name: target.saasZone.fallbackOrigin,
+        type: "AAAA",
+        content: "100::",
+        proxied: true,
+      },
+    ],
+    routes: [],
+  };
+  verifySaasResources(target, resources);
+  assert.throws(() => verifySaasResources(target, resources, true));
+  verifySaasResources(
+    target,
+    { ...resources, routes: [{ pattern: "*/*", script: target.workerName }] },
+    true,
+  );
+  for (const mutate of [
+    (r) => {
+      r.zone.account.id = "foreign";
+    },
+    (r) => {
+      r.zone.id = "foreign";
+    },
+    (r) => {
+      r.zone.paused = true;
+    },
+    (r) => {
+      r.fallback.status = "pending";
+    },
+    (r) => {
+      r.fallback.origin = "foreign.example.com";
+    },
+    (r) => {
+      r.dns[0].proxied = false;
+    },
+    (r) => {
+      r.dns[0].content = "::1";
+    },
+    (r) => {
+      r.routes = [{ pattern: "*/*", script: "other-worker" }];
+    },
+    (r) => {
+      r.routes = [{ pattern: "example.com/*", script: target.workerName }];
+    },
+  ]) {
+    const changed = structuredClone(resources);
+    mutate(changed);
+    assert.throws(() => verifySaasResources(target, changed));
+  }
+});
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "soccerbot-deploy-"));
   mkdirSync(join(root, "developer-release"));
@@ -100,6 +176,90 @@ test("Cloudflare deploy accepts only unchanged artifact bytes with matching main
       config.vars.SOURCE_REVISION = "b".repeat(40);
     });
     assert.throws(() => validateDeployment(f.root, revision), /hashes changed/);
+  } finally {
+    rmSync(f.root, { recursive: true, force: true });
+  }
+});
+test("sealed SaaS artifacts reject substituted zone routes and asset-origin bypass", () => {
+  const f = fixture();
+  try {
+    const target = {
+      ...loadTarget("staging"),
+      target: "production",
+      environment: "production",
+      accountId: "b".repeat(32),
+      databaseId: "11111111-1111-4111-8111-111111111111",
+      workerName: "client-worker",
+      databaseName: "client-state",
+      origin: "https://booking.example.com",
+      coordinatorName: "client-coordinator",
+      coordinatorLocationHint: "apac-ne",
+      sandbox: null,
+      access: "closed",
+      saasZone: {
+        id: "c".repeat(32),
+        name: "hosting.example.com",
+        fallbackOrigin: "fallback.hosting.example.com",
+      },
+    };
+    const original = JSON.parse(
+      readFileSync(join(f.root, "developer-release/wrangler.json"), "utf8"),
+    );
+    for (const flag of [
+      "IDENTITY_DELIVERY",
+      "HITPAY_CHECKOUT",
+      "HITPAY_RECOVERY",
+      "HITPAY_WEBHOOK",
+    ])
+      original.vars[flag] = "disabled";
+    const config = targetConfig(original, target);
+    const seal = () =>
+      f.change("developer-release/manifest.json", (manifest) => {
+        manifest.target = target;
+        manifest.targetDigest = targetDigest(target);
+        manifest.turnstileSitekey = target.turnstileSitekey;
+        const files = exportInventory(join(f.root, "developer-release"));
+        delete files["manifest.json"];
+        manifest.files = files;
+      });
+    const writeConfigs = (value) => {
+      for (const name of ["wrangler.json", "wrangler-live.json"])
+        writeFileSync(
+          join(f.root, "developer-release", name),
+          JSON.stringify(value),
+        );
+      seal();
+    };
+    f.change("verification-browser.json", (browser) => {
+      browser.turnstileSitekey = target.turnstileSitekey;
+    });
+    writeConfigs(config);
+    assert.equal(
+      validateDeployment(f.root, revision, target).name,
+      target.workerName,
+    );
+    for (const mutate of [
+      (c) => {
+        c.routes[0].zone_id = "d".repeat(32);
+      },
+      (c) => {
+        c.routes[0].pattern = "example.com/*";
+      },
+      (c) => {
+        c.assets.run_worker_first = false;
+      },
+      (c) => {
+        c.workers_dev = true;
+      },
+      (c) => {
+        c.preview_urls = true;
+      },
+    ]) {
+      const changed = structuredClone(config);
+      mutate(changed);
+      writeConfigs(changed);
+      assert.throws(() => validateDeployment(f.root, revision, target));
+    }
   } finally {
     rmSync(f.root, { recursive: true, force: true });
   }

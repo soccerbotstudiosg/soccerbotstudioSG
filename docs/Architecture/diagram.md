@@ -20,7 +20,7 @@ flowchart TB
   TS["Turnstile · bot verification"]
   Mail["Resend · identity verification email"]
   Inbox["Customer inbox"]
-  Grafana["Grafana Cloud Tempo + dashboards · not connected"]
+  Grafana["Company central Grafana · not connected"]
   CI["GitHub · frontend / backend / live-email CI"]
   Pages["GitHub Pages · separate demo export"]
   Browser --> Assets
@@ -66,7 +66,7 @@ flowchart TB
   Main["Main · three merged-revision CI gates"]
   Approval["Manual production dispatch · verified current main"]
   Prod["Client Cloudflare account · separate Worker / D1 / DO"]
-  ClientPages["Cloudflare Pages · book.soccerbotsg.com · external DNS CNAME"]
+  SaaS["Cloudflare for SaaS · soccerbotsg.win · vendor-controlled customer DNS"]
   LiveProviders["Client SimplyBook · HitPay live"]
   StageSecrets["Staging configuration / scoped credentials"]
   ProdSecrets["Production configuration / scoped credentials"]
@@ -76,8 +76,7 @@ flowchart TB
   Stage <--> TestProviders
   Stage --> Review --> Main --> Approval
   Approval -->|verified production artifact| Prod
-  Approval -->|verified frontend / routing artifact| ClientPages
-  ClientPages -->|same-origin /api · service binding| Prod
+  SaaS -->|zone-scoped route · canonical hostname| Prod
   ProdSecrets --> Prod
   Prod <--> LiveProviders
 ```

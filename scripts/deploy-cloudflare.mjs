@@ -52,8 +52,23 @@ export function validateDeployment(directory, revision, target = null) {
     assert.equal(config.vars.DEPLOYMENT_ACCOUNT_ID, target.accountId);
     assert.equal(config.vars.STATE_DATABASE_ID, target.databaseId);
     assert.equal(config.vars.APP_ORIGIN, target.origin);
+    assert.equal(
+      config.workers_dev,
+      target.target === "staging" && !target.pagesProject,
+    );
+    assert.equal(config.preview_urls, false);
+    if (target.saasZone) {
+      assert.deepEqual(config.routes, [
+        { pattern: "*/*", zone_id: target.saasZone.id },
+      ]);
+      assert.equal(config.assets.run_worker_first, true);
+    } else assert.equal(config.routes, undefined);
     assert.equal(config.vars.ENVIRONMENT, target.environment);
     assert.equal(config.vars.COORDINATOR_NAME, target.coordinatorName);
+    assert.equal(
+      config.vars.COORDINATOR_LOCATION_HINT,
+      target.coordinatorLocationHint,
+    );
     assert.equal(manifest.turnstileSitekey, target.turnstileSitekey);
     assert.equal(browser.turnstileSitekey, target.turnstileSitekey);
     if (target.access === "closed") {
@@ -133,6 +148,71 @@ async function readHealth(origin) {
   assert.equal(response.status, 200);
   return response.json();
 }
+/** Reject foreign zones, inactive fallback origins and competing routes before writes. */
+export function verifySaasResources(
+  target,
+  { zone, fallback, routes, dns },
+  deployed = false,
+) {
+  assert.ok(target.saasZone);
+  assert.equal(zone.id, target.saasZone.id);
+  assert.equal(zone.name, target.saasZone.name);
+  assert.equal(zone.account.id, target.accountId);
+  assert.equal(zone.status, "active");
+  assert.equal(zone.paused, false);
+  assert.equal(fallback.origin, target.saasZone.fallbackOrigin);
+  assert.equal(fallback.status, "active");
+  assert.equal(dns.length, 1);
+  assert.equal(dns[0].name, target.saasZone.fallbackOrigin);
+  assert.equal(dns[0].type, "AAAA");
+  assert.equal(dns[0].content, "100::");
+  assert.equal(dns[0].proxied, true);
+  assert.ok(routes.length <= 1, "Dedicated SaaS zone has competing routes");
+  for (const route of routes) {
+    assert.equal(route.pattern, "*/*");
+    assert.equal(
+      route.script,
+      target.workerName,
+      "Do not replace another Worker's route",
+    );
+  }
+  if (deployed)
+    assert.equal(
+      routes.length,
+      1,
+      "SaaS Worker route missing after deployment",
+    );
+}
+/** Read the declared SaaS resources without changing DNS or custom hostnames. */
+async function readSaasResources(target) {
+  const get = async (suffix) => {
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${target.saasZone.id}${suffix}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+        },
+        redirect: "error",
+        signal: AbortSignal.timeout(15000),
+      },
+    );
+    assert.equal(response.status, 200, "SaaS resource read failed");
+    const result = await response.json();
+    assert.equal(result.success, true);
+    if (result.result_info?.total_pages)
+      assert.ok(result.result_info.total_pages <= 1);
+    return result.result;
+  };
+  const [zone, fallback, routes, dns] = await Promise.all([
+    get(""),
+    get("/custom_hostnames/fallback_origin"),
+    get("/workers/routes"),
+    get(
+      `/dns_records?name=${encodeURIComponent(target.saasZone.fallbackOrigin)}&per_page=100`,
+    ),
+  ]);
+  return { zone, fallback, routes, dns };
+}
 /** Check deployed sandbox settings and required secret binding names. */
 export function verifySandboxSettings(settings, config) {
   for (const name of [
@@ -201,6 +281,8 @@ async function deploy() {
   const closed = target?.access === "closed";
   // Verify existing resources in the selected account before any migration/write.
   if (target) {
+    if (target.saasZone)
+      verifySaasResources(target, await readSaasResources(target));
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${target.accountId}/d1/database/${target.databaseId}`,
       {
@@ -282,6 +364,8 @@ async function deploy() {
   checkpoint("migrations-applied");
   wrangler(["deploy", "--no-bundle"]);
   checkpoint("worker-uploaded");
+  if (target?.saasZone)
+    verifySaasResources(target, await readSaasResources(target), true);
   if (target?.pagesProject) {
     execFileSync(
       process.execPath,

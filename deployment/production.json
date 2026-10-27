@@ -1,17 +1,23 @@
 {
   "target": "production",
   "repository": "soccerbotstudiosg/soccerbotstudioSG",
-  "accountId": "",
+  "accountId": "0b36822648e6905c681a90b6bec5ca7f",
   "workerName": "soccerbot-production",
   "databaseName": "soccerbot-production-state",
-  "databaseId": "",
-  "origin": "",
+  "databaseId": "e2a21801-0107-4db5-8551-ca1ff338df53",
+  "origin": "https://booking.standardsoftwares.com",
   "coordinatorName": "simplybook-production-account",
   "environment": "production",
   "campaignId": "production",
   "turnstileSitekey": "",
   "access": "closed",
-  "pagesProject": "soccerbot-booking",
+  "pagesProject": "",
   "pagesBranch": "main",
-  "sandbox": null
+  "sandbox": null,
+  "coordinatorLocationHint": "apac-ne",
+  "saasZone": {
+    "id": "7cef6c3b716d42af6267afd002b5bcf1",
+    "name": "soccerbotsg.win",
+    "fallbackOrigin": "fallback.soccerbotsg.win"
+  }
 }
