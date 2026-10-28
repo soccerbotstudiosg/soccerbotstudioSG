@@ -375,7 +375,7 @@ class PlanningTests(unittest.TestCase):
             path = self.repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('Document\n')
-        for missing in ('docs/architecture/diagram.md', 'docs/architecture/readme.md', 'docs/service_contracts.md'):
+        for missing in ('docs/architecture/diagram.md', 'docs/architecture/adr.md', 'docs/service_contracts.md'):
             path = self.repo / missing
             saved = path.read_text()
             path.unlink()

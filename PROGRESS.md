@@ -1,5 +1,13 @@
 # SoccerBotStudioSG current progress
 
+## PR112 browser failure inspection — 28 October 2026 SGT
+
+Run 40652609843 at 1b25b89 passed frontend and live-email but failed backend browser verification: 73 cases passed, two tablet-webkit synthetic checkout cases timed out. The paid-but-invalid case could not click Open checkout because booking-flow-overlay intercepted pointer events; the access-revocation case never observed the protected checkout response. First failure evidence remains in backend-evidence-40652609843-1 (artifact 12801265051). Source inspection identifies the shared loading provider and protected confirmation checking as investigation owners, but logs alone do not establish why the requests/overlay stayed pending. No speculative runtime fix, forced click, timeout increase or test weakening applied. PR111’s previous head 9d5fafe passed all checks; cleanup and ADR synchronization require fresh CI.
+
+## Architecture decisions — 28 October 2026 SGT
+
+Separate ADR branch based on PR111 replaces `docs/architecture/readme.md` with `adr.md`: eight decisions cover frontend, Worker hosting, coordinator/storage, booking/payment providers, identity, telemetry, release engineering and vendor-managed DNS. Each records status, evidence-based rationale, pros/cons, scaling triggers and alternatives; no fallback is claimed as deployed standby. Links and installer planning ownership follow the replacement. Documentation records architecture rationale without authorising migrations or changing runtime behavior.
+
 ## Engineering entry point cleanup — 28 October 2026 SGT
 
 Removed the redundant local skill wrapper, its document-map entry and formatting globs. AGENTS.md remains the automatically discovered instruction owner; ZIP guidance includes it directly. The separately installed cloud skill cannot be edited with this session’s read-only skill tools, so its stale snapshot remains explicitly superseded by current repository instructions.

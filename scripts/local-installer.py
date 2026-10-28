@@ -26,7 +26,7 @@ NODE_VERSION = '24.19.0'
 DELIVERY = 'SoccerBotStudioSG_Design_System_Local_2026-10-05'
 PLANNING_DELIVERY = 'SoccerBotStudioSG_Performance_Plan_Local_2026-10-05'
 PLANNING_DOCUMENTS = {
-    'AGENTS.md', 'docs/architecture/readme.md',
+    'AGENTS.md', 'docs/architecture/adr.md',
     'docs/service_contracts.md', 'docs/architecture/diagram.md',
 }
 PLANNING_OWNERS = PLANNING_DOCUMENTS | {
