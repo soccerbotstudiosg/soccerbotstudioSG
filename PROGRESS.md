@@ -2,6 +2,12 @@
 
 Updated 28 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
 
+## Active CI repair — PR116 checking-budget initialization
+
+Run [40706485933](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40706485933) failed one phone WebKit case after reading an uninitialized checking budget. Frontend/live-email and 74 other browser cases passed. The duplicate-tab test now waits for the initial confirmation request, which follows budget persistence, before capturing its baseline. Deadline/allowance assertions remain intact; no application behavior or timeouts changed. Original evidence and diagnosis are retained in [Journey](docs/journey.md#28-october-2026--pr116-checking-budget-test-initialization-repair).
+
+Leave-off: push the repair to PR116 and require fresh final-head CI. PR117 at `91539f2` independently passed all three gates in run 40714296582; update its stacked base after this repair. Neither PR is merged by this task.
+
 ## Current task — status reconciliation and function-level behavior documentation
 
 Owner requested reconciliation of the completed PR/CI stack and the transfer-first domain decision, followed by the paused technical-behavior expansion. Branch: `docs/reconcile-and-technical-behavior`, based on verified main `dffb24a12aae68de4ee32d6e7477bf227b3f0c50`.
