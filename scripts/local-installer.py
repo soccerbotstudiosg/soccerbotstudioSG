@@ -27,7 +27,7 @@ DELIVERY = 'SoccerBotStudioSG_Design_System_Local_2026-10-05'
 PLANNING_DELIVERY = 'SoccerBotStudioSG_Performance_Plan_Local_2026-10-05'
 PLANNING_DOCUMENTS = {
     'AGENTS.md', 'docs/architecture/adr.md',
-    'docs/business-rules.md', 'docs/domain-operations-api.md',
+    'docs/business-rules.md', 'docs/api-contracts.md',
     'docs/journey.md', 'docs/architecture/diagram.md',
 }
 PLANNING_OWNERS = PLANNING_DOCUMENTS | {

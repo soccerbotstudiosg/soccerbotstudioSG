@@ -1,6 +1,6 @@
 # Complete journey
 
-This document follows the customer, trainer, administrator and release journey, then preserves the original milestone criteria and dated implementation history. It describes implemented behavior without claiming every environment is deployed or accepted. [Progress](../PROGRESS.md) owns current blockers and verification status. [Business rules](business-rules.md) owns BR requirements; [Domain operations and API contracts](domain-operations-api.md) owns transport and operation details; [Runbook](runbook.md) owns operating procedures.
+This document follows the customer, trainer, administrator and release journey, then preserves the original milestone criteria and dated implementation history. It describes implemented behavior without claiming every environment is deployed or accepted. [Progress](../PROGRESS.md) owns current blockers and verification status. [Business rules](business-rules.md) owns BR requirements; [Domain operations and API contracts](api-contracts.md) owns transport and operation details; [Runbook](runbook.md) owns operating procedures.
 
 ## Initial milestone overview
 
@@ -236,7 +236,7 @@ flowchart TD
 | Book again       | Dismiss completed result, return to calendar; retain appropriate contact/session preferences   | Idempotent completion dismissal and active-attempt restoration                                                     | Lost dismissal acknowledgement must not create another financial effect                                                 | BR-012                                      |
 | Manage identity  | Sign out, sign out all devices, or return using remembered identity                            | Server revocation; all-device action requires current verified email authority                                     | Guest/expired/revoked authority cannot revoke another identity; retained contact evidence is not deleted by sign-out    | BR-003, BR-004                              |
 
-Rule IDs above link through the [rule-to-owner index](code-owners.md#11-business-rule-to-owner-index). The [API document](domain-operations-api.md) maps each stage to named operations and requests.
+Rule IDs above link through the [rule-to-owner index](code-owners.md#11-business-rule-to-owner-index). The [API document](api-contracts.md) maps each stage to named operations and requests.
 
 ## Failure and recovery branches
 
@@ -3603,3 +3603,11 @@ Owner requested a separate PR replacing the architecture explanation with ADRs c
 ### 28 October 2026 — Business rules, operation contracts and journey split
 
 Split the former service-contracts owner into three lowercase documents. Retain all BR IDs and milestone IDs; expand named operations with source status, policy, implementation and test owners using Fitfinity’s inventory structure. Document actual API routes, schemas, guards, effects and failure semantics. Place milestone overview and criteria before the complete role-based journey; retain prior dated history unchanged. Navigation and installer ownership follow the split. No runtime, provider configuration, deployment or acceptance claim changes.
+
+### 28 October 2026 — Progress becomes the current-task handover
+
+Replaced the accumulated Progress ledger with the detailed active documentation task, stacked PR/base and revision observations, completed checks, exact leave-off, unresolved PR112 browser evidence, ordered continuation and deferred client-deployment checkpoints. Current status belongs in Progress; milestones, complete flows and dated history belong here. The [prior Progress snapshot](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f40e8ef9a526df65b5861049e3cbe8068c40fc73/PROGRESS.md) preserves all earlier receipts and superseded status without duplicating this history. No runtime change or renewed provider/deployment authorization.
+
+### 28 October 2026 — API contract filename standardized
+
+Renamed the combined domain operation inventory and HTTP contract owner to `api-contracts.md` at the owner’s request. Updated document links, Progress handover and installer planning requirements; contract content and runtime behavior are unchanged.

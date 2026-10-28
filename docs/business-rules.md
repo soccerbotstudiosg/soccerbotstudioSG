@@ -1,6 +1,6 @@
 # Business rules
 
-This document owns the current numbered system invariants. [Domain operations and API contracts](domain-operations-api.md) explains their implementation boundaries; [Complete journey](journey.md) owns the end-to-end flow, milestone criteria and dated evidence. [AGENTS.md](../AGENTS.md) owns engineering instructions. Current rules override dated history; historical approvals never authorize new operations.
+This document owns the current numbered system invariants. [Domain operations and API contracts](api-contracts.md) explains their implementation boundaries; [Complete journey](journey.md) owns the end-to-end flow, milestone criteria and dated evidence. [AGENTS.md](../AGENTS.md) owns engineering instructions. Current rules override dated history; historical approvals never authorize new operations.
 
 ## Current system rules
 
