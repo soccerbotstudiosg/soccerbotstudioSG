@@ -4,17 +4,16 @@
 
 This file is the sole owner of repository engineering instructions. User instructions take precedence; current repository instructions supersede stale external skill snapshots. The cloud skill's older Journey, Rules & Architecture and CODEX_CLOUD references are superseded; do not recreate those files.
 
-| File                                                         | Unique purpose                                                                            |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| [Development guide](docs/development.md)                     | Development prerequisites, configuration and command reference.                           |
-| [Agents](AGENTS.md)                                          | Engineering workflow, coding conventions, verification and action boundaries.             |
-| [Local skill](.agents/skills/soccerbot-engineering/SKILL.md) | Discover and enter this repository's instructions.                                        |
-| [Runbook](docs/runbook.md)                                   | Dependency maintenance, observability interpretation and operational recovery procedures. |
-| [North Star](NORTH_STAR.md)                                  | Current outcome and priority.                                                             |
-| [Progress](PROGRESS.md)                                      | Current revision, observed evidence, blockers and next actions.                           |
-| [Architecture diagram](docs/architecture/diagram.md)         | Component topology and connections.                                                       |
-| [Architecture explanation](docs/architecture/readme.md)      | Explain component responsibilities and interactions.                                      |
-| [Service Contracts](docs/service_contracts.md)               | Part 1: system rules and milestone criteria; Part 2: dated decisions and evidence.        |
+| File                                                    | Unique purpose                                                                            |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [Development guide](docs/development.md)                | Development prerequisites, configuration and command reference.                           |
+| [Agents](AGENTS.md)                                     | Engineering workflow, coding conventions, verification and action boundaries.             |
+| [Runbook](docs/runbook.md)                              | Dependency maintenance, observability interpretation and operational recovery procedures. |
+| [North Star](NORTH_STAR.md)                             | Current outcome and priority.                                                             |
+| [Progress](PROGRESS.md)                                 | Current revision, observed evidence, blockers and next actions.                           |
+| [Architecture diagram](docs/architecture/diagram.md)    | Component topology and connections.                                                       |
+| [Architecture explanation](docs/architecture/readme.md) | Explain component responsibilities and interactions.                                      |
+| [Service Contracts](docs/service_contracts.md)          | Part 1: system rules and milestone criteria; Part 2: dated decisions and evidence.        |
 
 Read North Star, Progress, Architecture and the relevant Service Contracts before work. Refresh branch/HEAD/index and the remote revision; GitHub is canonical, but the local checkout may differ. Preserve unknown edits, worktrees, dependency symlinks and original evidence. Update the owning document and link to it elsewhere; do not maintain parallel rules, setup guides or status ledgers. Historical entries remain dated evidence, not current instructions or renewed authorization. Preserve milestone IDs and record history once in Service Contracts Part 2.
 

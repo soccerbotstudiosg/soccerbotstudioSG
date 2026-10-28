@@ -119,7 +119,7 @@ git archive --format=zip --output=../soccerbot-source.zip HEAD
 
 Record the full SHA and SHA-256 of the ZIP. On macOS use `shasum -a 256 ../soccerbot-source.zip`; on Linux use `sha256sum ../soccerbot-source.zip`. Give the ZIP a meaningful task/revision filename when practical. If the task depends on uncommitted changes, either commit reviewed changes to the task branch or explicitly supply a reviewed patch and its baseline; do not describe the archive as including edits that `git archive HEAD` omits.
 
-Include source, lockfile, manifests, workflow files, `AGENTS.md`, local skill and relevant docs/tests. Exclude credentials, `.env` files, provider exports, customer data, `.git` credentials/configuration, `node_modules`, build output, caches and unrelated logs. If any sensitive file was tracked, remove it from the delivery and resolve the exposure before sharing; do not assume `.gitignore` removes already tracked files.
+Include source, lockfile, manifests, workflow files, `AGENTS.md` and relevant docs/tests. Exclude credentials, `.env` files, provider exports, customer data, `.git` credentials/configuration, `node_modules`, build output, caches and unrelated logs. If any sensitive file was tracked, remove it from the delivery and resolve the exposure before sharing; do not assume `.gitignore` removes already tracked files.
 
 Attach the ZIP through the chat attachment control. Alongside it, give the repository, branch, full source SHA, archive checksum, task and expected outcome. Attach only necessary redacted failure evidence separately. Explain whether the chat has repository/tool access; archive-only work cannot honestly claim a GitHub push or verified remote state.
 

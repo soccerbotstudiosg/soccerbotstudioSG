@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Engineering entry point cleanup — 28 October 2026 SGT
+
+Removed the redundant local skill wrapper, its document-map entry and formatting globs. AGENTS.md remains the automatically discovered instruction owner; ZIP guidance includes it directly. The separately installed cloud skill cannot be edited with this session’s read-only skill tools, so its stale snapshot remains explicitly superseded by current repository instructions.
+
 ## Continuous development guide — 28 October 2026 SGT
 
 Removed root README at the owner’s request. `docs/development.md` opens with a guidance-only disclaimer and covers local VS Code, Codex Cloud and ZIP-attached chat workflows, baseline/provenance, setup, testing, engineering expectations, GitHub publication and CI/deployment distinctions. Prior setup/configuration content retained; AGENTS remains authoritative. Current navigation and formatting references updated. No application or workflow behavior changed.
