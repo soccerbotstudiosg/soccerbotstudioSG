@@ -4,6 +4,8 @@ Updated 28 October 2026, Singapore. This file is the current working checkpoint:
 
 ## Current task — documentation ownership and developer handover
 
+The owner has authorized merging these PRs if their required checks pass. PR111 is now merged; PR112 was retargeted to main and synchronized after GitHub reported it behind. PR113 includes that synchronization. Next: wait for final-head checks, merge PR112 when eligible, then retarget/synchronize PR113 and require its final checks before merging. No further merge permission is needed for this reviewed stack.
+
 The owner requested splitting the mixed service-contracts document into three files, with a Fitfinity-style domain operation inventory and detailed API contracts. The latest refinement is to make this Progress file a detailed current-task handover and put the initial milestone overview before the full journey.
 
 Implemented on `docs/contracts-expansion`, [draft PR113](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/113):
@@ -20,15 +22,15 @@ The contract split was published at `f40e8ef9a526df65b5861049e3cbe8068c40fc73`. 
 
 ## Exact leave-off and repository state
 
-Workspace: `/workspace/work/soccerbot-client-portability`. Preserve its dependency symlink and unknown files. Working branch: `docs/contracts-expansion`. GitHub main was read back as `ee4f37324701c3788e9dc9d6c9fefb32dc3281fe`; the documentation stack is not merged.
+Workspace: `/workspace/work/soccerbot-client-portability`. Preserve its dependency symlink and unknown files. Working branch: `docs/contracts-expansion`. PR111 merged into main as `cb33dec4102d2b9cb4a3219c920d99046483840e`; PR112 and PR113 remain unmerged.
 
-| PR                                                               | Branch / base                                        | Last observed revision and CI                                                                                                                                                                                                                                                                    |
-| ---------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [111](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/111) | `feat/version-inventory` → `main`                    | `35bc30561818a047ff8cf91568455b9e7ce4c5a2`; [run 40654808043](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40654808043) in progress at inspection. Previous head `9d5fafe` passed [run 40650921100](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40650921100). |
-| [112](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/112) | `docs/architecture-adr` → `feat/version-inventory`   | `6588170e047a670bcf1653103998cc9daf5c3235`; [run 40654951057](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40654951057) in progress at inspection. Earlier failure remains below.                                                                                               |
-| [113](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/113) | `docs/contracts-expansion` → `docs/architecture-adr` | `f40e8ef9a526df65b5861049e3cbe8068c40fc73`; [run 40656694239](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40656694239) in progress at inspection. This handover edit needs checks for its own final head.                                                                      |
+| PR                                                               | Branch / base                                        | Last observed revision and CI                                                                                                                                                         |
+| ---------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [111](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/111) | `feat/version-inventory` → `main`                    | Merged as `cb33dec4102d2b9cb4a3219c920d99046483840e` after all three required checks passed at head `35bc305`. Independent main verification/deployment must be inspected separately. |
+| [112](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/112) | `docs/architecture-adr` → `main`                     | Head `51082e6c4e41f5ae3950f64f7a103a2f0036e8ce` includes main. Previous head `6588170` passed all three gates; refreshed-head CI required.                                            |
+| [113](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/113) | `docs/contracts-expansion` → `docs/architecture-adr` | Includes the PR112 synchronization at `802a254`, followed by this handover update. Read the exact latest head/checks from GitHub.                                                     |
 
-All three were open drafts at inspection. These are timestamped observations, not live status. Refresh remote heads and CI before continuing. Keep this PR stacked on PR112 until its base is integrated; do not merge or retarget prematurely. Main independently verifies a merged revision before exact-artifact deployment.
+PR112 and PR113 remain drafts pending final-head checks. These are timestamped observations, not live status. Retarget PR113 after PR112 merges and synchronize if GitHub requires it; do not bypass checks. Owner merge authorization applies to this stack. Main independently verifies each merged revision before exact-artifact deployment.
 
 ## Verification completed and limits
 
@@ -51,7 +53,7 @@ Root cause is **not established**. Inspection owners: [experiment tests](tests/e
 1. Read AGENTS, this handover, [Business rules](docs/business-rules.md), [operation inventory](docs/api-contracts.md#1-domain-operation-inventory) and [Journey milestones](docs/journey.md#initial-milestone-overview). Refresh branch, index, main and all three PR heads/checks.
 2. Review the final documentation diff and check CI for the exact latest PR113 revision. Preserve the separate PR111/112 scope and base dependencies. Record actual outcomes here when known.
 3. Continue the previously requested failed-PR investigation using retained job logs and CI trace/network artifacts. Determine which operation kept loading active or prevented checkout context from arriving; fix the responsible owner only when evidence supports a cause. Owner/CI runs browser verification.
-4. Once all final-head gates and review pass, report readiness. Merge/deployment requires applicable explicit owner authorization. If PR bases merge, retarget dependent PRs in order and verify the resulting base/head combinations.
+4. Once all final-head gates and review pass, report readiness. The owner has authorized merging this stack when checks pass; any separate deployment action still follows its applicable authorization. If PR bases merge, retarget dependent PRs in order and verify the resulting base/head combinations.
 5. Resume client deployment work after this documentation/CI work is settled, using the checklist below and the [delivery journey](docs/journey.md#deployment-acceptance-and-handover-journey).
 
 ## Deployment handover retained for the next task

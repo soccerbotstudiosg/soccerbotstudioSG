@@ -3611,3 +3611,7 @@ Replaced the accumulated Progress ledger with the detailed active documentation 
 ### 28 October 2026 — API contract filename standardized
 
 Renamed the combined domain operation inventory and HTTP contract owner to `api-contracts.md` at the owner’s request. Updated document links, Progress handover and installer planning requirements; contract content and runtime behavior are unchanged.
+
+### 28 October 2026 — Documentation stack merge begins
+
+Owner authorized merge when eligible. PR111 merged as `cb33dec4102d2b9cb4a3219c920d99046483840e` after all three final-head checks passed. PR112 was retargeted to main; GitHub reported it behind, so main was merged into its branch and that update carried into PR113 without content conflicts. Remaining merges await checks on the refreshed heads; no bypass or automatic production activation was performed. Progress owns the next merge/handover checkpoint.
