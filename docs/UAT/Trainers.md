@@ -1,4 +1,4 @@
-# Trainer — SoccerBot acceptance worksheet
+# Trainers — SoccerBot acceptance worksheet
 
 | Test session                                                       | Fill in |
 | ------------------------------------------------------------------ | ------- |
@@ -12,7 +12,7 @@
 | Partner for coordinated checks                                     |         |
 | Test service / instructor / dates / booking and invoice references |         |
 
-Use the organiser-confirmed deployed environment and designated test records. Complete the [run prerequisites](README.md#before-testing) first. Write **Pass / Fail / Blocked / Not tested** in Result; leave it blank until checked. Record actual outcomes, evidence links, reference numbers and delays in Remarks. A previous CI pass does not prefill this worksheet. Mark missing permissions, integration or prepared examples **Blocked** and record why; do not switch to demo mode to obtain a pass.
+Use the organiser-confirmed deployed environment and designated test records. Before testing, confirm the deployed revision, environment, SimplyBook company/role, current service and schedule mappings, receiving inbox and payment mode with the organiser. Arrange controlled examples with support; unavailable fixtures remain Blocked. Write **Pass / Fail / Blocked / Not tested** in Result; leave it blank until checked. Record actual outcomes, evidence links, reference numbers and delays in Remarks. A previous CI pass does not prefill this worksheet. Mark missing permissions, integration or prepared examples **Blocked** and record why; do not switch to demo mode to obtain a pass.
 
 Owner/testers operate browsers and provider dashboards. Only authorised people perform the specifically agreed test bookings, payments, notifications or administrative changes. The assistant does not execute them. Use approved sandbox/test fixtures; any production transaction or disruptive change requires its own arranged owner procedure. Do not change device time, reset shared data or expose secrets/customer details in evidence.
 
@@ -48,11 +48,13 @@ Rules: [BR-002](../SERVICE_CONTRACTS.md#br-002), [BR-007](../SERVICE_CONTRACTS.m
 
 | Case    | What to do                                                                                                          | What should happen                                                                                                                       | Result | Remarks |
 | ------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
-| TRA-011 | Open the assigned single-session and multi-session test bookings created through the Customer worksheet.            | Dates, duration, instructor, service and permitted customer details match; sessions are not missing or duplicated.                       |        |         |
+| TRA-011 | Open the assigned single-session and multi-session test bookings created through the simulated-user worksheet.      | Dates, duration, instructor, service and permitted customer details match; sessions are not missing or duplicated.                       |        |         |
 | TRA-012 | Compare a confirmed paid booking with an unpaid/pending example supplied by Admin.                                  | You can distinguish the permitted provider statuses and escalate uncertain payment; you do not manually mark a payment as settled.       |        |         |
 | TRA-013 | Check a shared-studio clash with another instructor using the arranged fixture and Admin coordination.              | A different instructor does not bypass shared resource capacity. No unplanned customer booking is changed.                               |        |         |
 | TRA-014 | Review a rescheduling/cancellation request with Admin using a prepared record.                                      | The request goes to the authorised operator; Trainer access does not imply refund permission or automatic customer-site synchronisation. |        |         |
 | TRA-015 | Use the permitted SimplyBook interface on your work phone; inspect a busy day and enter a test availability change. | Dates, save/cancel and record selection remain usable. Capture device and delays; no accidental change to adjacent records.              |        |         |
+
+Keep completed results in the agreed evidence location with the full revision and environment. Retain original failures when retesting; redact customer data and credentials. Coordinate test schedule restoration with Admin and retain booking/payment history.
 
 ## Session outcome
 

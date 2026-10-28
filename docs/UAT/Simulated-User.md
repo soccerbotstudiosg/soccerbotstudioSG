@@ -1,4 +1,4 @@
-# Customer — SoccerBot acceptance worksheet
+# Simulated user — SoccerBot acceptance worksheet
 
 | Test session                                                       | Fill in |
 | ------------------------------------------------------------------ | ------- |
@@ -12,9 +12,11 @@
 | Partner for coordinated checks                                     |         |
 | Test service / instructor / dates / booking and invoice references |         |
 
-Use the organiser-confirmed deployed environment and designated test records. Complete the [run prerequisites](README.md#before-testing) first. Write **Pass / Fail / Blocked / Not tested** in Result; leave it blank until checked. Record actual outcomes, evidence links, reference numbers and delays in Remarks. A previous CI pass does not prefill this worksheet. Mark missing permissions, integration or prepared examples **Blocked** and record why; do not switch to demo mode to obtain a pass.
+Use the organiser-confirmed deployed environment and designated test records. Before testing, confirm the deployed revision, environment, SimplyBook company/role, current service and schedule mappings, receiving inbox and payment mode with the organiser. Arrange controlled examples with support; unavailable fixtures remain Blocked. Write **Pass / Fail / Blocked / Not tested** in Result; leave it blank until checked. Record actual outcomes, evidence links, reference numbers and delays in Remarks. A previous CI pass does not prefill this worksheet. Mark missing permissions, integration or prepared examples **Blocked** and record why; do not switch to demo mode to obtain a pass.
 
 Owner/testers operate browsers and provider dashboards. Only authorised people perform the specifically agreed test bookings, payments, notifications or administrative changes. The assistant does not execute them. Use approved sandbox/test fixtures; any production transaction or disruptive change requires its own arranged owner procedure. Do not change device time, reset shared data or expose secrets/customer details in evidence.
+
+A simulated user is a human tester acting as a customer with designated test data on the deployed site; it does not mean switching to a demo adapter. Existing CUS case IDs are retained for traceability.
 
 ## Access, email and saved details
 
@@ -70,6 +72,8 @@ Rules: [BR-013](../SERVICE_CONTRACTS.md#br-013), [BR-018](../SERVICE_CONTRACTS.m
 | CUS-025 | Repeat the key journey on desktop Chrome, iPhone Safari and Android Chrome where available; record each device separately. | Controls, dialogs, dates and payment return are usable. Missing devices remain Not tested.                                        |        |         |
 | CUS-026 | Use keyboard-only navigation, open the mobile keyboard, rotate, switch apps and return during details/review.              | Focus, labels and errors are clear; no trapped scroll or lost usable draft.                                                       |        |         |
 | CUS-027 | Measure first/repeated calendar load, checkout and confirmation. Try permitted Back/Cancel during a delay.                 | Progress and outcome are understandable; record seconds and disruptive delays without claiming a fixed unverified latency target. |        |         |
+
+Keep completed results in the agreed evidence location with the full revision and environment. Retain original failures when retesting; redact customer data and credentials. Coordinate test schedule restoration with Admin and retain booking/payment history.
 
 ## Session outcome
 

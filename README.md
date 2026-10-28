@@ -6,7 +6,7 @@ Development entry point for the SoccerBotStudioSG customer booking website. See 
 
 [Code owners and feature map](docs/Code-Owners.md) expands the system into Mermaid diagrams with links to each feature’s source owners.
 
-[UAT worksheets](docs/UAT/README.md) cover Customer, SimplyBook Admin, SimplyBook Trainer and Owner acceptance.
+UAT worksheets: [Admin](docs/UAT/Admin.md), [Trainers](docs/UAT/Trainers.md) and [Simulated user](docs/UAT/Simulated-User.md).
 
 ## Development setup
 
