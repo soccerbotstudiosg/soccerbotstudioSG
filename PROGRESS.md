@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Code ownership map — 28 October 2026 SGT
+
+Added `docs/Code-Owners.md`: overarching responsibility map, feature-level expansions and deeper booking/domain/payment/verification diagrams linked to existing source owners. Distinguishes responsibility arrows from execution flow, browser state from server authority, D1 from DO storage, demo composition from live integration and prepared delivery/telemetry from activation. README and Architecture link to this navigation owner. Added 32 stable BR rule-group IDs to existing Service Contracts paragraphs and a complete rule-to-owner index in the map; retained rule text, heading anchors, milestone IDs and history. All local file links and rule mappings checked; formatting and source/policy checks passed. Documentation only; no application or deployment behavior changed.
+
 ## Version visibility — 28 October 2026 SGT
 
 Prepared on merged PR108 (`ee4f37324701c3788e9dc9d6c9fefb32dc3281fe`): root `Versions.md` lists configured Node/npm/Python and all locked direct/transitive dependency paths, generated from existing manifests. README links to it. Full/code verification rejects stale generated content; dependency PRs must regenerate it with their updates. Verification runs emit observed Node/npm/Python, checked-out revision, job/target and lock hash with full JSON inventory into existing evidence artifacts and Actions summaries. This records verification inputs, not deployed runtime versions. No workflow permissions, deployment gates, provider configuration or production resources changed. Local reporting observed Python 3.12.14; CI patch version remains run-specific. All 158 tooling tests (including regeneration/report regressions), source/policy, formatting and affected lint checks passed; final-commit CI remains required.
