@@ -19,7 +19,7 @@ All three routes converge on the same reviewed source and verification process. 
 Start with [AGENTS](../AGENTS.md), [North Star](../NORTH_STAR.md) and [Progress](../PROGRESS.md). Then follow the task-specific reading order in AGENTS:
 
 - [Business rules](service_contracts.md#part-1--current-system-rules) define expected behavior and acceptance boundaries.
-- [Architecture](architecture/readme.md) and [system diagrams](architecture/diagram.md) explain runtime responsibilities.
+- [Architecture](architecture/adr.md) and [system diagrams](architecture/diagram.md) explain runtime responsibilities.
 - [Code owners](code-owners.md) links each feature and business-rule group to its implementation.
 - [Versions](versions.md) lists configured tools and locked packages; run evidence records observed tool versions.
 - [Runbook](runbook.md) covers incidents, dependencies, monitoring, deployment and recovery.

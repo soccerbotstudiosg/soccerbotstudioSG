@@ -1,5 +1,10 @@
 # SoccerBotStudioSG current progress
 
+## Architecture decisions — 28 October 2026 SGT
+
+Separate ADR branch based on PR111 replaces `docs/architecture/readme.md` with `adr.md`: eight decisions cover frontend, Worker hosting, coordinator/storage, booking/payment providers, identity, telemetry, release engineering and vendor-managed DNS. Each records status, evidence-based rationale, pros/cons, scaling triggers and alternatives; no fallback is claimed as deployed standby. Links and installer planning ownership follow the replacement. Documentation records architecture rationale without authorising migrations or changing runtime behavior.
+
+
 ## Continuous development guide — 28 October 2026 SGT
 
 Removed root README at the owner’s request. `docs/development.md` opens with a guidance-only disclaimer and covers local VS Code, Codex Cloud and ZIP-attached chat workflows, baseline/provenance, setup, testing, engineering expectations, GitHub publication and CI/deployment distinctions. Prior setup/configuration content retained; AGENTS remains authoritative. Current navigation and formatting references updated. No application or workflow behavior changed.

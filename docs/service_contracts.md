@@ -1,6 +1,6 @@
 # SoccerBotStudio — Service Contracts
 
-This is the single source for current system rules and dated change history. [Architecture](architecture/readme.md) explains the components; [the diagram](architecture/diagram.md) shows their connections. AGENTS.md owns engineering execution. Current rules below override dated history; historical approvals never authorize new operations.
+This is the single source for current system rules and dated change history. [Architecture](architecture/adr.md) explains the components; [the diagram](architecture/diagram.md) shows their connections. AGENTS.md owns engineering execution. Current rules below override dated history; historical approvals never authorize new operations.
 
 ## Part 1 — Current system rules
 
@@ -362,7 +362,7 @@ Prepared an isolated Pages entry forwarding same-origin API requests over a serv
 
 ### 22 October 2026 — Client staging and production delivery plan
 
-Owner agrees to one client repository controlling developer-account staging and client-account production. The [architecture diagram](architecture/diagram.md#planned-client-delivery-topology) and [explanation](architecture/readme.md) describe the planned relationships, provider isolation, approval flow and handover. Preserve existing developer infrastructure; implementation, environment protection availability and client UAT remain pending. This documentation update changes no workflows, resources, secrets or provider configuration. Test-impact review: inspect delivery workflow references and documentation checks; runtime tests and inventories are unchanged.
+Owner agrees to one client repository controlling developer-account staging and client-account production. The [architecture diagram](architecture/diagram.md#planned-client-delivery-topology) and [explanation](architecture/adr.md) describe the planned relationships, provider isolation, approval flow and handover. Preserve existing developer infrastructure; implementation, environment protection availability and client UAT remain pending. This documentation update changes no workflows, resources, secrets or provider configuration. Test-impact review: inspect delivery workflow references and documentation checks; runtime tests and inventories are unchanged.
 
 ### 22 October 2026 — Unique documentation ownership after PR88
 
@@ -3648,3 +3648,7 @@ Owner confirmed standard `AGENTS.md` after reviewing automatic discovery behavio
 ### 28 October 2026 — Continuous development guidance replaces root README
 
 Owner requested removal of the root README and a guidance-only `docs/development.md` covering local VS Code, Codex Cloud and ZIP-attached chat development. Existing setup/verification/configuration content is retained there, with GitHub publication, CI expectations, safe archive integration and guarded delivery guidance. AGENTS remains authoritative; current links and formatting commands use the new guide.
+
+### 28 October 2026 — Architecture decision records
+
+Owner requested a separate PR replacing the architecture explanation with ADRs covering stack rationale, tradeoffs, scaling and alternatives. `docs/architecture/adr.md` distinguishes implemented choices, pending activation and proposed contingencies; reconstructed reasoning is not presented as historical comparative benchmarking. Topology remains in diagram.md and operational recovery remains in the runbook.

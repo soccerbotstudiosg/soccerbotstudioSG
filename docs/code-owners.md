@@ -2,7 +2,7 @@
 
 Snapshot: 28 October 2026. “Owner” means the module responsible for a behavior, not a person or GitHub review assignment. Start at the overview, then follow the numbered sections into smaller diagrams and linked source files. Arrows show responsibility breakdown unless explicitly labelled as a request/data flow; they are not an exhaustive import graph or a promise of execution order.
 
-This document owns code navigation. [System topology](architecture/diagram.md) owns infrastructure diagrams, [Architecture](architecture/readme.md) explains runtime relationships, and [Service Contracts](service_contracts.md) owns behavioral rules. Update this map when responsibility moves between modules. The map describes implemented feature ownership. Test evidence and client deployment status remain separate in [Progress](../PROGRESS.md).
+This document owns code navigation. [System topology](architecture/diagram.md) owns infrastructure diagrams, [Architecture](architecture/adr.md) explains runtime relationships, and [Service Contracts](service_contracts.md) owns behavioral rules. Update this map when responsibility moves between modules. The map describes implemented feature ownership. Test evidence and client deployment status remain separate in [Progress](../PROGRESS.md).
 
 ## 1. Overview
 
