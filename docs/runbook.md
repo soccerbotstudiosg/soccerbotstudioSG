@@ -1,6 +1,6 @@
 # SoccerBot operations runbook
 
-Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Service Contracts](SERVICE_CONTRACTS.md) owns system rules; [README](../README.md#configuration) owns configuration reference. This document owns operational procedures.
+Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Service Contracts](service_contracts.md) owns system rules; [README](../README.md#configuration) owns configuration reference. This document owns operational procedures.
 
 Navigation: [Ownership](#1-ownership-and-access) · [Routine checks](#2-routine-checks) · [Dependencies](#3-dependency-maintenance-and-dependabot) · [Grafana](#4-monitoring-and-observability) · [Incidents](#5-incident-response-and-recovery) · [Deployments](#6-deployments-and-rollback) · [Data recovery](#7-data-protection-and-restore) · [DNS/HTTPS](#8-domain-dns-and-https) · [Handover](#9-operational-records-and-handover).
 
@@ -221,7 +221,7 @@ Restore procedure to rehearse with authorised support: identify incident/cutoff 
 
 ## 8. Domain, DNS and HTTPS
 
-Use [Admin Cloudflare UAT](UAT/Admin.md#cloudflare-domain-dns-and-https-checks) for inspection. Confirm registrar, authoritative DNS owner, Cloudflare account IDs and hosting owner separately. Cloudflare nameservers do not identify which account owns the zone. `app404.ai` remains outside the proof.
+Use [Admin Cloudflare UAT](uat/admin.md#cloudflare-domain-dns-and-https-checks) for inspection. Confirm registrar, authoritative DNS owner, Cloudflare account IDs and hosting owner separately. Cloudflare nameservers do not identify which account owns the zone. `app404.ai` remains outside the proof.
 
 Before any owner/vendor change, save the approved DNS baseline and exact record/TTL/proxy/validation/CAA instructions and rollback contact. Preserve MX/SPF/DKIM/DMARC. For SaaS, inspect fallback origin, custom hostname status, route ownership and persistent automated validation. A subdomain proof cannot establish apex support. Verify trusted coverage, redirects, same-origin API and secure cookies on each approved hostname.
 
@@ -231,4 +231,4 @@ Certificate incident: distinguish DNS validation/CAA, hostname activation, routi
 
 For each incident/change, record: owner, timestamps, environment/account IDs, revision/run/artifact, reason and scope, affected rule/case IDs, redacted evidence, before/after observations, approval where required, verification, residual risks and next review date. Keep actual customer/payment identifiers in restricted evidence rather than public PR descriptions.
 
-Keep [Admin](UAT/Admin.md), [Trainers](UAT/Trainers.md) and [Simulated user](UAT/Simulated-User.md) worksheets as blank masters; store completed results with revision/environment and preserve failures/retests. [Code owners](Code-Owners.md) locates implementation responsibility, not on-call people. Name primary/backup responders, verify billing/MFA, prove monitoring receiver delivery, rehearse recovery/rollback and obtain owner sign-off before handover. SMS, packages and MCP admin integration remain separately quoted scope.
+Keep [Admin](uat/admin.md), [Trainers](uat/trainers.md) and [Simulated user](uat/simulated-user.md) worksheets as blank masters; store completed results with revision/environment and preserve failures/retests. [Code owners](code-owners.md) locates implementation responsibility, not on-call people. Name primary/backup responders, verify billing/MFA, prove monitoring receiver delivery, rehearse recovery/rollback and obtain owner sign-off before handover. SMS, packages and MCP admin integration remain separately quoted scope.

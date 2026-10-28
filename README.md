@@ -4,9 +4,9 @@ Development entry point for the SoccerBotStudioSG customer booking website. See 
 
 [Versions](docs/versions.md) lists the configured toolchain and every locked dependency. Each Actions verification run also records observed tool versions in its summary and evidence artifact.
 
-[Code owners and feature map](docs/Code-Owners.md) expands the system into Mermaid diagrams with links to each feature’s source owners.
+[Code owners and feature map](docs/code-owners.md) expands the system into Mermaid diagrams with links to each feature’s source owners.
 
-UAT worksheets: [Admin](docs/UAT/Admin.md), [Trainers](docs/UAT/Trainers.md) and [Simulated user](docs/UAT/Simulated-User.md).
+UAT worksheets: [Admin](docs/uat/admin.md), [Trainers](docs/uat/trainers.md) and [Simulated user](docs/uat/simulated-user.md).
 
 ## Development setup
 
@@ -16,7 +16,7 @@ The Worker test runtime is pinned to Miniflare `5.20261023.0-beta`, matching Wra
 
 CI uses the official Playwright Noble image matching the locked Playwright version, with browsers/system libraries already installed. Node remains pinned by `.nvmrc`; the pinned setup-python action supplies Python 3.12 for installer checks. Update the image alongside Playwright when upgrading. This avoids repeated Ubuntu mirror downloads without changing test gates or job limits.
 
-`npm run dev` starts local development; `npm run build` creates `out/`; `npm run preview` serves that export locally. The default base path is `/SoccerBotStudioSG`; root hosting uses a separately verified empty-prefix build. Client provisioning and portability requirements live in [Service Contracts](docs/SERVICE_CONTRACTS.md#deployment-migration-and-acceptance).
+`npm run dev` starts local development; `npm run build` creates `out/`; `npm run preview` serves that export locally. The default base path is `/SoccerBotStudioSG`; root hosting uses a separately verified empty-prefix build. Client provisioning and portability requirements live in [Service Contracts](docs/service_contracts.md#deployment-migration-and-acceptance).
 
 ## Verification commands
 
@@ -69,4 +69,4 @@ This scaffold is **not live client portability acceptance**. Ongoing provider se
 
 ## Operations
 
-See the [Runbook](docs/Runbook.md) for dependency maintenance, Dependabot, monitoring/Grafana, incident response, deployment recovery and routine operations.
+See the [Runbook](docs/runbook.md) for dependency maintenance, Dependabot, monitoring/Grafana, incident response, deployment recovery and routine operations.

@@ -1,6 +1,6 @@
 # How the system fits together
 
-[System diagram](diagram.md) · [Current rules and dated history](../SERVICE_CONTRACTS.md)
+[System diagram](diagram.md) · [Current rules and dated history](../service_contracts.md)
 
 **Customer interface.** Next.js builds a static React site served by Cloudflare Worker Static Assets. The browser browses cached availability, collects details and consent, then calls the protected Worker API. It does not hold provider secrets or decide whether a payment or booking is valid. GitHub Pages serves a separate demo build, not the live checkout environment.
 
@@ -18,8 +18,8 @@
 
 **Client public entry (prepared).** Cloudflare for SaaS on the client-owned `soccerbotsg.win` zone routes custom hostname traffic to the application Worker with Static Assets and same-origin `/api`. The zone-scoped `*/*` Worker route handles customer hostnames; `run_worker_first: true` makes the application check the canonical origin before serving assets. Workers.dev and previews are disabled for client targets. Deployment preflight verifies zone/account identity, active fallback origin and its proxied originless DNS record, and rejects competing Worker routes. DNS and custom hostname registration remain owner-operated. The first test origin is `https://booking.standardsoftwares.com` with DNS in Primary; the test apex follows as a separately configured and verified target. The eventual origin is `https://soccerbotsg.com`, with Uncoverin retaining DNS. The optional Pages adapter remains supported and tested, but is not selected by the client target.
 
-**Handover and releases.** Preserve the existing staging Worker, D1 data and Durable Object identity; configure client resources and validate first-install/rerun behavior before UAT. Once the client repository controls both targets, disable deployment from the old repository. Deploy the exact artifact verified for each environment: frontend build-time settings such as Turnstile may require separately verified builds from the same revision. Keep migrations backward compatible with ongoing attempts; code rollback does not reverse database or provider effects. These are planned delivery relationships, not configured approval gates or a production-readiness claim; [Service Contracts](../SERVICE_CONTRACTS.md#deployment-migration-and-acceptance) owns release safeguards.
+**Handover and releases.** Preserve the existing staging Worker, D1 data and Durable Object identity; configure client resources and validate first-install/rerun behavior before UAT. Once the client repository controls both targets, disable deployment from the old repository. Deploy the exact artifact verified for each environment: frontend build-time settings such as Turnstile may require separately verified builds from the same revision. Keep migrations backward compatible with ongoing attempts; code rollback does not reverse database or provider effects. These are planned delivery relationships, not configured approval gates or a production-readiness claim; [Service Contracts](../service_contracts.md#deployment-migration-and-acceptance) owns release safeguards.
 
-For a recursive feature-to-file navigation map, see [Code owners and feature map](../Code-Owners.md).
+For a recursive feature-to-file navigation map, see [Code owners and feature map](../code-owners.md).
 
-The [Operations runbook](../Runbook.md) owns monitoring interpretation, dependency maintenance and recovery procedures, including current telemetry activation limits.
+The [Operations runbook](../runbook.md) owns monitoring interpretation, dependency maintenance and recovery procedures, including current telemetry activation limits.

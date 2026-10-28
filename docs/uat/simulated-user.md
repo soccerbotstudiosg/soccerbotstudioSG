@@ -20,7 +20,7 @@ A simulated user is a human tester acting as a customer with designated test dat
 
 ## Access, email and saved details
 
-Rules: [BR-003](../SERVICE_CONTRACTS.md#br-003), [BR-004](../SERVICE_CONTRACTS.md#br-004). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+Rules: [BR-003](../service_contracts.md#br-003), [BR-004](../service_contracts.md#br-004). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                    | What should happen                                                                                                                         | Result | Remarks |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
@@ -36,7 +36,7 @@ Rules: [BR-003](../SERVICE_CONTRACTS.md#br-003), [BR-004](../SERVICE_CONTRACTS.m
 
 ## Calendar, selection and review
 
-Rules: [BR-001](../SERVICE_CONTRACTS.md#br-001), [BR-002](../SERVICE_CONTRACTS.md#br-002), [BR-006](../SERVICE_CONTRACTS.md#br-006), [BR-007](../SERVICE_CONTRACTS.md#br-007). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+Rules: [BR-001](../service_contracts.md#br-001), [BR-002](../service_contracts.md#br-002), [BR-006](../service_contracts.md#br-006), [BR-007](../service_contracts.md#br-007). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                    | What should happen                                                                                                                               | Result | Remarks |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
@@ -49,7 +49,7 @@ Rules: [BR-001](../SERVICE_CONTRACTS.md#br-001), [BR-002](../SERVICE_CONTRACTS.m
 
 ## Hosted payment, return and confirmation
 
-Rules: [BR-007](../SERVICE_CONTRACTS.md#br-007), [BR-008](../SERVICE_CONTRACTS.md#br-008), [BR-010](../SERVICE_CONTRACTS.md#br-010), [BR-011](../SERVICE_CONTRACTS.md#br-011), [BR-012](../SERVICE_CONTRACTS.md#br-012), [BR-013](../SERVICE_CONTRACTS.md#br-013). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+Rules: [BR-007](../service_contracts.md#br-007), [BR-008](../service_contracts.md#br-008), [BR-010](../service_contracts.md#br-010), [BR-011](../service_contracts.md#br-011), [BR-012](../service_contracts.md#br-012), [BR-013](../service_contracts.md#br-013). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                               | What should happen                                                                                                                                                | Result | Remarks |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
@@ -65,7 +65,7 @@ Rules: [BR-007](../SERVICE_CONTRACTS.md#br-007), [BR-008](../SERVICE_CONTRACTS.m
 
 ## Devices, navigation and response time
 
-Rules: [BR-013](../SERVICE_CONTRACTS.md#br-013), [BR-018](../SERVICE_CONTRACTS.md#br-018). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+Rules: [BR-013](../service_contracts.md#br-013), [BR-018](../service_contracts.md#br-018). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                 | What should happen                                                                                                                | Result | Remarks |
 | ------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |

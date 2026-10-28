@@ -20,7 +20,7 @@ Staff scheduling and booking administration are tested in **SimplyBook**; mercha
 
 ## SimplyBook access and configuration
 
-Rules: [BR-001](../SERVICE_CONTRACTS.md#br-001), [BR-002](../SERVICE_CONTRACTS.md#br-002), [BR-005](../SERVICE_CONTRACTS.md#br-005), [BR-022](../SERVICE_CONTRACTS.md#br-022). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+Rules: [BR-001](../service_contracts.md#br-001), [BR-002](../service_contracts.md#br-002), [BR-005](../service_contracts.md#br-005), [BR-022](../service_contracts.md#br-022). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                                     | What should happen                                                                                                                                                 | Result | Remarks |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
@@ -32,7 +32,7 @@ Rules: [BR-001](../SERVICE_CONTRACTS.md#br-001), [BR-002](../SERVICE_CONTRACTS.m
 
 ## Trainer schedules in SimplyBook
 
-Rules: [BR-001](../SERVICE_CONTRACTS.md#br-001), [BR-002](../SERVICE_CONTRACTS.md#br-002), [BR-006](../SERVICE_CONTRACTS.md#br-006). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+Rules: [BR-001](../service_contracts.md#br-001), [BR-002](../service_contracts.md#br-002), [BR-006](../service_contracts.md#br-006). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                                                                        | What should happen                                                                                                                         | Result | Remarks |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
@@ -43,7 +43,7 @@ Rules: [BR-001](../SERVICE_CONTRACTS.md#br-001), [BR-002](../SERVICE_CONTRACTS.m
 
 ## Booking, invoice and payment reconciliation
 
-Rules: [BR-007](../SERVICE_CONTRACTS.md#br-007), [BR-008](../SERVICE_CONTRACTS.md#br-008), [BR-010](../SERVICE_CONTRACTS.md#br-010), [BR-013](../SERVICE_CONTRACTS.md#br-013). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+Rules: [BR-007](../service_contracts.md#br-007), [BR-008](../service_contracts.md#br-008), [BR-010](../service_contracts.md#br-010), [BR-013](../service_contracts.md#br-013). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                                       | What should happen                                                                                                                                  | Result | Remarks |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
@@ -56,7 +56,7 @@ Rules: [BR-007](../SERVICE_CONTRACTS.md#br-007), [BR-008](../SERVICE_CONTRACTS.m
 
 ## Daily operations and staff boundaries
 
-Rules: [BR-002](../SERVICE_CONTRACTS.md#br-002), [BR-003](../SERVICE_CONTRACTS.md#br-003), [BR-008](../SERVICE_CONTRACTS.md#br-008), [BR-022](../SERVICE_CONTRACTS.md#br-022). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+Rules: [BR-002](../service_contracts.md#br-002), [BR-003](../service_contracts.md#br-003), [BR-008](../service_contracts.md#br-008), [BR-022](../service_contracts.md#br-022). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                              | What should happen                                                                                                                                     | Result | Remarks |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
@@ -67,7 +67,7 @@ Rules: [BR-002](../SERVICE_CONTRACTS.md#br-002), [BR-003](../SERVICE_CONTRACTS.m
 
 ## HitPay merchant access and payment operations
 
-Rules: [BR-005](../SERVICE_CONTRACTS.md#br-005), [BR-008](../SERVICE_CONTRACTS.md#br-008), [BR-010](../SERVICE_CONTRACTS.md#br-010), [BR-011](../SERVICE_CONTRACTS.md#br-011), [BR-022](../SERVICE_CONTRACTS.md#br-022). See [payment code owners](../Code-Owners.md#72-payment-expansion).
+Rules: [BR-005](../service_contracts.md#br-005), [BR-008](../service_contracts.md#br-008), [BR-010](../service_contracts.md#br-010), [BR-011](../service_contracts.md#br-011), [BR-022](../service_contracts.md#br-022). See [payment code owners](../code-owners.md#72-payment-expansion).
 
 Use the actual HitPay dashboard available to the designated account; screens and permissions can vary. Support may supply redacted delivery/readback evidence where the dashboard does not expose it. Record unavailable evidence as Blocked. Do not paste API keys, webhook secrets, full checkout URLs or bank details into this sheet.
 
@@ -86,7 +86,7 @@ Use the actual HitPay dashboard available to the designated account; screens and
 
 ## Cloudflare domain, DNS and HTTPS checks
 
-Rules: [BR-005](../SERVICE_CONTRACTS.md#br-005), [BR-025](../SERVICE_CONTRACTS.md#br-025), [BR-026](../SERVICE_CONTRACTS.md#br-026), [BR-027](../SERVICE_CONTRACTS.md#br-027). See [delivery code owners](../Code-Owners.md#10-verification-and-delivery).
+Rules: [BR-005](../service_contracts.md#br-005), [BR-025](../service_contracts.md#br-025), [BR-026](../service_contracts.md#br-026), [BR-027](../service_contracts.md#br-027). See [delivery code owners](../code-owners.md#10-verification-and-delivery).
 
 Record the exact hostname, zone, DNS account ID and hosting account ID in Remarks for each environment. Inspect through the authorised Cloudflare account or owner/vendor-supplied evidence; lack of access is Blocked, not permission to use another account. These checks do not authorise DNS edits, nameserver changes, certificate uploads or changes to email records. Existing app404.ai is outside this test.
 

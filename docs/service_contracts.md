@@ -1,10 +1,10 @@
 # SoccerBotStudio — Service Contracts
 
-This is the single source for current system rules and dated change history. [Architecture](Architecture/README.md) explains the components; [the diagram](Architecture/diagram.md) shows their connections. AGENTS.md owns engineering execution. Current rules below override dated history; historical approvals never authorize new operations.
+This is the single source for current system rules and dated change history. [Architecture](architecture/readme.md) explains the components; [the diagram](architecture/diagram.md) shows their connections. AGENTS.md owns engineering execution. Current rules below override dated history; historical approvals never authorize new operations.
 
 ## Part 1 — Current system rules
 
-Stable rule-group IDs identify the existing paragraphs below; they do not change their requirements. Keep IDs when editing or moving a rule, never reuse retired IDs, and allocate the next unused ID for new rules. Milestone IDs and dated history remain unchanged. [Code ownership mapping](Code-Owners.md#11-business-rule-to-owner-index) links each rule group to its implementation or operational owner.
+Stable rule-group IDs identify the existing paragraphs below; they do not change their requirements. Keep IDs when editing or moving a rule, never reuse retired IDs, and allocate the next unused ID for new rules. Milestone IDs and dated history remain unchanged. [Code ownership mapping](code-owners.md#11-business-rule-to-owner-index) links each rule group to its implementation or operational owner.
 
 ### Product and booking policy
 
@@ -362,7 +362,7 @@ Prepared an isolated Pages entry forwarding same-origin API requests over a serv
 
 ### 22 October 2026 — Client staging and production delivery plan
 
-Owner agrees to one client repository controlling developer-account staging and client-account production. The [architecture diagram](Architecture/diagram.md#planned-client-delivery-topology) and [explanation](Architecture/README.md) describe the planned relationships, provider isolation, approval flow and handover. Preserve existing developer infrastructure; implementation, environment protection availability and client UAT remain pending. This documentation update changes no workflows, resources, secrets or provider configuration. Test-impact review: inspect delivery workflow references and documentation checks; runtime tests and inventories are unchanged.
+Owner agrees to one client repository controlling developer-account staging and client-account production. The [architecture diagram](architecture/diagram.md#planned-client-delivery-topology) and [explanation](architecture/readme.md) describe the planned relationships, provider isolation, approval flow and handover. Preserve existing developer infrastructure; implementation, environment protection availability and client UAT remain pending. This documentation update changes no workflows, resources, secrets or provider configuration. Test-impact review: inspect delivery workflow references and documentation checks; runtime tests and inventories are unchanged.
 
 ### 22 October 2026 — Unique documentation ownership after PR88
 
@@ -3166,12 +3166,12 @@ The superseded [4 October diagram](https://github.com/LimYouSheng/SoccerBotStudi
 
 Supporting sections not repeated in the narrative remain available at the exact pre-refactor revision. These links preserve complete details without duplicating current rules.
 
-- [Complete historical SERVICE_CONTRACTS.md](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SERVICE_CONTRACTS.md).
+- [Complete historical service_contracts.md](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SERVICE_CONTRACTS.md).
 - [Complete historical SOCCERBOT_RULES_AND_ARCHITECTURE.md](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md).
 - [Complete historical CODEX_CLOUD.md](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/CODEX_CLOUD.md).
 
 <details>
-<summary>Historical section index: SERVICE_CONTRACTS.md</summary>
+<summary>Historical section index: service_contracts.md</summary>
 
 - [Prepared isolated load runner — 21 October 2026](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SERVICE_CONTRACTS.md#prepared-isolated-load-runner--21-october-2026).
 - [Burst results and overload follow-up — 21 October 2026](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SERVICE_CONTRACTS.md#burst-results-and-overload-follow-up--21-october-2026).
@@ -3625,15 +3625,15 @@ Owner requested a standalone Versions file in the repository root. Generate `Ver
 
 ### 28 October 2026 — Feature ownership diagrams and rule identifiers
 
-Owner requested recursive Mermaid code-ownership diagrams and numbered business rules. `docs/Code-Owners.md` owns feature-to-file navigation and the rule-to-owner index; Part 1 retains rule authority with stable BR-001 through BR-032 identifiers for the existing rule groups. Existing rule text, heading anchors and milestone IDs are preserved. Implemented feature responsibility is distinct from test evidence and client deployment status. Demo adapters are identified only where current service composition selects them.
+Owner requested recursive Mermaid code-ownership diagrams and numbered business rules. `docs/code-owners.md` owns feature-to-file navigation and the rule-to-owner index; Part 1 retains rule authority with stable BR-001 through BR-032 identifiers for the existing rule groups. Existing rule text, heading anchors and milestone IDs are preserved. Implemented feature responsibility is distinct from test evidence and client deployment status. Demo adapters are identified only where current service composition selects them.
 
 ### 28 October 2026 — Role-based UAT preparation
 
-Owner requested the FitfinityReact role-worksheet format adapted to SoccerBot, explicitly including SimplyBook Admin operations and Trainer schedule entry. `docs/UAT` provides only Admin, Trainers and Simulated-User worksheets with blank results and rule/owner references, following the owner’s scope correction. Shared instructions are embedded in each sheet; there is no UAT README or Owner sheet. Existing provider permissions and approved test accounts govern execution; no new staff portal, production transaction authority or acceptance result is introduced.
+Owner requested the FitfinityReact role-worksheet format adapted to SoccerBot, explicitly including SimplyBook Admin operations and Trainer schedule entry. `docs/uat` provides only Admin, Trainers and Simulated-User worksheets with blank results and rule/owner references, following the owner’s scope correction. Shared instructions are embedded in each sheet; there is no UAT README or Owner sheet. Existing provider permissions and approved test accounts govern execution; no new staff portal, production transaction authority or acceptance result is introduced.
 
 ### 28 October 2026 — Operational runbook drafted
 
-Owner requested dependency/observability guidance moved out of README and a complete runbook with Grafana signal interpretation and potential fixes. `docs/Runbook.md` owns these procedures; source-derived event/panel dictionaries distinguish Tempo diagnostics from raw logs, sampled observations from traffic counts and prepared telemetry from activation. Source review also identifies current developer-only producer/service filtering and absent production environment labels. Operational alerts, restore objectives, provider recovery and client deployment acceptance remain evidence-dependent; no operational action was executed by drafting the runbook.
+Owner requested dependency/observability guidance moved out of README and a complete runbook with Grafana signal interpretation and potential fixes. `docs/runbook.md` owns these procedures; source-derived event/panel dictionaries distinguish Tempo diagnostics from raw logs, sampled observations from traffic counts and prepared telemetry from activation. Source review also identifies current developer-only producer/service filtering and absent production environment labels. Operational alerts, restore objectives, provider recovery and client deployment acceptance remain evidence-dependent; no operational action was executed by drafting the runbook.
 
 ### 28 October 2026 — Agent instructions own task routing
 
