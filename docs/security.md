@@ -1,6 +1,6 @@
 # Security infrastructure
 
-SoccerBot protects customers and the business through several layers that work together: secure connections protect information in transit, identity and access checks limit who can see customer details, and server-side validation checks booking and payment requests before they are accepted. Payments take place on HitPay’s hosted checkout, while SoccerBot checks payment and booking evidence before showing confirmation and retains records to recover safely from interrupted transactions. Controlled software releases, dependency checks and restricted credentials help protect the system behind the scenes. The diagram below shows these layers, including client hosting and monitoring arrangements that still need operational validation before handover.
+SoccerBot layers Cloudflare’s secure hosting, Turnstile’s bot checks and Resend-delivered email verification with server-enforced access controls. SimplyBook owns booking records and HitPay hosts payment; SoccerBot validates both before confirmation and retains recovery evidence to prevent duplicate transactions. Restricted credentials, protected data storage and GitHub’s dependency checks and verified releases safeguard operations. Planned Grafana monitoring adds failure visibility; client hosting, monitoring and operational safeguards still require acceptance before handover.
 
 ```mermaid
 flowchart TB
