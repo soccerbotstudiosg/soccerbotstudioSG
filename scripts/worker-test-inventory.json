@@ -81,6 +81,7 @@
   "rejected unbound window checks fresh availability and preserves failed or available readback as unresolved",
   "409 preparation readback distinguishes unavailable selection from unresolved without effects",
   "409 preparation preserves an existing original booking for recovery",
+  "automatic recovery completion publishes a receipt before dismissal and repeat acknowledgement",
   "foundation valid bindings emit correlated storage evidence without secret markers",
   "foundation missing and malformed configuration denies before protected reads",
   "foundation accepts a validated campaign name without changing retained account identity",

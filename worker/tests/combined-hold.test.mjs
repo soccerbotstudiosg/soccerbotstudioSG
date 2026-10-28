@@ -3322,3 +3322,65 @@ test("409 preparation preserves an existing original booking for recovery", asyn
     await m.close();
   }
 });
+
+test("automatic recovery completion publishes a receipt before dismissal and repeat acknowledgement", async () => {
+  const completion = Promise.withResolvers();
+  const m = await createBookingMechanism({
+    onLog(message) {
+      if (!message.startsWith("{")) return;
+      const event = JSON.parse(message);
+      if (event.event === "confirmation_trace" && event.boundary === "recovery")
+        completion.resolve(event);
+    },
+  });
+  try {
+    const c = await customer(m);
+    const id = c.input.key;
+    const created = await m.mf.dispatchFetch(
+      m.origin + `/api/booking/checkout/${id}`,
+      {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify({ ...c.input, accepted: true }),
+      },
+    );
+    assert.equal(created.status, 200, await created.text());
+    assert.equal((await m.completePayment()).status, 202);
+    // No cron trigger, polling or database writes: the webhook's actual alarm
+    // must publish its durable outcome before the test proceeds to dismissal.
+    const event = await completion.promise;
+    assert.equal(event.outcome, "ok");
+    assert.equal(event.result, "complete");
+    const context = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${id}/checkout`,
+      { headers: c.headers },
+    );
+    assert.equal((await context.json()).confirmation.attemptId, id);
+    for (let acknowledgement = 0; acknowledgement < 2; acknowledgement++) {
+      const dismissed = await m.mf.dispatchFetch(
+        m.origin + `/api/attempts/${id}/dismiss`,
+        { method: "POST", headers: c.headers },
+      );
+      assert.equal(dismissed.status, 200, await dismissed.text());
+    }
+    const receipt = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${id}/receipt`,
+      { headers: c.headers },
+    );
+    assert.equal(receipt.status, 200, await receipt.text());
+    assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
+    assert.equal(
+      m.calls.filter((c) => c.url.endsWith("/accept-payment")).length,
+      1,
+    );
+    assert.equal(
+      m.calls.filter(
+        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
+      ).length,
+      1,
+    );
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});

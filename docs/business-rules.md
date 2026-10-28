@@ -2,6 +2,18 @@
 
 This document owns the current numbered system invariants. [Domain operations and API contracts](api-contracts.md) explains their implementation boundaries; [Complete journey](journey.md) owns the end-to-end flow, milestone criteria and dated evidence. [AGENTS.md](../AGENTS.md) owns engineering instructions. Current rules override dated history; historical approvals never authorize new operations.
 
+## Status and evidence boundaries
+
+Status reconciled on 28 October 2026 against this working revision, committed target/workflow files and the retained owner/provisioning records. This is not a fresh live-account audit. Requirements below remain authoritative regardless of a deployment checkpoint; [Progress](../PROGRESS.md) owns the latest PR/CI/handover status.
+
+| Area                | Established evidence                                                                                                                                                                                                          | Still requires acceptance                                                                                                               |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Portable hosting    | Target validation, manual deployment workflows and SaaS Worker entry exist in source; production target selects Worker Static Assets, not Pages                                                                               | Client exact-artifact installation, safe rerun/interruption/rollback and activation                                                     |
+| Client placement    | D1 creation/KIX probe is recorded in [Journey](journey.md#27-october-2026--client-d1-created-and-primary-placement-verified); production target selects `apac-ne`; shared `coordinatorStub` applies/validates hints in source | First-use actual DO execution location and owner checkout evidence; do not create a second D1 or unhinted object merely to repeat setup |
+| Dependency security | Weekly Dependabot and blocking npm audit are implemented; owner confirmed developer-repository graph/alerts/security updates                                                                                                  | Fresh advisory status, client repository settings and supported optional code/secret scanning; copied YAML does not enable settings     |
+| Monitoring          | Sanitized diagnostics and exporter/dashboard source exist; committed exporter configuration is disabled                                                                                                                       | Actual stack/service mapping, exporter activation, alert receivers and ingestion/alert delivery                                         |
+| Client integrations | Guarded developer integration exists; production configuration remains closed/incomplete in committed targets                                                                                                                 | Client sender/Turnstile/merchant/provider mappings, billing/MFA, DNS apex/renewal proof and UAT                                         |
+
 ## Current system rules
 
 Stable rule-group IDs identify the existing paragraphs below; they do not change their requirements. Keep IDs when editing or moving a rule, never reuse retired IDs, and allocate the next unused ID for new rules. Milestone IDs and dated history are retained in [Complete journey](journey.md). [Code ownership mapping](code-owners.md#11-business-rule-to-owner-index) links each rule group to its implementation or operational owner.
@@ -28,7 +40,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-005"></a>
 
-**BR-005** — Developer and client accounts, merchants, origins, mappings, secrets and data must stay isolated. Existing source still pins developer account/database/environment values, sandbox HitPay hosts, provider safety exclusions, sender settings and repository paths. Moving repositories is not yet configuration-only. Client portability must replace those pins with validated configuration, not remove account/host guards.
+**BR-005** — Developer and client accounts, merchants, origins, mappings, secrets and data must stay isolated. Portable target validation and account/resource preflight exist, but developer-specific identity delivery, sandbox HitPay hosts and provider safety scopes still require deliberate client configuration work. Moving repositories alone does not establish production portability. Client portability must replace those pins with validated configuration, not remove account/host guards.
 
 ### Availability and selection
 
@@ -96,7 +108,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-019"></a>
 
-**BR-019** — Prepared Tail Worker `worker/telemetry.ts` converts allowlisted diagnostic summaries to OTLP/HTTP JSON for Grafana Cloud Tempo. It is disabled and unattached; no Grafana stack/ingestion acceptance yet. It runs after producer execution, outside customer request handling, with no provider/D1 calls. It does not fabricate parent-child continuity across RPC/alarms or represent aggregate durations as exact individual spans. Dashboard owner: `observability/grafana-dashboard.json`; configuration owner: `wrangler.telemetry.jsonc`.
+**BR-019** — Tail Worker `worker/telemetry.ts` implements conversion of allowlisted diagnostic summaries to OTLP/HTTP JSON for Grafana Cloud Tempo. Its committed configuration defaults to disabled. Require explicit attachment/configuration and ingestion acceptance for each environment; source availability is not evidence of activation. It runs after producer execution, outside customer request handling, with no provider/D1 calls. It does not fabricate parent-child continuity across RPC/alarms or represent aggregate durations as exact individual spans. Dashboard owner: `observability/grafana-dashboard.json`; configuration owner: `wrangler.telemetry.jsonc`.
 
 <a id="br-020"></a>
 
@@ -106,11 +118,11 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-021"></a>
 
-**BR-021** — Current main CI requires frontend, backend and live-email gates. The legacy main deployment remains in place until a reviewed switch to portable mode. The target scaffold adds separate manual staging and production workflows, distinct account credentials, exact-revision/target artifact verification and existing-resource preflight. Production uses an explicit manual workflow compatible with GitHub Free private repositories, not assumed paid environment protection. Client uploads remain closed; first upload may create only the configured Worker, after D1/Pages exist. It does not self-register foundation identity. Pending migrations are determined by D1's migration ledger, not a hardcoded developer migration/version checkpoint. The [development guide](development.md) owns configuration; the [runbook](runbook.md) owns operator steps. Automatic trusted PR staging, remote interrupted-install acceptance and client activation remain pending.
+**BR-021** — Current main CI requires frontend, backend and live-email gates. The legacy main deployment remains in place until a reviewed switch to portable mode. The target scaffold adds separate manual staging and production workflows, distinct account credentials, exact-revision/target artifact verification and existing-resource preflight. Production uses an explicit manual workflow compatible with GitHub Free private repositories, not assumed paid environment protection. Client uploads remain closed; first upload may create only the configured Worker, after the target’s required resources exist: D1 and SaaS zone/fallback for the selected client Worker target; Pages only for a separately selected Pages target. It does not self-register foundation identity. Pending migrations are determined by D1's migration ledger, not a hardcoded developer migration/version checkpoint. The [development guide](development.md) owns configuration; the [runbook](runbook.md) owns operator steps. Automatic trusted PR staging, remote interrupted-install acceptance and client activation remain pending.
 
 <a id="br-022"></a>
 
-**BR-022** — Owner will create client accounts/resources first. Then prepare portable configuration, validate/reuse those resources, test first install/rerun/interruption/account mismatch in isolation, report results and integrate before pushing to client GitHub. Keep access disabled through preparation; validate client provider entitlements, service/instructor mappings, shared capacity, schedules, notification configuration, merchant/payment destination, domain/email verification and legacy receipt/recovery continuity before UAT/cutover. A credential swap or green CI alone is not production acceptance.
+**BR-022** — Provision client resources only with applicable owner authorization, then validate/reuse the confirmed resources and portable configuration, test first install/rerun/interruption/account mismatch in isolation, report results and integrate before pushing to client GitHub. Keep access disabled through preparation; validate client provider entitlements, service/instructor mappings, shared capacity, schedules, notification configuration, merchant/payment destination, domain/email verification and legacy receipt/recovery continuity before UAT/cutover. A credential swap or green CI alone is not production acceptance.
 
 <a id="br-023"></a>
 
@@ -128,7 +140,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-026"></a>
 
-**BR-026** — The SaaS fallback `fallback.soccerbotsg.win` is active. Deployment requires the declared zone in the selected account, active/unpaused status, an active matching fallback, its proxied originless `AAAA 100::` record, and no competing routes. The tested artifact declares the zone-scoped `*/*` route. All client requests run through the Worker before assets, so alternate origins are rejected. Worker previews and Workers.dev are disabled. The optional Pages entry remains available for separately configured targets; this client target does not create or require a Pages project. Production remains closed and the public Turnstile key is still missing.
+**BR-026** — The fallback `fallback.soccerbotsg.win` was recorded active during setup; recheck it before deployment. Deployment requires the declared zone in the selected account, active/unpaused status, an active matching fallback, its proxied originless `AAAA 100::` record, and no competing routes. The target/release configuration declares the zone-scoped `*/*` route; verify it in the exact tested artifact before deployment. All client requests run through the Worker before assets, so alternate origins are rejected. Worker previews and Workers.dev are disabled. The optional Pages entry remains available for separately configured targets; this client target does not create or require a Pages project. Production remains closed and the public Turnstile key is still missing.
 
 <a id="br-027"></a>
 
@@ -136,7 +148,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-028"></a>
 
-**BR-028** — The client repository will own both environments: trusted PR staging continues to the existing developer Cloudflare/SimplyBook/Resend/Turnstile and payment sandbox configuration, while production uses client resources. Current staging workflows remain manual/reserved; automatic trusted PR deployment is requested but not implemented. Deny forks and Dependabot deployment credentials and prevent competing repository deployment ownership. Grafana uses the owner company’s central account, with separately scoped ingestion credentials and environment/service labels; activation remains pending. Weekly Dependabot version-update configuration is prepared; alerts, security updates and licensed scanning capabilities remain separate checks.
+**BR-028** — The client repository will own both environments: trusted PR staging continues to the existing developer Cloudflare/SimplyBook/Resend/Turnstile and payment sandbox configuration, while production uses client resources. Current staging workflows remain manual/reserved; automatic trusted PR deployment is requested but not implemented. Deny forks and Dependabot deployment credentials and prevent competing repository deployment ownership. Grafana uses the owner company’s central account, with separately scoped ingestion credentials and environment/service labels; activation remains pending. Maintain weekly Dependabot version updates and blocking dependency audit. Alerts/security updates were owner-confirmed for the developer repository; verify client settings independently. Optional licensed scanning capabilities require separate inspection. Do not treat an old clean advisory report as current security clearance.
 
 ### Client initial placement strategy (planned)
 
@@ -144,15 +156,15 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 **BR-029** — Choose database and coordinator placement together before the client account Durable Object is first used:
 
-1. Create the client D1 database with the `apac` location hint; inspect primary-query metadata (`served_by_primary` and `served_by_colo`) to establish its actual serving location. A hint is best effort, not a guaranteed city.
-2. If the primary is in Japan, prefer the account DO hint `apac-ne`; if near Singapore, prefer `apac-se`. For another location, measure before selecting. Keep these environment-specific choices in validated configuration, not repository/account hardcoding. The configuration/provisioning automation is still future work.
+1. For a new installation, create D1 with the `apac` location hint only under provisioning authorization; for the existing client database, reuse its recorded identity rather than creating another database. In either case, inspect primary-query metadata (`served_by_primary` and `served_by_colo`) to establish its actual serving location. A hint is best effort, not a guaranteed city.
+2. If the primary is in Japan, prefer the account DO hint `apac-ne`; if near Singapore, prefer `apac-se`. For another location, measure before selecting. Keep these environment-specific choices in validated configuration, not repository/account hardcoding. The validated target and shared `coordinatorStub` now apply this hint in source; provisioning and actual execution-location acceptance remain separate.
 3. Apply the chosen hint on the new account object's first creation/use. Leave frontend/entry Worker routing unchanged initially; Worker placement does not relocate the account DO. Do not rename or replace an existing object to move it without a separate plan preserving coordination, token and recovery state.
 4. Verify the DO's actual execution with Cloudflare GraphQL `durableObjectsInvocationsAdaptiveGroups` or `durableObjectsPeriodicGroups`, grouped by `objectId` and `coloCode`; record namespace/object identity and observation window. Incoming `request.cf.colo`, provider response edges and the requested hint are not execution-location proof. Missing analytics is inconclusive.
 5. Validate owner-operated checkout end to end, including provider timings, D1 round trips, queue waits and failures. Nearby D1 is an initial candidate-selection rule, not proof of the globally fastest placement or a 2–3-second checkout.
 
 <a id="br-030"></a>
 
-**BR-030** — This is a client setup strategy, not a deployed setting or authorization to provision/migrate resources. Existing developer placement evidence and its limits are retained in Part 2.
+**BR-030** — The source implements the configured first-use hint; it does not prove remote object placement or authorize new provisioning/migration. Preserve existing developer coordinator identity and placement. Evidence and limits belong to [Journey history](journey.md#part-2--dated-changes-and-evidence).
 
 ### Checkout placement experiment — waived
 

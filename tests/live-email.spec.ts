@@ -1890,7 +1890,20 @@ test("real API failed completed dismissal opens the first step and explicit retr
   page,
 }) => {
   let failDismissal = true;
-  const mechanism = await createBookingMechanism();
+  let recoveryFinished!: (result: { outcome: string; result: string }) => void;
+  const recovery = new Promise<{ outcome: string; result: string }>(
+    (resolve) => {
+      recoveryFinished = resolve;
+    },
+  );
+  const mechanism = await createBookingMechanism({
+    onLog: (message) => {
+      if (!message.startsWith("{")) return;
+      const event = JSON.parse(message);
+      if (event.event === "confirmation_trace" && event.boundary === "recovery")
+        recoveryFinished(event);
+    },
+  });
   const transport = await mechanismTransport(
     page,
     mechanism,
@@ -1920,6 +1933,10 @@ test("real API failed completed dismissal opens the first step and explicit retr
         mechanism.calls.filter((call) => call.body?.method === method),
       ).toHaveLength(0);
     expect((await mechanism.completePayment()).status).toBe(202);
+    // Dismissal starts with a completed receipt. Await the real alarm's commit
+    // before opening the page, avoiding unrelated browser polling during setup.
+    // The separate payment-recovery journey still covers the pending return.
+    expect(await recovery).toMatchObject({ outcome: "ok", result: "complete" });
     const savedConfirmation = page.waitForResponse(async (response) => {
       const path = new URL(response.url()).pathname;
       if (
