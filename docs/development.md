@@ -20,7 +20,7 @@ Start with [AGENTS](../AGENTS.md), [North Star](../NORTH_STAR.md) and [Progress]
 
 - [Business rules](business-rules.md#current-system-rules) define expected behavior and acceptance boundaries.
 - [Architecture](architecture/adr.md) and [system diagrams](architecture/diagram.md) explain runtime responsibilities.
-- [Code owners](code-owners.md) links each feature and business-rule group to its implementation.
+- [Code owners](code-owners/index.md) links each feature and business-rule group to its implementation.
 - [Versions](versions.md) lists configured tools and locked packages; run evidence records observed tool versions.
 - [Runbook](runbook.md) covers incidents, dependencies, monitoring, deployment and recovery.
 - [Admin](uat/admin.md), [Trainers](uat/trainers.md) and [Simulated-user](uat/simulated-user.md) worksheets guide owner-operated acceptance.
