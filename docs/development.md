@@ -18,7 +18,7 @@ All three routes converge on the same reviewed source and verification process. 
 
 Start with [AGENTS](../AGENTS.md), [North Star](../NORTH_STAR.md) and [Progress](../PROGRESS.md). Then follow the task-specific reading order in AGENTS:
 
-- [Business rules](service_contracts.md#part-1--current-system-rules) define expected behavior and acceptance boundaries.
+- [Business rules](business-rules.md#current-system-rules) define expected behavior and acceptance boundaries.
 - [Architecture](architecture/adr.md) and [system diagrams](architecture/diagram.md) explain runtime responsibilities.
 - [Code owners](code-owners.md) links each feature and business-rule group to its implementation.
 - [Versions](versions.md) lists configured tools and locked packages; run evidence records observed tool versions.
@@ -182,7 +182,7 @@ This is an explanatory summary of [AGENTS](../AGENTS.md), not a second rules aut
 - Preserve business-rule invariants, customer/privacy boundaries, accepted migrations and existing developer staging/coordinator identity.
 - Preserve unknown edits, worktrees and dependency symlinks. Use current manifests and approved scoped credentials; never expose secrets.
 - Keep meaningful checks strict. Investigate failures without skipped cases, relaxed inventories, forced clicks, blanket retries or longer timeouts to conceal defects.
-- Update the document that owns the information: Progress for evidence/status, Service Contracts for rules/decisions, Runbook for operations, code map for responsibility, versions generator for inventory.
+- Update the document that owns the information: Progress for evidence/status, Business rules for invariants, Domain operations and API contracts for service boundaries, Journey for dated decisions, Runbook for operations, code map for responsibility, versions generator for inventory.
 - Separate source completion, local checks, CI, merge, deployment and owner/provider acceptance. Browser and live-provider actions retain their stated owner/CI boundaries.
 
 For dependency changes, follow the [runbook procedure](runbook.md#3-dependency-maintenance-and-dependabot) and run `node scripts/versions.mjs write` so [versions.md](versions.md) stays current. Do not bypass a freshness failure or use `npm audit fix --force` as routine setup.
@@ -195,7 +195,7 @@ The Worker test runtime is pinned to Miniflare `5.20261023.0-beta`, matching Wra
 
 CI uses the official Playwright Noble image matching the locked Playwright version, with browsers/system libraries already installed. Node remains pinned by `.nvmrc`; the pinned setup-python action supplies Python 3.12 for installer checks. Update the image alongside Playwright when upgrading. This avoids repeated Ubuntu mirror downloads without changing test gates or job limits.
 
-`npm run dev` starts local development; `npm run build` creates `out/`; `npm run preview` serves that export locally. The default base path is `/SoccerBotStudioSG`; root hosting uses a separately verified empty-prefix build. Client provisioning and portability requirements live in [Service Contracts](service_contracts.md#deployment-migration-and-acceptance).
+`npm run dev` starts local development; `npm run build` creates `out/`; `npm run preview` serves that export locally. The default base path is `/SoccerBotStudioSG`; root hosting uses a separately verified empty-prefix build. Client provisioning and portability requirements live in [Business rules](business-rules.md#deployment-migration-and-acceptance).
 
 ## Verification commands
 

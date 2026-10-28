@@ -1,6 +1,6 @@
 # Current system diagram
 
-Current developer setup; client production migration remains pending. Dashed telemetry links are prepared but disabled/unattached. [Architecture decisions](adr.md) · [System rules](../service_contracts.md#part-1--current-system-rules).
+Current developer setup; client production migration remains pending. Dashed telemetry links are prepared but disabled/unattached. [Architecture decisions](adr.md) · [System rules](../business-rules.md#current-system-rules).
 
 ```mermaid
 flowchart TB

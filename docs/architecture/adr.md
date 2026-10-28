@@ -1,8 +1,8 @@
 # Architecture decision records
 
-Recorded: 28 October 2026. These records explain the current stack and its tradeoffs. **Status distinguishes implemented choices from prepared or proposed choices.** Rationale is reconstructed from the current code, constraints and [recorded contracts](../service_contracts.md); it is not a claim that every alternative was previously benchmarked or formally rejected. Alternatives below are contingency options for review, not authorised migrations or ready standby systems.
+Recorded: 28 October 2026. These records explain the current stack and its tradeoffs. **Status distinguishes implemented choices from prepared or proposed choices.** Rationale is reconstructed from the current code, constraints and [recorded contracts](../business-rules.md); it is not a claim that every alternative was previously benchmarked or formally rejected. Alternatives below are contingency options for review, not authorised migrations or ready standby systems.
 
-[System topology](diagram.md) shows the components; [code owners](../code-owners.md) maps implementation; [runbook](../runbook.md) owns operational recovery. Business rules remain in Service Contracts. Version pins belong to [versions.md](../versions.md), not this document. Amend a decision explicitly or add a superseding ADR when its assumptions change; preserve the rationale and evidence for the prior choice.
+[System topology](diagram.md) shows the components; [code owners](../code-owners.md) maps implementation; [runbook](../runbook.md) owns operational recovery. Business rules remain in the business-rules document. Version pins belong to [versions.md](../versions.md), not this document. Amend a decision explicitly or add a superseding ADR when its assumptions change; preserve the rationale and evidence for the prior choice.
 
 ## Context and decision drivers
 
@@ -37,7 +37,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 **Alternative / contingency.** React with Vite could simplify a static-only frontend, but requires route/build/export/test adaptation. A hosted Next.js server could support dynamic rendering but introduces an additional runtime, secrets and deployment surface. Neither can replace the backend authority checks. A cached static page is not a failover booking engine.
 
-**Owners/evidence.** [App routes](../../src/app), [service composition](../../src/services/index.ts), [Next config](../../next.config.ts), [export checks](../../scripts/check-export.mjs), [BR-003](../service_contracts.md#br-003), [BR-007](../service_contracts.md#br-007).
+**Owners/evidence.** [App routes](../../src/app), [service composition](../../src/services/index.ts), [Next config](../../next.config.ts), [export checks](../../scripts/check-export.mjs), [BR-003](../business-rules.md#br-003), [BR-007](../business-rules.md#br-007).
 
 ## ADR-002 — Cloudflare Worker with Static Assets
 
@@ -53,7 +53,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 **Alternative / contingency.** A regional container/Node service on AWS or another host could offer more runtime control and proximity to providers, at the cost of routing, scaling, patching and persistence operations. Moving the Worker API requires porting bindings, secret handling, cookies, scheduled work and state consistency—not merely changing a DNS target. The existing demo Pages site cannot transparently replace live checkout during an outage.
 
-**Owners/evidence.** [Worker entry](../../worker/index.ts), [bindings](../../worker/bindings.ts), [Worker config](../../wrangler.jsonc), [Pages adapter](../../worker/pages.ts), [BR-004](../service_contracts.md#br-004), [BR-029](../service_contracts.md#br-029).
+**Owners/evidence.** [Worker entry](../../worker/index.ts), [bindings](../../worker/bindings.ts), [Worker config](../../wrangler.jsonc), [Pages adapter](../../worker/pages.ts), [BR-004](../business-rules.md#br-004), [BR-029](../business-rules.md#br-029).
 
 ## ADR-003 — Account coordinator, D1 journal and DO SQLite
 
@@ -69,7 +69,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 **Alternative / contingency.** PostgreSQL with transactional claims and a queue/worker service is a plausible redesign; a managed queue alone does not prevent duplicate external effects. Redis-style locks without durable effects are insufficient. Any migration must preserve attempt IDs, leases/fences, booking/payment references and scheduled reconciliation, and prevent old/new writers from operating concurrently. Recreating/renaming the current DO is not a safe relocation or restore shortcut.
 
-**Owners/evidence.** [Coordinator](../../worker/coordinator.ts), [queue](../../worker/provider-queue.ts), [journal](../../worker/journal.ts), [payment journal](../../worker/hitpay-journal.ts), [token cache](../../worker/provider-token-cache.ts), [migrations](../../migrations), [BR-014–017](../service_contracts.md#br-014).
+**Owners/evidence.** [Coordinator](../../worker/coordinator.ts), [queue](../../worker/provider-queue.ts), [journal](../../worker/journal.ts), [payment journal](../../worker/hitpay-journal.ts), [token cache](../../worker/provider-token-cache.ts), [migrations](../../migrations), [BR-014–017](../business-rules.md#br-014).
 
 ## ADR-004 — SimplyBook and HitPay hosted payment
 
@@ -85,7 +85,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 **Alternative / contingency.** Another scheduling SaaS or a custom scheduling service would require migration of calendars, capacity, staff permissions, customers, bookings and invoice history. Another hosted payment provider requires new adapters, merchant onboarding, callback validation and accounting acceptance. Keep legacy pending/refund cases reconcilable during a provider transition. There is no implemented hot-swappable fallback provider; operator-assisted resolution is preferable to silently issuing a second charge through another service.
 
-**Owners/evidence.** [Native checkout](../../worker/native-checkout.ts), [provider transport](../../worker/provider-transport.ts), [provider normalization](../../worker/provider-normalization.ts), [HitPay recovery](../../worker/hitpay-recovery.ts), [BR-002](../service_contracts.md#br-002), [BR-007–013](../service_contracts.md#br-007). Client live merchant/mappings and owner acceptance remain separate from sandbox/CI evidence.
+**Owners/evidence.** [Native checkout](../../worker/native-checkout.ts), [provider transport](../../worker/provider-transport.ts), [provider normalization](../../worker/provider-normalization.ts), [HitPay recovery](../../worker/hitpay-recovery.ts), [BR-002](../business-rules.md#br-002), [BR-007–013](../business-rules.md#br-007). Client live merchant/mappings and owner acceptance remain separate from sandbox/CI evidence.
 
 ## ADR-005 — Email proof, Turnstile and server-side access state
 
@@ -101,7 +101,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 **Alternative / contingency.** A replacement transactional-email provider needs a reviewed delivery adapter, sender-domain authentication and challenge/idempotency acceptance. An identity platform introduces account migration and recovery semantics. Mail-provider failure should produce a clear recoverable flow; never bypass email proof or switch recipients to preserve conversion. Existing sessions remain governed by their current validity, not an outage exception.
 
-**Owners/evidence.** [Identity](../../worker/identity.ts), [delivery](../../worker/identity-delivery.ts), [remembered identity](../../worker/remembered-identity.ts), [access](../../worker/access.ts), [BR-003](../service_contracts.md#br-003).
+**Owners/evidence.** [Identity](../../worker/identity.ts), [delivery](../../worker/identity-delivery.ts), [remembered identity](../../worker/remembered-identity.ts), [access](../../worker/access.ts), [BR-003](../business-rules.md#br-003).
 
 ## ADR-006 — Sanitized diagnostics and central Grafana Tempo
 
@@ -117,7 +117,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 **Alternative / contingency.** Cloudflare-native diagnostics can support interim investigation within available retention/access. Another OTLP backend or a self-hosted collector may be viable with endpoint/auth/exporter changes and operational cost. The current endpoint allowlist does not support arbitrary receivers without code review. Logs absent from the export cannot be recovered by changing dashboards after the fact.
 
-**Owners/evidence.** [Diagnostics](../../worker/diagnostics.ts), [exporter](../../worker/telemetry.ts), [dashboard](../../observability/grafana-dashboard.json), [runbook signal dictionary](../runbook.md#4-monitoring-and-observability), [BR-018–020](../service_contracts.md#br-018).
+**Owners/evidence.** [Diagnostics](../../worker/diagnostics.ts), [exporter](../../worker/telemetry.ts), [dashboard](../../observability/grafana-dashboard.json), [runbook signal dictionary](../runbook.md#4-monitoring-and-observability), [BR-018–020](../business-rules.md#br-018).
 
 ## ADR-007 — Verified revisions and immutable release artifacts
 
@@ -133,7 +133,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 **Alternative / contingency.** Another CI system or self-hosted runners must preserve revision checks, isolation, test outcomes and artifact integrity. CI unavailability is not justification for an unverified local deployment. Normal rollback is a reviewed revert with fresh checks where schema-compatible; prior-artifact emergency restoration requires an approved rehearsed procedure. Neither reverses provider effects or database history.
 
-**Owners/evidence.** [Workflows](../../.github/workflows), [release packaging](../../scripts/prepare-developer-release.mjs), [target provenance](../../scripts/verified-target-run.mjs), [deployment](../../scripts/deploy-cloudflare.mjs), [BR-021](../service_contracts.md#br-021), [development guide](../development.md).
+**Owners/evidence.** [Workflows](../../.github/workflows), [release packaging](../../scripts/prepare-developer-release.mjs), [target provenance](../../scripts/verified-target-run.mjs), [deployment](../../scripts/deploy-cloudflare.mjs), [BR-021](../business-rules.md#br-021), [development guide](../development.md).
 
 ## ADR-008 — Managed custom hostnames with vendor-controlled DNS
 
@@ -149,7 +149,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 **Alternative / contingency.** A vendor-approved DNS/hosting account consolidation could enable a simpler supported Pages arrangement, but changes ownership assumptions. Another managed custom-domain host or a reverse proxy may meet the separation requirement after apex/TLS/cookie/API/renewal proof. A subdomain redirect is not equivalent to the required direct apex service. If the chosen design fails acceptance, keep the existing production DNS baseline while evaluating a supported alternative; do not improvise recurring manual certificates.
 
-**Owners/evidence.** [Production target](../../deployment/production.json), [deployment preflight](../../scripts/deploy-cloudflare.mjs), [hosting rules](../service_contracts.md#client-hosting-setup-prepared-not-deployed), [DNS runbook](../runbook.md#8-domain-dns-and-https).
+**Owners/evidence.** [Production target](../../deployment/production.json), [deployment preflight](../../scripts/deploy-cloudflare.mjs), [hosting rules](../business-rules.md#client-hosting-setup-prepared-not-deployed), [DNS runbook](../runbook.md#8-domain-dns-and-https).
 
 ## Scaling review and fallback readiness
 

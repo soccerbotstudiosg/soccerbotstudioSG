@@ -27,7 +27,8 @@ DELIVERY = 'SoccerBotStudioSG_Design_System_Local_2026-10-05'
 PLANNING_DELIVERY = 'SoccerBotStudioSG_Performance_Plan_Local_2026-10-05'
 PLANNING_DOCUMENTS = {
     'AGENTS.md', 'docs/architecture/adr.md',
-    'docs/service_contracts.md', 'docs/architecture/diagram.md',
+    'docs/business-rules.md', 'docs/api-contracts.md',
+    'docs/journey.md', 'docs/architecture/diagram.md',
 }
 PLANNING_OWNERS = PLANNING_DOCUMENTS | {
     'scripts/build-local-installer.py', 'scripts/local-installer.py',
@@ -57,14 +58,14 @@ def check_planning_documents(root, candidate):
     for name in PLANNING_DOCUMENTS:
         source = (candidate / name).read_text()
         guard.require(source.strip() and source.endswith('\n'), f'Empty or incomplete document: {name}')
-    rules = (candidate / 'docs/service_contracts.md').read_text()
+    rules = (candidate / 'docs/journey.md').read_text()
     counts = (4, 5, 6, 6, 5, 6, 4, 4, 4)
     expected = [f'M{major}.{minor}' for major, count in enumerate(counts, 1) for minor in range(1, count + 1)]
     actual = re.findall(r'^### (M[1-9]\.\d+) — ', rules, re.M)
     guard.require(actual == expected, 'Iteration plan must contain each of the 44 reviewed subiterations once, in order')
     for name in PLANNING_OWNERS - PLANNING_DOCUMENTS:
         ast.parse((candidate / name).read_text(), filename=name)
-    banner('PASS', 'PREFLIGHT — Architecture, Service Contracts, AGENTS, 44 ordered subiterations and Python syntax')
+    banner('PASS', 'PREFLIGHT — Architecture, Business rules, API contracts, Complete journey, AGENTS, 44 ordered subiterations and Python syntax')
 
 
 def verify_planning(root, run, receipt):

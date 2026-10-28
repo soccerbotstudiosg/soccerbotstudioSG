@@ -375,7 +375,7 @@ class PlanningTests(unittest.TestCase):
             path = self.repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('Document\n')
-        for missing in ('docs/architecture/diagram.md', 'docs/architecture/adr.md', 'docs/service_contracts.md'):
+        for missing in ('docs/architecture/diagram.md', 'docs/architecture/adr.md', 'docs/business-rules.md', 'docs/api-contracts.md', 'docs/journey.md'):
             path = self.repo / missing
             saved = path.read_text()
             path.unlink()
@@ -392,7 +392,7 @@ class PlanningTests(unittest.TestCase):
             path = self.repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('# fixture\n')
-        rules = self.repo / 'docs/service_contracts.md'
+        rules = self.repo / 'docs/journey.md'
         headings = [f'### M{major}.{minor} — fixture\n' for major, count in enumerate((4, 5, 6, 6, 5, 6, 4, 4, 4), 1) for minor in range(1, count + 1)]
         rules.write_text(''.join(headings))
         with redirect_stdout(io.StringIO()):

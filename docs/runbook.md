@@ -1,6 +1,6 @@
 # SoccerBot operations runbook
 
-Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Service Contracts](service_contracts.md) owns system rules; [Development guide](development.md#configuration) owns configuration reference. This document owns operational procedures.
+Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Business rules](business-rules.md) owns system rules; [Development guide](development.md#configuration) owns configuration reference. This document owns operational procedures.
 
 Navigation: [Ownership](#1-ownership-and-access) · [Routine checks](#2-routine-checks) · [Dependencies](#3-dependency-maintenance-and-dependabot) · [Grafana](#4-monitoring-and-observability) · [Incidents](#5-incident-response-and-recovery) · [Deployments](#6-deployments-and-rollback) · [Data recovery](#7-data-protection-and-restore) · [DNS/HTTPS](#8-domain-dns-and-https) · [Handover](#9-operational-records-and-handover).
 
