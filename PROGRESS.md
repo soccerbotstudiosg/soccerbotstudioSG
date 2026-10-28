@@ -2,9 +2,15 @@
 
 Updated 28 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
 
+## Active CI repair — PR116 checking-budget initialization
+
+Run [40706485933](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40706485933) failed one phone WebKit case after reading an uninitialized checking budget. Frontend/live-email and 74 other browser cases passed. The duplicate-tab test now waits for the initial confirmation request, which follows budget persistence, before capturing its baseline. Deadline/allowance assertions remain intact; no application behavior or timeouts changed. Original evidence and diagnosis are retained in [Journey](docs/journey.md#28-october-2026--pr116-checking-budget-test-initialization-repair).
+
+Leave-off: repair `cdef7e7` is pushed to PR116 and included in PR117; require fresh final-head CI. PR117 at `91539f2` independently passed all three gates in run 40714296582. Its prior green result predates this repair. Neither PR is merged by this task.
+
 ## Current task — data lifecycle draft before client clause mapping
 
-Owner requested a Markdown draft based on application behavior, then mapping to the client’s PDPA/privacy clauses before implementation. Branch: `docs/data-lifecycle-draft`, stacked on unmerged [PR116](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/116), head `b137a79`; application baseline remains verified main `dffb24a`.
+Owner requested a Markdown draft based on application behavior, then mapping to the client’s PDPA/privacy clauses before implementation. Branch: `docs/data-lifecycle-draft`, stacked on unmerged [PR116](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/116), head `cdef7e7`; application baseline remains verified main `dffb24a`.
 
 - Added [data-lifecycle.md](docs/data-lifecycle.md): lifecycle diagram, 18 inventory categories, source validity periods, actual narrow cleanup, provider/log/backup boundaries and a pending clause-mapping worksheet.
 - Reviewed all 35 migrations in an empty in-memory SQLite database and source storage/cleanup paths. No deployed data or account retention settings were inspected. Expiry, revocation and grant archival do not establish erasure; `retentionPreview` explicitly leaves cleanup disabled.
@@ -13,7 +19,7 @@ Owner requested a Markdown draft based on application behavior, then mapping to 
 
 **Validation scope:** Markdown links/anchors, formatting, source/policy and diff checks. Browser execution, provider acceptance and cleanup tests are not applicable evidence for this documentation-only change.
 
-**Leave-off:** publish a separate stacked draft PR; inspect final-head CI before claiming readiness. Review the worksheet with the client’s clauses before proposing implementation. PR116 contains the prior status/hosting reconciliation and code-owner/technical-behavior expansion and was still unmerged at this task’s checkpoint. Main/deployment receipts below do not establish acceptance of either documentation candidate.
+**Leave-off:** [PR117](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/117) is published as a stacked draft; inspect final-head CI before claiming readiness. Review the worksheet with the client’s clauses before proposing implementation. PR116 contains the prior status/hosting reconciliation and code-owner/technical-behavior expansion and was still unmerged at this task’s checkpoint. Main/deployment receipts below do not establish acceptance of either documentation candidate.
 
 ## Verified main and completed PR stack
 
