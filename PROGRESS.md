@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Continuous development guide — 28 October 2026 SGT
+
+Removed root README at the owner’s request. `docs/development.md` opens with a guidance-only disclaimer and covers local VS Code, Codex Cloud and ZIP-attached chat workflows, baseline/provenance, setup, testing, engineering expectations, GitHub publication and CI/deployment distinctions. Prior setup/configuration content retained; AGENTS remains authoritative. Current navigation and formatting references updated. No application or workflow behavior changed.
+
 ## Lowercase documentation paths — 28 October 2026 SGT
 
 All files and directories under `docs` now use lowercase paths, including `architecture/readme.md`, `service_contracts.md`, `code-owners.md`, `runbook.md` and the three `uat` worksheets. Updated local navigation, skill references, formatting globs and installer ownership checks; immutable external historical URLs retain their original casing. Root `AGENTS.md` remains standard uppercase. All local document links, source/policy checks and 30 installer tests passed.

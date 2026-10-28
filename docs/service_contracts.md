@@ -106,7 +106,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-021"></a>
 
-**BR-021** — Current main CI requires frontend, backend and live-email gates. The legacy main deployment remains in place until a reviewed switch to portable mode. The target scaffold adds separate manual staging and production workflows, distinct account credentials, exact-revision/target artifact verification and existing-resource preflight. Production uses an explicit manual workflow compatible with GitHub Free private repositories, not assumed paid environment protection. Client uploads remain closed; first upload may create only the configured Worker, after D1/Pages exist. It does not self-register foundation identity. Pending migrations are determined by D1's migration ledger, not a hardcoded developer migration/version checkpoint. The README owns configuration and operator steps. Automatic trusted PR staging, remote interrupted-install acceptance and client activation remain pending.
+**BR-021** — Current main CI requires frontend, backend and live-email gates. The legacy main deployment remains in place until a reviewed switch to portable mode. The target scaffold adds separate manual staging and production workflows, distinct account credentials, exact-revision/target artifact verification and existing-resource preflight. Production uses an explicit manual workflow compatible with GitHub Free private repositories, not assumed paid environment protection. Client uploads remain closed; first upload may create only the configured Worker, after D1/Pages exist. It does not self-register foundation identity. Pending migrations are determined by D1's migration ledger, not a hardcoded developer migration/version checkpoint. The [development guide](development.md) owns configuration; the [runbook](runbook.md) owns operator steps. Automatic trusted PR staging, remote interrupted-install acceptance and client activation remain pending.
 
 <a id="br-022"></a>
 
@@ -3644,3 +3644,7 @@ The owner also requested the generated version inventory at `docs/versions.md`; 
 ### 28 October 2026 — Standard agent filename restored
 
 Owner confirmed standard `AGENTS.md` after reviewing automatic discovery behavior. Retained the enhanced task routes and restored this exact filename across current links, local skill, formatting commands and installer ownership checks. Only one case variant exists. This supersedes the earlier filename decision.
+
+### 28 October 2026 — Continuous development guidance replaces root README
+
+Owner requested removal of the root README and a guidance-only `docs/development.md` covering local VS Code, Codex Cloud and ZIP-attached chat development. Existing setup/verification/configuration content is retained there, with GitHub publication, CI expectations, safe archive integration and guarded delivery guidance. AGENTS remains authoritative; current links and formatting commands use the new guide.
