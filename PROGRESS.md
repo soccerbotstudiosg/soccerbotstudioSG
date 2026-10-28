@@ -12,7 +12,9 @@ Original failed run [40665671472](https://github.com/LimYouSheng/SoccerBotStudio
 
 **Local evidence:** added isolated Worker regression verifies the automatic completion event precedes readable committed confirmation, repeat dismissal acknowledgements preserve the receipt, and booking/payment/accounting each occur once. Passed (1 test, zero failed/skipped), receipt `/tmp/pr115-recovery-regression.log`. Browser test lint, TypeScript and source checks passed. Static inspection of the saved trace used no browser. Final-head CI must establish tablet acceptance; the repair does not yet prove every CI timing issue resolved.
 
-**Leave-off:** publish this repair on PR115, inspect all final-head gates and preserve the original failed receipt. PR113 and PR114 are green on their last observed heads; all three PRs remain unmerged. Full CI remains enabled for documentation changes; any future classification design must preserve code/config/dependency gates and exact-artifact deployment requirements.
+**Latest CI:** run 40669492573 on `eda9dae` passed all 450 Worker tests in both backend/live-email jobs but failed the strict inventory comparison: the newly added test was omitted from `scripts/worker-test-inventory.json`. Frontend passed; browser verification did not run. Added only the missing title in its observed execution position; retained every existing entry and strict outcome checks. This is an authoring omission, not another runtime failure.
+
+**Leave-off:** publish the corrected inventory on PR115, inspect all final-head gates and preserve both failed receipts. PR113 and PR114 are green on their last observed heads; all three PRs remain unmerged. Full CI remains enabled for documentation changes; any future classification design must preserve code/config/dependency gates and exact-artifact deployment requirements.
 
 ## Operational documentation retained
 
