@@ -2,18 +2,18 @@
 
 Updated 28 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
 
-## Current task — status reconciliation and function-level behavior documentation
+## Current task — data lifecycle draft before client clause mapping
 
-Owner requested reconciliation of the completed PR/CI stack and the transfer-first domain decision, followed by the paused technical-behavior expansion. Branch: `docs/reconcile-and-technical-behavior`, based on verified main `dffb24a12aae68de4ee32d6e7477bf227b3f0c50`.
+Owner requested a Markdown draft based on application behavior, then mapping to the client’s PDPA/privacy clauses before implementation. Branch: `docs/data-lifecycle-draft`, stacked on unmerged [PR116](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/116), head `b137a79`; application baseline remains verified main `dffb24a`.
 
-- Reconcile current hosting intent across North Star, architecture, business rules, security, runbook, journey and Admin UAT. Preserve the earlier SaaS design as a prepared implementation pending reassessment, not an active ownership requirement.
-- Move the code-owner map to [docs/code-owners/index.md](docs/code-owners/index.md), preserving its existing diagrams and BR mapping, and update all incoming/relative links.
-- Add [technical-behavior.md](docs/code-owners/technical-behavior.md): named feature functions, behavior, guards, failures, recovery, diagrams, source/test links and a screenshot evidence checklist. No new browser screenshots were captured; owner/CI capture remains separate.
-- Documentation only. No manifest, application, workflow, DNS, registrar, secret or provider changes. Alert responders and destinations remain unassigned as requested.
+- Added [data-lifecycle.md](docs/data-lifecycle.md): lifecycle diagram, 18 inventory categories, source validity periods, actual narrow cleanup, provider/log/backup boundaries and a pending clause-mapping worksheet.
+- Reviewed all 35 migrations in an empty in-memory SQLite database and source storage/cleanup paths. No deployed data or account retention settings were inspected. Expiry, revocation and grant archival do not establish erasure; `retentionPreview` explicitly leaves cleanup disabled.
+- Linked the lifecycle owner from AGENTS, security and runbook. Corrected the security overview to place public display snapshots in Durable Object storage, not D1.
+- No retention duration approved, cleanup implemented, provider action taken or runtime changed. Client clauses, external settings and operational decisions remain pending; alert responders stay unassigned.
 
-**Local validation:** all local Markdown file/anchor links resolve; all 32 BR IDs, all 44 milestone IDs, the existing 15 code-owner diagrams and previous dated history are retained. Formatting, source checks and diff checks passed. Seven additional Mermaid diagrams describe the behavior paths; no browser rendering or screenshot capture was performed.
+**Validation scope:** Markdown links/anchors, formatting, source/policy and diff checks. Browser execution, provider acceptance and cleanup tests are not applicable evidence for this documentation-only change.
 
-**Leave-off:** publish a separate draft PR and inspect its final-head CI. This new PR is distinct from the completed PR111–115 stack; prior merge receipts do not establish acceptance of this candidate.
+**Leave-off:** publish a separate stacked draft PR; inspect final-head CI before claiming readiness. Review the worksheet with the client’s clauses before proposing implementation. PR116 contains the prior status/hosting reconciliation and code-owner/technical-behavior expansion and was still unmerged at this task’s checkpoint. Main/deployment receipts below do not establish acceptance of either documentation candidate.
 
 ## Verified main and completed PR stack
 

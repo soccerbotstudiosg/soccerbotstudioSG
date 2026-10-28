@@ -125,11 +125,11 @@ Provider credentials and webhook signing secrets have different uses and must be
 
 ## 7. Data, token encryption and retention
 
-D1 retains minimal access, attempts, grants, effect/payment/webhook/recovery evidence and display snapshots. The [migrations](../migrations) and application ownership checks preserve evidence needed for reconciliation. “Minimal” does not mean anonymous: contact and booking-associated records remain personal or sensitive operational data and require restricted access, retention decisions and secure recovery procedures.
+D1 retains access, identity/contact, attempts, grants and effect/payment/webhook/recovery evidence; public display snapshots are held in Durable Object storage. The [migrations](../migrations) and application ownership checks preserve evidence needed for reconciliation. These records are not anonymous: contact and booking-associated records remain personal or sensitive operational data and require restricted access, retention decisions and secure recovery procedures.
 
 The [provider token cache](../worker/provider-token-cache.ts) encrypts two token families in DO SQLite using AES-GCM with scoped authenticated metadata. Account/environment/credential identity, issuance and original expiry constrain restoration; ciphertext from another scope or invalid metadata is rejected. [Provider session](../worker/provider-session.ts) handles invalidation and replacement without turning cached tokens into customer authority. Do not describe this as application-level encryption of every D1 field: the explicit code-level encryption here covers provider tokens.
 
-No blanket retention/deletion or backup compliance claim is made. Restore capability, retention periods, approved RPO/RTO, encrypted backup access and a real restore drill still need recording for the selected accounts/plans. Financial uncertainty and audit evidence must not be erased by a cleanup job. See [data recovery runbook](runbook.md#7-data-protection-and-restore).
+No blanket retention/deletion or backup compliance claim is made. Restore capability, retention periods, approved RPO/RTO, encrypted backup access and a real restore drill still need recording for the selected accounts/plans. Financial uncertainty and audit evidence must not be erased by a cleanup job. See the [data lifecycle draft](data-lifecycle.md) for current storage/expiry behavior and pending clause mapping, and the [data recovery runbook](runbook.md#7-data-protection-and-restore) for restoration.
 
 ## 8. Availability and denial-of-service resistance
 

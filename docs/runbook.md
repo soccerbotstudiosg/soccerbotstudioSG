@@ -238,6 +238,8 @@ Rollback is **not an automated arbitrary historical-revision switch**. Productio
 
 D1 stores access/attempt/effect/payment/recovery evidence; the Durable Object separately stores coordination and encrypted token state. SimplyBook and HitPay hold their own authoritative records. A D1 backup alone is not a full system recovery point, and restoring application storage does not undo an external payment.
 
+The [data lifecycle draft](data-lifecycle.md) owns the source-based storage inventory, expiry versus deletion distinctions and pending client privacy-clause mapping. Its validity periods are not approved disposal periods; cleanup remains a separate reviewed implementation.
+
 ### Recovery targets and actual capability
 
 RPO is the maximum acceptable data-loss window; RTO is the time from incident declaration to safe service restoration. Neither is yet an agreed production commitment. Record measured recovery time separately from targets. Provider recovery entitlements/retention must be verified for the selected account/plan; this document does not assume a particular platform backup window or automatic DO restore facility.
