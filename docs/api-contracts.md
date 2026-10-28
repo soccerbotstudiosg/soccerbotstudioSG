@@ -217,3 +217,193 @@ The account coordinator serializes workflows; queue priorities/capacity and sepa
 ## 9. Verification ownership
 
 [Worker tests](../worker/tests) cover access, identity, catalogue, combined hold, provider writes, recovery and signature boundaries with isolated synthetic providers. [Service tests](../src/services) cover parsing and browser adapter failure mapping. [Customer browser tests](../tests/customer.spec.ts) and [synthetic checkout tests](../tests/experiment.spec.ts) cover UI state/navigation under owner/CI browser execution. UAT is separated into [Admin](uat/admin.md), [Trainers](uat/trainers.md) and [Simulated user](uat/simulated-user.md). Green synthetic tests are not evidence of client configuration, live provider capacity or deployed acceptance.
+
+## 10. Worked requests, responses and recovery decisions
+
+These examples are fictional documentation fixtures, not captured traffic or instructions to send requests. IDs, names, amounts and timestamps illustrate the contract; they do not authorize a customer/provider operation. Cookies, bot tokens, signatures and payment URLs are deliberately omitted. Examples show relevant headers only; common response headers from section 2 still apply. All timestamps are epoch milliseconds unless a header says otherwise. Non-GET browser requests require the configured same-origin Origin, and JSON requests require `Content-Type: application/json`.
+
+### A. Create guest access, then request email verification
+
+`POST /api/access` has **no body**. A newly issued capability returns HTTP 201:
+
+```json
+{ "access": "guest" }
+```
+
+The server sets the protected access cookie; the browser does not read or manufacture its value. Reusing authentic existing access returns the same body with HTTP 200. `POST /api/identity/challenges` then accepts `{email,botToken}` only with a real validated bot token and permitted delivery scope. Illustrative HTTP 200 reply:
+
+```json
+{
+  "challengeId": "11111111-1111-4111-8111-111111111111",
+  "expiresAt": 1800000600000,
+  "resendAfter": 1800000060000
+}
+```
+
+No email or provider-customer lookup result is returned by this wire response. The browser adapter attaches its already-normalized requested email to its local challenge object. A verification request binds that challenge, the same email, six-digit code and remember choice; code values are not included in documentation fixtures. Wrong/expired verification does not fall back to unverified profile lookup. See [identity owner](../worker/identity.ts).
+
+### B. Prepare a reviewed booking intent
+
+Illustrative JSON for `POST /api/booking/prepare`:
+
+```json
+{
+  "key": "22222222-2222-4222-8222-222222222222",
+  "contact": {
+    "name": "Example Customer",
+    "email": "customer@example.com",
+    "phone": "+6590000000",
+    "contactMethod": "email",
+    "academy": ""
+  },
+  "accepted": true,
+  "sessions": [
+    {
+      "serviceId": "1",
+      "instructorId": "2",
+      "startMs": 1800014400000,
+      "players": 1,
+      "totalMinor": 8800
+    }
+  ]
+}
+```
+
+The IDs/time/price must come from the configured current selection and pass provider/domain checks; these fixture values are not a real available slot or price quote. The same intent/key must be preserved for an uncertain result. Illustrative HTTP 201 preparation reply:
+
+```json
+{
+  "attemptId": "22222222-2222-4222-8222-222222222222",
+  "state": "prepared"
+}
+```
+
+Prepared authority is not a booking, a held studio slot, payment or confirmation. For the combined checkout route, add `holding:true`, use the same key as the UUID path and require `accepted:true`; that path can create external effects and is not equivalent to a preview/read.
+
+### C. Definitive request rejection versus uncertain checkout
+
+`POST /api/booking/hitpay/:attemptId` with `{ "accepted": false }` fails before payment dispatch at that route, HTTP 400:
+
+```json
+{ "error": "payment_consent_required" }
+```
+
+Correcting consent still requires the original owned eligible attempt; this error does not authorize a new financial claim. For combined checkout, an authenticated rejection readback may classify a now-unavailable selection. Example HTTP 409:
+
+```json
+{ "error": "checkout_selection_unavailable" }
+```
+
+Return to editable selection/Review according to the adapter's classification. Do not generalize **every** 409 as “nothing happened.” If rejected preparation readback cannot establish a safe no-start outcome, the combined route can return HTTP 409:
+
+```json
+{ "error": "checkout_recovery_required" }
+```
+
+Retain the original attempt/key and protected recovery state. An HTTP 503 `temporarily_unavailable`, response loss or browser abort is also not proof of no provider effect. See [rejected readback](../worker/customer-authority.ts) and [combined composition](../worker/coordinator.ts).
+
+### D. Checkout context without payment authority
+
+`GET /api/attempts/22222222-2222-4222-8222-222222222222/checkout`, HTTP 200:
+
+```json
+{
+  "attemptId": "22222222-2222-4222-8222-222222222222",
+  "mode": "live",
+  "checkout": { "state": "unavailable" },
+  "summary": {
+    "players": 1,
+    "totalMinor": 8800,
+    "currency": "SGD",
+    "sessions": [{ "startMs": 1800014400000, "players": 1 }]
+  },
+  "checking": {
+    "deadlineMs": 1800000780000,
+    "nextCheckMs": 1800000002000,
+    "pollAfterMs": 2000,
+    "holdExpiresAtMs": 1800000900000
+  }
+}
+```
+
+Show protected summary/checking state, keep checkout unavailable and do not fabricate a payment URL. A later valid available context can expose its saved URL, but merely opening that URL does not confirm payment. The original server clocks remain in force across refreshes/tabs.
+
+### E. Paid, but booking confirmation still pending
+
+`GET /api/attempts/:attemptId/confirmation` can return HTTP 200:
+
+```json
+{
+  "status": "pending",
+  "reason": "payment_received_booking_pending"
+}
+```
+
+Show payment received/booking pending and continue only permitted checking/recovery. Do not offer another payment or claim a confirmed receipt. Once current evidence establishes both payment and valid booking, the decision is:
+
+```json
+{ "status": "confirmed", "reason": "verified" }
+```
+
+This is a status decision, not the receipt payload. Read `/receipt` under current authority before exports. HTTP 409 `{ "error": "receipt_not_verified" }` means the required receipt evidence is not presently established; a prior UI success snapshot cannot bypass it.
+
+### F. Shared checking limit and expired access
+
+If the caller checks too early, HTTP 429 may include:
+
+```http
+X-Checking-Deadline: 1800000780000
+X-Next-Check: 1800000010000
+X-Checks-Remaining: 99
+```
+
+```json
+{ "error": "checking_throttled" }
+```
+
+Wait for the permitted next check using the existing checking owner; do not introduce an independent retry loop. When the shared allowance is exhausted, `X-Checks-Remaining: 0` accompanies `checking_limit_reached`. Neither case authorizes a replacement attempt or new deadline. If access is expired/revoked, HTTP 401 can return:
+
+```json
+{ "error": "access_denied" }
+```
+
+Hide protected information and follow identity recovery. Do not substitute another cookie, saved customer identity or local receipt. [Confirmation adapter](../src/services/confirmation.ts) maps HTTP denial/throttling separately from successful JSON decisions.
+
+### G. Signed webhook acknowledgement and repeatable dismissal
+
+An authenticated, scoped provider event can receive HTTP 202:
+
+```json
+{ "received": true }
+```
+
+This acknowledges retained delivery; it does not promise final reconciliation, email delivery or paid booking. Duplicate delivery must not duplicate accounting. Invalid signatures are rejected; never retry a signature failure by removing verification.
+
+After authoritative completion, bodyless `POST /api/attempts/:attemptId/dismiss` returns HTTP 200:
+
+```json
+{ "dismissed": true }
+```
+
+A lost acknowledgement can be reconciled/repeated under the same authority. Dismissal is not deletion of financial evidence and does not itself start a new booking.
+
+### State transition interpretation
+
+```mermaid
+flowchart TD
+  A[Reviewed intent] --> B[Prepared authority]
+  B --> C[Durably claimed external effect]
+  C --> D[Validated booking association]
+  D --> E[Saved payment request]
+  E --> F[Authoritative payment verification]
+  F --> G{Valid paid booking?}
+  G -->|Yes| H[Confirmed decision and authorized receipt]
+  G -->|Not yet| I[Payment received, booking pending]
+  C -->|Response lost or uncertain| R[Retain original attempt and recover]
+  E -->|Response lost or uncertain| R
+  R --> F
+  I --> F
+  H --> J[Repeatable completed dismissal]
+```
+
+This is a cross-operation interpretation, not a replacement for individual persisted state enums. Every edge requires the owning server operation and its guards. HTTP success, an adapter state such as `associated`, and a confirmed booking are different facts.
