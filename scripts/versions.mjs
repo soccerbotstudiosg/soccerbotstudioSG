@@ -110,9 +110,14 @@ Actions verification summaries show observed Node, npm and Python versions, chec
 `,
   { parser: "markdown" },
 );
-if (mode === "write") writeFileSync("Versions.md", document);
-if (mode === "check" && readFileSync("Versions.md", "utf8") !== document)
-  throw new Error("Versions.md is stale: run node scripts/versions.mjs write");
+if (mode === "write") {
+  mkdirSync("docs", { recursive: true });
+  writeFileSync("docs/versions.md", document);
+}
+if (mode === "check" && readFileSync("docs/versions.md", "utf8") !== document)
+  throw new Error(
+    "docs/versions.md is stale: run node scripts/versions.mjs write",
+  );
 if (mode === "report") {
   const observed = {
     Node: process.version,

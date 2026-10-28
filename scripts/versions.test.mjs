@@ -39,10 +39,13 @@ test("inventory detects stale toolchain data and regenerates deterministically",
   const dir = fixture();
   try {
     assert.equal(run(dir, "write").status, 0);
-    const initial = readFileSync(path.join(dir, "Versions.md"), "utf8");
+    const initial = readFileSync(path.join(dir, "docs/versions.md"), "utf8");
     assert.equal(run(dir, "check").status, 0);
     assert.equal(run(dir, "write").status, 0);
-    assert.equal(readFileSync(path.join(dir, "Versions.md"), "utf8"), initial);
+    assert.equal(
+      readFileSync(path.join(dir, "docs/versions.md"), "utf8"),
+      initial,
+    );
     writeFileSync(path.join(dir, ".nvmrc"), "24.20.0\n");
     assert.notEqual(run(dir, "check").status, 0);
     assert.equal(run(dir, "write").status, 0);

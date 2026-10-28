@@ -1,8 +1,8 @@
 # SoccerBotStudioSG current progress
 
-## Root task directory — 28 October 2026 SGT
+## Agent instruction routing — 28 October 2026 SGT
 
-Root README is now a simple task/read-first/read-next/destination table. Existing setup, verification and configuration details moved to `docs/Development.md`, preserving their content and ownership. AGENTS, Runbook and current Architecture/Service Contracts references updated; historical entries retained. Local links and formatting checked; no application, workflow or provider behavior changed.
+Owner corrected the README-directory request: restored README setup/configuration and enhanced the existing agent document map with task-specific reading order. Canonical instructions now use `Agents.md`; The old uppercase filename is removed to avoid a case-insensitive filesystem collision; local skill discovery points to `Agents.md`. Local skill and README links follow the canonical casing. No second directory or Development guide is retained. Generated version inventory moved to `docs/versions.md`; generator, tests and current links use the new path.
 
 ## Operations runbook draft — 28 October 2026 SGT
 
@@ -18,7 +18,7 @@ Added `docs/Code-Owners.md`: overarching responsibility map, feature-level expan
 
 ## Version visibility — 28 October 2026 SGT
 
-Prepared on merged PR108 (`ee4f37324701c3788e9dc9d6c9fefb32dc3281fe`): root `Versions.md` lists configured Node/npm/Python and all locked direct/transitive dependency paths, generated from existing manifests. README links to it. Full/code verification rejects stale generated content; dependency PRs must regenerate it with their updates. Verification runs emit observed Node/npm/Python, checked-out revision, job/target and lock hash with full JSON inventory into existing evidence artifacts and Actions summaries. This records verification inputs, not deployed runtime versions. No workflow permissions, deployment gates, provider configuration or production resources changed. Local reporting observed Python 3.12.14; CI patch version remains run-specific. All 158 tooling tests (including regeneration/report regressions), source/policy, formatting and affected lint checks passed; final-commit CI remains required.
+Prepared on merged PR108 (`ee4f37324701c3788e9dc9d6c9fefb32dc3281fe`): `docs/versions.md` lists configured Node/npm/Python and all locked direct/transitive dependency paths, generated from existing manifests. README links to it. Full/code verification rejects stale generated content; dependency PRs must regenerate it with their updates. Verification runs emit observed Node/npm/Python, checked-out revision, job/target and lock hash with full JSON inventory into existing evidence artifacts and Actions summaries. This records verification inputs, not deployed runtime versions. No workflow permissions, deployment gates, provider configuration or production resources changed. Local reporting observed Python 3.12.14; CI patch version remains run-specific. All 158 tooling tests (including regeneration/report regressions), source/policy, formatting and affected lint checks passed; final-commit CI remains required.
 
 ## Dependency vulnerability remediation — 27 October 2026 SGT
 

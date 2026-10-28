@@ -106,7 +106,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-021"></a>
 
-**BR-021** — Current main CI requires frontend, backend and live-email gates. The legacy main deployment remains in place until a reviewed switch to portable mode. The target scaffold adds separate manual staging and production workflows, distinct account credentials, exact-revision/target artifact verification and existing-resource preflight. Production uses an explicit manual workflow compatible with GitHub Free private repositories, not assumed paid environment protection. Client uploads remain closed; first upload may create only the configured Worker, after D1/Pages exist. It does not self-register foundation identity. Pending migrations are determined by D1's migration ledger, not a hardcoded developer migration/version checkpoint. The [Development guide](Development.md) owns configuration; the [Runbook](Runbook.md) owns operator steps. Automatic trusted PR staging, remote interrupted-install acceptance and client activation remain pending.
+**BR-021** — Current main CI requires frontend, backend and live-email gates. The legacy main deployment remains in place until a reviewed switch to portable mode. The target scaffold adds separate manual staging and production workflows, distinct account credentials, exact-revision/target artifact verification and existing-resource preflight. Production uses an explicit manual workflow compatible with GitHub Free private repositories, not assumed paid environment protection. Client uploads remain closed; first upload may create only the configured Worker, after D1/Pages exist. It does not self-register foundation identity. Pending migrations are determined by D1's migration ledger, not a hardcoded developer migration/version checkpoint. The README owns configuration and operator steps. Automatic trusted PR staging, remote interrupted-install acceptance and client activation remain pending.
 
 <a id="br-022"></a>
 
@@ -3635,6 +3635,8 @@ Owner requested the FitfinityReact role-worksheet format adapted to SoccerBot, e
 
 Owner requested dependency/observability guidance moved out of README and a complete runbook with Grafana signal interpretation and potential fixes. `docs/Runbook.md` owns these procedures; source-derived event/panel dictionaries distinguish Tempo diagnostics from raw logs, sampled observations from traffic counts and prepared telemetry from activation. Source review also identifies current developer-only producer/service filtering and absent production environment labels. Operational alerts, restore objectives, provider recovery and client deployment acceptance remain evidence-dependent; no operational action was executed by drafting the runbook.
 
-### 28 October 2026 — Root README task directory
+### 28 October 2026 — Agent instructions own task routing
 
-Owner requested the main repository README as a simple linked task-routing table. Setup, verification command and configuration details moved intact to `docs/Development.md`; README now routes debugging, development, CI, dependencies, deployments, incidents, monitoring, DNS, UAT and handover to their document owners. AGENTS and current operational references point to the new configuration owner. Historical entries remain historical.
+Owner replaced the README-directory request with an enhancement to the existing agent document map. `Agents.md` is the canonical cased instruction owner and includes ordered task routes; The previous uppercase file is removed to preserve case-insensitive checkout compatibility; the local engineering skill points to `Agents.md`. README retains setup/configuration; no parallel Development guide remains.
+
+The owner also requested the generated version inventory at `docs/versions.md`; its generator, freshness check, tests and current document links follow that path.

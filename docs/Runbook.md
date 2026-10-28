@@ -1,6 +1,6 @@
 # SoccerBot operations runbook
 
-Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Service Contracts](SERVICE_CONTRACTS.md) owns system rules; [Development guide](Development.md#configuration) owns configuration reference. This document owns operational procedures.
+Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Service Contracts](SERVICE_CONTRACTS.md) owns system rules; [README](../README.md#configuration) owns configuration reference. This document owns operational procedures.
 
 Navigation: [Ownership](#1-ownership-and-access) · [Routine checks](#2-routine-checks) · [Dependencies](#3-dependency-maintenance-and-dependabot) · [Grafana](#4-monitoring-and-observability) · [Incidents](#5-incident-response-and-recovery) · [Deployments](#6-deployments-and-rollback) · [Data recovery](#7-data-protection-and-restore) · [DNS/HTTPS](#8-domain-dns-and-https) · [Handover](#9-operational-records-and-handover).
 
@@ -63,14 +63,14 @@ GitHub schedules npm and GitHub Actions checks for Monday 09:00 Asia/Singapore; 
 
 1. Read the PR Files changed and upstream release/advisory notes. Identify direct/transitive packages, compatibility changes and runtime versus tooling exposure. SHA-pinned Actions still need review of the upstream commit change.
 2. Update package and lockfile together. Coordinate Wrangler/Miniflare, compiler/lint peers, Playwright/container versions and Node types where necessary; no blanket major upgrades or historical runtime downgrades.
-3. Run `node scripts/versions.mjs write` and commit `Versions.md` with the update. A Dependabot PR that changes locked versions will otherwise fail the freshness check. This is deliberate: the repository snapshot must match the reviewed lockfile. A trusted maintainer refreshes the bot branch or incorporates the update into a reviewed remediation branch; CI never pushes generated files to main.
+3. Run `node scripts/versions.mjs write` and commit `docs/versions.md` with the update. A Dependabot PR that changes locked versions will otherwise fail the freshness check. This is deliberate: the repository snapshot must match the reviewed lockfile. A trusted maintainer refreshes the bot branch or incorporates the update into a reviewed remediation branch; CI never pushes generated files to main.
 4. Run relevant local checks under AGENTS, then require all three final-head CI gates: frontend, backend and live-email. Owner/CI operates browsers. Preserve original failure evidence; diagnose incompatibility instead of weakening tests, suppressing alerts or retrying blindly.
 5. Review and explicitly authorise merge. Main verifies its merged revision independently. Confirm the deployment receipt and `/api/health` revision before reporting a deployed patch.
 6. Recheck GitHub Open Dependabot alerts and the audit report. Closed-as-fixed differs from dismissed. GitHub counts advisories; npm may count affected packages/meta-vulnerabilities, so counts need not match. Capture both results and the deployed revision.
 
 `npm audit --audit-level=high` blocks full/code verification on high/critical advisories and audit-service errors. Lower-severity alerts still require triage. If a combined reviewed PR supersedes bot PRs, check each diff and close only covered duplicates. A failed update is an unresolved proposal, not a change already applied to production. Do not merge a failing compatibility update simply because an advisory exists; patch the incompatibility or document an approved temporary mitigation and deadline.
 
-Version lookup: [Versions.md](../Versions.md) shows configured tools and the entire locked inventory. Actions Summary and `versions.json`/`versions.md` in each verification artifact show observed tools and checkout revision. Python is a verification tool; its CI series can remain 3.12 while the observed patch version changes. Cloudflare controls the production Worker runtime; local workerd is the test runtime, not its exact production version.
+Version lookup: [versions.md](versions.md) shows configured tools and the entire locked inventory. Actions Summary and `versions.json`/`versions.md` in each verification artifact show observed tools and checkout revision. Python is a verification tool; its CI series can remain 3.12 while the observed patch version changes. Cloudflare controls the production Worker runtime; local workerd is the test runtime, not its exact production version.
 
 ## 4. Monitoring and observability
 
@@ -202,7 +202,7 @@ Portable deployment procedure (when configured/enabled):
 
 1. Validate the explicit [target](../deployment) and account/resource identity. Keep production closed while required origin/sitekey/foundation/provider setup is incomplete.
 2. Run **Verify deployment target** for the selected target/revision. Confirm all three gates on that revision; retain sealed artifact and receipts.
-3. Reserve the staging candidate when required. On main, dispatch **Deploy staging** or **Deploy production** with exact 40-character `revision` and successful `verify_run_id`. Repository variables must enable the intended workflow and `DEPLOYMENT_MODE=portable`; see [Development setup](Development.md#portable-deployment-scaffold).
+3. Reserve the staging candidate when required. On main, dispatch **Deploy staging** or **Deploy production** with exact 40-character `revision` and successful `verify_run_id`. Repository variables must enable the intended workflow and `DEPLOYMENT_MODE=portable`; see [README setup](../README.md#portable-deployment-scaffold).
 4. The verifier checks provenance, target and gates; deployment checks resources, migration state, artifact hashes, upload and health. Do not bypass a rejected preflight.
 5. Retain `deployment.json`, observed revision, provider access state and routing evidence. Verification/deployment artifacts currently retain for 14 days: archive approved recovery evidence securely before expiry.
 6. At repository cutover, disable deployment from the former repository before enabling competing ownership. Copying code does not copy security settings or secrets.

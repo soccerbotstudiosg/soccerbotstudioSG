@@ -269,10 +269,10 @@ flowchart TB
   Frontend --> Tooling["scripts/*.test.mjs + installer Python tests"]
   Worker --> Runtime["worker/tests/* · D1 / DO / intercepted provider fixtures"]
   Frontend --> Receipt["verify-test-results.mjs + test inventories<br/>Exact outcomes and evidence checks"]
-  Frontend --> Versions["versions.mjs · Versions.md freshness + observed tool report"]
+  Frontend --> Versions["versions.mjs · docs/versions.md freshness + observed tool report"]
 ```
 
-[verify.mjs](../scripts/verify.mjs) selects code/browser/full scope; [verify-worker.mjs](../scripts/verify-worker.mjs) owns isolated Worker verification. [check-source.mjs](../scripts/check-source.mjs), [check-policy.mjs](../scripts/check-policy.mjs) and [check-pages-policy.mjs](../scripts/check-pages-policy.mjs) enforce source/configuration/workflow boundaries. [verify-test-results.mjs](../scripts/verify-test-results.mjs) checks evidence against inventories. Browser tests remain owner/CI-operated; simulated providers do not establish live-provider acceptance. [Versions.md](../Versions.md) is the separate dependency snapshot.
+[verify.mjs](../scripts/verify.mjs) selects code/browser/full scope; [verify-worker.mjs](../scripts/verify-worker.mjs) owns isolated Worker verification. [check-source.mjs](../scripts/check-source.mjs), [check-policy.mjs](../scripts/check-policy.mjs) and [check-pages-policy.mjs](../scripts/check-pages-policy.mjs) enforce source/configuration/workflow boundaries. [verify-test-results.mjs](../scripts/verify-test-results.mjs) checks evidence against inventories. Browser tests remain owner/CI-operated; simulated providers do not establish live-provider acceptance. [versions.md](versions.md) is the separate dependency snapshot.
 
 ## 11. Business rule to owner index
 
