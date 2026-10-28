@@ -4,6 +4,9 @@
 
 Separate ADR branch based on PR111 replaces `docs/architecture/readme.md` with `adr.md`: eight decisions cover frontend, Worker hosting, coordinator/storage, booking/payment providers, identity, telemetry, release engineering and vendor-managed DNS. Each records status, evidence-based rationale, pros/cons, scaling triggers and alternatives; no fallback is claimed as deployed standby. Links and installer planning ownership follow the replacement. Documentation records architecture rationale without authorising migrations or changing runtime behavior.
 
+## Engineering entry point cleanup — 28 October 2026 SGT
+
+Removed the redundant local skill wrapper, its document-map entry and formatting globs. AGENTS.md remains the automatically discovered instruction owner; ZIP guidance includes it directly. The separately installed cloud skill cannot be edited with this session’s read-only skill tools, so its stale snapshot remains explicitly superseded by current repository instructions.
 
 ## Continuous development guide — 28 October 2026 SGT
 
