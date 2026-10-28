@@ -26,8 +26,8 @@ NODE_VERSION = '24.19.0'
 DELIVERY = 'SoccerBotStudioSG_Design_System_Local_2026-10-05'
 PLANNING_DELIVERY = 'SoccerBotStudioSG_Performance_Plan_Local_2026-10-05'
 PLANNING_DOCUMENTS = {
-    'AGENTS.md', 'docs/Architecture/README.md',
-    'docs/SERVICE_CONTRACTS.md', 'docs/Architecture/diagram.md',
+    'AGENTS.md', 'docs/architecture/readme.md',
+    'docs/service_contracts.md', 'docs/architecture/diagram.md',
 }
 PLANNING_OWNERS = PLANNING_DOCUMENTS | {
     'scripts/build-local-installer.py', 'scripts/local-installer.py',
@@ -57,7 +57,7 @@ def check_planning_documents(root, candidate):
     for name in PLANNING_DOCUMENTS:
         source = (candidate / name).read_text()
         guard.require(source.strip() and source.endswith('\n'), f'Empty or incomplete document: {name}')
-    rules = (candidate / 'docs/SERVICE_CONTRACTS.md').read_text()
+    rules = (candidate / 'docs/service_contracts.md').read_text()
     counts = (4, 5, 6, 6, 5, 6, 4, 4, 4)
     expected = [f'M{major}.{minor}' for major, count in enumerate(counts, 1) for minor in range(1, count + 1)]
     actual = re.findall(r'^### (M[1-9]\.\d+) — ', rules, re.M)
