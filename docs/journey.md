@@ -3619,3 +3619,7 @@ Owner authorized merge when eligible. PR111 merged as `cb33dec4102d2b9cb4a3219c9
 ### 28 October 2026 — Security infrastructure documented
 
 Added security.md with a top-level Mermaid trust-boundary diagram, asset/threat map, identity/access, environment validation, financial effects/recovery, webhook/provider boundaries, token/data controls, bounded availability, supply-chain protections and observability/operator responsibilities. Current source controls are distinguished from pending client/domain/Grafana/MFA/restore acceptance and proposed future layers. A prioritized adoption matrix records rationale and acceptance evidence. Linked from AGENTS and the Runbook; no security setting, credential, runtime or provider state changed.
+
+### 28 October 2026 — PR114 concurrent response lifetime repair
+
+Preserved failure run 40659464431/job 122718693323: competing-customer checkout test tried to parse an already-consumed response. A minimal Miniflare/Undici forced-GC experiment reproduced cancellation of the original response’s shared unread stream before caller consumption. Changed three concurrent checkout tests to consume each response as it arrives before joining results; retained original HTTP/booking/financial assertions, concurrency and timeouts. No runtime or provider behavior changed. All three affected tests passed together and the immediate-consumption GC comparison passed; source/Worker checks, lint and formatting passed. Final-head CI remains required.

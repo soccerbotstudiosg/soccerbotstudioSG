@@ -2,6 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createBookingMechanism } from "./booking-mechanism-fixture.mjs";
 
+/** Consume each checkout response before waiting for competing requests. */
+async function checkoutResult(pending, expectedStatus) {
+  const response = await pending;
+  // Miniflare wraps an Undici response's stream; leaving it unread while a
+  // peer request finishes lets the original response's GC finalizer cancel it.
+  const body = await response.text();
+  if (expectedStatus !== undefined)
+    assert.equal(response.status, expectedStatus, body);
+  return JSON.parse(body);
+}
+
 async function customer(m) {
   const access = await m.mf.dispatchFetch(m.origin + "/api/access", {
     method: "POST",
@@ -56,11 +67,8 @@ test("combined hold performs one preflight and preserves immutable identity acro
       .bind(Date.now() + 300000)
       .run();
     c.input.contact.contactMethod = "sms";
-    const responses = await Promise.all([c.send(), c.send()]);
-    for (const response of responses)
-      assert.equal(response.status, 200, await response.clone().text());
     const results = await Promise.all(
-      responses.map((response) => response.json()),
+      [c.send(), c.send()].map((pending) => checkoutResult(pending, 200)),
     );
     assert.ok(results.some((result) => result.state === "associated"));
     const timing = await m.db
@@ -345,9 +353,8 @@ test("combined hold serializes competing customers and rejects the second slot w
   try {
     const first = await customer(m),
       second = await customer(m);
-    const responses = await Promise.all([first.send(), second.send()]);
     const results = await Promise.all(
-      responses.map((response) => response.json()),
+      [first.send(), second.send()].map((pending) => checkoutResult(pending)),
     );
     assert.equal(
       results.filter((result) => result.state === "associated").length,
@@ -2937,8 +2944,9 @@ test("five-call fresh snapshots cannot duplicate checkout across overlapping req
         headers: c.headers,
         body: JSON.stringify({ ...c.input, accepted: true }),
       });
-    const results = await Promise.all([send(), send()]);
-    const bodies = await Promise.all(results.map((r) => r.json()));
+    const bodies = await Promise.all(
+      [send(), send()].map((pending) => checkoutResult(pending)),
+    );
     assert.ok(bodies.some((r) => r.paymentAvailable === true));
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
