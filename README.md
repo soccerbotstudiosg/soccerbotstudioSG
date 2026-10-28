@@ -2,6 +2,8 @@
 
 Development entry point for the SoccerBotStudioSG customer booking website. See [AGENTS](AGENTS.md#authority-and-document-ownership) for the document map and engineering instructions.
 
+[Versions](Versions.md) lists the configured toolchain and every locked dependency. Each Actions verification run also records observed tool versions in its summary and evidence artifact.
+
 ## Development setup
 
 Use Node/npm pinned by `.nvmrc` and `package.json`, Python 3.11+ and Git. On initial setup, install the reviewed lockfile with `npm ci`; routine work reuses matching dependencies and browser caches. Browser dependencies are installed deliberately by the owner or CI.

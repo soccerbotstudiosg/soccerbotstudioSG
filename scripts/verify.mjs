@@ -93,6 +93,14 @@ const commands =
         ["unit-receipt", "node", "scripts/verify-test-results.mjs", "unit"],
         ["build", "npm", "run", "build"],
       ];
+if (mode !== "browser")
+  commands.unshift([
+    "versions-current",
+    "node",
+    "scripts/versions.mjs",
+    "check",
+  ]);
+commands.unshift(["versions", "node", "scripts/versions.mjs", "report"]);
 commands.push(["export", "node", "scripts/check-export.mjs"]);
 if (mode !== "code")
   commands.push(

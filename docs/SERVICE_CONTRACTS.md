@@ -3552,3 +3552,7 @@ Owner requested remediation after the dependency audit. Update Next.js and its l
 ### 27 October 2026 — Security updates and remediation integrated with dependency maintenance
 
 Owner requested version updates, Dependabot alerts and security updates together. The YAML now explicitly separates scheduled version updates from minor/patch npm security-update grouping, preserving individual major/tooling fixes and existing CI/deployment authority. Repository-level Dependency graph, alerts and automatic security-update settings need separate confirmation in both repositories; configuration copying alone does not enable them. Current audit findings and activation evidence are owned by Progress, with the operational workflow in README. Failed compatibility gates require a reviewed fix or mitigation, not automatic advisory dismissal or weakened verification. No dependency upgrades are included in this configuration change.
+
+### 28 October 2026 — Repository version inventory
+
+Owner requested a standalone Versions file in the repository root. Generate `Versions.md` from toolchain declarations and the complete npm lock inventory, preserving nested paths and optional/development labels. Verification rejects stale documentation and emits observed tools with checkout revision and lock hash into existing evidence artifacts and Actions summaries. Configured Python series and observed patch version are distinct; verification inventory does not establish production deployment. No automated documentation commits or elevated workflow permissions are introduced.

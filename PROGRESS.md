@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Version visibility — 28 October 2026 SGT
+
+Prepared on merged PR108 (`ee4f37324701c3788e9dc9d6c9fefb32dc3281fe`): root `Versions.md` lists configured Node/npm/Python and all locked direct/transitive dependency paths, generated from existing manifests. README links to it. Full/code verification rejects stale generated content; dependency PRs must regenerate it with their updates. Verification runs emit observed Node/npm/Python, checked-out revision, job/target and lock hash with full JSON inventory into existing evidence artifacts and Actions summaries. This records verification inputs, not deployed runtime versions. No workflow permissions, deployment gates, provider configuration or production resources changed. Local reporting observed Python 3.12.14; CI patch version remains run-specific. All 158 tooling tests (including regeneration/report regressions), source/policy, formatting and affected lint checks passed; final-commit CI remains required.
+
 ## Dependency vulnerability remediation — 27 October 2026 SGT
 
 Prepared on main `c166d73cc6968914753cb3f6480a0d33a567edfa`: Next.js/eslint-config-next 16.4.3, Zod 4.6.7, Wrangler 4.153.0 and Miniflare 5.20261023.0-beta. Wrangler depends on that same Miniflare beta, which uses patched Sharp 0.35.5 and Undici 7.30.1 with workerd 1.20261023.1. Refresh compatible locked DOMPurify to 3.4.17, Vite to 8.3.5 and the DOM-test Undici copy to 8.12.3. Preserve TypeScript 6.0.3, ESLint 9 and Playwright 1.58.2; no forced update, override or runtime downgrade. Update only the reviewed Miniflare prerelease pin in the existing policy guard.
