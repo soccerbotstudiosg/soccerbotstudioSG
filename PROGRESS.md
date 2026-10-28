@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Root task directory — 28 October 2026 SGT
+
+Root README is now a simple task/read-first/read-next/destination table. Existing setup, verification and configuration details moved to `docs/Development.md`, preserving their content and ownership. AGENTS, Runbook and current Architecture/Service Contracts references updated; historical entries retained. Local links and formatting checked; no application, workflow or provider behavior changed.
+
 ## Operations runbook draft — 28 October 2026 SGT
 
 Added `docs/Runbook.md` and moved dependency maintenance/monitoring prose out of README into its operational owner. Documents scheduled/security Dependabot behavior, version refresh, remediation and deployment closure; six allowlisted Tempo diagnostic events, all existing panels, token/export result dictionaries, sampling/gaps, proposed alerts and symptom-based investigation. Source inspection confirms exporter disabled and hardcoded to `soccerbot-dev`, without configurable production/environment labels; production mapping and ingestion acceptance remain pending. Includes roles, routine checks, provider incidents, verified release/revert recovery, backups/restore prerequisites, DNS/HTTPS and handover records. No alerts, telemetry, credentials, DNS or provider resources were changed.

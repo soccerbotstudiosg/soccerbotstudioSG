@@ -1,6 +1,6 @@
 # SoccerBot operations runbook
 
-Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Service Contracts](SERVICE_CONTRACTS.md) owns system rules; [README](../README.md#configuration) owns configuration reference. This document owns operational procedures.
+Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Service Contracts](SERVICE_CONTRACTS.md) owns system rules; [Development guide](Development.md#configuration) owns configuration reference. This document owns operational procedures.
 
 Navigation: [Ownership](#1-ownership-and-access) · [Routine checks](#2-routine-checks) · [Dependencies](#3-dependency-maintenance-and-dependabot) · [Grafana](#4-monitoring-and-observability) · [Incidents](#5-incident-response-and-recovery) · [Deployments](#6-deployments-and-rollback) · [Data recovery](#7-data-protection-and-restore) · [DNS/HTTPS](#8-domain-dns-and-https) · [Handover](#9-operational-records-and-handover).
 
@@ -202,7 +202,7 @@ Portable deployment procedure (when configured/enabled):
 
 1. Validate the explicit [target](../deployment) and account/resource identity. Keep production closed while required origin/sitekey/foundation/provider setup is incomplete.
 2. Run **Verify deployment target** for the selected target/revision. Confirm all three gates on that revision; retain sealed artifact and receipts.
-3. Reserve the staging candidate when required. On main, dispatch **Deploy staging** or **Deploy production** with exact 40-character `revision` and successful `verify_run_id`. Repository variables must enable the intended workflow and `DEPLOYMENT_MODE=portable`; see [README setup](../README.md#portable-deployment-scaffold).
+3. Reserve the staging candidate when required. On main, dispatch **Deploy staging** or **Deploy production** with exact 40-character `revision` and successful `verify_run_id`. Repository variables must enable the intended workflow and `DEPLOYMENT_MODE=portable`; see [Development setup](Development.md#portable-deployment-scaffold).
 4. The verifier checks provenance, target and gates; deployment checks resources, migration state, artifact hashes, upload and health. Do not bypass a rejected preflight.
 5. Retain `deployment.json`, observed revision, provider access state and routing evidence. Verification/deployment artifacts currently retain for 14 days: archive approved recovery evidence securely before expiry.
 6. At repository cutover, disable deployment from the former repository before enabling competing ownership. Copying code does not copy security settings or secrets.

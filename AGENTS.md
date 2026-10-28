@@ -6,7 +6,8 @@ This file is the sole owner of repository engineering instructions. User instruc
 
 | File                                                         | Unique purpose                                                                            |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| [README](README.md)                                          | Development prerequisites, configuration and command reference.                           |
+| [README](README.md)                                          | Task directory and document reading order.                                                |
+| [Development guide](docs/Development.md)                     | Development prerequisites, configuration and command reference.                           |
 | [AGENTS](AGENTS.md)                                          | Engineering workflow, coding conventions, verification and action boundaries.             |
 | [Local skill](.agents/skills/soccerbot-engineering/SKILL.md) | Discover and enter this repository's instructions.                                        |
 | [Runbook](docs/Runbook.md)                                   | Dependency maintenance, observability interpretation and operational recovery procedures. |
@@ -26,7 +27,7 @@ Use one-line JSDoc/TSDoc summaries (`/** ... */`) for major TypeScript/JavaScrip
 
 ## Verify and publish
 
-After every logical change or repair, search affected components, services, Worker/browser tests, fixtures and inventories. Update obsolete assumptions without weakening their purpose, then run meaningful affected checks using the [command reference](README.md#verification-commands). Never add retries, sleeps, forced clicks, skipped cases, looser timeouts or reduced inventories to conceal failures. Preserve the first failed receipt and diagnose it.
+After every logical change or repair, search affected components, services, Worker/browser tests, fixtures and inventories. Update obsolete assumptions without weakening their purpose, then run meaningful affected checks using the [command reference](docs/Development.md#verification-commands). Never add retries, sleeps, forced clicks, skipped cases, looser timeouts or reduced inventories to conceal failures. Preserve the first failed receipt and diagnose it.
 
 Owner/CI operates browsers and physical devices: no assistant Playwright, screenshots, `npm run verify`, `verify:browser` or browser-running installers. Simulations do not establish provider or production acceptance. Report source changes, local verification, CI, merge, deployment and owner/provider acceptance separately.
 
@@ -36,6 +37,6 @@ Never merge, auto-merge, push main, deploy or change protection without applicab
 
 ## Execution environment and local delivery
 
-Follow README for tool versions and configuration. Preserve inherited network proxy/CA settings; use supported permissions, never disable TLS or bypass the proxy. Check credential presence without printing values. Worker tests use isolated workerd/D1/DO with intercepted synthetic providers; test authorization does not permit live outbound calls. Local port 4173 is not a public preview; do not claim a preview URL without evidence.
+Follow the Development guide for tool versions and configuration. Preserve inherited network proxy/CA settings; use supported permissions, never disable TLS or bypass the proxy. Check credential presence without printing values. Worker tests use isolated workerd/D1/DO with intercepted synthetic providers; test authorization does not permit live outbound calls. Local port 4173 is not a public preview; do not claim a preview URL without evidence.
 
 Routine cloud source work needs no Mac installer. If delivering one, use `scripts/build-local-installer.py`, `local-installer.py` and `guarded-update.py`. Under one repository lock, validate baseline/candidate bytes, inventory, paths/case and receipt hashes; preserve external backups and failure receipts. Planning scope accepts only documentation/approved delivery tooling and never runs Node or browsers; application delivery retains all applicable gates. Never execute historical bundled shells against current checkouts. Verify final bytes, hash, filename and links before delivery.
