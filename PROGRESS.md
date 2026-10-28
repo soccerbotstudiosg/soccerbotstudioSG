@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Role-based UAT worksheets — 28 October 2026 SGT
+
+Prepared `docs/UAT` using the owner-selected FitfinityReact worksheet format: run metadata and Case / What to do / What should happen / Result / Remarks tables. SoccerBot-specific Customer (27), Admin (19), Trainer (15) and Owner (16) cases cover 77 checks, including SimplyBook staff scheduling, shared capacity, invoice/payment reconciliation and notifications. Rule links reference the canonical BR IDs. Results remain blank; no provider/browser actions were performed. README owns prerequisites, evidence recording and closure. All local file links, rule anchors and case ID uniqueness checked; documentation formatting passed. This is UAT preparation, not a new acceptance claim.
+
 ## Code ownership map — 28 October 2026 SGT
 
 Added `docs/Code-Owners.md`: overarching responsibility map, feature-level expansions and deeper booking/domain/payment/verification diagrams linked to existing source owners. Distinguishes responsibility arrows from execution flow, browser state from server authority, D1 from DO storage, demo composition from live integration and prepared delivery/telemetry from activation. README and Architecture link to this navigation owner. Added 32 stable BR rule-group IDs to existing Service Contracts paragraphs and a complete rule-to-owner index in the map; retained rule text, heading anchors, milestone IDs and history. All local file links and rule mappings checked; formatting and source/policy checks passed. Documentation only; no application or deployment behavior changed.

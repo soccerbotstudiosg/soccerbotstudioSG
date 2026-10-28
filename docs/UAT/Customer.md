@@ -1,0 +1,82 @@
+# Customer — SoccerBot acceptance worksheet
+
+| Test session                                                       | Fill in |
+| ------------------------------------------------------------------ | ------- |
+| Tester / date (Singapore time)                                     |         |
+| Website URL / environment                                          |         |
+| Deployed commit / verification run                                 |         |
+| SimplyBook company / staff role (no passwords)                     |         |
+| HitPay sandbox or approved live merchant                           |         |
+| Designated test customer / receiving inbox                         |         |
+| Device / browser                                                   |         |
+| Partner for coordinated checks                                     |         |
+| Test service / instructor / dates / booking and invoice references |         |
+
+Use the organiser-confirmed deployed environment and designated test records. Complete the [run prerequisites](README.md#before-testing) first. Write **Pass / Fail / Blocked / Not tested** in Result; leave it blank until checked. Record actual outcomes, evidence links, reference numbers and delays in Remarks. A previous CI pass does not prefill this worksheet. Mark missing permissions, integration or prepared examples **Blocked** and record why; do not switch to demo mode to obtain a pass.
+
+Owner/testers operate browsers and provider dashboards. Only authorised people perform the specifically agreed test bookings, payments, notifications or administrative changes. The assistant does not execute them. Use approved sandbox/test fixtures; any production transaction or disruptive change requires its own arranged owner procedure. Do not change device time, reset shared data or expose secrets/customer details in evidence.
+
+## Access, email and saved details
+
+Rules: [BR-003](../SERVICE_CONTRACTS.md#br-003), [BR-004](../SERVICE_CONTRACTS.md#br-004). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+
+| Case    | What to do                                                                                                                    | What should happen                                                                                                                         | Result | Remarks |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
+| CUS-001 | Open the website in a fresh browser. Browse dates before verifying an email.                                                  | Public display is available as configured; private saved details are not exposed.                                                          |        |         |
+| CUS-002 | Use the designated inbox to request and enter an email code. Test an organiser-prepared wrong, expired and already-used code. | Only a valid current code establishes identity. Errors are clear and private records do not appear for invalid proof.                      |        |         |
+| CUS-003 | Complete email verification with Remember me selected. Close and reopen the browser within the permitted lifetime.            | Eligible identity is restored; the correct saved details appear without revealing another account.                                         |        |         |
+| CUS-004 | Repeat with Remember me unticked in a fresh browser.                                                                          | No persistent remembered identity is created; required verification returns after the active session ends.                                 |        |         |
+| CUS-005 | Verify the same test identity on two devices. Use Sign out all devices, then refresh both devices and use Back/Forward.       | Both old sessions and remembered access lose authority; protected details cannot be recovered by navigation.                               |        |         |
+| CUS-006 | After all-device sign-out, complete a fresh email verification with Remember me selected. Repeat separately with it unticked. | Both fresh verification paths work; previously revoked sessions stay revoked.                                                              |        |         |
+| CUS-007 | Exercise all three account actions: Manage saved contact, Use another email, and Sign out all devices.                        | Each action opens the intended flow; Use another email clears the previous account context and opens email entry.                          |        |         |
+| CUS-008 | Edit saved details, cancel/back once, then save valid changes. Return to booking options and refresh.                         | Cancel does not save. Successful save returns to booking options and restores the saved values; errors retain a recoverable editing state. |        |         |
+| CUS-009 | Try blank/invalid contact fields, then valid values; use an organiser-prepared identity-expiry case while editing.            | Invalid values are explained. Expired authority requires verification without showing stale protected information.                         |        |         |
+
+## Calendar, selection and review
+
+Rules: [BR-001](../SERVICE_CONTRACTS.md#br-001), [BR-002](../SERVICE_CONTRACTS.md#br-002), [BR-006](../SERVICE_CONTRACTS.md#br-006), [BR-007](../SERVICE_CONTRACTS.md#br-007). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+
+| Case    | What to do                                                                                                                    | What should happen                                                                                                                               | Result | Remarks |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
+| CUS-010 | Compare displayed services, instructors, duration, price and opening hours with the Admin-approved SimplyBook setup.          | The configured service and eligible staff agree; currency and totals are correct. Record discrepancies rather than using historical chat values. |        |         |
+| CUS-011 | Browse months and dates, select sessions, change instructor, go Back/Forward and refresh.                                     | Selection and navigation remain coherent; unavailable choices are not invented and stale responses do not overwrite newer choices.               |        |         |
+| CUS-012 | Use organiser-prepared dates just inside/outside the four-hour cutoff, including an exactly eligible boundary when practical. | The server enforces the cutoff. Mark an exact boundary Blocked if it cannot be exercised reliably; do not alter device time.                     |        |         |
+| CUS-013 | Select the minimum/maximum permitted players and an invalid value; select multiple permitted sessions.                        | Accepted player count is 1–4; per-session and total prices agree with the approved setup.                                                        |        |         |
+| CUS-014 | Review a booking, edit details and go back before final submission. Ask Admin to inspect the designated records.              | Review alone creates no booking/payment. Changes remain visible and consent is required at the intended step.                                    |        |         |
+| CUS-015 | With Admin, arrange for a displayed test slot to become unavailable before submission.                                        | The conflict is clearly reported without duplicate booking/payment; availability can be refreshed under the original outcome rules.              |        |         |
+
+## Hosted payment, return and confirmation
+
+Rules: [BR-007](../SERVICE_CONTRACTS.md#br-007), [BR-008](../SERVICE_CONTRACTS.md#br-008), [BR-010](../SERVICE_CONTRACTS.md#br-010), [BR-011](../SERVICE_CONTRACTS.md#br-011), [BR-012](../SERVICE_CONTRACTS.md#br-012), [BR-013](../SERVICE_CONTRACTS.md#br-013). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+
+| Case    | What to do                                                                                                                               | What should happen                                                                                                                                                | Result | Remarks |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
+| CUS-016 | Complete one approved single-session booking and sandbox payment. Return from HitPay; ask Admin to inspect booking, invoice and payment. | The same attempt reaches confirmed only after authoritative payment and booking evidence agree. Amount, currency and references match.                            |        |         |
+| CUS-017 | Complete an approved multi-session checkout and ask Admin to check every session and invoice association.                                | Every requested session belongs to the intended checkout; no omitted or duplicate session/payment exists.                                                         |        |         |
+| CUS-018 | During one arranged checkout, double-click once and refresh/return to the pending attempt.                                               | The existing attempt is recovered; no extra booking or hosted payment is created.                                                                                 |        |         |
+| CUS-019 | Leave hosted payment without paying, return to the website and later reopen the saved handoff while still permitted.                     | Unpaid is not shown as confirmed; the same eligible payment is reused without extending its original window.                                                      |        |         |
+| CUS-020 | Use an arranged unpaid example to observe payment expiry, checking expiry and the hold timeout.                                          | The distinct configured deadlines are respected; a refresh does not restart them. Timeout alone is not presented as proof of financial settlement.                |        |         |
+| CUS-021 | With support, observe a prepared delayed-payment/reconciliation case and a prepared late-settlement case.                                | Pending, payment-received and confirmed states reflect evidence; there is no invented confirmation or automatic replay. Mark Blocked if fixtures are unavailable. |        |         |
+| CUS-022 | On confirmed booking, download PDF and calendar files. Refresh, go Back/Forward, dismiss and return.                                     | Files match authorised booking details and Singapore times; confirmation remains stable and dismissal does not cancel the booking.                                |        |         |
+| CUS-023 | Open a supplied other-customer receipt/confirmation link from the wrong test identity.                                                   | No other customer details or usable booking authority are disclosed.                                                                                              |        |         |
+| CUS-024 | Check actual identity email and booking notification in the designated inbox after the approved journey.                                 | Identity email and SimplyBook booking notification reach the intended recipient with correct links/details; no unexplained duplicate notice.                      |        |         |
+
+## Devices, navigation and response time
+
+Rules: [BR-013](../SERVICE_CONTRACTS.md#br-013), [BR-018](../SERVICE_CONTRACTS.md#br-018). See [code owners](../Code-Owners.md#11-business-rule-to-owner-index).
+
+| Case    | What to do                                                                                                                 | What should happen                                                                                                                | Result | Remarks |
+| ------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
+| CUS-025 | Repeat the key journey on desktop Chrome, iPhone Safari and Android Chrome where available; record each device separately. | Controls, dialogs, dates and payment return are usable. Missing devices remain Not tested.                                        |        |         |
+| CUS-026 | Use keyboard-only navigation, open the mobile keyboard, rotate, switch apps and return during details/review.              | Focus, labels and errors are clear; no trapped scroll or lost usable draft.                                                       |        |         |
+| CUS-027 | Measure first/repeated calendar load, checkout and confirmation. Try permitted Back/Cancel during a delay.                 | Progress and outcome are understandable; record seconds and disruptive delays without claiming a fixed unverified latency target. |        |         |
+
+## Session outcome
+
+| Decision                                         | Fill in |
+| ------------------------------------------------ | ------- |
+| Passed / Failed / Blocked / Not tested counts    |         |
+| Defect links and retest case IDs                 |         |
+| Evidence location (redacted)                     |         |
+| Tester signature / date                          |         |
+| Owner decision / accepted exceptions / follow-up |         |

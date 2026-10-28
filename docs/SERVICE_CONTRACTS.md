@@ -3626,3 +3626,7 @@ Owner requested a standalone Versions file in the repository root. Generate `Ver
 ### 28 October 2026 — Feature ownership diagrams and rule identifiers
 
 Owner requested recursive Mermaid code-ownership diagrams and numbered business rules. `docs/Code-Owners.md` owns feature-to-file navigation and the rule-to-owner index; Part 1 retains rule authority with stable BR-001 through BR-032 identifiers for the existing rule groups. Existing rule text, heading anchors and milestone IDs are preserved. Implemented feature responsibility is distinct from test evidence and client deployment status. Demo adapters are identified only where current service composition selects them.
+
+### 28 October 2026 — Role-based UAT preparation
+
+Owner requested the FitfinityReact role-worksheet format adapted to SoccerBot, explicitly including SimplyBook Admin operations and Trainer schedule entry. `docs/UAT` now provides Customer, Admin, Trainer and Owner worksheets with blank results and rule/owner references. Existing provider permissions and approved test accounts govern execution; no new staff portal, production transaction authority or acceptance result is introduced.
