@@ -21,3 +21,5 @@
 **Handover and releases.** Preserve the existing staging Worker, D1 data and Durable Object identity; configure client resources and validate first-install/rerun behavior before UAT. Once the client repository controls both targets, disable deployment from the old repository. Deploy the exact artifact verified for each environment: frontend build-time settings such as Turnstile may require separately verified builds from the same revision. Keep migrations backward compatible with ongoing attempts; code rollback does not reverse database or provider effects. These are planned delivery relationships, not configured approval gates or a production-readiness claim; [Service Contracts](../SERVICE_CONTRACTS.md#deployment-migration-and-acceptance) owns release safeguards.
 
 For a recursive feature-to-file navigation map, see [Code owners and feature map](../Code-Owners.md).
+
+The [Operations runbook](../Runbook.md) owns monitoring interpretation, dependency maintenance and recovery procedures, including current telemetry activation limits.

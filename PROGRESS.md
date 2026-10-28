@@ -1,5 +1,9 @@
 # SoccerBotStudioSG current progress
 
+## Operations runbook draft — 28 October 2026 SGT
+
+Added `docs/Runbook.md` and moved dependency maintenance/monitoring prose out of README into its operational owner. Documents scheduled/security Dependabot behavior, version refresh, remediation and deployment closure; six allowlisted Tempo diagnostic events, all existing panels, token/export result dictionaries, sampling/gaps, proposed alerts and symptom-based investigation. Source inspection confirms exporter disabled and hardcoded to `soccerbot-dev`, without configurable production/environment labels; production mapping and ingestion acceptance remain pending. Includes roles, routine checks, provider incidents, verified release/revert recovery, backups/restore prerequisites, DNS/HTTPS and handover records. No alerts, telemetry, credentials, DNS or provider resources were changed.
+
 ## Role-based UAT worksheets — 28 October 2026 SGT
 
 Prepared `docs/UAT` using the owner-selected FitfinityReact worksheet format: run metadata and Case / What to do / What should happen / Result / Remarks tables. The requested three worksheets—Simulated user (27), Admin (37) and Trainers (15)—cover 79 checks, including SimplyBook staff scheduling, shared capacity, invoice/payment reconciliation and notifications, plus explicit HitPay merchant access, payment records, callbacks, refunds and settlement-report inspection, and read-only Cloudflare domain/DNS/HTTPS/renewal/rollback checks. Rule links reference the canonical BR IDs. Results remain blank; no provider/browser actions were performed. Each worksheet includes its own prerequisites and evidence instructions; there is no UAT README or Owner worksheet. All local file links, rule anchors and case ID uniqueness checked; documentation formatting passed. This is UAT preparation, not a new acceptance claim.

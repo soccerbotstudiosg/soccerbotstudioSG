@@ -3630,3 +3630,7 @@ Owner requested recursive Mermaid code-ownership diagrams and numbered business 
 ### 28 October 2026 — Role-based UAT preparation
 
 Owner requested the FitfinityReact role-worksheet format adapted to SoccerBot, explicitly including SimplyBook Admin operations and Trainer schedule entry. `docs/UAT` provides only Admin, Trainers and Simulated-User worksheets with blank results and rule/owner references, following the owner’s scope correction. Shared instructions are embedded in each sheet; there is no UAT README or Owner sheet. Existing provider permissions and approved test accounts govern execution; no new staff portal, production transaction authority or acceptance result is introduced.
+
+### 28 October 2026 — Operational runbook drafted
+
+Owner requested dependency/observability guidance moved out of README and a complete runbook with Grafana signal interpretation and potential fixes. `docs/Runbook.md` owns these procedures; source-derived event/panel dictionaries distinguish Tempo diagnostics from raw logs, sampled observations from traffic counts and prepared telemetry from activation. Source review also identifies current developer-only producer/service filtering and absent production environment labels. Operational alerts, restore objectives, provider recovery and client deployment acceptance remain evidence-dependent; no operational action was executed by drafting the runbook.
