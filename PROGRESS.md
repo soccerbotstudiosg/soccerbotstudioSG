@@ -2,7 +2,7 @@
 
 ## Role-based UAT worksheets — 28 October 2026 SGT
 
-Prepared `docs/UAT` using the owner-selected FitfinityReact worksheet format: run metadata and Case / What to do / What should happen / Result / Remarks tables. The requested three worksheets—Simulated user (27), Admin (19) and Trainers (15)—cover 61 checks, including SimplyBook staff scheduling, shared capacity, invoice/payment reconciliation and notifications. Rule links reference the canonical BR IDs. Results remain blank; no provider/browser actions were performed. Each worksheet includes its own prerequisites and evidence instructions; there is no UAT README or Owner worksheet. All local file links, rule anchors and case ID uniqueness checked; documentation formatting passed. This is UAT preparation, not a new acceptance claim.
+Prepared `docs/UAT` using the owner-selected FitfinityReact worksheet format: run metadata and Case / What to do / What should happen / Result / Remarks tables. The requested three worksheets—Simulated user (27), Admin (29) and Trainers (15)—cover 71 checks, including SimplyBook staff scheduling, shared capacity, invoice/payment reconciliation and notifications, plus explicit HitPay merchant access, payment records, callbacks, refunds and settlement-report inspection. Rule links reference the canonical BR IDs. Results remain blank; no provider/browser actions were performed. Each worksheet includes its own prerequisites and evidence instructions; there is no UAT README or Owner worksheet. All local file links, rule anchors and case ID uniqueness checked; documentation formatting passed. This is UAT preparation, not a new acceptance claim.
 
 ## Code ownership map — 28 October 2026 SGT
 
