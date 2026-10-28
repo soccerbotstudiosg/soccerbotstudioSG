@@ -3640,3 +3640,7 @@ Owner requested dependency/observability guidance moved out of README and a comp
 Owner replaced the README-directory request with an enhancement to the existing agent document map. `Agents.md` is the canonical cased instruction owner and includes ordered task routes; The previous uppercase file is removed to preserve case-insensitive checkout compatibility; the local engineering skill points to `Agents.md`. README retains setup/configuration; no parallel Development guide remains.
 
 The owner also requested the generated version inventory at `docs/versions.md`; its generator, freshness check, tests and current document links follow that path.
+
+### 28 October 2026 — Standard agent filename restored
+
+Owner confirmed standard `AGENTS.md` after reviewing automatic discovery behavior. Retained the enhanced task routes and restored this exact filename across current links, local skill, formatting commands and installer ownership checks. Only one case variant exists. This supersedes the earlier filename decision.

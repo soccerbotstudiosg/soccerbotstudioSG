@@ -1,6 +1,6 @@
 # SoccerBotStudioSG
 
-Development entry point for the SoccerBotStudioSG customer booking website. See [Agents](Agents.md#authority-and-document-ownership) for the document map and engineering instructions.
+Development entry point for the SoccerBotStudioSG customer booking website. See [Agents](AGENTS.md#authority-and-document-ownership) for the document map and engineering instructions.
 
 [Versions](docs/versions.md) lists the configured toolchain and every locked dependency. Each Actions verification run also records observed tool versions in its summary and evidence artifact.
 

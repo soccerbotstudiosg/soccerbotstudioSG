@@ -319,7 +319,7 @@ class PlanningTests(unittest.TestCase):
 
     def planning_manifest(self):
         candidate = {name: 'same' for name in delivery.PLANNING_OWNERS}
-        baseline = {**candidate, 'Agents.md': 'old'}
+        baseline = {**candidate, 'AGENTS.md': 'old'}
         value = {'scope': 'planning', 'updates': [{'baseline': baseline, 'candidate': candidate, 'deletions': []}]}
         delivery.save_json(self.manifest, value)
         return value
@@ -333,12 +333,12 @@ class PlanningTests(unittest.TestCase):
 
     def test_planning_scope_rejects_deletion_or_missing_owner(self):
         value = self.planning_manifest()
-        value['updates'][0]['deletions'] = ['Agents.md']
+        value['updates'][0]['deletions'] = ['AGENTS.md']
         delivery.save_json(self.manifest, value)
         with self.assertRaisesRegex(RuntimeError, 'Planning scope permits'):
             delivery.delivery_scope(self.manifest)
         value['updates'][0]['deletions'] = []
-        del value['updates'][0]['candidate']['Agents.md']
+        del value['updates'][0]['candidate']['AGENTS.md']
         delivery.save_json(self.manifest, value)
         with self.assertRaisesRegex(RuntimeError, 'Missing canonical'):
             delivery.delivery_scope(self.manifest)

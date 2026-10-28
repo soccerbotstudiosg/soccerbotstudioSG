@@ -2,7 +2,7 @@
 
 ## Agent instruction routing — 28 October 2026 SGT
 
-Owner corrected the README-directory request: restored README setup/configuration and enhanced the existing agent document map with task-specific reading order. Canonical instructions now use `Agents.md`; The old uppercase filename is removed to avoid a case-insensitive filesystem collision; local skill discovery points to `Agents.md`. Local skill and README links follow the canonical casing. No second directory or Development guide is retained. Generated version inventory moved to `docs/versions.md`; generator, tests and current links use the new path.
+Owner corrected the README-directory request: restored README setup/configuration and enhanced the existing agent document map with task-specific reading order. Canonical instructions use standard `AGENTS.md` for automatic tool discovery, following the owner’s final naming decision. Only one casing exists; skill discovery, README links, formatting commands and installer checks use `AGENTS.md`. No second directory or Development guide is retained. Generated version inventory moved to `docs/versions.md`; generator, tests and current links use the new path.
 
 ## Operations runbook draft — 28 October 2026 SGT
 

@@ -7,7 +7,7 @@ This file is the sole owner of repository engineering instructions. User instruc
 | File                                                         | Unique purpose                                                                            |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | [README](README.md)                                          | Development prerequisites, configuration and command reference.                           |
-| [Agents](Agents.md)                                          | Engineering workflow, coding conventions, verification and action boundaries.             |
+| [Agents](AGENTS.md)                                          | Engineering workflow, coding conventions, verification and action boundaries.             |
 | [Local skill](.agents/skills/soccerbot-engineering/SKILL.md) | Discover and enter this repository's instructions.                                        |
 | [Runbook](docs/Runbook.md)                                   | Dependency maintenance, observability interpretation and operational recovery procedures. |
 | [North Star](NORTH_STAR.md)                                  | Current outcome and priority.                                                             |
