@@ -613,6 +613,9 @@ test("native guest journey preserves players contact and one checkout across ref
       .getByRole("group", { name: "Session times" })
       .getByRole("button", { name: /12:10–12:50/ })
       .click();
+    await page
+      .getByRole("combobox", { name: /Trainer for .* at 12:10/ })
+      .selectOption({ index: 1 });
     expect(
       calls.filter((c) => c.path.startsWith("/api/calendar/")),
     ).toHaveLength(monthOffset === 0 ? 1 : 2);
@@ -1384,11 +1387,18 @@ async function guestDetails(
     .getByRole("group", { name: "Session times" })
     .getByRole("button", { name: /12:10–12:50/ })
     .click();
-  if (batch)
+  await page
+    .getByRole("combobox", { name: /Trainer for .* at 12:10/ })
+    .selectOption({ index: 1 });
+  if (batch) {
     await page
       .getByRole("group", { name: "Session times" })
       .getByRole("button", { name: /13:00–13:40/ })
       .click();
+    await page
+      .getByRole("combobox", { name: /Trainer for .* at 13:00/ })
+      .selectOption({ index: 1 });
+  }
   await page.getByRole("link", { name: "Continue", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Your details", exact: true }),

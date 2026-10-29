@@ -144,14 +144,6 @@ export class NativeCalendarReads {
             const day = offers.get(date)!;
             for (const time of offeredStarts({ [date]: matrix[date] }, date)) {
               const startMs = Date.parse(`${date}T${time}+08:00`);
-              if (
-                day.some(
-                  (o) =>
-                    o.instructorId !== instructor.id &&
-                    Math.abs(o.startMs - startMs) < 3000000,
-                )
-              )
-                throw new ApiError(503, "native_provider_schedule_overlap");
               day.push({
                 serviceId: service.id,
                 serviceName: service.name,

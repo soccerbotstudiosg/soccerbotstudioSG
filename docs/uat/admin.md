@@ -112,3 +112,11 @@ Keep completed results in the agreed evidence location with the full revision an
 | Evidence location (redacted)                     |         |
 | Tester signature / date                          |         |
 | Owner decision / accepted exceptions / follow-up |         |
+
+## Per-slot trainer choice
+
+Rules: [BR-001](../business-rules.md#br-001), [BR-002](../business-rules.md#br-002). Use owner-approved test arrangements; do not enable overlapping schedules before shared-capacity acceptance.
+
+| Case    | What to do                                                                                                                                                                                                      | What should happen                                                                                                                                                                     | Result | Remarks |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
+| ADM-040 | Before overlapping schedules go live, verify every eligible trainer/service consumes the same single-capacity SimplyBook studio resource. Run the approved cross-trainer conflict case with two test customers. | Only one booking can occupy the studio at a time, including the ten-minute changeover. UI/calendar availability alone does not prove this; record provider evidence before activation. |        |         |

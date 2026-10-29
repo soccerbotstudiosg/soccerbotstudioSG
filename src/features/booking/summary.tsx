@@ -11,6 +11,7 @@ import {
   isElapsed,
   selectionErrors,
   slotKey,
+  sessionOfferKey,
   totalCents,
   type BookingDraft,
   type Session,
@@ -117,7 +118,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
     draft.slots.every((slot) =>
       result.slots.some(
         (available) =>
-          slotKey(available) === slotKey(slot) &&
+          sessionOfferKey(available) === sessionOfferKey(slot) &&
           available.available &&
           available.instructor === slot.instructor &&
           available.rotationAt === slot.rotationAt,
@@ -242,6 +243,9 @@ export function Summary({ basket = false }: { basket?: boolean }) {
           {instructors.map((slot) => (
             <InstructorProfile
               key={slot.instructor}
+              sessions={draft.slots.filter(
+                (session) => session.instructor === slot.instructor,
+              )}
               {...(slot.native
                 ? {
                     profile: {

@@ -60,6 +60,11 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
   await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
+  expect(loadBooking().draft.slots).toHaveLength(1);
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
+    `${restoredDate}|15:20|demo|daniel`,
+  );
   const instructors = screen.getByRole("region", { name: "Your instructors" });
   expect(within(instructors).getAllByRole("article")).toHaveLength(2);
   expect(
@@ -69,7 +74,21 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     within(instructors).getByRole("article", { name: "Daniel Tan" }),
   ).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
+    `${restoredDate}|12:00|demo|faisal`,
+  );
   expect(within(instructors).getAllByRole("article")).toHaveLength(2);
+  expect(
+    within(
+      within(instructors).getByRole("article", { name: "Faisal Shahril" }),
+    ).getAllByRole("listitem"),
+  ).toHaveLength(2);
+  expect(
+    within(
+      within(instructors).getByRole("article", { name: "Daniel Tan" }),
+    ).getAllByRole("listitem"),
+  ).toHaveLength(1);
   await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
   expect(within(instructors).getAllByRole("article")).toHaveLength(1);
   await user.click(screen.getByRole("button", { name: "Clear all" }));
@@ -173,6 +192,9 @@ test("an open booking page expires a selected slot at its start and keeps it rem
   const slot = screen.getByRole("button", { name: /12:00–12:40/ });
   expect(slot).toBeEnabled();
   fireEvent.click(slot);
+  fireEvent.change(screen.getByLabelText("Trainer for 2026-10-06 at 12:00"), {
+    target: { value: "2026-10-06|12:00|demo|faisal" },
+  });
   expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
   await act(async () => {
     vi.advanceTimersByTime(1);
@@ -269,4 +291,59 @@ test("an open calendar follows Singapore year rollover without deleting its draf
   expect(loadBooking().draft.slots).toEqual([slot]);
   expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
   view.unmount();
+});
+
+test("each time requires an independent trainer choice and changing it preserves other sessions and survives restoration", async () => {
+  const user = userEvent.setup();
+  const view = render(
+    <BookingProvider>
+      <BookingPage step="time" />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  expect(screen.getAllByRole("button", { name: /12:00–12:40/ })).toHaveLength(
+    1,
+  );
+  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  expect(loadBooking().draft.slots).toHaveLength(1);
+  const picker = screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`);
+  await user.selectOptions(picker, `${restoredDate}|12:00|demo|daniel`);
+  expect(
+    loadBooking().draft.slots.find((slot) => slot.start === "12:00")
+      ?.instructor,
+  ).toBe("daniel");
+  await user.selectOptions(picker, `${restoredDate}|12:00|demo|faisal`);
+  expect(loadBooking().draft.slots).toHaveLength(2);
+  expect(
+    loadBooking().draft.slots.find((slot) => slot.start === "14:30")
+      ?.instructor,
+  ).toBe("faisal");
+  view.unmount();
+  render(
+    <BookingProvider>
+      <BookingPage step="time" />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  expect(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
+  ).toHaveValue(`${restoredDate}|12:00|demo|faisal`);
+  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  expect(loadBooking().draft.slots).toHaveLength(1);
+});
+test("a trainer choice opened before expiry cannot add the session after its start", async () => {
+  vi.setSystemTime(new Date("2026-10-13T11:59:59+08:00"));
+  render(
+    <BookingProvider>
+      <BookingPage step="time" />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  const picker = screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`);
+  vi.setSystemTime(new Date("2026-10-13T12:00:00+08:00"));
+  fireEvent.change(picker, {
+    target: { value: `${restoredDate}|12:00|demo|daniel` },
+  });
+  expect(loadBooking().draft.slots).toHaveLength(1);
 });

@@ -81,6 +81,14 @@ export async function createBookingMechanism(options = {}) {
       value.deposit = 88 * batchSize;
     }
   }
+  const trainerIds = options.trainerIds ?? [14];
+  for (let index = 0; index < batchSize; index++) {
+    const trainerId = options.sessionTrainers?.[index] ?? 14;
+    creation.bookings[index].unit_id = trainerId;
+    bookingDetails[index].unit_id = String(trainerId);
+    for (const value of [invoice, creation.invoice])
+      value.lines[index].bookings[0].provider_id = trainerId;
+  }
   if (options.creationPriceDrift) creation.invoice.amount += 1;
   let batchBooks = 0;
   const requestId = "20000000-0000-4000-8000-000000000002";
@@ -306,20 +314,27 @@ export async function createBookingMechanism(options = {}) {
                 is_recurring: "0",
                 price: "88",
                 currency: "SGD",
-                unit_map: [14],
+                unit_map: trainerIds,
               },
             },
-            getUnitList: {
-              14: { id: 14, name: "Native Trainer", is_active: "1" },
-            },
+            getUnitList: Object.fromEntries(
+              trainerIds.map((id) => [
+                String(id),
+                {
+                  id,
+                  name: id === 14 ? "Native Trainer" : `Native Trainer ${id}`,
+                  is_active: "1",
+                },
+              ]),
+            ),
             getAdditionalFields: [],
             getAvailableUnits: options.batch
               ? batchBooks < batchSize
-                ? [14]
+                ? trainerIds
                 : []
               : booked
                 ? []
-                : [14],
+                : trainerIds,
             getStartTimeMatrix: matrix,
             book: creation,
             getBookingDetails:

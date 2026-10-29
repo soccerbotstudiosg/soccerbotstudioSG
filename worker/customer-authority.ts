@@ -117,7 +117,7 @@ export async function authorizeCustomerCheckout(
     durationMinutes: 40,
     bufferAfterMinutes: 10,
     clientLoginRequired: false,
-    providerSchedules: "non-overlapping",
+    providerSchedules: "customer-choice",
     bookingLeadMinutes: BOOKING_LEAD_MINUTES,
     confirmedAtMs: now,
     expiresAtMs: expires,

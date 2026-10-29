@@ -90,6 +90,9 @@ export const blankDraft = (): BookingDraft => ({
   contact: blankContact(),
   accepted: false,
 });
+/** Identify a trainer offer without changing the shared time-slot identity. */
+export const sessionOfferKey = (slot: Session) =>
+  `${slot.date}|${slot.start}|${slot.native?.serviceId ?? "demo"}|${slot.instructor}`;
 export const slotKey = (slot: Slot) => `${slot.date}|${slot.start}`;
 export const orderedSlots = <T extends Slot>(slots: T[]) =>
   [...slots].sort((a, b) => slotKey(a).localeCompare(slotKey(b)));

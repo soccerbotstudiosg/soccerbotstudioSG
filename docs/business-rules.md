@@ -22,7 +22,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-001"></a>
 
-**BR-001** — Customer booking website for one Singapore venue and one shared studio across instructors. Sessions are 40 minutes on 50-minute starts, 1–4 players, with multiple selected sessions permitted. Singapore time and SGD apply. Booking closes four hours before start: exactly 240 minutes is eligible; less is rejected in calendar filtering and server preparation/pre-write validation. Staff portals, memberships/packages, recurring charges, payroll and historical data migration are outside the commissioned website scope unless separately agreed.
+**BR-001** — Customer booking website for one Singapore venue and one shared studio across instructors. Sessions are 40 minutes on 50-minute starts, 1–4 players, with multiple selected sessions permitted. After choosing a time, the customer explicitly chooses an eligible trainer from that slot’s dropdown; each session has its own independent choice. Changing trainer replaces that slot’s selection, never adds another simultaneous session. Below the booking summary, stack one trainer card per stable instructor ID and list all dates/times chosen for that trainer. Singapore time and SGD apply. Booking closes four hours before start: exactly 240 minutes is eligible; less is rejected in calendar filtering and server preparation/pre-write validation. Staff portals, memberships/packages, recurring charges, payroll and historical data migration are outside the commissioned website scope unless separately agreed.
 
 <a id="br-002"></a>
 

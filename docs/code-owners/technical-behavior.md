@@ -63,6 +63,21 @@ Evidence: [experiment browser cases](../../tests/experiment.spec.ts), [live iden
 
 ### 1.1 Step presentation functions
 
+Trainer selection update (29 October 2026): `TimeStep` groups simultaneous offers into one time card and exposes its trainer dropdown after the time is opened. A pending dropdown does not add a session. Choosing or changing a trainer validates exact offer identity and current time; a refresh/failure never silently replaces a saved trainer. The selected time button or basket removal removes the session. `Summary` groups completed selections by stable instructor ID; `InstructorProfile` lists that trainer’s ordered dates/times below the summary. Profiles stack vertically, including when names match. Held/payment-locked drafts keep existing edit guards.
+
+```mermaid
+flowchart TB
+  Offers["Eligible service / trainer / time offers"] --> Time["TimeStep: one card per time"]
+  Time --> Choice["Dropdown: explicit trainer for this slot"]
+  Choice --> Draft["BookingProvider: selected session and trainer ID"]
+  Draft --> Summary["Summary: booking totals"]
+  Summary --> Cards["InstructorProfile: one card per trainer with all selected times"]
+  Draft --> Server["Server: selected trainer validation and provider creation"]
+  Server --> Capacity["SimplyBook: one shared studio across trainers"]
+```
+
+Evidence: [time selection regressions](../../src/features/booking/time-step.test.tsx), [service identity/capacity cases](../../src/services/async-booking.test.ts), [prebooking/calendar cases](../../worker/tests/catalogue.test.mjs), [cross-trainer conflict and batch restoration](../../worker/tests/combined-hold.test.mjs). Screenshots and actual shared-resource acceptance remain owner/CI work.
+
 These functions are under [the booking feature](../../src/features/booking). They consume provider/service state; they do not independently authorize provider writes.
 
 | Function / file                                                                                      | Behavior and guards                                                         | Failure / recovery                                                                                                     |

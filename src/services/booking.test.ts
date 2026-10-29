@@ -271,7 +271,7 @@ describe("customer verification preview", () => {
 describe("opening hours and demo instructor rotation", () => {
   it("offers only complete sessions within noon to 8pm and rotates instructors every three hours", () => {
     const slots = service.availability(tomorrow());
-    expect(slots.map((slot) => slot.start)).toEqual([
+    expect([...new Set(slots.map((slot) => slot.start))]).toEqual([
       "12:00",
       "12:50",
       "13:40",
@@ -330,6 +330,8 @@ describe("opening hours and demo instructor rotation", () => {
         .map(({ start, rotationAt }) => [start, rotationAt]),
     ).toEqual([
       ["14:30", "15:00"],
+      ["14:30", "15:00"],
+      ["17:50", "18:00"],
       ["17:50", "18:00"],
     ]);
     expect(
@@ -377,16 +379,19 @@ describe("opening hours and demo instructor rotation", () => {
     expect(ics).toContain("Instructor: Daniel Tan");
     expect(() =>
       service.checkout(
-        { ...validDraft(), slots: [{ ...slots[0], instructor: "daniel" }] },
+        {
+          ...validDraft(),
+          slots: [{ ...slots[0], instructor: "instructor4" }],
+        },
         null,
       ),
-    ).toThrow(/assignment has changed/);
+    ).toThrow(/selected instructor is no longer available/);
     expect(() =>
       service.checkout(
         { ...validDraft(), slots: [{ ...slots[0], rotationAt: undefined }] },
         null,
       ),
-    ).toThrow(/assignment has changed/);
+    ).toThrow(/selected instructor is no longer available/);
   });
 });
 it("keeps payment checking for exactly five seconds and preserves the deadline through storage", () => {
