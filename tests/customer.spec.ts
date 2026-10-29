@@ -709,12 +709,16 @@ test("header blue and the typography hierarchy stay consistent across every book
       .evaluateAll((nodes) =>
         nodes.map((node) => {
           const style = getComputedStyle(node);
-          return { size: style.fontSize, family: style.fontFamily };
+          return {
+            size: style.fontSize,
+            family: style.fontFamily,
+            element: node.outerHTML,
+          };
         }),
       );
     expect(styles.length).toBeGreaterThan(0);
     for (const style of styles) {
-      expect(style.size).toBe("16px");
+      expect(style.size, style.element).toBe("16px");
       expect(style.family).toBe(styles[0].family);
       expect(style.family).toContain("Roboto");
     }

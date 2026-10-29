@@ -361,9 +361,13 @@
   }
   .summary-total strong,
   .line-item.total strong,
-  .confirmation-card .paid strong,
   .counter output {
     font-size: var(--text-amount);
+  }
+  .summary-total strong,
+  .line-item.total strong,
+  .confirmation-card .paid strong,
+  .counter output {
     font-weight: var(--weight-heading);
     font-style: normal;
     line-height: var(--leading-heading);

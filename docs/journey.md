@@ -293,6 +293,10 @@ The following milestone IDs and history are preserved from the former service-co
 
 ## Part 2 — Dated changes and evidence
 
+### 29 October 2026 — PR122 confirmation typography correction
+
+Run [40836216699](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40836216699), frontend job 123321499184, failed the typography assertion in all three browser projects: confirmation paid amount computed as 24px instead of the requested 16px. The other 75 frontend browser cases passed. The later `.confirmation-card .paid strong` amount-role selector had the same specificity as the earlier body-role selector, so source order retained 24px. Separated amount sizing from shared emphasis styles: confirmation retains its brand colour, weight and numeric formatting, while the existing scoped body-size token remains canonical. Kept the 16px expectation and added the element markup to assertion diagnostics. Original failure evidence remains in the run/artifact 12881136544 and `/tmp/soccerbot-pr122-frontend-failure-tail.json`. The backend job 123321499391 failed at the identical browser assertion after Worker/load checks passed. The repair passed full local `verify:code` (242 tests, lint/types/build/export), source/policy/format checks and 974 links. New exact-head browser CI remains required; no browser acceptance is inferred from static inspection.
+
 ### 29 October 2026 — calendar navigation and fresh confirmation exports
 
 Preceding verified checkpoints: PR120 merged as `a07e31514369e2992ffc9f61e3502a0d5cbc286d`; main run 40820126089 passed verification and existing developer deployments. PR121 passed PR run 40827202583 and merged as `9938fdda23deb5a5a0e5da00deb7a234e6339748`; its main deployment was not reverified in this reconciliation. These are retained observations, not current production acceptance.
