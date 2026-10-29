@@ -6,6 +6,7 @@ import { Icon } from "@/components/icon";
 import {
   isElapsed,
   slotKey,
+  sessionOfferKey,
   sessionInstructorName,
   sessionPrice,
 } from "@/domain/booking";
@@ -32,6 +33,7 @@ export function TimeStep() {
     showMonth,
     bookingService,
   } = useBooking();
+  const [choosing, setChoosing] = useState<string | null>(null);
   const today = todaySG(new Date(now));
   const live = bookingService.mode === "live";
   const publicCalendarReady =
@@ -123,36 +125,35 @@ export function TimeStep() {
     result?.status === "success"
       ? result.slots.filter((slot) => slot.date === date)
       : [];
-  /** Apply a session selection while enforcing the current booking constraints. */
-  function select({
-    date,
-    start,
-    instructor,
-    rotationAt,
-    native,
-  }: AvailableSlot) {
-    const slot = {
-        date,
-        start,
-        instructor,
-        rotationAt,
-        ...(native ? { native } : {}),
-      },
-      selected = draft.slots.some((item) => slotKey(item) === slotKey(slot));
+  const groups = [
+    ...new Map(slots.map((slot) => [slotKey(slot), slot])).keys(),
+  ].map((key) => slots.filter((slot) => slotKey(slot) === key));
+  /** Commit only an explicitly chosen, currently offered trainer for this time. */
+  function select(offered: AvailableSlot) {
     if (
-      !selected &&
-      (isElapsed(slot) ||
-        !slots.some(
-          (candidate) =>
-            slotKey(candidate) === slotKey(slot) && candidate.available,
-        ))
+      isElapsed(offered) ||
+      !slots.some(
+        (candidate) =>
+          sessionOfferKey(candidate) === sessionOfferKey(offered) &&
+          candidate.available,
+      )
     )
       return;
+    const { date, start, instructor, rotationAt, native } = offered;
+    const slot = {
+      date,
+      start,
+      instructor,
+      rotationAt,
+      ...(native ? { native } : {}),
+    };
     update({
-      slots: selected
-        ? draft.slots.filter((item) => slotKey(item) !== slotKey(slot))
-        : [...draft.slots, slot],
+      slots: [
+        ...draft.slots.filter((item) => slotKey(item) !== slotKey(slot)),
+        slot,
+      ],
     });
+    setChoosing(null);
   }
   return (
     <>
@@ -302,51 +303,124 @@ export function TimeStep() {
         </div>
       ) : slots.length ? (
         <div className="times" role="group" aria-label="Session times">
-          {slots.map((slot) => {
-            const selected = draft.slots.some(
-              (item) => slotKey(item) === slotKey(slot),
+          {groups.map((offers) => {
+            const first = offers.find((offer) => offer.available) ?? offers[0];
+            const selected = draft.slots.find(
+              (item) => slotKey(item) === slotKey(first),
             );
+            const slot = selected
+              ? {
+                  ...selected,
+                  available: offers.some(
+                    (offer) =>
+                      sessionOfferKey(offer) === sessionOfferKey(selected) &&
+                      offer.available,
+                  ),
+                }
+              : first;
+            const available = offers.some((offer) => offer.available);
+            const key = slotKey(slot);
             const elapsed = isElapsed(slot, now);
             return (
-              <button
-                key={slot.start}
-                className={`time${selected ? " selected" : ""}`}
-                aria-pressed={selected}
-                disabled={(!slot.available || elapsed) && !selected}
-                onClick={() => select(slot)}
-              >
-                <span className="time-details">
-                  <span>
-                    {slot.start}–{endTime(slot.start)}
-                  </span>
-                  <span className="time-rate">
-                    {elapsed ? (
-                      "Session has started"
-                    ) : slot.available ? (
-                      <>
-                        <strong>{money(sessionPrice(slot))}</strong>
-                        <span>
-                          {slot.native ? "Per session" : "Trial price"}
-                        </span>
-                      </>
-                    ) : (
-                      "Unavailable"
+              <div className="time-choice" key={key}>
+                <button
+                  className={`time${selected ? " selected" : ""}`}
+                  aria-pressed={!!selected}
+                  aria-expanded={!!selected || choosing === key}
+                  disabled={(!available || elapsed) && !selected}
+                  onClick={() => {
+                    if (selected) {
+                      update({
+                        slots: draft.slots.filter(
+                          (item) => slotKey(item) !== key,
+                        ),
+                      });
+                      setChoosing(null);
+                    } else if (!isElapsed(slot) && available) {
+                      setChoosing(choosing === key ? null : key);
+                    }
+                  }}
+                >
+                  <span className="time-details">
+                    <span>
+                      {slot.start}–{endTime(slot.start)}
+                    </span>
+                    <span className="time-rate">
+                      {elapsed ? (
+                        "Session has started"
+                      ) : slot.available ? (
+                        <>
+                          <strong>{money(sessionPrice(slot))}</strong>
+                          <span>
+                            {slot.native ? "Per session" : "Trial price"}
+                          </span>
+                        </>
+                      ) : (
+                        "Unavailable"
+                      )}
+                    </span>
+                    <span className="time-instructor">
+                      {selected
+                        ? sessionInstructorName(selected)
+                        : available
+                          ? `Choose trainer: ${offers
+                              .filter((offer) => offer.available)
+                              .map(sessionInstructorName)
+                              .join(" / ")}`
+                          : "No instructor available"}
+                    </span>
+                    {slot.available && slot.rotationAt && (
+                      <span className="rotation-notice">
+                        Crosses the {slot.rotationAt} instructor rotation. Your
+                        chosen instructor stays for the full session.
+                      </span>
                     )}
                   </span>
-                  <span className="time-instructor">
-                    {slot.available || elapsed
-                      ? sessionInstructorName(slot)
-                      : "No instructor available"}
-                  </span>
-                  {slot.available && slot.rotationAt && (
-                    <span className="rotation-notice">
-                      Crosses the {slot.rotationAt} instructor rotation. Your
-                      assigned instructor stays for the full session.
-                    </span>
-                  )}
-                </span>
-                <Icon name={selected ? "check" : "plus"} />
-              </button>
+                  <Icon name={selected ? "check" : "plus"} />
+                </button>
+                {(selected || choosing === key) && (
+                  <label className="trainer-choice">
+                    <span>Trainer</span>
+                    <select
+                      aria-label={`Trainer for ${slot.date} at ${slot.start}`}
+                      value={selected ? sessionOfferKey(selected) : ""}
+                      disabled={elapsed || !available}
+                      onChange={(event) => {
+                        const offer = offers.find(
+                          (item) =>
+                            sessionOfferKey(item) === event.target.value,
+                        );
+                        if (offer) select(offer);
+                      }}
+                    >
+                      <option value="" disabled>
+                        Choose a trainer to add this session
+                      </option>
+                      {selected &&
+                        !offers.some(
+                          (offer) =>
+                            sessionOfferKey(offer) ===
+                            sessionOfferKey(selected),
+                        ) && (
+                          <option value={sessionOfferKey(selected)} disabled>
+                            {sessionInstructorName(selected)} — unavailable
+                          </option>
+                        )}
+                      {offers.map((offer) => (
+                        <option
+                          key={sessionOfferKey(offer)}
+                          value={sessionOfferKey(offer)}
+                          disabled={!offer.available}
+                        >
+                          {sessionInstructorName(offer)} ·{" "}
+                          {money(sessionPrice(offer))}
+                          {!offer.available ? " — unavailable" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
             );
           })}
         </div>
@@ -374,8 +448,8 @@ export function TimeStep() {
         <Icon name="clock" />
         <span>
           {live
-            ? "Open noon–8pm. Book at least 4 hours ahead. Each session includes one instructor. Your selection is checked when you review your booking."
-            : "Open noon–8pm. Each session includes one instructor. In this preview, instructors rotate every three hours; the instructor assigned at the start stays for your full session."}
+            ? "Open noon–8pm. Book at least 4 hours ahead. Choose a trainer for every session. All trainers share one studio; choosing another trainer does not create extra availability."
+            : "Open noon–8pm. Choose a trainer separately for every session. Demo trainer choices rotate every three hours; your chosen trainer stays for the full session."}
         </span>
       </p>
     </>

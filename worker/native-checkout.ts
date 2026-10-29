@@ -1470,9 +1470,10 @@ export async function customerNativeAvailability(options: {
             )
         )
           continue;
-        // Unexpected simultaneous eligibility is configuration drift. Never pick
-        // a provider by order or silently hide a competing studio allocation.
+        // Preserve the finite trial restriction; customer-choice grants retain
+        // every eligible trainer without inventing extra studio capacity.
         if (
+          contract.providerSchedules !== "customer-choice" &&
           offers.some(
             (offer) =>
               Math.abs(offer.startMs - startMs) < 3000000 &&

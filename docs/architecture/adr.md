@@ -73,7 +73,7 @@ The design therefore prioritises correctness under retries, separation of provid
 
 ## ADR-004 — SimplyBook and HitPay hosted payment
 
-**Decision.** SimplyBook owns schedules, eligible instructors, shared resources, bookings and invoices. HitPay hosts payment and owns payment truth. The backend creates/validates all required sessions and their association before creating the permitted hosted payment request. Webhooks and return navigation trigger authoritative reconciliation rather than directly marking the booking confirmed.
+**Decision.** SimplyBook owns schedules, eligible instructors, shared resources, bookings and invoices. Multiple eligible trainers can share a start; the customer chooses a trainer independently for each slot. These are alternatives for one shared studio, not separate capacity. Keep trainer identity in the immutable booking intent and provider readback; never infer studio exclusivity merely from serialized requests or non-overlapping trainer schedules. HitPay hosts payment and owns payment truth. The backend creates/validates all required sessions and their association before creating the permitted hosted payment request. Webhooks and return navigation trigger authoritative reconciliation rather than directly marking the booking confirmed.
 
 **Why it fits.** Reusing scheduling/admin and hosted-payment services avoids implementing a new scheduling back office or card-entry system. Admins and trainers can use SimplyBook for configured staff operations while customers use the custom frontend. Hosted payment keeps payment credentials out of the application; it does not remove all merchant/compliance responsibilities.
 

@@ -33,3 +33,14 @@ export function demoSession(slot: Slot): Session | null {
       : {}),
   };
 }
+
+/** Offer two rotating demo trainers while retaining one shared studio slot. */
+export function demoSessions(slot: Slot): Session[] {
+  const first = demoSession(slot);
+  if (!first) return [];
+  const index = ROTATION.indexOf(first.instructor as InstructorId);
+  return [
+    first,
+    { ...first, instructor: ROTATION[(index + 1) % ROTATION.length] },
+  ];
+}

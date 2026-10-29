@@ -244,6 +244,9 @@ test("the Payment preview entry and temporary checking failure retain customer s
     })
     .click();
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page
+    .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
+    .selectOption({ index: 1 });
   await page.getByRole("link", { name: "Continue", exact: true }).click();
   await page
     .getByLabel("Full name", { exact: false })

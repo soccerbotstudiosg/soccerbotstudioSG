@@ -26,6 +26,9 @@ async function chooseSlots(page: Page, multiple = false) {
     })
     .click();
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page
+    .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
+    .selectOption({ index: 1 });
   if (multiple) {
     await page
       .getByRole("button", {
@@ -34,6 +37,9 @@ async function chooseSlots(page: Page, multiple = false) {
       })
       .click();
     await page.getByRole("button", { name: /12:00–12:40/ }).click();
+    await page
+      .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
+      .selectOption({ index: 1 });
   }
   await page.getByRole("link", { name: "Continue", exact: true }).click();
 }
@@ -179,7 +185,7 @@ test("late payment has a contact path without another payment", async ({
     page.getByRole("link", { name: "Contact the studio", exact: true }),
   ).toHaveAttribute("href", /^tel:/);
 });
-test("50-minute cadence, automatic instructors, contact validation and final-slot conflict", async ({
+test("50-minute cadence, chosen instructors, contact validation and final-slot conflict", async ({
   page,
 }) => {
   await chooseSlots(page);
@@ -408,8 +414,14 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
   await expect(crossing).toContainText("Crosses the 15:00 instructor rotation");
   await crossing.click();
+  await page
+    .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
+    .selectOption({ index: 1 });
   await expect(page.getByRole("radio")).toHaveCount(0);
   await page.getByRole("button", { name: /15:20–16:00/ }).click();
+  await page
+    .getByRole("combobox", { name: /Trainer for .* at 15:20/ })
+    .selectOption({ index: 1 });
   const instructors = page.getByRole("region", { name: "Your instructors" });
   await expect(instructors.getByRole("article")).toHaveCount(2);
   await expect(
@@ -659,6 +671,9 @@ test("header blue and the typography hierarchy stay consistent across every book
     .click();
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
   await crossing.click();
+  await page
+    .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
+    .selectOption({ index: 1 });
   await expect(crossing).toHaveCSS("background-color", brand);
   await expect(crossing.locator(".time-instructor")).toHaveCSS(
     "font-size",
@@ -771,9 +786,15 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await page.clock.resume();
   await page.getByRole("button", { name: /12:50–13:30/ }).click();
   await page
+    .getByRole("combobox", { name: /Trainer for .* at 12:50/ })
+    .selectOption({ index: 1 });
+  await page
     .getByRole("button", { name: dateLabel("2026-10-07"), exact: true })
     .click();
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page
+    .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
+    .selectOption({ index: 1 });
   await page.getByRole("link", { name: "Continue", exact: true }).click();
   await details(page);
   await payment(page);
@@ -939,4 +960,53 @@ test("Back during hero entry stays on home even when the previous page was Studi
   ).toHaveCount(0);
   await expect(page.getByRole("link", { name: /^Book now —/ })).toBeVisible();
   await expect(page.getByRole("main")).not.toHaveAttribute("inert");
+});
+
+test("per-slot trainer dropdowns group times under trainer cards and retain changed choices after reload", async ({
+  page,
+}) => {
+  await openSite(page, "/book/account/");
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page.getByRole("link", { name: "See available times" }).click();
+  const date = addDays(DEMO_TODAY, 1);
+  await page
+    .getByRole("button", { name: dateLabel(date), exact: true })
+    .click();
+  await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await expect(
+    page.getByRole("button", { name: "Continue", exact: true }),
+  ).toBeDisabled();
+  const noon = page.getByRole("combobox", {
+    name: `Trainer for ${date} at 12:00`,
+  });
+  await noon.selectOption(`${date}|12:00|demo|daniel`);
+  await page.getByRole("button", { name: /15:20–16:00/ }).click();
+  await page
+    .getByRole("combobox", { name: `Trainer for ${date} at 15:20` })
+    .selectOption(`${date}|15:20|demo|daniel`);
+  const cards = page.getByRole("region", { name: "Your instructors" });
+  await expect(cards.getByRole("article")).toHaveCount(1);
+  await expect(
+    cards
+      .getByRole("article", { name: "Daniel Tan", exact: true })
+      .getByRole("listitem"),
+  ).toHaveCount(2);
+  await noon.selectOption(`${date}|12:00|demo|faisal`);
+  await expect(cards.getByRole("article")).toHaveCount(2);
+  await expect(
+    cards.getByRole("article", { name: "Faisal Shahril", exact: true }),
+  ).toContainText("12:00–12:40");
+  await expect(
+    cards.getByRole("article", { name: "Daniel Tan", exact: true }),
+  ).toContainText("15:20–16:00");
+  await page.reload();
+  await expect(noon).toHaveValue(`${date}|12:00|demo|faisal`);
+  await expect(cards.getByRole("article")).toHaveCount(2);
+  await page.getByRole("button", { name: /15:20–16:00/ }).click();
+  await expect(cards.getByRole("article")).toHaveCount(1);
+  await expect(
+    cards
+      .getByRole("article", { name: "Faisal Shahril", exact: true })
+      .getByRole("listitem"),
+  ).toHaveCount(1);
 });

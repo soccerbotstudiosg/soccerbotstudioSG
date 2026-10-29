@@ -112,9 +112,11 @@ Challenge email is trimmed/lowercased, valid and at most 254 characters; botToke
 [Schema owner](../src/domain/native-checkout.ts):
 
 - **Offer:** `{serviceId,productServiceId?,serviceName,instructorId,instructorName,startMs,priceMinor,currency:"SGD"}`. Names are 1–256 characters; IDs follow [providerIdentifier](../src/domain/catalog.ts); milliseconds and minor-unit amounts are safe integers, start positive and price nonnegative.
-- **Availability:** `{date,observedAtMs,offers:Offer[]}`; maximum 100 offers.
-- **PublicCalendar:** `{month,serviceId,observedAtMs,displayExpiresAtMs?,dates:[{date,available,offers?}]}`; maximum 31 dates. Validation rejects duplicate/out-of-month dates, duplicate offer starts and offers inconsistent with service/date/availability. Display-deadline validation applies.
+- **Availability:** `{date,observedAtMs,offers:Offer[]}`; maximum 100 offers. Different instructors may offer the same start; these are alternatives for one shared studio, not additive capacity. The client groups them by date/start and retains the explicitly selected instructor ID. Exact duplicate offers remain invalid.
+- **PublicCalendar:** `{month,serviceId,observedAtMs,displayExpiresAtMs?,dates:[{date,available,offers?}]}`; maximum 31 dates. Validation rejects duplicate/out-of-month dates, duplicate service/instructor/start offers and offers inconsistent with service/date/availability. Display-deadline validation applies.
 - **Protected calendar:** maximum 31 Availability entries. A missing/empty/failing result is not permission to fabricate a free slot.
+
+Customer grants declare `providerSchedules: "customer-choice"`; prebooking validates the selected eligible trainer without picking one by order. Legacy finite trial contracts retain `"non-overlapping"` and reject simultaneous eligibility. The existing calendar read bound of three active instructors per service is unchanged; more fails closed pending a separately budgeted expansion. Provider shared-resource capacity must be configured and owner-tested before enabling overlapping schedules.
 
 ## 5. Attempt preparation and booking/payment writes
 

@@ -84,3 +84,13 @@ Keep completed results in the agreed evidence location with the full revision an
 | Evidence location (redacted)                     |         |
 | Tester signature / date                          |         |
 | Owner decision / accepted exceptions / follow-up |         |
+
+## Per-slot trainer choice
+
+Rules: [BR-001](../business-rules.md#br-001), [BR-002](../business-rules.md#br-002). Use owner-approved test arrangements; do not enable overlapping schedules before shared-capacity acceptance.
+
+| Case    | What to do                                                                                                                              | What should happen                                                                                                                                                    | Result | Remarks |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
+| CUS-032 | Open a time with two available trainers, then choose one from its dropdown.                                                             | The time appears once; no session is added until a trainer is chosen; only eligible trainers can be selected.                                                         |        |         |
+| CUS-033 | Choose several times with the same trainer and another time with a different trainer. Change one choice, refresh, and remove a session. | Below the summary, one card per trainer lists all their times. Cards stack vertically; choices survive refresh; only the changed/removed session moves or disappears. |        |         |
+| CUS-034 | With Admin, use two approved test customers choosing different trainers for the same time.                                              | Only one shared-studio booking succeeds; the other cannot pay for an incomplete or rejected booking. Recovery preserves uncertain effects.                            |        |         |

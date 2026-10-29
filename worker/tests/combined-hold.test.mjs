@@ -3384,3 +3384,109 @@ test("automatic recovery completion publishes a receipt before dismissal and rep
     await m.close();
   }
 });
+
+test("customer-selected trainers survive a multi-slot hold and restoration without automatic reassignment", async () => {
+  const m = await createBookingMechanism({
+    batch: true,
+    trainerIds: [14, 15],
+    sessionTrainers: [15, 14],
+  });
+  try {
+    const c = await customer(m);
+    c.input.sessions[0].instructorId = "15";
+    c.input.sessions.push({
+      ...c.input.sessions[0],
+      instructorId: "14",
+      startMs: m.startMs + 3000000,
+    });
+    const result = await checkoutResult(c.send(), 200);
+    assert.equal(result.state, "associated");
+    const restored = await m.mf.dispatchFetch(
+      m.origin + "/api/booking/current",
+      { headers: c.headers },
+    );
+    assert.equal(restored.status, 200);
+    assert.deepEqual(
+      (await restored.json()).sessions.map((session) => session.instructorId),
+      ["15", "14"],
+    );
+    const books = m.calls.filter((call) => call.body?.method === "book");
+    assert.equal(books.length, 2);
+    await checkoutResult(c.send(), 200);
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      2,
+    );
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});
+test("different trainers cannot bypass a shared-studio conflict during concurrent customer holds", async () => {
+  const m = await createBookingMechanism({ trainerIds: [14, 15] });
+  try {
+    const first = await customer(m);
+    const second = await customer(m);
+    second.input.sessions[0].instructorId = "15";
+    const results = await Promise.all(
+      [first.send(), second.send()].map((pending) => checkoutResult(pending)),
+    );
+    assert.equal(
+      results.filter((result) => result.state === "associated").length,
+      1,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      1,
+    );
+    assert.equal(
+      (await m.db.prepare("SELECT COUNT(*) AS n FROM hitpay_holds").first()).n,
+      1,
+    );
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});
+test("direct checkout preserves provider shared-studio rejection across different trainers without a second payment or replay", async () => {
+  let books = 0;
+  const m = await createBookingMechanism({
+    trainerIds: [14, 15],
+    respond: async (call) => {
+      if (call.body?.method === "book" && ++books > 1)
+        return Response.json({
+          jsonrpc: "2.0",
+          id: call.body.id,
+          error: { code: -32000, message: "Synthetic shared studio occupied" },
+        });
+      return undefined;
+    },
+  });
+  try {
+    const first = await customer(m);
+    const second = await customer(m);
+    second.input.sessions[0].instructorId = "15";
+    const send = (c) =>
+      m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${c.input.key}`, {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify({ ...c.input, accepted: true }),
+      });
+    const accepted = await checkoutResult(send(first), 200);
+    assert.equal(accepted.paymentAvailable, true);
+    const denied = await checkoutResult(send(second), 200);
+    assert.equal(denied.paymentAvailable, false);
+    assert.notEqual(denied.state, "associated");
+    await checkoutResult(send(second), 200);
+    assert.equal(books, 2);
+    assert.equal(
+      m.calls.filter(
+        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+      ).length,
+      1,
+    );
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});

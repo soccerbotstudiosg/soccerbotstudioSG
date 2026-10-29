@@ -312,6 +312,8 @@
   .confirmation-section .rotation-notice,
   .trainer-identity > span,
   .trainer-bio,
+  .trainer-choice,
+  .trainer-sessions,
   .time-instructor,
   .rotation-notice {
     font-size: var(--text-meta);
@@ -3217,6 +3219,25 @@
   .time-heading span {
     color: var(--color-muted);
   }
+  .time-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .time-choice > .time {
+    width: 100%;
+    flex: 1;
+  }
+  .trainer-choice {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .trainer-choice select {
+    width: 100%;
+    min-width: 0;
+    padding: 0.5rem;
+  }
   .times {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -3586,6 +3607,11 @@
     display: grid;
     gap: 16px;
     margin-top: 18px;
+  }
+  .trainer-sessions {
+    margin: 0;
+    padding: 0 20px 20px 36px;
+    line-height: var(--leading-body);
   }
   .trainer-card {
     border: 1px solid var(--color-line);
