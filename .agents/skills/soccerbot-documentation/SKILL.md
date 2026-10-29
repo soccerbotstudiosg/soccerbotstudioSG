@@ -7,7 +7,7 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 
 ## Purpose and authority
 
-Keep every documentation owner's relevant state consistent with the actual change and available evidence. Apply this skill to **every PR, including documentation-only, dependency, workflow and automated update PRs**, and again when its delivery state changes. AGENTS.md is the engineering authority; explicit user instructions take precedence. This skill owns the reconciliation procedure, not business requirements, a second backlog or deployment permission.
+Keep every documentation owner's relevant state consistent with the actual change and available evidence. Apply this skill to **every PR, including documentation-only, dependency, workflow and automated update PRs**, and again when its delivery state changes. AGENTS.md is the engineering authority; explicit user instructions take precedence. This skill owns the reconciliation procedure, not business requirements, a second backlog or deployment permission. The companion `.agents/skills/soccerbot-testing/SKILL.md` owns test-impact review, fixture/inventory maintenance and the PR test-impact receipt; apply both without duplicating their evidence.
 
 Read root AGENTS.md, NORTH_STAR.md and PROGRESS.md first. Resolve all paths below from the repository root. Inspect source and actual PR/CI evidence before editing. A checked box, generated proposal or old receipt does not establish a current implementation or acceptance state.
 

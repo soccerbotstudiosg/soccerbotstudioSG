@@ -49,6 +49,8 @@ Use one-line JSDoc/TSDoc summaries (`/** ... */`) for major TypeScript/JavaScrip
 
 Apply the [documentation reconciliation skill](.agents/skills/soccerbot-documentation/SKILL.md) for every PR (including documentation, dependency and automated updates) and delivery-state change. Review all document owners for impact, edit affected owners, and include its concise documentation-state receipt in the PR. This is an instruction procedure, not a CI hook or background automation; it grants no additional action authority.
 
+Apply the [test-maintenance skill](.agents/skills/soccerbot-testing/SKILL.md) during every PR and scope change, including automated updates. Record test dispositions, fixture/inventory impact, actual checks and remaining gaps in the PR; a justified no-test-change decision is valid for unaffected behavior. This instruction skill adds no automatic CI enforcement.
+
 After every logical change or repair, search affected components, services, Worker/browser tests, fixtures and inventories. Update obsolete assumptions without weakening their purpose, then run meaningful affected checks using the [command reference](docs/development.md#verification-commands). Never add retries, sleeps, forced clicks, skipped cases, looser timeouts or reduced inventories to conceal failures. Preserve the first failed receipt and diagnose it.
 
 Owner/CI operates browsers and physical devices: no assistant Playwright, screenshots, `npm run verify`, `verify:browser` or browser-running installers. Simulations do not establish provider or production acceptance. Report source changes, local verification, CI, merge, deployment and owner/provider acceptance separately.
