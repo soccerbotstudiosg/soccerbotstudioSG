@@ -53,7 +53,7 @@ Reconciliation verifies provider state before confirmation; arrows do not imply 
 
 ## Planned client delivery topology
 
-Target topology; workflow scaffold prepared, external setup paused. The runtime components above apply independently to each environment.
+Target topology after the owner’s transfer-first decision; transfer, DNS delegation and production activation are not yet verified. The existing SaaS deployment manifest must be reassessed before implementing this target. The runtime components above apply independently to each environment.
 
 ```mermaid
 flowchart TB
@@ -66,7 +66,9 @@ flowchart TB
   Main["Main · three merged-revision CI gates"]
   Approval["Manual production dispatch · verified current main"]
   Prod["Client Cloudflare account · separate Worker / D1 / DO"]
-  SaaS["Cloudflare for SaaS · soccerbotsg.win · vendor-controlled customer DNS"]
+  Registrar["Client registrar · transfer first, pending"]
+  DNS["Client Cloudflare DNS · soccerbotsg.com · delegation pending"]
+  Host["Supported Worker hostname/routing · configuration and TLS proof pending"]
   LiveProviders["Client SimplyBook · HitPay live"]
   StageSecrets["Staging configuration / scoped credentials"]
   ProdSecrets["Production configuration / scoped credentials"]
@@ -76,7 +78,8 @@ flowchart TB
   Stage <--> TestProviders
   Stage --> Review --> Main --> Approval
   Approval -->|verified production artifact| Prod
-  SaaS -->|zone-scoped route · canonical hostname| Prod
+  Registrar -.->|separate nameserver change after DNS and email preparation| DNS
+  DNS --> Host --> Prod
   ProdSecrets --> Prod
   Prod <--> LiveProviders
 ```

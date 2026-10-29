@@ -1,6 +1,6 @@
 # Domain operation inventory and API contracts
 
-This is the implementation contract for the current repository revision, not a public third-party API or proof that a route is enabled in client production. [Business rules](business-rules.md) owns invariants; [Complete journey](journey.md) owns sequencing and history. [Code owners](code-owners.md) expands the modules. When changing an operation, update its schemas, server owner, browser adapter, tests and this inventory together. Source links below are the exact validation/behavior owners, not alternative implementations.
+This is the implementation contract for the current repository revision, not a public third-party API or proof that a route is enabled in client production. [Business rules](business-rules.md) owns invariants; [Complete journey](journey.md) owns sequencing and history. [Code owners](code-owners/index.md) expands the modules. When changing an operation, update its schemas, server owner, browser adapter, tests and this inventory together. Source links below are the exact validation/behavior owners, not alternative implementations.
 
 ## 1. Domain operation inventory
 
@@ -70,7 +70,7 @@ Format follows [Fitfinity’s domain operation inventory](https://github.com/Lim
 | OP-14 | Collect/export diagnostics             | [Diagnostics](../worker/diagnostics.ts), [telemetry](../worker/telemetry.ts)                                                         | Sanitized logs; optional OTLP export                                             | Redaction, sampling and bounds; no provider calls in exporter; activation separate                 | BR-018–020       |
 | OP-15 | Deliver and recover deployment         | [Deployment](../scripts/deploy-cloudflare.mjs), [verified artifact](../scripts/verified-target-run.mjs)                              | Authorized CI deployment only                                                    | Exact revision/artifact, correct account/resources, immutable foundation, independent acceptance   | BR-021–032       |
 
-Rule numbers resolve through [the stable rule index](code-owners.md#11-business-rule-to-owner-index). OP IDs describe responsibilities, not permission to invoke operations.
+Rule numbers resolve through [the stable rule index](code-owners/index.md#11-business-rule-to-owner-index). OP IDs describe responsibilities, not permission to invoke operations.
 
 ## 2. Common HTTP boundary
 

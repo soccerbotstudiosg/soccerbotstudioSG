@@ -20,7 +20,7 @@ A simulated user is a human tester acting as a customer with designated test dat
 
 ## Access, email and saved details
 
-Rules: [BR-003](../business-rules.md#br-003), [BR-004](../business-rules.md#br-004). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
+Rules: [BR-003](../business-rules.md#br-003), [BR-004](../business-rules.md#br-004). See [code owners](../code-owners/index.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                    | What should happen                                                                                                                         | Result | Remarks |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
@@ -36,7 +36,7 @@ Rules: [BR-003](../business-rules.md#br-003), [BR-004](../business-rules.md#br-0
 
 ## Calendar, selection and review
 
-Rules: [BR-001](../business-rules.md#br-001), [BR-002](../business-rules.md#br-002), [BR-006](../business-rules.md#br-006), [BR-007](../business-rules.md#br-007). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
+Rules: [BR-001](../business-rules.md#br-001), [BR-002](../business-rules.md#br-002), [BR-006](../business-rules.md#br-006), [BR-007](../business-rules.md#br-007). See [code owners](../code-owners/index.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                    | What should happen                                                                                                                               | Result | Remarks |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------- |
@@ -49,7 +49,7 @@ Rules: [BR-001](../business-rules.md#br-001), [BR-002](../business-rules.md#br-0
 
 ## Hosted payment, return and confirmation
 
-Rules: [BR-007](../business-rules.md#br-007), [BR-008](../business-rules.md#br-008), [BR-010](../business-rules.md#br-010), [BR-011](../business-rules.md#br-011), [BR-012](../business-rules.md#br-012), [BR-013](../business-rules.md#br-013). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
+Rules: [BR-007](../business-rules.md#br-007), [BR-008](../business-rules.md#br-008), [BR-010](../business-rules.md#br-010), [BR-011](../business-rules.md#br-011), [BR-012](../business-rules.md#br-012), [BR-013](../business-rules.md#br-013). See [code owners](../code-owners/index.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                               | What should happen                                                                                                                                                | Result | Remarks |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
@@ -65,7 +65,7 @@ Rules: [BR-007](../business-rules.md#br-007), [BR-008](../business-rules.md#br-0
 
 ## Devices, navigation and response time
 
-Rules: [BR-013](../business-rules.md#br-013), [BR-018](../business-rules.md#br-018). See [code owners](../code-owners.md#11-business-rule-to-owner-index).
+Rules: [BR-013](../business-rules.md#br-013), [BR-018](../business-rules.md#br-018). See [code owners](../code-owners/index.md#11-business-rule-to-owner-index).
 
 | Case    | What to do                                                                                                                 | What should happen                                                                                                                | Result | Remarks |
 | ------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |

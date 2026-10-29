@@ -175,12 +175,28 @@ test("reload and duplicate tabs retain one checking window with a shared server 
   page,
   context,
 }) => {
-  await start(page);
+  // The link can render before the checking effect persists its budget.
+  // Arm before setup: the first confirmation request follows that save.
+  const [request] = await Promise.all([
+    page.waitForRequest((request) =>
+      /^\/api\/attempts\/[a-f0-9-]{36}\/confirmation$/.test(
+        new URL(request.url()).pathname,
+      ),
+    ),
+    start(page),
+  ]);
   const id = new URL(page.url()).searchParams.get("attempt")!;
+  expect(new URL(request.url()).pathname).toBe(
+    `/api/attempts/${id}/confirmation`,
+  );
   const budget = await page.evaluate(
     (id) => JSON.parse(localStorage.getItem(`soccerbot-checking:${id}`)!),
     id,
   );
+  expect(budget).toEqual(
+    expect.objectContaining({ deadline: expect.any(Number) }),
+  );
+  expect(Number.isSafeInteger(budget.deadline)).toBe(true);
   await restoreContext(page, id, () => page.reload());
   await expect(
     page.getByRole("region", { name: "Current booking summary" }),

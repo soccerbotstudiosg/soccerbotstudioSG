@@ -16,7 +16,7 @@ Status reconciled on 28 October 2026 against this working revision, committed ta
 
 ## Current system rules
 
-Stable rule-group IDs identify the existing paragraphs below; they do not change their requirements. Keep IDs when editing or moving a rule, never reuse retired IDs, and allocate the next unused ID for new rules. Milestone IDs and dated history are retained in [Complete journey](journey.md). [Code ownership mapping](code-owners.md#11-business-rule-to-owner-index) links each rule group to its implementation or operational owner.
+Stable rule-group IDs identify the existing paragraphs below; they do not change their requirements. Keep IDs when editing or moving a rule, never reuse retired IDs, and allocate the next unused ID for new rules. Milestone IDs and dated history are retained in [Complete journey](journey.md). [Code ownership mapping](code-owners/index.md#11-business-rule-to-owner-index) links each rule group to its implementation or operational owner.
 
 ### Product and booking policy
 
@@ -136,11 +136,11 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-025"></a>
 
-**BR-025** — The selected client topology is Cloudflare for SaaS on `soccerbotsg.win` (client account `0b36822648e6905c681a90b6bec5ca7f`) routing to `soccerbot-production` with Worker Static Assets. Primary owns the DNS test zone `standardsoftwares.com`. Begin with `https://booking.standardsoftwares.com`, then separately verify the test apex before claiming production apex support. Final origin is `https://soccerbotsg.com` with Uncoverin retaining DNS; vendor account access, proxy mode, CAA and validation requirements remain to be confirmed. `app404.ai` is excluded from the test.
+**BR-025** — Current owner decision: transfer `soccerbotsg.com` to the client registrar first, then delegate authoritative DNS to the client Cloudflare account. Serve `https://soccerbotsg.com` directly with managed, automatically renewed HTTPS. Registrar ownership and DNS delegation are separate operations; neither is recorded complete. Confirm exact registrar, account IDs, hostname ownership, preserved email/DNS records and DNSSEC transition before any owner-executed change. Reassess supported Worker routing/custom-domain configuration after ownership verification; same-account DNS may remove the need for SaaS, but this documentation does not change deployment manifests or establish that configuration. The earlier SaaS proof used client zone `soccerbotsg.win` and Primary-owned `standardsoftwares.com`; these are retained test resources, not the current production ownership decision. If reused, prove subdomain and apex separately. `app404.ai` remains excluded.
 
 <a id="br-026"></a>
 
-**BR-026** — The fallback `fallback.soccerbotsg.win` was recorded active during setup; recheck it before deployment. Deployment requires the declared zone in the selected account, active/unpaused status, an active matching fallback, its proxied originless `AAAA 100::` record, and no competing routes. The target/release configuration declares the zone-scoped `*/*` route; verify it in the exact tested artifact before deployment. All client requests run through the Worker before assets, so alternate origins are rejected. Worker previews and Workers.dev are disabled. The optional Pages entry remains available for separately configured targets; this client target does not create or require a Pages project. Production remains closed and the public Turnstile key is still missing.
+**BR-026** — **Prepared SaaS implementation, pending reassessment under BR-025:** the fallback `fallback.soccerbotsg.win` was recorded active during setup; recheck it before deployment. Deploying this existing SaaS target requires the declared zone in the selected account, active/unpaused status, an active matching fallback, its proxied originless `AAAA 100::` record, and no competing routes. The target/release configuration declares the zone-scoped `*/*` route; verify it in the exact tested artifact before deployment. All client requests run through the Worker before assets, so alternate origins are rejected. Worker previews and Workers.dev are disabled. The optional Pages entry remains available for separately configured targets; this client target does not create or require a Pages project. Production remains closed and the public Turnstile key is still missing.
 
 <a id="br-027"></a>
 

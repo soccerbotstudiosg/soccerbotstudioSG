@@ -1,0 +1,310 @@
+# Technical behavior and recovery map
+
+Source snapshot: `dffb24a` (28 October 2026). This is the function-level companion to the [feature ownership map](index.md): what each named operation does, what the customer or operator sees, what prevents unsafe actions, and where failure recovery belongs. It covers the principal feature entry points and state-changing functions; it is not an exhaustive catalogue of private parsing helpers, JSX callbacks or generated bindings. “Owner” means code responsibility, not an assigned responder.
+
+[Business rules](../business-rules.md) remain the authority for invariants, [API contracts](../api-contracts.md) own request/response shapes, and the [runbook](../runbook.md) owns operator procedures. Tables describe implemented behavior, not proof that client production is configured. SimplyBook staff scheduling and HitPay/Cloudflare administration are provider-console operations, not custom SoccerBot admin features. Enquiry and assistant currently use demo adapters.
+
+## Overview and reading route
+
+```mermaid
+flowchart TB
+  User["Customer action or return navigation"] --> UI["1 · UI state and loading"]
+  UI --> Browser["2 · Browser services and local state"]
+  Browser --> Entry["3 · Worker origin, access and foundation guards"]
+  Entry --> Identity["4 · Identity and saved contact"]
+  Entry --> Calendar["5 · Catalogue and availability"]
+  Entry --> Checkout["6 · Booking and payment effects"]
+  Checkout --> Recovery["7 · Reconciliation, receipt and dismissal"]
+  Identity --> Coord["8 · Provider coordination and storage"]
+  Calendar --> Coord
+  Checkout --> Coord
+  Recovery --> Coord
+  Coord --> Providers["SimplyBook, HitPay, Resend and Turnstile"]
+  Entry -.-> Observe["9 · Diagnostics and telemetry"]
+  Coord -.-> Observe
+  Release["10 · Verified artifacts and deployment"] --> Entry
+```
+
+For a visible failure, start with its UI row, follow the named service to its Worker owner, then inspect the linked evidence. A diagram arrow denotes responsibility or a call path; it does not guarantee parallel execution, authorization or provider success.
+
+## 1. UI state, navigation and loading
+
+Rules: [BR-003–005](../business-rules.md#identity-privacy-and-environment-isolation), [BR-007–013](../business-rules.md#checkout-durable-effects-and-customer-errors). Owners: [provider.tsx](../../src/features/booking/provider.tsx), [booking-page.tsx](../../src/features/booking/booking-page.tsx), [booking-loading.tsx](../../src/features/booking/booking-loading.tsx).
+
+```mermaid
+flowchart TB
+  Page["BookingPage · requested step"] --> Provider["BookingProvider · restored draft and attempt"]
+  Provider --> Update["update · editable draft changes"]
+  Provider --> Run["run · single active operation"]
+  Run --> Review["review · local validation"]
+  Run --> Effects["reserve / checkout / pay · service boundary"]
+  Run --> Observe["check / resolve · retained attempt"]
+  Effects --> Guard["revision, identity and abort checks"]
+  Guard --> Result["commit current result or retain uncertainty"]
+  Provider --> Exit["finishExit / retryRebooking · same completed attempt"]
+  Provider --> Loading["BookingLoadingProvider · registered operations"]
+```
+
+| Function / operation                        | Behavior and visible result                                                                                       | Guards                                                                                                                                | Failure and recovery                                                                                                                                     |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BookingPage`                               | Selects the booking step and renders its current presentation.                                                    | Step prerequisites and provider readiness; route text is not booking authority.                                                       | Restore required state or return to an eligible step; diagnose the provider before changing route guards.                                                |
+| `BookingProvider` / `useBooking`            | Own shared draft, attempt, restoration, availability and exposed actions; `useBooking` requires its provider.     | Restored service/identity owner, revision and mounted state separate old work from current state.                                     | Failed restoration must not invent a successful attempt. Follow the service error and retained server evidence.                                          |
+| `run` with `review`                         | Checks the editable selection and reports local success. Review creates no reservation or payment.                | Current readiness, selection validity and one active action.                                                                          | Keep the draft editable; correct selection/contact instead of fabricating a hold.                                                                        |
+| `run` with `reserve`, `checkout`, `pay`     | Coordinates the corresponding service operation and hosted payment navigation.                                    | Synchronous active-request guard, abort controller, revision and identity checks; unfinished completed-exit work blocks new checkout. | Preserve existing attempt after uncertain dispatch; stale responses cannot replace a newer draft/session. Inspect original attempt before another write. |
+| `run` with `check`, `resolve`               | Applies outcome work to an existing attempt.                                                                      | Requires an attempt and the same current-operation checks.                                                                            | Retain pending/unknown state; no fresh payment merely because checking failed.                                                                           |
+| `update`                                    | Applies permitted draft changes; changing an editable draft clears old consent/attempt state.                     | Payment-locked attempts cannot be edited; held/verifying attempts allow only the supported consent change.                            | Do not bypass the guard to unlock a reservation; resolve or expire the original attempt through its authorized path.                                     |
+| `cancel`                                    | Aborts browser work and invalidates the active request.                                                           | Local request ownership and revision controls.                                                                                        | Abort is not proof that a provider write stopped; server readback owns uncertain effects.                                                                |
+| `finishExit` / `retryRebooking`             | Acknowledge completed-booking dismissal; explicit retry reuses its saved ID.                                      | Retained completed-exit identity; new checkout waits for unresolved exit work.                                                        | Show the saved-confirmation warning and retry action. Never erase the receipt or create another financial effect to clear it.                            |
+| `restartAfterExpiry`                        | Clears eligible expired selection while retaining contact and returns to time selection.                          | No conflicting active operation or different current attempt.                                                                         | An unknown payment is not eligible just because the browser clock elapsed. Follow server expiry/confirmation evidence.                                   |
+| `restartAfterConfirmation` / `reset`        | Start a new draft only through their permitted state transitions.                                                 | Completed exit is acknowledged in live mode; reset refuses active, held or checking/pending/late attempts.                            | Keep unresolved work attached to the original attempt.                                                                                                   |
+| `BookingLoadingProvider` / `BookingLoading` | Register concurrent loading work, display one overlay and make underlying content inert while keeping it mounted. | A registration returns its own cleanup; the overlay lasts while any registration remains.                                             | A stuck overlay requires inspecting unresolved operations and cleanup. Do not force clicks through it or remove the guard to pass a test.                |
+
+Evidence: [experiment browser cases](../../tests/experiment.spec.ts), [live identity/booking browser cases](../../tests/live-email.spec.ts), [booking domain tests](../../src/features/booking/async-booking.test.tsx). Screens to inspect: account choices, editable Review, loading overlay, saved-confirmation retry and back/forward return.
+
+### 1.1 Step presentation functions
+
+These functions are under [the booking feature](../../src/features/booking). They consume provider/service state; they do not independently authorize provider writes.
+
+| Function / file                                                                                      | Behavior and guards                                                         | Failure / recovery                                                                                                     |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `AccountStep` in `account-step.tsx`                                                                  | Present guest/email account choices and current session actions.            | Verification/access errors stay explicit; reverify or choose eligible guest access without borrowing another identity. |
+| `EmailBotProof` in `email-bot-proof.tsx`                                                             | Own Turnstile widget/proof lifecycle for the configured sitekey and action. | Missing/expired/failed proof cannot authorize email delivery; refresh through the widget lifecycle.                    |
+| `SessionStep` / `TimeStep`                                                                           | Present catalogue selection and calendar/slot state.                        | Empty/unavailable data stays distinct; refresh/reselect only when the retained attempt permits it.                     |
+| `DetailsStep`                                                                                        | Edit current contact and offer eligible saved details.                      | Field/profile errors remain visible; keep contact bound to the current identity and draft.                             |
+| `ReviewStep` / `ClientDetails` / `Arrival` in `review-step.tsx`                                      | Present editable review, contact and arrival guidance with consent.         | Review is not a booking; correct invalid details before checkout and preserve server-held restrictions.                |
+| `PaymentStep`                                                                                        | Present payment state/handoff through the booking provider.                 | Do not label an uncertain return paid or invent another payment request.                                               |
+| `ConfirmationStep` / `PendingConfirmation` / `BookingConfirmation`                                   | Select and render the supported pending or confirmed presentation.          | Live success/details/export depend on the protected confirmation and receipt owners, not just a component name.        |
+| `guardedStep` / `selectionErrors` / `paymentLocked` in [domain booking](../../src/domain/booking.ts) | Derive eligible navigation, selection errors and payment edit restrictions. | Redirect to a supported step; do not remove the guard to permit stale back/forward state.                              |
+
+## 2. Browser services, persistence and exports
+
+Owners: [booking.ts](../../src/services/booking.ts), [identity.ts](../../src/services/identity.ts), [storage.ts](../../src/services/storage.ts), [exports.ts](../../src/services/exports.ts), [composition](../../src/services/index.ts).
+
+| Function / operation                                                             | Behavior                                                                                                         | Guards                                                                                                       | Failure and recovery                                                                                                |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `defineBookingService`                                                           | Wraps an adapter in shared input/output and operation invariants.                                                | Contract validation applies to live and demo adapters.                                                       | Invalid results become service errors; do not accept malformed provider responses as UI state.                      |
+| `liveBookingService.restore`                                                     | Reads the current server-owned attempt rather than trusting a local receipt.                                     | Authenticated server result and validated shape.                                                             | Keep uncertainty visible if readback is unavailable; a local draft is not proof of non-dispatch.                    |
+| `publicCalendar`, `calendar`, `availability`                                     | Read calendar/slot information for the requested scope.                                                          | Schemas, dates, service mapping and abort signals.                                                           | Present unavailable/retry state; cached availability does not authorize checkout.                                   |
+| `checkout` / `pay`                                                               | Send the original intent/key through the booking/payment route and interpret retained or rejected outcomes.      | Consent, validated draft, same attempt and allowed checkout URL.                                             | Read back uncertain writes; distinguish definite preparation rejection from an effect that may already exist.       |
+| `createLiveIdentityService.current` / `refresh` / `guest`                        | Expose unexpired in-memory identity, establish access and restore remembered identity when needed.               | Refresh generation and abort guards reject stale results.                                                    | Clear unusable identity; keep guest access distinct from verified email authority.                                  |
+| `challenge` / `verify`                                                           | Submit normalized email plus bot proof, then verify the challenge and read server identity.                      | Valid email/token and server-backed proof; no locally manufactured membership.                               | Surface verification errors; obtain fresh proof only through the permitted flow.                                    |
+| Identity service `profile` / `saveProfile`                                       | Read or save contact for the current verified email.                                                             | Matching generation/email, unexpired identity and remembered consent for saving.                             | Reject stale/cross-email results; a failed save does not update server profile.                                     |
+| Identity service `signOut`                                                       | Clear in-memory identity immediately and request current-device or all-device server revocation.                 | Generation invalidates older requests; server independently authorizes revocation.                           | If the request fails, local clearing is not evidence that remote sessions were revoked.                             |
+| `safeRead`, `safeWrite`, `safeRemove`                                            | Tolerate denied browser storage or invalid JSON.                                                                 | Reads return null on failure; writes do not become authority.                                                | In-memory interaction can continue, but persistence may be unavailable; do not infer that server state was cleared. |
+| `loadBooking`, `saveBooking`, `loadLiveDraft`, `saveLiveDraft`, `upgradeBooking` | Validate/migrate local draft representation; keep live persistence limited to the intended draft representation. | Schema/version checks and live/demo separation.                                                              | Discard unusable local representation without deleting server booking evidence.                                     |
+| `calendarText`, `downloadCalendar`, `downloadBooking`                            | Format calendar/PDF output from the supplied booking.                                                            | Live callers must first obtain a fresh authorized receipt; these formatters are not authorization endpoints. | Receipt/download failure stays a failure; never fall back to a cached draft as live confirmation.                   |
+
+Evidence: [service tests](../../src/services/booking.test.ts), [live-email browser tests](../../tests/live-email.spec.ts), [protected export owner](../../src/features/booking/protected-confirmation.tsx). For staff schedule entry, use [Trainer UAT](../uat/trainers.md); it is performed in SimplyBook.
+
+## 3. HTTP entry, access and immutable foundation
+
+Owners: [Worker entry](../../worker/index.ts), [access](../../worker/access.ts), [bindings](../../worker/bindings.ts), [policy](../../worker/policy.ts). Rules: BR-003, BR-004, BR-014, BR-021, BR-027.
+
+```mermaid
+flowchart LR
+  Request["Request"] --> Origin["HTTPS, configured origin, method and route"]
+  Origin --> Foundation["verifyBindings · exact deployment foundation"]
+  Foundation --> Access["authenticate · current capability"]
+  Access --> Owner["attempt owner / operation grant"]
+  Owner --> Handler["feature handler"]
+  Origin --> Webhook["separate signed-webhook authority"]
+```
+
+| Function / operation                                                              | Behavior                                                                      | Guards                                                                        | Failure and recovery                                                                                                              |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Worker `fetch` / `scheduled`                                                      | Route named APIs/static assets and scheduled work to owners.                  | Origin/method/query/body boundaries; provider and environment enablement.     | Reject invalid requests before effects. Check configuration and route owner; do not enable production merely to make health pass. |
+| `authenticate` / `authenticateCheckout`                                           | Resolve a current access capability and checkout-compatible authority.        | Cookie format/hash, expiry, revocation and server state.                      | Deny unavailable/expired authority; establish the correct identity rather than copying another session cookie.                    |
+| `createAccess` / `revokeAccess` / `clearAccessCookie`                             | Create guest access, revoke presented authority and construct cookie removal. | Server-issued capability and secure cookie scope.                             | Client cookie clearing alone is not global sign-out; use the appropriate server revocation operation.                             |
+| `coordinatorName` / `coordinatorStub`                                             | Acquire the configured account coordinator with its placement hint.           | Validated configured identity; immutable first-use placement considerations.  | Do not rename the coordinator or create a replacement to bypass a mismatch.                                                       |
+| `assertBindingShape`, `foundationStatement`, `assertFoundation`, `verifyBindings` | Validate binding/resource identity against the registered foundation.         | Exact expected account/environment/resource identity and stored registration. | Fail closed on mismatch; inspect target and registration. No automatic self-registration or destructive reset.                    |
+
+Evidence: [foundation fixture and checks](../../worker/tests/foundation-fixture.mjs), [Worker tests](../../worker/tests), [deployment tests](../../scripts/deploy-cloudflare.test.mjs). Request errors are not evidence that no earlier request committed a write.
+
+## 4. Email identity, Remember me and saved contact
+
+Owners: [identity](../../worker/identity.ts), [delivery](../../worker/identity-delivery.ts), [remembered identity](../../worker/remembered-identity.ts), [contact profile](../../worker/contact-profile.ts). Rules: BR-003–005.
+
+```mermaid
+sequenceDiagram
+  participant UI as Account UI
+  participant API as identityDelivery
+  participant Bot as Turnstile
+  participant Mail as Resend
+  participant State as D1 identity state
+  UI->>API: request challenge with supplied proof
+  API->>State: reserve bounded dispatch
+  API->>Bot: validate proof
+  API->>Mail: send allowed challenge
+  UI->>API: verify challenge
+  API->>State: consume proof and bind identity
+  Note over API,State: Remembered access and saved contact retain separate consent and revocation rules
+```
+
+| Function / operation                                                                | Behavior                                                                                             | Guards                                                                                                          | Failure and recovery                                                                                                       |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `inputBody` / `assertIdentityProofOpen`                                             | Bound identity input and require an enabled delivery context.                                        | Body bounds and current environment/window.                                                                     | Fail closed; inspect delivery configuration before retrying.                                                               |
+| `identityDelivery` / nested `dispatch`                                              | Coordinate Turnstile verification and Resend delivery with durable dispatch accounting.              | Current access, trusted source metadata, reserved allowance, secret presence and repeated window checks.        | Unknown dispatch remains recorded; do not refund its slot or repeatedly send mail to conceal uncertainty.                  |
+| `requestIdentityChallenge`                                                          | Create a bounded email-verification challenge.                                                       | Normalized email, proof purpose and challenge/rate policy.                                                      | Reject invalid or limited requests; a send attempt is not verified identity.                                               |
+| `verifyIdentityChallenge` / `readVerifiedIdentity` / `verifiedContact`              | Consume matching proof, expose current identity and constrain matched contact to the verified email. | Expiry, purpose, single consumption and current capability.                                                     | Expired/replayed/mismatched proof cannot authorize saved details; reverify through the supported account flow.             |
+| `rememberedIssuance` / `restoreRememberedIdentity`                                  | Issue consented remembered access and rotate it during valid restoration.                            | Scoped hashed tokens, expiry, revocation and identity generation.                                               | Reject invalid/revoked restoration; an old browser response cannot resurrect a signed-out identity.                        |
+| `replaceRememberedIdentity` / `revokePresentedRemembered` / `clearRememberedCookie` | Replace or revoke the presented remembered identity and expire its browser cookie.                   | Current session and token scope.                                                                                | Keep revocation and cookie state consistent; do not use cookie deletion as proof that every device is revoked.             |
+| `revokeAllIdentities`                                                               | Revoke verified-email sessions/remembered access across devices.                                     | Current server-verified email session, including valid remembered restoration; guest authority is insufficient. | Require verification when identity is unavailable; preserve server revocation evidence.                                    |
+| `readContactProfile` / `saveContactProfile`                                         | Read and persist permitted contact details for the verified owner.                                   | Identity, consent, field schema and ownership; guest input does not become another email’s profile.             | Keep failed saves visible and allow an authorized reread; do not prefill another account or claim a failed save succeeded. |
+
+Evidence: [identity/remembered Worker tests](../../worker/tests), [email account and Remember me browser cases](../../tests/live-email.spec.ts), [account UI](../../src/features/booking/account-step.tsx), [Turnstile lifecycle](../../src/features/booking/email-bot-proof.tsx). Screen evidence should distinguish challenge request, verified session, Remember me restoration and all-device sign-out.
+
+## 5. Catalogue, selection and capacity
+
+Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calendar](../../worker/public-calendar.ts), [native read operations](../../worker/native-checkout.ts), [provider session](../../worker/provider-session.ts), [browser availability](../../src/features/booking/availability.ts). Rules: BR-001, BR-002, BR-006, BR-014–017.
+
+| Function / operation                              | Behavior                                                                                          | Guards                                                                                                                             | Failure and recovery                                                                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `customerCatalogue` / `ProviderSession.catalogue` | Read supported active service/instructor relationships and normalize them for customers.          | Account/environment scope, complete provider response and supported mapping.                                                       | Reject incomplete catalogue; retain explicit unavailable state rather than inventing sessions.                                                           |
+| `invalidateCatalogue`                             | Invalidate cached catalogue ownership so obsolete reads cannot become the next accepted snapshot. | Cache generation and scope.                                                                                                        | A late response from the previous generation must not restore invalidated data.                                                                          |
+| `publicCalendar` / `customerNativeCalendar`       | Return the supported public or customer calendar scope.                                           | Month/window, configured services and access where required.                                                                       | Calendar unavailability remains a read failure; no placeholder availability is booking authority.                                                        |
+| `customerNativeAvailability`                      | Read selected-day availability within the customer contract.                                      | Current day/service/instructor relationship and provider policy.                                                                   | Selection can become unavailable before checkout; revalidate at the write boundary.                                                                      |
+| `ProviderSession.prebooking` / `discoverFields`   | Read pricing/availability and supported booking input metadata.                                   | Supported tariff and field semantics, bounded cache/read scope.                                                                    | Reject unsupported/incomplete metadata rather than omit required provider fields.                                                                        |
+| `withinOpeningHours` and shared selection rules   | Validate local session times, player/selection limits and pricing representation.                 | [Booking policy](../../src/domain/booking-policy.ts), [session pricing](../../src/domain/session-pricing.ts), server revalidation. | Browser feedback does not replace server authority. Reconfirm actual client schedules/prices before activation; constants are not vendor setup evidence. |
+
+Evidence: [combined hold concurrency cases](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [Trainer schedule worksheet](../uat/trainers.md). Capacity is shared; an instructor label does not create another independent studio slot.
+
+## 6. Checkout, durable effects and hosted payment
+
+Owners: [customer authority](../../worker/customer-authority.ts), [native checkout](../../worker/native-checkout.ts), [dispatch claims](../../worker/native-dispatch.ts), [normalization](../../worker/provider-normalization.ts), [HitPay journal](../../worker/hitpay-journal.ts), [payment handoff](../../worker/hitpay-hold.ts). Rules: BR-007–011, BR-014–017.
+
+```mermaid
+flowchart TB
+  Intent["Original key, consent and selected sessions"] --> Grant["authorizeCustomerCheckout / prepareCustomerNative"]
+  Grant --> Claim["claimNativeDispatch / claimNativeEffect"]
+  Claim --> Book["executeNativeCheckout · SimplyBook effects"]
+  Book --> Evidence["normalizeNativeCreation / normalizeNativeReads"]
+  Evidence --> Complete{"Complete valid association?"}
+  Complete -->|yes| Pay["payHitpayHold · reserved payment creation"]
+  Complete -->|no or unknown| Retain["Retain original identity and recovery evidence"]
+  Pay --> URL["Validated hosted checkout handoff"]
+  Pay -->|uncertain response| Retain
+```
+
+| Function / operation                                                                                     | Behavior                                                                                      | Guards                                                                                                     | Failure and recovery                                                                                                     |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `authorizeCustomerCheckout`                                                                              | Validate selection/consent and retain a bounded immutable grant.                              | Current access, configured services, original intent/key and required fresh reads.                         | Definite rejection can return to editable Review only when evidence permits; uncertainty retains the original attempt.   |
+| `prepareCustomerNative`                                                                                  | Prepare the server-owned native checkout context.                                             | Current policy, grant and ownership; source records distinguish preparation from dispatch.                 | Preparation is not a booking. Retain/read existing context rather than minting new intent after an unknown write.        |
+| `archiveRejectedCustomerGrant` / `rejectedCheckoutReadback`                                              | Inspect/archive eligible rejected preparation and distinguish no-dispatch from retained work. | Capability ownership and persisted effect state.                                                           | Only authoritative no-dispatch evidence permits a fresh selection path; failed readback stays uncertain.                 |
+| `claimNativeDispatch` / `claimNativeEffect`                                                              | Atomically reserve attempt dispatch and individual provider effects before sending writes.    | Conditional state/version and one owned effect.                                                            | Contention returns retained state or rejection; never replay a financial effect merely because a lease/request ended.    |
+| `executeNativeCheckout`                                                                                  | Execute single or batch creation and retain creation/readback evidence before payment.        | Grant identity, ownership, bounds, exact association, supported money/session semantics and effect claims. | Partial batch or unknown creation preserves references and recovery; no payment for an incomplete booking set.           |
+| `normalizeNativeCreation`, `normalizeNativeBatchClosure`, `normalizeNativeReads`, `inspectNativeBooking` | Validate provider IDs, booking/invoice association, selected sessions and financial evidence. | Full schema/association consistency rather than HTTP status alone.                                         | Invalid evidence blocks progression; inspect retained diagnostics without replacing it with guessed values.              |
+| `nativeCheckoutStatus` / `currentCustomerNative`                                                         | Read original/current customer checkout state for restoration and reconciliation.             | Authenticated owner and stored associations.                                                               | A missing/failed read cannot establish that no booking happened; retain original identity for investigation.             |
+| `selectPaymentRoute` / `prepareHitpay` / `hitpayHoldStatement`                                           | Select permitted payment handling and persist its scoped payment intent.                      | Merchant, account, amount, currency and booking association.                                               | Reject disabled or mismatched integration; do not switch payment routes to evade existing effects.                       |
+| `claimHitpay` / `hitpayClaimStatements`                                                                  | Claim the existing payment creation/recovery state conditionally.                             | Durable single-effect ownership and current state.                                                         | Uncertain creation must be discovered/reconciled before another creation.                                                |
+| `payHitpayHold`                                                                                          | Create or recover the allowed hosted-payment handoff for a verified hold.                     | Consent, complete booking proof, scoped credentials and configured HitPay contract.                        | Preserve the reservation on payment creation failure; do not return it to fresh slot selection as if no effect occurred. |
+| `recordedHitpayPayment`, `storedHitpayCheckout`, `findHitpayRequest`                                     | Validate retained payment/handoff or locate the existing request by its association.          | Exact reference, money, merchant, status and supported checkout URL.                                       | Ambiguous/mismatched evidence remains blocked for recovery; never select an arbitrary matching payment.                  |
+
+Evidence: [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [live checkout browser tests](../../tests/live-email.spec.ts). Capture Review and hosted-return states with synthetic data; a screenshot of the payment page cannot prove settlement.
+
+## 7. Recovery, confirmation, exports and completed exit
+
+Owners: [recovery](../../worker/hitpay-recovery.ts), [confirmation](../../worker/confirmation.ts), [receipt](../../worker/receipt.ts), [progress](../../worker/checkout-progress.ts), [browser confirmation service](../../src/services/confirmation.ts), [ProtectedConfirmation](../../src/features/booking/protected-confirmation.tsx), [checking hook](../../src/features/booking/confirmation-checking.ts). Rules: BR-008, BR-010–013.
+
+```mermaid
+sequenceDiagram
+  participant Hook as receiveHitpayWebhook
+  participant DO as Coordinator alarm
+  participant Recovery as recoverHitpay
+  participant Provider as HitPay and SimplyBook
+  participant UI as ProtectedConfirmation
+  Hook->>DO: retain wakeup
+  DO->>Recovery: claim original recovery
+  Recovery->>Provider: verify payment, accounting and booking
+  Recovery->>Recovery: commit authoritative outcome
+  UI->>Recovery: protected context/status read
+  Note over UI,Recovery: Browser polling observes; it does not prove or fabricate settlement
+  UI->>Recovery: authorized receipt read
+```
+
+| Function / operation                                                  | Behavior                                                                                        | Guards                                                                                              | Failure and recovery                                                                                                     |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `receiveHitpayWebhook`                                                | Authenticate the webhook, associate its request and persist deduplicated receipt/wakeup.        | Signature, bounded body, reference/account scope and immutable receipt identity.                    | Reject invalid input; acknowledgement records receipt, not completed payment verification.                               |
+| `captureWebhook`                                                      | Capture supported SimplyBook event hints within its configured channel/window.                  | Its own signature/body/deduplication policy; not interchangeable with HitPay signatures.            | Invalid or unavailable capture is not acknowledged as success; hints do not replace provider readback.                   |
+| Coordinator `wakeHitpayRecovery`, `alarm`, `hitpayRecovery`           | Persist wakeup generations and run recovery through account coordination.                       | Conditional generation removal, queue admission and durable recovery claims.                        | Preserve newer wakeups; retained work and bounded scheduled recovery own reconciliation after interruption.              |
+| `recoverHitpay`                                                       | Verify payment, read booking/invoice, perform guarded accounting and publish the valid outcome. | Original payment scope, lease/generation, finite budget, financial evidence and accounting journal. | Paid-but-invalid/unknown booking remains unresolved/manual review; no blind accounting replay, refund or cancellation.   |
+| `runScheduledRecovery`                                                | Dispatch due retained payment/booking work or explicitly granted operator windows.              | Feature enablement, original windows/budgets and coordinator authority.                             | Does not reset deadlines or authorize new writes outside recovery scope. Follow the runbook for blocked work.            |
+| `confirmation` / `decideStoredConfirmation`                           | Admit bounded checking and derive status from current retained evidence.                        | Owner, expiry, checking quota and post-admission reread; manual review supersedes earlier success.  | Throttling follows server timing; stale/unknown evidence stays pending/unresolved rather than confirmed.                 |
+| `checkoutContext` / `hitpayConfirmationGuard`                         | Return protected context and fence invalid/uncertain payment evidence.                          | Current access, matching attempt, payment scope and state.                                          | Deny mismatched access; never expose a stale success context after revocation or manual review.                          |
+| `retainCustomerConfirmation` / `customerConfirmation`                 | Retain/read the validated customer confirmation representation.                                 | Correct attempt association and durable proof.                                                      | UI caches cannot manufacture this proof or upgrade pending to paid.                                                      |
+| `checkoutCheckingDeadline`, `checkoutExpired`, `expireCheckout`       | Derive original checking/hold state and process allowed expiry.                                 | Server clocks and retained payment/effect evidence.                                                 | Browser time or deleted payment link is insufficient proof of nonpayment.                                                |
+| `useConfirmationChecking`                                             | Coordinate bounded browser reads and pending/confirmed/denied states.                           | Current attempt/session revision, abort and timing guards.                                          | Stop inappropriate work on revocation/change; respect server budget instead of restarting a new checking window.         |
+| `ProtectedConfirmation`                                               | Render current context/status/receipt and offer permitted payment, export or restart actions.   | Attempt/mode/session-revision match; protected receipt required for details/export.                 | Hide unauthorized details; show pending/retry/unavailable states without claiming settlement.                            |
+| `bookingReceipt` / `readBookingReceipt` / `bookingFromReceipt`        | Reauthorize and validate the live receipt, then map it for presentation/export.                 | Server ownership/payment guard plus access recheck; client schema validation.                       | Receipt failure blocks export even if a prior screen said confirmed. Reauthenticate or investigate the original attempt. |
+| `dismissCompletedBooking` and coordinator `dismissCompleted`          | Acknowledge completed exit while preserving the authorized receipt.                             | Original owned completed attempt; repeat acknowledgement is supported.                              | Lost response is retried with the same ID; do not create another booking/payment.                                        |
+| `completedExitIntent`, `rememberCompletedExit`, `forgetCompletedExit` | Retain the browser’s outstanding completed-exit intent.                                         | Same-attempt handling; acknowledgement governs clearing.                                            | Failed dismissal shows saved-confirmation warning until explicit retry succeeds.                                         |
+
+Evidence: [live-email dismissal and automatic recovery journeys](../../tests/live-email.spec.ts), [automatic completion/repeat acknowledgement regression](../../worker/tests/combined-hold.test.mjs), [provider recovery/receipt cases](../../worker/tests/provider.test.mjs). The completed-dismissal test awaits the actual recovery event before navigation; the separate pending-return scenario still exercises recovery in flight.
+
+## 8. Provider coordination, token persistence and storage
+
+Owners: [queue](../../worker/provider-queue.ts), [session](../../worker/provider-session.ts), [token cache](../../worker/provider-token-cache.ts), [transport](../../worker/provider-transport.ts), [journal](../../worker/journal.ts). Rules: BR-014–017.
+
+| Function / operation                                      | Behavior                                                                                      | Guards                                                                                  | Failure and recovery                                                                                                         |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ProviderQueue.run` / `drain`                             | Serialize account workflows with bounded waiting and priority fairness.                       | Capacity, recovery reserve, admission deadline and no active-I/O preemption.            | Busy/expired admission returns a bounded failure. Diagnose queue pressure; do not enlarge limits to mask uncertain effects.  |
+| `ProviderSession.nativeRead` / `nativeWrite` / `identity` | Own scoped authenticated provider operations.                                                 | Supported method, transport/account mapping, budgets and existing effect authority.     | Read failure remains unavailable; write uncertainty retains journal evidence.                                                |
+| `checkoutToken` / `refreshPublicTokenAhead`               | Obtain/reuse valid provider authentication and perform permitted refresh-ahead.               | Original absolute expiry, scope and serialized provider work.                           | Invalid/expired credentials require supported refresh/configuration correction, not lifetime extension.                      |
+| `ProviderTokenCache.load` / `save` / `remove`             | Restore/persist encrypted scoped public/admin tokens in DO SQLite or remove unusable entries. | AES-GCM validation, account/environment/credential scope and absolute expiry.           | Bad decryption/scope/expiry cannot yield a usable token; inspect sanitized cache result rather than exposing token material. |
+| `providerRequest`, `identityRequest`, `hitpayRequest`     | Send bounded allowlisted provider requests and validate their contract.                       | Configured host/path/method, credentials, body/response bounds and transport deadlines. | Distinguish transport uncertainty from definitive rejection; neither timeout nor abort proves a write did not commit.        |
+| Journal and migration owners                              | Preserve attempts, effects, associations and recovery state across requests.                  | Conditional transitions, immutable identity and additive migrations.                    | Do not delete state or rewrite accepted migrations as a recovery shortcut; use isolated restore/reconciliation procedures.   |
+
+Evidence: [provider queue tests](../../worker/tests/provider-queue.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [migrations](../../migrations). D1 business state and coordinator SQLite token/coordination state have separate recovery implications.
+
+## 9. Diagnostics, Grafana and data boundaries
+
+Owners: [diagnostics](../../worker/diagnostics.ts), [confirmation tracing](../../worker/confirmation-tracing.ts), [telemetry](../../worker/telemetry.ts). Rules: BR-018–020. Operational signal meanings and proposed alerts belong to the [runbook](../runbook.md#4-monitoring-and-observability).
+
+| Function / operation                                                | Behavior                                                                                   | Guards                                                                                       | Failure and recovery                                                                                                                               |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `traced`, `measure`, `instrumentStorage`, `providerTransportTiming` | Measure request/storage/provider boundaries and emit bounded diagnostics.                  | Correlation and sanitized dimensions; overlapping durations are not additive exclusive time. | Missing timing is not proof of no work. Correlate request/provider evidence before attributing latency.                                            |
+| `finishConfirmationTrace`                                           | Emit one terminal trace for the observed confirmation/recovery operation.                  | Closed-trace guard, hashed recovery key and bounded outcome/result fields.                   | A trace is diagnostic evidence, not a replacement for authorized receipt/payment state.                                                            |
+| `sanitizeDiagnostic`                                                | Accept only allowed diagnostic fields and event shapes.                                    | Explicit allowlists and size/value bounds.                                                   | Unknown fields are not forwarded merely to improve debugging; never export raw secrets, customer fields or arbitrary payloads.                     |
+| `telemetryPayload` / Tail Worker `tail`                             | Build bounded OTLP summaries with configured success sampling and failure retention rules. | Sampling/batch/time bounds, service/environment labels and exporter configuration.           | Export failure must not change booking authority. Verify ingestion/heartbeat separately; absent Grafana traces cannot prove an error-free service. |
+
+Grafana receiver activation, alert delivery and production acceptance remain pending. Primary/backup responders and alert destinations remain **unassigned at the owner’s request**. A code-owner diagram does not assign these roles.
+
+## 10. Verification, deployment and configuration recovery
+
+Owners: [verified target run](../../scripts/verified-target-run.mjs), [deployment](../../scripts/deploy-cloudflare.mjs), [target configuration](../../scripts/deployment-target.mjs), [Worker verifier](../../scripts/verify-worker.mjs). Rules: BR-021–023, BR-025–032.
+
+```mermaid
+flowchart LR
+  SHA["Exact revision and target"] --> Gates["Three required verification gates"]
+  Gates --> Artifact["Verified artifact and receipt"]
+  Artifact --> Preflight["Account, foundation, route and config preflight"]
+  Preflight --> Install["Migrations and existing built Worker"]
+  Install --> Health["Observe expected revision and enabled/closed mode"]
+  Health --> Record["Deployment receipt / owner acceptance"]
+  Health -->|failure| Stop["Retain checkpoint; investigate or authorized rollback"]
+```
+
+| Function / operation                         | Behavior                                                                                        | Guards                                                                                                             | Failure and recovery                                                                                                                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `validateTargetRun`                          | Resolve the verified revision/attempt and its artifact.                                         | Correct repository/workflow/event, all three passing gates, current main for production or reserved staging SHA.   | Reject stale/foreign/mismatched evidence; do not rebuild a different artifact and reuse the receipt.                                                                           |
+| `validateDeployment`                         | Check release artifact/configuration integrity before deployment.                               | Revision, required files, target identity and artifact evidence.                                                   | Stop before provisioning/upload on mismatch; rebuild and reverify through the owning workflow if configuration changes.                                                        |
+| `verifySaasResources`                        | Enforce account/zone/fallback/DNS/route prerequisites for the existing SaaS target.             | Exact active zone, matching proxied fallback and no competing Worker route.                                        | The transfer-first DNS decision does not bypass this function. Reassess/change target configuration in a separate reviewed implementation before using another routing design. |
+| `awaitDeploymentHealth`                      | Confirm the expected revision and closed/enabled access mode after upload.                      | Only the expected previous revision is tolerated during bounded propagation; unknown revision or wrong mode fails. | Retain deployment checkpoints and investigate. Use the runbook’s authorized rollback; do not declare success on a generic HTTP 200.                                            |
+| Worker verifier runtime inventory comparison | Require the exact expected ordered test titles and zero failed/skipped/cancelled/todo outcomes. | [Inventory](../../scripts/worker-test-inventory.json) matches actual execution.                                    | A new regression requires its inventory entry; preserve the failed receipt and add the missing test rather than loosen the comparison.                                         |
+
+Evidence: [deployment tests](../../scripts/deploy-cloudflare.test.mjs), [verified-run tests](../../scripts/deployment-target.test.mjs), [CI workflows](../../.github/workflows). Current main deployment success is developer-environment evidence, not proof that the client repository, registrar or production integrations are installed.
+
+## 11. Screenshot and evidence index
+
+No new screenshots were captured for this document. Owner/CI operates browsers. The following is a capture checklist, not completed acceptance; use synthetic/redacted records and attach actual images only with revision, environment, device and scenario. Never include transfer codes, API keys, verification codes or real customer/payment data. Diagrams explain source behavior; screenshots establish only what was visible at capture time.
+
+| Evidence ID | View and states to capture                                                              | Responsible functions                                    | Existing test / worksheet                                                                              |
+| ----------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| TB-UI-01    | Guest/email choices; challenge rejected and verified; Remember me restored and revoked  | Identity service, identity delivery, remembered identity | [Live email tests](../../tests/live-email.spec.ts), [user UAT](../uat/simulated-user.md)               |
+| TB-UI-02    | Calendar availability; slot changed/unavailable; retained contact after eligible expiry | Catalogue/availability, provider update/restart          | [Combined hold tests](../../worker/tests/combined-hold.test.mjs), [user UAT](../uat/simulated-user.md) |
+| TB-UI-03    | Editable Review and consent; active loading overlay; blocked duplicate action           | BookingProvider.run/update, BookingLoadingProvider       | [Experiment tests](../../tests/experiment.spec.ts)                                                     |
+| TB-UI-04    | Payment pending, payment received/booking pending, confirmed and access denied          | ProtectedConfirmation, checking, server confirmation     | [Live email tests](../../tests/live-email.spec.ts)                                                     |
+| TB-UI-05    | Saved details and receipt; failed export; completed-exit warning and successful retry   | Receipt, exports, finishExit and dismissal               | [Live email tests](../../tests/live-email.spec.ts), [user UAT](../uat/simulated-user.md)               |
+| TB-OPS-01   | SimplyBook trainer schedule, invoice and HitPay reconciliation views                    | Provider-console permissions, not SoccerBot staff UI     | [Trainer UAT](../uat/trainers.md), [Admin UAT](../uat/admin.md)                                        |
+| TB-OPS-02   | Registrar/delegation, HTTPS and Grafana signal views after configured acceptance        | Operator procedures and telemetry; credentials redacted  | [Admin UAT](../uat/admin.md), [runbook](../runbook.md)                                                 |
+
+For each attachment record: evidence ID, source/production revision, environment, time, browser/device, expected versus observed behavior, redacted artifact location and outcome. Link durable evidence; temporary session paths and expiring CI artifact links are not permanent screenshots embedded in this documentation.

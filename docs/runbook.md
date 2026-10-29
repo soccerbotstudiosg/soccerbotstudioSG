@@ -6,16 +6,16 @@ Navigation: [Ownership](#1-ownership-and-access) · [Routine checks](#2-routine-
 
 ## 1. Ownership and access
 
-| Area                                            | Responsible role                  | Operational boundary                                                           |
-| ----------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------ |
-| Business acceptance and incident decisions      | Business owner                    | Approves live transactions, financial corrections, downtime and residual risks |
-| Code, CI and release recovery                   | Engineering/release operator      | Reviews changes, diagnoses failures and deploys approved verified artifacts    |
-| Booking services, schedules, staff and invoices | SimplyBook Admin                  | Uses the correct company; preserves booking history and shared studio capacity |
-| Instructor availability                         | SimplyBook Trainer                | Edits only owner-approved fields within actual provider permissions            |
-| Merchant, payments and refunds                  | Authorised HitPay operator        | Confirms authoritative financial state; cancellation does not imply refund     |
-| Hosting, D1/DO, secrets and TLS routing         | Authorised Cloudflare operator    | Verifies account IDs; preserves existing coordinator identity and foundation   |
-| Customer-domain DNS                             | Uncoverin / delegated DNS owner   | Performs agreed record changes and rollback while retaining DNS management     |
-| Central Grafana and alert delivery              | Owner company monitoring operator | Separate environment credentials, dashboards, alert receivers and retention    |
+| Area                                            | Responsible role                                                | Operational boundary                                                                                               |
+| ----------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Business acceptance and incident decisions      | Business owner                                                  | Approves live transactions, financial corrections, downtime and residual risks                                     |
+| Code, CI and release recovery                   | Engineering/release operator                                    | Reviews changes, diagnoses failures and deploys approved verified artifacts                                        |
+| Booking services, schedules, staff and invoices | SimplyBook Admin                                                | Uses the correct company; preserves booking history and shared studio capacity                                     |
+| Instructor availability                         | SimplyBook Trainer                                              | Edits only owner-approved fields within actual provider permissions                                                |
+| Merchant, payments and refunds                  | Authorised HitPay operator                                      | Confirms authoritative financial state; cancellation does not imply refund                                         |
+| Hosting, D1/DO, secrets and TLS routing         | Authorised Cloudflare operator                                  | Verifies account IDs; preserves existing coordinator identity and foundation                                       |
+| Customer-domain DNS                             | Current DNS operator → client operator after accepted migration | Preserves existing DNS/email during registrar transfer; client DNS ownership starts only after verified delegation |
+| Central Grafana and alert delivery              | Owner company monitoring operator                               | Separate environment credentials, dashboards, alert receivers and retention                                        |
 
 Populate named primary/backup contacts and provider support channels in the owner-controlled access inventory before handover. Do not store passwords, API keys, bank details or recovery codes here. Complete MFA and billing arrangements. Confirm least-privilege access with each provider; being a SimplyBook Admin does not grant HitPay or Cloudflare authority.
 
@@ -291,12 +291,16 @@ Keep this as the blank master; store completed results in restricted owner-contr
 
 Use [Admin Cloudflare UAT](uat/admin.md#cloudflare-domain-dns-and-https-checks) for inspection. Confirm registrar, authoritative DNS owner, Cloudflare account IDs and hosting owner separately. Cloudflare nameservers do not identify which account owns the zone. `app404.ai` remains outside the proof.
 
+Current owner decision is **registrar transfer first, then client Cloudflare DNS** for `soccerbotsg.com`. Neither transfer nor delegation has been verified complete. Confirm registrar unlock/transfer eligibility and destination account without storing transfer codes in repository evidence. During registrar transfer, preserve existing nameservers and DNS service unless the owner separately approves a reviewed migration. Populate and compare the destination zone, including MX/SPF/DKIM/DMARC and other existing records, before changing delegation. Assess DS/DNSSEC coordination and record the old nameservers/zone for rollback. A completed registrar transfer alone does not copy DNS or establish client hosting.
+
+Reassess the prepared SaaS deployment target against supported same-account Worker hosting after ownership is confirmed; do not skip SaaS checks while still using that target. [ADR-008](architecture/adr.md#adr-008--managed-custom-hostnames-with-vendor-controlled-dns) records the amended decision.
+
 Before any owner/vendor change, save the approved DNS baseline and exact record/TTL/proxy/validation/CAA instructions and rollback contact. Preserve MX/SPF/DKIM/DMARC. For SaaS, inspect fallback origin, custom hostname status, route ownership and persistent automated validation. A subdomain proof cannot establish apex support. Verify trusted coverage, redirects, same-origin API and secure cookies on each approved hostname.
 
-Certificate incident: distinguish DNS validation/CAA, hostname activation, routing and actual certificate expiry. Correct the failed prerequisite through the authorised DNS/hosting operator, then verify issuance and availability. Prefer persistent managed renewal; do not introduce routine manual TXT changes/uploads as the fix. Record initial issuance and actual renewal separately, with expiry/availability alert evidence. Final vendor instructions and apex acceptance remain required before production handover.
+Certificate incident: distinguish DNS validation/CAA, hostname activation, routing and actual certificate expiry. Correct the failed prerequisite through the authorised DNS/hosting operator, then verify issuance and availability. Prefer persistent managed renewal; do not introduce routine manual TXT changes/uploads as the fix. Record initial issuance and actual renewal separately, with expiry/availability alert evidence. Exact owner/operator DNS instructions and apex acceptance remain required before production handover.
 
 ## 9. Operational records and handover
 
 For each incident/change, record: owner, timestamps, environment/account IDs, revision/run/artifact, reason and scope, affected rule/case IDs, redacted evidence, before/after observations, approval where required, verification, residual risks and next review date. Keep actual customer/payment identifiers in restricted evidence rather than public PR descriptions.
 
-Keep [Admin](uat/admin.md), [Trainers](uat/trainers.md) and [Simulated user](uat/simulated-user.md) worksheets as blank masters; store completed results with revision/environment and preserve failures/retests. [Code owners](code-owners.md) locates implementation responsibility, not on-call people. Name primary/backup responders, verify billing/MFA, prove monitoring receiver delivery, rehearse recovery/rollback and obtain owner sign-off before handover. SMS, packages and MCP admin integration remain separately quoted scope.
+Keep [Admin](uat/admin.md), [Trainers](uat/trainers.md) and [Simulated user](uat/simulated-user.md) worksheets as blank masters; store completed results with revision/environment and preserve failures/retests. [Code owners](code-owners/index.md) locates implementation responsibility, not on-call people. Name primary/backup responders, verify billing/MFA, prove monitoring receiver delivery, rehearse recovery/rollback and obtain owner sign-off before handover. SMS, packages and MCP admin integration remain separately quoted scope.
