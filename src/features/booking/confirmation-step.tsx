@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon";
 import { ADDRESS, CONTACT } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { dateLabel, endTime, money } from "@/domain/dates";
+import { ConfirmationError } from "@/services/confirmation";
 import { downloadBooking, downloadCalendar } from "@/services/exports";
 import type { Booking } from "@/domain/booking";
 import { useBooking } from "./provider";
@@ -40,10 +41,13 @@ export function PendingConfirmation({
       <div className="status-heading">
         <PendingConfirmationHeading label={label} />
       </div>
-      <section className="surface confirmation-card" aria-busy="true">
+      <section
+        className="surface confirmation-card booking-document"
+        aria-busy="true"
+      >
         {children ?? (
           <div className="confirmation-summary" aria-label="Booking summary">
-            <strong>Your booking</strong>
+            <strong className="section-title">Your booking</strong>
             <p>Loading booking details…</p>
           </div>
         )}
@@ -117,8 +121,12 @@ export function BookingConfirmation({
     setError("");
     try {
       await operation();
-    } catch {
-      setError("The download could not be created. Please try again.");
+    } catch (error) {
+      setError(
+        error instanceof ConfirmationError && error.kind === "throttled"
+          ? "Please wait a few seconds before requesting another download."
+          : "The download could not be created. Please try again.",
+      );
     } finally {
       setDownloading(false);
     }
@@ -190,8 +198,8 @@ export function BookingConfirmation({
             <Icon name="plus" />
             <span>Make another booking</span>
           </button>
-          <a className="button secondary" href={`tel:${CONTACT.phone}`}>
-            <Icon name="phone" />
+          <a className="button secondary" href={`mailto:${CONTACT.email}`}>
+            <Icon name="mail" />
             <span>Need help?</span>
           </a>
           <Link
@@ -210,9 +218,9 @@ export function BookingConfirmation({
           </Link>
         </div>
       )}
-      <section className="surface confirmation-card">
+      <section className="surface confirmation-card booking-document">
         <div className="confirmation-summary" aria-label="Booking summary">
-          <strong>
+          <strong className="section-title">
             {booking.slots[0]?.native?.serviceName ?? SERVICE_NAME}
           </strong>
           <p>

@@ -1360,7 +1360,7 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
       { ...intent().sessions[0], serviceId: "12", instructorId: "14" },
     ],
   };
-  const a = await prepared(undefined, 0, approved),
+  const a = await prepared(undefined, 180000, approved),
     other = await guest();
   const route = origin + `/api/attempts/${a.id}/receipt`;
   const readReceipt = () =>
@@ -1425,6 +1425,94 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
   });
   assert.equal(receipt.sessions[0].serviceName, "Native Session");
   assert.equal(JSON.stringify(receipt).includes("capability"), false);
+  // Clicking an export can refresh stale proof, but never reuse a saved receipt.
+  const original = await db
+    .prepare("SELECT * FROM attempts WHERE id=?")
+    .bind(a.id)
+    .first();
+  const fresh = structuredClone(evidence);
+  const stale = structuredClone(evidence);
+  stale.invoice.observedAtMs -= 120000;
+  stale.bookings[0].observedAtMs -= 120000;
+  const resetRefresh = async () =>
+    db
+      .prepare(
+        "UPDATE attempts SET state=?,observation_json=?,confirmation_next_ms=0,confirmation_checks=0 WHERE id=?",
+      )
+      .bind(original.state, JSON.stringify(stale), a.id)
+      .run();
+  const refresh = (scenario = "fresh", proof = fresh, cookie = a.cookie) =>
+    mf.dispatchFetch(origin + "/test/receipt-refresh", {
+      method: "POST",
+      headers: { cookie },
+      body: JSON.stringify({
+        id: a.id,
+        owner: a.owner,
+        scenario,
+        observation: proof,
+      }),
+    });
+  await resetRefresh();
+  assert.equal((await readReceipt()).status, 409);
+  let refreshed = await refresh();
+  assert.equal(refreshed.status, 200);
+  assert.equal((await refreshed.json()).refreshes, 1);
+  let retained = await db
+    .prepare("SELECT * FROM attempts WHERE id=?")
+    .bind(a.id)
+    .first();
+  assert.equal(retained.observation_json, JSON.stringify(stale));
+  assert.equal(retained.deadline_ms, original.deadline_ms);
+  assert.equal(retained.confirmation_checks, 1);
+  refreshed = await refresh();
+  assert.equal(refreshed.status, 429);
+  assert.equal((await refreshed.json()).refreshes, 0);
+  await resetRefresh();
+  refreshed = await refresh("fresh", fresh, other.cookie);
+  assert.equal(refreshed.status, 404);
+  assert.equal((await refreshed.json()).refreshes, 0);
+  for (const scenario of ["provider-failure", "changed"]) {
+    await resetRefresh();
+    refreshed = await refresh(scenario);
+    assert.equal(refreshed.status, scenario === "provider-failure" ? 503 : 409);
+    assert.equal((await refreshed.json()).refreshes, 1);
+  }
+  await resetRefresh();
+  await db
+    .prepare("UPDATE attempts SET confirmation_checks=120 WHERE id=?")
+    .bind(a.id)
+    .run();
+  refreshed = await refresh();
+  assert.equal(refreshed.status, 429);
+  assert.equal((await refreshed.json()).refreshes, 0);
+  await resetRefresh();
+  for (const invalid of [
+    stale,
+    { ...fresh, invoice: { ...fresh.invoice, paymentReceived: false } },
+    {
+      ...fresh,
+      bookings: fresh.bookings.map((b) => ({ ...b, status: "cancelled" })),
+    },
+  ]) {
+    await resetRefresh();
+    refreshed = await refresh("fresh", invalid);
+    assert.equal(refreshed.status, 409);
+  }
+  await resetRefresh();
+  refreshed = await refresh("revoke");
+  assert.equal(refreshed.status, 401);
+  assert.equal((await refreshed.json()).refreshes, 1);
+  await db
+    .prepare("UPDATE guest_access SET revoked_ms=NULL WHERE owner_id=?")
+    .bind(a.owner)
+    .run();
+  await resetRefresh();
+  refreshed = await refresh("expired");
+  assert.equal(refreshed.status, 409);
+  assert.equal((await refreshed.json()).refreshes, 1);
+  refreshed = await refresh();
+  assert.equal(refreshed.status, 409);
+  assert.equal((await refreshed.json()).refreshes, 0);
   evidence.invoice.paymentReceived = false;
   await db
     .prepare("UPDATE attempts SET observation_json=? WHERE id=?")

@@ -1,4 +1,5 @@
 // Local workerd test driver; never the deployment entry point.
+import { bookingReceipt } from "../receipt";
 import { ApiError } from "../policy";
 import worker, {
   SoccerBotAccountCoordinator as ProductionCoordinator,
@@ -65,6 +66,51 @@ const harness = {
         input.coordinator || "synthetic-account",
       );
       switch (p) {
+        case "/test/receipt-refresh": {
+          let refreshes = 0;
+          try {
+            const receipt = await bookingReceipt(
+              request,
+              env,
+              input.id,
+              Date.now(),
+              async (_snapshot, signal) => {
+                refreshes++;
+                signal.throwIfAborted();
+                if (input.scenario === "provider-failure")
+                  throw new ApiError(503, "provider_unavailable");
+                if (input.scenario === "revoke")
+                  await env.STATE.prepare(
+                    "UPDATE guest_access SET revoked_ms=? WHERE owner_id=?",
+                  )
+                    .bind(Date.now(), input.owner)
+                    .run();
+                if (input.scenario === "changed")
+                  await env.STATE.prepare(
+                    "UPDATE attempts SET state='recovery_required' WHERE id=?",
+                  )
+                    .bind(input.id)
+                    .run();
+                if (input.scenario === "expired")
+                  await env.STATE.prepare(
+                    "INSERT INTO checkout_progress(attempt_id,booking_created_ms) VALUES(?,?)",
+                  )
+                    .bind(input.id, Date.now() - 660000)
+                    .run();
+                return input.observation;
+              },
+            );
+            return Response.json({ receipt, refreshes });
+          } catch (error) {
+            return Response.json(
+              {
+                refreshes,
+                error: error instanceof ApiError ? error.code : "test_error",
+              },
+              { status: error instanceof ApiError ? error.status : 500 },
+            );
+          }
+        }
         case "/test/admission-query-metrics":
           result = await (
             coordinator as DurableObjectStub<SoccerBotAccountCoordinator>

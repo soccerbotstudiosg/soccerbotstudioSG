@@ -236,7 +236,11 @@ export function ProtectedConfirmation({
           };
         });
       }
-      const current = await readBookingReceipt(attemptId, controller.signal);
+      const current = await readBookingReceipt(
+        attemptId,
+        controller.signal,
+        true,
+      );
       if (controller.signal.aborted) throw new Error("receipt_unavailable");
       if (format === "calendar") downloadCalendar(current.booking, false);
       else

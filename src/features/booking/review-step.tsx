@@ -80,7 +80,7 @@ export function ReviewStep({
     <>
       <h1 className="page-title">Review booking</h1>
       <p className="lead">Check your details before payment.</p>
-      <section className="surface">
+      <section className="surface booking-document">
         <div className="review-block">
           <div className="review-head">
             <h2>Your sessions</h2>

@@ -217,6 +217,10 @@ Acceptance: use an owner-authorized synthetic alert fixture, observe firing, del
 | D1/DO errors after release          | Migration ledger, foundation/account IDs, bindings and coordinator identity                              | Stop wrong-account deployment; diagnose last successful phase. Never reset foundation/data to satisfy preflight.                             |
 | Grafana empty                       | Export status/attachment, exact producer, sample/time range, datasource and exporter logs                | Follow section 4; do not conclude application health from no traces                                                                          |
 
+### Confirmation download failures
+
+A download click requests a protected receipt with `X-Booking-Refresh: 1`. Fresh retained evidence returns immediately; stale evidence can trigger read-only booking/invoice verification during the original checking window. Inspect the receipt HTTP result and its `X-Recovery-Trace`: 401/403 requires valid access, 409 means evidence is invalid/stale or the refresh window has ended, 429 means the shared check quota/pacing refused another refresh, and provider failures require transport/account investigation. Never reset payment tries, extend a deadline, or export a saved confirmation to bypass the failure. Calendar/PDF generation happens locally only after receipt validation. Reproduce in the authorized UAT environment and check browser download handling if the receipt succeeded. Support contact is `contact@soccerbotsg.com`; the Need help link opens an email draft.
+
 ## 6. Deployments and rollback
 
 Normal release: inspect PR changes and final-head gates, obtain applicable merge authorization, merge, then verify the merged revision and deployed artifact. Legacy main developer deployment remains active until the reviewed portable cutover. The standalone GitHub Pages export is separate from the Cloudflare customer backend.

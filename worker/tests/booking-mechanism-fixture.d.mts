@@ -1,5 +1,6 @@
 import type { Miniflare } from "miniflare";
 export function createBookingMechanism(options?: {
+  observationMaxAgeMs?: number;
   batch?: boolean;
   batchSize?: number;
   missingCreationDeadline?: boolean;

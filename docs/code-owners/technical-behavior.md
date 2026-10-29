@@ -78,6 +78,8 @@ flowchart TB
 
 Evidence: [time selection regressions](../../src/features/booking/time-step.test.tsx), [service identity/capacity cases](../../src/services/async-booking.test.ts), [prebooking/calendar cases](../../worker/tests/catalogue.test.mjs), [cross-trainer conflict and batch restoration](../../worker/tests/combined-hold.test.mjs). Screenshots and actual shared-resource acceptance remain owner/CI work.
 
+`TimeStep` offers See next month when an empty loaded month has no next available date. Navigation stays within the public four-month horizon and selects an eligible date after the explicitly requested month loads; it never scans months in the background or changes the basket.
+
 These functions are under [the booking feature](../../src/features/booking). They consume provider/service state; they do not independently authorize provider writes.
 
 | Function / file                                                                                      | Behavior and guards                                                         | Failure / recovery                                                                                                     |
@@ -252,6 +254,8 @@ sequenceDiagram
 | `bookingReceipt` / `readBookingReceipt` / `bookingFromReceipt`        | Reauthorize and validate the live receipt, then map it for presentation/export.                 | Server ownership/payment guard plus access recheck; client schema validation.                       | Receipt failure blocks export even if a prior screen said confirmed. Reauthenticate or investigate the original attempt. |
 | `dismissCompletedBooking` and coordinator `dismissCompleted`          | Acknowledge completed exit while preserving the authorized receipt.                             | Original owned completed attempt; repeat acknowledgement is supported.                              | Lost response is retried with the same ID; do not create another booking/payment.                                        |
 | `completedExitIntent`, `rememberCompletedExit`, `forgetCompletedExit` | Retain the browser’s outstanding completed-exit intent.                                         | Same-attempt handling; acknowledgement governs clearing.                                            | Failed dismissal shows saved-confirmation warning until explicit retry succeeds.                                         |
+
+Receipt exports: `ProtectedConfirmation` explicitly requests refresh on download. Coordinator `receipt` uses the existing provider queue and known-ID native reads; `bookingReceipt` owns the original-window/quota checks, post-read authorization and state comparison. Fresh proof is response-local; no payment recovery counter or journal observation is overwritten. Stale/invalid/revoked/expired evidence blocks export. Contact and Need help use `mailto:contact@soccerbotsg.com`. Review and confirmation share heading/body tokens and left-aligned label/value details.
 
 Evidence: [live-email dismissal and automatic recovery journeys](../../tests/live-email.spec.ts), [automatic completion/repeat acknowledgement regression](../../worker/tests/combined-hold.test.mjs), [provider recovery/receipt cases](../../worker/tests/provider.test.mjs). The completed-dismissal test awaits the actual recovery event before navigation; the separate pending-return scenario still exercises recovery in flight.
 

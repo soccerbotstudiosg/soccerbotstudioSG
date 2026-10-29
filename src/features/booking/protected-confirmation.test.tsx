@@ -1,3 +1,4 @@
+import * as exports from "@/services/exports";
 import ConfirmationPage from "@/app/confirmation/page";
 import { BookingProvider } from "./provider";
 import { liveBookingService } from "@/services/booking";
@@ -1042,4 +1043,74 @@ it("shows payment received feedback with details while current booking evidence 
   expect(fetch.mock.calls.some(([url]) => url.endsWith("/receipt"))).toBe(
     false,
   );
+});
+
+it("revisiting a saved confirmation within its window refreshes each export without using saved proof", async () => {
+  const now = Date.now(),
+    saved = receiptFixture(now - 120000);
+  const calendar = vi
+    .spyOn(exports, "downloadCalendar")
+    .mockImplementation(() => {});
+  const details = vi
+    .spyOn(exports, "downloadBooking")
+    .mockResolvedValue(undefined);
+  const fetch = vi.fn((url: string, init?: RequestInit) =>
+    Promise.resolve(
+      url.endsWith("/checkout")
+        ? Response.json({
+            attemptId: first,
+            mode: "live",
+            confirmation: saved,
+            payment: { status: "recorded", paidAtMs: saved.verifiedAtMs },
+            checkout: { state: "unavailable" },
+            summary: {
+              players: 2,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [{ startMs: now + 86400000, players: 2 }],
+            },
+            checking: {
+              deadlineMs: now + 60000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+            },
+          })
+        : url.endsWith("/receipt") &&
+            new Headers(init?.headers).get("X-Booking-Refresh") === "1"
+          ? Response.json(receiptFixture(now))
+          : new Response(null, { status: 409 }),
+    ),
+  );
+  vi.stubGlobal("fetch", fetch);
+  try {
+    render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
+    await screen.findByText(/Saved confirmation/);
+    expect(calendar).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+    await waitFor(() => expect(calendar).toHaveBeenCalledTimes(1));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Download booking details/ }),
+    );
+    await waitFor(() => expect(details).toHaveBeenCalledTimes(1));
+    expect(calendar.mock.calls[0][0].createdAt).toBe(
+      new Date(now).toISOString(),
+    );
+    expect(details.mock.calls[0][0].createdAt).toBe(
+      new Date(now).toISOString(),
+    );
+    expect(fetch.mock.calls.map(([url]) => url.split("/").at(-1))).toEqual([
+      "checkout",
+      "receipt",
+      "receipt",
+    ]);
+    fetch.mockResolvedValueOnce(new Response(null, { status: 429 }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Please wait a few seconds before requesting another download.",
+    );
+    expect(calendar).toHaveBeenCalledTimes(1);
+  } finally {
+    calendar.mockRestore();
+    details.mockRestore();
+  }
 });
