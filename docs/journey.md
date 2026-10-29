@@ -3664,3 +3664,9 @@ Owner requested documenting actual application behavior before mapping the clien
 ### 29 October 2026 — Repair recovery sequence diagram syntax
 
 The section 7 note in [technical behavior](code-owners/technical-behavior.md#7-recovery-confirmation-exports-and-completed-exit) contained a literal semicolon, which Mermaid interpreted as a sequence statement separator. Reproduced the original parse failure with a temporary Mermaid 11 installation outside the repository, then confirmed the comma replacement parses. Diagram meaning, operations and application behavior are unchanged. No browser rendering or repository dependency change was performed.
+
+### 29 October 2026 — Campaign operating guide and repository-wide rendering audit
+
+Adapted the user-supplied [Fitfinity campaign guide](https://github.com/LimYouSheng/FitfinityReact/blob/docs/campaign-operating-guide/NORTH_STAR.md) into [North Star](../NORTH_STAR.md), retaining scoped campaigns, bounded evidence-driven iterations, budgets, completion states and handover. Replaced Fitfinity/AWS/PostgreSQL-specific assumptions with SoccerBot owners, actual workflow limits, isolated Worker storage evidence and owner/CI browser/provider boundaries. AGENTS retains authority; Progress owns the active outcome. No scheduler, background agent, permissions or CI behavior was added.
+
+Inspected all 18 tracked Markdown files: all 30 Mermaid diagrams pass parsing after the section 7 repair. Markdown structure and local-link checks accompany this audit; these are syntax checks, not owner-side GitHub visual acceptance. Temporary parser dependencies remain outside the repository.
