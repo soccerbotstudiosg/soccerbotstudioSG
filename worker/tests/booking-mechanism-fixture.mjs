@@ -134,6 +134,9 @@ export async function createBookingMechanism(options = {}) {
       compatibilityFlags: config.compatibility_flags,
       bindings: {
         ...config.vars,
+        OBSERVATION_MAX_AGE_MS: String(
+          options.observationMaxAgeMs ?? config.vars.OBSERVATION_MAX_AGE_MS,
+        ),
         APP_ORIGIN: origin,
         SOURCE_REVISION: "d".repeat(40),
         LIVE_CUSTOMER_ACCESS: "enabled",

@@ -1115,6 +1115,50 @@ test("cold calendar entry and refresh select an available day while retaining a 
   fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
   await screen.findByText("No times on this day.");
   expect(day("2026-10-24")).toHaveAttribute("aria-pressed", "true");
+  // An empty October must still allow an explicit move to November.
+  expect(
+    publicCalendar.mock.calls.every(([input]) => input.month === "2026-10"),
+  ).toBe(true);
+  dates = ["2026-11-03", "2026-11-04"];
+  fireEvent.click(screen.getByRole("button", { name: "See next month" }));
+  await waitFor(() =>
+    expect(day("2026-11-03")).toHaveAttribute("aria-pressed", "true"),
+  );
+  expect(screen.getByRole("combobox", { name: "Calendar month" })).toHaveValue(
+    "1",
+  );
+  expect(
+    publicCalendar.mock.calls.filter(([input]) => input.month === "2026-11"),
+  ).toHaveLength(1);
+  fireEvent.click(day("2026-11-04"));
+  expect(day("2026-11-04")).toHaveAttribute("aria-pressed", "true");
+  dates = [];
+  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  await screen.findByText("No times on this day.");
+  fireEvent.click(screen.getByRole("button", { name: "See next month" }));
+  await waitFor(() =>
+    expect(
+      publicCalendar.mock.calls.some(([input]) => input.month === "2026-12"),
+    ).toBe(true),
+  );
+  await screen.findByText("No times on this day.");
+  fireEvent.click(screen.getByRole("button", { name: "See next month" }));
+  await waitFor(() =>
+    expect(
+      publicCalendar.mock.calls.some(([input]) => input.month === "2027-01"),
+    ).toBe(true),
+  );
+  await screen.findByText("No times on this day.");
+  expect(screen.getByRole("button", { name: "See next month" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
+  expect(
+    within(
+      screen.getByRole("combobox", { name: "Calendar month" }),
+    ).getAllByRole("option"),
+  ).toHaveLength(4);
+  expect(
+    publicCalendar.mock.calls.some(([input]) => input.month > "2027-01"),
+  ).toBe(false);
   first.unmount();
   dates = ["2026-10-22", "2026-10-23"];
   render(view());

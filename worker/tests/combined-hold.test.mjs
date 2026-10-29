@@ -1,3 +1,4 @@
+import { setTimeout as waitForClockBoundary } from "node:timers/promises";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createBookingMechanism } from "./booking-mechanism-fixture.mjs";
@@ -3326,6 +3327,7 @@ test("409 preparation preserves an existing original booking for recovery", asyn
 test("automatic recovery completion publishes a receipt before dismissal and repeat acknowledgement", async () => {
   const completion = Promise.withResolvers();
   const m = await createBookingMechanism({
+    observationMaxAgeMs: 1000,
     onLog(message) {
       if (!message.startsWith("{")) return;
       const event = JSON.parse(message);
@@ -3356,6 +3358,40 @@ test("automatic recovery completion publishes a receipt before dismissal and rep
       { headers: c.headers },
     );
     assert.equal((await context.json()).confirmation.attemptId, id);
+    const paymentBefore = await m.db
+      .prepare("SELECT * FROM hitpay_payments WHERE attempt_id=?")
+      .bind(id)
+      .first();
+    const journalBefore = await m.db
+      .prepare("SELECT observation_json FROM attempts WHERE id=?")
+      .bind(id)
+      .first();
+    // Exercise the actual age boundary, not a retry or extended test timeout.
+    await waitForClockBoundary(1001);
+    const stale = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${id}/receipt`,
+      { headers: c.headers },
+    );
+    assert.equal(stale.status, 409, await stale.text());
+    const refreshed = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${id}/receipt`,
+      { headers: { ...c.headers, "X-Booking-Refresh": "1" } },
+    );
+    assert.equal(refreshed.status, 200, await refreshed.text());
+    assert.deepEqual(
+      await m.db
+        .prepare("SELECT * FROM hitpay_payments WHERE attempt_id=?")
+        .bind(id)
+        .first(),
+      paymentBefore,
+    );
+    assert.deepEqual(
+      await m.db
+        .prepare("SELECT observation_json FROM attempts WHERE id=?")
+        .bind(id)
+        .first(),
+      journalBefore,
+    );
     for (let acknowledgement = 0; acknowledgement < 2; acknowledgement++) {
       const dismissed = await m.mf.dispatchFetch(
         m.origin + `/api/attempts/${id}/dismiss`,
@@ -3367,7 +3403,7 @@ test("automatic recovery completion publishes a receipt before dismissal and rep
       m.origin + `/api/attempts/${id}/receipt`,
       { headers: c.headers },
     );
-    assert.equal(receipt.status, 200, await receipt.text());
+    assert.equal(receipt.status, 409, await receipt.text());
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
       m.calls.filter((c) => c.url.endsWith("/accept-payment")).length,

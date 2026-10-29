@@ -46,7 +46,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-006"></a>
 
-**BR-006** — Public display snapshots support fast browsing; they do not authorize bookings. Scheduled warming refreshes availability on its approximately 15-minute cadence through the minute scheduler; snapshots have a fixed maximum 30-minute display lifetime, never renewed by serving them. Protected selection rechecks current rules. On entry/refresh retain an available chosen day, otherwise choose the next available day in the loaded month (or its first available future day); failed/empty months keep an honest state. Do not silently scan other months or alter the basket. Review remains editable and creates no booking.
+**BR-006** — Public display snapshots support fast browsing; they do not authorize bookings. Scheduled warming refreshes availability on its approximately 15-minute cadence through the minute scheduler; snapshots have a fixed maximum 30-minute display lifetime, never renewed by serving them. Protected selection rechecks current rules. On entry/refresh retain an available chosen day, otherwise choose the next available day in the loaded month (or its first available future day); failed/empty months keep an honest state. An empty month offers an explicit See next month action within the public four-month horizon; loading that month selects its first available eligible day. Do not silently scan other months or alter the basket. Review remains editable and creates no booking.
 
 ### Checkout, durable effects and customer errors
 
@@ -80,7 +80,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-013"></a>
 
-**BR-013** — Show checking/preparation/payment-received states according to actual evidence. Payment received can remain booking pending until reconciliation is complete. Preserve customer details/reference during errors; expose confirmed actions only with authoritative confirmation. Sessions/instructors and total appear once in the summary; expanded details contain client and location side by side where space permits, then a full-width concise disclaimer. Receipt tax data is independent of summary presentation. PDF/calendar exports require current authorization and validated booking evidence; a saved browser snapshot cannot bypass it.
+**BR-013** — Show checking/preparation/payment-received states according to actual evidence. Payment received can remain booking pending until reconciliation is complete. Preserve customer details/reference during errors; expose confirmed actions only with authoritative confirmation. Sessions/instructors and total appear once in the summary; expanded details use stacked, left-aligned sections and the same label/value layout as Review, followed by concise disclaimers. Review and confirmation use shared 20px section headings and 16px body typography. Receipt tax data is independent of summary presentation. PDF/calendar exports require current authorization and validated booking evidence; a saved browser snapshot cannot bypass it. A revisited confirmation can export within its original checking window after fresh verification; stale evidence may be refreshed through bounded read-only booking/invoice checks, without reopening financial recovery or extending the window.
 
 ### Storage, queue and tokens
 

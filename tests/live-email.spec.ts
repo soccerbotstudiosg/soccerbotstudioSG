@@ -1038,7 +1038,7 @@ test("real payment recovery confirms the browser return from verified provider s
     expect(tickBox!.height).toBeGreaterThanOrEqual(48);
     await expect(page.getByLabel("Booking summary", { exact: true })).toHaveCSS(
       "text-align",
-      "center",
+      "left",
     );
     const summaryBox = await page
       .getByLabel("Booking summary", { exact: true })
@@ -1116,7 +1116,7 @@ test("real payment recovery confirms the browser return from verified provider s
     );
     await expect(page.locator(".confirmation-details-grid")).toHaveCSS(
       "text-align",
-      "center",
+      "left",
     );
     expect(
       await page

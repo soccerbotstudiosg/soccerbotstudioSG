@@ -11,6 +11,12 @@ import {
 } from "./checkout-tracing";
 import { annotatePendingBooking } from "./native-comments";
 import { DisplaySnapshots } from "./display-snapshots";
+import { bookingReceipt } from "./receipt";
+import {
+  assertPaymentScope,
+  paymentScopeSchema,
+  hitpaySetting,
+} from "./hitpay-contract";
 import { expireCheckout } from "./checkout-progress";
 import { dismissCompletedCheckout } from "./completed-checkout";
 import {
@@ -48,6 +54,7 @@ import { nativePrepareSchema } from "../src/domain/native-checkout";
 import { intentSchema, associationSchema } from "./journal";
 import { runNativeReadback } from "./recovery";
 import {
+  readNativeAttempt,
   storedNativeSignature,
   recoverNativeAssociation,
 } from "./native-adapter";
@@ -839,6 +846,86 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           )
           .one().latest ?? 0,
     };
+  }
+  /** Refresh export evidence through the existing bounded read-only provider queue. */
+  async receipt(
+    scope: { attemptId: string; cookie: string },
+    correlationId: string,
+  ) {
+    return rpcOutcome(() =>
+      this.providerQueue.run("foreground", () =>
+        traced(correlationId, "coordinator", () =>
+          bookingReceipt(
+            new Request(this.env.APP_ORIGIN, {
+              headers: { cookie: scope.cookie },
+            }),
+            this.env,
+            scope.attemptId,
+            Date.now(),
+            async (snapshot, signal) => {
+              const intent = intentSchema.parse(
+                JSON.parse(snapshot.row.intent_json),
+              );
+              if (
+                intent.accountId !== this.env.DEPLOYMENT_ACCOUNT_ID ||
+                intent.environmentId !== this.env.ENVIRONMENT
+              )
+                throw new ApiError(409, "receipt_scope_mismatch");
+              let paymentProcessor: string | undefined;
+              if (snapshot.payment.route === "hitpay") {
+                const payment = paymentScopeSchema.parse(
+                  JSON.parse(snapshot.payment.payment!.scope_json),
+                );
+                await assertPaymentScope(this.env, payment);
+                if (
+                  payment.attemptId !== scope.attemptId ||
+                  payment.intentHash !== snapshot.row.intent_hash ||
+                  payment.associationJson !== snapshot.row.association_json
+                )
+                  throw new ApiError(409, "receipt_scope_mismatch");
+                paymentProcessor = payment.externalProcessor;
+              }
+              const control = this.providerControl(false, true);
+              const bounded = {
+                ...control,
+                reserve: (metadata: Parameters<typeof control.reserve>[0]) => {
+                  signal.throwIfAborted();
+                  return control.reserve(metadata);
+                },
+              };
+              const secret = hitpaySetting(
+                this.env,
+                "SIMPLYBOOK_DEV_SIGNING_SECRET",
+              );
+              if (!secret)
+                throw new ApiError(503, "native_signing_unavailable");
+              await this.provider.identity(this.env, bounded);
+              const result = await readNativeAttempt({
+                scope: {
+                  attemptId: scope.attemptId,
+                  companyLogin: providerSecrets(this.env).company,
+                  timezone: "Asia/Singapore",
+                  intent,
+                },
+                association: JSON.parse(snapshot.row.association_json!),
+                paymentProcessor,
+                signal,
+                exchange: (operation, abort) =>
+                  this.provider.nativeRead(this.env, bounded, operation, abort),
+                signature: (bookingId) =>
+                  storedNativeSignature(
+                    this.env.STATE,
+                    scope.attemptId,
+                    bookingId,
+                    secret,
+                  ),
+              });
+              return result.observation;
+            },
+          ),
+        ),
+      ),
+    );
   }
   async expireCheckout(scope: { attemptId: string; cookie: string }) {
     return rpcOutcome(() =>

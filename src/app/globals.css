@@ -210,6 +210,7 @@
     text-transform: uppercase;
     color: var(--color-brand);
   }
+  .booking-document .arrival-information h3,
   .section-title,
   .review-head h2,
   .access-option h2,
@@ -249,6 +250,18 @@
     font-style: normal;
     line-height: var(--leading-heading);
   }
+  .booking-document,
+  .booking-document .series-date,
+  .booking-document .series-date span,
+  .booking-document .hint,
+  .booking-document .arrival-information p,
+  .booking-document .price-breakdown .line-item small,
+  .booking-document .reference,
+  .booking-document .rotation-notice,
+  .booking-document .payment-foot,
+  .booking-document .paid strong,
+  .booking-document .line-item.total strong,
+  .booking-document .text-link,
   .lead,
   .access-option p,
   .session-product p,
@@ -3569,9 +3582,9 @@
   }
   .confirmation-details-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-    gap: 20px 24px;
-    text-align: center;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    text-align: left;
   }
   .confirmation-details-grid .confirmation-section {
     min-width: 0;
@@ -3580,23 +3593,6 @@
   }
   .confirmation-details-grid .section-title {
     margin-bottom: 12px;
-  }
-  .confirmation-details-grid .booking-facts {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: 4px;
-  }
-  .confirmation-details-grid .booking-facts dd {
-    margin-bottom: 10px;
-    overflow-wrap: anywhere;
-  }
-  .confirmation-summary .series-list li {
-    flex-direction: column;
-    gap: 6px;
-    justify-content: center;
-  }
-  .confirmation-summary .series-date {
-    text-align: center;
   }
   .confirmation-disclaimers {
     grid-column: 1 / -1;
@@ -3614,6 +3610,9 @@
   }
   .confirmation-section .arrival-information {
     margin-top: 0;
+  }
+  .confirmation-section .payment-foot {
+    text-align: left;
   }
   .booking-instructors {
     display: grid;
@@ -3674,7 +3673,7 @@
   }
   .confirmation-card .paid {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
     align-items: center;
@@ -3709,7 +3708,7 @@
   .confirmation-summary {
     display: grid;
     gap: 12px;
-    text-align: center;
+    text-align: left;
     overflow-wrap: anywhere;
   }
   .confirmation-summary p {
@@ -3722,7 +3721,7 @@
   }
   .confirmation-full-details > summary {
     cursor: pointer;
-    text-align: center;
+    text-align: left;
     min-height: 44px;
     align-content: center;
     color: var(--color-action);

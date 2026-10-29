@@ -615,7 +615,17 @@ export default {
         if (receipt && request.method === "GET")
           return json(
             await confirmationRead(receipt[1], "receipt", () =>
-              bookingReceipt(request, env, receipt[1], now),
+              request.headers.get("X-Booking-Refresh") === "1"
+                ? coordinatorStub(env)
+                    .receipt(
+                      {
+                        attemptId: receipt[1],
+                        cookie: request.headers.get("cookie") || "",
+                      },
+                      correlationId,
+                    )
+                    .then(unwrapRpcOutcome)
+                : bookingReceipt(request, env, receipt[1], now),
             ),
           );
         const checkout = /^\/api\/attempts\/([a-f0-9-]{36})\/checkout$/.exec(

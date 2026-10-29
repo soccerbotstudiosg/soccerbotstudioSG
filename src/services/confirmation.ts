@@ -81,6 +81,7 @@ async function protectedRead(
   operation: string,
   signal: AbortSignal,
   displayDetails = false,
+  refreshReceipt = false,
 ) {
   idSchema.parse(attemptId);
   const response = await fetch(
@@ -93,6 +94,7 @@ async function protectedRead(
       headers: {
         Accept: "application/json",
         ...(displayDetails ? { "X-Booking-Details": "1" } : {}),
+        ...(refreshReceipt ? { "X-Booking-Refresh": "1" } : {}),
       },
     },
   );
@@ -138,8 +140,15 @@ export async function readConfirmation(attemptId: string, signal: AbortSignal) {
 export async function readBookingReceipt(
   attemptId: string,
   signal: AbortSignal,
+  refresh = false,
 ) {
-  const { response } = await protectedRead(attemptId, "receipt", signal);
+  const { response } = await protectedRead(
+    attemptId,
+    "receipt",
+    signal,
+    false,
+    refresh,
+  );
   const receipt = receiptSchema.parse(await response.json());
   // The authenticated server validates provider freshness. Compare its receipt
   // to its HTTP clock, not a customer's potentially skewed device clock.

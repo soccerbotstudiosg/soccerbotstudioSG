@@ -701,8 +701,27 @@ test("header blue and the typography hierarchy stay consistent across every book
   );
   await expect(page.locator("#name")).toHaveCSS("font-size", "16px");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
+  async function bookingDocumentBody() {
+    const styles = await page
+      .locator(
+        ".booking-document p, .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .line-item.total strong, .booking-document .paid strong",
+      )
+      .evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const style = getComputedStyle(node);
+          return { size: style.fontSize, family: style.fontFamily };
+        }),
+      );
+    expect(styles.length).toBeGreaterThan(0);
+    for (const style of styles) {
+      expect(style.size).toBe("16px");
+      expect(style.family).toBe(styles[0].family);
+      expect(style.family).toContain("Roboto");
+    }
+  }
   await details(page);
   await pageHeading("Review booking");
+  await bookingDocumentBody();
   await sectionType(".review-head h2, .review-block > h2");
   await expect(page.locator(".booking-facts")).toHaveCSS("font-size", "16px");
   await page.getByRole("button", { name: "Continue to payment" }).click();
@@ -728,11 +747,40 @@ test("header blue and the typography hierarchy stay consistent across every book
     "color",
     "rgb(255, 255, 255)",
   );
+  await expect(
+    page.getByRole("link", { name: "Need help?", exact: true }),
+  ).toHaveAttribute("href", "mailto:contact@soccerbotsg.com");
   await page.getByText("View full details", { exact: true }).click();
-  await sectionType(".confirmation-section > h2");
+  await sectionType(
+    ".confirmation-section > h2, .confirmation-summary > .section-title",
+  );
+  await bookingDocumentBody();
+  await expect(page.locator(".confirmation-summary")).toHaveCSS(
+    "text-align",
+    "left",
+  );
+  await expect(page.locator(".confirmation-details-grid")).toHaveCSS(
+    "text-align",
+    "left",
+  );
+  await expect(
+    page.locator(".confirmation-summary .series-list li").first(),
+  ).toHaveCSS("flex-direction", "row");
+  const facts = page.locator(".confirmation-details-grid .booking-facts");
+  const labelBox = await facts.locator("dt").first().boundingBox();
+  const valueBox = await facts.locator("dd").first().boundingBox();
+  expect(labelBox).not.toBeNull();
+  expect(valueBox).not.toBeNull();
+  if (page.viewportSize()!.width <= 700) {
+    expect(valueBox!.x).toBeCloseTo(labelBox!.x, 0);
+    expect(valueBox!.y).toBeGreaterThan(labelBox!.y);
+  } else {
+    expect(valueBox!.x).toBeGreaterThan(labelBox!.x);
+    expect(valueBox!.y).toBeCloseTo(labelBox!.y, 0);
+  }
   await expect(page.locator(".confirmation-card .paid strong")).toHaveCSS(
     "font-size",
-    "24px",
+    "16px",
   );
   await expect(page.locator(".confirmation-card .paid strong")).toHaveCSS(
     "color",

@@ -8,7 +8,7 @@ export const ADDRESS = `${LOCATION.street}, ${LOCATION.unit} ${LOCATION.building
 export const CONTACT = {
   phone: "+6590143819",
   phoneDisplay: "+65 9014 3819",
-  email: "glenna@soccerbotsg.com",
+  email: "contact@soccerbotsg.com",
   instagram: "https://www.instagram.com/soccerbotstudiosg/",
 };
 export const CONTACT_METHODS = {

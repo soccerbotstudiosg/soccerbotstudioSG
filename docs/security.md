@@ -115,6 +115,10 @@ Security includes preventing unauthorized or duplicate financial effects. [Custo
 
 Unknown writes retain their original identity and evidence; they are not retried with a new key. Browser closure, expiry, a deleted link or a lost response cannot prove nonpayment. Payment received may remain booking pending until accounting and valid booking readback reconcile. Cancellation is not a refund. [Receipt authorization](../worker/receipt.ts) and [confirmation](../worker/confirmation.ts) protect final success/export from cached browser claims. See [BR-007–013](business-rules.md#checkout-durable-effects-and-customer-errors).
 
+### Receipt refresh boundary
+
+Explicit export requests may refresh stale booking/invoice evidence through the existing coordinator queue. The server enforces owned access, the original checking window, shared check quota, provider account scope, and post-read state/authorization checks. Only known-ID reads are admitted; this path does not create bookings, register payments, reopen financial recovery or extend deadlines. Refreshed evidence authorizes that response only. Saved confirmation remains display evidence, not download authority. See the [receipt contract](api-contracts.md#6-protected-confirmation-receipt-and-recovery).
+
 ## 6. Webhook and outbound-provider boundaries
 
 [HitPay webhook](../worker/hitpay-webhook.ts) verifies HMAC-SHA256 over bounded raw request bytes using its configured salt and `Hitpay-Signature`, then binds the event to retained payment scope. [SimplyBook webhook](../worker/webhook.ts) has its own `x-signature` and payload/subscription contract. Do not interchange their signing mechanisms. Both retain/deduplicate evidence; delivery acknowledgement is not confirmation of financial settlement. Recovery reads authoritative provider state.

@@ -53,10 +53,11 @@ export function TimeStep() {
     [selectedMonth, setMonth] = useState(() =>
       monthAt(draft.slots[0]?.date || today, 0),
     );
+  const maxMonthOffset = publicCalendarReady ? 3 : 11;
   const offset = Math.max(
     0,
     Math.min(
-      11,
+      maxMonthOffset,
       (+selectedMonth.slice(0, 4) - +today.slice(0, 4)) * 12 +
         +selectedMonth.slice(5, 7) -
         +today.slice(5, 7),
@@ -178,7 +179,7 @@ export function TimeStep() {
               value={offset}
               onChange={(e) => setMonth(monthAt(today, +e.target.value))}
             >
-              {Array.from({ length: 12 }, (_, i) => (
+              {Array.from({ length: maxMonthOffset + 1 }, (_, i) => (
                 <option key={i} value={i}>
                   {dateLabel(monthAt(today, i), {
                     month: "long",
@@ -200,7 +201,7 @@ export function TimeStep() {
             <button
               className="icon-button"
               aria-label="Next month"
-              disabled={offset === 11}
+              disabled={offset === maxMonthOffset}
               onClick={() => setMonth(monthAt(today, offset + 1))}
             >
               <Icon name="arrow" />
@@ -431,15 +432,24 @@ export function TimeStep() {
           <p>Choose another date. Your selections are saved.</p>
           <button
             className="button secondary"
-            disabled={live && !nextAvailable}
+            disabled={live && !nextAvailable && offset === maxMonthOffset}
             onClick={() => {
-              const next = live ? nextAvailable : addDays(date, 1);
+              const next = live
+                ? (nextAvailable ??
+                  (offset < maxMonthOffset
+                    ? monthAt(today, offset + 1)
+                    : undefined))
+                : addDays(date, 1);
               if (!next) return;
               setDate(next);
               setMonth(monthAt(next, 0));
             }}
           >
-            {live ? "See next available day" : "See next day"}{" "}
+            {live
+              ? nextAvailable
+                ? "See next available day"
+                : "See next month"
+              : "See next day"}{" "}
             <Icon name="arrow" />
           </button>
         </div>
