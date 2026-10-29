@@ -717,11 +717,15 @@ test("header blue and the typography hierarchy stay consistent across every book
         }),
       );
     expect(styles.length).toBeGreaterThan(0);
-    for (const style of styles) {
-      expect(style.size, style.element).toBe("16px");
-      expect(style.family).toBe(styles[0].family);
-      expect(style.family).toContain("Roboto");
-    }
+    expect(
+      styles.filter(
+        (style) =>
+          style.size !== "16px" ||
+          style.family !== styles[0].family ||
+          !style.family.includes("Roboto"),
+      ),
+      "Every booking body element must share the 16px Roboto body role",
+    ).toEqual([]);
   }
   await details(page);
   await pageHeading("Review booking");
