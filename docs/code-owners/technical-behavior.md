@@ -217,7 +217,7 @@ sequenceDiagram
   Recovery->>Provider: verify payment, accounting and booking
   Recovery->>Recovery: commit authoritative outcome
   UI->>Recovery: protected context/status read
-  Note over UI,Recovery: Browser polling observes; it does not prove or fabricate settlement
+  Note over UI,Recovery: Browser polling observes, it does not prove or fabricate settlement
   UI->>Recovery: authorized receipt read
 ```
 

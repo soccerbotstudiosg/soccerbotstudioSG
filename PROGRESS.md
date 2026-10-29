@@ -1,6 +1,16 @@
 # SoccerBotStudioSG current task and handover
 
-Updated 28 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
+Updated 29 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
+
+## Current task — section 7 Mermaid rendering repair, 29 October 2026
+
+The recovery sequence diagram in [technical behavior](docs/code-owners/technical-behavior.md#7-recovery-confirmation-exports-and-completed-exit) failed parsing because a literal semicolon in its note was interpreted as a statement separator. Reproduced with Mermaid 11 using a temporary parser outside the repository; replacing the semicolon with a comma passes. No application, dependency manifest or workflow changed. Browser rendering remains owner/CI-operated.
+
+Branch `docs/fix-recovery-diagram` starts from main `150b705`, containing merged PR116 and PR117. Their final PR checks passed; post-merge deployment status is not reverified in this narrow task. Publish this repair as a draft PR and inspect its final-head CI.
+
+Domain handover remains pending vendor action: the client zone was prepared and inspected, with assigned nameservers `daniella.ns.cloudflare.com` and `merlin.ns.cloudflare.com`. Cloudflare Registrar requires the destination zone to become active **before** initiating the EPP transfer; this supersedes the transfer-first ordering in the earlier checkpoint below. Existing registrar DS status and five extra cPanel service proxy settings require vendor review. Preserve email hosting; no assistant DNS change or message send.
+
+## Previous task checkpoint — retained history, superseded by the current task above
 
 ## Active CI repair — PR116 checking-budget initialization
 
