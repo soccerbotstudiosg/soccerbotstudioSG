@@ -65,3 +65,11 @@ Keep completed results in the agreed evidence location with the full revision an
 | Evidence location (redacted)                     |         |
 | Tester signature / date                          |         |
 | Owner decision / accepted exceptions / follow-up |         |
+
+## Per-slot trainer choice
+
+Rules: [BR-001](../business-rules.md#br-001), [BR-002](../business-rules.md#br-002). Use owner-approved test arrangements; do not enable overlapping schedules before shared-capacity acceptance.
+
+| Case    | What to do                                                                                                                                               | What should happen                                                                                                                                    | Result | Remarks |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
+| TRA-016 | With Admin, prepare overlapping trainer availability and a multi-slot booking choosing different trainers; inspect each trainer’s assigned appointments. | Each appointment belongs to the customer-selected trainer. Other available trainers are not silently assigned and shared studio capacity remains one. |        |         |

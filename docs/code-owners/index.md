@@ -48,7 +48,7 @@ Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/
 flowchart TB
   State["provider.tsx · state, async actions and restoration"]
   State --> Account["account-step.tsx<br/>Email and account choices"]
-  State --> Selection["session-step.tsx + time-step.tsx + instructor.tsx<br/>Session selection"]
+  State --> Selection["session-step.tsx + time-step.tsx + instructor.tsx<br/>Time and per-slot trainer selection"]
   State --> Details["details-step.tsx<br/>Contact details"]
   State --> Review["review-step.tsx + summary.tsx<br/>Review and consent"]
   State --> Payment["payment-step.tsx<br/>Payment handoff presentation"]

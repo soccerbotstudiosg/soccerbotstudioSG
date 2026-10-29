@@ -234,6 +234,12 @@ Interrupted deployment: inspect the receipt’s last completed phase, current Wo
 
 Rollback is **not an automated arbitrary historical-revision switch**. Production workflow requires verified current main, so an older SHA can be rejected. Normal code rollback is a reviewed revert on main, fresh target verification and deployment of the resulting verified artifact, provided schema compatibility is established. Emergency restoration of a retained prior Cloudflare version/artifact requires a separately approved operator procedure and resource/schema review; do not bypass workflow gates or claim that this path is already rehearsed. Code rollback does not reverse D1 migrations, bookings, payments, notifications or provider-side effects.
 
+### Trainer-choice rollout and recovery
+
+Before enabling overlapping trainer schedules, Admin must confirm that all relevant SimplyBook services/trainers consume the same one-capacity studio resource, including the ten-minute changeover, and record [the cross-trainer UAT](uat/admin.md#per-slot-trainer-choice). The calendar currently supports at most three active instructors per service; larger rosters fail closed. Multiple offers are choices, not extra studio capacity. A single serialized Worker workflow does not establish provider resource exclusivity.
+
+If a chosen trainer disappears, refresh availability and choose another trainer for that session; never silently reassign a held booking. Investigate `native_selection_changed` against the selected service/trainer/start and `native_provider_schedule_overlap` against a legacy finite trial contract. New customer grants store `providerSchedules: "customer-choice"`; legacy contracts remain `"non-overlapping"`. An older build that accepts only the latter cannot safely restore new grants. Use a compatible rollback build or forward fix while retaining active attempt/payment evidence; do not edit stored contracts, reset D1, or retry uncertain bookings to make an old build accept them. Provider schedule/resource changes and deployment remain owner-authorized operations.
+
 ## 7. Data protection and restore
 
 D1 stores access/attempt/effect/payment/recovery evidence; the Durable Object separately stores coordination and encrypted token state. SimplyBook and HitPay hold their own authoritative records. A D1 backup alone is not a full system recovery point, and restoring application storage does not undo an external payment.

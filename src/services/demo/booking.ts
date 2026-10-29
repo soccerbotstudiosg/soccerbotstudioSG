@@ -21,7 +21,7 @@ import { SESSION_STARTS, STUDIOS } from "@/domain/demo-catalog";
 import { BookingServiceError } from "../contracts";
 import { defineBookingService } from "../booking";
 import { safeRead, safeWrite, upgradeBooking } from "../storage";
-import { demoSession } from "./schedule";
+import { demoSessions } from "./schedule";
 const RECEIPTS = "soccerbot-next-demo-receipts";
 const receiptsSchema = z.record(
   z.string(),
@@ -66,13 +66,12 @@ function assign(slots: Session[]) {
 // Synchronous simulation model only; UI consumes the validated async adapter below.
 export const demoBookingModel = {
   availability(date: string) {
-    return SESSION_STARTS.map((minute) => {
-      const slot = demoSession({ date, start: clock(minute) })!;
-      return {
+    return SESSION_STARTS.flatMap((minute) =>
+      demoSessions({ date, start: clock(minute) }).map((slot) => ({
         ...slot,
         available: !isElapsed(slot) && availableStudios(slot).length > 0,
-      };
-    });
+      })),
+    );
   },
   /** Simulate checkout creation within the demo booking state. */
   checkout(draft: BookingDraft, previous: Attempt | null): Attempt {
@@ -85,17 +84,16 @@ export const demoBookingModel = {
     if (error) throw new BookingServiceError("conflict", error);
     if (
       draft.slots.some((slot) => {
-        const assigned = demoSession(slot);
-        return (
-          !assigned ||
-          assigned.instructor !== slot.instructor ||
-          assigned.rotationAt !== slot.rotationAt
+        return !demoSessions(slot).some(
+          (offered) =>
+            offered.instructor === slot.instructor &&
+            offered.rotationAt === slot.rotationAt,
         );
       })
     )
       throw new BookingServiceError(
         "conflict",
-        "An instructor assignment has changed. Review your selected sessions.",
+        "A selected instructor is no longer available. Review your selected sessions.",
       );
     if (!draft.slots.every((slot) => availableStudios(slot).length > 0))
       throw new BookingServiceError(

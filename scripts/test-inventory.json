@@ -161,7 +161,7 @@
   },
   {
     "file": "src/domain/session-pricing.test.ts",
-    "title": "accepts priced public slots and rejects foreign dates, services, duplicate starts and private fields"
+    "title": "accepts priced public slots and rejects foreign dates, services, duplicate trainer offers and private fields"
   },
   {
     "file": "src/domain/session-pricing.test.ts",
@@ -500,6 +500,14 @@
     "title": "selection rechecks time before dispatch and refreshes after a suspended tab resumes"
   },
   {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "a trainer choice opened before expiry cannot add the session after its start"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "each time requires an independent trainer choice and changing it preserves other sessions and survives restoration"
+  },
+  {
     "file": "src/features/enquiry/enquiry-page.test.tsx",
     "title": "enquiry waits for hydration then preserves entered details through submission"
   },
@@ -829,7 +837,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "50-minute cadence, automatic instructors, contact validation and final-slot conflict"
+    "title": "50-minute cadence, chosen instructors, contact validation and final-slot conflict"
   },
   {
     "file": "tests/customer.spec.ts",
@@ -1008,6 +1016,10 @@
     "title": "Back during hero entry stays on home even when the previous page was Studio"
   },
   {
+    "file": "tests/customer.spec.ts",
+    "title": "per-slot trainer dropdowns group times under trainer cards and retain changed choices after reload"
+  },
+  {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "expired Review releases only an authoritatively unpaid attempt and preserves contact on calendar return"
   },
@@ -1110,6 +1122,14 @@
   {
     "file": "src/services/async-booking.test.ts",
     "title": "queue busy returns clear retained-attempt feedback without an automatic retry"
+  },
+  {
+    "file": "src/services/async-booking.test.ts",
+    "title": "a paid response cannot silently replace the selected trainer for the same time"
+  },
+  {
+    "file": "src/services/async-booking.test.ts",
+    "title": "availability accepts trainer alternatives but checkout rejects two trainers for the same studio time"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",

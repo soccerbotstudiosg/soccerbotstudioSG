@@ -1185,17 +1185,21 @@ test("calendar ranges never bridge unauthorized gaps and reject conflicting or f
     }),
     /calendar_representation_unavailable/,
   );
-  await assert.rejects(
-    new NativeCalendarReads().read({
-      ...input,
-      catalogue: async () => {
-        const value = calendarFixture();
-        value.services[0].instructorIds = ["14", "15"];
-        return value;
-      },
-    }),
-    /native_provider_schedule_overlap/,
+  const choices = await new NativeCalendarReads().read({
+    ...input,
+    catalogue: async () => {
+      const value = calendarFixture();
+      value.services[0].instructorIds = ["14", "15"];
+      return value;
+    },
+  });
+  const offers = choices.dates[0].offers;
+  assert.ok(offers.length >= 2);
+  assert.deepEqual(
+    new Set(offers.map((offer) => offer.instructorId)),
+    new Set(["14", "15"]),
   );
+  assert.equal(offers[0].startMs, offers[1].startMs);
 });
 test("calendar invalidation fences an in-flight stale response", async () => {
   const { input } = monthFixture();
@@ -2278,4 +2282,59 @@ test("public refresh-ahead is gated and never renews an expired token", async (t
   });
   await session.refreshPublicTokenAhead(f.env, f.control);
   assert.equal(await f.cache.load(f.env, "public"), undefined);
+});
+
+test("customer-choice prebooking keeps the requested eligible trainer and refuses unavailable or foreign choices", async () => {
+  const intent = approved();
+  intent.customerMode = "booking-contact";
+  intent.contact = {
+    name: "Synthetic Guest",
+    email: "guest@example.invalid",
+    phone: "00000000",
+    contactMethod: "email",
+    academy: "",
+  };
+  const read = exchangeFor(fixtures(), intent);
+  const contract = {
+    ...binding,
+    serviceId: "12",
+    priceMinor: 8800,
+    currency: "SGD",
+    taxMinor: 0,
+    durationMinutes: 40,
+    bufferAfterMinutes: 10,
+    clientLoginRequired: false,
+    providerSchedules: "customer-choice",
+    confirmedAtMs: Date.now() - 1000,
+    expiresAtMs: Date.now() + 600000,
+  };
+  const validation = new NativePrebooking(
+    binding,
+    new CatalogueReads(),
+    read.exchange,
+    contract,
+  );
+  read.bodies["eligible-instructors"] = [15, 14];
+  assert.equal((await validation.review(intent)).state, "ready");
+  assert.equal(
+    (await validation.revalidate(intent)).sessions[0].instructorId,
+    "14",
+  );
+  intent.sessions[0].instructorId = "15";
+  assert.equal((await validation.review(intent)).state, "ready");
+  assert.equal(
+    read.calls.filter((call) => call.kind === "availability").at(-1)
+      .instructorId,
+    "15",
+  );
+  read.bodies["eligible-instructors"] = [14];
+  assert.equal(
+    (await validation.review(intent)).state,
+    "selection_unavailable",
+  );
+  read.bodies["eligible-instructors"] = [14, 99];
+  await assert.rejects(
+    validation.review(intent),
+    /eligibility_catalogue_conflict/,
+  );
 });

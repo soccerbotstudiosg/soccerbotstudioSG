@@ -72,8 +72,12 @@ export const publicCalendarSchema = z
           day.date.startsWith(value.month + "-") &&
           (!day.offers ||
             (day.available === day.offers.length > 0 &&
-              new Set(day.offers.map((offer) => offer.startMs)).size ===
-                day.offers.length &&
+              new Set(
+                day.offers.map(
+                  (offer) =>
+                    `${offer.serviceId}|${offer.instructorId}|${offer.startMs}`,
+                ),
+              ).size === day.offers.length &&
               day.offers.every(
                 (offer) =>
                   (offer.productServiceId ?? offer.serviceId) ===

@@ -1,3 +1,5 @@
+import { orderedSlots, slotKey, type Session } from "@/domain/booking";
+import { dateLabel, endTime } from "@/domain/dates";
 import { INSTRUCTORS, type InstructorId } from "@/domain/demo-catalog";
 type InstructorDisplay = {
   name: string;
@@ -27,7 +29,9 @@ export function InstructorIdentity(props: InstructorProps) {
   );
 }
 /** Present the instructor profile details. */
-export function InstructorProfile(props: InstructorProps) {
+export function InstructorProfile(
+  props: InstructorProps & { sessions?: Session[] },
+) {
   const instructor = instructorDisplay(props);
   return (
     <article
@@ -37,7 +41,19 @@ export function InstructorProfile(props: InstructorProps) {
       <div className="trainer-heading">
         <InstructorIdentity {...props} />
       </div>
-      <p className="trainer-bio">{instructor.bio}</p>
+      {instructor.bio && <p className="trainer-bio">{instructor.bio}</p>}
+      {props.sessions && (
+        <ul
+          className="trainer-sessions"
+          aria-label={`Sessions with ${instructor.name}`}
+        >
+          {orderedSlots(props.sessions).map((slot) => (
+            <li key={slotKey(slot)}>
+              {dateLabel(slot.date)} · {slot.start}–{endTime(slot.start)} SGT
+            </li>
+          ))}
+        </ul>
+      )}
     </article>
   );
 }

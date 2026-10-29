@@ -87,7 +87,7 @@ export const nativeAccountContractSchema = z
     durationMinutes: z.literal(40),
     bufferAfterMinutes: z.literal(10),
     clientLoginRequired: z.literal(false),
-    providerSchedules: z.literal("non-overlapping"),
+    providerSchedules: z.enum(["non-overlapping", "customer-choice"]),
     bookingLeadMinutes: z
       .union([z.literal(150), z.literal(BOOKING_LEAD_MINUTES)])
       .optional(),
@@ -288,9 +288,12 @@ export class NativePrebooking {
       )
     )
       throw new ApiError(503, "eligibility_catalogue_conflict");
-    // The owner configures non-overlapping provider schedules for one studio.
-    // Unexpected overlap is configuration drift, never a name/order tie-break.
-    if (ids.length > 1)
+    // Legacy finite trials retain their declared schedule restriction. Ongoing
+    // customers choose a trainer; SimplyBook still enforces shared capacity.
+    if (
+      ids.length > 1 &&
+      this.accountContract?.providerSchedules !== "customer-choice"
+    )
       return {
         state: "unavailable" as const,
         reasons: ["native_provider_schedule_overlap"],

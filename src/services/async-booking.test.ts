@@ -180,6 +180,21 @@ test("attempt responses cannot change identity approved draft or paid associatio
     service.pay({ attempt: ready, outcome: "success" }),
   ).rejects.toMatchObject({ code: "invalid_response" });
 });
+test("a paid response cannot silently replace the selected trainer for the same time", async () => {
+  const ready = demoBookingModel.checkout(draft(), null);
+  const checking = demoBookingModel.pay(ready, "success");
+  const paid = demoBookingModel.resolve(checking, checking.checkUntil);
+  expect(paid.status).toBe("paid");
+  const changed = structuredClone(paid);
+  changed.booking!.slots[0].instructor = "daniel";
+  const service = defineBookingService({
+    ...demoBookingService,
+    resolve: async () => changed,
+  });
+  await expect(
+    service.resolve({ attempt: checking, now: checking.checkUntil }),
+  ).rejects.toMatchObject({ code: "invalid_response" });
+});
 test("all live booking operations remain unavailable and never call demo or transport", async () => {
   const fetch = vi.fn();
   vi.stubGlobal("fetch", fetch);
@@ -517,4 +532,51 @@ test("queue busy returns clear retained-attempt feedback without an automatic re
       "The booking service is busy. Your details and existing attempt are saved. Please wait a moment before trying again.",
   });
   expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+test("availability accepts trainer alternatives but checkout rejects two trainers for the same studio time", async () => {
+  const slots = (
+    await demoBookingService.availability({ date: "2026-10-13", players: 1 })
+  ).filter((slot) => slot.start === "12:00");
+  expect(slots).toHaveLength(2);
+  expect(new Set(slots.map((slot) => slot.instructor)).size).toBe(2);
+  const selected = await demoBookingService.checkout({
+    draft: { ...draft(), slots: [slots[1]] },
+    previous: null,
+  });
+  expect(selected.draft.slots[0].instructor).toBe("daniel");
+  await expect(
+    demoBookingService.checkout({
+      draft: { ...draft(), slots },
+      previous: null,
+    }),
+  ).rejects.toBeDefined();
+  const competing = await demoBookingService.checkout({
+    draft: { ...draft(), slots: [slots[0]] },
+    previous: null,
+  });
+  const first = await demoBookingService.pay({
+    attempt: selected,
+    outcome: "success",
+  });
+  const second = await demoBookingService.pay({
+    attempt: competing,
+    outcome: "success",
+  });
+  expect(
+    (
+      await demoBookingService.resolve({
+        attempt: first,
+        now: first.checkUntil,
+      })
+    ).status,
+  ).toBe("paid");
+  expect(
+    (
+      await demoBookingService.resolve({
+        attempt: second,
+        now: second.checkUntil,
+      })
+    ).status,
+  ).toBe("late");
 });

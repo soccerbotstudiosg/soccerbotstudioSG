@@ -13,7 +13,7 @@ import {
   draftSchema,
   outcomeSchema,
   sessionSchema,
-  slotKey,
+  sessionOfferKey,
   snapshot,
   totalCents,
   type Attempt,
@@ -130,7 +130,8 @@ function resultAttempt(
       result.booking.slots.length !== draft.slots.length ||
       result.booking.slots.some(
         (slot, index) =>
-          slotKey(slot) !== slotKey(snapshot(draft).slots[index]),
+          sessionOfferKey(slot) !==
+          sessionOfferKey(snapshot(draft).slots[index]),
       ))
   )
     throw invalidResponse();
@@ -271,7 +272,7 @@ export function defineBookingService(adapter: BookingService): BookingService {
                   (slot.native.productServiceId ?? slot.native.serviceId) !==
                     request.serviceId),
           ) ||
-          new Set(slots.map(slotKey)).size !== slots.length
+          new Set(slots.map(sessionOfferKey)).size !== slots.length
         )
           throw invalidResponse();
         return slots;

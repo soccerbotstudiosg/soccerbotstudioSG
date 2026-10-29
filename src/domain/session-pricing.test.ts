@@ -40,7 +40,7 @@ describe("Singapore session pricing", () => {
     };
     expect(totalCents(draft)).toBe(19800);
   });
-  it("accepts priced public slots and rejects foreign dates, services, duplicate starts and private fields", () => {
+  it("accepts priced public slots and rejects foreign dates, services, duplicate trainer offers and private fields", () => {
     const offer = {
       serviceId: "3",
       productServiceId: "2",
@@ -58,6 +58,20 @@ describe("Singapore session pricing", () => {
       dates: [{ date: "2026-10-17", available: true, offers: [offer] }],
     };
     expect(publicCalendarSchema.safeParse(value).success).toBe(true);
+    expect(
+      publicCalendarSchema.safeParse({
+        ...value,
+        dates: [
+          {
+            ...value.dates[0],
+            offers: [
+              offer,
+              { ...offer, instructorId: "4", instructorName: "Other trainer" },
+            ],
+          },
+        ],
+      }).success,
+    ).toBe(true);
     for (const patch of [
       { productServiceId: "4" },
       { startMs: offer.startMs + 86400000 },
