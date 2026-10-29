@@ -2,7 +2,7 @@
 
 ## Authority and document ownership
 
-This file is the sole owner of repository engineering instructions. User instructions take precedence; current repository instructions supersede stale external skill snapshots. The cloud skill’s older uppercase Journey, Rules & Architecture and CODEX_CLOUD paths are superseded. Use the current document map below.
+This file is the authority for repository engineering instructions; linked procedures operate under it. User instructions take precedence; current repository instructions supersede stale external skill snapshots. The cloud skill’s older uppercase Journey, Rules & Architecture and CODEX_CLOUD paths are superseded. Use the current document map below.
 
 | File                                                         | Unique purpose                                                                                         |
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
@@ -46,6 +46,8 @@ Use one feature branch and edit existing component/domain/service/style owners. 
 Use one-line JSDoc/TSDoc summaries (`/** ... */`) for major TypeScript/JavaScript functions and one-line PEP 257 docstrings (`"""..."""`) for Python functions. Describe purpose or an important constraint with an imperative sentence; omit redundant type/parameter prose. Keep detailed safety rationale beside the relevant logic. Exclude generated code, test callbacks and trivial accessors from blanket documentation.
 
 ## Verify and publish
+
+Apply the [documentation reconciliation skill](.agents/skills/soccerbot-documentation/SKILL.md) for every PR (including documentation, dependency and automated updates) and delivery-state change. Review all document owners for impact, edit affected owners, and include its concise documentation-state receipt in the PR. This is an instruction procedure, not a CI hook or background automation; it grants no additional action authority.
 
 After every logical change or repair, search affected components, services, Worker/browser tests, fixtures and inventories. Update obsolete assumptions without weakening their purpose, then run meaningful affected checks using the [command reference](docs/development.md#verification-commands). Never add retries, sleeps, forced clicks, skipped cases, looser timeouts or reduced inventories to conceal failures. Preserve the first failed receipt and diagnose it.
 

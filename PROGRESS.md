@@ -2,18 +2,19 @@
 
 Updated 29 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
 
-## Current task — diagram repair, rendering audit and campaign guide
+## Current task — documentation state reconciliation skill
 
-Outcome: repair section 7 of [technical behavior](docs/code-owners/technical-behavior.md#7-recovery-confirmation-exports-and-completed-exit), adapt the user-linked Fitfinity campaign guide into [North Star](NORTH_STAR.md), and inspect every tracked Markdown document for rendering syntax failures. PR: [118](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/118), branch `docs/fix-recovery-diagram`, based on main `150b705` (merged PR116 and PR117). Their final PR checks passed; post-merge deployment status has not been reverified in this task.
+Outcome: adapt the requested Fitfinity procedure into [.agents/skills/soccerbot-documentation/SKILL.md](.agents/skills/soccerbot-documentation/SKILL.md) and link it from AGENTS for every PR and delivery-state change. Branch `docs/documentation-state-skill` starts from merged main `3c39f88` (PR118). Working tree was clean before this task; dependency files are preserved.
 
-- Reproduced the section 7 Mermaid parser failure: a literal semicolon split its note into another statement. Replacing it with a comma preserves meaning and passes parsing.
-- Adapted the campaign procedure to SoccerBot's document owners, three 20-minute verification jobs, 10-minute deployment jobs, isolated Worker/D1/DO evidence and owner/CI browser boundaries. AGENTS remains the engineering authority; this adds no background automation or external permissions.
-- Retained the product outcome here: prepare dependable customer booking and quick rebooking for client UAT/handover, complete client configuration and prove the client deployment. The [data lifecycle draft](docs/data-lifecycle.md) remains pending client clause mapping before cleanup implementation.
-- Audit scope: all 18 tracked Markdown documents and 30 Mermaid diagrams; validate syntax, fences, tables and local links. Temporary parsers live outside the repository. No application, dependency manifest or workflow change, browser execution or screenshot capture.
+The procedure reviews all documentation owners, changes only affected ones, records exact evidence/acceptance states and keeps delivery receipts current without endless status-only commits. Adaptations use SoccerBot's actual UAT paths, Worker/TypeScript/Zod contracts, three CI gates, isolated Worker storage tests and owner/CI browser boundary. It is an instruction skill, not unattended automation or a new permission grant. AGENTS remains the authority.
 
-Campaign budget: one bounded block with two source/evidence cycles (diagram diagnosis/repair, guide adaptation/document audit); default six-iteration/90-minute review boundary. Token/tool cost accounting is unavailable. Acceptance: preserve document links and application invariants, parse diagrams/Markdown, retain exact failure evidence, and pass final-head CI. No merge is authorized for this new PR by the earlier PR116/117 instruction.
+Owner impact: skill and AGENTS own the new procedure; Progress and Journey own task/delivery reconciliation. North Star's campaign budgets, business/API rules, code-owner diagrams, architecture/security/data-lifecycle content, setup/runbook/version inventory and UAT behavior do not change for this procedure-only PR. No application, schema, dependencies, workflows or external settings changed.
 
-**Leave-off:** publish the expanded PR118 head and inspect its three CI gates. Syntax checks do not establish GitHub's visual layout; owner reviews rendered documents. [Journey](docs/journey.md#29-october-2026--repair-recovery-sequence-diagram-syntax) records the original defect and correction.
+Budget: one bounded review/adaptation/validation cycle within the default six-iteration/90-minute block; token/tool cost accounting unavailable. Acceptance: valid skill metadata and paths, consistent owner map, local links/Markdown structure and source/policy checks, followed by exact-final-head CI. No browser rendering is claimed or needed for unchanged diagrams.
+
+**Verified delivery checkpoint:** PR118 merged as `3c39f882d1106185bda10227a21784cafc357e1d`; its final-head run 40804424347 passed all three gates. At this task's read, [main run 40811741772](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40811741772) had passed frontend/backend and frontend deployment, with live-email still running; Cloudflare deployment was not confirmed. This is last-observed evidence, not a live status.
+
+**Leave-off:** publish a new draft PR with the skill's documentation-state receipt and inspect its final-head gates. Merge requires separate authorization. The product outcome remains dependable customer booking and quick rebooking for client UAT/handover; client configuration/deployment proof and privacy-clause mapping for [data lifecycle](docs/data-lifecycle.md) remain pending.
 
 ## Current domain handover — pending vendor action
 
