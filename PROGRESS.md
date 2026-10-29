@@ -12,7 +12,6 @@ Campaign scope: BR-004/006/013, existing calendar, presentation, receipt/coordin
 
 **Leave-off:** complete local `verify:code` passed for the repair (242 tests, types/lint/build/export); 973 local links and formatting/diff checks passed. Push PR122 and inspect the new exact-head browser CI. Retain original failed runs and delivery evidence in Journey/PR. Browser acceptance and all three final-head gates remain required; there is no new merge/deployment authority. Worker behavior is unchanged from the already-tested candidate. No live provider, booking, payment, notification or DNS action is included.
 
-
 Provider test setup: owner-authorized changes added 42 date-specific schedules in SimplyBook company `soccerbot`, 3–16 November 2026 (Singapore): Faisal noon–4pm, Nabil 2–6pm, Caelan 4–8pm. All 42 schedules were read back; November dates outside the range were unchanged. Effective service hours were checked for 3 November. No bookings were created. Customer-flow acceptance still needs to verify trainer choices and the single studio capacity across different trainers; the owner's screenshot showed admin exemption enabled, so admin booking entry is not sufficient evidence. Earlier bookings remain untouched.
 
 ## Current domain handover — pending vendor action
