@@ -1,25 +1,25 @@
 # SoccerBotStudioSG current task and handover
 
-Updated 28 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
+Updated 29 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
 
-## Active CI repair — PR116 checking-budget initialization
+## Current task — diagram repair, rendering audit and campaign guide
 
-Run [40706485933](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40706485933) failed one phone WebKit case after reading an uninitialized checking budget. Frontend/live-email and 74 other browser cases passed. The duplicate-tab test now waits for the initial confirmation request, which follows budget persistence, before capturing its baseline. Deadline/allowance assertions remain intact; no application behavior or timeouts changed. Original evidence and diagnosis are retained in [Journey](docs/journey.md#28-october-2026--pr116-checking-budget-test-initialization-repair).
+Outcome: repair section 7 of [technical behavior](docs/code-owners/technical-behavior.md#7-recovery-confirmation-exports-and-completed-exit), adapt the user-linked Fitfinity campaign guide into [North Star](NORTH_STAR.md), and inspect every tracked Markdown document for rendering syntax failures. PR: [118](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/118), branch `docs/fix-recovery-diagram`, based on main `150b705` (merged PR116 and PR117). Their final PR checks passed; post-merge deployment status has not been reverified in this task.
 
-Leave-off: repair `cdef7e7` is pushed to PR116 and included in PR117; require fresh final-head CI. PR117 at `91539f2` independently passed all three gates in run 40714296582. Its prior green result predates this repair. Neither PR is merged by this task.
+- Reproduced the section 7 Mermaid parser failure: a literal semicolon split its note into another statement. Replacing it with a comma preserves meaning and passes parsing.
+- Adapted the campaign procedure to SoccerBot's document owners, three 20-minute verification jobs, 10-minute deployment jobs, isolated Worker/D1/DO evidence and owner/CI browser boundaries. AGENTS remains the engineering authority; this adds no background automation or external permissions.
+- Retained the product outcome here: prepare dependable customer booking and quick rebooking for client UAT/handover, complete client configuration and prove the client deployment. The [data lifecycle draft](docs/data-lifecycle.md) remains pending client clause mapping before cleanup implementation.
+- Audit scope: all 18 tracked Markdown documents and 30 Mermaid diagrams; validate syntax, fences, tables and local links. Temporary parsers live outside the repository. No application, dependency manifest or workflow change, browser execution or screenshot capture.
 
-## Current task — data lifecycle draft before client clause mapping
+Campaign budget: one bounded block with two source/evidence cycles (diagram diagnosis/repair, guide adaptation/document audit); default six-iteration/90-minute review boundary. Token/tool cost accounting is unavailable. Acceptance: preserve document links and application invariants, parse diagrams/Markdown, retain exact failure evidence, and pass final-head CI. No merge is authorized for this new PR by the earlier PR116/117 instruction.
 
-Owner requested a Markdown draft based on application behavior, then mapping to the client’s PDPA/privacy clauses before implementation. Branch: `docs/data-lifecycle-draft`, stacked on unmerged [PR116](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/116), head `cdef7e7`; application baseline remains verified main `dffb24a`.
+**Leave-off:** publish the expanded PR118 head and inspect its three CI gates. Syntax checks do not establish GitHub's visual layout; owner reviews rendered documents. [Journey](docs/journey.md#29-october-2026--repair-recovery-sequence-diagram-syntax) records the original defect and correction.
 
-- Added [data-lifecycle.md](docs/data-lifecycle.md): lifecycle diagram, 18 inventory categories, source validity periods, actual narrow cleanup, provider/log/backup boundaries and a pending clause-mapping worksheet.
-- Reviewed all 35 migrations in an empty in-memory SQLite database and source storage/cleanup paths. No deployed data or account retention settings were inspected. Expiry, revocation and grant archival do not establish erasure; `retentionPreview` explicitly leaves cleanup disabled.
-- Linked the lifecycle owner from AGENTS, security and runbook. Corrected the security overview to place public display snapshots in Durable Object storage, not D1.
-- No retention duration approved, cleanup implemented, provider action taken or runtime changed. Client clauses, external settings and operational decisions remain pending; alert responders stay unassigned.
+## Current domain handover — pending vendor action
 
-**Validation scope:** Markdown links/anchors, formatting, source/policy and diff checks. Browser execution, provider acceptance and cleanup tests are not applicable evidence for this documentation-only change.
+The client zone was prepared and inspected, with assigned nameservers `daniella.ns.cloudflare.com` and `merlin.ns.cloudflare.com`. Cloudflare Registrar requires the destination zone to become active **before** initiating the EPP transfer. Existing registrar DS status and five extra cPanel service proxy settings require vendor review. Preserve email hosting; no assistant DNS change or message send. Once the vendor confirms the nameserver change, recheck zone activation and email routing before guiding the owner through EPP/payment submission. Never place the EPP code in repository evidence.
 
-**Leave-off:** [PR117](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/117) is published as a stacked draft; inspect final-head CI before claiming readiness. Review the worksheet with the client’s clauses before proposing implementation. PR116 contains the prior status/hosting reconciliation and code-owner/technical-behavior expansion and was still unmerged at this task’s checkpoint. Main/deployment receipts below do not establish acceptance of either documentation candidate.
+## Historical deployment checkpoint — retained context, not current task status
 
 ## Verified main and completed PR stack
 
@@ -35,9 +35,9 @@ Final merged revision: `dffb24a12aae68de4ee32d6e7477bf227b3f0c50`. [Main run 406
 
 PR114’s consumed-response repair and PR115’s dismissal setup/inventory repair passed final checks. Original failure receipts and their explanations are retained in [Journey’s dated history](docs/journey.md#part-2--dated-changes-and-evidence). The earlier PR112 tablet timing failure has no established root cause; later green runs do not retroactively diagnose it. It is a retained investigation item, not a currently failing final-main gate.
 
-## Domain decision and next deployment step
+## Earlier domain plan — superseded by current domain handover above
 
-**Confirmed plan:** transfer `soccerbotsg.com` to the client registrar first, then delegate authoritative DNS to the client Cloudflare account. The vendor supplied “PP unlock” and email records. **Not verified:** transfer completion, destination registrar/account, exact current zone/account rights, nameserver change, mail-record completeness or production hostname configuration. Do not store transfer codes in the repository.
+**Earlier plan (superseded):** transfer `soccerbotsg.com` to the client registrar first, then delegate authoritative DNS to the client Cloudflare account. The vendor supplied “PP unlock” and email records. **Not verified:** transfer completion, destination registrar/account, exact current zone/account rights, nameserver change, mail-record completeness or production hostname configuration. Do not store transfer codes in the repository.
 
 Registrar ownership, authoritative DNS delegation and application hosting are three separate states. Preserve existing nameservers/DNS/email service during registrar transfer; prepare and compare the destination zone and DNSSEC/DS transition before an owner-executed delegation change. Confirm the supported same-account Worker hostname/routing design and costs, then prove direct `https://soccerbotsg.com` access, managed TLS/renewal prerequisites, redirects, same-origin API, cookies and rollback. Record first issuance and actual renewal separately.
 

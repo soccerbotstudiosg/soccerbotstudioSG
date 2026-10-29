@@ -11,7 +11,7 @@ This file is the sole owner of repository engineering instructions. User instruc
 | [Runbook](docs/runbook.md)                                   | Dependency maintenance, observability interpretation and operational recovery procedures.              |
 | [Security infrastructure](docs/security.md)                  | Security boundaries, implemented controls, evidence limits and proposed additional layers.             |
 | [Data lifecycle](docs/data-lifecycle.md)                     | Source-based storage/expiry inventory and pending client privacy-clause mapping; no deletion approval. |
-| [North Star](NORTH_STAR.md)                                  | Current outcome and priority.                                                                          |
+| [North Star](NORTH_STAR.md)                                  | Campaign operating procedure, bounded iteration budgets, evidence states and handover.                 |
 | [Progress](PROGRESS.md)                                      | Detailed current task, exact leave-off, evidence, blockers and handover; link to Journey history.      |
 | [Architecture diagram](docs/architecture/diagram.md)         | Component topology and connections.                                                                    |
 | [Architecture decisions](docs/architecture/adr.md)           | Stack rationale, tradeoffs, scaling triggers and alternative designs.                                  |
@@ -21,7 +21,7 @@ This file is the sole owner of repository engineering instructions. User instruc
 
 Function-level behavior, guards, failure recovery and evidence are in [Technical behavior](docs/code-owners/technical-behavior.md); start with the [feature map](docs/code-owners/index.md) for navigation.
 
-Read North Star, Progress, Architecture and the relevant Business rules and API contracts before work. Refresh branch/HEAD/index and the remote revision; GitHub is canonical, but the local checkout may differ. Preserve unknown edits, worktrees, dependency symlinks and original evidence. Update the owning document and link to it elsewhere; do not maintain parallel rules, setup guides or status ledgers. Historical entries remain dated evidence, not current instructions or renewed authorization. Preserve milestone IDs and record history once in Complete journey’s dated history.
+Use North Star for sustained multi-step campaigns; scale it down for small corrections. Progress owns the active outcome and priority. Read North Star, Progress, Architecture and the relevant Business rules and API contracts before work. Refresh branch/HEAD/index and the remote revision; GitHub is canonical, but the local checkout may differ. Preserve unknown edits, worktrees, dependency symlinks and original evidence. Update the owning document and link to it elsewhere; do not maintain parallel rules, setup guides or status ledgers. Historical entries remain dated evidence, not current instructions or renewed authorization. Preserve milestone IDs and record history once in Complete journey’s dated history.
 
 ## Route the request
 
