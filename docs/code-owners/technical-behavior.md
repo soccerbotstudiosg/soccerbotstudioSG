@@ -63,7 +63,7 @@ Evidence: [experiment browser cases](../../tests/experiment.spec.ts), [live iden
 
 ### 1.1 Step presentation functions
 
-Trainer selection update (29 October 2026): `TimeStep` groups simultaneous offers into one time card and exposes its trainer dropdown after the time is opened. A pending dropdown does not add a session. Choosing or changing a trainer validates exact offer identity and current time; a refresh/failure never silently replaces a saved trainer. The selected time button or basket removal removes the session. `Summary` groups completed selections by stable instructor ID; `InstructorProfile` lists that trainer’s ordered dates/times below the summary. Profiles stack vertically, including when names match. Held/payment-locked drafts keep existing edit guards.
+Trainer selection update (29 October 2026): `TimeStep` groups simultaneous offers into one time card and exposes its trainer dropdown after the time is opened. A pending dropdown does not add a session. Choosing or changing a trainer validates exact offer identity and current time; a refresh/failure never silently replaces a saved trainer. The selected time button or basket removal removes the session. `Summary` groups completed selections by stable instructor ID; `InstructorProfile` lists that trainer’s ordered dates/times below the summary. Profiles stack vertically, including when names match. Each left-hand trainer selector has its own bordered surface, bold label and outlined control; the right-hand session list has top padding separating dates from the trainer header. Held/payment-locked drafts keep existing edit guards.
 
 ```mermaid
 flowchart TB

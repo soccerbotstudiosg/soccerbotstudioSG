@@ -2,7 +2,11 @@
 
 Updated 29 October 2026, Singapore. This file owns the current task, verified checkpoint and next actions. [Journey](docs/journey.md) owns milestones, complete flows and dated history; [AGENTS](AGENTS.md) owns engineering rules. Historical failures and previous plans remain dated evidence, not current release status.
 
-## Current task — per-slot trainer selection
+## Current task — trainer selection visual grouping
+
+On branch `fix/trainer-section-spacing`, based on merged PR120 (`a07e315`), give the left trainer selector a bordered surface, bold label and outlined 44px control; add 18px of top padding above the dates in right-hand trainer cards. This is presentation-only: selection, pricing and shared studio capacity are unchanged. Review existing time-selection regressions and source/format checks; owner/CI performs visual browser acceptance. Next: publish the draft PR and require final-revision CI before merge.
+
+## Previous task — per-slot trainer selection
 
 Outcome: after choosing each time, the customer explicitly chooses an available trainer from that slot’s dropdown. Below the right-hand booking summary, one trainer card lists all selected times for that trainer; different trainer cards stack vertically. Different sessions may use different trainers; studio capacity remains one across all trainers (BR-001/002). Branch `feat/per-slot-trainer-choice` starts from main `3c39f882d1106185bda10227a21784cafc357e1d` (PR118 merged). PR119's documentation/testing skills remain a separate draft.
 
