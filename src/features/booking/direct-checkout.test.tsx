@@ -247,7 +247,7 @@ it("cancelled checkout ignores a late saved URL handoff", () =>
 it("cancelled direct checkout never navigates", () => directCase("cancel"));
 it("direct checkout rejects an untrusted destination", () =>
   directCase("wrong_host"));
-it("holds once before review and starts payment without preparing or checking availability again", async () => {
+it("explicit reservation reuses its hold for payment without preparing or checking availability again", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const checkout = vi.fn<BookingService["checkout"]>(

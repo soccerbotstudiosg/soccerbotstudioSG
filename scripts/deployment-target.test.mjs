@@ -131,12 +131,14 @@ const run = {
   status: "completed",
   conclusion: "success",
 };
-const jobs = ["frontend", "backend", "live-email"].map((name) => ({
-  name: `verify / ${name}`,
-  conclusion: "success",
-  head_sha: revision,
-  run_attempt: 2,
-}));
+const jobs = ["frontend", "backend", "live-email", "worker-runtime"].map(
+  (name) => ({
+    name: `verify / ${name}`,
+    conclusion: "success",
+    head_sha: revision,
+    run_attempt: 2,
+  }),
+);
 const options = {
   repository: "client/booking",
   revision,
@@ -169,7 +171,28 @@ test("deployment evidence rejects wrong revisions, forks, missing gates and mixe
         options,
       ),
     );
-  assert.throws(() => validateTargetRun(run, jobs.slice(1), options));
+  for (const gate of jobs) {
+    assert.throws(() =>
+      validateTargetRun(
+        run,
+        jobs.filter((job) => job !== gate),
+        options,
+      ),
+    );
+    for (const patch of [
+      { conclusion: "failure" },
+      { conclusion: "skipped" },
+      { run_attempt: 1 },
+      { head_sha: "b".repeat(40) },
+    ])
+      assert.throws(() =>
+        validateTargetRun(
+          run,
+          jobs.map((job) => (job === gate ? { ...job, ...patch } : job)),
+          options,
+        ),
+      );
+  }
   assert.throws(() =>
     validateTargetRun(run, jobs, { ...options, mainRevision: "c".repeat(40) }),
   );

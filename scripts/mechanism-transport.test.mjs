@@ -95,4 +95,9 @@ test("real Worker transport preserves checkout bodies across navigation and repe
   );
   assert.equal(sequence, 2);
   await captured.drain();
+  page.isClosed = () => true;
+  page.unrouteAll = async () => {
+    throw new Error("closed page must not receive route API calls");
+  };
+  await captured.drain();
 });

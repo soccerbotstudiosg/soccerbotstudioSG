@@ -405,7 +405,7 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "holds once before review and starts payment without preparing or checking availability again"
+    "title": "explicit reservation reuses its hold for payment without preparing or checking availability again"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
