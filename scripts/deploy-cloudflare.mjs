@@ -4,6 +4,7 @@ import {
   releaseConfig,
   loadTarget,
   targetDigest,
+  isWorkersDevTarget,
 } from "./deployment-target.mjs";
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -52,10 +53,7 @@ export function validateDeployment(directory, revision, target = null) {
     assert.equal(config.vars.DEPLOYMENT_ACCOUNT_ID, target.accountId);
     assert.equal(config.vars.STATE_DATABASE_ID, target.databaseId);
     assert.equal(config.vars.APP_ORIGIN, target.origin);
-    assert.equal(
-      config.workers_dev,
-      target.target === "staging" && !target.pagesProject,
-    );
+    assert.equal(config.workers_dev, isWorkersDevTarget(target));
     assert.equal(config.preview_urls, false);
     if (target.saasZone) {
       assert.deepEqual(config.routes, [
@@ -252,7 +250,9 @@ export function verifySandboxSettings(settings, config) {
 async function deploy() {
   assert.equal(process.env.GITHUB_REF, "refs/heads/main");
   assert.ok(
-    ["push", "workflow_dispatch"].includes(process.env.GITHUB_EVENT_NAME),
+    ["push", "workflow_dispatch", "workflow_run"].includes(
+      process.env.GITHUB_EVENT_NAME,
+    ),
   );
   assert.ok(
     process.env.CLOUDFLARE_API_TOKEN,

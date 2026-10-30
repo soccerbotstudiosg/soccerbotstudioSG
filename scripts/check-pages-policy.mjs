@@ -1,6 +1,6 @@
 import { emailSitekey } from "./release-profile.mjs";
 const mainOnly =
-  "github.ref == 'refs/heads/main' && github.event_name != 'pull_request'";
+  "github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && github.repository == 'LimYouSheng/SoccerBotStudioSG' && vars.DEPLOYMENT_MODE != 'portable'";
 const releaseCommand =
   "node scripts/prepare-developer-release.mjs\nnode scripts/check-developer-release.mjs\n";
 /** Verify that CI preserves the separate Pages and Worker release gates. */
@@ -51,7 +51,8 @@ export function checkPagesPolicy(doc) {
   require(backend.name === "verify / backend" &&
     backend["runs-on"] === "ubuntu-latest" &&
     backend["timeout-minutes"] === 20 &&
-    !backend.if &&
+    backend.if ===
+      "github.repository != 'soccerbotstudiosg/soccerbotstudioSG'" &&
     !backend.permissions &&
     !backend.environment &&
     !backend["continue-on-error"] &&
@@ -163,7 +164,7 @@ export function checkPagesPolicy(doc) {
   require(same(doc.jobs?.cloudflare, {
     name: "deploy / Cloudflare",
     needs: ["frontend", "backend", "live-email"],
-    if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOYMENT_MODE != 'portable'",
+    if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && github.repository == 'LimYouSheng/SoccerBotStudioSG' && vars.DEPLOYMENT_MODE != 'portable'",
     "runs-on": "ubuntu-latest",
     "timeout-minutes": 10,
     permissions: {

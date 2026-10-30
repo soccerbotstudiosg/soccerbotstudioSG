@@ -106,7 +106,8 @@ export function checkPolicy({
   require(!!job &&
     job["runs-on"] === "ubuntu-latest" &&
     job["timeout-minutes"] === 20, "Frontend runner/timeout changed");
-  require(!Object.hasOwn(job || {}, "if") &&
+  require(job?.if ===
+    "github.repository != 'soccerbotstudiosg/soccerbotstudioSG'" &&
     !job?.["continue-on-error"] &&
     !job?.permissions &&
     !job?.environment, "Required job bypass or deployment access refused");

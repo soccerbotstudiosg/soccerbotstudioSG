@@ -8,6 +8,7 @@ import {
   targetConfig,
   targetDigest,
   pagesConfig,
+  isWorkersDevTarget,
 } from "./deployment-target.mjs";
 import { validateTargetRun } from "./verified-target-run.mjs";
 const staging = loadTarget("staging");
@@ -29,7 +30,7 @@ const production = {
   sandbox: null,
 };
 test("deployment targets reject incomplete identities, secret fields and production activation", () => {
-  assert.throws(() => loadTarget("production"));
+  assert.equal(loadTarget("production").access, "closed");
   assert.throws(() => loadTarget("../staging"));
   assert.deepEqual(validateTarget(production), production);
   for (const change of [
@@ -188,10 +189,13 @@ test("deployment evidence rejects wrong revisions, forks, missing gates and mixe
     "live-email-evidence-42-2",
   );
 });
-test("target workflows isolate credentials and require manual verified-revision deployment", () => {
+test("target workflows isolate PR credentials and deploy through trusted main after completed verification", () => {
   const read = (name) =>
     YAML.parse(readFileSync(`.github/workflows/${name}.yml`, "utf8"));
   const verify = read("verify-target");
+  assert.deepEqual(verify.on.push.branches, ["main"]);
+  assert.deepEqual(verify.on.pull_request.branches, ["main"]);
+  assert.equal(verify.on.pull_request_target, undefined);
   assert.deepEqual(Object.keys(verify.jobs).sort(), [
     "backend",
     "frontend",
@@ -199,6 +203,10 @@ test("target workflows isolate credentials and require manual verified-revision 
   ]);
   assert.equal(JSON.stringify(verify).includes("secrets."), false);
   for (const job of Object.values(verify.jobs)) {
+    assert.equal(
+      job.steps[0].with.ref,
+      "${{ github.event.pull_request.head.sha || github.sha }}",
+    );
     assert.ok(!job["continue-on-error"]);
     assert.equal(
       job.container.image,
@@ -212,7 +220,29 @@ test("target workflows isolate credentials and require manual verified-revision 
   }
   for (const target of ["staging", "production"]) {
     const workflow = read(`deploy-${target}`);
-    assert.deepEqual(Object.keys(workflow.on), ["workflow_dispatch"]);
+    assert.deepEqual(Object.keys(workflow.on), [
+      "workflow_run",
+      "workflow_dispatch",
+    ]);
+    assert.deepEqual(workflow.on.workflow_run, {
+      workflows: ["Verify deployment target"],
+      types: ["completed"],
+    });
+    assert.ok(
+      workflow.jobs.deploy.if.includes(
+        "github.event.workflow_run.conclusion == 'success'",
+      ),
+    );
+    assert.ok(
+      workflow.jobs.deploy.if.includes(
+        `github.event.workflow_run.event == '${target === "staging" ? "pull_request" : "push"}'`,
+      ),
+    );
+    assert.ok(
+      workflow.jobs.deploy.if.includes(
+        "github.repository == 'soccerbotstudiosg/soccerbotstudioSG'",
+      ),
+    );
     assert.equal(workflow.concurrency["cancel-in-progress"], false);
     assert.ok(!workflow.jobs.deploy.environment);
     const steps = workflow.jobs.deploy.steps;
@@ -224,4 +254,96 @@ test("target workflows isolate credentials and require manual verified-revision 
       `\${{ secrets.${target.toUpperCase()}_CLOUDFLARE_API_TOKEN }}`,
     );
   }
+});
+
+test("closed client Workers.dev entry preserves the existing database and first-use placement", () => {
+  const client = loadTarget("production");
+  assert.equal(client.databaseId, "e2a21801-0107-4db5-8551-ca1ff338df53");
+  assert.equal(client.coordinatorName, "simplybook-production-account");
+  assert.equal(client.coordinatorLocationHint, "apac-ne");
+  assert.equal(isWorkersDevTarget(client), true);
+  const config = targetConfig({ d1_databases: [{}], vars: {} }, client);
+  assert.equal(config.workers_dev, true);
+  assert.equal(config.preview_urls, false);
+  assert.equal(config.vars.COORDINATOR_LOCATION_HINT, "apac-ne");
+  for (const patch of [
+    { origin: "https://another.lucky-poetry-b25e.workers.dev" },
+    { origin: "https://soccerbotsg.com" },
+    {
+      origin:
+        "https://soccerbot-production.lucky-poetry-b25e.workers.dev.attacker.invalid",
+    },
+    { access: "developer-sandbox" },
+    { coordinatorLocationHint: "" },
+  ])
+    assert.throws(() => validateTarget({ ...client, ...patch }));
+});
+
+test("automatic staging rejects forks, bots, stale PR heads, closed PRs and untrusted authors", () => {
+  const pr = {
+    state: "open",
+    draft: false,
+    user: { login: "owner", type: "User" },
+    head: { sha: revision, repo: { full_name: "client/booking" } },
+    base: { ref: "main", repo: { full_name: "client/booking" } },
+  };
+  const automatic = {
+    ...run,
+    event: "pull_request",
+    head_branch: "feature",
+    actor: { type: "User" },
+    triggering_actor: { type: "User" },
+  };
+  const opts = {
+    ...options,
+    target: "staging",
+    pullRequest: pr,
+    permission: "write",
+    attempt: 2,
+  };
+  assert.equal(
+    validateTargetRun(automatic, jobs, opts),
+    "live-email-evidence-42-2",
+  );
+  for (const patch of [
+    { state: "closed" },
+    { draft: true },
+    { user: { login: "dependabot[bot]", type: "Bot" } },
+    { head: { ...pr.head, sha: "b".repeat(40) } },
+    { head: { ...pr.head, repo: { full_name: "fork/booking" } } },
+    { base: { ...pr.base, ref: "other" } },
+  ])
+    assert.throws(() =>
+      validateTargetRun(automatic, jobs, {
+        ...opts,
+        pullRequest: { ...pr, ...patch },
+      }),
+    );
+  for (const permission of [undefined, "read", "triage", "none"])
+    assert.throws(() =>
+      validateTargetRun(automatic, jobs, { ...opts, permission }),
+    );
+  assert.throws(() =>
+    validateTargetRun(
+      { ...automatic, triggering_actor: { type: "Bot" } },
+      jobs,
+      opts,
+    ),
+  );
+  assert.throws(() =>
+    validateTargetRun(automatic, jobs, { ...opts, attempt: 1 }),
+  );
+  assert.throws(() =>
+    validateTargetRun(automatic, jobs, { ...opts, target: "production" }),
+  );
+  assert.equal(
+    validateTargetRun({ ...run, event: "push" }, jobs, options),
+    "live-email-evidence-42-2",
+  );
+  assert.throws(() =>
+    validateTargetRun({ ...run, event: "push" }, jobs, {
+      ...options,
+      mainRevision: "b".repeat(40),
+    }),
+  );
 });

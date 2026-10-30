@@ -1,5 +1,8 @@
 name: Deploy production
 on:
+  workflow_run:
+    workflows: [Verify deployment target]
+    types: [completed]
   workflow_dispatch:
     inputs:
       revision:
@@ -13,18 +16,20 @@ on:
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 concurrency:
   group: deploy-cloudflare-production
   cancel-in-progress: false
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main' && vars.DEPLOYMENT_MODE == 'portable' && vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+    if: github.repository == 'soccerbotstudiosg/soccerbotstudioSG' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')) && github.ref == 'refs/heads/main' && vars.DEPLOYMENT_MODE == 'portable' && vars.PRODUCTION_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       RELEASE_TARGET: production
-      RELEASE_REVISION: ${{ inputs.revision }}
-      VERIFY_RUN_ID: ${{ inputs.verify_run_id }}
+      RELEASE_REVISION: ${{ github.event.workflow_run.head_sha || inputs.revision }}
+      VERIFY_RUN_ID: ${{ github.event.workflow_run.id || inputs.verify_run_id }}
+      VERIFY_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
       WRANGLER_SEND_METRICS: "false"
       WRANGLER_LOG_PATH: work/deploy-evidence/wrangler-logs
     steps:

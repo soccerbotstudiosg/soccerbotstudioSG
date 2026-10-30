@@ -6,14 +6,25 @@ import { pathToFileURL } from "node:url";
 export function validateTargetRun(
   run,
   jobs,
-  { repository, revision, target, mainRevision, reservation },
+  {
+    repository,
+    revision,
+    target,
+    mainRevision,
+    reservation,
+    pullRequest,
+    permission,
+    attempt,
+  },
 ) {
   assert.match(revision, /^[a-f0-9]{40}$/);
   assert.equal(run.repository.full_name, repository);
   assert.equal(run.head_repository.full_name, repository);
   assert.equal(run.head_sha, revision);
   assert.equal(run.path, ".github/workflows/verify-target.yml");
-  assert.equal(run.event, "workflow_dispatch");
+  assert.ok(["workflow_dispatch", "pull_request", "push"].includes(run.event));
+  if (attempt)
+    assert.equal(run.run_attempt, Number(attempt), "Superseded run attempt");
   assert.equal(run.status, "completed");
   assert.equal(run.conclusion, "success");
   for (const name of [
@@ -28,6 +39,7 @@ export function validateTargetRun(
     assert.equal(matches[0].run_attempt, run.run_attempt);
   }
   if (target === "production") {
+    assert.ok(["push", "workflow_dispatch"].includes(run.event));
     assert.equal(run.head_branch, "main");
     assert.equal(
       revision,
@@ -36,11 +48,32 @@ export function validateTargetRun(
     );
   } else {
     assert.equal(target, "staging");
-    assert.equal(
-      revision,
-      reservation,
-      "Reserve this exact staging candidate first",
-    );
+    if (run.event === "pull_request") {
+      assert.equal(pullRequest?.state, "open");
+      assert.equal(pullRequest.draft, false);
+      assert.equal(
+        pullRequest.head.repo.full_name,
+        repository,
+        "Fork deployment refused",
+      );
+      assert.equal(pullRequest.base.repo.full_name, repository);
+      assert.equal(pullRequest.base.ref, "main");
+      assert.equal(pullRequest.head.sha, revision, "Superseded PR head");
+      assert.equal(pullRequest.user.type, "User", "Bot PR deployment refused");
+      assert.equal(run.actor?.type, "User");
+      assert.equal(run.triggering_actor?.type, "User");
+      assert.ok(
+        ["write", "maintain", "admin"].includes(permission),
+        "PR author must have repository write access",
+      );
+    } else {
+      assert.equal(run.event, "workflow_dispatch");
+      assert.equal(
+        revision,
+        reservation,
+        "Reserve this exact staging candidate first",
+      );
+    }
   }
   return `live-email-evidence-${run.id}-${run.run_attempt}`;
 }
@@ -53,7 +86,11 @@ async function main() {
     VERIFY_RUN_ID: id,
   } = process.env;
   assert.equal(process.env.GITHUB_REF, "refs/heads/main");
-  assert.equal(process.env.GITHUB_EVENT_NAME, "workflow_dispatch");
+  assert.ok(
+    ["workflow_dispatch", "workflow_run"].includes(
+      process.env.GITHUB_EVENT_NAME,
+    ),
+  );
   assert.match(id || "", /^[1-9][0-9]*$/);
   const api = (path) =>
     JSON.parse(
@@ -66,12 +103,24 @@ async function main() {
     `actions/runs/${id}/attempts/${run.run_attempt}/jobs?per_page=100`,
   );
   assert.equal(jobs.total_count, jobs.jobs.length);
+  let pullRequest, permission;
+  if (run.event === "pull_request") {
+    assert.equal(target, "staging");
+    assert.equal(run.pull_requests?.length, 1, "Require one originating PR");
+    pullRequest = api(`pulls/${run.pull_requests[0].number}`);
+    permission = api(
+      `collaborators/${encodeURIComponent(pullRequest.user.login)}/permission`,
+    ).permission;
+  }
   const artifact = validateTargetRun(run, jobs.jobs, {
     repository,
     revision,
     target,
     mainRevision: api("git/ref/heads/main").object.sha,
     reservation: process.env.STAGING_RESERVED_REVISION,
+    pullRequest,
+    permission,
+    attempt: process.env.VERIFY_RUN_ATTEMPT,
   });
   execFileSync(
     "gh",

@@ -5,19 +5,15 @@
   "workerName": "soccerbot-production",
   "databaseName": "soccerbot-production-state",
   "databaseId": "e2a21801-0107-4db5-8551-ca1ff338df53",
-  "origin": "https://booking.standardsoftwares.com",
+  "origin": "https://soccerbot-production.lucky-poetry-b25e.workers.dev",
   "coordinatorName": "simplybook-production-account",
   "environment": "production",
   "campaignId": "production",
-  "turnstileSitekey": "",
+  "turnstileSitekey": "0x4AAAAAAFr7YXp64r3SY34-",
   "access": "closed",
   "pagesProject": "",
   "pagesBranch": "main",
   "sandbox": null,
   "coordinatorLocationHint": "apac-ne",
-  "saasZone": {
-    "id": "7cef6c3b716d42af6267afd002b5bcf1",
-    "name": "soccerbotsg.win",
-    "fallbackOrigin": "fallback.soccerbotsg.win"
-  }
+  "saasZone": null
 }

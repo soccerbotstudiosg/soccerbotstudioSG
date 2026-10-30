@@ -1,6 +1,6 @@
 {
   "target": "staging",
-  "repository": "LimYouSheng/SoccerBotStudioSG",
+  "repository": "soccerbotstudiosg/soccerbotstudioSG",
   "accountId": "517f4f85eb8f982b483dbc05b797fd88",
   "workerName": "soccerbot-dev",
   "databaseName": "soccerbot-dev-state",

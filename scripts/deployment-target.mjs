@@ -60,8 +60,12 @@ export function validateTarget(value) {
       "Client coordinator requires explicit placement",
     );
     assert.ok(
-      Boolean(target.pagesProject) !== Boolean(target.saasZone),
-      "Client entry requires exactly one Pages or SaaS target",
+      [
+        Boolean(target.pagesProject),
+        Boolean(target.saasZone),
+        isWorkersDevTarget(target),
+      ].filter(Boolean).length === 1,
+      "Client entry requires exactly one Pages, SaaS or closed Workers.dev target",
     );
   }
   if (target.saasZone) {
@@ -94,6 +98,16 @@ export function targetDigest(target) {
     .update(JSON.stringify(validateTarget(target)))
     .digest("hex");
 }
+/** Recognize an explicit temporary Worker hostname without granting customer access. */
+export function isWorkersDevTarget(target) {
+  return (
+    !target.pagesProject &&
+    !target.saasZone &&
+    new RegExp(
+      `^https://${target.workerName}\\.[a-z0-9-]+\\.workers\\.dev$`,
+    ).test(target.origin)
+  );
+}
 /** Render a closed backend while preserving the reviewed runtime and migration schema. */
 export function targetConfig(base, target) {
   validateTarget(target);
@@ -101,7 +115,7 @@ export function targetConfig(base, target) {
     ...base,
     name: target.workerName,
     account_id: target.accountId,
-    workers_dev: target.target === "staging" && !target.pagesProject,
+    workers_dev: isWorkersDevTarget(target),
     preview_urls: false,
     ...(target.saasZone
       ? {
