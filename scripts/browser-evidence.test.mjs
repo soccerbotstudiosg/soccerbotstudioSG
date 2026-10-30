@@ -20,6 +20,7 @@ test("browser resource evidence preserves unavailable counters and never copies 
   };
   const missing = runtimeResources(unavailable, unavailable);
   assert.deepEqual(missing, {
+    coreDumpFilter: null,
     storage: Object.fromEntries(
       [".", "/tmp", "/dev/shm", "/__w/_temp", "/github/home"].map((path) => [
         path,

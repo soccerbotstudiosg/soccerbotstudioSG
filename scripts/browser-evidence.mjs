@@ -96,7 +96,15 @@ export function runtimeResources(
       return null;
     }
   };
+  let coreDumpFilter = null;
+  try {
+    const value = read("/proc/self/coredump_filter").trim();
+    if (/^[0-9a-f]+$/i.test(value)) coreDumpFilter = Number.parseInt(value, 16);
+  } catch {
+    /* Unsupported hosts retain null. */
+  }
   return {
+    coreDumpFilter,
     storage: Object.fromEntries(
       [".", "/tmp", "/dev/shm", "/__w/_temp", "/github/home"].map(
         (directory) => {
@@ -181,6 +189,14 @@ export default class BrowserEvidence {
 
   /** Record the browser configuration before collecting test evidence. */
   onBegin(config) {
+    if (
+      process.env.GITHUB_ACTIONS === "true" &&
+      process.platform === "linux" &&
+      runtimeResources().coreDumpFilter !== 0
+    )
+      throw new Error(
+        "CI browser process did not inherit memory-excluding core dump filter",
+      );
     mkdirSync(browserEvidenceDirectory(), { recursive: true });
     writeFileSync(`${browserEvidenceDirectory()}/browser-resources.jsonl`, "");
     writeFileSync(

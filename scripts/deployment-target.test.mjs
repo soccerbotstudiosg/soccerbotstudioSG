@@ -10,7 +10,10 @@ import {
   pagesConfig,
   isWorkersDevTarget,
 } from "./deployment-target.mjs";
-import { validateTargetRun } from "./verified-target-run.mjs";
+import {
+  validateTargetRun,
+  automaticExclusion,
+} from "./verified-target-run.mjs";
 const staging = loadTarget("staging");
 const production = {
   ...staging,
@@ -332,6 +335,7 @@ test("target workflows isolate PR credentials and deploy through trusted main af
   );
   const workflow = read("deploy-release");
   assert.deepEqual(Object.keys(workflow.jobs).sort(), [
+    "eligibility",
     "production",
     "staging",
   ]);
@@ -339,8 +343,19 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     "staging",
     "production",
   ]);
+  assert.equal(
+    JSON.stringify(workflow.jobs.eligibility).includes("secrets."),
+    false,
+  );
+  assert.equal(workflow.jobs.eligibility.steps[0].with.ref, "main");
+  assert.equal(
+    workflow.jobs.eligibility.steps.at(-1).run,
+    "node scripts/verified-target-run.mjs --eligibility-only",
+  );
   for (const target of ["staging", "production"]) {
     const job = workflow.jobs[target];
+    assert.equal(job.needs, "eligibility");
+    assert.ok(job.if.includes("needs.eligibility.outputs.eligible == 'true'"));
     assert.deepEqual(Object.keys(workflow.on), [
       "workflow_run",
       "workflow_dispatch",
@@ -430,6 +445,19 @@ test("automatic staging rejects forks, bots, stale PR heads, closed PRs and untr
   assert.equal(
     validateTargetRun(automatic, jobs, opts),
     "live-email-evidence-42-2",
+  );
+  assert.equal(automaticExclusion(automatic, pr, opts), null);
+  assert.equal(
+    automaticExclusion(automatic, { ...pr, draft: true }, opts),
+    "PR is draft",
+  );
+  assert.equal(
+    automaticExclusion(automatic, { ...pr, state: "closed" }, opts),
+    "PR is no longer open",
+  );
+  assert.equal(
+    automaticExclusion({ ...run, event: "push" }, null, options),
+    null,
   );
   for (const patch of [
     { state: "closed" },

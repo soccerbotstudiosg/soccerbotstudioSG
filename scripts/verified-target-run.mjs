@@ -2,6 +2,31 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+/** Explain expected automatic PR exclusions before allocating deployment credentials. */
+export function automaticExclusion(
+  run,
+  pullRequest,
+  { repository, revision, permission },
+) {
+  if (run.event !== "pull_request") return null;
+  if (pullRequest?.state !== "open") return "PR is no longer open";
+  if (pullRequest.draft) return "PR is draft";
+  if (pullRequest.head?.sha !== revision) return "PR head superseded this run";
+  if (
+    pullRequest.head?.repo?.full_name !== repository ||
+    pullRequest.base?.repo?.full_name !== repository
+  )
+    return "Fork PR is not a deployment candidate";
+  if (
+    pullRequest.user?.type !== "User" ||
+    run.actor?.type !== "User" ||
+    run.triggering_actor?.type !== "User"
+  )
+    return "Bot-triggered PR is not a deployment candidate";
+  if (!["write", "maintain", "admin"].includes(permission))
+    return "PR author lacks deployment eligibility";
+  return null;
+}
 /** Require every target gate, including Worker/runtime, on the selected repository revision and attempt. */
 export function validateTargetRun(
   run,
@@ -113,6 +138,19 @@ async function main() {
       `collaborators/${encodeURIComponent(pullRequest.user.login)}/permission`,
     ).permission;
   }
+  const eligibilityOnly = process.argv.includes("--eligibility-only");
+  if (eligibilityOnly && process.env.GITHUB_EVENT_NAME === "workflow_run") {
+    const reason = automaticExclusion(run, pullRequest, {
+      repository,
+      revision,
+      permission,
+    });
+    if (reason) {
+      appendFileSync(process.env.GITHUB_OUTPUT, "eligible=false\n");
+      console.log(`Deployment skipped: ${reason}`);
+      return;
+    }
+  }
   const artifact = validateTargetRun(run, jobs.jobs, {
     repository,
     revision,
@@ -123,6 +161,10 @@ async function main() {
     permission,
     attempt: process.env.VERIFY_RUN_ATTEMPT,
   });
+  if (eligibilityOnly) {
+    appendFileSync(process.env.GITHUB_OUTPUT, "eligible=true\n");
+    return;
+  }
   execFileSync(
     "gh",
     [

@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import {
+  configureBrowserCoreDump,
   batchesForShard,
   combineReports,
   validateShards,
@@ -152,5 +153,44 @@ test("browser shards reject foreign builds, mixed attempts, failed receipts and 
   assert.equal(
     browserEvidenceDirectory({ SOCCERBOT_BROWSER_BATCH: "42" }),
     "test-results/browser-batches/42",
+  );
+});
+
+test("CI core filtering excludes memory without changing execution and fails closed when not applied", () => {
+  let value = "00000033\n";
+  const read = () => value;
+  const write = (file, next) => {
+    assert.equal(file, "/proc/self/coredump_filter");
+    assert.equal(next, "0\n");
+    value = "00000000\n";
+  };
+  assert.deepEqual(configureBrowserCoreDump({ enabled: true, read, write }), {
+    before: "00000033",
+    after: "00000000",
+  });
+  assert.equal(
+    configureBrowserCoreDump({
+      enabled: false,
+      read: () => {
+        throw new Error("must not read");
+      },
+    }),
+    null,
+  );
+  assert.throws(() =>
+    configureBrowserCoreDump({
+      enabled: true,
+      read: () => "00000033",
+      write: () => {},
+    }),
+  );
+  assert.throws(() =>
+    configureBrowserCoreDump({
+      enabled: true,
+      read: () => {
+        throw new Error("unavailable");
+      },
+      write,
+    }),
   );
 });
