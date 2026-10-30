@@ -10,10 +10,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: true,
   retries: 0,
-  // Each live mechanism case owns a real workerd/D1 instance. Avoid CPU
-  // contention between those instances and WebKit on the two-core CI runner.
+  // Keep browser cases from competing for the private runner's CPU and memory.
   // Concurrency scenarios still issue competing requests within their case.
-  workers: liveEmail ? 1 : 2,
+  workers: 1,
   reporter: [
     ["list"],
     ["json", { outputFile: "test-results/browser.json" }],

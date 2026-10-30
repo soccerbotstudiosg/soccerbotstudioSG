@@ -200,6 +200,7 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     "backend",
     "frontend",
     "live-email",
+    "worker",
   ]);
   assert.equal(JSON.stringify(verify).includes("secrets."), false);
   for (const job of Object.values(verify.jobs)) {
@@ -217,6 +218,32 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     assert.ok(
       job.steps.some((s) => s.run === "node scripts/deployment-target.mjs"),
     );
+  }
+  const runtime = verify.jobs.worker;
+  assert.deepEqual(
+    runtime.steps
+      .filter((step) => step.run?.startsWith("npm run"))
+      .map((step) => step.run),
+    ["npm run verify:worker", "npm run test:load:smoke"],
+  );
+  assert.equal(runtime.if, undefined);
+  for (const name of ["backend", "live-email"]) {
+    const gate = verify.jobs[name];
+    assert.equal(gate.needs, "worker");
+    assert.equal(gate.if, undefined);
+    const download = gate.steps.find((step) =>
+      step.uses?.startsWith("actions/download-artifact@"),
+    );
+    assert.equal(
+      download.uses,
+      "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
+    );
+    assert.deepEqual(download.with, {
+      name: "worker-evidence-${{ github.run_id }}-${{ github.run_attempt }}",
+      path: "test-results/",
+    });
+    assert.equal(download.if, undefined);
+    assert.ok(gate.steps.some((step) => step.run === "npm run verify:browser"));
   }
   for (const target of ["staging", "production"]) {
     const workflow = read(`deploy-${target}`);
