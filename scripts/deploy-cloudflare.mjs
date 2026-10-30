@@ -144,7 +144,8 @@ export async function awaitDeploymentHealth({
   }
   throw new Error("Deployed revision did not propagate within 16 observations");
 }
-async function readHealth(origin) {
+/** Read canonical health with bounded transport and no redirects. */
+export async function readHealth(origin) {
   const response = await fetch(`${origin}/api/health`, {
     headers: {
       accept: "application/json",
