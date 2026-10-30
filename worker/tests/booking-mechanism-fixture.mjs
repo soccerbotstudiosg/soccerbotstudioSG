@@ -11,6 +11,12 @@ import { initializeFixture } from "./foundation-fixture.mjs";
 // still owns a new runtime, database, provider state and effect history.
 let compiledWorker;
 export async function createBookingMechanism(options = {}) {
+  let phaseStarted = performance.now();
+  const mark = (phase) => {
+    const now = performance.now();
+    options.onTiming?.({ phase, durationMs: now - phaseStarted });
+    phaseStarted = now;
+  };
   const config = ts.parseConfigFileTextToJson(
     "wrangler.jsonc",
     readFileSync("wrangler.jsonc", "utf8"),
@@ -123,6 +129,7 @@ export async function createBookingMechanism(options = {}) {
       external: ["cloudflare:workers", "node:async_hooks"],
     }))
   ).outputFiles[0].text;
+  mark("compile");
   const mf = new Miniflare({
     ...convertV4MiniflareOptions({
       name: "booking-mechanism",
@@ -376,8 +383,11 @@ export async function createBookingMechanism(options = {}) {
   });
   try {
     await mf.ready;
+    mark("runtime-ready");
     const db = await mf.getD1Database("STATE");
+    mark("database-handle");
     await initializeFixture(mf, db);
+    mark("schema-init");
     return {
       mf,
       db,
@@ -407,7 +417,17 @@ export async function createBookingMechanism(options = {}) {
         });
       },
       recover: async () => (await mf.getWorker()).scheduled(),
-      close: () => mf.dispose(),
+      close: async () => {
+        const started = performance.now();
+        try {
+          await mf.dispose();
+        } finally {
+          options.onTiming?.({
+            phase: "dispose",
+            durationMs: performance.now() - started,
+          });
+        }
+      },
     };
   } catch (error) {
     await mf.dispose();

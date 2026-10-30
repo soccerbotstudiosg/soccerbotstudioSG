@@ -1,4 +1,4 @@
-import { createBookingMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
+import { createBookingMechanism as createIsolatedMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
 import {
   expect,
   test,
@@ -7,6 +7,22 @@ import {
   type Request as BrowserRequest,
   type Response as BrowserResponse,
 } from "@playwright/test";
+
+/** Record isolated setup phases without changing per-test deadlines or state. */
+async function createBookingMechanism(
+  options: Parameters<typeof createIsolatedMechanism>[0] = {},
+) {
+  const testId = test.info().testId;
+  return createIsolatedMechanism({
+    ...options,
+    onTiming: (timing) => {
+      console.info(
+        JSON.stringify({ event: "fixture_phase", testId, ...timing }),
+      );
+      options.onTiming?.(timing);
+    },
+  });
+}
 
 // CI-only synthetic transports. No widget script, email or provider is contacted.
 const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";

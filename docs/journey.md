@@ -293,6 +293,14 @@ The following milestone IDs and history are preserved from the former service-co
 
 ## Part 2 — Dated changes and evidence
 
+### 30 October 2026 — Instrument intermittent isolated runtime stalls
+
+Run 40995800145 passed frontend/Worker/backend and 82/84 live-email cases; phone booking-readback and tablet unpaid-return exceeded the unchanged test budget (job 123879760699, artifact 12952654625). Previous price-drift/payment-creation cases passed all devices. Tablet synthetic setup completed only around 37 seconds. Earlier setup reductions have not established the underlying cause.
+
+Twelve local non-browser hold cycles under two-CPU affinity showed 464–811 ms initialization, 3649–3667 ms holds, 6–9 ms disposal and settled parent RSS near 260 MB. This does not reproduce WebKit or private-runner memory/host contention. Preserve `repeat-hold-2cpu.log`. The initial stdin phase probe failed because inherited `--input-type=module` conflicted with the dependency's Worker-thread evaluation; the file-based three-cycle probe passed and is retained separately.
+
+Add diagnostic-only fixture phase timings and per-test numeric Linux pressure/memory/cgroup snapshots to existing browser evidence. Correlate by test ID, report missing counters as null, and never record arbitrary resource-file text or credentials. Collector privacy/missing-data regression and all 162 tooling tests passed; types/source/policy/Worker graph/affected lint passed. No test deadline, inventory, assertion, provider implementation, runtime isolation, deployment configuration or browser execution permission changes. Exact-head CI measurements are the next evidence required, not a claimed repair.
+
 ### 30 October 2026 — Remove repeated homepage setup from failure journeys
 
 Owner let run 40991915866 finish to collect new failures: frontend, Worker/runtime and backend passed; live-email passed 82/84. Phone payment-creation failure and tablet price drift hit the existing 30-second budget (job 123861479806, artifact 12950643550). Text traces show roughly 12 seconds of isolated runtime initialization plus 9.6–12.1 seconds of homepage warming before booking entry. Retain original evidence and secondary closed-page/socket errors; no assertion established an incorrect booking/payment outcome.
