@@ -53,7 +53,7 @@ Reconciliation verifies provider state before confirmation; arrows do not imply 
 
 ## Planned client delivery topology
 
-Target topology after the owner’s transfer-first decision; transfer, DNS delegation and production activation are not yet verified. The existing SaaS deployment manifest must be reassessed before implementing this target. The runtime components above apply independently to each environment.
+Client pipeline topology implemented in source; repository cutover and cloud execution still require evidence. The initial client Worker uses its temporary Workers.dev hostname with customer/provider access disabled. Domain hookup and activation are later steps. The runtime components above apply independently to each environment.
 
 ```mermaid
 flowchart TB
@@ -64,22 +64,24 @@ flowchart TB
   TestProviders["Separate SimplyBook test account · HitPay sandbox"]
   Review["Owner staging acceptance · merge"]
   Main["Main · three merged-revision CI gates"]
-  Approval["Manual production dispatch · verified current main"]
+  Approval["Trusted-main controller · verified current main"]
   Prod["Client Cloudflare account · separate Worker / D1 / DO"]
-  Registrar["Client registrar · transfer first, pending"]
+  Registrar["Client registrar · transfer after zone activation"]
   DNS["Client Cloudflare DNS · soccerbotsg.com · delegation pending"]
-  Host["Supported Worker hostname/routing · configuration and TLS proof pending"]
+  Host["Later custom domain · configuration and TLS proof pending"]
   LiveProviders["Client SimplyBook · HitPay live"]
   StageSecrets["Staging configuration / scoped credentials"]
   ProdSecrets["Production configuration / scoped credentials"]
   Repo --> PR --> StageGate
-  StageGate -->|reserved candidate dispatch| Stage
+  StageGate -->|trusted-main controller| Stage
   StageSecrets --> Stage
   Stage <--> TestProviders
   Stage --> Review --> Main --> Approval
   Approval -->|verified production artifact| Prod
-  Registrar -.->|separate nameserver change after DNS and email preparation| DNS
+  DNS -.->|active zone required before transfer| Registrar
   DNS --> Host --> Prod
   ProdSecrets --> Prod
-  Prod <--> LiveProviders
+  Prod -.->|closed until provider acceptance| LiveProviders
+  Temporary["Workers.dev bootstrap · existing D1 · apac-ne first-use hint"]
+  Temporary --> Prod
 ```
