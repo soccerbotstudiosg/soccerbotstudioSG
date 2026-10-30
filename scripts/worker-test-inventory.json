@@ -400,6 +400,22 @@
     "title": "pending foundation health requires production and every effect switch explicitly disabled"
   },
   {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation management registers once and initializes only the matching closed coordinator"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation management rejects wrong targets and foreign records without replacing identity"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation management is unavailable with open effects or developer environment"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation registration survives a full runtime restart with durable storage preserved"
+  },
+  {
     "file": "worker/tests/hitpay.test.mjs",
     "title": "HitPay ingress verifies untouched bytes before parsing or durable effects"
   },

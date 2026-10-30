@@ -1,3 +1,4 @@
+export { FoundationManagement } from "./foundation-management";
 import {
   createConfirmationTrace,
   confirmationTraceKey,

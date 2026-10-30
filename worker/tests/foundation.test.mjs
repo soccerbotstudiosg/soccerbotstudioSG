@@ -279,7 +279,11 @@ test("production static entry serves only its canonical HTTPS origin and safe me
 });
 
 /** Exercise first-install health against fresh real storage without provider transport. */
-async function closedInstallation(overrides = {}) {
+async function closedInstallation(
+  overrides = {},
+  persistence = null,
+  migrate = true,
+) {
   const { outputFiles } = await build({
     entryPoints: ["worker/index.ts"],
     bundle: true,
@@ -305,35 +309,54 @@ async function closedInstallation(overrides = {}) {
     PUBLIC_TOKEN_REFRESH_AHEAD: "disabled",
   };
   let effects = 0;
-  const local = new Miniflare(
-    convertV4MiniflareOptions({
-      modules: true,
-      script: outputFiles[0].text,
-      compatibilityDate: config.compatibility_date,
-      compatibilityFlags: config.compatibility_flags,
-      cf: false,
-      bindings: { ...vars, ...overrides },
-      d1Databases: { STATE: "closed-health" },
-      durableObjects: {
-        COORDINATOR: {
-          className: "SoccerBotAccountCoordinator",
-          useSQLite: true,
-        },
+  const options = convertV4MiniflareOptions({
+    name: "closed-health",
+    modules: true,
+    script: outputFiles[0].text,
+    compatibilityDate: config.compatibility_date,
+    compatibilityFlags: config.compatibility_flags,
+    cf: false,
+    bindings: Object.fromEntries(
+      Object.entries({ ...vars, ...overrides }).filter(
+        ([, value]) => value !== undefined,
+      ),
+    ),
+    d1Databases: { STATE: "closed-health" },
+    durableObjects: {
+      COORDINATOR: {
+        className: "SoccerBotAccountCoordinator",
+        useSQLite: true,
       },
-      serviceBindings: { ASSETS: () => new Response("static") },
-      outboundService: () => {
-        effects++;
-        throw new Error("External transport forbidden");
+    },
+    serviceBindings: {
+      ASSETS: () => new Response("static"),
+      MANAGEMENT: {
+        name: "closed-health",
+        entrypoint: "FoundationManagement",
       },
-    }),
-  );
+    },
+    outboundService: () => {
+      effects++;
+      throw new Error("External transport forbidden");
+    },
+  });
+  const local = new Miniflare({
+    ...options,
+    ...(persistence
+      ? {
+          resourcePersistencePath: persistence,
+          isolatedResourcePersistencePath: persistence,
+        }
+      : {}),
+  });
   const database = await local.getD1Database("STATE");
-  for (const name of readdirSync("migrations").sort())
-    await database.exec(
-      readFileSync(`migrations/${name}`, "utf8")
-        .replace(/^--.*$/gm, "")
-        .replace(/\n/g, " "),
-    );
+  if (migrate)
+    for (const name of readdirSync("migrations").sort())
+      await database.exec(
+        readFileSync(`migrations/${name}`, "utf8")
+          .replace(/^--.*$/gm, "")
+          .replace(/\n/g, " "),
+      );
   return { local, database, vars, effects: () => effects };
 }
 
@@ -412,6 +435,7 @@ test("closed health rejects foreign foundation and only reports registered after
 test("pending foundation health requires production and every effect switch explicitly disabled", async () => {
   for (const vars of [
     { ENVIRONMENT: "developer" },
+    { PROVIDER_ACCESS: undefined },
     ...[
       "LIVE_CUSTOMER_ACCESS",
       "PROVIDER_ACCESS",
@@ -445,5 +469,216 @@ test("pending foundation health requires production and every effect switch expl
     } finally {
       await f.local.dispose();
     }
+  }
+});
+
+/** Resolve the management service binding and independently declared target. */
+async function management(f) {
+  const { MANAGEMENT } = await f.local.getBindings();
+  return {
+    service: MANAGEMENT,
+    expected: {
+      accountId: f.vars.DEPLOYMENT_ACCOUNT_ID,
+      databaseId: f.vars.STATE_DATABASE_ID,
+      coordinatorName: f.vars.COORDINATOR_NAME,
+      locationHint: f.vars.COORDINATOR_LOCATION_HINT,
+      revision: f.vars.SOURCE_REVISION,
+    },
+  };
+}
+
+test("foundation management registers once and initializes only the matching closed coordinator", async () => {
+  const f = await closedInstallation();
+  try {
+    const { service, expected } = await management(f);
+    const inspected = await service.inspect(expected);
+    assert.equal(inspected.registration, "pending");
+    assert.match(inspected.coordinatorId, /^[a-f0-9]{64}$/);
+    assert.equal(
+      (
+        await f.database
+          .prepare("SELECT COUNT(*) AS n FROM foundation_identity")
+          .first()
+      ).n,
+      0,
+    );
+    const publicAttempt = await f.local.dispatchFetch(
+      "https://soccerbot.test/api/foundation/register",
+    );
+    assert.notEqual(publicAttempt.status, 200);
+    const input = { ...expected, coordinatorId: inspected.coordinatorId };
+    await assert.rejects(async () => service.initialize(input));
+    const results = await Promise.all([
+      service.register(input),
+      service.register(input),
+    ]);
+    assert.ok(results.every((r) => r.registration === "registered"));
+    // Discard the successful response, then recover by inspecting and safely repeating.
+    assert.equal((await service.inspect(expected)).registration, "registered");
+    assert.equal((await service.register(input)).registration, "registered");
+    assert.equal(
+      (
+        await f.database
+          .prepare("SELECT COUNT(*) AS n FROM foundation_identity")
+          .first()
+      ).n,
+      1,
+    );
+    const initialized = await service.initialize(input);
+    assert.deepEqual(
+      {
+        coordinatorId: initialized.coordinatorId,
+        alarm: initialized.alarm,
+        pendingWakeups: initialized.pendingWakeups,
+        location: initialized.location,
+      },
+      {
+        coordinatorId: inspected.coordinatorId,
+        alarm: null,
+        pendingWakeups: 0,
+        location: null,
+      },
+    );
+    assert.equal(
+      (await service.initialize(input)).coordinatorId,
+      initialized.coordinatorId,
+    );
+    assert.equal(f.effects(), 0);
+    const response = await f.local.dispatchFetch(
+      "https://soccerbot.test/api/health",
+    );
+    assert.equal((await response.json()).foundationRegistration, "registered");
+    await assert.rejects(
+      f.database.prepare("DELETE FROM foundation_identity").run(),
+    );
+  } finally {
+    await f.local.dispose();
+  }
+});
+
+test("foundation management rejects wrong targets and foreign records without replacing identity", async () => {
+  const f = await closedInstallation();
+  try {
+    const { service, expected } = await management(f);
+    for (const [key, value] of Object.entries({
+      accountId: "f".repeat(32),
+      databaseId: "11111111-1111-4111-8111-111111111111",
+      coordinatorName: "wrong-name",
+      locationHint: "apac-se",
+      revision: "b".repeat(40),
+    }))
+      await assert.rejects(async () =>
+        service.inspect({ ...expected, [key]: value }),
+      );
+    await assert.rejects(async () =>
+      service.register({ ...expected, coordinatorId: "f".repeat(64) }),
+    );
+    assert.equal(
+      (
+        await f.database
+          .prepare("SELECT COUNT(*) AS n FROM foundation_identity")
+          .first()
+      ).n,
+      0,
+    );
+    await f.database
+      .prepare("INSERT INTO foundation_identity VALUES(1,?,'production',?,?)")
+      .bind("foreign-account", expected.databaseId, "f".repeat(64))
+      .run();
+    await assert.rejects(async () => service.inspect(expected));
+    await assert.rejects(async () =>
+      service.register({ ...expected, coordinatorId: "f".repeat(64) }),
+    );
+    assert.equal(
+      (
+        await f.database
+          .prepare("SELECT account_id FROM foundation_identity")
+          .first()
+      ).account_id,
+      "foreign-account",
+    );
+    assert.equal(f.effects(), 0);
+  } finally {
+    await f.local.dispose();
+  }
+});
+
+test("foundation management is unavailable with open effects or developer environment", async () => {
+  for (const overrides of [
+    { ENVIRONMENT: "developer" },
+    ...[
+      "LIVE_CUSTOMER_ACCESS",
+      "PROVIDER_ACCESS",
+      "IDENTITY_DELIVERY",
+      "HITPAY_CHECKOUT",
+      "HITPAY_RECOVERY",
+      "HITPAY_WEBHOOK",
+      "PUBLIC_DISPLAY_WARMING",
+      "PUBLIC_TOKEN_REFRESH_AHEAD",
+    ].map((name) => ({ [name]: "enabled" })),
+  ]) {
+    const f = await closedInstallation(overrides);
+    try {
+      const { service, expected } = await management(f);
+      await assert.rejects(async () => service.inspect(expected));
+      await assert.rejects(async () =>
+        service.register({ ...expected, coordinatorId: "f".repeat(64) }),
+      );
+      await assert.rejects(async () =>
+        service.initialize({ ...expected, coordinatorId: "f".repeat(64) }),
+      );
+      assert.equal(
+        (
+          await f.database
+            .prepare("SELECT COUNT(*) AS n FROM foundation_identity")
+            .first()
+        ).n,
+        0,
+      );
+      assert.equal(f.effects(), 0);
+    } finally {
+      await f.local.dispose();
+    }
+  }
+});
+
+test("foundation registration survives a full runtime restart with durable storage preserved", async () => {
+  const storage = mkdtempSync(
+    path.join(tmpdir(), "soccerbot-registration-restart-"),
+  );
+  let f = await closedInstallation({}, storage);
+  try {
+    const first = await management(f);
+    const inspected = await first.service.inspect(first.expected);
+    const input = { ...first.expected, coordinatorId: inspected.coordinatorId };
+    await first.service.register(input);
+    await first.service.initialize(input);
+    await f.local.dispose();
+    f = await closedInstallation({}, storage, false);
+    const second = await management(f);
+    assert.equal(
+      (await second.service.inspect(second.expected)).registration,
+      "registered",
+    );
+    assert.equal(
+      (await second.service.register(input)).coordinatorId,
+      input.coordinatorId,
+    );
+    assert.equal(
+      (await second.service.initialize(input)).coordinatorId,
+      input.coordinatorId,
+    );
+    assert.equal(
+      (
+        await f.database
+          .prepare("SELECT COUNT(*) AS n FROM foundation_identity")
+          .first()
+      ).n,
+      1,
+    );
+    assert.equal(f.effects(), 0);
+  } finally {
+    await f.local.dispose();
+    rmSync(storage, { recursive: true, force: true });
   }
 });

@@ -89,3 +89,21 @@ export async function healthFoundation(
   assertFoundation(env, identity);
   return "registered";
 }
+
+/** Reject management operations unless every external effect is explicitly closed. */
+export function assertClosedFoundation(env: Env) {
+  if (
+    String(env.ENVIRONMENT) !== "production" ||
+    ![
+      "LIVE_CUSTOMER_ACCESS",
+      "PROVIDER_ACCESS",
+      "IDENTITY_DELIVERY",
+      "HITPAY_CHECKOUT",
+      "HITPAY_RECOVERY",
+      "HITPAY_WEBHOOK",
+      "PUBLIC_DISPLAY_WARMING",
+      "PUBLIC_TOKEN_REFRESH_AHEAD",
+    ].every((name) => Reflect.get(env, name) === "disabled")
+  )
+    throw new ApiError(503, "environment_unavailable");
+}
