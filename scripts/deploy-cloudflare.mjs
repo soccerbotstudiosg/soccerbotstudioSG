@@ -120,7 +120,16 @@ export async function awaitDeploymentHealth({
         health.effectiveProviderAccess,
         closed ? "disabled" : "trusted-reads",
       );
-      if (!closed) assert.equal(health.providerCredentialsPresent, true);
+      assert.equal(health.environment, closed ? "production" : "developer");
+      if (closed)
+        assert.ok(
+          ["pending", "registered"].includes(health.foundationRegistration),
+          "Require explicit closed-install foundation state",
+        );
+      else {
+        assert.equal(health.foundationRegistration, "registered");
+        assert.equal(health.providerCredentialsPresent, true);
+      }
       return { health, observedRevisions };
     }
     assert.equal(
@@ -430,7 +439,7 @@ async function deploy() {
         liveCustomerAccess: closed ? "disabled" : "enabled",
         sandboxSettingsVerified: !closed,
         target: target?.target || "legacy-developer",
-        foundationRegistration: closed ? "separate-reviewed-step" : "existing",
+        foundationRegistration: health.foundationRegistration,
         verifiedAt: new Date().toISOString(),
       },
       null,

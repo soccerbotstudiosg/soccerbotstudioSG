@@ -388,6 +388,18 @@
     "title": "production static entry serves only its canonical HTTPS origin and safe methods"
   },
   {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "closed production health reports pending registration without claiming storage or opening protected operations"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "closed health rejects foreign foundation and only reports registered after matching immutable identity"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "pending foundation health requires production and every effect switch explicitly disabled"
+  },
+  {
     "file": "worker/tests/hitpay.test.mjs",
     "title": "HitPay ingress verifies untouched bytes before parsing or durable effects"
   },

@@ -38,7 +38,7 @@ import {
   liveCustomerAccess,
   unwrapRpcOutcome,
 } from "./policy";
-import { verifyBindings } from "./bindings";
+import { verifyBindings, healthFoundation } from "./bindings";
 import { traced, instrumentStorage, traceStatus } from "./diagnostics";
 import { developerOperation } from "./developer-operation";
 export {
@@ -336,6 +336,37 @@ export default {
               )
             : env.STATE,
         };
+        if (url.pathname === "/api/health" && request.method === "GET")
+          return json({
+            environment: configuration.ENVIRONMENT,
+            foundationRegistration: await healthFoundation(env),
+            providerAccess: env.PROVIDER_ACCESS,
+            revision: env.SOURCE_REVISION,
+            versionId: env.CF_VERSION_METADATA?.id ?? null,
+            origin: env.APP_ORIGIN,
+            campaignEndMs: Number(env.CAMPAIGN_END_MS),
+            liveCustomerAccess: configuration.LIVE_CUSTOMER_ACCESS,
+            effectiveProviderAccess:
+              configuration.PROVIDER_ACCESS === "trusted-reads" &&
+              (now < Number(env.CAMPAIGN_END_MS) ||
+                configuration.LIVE_CUSTOMER_ACCESS === "enabled")
+                ? "trusted-reads"
+                : "disabled",
+            readinessNonce: /^[a-f0-9]{32}$/.test(
+              request.headers.get("X-Readiness-Nonce") ?? "",
+            )
+              ? request.headers.get("X-Readiness-Nonce")
+              : null,
+            providerCredentialsPresent: [
+              "SIMPLYBOOK_DEV_COMPANY_LOGIN",
+              "SIMPLYBOOK_DEV_ADMIN_LOGIN",
+              "SIMPLYBOOK_DEV_API_KEY",
+              "SIMPLYBOOK_DEV_ADMIN_API_USER_KEY",
+            ].every((name) => {
+              const value: unknown = Reflect.get(env, name);
+              return typeof value === "string" && value.length > 0;
+            }),
+          });
         await verifyBindings(env);
         const expire = /^\/api\/attempts\/([a-f0-9-]{36})\/expire$/.exec(
           url.pathname,
@@ -470,36 +501,7 @@ export default {
             ),
           );
         }
-        if (url.pathname === "/api/health" && request.method === "GET")
-          return json({
-            environment: "developer",
-            providerAccess: env.PROVIDER_ACCESS,
-            revision: env.SOURCE_REVISION,
-            versionId: env.CF_VERSION_METADATA?.id ?? null,
-            origin: env.APP_ORIGIN,
-            campaignEndMs: Number(env.CAMPAIGN_END_MS),
-            liveCustomerAccess: configuration.LIVE_CUSTOMER_ACCESS,
-            effectiveProviderAccess:
-              configuration.PROVIDER_ACCESS === "trusted-reads" &&
-              (now < Number(env.CAMPAIGN_END_MS) ||
-                configuration.LIVE_CUSTOMER_ACCESS === "enabled")
-                ? "trusted-reads"
-                : "disabled",
-            readinessNonce: /^[a-f0-9]{32}$/.test(
-              request.headers.get("X-Readiness-Nonce") ?? "",
-            )
-              ? request.headers.get("X-Readiness-Nonce")
-              : null,
-            providerCredentialsPresent: [
-              "SIMPLYBOOK_DEV_COMPANY_LOGIN",
-              "SIMPLYBOOK_DEV_ADMIN_LOGIN",
-              "SIMPLYBOOK_DEV_API_KEY",
-              "SIMPLYBOOK_DEV_ADMIN_API_USER_KEY",
-            ].every((name) => {
-              const value: unknown = Reflect.get(env, name);
-              return typeof value === "string" && value.length > 0;
-            }),
-          });
+
         if (
           (url.pathname === "/api/developer/provider-identity" ||
             url.pathname === "/api/developer/historical-comparison" ||
