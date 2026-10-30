@@ -1,9 +1,11 @@
 name: Verify deployment target
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       target:
@@ -39,7 +41,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.12"
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -73,7 +75,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.12"
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -87,57 +89,137 @@ jobs:
           path: test-results/
           retention-days: 14
           if-no-files-found: error
-  backend:
-    needs: worker
-    name: verify / backend
+  browser-build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
       options: --ipc=host
-    env:
+    name: build / ${{ matrix.profile }}
+    strategy:
+      fail-fast: false
+      matrix:
+        profile:
+          - backend
+          - live-email
+    env: &a1
       NEXT_PUBLIC_BASE_PATH: ""
       WRANGLER_SEND_METRICS: "false"
       WRANGLER_LOG_PATH: test-results/wrangler-logs
       RELEASE_TARGET: ${{ github.event_name == 'pull_request' && 'staging' || github.event_name == 'push' && 'production' || inputs.target }}
+      RELEASE_PROFILE: ${{ matrix.profile == 'live-email' && 'live-email' || 'closed-demo' }}
+      NEXT_PUBLIC_BOOKING_MODE: ${{ matrix.profile == 'live-email' && 'live' || 'demo' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 2
-      - name: Inspect backend storage before setup
-        run: |
-          df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
-          df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: "3.12"
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - run: node scripts/browser-shards.mjs build
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: browser-build-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |-
+            out/
+            test-results/browser-build.json
+          retention-days: 14
+          if-no-files-found: error
+  browser-shards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: ${{ matrix.profile == 'live-email' && '--ipc=host --tmpfs /tmp:rw,size=2g' || '--ipc=host' }}
+    needs: browser-build
+    name: browser / ${{ matrix.profile }} / shard ${{ matrix.shard }}
+    strategy:
+      fail-fast: false
+      matrix:
+        profile:
+          - backend
+          - live-email
+        shard:
+          - 1
+          - 2
+    env: *a1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: node scripts/deployment-target.mjs
+      - name: Check isolated runtime storage
+        if: matrix.profile == 'live-email'
+        run: test "$(stat -f -c %T /tmp)" = tmpfs
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: browser-build-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .
+      - run: node scripts/browser-shards.mjs run ${{ matrix.shard }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: browser-shard-${{ matrix.profile }}-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: error
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
+    name: verify / backend
+    needs:
+      - worker
+      - browser-build
+      - browser-shards
+    env:
+      NEXT_PUBLIC_BASE_PATH: ""
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: test-results/wrangler-logs
+      RELEASE_TARGET: ${{ github.event_name == 'pull_request' && 'staging' || github.event_name == 'push' && 'production' || inputs.target }}
+      RELEASE_PROFILE: closed-demo
+      NEXT_PUBLIC_BOOKING_MODE: demo
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: node scripts/deployment-target.mjs
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: browser-build-backend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: worker-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/
-      - name: Inspect backend storage before browser
-        run: |
-          df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
-          df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
-          du -x --max-depth=1 -B1 /tmp 2>/dev/null || true
-          du -x -s -B1 /tmp /github/home /__w/_temp /__t "$GITHUB_WORKSPACE/node_modules" "$GITHUB_WORKSPACE/.next" "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/test-results" 2>/dev/null || true
-      - run: npm run verify:browser
-      - name: Inspect backend storage after browser
-        if: always()
-        run: |
-          df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
-          df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
-          du -x --max-depth=1 -B1 /tmp 2>/dev/null || true
-          du -x -s -B1 /tmp /github/home /__w/_temp /__t "$GITHUB_WORKSPACE/node_modules" "$GITHUB_WORKSPACE/.next" "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/test-results" 2>/dev/null || true
-      - name: Package and check the exact closed developer release
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: browser-shard-backend-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/shard-inputs
+      - run: node scripts/browser-shards.mjs merge
+      - &a2
+        name: Package and check the exact closed developer release
         env:
           RELEASE_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -147,25 +229,29 @@ jobs:
         if: always()
         with:
           name: backend-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          path: test-results/
+          path: |-
+            test-results/
+            !test-results/shard-inputs/
           retention-days: 14
           if-no-files-found: error
   live-email:
-    needs: worker
-    name: verify / live-email
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
-      # Isolated Miniflare SQLite state is temporary; avoid runner disk stalls.
-      options: --ipc=host --tmpfs /tmp:rw,size=2g
+      options: --ipc=host
+    name: verify / live-email
+    needs:
+      - worker
+      - browser-build
+      - browser-shards
     env:
       NEXT_PUBLIC_BASE_PATH: ""
-      RELEASE_PROFILE: live-email
-      NEXT_PUBLIC_BOOKING_MODE: live
       WRANGLER_SEND_METRICS: "false"
       WRANGLER_LOG_PATH: test-results/wrangler-logs
       RELEASE_TARGET: ${{ github.event_name == 'pull_request' && 'staging' || github.event_name == 'push' && 'production' || inputs.target }}
+      RELEASE_PROFILE: live-email
+      NEXT_PUBLIC_BOOKING_MODE: live
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -175,29 +261,29 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: "3.12"
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - name: Check isolated runtime storage
-        run: test "$(stat -f -c %T /tmp)" = tmpfs
       - run: npm ci
       - run: node scripts/deployment-target.mjs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: browser-build-live-email-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: worker-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/
-      - run: npm run verify:browser
-      - name: Package and check the exact closed developer release
-        env:
-          RELEASE_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          node scripts/prepare-developer-release.mjs
-          node scripts/check-developer-release.mjs
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: browser-shard-live-email-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/shard-inputs
+      - run: node scripts/browser-shards.mjs merge
+      - *a2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: live-email-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          path: test-results/
+          path: |-
+            test-results/
+            !test-results/shard-inputs/
           retention-days: 14
           if-no-files-found: error

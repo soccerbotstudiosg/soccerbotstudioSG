@@ -1,3 +1,4 @@
+import { browserEvidenceDirectory } from "./scripts/browser-batch-path.mjs";
 import { sitePath } from "./src/content/site-path";
 import { defineConfig, devices } from "@playwright/test";
 const liveEmail = process.env.RELEASE_PROFILE === "live-email";
@@ -6,7 +7,7 @@ export default defineConfig({
   testMatch: liveEmail
     ? "live-email.spec.ts"
     : ["customer.spec.ts", "experiment.spec.ts"],
-  outputDir: "test-results/browser-artifacts",
+  outputDir: `${browserEvidenceDirectory()}/browser-artifacts`,
   fullyParallel: true,
   forbidOnly: true,
   retries: 0,
@@ -15,7 +16,7 @@ export default defineConfig({
   workers: 1,
   reporter: [
     ["list"],
-    ["json", { outputFile: "test-results/browser.json" }],
+    ["json", { outputFile: `${browserEvidenceDirectory()}/browser.json` }],
     ["./scripts/browser-evidence.mjs"],
   ],
   use: {
