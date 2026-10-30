@@ -275,6 +275,9 @@ test("hero entry restores the arena scene and click-to-skip without a logo overl
   page,
 }) => {
   await openSite(page, "/");
+  // Keep automatic navigation from winning while this case checks click-to-skip.
+  // Natural completion has its own advancing-clock case below.
+  await page.clock.pauseAt(new Date("2026-10-05T08:01:00+08:00"));
   await page.getByRole("link", { name: /^Book now —/ }).click();
   const transition = page.getByRole("button", {
     name: "Skip arena transition",
@@ -284,6 +287,7 @@ test("hero entry restores the arena scene and click-to-skip without a logo overl
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await transition.click();
   await expect(page).toHaveURL(/\/book\/account\/$/);
+  await page.clock.resume();
   await expect(transition).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Start your booking" }),

@@ -293,6 +293,10 @@ The following milestone IDs and history are preserved from the former service-co
 
 ## Part 2 — Dated changes and evidence
 
+### 30 October 2026 — Client setup and skip-interaction clock repair
+
+Owner confirmed the staging secret and supplied the client Actions variables for portable deployment to the existing developer account, with staging enabled. The previous developer-repository screenshot showed portable mode for deployer cutover. Initial client main [run 40983795710](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/40983795710), frontend job 123829890820 / artifact 12946457242, passed 77 browser cases but timed out in phone-WebKit clicking “Skip arena transition”: the button was unstable, then detached before the click. The test allowed the automatic navigation timer to compete with its scene assertions and normal click. Preserve `/workspace/work/client-pipeline/frontend-40983795710.log`. Pause the already-installed fixture clock before entry, require the normal click to navigate while automatic completion is paused, then resume for cleanup. Natural-completion coverage remains independently advancing; no retries, force, relaxed timeout, skipped cases or inventory changes. This is a test-fixture repair, with CI browser confirmation pending; it changes no application animation or provider behavior. PR1 remains unmerged and client deployment remains unverified.
+
 ### 30 October 2026 — Client GitHub pipeline and closed Worker bootstrap
 
 Owner clarified that staging must deploy from `soccerbotstudiosg/soccerbotstudioSG`, with PR checks then staging, and merged-main checks then client Cloudflare production. Owner authorized Workers.dev before domain hookup and required the intended first-use placement hint. Read-only inspection confirmed existing client D1 `e2a21801-0107-4db5-8551-ca1ff338df53`, account subdomain `lucky-poetry-b25e`, no Workers, and a still-pending customer zone. Created the public widget for the temporary Worker hostname without exporting its secret. Preserve coordinator `simplybook-production-account` and `apac-ne`; neither the hint nor the earlier KIX D1 observation proves DO location.
