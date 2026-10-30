@@ -3467,7 +3467,7 @@ test("native calendar scopes range reads to granted dates and retains fresh cont
   }
 });
 
-test("Review booking creates one HitPay holding appointment without payment or post-reservation availability", async () => {
+test("finite hold creates one unpaid appointment without payment or post-reservation availability", async () => {
   const data = await prepared(false, true, true);
   await grantNative(data);
   const wall = new Date(

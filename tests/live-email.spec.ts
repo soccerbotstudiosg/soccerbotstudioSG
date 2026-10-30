@@ -1,4 +1,4 @@
-import { createBookingMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
+import { createBookingMechanism as createIsolatedMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
 import {
   expect,
   test,
@@ -7,6 +7,22 @@ import {
   type Request as BrowserRequest,
   type Response as BrowserResponse,
 } from "@playwright/test";
+
+/** Record isolated setup phases without changing per-test deadlines or state. */
+async function createBookingMechanism(
+  options: Parameters<typeof createIsolatedMechanism>[0] = {},
+) {
+  const testId = test.info().testId;
+  return createIsolatedMechanism({
+    ...options,
+    onTiming: (timing) => {
+      console.info(
+        JSON.stringify({ event: "fixture_phase", testId, ...timing }),
+      );
+      options.onTiming?.(timing);
+    },
+  });
+}
 
 // CI-only synthetic transports. No widget script, email or provider is contacted.
 const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
@@ -525,7 +541,7 @@ async function mechanismTransport(
     async drain() {
       // Drain our provider/response work, not Playwright's unresolved internal
       // handled promise for a route canceled by document navigation.
-      await page.unrouteAll();
+      if (!page.isClosed()) await page.unrouteAll();
       await Promise.all([...pending]);
     },
   };
@@ -853,7 +869,8 @@ async function authenticateBrowserGuest(
 async function prepareBrowserAttempt(
   page: Page,
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
-  mode: "prepare" | "checkout" = "prepare",
+  mode: "prepare" | "hold" | "checkout" = "prepare",
+  checkoutState: "associated" | "recovery_required" = "associated",
 ) {
   const headers = await authenticateBrowserGuest(page, mechanism);
   const key = crypto.randomUUID();
@@ -891,9 +908,11 @@ async function prepareBrowserAttempt(
   expect(prepared.status).toBe(mode === "prepare" ? 201 : 200);
   const result = await prepared.json();
   if (mode !== "prepare")
-    expect(result).toMatchObject({ attemptId: key, state: "associated" });
-  if (mode === "checkout")
-    expect(result).toMatchObject({ paymentAvailable: true });
+    expect(result).toMatchObject({ attemptId: key, state: checkoutState });
+  if (mode !== "prepare")
+    expect(result).toMatchObject({
+      paymentAvailable: mode === "checkout" && checkoutState === "associated",
+    });
   const { attemptId } = result as { attemptId: string };
   return { headers, attemptId };
 }
@@ -938,23 +957,12 @@ test("real payment recovery confirms the browser return from verified provider s
     return path.endsWith("/dismiss") ? dismissGate : Promise.resolve();
   });
   try {
-    const { headers, attemptId } = await prepareBrowserAttempt(page, mechanism);
-    const held = await mechanism.mf.dispatchFetch(
-      mechanism.origin + `/api/booking/native/${attemptId}?hold=1`,
-      { method: "POST", headers },
+    // Payment recovery starts from the current customer checkout contract.
+    const { headers, attemptId } = await prepareBrowserAttempt(
+      page,
+      mechanism,
+      "checkout",
     );
-    expect(await held.json()).toMatchObject({
-      state: "associated",
-      paymentAvailable: false,
-    });
-    const checkout = await mechanism.mf.dispatchFetch(
-      mechanism.origin + `/api/booking/hitpay/${attemptId}`,
-      { method: "POST", headers, body: JSON.stringify({ accepted: true }) },
-    );
-    expect(await checkout.json()).toMatchObject({
-      state: "associated",
-      paymentAvailable: true,
-    });
     expect((await mechanism.completePayment()).status).toBe(202);
     // The authenticated webhook must wake production recovery itself. No
     // manual cron invocation or fabricated application confirmation response.
@@ -1219,6 +1227,8 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
   const transport = await mechanismTransport(page, mechanism);
   const secondTransport = await mechanismTransport(other, mechanism);
   try {
+    // Intentionally start prepared: this case races the supported split hold
+    // and payment endpoints; the native guest journey covers current UI checkout.
     const { attemptId } = await prepareBrowserAttempt(page, mechanism);
     // Finish both tabs' real account bootstrap before measuring competing holds.
     // Refresh reads identity, restores the cookie, then rereads identity. Racing
@@ -1342,20 +1352,13 @@ async function guestDetails(
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
   batch = false,
 ) {
-  const months = new Set<string>();
-  const warmed = page.waitForResponse((response) => {
-    const path = new URL(response.url()).pathname;
-    if (path.startsWith("/api/calendar/") && response.status() === 200)
-      months.add(path);
-    return months.size === 1;
-  });
-  await page.goto("/");
+  // Failure journeys start at the supported booking entry. The native guest
+  // journey separately asserts homepage warming and navigation into booking.
+  await page.goto("/book/account/");
   await page
     .getByRole("dialog", { name: "Get the SoccerBot Player App" })
     .getByRole("button", { name: "Not now", exact: true })
     .click();
-  await warmed;
-  await page.getByRole("link", { name: "Book now", exact: true }).click();
   await page
     .getByRole("button", { name: "Continue as guest", exact: true })
     .click();
@@ -1690,6 +1693,8 @@ test("real API failed booking readback retains created references and blocks che
 test("real API revoked access at checkout retains the draft and denies protected access without provider creation", async ({
   page,
 }) => {
+  // This case checks authorization; animation behavior has dedicated coverage.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const mechanism = await createBookingMechanism();
   const transport = await mechanismTransport(page, mechanism);
   try {
@@ -2253,15 +2258,13 @@ test("real API exhausted browser checking window retains the original deadline a
   });
   const transport = await mechanismTransport(page, mechanism);
   try {
-    const { headers, attemptId } = await prepareBrowserAttempt(page, mechanism);
-    const hold = await mechanism.mf.dispatchFetch(
-      mechanism.origin + `/api/booking/native/${attemptId}?hold=1`,
-      { method: "POST", headers },
+    // Use current checkout, preserving the unknown booking effect for recovery.
+    const { attemptId } = await prepareBrowserAttempt(
+      page,
+      mechanism,
+      "checkout",
+      "recovery_required",
     );
-    expect(await hold.json()).toMatchObject({
-      state: "recovery_required",
-      paymentAvailable: false,
-    });
     const row = await mechanism.db
       .prepare("SELECT id,intent_hash,deadline_ms FROM attempts WHERE id=?")
       .bind(attemptId)
@@ -2455,12 +2458,8 @@ test("real API unpaid return shows the pending confirmation layout without claim
     if (path.endsWith("/checkout")) await contextGate;
   });
   try {
-    const { headers, attemptId } = await prepareBrowserAttempt(page, mechanism);
-    const held = await mechanism.mf.dispatchFetch(
-      mechanism.origin + `/api/booking/native/${attemptId}?hold=1`,
-      { method: "POST", headers },
-    );
-    expect(await held.json()).toMatchObject({ state: "associated" });
+    // Resume an unpaid hold without creating a HitPay payment request.
+    const { attemptId } = await prepareBrowserAttempt(page, mechanism, "hold");
     const contextRead = page.waitForResponse(
       (response) =>
         new URL(response.url()).pathname ===

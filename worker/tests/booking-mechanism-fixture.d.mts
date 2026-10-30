@@ -5,6 +5,7 @@ export function createBookingMechanism(options?: {
   batchSize?: number;
   missingCreationDeadline?: boolean;
   creationPriceDrift?: boolean;
+  onTiming?: (timing: { phase: string; durationMs: number }) => void;
   onLog?: (message: string) => void;
   displayWarming?: boolean;
   respond?: (call: {

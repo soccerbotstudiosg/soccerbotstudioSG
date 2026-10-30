@@ -195,7 +195,7 @@ test("requires backend runtime and root browser checks without deployment permis
   const { checkPagesPolicy } = await import("./check-pages-policy.mjs");
   const { default: YAML } = await import("yaml");
   const original = YAML.parse(
-    readFileSync(".github/workflows/verify.yml", "utf8"),
+    readFileSync(".github/legacy/verify.yml", "utf8"),
   );
   for (const change of [
     (d) => delete d.jobs.backend,

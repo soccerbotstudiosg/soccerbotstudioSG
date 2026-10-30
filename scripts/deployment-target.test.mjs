@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import YAML from "yaml";
 import {
   loadTarget,
@@ -131,12 +131,14 @@ const run = {
   status: "completed",
   conclusion: "success",
 };
-const jobs = ["frontend", "backend", "live-email"].map((name) => ({
-  name: `verify / ${name}`,
-  conclusion: "success",
-  head_sha: revision,
-  run_attempt: 2,
-}));
+const jobs = ["frontend", "backend", "live-email", "worker-runtime"].map(
+  (name) => ({
+    name: `verify / ${name}`,
+    conclusion: "success",
+    head_sha: revision,
+    run_attempt: 2,
+  }),
+);
 const options = {
   repository: "client/booking",
   revision,
@@ -169,7 +171,28 @@ test("deployment evidence rejects wrong revisions, forks, missing gates and mixe
         options,
       ),
     );
-  assert.throws(() => validateTargetRun(run, jobs.slice(1), options));
+  for (const gate of jobs) {
+    assert.throws(() =>
+      validateTargetRun(
+        run,
+        jobs.filter((job) => job !== gate),
+        options,
+      ),
+    );
+    for (const patch of [
+      { conclusion: "failure" },
+      { conclusion: "skipped" },
+      { run_attempt: 1 },
+      { head_sha: "b".repeat(40) },
+    ])
+      assert.throws(() =>
+        validateTargetRun(
+          run,
+          jobs.map((job) => (job === gate ? { ...job, ...patch } : job)),
+          options,
+        ),
+      );
+  }
   assert.throws(() =>
     validateTargetRun(run, jobs, { ...options, mainRevision: "c".repeat(40) }),
   );
@@ -192,14 +215,20 @@ test("deployment evidence rejects wrong revisions, forks, missing gates and mixe
 test("target workflows isolate PR credentials and deploy through trusted main after completed verification", () => {
   const read = (name) =>
     YAML.parse(readFileSync(`.github/workflows/${name}.yml`, "utf8"));
+  assert.deepEqual(readdirSync(".github/workflows").sort(), [
+    "deploy-release.yml",
+    "verify-target.yml",
+  ]);
   const verify = read("verify-target");
   assert.deepEqual(verify.on.push.branches, ["main"]);
-  assert.deepEqual(verify.on.pull_request.branches, ["main"]);
+  assert.deepEqual(verify.on.pull_request, { branches: ["main"] });
+  assert.deepEqual(verify.on.push, { branches: ["main"] });
   assert.equal(verify.on.pull_request_target, undefined);
   assert.deepEqual(Object.keys(verify.jobs).sort(), [
     "backend",
     "frontend",
     "live-email",
+    "worker",
   ]);
   assert.equal(JSON.stringify(verify).includes("secrets."), false);
   for (const job of Object.values(verify.jobs)) {
@@ -218,8 +247,49 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       job.steps.some((s) => s.run === "node scripts/deployment-target.mjs"),
     );
   }
+  const runtime = verify.jobs.worker;
+  assert.deepEqual(
+    runtime.steps
+      .filter((step) => step.run?.startsWith("npm run"))
+      .map((step) => step.run),
+    ["npm run verify:worker", "npm run test:load:smoke"],
+  );
+  assert.equal(runtime.if, undefined);
+  for (const name of ["backend", "live-email"]) {
+    const gate = verify.jobs[name];
+    assert.equal(gate.needs, "worker");
+    assert.equal(gate.if, undefined);
+    const download = gate.steps.find((step) =>
+      step.uses?.startsWith("actions/download-artifact@"),
+    );
+    assert.equal(
+      download.uses,
+      "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
+    );
+    assert.deepEqual(download.with, {
+      name: "worker-evidence-${{ github.run_id }}-${{ github.run_attempt }}",
+      path: "test-results/",
+    });
+    assert.equal(download.if, undefined);
+    assert.ok(gate.steps.some((step) => step.run === "npm run verify:browser"));
+  }
+  assert.deepEqual(
+    Object.keys(
+      YAML.parse(readFileSync(".github/legacy/verify.yml", "utf8")).on,
+    ),
+    ["workflow_dispatch"],
+  );
+  const workflow = read("deploy-release");
+  assert.deepEqual(Object.keys(workflow.jobs).sort(), [
+    "production",
+    "staging",
+  ]);
+  assert.deepEqual(workflow.on.workflow_dispatch.inputs.target.options, [
+    "staging",
+    "production",
+  ]);
   for (const target of ["staging", "production"]) {
-    const workflow = read(`deploy-${target}`);
+    const job = workflow.jobs[target];
     assert.deepEqual(Object.keys(workflow.on), [
       "workflow_run",
       "workflow_dispatch",
@@ -229,23 +299,27 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       types: ["completed"],
     });
     assert.ok(
-      workflow.jobs.deploy.if.includes(
-        "github.event.workflow_run.conclusion == 'success'",
-      ),
+      job.if.includes("github.event.workflow_run.conclusion == 'success'"),
     );
     assert.ok(
-      workflow.jobs.deploy.if.includes(
+      job.if.includes(
         `github.event.workflow_run.event == '${target === "staging" ? "pull_request" : "push"}'`,
       ),
     );
     assert.ok(
-      workflow.jobs.deploy.if.includes(
+      job.if.includes(
         "github.repository == 'soccerbotstudiosg/soccerbotstudioSG'",
       ),
     );
-    assert.equal(workflow.concurrency["cancel-in-progress"], false);
-    assert.ok(!workflow.jobs.deploy.environment);
-    const steps = workflow.jobs.deploy.steps;
+    assert.ok(job.if.includes(`inputs.target == '${target}'`));
+    assert.ok(
+      job.if.includes(`vars.${target.toUpperCase()}_DEPLOY_ENABLED == 'true'`),
+    );
+    assert.equal(job.env.RELEASE_TARGET, target);
+    assert.equal(job.concurrency.group, `deploy-cloudflare-${target}`);
+    assert.equal(job.concurrency["cancel-in-progress"], false);
+    assert.ok(!job.environment);
+    const steps = job.steps;
     assert.equal(steps[0].with.ref, "main");
     assert.equal(steps[3].run, "node scripts/verified-target-run.mjs");
     assert.equal(steps[4].run, "node scripts/deploy-cloudflare.mjs");
@@ -266,6 +340,7 @@ test("closed client Workers.dev entry preserves the existing database and first-
   assert.equal(config.workers_dev, true);
   assert.equal(config.preview_urls, false);
   assert.equal(config.vars.COORDINATOR_LOCATION_HINT, "apac-ne");
+  assert.equal(config.assets.run_worker_first, true);
   for (const patch of [
     { origin: "https://another.lucky-poetry-b25e.workers.dev" },
     { origin: "https://soccerbotsg.com" },

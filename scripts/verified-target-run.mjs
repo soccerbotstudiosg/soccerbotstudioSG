@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-/** Require all three target gates on the selected repository revision and attempt. */
+/** Require every target gate, including Worker/runtime, on the selected repository revision and attempt. */
 export function validateTargetRun(
   run,
   jobs,
@@ -28,6 +28,7 @@ export function validateTargetRun(
   assert.equal(run.status, "completed");
   assert.equal(run.conclusion, "success");
   for (const name of [
+    "verify / worker-runtime",
     "verify / frontend",
     "verify / backend",
     "verify / live-email",

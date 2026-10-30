@@ -77,7 +77,7 @@ test("live browser evidence cannot substitute demo cases or omit an engine", () 
 
 test("live CI cannot omit gates change the sitekey or gain deployment permissions", () => {
   const original = YAML.parse(
-    readFileSync(".github/workflows/verify.yml", "utf8"),
+    readFileSync(".github/legacy/verify.yml", "utf8"),
   );
   assert.deepEqual(checkPagesPolicy(original), []);
   for (const change of [

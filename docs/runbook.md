@@ -225,14 +225,14 @@ A download click requests a protected receipt with `X-Booking-Refresh: 1`. Fresh
 
 Normal release: inspect PR changes and final-head gates, obtain applicable merge authorization, merge, then verify the merged revision and deployed artifact. Legacy main developer deployment remains active until the reviewed portable cutover. The standalone GitHub Pages export is separate from the Cloudflare customer backend.
 
-Portable deployment procedure (when configured/enabled):
+Client deployment procedure (after repository/credential cutover):
 
-1. Validate the explicit [target](../deployment) and account/resource identity. Keep production closed while required origin/sitekey/foundation/provider setup is incomplete.
-2. Run **Verify deployment target** for the selected target/revision. Confirm all three gates on that revision; retain sealed artifact and receipts.
-3. Reserve the staging candidate when required. On main, dispatch **Deploy staging** or **Deploy production** with exact 40-character `revision` and successful `verify_run_id`. Repository variables must enable the intended workflow and `DEPLOYMENT_MODE=portable`; see [Development setup](development.md#portable-deployment-scaffold).
-4. The verifier checks provenance, target and gates; deployment checks resources, migration state, artifact hashes, upload and health. Do not bypass a rejected preflight.
-5. Retain `deployment.json`, observed revision, provider access state and routing evidence. Verification/deployment artifacts currently retain for 14 days: archive approved recovery evidence securely before expiry.
-6. At repository cutover, disable deployment from the former repository before enabling competing ownership. Copying code does not copy security settings or secrets.
+1. Validate the target account, existing D1 and coordinator identity. Preserve `apac-ne` for first client coordinator acquisition; it is not proof of actual placement.
+2. Populate the client repository with reviewed source and trusted main deployment controllers. Disable the former repository's Cloudflare deployer with `DEPLOYMENT_MODE=portable` before enabling client staging. Keep production and staging credentials separately scoped.
+3. A PR runs **Verify deployment target** on its exact head for staging without credentials. A completed successful run triggers the trusted-main staging controller. It requires an open non-draft same-repository PR, a human author with current write access, current head and all three matching gate results. Fork/bot PRs cannot deploy.
+4. Merge produces independent production target verification on the new main revision. The trusted controller rejects a superseded main or failed/mixed-attempt gates and consumes the sealed artifact without rebuilding. The configured client bootstrap stays closed on Workers.dev; domain, foundation and provider activation are separate.
+5. Manual verification/deployment remains available. A manually selected staging candidate must match `STAGING_RESERVED_REVISION`; production must match current main. Deployment enable variables and account-specific secrets are required for either trigger.
+6. Retain deployment receipts and observed version/health. Artifacts retain for 14 days. Prove staging provider/device behavior and recovery separately; do not infer these from CI. Never allow both repositories to control the staging Worker concurrently.
 
 Interrupted deployment: inspect the receipt’s last completed phase, current Worker revision, D1 migration ledger and route state. A failed job can have applied migrations or uploaded code. Reuse the same reviewed resource identities/artifact only after diagnosing the interruption and validating rerun eligibility; do not blindly dispatch repeatedly.
 
@@ -303,7 +303,7 @@ Keep this as the blank master; store completed results in restricted owner-contr
 
 Use [Admin Cloudflare UAT](uat/admin.md#cloudflare-domain-dns-and-https-checks) for inspection. Confirm registrar, authoritative DNS owner, Cloudflare account IDs and hosting owner separately. Cloudflare nameservers do not identify which account owns the zone. `app404.ai` remains outside the proof.
 
-Current owner decision is **registrar transfer first, then client Cloudflare DNS** for `soccerbotsg.com`. Neither transfer nor delegation has been verified complete. Confirm registrar unlock/transfer eligibility and destination account without storing transfer codes in repository evidence. During registrar transfer, preserve existing nameservers and DNS service unless the owner separately approves a reviewed migration. Populate and compare the destination zone, including MX/SPF/DKIM/DMARC and other existing records, before changing delegation. Assess DS/DNSSEC coordination and record the old nameservers/zone for rollback. A completed registrar transfer alone does not copy DNS or establish client hosting.
+Current owner decision is **closed Workers.dev bootstrap first, domain hookup later** for `soccerbotsg.com`; Cloudflare Registrar transfer requires the destination zone active first. Neither transfer nor delegation has been verified complete. Confirm registrar unlock/transfer eligibility and destination account without storing transfer codes in repository evidence. During registrar transfer, preserve existing nameservers and DNS service unless the owner separately approves a reviewed migration. Populate and compare the destination zone, including MX/SPF/DKIM/DMARC and other existing records, before changing delegation. Assess DS/DNSSEC coordination and record the old nameservers/zone for rollback. A completed registrar transfer alone does not copy DNS or establish client hosting.
 
 Reassess the prepared SaaS deployment target against supported same-account Worker hosting after ownership is confirmed; do not skip SaaS checks while still using that target. [ADR-008](architecture/adr.md#adr-008--managed-custom-hostnames-with-vendor-controlled-dns) records the amended decision.
 
