@@ -55,6 +55,8 @@ export function validateDeployment(directory, revision, target = null) {
     assert.equal(config.vars.APP_ORIGIN, target.origin);
     assert.equal(config.workers_dev, isWorkersDevTarget(target));
     assert.equal(config.preview_urls, false);
+    if (target.target === "production")
+      assert.equal(config.assets.run_worker_first, true);
     if (target.saasZone) {
       assert.deepEqual(config.routes, [
         { pattern: "*/*", zone_id: target.saasZone.id },

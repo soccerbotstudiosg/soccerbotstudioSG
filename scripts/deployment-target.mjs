@@ -117,10 +117,12 @@ export function targetConfig(base, target) {
     account_id: target.accountId,
     workers_dev: isWorkersDevTarget(target),
     preview_urls: false,
+    ...(target.target === "production"
+      ? { assets: { ...base.assets, run_worker_first: true } }
+      : {}),
     ...(target.saasZone
       ? {
           routes: [{ pattern: "*/*", zone_id: target.saasZone.id }],
-          assets: { ...base.assets, run_worker_first: true },
         }
       : {}),
     d1_databases: [

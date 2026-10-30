@@ -266,6 +266,7 @@ test("closed client Workers.dev entry preserves the existing database and first-
   assert.equal(config.workers_dev, true);
   assert.equal(config.preview_urls, false);
   assert.equal(config.vars.COORDINATOR_LOCATION_HINT, "apac-ne");
+  assert.equal(config.assets.run_worker_first, true);
   for (const patch of [
     { origin: "https://another.lucky-poetry-b25e.workers.dev" },
     { origin: "https://soccerbotsg.com" },
