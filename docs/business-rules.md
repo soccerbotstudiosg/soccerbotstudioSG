@@ -175,3 +175,5 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 <a id="br-032"></a>
 
 **BR-032** — Follow the client initial placement strategy above: verify the new D1 primary location, prefer `apac-ne` when it is in Japan, then verify actual DO execution and checkout during normal client UAT. Reduced database network time is an engineering expectation; end-to-end savings and a 2–3-second cold checkout remain unproven. Existing developer coordinator placement is unchanged. The earlier preparation protocol is retained in Git history, not an active execution instruction.
+
+Foundation management implements the separate registration step through a trusted named service binding only. Closed-production inspection must not instantiate the coordinator. Registration must validate the real namespace-derived identity, retain a matching singleton across repeats/restarts, and reject mismatches without update/delete. First initialization is a separate diagnostic using the reviewed placement hint; its success does not establish location or provider/customer readiness. See the [runbook procedure](runbook.md#closed-production-foundation-registration).

@@ -167,3 +167,7 @@ The design therefore prioritises correctness under retries, separation of provid
 | CI/service disruption       | Last verified artifact, revision and schema compatibility             | Restore delivery service or approved recovery procedure                              | No rebuilding/merging around verification safeguards                       |
 
 No alternate stack in this document is deployed as hot standby. Before treating one as a backup, define ownership, current pricing/limits, RPO/RTO, data/export format, restore method, secrets/DNS transition, old/new writer fencing, in-flight payment reconciliation and a rehearsed acceptance/rollback plan. A source ZIP, static mirror or provider export alone is not a complete recoverable system.
+
+### Closed-install registration control path — 30 October 2026
+
+Use a named internal `FoundationManagement` Worker entrypoint for operator-only identity inspection, insert-only registration and separate coordinator initialization. The operator client accesses it through an authenticated remote service binding and validates the deployed resource mapping against the sealed production artifact. This avoids a public bootstrap endpoint or a local namespace-derived identity. Existing D1, coordinator namespace/name and provider boundaries remain unchanged; no separately deployed management Worker is required. Service-binding authority is privileged and must not be granted to untrusted callers. Cloud transport acceptance is pending; operation success cannot substitute for actual placement or provider acceptance.

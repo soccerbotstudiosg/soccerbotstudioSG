@@ -1,4 +1,9 @@
 import {
+  assertClosedFoundation,
+  coordinatorName,
+  verifyBindings,
+} from "./bindings";
+import {
   createConfirmationTrace,
   confirmationTraceKey,
   runConfirmationTrace,
@@ -133,6 +138,26 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     ctx.storage.sql.exec(
       "CREATE INDEX IF NOT EXISTS admissions_unfinished ON admissions(finished) WHERE finished=0",
     );
+  }
+  /** Inspect initialized storage without invoking providers or scheduling work. */
+  async inspectFoundation() {
+    assertClosedFoundation(this.env);
+    await verifyBindings(this.env);
+    if (
+      this.ctx.id.toString() !==
+      this.env.COORDINATOR.idFromName(coordinatorName(this.env)).toString()
+    )
+      throw new Error("Coordinator identity mismatch");
+    return {
+      coordinatorId: this.ctx.id.toString(),
+      alarm: await this.ctx.storage.getAlarm(),
+      pendingWakeups: this.sql
+        .exec<{ count: number }>(
+          "SELECT COUNT(*) AS count FROM payment_wakeups",
+        )
+        .one().count,
+      location: null,
+    };
   }
   /** Reconcile interrupted transport accounting without replaying uncertain writes. */
   private recoverInterruptedTransports() {

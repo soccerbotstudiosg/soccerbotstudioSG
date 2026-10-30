@@ -411,3 +411,7 @@ flowchart TD
 ```
 
 This is a cross-operation interpretation, not a replacement for individual persisted state enums. Every edge requires the owning server operation and its guards. HTTP success, an adapter state such as `associated`, and a confirmed booking are different facts.
+
+### Closed-install management service contract
+
+`FoundationManagement` (`worker/foundation-management.ts`) is an internal named Worker entrypoint reachable only through explicitly granted service bindings; the public HTTP router exposes none of these methods. All methods require production, all eight external-effect switches disabled, and exact expected account/database/coordinator name/location hint/source revision. `inspect` derives the real namespace ID without obtaining a stub and returns pending or matching registered state; foreign identity fails. `register` additionally requires that exact derived ID, inserts only an absent singleton and verifies the immutable winner after concurrent/repeated calls. `initialize` requires matching registration and invokes only the coordinator's `inspectFoundation` diagnostic through `coordinatorStub`. The diagnostic checks its own identity and returns ID, alarm, pending-wakeup count and unknown location; it performs no provider operations. Registration is management-owned and is never inferred from a public health request.
