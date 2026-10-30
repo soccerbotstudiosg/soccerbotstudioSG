@@ -1336,20 +1336,13 @@ async function guestDetails(
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
   batch = false,
 ) {
-  const months = new Set<string>();
-  const warmed = page.waitForResponse((response) => {
-    const path = new URL(response.url()).pathname;
-    if (path.startsWith("/api/calendar/") && response.status() === 200)
-      months.add(path);
-    return months.size === 1;
-  });
-  await page.goto("/");
+  // Failure journeys start at the supported booking entry. The native guest
+  // journey separately asserts homepage warming and navigation into booking.
+  await page.goto("/book/account/");
   await page
     .getByRole("dialog", { name: "Get the SoccerBot Player App" })
     .getByRole("button", { name: "Not now", exact: true })
     .click();
-  await warmed;
-  await page.getByRole("link", { name: "Book now", exact: true }).click();
   await page
     .getByRole("button", { name: "Continue as guest", exact: true })
     .click();

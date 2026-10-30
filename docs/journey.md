@@ -293,6 +293,12 @@ The following milestone IDs and history are preserved from the former service-co
 
 ## Part 2 — Dated changes and evidence
 
+### 30 October 2026 — Remove repeated homepage setup from failure journeys
+
+Owner let run 40991915866 finish to collect new failures: frontend, Worker/runtime and backend passed; live-email passed 82/84. Phone payment-creation failure and tablet price drift hit the existing 30-second budget (job 123861479806, artifact 12950643550). Text traces show roughly 12 seconds of isolated runtime initialization plus 9.6–12.1 seconds of homepage warming before booking entry. Retain original evidence and secondary closed-page/socket errors; no assertion established an incorrect booking/payment outcome.
+
+The shared failure helper now enters `/book/account/` directly. Keep real guest, calendar/trainer, contact and Review interactions and all fault/storage/payment assertions. Homepage warming/navigation remains explicitly asserted by the native guest journey, so this removes repeated unrelated setup rather than retiring coverage. Inspected every caller's fault timing and provider-count assumptions; inventory, timeouts and retries unchanged. Types, affected lint/format, source integrity and transport regression passed. Exact-head browser CI remains pending; existing run 40994040151 is left to finish per owner direction. No merge, deployment or external provider action.
+
 ### 30 October 2026 — Diagnose client CI and review test-flow freshness
 
 Run 40988799036 passed Worker/runtime, frontend and backend but failed three of 84 live-email cases at the existing 30-second test deadline (job 123851207800, artifact 12949079810). Text traces retained revoked-access setup, exhausted-window setup and unpaid-return teardown timing. The public developer/private client repository difference implies different standard Ubuntu runner capacity (4 CPU/16 GB versus 2 CPU/8 GB); it is not evidence that every failure has only a hardware cause.
