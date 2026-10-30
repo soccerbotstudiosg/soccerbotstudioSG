@@ -140,7 +140,8 @@ jobs:
     timeout-minutes: 20
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
-      options: --ipc=host
+      # Isolated Miniflare SQLite state is temporary; avoid runner disk stalls.
+      options: --ipc=host --tmpfs /tmp:rw,size=2g
     env:
       NEXT_PUBLIC_BASE_PATH: ""
       RELEASE_PROFILE: live-email
@@ -161,6 +162,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Check isolated runtime storage
+        run: test "$(stat -f -c %T /tmp)" = tmpfs
       - run: npm ci
       - run: node scripts/deployment-target.mjs
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0

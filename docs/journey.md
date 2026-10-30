@@ -293,6 +293,14 @@ The following milestone IDs and history are preserved from the former service-co
 
 ## Part 2 — Dated changes and evidence
 
+### 30 October 2026 — Merged-main I/O stall and bounded temporary storage
+
+Owner approved PR1 merge as `930aa230ef1aaa41f4d3e49f9ca2fc26e4e115eb` after head `7a9d96b73ae5ad1532c09543c6a783d04ae678ea` passed all four jobs in run 41001585832. Client-repository staging run 41004241912 succeeded; the two-workflow cleanup is now on main. Production remains disabled and client production acceptance is separate.
+
+Independent main run 41006678430 passed Worker/frontend/backend and 83/84 live-email cases. Tablet price drift exceeded the unchanged test deadline (job 123908098889, artifact 12956138759). The same case passed in 7.18 seconds on PR head (artifact 12955081086). Main's fixture runtime-ready phase took 9.42 seconds; its 63.75-second test/cleanup interval recorded host I/O pressure increases of 48.45 seconds some / 33.29 seconds full, versus 27.7 ms / 7.6 ms in the passing 7.20-second interval. Two slow passing cases also correlated with I/O pressure. Available memory exceeded 5 GB with no recorded OOM or cgroup CPU throttling. Host counters establish correlation, not ownership of every stall or the underlying device cause.
+
+Miniflare default D1/DO files live under randomized temporary directories. Prepare a follow-up that mounts live-email `/tmp` as bounded 2 GiB tmpfs and checks the filesystem type before testing. Keep real SQLite, isolated cases, full inventories, all assertions/deadlines and disk-backed artifacts. Worker/storage tests remain in their separate unchanged job. Seven workflow regressions plus policy/version checks passed; exact-head CI remains required to test this hypothesis. No new paid resources, production/storage migration or assistant browser/provider operation. Further merge authorization is separate.
+
 ### 30 October 2026 — Instrument intermittent isolated runtime stalls
 
 Run 40995800145 passed frontend/Worker/backend and 82/84 live-email cases; phone booking-readback and tablet unpaid-return exceeded the unchanged test budget (job 123879760699, artifact 12952654625). Previous price-drift/payment-creation cases passed all devices. Tablet synthetic setup completed only around 37 seconds. Earlier setup reductions have not established the underlying cause.
