@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import YAML from "yaml";
 import {
   loadTarget,
@@ -192,6 +192,10 @@ test("deployment evidence rejects wrong revisions, forks, missing gates and mixe
 test("target workflows isolate PR credentials and deploy through trusted main after completed verification", () => {
   const read = (name) =>
     YAML.parse(readFileSync(`.github/workflows/${name}.yml`, "utf8"));
+  assert.deepEqual(readdirSync(".github/workflows").sort(), [
+    "deploy-release.yml",
+    "verify-target.yml",
+  ]);
   const verify = read("verify-target");
   assert.deepEqual(verify.on.push.branches, ["main"]);
   assert.deepEqual(verify.on.pull_request, { branches: ["main"] });
@@ -246,7 +250,12 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     assert.equal(download.if, undefined);
     assert.ok(gate.steps.some((step) => step.run === "npm run verify:browser"));
   }
-  assert.deepEqual(Object.keys(read("verify").on), ["workflow_dispatch"]);
+  assert.deepEqual(
+    Object.keys(
+      YAML.parse(readFileSync(".github/legacy/verify.yml", "utf8")).on,
+    ),
+    ["workflow_dispatch"],
+  );
   const workflow = read("deploy-release");
   assert.deepEqual(Object.keys(workflow.jobs).sort(), [
     "production",

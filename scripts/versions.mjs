@@ -36,7 +36,7 @@ if (!["write", "check", "report"].includes(mode))
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 const lockBytes = readFileSync("package-lock.json");
 const lock = JSON.parse(lockBytes);
-const workflows = ["verify.yml", "verify-target.yml"].map((file) =>
+const workflows = ["verify-target.yml"].map((file) =>
   YAML.parse(readFileSync(`.github/workflows/${file}`, "utf8")),
 );
 const python = [

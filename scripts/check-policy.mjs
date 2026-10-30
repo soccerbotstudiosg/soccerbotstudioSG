@@ -149,7 +149,7 @@ export function policyInputs(root) {
   return {
     pkg: JSON.parse(read("package.json")),
     lock: JSON.parse(read("package-lock.json")),
-    workflow: read(".github/workflows/verify.yml"),
+    workflow: read(".github/legacy/verify.yml"),
     nodeVersion: read(".nvmrc"),
     vitest: read("vitest.config.ts"),
     playwright: read("playwright.config.ts"),

@@ -21,7 +21,6 @@ function fixture() {
     "package.json",
     "package-lock.json",
     ".nvmrc",
-    ".github/workflows/verify.yml",
     ".github/workflows/verify-target.yml",
   ])
     copyFileSync(file, path.join(dir, file));
