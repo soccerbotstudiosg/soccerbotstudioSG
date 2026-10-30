@@ -247,6 +247,17 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       job.steps.some((s) => s.run === "node scripts/deployment-target.mjs"),
     );
   }
+  assert.equal(
+    verify.jobs["live-email"].container.options,
+    "--ipc=host --tmpfs /tmp:rw,size=2g",
+  );
+  assert.ok(
+    verify.jobs["live-email"].steps.some(
+      (step) => step.run === 'test "$(stat -f -c %T /tmp)" = tmpfs',
+    ),
+  );
+  for (const name of ["frontend", "backend", "worker"])
+    assert.equal(verify.jobs[name].container.options, "--ipc=host");
   const runtime = verify.jobs.worker;
   assert.deepEqual(
     runtime.steps

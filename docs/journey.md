@@ -293,6 +293,14 @@ The following milestone IDs and history are preserved from the former service-co
 
 ## Part 2 — Dated changes and evidence
 
+### 30 October 2026 — Merged-main I/O stall and bounded temporary storage
+
+Owner approved PR1 merge as `930aa230ef1aaa41f4d3e49f9ca2fc26e4e115eb` after head `7a9d96b73ae5ad1532c09543c6a783d04ae678ea` passed all four jobs in run 41001585832. Client-repository staging run 41004241912 succeeded; the two-workflow cleanup is now on main. Production remains disabled and client production acceptance is separate.
+
+Independent main run 41006678430 passed Worker/frontend/backend and 83/84 live-email cases. Tablet price drift exceeded the unchanged test deadline (job 123908098889, artifact 12956138759). The same case passed in 7.18 seconds on PR head (artifact 12955081086). Main's fixture runtime-ready phase took 9.42 seconds; its 63.75-second test/cleanup interval recorded host I/O pressure increases of 48.45 seconds some / 33.29 seconds full, versus 27.7 ms / 7.6 ms in the passing 7.20-second interval. Two slow passing cases also correlated with I/O pressure. Available memory exceeded 5 GB with no recorded OOM or cgroup CPU throttling. Host counters establish correlation, not ownership of every stall or the underlying device cause.
+
+Miniflare default D1/DO files live under randomized temporary directories. Prepare a follow-up that mounts live-email `/tmp` as bounded 2 GiB tmpfs and checks the filesystem type before testing. Keep real SQLite, isolated cases, full inventories, all assertions/deadlines and disk-backed artifacts. Worker/storage tests remain in their separate unchanged job. Seven workflow regressions plus policy/version checks passed; exact-head CI remains required to test this hypothesis. No new paid resources, production/storage migration or assistant browser/provider operation. Further merge authorization is separate.
+
 ### 30 October 2026 — Instrument intermittent isolated runtime stalls
 
 Run 40995800145 passed frontend/Worker/backend and 82/84 live-email cases; phone booking-readback and tablet unpaid-return exceeded the unchanged test budget (job 123879760699, artifact 12952654625). Previous price-drift/payment-creation cases passed all devices. Tablet synthetic setup completed only around 37 seconds. Earlier setup reductions have not established the underlying cause.
@@ -3760,3 +3768,11 @@ Owner requested an explicit procedure to prevent test maintenance being missed a
 ### 29 October 2026 — Reconcile PR119 after trainer selection and spacing
 
 Reconciled the documentation/test-maintenance procedures with main `9938fdd` (PR121), retaining PR120 trainer functionality, PR121 presentation and all current test inventories. Earlier PR119 CI passed at `4cb7bdd`; the merge reconciliation creates a new revision requiring its own complete gates. The owner authorized reconciliation and merge once green. Progress now records the merged trainer changes and the separately authorized, read-back-verified SimplyBook test schedules; no runtime or provider mutation is included in this PR. Local link, format, source/policy and diff checks accompany the revised handover; final CI, merge and subsequent main deployment are separate receipts.
+
+### 30 October 2026 — PR4 storage evidence and backend disk exhaustion
+
+PR4 head `4971c4f366762a8856ac9cd68d14ece1e6d95f10`, run [41009857773](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41009857773), passed frontend, Worker/runtime and all 84 live-email cases (10.8 minutes). The earlier failing price-drift case's runtime initialization improved from 9.42 seconds to 0.50 seconds with `/tmp` tmpfs; this is encouraging case-level evidence, not proof of whole-suite speedup or the sole cause of historical failures.
+
+Backend job 123917861105 failed with `SQLITE_FULL` followed immediately by the GitHub runner failing to write its own log with `No space left on device`. Its saved artifact 12957803459 is 2,561,347 bytes uncompressed; its restored npm cache was roughly 253 MB compressed. The original runner was torn down without disk usage measurements, so the specific consumer remains unknown. Client Cloudflare D1 capacity is not implicated by these local CI errors.
+
+Retained tmpfs only for live-email. Added numeric per-test filesystem bytes/inodes and backend before-setup/before-browser/after-browser directory and filesystem diagnostics, with post-browser output attempted even after failure. No deletion, reduced assertions/inventories, retry or deadline relaxation. Extended the existing resource-evidence regression for zero capacity, inode and missing-filesystem values without exposing arbitrary contents. Progress and Development own the updated checkpoint and diagnostic contract; application/API/security/data-lifecycle/UAT/version owners are unchanged. Focused checks accompany the diagnostic candidate; CI, PR4 merge and independent main acceptance remain pending.

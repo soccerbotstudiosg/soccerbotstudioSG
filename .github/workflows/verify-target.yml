@@ -105,6 +105,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 2
+      - name: Inspect backend storage before setup
+        run: |
+          df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
+          df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version-file: .nvmrc
@@ -119,7 +123,20 @@ jobs:
         with:
           name: worker-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/
+      - name: Inspect backend storage before browser
+        run: |
+          df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
+          df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
+          du -x --max-depth=1 -B1 /tmp 2>/dev/null || true
+          du -x -s -B1 /tmp /github/home /__w/_temp /__t "$GITHUB_WORKSPACE/node_modules" "$GITHUB_WORKSPACE/.next" "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/test-results" 2>/dev/null || true
       - run: npm run verify:browser
+      - name: Inspect backend storage after browser
+        if: always()
+        run: |
+          df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
+          df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
+          du -x --max-depth=1 -B1 /tmp 2>/dev/null || true
+          du -x -s -B1 /tmp /github/home /__w/_temp /__t "$GITHUB_WORKSPACE/node_modules" "$GITHUB_WORKSPACE/.next" "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/test-results" 2>/dev/null || true
       - name: Package and check the exact closed developer release
         env:
           RELEASE_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -140,7 +157,8 @@ jobs:
     timeout-minutes: 20
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
-      options: --ipc=host
+      # Isolated Miniflare SQLite state is temporary; avoid runner disk stalls.
+      options: --ipc=host --tmpfs /tmp:rw,size=2g
     env:
       NEXT_PUBLIC_BASE_PATH: ""
       RELEASE_PROFILE: live-email
@@ -161,6 +179,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Check isolated runtime storage
+        run: test "$(stat -f -c %T /tmp)" = tmpfs
       - run: npm ci
       - run: node scripts/deployment-target.mjs
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0

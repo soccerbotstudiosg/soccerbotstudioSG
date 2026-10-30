@@ -2,10 +2,14 @@ import {
   appendFileSync,
   mkdirSync,
   readFileSync,
+  statfsSync,
   writeFileSync,
 } from "node:fs";
 /** Read only numeric resource counters; unavailable counters stay null. */
-export function runtimeResources(read = (file) => readFileSync(file, "utf8")) {
+export function runtimeResources(
+  read = (file) => readFileSync(file, "utf8"),
+  stat = statfsSync,
+) {
   const numeric = (file, pattern) => {
     try {
       const matches = [...read(file).matchAll(pattern)];
@@ -19,6 +23,26 @@ export function runtimeResources(read = (file) => readFileSync(file, "utf8")) {
     }
   };
   return {
+    storage: Object.fromEntries(
+      [".", "/tmp", "/dev/shm", "/__w/_temp", "/github/home"].map(
+        (directory) => {
+          try {
+            const fs = stat(directory);
+            return [
+              directory,
+              {
+                totalBytes: fs.blocks * fs.bsize,
+                availableBytes: fs.bavail * fs.bsize,
+                totalInodes: fs.files,
+                freeInodes: fs.ffree,
+              },
+            ];
+          } catch {
+            return [directory, null];
+          }
+        },
+      ),
+    ),
     memoryKiB: numeric(
       "/proc/meminfo",
       /^(MemAvailable|SwapFree):\s+(\d+) kB$/gm,
