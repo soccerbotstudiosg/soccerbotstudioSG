@@ -234,6 +234,7 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     "frontend",
     "live-email",
     "worker",
+    "worker-groups",
   ]);
   assert.equal(JSON.stringify(verify).includes("secrets."), false);
   for (const job of Object.values(verify.jobs)) {
@@ -285,6 +286,7 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     "frontend",
     "backend",
     "worker",
+    "worker-groups",
     "live-email",
     "browser-build",
   ])
@@ -294,9 +296,40 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     runtime.steps
       .filter((step) => step.run?.startsWith("npm run"))
       .map((step) => step.run),
-    ["npm run verify:worker", "npm run test:load:smoke"],
+    [],
   );
   assert.equal(runtime.if, undefined);
+  assert.equal(runtime.needs, "worker-groups");
+  assert.ok(
+    runtime.steps.some(
+      (step) => step.run === "node scripts/verify-worker.mjs merge",
+    ),
+  );
+  const groups = verify.jobs["worker-groups"];
+  assert.deepEqual(groups.strategy.matrix.group, [
+    "contracts",
+    "sustained",
+    "recovery",
+  ]);
+  assert.equal(groups.strategy["fail-fast"], false);
+  assert.equal(groups.if, undefined);
+  assert.ok(
+    groups.steps.some(
+      (step) =>
+        step.run === "node scripts/verify-worker.mjs group ${{ matrix.group }}",
+    ),
+  );
+  assert.ok(
+    !groups.steps.some((step) => step.run?.includes("test-name-pattern")),
+  );
+  assert.ok(
+    runtime.steps.some(
+      (step) =>
+        step.with?.pattern ===
+          "worker-group-*-${{ github.run_id }}-${{ github.run_attempt }}" &&
+        step.with.path === "test-results/worker-inputs",
+    ),
+  );
   for (const name of ["backend", "live-email"]) {
     const gate = verify.jobs[name];
     assert.deepEqual(gate.needs, ["worker", "browser-build", "browser-shards"]);

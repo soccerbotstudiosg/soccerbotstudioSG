@@ -1,5 +1,21 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import {
+  workerGroups,
+  groupFiles,
+  expectedTitles,
+  validateRuntimeLog,
+  workerIdentity,
+  validateGroupEvidence,
+} from "./worker-groups.mjs";
+import assert from "node:assert/strict";
+const mode = process.argv[2] || "all";
+const group = process.argv[3];
+assert.ok(["all", "group", "merge"].includes(mode));
+if (mode === "group") groupFiles(group);
+else assert.equal(group, undefined);
+expectedTitles();
+const initialIdentity = mode === "all" ? null : workerIdentity();
 const dir = "test-results";
 mkdirSync(dir, { recursive: true });
 const env = {
@@ -40,28 +56,27 @@ const commands = [
     [
       "--test",
       "--test-reporter=tap",
-      "worker/tests/catalogue.test.mjs",
-      "worker/tests/foundation.test.mjs",
-      "worker/tests/identity.test.mjs",
-      "worker/tests/identity-delivery.test.mjs",
-      "worker/tests/provider.test.mjs",
-      "worker/tests/provider-queue.test.mjs",
-      "worker/tests/native.test.mjs",
-      "worker/tests/runtime.test.mjs",
-      "worker/tests/recovery.test.mjs",
-      "worker/tests/webhook.test.mjs",
-      "worker/tests/hitpay.test.mjs",
-      "worker/tests/combined-hold.test.mjs",
-      "worker/tests/telemetry.test.mjs",
-      "worker/tests/pages.test.mjs",
+      "--test-concurrency=2",
+      ...(mode === "group" ? groupFiles(group) : groupFiles()),
     ],
   ],
 ];
+if (mode === "group" && group === "sustained")
+  commands.push(["load-smoke", "node", ["scripts/run-load.mjs", "--smoke"]]);
 const receipt = { status: "running", providerRequests: 0, commands: [] };
-for (const [name, cmd, args] of commands) {
+for (const [name, cmd, args] of commands.filter(([name]) =>
+  mode === "group"
+    ? ["runtime", "load-smoke"].includes(name)
+    : mode === "merge"
+      ? name !== "runtime"
+      : true,
+)) {
   const r = spawnSync(cmd, args, { env, encoding: "utf8" });
   const output = (r.stdout || "") + (r.stderr || "");
-  writeFileSync(`${dir}/worker-${name}.log`, output);
+  writeFileSync(
+    `${dir}/worker-${mode === "group" ? `${group}-` : ""}${name}.log`,
+    output,
+  );
   process.stdout.write(output);
   receipt.commands.push({ name, exitCode: r.status });
   if (r.status !== 0) {
@@ -69,26 +84,57 @@ for (const [name, cmd, args] of commands) {
     break;
   }
   if (name === "runtime") {
-    const expected = JSON.parse(
-      readFileSync("scripts/worker-test-inventory.json", "utf8"),
-    );
-    const titles = [...output.matchAll(/^# Subtest: (.+)$/gm)].map((m) => m[1]);
-    if (
-      JSON.stringify(titles) !== JSON.stringify(expected) ||
-      !/^# fail 0$/m.test(output) ||
-      !/^# skipped 0$/m.test(output) ||
-      !/^# cancelled 0$/m.test(output) ||
-      !/^# todo 0$/m.test(output)
-    ) {
+    try {
+      validateRuntimeLog(
+        output,
+        expectedTitles(mode === "group" ? group : undefined),
+      );
+    } catch (error) {
       receipt.status = "failed";
-      receipt.error = "Runtime inventory or strict outcome mismatch";
+      receipt.error = error.message;
       break;
     }
   }
 }
+if (receipt.status === "running" && mode === "merge") {
+  try {
+    assert.deepEqual(
+      readdirSync(`${dir}/worker-inputs`).sort(),
+      workerGroups
+        .map(
+          ({ id }) =>
+            `worker-group-${id}-${initialIdentity.runId}-${initialIdentity.attempt}`,
+        )
+        .sort(),
+      "Unexpected Worker group artifact directories",
+    );
+    const evidence = workerGroups.map(({ id }) => {
+      const root = `${dir}/worker-inputs/worker-group-${id}-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`;
+      return {
+        receipt: JSON.parse(
+          readFileSync(`${root}/worker-group-${id}.json`, "utf8"),
+        ),
+        log: readFileSync(`${root}/worker-${id}-runtime.log`, "utf8"),
+      };
+    });
+    assert.deepEqual(workerIdentity(), initialIdentity);
+    validateGroupEvidence(evidence, initialIdentity);
+    receipt.groups = evidence.map(({ receipt }) => receipt);
+    receipt.commands.push({ name: "runtime", exitCode: 0 });
+  } catch (error) {
+    receipt.status = "failed";
+    receipt.error = error.message;
+  }
+}
 if (receipt.status === "running") receipt.status = "passed";
+if (mode === "group") {
+  receipt.group = group;
+  receipt.files = groupFiles(group);
+  assert.deepEqual(workerIdentity(), initialIdentity);
+  receipt.identity = initialIdentity;
+}
 writeFileSync(
-  `${dir}/verification-worker.json`,
+  `${dir}/${mode === "group" ? `worker-group-${group}` : "verification-worker"}.json`,
   JSON.stringify(receipt, null, 2) + "\n",
 );
 if (receipt.status !== "passed") process.exitCode = 1;
