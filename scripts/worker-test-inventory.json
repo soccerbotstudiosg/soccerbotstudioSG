@@ -1,456 +1,1818 @@
 [
-  "catalogue IDs survive rename addition deactivation and duplicate display names",
-  "catalogue rejects partial paginated malformed and unsupported relationship envelopes",
-  "catalogue shares bounded reads isolates account environment and protects cached objects",
-  "catalogue overlaps independent reads and waits for both before caching",
-  "catalogue drains a failed read sibling and does not cache partial success",
-  "catalogue invalidation fences delayed reads and never serves stale fallback",
-  "prebooking refreshes current price and names without rewriting approved intent",
-  "prebooking rejects unknown inactive reassigned and no longer eligible instructors",
-  "prebooking validates freshness account lead time and supported service profile",
-  "prebooking derives automatic non-blocking player comments independently of studio capacity",
-  "native comments bind optional school to the approved contact and reject injected lines",
-  "prebooking treats overlapping eligibility as unassigned and rejects contradictory schedules",
-  "catalogue transport uses documented named calls and remains denied in closed sessions",
-  "ended provider transports release capacity without replaying uncertain writes",
-  "provider session refuses credential account changes before cached identity reuse",
-  "catalogue cache expires and scope eviction never returns another account data",
-  "prebooking accepts scoped owner declarations for fresh booking contact and rejects stale or foreign settings",
-  "owner date-scoped trial lead exception preserves default account instructor and time fences",
-  "owner trial exception rechecks twenty-four-hour minimum and contract expiry after provider reads",
-  "calendar range cache batches a month shares reads and preserves explicit empty versus unknown days",
-  "calendar cache isolates scope and invalidates changed dates without stale fallback",
-  "calendar ranges never bridge unauthorized gaps and reject conflicting or foreign provider data",
-  "calendar invalidation fences an in-flight stale response",
-  "anonymous calendar is bounded and shared without exposing provider slots or customer data",
-  "priced customer calendar chooses native service by Singapore weekday and public holiday and refreshes changes",
-  "priced prebooking accepts exact mixed service totals and rejects cheap holiday service substitution",
-  "catalogue accepts observed explicit provider null maps without allowing other object relationships",
-  "customer booking accepts exactly 240 minutes and rechecks the cutoff after provider reads",
-  "provider identity renewal keeps native reads valid across token retention boundaries",
-  "bounded read groups reuse two lanes and drain failure without starting queued work",
-  "persistent display snapshots retain original deadlines across restarts and fence invalidation",
-  "failed pre-dispatch evidence persistence releases the transport reservation without sending a write",
-  "durable provider tokens retain original expiry and reject changed credentials tampering and cross-account reuse",
-  "late authentication rejection cannot evict a newer token",
-  "public refresh-ahead replaces only near-expiry tokens and persists a new absolute expiry across restoration",
-  "public refresh-ahead shares authentication with checkout and does not reuse the retired generation",
-  "failed public refresh cannot restore a retired token and later demand authenticates without replay",
-  "public refresh-ahead is gated and never renews an expired token",
-  "customer-choice prebooking keeps the requested eligible trainer and refuses unavailable or foreign choices",
-  "combined hold performs one preflight and preserves immutable identity across concurrent requests and restoration",
-  "combined hold rejects changed price and unavailable selection before creation without deleting attempt evidence",
-  "combined hold retains an unknown provider creation and never replays it after a lost response",
-  "combined hold rechecks revocation at the write boundary and preserves created references on readback failure",
-  "combined hold serializes competing customers and rejects the second slot without duplicate creation",
-  "combined batch hold uses one validation per item and retains partial or unknown creation without payment",
-  "single hold exposes creation progress while independent readbacks are pending and payment remains blocked",
-  "ongoing confirmation grants twenty bounded two-second status checks while retaining the shared cap and deadline",
-  "single hold progress requires validated retained creation before comments without granting payment",
-  "combined preflight overlaps independent reads and drains them before one booking write",
-  "concurrent preflight drains siblings and rejects revocation before creation",
-  "combined preparation overlaps public and admin authentication without premature booking",
-  "concurrent preflight attributes invalid fields correctly and creates no booking",
-  "checkout reuses complete creation evidence for one HitPay request without redundant reads",
-  "combined checkout never creates HitPay after failed booking verification and preserves its attempt",
-  "combined batch checkout retains one payment effect and exact booking association",
-  "batch closure fallback and failed hold persistence preserve one original attempt without unsafe payment",
-  "scheduled display warming survives idle entry and booking refresh never delays payment handoff",
-  "failed scheduled display refresh retains a bounded snapshot without renewing its expiry",
-  "checkout returns its durable URL while comments are blocked and annotation failure never repeats effects",
-  "checkout never exposes a HitPay URL when its durable save loses the creation fence",
-  "public display reads use one free provider slot without releasing retained unknown admissions",
-  "interrupted read admissions recover after restart while unknown writes and live reads stay fenced",
-  "expired identified write transports free capacity after reset without authorizing another effect",
-  "failed identity warming proves checkout never started and permits a fresh explicit attempt",
-  "direct single checkout uses only public authentication and creation before HitPay with bounded D1 work",
-  "direct single completion retains payment but denies handoff after access revocation",
-  "checkout failure timing survives token booking and payment failures without exposing request data",
-  "direct batch checkout uses creation responses for two four and eight sessions with one payment and minimal D1 work",
-  "direct batch rejection lost response and invalid invoice retain original effects without payment or replay",
-  "consolidated single checkout guards failed transactions and retained references across restart",
-  "protected confirmation traces correlate context status and denied receipt without leaking payment data",
-  "confirmation snapshots reduce reads and observe manual review after poll admission",
-  "batch transport claims recheck revocation at each creation boundary without replay",
-  "single and batch recovery retain verified evidence with bounded read overlap and measured D1 work",
-  "deferred single and batch checkout reject failed foundation and conditional preparation without provider writes",
-  "five-call single checkout retains malformed response evidence and blocks payment after failed reservation predicates",
-  "five-call fresh snapshots cannot duplicate checkout across overlapping requests",
-  "five-call speculative preparation cannot change a colliding foreign attempt",
-  "recovery publication rolls back on storage failure and resumes without duplicate accounting",
-  "rejected concurrent checkout reads the owned active attempt without repeating provider effects",
-  "rejected unbound window checks fresh availability and preserves failed or available readback as unresolved",
-  "409 preparation readback distinguishes unavailable selection from unresolved without effects",
-  "409 preparation preserves an existing original booking for recovery",
-  "automatic recovery completion publishes a receipt before dismissal and repeat acknowledgement",
-  "customer-selected trainers survive a multi-slot hold and restoration without automatic reassignment",
-  "different trainers cannot bypass a shared-studio conflict during concurrent customer holds",
-  "direct checkout preserves provider shared-studio rejection across different trainers without a second payment or replay",
-  "foundation valid bindings emit correlated storage evidence without secret markers",
-  "foundation missing and malformed configuration denies before protected reads",
-  "foundation accepts a validated campaign name without changing retained account identity",
-  "foundation foreign database and coordinator namespace identities fail closed",
-  "foundation manifests are immutable and populated uncertain operations survive upgrade",
-  "foundation rejects forged host cross-origin GET and unsupported methods",
-  "foundation bounds stalled bodies with a fixed one-second deadline",
-  "foundation invalid customer access never reaches attempt or operator data",
-  "foundation concurrent requests isolate correlations and redact injected failures",
-  "production static entry serves only its canonical HTTPS origin and safe methods",
-  "HitPay ingress verifies untouched bytes before parsing or durable effects",
-  "HitPay receipts deduplicate concurrent delivery and preserve payment evidence",
-  "HitPay ingress rejects foreign references and bounded receipt exhaustion atomically",
-  "HitPay journal makes routes scopes and verified identities immutable",
-  "HitPay authoritative contract rejects identity money currency refund and status mismatches",
-  "HitPay webhook durable alarm races cron without duplicate financial writes",
-  "HitPay alarm retains a webhook arriving while its earlier wakeup runs",
-  "HitPay recovery independently verifies payment and bookings before one external write",
-  "HitPay recovery preserves unknown writes and reads back without repeating payment",
-  "HitPay amount mismatch never finalizes SimplyBook",
-  "HitPay claims serialize concurrent recovery and exhaust without reopening checkout",
-  "HitPay creation persists intent before dispatch and never repeats an uncertain POST",
-  "HitPay creation recovery searches exact reference without another POST",
-  "HitPay late payment retains money evidence without recreating or finalizing expired bookings",
-  "HitPay cancelled booking stops finalisation",
-  "HitPay creation accepts only a bounded Singapore expiry and retains a single request",
-  "HitPay protected confirmation queues stale booking proof without resetting recovery or leaking ownership",
-  "HitPay holding appointment payment uses its existing invoice without availability or another booking",
-  "HitPay holding appointment expiry blocks payment without querying availability",
-  "HitPay preexisting invoice payment requires review without another external write",
-  "HitPay novel webhooks reopen recoverable manual review within a bounded unchanged deadline",
-  "HitPay webhook reopening retains security decisions and exhausted retry limits",
-  "HitPay webhook cannot extend an expired financial recovery deadline",
-  "HitPay webhook arriving during a claim is reconciled after its older terminal read",
-  "HitPay terminal persistence failure retains a reclaimable lease and durable webhook",
-  "HitPay creation mismatch retains only a redacted field diagnostic and never repeats creation",
-  "verified HitPay payment waits for current booking and invoice evidence before customer confirmation",
-  "legacy customer snapshot remains hidden until current booking reconciliation",
-  "current booking cancelled with verified payment never publishes customer success",
-  "current booking read-failure with verified payment never publishes customer success",
-  "expired unpaid hold releases only its active grant and retains immutable creation and booking history",
-  "expired checkout retains dispatched payment even after expired status and webhook reconciliation",
-  "late verified payment cannot confirm an expired hold or release it for another booking",
-  "on-time HitPay payment reconciles after payment expiry only within the original hold",
-  "on-time HitPay payment cannot finalize after the original hold expires",
-  "HitPay upstream HTTP diagnostics retain only status and representation without replaying creation",
-  "HitPay validation diagnostics retain only allowlisted fields without replaying creation",
-  "HitPay recovery rejects a replaced claim after payment response without further accounting or success",
-  "HitPay recovery rejects a replaced claim after booking response without further accounting or success",
-  "HitPay recovery rejects a replaced claim after accounting response without further accounting or success",
-  "HitPay recovery rejects a replaced claim after paid-booking response without further accounting or success",
-  "delivery default empty window and disabled mode reject before external dispatch",
-  "delivery validates exact revision origin recipient and authenticated bounded JSON before dispatch",
-  "delivery public routes use fixed sender recipient idempotency and single-use verified identity",
-  "delivery rejects foreign recipient malformed oversized and cross-origin inputs without quota consumption",
-  "delivery bot hostname action timestamp denial and malformed proof never send mail",
-  "delivery durable bot replay and source quota precede outbound validation across guest sessions",
-  "delivery global five bot reservations survive concurrency restart and new sources",
-  "delivery mail uncertainty retains original challenge and charged reservation with no retry",
-  "delivery rejects redirect oversized malformed and denied upstream responses without following or retry",
-  "delivery three global send reservations and immutable closure cannot reset across restart",
-  "delivery expired and near-expiry windows stop before dispatch without extending the grant",
-  "delivery rechecks closure after bot response and retains uncertain challenge without email",
-  "delivery rejects expired future and unparseable bot timestamps",
-  "delivery replacement preserves closed history and permits one unused replacement across restart",
-  "delivery replacement rejects overlap missing predecessor and changed expiry",
-  "delivery replacement preserves charged unknown dispatch and refuses a budget reset",
-  "delivery replacement keeps global dispatch limits and denies a foreign release",
-  "identity proof migration preserves both closed windows and charged history without provisioning authority",
-  "identity proof admits only one finite successor with exact recipient and immutable expiry",
-  "identity proof counts six emails and eight bot reservations separately from preserved historical charges",
-  "identity proof close revokes issued and restored authority while preserving guest history",
-  "identity proof expiry blocks identity reads and restoration independently of ninety-day cookies",
-  "identity proof closure during bot completion forbids mail and keeps the charged dispatch",
-  "identity proof wrong revision and disabled delivery block restoration as well as challenges",
-  "identity proof closure storage failure rolls back the close and all revocation writes",
-  "ongoing delivery preserves closed proofs and restores consented identity after restart without another email",
-  "ongoing verified contact reads and consented saves ignore closed historical proof windows",
-  "ongoing delivery charges unknown sends against durable hourly capacity across restart and preserves history",
-  "ongoing delivery retains bot replay source limits and requires live developer authority",
-  "identity stores no plaintext code and consumes one concurrent redemption without renewing guest expiry",
-  "identity rejects wrong expired reused and foreign email or guest codes",
-  "identity rejects bot denial expiry purpose mismatch and durable token replay before email",
-  "identity resend supersedes previous challenge and preserves unknown delivery without retry across restart",
-  "identity concurrent sends and subject limits cannot be bypassed by a new guest",
-  "identity guest revocation denies verified session and ambiguous contacts never prefill",
-  "remembered identity requires opt in and persists only digests with fixed cookie expiry",
-  "remembered identity survives restart and restores into a fresh guest without old attempt authority",
-  "remembered identity denies at and after absolute day ninety and rotation cannot extend expiry",
-  "remembered concurrent rotation returns one successor and old-token replay revokes every linked session",
-  "remembered logout fences concurrent restore and a delayed issued cookie cannot revive authority",
-  "remembered all-device signout accepts restored and older valid sessions and invalidates older challenges",
-  "fresh remembered login after all-device signout keeps old families revoked",
-  "all-device signout rejects expired identity and preserves another email",
-  "remembered malformed duplicate foreign and missing credentials cannot disclose identity",
-  "remembered storage failure rolls back consumption and emits no credential",
-  "remembered opt-out verification clears and revokes an earlier browser family without changing guest ownership",
-  "remembered verification racing signout never establishes reusable authority",
-  "remembered signout after the guest expires revokes the persistent credential",
-  "website contact requires verified identity and a guessed email cannot read or overwrite another profile",
-  "website contact shared email uses latest explicit save without changing retained attempts or identity expiry",
-  "website contact rejects malformed payloads expired sessions and signout while preserving saved data",
-  "website contact HTTP boundary rejects foreign origin query targeting unverified reads and oversized writes",
-  "website contact remembered restoration can read and save without recovering booking authority",
-  "website contact opt-out cannot create or replace a profile even with a forged remember flag",
-  "website contact stays inaccessible under closed developer proof even with an otherwise valid identity",
-  "native supplied unpaid and paid shapes use stable invoice identity and canonical decisions",
-  "native scalar normalization rejects truthiness rounding malformed and unsafe values",
-  "native creation does not treat require_payment false as paid and uses complete returned invoice",
-  "native normalization rejects missing foreign extra duplicate and nested associations",
-  "native money mismatches and unsupported deposit tax refund semantics fail closed",
-  "native paid invalid booking and contradictory or unknown payment never confirm",
-  "native trusted booking timezone and receipt clocks reject invalid times and stale reads",
-  "native destination accepts only supplied fixed path and rejects absent policy",
-  "native fixed requests reserve each dispatch and reject malformed signatures and RPC errors",
-  "native signed read matches the retained legacy signature contract",
-  "native closed session admission performs no reservation or provider execution",
-  "native orchestration consumes one booking response and cannot replay lost writes",
-  "native creation requires an immutable contact snapshot and rejects changed contact before dispatch",
-  "native link effect preserves one capability on reopen and never regenerates lost replies",
-  "native targeted readback persists canonical evidence and leaves other due work untouched",
-  "native durable signing key and checkout capability stay attempt-owned and revocable",
-  "native lost readback stops the pair without replaying booking or link effects",
-  "native multi-session invoice joins every booking irrespective of provider response order",
-  "native multi-session rejects missing duplicate foreign and financially inconsistent invoice lines",
-  "native batch closure validates the complete invoice independently of allocation envelope fields",
-  "native batch closure rejects incomplete foreign changed unpaid and confirmation evidence without replay",
-  "native batch reserves once finalizes all sessions and cannot repeat across adapter instances",
-  "native batch receipts select the unique new booking from the complete unordered retained set",
-  "native batch receipt sets reject absent duplicate foreign changed and premature members without replay",
-  "native missing batch echoes retain the created ID signature and exact final booking set",
-  "native missing batch echo still requires a valid unchanged batch hash before closure",
-  "native lost batch closure keeps all original references and withholds payment without replay",
-  "native guest batch binds only the new client receipt and signs later sessions without a directory lookup",
-  "native guest creation rejects mixed client receipts and retains a known booking when its client hash is missing",
-  "native finite grant rejects absent wrong revision changed intent and expired authority before provider dispatch",
-  "native finite checkout composes fresh checks one booking protected payment and replay prevention",
-  "native checkout checks durable grant only at write and handoff boundaries",
-  "native checkout rejects revocation during provider reads before booking write",
-  "native forward reads refresh expired identity within accounting and fail closed on a wrong account",
-  "native generic reads reject expired identity without spending recovery calls on refresh",
-  "native prerequisite diagnostics retain safe private evidence without writes or customer disclosure",
-  "native extended grant needs the exact approved ceiling and retains the carried counter",
-  "native batch rechecks guest revocation after reservation before creating a booking",
-  "native batch accepts pending cart receipts but requires a complete invoice at finalization",
-  "native batch permits unavailable interim payment flags only with strict finalization",
-  "native batch rejects malformed non-null interim payment flags without further writes",
-  "native pending cart receipt still rejects invalid flags and foreign session evidence",
-  "native lost batch finalization reconciles all retained IDs without replay and rejects invoice conflicts",
-  "native malformed creation retains its reference for strict readback without accepting or replaying it",
-  "native recovery and compensation reject reassigned clients and previously bound invoice changes",
-  "native missing signing keys and partial or duplicate references never authorize guessed recovery",
-  "native failed checkout handoff durably enters recovery and cannot regenerate its link",
-  "native compensation cancels only the freshly unpaid retained subset and keeps missing replies unresolved",
-  "native compensation verifies every cancellation and accepts only an explicitly unpaid cancelled invoice",
-  "native checkout diagnostics retain receipt collection kinds and counts without values",
-  "native checkout retains independent execution and cleanup failures privately without replay",
-  "native residual cleanup requires exact current operator scope after customer expiry",
-  "native finite compensation is separately granted and never exposes payment or replays writes",
-  "native compensation preserves paid foreign stale and potentially handed-off bookings",
-  "native cancellation loss and payment race retain unknown effects without retry or refund",
-  "native cancellation dispatch rejects evidence that expired before the physical request",
-  "native customer preparation binds one immutable cart and restores only the authenticated snapshot",
-  "native customer preparation rejects price drift unapproved dates and incomplete contact without provider effects",
-  "native customer window retains first private rejection without admitting provider calls or exposing diagnostics",
-  "native customer availability preserves provider offers caches bounded reads and rejects foreign dates",
-  "native creation diagnostics distinguish missing malformed and mismatched fields without provider values",
-  "native invoice and readback diagnostics identify exact financial ownership time and set predicates",
-  "native batch and client metadata diagnostics retain known effects without finalization or replay",
-  "native finalization diagnostics keep confirmation invoice and complete-set guards strict",
-  "native private validation reason stops at RPC while its permanent failure code survives",
-  "native residual diagnostic names missing invoice evidence without cancelling an unfinished cart",
-  "native inspection reports every independent predicate despite missing invoice and never changes the attempt",
-  "native date-scoped owner exception reaches fresh availability and exact two-date preparation only",
-  "native calendar scopes range reads to granted dates and retains fresh continuation checks",
-  "finite hold creates one unpaid appointment without payment or post-reservation availability",
-  "HitPay hold rejection retains redacted creation flags and invoice joins before normalization without replay",
-  "HitPay parallel hold readbacks retain both observations durably despite invoice rejection",
-  "rejected ongoing preflight grants are archived without reopening finite or uncertain writes",
-  "Pages service binding reaches the actual Worker with guest cookie continuity and origin enforcement",
-  "Pages service routing preserves public URL cookies raw payload and backend proof headers",
-  "Pages routing denies foreign preview origins and never falls back or retries failed API writes",
-  "Pages routing leaves redirect navigation to the browser and rejects malformed configuration",
-  "provider queue advances checkout ahead of waiting months without overlapping active work",
-  "provider queue preserves FIFO and gives waiting calendars a bounded turn",
-  "provider queue preserves unknown failures without replay and continues after sync or async errors",
-  "provider queue reserves recovery capacity bounds waiting and never dispatches rejected jobs",
-  "provider queue prioritizes recovery while bounding starvation under mixed customer loads",
-  "checkout timing isolates queued requests attributes D1 to dispatch phase and closes before background work",
-  "confirmation timing isolates concurrent traces preserves failures and excludes late background metrics",
-  "provider operation rejects absent expired and disabled grants before dispatch",
-  "provider identity counts every physical request and returns only sanitized evidence",
-  "concurrent provider proof grants share authentication and upstream reads",
-  "provider redirect is refused without forwarding credentials or following Location",
-  "provider RPC correlation mismatch blocks dependent authentication and reads",
-  "provider auth challenge is unavailable and never triggers notification or retry",
-  "provider identity mismatch prevents tariff read and never exposes account fields",
-  "provider rate failures consume budget enforce cooldown and never retry",
-  "catalogue retries during provider cooldown preserve its original deadline and resume after expiry",
-  "provider oversized response is bounded and never accepted as authentication",
-  "closed provider campaign refuses physical dispatch",
-  "provider ordinary requests preserve recovery reserve at durable budget boundary",
-  "provider interrupted operation survives restart without replay",
-  "stale token completion is fenced before any dependent provider read",
-  "provider dispatch reservation exists before transport and caps active requests",
-  "provider read burst after eviction cannot exceed four rolling starts",
-  "failed provider authentication releases concurrency without replay or budget refund",
-  "historical read normalization preserves string flags exact money and occupied end without manufacturing intent",
-  "historical normalization leaves unknown flags states and imprecise amounts unresolved",
-  "historical paid invoice retains cancelled booking independently and invoice renumbering is not identity",
-  "historical invoice new pending and timeout states remain distinct",
-  "operator grants are bound to the exact historical read operation",
-  "operator scope migration preserves existing completed grants and results",
-  "correlated provider spans separate admission storage transport and shared caller work",
-  "provider failure spans are redacted and preserve consumed reservations",
-  "provider cooldown and consumption persist across runtime restart",
-  "provider missing credentials and client mapping refuse before authentication",
-  "operator readiness reports coordinator bindings with carried accounting and no provider dispatch",
-  "calendar probe binds source account range and carried budget and never replays",
-  "calendar probe rejects foreign stale overbroad and recovery-reserve scopes before dispatch",
-  "calendar probe rejects malformed out-of-range duplicate and invalid times without replay",
-  "native setup reads exact working-hour layers and subscription metadata once without leaking destinations",
-  "native setup rejects changed authority and ranges before any provider request",
-  "native setup diagnostic privacy rejects fixture values without matching UUID digits",
-  "native setup rejects unknown subscription envelopes and malformed hours with bounded private diagnostics",
-  "discovery uses exactly five fixed requests and projects metadata without answers or secrets",
-  "discovery denies closed expired foreign and wrong-scope grants with zero dispatch",
-  "discovery stops before dispatch on changed durable usage unknown reservations or oversized window",
-  "discovery counts failed authentication and never retries or resumes a consumed grant",
-  "discovery rejects malformed duplicate paginated and oversized metadata without retaining raw values",
-  "discovery failed read releases concurrency but remains counted across eviction and cannot replay",
-  "customer catalogue joins authenticated guest to one finite six-call read without exposing company binding",
-  "customer catalogue denies closed wrong-accounting unowned and unknown scopes without replay",
-  "ongoing readback confirms known checkout after campaign closure and deduplicates scheduled events",
-  "ongoing readback excludes finite unassociated expired and exhausted attempts",
-  "ongoing readback is disabled without explicit release flag",
-  "ongoing readback retains unpaid evidence and stops after five bounded tries",
-  "ongoing readback accounts failed provider setup without duplicate automatic dispatch",
-  "ongoing readback gives cold setup a separate bounded window before evidence reads",
-  "scheduled native recovery confirms from authoritative reads without browser and consumes one window",
-  "scheduled native readback uses the recovery reserve only under explicit finite authority",
-  "scheduled recovery admits carried counters through the configured ceiling without resetting or replay",
-  "scheduled recovery at carried512 keeps ordinary reserve scope and global ceiling fences",
-  "operator native readback consumes only its named window and cannot be invoked by guest access",
-  "operator inspection reads one retained booking under the carried192 ledger without invoice cleanup scheduler or replay",
-  "operator residual recovery scopes cleanup to retained bookings and preserves unsafe records",
-  "scheduled recovery rejects closed expired future unknown and unsigned windows without provider calls",
-  "scheduled native recovery preserves conflicting paid evidence for manual review",
-  "inspection window serves session catalogue and cached times without granting a booking",
-  "ongoing customer access survives campaign closure and preserves fresh consent and booking replay guards",
-  "native availability and preparation cross the real HTTP coordinator boundary under a finite grant",
-  "finite webhook subscription preserves prior destinations and deletes only its freshly proven ID",
-  "finite webhook subscription accepts exact string flags and restores mixed representation baselines",
-  "finite webhook subscription string zero remains inactive and malformed flags cannot authorize writes",
-  "finite webhook subscription retains a private field error after create without replay or unsafe cleanup",
-  "finite webhook subscription refuses sixth event and preexisting campaign destination",
-  "finite webhook subscription closes admission for foreign source, company, expired and unknown capabilities",
-  "finite webhook subscription unknown create cannot replay and cleanup requires fresh exact baseline",
-  "finite webhook subscription simultaneous create consumes exactly one durable write claim",
-  "finite webhook subscription changed prior entry blocks acceptance and never deletes old IDs",
-  "finite webhook subscription failed deletion is retained and cannot dispatch a second DELETE",
-  "finite webhook cleanup verifies the fresh baseline after body-independent HTTP acknowledgement",
-  "finite webhook cleanup never treats acknowledgement as proof when the fresh baseline fails",
-  "finite webhook cleanup rejects redirects and HTTP errors without following or replaying DELETE",
-  "finite webhook subscription cap stops before create and preserves recovery reserve",
-  "webhook structure inspection reads one account list and exposes types without assuming the active flag representation",
-  "webhook structure inspection refuses changed source budget scope and expired one-use authority before transport",
-  "webhook structure inspection bounds nested diagnostics and never interprets an unknown envelope as subscription acceptance",
-  "paired webhook channels preserve exact baselines through reverse cleanup without replay",
-  "paired webhook cleanup refuses out of order deletion and preserves both subscriptions",
-  "invoice webhook scope enforces its own event cap before any subscription write",
-  "ongoing checkout admits the priced weekend service with the customer lead-time contract",
-  "held checkout crosses authenticated HTTP routes and durable coordination without rechecking its reserved slot",
-  "provider tokens survive coordinator eviction and admin rejection preserves the public family",
-  "recovery scheduling is atomic with dispatch and duplicate logical intent stays unique",
-  "concurrent recovery workers acquire one claim and advance the original attempt fence",
-  "expired recovery claims reject late completion before and after fenced reclaim",
-  "restart preserves unknown effects and recovery identity without replaying dispatch",
-  "bounded recovery selection excludes future work and terminal classifications",
-  "read deferral is bounded across restart and cannot be reset by a forged claim counter",
-  "repeated process loss reaches manual review without a sixth reconciliation read",
-  "expired and revoked customer access denies reads but preserves separately claimed recovery",
-  "original association and canonical confirmation verify recovered evidence before terminal completion",
-  "malformed foreign or unassociated recovery evidence stays unresolved without persisting raw results",
-  "checking deadline never converts unknown or unpaid recovery into provider cancellation",
-  "closed live admission never invokes the reader and unsupported reconciliation is explicit",
-  "supervised recovery targets only the original attempt and never substitutes other due work",
-  "supervised recovery preserves due time scope validation and closed live admission",
-  "synthetic transport failure defers only a read while malformed replies become manual review",
-  "storage failure rolls back claim and completion without losing eligible recovery",
-  "late effect completion after recovery ownership cannot bind references or create another effect",
-  "retention dry run is bounded and preserves access linked to unresolved or completed attempts",
-  "populated migration preserves immutable intent unknown effects completed proofs and coordinator accounting",
-  "recovery uses the ordered partial index without scanning or sorting terminal work",
-  "retained terminal observations complete locally and known rejection uses the existing verifier",
-  "recovery cannot replace a newer retained observation with an older provider snapshot",
-  "invalid retained evidence cannot trap due work in perpetual failed claims",
-  "completion resamples trusted time after storage validation and refuses an expired lease",
-  "protected confirmation preserves fresh late paid evidence without reopening checking",
-  "health identifies disabled development mode",
-  "guest ownership is generated and only capability digests are stored",
-  "missing capability denies before protected storage reads",
-  "expired future-issued and revoked capabilities deny",
-  "foreign attempts and missing attempts are indistinguishable",
-  "revocation persists across worker restart",
-  "cross-origin mutation insecure transport and payloads are rejected",
-  "browser payment hints and arbitrary provider methods confer no authority",
-  "duplicate idempotency keys return one attempt under interleaving",
-  "changed intent conflicts and immutable intent rejects SQL changes",
-  "overlapping and elapsed multi-session intents are refused",
-  "dispatch is durable before effects and cannot be blindly replayed after restart",
-  "fenced stale completions cannot overwrite newer observations",
-  "only a complete exact paid and valid booking association confirms",
-  "paid but cancelled booking requires recovery and never confirms",
-  "tampered observations cannot replace the immutable approved price",
-  "stale observations and absent invoice stay unresolved or pending",
-  "observation storage failure cannot produce success",
-  "coordinator upgrades retained admissions to indexed bounded reads without losing reservations",
-  "coordinator persists in-flight concurrency reservations across restart",
-  "coordinator enforces four starts per rolling second and cooldown",
-  "migration constraints and existing journal survive additive migration",
-  "checking deadline never invents cancellation",
-  "revoked access denies even if protected attempt storage is unavailable",
-  "persistent budget reserves sixteen calls for recovery and caps at eighty",
-  "explicit provider ceiling extension preserves used calls and the sixteen-call recovery reserve across restart",
-  "shared refresh and token generation claims reject stale completion",
-  "orchestration withholds all writes when native contracts or recovery capacity are unavailable",
-  "orchestration preflights the complete cart before any effect and preserves selection on failure",
-  "single-session orchestration validates once and preserves conflict fencing and unknown effects",
-  "orchestration associates every session and invoice once without enabling payment",
-  "orchestration retains partial accepted and unknown sessions without replacement or finalization",
-  "orchestration rechecks exact price and revoked access before each session write",
-  "orchestration stale generation cannot dispatch a subsequent session",
-  "orchestration rejects duplicate booking references and incomplete invoice associations",
-  "orchestration unknown finalization survives restart and is never replayed",
-  "concurrent orchestration requests have one durable winner and no duplicate effects",
-  "confirmation checking is atomically bounded across concurrent tabs and retains its deadline",
-  "checkout context requires ownership and exposes no unproved live checkout link",
-  "expired or foreign access cannot consume another attempt checking allowance",
-  "checking exhaustion survives runtime restart and cannot extend the immutable attempt deadline",
-  "elapsed checking deadline returns unresolved without modifying recovery or dispatch state",
-  "synthetic fixture awaits evidence without a stale pending snapshot and reuses its attempt",
-  "readiness reports effective expiry served identity and bounded nonce without provider calls",
-  "single statement discovery closure returns expiry then independent D1 read preserves evidence",
-  "fresh availability and holding queries reach authentication and reject arbitrary parameters",
-  "receipt export rechecks ownership paid evidence and revocation without provider calls",
-  "combined batch validates each session once before its effect and never repeats a completed attempt",
-  "combined batch later conflict price or outage retains the first reference and blocks finalization without replay",
-  "combined batch first conflict creates nothing and a later unknown creation is retained without finalization",
-  "telemetry allowlist excludes secrets and rejects arbitrary labels identities and nonfinite metrics",
-  "telemetry samples successful correlations consistently and retains detected failures at zero success sampling",
-  "telemetry separates delayed invocations and retains safe recovery links without fabricated parents",
-  "telemetry ignores raw Tail payloads malformed logs and foreign producers and bounds output",
-  "telemetry stays disabled without configuration and refuses redirectable or foreign destinations",
-  "telemetry transport bounds timeout rejects redirects and hides exporter failures",
-  "real Workers Tail delivery exports sanitized OTLP independently of producer response",
-  "placement diagnostics retain bounded timings and D1 locations without provider or customer payloads",
-  "D1 diagnostics preserve promise identity and count batch statements separately from round trips",
-  "webhook capture defaults closed and requires exact source account environment and origin",
-  "webhook HMAC verifies exact raw bytes before retaining only bounded structure",
-  "webhook missing forged signatures malformed envelopes and stale timestamps leave no receipts",
-  "webhook concurrent duplicates are durable and later distinct hints remain separate within the cap",
-  "webhook finite closure rejects replay and database failure is never acknowledged",
-  "webhook body limits and HTTP boundaries reject before capture",
-  "webhook slow streamed bodies time out and never acknowledge a receipt",
-  "webhook comparison channels isolate capture deduplication caps and closure",
-  "invoice capture retains authentication boundaries and immutable event authority"
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue IDs survive rename addition deactivation and duplicate display names"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue rejects partial paginated malformed and unsupported relationship envelopes"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue shares bounded reads isolates account environment and protects cached objects"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue overlaps independent reads and waits for both before caching"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue drains a failed read sibling and does not cache partial success"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue invalidation fences delayed reads and never serves stale fallback"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "prebooking refreshes current price and names without rewriting approved intent"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "prebooking rejects unknown inactive reassigned and no longer eligible instructors"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "prebooking validates freshness account lead time and supported service profile"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "prebooking derives automatic non-blocking player comments independently of studio capacity"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "native comments bind optional school to the approved contact and reject injected lines"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "prebooking treats overlapping eligibility as unassigned and rejects contradictory schedules"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue transport uses documented named calls and remains denied in closed sessions"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "ended provider transports release capacity without replaying uncertain writes"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "provider session refuses credential account changes before cached identity reuse"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue cache expires and scope eviction never returns another account data"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "prebooking accepts scoped owner declarations for fresh booking contact and rejects stale or foreign settings"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "owner date-scoped trial lead exception preserves default account instructor and time fences"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "owner trial exception rechecks twenty-four-hour minimum and contract expiry after provider reads"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar range cache batches a month shares reads and preserves explicit empty versus unknown days"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar cache isolates scope and invalidates changed dates without stale fallback"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar ranges never bridge unauthorized gaps and reject conflicting or foreign provider data"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar invalidation fences an in-flight stale response"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "anonymous calendar is bounded and shared without exposing provider slots or customer data"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "priced customer calendar chooses native service by Singapore weekday and public holiday and refreshes changes"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "priced prebooking accepts exact mixed service totals and rejects cheap holiday service substitution"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "catalogue accepts observed explicit provider null maps without allowing other object relationships"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "customer booking accepts exactly 240 minutes and rechecks the cutoff after provider reads"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "provider identity renewal keeps native reads valid across token retention boundaries"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "bounded read groups reuse two lanes and drain failure without starting queued work"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "persistent display snapshots retain original deadlines across restarts and fence invalidation"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "failed pre-dispatch evidence persistence releases the transport reservation without sending a write"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "durable provider tokens retain original expiry and reject changed credentials tampering and cross-account reuse"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "late authentication rejection cannot evict a newer token"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "public refresh-ahead replaces only near-expiry tokens and persists a new absolute expiry across restoration"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "public refresh-ahead shares authentication with checkout and does not reuse the retired generation"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "failed public refresh cannot restore a retired token and later demand authenticates without replay"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "public refresh-ahead is gated and never renews an expired token"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "customer-choice prebooking keeps the requested eligible trainer and refuses unavailable or foreign choices"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined hold performs one preflight and preserves immutable identity across concurrent requests and restoration"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined hold rejects changed price and unavailable selection before creation without deleting attempt evidence"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined hold retains an unknown provider creation and never replays it after a lost response"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined hold rechecks revocation at the write boundary and preserves created references on readback failure"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined hold serializes competing customers and rejects the second slot without duplicate creation"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined batch hold uses one validation per item and retains partial or unknown creation without payment"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "single hold exposes creation progress while independent readbacks are pending and payment remains blocked"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "ongoing confirmation grants twenty bounded two-second status checks while retaining the shared cap and deadline"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "single hold progress requires validated retained creation before comments without granting payment"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined preflight overlaps independent reads and drains them before one booking write"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "concurrent preflight drains siblings and rejects revocation before creation"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined preparation overlaps public and admin authentication without premature booking"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "concurrent preflight attributes invalid fields correctly and creates no booking"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "checkout reuses complete creation evidence for one HitPay request without redundant reads"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined checkout never creates HitPay after failed booking verification and preserves its attempt"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "combined batch checkout retains one payment effect and exact booking association"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "batch closure fallback and failed hold persistence preserve one original attempt without unsafe payment"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "scheduled display warming survives idle entry and booking refresh never delays payment handoff"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "failed scheduled display refresh retains a bounded snapshot without renewing its expiry"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "checkout returns its durable URL while comments are blocked and annotation failure never repeats effects"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "checkout never exposes a HitPay URL when its durable save loses the creation fence"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "public display reads use one free provider slot without releasing retained unknown admissions"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "interrupted read admissions recover after restart while unknown writes and live reads stay fenced"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "expired identified write transports free capacity after reset without authorizing another effect"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "failed identity warming proves checkout never started and permits a fresh explicit attempt"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "direct single checkout uses only public authentication and creation before HitPay with bounded D1 work"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "direct single completion retains payment but denies handoff after access revocation"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "checkout failure timing survives token booking and payment failures without exposing request data"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "direct batch checkout uses creation responses for two four and eight sessions with one payment and minimal D1 work"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "direct batch rejection lost response and invalid invoice retain original effects without payment or replay"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "consolidated single checkout guards failed transactions and retained references across restart"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "protected confirmation traces correlate context status and denied receipt without leaking payment data"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "confirmation snapshots reduce reads and observe manual review after poll admission"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "batch transport claims recheck revocation at each creation boundary without replay"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "single and batch recovery retain verified evidence with bounded read overlap and measured D1 work"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "deferred single and batch checkout reject failed foundation and conditional preparation without provider writes"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "five-call single checkout retains malformed response evidence and blocks payment after failed reservation predicates"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "five-call fresh snapshots cannot duplicate checkout across overlapping requests"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "five-call speculative preparation cannot change a colliding foreign attempt"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "recovery publication rolls back on storage failure and resumes without duplicate accounting"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "rejected concurrent checkout reads the owned active attempt without repeating provider effects"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "rejected unbound window checks fresh availability and preserves failed or available readback as unresolved"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "409 preparation readback distinguishes unavailable selection from unresolved without effects"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "409 preparation preserves an existing original booking for recovery"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "automatic recovery completion publishes a receipt before dismissal and repeat acknowledgement"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "customer-selected trainers survive a multi-slot hold and restoration without automatic reassignment"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "different trainers cannot bypass a shared-studio conflict during concurrent customer holds"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "direct checkout preserves provider shared-studio rejection across different trainers without a second payment or replay"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation valid bindings emit correlated storage evidence without secret markers"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation missing and malformed configuration denies before protected reads"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation accepts a validated campaign name without changing retained account identity"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation foreign database and coordinator namespace identities fail closed"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation manifests are immutable and populated uncertain operations survive upgrade"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation rejects forged host cross-origin GET and unsupported methods"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation bounds stalled bodies with a fixed one-second deadline"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation invalid customer access never reaches attempt or operator data"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "foundation concurrent requests isolate correlations and redact injected failures"
+  },
+  {
+    "file": "worker/tests/foundation.test.mjs",
+    "title": "production static entry serves only its canonical HTTPS origin and safe methods"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay ingress verifies untouched bytes before parsing or durable effects"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay receipts deduplicate concurrent delivery and preserve payment evidence"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay ingress rejects foreign references and bounded receipt exhaustion atomically"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay journal makes routes scopes and verified identities immutable"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay authoritative contract rejects identity money currency refund and status mismatches"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay webhook durable alarm races cron without duplicate financial writes"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay alarm retains a webhook arriving while its earlier wakeup runs"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay recovery independently verifies payment and bookings before one external write"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay recovery preserves unknown writes and reads back without repeating payment"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay amount mismatch never finalizes SimplyBook"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay claims serialize concurrent recovery and exhaust without reopening checkout"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay creation persists intent before dispatch and never repeats an uncertain POST"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay creation recovery searches exact reference without another POST"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay late payment retains money evidence without recreating or finalizing expired bookings"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay cancelled booking stops finalisation"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay creation accepts only a bounded Singapore expiry and retains a single request"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay protected confirmation queues stale booking proof without resetting recovery or leaking ownership"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay holding appointment payment uses its existing invoice without availability or another booking"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay holding appointment expiry blocks payment without querying availability"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay preexisting invoice payment requires review without another external write"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay novel webhooks reopen recoverable manual review within a bounded unchanged deadline"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay webhook reopening retains security decisions and exhausted retry limits"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay webhook cannot extend an expired financial recovery deadline"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay webhook arriving during a claim is reconciled after its older terminal read"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay terminal persistence failure retains a reclaimable lease and durable webhook"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay creation mismatch retains only a redacted field diagnostic and never repeats creation"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "verified HitPay payment waits for current booking and invoice evidence before customer confirmation"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "legacy customer snapshot remains hidden until current booking reconciliation"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "current booking cancelled with verified payment never publishes customer success"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "current booking read-failure with verified payment never publishes customer success"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "expired unpaid hold releases only its active grant and retains immutable creation and booking history"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "expired checkout retains dispatched payment even after expired status and webhook reconciliation"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "late verified payment cannot confirm an expired hold or release it for another booking"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "on-time HitPay payment reconciles after payment expiry only within the original hold"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "on-time HitPay payment cannot finalize after the original hold expires"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay upstream HTTP diagnostics retain only status and representation without replaying creation"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay validation diagnostics retain only allowlisted fields without replaying creation"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay recovery rejects a replaced claim after payment response without further accounting or success"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay recovery rejects a replaced claim after booking response without further accounting or success"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay recovery rejects a replaced claim after accounting response without further accounting or success"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay recovery rejects a replaced claim after paid-booking response without further accounting or success"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery default empty window and disabled mode reject before external dispatch"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery validates exact revision origin recipient and authenticated bounded JSON before dispatch"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery public routes use fixed sender recipient idempotency and single-use verified identity"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery rejects foreign recipient malformed oversized and cross-origin inputs without quota consumption"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery bot hostname action timestamp denial and malformed proof never send mail"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery durable bot replay and source quota precede outbound validation across guest sessions"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery global five bot reservations survive concurrency restart and new sources"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery mail uncertainty retains original challenge and charged reservation with no retry"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery rejects redirect oversized malformed and denied upstream responses without following or retry"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery three global send reservations and immutable closure cannot reset across restart"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery expired and near-expiry windows stop before dispatch without extending the grant"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery rechecks closure after bot response and retains uncertain challenge without email"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery rejects expired future and unparseable bot timestamps"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery replacement preserves closed history and permits one unused replacement across restart"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery replacement rejects overlap missing predecessor and changed expiry"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery replacement preserves charged unknown dispatch and refuses a budget reset"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "delivery replacement keeps global dispatch limits and denies a foreign release"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "identity proof migration preserves both closed windows and charged history without provisioning authority"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "identity proof admits only one finite successor with exact recipient and immutable expiry"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "identity proof counts six emails and eight bot reservations separately from preserved historical charges"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "identity proof close revokes issued and restored authority while preserving guest history"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "identity proof expiry blocks identity reads and restoration independently of ninety-day cookies"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "identity proof closure during bot completion forbids mail and keeps the charged dispatch"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "identity proof wrong revision and disabled delivery block restoration as well as challenges"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "identity proof closure storage failure rolls back the close and all revocation writes"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "ongoing delivery preserves closed proofs and restores consented identity after restart without another email"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "ongoing verified contact reads and consented saves ignore closed historical proof windows"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "ongoing delivery charges unknown sends against durable hourly capacity across restart and preserves history"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "ongoing delivery retains bot replay source limits and requires live developer authority"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "identity stores no plaintext code and consumes one concurrent redemption without renewing guest expiry"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "identity rejects wrong expired reused and foreign email or guest codes"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "identity rejects bot denial expiry purpose mismatch and durable token replay before email"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "identity resend supersedes previous challenge and preserves unknown delivery without retry across restart"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "identity concurrent sends and subject limits cannot be bypassed by a new guest"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "identity guest revocation denies verified session and ambiguous contacts never prefill"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered identity requires opt in and persists only digests with fixed cookie expiry"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered identity survives restart and restores into a fresh guest without old attempt authority"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered identity denies at and after absolute day ninety and rotation cannot extend expiry"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered concurrent rotation returns one successor and old-token replay revokes every linked session"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered logout fences concurrent restore and a delayed issued cookie cannot revive authority"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered all-device signout accepts restored and older valid sessions and invalidates older challenges"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "fresh remembered login after all-device signout keeps old families revoked"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "all-device signout rejects expired identity and preserves another email"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered malformed duplicate foreign and missing credentials cannot disclose identity"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered storage failure rolls back consumption and emits no credential"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered opt-out verification clears and revokes an earlier browser family without changing guest ownership"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered verification racing signout never establishes reusable authority"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "remembered signout after the guest expires revokes the persistent credential"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "website contact requires verified identity and a guessed email cannot read or overwrite another profile"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "website contact shared email uses latest explicit save without changing retained attempts or identity expiry"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "website contact rejects malformed payloads expired sessions and signout while preserving saved data"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "website contact HTTP boundary rejects foreign origin query targeting unverified reads and oversized writes"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "website contact remembered restoration can read and save without recovering booking authority"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "website contact opt-out cannot create or replace a profile even with a forged remember flag"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "website contact stays inaccessible under closed developer proof even with an otherwise valid identity"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native supplied unpaid and paid shapes use stable invoice identity and canonical decisions"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native scalar normalization rejects truthiness rounding malformed and unsafe values"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native creation does not treat require_payment false as paid and uses complete returned invoice"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native normalization rejects missing foreign extra duplicate and nested associations"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native money mismatches and unsupported deposit tax refund semantics fail closed"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native paid invalid booking and contradictory or unknown payment never confirm"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native trusted booking timezone and receipt clocks reject invalid times and stale reads"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native destination accepts only supplied fixed path and rejects absent policy"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native fixed requests reserve each dispatch and reject malformed signatures and RPC errors"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native signed read matches the retained legacy signature contract"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native closed session admission performs no reservation or provider execution"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native orchestration consumes one booking response and cannot replay lost writes"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native creation requires an immutable contact snapshot and rejects changed contact before dispatch"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native link effect preserves one capability on reopen and never regenerates lost replies"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native targeted readback persists canonical evidence and leaves other due work untouched"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native durable signing key and checkout capability stay attempt-owned and revocable"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native lost readback stops the pair without replaying booking or link effects"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native multi-session invoice joins every booking irrespective of provider response order"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native multi-session rejects missing duplicate foreign and financially inconsistent invoice lines"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch closure validates the complete invoice independently of allocation envelope fields"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch closure rejects incomplete foreign changed unpaid and confirmation evidence without replay"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch reserves once finalizes all sessions and cannot repeat across adapter instances"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch receipts select the unique new booking from the complete unordered retained set"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch receipt sets reject absent duplicate foreign changed and premature members without replay"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native missing batch echoes retain the created ID signature and exact final booking set"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native missing batch echo still requires a valid unchanged batch hash before closure"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native lost batch closure keeps all original references and withholds payment without replay"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native guest batch binds only the new client receipt and signs later sessions without a directory lookup"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native guest creation rejects mixed client receipts and retains a known booking when its client hash is missing"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native finite grant rejects absent wrong revision changed intent and expired authority before provider dispatch"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native finite checkout composes fresh checks one booking protected payment and replay prevention"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native checkout checks durable grant only at write and handoff boundaries"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native checkout rejects revocation during provider reads before booking write"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native forward reads refresh expired identity within accounting and fail closed on a wrong account"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native generic reads reject expired identity without spending recovery calls on refresh"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native prerequisite diagnostics retain safe private evidence without writes or customer disclosure"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native extended grant needs the exact approved ceiling and retains the carried counter"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch rechecks guest revocation after reservation before creating a booking"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch accepts pending cart receipts but requires a complete invoice at finalization"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch permits unavailable interim payment flags only with strict finalization"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch rejects malformed non-null interim payment flags without further writes"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native pending cart receipt still rejects invalid flags and foreign session evidence"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native lost batch finalization reconciles all retained IDs without replay and rejects invoice conflicts"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native malformed creation retains its reference for strict readback without accepting or replaying it"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native recovery and compensation reject reassigned clients and previously bound invoice changes"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native missing signing keys and partial or duplicate references never authorize guessed recovery"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native failed checkout handoff durably enters recovery and cannot regenerate its link"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native compensation cancels only the freshly unpaid retained subset and keeps missing replies unresolved"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native compensation verifies every cancellation and accepts only an explicitly unpaid cancelled invoice"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native checkout diagnostics retain receipt collection kinds and counts without values"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native checkout retains independent execution and cleanup failures privately without replay"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native residual cleanup requires exact current operator scope after customer expiry"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native finite compensation is separately granted and never exposes payment or replays writes"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native compensation preserves paid foreign stale and potentially handed-off bookings"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native cancellation loss and payment race retain unknown effects without retry or refund"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native cancellation dispatch rejects evidence that expired before the physical request"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native customer preparation binds one immutable cart and restores only the authenticated snapshot"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native customer preparation rejects price drift unapproved dates and incomplete contact without provider effects"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native customer window retains first private rejection without admitting provider calls or exposing diagnostics"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native customer availability preserves provider offers caches bounded reads and rejects foreign dates"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native creation diagnostics distinguish missing malformed and mismatched fields without provider values"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native invoice and readback diagnostics identify exact financial ownership time and set predicates"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native batch and client metadata diagnostics retain known effects without finalization or replay"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native finalization diagnostics keep confirmation invoice and complete-set guards strict"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native private validation reason stops at RPC while its permanent failure code survives"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native residual diagnostic names missing invoice evidence without cancelling an unfinished cart"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native inspection reports every independent predicate despite missing invoice and never changes the attempt"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native date-scoped owner exception reaches fresh availability and exact two-date preparation only"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "native calendar scopes range reads to granted dates and retains fresh continuation checks"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "finite hold creates one unpaid appointment without payment or post-reservation availability"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "HitPay hold rejection retains redacted creation flags and invoice joins before normalization without replay"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "HitPay parallel hold readbacks retain both observations durably despite invoice rejection"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "rejected ongoing preflight grants are archived without reopening finite or uncertain writes"
+  },
+  {
+    "file": "worker/tests/pages.test.mjs",
+    "title": "Pages service binding reaches the actual Worker with guest cookie continuity and origin enforcement"
+  },
+  {
+    "file": "worker/tests/pages.test.mjs",
+    "title": "Pages service routing preserves public URL cookies raw payload and backend proof headers"
+  },
+  {
+    "file": "worker/tests/pages.test.mjs",
+    "title": "Pages routing denies foreign preview origins and never falls back or retries failed API writes"
+  },
+  {
+    "file": "worker/tests/pages.test.mjs",
+    "title": "Pages routing leaves redirect navigation to the browser and rejects malformed configuration"
+  },
+  {
+    "file": "worker/tests/provider-queue.test.mjs",
+    "title": "provider queue advances checkout ahead of waiting months without overlapping active work"
+  },
+  {
+    "file": "worker/tests/provider-queue.test.mjs",
+    "title": "provider queue preserves FIFO and gives waiting calendars a bounded turn"
+  },
+  {
+    "file": "worker/tests/provider-queue.test.mjs",
+    "title": "provider queue preserves unknown failures without replay and continues after sync or async errors"
+  },
+  {
+    "file": "worker/tests/provider-queue.test.mjs",
+    "title": "provider queue reserves recovery capacity bounds waiting and never dispatches rejected jobs"
+  },
+  {
+    "file": "worker/tests/provider-queue.test.mjs",
+    "title": "provider queue prioritizes recovery while bounding starvation under mixed customer loads"
+  },
+  {
+    "file": "worker/tests/provider-queue.test.mjs",
+    "title": "checkout timing isolates queued requests attributes D1 to dispatch phase and closes before background work"
+  },
+  {
+    "file": "worker/tests/provider-queue.test.mjs",
+    "title": "confirmation timing isolates concurrent traces preserves failures and excludes late background metrics"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider operation rejects absent expired and disabled grants before dispatch"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider identity counts every physical request and returns only sanitized evidence"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "concurrent provider proof grants share authentication and upstream reads"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider redirect is refused without forwarding credentials or following Location"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider RPC correlation mismatch blocks dependent authentication and reads"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider auth challenge is unavailable and never triggers notification or retry"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider identity mismatch prevents tariff read and never exposes account fields"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider rate failures consume budget enforce cooldown and never retry"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "catalogue retries during provider cooldown preserve its original deadline and resume after expiry"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider oversized response is bounded and never accepted as authentication"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "closed provider campaign refuses physical dispatch"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider ordinary requests preserve recovery reserve at durable budget boundary"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider interrupted operation survives restart without replay"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "stale token completion is fenced before any dependent provider read"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider dispatch reservation exists before transport and caps active requests"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider read burst after eviction cannot exceed four rolling starts"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "failed provider authentication releases concurrency without replay or budget refund"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "historical read normalization preserves string flags exact money and occupied end without manufacturing intent"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "historical normalization leaves unknown flags states and imprecise amounts unresolved"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "historical paid invoice retains cancelled booking independently and invoice renumbering is not identity"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "historical invoice new pending and timeout states remain distinct"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "operator grants are bound to the exact historical read operation"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "operator scope migration preserves existing completed grants and results"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "correlated provider spans separate admission storage transport and shared caller work"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider failure spans are redacted and preserve consumed reservations"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider cooldown and consumption persist across runtime restart"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider missing credentials and client mapping refuse before authentication"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "operator readiness reports coordinator bindings with carried accounting and no provider dispatch"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "calendar probe binds source account range and carried budget and never replays"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "calendar probe rejects foreign stale overbroad and recovery-reserve scopes before dispatch"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "calendar probe rejects malformed out-of-range duplicate and invalid times without replay"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "native setup reads exact working-hour layers and subscription metadata once without leaking destinations"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "native setup rejects changed authority and ranges before any provider request"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "native setup diagnostic privacy rejects fixture values without matching UUID digits"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "native setup rejects unknown subscription envelopes and malformed hours with bounded private diagnostics"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "discovery uses exactly five fixed requests and projects metadata without answers or secrets"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "discovery denies closed expired foreign and wrong-scope grants with zero dispatch"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "discovery stops before dispatch on changed durable usage unknown reservations or oversized window"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "discovery counts failed authentication and never retries or resumes a consumed grant"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "discovery rejects malformed duplicate paginated and oversized metadata without retaining raw values"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "discovery failed read releases concurrency but remains counted across eviction and cannot replay"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "customer catalogue joins authenticated guest to one finite six-call read without exposing company binding"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "customer catalogue denies closed wrong-accounting unowned and unknown scopes without replay"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "ongoing readback confirms known checkout after campaign closure and deduplicates scheduled events"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "ongoing readback excludes finite unassociated expired and exhausted attempts"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "ongoing readback is disabled without explicit release flag"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "ongoing readback retains unpaid evidence and stops after five bounded tries"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "ongoing readback accounts failed provider setup without duplicate automatic dispatch"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "ongoing readback gives cold setup a separate bounded window before evidence reads"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "scheduled native recovery confirms from authoritative reads without browser and consumes one window"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "scheduled native readback uses the recovery reserve only under explicit finite authority"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "scheduled recovery admits carried counters through the configured ceiling without resetting or replay"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "scheduled recovery at carried512 keeps ordinary reserve scope and global ceiling fences"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "operator native readback consumes only its named window and cannot be invoked by guest access"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "operator inspection reads one retained booking under the carried192 ledger without invoice cleanup scheduler or replay"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "operator residual recovery scopes cleanup to retained bookings and preserves unsafe records"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "scheduled recovery rejects closed expired future unknown and unsigned windows without provider calls"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "scheduled native recovery preserves conflicting paid evidence for manual review"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "inspection window serves session catalogue and cached times without granting a booking"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "ongoing customer access survives campaign closure and preserves fresh consent and booking replay guards"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "native availability and preparation cross the real HTTP coordinator boundary under a finite grant"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription preserves prior destinations and deletes only its freshly proven ID"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription accepts exact string flags and restores mixed representation baselines"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription string zero remains inactive and malformed flags cannot authorize writes"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription retains a private field error after create without replay or unsafe cleanup"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription refuses sixth event and preexisting campaign destination"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription closes admission for foreign source, company, expired and unknown capabilities"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription unknown create cannot replay and cleanup requires fresh exact baseline"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription simultaneous create consumes exactly one durable write claim"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription changed prior entry blocks acceptance and never deletes old IDs"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription failed deletion is retained and cannot dispatch a second DELETE"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook cleanup verifies the fresh baseline after body-independent HTTP acknowledgement"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook cleanup never treats acknowledgement as proof when the fresh baseline fails"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook cleanup rejects redirects and HTTP errors without following or replaying DELETE"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "finite webhook subscription cap stops before create and preserves recovery reserve"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "webhook structure inspection reads one account list and exposes types without assuming the active flag representation"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "webhook structure inspection refuses changed source budget scope and expired one-use authority before transport"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "webhook structure inspection bounds nested diagnostics and never interprets an unknown envelope as subscription acceptance"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "paired webhook channels preserve exact baselines through reverse cleanup without replay"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "paired webhook cleanup refuses out of order deletion and preserves both subscriptions"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "invoice webhook scope enforces its own event cap before any subscription write"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "ongoing checkout admits the priced weekend service with the customer lead-time contract"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "held checkout crosses authenticated HTTP routes and durable coordination without rechecking its reserved slot"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "provider tokens survive coordinator eviction and admin rejection preserves the public family"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "recovery scheduling is atomic with dispatch and duplicate logical intent stays unique"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "concurrent recovery workers acquire one claim and advance the original attempt fence"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "expired recovery claims reject late completion before and after fenced reclaim"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "restart preserves unknown effects and recovery identity without replaying dispatch"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "bounded recovery selection excludes future work and terminal classifications"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "read deferral is bounded across restart and cannot be reset by a forged claim counter"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "repeated process loss reaches manual review without a sixth reconciliation read"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "expired and revoked customer access denies reads but preserves separately claimed recovery"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "original association and canonical confirmation verify recovered evidence before terminal completion"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "malformed foreign or unassociated recovery evidence stays unresolved without persisting raw results"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "checking deadline never converts unknown or unpaid recovery into provider cancellation"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "closed live admission never invokes the reader and unsupported reconciliation is explicit"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "supervised recovery targets only the original attempt and never substitutes other due work"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "supervised recovery preserves due time scope validation and closed live admission"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "synthetic transport failure defers only a read while malformed replies become manual review"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "storage failure rolls back claim and completion without losing eligible recovery"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "late effect completion after recovery ownership cannot bind references or create another effect"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "retention dry run is bounded and preserves access linked to unresolved or completed attempts"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "populated migration preserves immutable intent unknown effects completed proofs and coordinator accounting"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "recovery uses the ordered partial index without scanning or sorting terminal work"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "retained terminal observations complete locally and known rejection uses the existing verifier"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "recovery cannot replace a newer retained observation with an older provider snapshot"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "invalid retained evidence cannot trap due work in perpetual failed claims"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "completion resamples trusted time after storage validation and refuses an expired lease"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "protected confirmation preserves fresh late paid evidence without reopening checking"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "health identifies disabled development mode"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "guest ownership is generated and only capability digests are stored"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "missing capability denies before protected storage reads"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "expired future-issued and revoked capabilities deny"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "foreign attempts and missing attempts are indistinguishable"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "revocation persists across worker restart"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "cross-origin mutation insecure transport and payloads are rejected"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "browser payment hints and arbitrary provider methods confer no authority"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "duplicate idempotency keys return one attempt under interleaving"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "changed intent conflicts and immutable intent rejects SQL changes"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "overlapping and elapsed multi-session intents are refused"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "dispatch is durable before effects and cannot be blindly replayed after restart"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "fenced stale completions cannot overwrite newer observations"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "only a complete exact paid and valid booking association confirms"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "paid but cancelled booking requires recovery and never confirms"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "tampered observations cannot replace the immutable approved price"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "stale observations and absent invoice stay unresolved or pending"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "observation storage failure cannot produce success"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "coordinator upgrades retained admissions to indexed bounded reads without losing reservations"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "coordinator persists in-flight concurrency reservations across restart"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "coordinator enforces four starts per rolling second and cooldown"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "migration constraints and existing journal survive additive migration"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "checking deadline never invents cancellation"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "revoked access denies even if protected attempt storage is unavailable"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "persistent budget reserves sixteen calls for recovery and caps at eighty"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "explicit provider ceiling extension preserves used calls and the sixteen-call recovery reserve across restart"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "shared refresh and token generation claims reject stale completion"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "orchestration withholds all writes when native contracts or recovery capacity are unavailable"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "orchestration preflights the complete cart before any effect and preserves selection on failure"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "single-session orchestration validates once and preserves conflict fencing and unknown effects"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "orchestration associates every session and invoice once without enabling payment"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "orchestration retains partial accepted and unknown sessions without replacement or finalization"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "orchestration rechecks exact price and revoked access before each session write"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "orchestration stale generation cannot dispatch a subsequent session"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "orchestration rejects duplicate booking references and incomplete invoice associations"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "orchestration unknown finalization survives restart and is never replayed"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "concurrent orchestration requests have one durable winner and no duplicate effects"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "confirmation checking is atomically bounded across concurrent tabs and retains its deadline"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "checkout context requires ownership and exposes no unproved live checkout link"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "expired or foreign access cannot consume another attempt checking allowance"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "checking exhaustion survives runtime restart and cannot extend the immutable attempt deadline"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "elapsed checking deadline returns unresolved without modifying recovery or dispatch state"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "synthetic fixture awaits evidence without a stale pending snapshot and reuses its attempt"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "readiness reports effective expiry served identity and bounded nonce without provider calls"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "single statement discovery closure returns expiry then independent D1 read preserves evidence"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "fresh availability and holding queries reach authentication and reject arbitrary parameters"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "receipt export rechecks ownership paid evidence and revocation without provider calls"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "combined batch validates each session once before its effect and never repeats a completed attempt"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "combined batch later conflict price or outage retains the first reference and blocks finalization without replay"
+  },
+  {
+    "file": "worker/tests/runtime.test.mjs",
+    "title": "combined batch first conflict creates nothing and a later unknown creation is retained without finalization"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "telemetry allowlist excludes secrets and rejects arbitrary labels identities and nonfinite metrics"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "telemetry samples successful correlations consistently and retains detected failures at zero success sampling"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "telemetry separates delayed invocations and retains safe recovery links without fabricated parents"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "telemetry ignores raw Tail payloads malformed logs and foreign producers and bounds output"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "telemetry stays disabled without configuration and refuses redirectable or foreign destinations"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "telemetry transport bounds timeout rejects redirects and hides exporter failures"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "real Workers Tail delivery exports sanitized OTLP independently of producer response"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "placement diagnostics retain bounded timings and D1 locations without provider or customer payloads"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "D1 diagnostics preserve promise identity and count batch statements separately from round trips"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "webhook capture defaults closed and requires exact source account environment and origin"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "webhook HMAC verifies exact raw bytes before retaining only bounded structure"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "webhook missing forged signatures malformed envelopes and stale timestamps leave no receipts"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "webhook concurrent duplicates are durable and later distinct hints remain separate within the cap"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "webhook finite closure rejects replay and database failure is never acknowledged"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "webhook body limits and HTTP boundaries reject before capture"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "webhook slow streamed bodies time out and never acknowledge a receipt"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "webhook comparison channels isolate capture deduplication caps and closure"
+  },
+  {
+    "file": "worker/tests/webhook.test.mjs",
+    "title": "invoice capture retains authentication boundaries and immutable event authority"
+  }
 ]

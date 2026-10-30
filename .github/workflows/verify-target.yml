@@ -20,8 +20,12 @@ concurrency:
   group: target-verify-${{ github.event_name == 'pull_request' && 'staging' || github.event_name == 'push' && 'production' || inputs.target }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  worker:
-    name: verify / worker-runtime
+  worker-groups:
+    name: worker / ${{ matrix.group }}
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [contracts, sustained, recovery]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
@@ -47,8 +51,47 @@ jobs:
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
-      - run: npm run verify:worker
-      - run: npm run test:load:smoke
+      - run: node scripts/verify-worker.mjs group ${{ matrix.group }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: worker-group-${{ matrix.group }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: error
+  worker:
+    name: verify / worker-runtime
+    needs: worker-groups
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
+    env:
+      NEXT_PUBLIC_BASE_PATH: ""
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: test-results/wrangler-logs
+      RELEASE_TARGET: ${{ github.event_name == 'pull_request' && 'staging' || github.event_name == 'push' && 'production' || inputs.target }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: node scripts/deployment-target.mjs
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: worker-group-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/worker-inputs
+      - run: node scripts/verify-worker.mjs merge
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
