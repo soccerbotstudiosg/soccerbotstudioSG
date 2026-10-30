@@ -21,6 +21,22 @@ const write = (file, value) =>
   writeFileSync(file, JSON.stringify(value, null, 2) + "\n");
 const digest = (value) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
+/** Exclude process memory from CI core dumps while retaining crash status and browser traces. */
+export function configureBrowserCoreDump({
+  enabled = process.env.GITHUB_ACTIONS === "true" &&
+    process.platform === "linux",
+  read = readFileSync,
+  write = writeFileSync,
+} = {}) {
+  if (!enabled) return null;
+  const file = "/proc/self/coredump_filter";
+  const before = String(read(file, "utf8")).trim();
+  assert.match(before, /^[0-9a-f]+$/i);
+  write(file, "0\n");
+  const after = String(read(file, "utf8")).trim();
+  assert.match(after, /^0+$/);
+  return { before, after };
+}
 /** Partition every batch once across independent runner shards. */
 export function batchesForShard(index) {
   assert.ok(Number.isInteger(index) && index >= 1 && index <= shardCount);
@@ -118,6 +134,11 @@ function run(command, args, env = process.env) {
 }
 /** Run disjoint batches in fresh Playwright processes while preserving whole test scenarios. */
 function executeBatches(batches) {
+  const coreDump = configureBrowserCoreDump();
+  if (coreDump)
+    console.log(
+      JSON.stringify({ event: "browser_core_dump_filter", ...coreDump }),
+    );
   const failures = [];
   for (const batch of batches) {
     const directory = `test-results/browser-batches/${batch}`;
