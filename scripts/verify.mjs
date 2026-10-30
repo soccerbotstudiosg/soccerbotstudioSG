@@ -1,12 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import {
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-  rmSync,
-} from "node:fs";
-import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { exportInventory } from "./check-export.mjs";
 import { siteBasePath } from "../src/content/site-path.ts";
@@ -15,47 +8,7 @@ const profile = releaseProfile();
 const mode = process.argv[2];
 if (!["code", "browser", "all"].includes(mode))
   throw new Error("Use code, browser or all verification scope");
-const ignored = new Set([
-  "node_modules",
-  ".wrangler",
-  ".git",
-  ".next",
-  "out",
-  "test-results",
-  "playwright-report",
-  "coverage",
-  "__pycache__",
-]);
-/** Fingerprint verification inputs to bind receipts to their source. */
-function fingerprint() {
-  const hash = createHash("sha256");
-  /** Collect verification input hashes while excluding generated artifacts. */
-  function visit(dir) {
-    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    )) {
-      if (
-        ignored.has(entry.name) ||
-        entry.name === "next-env.d.ts" ||
-        entry.name === "runtime.d.ts" ||
-        entry.name === "telemetry-env.d.ts" ||
-        entry.name.endsWith(".tsbuildinfo")
-      )
-        continue;
-      const file = path.join(dir, entry.name);
-      if (entry.isSymbolicLink()) throw new Error(`Symlink refused: ${file}`);
-      if (entry.isDirectory()) visit(file);
-      else {
-        hash.update(path.relative(process.cwd(), file));
-        hash.update("\0");
-        hash.update(readFileSync(file));
-        hash.update("\0");
-      }
-    }
-  }
-  visit(process.cwd());
-  return hash.digest("hex");
-}
+import { fingerprint } from "./source-fingerprint.mjs";
 const npm = process.platform === "win32" ? "npm.cmd" : "npm",
   dir = "test-results";
 mkdirSync(dir, { recursive: true });
@@ -104,7 +57,7 @@ commands.unshift(["versions", "node", "scripts/versions.mjs", "report"]);
 commands.push(["export", "node", "scripts/check-export.mjs"]);
 if (mode !== "code")
   commands.push(
-    ["browser", "npm", "run", "test:e2e"],
+    ["browser", "node", "scripts/browser-shards.mjs", "local"],
     ["browser-receipt", "node", "scripts/verify-test-results.mjs", "browser"],
   );
 try {

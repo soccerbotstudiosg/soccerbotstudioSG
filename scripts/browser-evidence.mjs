@@ -1,3 +1,4 @@
+import { browserEvidenceDirectory } from "./browser-batch-path.mjs";
 import {
   appendFileSync,
   mkdirSync,
@@ -158,7 +159,7 @@ export default class BrowserEvidence {
         }),
       );
     appendFileSync(
-      "test-results/browser-resources.jsonl",
+      `${browserEvidenceDirectory()}/browser-resources.jsonl`,
       JSON.stringify({
         event,
         testId: test.id,
@@ -180,10 +181,10 @@ export default class BrowserEvidence {
 
   /** Record the browser configuration before collecting test evidence. */
   onBegin(config) {
-    mkdirSync("test-results", { recursive: true });
-    writeFileSync("test-results/browser-resources.jsonl", "");
+    mkdirSync(browserEvidenceDirectory(), { recursive: true });
+    writeFileSync(`${browserEvidenceDirectory()}/browser-resources.jsonl`, "");
     writeFileSync(
-      "test-results/browser-engines.json",
+      `${browserEvidenceDirectory()}/browser-engines.json`,
       JSON.stringify(
         config.projects.map((project) => ({
           name: project.name,

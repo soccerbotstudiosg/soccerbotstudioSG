@@ -226,6 +226,8 @@ test("target workflows isolate PR credentials and deploy through trusted main af
   assert.equal(verify.on.pull_request_target, undefined);
   assert.deepEqual(Object.keys(verify.jobs).sort(), [
     "backend",
+    "browser-build",
+    "browser-shards",
     "frontend",
     "live-email",
     "worker",
@@ -247,16 +249,42 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       job.steps.some((s) => s.run === "node scripts/deployment-target.mjs"),
     );
   }
+  const shards = verify.jobs["browser-shards"];
+  assert.deepEqual(shards.strategy.matrix, {
+    profile: ["backend", "live-email"],
+    shard: [1, 2],
+  });
+  assert.equal(shards.strategy["fail-fast"], false);
+  assert.equal(shards.needs, "browser-build");
   assert.equal(
-    verify.jobs["live-email"].container.options,
-    "--ipc=host --tmpfs /tmp:rw,size=2g",
+    shards.container.options,
+    "${{ matrix.profile == 'live-email' && '--ipc=host --tmpfs /tmp:rw,size=2g' || '--ipc=host' }}",
   );
   assert.ok(
-    verify.jobs["live-email"].steps.some(
-      (step) => step.run === 'test "$(stat -f -c %T /tmp)" = tmpfs',
+    shards.steps.some(
+      (step) =>
+        step.run === 'test "$(stat -f -c %T /tmp)" = tmpfs' &&
+        step.if === "matrix.profile == 'live-email'",
     ),
   );
-  for (const name of ["frontend", "backend", "worker"])
+  assert.ok(
+    shards.steps.some(
+      (step) =>
+        step.run === "node scripts/browser-shards.mjs run ${{ matrix.shard }}",
+    ),
+  );
+  assert.ok(
+    verify.jobs["browser-build"].steps.some(
+      (step) => step.run === "node scripts/browser-shards.mjs build",
+    ),
+  );
+  for (const name of [
+    "frontend",
+    "backend",
+    "worker",
+    "live-email",
+    "browser-build",
+  ])
     assert.equal(verify.jobs[name].container.options, "--ipc=host");
   const runtime = verify.jobs.worker;
   assert.deepEqual(
@@ -268,10 +296,12 @@ test("target workflows isolate PR credentials and deploy through trusted main af
   assert.equal(runtime.if, undefined);
   for (const name of ["backend", "live-email"]) {
     const gate = verify.jobs[name];
-    assert.equal(gate.needs, "worker");
+    assert.deepEqual(gate.needs, ["worker", "browser-build", "browser-shards"]);
     assert.equal(gate.if, undefined);
-    const download = gate.steps.find((step) =>
-      step.uses?.startsWith("actions/download-artifact@"),
+    const download = gate.steps.find(
+      (step) =>
+        step.uses?.startsWith("actions/download-artifact@") &&
+        step.with?.name?.startsWith("worker-evidence-"),
     );
     assert.equal(
       download.uses,
@@ -282,7 +312,17 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       path: "test-results/",
     });
     assert.equal(download.if, undefined);
-    assert.ok(gate.steps.some((step) => step.run === "npm run verify:browser"));
+    assert.ok(
+      gate.steps.some(
+        (step) => step.run === "node scripts/browser-shards.mjs merge",
+      ),
+    );
+    assert.ok(
+      !gate.steps.some(
+        (step) =>
+          step.run === "npm run build" || step.run === "npm run verify:browser",
+      ),
+    );
   }
   assert.deepEqual(
     Object.keys(
