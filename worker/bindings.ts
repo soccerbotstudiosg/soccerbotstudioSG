@@ -61,3 +61,31 @@ export async function verifyBindings(env: Env) {
   assertBindingShape(env);
   assertFoundation(env, await foundationStatement(env).first());
 }
+
+/** Report an unregistered closed installation without authorizing protected operations. */
+export async function healthFoundation(
+  env: Env,
+): Promise<"pending" | "registered"> {
+  assertBindingShape(env);
+  const identity =
+    await foundationStatement(env).first<
+      NonNullable<Parameters<typeof assertFoundation>[1]>
+    >();
+  if (
+    identity === null &&
+    String(env.ENVIRONMENT) === "production" &&
+    [
+      "LIVE_CUSTOMER_ACCESS",
+      "PROVIDER_ACCESS",
+      "IDENTITY_DELIVERY",
+      "HITPAY_CHECKOUT",
+      "HITPAY_RECOVERY",
+      "HITPAY_WEBHOOK",
+      "PUBLIC_DISPLAY_WARMING",
+      "PUBLIC_TOKEN_REFRESH_AHEAD",
+    ].every((name) => Reflect.get(env, name) === "disabled")
+  )
+    return "pending";
+  assertFoundation(env, identity);
+  return "registered";
+}

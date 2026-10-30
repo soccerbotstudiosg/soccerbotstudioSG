@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { readFileSync, readdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { build } from "esbuild";
@@ -114,6 +114,8 @@ test("foundation valid bindings emit correlated storage evidence without secret 
   const r = await call();
   assert.equal(r.status, 200);
   assert.equal(JSON.parse(r.body).providerAccess, "disabled");
+  assert.equal(JSON.parse(r.body).environment, "developer");
+  assert.equal(JSON.parse(r.body).foundationRegistration, "registered");
   assert.match(r.headers["x-request-id"], /^[a-f0-9-]{36}$/);
   assert.ok(
     logs.some(
@@ -274,4 +276,174 @@ test("production static entry serves only its canonical HTTPS origin and safe me
   const post = await call({ path: "/", method: "POST", vars });
   assert.equal(post.status, 405);
   assert.deepEqual(post.queries, []);
+});
+
+/** Exercise first-install health against fresh real storage without provider transport. */
+async function closedInstallation(overrides = {}) {
+  const { outputFiles } = await build({
+    entryPoints: ["worker/index.ts"],
+    bundle: true,
+    write: false,
+    format: "esm",
+    platform: "browser",
+    external: ["cloudflare:workers", "node:async_hooks"],
+  });
+  const vars = {
+    ...config.vars,
+    ENVIRONMENT: "production",
+    APP_ORIGIN: "https://soccerbot.test",
+    SOURCE_REVISION: "a".repeat(40),
+    COORDINATOR_NAME: "simplybook-production-account",
+    COORDINATOR_LOCATION_HINT: "apac-ne",
+    LIVE_CUSTOMER_ACCESS: "disabled",
+    PROVIDER_ACCESS: "disabled",
+    IDENTITY_DELIVERY: "disabled",
+    HITPAY_CHECKOUT: "disabled",
+    HITPAY_RECOVERY: "disabled",
+    HITPAY_WEBHOOK: "disabled",
+    PUBLIC_DISPLAY_WARMING: "disabled",
+    PUBLIC_TOKEN_REFRESH_AHEAD: "disabled",
+  };
+  let effects = 0;
+  const local = new Miniflare(
+    convertV4MiniflareOptions({
+      modules: true,
+      script: outputFiles[0].text,
+      compatibilityDate: config.compatibility_date,
+      compatibilityFlags: config.compatibility_flags,
+      cf: false,
+      bindings: { ...vars, ...overrides },
+      d1Databases: { STATE: "closed-health" },
+      durableObjects: {
+        COORDINATOR: {
+          className: "SoccerBotAccountCoordinator",
+          useSQLite: true,
+        },
+      },
+      serviceBindings: { ASSETS: () => new Response("static") },
+      outboundService: () => {
+        effects++;
+        throw new Error("External transport forbidden");
+      },
+    }),
+  );
+  const database = await local.getD1Database("STATE");
+  for (const name of readdirSync("migrations").sort())
+    await database.exec(
+      readFileSync(`migrations/${name}`, "utf8")
+        .replace(/^--.*$/gm, "")
+        .replace(/\n/g, " "),
+    );
+  return { local, database, vars, effects: () => effects };
+}
+
+test("closed production health reports pending registration without claiming storage or opening protected operations", async () => {
+  const f = await closedInstallation();
+  try {
+    const response = await f.local.dispatchFetch(
+      "https://soccerbot.test/api/health",
+      { headers: { "X-Readiness-Nonce": "b".repeat(32) } },
+    );
+    assert.equal(response.status, 200);
+    const health = await response.json();
+    assert.equal(health.environment, "production");
+    assert.equal(health.foundationRegistration, "pending");
+    assert.equal(health.revision, "a".repeat(40));
+    assert.equal(health.readinessNonce, "b".repeat(32));
+    assert.equal(health.liveCustomerAccess, "disabled");
+    assert.equal(health.effectiveProviderAccess, "disabled");
+    assert.equal(
+      (
+        await f.database
+          .prepare("SELECT COUNT(*) AS n FROM foundation_identity")
+          .first()
+      ).n,
+      0,
+    );
+    const denied = await f.local.dispatchFetch(
+      "https://soccerbot.test/api/access",
+      { method: "POST", headers: { origin: "https://soccerbot.test" } },
+    );
+    assert.equal(denied.status, 503);
+    assert.equal(
+      (
+        await f.database
+          .prepare("SELECT COUNT(*) AS n FROM guest_access")
+          .first()
+      ).n,
+      0,
+    );
+    assert.equal(f.effects(), 0);
+  } finally {
+    await f.local.dispose();
+  }
+});
+
+test("closed health rejects foreign foundation and only reports registered after matching immutable identity", async () => {
+  for (const foreign of [false, true]) {
+    const f = await closedInstallation();
+    try {
+      const namespace = await f.local.getDurableObjectNamespace("COORDINATOR");
+      await f.database
+        .prepare("INSERT INTO foundation_identity VALUES(1,?,?,?,?)")
+        .bind(
+          foreign ? "f".repeat(32) : f.vars.DEPLOYMENT_ACCOUNT_ID,
+          "production",
+          f.vars.STATE_DATABASE_ID,
+          namespace.idFromName(f.vars.COORDINATOR_NAME).toString(),
+        )
+        .run();
+      const response = await f.local.dispatchFetch(
+        "https://soccerbot.test/api/health",
+      );
+      assert.equal(response.status, foreign ? 503 : 200);
+      if (!foreign)
+        assert.equal(
+          (await response.json()).foundationRegistration,
+          "registered",
+        );
+      assert.equal(f.effects(), 0);
+    } finally {
+      await f.local.dispose();
+    }
+  }
+});
+
+test("pending foundation health requires production and every effect switch explicitly disabled", async () => {
+  for (const vars of [
+    { ENVIRONMENT: "developer" },
+    ...[
+      "LIVE_CUSTOMER_ACCESS",
+      "PROVIDER_ACCESS",
+      "IDENTITY_DELIVERY",
+      "HITPAY_CHECKOUT",
+      "HITPAY_RECOVERY",
+      "HITPAY_WEBHOOK",
+      "PUBLIC_DISPLAY_WARMING",
+      "PUBLIC_TOKEN_REFRESH_AHEAD",
+    ].map((name) => ({
+      [name]: name === "PROVIDER_ACCESS" ? "trusted-reads" : "enabled",
+    })),
+  ]) {
+    const f = await closedInstallation(vars);
+    try {
+      assert.equal(
+        (await f.local.dispatchFetch("https://soccerbot.test/api/health"))
+          .status,
+        503,
+        JSON.stringify(vars),
+      );
+      assert.equal(
+        (
+          await f.database
+            .prepare("SELECT COUNT(*) AS n FROM foundation_identity")
+            .first()
+        ).n,
+        0,
+      );
+      assert.equal(f.effects(), 0);
+    } finally {
+      await f.local.dispose();
+    }
+  }
 });

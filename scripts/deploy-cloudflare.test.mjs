@@ -319,6 +319,8 @@ test("deployment readiness observes previous revision until the exact new revisi
       liveCustomerAccess: "enabled",
       effectiveProviderAccess: "trusted-reads",
       providerCredentialsPresent: true,
+      environment: "developer",
+      foundationRegistration: "registered",
     }),
     pause: async (ms) => pauses.push(ms),
   });
@@ -405,7 +407,7 @@ test("deployment checks actual sandbox flags and secret presence without requiri
   }
 });
 
-test("closed first-install health does not require provider credentials or an old revision", async () => {
+test("closed first-install health requires explicit pending registration without provider credentials or an old revision", async () => {
   const result = await awaitDeploymentHealth({
     revision,
     previousRevision: undefined,
@@ -415,6 +417,8 @@ test("closed first-install health does not require provider credentials or an ol
       liveCustomerAccess: "disabled",
       effectiveProviderAccess: "disabled",
       providerCredentialsPresent: false,
+      environment: "production",
+      foundationRegistration: "pending",
     }),
     pause: async () => {
       throw new Error("No propagation retry required");
@@ -431,6 +435,50 @@ test("closed first-install health does not require provider credentials or an ol
         effectiveProviderAccess: "disabled",
       }),
       pause: async () => {},
+    }),
+  );
+});
+
+test("closed deployment refuses missing or misleading registration and environment health", async () => {
+  const health = {
+    revision,
+    environment: "production",
+    foundationRegistration: "pending",
+    liveCustomerAccess: "disabled",
+    effectiveProviderAccess: "disabled",
+  };
+  for (const bad of [
+    { foundationRegistration: undefined },
+    { foundationRegistration: "unknown" },
+    { environment: "developer" },
+  ]) {
+    await assert.rejects(
+      awaitDeploymentHealth({
+        revision,
+        closed: true,
+        read: async () => ({ ...health, ...bad }),
+        pause: async () => assert.fail("Invalid health must not be retried"),
+      }),
+    );
+  }
+  const registered = await awaitDeploymentHealth({
+    revision,
+    closed: true,
+    read: async () => ({ ...health, foundationRegistration: "registered" }),
+    pause: async () => assert.fail(),
+  });
+  assert.equal(registered.health.foundationRegistration, "registered");
+  await assert.rejects(
+    awaitDeploymentHealth({
+      revision,
+      read: async () => ({
+        ...health,
+        environment: "developer",
+        liveCustomerAccess: "enabled",
+        effectiveProviderAccess: "trusted-reads",
+        providerCredentialsPresent: true,
+      }),
+      pause: async () => assert.fail(),
     }),
   );
 });

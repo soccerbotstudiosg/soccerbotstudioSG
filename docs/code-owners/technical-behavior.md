@@ -135,6 +135,8 @@ flowchart LR
 | `coordinatorName` / `coordinatorStub`                                             | Acquire the configured account coordinator with its placement hint.           | Validated configured identity; immutable first-use placement considerations.  | Do not rename the coordinator or create a replacement to bypass a mismatch.                                                       |
 | `assertBindingShape`, `foundationStatement`, `assertFoundation`, `verifyBindings` | Validate binding/resource identity against the registered foundation.         | Exact expected account/environment/resource identity and stored registration. | Fail closed on mismatch; inspect target and registration. No automatic self-registration or destructive reset.                    |
 
+`healthFoundation` is the read-only closed-install exception: an existing empty registration can be reported as pending only for explicitly disabled production. All protected routes still call `verifyBindings`; neither path auto-registers a database. Health reports the configured environment.
+
 Evidence: [foundation fixture and checks](../../worker/tests/foundation-fixture.mjs), [Worker tests](../../worker/tests), [deployment tests](../../scripts/deploy-cloudflare.test.mjs). Request errors are not evidence that no earlier request committed a write.
 
 ## 4. Email identity, Remember me and saved contact
