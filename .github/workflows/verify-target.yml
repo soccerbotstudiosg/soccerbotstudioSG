@@ -107,6 +107,8 @@ jobs:
           fetch-depth: 2
       - name: Inspect backend storage before setup
         run: |
+          ulimit -c
+          cat /proc/sys/kernel/core_pattern
           df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
           df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
@@ -127,6 +129,7 @@ jobs:
         run: |
           df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
           df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
+          timeout 30s du -x --max-depth=1 -B1 "$GITHUB_WORKSPACE" /var /root /home /opt 2>/dev/null || true
           du -x --max-depth=1 -B1 /tmp 2>/dev/null || true
           du -x -s -B1 /tmp /github/home /__w/_temp /__t "$GITHUB_WORKSPACE/node_modules" "$GITHUB_WORKSPACE/.next" "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/test-results" 2>/dev/null || true
       - run: npm run verify:browser
@@ -135,6 +138,7 @@ jobs:
         run: |
           df -h / /tmp /dev/shm "$GITHUB_WORKSPACE"
           df -i / /tmp /dev/shm "$GITHUB_WORKSPACE"
+          timeout 30s du -x --max-depth=1 -B1 "$GITHUB_WORKSPACE" /var /root /home /opt 2>/dev/null || true
           du -x --max-depth=1 -B1 /tmp 2>/dev/null || true
           du -x -s -B1 /tmp /github/home /__w/_temp /__t "$GITHUB_WORKSPACE/node_modules" "$GITHUB_WORKSPACE/.next" "$GITHUB_WORKSPACE/out" "$GITHUB_WORKSPACE/test-results" 2>/dev/null || true
       - name: Package and check the exact closed developer release
