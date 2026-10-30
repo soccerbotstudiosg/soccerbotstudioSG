@@ -74,11 +74,11 @@ for (const [name, mutate] of [
       )),
   ],
   [
-    "workflow path bypass",
+    "legacy automatic path trigger",
     (p) =>
       (p.workflow = p.workflow.replace(
-        "pull_request:",
-        "pull_request:\n    paths: [src/**]",
+        "workflow_dispatch:",
+        "workflow_dispatch:\n  pull_request:\n    paths: [src/**]",
       )),
   ],
   [

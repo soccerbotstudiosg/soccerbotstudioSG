@@ -10,6 +10,7 @@ import { checkExport } from "./check-export.mjs";
 import { exportServer } from "./serve-export.mjs";
 
 for (const [name, mutate] of [
+  ["legacy automatic trigger", (d) => (d.on.pull_request = {})],
   [
     "Cloudflare missing backend gate",
     (d) => d.jobs.cloudflare.needs.splice(1, 1),

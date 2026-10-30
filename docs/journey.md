@@ -293,6 +293,10 @@ The following milestone IDs and history are preserved from the former service-co
 
 ## Part 2 — Dated changes and evidence
 
+### 30 October 2026 — Consolidate client Actions entries
+
+Owner requested cleanup of duplicate verification and skipped deployment entries. Make inherited `verify.yml` manual-only and replace the two deployment workflows with one `deploy-release.yml`. Keep distinct staging/production jobs and secret bindings, explicit manual target, target-specific enable flags and concurrency, trusted-main checkout, verified artifact/provenance checks and no deployment access in PR verification. Failed verification may still create one skipped completion workflow because GitHub cannot filter completion triggers by conclusion. Existing history remains and completion-controller changes take effect only on default-branch main. Update workflow/policy regression checks and development/security links; no application, provider, dependency or deployment activation change. The first tooling run exposed a now-no-op mutation of the removed legacy PR trigger; replace it with explicit rejection of restored automatic triggers and retain exact unfiltered PR/main assertions on target verification. Preserve tooling-workflow-cleanup.log; all 161 tooling tests passed after correction, alongside source/policy/version, formatting and affected lint checks.
+
 ### 30 October 2026 — Separate target verification stages for private runners
 
 Client run 40985961618 at `8488cc3` passed the repaired animation-skip case across all three devices. Frontend job 123837833215 passed 77 browser cases but reached the overall tablet expired-selection deadline; artifact 12947831460's text trace shows successful expiry/removal assertions, replacement payment and confirmation before time ran out after reload. Preserve the archive and `frontend-40985961618.log`. Backend jobs 123837832901 and 123837833221 each passed 454 Worker cases, taking 12–14 minutes, then reached the unchanged 20-minute job deadline during browser checks. These cancellations are not completed browser acceptance.

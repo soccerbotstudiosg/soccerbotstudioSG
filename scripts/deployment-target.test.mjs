@@ -194,7 +194,8 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     YAML.parse(readFileSync(`.github/workflows/${name}.yml`, "utf8"));
   const verify = read("verify-target");
   assert.deepEqual(verify.on.push.branches, ["main"]);
-  assert.deepEqual(verify.on.pull_request.branches, ["main"]);
+  assert.deepEqual(verify.on.pull_request, { branches: ["main"] });
+  assert.deepEqual(verify.on.push, { branches: ["main"] });
   assert.equal(verify.on.pull_request_target, undefined);
   assert.deepEqual(Object.keys(verify.jobs).sort(), [
     "backend",
@@ -245,8 +246,18 @@ test("target workflows isolate PR credentials and deploy through trusted main af
     assert.equal(download.if, undefined);
     assert.ok(gate.steps.some((step) => step.run === "npm run verify:browser"));
   }
+  assert.deepEqual(Object.keys(read("verify").on), ["workflow_dispatch"]);
+  const workflow = read("deploy-release");
+  assert.deepEqual(Object.keys(workflow.jobs).sort(), [
+    "production",
+    "staging",
+  ]);
+  assert.deepEqual(workflow.on.workflow_dispatch.inputs.target.options, [
+    "staging",
+    "production",
+  ]);
   for (const target of ["staging", "production"]) {
-    const workflow = read(`deploy-${target}`);
+    const job = workflow.jobs[target];
     assert.deepEqual(Object.keys(workflow.on), [
       "workflow_run",
       "workflow_dispatch",
@@ -256,23 +267,27 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       types: ["completed"],
     });
     assert.ok(
-      workflow.jobs.deploy.if.includes(
-        "github.event.workflow_run.conclusion == 'success'",
-      ),
+      job.if.includes("github.event.workflow_run.conclusion == 'success'"),
     );
     assert.ok(
-      workflow.jobs.deploy.if.includes(
+      job.if.includes(
         `github.event.workflow_run.event == '${target === "staging" ? "pull_request" : "push"}'`,
       ),
     );
     assert.ok(
-      workflow.jobs.deploy.if.includes(
+      job.if.includes(
         "github.repository == 'soccerbotstudiosg/soccerbotstudioSG'",
       ),
     );
-    assert.equal(workflow.concurrency["cancel-in-progress"], false);
-    assert.ok(!workflow.jobs.deploy.environment);
-    const steps = workflow.jobs.deploy.steps;
+    assert.ok(job.if.includes(`inputs.target == '${target}'`));
+    assert.ok(
+      job.if.includes(`vars.${target.toUpperCase()}_DEPLOY_ENABLED == 'true'`),
+    );
+    assert.equal(job.env.RELEASE_TARGET, target);
+    assert.equal(job.concurrency.group, `deploy-cloudflare-${target}`);
+    assert.equal(job.concurrency["cancel-in-progress"], false);
+    assert.ok(!job.environment);
+    const steps = job.steps;
     assert.equal(steps[0].with.ref, "main");
     assert.equal(steps[3].run, "node scripts/verified-target-run.mjs");
     assert.equal(steps[4].run, "node scripts/deploy-cloudflare.mjs");

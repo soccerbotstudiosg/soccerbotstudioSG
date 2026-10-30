@@ -77,15 +77,8 @@ export function checkPolicy({
   } catch {
     return [...errors, "Invalid workflow YAML"];
   }
-  require(!!doc.on &&
-    Object.hasOwn(doc.on, "pull_request") &&
-    Object.hasOwn(doc.on, "push") &&
-    JSON.stringify(doc.on.push?.branches) ===
-      '["main"]', "PR/main verification triggers missing");
-  require(!doc.on?.pull_request?.paths &&
-    !doc.on?.pull_request?.["paths-ignore"] &&
-    !doc.on?.push?.paths &&
-    !doc.on?.push?.["paths-ignore"], "Workflow path bypass refused");
+  require(JSON.stringify(Object.keys(doc.on || {})) ===
+    '["workflow_dispatch"]', "Legacy verification must be manual-only");
   require(JSON.stringify(doc.permissions) ===
     '{"contents":"read"}', "Workflow must be read-only");
   for (const name of ["frontend", "backend", "live-email"]) {

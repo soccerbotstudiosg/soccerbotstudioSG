@@ -23,8 +23,6 @@ export function checkPagesPolicy(doc) {
           step.uses,
         ), "Workflow actions must use approved action names and full commit SHAs");
   require(same(Object.keys(doc.on || {}).sort(), [
-    "pull_request",
-    "push",
     "workflow_dispatch",
   ]), "Unexpected workflow trigger");
   require(same(Object.keys(doc.jobs || {}).sort(), [

@@ -1,0 +1,107 @@
+name: Deploy verified release
+on:
+  workflow_run:
+    workflows: [Verify deployment target]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Reviewed deployment target
+        type: choice
+        required: true
+        options: [staging, production]
+      revision:
+        description: Exact verified 40-character source revision
+        required: true
+        type: string
+      verify_run_id:
+        description: Successful Verify deployment target run ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+jobs:
+  staging:
+    name: Deploy staging
+    concurrency:
+      group: deploy-cloudflare-staging
+      cancel-in-progress: false
+    if: github.repository == 'soccerbotstudiosg/soccerbotstudioSG' && ((github.event_name == 'workflow_dispatch' && inputs.target == 'staging') || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request')) && github.ref == 'refs/heads/main' && vars.DEPLOYMENT_MODE == 'portable' && vars.STAGING_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RELEASE_TARGET: staging
+      RELEASE_REVISION: ${{ github.event.workflow_run.head_sha || inputs.revision }}
+      VERIFY_RUN_ID: ${{ github.event.workflow_run.id || inputs.verify_run_id }}
+      VERIFY_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: work/deploy-evidence/wrangler-logs
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Validate final-commit gates and download sealed target artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STAGING_RESERVED_REVISION: ${{ vars.STAGING_RESERVED_REVISION }}
+        run: node scripts/verified-target-run.mjs
+      - name: Deploy exact target artifact
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.STAGING_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.STAGING_CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/deploy-cloudflare.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: staging-deployment-${{ github.run_id }}-${{ github.run_attempt }}
+          path: work/deploy-evidence/deployment.json
+          if-no-files-found: warn
+          retention-days: 14
+  production:
+    name: Deploy production
+    concurrency:
+      group: deploy-cloudflare-production
+      cancel-in-progress: false
+    if: github.repository == 'soccerbotstudiosg/soccerbotstudioSG' && ((github.event_name == 'workflow_dispatch' && inputs.target == 'production') || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')) && github.ref == 'refs/heads/main' && vars.DEPLOYMENT_MODE == 'portable' && vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RELEASE_TARGET: production
+      RELEASE_REVISION: ${{ github.event.workflow_run.head_sha || inputs.revision }}
+      VERIFY_RUN_ID: ${{ github.event.workflow_run.id || inputs.verify_run_id }}
+      VERIFY_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: work/deploy-evidence/wrangler-logs
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Validate final-commit gates and download sealed target artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STAGING_RESERVED_REVISION: ${{ vars.STAGING_RESERVED_REVISION }}
+        run: node scripts/verified-target-run.mjs
+      - name: Deploy exact target artifact
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PRODUCTION_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.PRODUCTION_CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/deploy-cloudflare.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: production-deployment-${{ github.run_id }}-${{ github.run_attempt }}
+          path: work/deploy-evidence/deployment.json
+          if-no-files-found: warn
+          retention-days: 14
