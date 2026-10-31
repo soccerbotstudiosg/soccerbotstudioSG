@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import ts from "typescript";
 import {
   workerGroups,
   groupFiles,
@@ -38,18 +40,55 @@ function evidence() {
   });
 }
 
-test("Worker groups cover each whole suite and retain the complete 461-case inventory", () => {
+test("Worker groups cover each whole suite and retain the complete 465-case inventory", () => {
   const files = workerGroups.flatMap(({ id }) => groupFiles(id));
   assert.equal(files.length, 14);
   assert.equal(new Set(files).size, files.length);
   assert.deepEqual(files.sort(), groupFiles());
   assert.deepEqual(
     workerGroups.map(({ id }) => expectedTitles(id).length),
-    [109, 188, 164],
+    [113, 188, 164],
   );
-  assert.equal(expectedTitles().length, 461);
+  assert.equal(expectedTitles().length, 465);
   assert.throws(() => groupFiles("unknown"));
   validateGroupEvidence(evidence(), identity);
+});
+
+test("Worker inventory preserves literal source declaration order before runtime execution", () => {
+  const inventory = JSON.parse(
+    readFileSync("scripts/worker-test-inventory.json", "utf8"),
+  );
+  for (const file of groupFiles()) {
+    const source = ts.createSourceFile(
+      file,
+      readFileSync(file, "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.JS,
+    );
+    const declared = [];
+    /** Collect literal cases without executing fixtures or provider harnesses. */
+    function visit(node) {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === "test" &&
+        ts.isStringLiteral(node.arguments[0])
+      )
+        declared.push(node.arguments[0].text);
+      ts.forEachChild(node, visit);
+    }
+    visit(source);
+    // Parameterized titles still require complete runtime TAP validation.
+    const literalTitles = new Set(declared);
+    assert.deepEqual(
+      inventory
+        .filter((item) => item.file === file && literalTitles.has(item.title))
+        .map((item) => item.title),
+      declared,
+      file,
+    );
+  }
 });
 
 test("Worker aggregation rejects missing duplicate foreign failed and mixed-attempt groups", () => {
@@ -81,10 +120,20 @@ test("Worker TAP rejects missing repeated skipped cancelled and failed cases", (
     log.replace(/^# Subtest:.*\n/, ""),
     `# Subtest: ${expected[0]}\n${log}`,
     `${log}\nnot ok 1 - failure`,
+    log.replace(
+      `# Subtest: ${expected[0]}\n# Subtest: ${expected[1]}`,
+      `# Subtest: ${expected[1]}\n# Subtest: ${expected[0]}`,
+    ),
     ...["fail", "skipped", "cancelled", "todo"].map((key) =>
       log.replace(`# ${key} 0`, `# ${key} 1`),
     ),
-    log.replace("# pass 109", "# pass 108"),
-  ])
+    log.replace(`# pass ${expected.length}`, `# pass ${expected.length - 1}`),
+  ]) {
+    assert.notEqual(
+      bad,
+      log,
+      "Negative fixture must actually alter the receipt",
+    );
     assert.throws(() => validateRuntimeLog(bad, expected));
+  }
 });
