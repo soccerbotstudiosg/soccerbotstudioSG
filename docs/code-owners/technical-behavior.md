@@ -174,6 +174,8 @@ Evidence: [identity/remembered Worker tests](../../worker/tests), [email account
 
 ## 5. Catalogue, selection and capacity
 
+`NativeCalendarReads` includes the complete active linked roster, plans at most 96 range calls and uses the existing two-lane `parallelReads` helper for ongoing customer traffic. `calendarWindow` serializes admission so parallel reads retain the 300ms spacing check and account controls. Missing trainer/date results reject the refresh; only complete results are cached. Shared DTO limits bound daily/monthly offer counts and UTF-8 payload bytes before snapshot persistence. See [calendar contracts](../api-contracts.md#4-catalogue-and-selection-contracts) for exact limits. `sessionPrices` and `sessionRate` distinguish developer S$88/S$108 from client S$108/S$128; current native checkout contract/service mapping remains developer-only pending production integration.
+
 Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calendar](../../worker/public-calendar.ts), [native read operations](../../worker/native-checkout.ts), [provider session](../../worker/provider-session.ts), [browser availability](../../src/features/booking/availability.ts). Rules: BR-001, BR-002, BR-006, BR-014–017.
 
 | Function / operation                              | Behavior                                                                                          | Guards                                                                                                                             | Failure and recovery                                                                                                                                     |

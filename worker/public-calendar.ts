@@ -4,7 +4,7 @@ import {
   withinOpeningHours,
   NATIVE_TRIAL_LEAD_MS,
 } from "../src/domain/booking-policy";
-import { sessionRate } from "../src/domain/session-pricing";
+import { sessionPrices, sessionRate } from "../src/domain/session-pricing";
 import { ApiError, policy, liveCustomerAccess } from "./policy";
 import { providerSecrets } from "./provider-transport";
 import type { ProviderSession, ProviderControl } from "./provider-session";
@@ -105,19 +105,26 @@ export function calendarWindow(options: ReadOptions) {
   };
   assertOpen();
   let lastCall = 0;
+  let admission: Promise<unknown> = Promise.resolve();
   const control: ProviderControl = {
     ...options.control,
-    reserve: async (metadata) => {
-      const delay = Math.max(
-        0,
-        Math.max(lastCall, options.lastDispatchMs?.() ?? 0) + 300 - Date.now(),
-      );
-      if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
-      assertOpen();
-      if (options.accounting().used >= window.maximumUsed)
-        throw new ApiError(503, "public_calendar_budget_exhausted");
-      lastCall = Date.now();
-      return options.control.reserve(metadata);
+    reserve: (metadata) => {
+      const pending = admission.then(async () => {
+        const delay = Math.max(
+          0,
+          Math.max(lastCall, options.lastDispatchMs?.() ?? 0) +
+            300 -
+            Date.now(),
+        );
+        if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+        assertOpen();
+        if (options.accounting().used >= window.maximumUsed)
+          throw new ApiError(503, "public_calendar_budget_exhausted");
+        lastCall = Date.now();
+        return options.control.reserve(metadata);
+      });
+      admission = pending.catch(() => undefined);
+      return pending;
     },
   };
   const binding = {
@@ -204,6 +211,7 @@ export async function windowCalendar(
   const read = (serviceId: string) =>
     options.cache.read({
       cacheOnly: options.cacheOnly,
+      parallelReads: liveCustomerAccess(env) && control.parallelReads !== false,
       scope: JSON.stringify([binding, p.SOURCE_REVISION]),
       month,
       serviceId,
@@ -216,7 +224,9 @@ export async function windowCalendar(
           );
           if (
             service?.priceMinor !==
-            (serviceId === p.PREMIUM_SERVICE_ID ? 10800 : 8800)
+            (serviceId === p.PREMIUM_SERVICE_ID
+              ? sessionPrices(p.ENVIRONMENT).premium
+              : sessionPrices(p.ENVIRONMENT).ordinary)
           )
             throw new ApiError(503, "native_service_price_changed");
         }
@@ -233,7 +243,7 @@ export async function windowCalendar(
       throw new ApiError(503, "native_pricing_configuration_invalid");
     const selectedDates =
       options.fresh && options.date ? [options.date] : dates;
-    const rates = selectedDates.map((date) => sessionRate(date));
+    const rates = selectedDates.map((date) => sessionRate(date, p.ENVIRONMENT));
     if (rates.some((rate) => !rate))
       throw new ApiError(503, "native_pricing_calendar_unavailable");
     const ordinary = rates.some((rate) => !rate!.premium)
@@ -249,7 +259,9 @@ export async function windowCalendar(
         premium?.observedAtMs ?? Date.now(),
       ),
       dates: selectedDates.flatMap((date) => {
-        const source = sessionRate(date)!.premium ? premium : ordinary;
+        const source = sessionRate(date, p.ENVIRONMENT)!.premium
+          ? premium
+          : ordinary;
         const day = source?.dates.find((entry) => entry.date === date);
         return day
           ? [

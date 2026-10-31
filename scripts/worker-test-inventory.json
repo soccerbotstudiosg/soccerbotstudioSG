@@ -156,6 +156,22 @@
     "title": "customer-choice prebooking keeps the requested eligible trainer and refuses unavailable or foreign choices"
   },
   {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar supports growing rosters with two read lanes complete offers and shared cache"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar rejects excessive work and offer volume without returning a truncated roster"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar drains started reads after failure and never caches incomplete trainers"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "parallel calendar admission preserves spacing and rechecks exhausted budgets"
+  },
+  {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "combined hold performs one preflight and preserves immutable identity across concurrent requests and restoration"
   },

@@ -21,6 +21,7 @@ const {
   customerCatalogue,
   publicCalendar,
   windowCatalogue,
+  calendarWindow,
   windowCalendar,
   windowAvailability,
   NativeCalendarReads,
@@ -1065,6 +1066,149 @@ function monthFixture() {
   };
   return { input, calls };
 }
+/** Build a synthetic growing roster without calling a provider. */
+function rosterFixture(count) {
+  const catalogue = calendarFixture();
+  catalogue.instructors = Array.from({ length: count }, (_, index) => ({
+    ...catalogue.instructors[0],
+    id: String(index + 100),
+    name: `Trainer ${index + 1}`,
+  }));
+  catalogue.services[0].instructorIds = catalogue.instructors.map(
+    (person) => person.id,
+  );
+  return catalogue;
+}
+test("calendar supports growing rosters with two read lanes complete offers and shared cache", async () => {
+  const { input } = monthFixture();
+  let active = 0,
+    maximum = 0,
+    calls = 0;
+  const catalogue = rosterFixture(20);
+  const starts = [
+    "12:00:00",
+    "12:50:00",
+    "13:40:00",
+    "14:30:00",
+    "15:20:00",
+    "16:10:00",
+    "17:00:00",
+    "17:50:00",
+    "18:40:00",
+  ];
+  const request = {
+    ...input,
+    parallelReads: true,
+    catalogue: async () => catalogue,
+    exchange: async (operation) => {
+      active++;
+      calls++;
+      maximum = Math.max(maximum, active);
+      await new Promise((resolve) => setImmediate(resolve));
+      active--;
+      return {
+        receivedAtMs: Date.now(),
+        body: Object.fromEntries(
+          input.dates
+            .filter((date) => date >= operation.from && date <= operation.to)
+            .map((date) => [date, starts]),
+        ),
+      };
+    },
+  };
+  const cache = new NativeCalendarReads();
+  const [first, shared] = await Promise.all([
+    cache.read(request),
+    cache.read(request),
+  ]);
+  assert.equal(calls, 60);
+  assert.equal(maximum, 2);
+  assert.equal(active, 0);
+  assert.deepEqual(first, shared);
+  assert.equal(first.dates.length, 31);
+  for (const day of first.dates) {
+    assert.equal(day.offers.length, 180);
+    assert.deepEqual(
+      new Set(day.offers.map((offer) => offer.instructorId)),
+      new Set(catalogue.instructors.map((person) => person.id)),
+    );
+  }
+  await cache.read({ ...request, cacheOnly: true });
+  assert.equal(calls, 60);
+});
+test("calendar rejects excessive work and offer volume without returning a truncated roster", async () => {
+  const { input, calls } = monthFixture();
+  await assert.rejects(
+    new NativeCalendarReads().read({
+      ...input,
+      catalogue: async () => rosterFixture(33),
+      parallelReads: true,
+    }),
+    /calendar_read_budget_exceeded/,
+  );
+  assert.equal(calls.length, 0);
+  const cache = new NativeCalendarReads();
+  const request = {
+    ...input,
+    dates: [input.dates[0]],
+    catalogue: async () => rosterFixture(96),
+    parallelReads: true,
+    exchange: async () => ({
+      receivedAtMs: Date.now(),
+      body: {
+        [input.dates[0]]: Array.from(
+          { length: 21 },
+          (_, index) => `${String(index).padStart(2, "0")}:00:00`,
+        ),
+      },
+    }),
+  };
+  await assert.rejects(cache.read(request), /calendar_offer_budget_exceeded/);
+  await assert.rejects(
+    cache.read({ ...request, cacheOnly: true }),
+    /display_cache_miss/,
+  );
+});
+test("calendar drains started reads after failure and never caches incomplete trainers", async () => {
+  const { input } = monthFixture();
+  let calls = 0,
+    finished = 0,
+    release;
+  const sibling = new Promise((resolve) => {
+    release = resolve;
+  });
+  const request = {
+    ...input,
+    parallelReads: true,
+    catalogue: async () => rosterFixture(5),
+    exchange: async (operation) => {
+      calls++;
+      if (calls === 1) throw new Error("provider unavailable");
+      await sibling;
+      finished++;
+      return input.exchange(operation);
+    },
+  };
+  const cache = new NativeCalendarReads();
+  let settled = false;
+  const rejected = assert
+    .rejects(cache.read(request), /provider unavailable/)
+    .then(() => {
+      settled = true;
+    });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(calls, 2);
+  assert.equal(settled, false);
+  release();
+  await rejected;
+  assert.equal(finished, 1);
+  assert.equal(calls, 2);
+  await assert.rejects(
+    cache.read({ ...request, cacheOnly: true }),
+    /display_cache_miss/,
+  );
+  assert.equal((await cache.read(input)).dates.length, 31);
+});
 test("calendar range cache batches a month shares reads and preserves explicit empty versus unknown days", async () => {
   const { input, calls } = monthFixture();
   const cache = new NativeCalendarReads();
@@ -1085,39 +1229,32 @@ test("calendar range cache batches a month shares reads and preserves explicit e
   first.dates[0].offers.length = 0;
   assert.equal((await cache.read(input)).dates[0].offers.length, 1);
   assert.equal(calls.length, 3);
-  const unknown = await new NativeCalendarReads().read({
-    ...input,
-    exchange: async (request) => {
-      const response = await input.exchange(request);
-      delete response.body["2027-01-03"];
-      return response;
-    },
-  });
-  assert.equal(
-    unknown.dates.some((d) => d.date === "2027-01-03"),
-    false,
+  await assert.rejects(
+    new NativeCalendarReads().read({
+      ...input,
+      exchange: async (request) => {
+        const response = await input.exchange(request);
+        delete response.body["2027-01-03"];
+        return response;
+      },
+    }),
+    /calendar_date_unknown/,
   );
-  // A positive offer establishes display availability even when another
-  // instructor's omitted date is unknown. Empty still requires every reply.
-  const mixed = await new NativeCalendarReads().read({
-    ...input,
-    catalogue: async () => {
-      const value = calendarFixture();
-      value.services[0].instructorIds = ["14", "15"];
-      return value;
-    },
-    exchange: async (request) =>
-      request.instructorId === "14"
-        ? { receivedAtMs: Date.now(), body: {} }
-        : input.exchange(request),
-  });
-  assert.equal(
-    mixed.dates.find((day) => day.date === "2027-01-01").offers.length,
-    1,
-  );
-  assert.equal(
-    mixed.dates.some((day) => day.date === "2027-01-02"),
-    false,
+  // A partial trainer list must not masquerade as complete availability.
+  await assert.rejects(
+    new NativeCalendarReads().read({
+      ...input,
+      catalogue: async () => {
+        const value = calendarFixture();
+        value.services[0].instructorIds = ["14", "15"];
+        return value;
+      },
+      exchange: async (request) =>
+        request.instructorId === "14"
+          ? { receivedAtMs: Date.now(), body: {} }
+          : input.exchange(request),
+    }),
+    /calendar_date_unknown/,
   );
 });
 test("calendar cache isolates scope and invalidates changed dates without stale fallback", async () => {
@@ -1218,6 +1355,63 @@ test("calendar invalidation fences an in-flight stale response", async () => {
   cache.invalidateDate("2027-01-01");
   release();
   await assert.rejects(pending, /calendar_read_superseded/);
+});
+
+test("parallel calendar admission preserves spacing and rechecks exhausted budgets", async (t) => {
+  const now = Date.parse("2026-11-01T00:00:00Z");
+  t.mock.timers.enable({ apis: ["Date", "setTimeout"], now });
+  const config = ts.parseConfigFileTextToJson(
+    "wrangler.jsonc",
+    readFileSync("wrangler.jsonc", "utf8"),
+  ).config;
+  const starts = [];
+  const input = {
+    env: {
+      ...config.vars,
+      SOURCE_REVISION: "a".repeat(40),
+      PROVIDER_ACCESS: "trusted-reads",
+      CAMPAIGN_END_MS: String(now + 600000),
+      PUBLIC_CALENDAR_WINDOW_JSON: JSON.stringify({
+        sourceRevision: "a".repeat(40),
+        serviceId: "12",
+        dates: ["2026-11-02"],
+        notBeforeMs: now,
+        expiresMs: now + 600000,
+        startingUsed: 0,
+        maximumUsed: 2,
+      }),
+      SIMPLYBOOK_DEV_COMPANY_LOGIN: "synthetic-company",
+      SIMPLYBOOK_DEV_ADMIN_LOGIN: "synthetic-admin",
+      SIMPLYBOOK_DEV_API_KEY: "synthetic-key",
+      SIMPLYBOOK_DEV_ADMIN_API_USER_KEY: "synthetic-key",
+    },
+    accounting: () => ({ used: starts.length, active: 0 }),
+    control: {
+      reserve: async () => {
+        starts.push(Date.now());
+        return "test";
+      },
+    },
+  };
+  const { control } = calendarWindow(input);
+  const first = control.reserve(),
+    second = control.reserve();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(starts, [now]);
+  t.mock.timers.tick(299);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(starts.length, 1);
+  t.mock.timers.tick(1);
+  await Promise.all([first, second]);
+  assert.deepEqual(starts, [now, now + 300]);
+  const rejected = assert.rejects(
+    control.reserve(),
+    /public_calendar_budget_exhausted/,
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+  t.mock.timers.tick(300);
+  await rejected;
+  assert.equal(starts.length, 2);
 });
 
 test("anonymous calendar is bounded and shared without exposing provider slots or customer data", async () => {

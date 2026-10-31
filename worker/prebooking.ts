@@ -111,6 +111,7 @@ export function nativeContractSelection(
     return { serviceId: contract.serviceId, priceMinor: contract.priceMinor };
   const rate = sessionRate(
     new Date(startMs + 28800000).toISOString().slice(0, 10),
+    contract.environmentId,
   );
   if (!rate) throw new ApiError(503, "native_pricing_calendar_unavailable");
   return {

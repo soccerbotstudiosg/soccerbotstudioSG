@@ -172,6 +172,14 @@
     "title": "totals a mixed demo cart by date and preserves native quote amounts"
   },
   {
+    "file": "src/domain/session-pricing.test.ts",
+    "title": "keeps client rates separate from staging and preserves client quotes in the cart"
+  },
+  {
+    "file": "src/domain/session-pricing.test.ts",
+    "title": "bounds calendar day month and UTF-8 payload sizes without truncating offers"
+  },
+  {
     "file": "src/features/assistant/assistant.test.tsx",
     "title": "Escape closes the assistant after a touch reply leaves focus outside the panel"
   },
@@ -1134,6 +1142,10 @@
   {
     "file": "src/services/async-booking.test.ts",
     "title": "availability accepts trainer alternatives but checkout rejects two trainers for the same studio time"
+  },
+  {
+    "file": "src/services/async-booking.test.ts",
+    "title": "native availability preserves every trainer choice beyond the old hundred-offer limit"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",

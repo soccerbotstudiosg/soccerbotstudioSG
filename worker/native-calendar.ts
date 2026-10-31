@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {
   nativeCalendarSchema,
+  MAX_DAILY_NATIVE_OFFERS,
+  MAX_CALENDAR_NATIVE_OFFERS,
   type nativeOfferSchema,
 } from "../src/domain/native-checkout";
 import type { ProviderCatalogue } from "../src/domain/catalog";
@@ -8,8 +10,10 @@ import type { NativeExchange } from "./provider-transport";
 import { ApiError } from "./policy";
 import { offeredStarts } from "./prebooking";
 import { freshReceipt } from "./catalogue";
+import { parallelReads } from "./parallel-reads";
 
 export const CALENDAR_CACHE_MS = 60000;
+export const CALENDAR_RANGE_READ_LIMIT = 96;
 const dayMs = 86400000;
 const dateMs = (date: string) => Date.parse(`${date}T00:00:00Z`);
 /** Enumerate the dates covered by the requested calendar range. */
@@ -69,6 +73,7 @@ export class NativeCalendarReads {
     serviceId: string;
     dates: string[];
     cacheOnly?: boolean;
+    parallelReads?: boolean;
     catalogue: () => Promise<ProviderCatalogue>;
     exchange: NativeExchange;
   }): Promise<Calendar> {
@@ -114,15 +119,20 @@ export class NativeCalendarReads {
           (service.instructorIds === null ||
             service.instructorIds.includes(i.id)),
       );
-      if (!instructors.length || instructors.length > 3)
+      if (!instructors.length)
         throw new ApiError(503, "native_instructors_unavailable");
+      const ranges = calendarRanges(dates);
+      // Refuse oversized work before availability dispatch, never truncate
+      // the roster. Provider admission and the original freshness bound apply.
+      if (instructors.length * ranges.length > CALENDAR_RANGE_READ_LIMIT)
+        throw new ApiError(503, "calendar_read_budget_exceeded");
       const offers = new Map<string, z.infer<typeof nativeOfferSchema>[]>(
         dates.map((d) => [d, []]),
       );
-      const complete = new Set(dates);
       let observedAtMs = catalogue.observedAtMs;
-      for (const instructor of instructors)
-        for (const range of calendarRanges(dates)) {
+      let offerCount = 0;
+      const operations = instructors.flatMap((instructor) =>
+        ranges.map((range) => async () => {
           const response = await input.exchange({
             kind: "availability-range",
             serviceId: service.id,
@@ -136,13 +146,17 @@ export class NativeCalendarReads {
           if (Object.keys(matrix).some((date) => !range.dates.includes(date)))
             throw new ApiError(503, "calendar_representation_unavailable");
           for (const date of range.dates) {
-            // Omitted days are unknown, not an invented closed-day declaration.
-            if (!(date in matrix)) {
-              complete.delete(date);
-              continue;
-            }
+            // Unknown is neither closed nor a complete list of trainer choices.
+            if (!(date in matrix))
+              throw new ApiError(503, "calendar_date_unknown");
             const day = offers.get(date)!;
             for (const time of offeredStarts({ [date]: matrix[date] }, date)) {
+              if (
+                day.length >= MAX_DAILY_NATIVE_OFFERS ||
+                offerCount >= MAX_CALENDAR_NATIVE_OFFERS
+              )
+                throw new ApiError(503, "calendar_offer_budget_exceeded");
+              offerCount++;
               const startMs = Date.parse(`${date}T${time}+08:00`);
               day.push({
                 serviceId: service.id,
@@ -155,18 +169,25 @@ export class NativeCalendarReads {
               });
             }
           }
-        }
+        }),
+      );
+      if (input.parallelReads) await parallelReads(operations);
+      else for (const operation of operations) await operation();
       freshReceipt(observedAtMs, Date.now(), CALENDAR_CACHE_MS);
       return nativeCalendarSchema.parse({
         month: input.month,
         observedAtMs,
-        dates: dates
-          .filter((d) => complete.has(d) || offers.get(d)!.length > 0)
-          .map((date) => ({
-            date,
-            observedAtMs,
-            offers: offers.get(date)!.sort((a, b) => a.startMs - b.startMs),
-          })),
+        dates: dates.map((date) => ({
+          date,
+          observedAtMs,
+          offers: offers
+            .get(date)!
+            .sort(
+              (a, b) =>
+                a.startMs - b.startMs ||
+                a.instructorId.localeCompare(b.instructorId),
+            ),
+        })),
       });
     })();
     selected.pending = pending;
