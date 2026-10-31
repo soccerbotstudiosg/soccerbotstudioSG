@@ -1545,6 +1545,66 @@ test("anonymous calendar is bounded and shared without exposing provider slots o
     },
   };
   await assert.rejects(customerCatalogue(visitor, privateEnv, Date.now()));
+  const clientEnv = {
+    ...env,
+    ENVIRONMENT: "production",
+    CLIENT_SANDBOX_ACCESS: "enabled",
+    LIVE_CUSTOMER_ACCESS: "enabled",
+    PRIMARY_SERVICE_ID: "12",
+    PREMIUM_SERVICE_ID: "13",
+    SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_ADMIN_LOGIN: "synthetic-admin",
+    SIMPLYBOOK_PROD_API_KEY: "synthetic-key",
+    SIMPLYBOOK_PROD_ADMIN_API_USER_KEY: "synthetic-key",
+    COORDINATOR_LOCATION_HINT: "apac-ne",
+    HITPAY_EXPECTED_MERCHANT: "synthetic",
+    HITPAY_MERCHANT: "synthetic",
+    HITPAY_EXPECTED_BUSINESS_ID: "00000000-0000-4000-8000-000000000003",
+    HITPAY_BUSINESS_ID: "00000000-0000-4000-8000-000000000003",
+    HITPAY_CONTRACT_ACCEPTED: "sandbox-reviewed",
+    SIMPLYBOOK_EXTERNAL_PAYMENT: "sandbox-reviewed",
+    SIMPLYBOOK_EXTERNAL_PROCESSOR: "manual",
+  };
+  const clientCatalogue = await windowCatalogue({
+    ...input,
+    env: clientEnv,
+    provider: {
+      ...input.provider,
+      catalogue: async () => {
+        const value = calendarFixture();
+        return {
+          ...value,
+          binding: {
+            ...value.binding,
+            environmentId: "production",
+            companyLogin: "synthetic-client",
+          },
+        };
+      },
+    },
+  });
+  assert.equal(clientCatalogue.environment, "production");
+  assert.deepEqual(
+    clientCatalogue.services.map((service) => service.id),
+    ["12"],
+  );
+  assert.equal("binding" in clientCatalogue, false);
+  assert.deepEqual(
+    await customerCatalogue(
+      visitor,
+      {
+        ...clientEnv,
+        COORDINATOR: {
+          getByName: () => ({
+            windowCatalogue: async () => ({ ok: true, value: clientCatalogue }),
+          }),
+        },
+      },
+      Date.now(),
+    ),
+    clientCatalogue,
+  );
   const protectedMonth = await windowCalendar({ ...input, serviceId: "12" });
   assert.equal(protectedMonth.dates[0].offers.length, 1);
   assert.equal(
