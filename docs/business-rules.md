@@ -28,6 +28,8 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 **BR-002** — SimplyBook owns services, schedules, eligible instructors, customer/booking/invoice records and configured shared-studio capacity. Browser labels, prices, dates, IDs and cached availability are never write authority. The server validates identity, account, service, time, price and current operation scope. Direct checkout deliberately omits extra live catalogue/availability preflight; provider creation enforces availability and every creation response is validated. Capacity configuration does not prove batch atomicity.
 
+Owner-confirmed rule (31 October 2026): both staging and client production allow only one simultaneous booking across the SimplyBook account, across all trainers/services, including the changeover buffer. Admins have no exemption. Trainer weekly availability remains off; approved date-specific entries define working availability. Provider settings confirmation and controlled enforcement acceptance are separate evidence.
+
 ### Identity, privacy and environment isolation
 
 <a id="br-003"></a>

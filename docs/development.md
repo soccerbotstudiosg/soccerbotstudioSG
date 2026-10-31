@@ -9,7 +9,7 @@ Paths and commands below assume the repository root unless stated otherwise. Git
 | Way                                                                      | Best suited to                                                          | Where work happens                                      | How changes return                                                                               |
 | ------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | [1. Local VS Code](#1-local-development-with-vs-code)                    | Interactive editing, local debugging and owner-operated browser testing | Your computer and task branch                           | Review diff, commit, push, draft PR                                                              |
-| [2. Codex Cloud](#2-development-with-codex-cloud)                        | Repository inspection, focused fixes and automated non-browser checks   | Connected repository and managed workspace              | Agent pushes a task branch and opens/updates a draft PR when available                           |
+| [2. Cloud Containers](#2-development-with-cloud-containers)              | Repository inspection, focused fixes and automated non-browser checks   | Connected repository and managed workspace              | Agent pushes a task branch and opens/updates a draft PR when available                           |
 | [3. ZIP attached to chat](#3-development-through-a-zip-attached-to-chat) | File-based review when direct repository access is unavailable          | A clearly identified source snapshot and chat workspace | Reviewed patch/files or guarded installer, then integration into a local branch and normal PR/CI |
 
 All three routes converge on the same reviewed source and verification process. A ZIP or chat response is not a separate deployment pipeline.
@@ -78,7 +78,7 @@ Edit the existing owning module and affected tests, then run checks appropriate 
 
 Human/CI browser verification is separate from assistant non-browser checks. Local browser setup may require the matching Playwright browser/system dependencies; the owner installs these deliberately. Do not upgrade Playwright solely to obtain a browser executable. The complete final-revision CI gates still apply before readiness.
 
-## 2. Development with Codex Cloud
+## 2. Development with Cloud Containers
 
 Connect the intended repository/account and select a workspace for the task. Check branch, HEAD, working tree and remote main; a previous workspace can contain an unfinished task. Confirm the managed environment is ready and supports required tools/network hosts before relying on it.
 

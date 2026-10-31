@@ -229,7 +229,9 @@ test("reload and duplicate tabs retain one checking window with a shared server 
 test("the Payment preview entry and temporary checking failure retain customer selections and contact", async ({
   page,
 }) => {
-  const { addDays, dateLabel, todaySG } = await import("../src/domain/dates");
+  const { dateLabel } = await import("../src/domain/dates");
+  // Keep calendar selection inside a known month, independent of the CI date.
+  await page.clock.install({ time: new Date("2026-10-05T08:00:00+08:00") });
   await page.goto(sitePath("/book/account/"));
   await page
     .getByRole("dialog", { name: "Get the SoccerBot Player App" })
@@ -239,7 +241,7 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page.getByRole("link", { name: "See available times" }).click();
   await page
     .getByRole("button", {
-      name: dateLabel(addDays(todaySG(), 1)),
+      name: dateLabel("2026-10-06"),
       exact: true,
     })
     .click();
@@ -263,6 +265,8 @@ test("the Payment preview entry and temporary checking failure retain customer s
   const before = await page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!),
   );
+  // Synthetic checkout uses real server deadlines; restore wall time first.
+  await page.clock.setSystemTime(new Date());
   await page
     .getByRole("link", { name: "Try separate checkout · Synthetic Preview" })
     .click();
