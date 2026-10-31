@@ -124,7 +124,7 @@ export type ProviderCatalogue = z.infer<typeof catalogueSchema>;
 // Public projection excludes the credential/company binding used by the cache.
 export const customerCatalogueSchema = z
   .strictObject({
-    environment: z.literal("developer"),
+    environment: z.enum(["developer", "production"]),
     displayExpiresAtMs: z.number().int().nonnegative().safe().optional(),
     observedAtMs: catalogueSchema.shape.observedAtMs,
     complete: catalogueSchema.shape.complete,

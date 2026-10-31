@@ -23,21 +23,23 @@ const catalogue = () => ({
   instructors: [{ id: "9", name: "Updated instructor", active: true }],
 });
 test("customer catalogue accepts current mutable provider data only through same-origin public display reads", async () => {
-  const customerCatalogueService = createCustomerCatalogueService();
-  const data = catalogue(),
-    request = vi.fn().mockResolvedValue(Response.json(data));
-  vi.stubGlobal("fetch", request);
-  const signal = new AbortController().signal;
-  expect(await customerCatalogueService.read(signal)).toEqual(data);
-  expect(request).toHaveBeenCalledWith(
-    "/api/catalogue",
-    expect.objectContaining({
-      signal: expect.any(AbortSignal),
-      credentials: "same-origin",
-      cache: "no-store",
-      redirect: "error",
-    }),
-  );
+  for (const environment of ["developer", "production"]) {
+    const customerCatalogueService = createCustomerCatalogueService();
+    const data = { ...catalogue(), environment },
+      request = vi.fn().mockResolvedValue(Response.json(data));
+    vi.stubGlobal("fetch", request);
+    const signal = new AbortController().signal;
+    expect(await customerCatalogueService.read(signal)).toEqual(data);
+    expect(request).toHaveBeenCalledWith(
+      "/api/catalogue",
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+        credentials: "same-origin",
+        cache: "no-store",
+        redirect: "error",
+      }),
+    );
+  }
 });
 test("customer catalogue rejects stale future partial foreign oversized and unavailable data without fallback", async () => {
   const customerCatalogueService = createCustomerCatalogueService();
@@ -47,7 +49,7 @@ test("customer catalogue rejects stale future partial foreign oversized and unav
     Response.json({ ...catalogue(), observedAtMs: 1 }),
     Response.json({ ...catalogue(), observedAtMs: Date.now() + 100000 }),
     Response.json({ ...catalogue(), complete: false }),
-    Response.json({ ...catalogue(), environment: "production" }),
+    Response.json({ ...catalogue(), environment: "unrecognised" }),
     Response.json({ ...catalogue(), privateCustomer: "must not be disclosed" }),
     new Response("x".repeat(131073)),
     new Response(null, { status: 503 }),
