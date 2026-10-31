@@ -3526,3 +3526,93 @@ test("direct checkout preserves provider shared-studio rejection across differen
     await m.close();
   }
 });
+
+test("client sandbox guest checkout preserves production scope through duplicate requests and paid recovery", async () => {
+  const completion = Promise.withResolvers();
+  const m = await createBookingMechanism({
+    clientSandbox: true,
+    onLog(message) {
+      if (!message.startsWith("{")) return;
+      const event = JSON.parse(message);
+      if (event.event === "confirmation_trace" && event.boundary === "recovery")
+        completion.resolve(event);
+    },
+  });
+  try {
+    const c = await customer(m);
+    c.input.sessions[0].serviceId = "3";
+    c.input.sessions[0].totalMinor = 10800;
+    const results = await Promise.all(
+      [c.send(), c.send()].map((r) => checkoutResult(r, 200)),
+    );
+    assert.ok(results.every((r) => r.attemptId === c.input.key));
+    assert.ok(
+      results.some((r) => r.state === "associated"),
+      JSON.stringify(results),
+    );
+    const pay = () =>
+      m.mf.dispatchFetch(m.origin + `/api/booking/hitpay/${c.input.key}`, {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify({ accepted: true }),
+      });
+    await checkoutResult(pay(), 200);
+    await checkoutResult(pay(), 200);
+    const attempt = await m.db
+      .prepare("SELECT intent_json FROM attempts WHERE id=?")
+      .bind(c.input.key)
+      .first();
+    assert.equal(JSON.parse(attempt.intent_json).environmentId, "production");
+    assert.equal(JSON.parse(attempt.intent_json).totalMinor, 10800);
+    assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
+    assert.equal(
+      m.calls.filter(
+        (c) => c.method === "POST" && c.url.endsWith("/v1/payment-requests"),
+      ).length,
+      1,
+    );
+    assert.equal((await m.completePayment()).status, 202);
+    const event = await completion.promise;
+    assert.equal(event.result, "complete");
+    const receipt = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${c.input.key}/receipt`,
+      { headers: c.headers },
+    );
+    assert.equal(receipt.status, 200, await receipt.text());
+    assert.equal(
+      m.calls.filter((c) => c.url.endsWith("/accept-payment")).length,
+      1,
+    );
+    assert.ok(
+      m.calls
+        .filter((c) => c.url.includes("hit-pay.com"))
+        .every((c) => new URL(c.url).hostname === "api.sandbox.hit-pay.com"),
+    );
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});
+
+test("client sandbox disabled or foreign pairing refuses guest booking before provider dispatch", async () => {
+  for (const bindings of [
+    { CLIENT_SANDBOX_ACCESS: "disabled" },
+    { HITPAY_MERCHANT: "foreign" },
+    { SIMPLYBOOK_PROD_COMPANY_LOGIN: "foreign" },
+  ]) {
+    const m = await createBookingMechanism({ clientSandbox: true, bindings });
+    try {
+      const c = await customer(m);
+      c.input.sessions[0].serviceId = "3";
+      c.input.sessions[0].totalMinor = 10800;
+      const response = await c.send();
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), {
+        error: "combined_hold_unavailable",
+      });
+      assert.deepEqual(m.calls, []);
+    } finally {
+      await m.close();
+    }
+  }
+});

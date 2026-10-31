@@ -1,5 +1,5 @@
 import { authenticate, type Access } from "./access";
-import { ApiError, digest } from "./policy";
+import { providerCredentialName, ApiError, digest } from "./policy";
 import { intentSchema, associationSchema } from "./journal";
 import { assertHitpayCreation, hitpaySetting } from "./hitpay-contract";
 import { prepareHitpay } from "./hitpay-journal";
@@ -99,7 +99,10 @@ export async function payHitpayHold(
     throw new ApiError(409, "hitpay_scope_mismatch");
   const scope: NativeScope = {
     attemptId: id,
-    companyLogin: hitpaySetting(env, "SIMPLYBOOK_DEV_COMPANY_LOGIN"),
+    companyLogin: hitpaySetting(
+      env,
+      providerCredentialName(env, "COMPANY_LOGIN"),
+    ),
     timezone: "Asia/Singapore",
     intent,
   };
@@ -148,7 +151,7 @@ export async function payHitpayHold(
             env.STATE,
             id,
             bookingId,
-            hitpaySetting(env, "SIMPLYBOOK_DEV_SIGNING_SECRET"),
+            hitpaySetting(env, providerCredentialName(env, "SIGNING_SECRET")),
           ),
         exchange: async (operation, signal) => {
           await assertHeld();

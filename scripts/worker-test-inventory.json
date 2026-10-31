@@ -77,6 +77,18 @@
   },
   {
     "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar supports growing rosters with two read lanes complete offers and shared cache"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar rejects excessive work and offer volume without returning a truncated roster"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "calendar drains started reads after failure and never caches incomplete trainers"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
     "title": "calendar range cache batches a month shares reads and preserves explicit empty versus unknown days"
   },
   {
@@ -90,6 +102,10 @@
   {
     "file": "worker/tests/catalogue.test.mjs",
     "title": "calendar invalidation fences an in-flight stale response"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "parallel calendar admission preserves spacing and rechecks exhausted budgets"
   },
   {
     "file": "worker/tests/catalogue.test.mjs",
@@ -154,6 +170,18 @@
   {
     "file": "worker/tests/catalogue.test.mjs",
     "title": "customer-choice prebooking keeps the requested eligible trainer and refuses unavailable or foreign choices"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "production provider credentials never fall back to developer keys and require the reviewed company"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "production service selection requires explicit distinct mappings without staging defaults"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "client sandbox contracts bind merchant company environment and pricing without enabling live payments"
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
@@ -346,6 +374,14 @@
   {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "direct checkout preserves provider shared-studio rejection across different trainers without a second payment or replay"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "client sandbox guest checkout preserves production scope through duplicate requests and paid recovery"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "client sandbox disabled or foreign pairing refuses guest booking before provider dispatch"
   },
   {
     "file": "worker/tests/foundation.test.mjs",

@@ -30,6 +30,8 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 Owner-confirmed rule (31 October 2026): both staging and client production allow only one simultaneous booking across the SimplyBook account, across all trainers/services, including the changeover buffer. Admins have no exemption. Trainer weekly availability remains off; approved date-specific entries define working availability. Provider settings confirmation and controlled enforcement acceptance are separate evidence.
 
+Owner-confirmed client prices are S$108 on weekdays and S$128 on weekends and gazetted Singapore public holidays, including substitute holidays. Developer staging/demo retains S$88/S$108. The shared pricing owner selects the trusted environment; native browser display retains server quotes. Production service IDs 3/4 and company `soccerbotadmin` still require reviewed runtime integration before activation; a pricing helper does not establish provider/payment readiness. Owner confirmed four-hour advance notice and a 15-minute unpaid provider invoice timeout. The application's eight-minute customer payment window is a separate existing bound.
+
 ### Identity, privacy and environment isolation
 
 <a id="br-003"></a>

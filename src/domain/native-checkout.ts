@@ -32,6 +32,19 @@ import { isDate } from "./dates";
 import { providerIdentifier } from "./catalog";
 import { contactSchema } from "./contact";
 import { MAX_PLAYERS } from "./booking-policy";
+// Bound response size independently of the number of providers in the roster.
+export const MAX_DAILY_NATIVE_OFFERS = 2000;
+export const MAX_CALENDAR_NATIVE_OFFERS = 6000;
+export const MAX_CALENDAR_BYTES = 1500000;
+/** Keep calendar payloads within browser and durable snapshot storage budgets. */
+function boundedCalendar(value: { dates: { offers?: unknown[] }[] }) {
+  return (
+    value.dates.reduce((count, day) => count + (day.offers?.length ?? 0), 0) <=
+      MAX_CALENDAR_NATIVE_OFFERS &&
+    new TextEncoder().encode(JSON.stringify(value)).byteLength <=
+      MAX_CALENDAR_BYTES
+  );
+}
 export const nativeOfferSchema = z.strictObject({
   serviceId: providerIdentifier,
   productServiceId: providerIdentifier.optional(),
@@ -45,7 +58,7 @@ export const nativeOfferSchema = z.strictObject({
 export const nativeAvailabilitySchema = z.strictObject({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   observedAtMs: z.number().int().nonnegative().safe(),
-  offers: z.array(nativeOfferSchema).max(100),
+  offers: z.array(nativeOfferSchema).max(MAX_DAILY_NATIVE_OFFERS),
 });
 export const publicCalendarSchema = z
   .strictObject({
@@ -58,11 +71,15 @@ export const publicCalendarSchema = z
         z.strictObject({
           date: z.string().refine(isDate),
           available: z.boolean(),
-          offers: z.array(nativeOfferSchema).max(100).optional(),
+          offers: z
+            .array(nativeOfferSchema)
+            .max(MAX_DAILY_NATIVE_OFFERS)
+            .optional(),
         }),
       )
       .max(31),
   })
+  .refine(boundedCalendar)
   .refine(validDisplayDeadline)
   .refine(
     (value) =>
@@ -89,11 +106,13 @@ export const publicCalendarSchema = z
       ),
   );
 
-export const nativeCalendarSchema = z.strictObject({
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-  observedAtMs: z.number().int().nonnegative().safe(),
-  dates: z.array(nativeAvailabilitySchema).max(31),
-});
+export const nativeCalendarSchema = z
+  .strictObject({
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    observedAtMs: z.number().int().nonnegative().safe(),
+    dates: z.array(nativeAvailabilitySchema).max(31),
+  })
+  .refine(boundedCalendar);
 export const nativePrepareSchema = z
   .strictObject({
     key: z.string().regex(/^[A-Za-z0-9_-]{16,128}$/),

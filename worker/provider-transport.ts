@@ -16,7 +16,7 @@ import {
   traceHitpayFailure,
   providerTransportTiming,
 } from "./diagnostics";
-import { ApiError } from "./policy";
+import { ApiError, providerCredentialName } from "./policy";
 
 // Fixed identity endpoints share the physical transport owner. Their durable
 // admission is owned by identity-delivery, separately from SimplyBook accounting.
@@ -225,11 +225,18 @@ export function providerSecrets(env: Env): ProviderSecrets {
       throw new ApiError(503, "provider_credentials_missing");
     return value;
   };
+  const company = read(providerCredentialName(env, "COMPANY_LOGIN"));
+  if (
+    z.enum(["developer", "production"]).parse(env.ENVIRONMENT) ===
+      "production" &&
+    company !== read("SIMPLYBOOK_EXPECTED_COMPANY_LOGIN")
+  )
+    throw new ApiError(503, "provider_identity_unverified");
   return {
-    company: read("SIMPLYBOOK_DEV_COMPANY_LOGIN"),
-    login: read("SIMPLYBOOK_DEV_ADMIN_LOGIN"),
-    publicKey: read("SIMPLYBOOK_DEV_API_KEY"),
-    adminKey: read("SIMPLYBOOK_DEV_ADMIN_API_USER_KEY"),
+    company,
+    login: read(providerCredentialName(env, "ADMIN_LOGIN")),
+    publicKey: read(providerCredentialName(env, "API_KEY")),
+    adminKey: read(providerCredentialName(env, "ADMIN_API_USER_KEY")),
   };
 }
 

@@ -1,5 +1,15 @@
 import { isDate } from "./dates";
 
+const prices = {
+  developer: { ordinary: 8800, premium: 10800 },
+  production: { ordinary: 10800, premium: 12800 },
+} as const;
+
+/** Resolve approved SGD prices from the trusted deployment environment. */
+export function sessionPrices(environment: keyof typeof prices) {
+  return prices[environment];
+}
+
 // MOM gazetted calendars, including the announced substitute public holidays.
 // https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026
 // https://www.mom.gov.sg/newsroom/press-releases/2026/0618-public-holidays-for-2027
@@ -36,10 +46,18 @@ const holidays: Readonly<Record<string, readonly string[]>> = {
   ],
 };
 /** Select the session rate for the Singapore calendar date. */
-export function sessionRate(date: string) {
+export function sessionRate(
+  date: string,
+  environment: keyof typeof prices = "developer",
+) {
   if (!isDate(date) || !holidays[date.slice(0, 4)]) return null;
   const holiday = holidays[date.slice(0, 4)].includes(date.slice(5));
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
   const premium = holiday || weekday === 0 || weekday === 6;
-  return { priceMinor: premium ? 10800 : 8800, premium, holiday };
+  const amounts = sessionPrices(environment);
+  return {
+    priceMinor: premium ? amounts.premium : amounts.ordinary,
+    premium,
+    holiday,
+  };
 }

@@ -19,8 +19,8 @@ const retention = (entry: CalendarAvailability) =>
     : entry.dates.every((day) => day.offers !== undefined)
       ? BROWSER_CALENDAR_MAX_AGE_MS
       : CATALOGUE_MAX_AGE_MS;
-// Load only the displayed month. Other months load on navigation, never as
-// background prefetch or an empty-result polling loop.
+// Load only the requested month. TimeStep may advance initial discovery once
+// through the supported months; this hook never prefetches or polls empty data.
 /** Load calendar availability and reconcile the selected day. */
 export function useCalendarAvailability(
   service: BookingService,

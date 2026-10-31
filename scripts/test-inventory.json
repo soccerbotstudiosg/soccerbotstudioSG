@@ -172,6 +172,14 @@
     "title": "totals a mixed demo cart by date and preserves native quote amounts"
   },
   {
+    "file": "src/domain/session-pricing.test.ts",
+    "title": "keeps client rates separate from staging and preserves client quotes in the cart"
+  },
+  {
+    "file": "src/domain/session-pricing.test.ts",
+    "title": "bounds calendar day month and UTF-8 payload sizes without truncating offers"
+  },
+  {
     "file": "src/features/assistant/assistant.test.tsx",
     "title": "Escape closes the assistant after a touch reply leaves focus outside the panel"
   },
@@ -1136,6 +1144,10 @@
     "title": "availability accepts trainer alternatives but checkout rejects two trainers for the same studio time"
   },
   {
+    "file": "src/services/async-booking.test.ts",
+    "title": "native availability preserves every trainer choice beyond the old hundred-offer limit"
+  },
+  {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "queue rejection keeps the original attempt on Review for an explicit retry"
   },
@@ -1150,6 +1162,10 @@
   {
     "file": "src/features/booking/booking-parity.test.tsx",
     "title": "cold calendar entry and refresh select an available day while retaining a valid chosen day"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation"
   },
   {
     "file": "tests/live-email.spec.ts",

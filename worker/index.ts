@@ -34,6 +34,7 @@ import {
 import { confirmation, checkoutContext } from "./confirmation";
 import {
   ApiError,
+  providerCredentialName,
   digest,
   policy,
   liveCustomerAccess,
@@ -358,13 +359,18 @@ export default {
             )
               ? request.headers.get("X-Readiness-Nonce")
               : null,
-            providerCredentialsPresent: [
-              "SIMPLYBOOK_DEV_COMPANY_LOGIN",
-              "SIMPLYBOOK_DEV_ADMIN_LOGIN",
-              "SIMPLYBOOK_DEV_API_KEY",
-              "SIMPLYBOOK_DEV_ADMIN_API_USER_KEY",
-            ].every((name) => {
-              const value: unknown = Reflect.get(env, name);
+            providerCredentialsPresent: (
+              [
+                "COMPANY_LOGIN",
+                "ADMIN_LOGIN",
+                "API_KEY",
+                "ADMIN_API_USER_KEY",
+              ] as const
+            ).every((suffix) => {
+              const value: unknown = Reflect.get(
+                env,
+                providerCredentialName(env, suffix),
+              );
               return typeof value === "string" && value.length > 0;
             }),
           });

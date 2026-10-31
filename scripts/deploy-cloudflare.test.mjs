@@ -194,6 +194,15 @@ test("sealed SaaS artifacts reject substituted zone routes and asset-origin bypa
       origin: "https://booking.example.com",
       coordinatorName: "client-coordinator",
       coordinatorLocationHint: "apac-ne",
+      hitpaySandbox: {
+        merchant: "synthetic",
+        businessId: "11111111-1111-4111-8111-111111111111",
+      },
+      simplybook: {
+        companyLogin: "synthetic-client",
+        primaryServiceId: "3",
+        premiumServiceId: "4",
+      },
       sandbox: null,
       access: "closed",
       saasZone: {
@@ -239,6 +248,25 @@ test("sealed SaaS artifacts reject substituted zone routes and asset-origin bypa
       target.workerName,
     );
     for (const mutate of [
+      (c) => {
+        c.vars.CLIENT_SANDBOX_ACCESS = "enabled";
+      },
+      (c) => {
+        c.vars.HITPAY_EXPECTED_MERCHANT = "foreign";
+      },
+      (c) => {
+        c.vars.HITPAY_EXPECTED_BUSINESS_ID =
+          "22222222-2222-4222-8222-222222222222";
+      },
+      (c) => {
+        c.vars.SIMPLYBOOK_EXPECTED_COMPANY_LOGIN = "foreign-company";
+      },
+      (c) => {
+        c.vars.PRIMARY_SERVICE_ID = "2";
+      },
+      (c) => {
+        c.vars.PREMIUM_SERVICE_ID = "3";
+      },
       (c) => {
         c.routes[0].zone_id = "d".repeat(32);
       },

@@ -534,3 +534,81 @@ test("automatic staging rejects forks, bots, stale PR heads, closed PRs and untr
     }),
   );
 });
+
+test("client service mapping is sealed, distinct and cannot enter staging", () => {
+  const target = loadTarget("production");
+  assert.deepEqual(target.simplybook, {
+    companyLogin: "soccerbotadmin",
+    primaryServiceId: "3",
+    premiumServiceId: "4",
+  });
+  const config = targetConfig(
+    {
+      d1_databases: [{}],
+      vars: { PROVIDER_ACCESS: "disabled", LIVE_CUSTOMER_ACCESS: "disabled" },
+    },
+    target,
+  );
+  assert.equal(config.vars.SIMPLYBOOK_EXPECTED_COMPANY_LOGIN, "soccerbotadmin");
+  assert.equal(config.vars.PRIMARY_SERVICE_ID, "3");
+  assert.equal(config.vars.PREMIUM_SERVICE_ID, "4");
+  assert.equal(config.vars.PROVIDER_ACCESS, "disabled");
+  assert.equal(config.vars.LIVE_CUSTOMER_ACCESS, "disabled");
+  for (const patch of [
+    { companyLogin: "other-client" },
+    { primaryServiceId: "5" },
+    { premiumServiceId: "6" },
+  ])
+    assert.notEqual(
+      targetDigest(target),
+      targetDigest({
+        ...target,
+        simplybook: { ...target.simplybook, ...patch },
+      }),
+    );
+  for (const patch of [
+    { companyLogin: "" },
+    { primaryServiceId: "" },
+    { premiumServiceId: "3" },
+    { apiKey: "forbidden" },
+  ])
+    assert.throws(() =>
+      validateTarget({
+        ...target,
+        simplybook: { ...target.simplybook, ...patch },
+      }),
+    );
+  assert.throws(() =>
+    validateTarget({ ...staging, simplybook: target.simplybook }),
+  );
+});
+
+test("client sandbox mapping stays closed and sealed independently of staging", () => {
+  const target = loadTarget("production");
+  assert.equal(target.hitpaySandbox.merchant, "app404");
+  const config = targetConfig(
+    { d1_databases: [{}], vars: { CLIENT_SANDBOX_ACCESS: "enabled" } },
+    target,
+  );
+  assert.equal(config.vars.CLIENT_SANDBOX_ACCESS, "disabled");
+  assert.equal(config.vars.HITPAY_EXPECTED_MERCHANT, "app404");
+  assert.equal(
+    config.vars.HITPAY_EXPECTED_BUSINESS_ID,
+    target.hitpaySandbox.businessId,
+  );
+  assert.throws(() =>
+    validateTarget({ ...staging, hitpaySandbox: target.hitpaySandbox }),
+  );
+  assert.throws(() => validateTarget({ ...target, simplybook: undefined }));
+  for (const patch of [
+    { merchant: "foreign" },
+    { businessId: "11111111-1111-4111-8111-111111111111" },
+  ])
+    assert.notEqual(
+      targetDigest(target),
+      targetDigest({
+        ...target,
+        hitpaySandbox: { ...target.hitpaySandbox, ...patch },
+      }),
+    );
+});

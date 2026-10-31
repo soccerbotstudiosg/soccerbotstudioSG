@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 const bundle = await build({
   stdin: {
-    contents: `export * from './worker/provider-token-cache'; export * from './worker/display-snapshots'; export * from './worker/parallel-reads'; export * from './worker/customer-catalogue'; export * from './worker/public-calendar'; export * from './worker/native-calendar'; export * from './worker/catalogue'; export * from './worker/prebooking'; export * from './worker/provider-session'; export * from './worker/provider-transport';`,
+    contents: `export * from './worker/hitpay-contract'; export * from './worker/policy'; export * from './worker/provider-token-cache'; export * from './worker/display-snapshots'; export * from './worker/parallel-reads'; export * from './worker/customer-catalogue'; export * from './worker/public-calendar'; export * from './worker/native-calendar'; export * from './worker/catalogue'; export * from './worker/prebooking'; export * from './worker/provider-session'; export * from './worker/provider-transport';`,
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -21,6 +21,7 @@ const {
   customerCatalogue,
   publicCalendar,
   windowCatalogue,
+  calendarWindow,
   windowCalendar,
   windowAvailability,
   NativeCalendarReads,
@@ -33,6 +34,16 @@ const {
   nativeTrialLeadMs,
   ProviderSession,
   providerRequest,
+  providerSecrets,
+  providerCredentialName,
+  providerServiceIds,
+  turnstileSecretName,
+  clientSandboxAccess,
+  sandboxPolicy,
+  nativeAccountContractSchema,
+  paymentScopeSchema,
+  assertPaymentScope,
+  digest,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
@@ -194,12 +205,26 @@ test("catalogue shares bounded reads isolates account environment and protects c
     read.exchange,
   );
   assert.equal(read.calls.length, 6);
+  const clientBinding = { ...binding, environmentId: "production" };
   await assert.rejects(
-    cache.read({ ...binding, environmentId: "production" }, read.exchange),
+    cache.read(clientBinding, read.exchange, false, false, true),
+    /display_cache_miss/,
+  );
+  assert.equal(read.calls.length, 6);
+  const client = await cache.read(clientBinding, read.exchange);
+  assert.equal(client.binding.environmentId, "production");
+  assert.equal(read.calls.length, 8);
+  await assert.rejects(
+    cache.read({ ...binding, environmentId: "unknown" }, read.exchange),
   );
   cache.invalidate(binding);
   await cache.read(binding, read.exchange);
-  assert.equal(read.calls.length, 8);
+  assert.equal(read.calls.length, 10);
+  assert.deepEqual(
+    await cache.read(clientBinding, read.exchange, false, false, true),
+    client,
+  );
+  assert.equal(read.calls.length, 10);
 });
 test("catalogue overlaps independent reads and waits for both before caching", async () => {
   const cache = new CatalogueReads(),
@@ -1065,6 +1090,149 @@ function monthFixture() {
   };
   return { input, calls };
 }
+/** Build a synthetic growing roster without calling a provider. */
+function rosterFixture(count) {
+  const catalogue = calendarFixture();
+  catalogue.instructors = Array.from({ length: count }, (_, index) => ({
+    ...catalogue.instructors[0],
+    id: String(index + 100),
+    name: `Trainer ${index + 1}`,
+  }));
+  catalogue.services[0].instructorIds = catalogue.instructors.map(
+    (person) => person.id,
+  );
+  return catalogue;
+}
+test("calendar supports growing rosters with two read lanes complete offers and shared cache", async () => {
+  const { input } = monthFixture();
+  let active = 0,
+    maximum = 0,
+    calls = 0;
+  const catalogue = rosterFixture(20);
+  const starts = [
+    "12:00:00",
+    "12:50:00",
+    "13:40:00",
+    "14:30:00",
+    "15:20:00",
+    "16:10:00",
+    "17:00:00",
+    "17:50:00",
+    "18:40:00",
+  ];
+  const request = {
+    ...input,
+    parallelReads: true,
+    catalogue: async () => catalogue,
+    exchange: async (operation) => {
+      active++;
+      calls++;
+      maximum = Math.max(maximum, active);
+      await new Promise((resolve) => setImmediate(resolve));
+      active--;
+      return {
+        receivedAtMs: Date.now(),
+        body: Object.fromEntries(
+          input.dates
+            .filter((date) => date >= operation.from && date <= operation.to)
+            .map((date) => [date, starts]),
+        ),
+      };
+    },
+  };
+  const cache = new NativeCalendarReads();
+  const [first, shared] = await Promise.all([
+    cache.read(request),
+    cache.read(request),
+  ]);
+  assert.equal(calls, 60);
+  assert.equal(maximum, 2);
+  assert.equal(active, 0);
+  assert.deepEqual(first, shared);
+  assert.equal(first.dates.length, 31);
+  for (const day of first.dates) {
+    assert.equal(day.offers.length, 180);
+    assert.deepEqual(
+      new Set(day.offers.map((offer) => offer.instructorId)),
+      new Set(catalogue.instructors.map((person) => person.id)),
+    );
+  }
+  await cache.read({ ...request, cacheOnly: true });
+  assert.equal(calls, 60);
+});
+test("calendar rejects excessive work and offer volume without returning a truncated roster", async () => {
+  const { input, calls } = monthFixture();
+  await assert.rejects(
+    new NativeCalendarReads().read({
+      ...input,
+      catalogue: async () => rosterFixture(33),
+      parallelReads: true,
+    }),
+    /calendar_read_budget_exceeded/,
+  );
+  assert.equal(calls.length, 0);
+  const cache = new NativeCalendarReads();
+  const request = {
+    ...input,
+    dates: [input.dates[0]],
+    catalogue: async () => rosterFixture(96),
+    parallelReads: true,
+    exchange: async () => ({
+      receivedAtMs: Date.now(),
+      body: {
+        [input.dates[0]]: Array.from(
+          { length: 21 },
+          (_, index) => `${String(index).padStart(2, "0")}:00:00`,
+        ),
+      },
+    }),
+  };
+  await assert.rejects(cache.read(request), /calendar_offer_budget_exceeded/);
+  await assert.rejects(
+    cache.read({ ...request, cacheOnly: true }),
+    /display_cache_miss/,
+  );
+});
+test("calendar drains started reads after failure and never caches incomplete trainers", async () => {
+  const { input } = monthFixture();
+  let calls = 0,
+    finished = 0,
+    release;
+  const sibling = new Promise((resolve) => {
+    release = resolve;
+  });
+  const request = {
+    ...input,
+    parallelReads: true,
+    catalogue: async () => rosterFixture(5),
+    exchange: async (operation) => {
+      calls++;
+      if (calls === 1) throw new Error("provider unavailable");
+      await sibling;
+      finished++;
+      return input.exchange(operation);
+    },
+  };
+  const cache = new NativeCalendarReads();
+  let settled = false;
+  const rejected = assert
+    .rejects(cache.read(request), /provider unavailable/)
+    .then(() => {
+      settled = true;
+    });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(calls, 2);
+  assert.equal(settled, false);
+  release();
+  await rejected;
+  assert.equal(finished, 1);
+  assert.equal(calls, 2);
+  await assert.rejects(
+    cache.read({ ...request, cacheOnly: true }),
+    /display_cache_miss/,
+  );
+  assert.equal((await cache.read(input)).dates.length, 31);
+});
 test("calendar range cache batches a month shares reads and preserves explicit empty versus unknown days", async () => {
   const { input, calls } = monthFixture();
   const cache = new NativeCalendarReads();
@@ -1085,39 +1253,32 @@ test("calendar range cache batches a month shares reads and preserves explicit e
   first.dates[0].offers.length = 0;
   assert.equal((await cache.read(input)).dates[0].offers.length, 1);
   assert.equal(calls.length, 3);
-  const unknown = await new NativeCalendarReads().read({
-    ...input,
-    exchange: async (request) => {
-      const response = await input.exchange(request);
-      delete response.body["2027-01-03"];
-      return response;
-    },
-  });
-  assert.equal(
-    unknown.dates.some((d) => d.date === "2027-01-03"),
-    false,
+  await assert.rejects(
+    new NativeCalendarReads().read({
+      ...input,
+      exchange: async (request) => {
+        const response = await input.exchange(request);
+        delete response.body["2027-01-03"];
+        return response;
+      },
+    }),
+    /calendar_date_unknown/,
   );
-  // A positive offer establishes display availability even when another
-  // instructor's omitted date is unknown. Empty still requires every reply.
-  const mixed = await new NativeCalendarReads().read({
-    ...input,
-    catalogue: async () => {
-      const value = calendarFixture();
-      value.services[0].instructorIds = ["14", "15"];
-      return value;
-    },
-    exchange: async (request) =>
-      request.instructorId === "14"
-        ? { receivedAtMs: Date.now(), body: {} }
-        : input.exchange(request),
-  });
-  assert.equal(
-    mixed.dates.find((day) => day.date === "2027-01-01").offers.length,
-    1,
-  );
-  assert.equal(
-    mixed.dates.some((day) => day.date === "2027-01-02"),
-    false,
+  // A partial trainer list must not masquerade as complete availability.
+  await assert.rejects(
+    new NativeCalendarReads().read({
+      ...input,
+      catalogue: async () => {
+        const value = calendarFixture();
+        value.services[0].instructorIds = ["14", "15"];
+        return value;
+      },
+      exchange: async (request) =>
+        request.instructorId === "14"
+          ? { receivedAtMs: Date.now(), body: {} }
+          : input.exchange(request),
+    }),
+    /calendar_date_unknown/,
   );
 });
 test("calendar cache isolates scope and invalidates changed dates without stale fallback", async () => {
@@ -1218,6 +1379,63 @@ test("calendar invalidation fences an in-flight stale response", async () => {
   cache.invalidateDate("2027-01-01");
   release();
   await assert.rejects(pending, /calendar_read_superseded/);
+});
+
+test("parallel calendar admission preserves spacing and rechecks exhausted budgets", async (t) => {
+  const now = Date.parse("2026-11-01T00:00:00Z");
+  t.mock.timers.enable({ apis: ["Date", "setTimeout"], now });
+  const config = ts.parseConfigFileTextToJson(
+    "wrangler.jsonc",
+    readFileSync("wrangler.jsonc", "utf8"),
+  ).config;
+  const starts = [];
+  const input = {
+    env: {
+      ...config.vars,
+      SOURCE_REVISION: "a".repeat(40),
+      PROVIDER_ACCESS: "trusted-reads",
+      CAMPAIGN_END_MS: String(now + 600000),
+      PUBLIC_CALENDAR_WINDOW_JSON: JSON.stringify({
+        sourceRevision: "a".repeat(40),
+        serviceId: "12",
+        dates: ["2026-11-02"],
+        notBeforeMs: now,
+        expiresMs: now + 600000,
+        startingUsed: 0,
+        maximumUsed: 2,
+      }),
+      SIMPLYBOOK_DEV_COMPANY_LOGIN: "synthetic-company",
+      SIMPLYBOOK_DEV_ADMIN_LOGIN: "synthetic-admin",
+      SIMPLYBOOK_DEV_API_KEY: "synthetic-key",
+      SIMPLYBOOK_DEV_ADMIN_API_USER_KEY: "synthetic-key",
+    },
+    accounting: () => ({ used: starts.length, active: 0 }),
+    control: {
+      reserve: async () => {
+        starts.push(Date.now());
+        return "test";
+      },
+    },
+  };
+  const { control } = calendarWindow(input);
+  const first = control.reserve(),
+    second = control.reserve();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(starts, [now]);
+  t.mock.timers.tick(299);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(starts.length, 1);
+  t.mock.timers.tick(1);
+  await Promise.all([first, second]);
+  assert.deepEqual(starts, [now, now + 300]);
+  const rejected = assert.rejects(
+    control.reserve(),
+    /public_calendar_budget_exhausted/,
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+  t.mock.timers.tick(300);
+  await rejected;
+  assert.equal(starts.length, 2);
 });
 
 test("anonymous calendar is bounded and shared without exposing provider slots or customer data", async () => {
@@ -2010,7 +2228,14 @@ test("durable provider tokens retain original expiry and reject changed credenti
       { SIMPLYBOOK_DEV_API_KEY: "rotated-public-key" },
       { SIMPLYBOOK_DEV_COMPANY_LOGIN: "another-company" },
       { DEPLOYMENT_ACCOUNT_ID: "another-account" },
-      { ENVIRONMENT: "another-environment" },
+      {
+        ENVIRONMENT: "production",
+        SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-company",
+        SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-company",
+        SIMPLYBOOK_PROD_ADMIN_LOGIN: "synthetic-admin",
+        SIMPLYBOOK_PROD_API_KEY: "synthetic-public-key",
+        SIMPLYBOOK_PROD_ADMIN_API_USER_KEY: "synthetic-admin-key",
+      },
     ]) {
       await restored.save(env, "public", token);
       assert.equal(
@@ -2337,4 +2562,199 @@ test("customer-choice prebooking keeps the requested eligible trainer and refuse
     validation.review(intent),
     /eligibility_catalogue_conflict/,
   );
+});
+
+test("production provider credentials never fall back to developer keys and require the reviewed company", () => {
+  const env = {
+    ENVIRONMENT: "production",
+    SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_ADMIN_LOGIN: "client-admin",
+    SIMPLYBOOK_PROD_API_KEY: "client-public-key",
+    SIMPLYBOOK_PROD_ADMIN_API_USER_KEY: "client-admin-key",
+    SIMPLYBOOK_DEV_COMPANY_LOGIN: "synthetic-developer",
+    SIMPLYBOOK_DEV_ADMIN_LOGIN: "developer-admin",
+    SIMPLYBOOK_DEV_API_KEY: "developer-public-key",
+    SIMPLYBOOK_DEV_ADMIN_API_USER_KEY: "developer-admin-key",
+  };
+  assert.equal(turnstileSecretName(env), "TURNSTILE_SECRET_KEY");
+  assert.equal(
+    turnstileSecretName({ ...env, ENVIRONMENT: "developer" }),
+    "TURNSTILE_SECRET",
+  );
+  assert.deepEqual(providerSecrets(env), {
+    company: "synthetic-client",
+    login: "client-admin",
+    publicKey: "client-public-key",
+    adminKey: "client-admin-key",
+  });
+  assert.deepEqual(providerSecrets({ ...env, ENVIRONMENT: "developer" }), {
+    company: "synthetic-developer",
+    login: "developer-admin",
+    publicKey: "developer-public-key",
+    adminKey: "developer-admin-key",
+  });
+  for (const suffix of [
+    "COMPANY_LOGIN",
+    "ADMIN_LOGIN",
+    "API_KEY",
+    "ADMIN_API_USER_KEY",
+  ])
+    assert.throws(
+      () => providerSecrets({ ...env, [`SIMPLYBOOK_PROD_${suffix}`]: "" }),
+      /provider_credentials_missing/,
+    );
+  assert.throws(
+    () => providerSecrets({ ...env, SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "" }),
+    /provider_credentials_missing/,
+  );
+  assert.throws(
+    () =>
+      providerSecrets({
+        ...env,
+        SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-developer",
+      }),
+    /provider_identity_unverified/,
+  );
+  assert.throws(() => providerSecrets({ ...env, ENVIRONMENT: "unknown" }));
+  assert.equal(
+    providerCredentialName(env, "SIGNING_SECRET"),
+    "SIMPLYBOOK_PROD_SIGNING_SECRET",
+  );
+  assert.equal(
+    providerCredentialName(
+      { ...env, ENVIRONMENT: "developer" },
+      "SIGNING_SECRET",
+    ),
+    "SIMPLYBOOK_DEV_SIGNING_SECRET",
+  );
+});
+test("production service selection requires explicit distinct mappings without staging defaults", () => {
+  const config = ts.parseConfigFileTextToJson(
+    "wrangler.jsonc",
+    readFileSync("wrangler.jsonc", "utf8"),
+  ).config;
+  const env = {
+    ...config.vars,
+    ENVIRONMENT: "production",
+    SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-client",
+    PRIMARY_SERVICE_ID: "3",
+    PREMIUM_SERVICE_ID: "4",
+  };
+  assert.deepEqual(providerServiceIds(env), { primary: "3", premium: "4" });
+  assert.deepEqual(providerServiceIds(config.vars), {
+    primary: "2",
+    premium: "",
+  });
+  for (const patch of [
+    { PRIMARY_SERVICE_ID: "" },
+    { PREMIUM_SERVICE_ID: "" },
+    { PREMIUM_SERVICE_ID: "3" },
+    { SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "" },
+  ])
+    assert.throws(
+      () => providerServiceIds({ ...env, ...patch }),
+      /native_pricing_configuration_invalid/,
+    );
+});
+
+test("client sandbox contracts bind merchant company environment and pricing without enabling live payments", async () => {
+  const config = ts.parseConfigFileTextToJson(
+    "wrangler.jsonc",
+    readFileSync("wrangler.jsonc", "utf8"),
+  ).config;
+  const env = {
+    ...config.vars,
+    ENVIRONMENT: "production",
+    CLIENT_SANDBOX_ACCESS: "enabled",
+    PRIMARY_SERVICE_ID: "3",
+    PREMIUM_SERVICE_ID: "4",
+    SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-client",
+    HITPAY_EXPECTED_MERCHANT: "synthetic",
+    HITPAY_MERCHANT: "synthetic",
+    HITPAY_EXPECTED_BUSINESS_ID: "00000000-0000-4000-8000-000000000003",
+    HITPAY_BUSINESS_ID: "00000000-0000-4000-8000-000000000003",
+    HITPAY_CONTRACT_ACCEPTED: "sandbox-reviewed",
+    SIMPLYBOOK_EXTERNAL_PAYMENT: "sandbox-reviewed",
+    SIMPLYBOOK_EXTERNAL_PROCESSOR: "manual",
+    HITPAY_RECOVERY: "enabled",
+    HITPAY_SANDBOX_API_KEY: "synthetic-key",
+  };
+  assert.equal(clientSandboxAccess(env), true);
+  assert.equal(sandboxPolicy(env).ENVIRONMENT, "production");
+  for (const patch of [
+    { CLIENT_SANDBOX_ACCESS: undefined },
+    { HITPAY_EXPECTED_MERCHANT: "" },
+    { HITPAY_MERCHANT: "foreign" },
+    { HITPAY_BUSINESS_ID: "00000000-0000-4000-8000-000000000004" },
+    { HITPAY_EXPECTED_BUSINESS_ID: "" },
+    { SIMPLYBOOK_PROD_COMPANY_LOGIN: "foreign" },
+    { HITPAY_CONTRACT_ACCEPTED: "live" },
+    { PRIMARY_SERVICE_ID: "4" },
+    { SIMPLYBOOK_EXTERNAL_PROCESSOR: "other" },
+  ]) {
+    assert.equal(clientSandboxAccess({ ...env, ...patch }), false);
+    assert.throws(
+      () => sandboxPolicy({ ...env, ...patch }),
+      /provider_access_disabled/,
+    );
+  }
+  const scope = paymentScopeSchema.parse({
+    accountId: env.DEPLOYMENT_ACCOUNT_ID,
+    environmentId: "production",
+    companyLogin: "synthetic-client",
+    businessId: env.HITPAY_BUSINESS_ID,
+    merchant: "synthetic",
+    externalProcessor: "manual",
+    keyDigest: await digest("synthetic-key"),
+    attemptId: "00000000-0000-4000-8000-000000000001",
+    intentHash: "synthetic",
+    associationJson: "{}",
+    invoiceId: "1",
+    customerId: "2",
+    totalMinor: 10800,
+    currency: "SGD",
+  });
+  await assertPaymentScope(env, scope);
+  for (const patch of [
+    { environmentId: "developer" },
+    { companyLogin: "synthetic-developer" },
+    { accountId: "foreign" },
+    { merchant: "foreign" },
+    { keyDigest: "a".repeat(64) },
+  ])
+    await assert.rejects(
+      () => assertPaymentScope(env, { ...scope, ...patch }),
+      /hitpay_scope_mismatch/,
+    );
+  const contract = {
+    accountId: env.DEPLOYMENT_ACCOUNT_ID,
+    environmentId: "production",
+    companyLogin: "synthetic-client",
+    serviceId: "3",
+    premiumServiceId: "4",
+    priceMinor: 10800,
+    currency: "SGD",
+    taxMinor: 0,
+    durationMinutes: 40,
+    bufferAfterMinutes: 10,
+    clientLoginRequired: false,
+    providerSchedules: "customer-choice",
+    bookingLeadMinutes: 240,
+    confirmedAtMs: 1000,
+    expiresAtMs: 2000,
+  };
+  assert.equal(nativeAccountContractSchema.safeParse(contract).success, true);
+  for (const patch of [
+    { priceMinor: 8800 },
+    { environmentId: "developer" },
+    { trialLeadTimeException: "owner-2026-10-14-15" },
+    { bookingLeadMinutes: 150 },
+    { premiumServiceId: undefined },
+  ])
+    assert.equal(
+      nativeAccountContractSchema.safeParse({ ...contract, ...patch }).success,
+      false,
+    );
 });

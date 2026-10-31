@@ -12,6 +12,16 @@ const origin = z
   );
 const schema = z.strictObject({
   target: z.enum(["staging", "production"]),
+  hitpaySandbox: z
+    .strictObject({ merchant: name, businessId: z.string().uuid() })
+    .optional(),
+  simplybook: z
+    .strictObject({
+      companyLogin: z.string().regex(/^[a-z0-9][a-z0-9_-]{0,127}$/),
+      primaryServiceId: z.string().regex(/^[1-9][0-9]{0,14}$/),
+      premiumServiceId: z.string().regex(/^[1-9][0-9]{0,14}$/),
+    })
+    .optional(),
   sandbox: z
     .strictObject({
       premiumServiceId: z.string().regex(/^[1-9][0-9]{0,14}$/),
@@ -44,6 +54,24 @@ const schema = z.strictObject({
 /** Reject incomplete target identities and unsupported production activation. */
 export function validateTarget(value) {
   const target = schema.parse(value);
+  if (target.hitpaySandbox) {
+    assert.equal(target.target, "production");
+    assert.ok(
+      target.simplybook,
+      "Client sandbox requires explicit company/services",
+    );
+  }
+  if (target.simplybook) {
+    assert.equal(
+      target.target,
+      "production",
+      "Client mapping belongs to production",
+    );
+    assert.notEqual(
+      target.simplybook.primaryServiceId,
+      target.simplybook.premiumServiceId,
+    );
+  }
   assert.equal(
     target.environment,
     target.target === "production" ? "production" : "developer",
@@ -141,6 +169,22 @@ export function targetConfig(base, target) {
       CAMPAIGN_ID: target.campaignId,
       COORDINATOR_NAME: target.coordinatorName,
       COORDINATOR_LOCATION_HINT: target.coordinatorLocationHint,
+      ...(target.target === "production"
+        ? { CLIENT_SANDBOX_ACCESS: "disabled" }
+        : {}),
+      ...(target.hitpaySandbox
+        ? {
+            HITPAY_EXPECTED_MERCHANT: target.hitpaySandbox.merchant,
+            HITPAY_EXPECTED_BUSINESS_ID: target.hitpaySandbox.businessId,
+          }
+        : {}),
+      ...(target.simplybook
+        ? {
+            SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: target.simplybook.companyLogin,
+            PRIMARY_SERVICE_ID: target.simplybook.primaryServiceId,
+            PREMIUM_SERVICE_ID: target.simplybook.premiumServiceId,
+          }
+        : {}),
     },
   };
 }

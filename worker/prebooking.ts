@@ -1,6 +1,6 @@
 import { parallelReads } from "./parallel-reads";
 import { z } from "zod";
-import { sessionRate } from "../src/domain/session-pricing";
+import { sessionPrices, sessionRate } from "../src/domain/session-pricing";
 import {
   CATALOGUE_RECORD_LIMIT,
   CONTACT_METHODS,
@@ -69,15 +69,15 @@ export function eligibleInstructors(raw: unknown): string[] {
     throw new ApiError(503, "eligibility_representation_unavailable");
   return ids;
 }
-// This is an owner declaration installed by the trusted finite developer
-// composition, never a customer input or proof of a completed provider trial.
+// Server-built grant for the configured environment or retained developer trial;
+// never customer input or proof of completed provider acceptance.
 export const nativeAccountContractSchema = z
   .strictObject({
     accountId: z.string().min(1).max(128),
-    environmentId: z.literal("developer"),
+    environmentId: z.enum(["developer", "production"]),
     companyLogin: z.string().min(1).max(128),
     serviceId: z.string().regex(/^[1-9]\d{0,14}$/),
-    priceMinor: z.literal(8800),
+    priceMinor: z.union([z.literal(8800), z.literal(10800)]),
     premiumServiceId: z
       .string()
       .regex(/^[1-9]\d{0,14}$/)
@@ -97,6 +97,12 @@ export const nativeAccountContractSchema = z
   })
   .refine(
     (value) =>
+      value.priceMinor === sessionPrices(value.environmentId).ordinary &&
+      (value.environmentId === "developer" ||
+        (value.providerSchedules === "customer-choice" &&
+          !!value.premiumServiceId &&
+          value.bookingLeadMinutes === BOOKING_LEAD_MINUTES &&
+          value.trialLeadTimeException === undefined)) &&
       value.expiresAtMs > value.confirmedAtMs &&
       value.premiumServiceId !== value.serviceId,
   );
@@ -111,6 +117,7 @@ export function nativeContractSelection(
     return { serviceId: contract.serviceId, priceMinor: contract.priceMinor };
   const rate = sessionRate(
     new Date(startMs + 28800000).toISOString().slice(0, 10),
+    contract.environmentId,
   );
   if (!rate) throw new ApiError(503, "native_pricing_calendar_unavailable");
   return {

@@ -24,6 +24,7 @@ import { SESSION_STARTS } from "@/domain/demo-catalog";
 import { BookingServiceError, type BookingService } from "./contracts";
 import {
   publicCalendarSchema,
+  MAX_DAILY_NATIVE_OFFERS,
   nativeDisplaySlots,
   nativeAvailabilitySchema,
   nativeCalendarSchema,
@@ -54,7 +55,7 @@ const resolveInput = attemptInput.extend({
 });
 const slotsSchema = z
   .array(sessionSchema.safeExtend({ available: z.boolean() }))
-  .max(100);
+  .max(MAX_DAILY_NATIVE_OFFERS);
 const cancelled = () =>
   new BookingServiceError("cancelled", "The request was cancelled.");
 const invalidResponse = () =>

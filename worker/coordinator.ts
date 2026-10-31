@@ -77,7 +77,13 @@ import {
 } from "./native-residual";
 import { DurableObject } from "cloudflare:workers";
 import { traced, measure, instrumentStorage } from "./diagnostics";
-import { ApiError, policy, rpcOutcome, liveCustomerAccess } from "./policy";
+import {
+  providerCredentialName,
+  ApiError,
+  policy,
+  rpcOutcome,
+  liveCustomerAccess,
+} from "./policy";
 import { ProviderSession, type ProviderControl } from "./provider-session";
 // One instance per actual provider account. No booking or customer data here.
 export class SoccerBotAccountCoordinator extends DurableObject<Env> {
@@ -920,7 +926,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
               };
               const secret = hitpaySetting(
                 this.env,
-                "SIMPLYBOOK_DEV_SIGNING_SECRET",
+                providerCredentialName(this.env, "SIGNING_SECRET"),
               );
               if (!secret)
                 throw new ApiError(503, "native_signing_unavailable");
@@ -1411,7 +1417,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         throw new ApiError(503, "native_recovery_scope_mismatch");
       const secret: unknown = Reflect.get(
         this.env,
-        "SIMPLYBOOK_DEV_SIGNING_SECRET",
+        providerCredentialName(this.env, "SIGNING_SECRET"),
       );
       if (typeof secret !== "string")
         throw new ApiError(503, "native_signing_unavailable");

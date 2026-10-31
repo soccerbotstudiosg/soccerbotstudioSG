@@ -1167,3 +1167,127 @@ test("cold calendar entry and refresh select an available day while retaining a 
   );
   expect(screen.queryByText("No times on this day.")).not.toBeInTheDocument();
 });
+
+test("initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-31T02:00:00Z"));
+  for (const scenario of ["available", "empty", "failure", "manual"] as const) {
+    localStorage.clear();
+    sessionStorage.clear();
+    const gates = new Map<string, () => void>();
+    const publicCalendar = vi.fn(async ({ month }: { month: string }) => {
+      await new Promise<void>((resolve) => gates.set(month, resolve));
+      if (scenario === "failure") throw new Error("synthetic calendar failure");
+      return {
+        month,
+        serviceId: "2",
+        observedAtMs: Date.now(),
+        dates:
+          scenario === "available" && month === "2026-11"
+            ? [
+                {
+                  date: "2026-11-03",
+                  available: true,
+                  offers: [
+                    {
+                      serviceId: "2",
+                      serviceName: "Session",
+                      instructorId: "14",
+                      instructorName: "Trainer",
+                      startMs: Date.parse("2026-11-03T12:00:00+08:00"),
+                      priceMinor: 8800,
+                      currency: "SGD" as const,
+                    },
+                  ],
+                },
+              ]
+            : [],
+      };
+    });
+    const service: BookingService = {
+      ...demoBookingService,
+      mode: "live",
+      operations: { ...demoBookingService.operations, availability: "live" },
+      publicCalendar,
+    };
+    const view = render(
+      <BookingProvider bookingService={service}>
+        <TimeStep />
+      </BookingProvider>,
+    );
+    const region = screen.getByRole("region", { name: "Booking calendar" });
+    await waitFor(() => expect(gates.has("2026-10")).toBe(true));
+    expect(region).toHaveAttribute("aria-busy", "true");
+    expect(
+      within(region).getByRole("status", { name: "Checking available dates…" }),
+    ).toBeInTheDocument();
+    expect(
+      within(region).queryByRole("button", { name: dateLabel("2026-10-31") }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("No times on this day.")).not.toBeInTheDocument();
+    if (scenario === "manual") {
+      fireEvent.change(
+        screen.getByRole("combobox", { name: "Calendar month" }),
+        { target: { value: "2" } },
+      );
+      await waitFor(() => expect(gates.has("2026-12")).toBe(true));
+      await act(async () => gates.get("2026-10")!());
+      await act(async () => gates.get("2026-12")!());
+      await screen.findByText("No times on this day.");
+      expect(publicCalendar.mock.calls.map(([q]) => q.month)).toEqual([
+        "2026-10",
+        "2026-12",
+      ]);
+      expect(
+        screen.getByRole("combobox", { name: "Calendar month" }),
+      ).toHaveValue("2");
+    } else {
+      await act(async () => gates.get("2026-10")!());
+      if (scenario === "failure") {
+        await screen.findByText(
+          "Availability could not be checked. Your selections are saved.",
+        );
+        expect(publicCalendar).toHaveBeenCalledTimes(1);
+        expect(region).toHaveAttribute("aria-busy", "false");
+        expect(
+          screen.getByRole("button", { name: "Refresh availability" }),
+        ).toBeEnabled();
+      } else {
+        await waitFor(() => expect(gates.has("2026-11")).toBe(true));
+        expect(region).toHaveAttribute("aria-busy", "true");
+        await act(async () => gates.get("2026-11")!());
+        if (scenario === "available") {
+          await waitFor(() =>
+            expect(
+              within(region).getByRole("button", {
+                name: dateLabel("2026-11-03"),
+              }),
+            ).toHaveAttribute("aria-pressed", "true"),
+          );
+          expect(publicCalendar.mock.calls.map(([q]) => q.month)).toEqual([
+            "2026-10",
+            "2026-11",
+          ]);
+          expect(region).toHaveAttribute("aria-busy", "false");
+        } else {
+          for (const month of ["2026-12", "2027-01"]) {
+            await waitFor(() => expect(gates.has(month)).toBe(true));
+            await act(async () => gates.get(month)!());
+          }
+          await screen.findByText("No times on this day.");
+          expect(publicCalendar.mock.calls.map(([q]) => q.month)).toEqual([
+            "2026-10",
+            "2026-11",
+            "2026-12",
+            "2027-01",
+          ]);
+          expect(
+            screen.getByRole("button", { name: "Next month" }),
+          ).toBeDisabled();
+          expect(region).toHaveAttribute("aria-busy", "false");
+        }
+      }
+    }
+    view.unmount();
+  }
+});

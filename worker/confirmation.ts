@@ -152,7 +152,7 @@ export function decideStoredConfirmation(
     return { status: "unresolved", reason: "invalid_input" };
   const scope = {
       accountId: intent.accountId,
-      environmentId: "developer",
+      environmentId: intent.environmentId,
       attemptId: row.id,
     },
     subject = { kind: "guest", id: access.owner_id };

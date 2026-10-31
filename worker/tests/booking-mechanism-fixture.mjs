@@ -21,6 +21,10 @@ export async function createBookingMechanism(options = {}) {
     "wrangler.jsonc",
     readFileSync("wrangler.jsonc", "utf8"),
   ).config;
+  const client = options.clientSandbox === true;
+  const price = client ? 108 : 88;
+  const serviceId = client ? 3 : 2;
+  const company = client ? "synthetic-client" : "synthetic-developer";
   const origin = "https://soccerbot.test";
   const day = new Date(Date.now() + 3 * 86400000);
   while (day.getUTCDay() !== 3) day.setUTCDate(day.getUTCDate() + 1);
@@ -35,23 +39,43 @@ export async function createBookingMechanism(options = {}) {
   const wall = (ms) =>
     new Date(ms + 28800000).toISOString().slice(0, 19).replace("T", " ");
   for (const value of [booking, creation.bookings[0]]) {
-    value.event_id = 2;
+    value.event_id = serviceId;
     value.start_date_time = wall(startMs);
     value.end_date_time = wall(startMs + 3000000);
   }
   for (const value of [invoice, creation.invoice]) {
-    value.lines[0].bookings[0].service_id = 2;
+    value.lines[0].bookings[0].service_id = serviceId;
     value.due_datetime = new Date(Date.now() + 900000)
       .toISOString()
       .replace(/\.\d{3}Z$/, "Z");
     value.lines[0].bookings[0].start_datetime = wall(startMs);
     value.lines[0].bookings[0].end_datetime = wall(startMs + 3000000);
   }
+  if (client) {
+    booking.company_login = company;
+    for (const field of [
+      "event_price",
+      "invoice_line_amount",
+      "invoice_amount",
+    ])
+      booking[field] = "108.0000";
+    for (const value of [invoice, creation.invoice]) {
+      value.amount = value.deposit = 108;
+      for (const field of [
+        "deposit",
+        "price",
+        "price_without_tax",
+        "final_price",
+        "amount",
+      ])
+        value.lines[0][field] = 108;
+    }
+  }
   if (options.missingCreationDeadline) delete creation.invoice.due_datetime;
   creation.bookings[0].client_hash = "synthetic-client-hash";
   const batchSize = options.batch ? (options.batchSize ?? 2) : 1;
   assert.ok(Number.isInteger(batchSize) && batchSize >= 1 && batchSize <= 12);
-  const total = (88 * batchSize).toFixed(2);
+  const total = (price * batchSize).toFixed(2);
   const bookingDetails = [booking];
   if (options.batch) {
     for (let index = 1; index < batchSize; index++) {
@@ -81,10 +105,10 @@ export async function createBookingMechanism(options = {}) {
       }
     }
     for (const value of bookingDetails)
-      value.invoice_amount = (88 * batchSize).toFixed(4);
+      value.invoice_amount = (price * batchSize).toFixed(4);
     for (const value of [invoice, creation.invoice]) {
-      value.amount = 88 * batchSize;
-      value.deposit = 88 * batchSize;
+      value.amount = price * batchSize;
+      value.deposit = price * batchSize;
     }
   }
   const trainerIds = options.trainerIds ?? [14];
@@ -113,7 +137,7 @@ export async function createBookingMechanism(options = {}) {
           export default { ...worker, async fetch(request, env, ctx) {
             const url = new URL(request.url);
             if (url.pathname === "/__fixture/drain-annotations") {
-              const coordinator = env.COORDINATOR.get(env.COORDINATOR.idFromName("simplybook-developer-account"));
+              const coordinator = env.COORDINATOR.get(env.COORDINATOR.idFromName(env.COORDINATOR_NAME));
               await coordinator.bookingComments(url.searchParams.get("attempt"));
               return new Response(null, { status: 204 });
             }
@@ -165,6 +189,27 @@ export async function createBookingMechanism(options = {}) {
         SIMPLYBOOK_DEV_API_KEY: "synthetic-public-secret",
         SIMPLYBOOK_DEV_ADMIN_API_USER_KEY: "synthetic-admin-secret",
         SIMPLYBOOK_DEV_SIGNING_SECRET: "synthetic-signing-secret",
+        ...(client
+          ? {
+              ENVIRONMENT: "production",
+              DEPLOYMENT_ACCOUNT_ID: "b".repeat(32),
+              STATE_DATABASE_ID: "11111111-1111-4111-8111-111111111111",
+              COORDINATOR_NAME: "synthetic-client-account",
+              COORDINATOR_LOCATION_HINT: "apac-ne",
+              CLIENT_SANDBOX_ACCESS: "enabled",
+              PRIMARY_SERVICE_ID: "3",
+              PREMIUM_SERVICE_ID: "4",
+              SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: company,
+              HITPAY_EXPECTED_BUSINESS_ID: businessId,
+              HITPAY_EXPECTED_MERCHANT: "soccerbot",
+              SIMPLYBOOK_PROD_COMPANY_LOGIN: company,
+              SIMPLYBOOK_PROD_ADMIN_LOGIN: "synthetic-client-admin",
+              SIMPLYBOOK_PROD_API_KEY: "synthetic-client-public-key",
+              SIMPLYBOOK_PROD_ADMIN_API_USER_KEY: "synthetic-client-admin-key",
+              SIMPLYBOOK_PROD_SIGNING_SECRET: "synthetic-signing-secret",
+            }
+          : {}),
+        ...options.bindings,
       },
       d1Databases: { STATE: "synthetic-state" },
       durableObjects: {
@@ -250,7 +295,7 @@ export async function createBookingMechanism(options = {}) {
           if (url.pathname === "/admin/auth")
             return Response.json({ token: "synthetic-admin-token" });
           if (url.pathname === "/admin/company/info")
-            return Response.json({ login: "synthetic-developer" });
+            return Response.json({ login: company });
           if (url.pathname === "/admin/tariff/current")
             return Response.json({
               limits: [{ key: "sheduler_limit", total: 100, rest: 100 }],
@@ -315,14 +360,14 @@ export async function createBookingMechanism(options = {}) {
           const results = {
             getToken: "synthetic-public-token",
             getEventList: {
-              2: {
-                id: 2,
+              [serviceId]: {
+                id: serviceId,
                 name: "Native Session",
                 duration: "40",
                 is_active: "1",
                 is_public: "1",
                 is_recurring: "0",
-                price: "88",
+                price: String(price),
                 currency: "SGD",
                 unit_map: trainerIds,
               },
@@ -363,6 +408,13 @@ export async function createBookingMechanism(options = {}) {
                 }
               : {}),
           };
+          if (client)
+            results.getEventList[4] = {
+              ...results.getEventList[3],
+              id: 4,
+              price: "128",
+              name: "Premium Session",
+            };
           if (body && Object.hasOwn(results, body.method)) {
             if (body.method === "book") {
               assert.equal(booked, false, "a hold must never book twice");
@@ -386,7 +438,19 @@ export async function createBookingMechanism(options = {}) {
     mark("runtime-ready");
     const db = await mf.getD1Database("STATE");
     mark("database-handle");
-    await initializeFixture(mf, db);
+    await initializeFixture(
+      mf,
+      db,
+      undefined,
+      client
+        ? {
+            accountId: "b".repeat(32),
+            environment: "production",
+            databaseId: "11111111-1111-4111-8111-111111111111",
+            coordinatorName: "synthetic-client-account",
+          }
+        : undefined,
+    );
     mark("schema-init");
     return {
       mf,
