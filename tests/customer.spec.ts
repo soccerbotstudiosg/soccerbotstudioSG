@@ -352,7 +352,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await openSite(page, "/book/account/");
   await expect(page.locator(".footer-logo")).toHaveAttribute(
     "src",
-    sitePath("/assets/e1fb2d17fd4c.svg"),
+    sitePath("/assets/7a29f38b3c34.webp"),
   );
   await expect(page.locator(".nav .official-logo")).toHaveAttribute(
     "src",
