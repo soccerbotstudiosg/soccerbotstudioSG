@@ -64,7 +64,7 @@ export const providerIdentifier = z
   .refine((value) => Number.isSafeInteger(Number(value)));
 export const catalogueBindingSchema = z.strictObject({
   accountId: z.string().min(1).max(128),
-  environmentId: z.literal("developer"),
+  environmentId: z.enum(["developer", "production"]),
   companyLogin: z.string().min(1).max(128),
 });
 const label = z.string().trim().min(1).max(256);

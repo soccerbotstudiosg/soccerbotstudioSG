@@ -12,7 +12,13 @@ import { nativeValidationReason } from "./provider-normalization";
 import { safeNativeFailure } from "./native-residual";
 import { z } from "zod";
 import { authenticate, type Access } from "./access";
-import { ApiError, digest, sandboxPolicy, liveCustomerAccess } from "./policy";
+import {
+  providerCredentialName,
+  ApiError,
+  digest,
+  sandboxPolicy,
+  liveCustomerAccess,
+} from "./policy";
 import {
   intentSchema,
   associationSchema,
@@ -151,7 +157,10 @@ export async function executeNativeCheckout(options: {
     options.prepared?.grant ?? (snapshots![0].results[0] as Grant | undefined);
   if (!grant) throw new ApiError(503, "native_write_grant_unavailable");
   const ongoing = grant.ongoing === 1 && liveCustomerAccess(env);
-  if (grant.ongoing === 1 && !ongoing)
+  if (
+    (grant.ongoing === 1 && !ongoing) ||
+    (p.ENVIRONMENT === "production" && !ongoing)
+  )
     throw new ApiError(503, "provider_access_disabled");
   if (grant.state !== "granted")
     return nativeCheckoutStatus(request, env, attemptId);
@@ -204,7 +213,10 @@ export async function executeNativeCheckout(options: {
     grant.maximum_used - grant.starting_used < 20
   )
     throw new ApiError(503, "native_write_scope_unavailable");
-  const secret: unknown = Reflect.get(env, "SIMPLYBOOK_DEV_SIGNING_SECRET");
+  const secret: unknown = Reflect.get(
+    env,
+    providerCredentialName(env, "SIGNING_SECRET"),
+  );
   if (typeof secret !== "string" || !secret || secret.includes("["))
     throw new ApiError(503, "native_signing_unavailable");
   const consolidated = !!options.prepared && options.creationOnly === true;
@@ -1043,7 +1055,9 @@ async function customerNativeWindow(
     state:
       grant.state === "granted" ||
       (attemptId !== undefined && grant.attempt_id === attemptId),
-    mode: grant.ongoing !== 1 || ongoing,
+    mode:
+      (grant.ongoing !== 1 || ongoing) &&
+      (p.ENVIRONMENT === "developer" || ongoing),
     access: p.PROVIDER_ACCESS === "trusted-reads",
     source:
       grant.source_revision === p.SOURCE_REVISION &&

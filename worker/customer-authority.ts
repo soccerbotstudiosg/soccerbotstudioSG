@@ -1,6 +1,12 @@
 import { BOOKING_LEAD_MINUTES } from "../src/domain/booking-policy";
 import { authenticate, type Access } from "./access";
-import { ApiError, liveCustomerAccess, policy } from "./policy";
+import {
+  ApiError,
+  liveCustomerAccess,
+  policy,
+  providerServiceIds,
+} from "./policy";
+import { sessionPrices } from "../src/domain/session-pricing";
 import { nativePrepareSchema } from "../src/domain/native-checkout";
 import { nativeAccountContractSchema } from "./prebooking";
 import {
@@ -48,6 +54,7 @@ export async function authorizeCustomerCheckout(
     throw new ApiError(503, "provider_access_disabled");
   const input = nativePrepareSchema.parse(value);
   const p = policy(env);
+  const services = providerServiceIds(env);
   const access =
     verifiedAccess ?? (await authenticate(request, env, Date.now()));
   const existing =
@@ -64,7 +71,8 @@ export async function authorizeCustomerCheckout(
   if (
     input.sessions.some(
       (session) =>
-        session.serviceId !== "2" && session.serviceId !== p.PREMIUM_SERVICE_ID,
+        session.serviceId !== services.primary &&
+        session.serviceId !== services.premium,
     )
   )
     throw new ApiError(409, "native_selection_changed");
@@ -81,7 +89,7 @@ export async function authorizeCustomerCheckout(
     available[date] = await windowAvailability({
       ...options,
       date,
-      serviceId: "2",
+      serviceId: services.primary,
       fresh: true,
     });
   }
@@ -109,8 +117,8 @@ export async function authorizeCustomerCheckout(
     accountId: p.DEPLOYMENT_ACCOUNT_ID,
     environmentId: p.ENVIRONMENT,
     companyLogin: providerSecrets(env).company,
-    serviceId: "2",
-    priceMinor: 8800,
+    serviceId: services.primary,
+    priceMinor: sessionPrices(p.ENVIRONMENT).ordinary,
     ...(p.PREMIUM_SERVICE_ID ? { premiumServiceId: p.PREMIUM_SERVICE_ID } : {}),
     currency: "SGD",
     taxMinor: 0,
@@ -287,7 +295,7 @@ export async function rejectedCheckoutReadback(
       day = await windowAvailability({
         ...options,
         date,
-        serviceId: "2",
+        serviceId: providerServiceIds(options.env).primary,
         fresh: true,
       });
       days.set(date, day);

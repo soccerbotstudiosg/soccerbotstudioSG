@@ -1164,6 +1164,10 @@
     "title": "cold calendar entry and refresh select an available day while retaining a valid chosen day"
   },
   {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation"
+  },
+  {
     "file": "tests/live-email.spec.ts",
     "title": "real API 409 preparation rejection stays on Review without payment verification"
   },

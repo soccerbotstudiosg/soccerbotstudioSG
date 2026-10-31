@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { ApiError, digest } from "./policy";
+import {
+  clientSandboxAccess,
+  providerCredentialName,
+  ApiError,
+  digest,
+} from "./policy";
 import { isHitpayCheckoutUrl } from "../src/domain/native-checkout";
 
 export const hitpayId = z.string().uuid();
@@ -11,7 +16,7 @@ export function hitpaySetting(env: Env, name: string) {
 /** Check whether the configured environment permits HitPay recovery. */
 export function hitpayRecoveryEnabled(env: Env) {
   return (
-    env.ENVIRONMENT === "developer" &&
+    (env.ENVIRONMENT === "developer" || clientSandboxAccess(env)) &&
     hitpaySetting(env, "HITPAY_RECOVERY") === "enabled"
   );
 }
@@ -44,7 +49,7 @@ export function assertHitpayCreation(env: Env) {
 }
 export const paymentScopeSchema = z.strictObject({
   accountId: z.string(),
-  environmentId: z.literal("developer"),
+  environmentId: z.enum(["developer", "production"]),
   companyLogin: z.string(),
   businessId: hitpayId,
   merchant: z.string(),
@@ -65,7 +70,8 @@ export async function assertPaymentScope(env: Env, scope: PaymentScope) {
   if (
     scope.accountId !== env.DEPLOYMENT_ACCOUNT_ID ||
     scope.environmentId !== env.ENVIRONMENT ||
-    scope.companyLogin !== hitpaySetting(env, "SIMPLYBOOK_DEV_COMPANY_LOGIN") ||
+    scope.companyLogin !==
+      hitpaySetting(env, providerCredentialName(env, "COMPANY_LOGIN")) ||
     scope.businessId !== config.businessId ||
     scope.merchant !== config.merchant ||
     scope.externalProcessor !==

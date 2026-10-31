@@ -5,7 +5,12 @@ import {
   NATIVE_TRIAL_LEAD_MS,
 } from "../src/domain/booking-policy";
 import { sessionPrices, sessionRate } from "../src/domain/session-pricing";
-import { ApiError, policy, liveCustomerAccess } from "./policy";
+import {
+  ApiError,
+  policy,
+  liveCustomerAccess,
+  providerServiceIds,
+} from "./policy";
 import { providerSecrets } from "./provider-transport";
 import type { ProviderSession, ProviderControl } from "./provider-session";
 import { calendarDates, NativeCalendarReads } from "./native-calendar";
@@ -74,7 +79,7 @@ export function calendarWindow(options: ReadOptions) {
       dates.push(day.toISOString().slice(0, 10));
     parsed = {
       sourceRevision: p.SOURCE_REVISION,
-      serviceId: "2",
+      serviceId: providerServiceIds(env).primary,
       dates,
       notBeforeMs: Date.now(),
       expiresMs: Number.MAX_SAFE_INTEGER,

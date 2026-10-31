@@ -1,6 +1,6 @@
 import { confirmationStage, confirmationResult } from "./confirmation-tracing";
 import { receiptData } from "./receipt-data";
-import { ApiError, digest, policy } from "./policy";
+import { providerCredentialName, ApiError, digest, policy } from "./policy";
 import {
   hitpayRecoveryEnabled,
   hitpayFailureReason,
@@ -152,7 +152,10 @@ export async function recoverHitpay(
       }
       return;
     }
-    const secret = hitpaySetting(env, "SIMPLYBOOK_DEV_SIGNING_SECRET");
+    const secret = hitpaySetting(
+      env,
+      providerCredentialName(env, "SIGNING_SECRET"),
+    );
     if (!secret) throw new ApiError(503, "native_signing_unavailable");
     const signatures = await nativeSignaturesFromSnapshot(
       initial[4].results as { step: string; reference_id: string }[],

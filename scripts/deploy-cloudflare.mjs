@@ -64,6 +64,32 @@ export function validateDeployment(directory, revision, target = null) {
       assert.equal(config.assets.run_worker_first, true);
     } else assert.equal(config.routes, undefined);
     assert.equal(config.vars.ENVIRONMENT, target.environment);
+    if (target.target === "production")
+      assert.equal(config.vars.CLIENT_SANDBOX_ACCESS, "disabled");
+    if (target.hitpaySandbox) {
+      assert.equal(
+        config.vars.HITPAY_EXPECTED_MERCHANT,
+        target.hitpaySandbox.merchant,
+      );
+      assert.equal(
+        config.vars.HITPAY_EXPECTED_BUSINESS_ID,
+        target.hitpaySandbox.businessId,
+      );
+    }
+    if (target.simplybook) {
+      assert.equal(
+        config.vars.SIMPLYBOOK_EXPECTED_COMPANY_LOGIN,
+        target.simplybook.companyLogin,
+      );
+      assert.equal(
+        config.vars.PRIMARY_SERVICE_ID,
+        target.simplybook.primaryServiceId,
+      );
+      assert.equal(
+        config.vars.PREMIUM_SERVICE_ID,
+        target.simplybook.premiumServiceId,
+      );
+    }
     assert.equal(config.vars.COORDINATOR_NAME, target.coordinatorName);
     assert.equal(
       config.vars.COORDINATOR_LOCATION_HINT,

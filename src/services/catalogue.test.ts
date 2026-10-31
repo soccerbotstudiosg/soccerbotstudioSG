@@ -44,6 +44,26 @@ test("live catalogue boundary accepts stable provider IDs without preview aliase
     "14",
     "15",
   ]);
+  const client = {
+    ...value,
+    binding: { ...value.binding, environmentId: "production" as const },
+  };
+  expect(
+    await defineCatalogueService(client.binding, {
+      read: async () => client,
+    }).read({}),
+  ).toEqual(client);
+  await expect(
+    defineCatalogueService(value.binding, { read: async () => client }).read(
+      {},
+    ),
+  ).rejects.toMatchObject({ code: "invalid_response" });
+  expect(
+    catalogueSchema.safeParse({
+      ...value,
+      binding: { ...value.binding, environmentId: "unknown" },
+    }).success,
+  ).toBe(false);
   expect(draftSchema.parse(blankDraft())).toEqual(blankDraft());
   const invalid = {
     ...value,

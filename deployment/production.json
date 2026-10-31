@@ -1,5 +1,10 @@
 {
   "target": "production",
+  "simplybook": {
+    "companyLogin": "soccerbotadmin",
+    "primaryServiceId": "3",
+    "premiumServiceId": "4"
+  },
   "repository": "soccerbotstudiosg/soccerbotstudioSG",
   "accountId": "0b36822648e6905c681a90b6bec5ca7f",
   "workerName": "soccerbot-production",
@@ -15,5 +20,9 @@
   "pagesBranch": "main",
   "sandbox": null,
   "coordinatorLocationHint": "apac-ne",
-  "saasZone": null
+  "saasZone": null,
+  "hitpaySandbox": {
+    "merchant": "app404",
+    "businessId": "a2d2119d-79f1-41fa-9d65-6e311d06da35"
+  }
 }

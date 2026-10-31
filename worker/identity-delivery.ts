@@ -1,3 +1,4 @@
+import { turnstileSecretName } from "./policy";
 import { z } from "zod";
 import { authenticate } from "./access";
 import { verifyBindings } from "./bindings";
@@ -157,7 +158,7 @@ export async function identityDelivery(
     throw unavailable();
   const sourceHash = await keyedHash(pepper, ["delivery-source", source]);
   const resendKey = secret(env, "RESEND_API_KEY");
-  const botKey = secret(env, "TURNSTILE_SECRET");
+  const botKey = secret(env, turnstileSecretName(env));
   /** Dispatch the authorized identity action within its delivery window. */
   async function dispatch(
     kind: "bot" | "email",

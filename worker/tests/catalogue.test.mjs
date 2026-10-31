@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 const bundle = await build({
   stdin: {
-    contents: `export * from './worker/provider-token-cache'; export * from './worker/display-snapshots'; export * from './worker/parallel-reads'; export * from './worker/customer-catalogue'; export * from './worker/public-calendar'; export * from './worker/native-calendar'; export * from './worker/catalogue'; export * from './worker/prebooking'; export * from './worker/provider-session'; export * from './worker/provider-transport';`,
+    contents: `export * from './worker/hitpay-contract'; export * from './worker/policy'; export * from './worker/provider-token-cache'; export * from './worker/display-snapshots'; export * from './worker/parallel-reads'; export * from './worker/customer-catalogue'; export * from './worker/public-calendar'; export * from './worker/native-calendar'; export * from './worker/catalogue'; export * from './worker/prebooking'; export * from './worker/provider-session'; export * from './worker/provider-transport';`,
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -34,6 +34,16 @@ const {
   nativeTrialLeadMs,
   ProviderSession,
   providerRequest,
+  providerSecrets,
+  providerCredentialName,
+  providerServiceIds,
+  turnstileSecretName,
+  clientSandboxAccess,
+  sandboxPolicy,
+  nativeAccountContractSchema,
+  paymentScopeSchema,
+  assertPaymentScope,
+  digest,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}`
 );
@@ -195,12 +205,26 @@ test("catalogue shares bounded reads isolates account environment and protects c
     read.exchange,
   );
   assert.equal(read.calls.length, 6);
+  const clientBinding = { ...binding, environmentId: "production" };
   await assert.rejects(
-    cache.read({ ...binding, environmentId: "production" }, read.exchange),
+    cache.read(clientBinding, read.exchange, false, false, true),
+    /display_cache_miss/,
+  );
+  assert.equal(read.calls.length, 6);
+  const client = await cache.read(clientBinding, read.exchange);
+  assert.equal(client.binding.environmentId, "production");
+  assert.equal(read.calls.length, 8);
+  await assert.rejects(
+    cache.read({ ...binding, environmentId: "unknown" }, read.exchange),
   );
   cache.invalidate(binding);
   await cache.read(binding, read.exchange);
-  assert.equal(read.calls.length, 8);
+  assert.equal(read.calls.length, 10);
+  assert.deepEqual(
+    await cache.read(clientBinding, read.exchange, false, false, true),
+    client,
+  );
+  assert.equal(read.calls.length, 10);
 });
 test("catalogue overlaps independent reads and waits for both before caching", async () => {
   const cache = new CatalogueReads(),
@@ -2204,7 +2228,14 @@ test("durable provider tokens retain original expiry and reject changed credenti
       { SIMPLYBOOK_DEV_API_KEY: "rotated-public-key" },
       { SIMPLYBOOK_DEV_COMPANY_LOGIN: "another-company" },
       { DEPLOYMENT_ACCOUNT_ID: "another-account" },
-      { ENVIRONMENT: "another-environment" },
+      {
+        ENVIRONMENT: "production",
+        SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-company",
+        SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-company",
+        SIMPLYBOOK_PROD_ADMIN_LOGIN: "synthetic-admin",
+        SIMPLYBOOK_PROD_API_KEY: "synthetic-public-key",
+        SIMPLYBOOK_PROD_ADMIN_API_USER_KEY: "synthetic-admin-key",
+      },
     ]) {
       await restored.save(env, "public", token);
       assert.equal(
@@ -2531,4 +2562,199 @@ test("customer-choice prebooking keeps the requested eligible trainer and refuse
     validation.review(intent),
     /eligibility_catalogue_conflict/,
   );
+});
+
+test("production provider credentials never fall back to developer keys and require the reviewed company", () => {
+  const env = {
+    ENVIRONMENT: "production",
+    SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_ADMIN_LOGIN: "client-admin",
+    SIMPLYBOOK_PROD_API_KEY: "client-public-key",
+    SIMPLYBOOK_PROD_ADMIN_API_USER_KEY: "client-admin-key",
+    SIMPLYBOOK_DEV_COMPANY_LOGIN: "synthetic-developer",
+    SIMPLYBOOK_DEV_ADMIN_LOGIN: "developer-admin",
+    SIMPLYBOOK_DEV_API_KEY: "developer-public-key",
+    SIMPLYBOOK_DEV_ADMIN_API_USER_KEY: "developer-admin-key",
+  };
+  assert.equal(turnstileSecretName(env), "TURNSTILE_SECRET_KEY");
+  assert.equal(
+    turnstileSecretName({ ...env, ENVIRONMENT: "developer" }),
+    "TURNSTILE_SECRET",
+  );
+  assert.deepEqual(providerSecrets(env), {
+    company: "synthetic-client",
+    login: "client-admin",
+    publicKey: "client-public-key",
+    adminKey: "client-admin-key",
+  });
+  assert.deepEqual(providerSecrets({ ...env, ENVIRONMENT: "developer" }), {
+    company: "synthetic-developer",
+    login: "developer-admin",
+    publicKey: "developer-public-key",
+    adminKey: "developer-admin-key",
+  });
+  for (const suffix of [
+    "COMPANY_LOGIN",
+    "ADMIN_LOGIN",
+    "API_KEY",
+    "ADMIN_API_USER_KEY",
+  ])
+    assert.throws(
+      () => providerSecrets({ ...env, [`SIMPLYBOOK_PROD_${suffix}`]: "" }),
+      /provider_credentials_missing/,
+    );
+  assert.throws(
+    () => providerSecrets({ ...env, SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "" }),
+    /provider_credentials_missing/,
+  );
+  assert.throws(
+    () =>
+      providerSecrets({
+        ...env,
+        SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-developer",
+      }),
+    /provider_identity_unverified/,
+  );
+  assert.throws(() => providerSecrets({ ...env, ENVIRONMENT: "unknown" }));
+  assert.equal(
+    providerCredentialName(env, "SIGNING_SECRET"),
+    "SIMPLYBOOK_PROD_SIGNING_SECRET",
+  );
+  assert.equal(
+    providerCredentialName(
+      { ...env, ENVIRONMENT: "developer" },
+      "SIGNING_SECRET",
+    ),
+    "SIMPLYBOOK_DEV_SIGNING_SECRET",
+  );
+});
+test("production service selection requires explicit distinct mappings without staging defaults", () => {
+  const config = ts.parseConfigFileTextToJson(
+    "wrangler.jsonc",
+    readFileSync("wrangler.jsonc", "utf8"),
+  ).config;
+  const env = {
+    ...config.vars,
+    ENVIRONMENT: "production",
+    SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-client",
+    PRIMARY_SERVICE_ID: "3",
+    PREMIUM_SERVICE_ID: "4",
+  };
+  assert.deepEqual(providerServiceIds(env), { primary: "3", premium: "4" });
+  assert.deepEqual(providerServiceIds(config.vars), {
+    primary: "2",
+    premium: "",
+  });
+  for (const patch of [
+    { PRIMARY_SERVICE_ID: "" },
+    { PREMIUM_SERVICE_ID: "" },
+    { PREMIUM_SERVICE_ID: "3" },
+    { SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "" },
+  ])
+    assert.throws(
+      () => providerServiceIds({ ...env, ...patch }),
+      /native_pricing_configuration_invalid/,
+    );
+});
+
+test("client sandbox contracts bind merchant company environment and pricing without enabling live payments", async () => {
+  const config = ts.parseConfigFileTextToJson(
+    "wrangler.jsonc",
+    readFileSync("wrangler.jsonc", "utf8"),
+  ).config;
+  const env = {
+    ...config.vars,
+    ENVIRONMENT: "production",
+    CLIENT_SANDBOX_ACCESS: "enabled",
+    PRIMARY_SERVICE_ID: "3",
+    PREMIUM_SERVICE_ID: "4",
+    SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-client",
+    HITPAY_EXPECTED_MERCHANT: "synthetic",
+    HITPAY_MERCHANT: "synthetic",
+    HITPAY_EXPECTED_BUSINESS_ID: "00000000-0000-4000-8000-000000000003",
+    HITPAY_BUSINESS_ID: "00000000-0000-4000-8000-000000000003",
+    HITPAY_CONTRACT_ACCEPTED: "sandbox-reviewed",
+    SIMPLYBOOK_EXTERNAL_PAYMENT: "sandbox-reviewed",
+    SIMPLYBOOK_EXTERNAL_PROCESSOR: "manual",
+    HITPAY_RECOVERY: "enabled",
+    HITPAY_SANDBOX_API_KEY: "synthetic-key",
+  };
+  assert.equal(clientSandboxAccess(env), true);
+  assert.equal(sandboxPolicy(env).ENVIRONMENT, "production");
+  for (const patch of [
+    { CLIENT_SANDBOX_ACCESS: undefined },
+    { HITPAY_EXPECTED_MERCHANT: "" },
+    { HITPAY_MERCHANT: "foreign" },
+    { HITPAY_BUSINESS_ID: "00000000-0000-4000-8000-000000000004" },
+    { HITPAY_EXPECTED_BUSINESS_ID: "" },
+    { SIMPLYBOOK_PROD_COMPANY_LOGIN: "foreign" },
+    { HITPAY_CONTRACT_ACCEPTED: "live" },
+    { PRIMARY_SERVICE_ID: "4" },
+    { SIMPLYBOOK_EXTERNAL_PROCESSOR: "other" },
+  ]) {
+    assert.equal(clientSandboxAccess({ ...env, ...patch }), false);
+    assert.throws(
+      () => sandboxPolicy({ ...env, ...patch }),
+      /provider_access_disabled/,
+    );
+  }
+  const scope = paymentScopeSchema.parse({
+    accountId: env.DEPLOYMENT_ACCOUNT_ID,
+    environmentId: "production",
+    companyLogin: "synthetic-client",
+    businessId: env.HITPAY_BUSINESS_ID,
+    merchant: "synthetic",
+    externalProcessor: "manual",
+    keyDigest: await digest("synthetic-key"),
+    attemptId: "00000000-0000-4000-8000-000000000001",
+    intentHash: "synthetic",
+    associationJson: "{}",
+    invoiceId: "1",
+    customerId: "2",
+    totalMinor: 10800,
+    currency: "SGD",
+  });
+  await assertPaymentScope(env, scope);
+  for (const patch of [
+    { environmentId: "developer" },
+    { companyLogin: "synthetic-developer" },
+    { accountId: "foreign" },
+    { merchant: "foreign" },
+    { keyDigest: "a".repeat(64) },
+  ])
+    await assert.rejects(
+      () => assertPaymentScope(env, { ...scope, ...patch }),
+      /hitpay_scope_mismatch/,
+    );
+  const contract = {
+    accountId: env.DEPLOYMENT_ACCOUNT_ID,
+    environmentId: "production",
+    companyLogin: "synthetic-client",
+    serviceId: "3",
+    premiumServiceId: "4",
+    priceMinor: 10800,
+    currency: "SGD",
+    taxMinor: 0,
+    durationMinutes: 40,
+    bufferAfterMinutes: 10,
+    clientLoginRequired: false,
+    providerSchedules: "customer-choice",
+    bookingLeadMinutes: 240,
+    confirmedAtMs: 1000,
+    expiresAtMs: 2000,
+  };
+  assert.equal(nativeAccountContractSchema.safeParse(contract).success, true);
+  for (const patch of [
+    { priceMinor: 8800 },
+    { environmentId: "developer" },
+    { trialLeadTimeException: "owner-2026-10-14-15" },
+    { bookingLeadMinutes: 150 },
+    { premiumServiceId: undefined },
+  ])
+    assert.equal(
+      nativeAccountContractSchema.safeParse({ ...contract, ...patch }).success,
+      false,
+    );
 });

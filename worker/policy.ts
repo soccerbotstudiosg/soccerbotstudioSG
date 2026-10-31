@@ -20,6 +20,12 @@ const schema = z.object({
   CAMPAIGN_END_MS: duration(0, Number.MAX_SAFE_INTEGER),
   SOURCE_REVISION: z.string().regex(/^(unpublished|[a-f0-9]{40})$/),
   ENVIRONMENT: z.enum(["developer", "production"]),
+  CLIENT_SANDBOX_ACCESS: z.enum(["disabled", "enabled"]).default("disabled"),
+  PRIMARY_SERVICE_ID: z
+    .string()
+    .regex(/^(?:[1-9]\d{0,14})?$/)
+    .default(""),
+  SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: z.string().max(128).default(""),
   PREMIUM_SERVICE_ID: z
     .string()
     .regex(/^(?:[1-9]\d{0,14})?$/)
@@ -43,12 +49,73 @@ const schema = z.object({
 export function policy(env: Env) {
   return schema.parse(env);
 }
-/** Keep provider workflows closed outside the currently reviewed developer contract. */
+/** Select credential names without falling back across deployment environments. */
+export function providerCredentialName(
+  env: Env,
+  suffix:
+    | "COMPANY_LOGIN"
+    | "ADMIN_LOGIN"
+    | "API_KEY"
+    | "ADMIN_API_USER_KEY"
+    | "SIGNING_SECRET",
+) {
+  const environment = z
+    .enum(["developer", "production"])
+    .parse(env.ENVIRONMENT);
+  return `SIMPLYBOOK_${environment === "production" ? "PROD" : "DEV"}_${suffix}`;
+}
+/** Select the installed bot-verification binding for each deployment environment. */
+export function turnstileSecretName(env: Env) {
+  return z.enum(["developer", "production"]).parse(env.ENVIRONMENT) ===
+    "production"
+    ? "TURNSTILE_SECRET_KEY"
+    : "TURNSTILE_SECRET";
+}
+/** Require explicit client service mappings while retaining developer defaults. */
+export function providerServiceIds(env: Env) {
+  const p = policy(env);
+  const primary =
+    p.PRIMARY_SERVICE_ID || (p.ENVIRONMENT === "developer" ? "2" : "");
+  const premium = p.PREMIUM_SERVICE_ID;
+  if (
+    !primary ||
+    primary === premium ||
+    (p.ENVIRONMENT === "production" &&
+      (!premium || !p.SIMPLYBOOK_EXPECTED_COMPANY_LOGIN))
+  )
+    throw new ApiError(503, "native_pricing_configuration_invalid");
+  return { primary, premium };
+}
+/** Require the explicitly reviewed client pairing before sandbox operations. */
+export function clientSandboxAccess(env: Env) {
+  const p = policy(env);
+  const read = (name: string): unknown => Reflect.get(env, name);
+  return (
+    p.ENVIRONMENT === "production" &&
+    p.CLIENT_SANDBOX_ACCESS === "enabled" &&
+    !!p.PRIMARY_SERVICE_ID &&
+    !!p.PREMIUM_SERVICE_ID &&
+    p.PRIMARY_SERVICE_ID !== p.PREMIUM_SERVICE_ID &&
+    !!p.SIMPLYBOOK_EXPECTED_COMPANY_LOGIN &&
+    read("SIMPLYBOOK_PROD_COMPANY_LOGIN") ===
+      p.SIMPLYBOOK_EXPECTED_COMPANY_LOGIN &&
+    typeof read("HITPAY_EXPECTED_BUSINESS_ID") === "string" &&
+    z.uuid().safeParse(read("HITPAY_EXPECTED_BUSINESS_ID")).success &&
+    read("HITPAY_BUSINESS_ID") === read("HITPAY_EXPECTED_BUSINESS_ID") &&
+    typeof read("HITPAY_EXPECTED_MERCHANT") === "string" &&
+    /^[a-zA-Z0-9_-]{1,80}$/.test(String(read("HITPAY_EXPECTED_MERCHANT"))) &&
+    read("HITPAY_MERCHANT") === read("HITPAY_EXPECTED_MERCHANT") &&
+    read("HITPAY_CONTRACT_ACCEPTED") === "sandbox-reviewed" &&
+    read("SIMPLYBOOK_EXTERNAL_PAYMENT") === "sandbox-reviewed" &&
+    read("SIMPLYBOOK_EXTERNAL_PROCESSOR") === "manual"
+  );
+}
+/** Keep native workflows within developer or explicitly scoped client sandbox contracts. */
 export function sandboxPolicy(env: Env) {
   const p = policy(env);
-  if (p.ENVIRONMENT !== "developer")
+  if (p.ENVIRONMENT !== "developer" && !clientSandboxAccess(env))
     throw new ApiError(503, "provider_access_disabled");
-  return { ...p, ENVIRONMENT: p.ENVIRONMENT };
+  return p;
 }
 // Ongoing customer operations have no campaign expiry. Operator experiments
 // retain their separately installed grants, deadlines and cumulative budgets.
@@ -56,6 +123,7 @@ export function sandboxPolicy(env: Env) {
 export function liveCustomerAccess(env: Env) {
   const p = policy(env);
   return (
+    (p.ENVIRONMENT === "developer" || clientSandboxAccess(env)) &&
     p.LIVE_CUSTOMER_ACCESS === "enabled" &&
     p.PROVIDER_ACCESS === "trusted-reads" &&
     /^[a-f0-9]{40}$/.test(p.SOURCE_REVISION)

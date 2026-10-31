@@ -22,10 +22,11 @@ export async function initializeFixture(
   mf,
   db,
   names = readdirSync("migrations").sort(),
+  identity,
 ) {
-  await seedFoundation(mf, db);
+  if (!identity) await seedFoundation(mf, db);
   const sql = names
-    .filter((name) => !name.startsWith("0005"))
+    .filter((name) => identity || !name.startsWith("0005"))
     .map((name) =>
       readFileSync(`migrations/${name}`, "utf8")
         .replace(/^--.*$/gm, "")
@@ -33,4 +34,16 @@ export async function initializeFixture(
     )
     .join(" ");
   if (sql) await db.exec(sql);
+  if (identity) {
+    const ns = await mf.getDurableObjectNamespace("COORDINATOR");
+    await db
+      .prepare("INSERT INTO foundation_identity VALUES(1,?,?,?,?)")
+      .bind(
+        identity.accountId,
+        identity.environment,
+        identity.databaseId,
+        ns.idFromName(identity.coordinatorName).toString(),
+      )
+      .run();
+  }
 }

@@ -10,7 +10,7 @@ import { ApiError, digest } from "./policy";
 export const intentSchema = z
   .strictObject({
     accountId: z.string().min(1).max(128),
-    environmentId: z.literal("developer"),
+    environmentId: z.enum(["developer", "production"]),
     customerId: z.string().min(1).max(128),
     // New guest attempts use a server-owned local subject. The returned native
     // client ID is bound only to this attempt's newly created bookings.

@@ -1039,6 +1039,19 @@ test("per-slot trainer dropdowns group times under trainer cards and retain chan
   const noon = page.getByRole("combobox", {
     name: `Trainer for ${date} at 12:00`,
   });
+  const choice = page.locator(".time-choice").filter({ has: noon });
+  await expect(choice).toHaveCount(1);
+  await expect(choice).toHaveCSS("border-top-width", "1px");
+  await expect(choice).toHaveCSS("row-gap", "normal");
+  await expect(choice.locator(".time")).toHaveCSS("border-top-width", "0px");
+  await expect(choice.locator(".trainer-choice")).toHaveCSS(
+    "border-bottom-width",
+    "0px",
+  );
+  await expect(choice.locator(".trainer-choice")).toHaveCSS(
+    "border-top-width",
+    "1px",
+  );
   await noon.selectOption(`${date}|12:00|demo|daniel`);
   await page.getByRole("button", { name: /15:20–16:00/ }).click();
   await page

@@ -172,6 +172,18 @@
     "title": "customer-choice prebooking keeps the requested eligible trainer and refuses unavailable or foreign choices"
   },
   {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "production provider credentials never fall back to developer keys and require the reviewed company"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "production service selection requires explicit distinct mappings without staging defaults"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "client sandbox contracts bind merchant company environment and pricing without enabling live payments"
+  },
+  {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "combined hold performs one preflight and preserves immutable identity across concurrent requests and restoration"
   },
@@ -362,6 +374,14 @@
   {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "direct checkout preserves provider shared-studio rejection across different trainers without a second payment or replay"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "client sandbox guest checkout preserves production scope through duplicate requests and paid recovery"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "client sandbox disabled or foreign pairing refuses guest booking before provider dispatch"
   },
   {
     "file": "worker/tests/foundation.test.mjs",

@@ -1,7 +1,7 @@
 import { webhookEvent, webhookRoute } from "./webhook-contract";
 import { z } from "zod";
 import { verifyBindings } from "./bindings";
-import { ApiError } from "./policy";
+import { ApiError, providerCredentialName } from "./policy";
 
 const unavailable = () => new ApiError(503, "webhook_unavailable");
 const windowSchema = z.strictObject({
@@ -104,7 +104,10 @@ export async function captureWebhook(
   );
   if (!parsedWindow.success) throw unavailable();
   const window = parsedWindow.data;
-  const company: unknown = Reflect.get(env, "SIMPLYBOOK_DEV_COMPANY_LOGIN");
+  const company: unknown = Reflect.get(
+    env,
+    providerCredentialName(env, "COMPANY_LOGIN"),
+  );
   if (
     window.subscription_event !== event ||
     window.source_revision !== env.SOURCE_REVISION ||
@@ -117,7 +120,10 @@ export async function captureWebhook(
     window.expires_ms - window.opened_ms > 1200000
   )
     throw unavailable();
-  const secret: unknown = Reflect.get(env, "SIMPLYBOOK_DEV_SIGNING_SECRET");
+  const secret: unknown = Reflect.get(
+    env,
+    providerCredentialName(env, "SIGNING_SECRET"),
+  );
   if (typeof secret !== "string" || secret.length < 16 || secret.length > 512)
     throw unavailable();
   const signature = request.headers.get("x-signature");
