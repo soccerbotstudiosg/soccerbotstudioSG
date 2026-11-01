@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import {
   act,
   cleanup,
+  fireEvent,
   renderHook,
   render,
   screen,
@@ -158,19 +159,18 @@ it("an elapsed protected checkout window aborts checking without resetting its a
 
 it("hides the native payment capability at its expiry without claiming payment cancellation", async () => {
   vi.useFakeTimers();
-  const now = Date.now();
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (path: string) =>
+  for (const url of [
+    "https://soccerbotstudiosg.simplybook.asia/v2/client/pay-later/id/synthetic-id/hash/synthetic-hash",
+    "https://checkout.sandbox.hit-pay.com/payment-request/@test/00000000-0000-4000-8000-000000000001/checkout",
+  ]) {
+    const hitpay = url.includes("hit-pay");
+    const now = Date.now();
+    const fetch = vi.fn(async (path: string) =>
       path.endsWith("/checkout")
         ? Response.json({
             attemptId: id,
             mode: "live",
-            checkout: {
-              state: "available",
-              url: "https://soccerbotstudiosg.simplybook.asia/v2/client/pay-later/id/synthetic-id/hash/synthetic-hash",
-              expiresAtMs: now + 1000,
-            },
+            checkout: { state: "available", url, expiresAtMs: now + 3000 },
             summary: {
               players: 1,
               totalMinor: 8800,
@@ -184,20 +184,39 @@ it("hides the native payment capability at its expiry without claiming payment c
             },
           })
         : pending(),
-    ),
-  );
-  render(<ProtectedConfirmation attemptId={id} checkoutMode="live" />);
-  await act(async () => {});
-  expect(screen.getByRole("link", { name: "Open checkout" })).toBeVisible();
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(1000);
-  });
-  expect(
-    screen.queryByRole("link", { name: "Open checkout" }),
-  ).not.toBeInTheDocument();
-  expect(
-    screen.getByRole("status", { name: "Verifying your payment…" }),
-  ).toBeVisible();
+    );
+    vi.stubGlobal("fetch", fetch);
+    const first = render(
+      <ProtectedConfirmation attemptId={id} checkoutMode="live" />,
+    );
+    await act(async () => {});
+    const label = hitpay ? "Continue payment" : "Open checkout";
+    const link = screen.getByRole("link", { name: label });
+    expect(link).toHaveAttribute("href", url);
+    if (hitpay) {
+      expect(screen.getByRole("timer")).toHaveTextContent("00:03");
+      const count = fetch.mock.calls.length;
+      fireEvent.click(link);
+      expect(fetch.mock.calls.length).toBe(count);
+    }
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    first.unmount();
+    render(<ProtectedConfirmation attemptId={id} checkoutMode="live" />);
+    await act(async () => {});
+    if (hitpay) expect(screen.getByRole("timer")).toHaveTextContent("00:02");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByRole("link", { name: label })).toBeNull();
+    expect(screen.queryByRole("timer")).toBeNull();
+    expect(
+      screen.getByRole("status", { name: "Verifying your payment…" }),
+    ).toBeVisible();
+    cleanup();
+    localStorage.clear();
+  }
 });
 
 it("uses a server-granted early check without extending the deadline or resetting the shared count", async () => {

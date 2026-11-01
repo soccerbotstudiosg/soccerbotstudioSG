@@ -70,7 +70,7 @@ Owner-confirmed client prices are S$108 on weekdays and S$128 on weekends and ga
 
 <a id="br-010"></a>
 
-**BR-010** — HitPay hosts payment; secrets and payment verification stay server-side. Bind merchant, account, attempt, invoice, amount/currency and request identity before accepting evidence. Browser return and webhook payload alone never confirm a booking. Authenticate webhooks, retain/deduplicate receipts, and read authoritative provider state. Recovery preserves original financial claims and handles delayed/duplicate/out-of-order delivery without duplicate accounting.
+**BR-010** — An eligible unpaid return offers Continue payment with the same retained HitPay link and an original-expiry countdown. Reopening never creates a payment or extends its deadline; paid, expired, denied or unresolved states offer no continuation. Polling remains active and browser expiry alone never claims cancellation. HitPay hosts payment; secrets and payment verification stay server-side. Bind merchant, account, attempt, invoice, amount/currency and request identity before accepting evidence. Browser return and webhook payload alone never confirm a booking. Authenticate webhooks, retain/deduplicate receipts, and read authoritative provider state. Recovery preserves original financial claims and handles delayed/duplicate/out-of-order delivery without duplicate accounting.
 
 <a id="br-011"></a>
 

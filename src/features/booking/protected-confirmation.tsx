@@ -17,6 +17,53 @@ import {
 import type { CheckoutContext } from "@/services/contracts";
 import { money } from "@/domain/dates";
 import { useConfirmationChecking } from "./confirmation-checking";
+/** Reopen only the retained handoff within its original payment deadline. */
+function PaymentContinuation({
+  url,
+  expiresAtMs,
+}: {
+  url: string;
+  expiresAtMs: number;
+}) {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const refresh = () => setNow(Date.now());
+    const timer = setInterval(refresh, 1000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, []);
+  const seconds = Math.max(0, Math.ceil((expiresAtMs - now) / 1000));
+  if (!seconds) return null;
+  return (
+    <div>
+      <p role="timer" aria-live="off">
+        Time left to pay: {String(Math.floor(seconds / 60)).padStart(2, "0")}:
+        {String(seconds % 60).padStart(2, "0")}
+      </p>
+      <a
+        className="button wide"
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        referrerPolicy="no-referrer"
+        onClick={(event) => {
+          if (Date.now() >= expiresAtMs) {
+            event.preventDefault();
+            setNow(Date.now());
+          }
+        }}
+      >
+        Continue payment
+      </a>
+      <p>Already paid? We’ll confirm automatically.</p>
+    </div>
+  );
+}
 /** Present protected checkout status without trusting browser payment claims. */
 export function ProtectedConfirmation({
   attemptId,
@@ -201,6 +248,7 @@ export function ProtectedConfirmation({
     !!recordedPayment && ["unresolved", "unavailable"].includes(view);
   const showLink =
     !recordedPayment &&
+    !paymentReceived &&
     current?.checkout.state === "available" &&
     current.checkout.url !== expiredLink &&
     !["confirmed", "denied", "unresolved"].includes(view);
@@ -305,6 +353,18 @@ export function ProtectedConfirmation({
           : paymentReceived
             ? "Payment received—verifying booking…"
             : "Verifying your payment…";
+    const continuation =
+      showLink &&
+      !expired &&
+      view === "checking" &&
+      link?.expiresAtMs &&
+      isHitpayCheckoutUrl(link.url) ? (
+        <PaymentContinuation
+          key={link.url}
+          url={link.url}
+          expiresAtMs={link.expiresAtMs}
+        />
+      ) : undefined;
     if (current?.details) {
       const details = bookingFromReceipt(current.details);
       return (
@@ -312,6 +372,7 @@ export function ProtectedConfirmation({
           booking={details.booking}
           pending
           pendingLabel={pendingLabel}
+          pendingAction={continuation}
           onAgain={() => {}}
         />
       );
@@ -319,7 +380,10 @@ export function ProtectedConfirmation({
     return (
       <PendingConfirmation label={pendingLabel}>
         {current ? (
-          <ConfirmationSummary summary={current.summary} />
+          <>
+            <ConfirmationSummary summary={current.summary} />
+            {continuation}
+          </>
         ) : undefined}
       </PendingConfirmation>
     );

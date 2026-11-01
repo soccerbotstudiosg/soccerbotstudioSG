@@ -240,6 +240,7 @@ export function useConfirmationChecking(
                 : undefined;
         expired = "expired" in response && response.expired === true;
         paymentReceived =
+          paymentReceived ||
           response.reason === "payment_received_booking_pending" ||
           response.status === "confirmed";
         if (response.status === "confirmed") {
