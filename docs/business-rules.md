@@ -74,7 +74,7 @@ Owner-confirmed client prices are S$108 on weekdays and S$128 on weekends and ga
 
 <a id="br-011"></a>
 
-**BR-011** — Original booking creation anchors the eight-minute payment window and fifteen-minute hold. The checking period is thirteen minutes; recovery buffer remains five minutes. These are different clocks. Browser expiry, deleted/expired payment links or exhausted polling do not prove settlement impossible. Protect unknown in-flight outcomes. After verified payment, reconcile SimplyBook accounting and require current valid-booking/paid-invoice readback before final confirmation. Preserve the first valid confirmation timestamp on later visits. Refunds are owner/provider operations; cancellation is not a refund.
+**BR-011** — Original booking creation anchors the eight-minute payment window and fifteen-minute hold. The checking period is thirteen minutes; recovery buffer remains five minutes. These are different clocks. Browser expiry, deleted/expired payment links or exhausted polling do not prove settlement impossible. Protect unknown in-flight outcomes. After verified payment, reconcile SimplyBook accounting and require current valid-booking/paid-invoice evidence before final confirmation. A complete validated payment-recording response may supply that evidence after the original booking check; an incomplete or inconsistent response requires authoritative readback. HTTP success alone is insufficient. Preserve the first valid confirmation timestamp on later visits. Refunds are owner/provider operations; cancellation is not a refund.
 
 <a id="br-012"></a>
 

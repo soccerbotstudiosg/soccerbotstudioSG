@@ -116,7 +116,16 @@ export async function confirmation(
     if (queued)
       return { status: "pending", reason: "payment_received_booking_pending" };
   }
-  return decision;
+  return decision.status === "confirmed"
+    ? {
+        ...decision,
+        customerConfirmation: await customerConfirmation(
+          env,
+          id,
+          snapshot.proof,
+        ),
+      }
+    : decision;
 }
 // Shared decision mapping. Caller supplies independently established authority:
 // authenticated customer access, or a current bounded internal recovery claim.

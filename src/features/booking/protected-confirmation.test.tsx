@@ -909,57 +909,64 @@ it("authoritative unpaid expiry releases the original attempt before returning t
 
 it("poll-confirmed payment retains its displayed proof while the final receipt is delayed", async () => {
   vi.useFakeTimers();
-  const proof = receiptFixture();
-  let finishReceipt!: (response: Response) => void;
-  const receipt = new Promise<Response>((resolve) => {
-    finishReceipt = resolve;
-  });
-  let polls = 0;
-  const fetch = vi.fn((url: string) =>
-    url.endsWith("/receipt")
-      ? receipt
-      : Promise.resolve(
-          Response.json(
-            ++polls === 1
-              ? {
-                  status: "pending",
-                  reason: "payment_received_booking_pending",
-                  customerConfirmation: proof,
-                }
-              : { status: "confirmed", reason: "verified" },
+  for (const initialStatus of ["pending", "confirmed"]) {
+    const proof = receiptFixture();
+    let finishReceipt!: (response: Response) => void;
+    const receipt = new Promise<Response>((resolve) => {
+      finishReceipt = resolve;
+    });
+    let polls = 0;
+    const fetch = vi.fn((url: string) =>
+      url.endsWith("/receipt")
+        ? receipt
+        : Promise.resolve(
+            Response.json(
+              ++polls === 1
+                ? {
+                    status: initialStatus,
+                    reason:
+                      initialStatus === "confirmed"
+                        ? "verified"
+                        : "payment_received_booking_pending",
+                    customerConfirmation: proof,
+                  }
+                : { status: "confirmed", reason: "verified" },
+            ),
           ),
-        ),
-  );
-  vi.stubGlobal("fetch", fetch);
-  render(<ProtectedConfirmation attemptId={first} />);
-  await act(async () => {});
-  const heading = screen.getByRole("heading", { name: "Booking confirmed" });
-  const verified = screen.getByText(/Saved confirmation/).textContent;
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(5000);
-  });
-  expect(
-    fetch.mock.calls.filter(([url]) => url.endsWith("/receipt")),
-  ).toHaveLength(1);
-  expect(screen.getByRole("heading", { name: "Booking confirmed" })).toBe(
-    heading,
-  );
-  expect(
-    screen.queryByRole("status", { name: "Preparing your confirmation…" }),
-  ).toBeNull();
-  expect(
-    screen.queryByText(
-      "Please don’t close or refresh this page while we finish.",
-    ),
-  ).toBeNull();
-  expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
-  await act(async () => {
-    finishReceipt(Response.json(proof));
-  });
-  expect(screen.getByRole("heading", { name: "Booking confirmed" })).toBe(
-    heading,
-  );
-  expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
+    );
+    vi.stubGlobal("fetch", fetch);
+    render(<ProtectedConfirmation attemptId={first} />);
+    await act(async () => {});
+    const heading = screen.getByRole("heading", { name: "Booking confirmed" });
+    const verified = screen.getByText(/Saved confirmation/).textContent;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    expect(
+      fetch.mock.calls.filter(([url]) => url.endsWith("/receipt")),
+    ).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "Booking confirmed" })).toBe(
+      heading,
+    );
+    expect(
+      screen.queryByRole("status", { name: "Preparing your confirmation…" }),
+    ).toBeNull();
+    expect(
+      screen.queryByText(
+        "Please don’t close or refresh this page while we finish.",
+      ),
+    ).toBeNull();
+    expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
+    await act(async () => {
+      finishReceipt(Response.json(proof));
+    });
+    expect(screen.getByRole("heading", { name: "Booking confirmed" })).toBe(
+      heading,
+    );
+    expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
+    cleanup();
+    localStorage.clear();
+  }
 });
 
 it("retains verified customer confirmation across pending responses that omit proof", async () => {

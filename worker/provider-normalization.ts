@@ -896,6 +896,38 @@ export function inspectNativeBooking(
   };
 }
 
+/** Validate a paid mutation response with complete current invoice booking evidence. */
+export function normalizeNativePaymentResponse(
+  value: unknown,
+  context: NativeReadContext,
+  before: ReturnType<typeof normalizeNativeReads>,
+) {
+  const normalized = invoiceEvidence(value, context);
+  if (
+    normalized.invoice.status !== "paid" ||
+    before.bookings.length !== normalized.lines.length ||
+    before.bookings.some(
+      (booking) =>
+        !normalized.lines.some(
+          (line) => line.bookingId === booking.session.bookingId,
+        ),
+    ) ||
+    before.bookings.some((booking) => booking.status !== "confirmed") ||
+    normalized.lines.some((line) => !line.nestedConfirmed)
+  )
+    rejectNative("invoice.line.booking.is_confirmed", "mismatch");
+  return {
+    invoice: normalized.invoice,
+    bookings: before.bookings.map((booking) => ({
+      ...booking,
+      observedAtMs: receipt(
+        context.invoiceObservedAtMs,
+        "context.invoiceObservedAtMs",
+      ),
+    })),
+  };
+}
+
 /** Normalize authoritative booking and invoice readback evidence. */
 export function normalizeNativeReads(
   bookingValue: unknown,

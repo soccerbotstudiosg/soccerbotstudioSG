@@ -10,7 +10,11 @@ import { z } from "zod";
 import type { ProtectedCheckoutService } from "./contracts";
 const idSchema = z.string().uuid();
 const decisionSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("confirmed"), reason: z.literal("verified") }),
+  z.object({
+    status: z.literal("confirmed"),
+    reason: z.literal("verified"),
+    customerConfirmation: receiptSchema.optional(),
+  }),
   z.object({
     status: z.literal("pending"),
     reason: z.string(),

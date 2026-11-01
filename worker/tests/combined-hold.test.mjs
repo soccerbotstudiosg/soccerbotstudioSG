@@ -2765,8 +2765,8 @@ test("single and batch recovery retain verified evidence with bounded read overl
         trace,
         JSON.stringify(logs.filter((e) => e.event === "confirmation_trace")),
       );
-      assert.equal(trace.operations.booking_read.count, 2 * count);
-      assert.equal(trace.operations.invoice_read.count, 2);
+      assert.equal(trace.operations.booking_read.count, count);
+      assert.equal(trace.operations.invoice_read.count, 1);
       assert.equal(trace.operations.accounting_write.count, 1);
       assert.equal(trace.operations.d1.count, 5);
       console.log(

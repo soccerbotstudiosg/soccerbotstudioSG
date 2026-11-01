@@ -239,7 +239,8 @@ sequenceDiagram
   Recovery->>Recovery: commit authoritative outcome
   UI->>Recovery: protected context/status read
   Note over UI,Recovery: Browser polling observes, it does not prove or fabricate settlement
-  UI->>Recovery: authorized receipt read
+  Recovery-->>UI: confirmed status with retained receipt details
+  UI->>Recovery: separate authorized receipt read
 ```
 
 | Function / operation                                                  | Behavior                                                                                        | Guards                                                                                              | Failure and recovery                                                                                                     |
@@ -258,6 +259,8 @@ sequenceDiagram
 | `bookingReceipt` / `readBookingReceipt` / `bookingFromReceipt`        | Reauthorize and validate the live receipt, then map it for presentation/export.                 | Server ownership/payment guard plus access recheck; client schema validation.                       | Receipt failure blocks export even if a prior screen said confirmed. Reauthenticate or investigate the original attempt. |
 | `dismissCompletedBooking` and coordinator `dismissCompleted`          | Acknowledge completed exit while preserving the authorized receipt.                             | Original owned completed attempt; repeat acknowledgement is supported.                              | Lost response is retried with the same ID; do not create another booking/payment.                                        |
 | `completedExitIntent`, `rememberCompletedExit`, `forgetCompletedExit` | Retain the browser’s outstanding completed-exit intent.                                         | Same-attempt handling; acknowledgement governs clearing.                                            | Failed dismissal shows saved-confirmation warning until explicit retry succeeds.                                         |
+
+`normalizeNativePaymentResponse` validates complete paid invoice and nested booking evidence from the accounting response, using the existing invoice validator and the prior confirmed booking set. Recovery publishes it atomically; missing/inconsistent replies fall back to readback and lost replies retain unknown-write recovery. Confirmed status includes retained customer proof so `ProtectedConfirmation` can render before the separate receipt fetch completes.
 
 Receipt exports: `ProtectedConfirmation` explicitly requests refresh on download. Coordinator `receipt` uses the existing provider queue and known-ID native reads; `bookingReceipt` owns the original-window/quota checks, post-read authorization and state comparison. Fresh proof is response-local; no payment recovery counter or journal observation is overwritten. Stale/invalid/revoked/expired evidence blocks export. Contact and Need help use `mailto:contact@soccerbotsg.com`. Review and confirmation share heading/body tokens and left-aligned label/value details.
 
