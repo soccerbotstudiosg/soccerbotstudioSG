@@ -199,6 +199,8 @@ CI uses the official Playwright Noble image matching the locked Playwright versi
 
 ## Verification commands
 
+For CI failure investigation, resource pressure or changes to sharding/lifecycle, apply the [CI-diagnosis skill](../.agents/skills/soccerbot-ci-diagnosis/SKILL.md) alongside the test-maintenance skill. It owns causal investigation and resource experiments; the commands and execution boundaries below remain authoritative.
+
 Full/code verification includes `npm audit --audit-level=high`: known high/critical advisories or an unavailable audit service fail the gate. Audit output is retained in the normal verification receipt/logs. Alerts and security-update PRs complement this gate; a clean audit is not proof against unknown vulnerabilities.
 
 | Command                                     | Scope                                                           |

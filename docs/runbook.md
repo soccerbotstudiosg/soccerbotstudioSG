@@ -225,6 +225,8 @@ A download click requests a protected receipt with `X-Booking-Refresh: 1`. Fresh
 
 ## 6. Deployments and rollback
 
+Apply the [deployment-readiness skill](../.agents/skills/soccerbot-deployment/SKILL.md) to reconcile source/artifact, account/resource and configuration evidence before a release recommendation; use this section for operational steps. For verification failures or resource pressure, apply the [CI-diagnosis skill](../.agents/skills/soccerbot-ci-diagnosis/SKILL.md) with the testing skill before rerunning or changing limits. Neither instruction expands deployment authority.
+
 Normal release: inspect PR changes and final-head gates, obtain applicable merge authorization, merge, then verify the merged revision and deployed artifact. Legacy main developer deployment remains active until the reviewed portable cutover. The standalone GitHub Pages export is separate from the Cloudflare customer backend.
 
 Client deployment procedure (after repository/credential cutover):

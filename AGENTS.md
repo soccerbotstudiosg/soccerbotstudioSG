@@ -53,6 +53,8 @@ Apply the [dependency review skill](.agents/skills/soccerbot-dependencies/SKILL.
 
 Apply the [test-maintenance skill](.agents/skills/soccerbot-testing/SKILL.md) during every PR and scope change, including automated updates. Record test dispositions, fixture/inventory impact, actual checks and remaining gaps in the PR; a justified no-test-change decision is valid for unaffected behavior. This instruction skill adds no automatic CI enforcement.
 
+Apply the [deployment-readiness skill](.agents/skills/soccerbot-deployment/SKILL.md) for staging/production setup, release/configuration checks, activation and rollback investigation. Apply the [CI-diagnosis skill](.agents/skills/soccerbot-ci-diagnosis/SKILL.md) for failed/skipped/queued jobs, resource pressure and sharding or lifecycle optimization. They guide investigation and evidence; existing operational owners, testing/documentation responsibilities and action permissions remain authoritative.
+
 After every logical change or repair, search affected components, services, Worker/browser tests, fixtures and inventories. Update obsolete assumptions without weakening their purpose, then run meaningful affected checks using the [command reference](docs/development.md#verification-commands). Never add retries, sleeps, forced clicks, skipped cases, looser timeouts or reduced inventories to conceal failures. Preserve the first failed receipt and diagnose it.
 
 Owner/CI operates browsers and physical devices: no assistant Playwright, screenshots, `npm run verify`, `verify:browser` or browser-running installers. Simulations do not establish provider or production acceptance. Report source changes, local verification, CI, merge, deployment and owner/provider acceptance separately.
