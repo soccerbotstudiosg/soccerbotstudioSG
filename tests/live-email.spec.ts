@@ -1031,9 +1031,12 @@ test("real payment recovery confirms the browser return from verified provider s
         name: "Preparing your confirmation…",
         exact: true,
       }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Continue payment", exact: true }),
     ).toHaveCount(0);
     releaseReceipt();
     await expect(
@@ -2497,6 +2500,10 @@ test("real API unpaid return shows the pending confirmation layout without claim
       /confirmation_http;dur=[0-9.]+/,
     );
 
+    await expect(
+      page.getByRole("link", { name: "Continue payment", exact: true }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("timer")).toHaveCount(0);
     await expect(page.getByLabel("Booking summary")).toBeVisible();
     await page.getByText("View full details", { exact: true }).click();
     await expect(

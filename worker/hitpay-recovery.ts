@@ -1,3 +1,7 @@
+import {
+  normalizeNativePaymentResponse,
+  nativeValidationReason,
+} from "./provider-normalization";
 import { confirmationStage, confirmationResult } from "./confirmation-tracing";
 import { receiptData } from "./receipt-data";
 import { providerCredentialName, ApiError, digest, policy } from "./policy";
@@ -250,8 +254,8 @@ export async function recoverHitpay(
         await diagnoseClaim();
         throw new ApiError(409, "external_payment_reserved");
       }
-      // The write reply is not payment evidence; an unknown write is never replayed.
-      await provider.nativeWrite(
+      // Transport success alone is not evidence; an unknown write is never replayed.
+      const recorded = await provider.nativeWrite(
         env,
         control,
         {
@@ -279,8 +283,28 @@ export async function recoverHitpay(
       // A returned transport has already durably finished its DO admission.
       // Older unknown-write recoveries must retain the release-before-terminal path.
       accountingTransportEnded = true;
-      confirmationStage("booking_after");
-      observation = await read();
+      // A complete paid invoice response already includes current booking evidence.
+      // Missing or inconsistent bodies retain the authoritative readback path.
+      try {
+        observation = normalizeNativePaymentResponse(
+          recorded.body,
+          {
+            attemptId: id,
+            companyLogin: scope.companyLogin,
+            timezone: "Asia/Singapore",
+            intent,
+            association: refs,
+            paymentProcessor: scope.externalProcessor,
+            bookingObservedAtMs: recorded.receivedAtMs,
+            invoiceObservedAtMs: recorded.receivedAtMs,
+          },
+          observation,
+        );
+      } catch (error) {
+        if (!nativeValidationReason(error)) throw error;
+        confirmationStage("booking_after");
+        observation = await read();
+      }
     }
     if (
       observation.invoice.status !== "paid" ||
