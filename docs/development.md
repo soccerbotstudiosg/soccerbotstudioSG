@@ -201,6 +201,8 @@ When upgrading Playwright, update its exact package/lock versions and all matchi
 
 ## Verification commands
 
+For CI failure investigation, resource pressure or changes to sharding/lifecycle, apply the [CI-diagnosis skill](../.agents/skills/soccerbot-ci-diagnosis/SKILL.md) alongside the test-maintenance skill. It owns causal investigation and resource experiments; the commands and execution boundaries below remain authoritative.
+
 Full/code verification includes `npm audit --audit-level=high`: known high/critical advisories or an unavailable audit service fail the gate. Audit output is retained in the normal verification receipt/logs. Alerts and security-update PRs complement this gate; a clean audit is not proof against unknown vulnerabilities.
 
 | Command                                     | Scope                                                           |
@@ -211,6 +213,35 @@ Full/code verification includes `npm audit --audit-level=high`: known high/criti
 | `npm run verify:worker`                     | Isolated Worker types and runtime suite.                        |
 | `npm run verify:browser`                    | Browser suite operated by owner/CI under AGENTS.                |
 | `npm run verify`                            | Combined application/browser verification operated by owner/CI. |
+
+## Browser testing coverage
+
+This section owns automated browser coverage and its limits; [versions.md](versions.md) remains the generated branch dependency inventory. It is not a customer minimum-browser support policy. Every dependency upgrade PR must include the [support-range comparison](../.agents/skills/soccerbot-dependencies/SKILL.md#required-support-range-comparison-in-every-dependency-pr), including upstream requirements, project pins, verified coverage and removed support.
+
+Checkpoint: 2 November 2026. At the original coverage checkpoint, main f99a1ee1d92b8413e54baf7600a82ebbc78ca60d pinned Playwright1.58.2 and PR17 proposed1.64.1. This synchronized documentation branch now includes PR17 and pins1.64.1; its final combined-head CI is separate from the historical configurations below. Confirm main/merge/deployment state from current release receipts. The versions below come from the exact installed package's browsers.json and matching Noble CI images; they identify configured bundled engines, not an independently captured browser.version() receipt. CI browser-engines.json records project/engine names, retries and repetition, not browser patch versions. Recheck the source and matching image when using this matrix.
+
+| Configuration                        | Playwright | Bundled Chromium / revision | Bundled WebKit / revision | Complete CI evidence                                                                                                                                               |
+| ------------------------------------ | ---------- | --------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Existing baseline; PR16 verification | 1.58.2     | 145.0.7632.6 / 1208         | 26.0 / 2248               | Head7d678dfa7866bd21673a3b4e4465bd94f44326e4, [run41373470332](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41373470332), all13 jobs passed |
+| PR17 proposed upgrade                | 1.64.1     | 156.0.8078.4 / 1248         | 27.2 / 2370               | Head45c59ce40446e1dc10a2deb714370c7db9ef7e95, [run41375585310](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41375585310), all13 jobs passed |
+
+Use explicit labels in release/PR reviews: **Testing-tool support** describes the hosts on which upstream supports running the tool; **Our verified test coverage** describes combinations exercised by our tests; **Customer impact** describes actual application behavior or customer requirements. An untested customer browser is unverified, not known broken. A test host dropped by upstream may stop installing/running the tool, but that does not itself block customers browsing the website. PR17 changes testing tooling, not application code or customer-browser restrictions; no customer breakage has been established by its host-support removals.
+
+These are two discrete tested configurations on different source heads, **not** coverage of Chromium145–156, WebKit26–27, or every intermediate/older/newer version. Main's merged revision and deployed artifact need their own evidence.
+
+The three projects in playwright.config.ts use the following profiles in both configurations:
+
+| Project          | Engine / descriptor       | Viewport (CSS pixels) | Mobile / touch | Evidence limit                                                             |
+| ---------------- | ------------------------- | --------------------- | -------------- | -------------------------------------------------------------------------- |
+| desktop-chromium | Chromium / Desktop Chrome | 1280 × 720            | no / no        | Bundled Chromium, not every branded Chrome/Edge version or desktop OS      |
+| phone-webkit     | WebKit / iPhone 13        | 390 × 664             | yes / yes      | Emulation on Linux, not a physical iPhone or a specific iOS/Safari release |
+| tablet-webkit    | WebKit / iPad (gen 7)     | 810 × 1080            | yes / yes      | Emulation on Linux, not physical iPadOS/Safari acceptance                  |
+
+Playwright1.64 also forwards descriptor screen dimensions, which can affect screen/media-query behavior; viewport dimensions alone do not describe all emulation changes. [Upstream1.64 notes](https://github.com/microsoft/playwright/releases/tag/v1.64.0) describe that change. No Firefox, branded Edge, real Android Chrome, physical Safari or continuous older-browser range is established by these automated projects. Customer devices are not blocked by this tooling upgrade, but untested combinations must remain unverified.
+
+Test-host requirements are separate: exact package metadata changes Node>=18 (1.58.2) to Node>=20 (1.64.1); the repository pins Node24.19.0 in both. CI uses the matching Ubuntu Noble image. Across the upgrade interval, upstream removed macOS14 WebKit support ([1.59](https://github.com/microsoft/playwright/releases/tag/v1.59.0)), Debian11 support ([1.62](https://github.com/microsoft/playwright/releases/tag/v1.62.0)) and Ubuntu20.04 support ([1.63](https://github.com/microsoft/playwright/releases/tag/v1.63.0)). Those removals do not establish every other OS/architecture as supported or tested here; consult the selected release's platform requirements before local setup. Externally published Cloud Containers browser/bootstrap pins must be aligned separately.
+
+For physical/customer acceptance, record device model, exact OS and browser version, deployed revision and results in [Simulated-user UAT](uat/simulated-user.md). No customer minimum version or continuous supported range is declared until explicitly chosen and validated. Preserve this dated matrix as evidence when updating the current configuration; do not present an unmerged upgrade or historical pass as deployed acceptance.
 
 ## Configuration
 

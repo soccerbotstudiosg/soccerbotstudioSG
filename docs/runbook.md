@@ -45,6 +45,8 @@ Do not run real bookings/payments or send test notifications merely to fill a mo
 
 ## 3. Dependency maintenance and Dependabot
 
+Apply the [dependency review skill](../.agents/skills/soccerbot-dependencies/SKILL.md) before changing dependencies or recommending merge. It owns upstream research, suitability, compatibility mapping, application-change decisions and the PR assessment; this section owns cadence and operational remediation/release steps. Use the existing testing and documentation skills for their respective evidence.
+
 [Dependabot configuration](../.github/dependabot.yml) schedules weekly npm and GitHub Actions **version updates** (Monday 09:00 Singapore), limited to one open version-update PR per ecosystem. Minor/patch updates are grouped; major upgrades and coordinated compiler, lint, Node-type, Playwright and Cloudflare tooling updates remain individual. Security updates have separate GitHub limits and are not constrained to this weekly schedule or two-PR limit.
 
 **Security setup is per repository.** In GitHub Settings → Advanced Security (or Code security), enable Dependency graph, Dependabot alerts and Dependabot security updates. Do this for both the canonical repository and the client repository when populated; copying YAML does not copy repository settings. Confirm the settings and review Security → Dependabot alerts; an empty PR list is not evidence that alerts are enabled or vulnerabilities absent. Progress records owner/API confirmation for each repository. The current connector cannot change these settings.
@@ -60,6 +62,8 @@ Use `npm audit --json` to supplement GitHub alerts and retain the report when tr
 GitHub schedules npm and GitHub Actions checks for Monday 09:00 Asia/Singapore; actual start may be delayed. “Dependabot Updates” jobs labelled `main` inspect the default branch and propose updates: they do not merge or deploy it. No eligible updates may mean no new PR. New/refreshed PR commits trigger Verify. At most one version-update PR per ecosystem is open; manual remediation and security PRs are outside that combined two-PR limit. Security alerts/updates can arrive on any day. GitHub notification preferences control email/in-app notifications; this chat is not a standing monitor.
 
 ### Update and remediation procedure
+
+Every dependency update PR must include the [before/after support-range comparison](../.agents/skills/soccerbot-dependencies/SKILL.md#required-support-range-comparison-in-every-dependency-pr), including unchanged requirements, removed support, exact tested configurations and unverified targets. Update the [browser coverage matrix](development.md#browser-testing-coverage) when affected.
 
 1. Read the PR Files changed and upstream release/advisory notes. Identify direct/transitive packages, compatibility changes and runtime versus tooling exposure. SHA-pinned Actions still need review of the upstream commit change.
 2. Update package and lockfile together. Coordinate Wrangler/Miniflare, compiler/lint peers, Playwright/container versions and Node types where necessary; no blanket major upgrades or historical runtime downgrades.
@@ -222,6 +226,8 @@ Acceptance: use an owner-authorized synthetic alert fixture, observe firing, del
 A download click requests a protected receipt with `X-Booking-Refresh: 1`. Fresh retained evidence returns immediately; stale evidence can trigger read-only booking/invoice verification during the original checking window. Inspect the receipt HTTP result and its `X-Recovery-Trace`: 401/403 requires valid access, 409 means evidence is invalid/stale or the refresh window has ended, 429 means the shared check quota/pacing refused another refresh, and provider failures require transport/account investigation. Never reset payment tries, extend a deadline, or export a saved confirmation to bypass the failure. Calendar/PDF generation happens locally only after receipt validation. Reproduce in the authorized UAT environment and check browser download handling if the receipt succeeded. Support contact is `contact@soccerbotsg.com`; the Need help link opens an email draft.
 
 ## 6. Deployments and rollback
+
+Apply the [deployment-readiness skill](../.agents/skills/soccerbot-deployment/SKILL.md) to reconcile source/artifact, account/resource and configuration evidence before a release recommendation; use this section for operational steps. For verification failures or resource pressure, apply the [CI-diagnosis skill](../.agents/skills/soccerbot-ci-diagnosis/SKILL.md) with the testing skill before rerunning or changing limits. Neither instruction expands deployment authority.
 
 Normal release: inspect PR changes and final-head gates, obtain applicable merge authorization, merge, then verify the merged revision and deployed artifact. Legacy main developer deployment remains active until the reviewed portable cutover. The standalone GitHub Pages export is separate from the Cloudflare customer backend.
 

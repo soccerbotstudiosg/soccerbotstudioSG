@@ -8,13 +8,15 @@
 | SimplyBook company / staff role (no passwords)                     |         |
 | HitPay sandbox or approved live merchant                           |         |
 | Designated test customer / receiving inbox                         |         |
-| Device / browser                                                   |         |
+| Device model / exact OS version / exact browser version            |         |
 | Partner for coordinated checks                                     |         |
 | Test service / instructor / dates / booking and invoice references |         |
 
 Use the organiser-confirmed deployed environment and designated test records. Before testing, confirm the deployed revision, environment, SimplyBook company/role, current service and schedule mappings, receiving inbox and payment mode with the organiser. Arrange controlled examples with support; unavailable fixtures remain Blocked. Write **Pass / Fail / Blocked / Not tested** in Result; leave it blank until checked. Record actual outcomes, evidence links, reference numbers and delays in Remarks. A previous CI pass does not prefill this worksheet. Mark missing permissions, integration or prepared examples **Blocked** and record why; do not switch to demo mode to obtain a pass.
 
 Owner/testers operate browsers and provider dashboards. Only authorised people perform the specifically agreed test bookings, payments, notifications or administrative changes. The assistant does not execute them. Use approved sandbox/test fixtures; any production transaction or disruptive change requires its own arranged owner procedure. Do not change device time, reset shared data or expose secrets/customer details in evidence.
+
+Automated engine versions and emulation limits are recorded in [Browser testing coverage](../development.md#browser-testing-coverage). For each physical-device session record exact OS/browser versions, model and deployed revision above; missing versions or devices remain unverified. Do not infer an entire supported version range from a single device pass, or equate Linux WebKit emulation with physical Safari acceptance.
 
 A simulated user is a human tester acting as a customer with designated test data on the deployed site; it does not mean switching to a demo adapter. Existing CUS case IDs are retained for traceability.
 
