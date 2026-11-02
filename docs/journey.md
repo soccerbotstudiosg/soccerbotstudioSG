@@ -3970,3 +3970,11 @@ PR15 scope now includes the original-link Continue payment action and original-d
 ### 2 November 2026 — clock-independent continuation and late confirmation proof
 
 PR15 head720f5db passed all gates in CI41268704987. Owner-approved audit follow-up anchors checkout expiry/polling to authenticated response Date plus monotonic elapsed time, conservatively including second precision and request transit. HitPay continuation is withheld without usable server time. A fresh confirmed decision after the checking deadline carries the same retained proof as the normal path; no new polling budget or provider operation. Expanded existing regressions retain inventories/shards. Late-proof fixture failures exposed an approval newer than its simulated deadline, immutable creation protection, and a legacy five-minute window expectation; setup was corrected without relaxing production guards. Consolidated verification/new-head CI remain pending, and no deployment or real payment was performed.
+
+### 2 November 2026 — Dependabot artifact action guard repair
+
+PR16 updates the SHA-pinned download-artifact action to8.0.2. CI41371387964 proved the download paths through all browser shards and Worker groups, but frontend tooling compared the new pin to a duplicated4.3.0 hash. The guard now checks the exact official action name and full commit pin while retaining artifact identity/path/run-attempt/credential assertions. Existing test titles and inventories remain unchanged. Both repository skills applied; local code verification and final-head CI remain pending, followed by owner review/merge. No application/provider/runtime-resource change or deployment.
+
+### 2 November 2026 — authorized merge campaign and PR16 synchronization
+
+Owner authorized merging PR15–18 after reviewing testing-tool versus customer impact. PR15 passed all13 final-head jobs and merged as beb657a8363044445b57c57554cd08f5f21a00e3. Owner accepts post-deployment testing on the not-yet-live client Worker with repository access closed and manual sandbox activation when needed. PR16 synchronization retains the payment history and action-maintenance history; conflicts were limited to Progress/Journey. Fresh synchronized-head CI is required before continuing. No manual deployment activation or provider transaction performed; protected507 untouched.

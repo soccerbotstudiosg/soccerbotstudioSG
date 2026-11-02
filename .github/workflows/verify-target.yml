@@ -87,7 +87,7 @@ jobs:
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           pattern: worker-group-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/worker-inputs
@@ -206,7 +206,7 @@ jobs:
       - name: Check isolated runtime storage
         if: matrix.profile == 'live-email'
         run: test "$(stat -f -c %T /tmp)" = tmpfs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: browser-build-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .
@@ -248,15 +248,15 @@ jobs:
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: browser-build-backend-${{ github.run_id }}-${{ github.run_attempt }}
           path: .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: worker-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           pattern: browser-shard-backend-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/shard-inputs
@@ -307,15 +307,15 @@ jobs:
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: browser-build-live-email-${{ github.run_id }}-${{ github.run_attempt }}
           path: .
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: worker-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           pattern: browser-shard-live-email-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/shard-inputs

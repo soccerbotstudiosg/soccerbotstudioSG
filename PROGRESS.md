@@ -1,8 +1,14 @@
 # SoccerBotStudioSG current task and handover
 
-Updated 1 November 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
+Updated 2 November 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
 
-## Active implementation — payment-response confirmation
+## Current merge campaign — PR15–18
+
+Owner authorized merging all ready PRs on 2 November after consultation. PR15 headc827924 passed all13 jobs in run41369195891 and merged as beb657a8363044445b57c57554cd08f5f21a00e3. Owner accepts testing on the not-yet-live client production Worker after deployment; pre-merge staging UAT is waived for this change. Keep repository production access closed; manual sandbox activation is the accepted testing procedure and a later deployment may close it again. This supersedes older statements treating that intentional setup as a merge blocker. Provider/device/latency acceptance remains outstanding.
+
+PR16's original final head7d678dfa passed all13 jobs in run41373470332. Incorporating merged PR15 exposed only Progress/Journey conflicts; retain both histories and update the checkpoint. This synchronized head requires fresh CI before merge. PR17/18 will incorporate the reviewed predecessors and resolve overlapping documentation without altering product behavior. No live provider effects or manual activation are performed by this campaign. Leave507 untouched.
+
+## PR15 implementation checkpoint — historical before merge
 
 Draft PR #15, branch fix/payment-response-confirmation. Head720f5dbaa4a6c483304fdab97f62da61ac2dc014 passed all required CI gates in run41268704987. Owner requested an audit, then approved tightening two findings: device-clock dependence in continuation and the late-confirmation branch omitting retained proof. Prepared server-Date/monotonic timing shared by context validation, polling, countdown and click guard; missing server time hides Continue payment. Fresh confirmed results after the checking deadline now include retained proof without renewing checks or financial effects.
 

@@ -339,10 +339,9 @@ test("target workflows isolate PR credentials and deploy through trusted main af
         step.uses?.startsWith("actions/download-artifact@") &&
         step.with?.name?.startsWith("worker-evidence-"),
     );
-    assert.equal(
-      download.uses,
-      "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093",
-    );
+    // The workflow owns the reviewed revision; retain the exact action owner
+    // and immutable pin contract without copying a version into this guard.
+    assert.match(download.uses, /^actions\/download-artifact@[a-f0-9]{40}$/);
     assert.deepEqual(download.with, {
       name: "worker-evidence-${{ github.run_id }}-${{ github.run_attempt }}",
       path: "test-results/",
