@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { protectedCheckoutService } from "./confirmation";
+import { checkoutNow, protectedCheckoutService } from "./confirmation";
 const id = "00000000-0000-4000-8000-000000000001";
 const context = {
   attemptId: id,
@@ -19,7 +19,10 @@ const read = (mode: "synthetic" | "live" = "synthetic") =>
     mode,
     signal: new AbortController().signal,
   });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 it("accepts only the protected synthetic checkout bound to the requested attempt", async () => {
   const fetch = vi.fn().mockResolvedValue(Response.json(context));
   vi.stubGlobal("fetch", fetch);
@@ -170,5 +173,36 @@ it("accepts only a bounded protected HitPay sandbox checkout URL", async () => {
   for (const expiry of [0, Date.now() - 1, Date.now() + 180000]) {
     fetch.mockResolvedValue(reply(url, expiry));
     await expect(read("live")).rejects.toThrow();
+  }
+  const serverTime = Math.floor(Date.now() / 1000) * 1000;
+  let elapsed = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => elapsed);
+  const wall = vi.spyOn(Date, "now");
+  for (const skew of [-3600000, 3600000]) {
+    wall.mockReturnValue(serverTime + skew);
+    fetch.mockResolvedValue(
+      Response.json(
+        {
+          ...context,
+          mode: "live",
+          checking: { ...context.checking, deadlineMs: serverTime + 120000 },
+          checkout: {
+            state: "available",
+            url,
+            expiresAtMs: serverTime + 60000,
+          },
+        },
+        { headers: { Date: new Date(serverTime).toUTCString() } },
+      ),
+    );
+    const result = await read("live");
+    expect(result.checkout.state).toBe("available");
+    expect(checkoutNow(result.clock)).toBe(serverTime);
+    expect(checkoutNow(result.clock, true)).toBe(serverTime + 999);
+    elapsed += 1000.25;
+    wall.mockReturnValue(serverTime + skew * 2);
+    expect(checkoutNow(result.clock)).toBe(serverTime + 1000);
+    expect(checkoutNow(result.clock, true)).toBe(serverTime + 1999);
+    expect(Number.isSafeInteger(checkoutNow(result.clock))).toBe(true);
   }
 });
