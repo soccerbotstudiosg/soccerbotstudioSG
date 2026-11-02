@@ -212,6 +212,33 @@ Full/code verification includes `npm audit --audit-level=high`: known high/criti
 | `npm run verify:browser`                    | Browser suite operated by owner/CI under AGENTS.                |
 | `npm run verify`                            | Combined application/browser verification operated by owner/CI. |
 
+## Browser testing coverage
+
+This section owns automated browser coverage and its limits; [versions.md](versions.md) remains the generated branch dependency inventory. It is not a customer minimum-browser support policy. Every dependency upgrade PR must include the [support-range comparison](../.agents/skills/soccerbot-dependencies/SKILL.md#required-support-range-comparison-in-every-dependency-pr), including upstream requirements, project pins, verified coverage and removed support.
+
+Checkpoint: 2 November 2026. Main at f99a1ee1d92b8413e54baf7600a82ebbc78ca60d and this documentation branch pin Playwright1.58.2. PR17 proposes1.64.1 and remained unmerged at this review. The versions below come from the exact installed package's browsers.json and matching Noble CI images; they identify configured bundled engines, not an independently captured browser.version() receipt. CI browser-engines.json records project/engine names, retries and repetition, not browser patch versions. Recheck the source and matching image when using this matrix.
+
+| Configuration                        | Playwright | Bundled Chromium / revision | Bundled WebKit / revision | Complete CI evidence                                                                                                                                               |
+| ------------------------------------ | ---------- | --------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Existing baseline; PR16 verification | 1.58.2     | 145.0.7632.6 / 1208         | 26.0 / 2248               | Head7d678dfa7866bd21673a3b4e4465bd94f44326e4, [run41373470332](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41373470332), all13 jobs passed |
+| PR17 proposed upgrade                | 1.64.1     | 156.0.8078.4 / 1248         | 27.2 / 2370               | Head45c59ce40446e1dc10a2deb714370c7db9ef7e95, [run41375585310](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41375585310), all13 jobs passed |
+
+These are two discrete tested configurations on different source heads, **not** coverage of Chromium145–156, WebKit26–27, or every intermediate/older/newer version. Main's merged revision and deployed artifact need their own evidence.
+
+The three projects in playwright.config.ts use the following profiles in both configurations:
+
+| Project          | Engine / descriptor       | Viewport (CSS pixels) | Mobile / touch | Evidence limit                                                             |
+| ---------------- | ------------------------- | --------------------- | -------------- | -------------------------------------------------------------------------- |
+| desktop-chromium | Chromium / Desktop Chrome | 1280 × 720            | no / no        | Bundled Chromium, not every branded Chrome/Edge version or desktop OS      |
+| phone-webkit     | WebKit / iPhone 13        | 390 × 664             | yes / yes      | Emulation on Linux, not a physical iPhone or a specific iOS/Safari release |
+| tablet-webkit    | WebKit / iPad (gen 7)     | 810 × 1080            | yes / yes      | Emulation on Linux, not physical iPadOS/Safari acceptance                  |
+
+Playwright1.64 also forwards descriptor screen dimensions, which can affect screen/media-query behavior; viewport dimensions alone do not describe all emulation changes. [Upstream1.64 notes](https://github.com/microsoft/playwright/releases/tag/v1.64.0) describe that change. No Firefox, branded Edge, real Android Chrome, physical Safari or continuous older-browser range is established by these automated projects. Customer devices are not blocked by this tooling upgrade, but untested combinations must remain unverified.
+
+Test-host requirements are separate: exact package metadata changes Node>=18 (1.58.2) to Node>=20 (1.64.1); the repository pins Node24.19.0 in both. CI uses the matching Ubuntu Noble image. Across the upgrade interval, upstream removed macOS14 WebKit support ([1.59](https://github.com/microsoft/playwright/releases/tag/v1.59.0)), Debian11 support ([1.62](https://github.com/microsoft/playwright/releases/tag/v1.62.0)) and Ubuntu20.04 support ([1.63](https://github.com/microsoft/playwright/releases/tag/v1.63.0)). Those removals do not establish every other OS/architecture as supported or tested here; consult the selected release's platform requirements before local setup. Externally published Cloud Containers browser/bootstrap pins must be aligned separately.
+
+For physical/customer acceptance, record device model, exact OS and browser version, deployed revision and results in [Simulated-user UAT](uat/simulated-user.md). No customer minimum version or continuous supported range is declared until explicitly chosen and validated. Preserve this dated matrix as evidence when updating the current configuration; do not present an unmerged upgrade or historical pass as deployed acceptance.
+
 ## Configuration
 
 For a local live frontend build, supply the public `NEXT_PUBLIC_TURNSTILE_SITE_KEY` through your shell or an ignored `.env.local` file. The `live-email` target CI job supplies this build-time value from `deployment/production.json` or `deployment/staging.json`; client setup must supply the client's public widget key. Cloudflare Worker secrets separately hold the private `TURNSTILE_SECRET` for developer staging or `TURNSTILE_SECRET_KEY` for production, and provider credentials; setting Worker secrets does not configure the static frontend build. Default local development remains demo; live builds require their own verification.

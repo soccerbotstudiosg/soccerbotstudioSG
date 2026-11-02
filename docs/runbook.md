@@ -63,6 +63,8 @@ GitHub schedules npm and GitHub Actions checks for Monday 09:00 Asia/Singapore; 
 
 ### Update and remediation procedure
 
+Every dependency update PR must include the [before/after support-range comparison](../.agents/skills/soccerbot-dependencies/SKILL.md#required-support-range-comparison-in-every-dependency-pr), including unchanged requirements, removed support, exact tested configurations and unverified targets. Update the [browser coverage matrix](development.md#browser-testing-coverage) when affected.
+
 1. Read the PR Files changed and upstream release/advisory notes. Identify direct/transitive packages, compatibility changes and runtime versus tooling exposure. SHA-pinned Actions still need review of the upstream commit change.
 2. Update package and lockfile together. Coordinate Wrangler/Miniflare, compiler/lint peers, Playwright/container versions and Node types where necessary; no blanket major upgrades or historical runtime downgrades.
 3. Run `node scripts/versions.mjs write` and commit `docs/versions.md` with the update. A Dependabot PR that changes locked versions will otherwise fail the freshness check. This is deliberate: the repository snapshot must match the reviewed lockfile. A trusted maintainer refreshes the bot branch or incorporates the update into a reviewed remediation branch; CI never pushes generated files to main.
