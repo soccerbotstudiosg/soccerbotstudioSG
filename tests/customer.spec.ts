@@ -114,7 +114,7 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(response?.status()).toBe(404);
   expect(errors).toEqual([]);
 });
-test("guest multi-date booking survives reload and exports calendar and PDF", async ({
+test("guest multi-date booking survives reload without retired export actions", async ({
   page,
 }) => {
   await chooseSlots(page, true);
@@ -134,12 +134,11 @@ test("guest multi-date booking survives reload and exports calendar and PDF", as
       () => document.documentElement.scrollWidth - innerWidth,
     ),
   ).toBeLessThanOrEqual(1);
-  const calendar = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Add to calendar" }).click();
-  expect((await calendar).suggestedFilename()).toMatch(/\.ics$/);
-  const pdf = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download booking details" }).click();
-  expect((await pdf).suggestedFilename()).toMatch(/\.pdf$/);
+  await expect(
+    page.getByRole("button", {
+      name: /Add to calendar|Download booking details/,
+    }),
+  ).toHaveCount(0);
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
@@ -478,7 +477,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
         .getBoundingClientRect().top,
       actions: shell.querySelectorAll(".confirmation-actions .button").length,
     }));
-  expect(confirmationLayout.actions).toBe(5);
+  expect(confirmationLayout.actions).toBe(3);
   expect(confirmationLayout.actionsBottom).toBeLessThanOrEqual(
     confirmationLayout.summaryTop,
   );
@@ -760,8 +759,8 @@ test("header blue and the typography hierarchy stay consistent across every book
     "rgb(255, 255, 255)",
   );
   await expect(
-    page.getByRole("link", { name: "Need help?", exact: true }),
-  ).toHaveAttribute("href", "mailto:contact@soccerbotsg.com");
+    page.getByRole("link", { name: "WhatsApp Enquiry", exact: true }),
+  ).toHaveAttribute("href", "https://wa.me/6590143819");
   await page.getByText("View full details", { exact: true }).click();
   await sectionType(
     ".confirmation-section > h2, .confirmation-summary > .section-title",
@@ -914,7 +913,7 @@ test("protected confirmation waits for server evidence and rejects a tampered re
   );
   await openSite(page, `/confirmation/?attempt=${attempt}&paid=true`);
   await expect(
-    page.getByRole("status", { name: "Verifying your payment…" }),
+    page.getByRole("status", { name: "Checking payment…" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
@@ -924,7 +923,7 @@ test("protected confirmation waits for server evidence and rejects a tampered re
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "Your booking is confirmed, but its details could not be loaded.",
+    "Booking confirmed. Try loading your details again.",
   );
   await expect(
     page.getByRole("button", { name: "Load booking details", exact: true }),
@@ -939,7 +938,7 @@ test("protected confirmation waits for server evidence and rejects a tampered re
   );
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Confirmation unavailable" }),
+    page.getByRole("heading", { name: "Can’t load confirmation" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),

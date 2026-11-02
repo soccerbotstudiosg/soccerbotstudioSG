@@ -6,6 +6,7 @@ import type { CustomerCatalogue } from "@/domain/catalog";
 import { Icon } from "@/components/icon";
 import { MAX_PLAYERS } from "@/domain/booking-policy";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
+import { sessionPriceLabel } from "./session-price";
 import { LiveCatalogue } from "./live-catalogue";
 import { useBooking } from "./provider";
 /** Select the live or demo session presentation. */
@@ -65,6 +66,7 @@ function LiveSession({ data }: { data: CustomerCatalogue }) {
   return (
     <SessionPresentation
       serviceName={selected.name}
+      environment={data.environment}
       pending={draft.nativeServiceId !== selected.id}
     />
   );
@@ -72,9 +74,11 @@ function LiveSession({ data }: { data: CustomerCatalogue }) {
 /** Render session information and player-count controls. */
 function SessionPresentation({
   serviceName = SERVICE_NAME,
+  environment = "developer",
   pending = false,
 }: {
   serviceName?: string;
+  environment?: "developer" | "production";
   pending?: boolean;
 }) {
   const { draft, update } = useBooking();
@@ -128,8 +132,7 @@ function SessionPresentation({
         </div>
       </section>
       <p className="hint">
-        S$88 weekdays · S$108 weekends and Singapore public holidays. Per
-        session for 1–4 players.
+        {sessionPriceLabel(environment)}. Per session for 1–4 players.
       </p>
       {playerSelection}
       <section className="session-inclusions">
@@ -164,11 +167,7 @@ function SessionPresentation({
       <div className="actions">
         {pending ? (
           <button className="button" disabled>
-            <BrandLoading
-              overlay={false}
-              compact
-              label="Loading available times…"
-            />
+            <BrandLoading overlay={false} compact label="Loading times…" />
           </button>
         ) : (
           <Link href="/book/time/" className="button">

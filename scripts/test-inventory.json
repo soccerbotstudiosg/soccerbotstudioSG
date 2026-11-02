@@ -376,6 +376,14 @@
     "title": "stops a hung read at the original deadline without claiming cancellation"
   },
   {
+    "file": "src/features/booking/confirmation-render-trace.test.tsx",
+    "title": "confirmation timing defers hidden frames and discards stale unmounted callbacks without affecting UI"
+  },
+  {
+    "file": "src/features/booking/confirmation-render-trace.test.tsx",
+    "title": "confirmation timing separates pending from verified UI and emits only allowlisted local diagnostics"
+  },
+  {
     "file": "src/features/booking/details-step.test.tsx",
     "title": "details contains only the five contact fields and validates them before review"
   },
@@ -469,7 +477,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "verified live receipt uses demo sections and refuses exports after access is revoked"
+    "title": "verified live receipt shows booking sections without export actions or unverified invoice labels"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -493,7 +501,7 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
-    "title": "confirmation places five actions above a compact summary and discloses complete details"
+    "title": "confirmation places three retained actions above a compact summary and discloses complete details"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
@@ -633,7 +641,7 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "records multiple dates and generates one calendar event per session in UTC"
+    "title": "records multiple dates and preserves each booked session"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -833,7 +841,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "guest multi-date booking survives reload and exports calendar and PDF"
+    "title": "guest multi-date booking survives reload without retired export actions"
   },
   {
     "file": "tests/customer.spec.ts",
@@ -981,7 +989,7 @@
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "real API editable Review creates nothing and checkout waits for verified creation before HitPay"
+    "title": "real API editable Review and same-tab Back continuation preserve payment identity through paid return"
   },
   {
     "file": "tests/live-email.spec.ts",
@@ -1013,7 +1021,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "pending confirmation retains the final detail layout while hiding success and every action"
+    "title": "pending confirmation retains the booking summary while hiding full details success and every action"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1037,7 +1045,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "verified payment shows confirmation before reconciliation and only the requested download waits"
+    "title": "verified payment shows confirmation before reconciliation without export actions"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1129,7 +1137,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "revisiting a saved confirmation within its window refreshes each export without using saved proof"
+    "title": "revisiting a saved confirmation exposes no export actions or refresh requests"
   },
   {
     "file": "src/services/async-booking.test.ts",
@@ -1198,5 +1206,21 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "email account actions return through booking options and sign in again with either remember choice"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "three complete single-booking browser journeys preserve independent confirmations through Back reload and old links"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "complete multi-session then two single-booking browser journeys reset selections and preserve old receipts"
+  },
+  {
+    "file": "src/features/booking/session-price.test.tsx",
+    "title": "homepage prices follow the catalogue environment without a live preview fallback"
+  },
+  {
+    "file": "src/features/booking/session-price.test.tsx",
+    "title": "live session selection uses client prices while demo retains its own rates"
   }
 ]

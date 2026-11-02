@@ -95,3 +95,7 @@ Use PROGRESS.md for the current task and docs/journey.md for durable evidence un
 ## Exit criteria
 
 Every changed behavior has a justified test disposition; affected assertions, fixtures and inventories agree with the intended contract; relevant negative/recovery cases are covered or explicitly blocked; permitted checks have recorded outcomes; no coverage was weakened to obtain green. Publication may precede browser CI completion, but merge readiness cannot. This skill improves the review discipline; it does not certify complete coverage or make future failures impossible.
+
+## Draft, staging and merge evidence
+
+Apply the mandatory draft→ready→verified staging→owner acceptance→merge sequence in root AGENTS.md and the runbook deployment procedure. Continue related changes on the existing draft and disclose inherited changes for dependent PRs. Verify an actual successful staging deployment and exact revision; draft CI, ready status and green eligibility-only workflows are insufficient. A source change invalidates acceptance of the prior candidate. Bot/fork automatic exclusions require the reviewed trusted staging path rather than an implied exception. Report the current automation gap honestly: main production deployment does not yet require a staging-acceptance receipt. Consolidate source/fixture/guard/docs changes before CI and reuse valid evidence.

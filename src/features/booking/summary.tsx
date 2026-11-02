@@ -210,7 +210,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
               </button>
             ))}
           {basket && draft.slots.length > 0 && !valid && (
-            <p className="field-error" role="status">
+            <p className="notice" role="status">
               {selectionErrors(draft.slots, now).length > 0 ||
               result?.status === "success" ? (
                 "A selected session is no longer available. Remove it and choose another time."
@@ -218,7 +218,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
                 <BrandLoading
                   overlay={false}
                   compact
-                  label="Checking your selected sessions…"
+                  label="Checking sessions…"
                 />
               ) : (
                 "Your selections are saved. Availability could not be checked."

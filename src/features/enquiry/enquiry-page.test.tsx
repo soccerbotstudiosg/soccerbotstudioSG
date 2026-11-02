@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
+import { services } from "@/services";
 import { EnquiryPage } from "./enquiry-page";
 
 test("enquiry waits for hydration then preserves entered details through submission", async () => {
@@ -53,6 +54,19 @@ test("enquiry waits for hydration then preserves entered details through submiss
       target: { value: "A group session for our team." },
     },
   );
+  const submit = vi
+    .spyOn(services.enquiry, "submit")
+    .mockRejectedValueOnce(
+      new Error("SQLITE_FULL internal request identity=private"),
+    );
+  await user.click(screen.getByRole("button", { name: "Send enquiry" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "We couldn’t send your enquiry. Please try again or contact the studio.",
+  );
+  expect(screen.getByRole("alert")).toHaveClass("alert");
+  expect(screen.queryByText(/SQLITE_FULL|identity=private/)).toBeNull();
+  expect(name).toHaveValue("Demo Customer");
+  submit.mockRestore();
   await user.click(screen.getByRole("button", { name: "Send enquiry" }));
   expect(await screen.findByText("Preview · No enquiry sent.")).toBeVisible();
   expect(screen.getByText("demo@example.com")).toBeVisible();

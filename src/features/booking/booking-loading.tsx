@@ -9,10 +9,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { BrandLoading } from "@/components/brand-loading";
-export const loadingMessage =
-  "Please don’t close or refresh this page while we finish.";
+export const loadingMessage = "Don’t close or refresh.";
 const feedbackMessage = (label?: string) =>
-  label === "Opening secure payment…" || label === "Verifying your payment…"
+  label === "Opening checkout…" || label === "Checking payment…"
     ? `${label} ${loadingMessage}`
     : loadingMessage;
 const Loading = createContext<((label: string) => () => void) | null>(null);
@@ -66,7 +65,7 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
 }
 /** Render the shared booking progress presentation. */
 export function BookingLoading({
-  label = "Preparing your booking…",
+  label = "Preparing booking…",
   compact = false,
   overlay = true,
 }: {

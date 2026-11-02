@@ -60,3 +60,7 @@ Use the existing Admin/Trainer/Simulated-user UAT owners for real provider/devic
 ## 6. Readiness receipt
 
 Report the target/operation and authorization; exact repository/source/run/artifact; verified account/resource identities; configuration gaps without secret values; observed health/runtime/provider evidence; rollback constraints; and a **go** or **hold** recommendation with the exact remaining step. Distinguish prepared, verified, deployed, activated and owner-accepted states. Update existing Progress/Journey and affected operational owners under the documentation skill. No unconditional readiness claim while required evidence is missing, and no extra status-only commits merely to restate green CI.
+
+## Draft, staging and merge evidence
+
+Apply the mandatory draft→ready→verified staging→owner acceptance→merge sequence in root AGENTS.md and the runbook deployment procedure. Continue related changes on the existing draft and disclose inherited changes for dependent PRs. Verify an actual successful staging deployment and exact revision; draft CI, ready status and green eligibility-only workflows are insufficient. A source change invalidates acceptance of the prior candidate. Bot/fork automatic exclusions require the reviewed trusted staging path rather than an implied exception. Report the current automation gap honestly: main production deployment does not yet require a staging-acceptance receipt. Consolidate source/fixture/guard/docs changes before CI and reuse valid evidence.

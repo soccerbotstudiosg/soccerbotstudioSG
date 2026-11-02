@@ -185,9 +185,7 @@ async function directCase(scenario: string) {
   );
   expect(screen.getByTestId("retained")).toHaveTextContent(id);
   expect(pay).toHaveBeenCalledTimes(1);
-  fireEvent.click(
-    screen.getByRole("button", { name: "Opening secure payment…" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Opening checkout…" }));
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(assign).not.toHaveBeenCalled();
   if (scenario === "cancel" || scenario === "cancel_handoff")
@@ -207,18 +205,16 @@ async function directCase(scenario: string) {
     // the checkout destination loads. Never reveal the review form here.
     expect(screen.getByTestId("action")).toHaveTextContent("loading");
     expect(
-      screen.getByRole("status", { name: "Opening secure payment…" }),
+      screen.getByRole("status", { name: "Opening checkout…" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "Opening secure payment… Please don’t close or refresh this page while we finish.",
-      ),
+      screen.getByText("Opening checkout… Don’t close or refresh."),
     ).toBeVisible();
     await act(async () => fireEvent.click(screen.getByText("Repeat checkout")));
     expect(pay).toHaveBeenCalledTimes(1);
     expect(assign).toHaveBeenCalledTimes(1);
     expect(
-      screen.getByRole("button", { name: "Opening secure payment…" }),
+      screen.getByRole("button", { name: "Opening checkout…" }),
     ).toBeDisabled();
     act(() => window.dispatchEvent(new PageTransitionEvent("pageshow")));
     expect(screen.getByTestId("action")).toHaveTextContent("loading");
@@ -470,7 +466,7 @@ it("HitPay HTTP conflict preserves the hold and shows payment failure without se
     ),
   );
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "Payment checkout could not be verified",
+    "We couldn’t open checkout",
   );
   expect(screen.getByTestId("hold")).toHaveTextContent(id + ":true");
   expect(
@@ -572,7 +568,7 @@ it("Review performs no provider reads and checkout verifies one booking before H
   expect(pay.mock.calls[0][0].holding).toBe(true);
   expect(assign).not.toHaveBeenCalled();
   expect(
-    screen.getByRole("button", { name: "Opening secure payment…" }),
+    screen.getByRole("button", { name: "Opening checkout…" }),
   ).toBeDisabled();
   fireEvent.click(screen.getByText("Repeat checkout"));
   expect(pay).toHaveBeenCalledTimes(1);
@@ -771,7 +767,7 @@ it("expired Review releases only an authoritatively unpaid attempt and preserves
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent(id);
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "Your original booking has been kept",
+    "Still checking your payment",
   );
   uncertain = false;
   await act(async () =>
@@ -861,7 +857,7 @@ it("proven unstarted checkout stays editable without entering payment recovery",
   );
   fireEvent.click(screen.getByRole("button", { name: "Seed" }));
   fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
-  await screen.findByText(/No booking or payment was started/);
+  await screen.findByText(/Nothing was booked or charged/);
   expect(screen.getByTestId("retained")).toBeEmptyDOMElement();
   expect(screen.getByTestId("action")).toHaveTextContent("failure");
   expect(navigation.push).not.toHaveBeenCalled();
@@ -891,7 +887,7 @@ it("queue rejection keeps the original attempt on Review for an explicit retry",
   );
   fireEvent.click(screen.getByRole("button", { name: "Seed" }));
   fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
-  await screen.findByText(/The booking service is busy/);
+  await screen.findByText(/Please wait a moment, then try again/);
   const original = screen.getByTestId("retained").textContent;
   expect(original).toMatch(/^[0-9a-f-]{36}$/);
   expect(screen.getByTestId("action")).toHaveTextContent("failure");
@@ -935,7 +931,7 @@ it("rejected checkout window retains its attempt and displays the readback witho
   expect(navigation.push).not.toHaveBeenCalled();
   expect(navigation.replace).not.toHaveBeenCalled();
   expect(fetch).toHaveBeenCalledTimes(1);
-  expect(screen.queryByText("Verifying your payment…")).not.toBeInTheDocument();
+  expect(screen.queryByText("Checking payment…")).not.toBeInTheDocument();
 });
 
 it("checkout readback uses slot-specific messaging only for verified unavailability", async () => {
@@ -975,9 +971,9 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
               : "checkout_window_blocked",
         message:
           error === "checkout_recovery_required"
-            ? "Your original booking is still being checked. Do not start another booking or payment."
+            ? "We’re checking your booking. Don’t book or pay again."
             : error === "checkout_selection_unavailable"
-              ? "This time slot is no longer available. Please choose another. Your details have been kept."
+              ? "That time is unavailable. Choose another; your details are saved."
               : "We couldn’t start checkout. Please try again later.",
       });
       expect(fetch).toHaveBeenCalledTimes(1);

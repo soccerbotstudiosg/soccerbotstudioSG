@@ -49,6 +49,7 @@ export function DetailsStep({
     key: "",
     saving: false,
     message: "",
+    failed: false,
   });
   const activeSave = useRef<AbortController | null>(null);
   const contactKey = JSON.stringify([draft.mode, draft.accountEmail, c]);
@@ -74,14 +75,15 @@ export function DetailsStep({
     }
     const controller = new AbortController();
     activeSave.current = controller;
-    setSaveState({ key: contactKey, saving: true, message: "" });
+    setSaveState({ key: contactKey, saving: true, message: "", failed: false });
     try {
       await identityService.saveProfile(c, controller.signal);
       if (!controller.signal.aborted)
         setSaveState({
           key: contactKey,
           saving: false,
-          message: "Contact details saved for your next visit.",
+          message: "Details saved.",
+          failed: false,
         });
       return !controller.signal.aborted;
     } catch {
@@ -89,8 +91,8 @@ export function DetailsStep({
         setSaveState({
           key: contactKey,
           saving: false,
-          message:
-            "Contact details could not be saved. Verify your email and try again.",
+          message: "We couldn’t save your details. Please try again.",
+          failed: true,
         });
       return false;
     } finally {
@@ -105,7 +107,7 @@ export function DetailsStep({
   ) {
     activeSave.current?.abort();
     activeSave.current = null;
-    setSaveState({ key: "", saving: false, message: "" });
+    setSaveState({ key: "", saving: false, message: "", failed: false });
     update({ contact: { ...c, [key]: value } });
     setErrors((current) => ({ ...current, [key]: undefined }));
   }
@@ -282,7 +284,7 @@ export function DetailsStep({
                 disabled={saving || checking}
               >
                 {saving ? (
-                  <BrandLoading compact label="Saving contact details…" />
+                  <BrandLoading compact label="Saving details…" />
                 ) : (
                   "Save contact details"
                 )}
@@ -297,11 +299,24 @@ export function DetailsStep({
             </button>
           </div>
         )}
-        {saveMessage && <p role="status">{saveMessage}</p>}
-        {!profileOnly && selectionNotice && (
-          <p role="status">{selectionNotice}</p>
+        {saveMessage && (
+          <p
+            className={saveState.failed ? "alert" : "notice"}
+            role={saveState.failed ? "alert" : "status"}
+          >
+            {saveMessage}
+          </p>
         )}
-        {action.error && <p role="alert">{action.error}</p>}
+        {!profileOnly && selectionNotice && (
+          <p className="notice" role="status">
+            {selectionNotice}
+          </p>
+        )}
+        {action.error && (
+          <p className="alert" role="alert">
+            {action.error}
+          </p>
+        )}
         {!profileOnly && (
           <div className="actions">
             <button

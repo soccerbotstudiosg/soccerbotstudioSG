@@ -381,7 +381,7 @@ async function nativeRequest(
       if (error?.error === "provider_queue_busy")
         throw new BookingServiceError(
           "queue_busy",
-          "The booking service is busy. Your details and existing attempt are saved. Please wait a moment before trying again.",
+          "Please wait a moment, then try again. Your details are saved.",
         );
     }
     if (
@@ -395,12 +395,12 @@ async function nativeRequest(
       if (error?.error === "checkout_recovery_required")
         throw new BookingServiceError(
           "temporarily_unavailable",
-          "Your original booking is still being checked. Do not start another booking or payment.",
+          "We’re checking your booking. Don’t book or pay again.",
         );
       if (error?.error === "checkout_selection_unavailable")
         throw new BookingServiceError(
           "selection_unavailable",
-          "This time slot is no longer available. Please choose another. Your details have been kept.",
+          "That time is unavailable. Choose another; your details are saved.",
         );
       if (
         [
@@ -416,7 +416,7 @@ async function nativeRequest(
       if (error?.error === "checkout_not_started")
         throw new BookingServiceError(
           "checkout_not_started",
-          "We couldn’t connect to the booking service. No booking or payment was started. Your details are saved; please try again shortly.",
+          "Nothing was booked or charged. Your details are saved; try again shortly.",
         );
     }
     if (path.startsWith("/api/booking/hitpay/")) {
@@ -424,11 +424,11 @@ async function nativeRequest(
       if (response.status === 409 && body?.error === "hitpay_hold_expired")
         throw new BookingServiceError(
           "reservation_expired",
-          "Your reservation expired. Please choose a time again. Your contact details have been kept.",
+          "Your reserved time expired. Choose again; your details are saved.",
         );
       throw new BookingServiceError(
         "payment_unavailable",
-        "Payment checkout could not be verified. Your booking attempt has been kept. Do not start another booking or payment; contact the studio for help.",
+        "We couldn’t open checkout. Don’t book or pay again; contact the studio.",
       );
     }
     if (
@@ -442,7 +442,7 @@ async function nativeRequest(
       )
         throw new BookingServiceError(
           "selection_changed",
-          "Your selection is no longer available or has changed. Please choose again. Your details have been kept.",
+          "Your selected time changed. Choose again; your details are saved.",
         );
     }
     if (response.status === 409)

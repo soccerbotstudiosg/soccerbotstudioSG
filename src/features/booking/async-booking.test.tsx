@@ -110,7 +110,11 @@ afterEach(() => {
 });
 
 const completedId = "00000000-0000-4000-8000-000000000001";
-function RebookingProbe() {
+function RebookingProbe({
+  onRestartFailure,
+}: {
+  onRestartFailure?: () => void;
+}) {
   const state = useBooking();
   return (
     <>
@@ -118,7 +122,22 @@ function RebookingProbe() {
         {state.attempt?.id ?? "none"}
       </output>
       <output data-testid="rebooking-error">{state.rebookingError}</output>
-      <button onClick={() => state.restartAfterConfirmation(completedId)}>
+      <output data-testid="rebooking-calendar">
+        {state.calendar.entry("2026-10", state.now)?.dates[0]?.available ===
+        true
+          ? "available"
+          : "unavailable"}
+      </output>
+      <button
+        onClick={() => {
+          try {
+            state.restartAfterConfirmation(completedId);
+          } catch (error) {
+            if (!onRestartFailure) throw error;
+            onRestartFailure();
+          }
+        }}
+      >
         Restart completed
       </button>
       <button
@@ -140,7 +159,7 @@ test("rebooking clears the view immediately but gates new checkout on background
   const checkout = vi.fn(async () => {
     throw new Error("synthetic checkout stop");
   });
-  render(
+  const view = render(
     <BookingProvider
       bookingService={{
         ...demoBookingService,
@@ -173,6 +192,61 @@ test("rebooking clears the view immediately but gates new checkout on background
   );
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(request).toHaveBeenCalledTimes(2);
+  view.unmount();
+  const refreshedCalendar = deferred<{
+    month: string;
+    serviceId: string;
+    observedAtMs: number;
+    dates: { date: string; available: boolean }[];
+  }>();
+  const publicCalendar = vi
+    .fn()
+    .mockResolvedValueOnce({
+      month: "2026-10",
+      serviceId: "2",
+      observedAtMs: Date.now(),
+      dates: [{ date, available: true }],
+    })
+    .mockReturnValue(refreshedCalendar.promise);
+  render(
+    <BookingProvider
+      bookingService={{
+        ...demoBookingService,
+        publicCalendar,
+        checkout: async (input) => ({
+          ...(await demoBookingService.checkout(input)),
+          id: completedId,
+        }),
+      }}
+    >
+      <RebookingProbe />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  expect(screen.getByTestId("rebooking-calendar")).toHaveTextContent(
+    /^available$/,
+  );
+  expect(publicCalendar).toHaveBeenCalledTimes(1);
+  await act(async () =>
+    fireEvent.click(screen.getByRole("button", { name: "Review new booking" })),
+  );
+  expect(screen.getByTestId("restored-attempt")).toHaveTextContent(completedId);
+  fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
+  expect(screen.getByTestId("rebooking-calendar")).toHaveTextContent(
+    /^unavailable$/,
+  );
+  expect(publicCalendar).toHaveBeenCalledTimes(2);
+  await act(async () =>
+    refreshedCalendar.resolve({
+      month: "2026-10",
+      serviceId: "2",
+      observedAtMs: Date.now(),
+      dates: [{ date, available: false }],
+    }),
+  );
+  expect(screen.getByTestId("rebooking-calendar")).toHaveTextContent(
+    /^unavailable$/,
+  );
 });
 
 test("reload resumes an interrupted completed exit without restoring that confirmation or suppressing another attempt", async () => {
@@ -217,16 +291,25 @@ test("reload resumes an interrupted completed exit without restoring that confir
     ...restored,
     id: "00000000-0000-4000-8000-000000000002",
   });
+  const restartFailure = vi.fn();
   render(
     <BookingProvider bookingService={service} identityService={identity}>
-      <RebookingProbe />
+      <RebookingProbe onRestartFailure={restartFailure} />
     </BookingProvider>,
   );
   await act(async () => {});
   expect(screen.getByTestId("restored-attempt")).toHaveTextContent(
     "00000000-0000-4000-8000-000000000002",
   );
+  // An old confirmation's exit must not clear the newer active checkout.
+  fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
+  expect(restartFailure).toHaveBeenCalledTimes(1);
   await act(async () => dismissal.resolve(Response.json({ dismissed: true })));
+  fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
+  expect(restartFailure).toHaveBeenCalledTimes(2);
+  expect(screen.getByTestId("restored-attempt")).toHaveTextContent(
+    "00000000-0000-4000-8000-000000000002",
+  );
 });
 
 test("calendar and basket share delayed availability once and preserve selection through loading success", async () => {
@@ -242,9 +325,7 @@ test("calendar and basket share delayed availability once and preserve selection
       <Probe />
     </BookingProvider>,
   );
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   expect(loadBooking().draft.slots).toHaveLength(1);
   expect(availability).toHaveBeenCalledTimes(1);
@@ -290,9 +371,7 @@ test("availability failure is not no slots and an explicit retry retains the bas
   expect(screen.queryByText(/synthetic private/)).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   await act(async () => {
     second.resolve(demoBookingModel.availability(date));
   });
@@ -347,15 +426,11 @@ test("reordered dates and player revisions discard old replies even when the ada
   });
   expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Change players" }));
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   await act(async () => {
     old.resolve(demoBookingModel.availability("2026-10-09"));
   });
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   await act(async () => {
     changed.resolve(demoBookingModel.availability(date));
   });
@@ -402,7 +477,7 @@ test("review waits before navigation and same-turn duplicate checkout has one lo
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(navigation.push).not.toHaveBeenCalled();
   expect(
-    screen.getByRole("button", { name: "Opening secure payment…" }),
+    screen.getByRole("button", { name: "Opening checkout…" }),
   ).toBeDisabled();
   const result = demoBookingModel.checkout(draft(), null);
   await act(async () => {
@@ -748,9 +823,7 @@ test("replacing an adapter with the same mode invalidates its completed availabi
       <Summary basket />
     </BookingProvider>,
   );
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   await act(async () => {
     pending.resolve([]);
@@ -771,7 +844,7 @@ test("replacing an adapter cancels its pending action and releases the new revie
   );
   fireEvent.click(screen.getByRole("button", { name: "Continue to payment" }));
   expect(
-    screen.getByRole("button", { name: "Opening secure payment…" }),
+    screen.getByRole("button", { name: "Opening checkout…" }),
   ).toBeDisabled();
   view.rerender(
     <BookingProvider bookingService={replacement}>

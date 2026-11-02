@@ -124,6 +124,18 @@ async function protectedRead(
   if (!response.ok) throw new ConfirmationError("unavailable");
   return { response, checking };
 }
+const responseTimes = new WeakMap<object, number>();
+/** Read the monotonic time when validated response evidence became available. */
+export function confirmationResponseTime(value: object | null | undefined) {
+  return value ? responseTimes.get(value) : undefined;
+}
+/** Attach local timing without changing response contracts or retaining customer data. */
+function timeResponse<T extends object>(value: T, ...proofs: unknown[]): T {
+  const at = performance.now();
+  for (const item of [value, ...proofs])
+    if (item && typeof item === "object") responseTimes.set(item, at);
+  return value;
+}
 /** Read and validate the server's confirmation evidence. */
 export async function readConfirmation(attemptId: string, signal: AbortSignal) {
   const { response, checking } = await protectedRead(
@@ -138,7 +150,12 @@ export async function readConfirmation(attemptId: string, signal: AbortSignal) {
     decision.customerConfirmation.attemptId !== attemptId
   )
     throw new ConfirmationError("unavailable");
-  return { ...decision, checking };
+  return timeResponse(
+    { ...decision, checking },
+    "customerConfirmation" in decision
+      ? decision.customerConfirmation
+      : undefined,
+  );
 }
 /** Read the authorized receipt for the current booking attempt. */
 export async function readBookingReceipt(
@@ -166,7 +183,7 @@ export async function readBookingReceipt(
     referenceTime - receipt.verifiedAtMs > 60000
   )
     throw new ConfirmationError("unavailable");
-  return bookingFromReceipt(receipt);
+  return timeResponse(bookingFromReceipt(receipt));
 }
 /** Build a display booking from validated receipt evidence. */
 export function bookingFromReceipt<
@@ -268,7 +285,11 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
       )
         throw new ConfirmationError("unavailable");
     }
-    return { ...context, clock };
+    return timeResponse(
+      { ...context, clock },
+      context.customerConfirmation,
+      context.confirmation,
+    );
   },
 };
 
@@ -314,9 +335,7 @@ export async function dismissCompletedBooking(attemptId: string) {
     headers: { Accept: "application/json" },
   });
   if (!response.ok || !(await response.json()).dismissed)
-    throw new Error(
-      "Your booking could not be closed on this device. Please try again.",
-    );
+    throw new Error("Please try again to leave this booking.");
 }
 
 // Tab-local navigation intent only; the server still verifies completion and

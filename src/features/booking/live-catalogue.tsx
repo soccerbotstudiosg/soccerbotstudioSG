@@ -45,13 +45,11 @@ export function LiveCatalogue({
   const current =
     result?.owner === service && result.revision === revision ? result : null;
   if (!current)
-    return (
-      <BrandLoading overlay={false} compact label="Loading current sessions…" />
-    );
+    return <BrandLoading overlay={false} compact label="Loading sessions…" />;
   if (current.failed)
     return (
       <section className="surface">
-        <p role="alert">
+        <p className="alert" role="alert">
           Session information is unavailable. Your details have been kept.
         </p>
         <button className="button" onClick={() => retry((n) => n + 1)}>

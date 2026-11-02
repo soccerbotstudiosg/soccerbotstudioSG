@@ -1374,6 +1374,7 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
   assert.equal((await readReceipt()).status, 409);
 
   const evidence = await observation(a);
+  evidence.invoice.documentNumber = "INV-SYNTHETIC-42";
   await db
     .prepare(
       "UPDATE attempts SET association_json=?,observation_json=? WHERE id=?",
@@ -1422,6 +1423,7 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
   assert.deepEqual(receipt.providerReferences, {
     bookingIds: ["booking-1"],
     invoiceId: "invoice-1",
+    invoiceNumber: "INV-SYNTHETIC-42",
   });
   assert.equal(receipt.sessions[0].serviceName, "Native Session");
   assert.equal(JSON.stringify(receipt).includes("capability"), false);

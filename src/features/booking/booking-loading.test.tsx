@@ -17,11 +17,7 @@ test("overlapping booking reads share one full-page loader and preserve the moun
   fireEvent.change(input, { target: { value: "Retained name" } });
   view.rerender(<Screen first second />);
   expect(document.querySelectorAll(".page-loading")).toHaveLength(1);
-  expect(
-    screen.getByText(
-      "Please don’t close or refresh this page while we finish.",
-    ),
-  ).toBeVisible();
+  expect(screen.getByText("Don’t close or refresh.")).toBeVisible();
   expect(document.querySelector(".booking-loading-inline")).toBeNull();
   expect(input.parentElement).toHaveAttribute("inert");
   view.rerender(<Screen first={false} second />);
@@ -68,7 +64,7 @@ test("display loading leaves navigation interactive while payment loading still 
     <BookingLoadingProvider>
       <button>Continue as guest</button>
       <BookingLoading compact overlay={false} label="Reading calendar" />
-      <BookingLoading compact label="Opening secure payment…" />
+      <BookingLoading compact label="Opening checkout…" />
     </BookingLoadingProvider>,
   );
   expect(button.closest("[inert]")).not.toBeNull();

@@ -78,6 +78,7 @@ export function checkWorker(root) {
             ![
               "../src/domain/confirmation",
               "../src/domain/native-checkout",
+              "../src/domain/provider-references",
               "../src/domain/booking-policy",
               "../src/domain/catalog",
               "../src/domain/contact",

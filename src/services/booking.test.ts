@@ -29,7 +29,6 @@ import {
   loadLiveDraft,
   saveLiveDraft,
 } from "@/services/storage";
-import { calendarText } from "@/services/exports";
 class StorageMock {
   private values = new Map<string, string>();
   getItem(key: string) {
@@ -214,7 +213,7 @@ describe("service and payment invariants", () => {
     expect(service.pay(late, "success")).toEqual(late);
     expect(late.booking).toBeNull();
   });
-  it("records multiple dates and generates one calendar event per session in UTC", () => {
+  it("records multiple dates and preserves each booked session", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-14T00:00:00Z"));
     const draft = validDraft();
@@ -222,12 +221,8 @@ describe("service and payment invariants", () => {
       demoSession({ date: addDays(tomorrow(), 1), start: "12:00" })!,
     );
     const attempt = service.pay(service.checkout(draft, null), "success"),
-      paid = service.resolve(attempt, attempt.checkUntil),
-      ics = calendarText(paid.booking!);
+      paid = service.resolve(attempt, attempt.checkUntil);
     expect(paid.booking?.totalCents).toBe(17600);
-    expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(2);
-    expect(ics).toContain("T040000Z");
-    expect(ics).toContain("T044000Z");
     expect(new Set(paid.booking?.slots.map(slotKey)).size).toBe(2);
   });
 });
@@ -374,9 +369,6 @@ describe("opening hours and demo instructor rotation", () => {
       "faisal",
     ]);
     expect(paid.booking?.totalCents).toBe(26400);
-    const ics = calendarText(paid.booking!);
-    expect(ics).toContain("Instructor: Faisal Shahril");
-    expect(ics).toContain("Instructor: Daniel Tan");
     expect(() =>
       service.checkout(
         {

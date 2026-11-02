@@ -100,7 +100,7 @@ test("guest loading remains until the destination commits without exposing the p
   render(<Router />);
   await user.click(screen.getByRole("button", { name: "Continue as guest" }));
   expect(
-    screen.getByRole("status", { name: "Preparing your booking…" }),
+    screen.getByRole("status", { name: "Preparing booking…" }),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: "Continue as guest" }),

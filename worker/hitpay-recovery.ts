@@ -321,7 +321,11 @@ export async function recoverHitpay(
       attempt.hold_expires_ms !== null &&
       attempt.booking_created_ms !== null
     ) {
-      const receipt = await receiptData(env, attempt, observedAt);
+      const receipt = await receiptData(
+        env,
+        { ...attempt, observation_json: JSON.stringify(observation) },
+        observedAt,
+      );
       if (!receipt.sessions.some((session) => session.startMs <= Date.now()))
         confirmationJson = JSON.stringify(receipt);
     }

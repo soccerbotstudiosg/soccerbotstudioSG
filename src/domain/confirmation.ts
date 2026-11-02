@@ -1,3 +1,4 @@
+import { invoiceNumberSchema } from "./provider-references";
 import { z } from "zod";
 
 // Internal normalized evidence, not provider response schemas or authentication.
@@ -76,6 +77,7 @@ const bookingSchema = z.strictObject({
   status: z.enum(["confirmed", "pending", "cancelled", "invalid", "unknown"]),
 });
 const invoiceSchema = z.strictObject({
+  documentNumber: invoiceNumberSchema.optional(),
   ...observationBinding,
   invoiceId: identifier,
   money,

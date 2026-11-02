@@ -5,41 +5,43 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { ADDRESS, CONTACT } from "@/domain/catalog";
+import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { dateLabel, endTime, money } from "@/domain/dates";
-import { ConfirmationError } from "@/services/confirmation";
-import { downloadBooking, downloadCalendar } from "@/services/exports";
 import type { Booking } from "@/domain/booking";
 import { useBooking } from "./provider";
 import { SessionList } from "./summary";
 import { Arrival, ClientDetails } from "./review-step";
-function PendingConfirmationHeading({ label }: { label: string }) {
+function PendingConfirmationHeading({
+  label,
+  message,
+}: {
+  label: string;
+  message?: string;
+}) {
   return (
     <>
       <InlineLoading compact label={label} />
       <p className="text-sm text-muted">{label}</p>
-      <p className="text-sm text-muted">
-        We’re checking the payment status for this booking. Your details are
-        saved.
-      </p>
-      <p className="text-sm text-muted">{loadingMessage}</p>
+      <p className="text-sm text-muted">{message ?? loadingMessage}</p>
     </>
   );
 }
 
 /** Present a pending booking without claiming final confirmation. */
 export function PendingConfirmation({
-  label = "Checking your booking…",
+  label = "Checking booking…",
+  message,
   children,
 }: {
   label?: string;
+  message?: string;
   children?: ReactNode;
 }) {
   return (
     <div className="status-shell confirmation-shell">
       <div className="status-heading">
-        <PendingConfirmationHeading label={label} />
+        <PendingConfirmationHeading label={label} message={message} />
       </div>
       <section
         className="surface confirmation-card booking-document"
@@ -48,7 +50,7 @@ export function PendingConfirmation({
         {children ?? (
           <div className="confirmation-summary" aria-label="Booking summary">
             <strong className="section-title">Your booking</strong>
-            <p>Loading booking details…</p>
+            <p>Loading summary…</p>
           </div>
         )}
       </section>
@@ -77,32 +79,29 @@ export function ConfirmationStep() {
     />
   );
 }
-/** Render confirmed booking details and authorized export actions. */
+/** Render confirmed booking details and customer navigation. */
 export function BookingConfirmation({
   booking,
   preview = false,
   pending = false,
-  pendingLabel = "Verifying your payment…",
+  pendingLabel = "Checking payment…",
+  pendingMessage,
   pendingAction,
   verifiedAtMs,
   onAgain,
   onHome,
-  calendarDownload,
-  detailsDownload,
 }: {
   booking: Booking;
   preview?: boolean;
   pending?: boolean;
   pendingLabel?: string;
+  pendingMessage?: string;
   pendingAction?: ReactNode;
   verifiedAtMs?: number;
   onAgain: () => void | Promise<void>;
   onHome?: () => void | Promise<void>;
-  calendarDownload?: () => Promise<void>;
-  detailsDownload?: () => Promise<void>;
 }) {
   const [error, setError] = useState(""),
-    [downloading, setDownloading] = useState(false),
     [leaving, setLeaving] = useState(false);
   async function leave(operation: () => void | Promise<void>) {
     if (leaving) return;
@@ -111,33 +110,19 @@ export function BookingConfirmation({
     try {
       await operation();
     } catch {
-      setError(
-        "Your booking could not be closed on this device. Please try again.",
-      );
+      setError("Please try again to leave this booking.");
     } finally {
       setLeaving(false);
-    }
-  }
-  async function download(operation: () => Promise<void> | void) {
-    setDownloading(true);
-    setError("");
-    try {
-      await operation();
-    } catch (error) {
-      setError(
-        error instanceof ConfirmationError && error.kind === "throttled"
-          ? "Please wait a few seconds before requesting another download."
-          : "The download could not be created. Please try again.",
-      );
-    } finally {
-      setDownloading(false);
     }
   }
   return (
     <div className="status-shell confirmation-shell">
       <div className="status-heading">
         {pending ? (
-          <PendingConfirmationHeading label={pendingLabel} />
+          <PendingConfirmationHeading
+            label={pendingLabel}
+            message={pendingMessage}
+          />
         ) : (
           <>
             <span className="status-icon">
@@ -157,41 +142,15 @@ export function BookingConfirmation({
             (Singapore time)
           </p>
         )}
-        <p className="reference">
-          {preview ? "Booking reference" : "SoccerBot reference"}{" "}
-          <strong className="text-ink">{booking.reference}</strong>
-        </p>
+        {!pending && preview && (
+          <p className="reference">
+            Booking reference{" "}
+            <strong className="text-ink">{booking.reference}</strong>
+          </p>
+        )}
       </div>
       {!pending && (
         <div className="confirmation-actions" aria-label="Booking actions">
-          <button
-            className="button"
-            disabled={downloading}
-            onClick={() =>
-              void download(
-                calendarDownload ?? (() => downloadCalendar(booking)),
-              )
-            }
-          >
-            <Icon name="calendar" />
-            <span>Add to calendar</span>
-          </button>
-          <button
-            className="button"
-            disabled={downloading}
-            onClick={() =>
-              void download(detailsDownload ?? (() => downloadBooking(booking)))
-            }
-          >
-            <Icon name="download" />
-            <span>
-              {downloading ? (
-                <InlineLoading compact label="Preparing download…" />
-              ) : (
-                "Download booking details"
-              )}
-            </span>
-          </button>
           <button
             className="button secondary"
             disabled={leaving}
@@ -200,9 +159,9 @@ export function BookingConfirmation({
             <Icon name="plus" />
             <span>Make another booking</span>
           </button>
-          <a className="button secondary" href={`mailto:${CONTACT.email}`}>
-            <Icon name="mail" />
-            <span>Need help?</span>
+          <a className="button secondary" href={BOOKING_SUPPORT.whatsappUrl}>
+            <Icon name="phone" />
+            <span>WhatsApp Enquiry</span>
           </a>
           <Link
             href="/"
@@ -241,84 +200,65 @@ export function BookingConfirmation({
           </div>
         </div>
         {pending && pendingAction}
-        <details className="confirmation-full-details">
-          <summary>View full details</summary>
-          <div className="confirmation-details-grid">
-            <section
-              className="confirmation-section"
-              aria-labelledby="confirmation-client"
-            >
-              <h2 className="section-title" id="confirmation-client">
-                Client Details
-              </h2>
-              <ClientDetails contact={booking.draft.contact} />
-            </section>
-            <section
-              className="confirmation-section"
-              aria-labelledby="confirmation-location"
-            >
-              <h2 className="section-title" id="confirmation-location">
-                Location
-              </h2>
-              <p>
-                <strong>
-                  {[...new Set(booking.slots.map((slot) => slot.studio))].join(
-                    ", ",
-                  )}
-                </strong>
-                <br />
-                {ADDRESS}
-              </p>
-            </section>
-            <section
-              className="confirmation-section confirmation-disclaimers"
-              aria-labelledby="confirmation-disclaimers"
-            >
-              <h2 className="section-title" id="confirmation-disclaimers">
-                Disclaimers
-              </h2>
-              {booking.slots
-                .filter((slot) => slot.rotationAt)
-                .map((slot) => (
-                  <p
-                    className="rotation-notice"
-                    key={`${slot.date}|${slot.start}`}
-                  >
-                    {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}:
-                    Crosses the {slot.rotationAt} instructor rotation. Your
-                    assigned instructor stays for the full session.
-                  </p>
-                ))}
-              <Arrival compact />
-              <p className="hint">
-                Follow your instructor’s safety guidance. For changes,
-                cancellations or refunds, contact the studio.
-              </p>
-              {preview && (
-                <p className="payment-foot">
-                  Payment preview · No money was charged.
-                </p>
-              )}
-            </section>
-            {booking.providerReferences && (
-              <div className="reference confirmation-provider-references">
+        {!pending && (
+          <details className="confirmation-full-details">
+            <summary>View full details</summary>
+            <div className="confirmation-details-grid">
+              <section
+                className="confirmation-section"
+                aria-labelledby="confirmation-client"
+              >
+                <h2 className="section-title" id="confirmation-client">
+                  Client Details
+                </h2>
+                <ClientDetails contact={booking.draft.contact} />
+              </section>
+              <section
+                className="confirmation-section"
+                aria-labelledby="confirmation-location"
+              >
+                <h2 className="section-title" id="confirmation-location">
+                  Location
+                </h2>
                 <p>
-                  SimplyBook booking ID
-                  {booking.providerReferences.bookingIds.length > 1
-                    ? "s"
-                    : ""}:{" "}
                   <strong>
-                    {booking.providerReferences.bookingIds.join(", ")}
+                    {[
+                      ...new Set(booking.slots.map((slot) => slot.studio)),
+                    ].join(", ")}
                   </strong>
+                  <br />
+                  {ADDRESS}
                 </p>
-                <p>
-                  SimplyBook invoice ID:{" "}
-                  <strong>{booking.providerReferences.invoiceId}</strong>
-                </p>
-              </div>
-            )}
-          </div>
-        </details>
+              </section>
+              <section
+                className="confirmation-section confirmation-disclaimers"
+                aria-labelledby="confirmation-disclaimers"
+              >
+                <h2 className="section-title" id="confirmation-disclaimers">
+                  Disclaimers
+                </h2>
+                {booking.slots
+                  .filter((slot) => slot.rotationAt)
+                  .map((slot) => (
+                    <p
+                      className="rotation-notice"
+                      key={`${slot.date}|${slot.start}`}
+                    >
+                      {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}
+                      : Crosses the {slot.rotationAt} instructor rotation. Your
+                      assigned instructor stays for the full session.
+                    </p>
+                  ))}
+                <Arrival compact />
+                {preview && (
+                  <p className="payment-foot">
+                    Payment preview · No money was charged.
+                  </p>
+                )}
+              </section>
+            </div>
+          </details>
+        )}
       </section>
 
       {error && (

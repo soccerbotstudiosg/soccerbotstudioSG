@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { blankContact } from "@/domain/contact";
 import { DEMO_CODE } from "@/services/demo/identity";
-import type { CustomerChallenge } from "@/services/contracts";
+import {
+  customerMessage,
+  CustomerMessageError,
+  type CustomerChallenge,
+} from "@/services/contracts";
 import { useBooking } from "./provider";
 import { EmailBotProof } from "./email-bot-proof";
 import { DetailsStep } from "./details-step";
@@ -76,7 +80,7 @@ export function AccountStep() {
     } catch (e) {
       if (!controller.signal.aborted) {
         if (!identityService.current()) setIdentity(null);
-        setError(e instanceof Error ? e.message : "Please try again.");
+        setError(customerMessage(e, "We couldn’t continue. Please try again."));
       }
     } finally {
       if (active.current === controller) {
@@ -131,19 +135,23 @@ export function AccountStep() {
       <>
         <h1 className="page-title">Start your booking</h1>
         {rebookingError && (
-          <div role="alert">
+          <div className="alert" role="alert">
             <p>{rebookingError}</p>
             <button className="button secondary" onClick={retryRebooking}>
               Try again
             </button>
           </div>
         )}
-        {error && <p role="alert">{error}</p>}
+        {error && (
+          <p className="alert" role="alert">
+            {error}
+          </p>
+        )}
         {busy && (
           <span
             className="sr-only"
             role="status"
-            aria-label="Preparing your booking…"
+            aria-label="Preparing booking…"
           />
         )}
         <div className="access-options">
@@ -159,7 +167,7 @@ export function AccountStep() {
               disabled={busy}
               onClick={() => void perform((signal) => proceed(signal))}
             >
-              {busy ? "Preparing your booking…" : "Continue as guest"}{" "}
+              {busy ? "Preparing booking…" : "Continue as guest"}{" "}
               <Icon name="arrow" />
             </button>
           </section>
@@ -186,7 +194,10 @@ export function AccountStep() {
                       const current = await identityService.refresh(signal);
                       if (signal.aborted) return;
                       setIdentity(current);
-                      if (!current) throw new Error("Verify your email again.");
+                      if (!current)
+                        throw new CustomerMessageError(
+                          "Verify your email again.",
+                        );
                       await proceed(signal, current.email);
                     })
                   : setView("email")
@@ -208,7 +219,7 @@ export function AccountStep() {
                         if (signal.aborted) return;
                         setIdentity(current);
                         if (!current || current.remember !== true)
-                          throw new Error(
+                          throw new CustomerMessageError(
                             "Verify your email with Remember me selected to save contact details.",
                           );
                         await proceed(signal, current.email, true);
@@ -272,7 +283,7 @@ export function AccountStep() {
         <span
           className="sr-only"
           role="status"
-          aria-label="Checking your details…"
+          aria-label="Checking details…"
         />
       )}
       <form
@@ -352,7 +363,7 @@ export function AccountStep() {
           </>
         )}
         {error && (
-          <p role="alert" className="field-error auth-error">
+          <p role="alert" className="alert auth-error">
             {error}
           </p>
         )}

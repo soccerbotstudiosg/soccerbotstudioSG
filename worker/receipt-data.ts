@@ -1,3 +1,4 @@
+import { invoiceNumberSchema } from "../src/domain/provider-references";
 import { z } from "zod";
 import { ApiError } from "./policy";
 import { associationSchema, intentSchema } from "./journal";
@@ -15,6 +16,7 @@ export async function bookingDetailsData(
     created_ms: number;
     association_json: string | null;
     availability_json?: string | null;
+    observation_json?: string | null;
   },
 ) {
   const intent = intentSchema.parse(JSON.parse(row.intent_json));
@@ -49,10 +51,21 @@ export async function bookingDetailsData(
   );
   if (association.bookingIds.length !== slots.length)
     throw new ApiError(503, "receipt_details_unavailable");
+  // Display metadata is optional for old records and never triggers a provider read.
+  let invoiceNumber: string | undefined;
+  try {
+    const invoice = JSON.parse(row.observation_json || "null")?.invoice;
+    const number = invoiceNumberSchema.safeParse(invoice?.documentNumber);
+    if (invoice?.invoiceId === association.invoiceId && number.success)
+      invoiceNumber = number.data;
+  } catch {
+    // Invalid display metadata must not block otherwise verified confirmation.
+  }
   return bookingDetailsSchema.parse({
     providerReferences: {
       bookingIds: association.bookingIds,
       invoiceId: association.invoiceId,
+      ...(invoiceNumber ? { invoiceNumber } : {}),
     },
     attemptId: row.id,
     createdAtMs: row.created_ms,

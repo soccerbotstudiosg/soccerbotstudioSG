@@ -1,3 +1,4 @@
+import { CustomerMessageError } from "./contracts";
 import { z } from "zod";
 import { blankContact } from "@/domain/contact";
 import type { CustomerIdentityService, VerifiedIdentity } from "./contracts";
@@ -26,7 +27,9 @@ const savedSchema = z.strictObject({
   saved: z.literal(true),
 });
 const unavailable = () =>
-  new Error("Email verification is unavailable. You can continue as a guest.");
+  new CustomerMessageError(
+    "Email verification is unavailable. You can continue as a guest.",
+  );
 /** Send an identity request with bounded transport and response validation. */
 async function identityRequest(
   path: string,
@@ -48,28 +51,30 @@ async function identityRequest(
   });
   if (!response.ok) {
     if (path === "/api/identity/all-devices" && response.status === 401)
-      throw new Error(
-        "Your session has expired. Sign in again to sign out all devices.",
+      throw new CustomerMessageError(
+        "Sign in again, then choose Sign out all devices.",
       );
     if (path === "/api/identity/all-devices")
-      throw new Error("Could not sign out all devices. Please try again.");
+      throw new CustomerMessageError(
+        "Could not sign out all devices. Please try again.",
+      );
     if (path === "/api/access" && method === "DELETE")
-      throw new Error("Could not sign out this browser. Please try again.");
+      throw new CustomerMessageError(
+        "Could not sign out this browser. Please try again.",
+      );
     if (response.status === 429)
-      throw new Error(
-        "Too many verification requests. Wait a few minutes before requesting another code.",
+      throw new CustomerMessageError(
+        "Wait a few minutes before requesting another code.",
       );
     if (response.status === 401)
-      throw new Error(
-        "Your session has expired. Go back to booking options and verify your email again.",
+      throw new CustomerMessageError(
+        "Return to booking options and sign in again.",
       );
     if (path === "/api/identity/verify" && response.status === 400)
-      throw new Error(
-        "This code is incorrect, expired or already used. Check it or request a new code.",
-      );
+      throw new CustomerMessageError("Check your code or request a new one.");
     if (path === "/api/identity/challenges" && response.status === 400)
-      throw new Error(
-        "The email security check was not accepted. Complete the new check and try again.",
+      throw new CustomerMessageError(
+        "Complete the security check and try again.",
       );
     throw unavailable();
   }
@@ -144,7 +149,9 @@ export function createLiveIdentityService(): CustomerIdentityService {
     challenge: async (email, signal, botToken) => {
       const normalized = z.email().parse(email.trim().toLowerCase());
       if (!botToken || botToken.length > 2048)
-        throw new Error("Complete the email security check, then try again.");
+        throw new CustomerMessageError(
+          "Complete the security check and try again.",
+        );
       const own = ++generation;
       current = null;
       await identityRequest("/api/access", "POST", signal);

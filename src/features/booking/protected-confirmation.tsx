@@ -4,7 +4,6 @@ import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookingConfirmation, PendingConfirmation } from "./confirmation-step";
-import { downloadBooking, downloadCalendar } from "@/services/exports";
 type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
 import { sitePath } from "@/content/site-path";
 import {
@@ -17,6 +16,7 @@ import {
 } from "@/services/confirmation";
 import type { CheckoutContext } from "@/services/contracts";
 import { money } from "@/domain/dates";
+import { useConfirmationRenderTrace } from "./confirmation-render-trace";
 import { useConfirmationChecking } from "./confirmation-checking";
 /** Reopen only the retained handoff within its original payment deadline. */
 function PaymentContinuation({
@@ -51,8 +51,6 @@ function PaymentContinuation({
       <a
         className="button wide"
         href={url}
-        target="_blank"
-        rel="noopener noreferrer"
         referrerPolicy="no-referrer"
         onClick={(event) => {
           if (checkoutNow(clock, true) >= expiresAtMs) {
@@ -63,7 +61,6 @@ function PaymentContinuation({
       >
         Continue payment
       </a>
-      <p>Already paid? We’ll confirm automatically.</p>
     </div>
   );
 }
@@ -71,6 +68,7 @@ function PaymentContinuation({
 export function ProtectedConfirmation({
   attemptId,
   checkoutMode,
+  allowPaymentContinuation = false,
   sessionRevision = 0,
   onAgain,
   onRestart,
@@ -78,6 +76,7 @@ export function ProtectedConfirmation({
 }: {
   attemptId: string;
   checkoutMode?: "synthetic" | "live";
+  allowPaymentContinuation?: boolean;
   sessionRevision?: number;
   onAgain?: () => void;
   onExpired?: (attemptId: string) => void;
@@ -107,6 +106,7 @@ export function ProtectedConfirmation({
     check,
     bindWindow,
     paymentReceived,
+    responseEvidence,
     customerConfirmation,
     expired,
   } = useConfirmationChecking(
@@ -127,32 +127,6 @@ export function ProtectedConfirmation({
     revision: number;
   } | null>(null);
   const [receiptRead, setReceiptRead] = useState(0);
-  const exportWaiter = useRef<{
-    resolve: () => void;
-    reject: () => void;
-  } | null>(null);
-  useEffect(() => {
-    if (
-      receipt?.value.attemptId === attemptId &&
-      receipt.revision === sessionRevision
-    ) {
-      exportWaiter.current?.resolve();
-      exportWaiter.current = null;
-    } else if (
-      ["denied", "unresolved", "unavailable"].includes(view) ||
-      receiptFailure
-    ) {
-      exportWaiter.current?.reject();
-      exportWaiter.current = null;
-    }
-  }, [receipt, receiptFailure, view, attemptId, sessionRevision]);
-  useEffect(
-    () => () => {
-      exportWaiter.current?.reject();
-      exportWaiter.current = null;
-    },
-    [attemptId, sessionRevision],
-  );
   const finishExpiry = useEffectEvent(() => {
     onExpired?.(attemptId);
     router.replace("/book/time/");
@@ -160,7 +134,12 @@ export function ProtectedConfirmation({
   const expiryWork = useRef<{ id: string; work: Promise<void> } | null>(null);
   const wantsExpiry =
     expired || (contextMatches && context.value.expired === true);
-  const [expiryFailure, setExpiryFailure] = useState(false);
+  const [failedExpiry, setFailedExpiry] = useState<{
+    id: string;
+    revision: number;
+  } | null>(null);
+  const expiryFailure =
+    failedExpiry?.id === attemptId && failedExpiry.revision === sessionRevision;
   useEffect(() => {
     if (!wantsExpiry) return;
     if (expiryWork.current?.id !== attemptId)
@@ -172,7 +151,8 @@ export function ProtectedConfirmation({
         finishExpiry();
       },
       () => {
-        if (active) setExpiryFailure(true);
+        if (active)
+          setFailedExpiry({ id: attemptId, revision: sessionRevision });
       },
     );
     return () => {
@@ -269,40 +249,50 @@ export function ProtectedConfirmation({
       : customerProof
         ? bookingFromReceipt(customerProof)
         : null;
+  const receiptUnavailable =
+    receiptFailure?.id === attemptId &&
+    receiptFailure.revision === sessionRevision;
+  const receiptMatches =
+    view === "confirmed" &&
+    receipt?.value.attemptId === attemptId &&
+    receipt.revision === sessionRevision;
+  const confirmedCard =
+    !!displayedReceipt || (view === "confirmed" && receiptUnavailable);
+  useConfirmationRenderTrace({
+    attemptId,
+    revision: sessionRevision,
+    state:
+      checkoutMode !== "live" || expiryFailure || view === "denied"
+        ? undefined
+        : confirmedCard
+          ? "confirmed"
+          : paymentReceived
+            ? "payment_received"
+            : current
+              ? "summary"
+              : undefined,
+    proofSource: saved
+      ? "saved"
+      : receiptMatches
+        ? "receipt"
+        : customerConfirmation
+          ? "status_proof"
+          : customerProof
+            ? "context_proof"
+            : view === "confirmed"
+              ? "confirmed_status"
+              : "none",
+    evidence:
+      saved ??
+      (receiptMatches
+        ? receipt.value
+        : (customerProof ??
+          (paymentReceived || view === "confirmed"
+            ? responseEvidence
+            : current))),
+    receipt: receiptMatches ? receipt.value : undefined,
+  });
   if (displayedReceipt && checkoutMode !== "synthetic") {
-    const exportReceipt = async (format: "calendar" | "details") => {
-      const controller =
-        receiptWork.current && !receiptWork.current.signal.aborted
-          ? receiptWork.current
-          : new AbortController();
-      receiptWork.current = controller;
-      if (!controller || controller.signal.aborted)
-        throw new Error("receipt_unavailable");
-      if (customerProof && view !== "confirmed" && !saved) {
-        if (["unresolved", "unavailable", "denied"].includes(view))
-          throw new Error("receipt_unavailable");
-        await new Promise<void>((resolve, reject) => {
-          exportWaiter.current = {
-            resolve,
-            reject: () => reject(new Error("receipt_unavailable")),
-          };
-        });
-      }
-      const current = await readBookingReceipt(
-        attemptId,
-        controller.signal,
-        true,
-      );
-      if (controller.signal.aborted) throw new Error("receipt_unavailable");
-      if (format === "calendar") downloadCalendar(current.booking, false);
-      else
-        await downloadBooking(
-          current.booking,
-          false,
-          current.taxMinor,
-          controller.signal,
-        );
-    };
     return (
       <BookingConfirmation
         booking={displayedReceipt.booking}
@@ -327,21 +317,15 @@ export function ProtectedConfirmation({
           onAgain?.();
           window.location.assign(sitePath("/"));
         }}
-        calendarDownload={() => exportReceipt("calendar")}
-        detailsDownload={() => exportReceipt("details")}
       />
     );
   }
   if (expiryFailure)
     return (
-      <p role="alert">
-        Payment status is still being checked. Your original booking has been
-        kept.
+      <p className="alert" role="alert">
+        Still checking your payment. Don’t pay again.
       </p>
     );
-  const receiptUnavailable =
-    receiptFailure?.id === attemptId &&
-    receiptFailure.revision === sessionRevision;
   if (
     (view === "checking" &&
       !(showLink && link && !isHitpayCheckoutUrl(link.url))) ||
@@ -351,13 +335,16 @@ export function ProtectedConfirmation({
   ) {
     const pendingLabel =
       view === "confirmed"
-        ? "Preparing your confirmation…"
+        ? "Preparing confirmation…"
         : checkoutMode && preparation === "loading"
-          ? "Checking your booking…"
+          ? "Checking booking…"
           : paymentReceived
-            ? "Payment received—verifying booking…"
-            : "Verifying your payment…";
+            ? "Paid—confirming booking…"
+            : "Checking payment…";
+    // Only the original payment step may reopen an unpaid handoff. The provider
+    // return route remains confirmation-only, even before payment evidence arrives.
     const continuation =
+      allowPaymentContinuation &&
       showLink &&
       !expired &&
       view === "checking" &&
@@ -371,6 +358,9 @@ export function ProtectedConfirmation({
           expiresAtMs={link.expiresAtMs}
         />
       ) : undefined;
+    const pendingMessage = continuation
+      ? "Complete your payment below. If you have paid, please wait for confirmation."
+      : undefined;
     if (current?.details) {
       const details = bookingFromReceipt(current.details);
       return (
@@ -378,13 +368,14 @@ export function ProtectedConfirmation({
           booking={details.booking}
           pending
           pendingLabel={pendingLabel}
+          pendingMessage={pendingMessage}
           pendingAction={continuation}
           onAgain={() => {}}
         />
       );
     }
     return (
-      <PendingConfirmation label={pendingLabel}>
+      <PendingConfirmation label={pendingLabel} message={pendingMessage}>
         {current ? (
           <>
             <ConfirmationSummary summary={current.summary} />
@@ -416,30 +407,30 @@ export function ProtectedConfirmation({
                 label={
                   checkoutMode && preparation === "loading"
                     ? "Preparing checkout…"
-                    : "Verifying your payment…"
+                    : "Checking payment…"
                 }
               />
             )
           ) : view === "confirmed" ? (
             "Booking confirmed"
           ) : view === "unresolved" ? (
-            "Payment status unresolved"
+            "Payment needs checking"
           ) : (
-            "Confirmation unavailable"
+            "Can’t load confirmation"
           )}
         </h1>
         <p>
           {historicalPayment
-            ? "Your payment was verified and recorded. Contact the studio if you need the latest booking status. Do not pay again."
+            ? "Payment received. Contact the studio for booking help. Don’t pay again."
             : view === "confirmed"
-              ? "Your payment and booking have been verified."
+              ? "Your booking is confirmed."
               : view === "denied"
-                ? "Your access has expired or was revoked. Contact the studio to recover access before trying another payment."
+                ? "Contact the studio to view this booking. Don’t pay again."
                 : view === "checking"
-                  ? "Please wait while we verify your booking."
+                  ? "Checking booking."
                   : view === "unavailable"
-                    ? "Status checking is temporarily unavailable. Your information is preserved. You can check again shortly."
-                    : "We haven’t resolved your previous payment yet. Your booking attempt and details are saved. Another checkout remains unavailable until its payment outcome is verified. The checking deadline does not cancel payment."}
+                    ? "We couldn’t check your payment. Try checking again shortly."
+                    : "We couldn’t confirm your payment. Don’t pay again; contact the studio."}
         </p>
         {historicalPayment && recordedPayment && (
           <p>
@@ -453,10 +444,8 @@ export function ProtectedConfirmation({
           </p>
         )}
         {view === "confirmed" && receiptUnavailable && (
-          <div role="alert">
-            <p>
-              Your booking is confirmed, but its details could not be loaded.
-            </p>
+          <div className="alert" role="alert">
+            <p>Booking confirmed. Try loading your details again.</p>
             <button
               className="button"
               onClick={() => {
@@ -474,9 +463,7 @@ export function ProtectedConfirmation({
           !(link && isHitpayCheckoutUrl(link.url)) && (
             <>
               <p>
-                Checkout opens separately. Your browser may use a tab or window.
-                Return to SoccerBot to check progress; opening or closing
-                checkout does not confirm payment.
+                Checkout opens separately. Return here to check your booking.
               </p>
               {showLink && current?.checkout.state === "available" ? (
                 <a
@@ -500,11 +487,11 @@ export function ProtectedConfirmation({
                     : "Open checkout"}
                 </a>
               ) : view === "checking" || view === "unavailable" ? (
-                <p role="status">
+                <p className="notice" role="status">
                   {preparation === "loading" ? (
                     <BrandLoading compact label="Preparing checkout…" />
                   ) : (
-                    "Checkout unavailable. Do not start another payment."
+                    "Checkout unavailable. Don’t pay again; contact the studio."
                   )}
                 </p>
               ) : null}

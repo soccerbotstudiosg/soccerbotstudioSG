@@ -1,3 +1,4 @@
+import { createBookingSequence } from "../worker/tests/booking-sequence-fixture.mjs";
 import { createBookingMechanism as createIsolatedMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
 import {
   expect,
@@ -203,7 +204,7 @@ test("live email requires the supplied widget proof before protected requests", 
     .getByRole("button", { name: "Continue with email", exact: true })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Complete the email security check, then try again.",
+    "Complete the security check and try again.",
   );
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
     { path: "/api/access", method: "POST", body: null },
@@ -360,7 +361,7 @@ test("remembered live account edits and rereads contact while native booking sta
     .getByRole("button", { name: "Save contact details", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Saving contact details…", exact: true }),
+    page.getByRole("status", { name: "Saving details…", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Start your booking", exact: true }),
@@ -464,6 +465,9 @@ async function mechanismTransport(
       },
     );
     const responseHeaders = Object.fromEntries(response.headers);
+    // dispatchFetch bypasses the HTTP server that normally supplies Date.
+    // Use the fixture host's server clock, never a browser-controlled timestamp.
+    responseHeaders.date ??= new Date().toUTCString();
     if (responseHeaders["set-cookie"]) {
       responseHeaders["set-cookie"] = responseHeaders["set-cookie"]
         .replace("__Host-soccerbot-access=", "soccerbot-mechanism-access=")
@@ -944,7 +948,7 @@ test("real payment recovery confirms the browser return from verified provider s
     releaseDismiss = resolve;
   });
   let releaseReceipt!: () => void;
-  let receiptGate = new Promise<void>((resolve) => {
+  const receiptGate = new Promise<void>((resolve) => {
     releaseReceipt = resolve;
   });
   let receiptStarted!: () => void;
@@ -992,7 +996,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await accounting;
     await expect(
       page.getByRole("status", {
-        name: "Payment received—verifying booking…",
+        name: "Paid—confirming booking…",
         exact: true,
       }),
     ).toBeVisible();
@@ -1000,6 +1004,13 @@ test("real payment recovery confirms the browser return from verified provider s
       page.getByRole("heading", { name: "Booking confirmed", exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".confirmation-actions")).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () =>
+          performance.getEntriesByName("soccerbot:confirmation:confirmed")
+            .length,
+      ),
+    ).toBe(0);
     const pendingContext = await mechanism.mf.dispatchFetch(
       mechanism.origin + `/api/attempts/${attemptId}/checkout`,
       { headers },
@@ -1028,9 +1039,35 @@ test("real payment recovery confirms the browser return from verified provider s
         verifiedResponse.status === "confirmed",
     ).toBe(true);
     await receiptRead;
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            performance.getEntriesByName("soccerbot:confirmation:confirmed")
+              .length,
+        ),
+      )
+      .toBe(1);
+    const uiTiming = await page.evaluate(
+      () =>
+        (
+          performance.getEntriesByName(
+            "soccerbot:confirmation:confirmed",
+          )[0] as PerformanceMark
+        ).detail,
+    );
+    expect(uiTiming).toMatchObject({
+      event: "confirmation_ui",
+      stage: "confirmed",
+      measurement: "visible_animation_frame",
+    });
+    expect(uiTiming.proofSource).not.toBe("none");
+    expect(uiTiming.frameMs).toBeGreaterThanOrEqual(uiTiming.committedMs);
+    expect(uiTiming.recoveryKey).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(uiTiming)).not.toContain(attemptId);
     await expect(
       page.getByRole("status", {
-        name: "Preparing your confirmation…",
+        name: "Preparing confirmation…",
         exact: true,
       }),
     ).toHaveCount(0);
@@ -1066,38 +1103,12 @@ test("real payment recovery confirms the browser return from verified provider s
           (cardBox!.x + cardBox!.width / 2),
       ),
     ).toBeLessThanOrEqual(1);
-    // A download is a new protected read, independent of initial presentation.
-    const receiptReadsBeforeDownload = transport.calls.filter((call) =>
-      call.path.endsWith("/receipt"),
-    ).length;
-    receiptGate = new Promise<void>((resolve) => {
-      releaseReceipt = resolve;
-    });
-    const download = page.waitForEvent("download");
-    await page
-      .getByRole("button", { name: "Download booking details", exact: true })
-      .click();
     await expect(
-      page.getByRole("status", { name: "Preparing download…" }),
-    ).toBeVisible();
-    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
-    await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("status", {
-        name: "Preparing your confirmation…",
-        exact: true,
+      page.getByRole("button", {
+        name: /Add to calendar|Download booking details/,
       }),
     ).toHaveCount(0);
-    releaseReceipt();
-    await download;
-    expect(
-      transport.calls.filter((call) => call.path.endsWith("/receipt")),
-    ).toHaveLength(receiptReadsBeforeDownload + 1);
-    await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
-    ).toBeVisible();
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     expect(
       mechanism.calls.filter((call) => call.url.endsWith("/accept-payment")),
     ).toHaveLength(1);
@@ -1356,14 +1367,17 @@ async function guestDetails(
   page: Page,
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
   batch = false,
+  journey?: { starts: number[]; enter: boolean },
 ) {
   // Failure journeys start at the supported booking entry. The native guest
   // journey separately asserts homepage warming and navigation into booking.
-  await page.goto("/book/account/");
-  await page
-    .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-    .getByRole("button", { name: "Not now", exact: true })
-    .click();
+  if (journey?.enter !== false) {
+    await page.goto("/book/account/");
+    await page
+      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("button", { name: "Not now", exact: true })
+      .click();
+  }
   await page
     .getByRole("button", { name: "Continue as guest", exact: true })
     .click();
@@ -1391,20 +1405,18 @@ async function guestDetails(
     year: "numeric",
   }).format(new Date(`${mechanism.date}T04:00:00Z`));
   await page.getByRole("button", { name: label, exact: true }).click();
-  await page
-    .getByRole("group", { name: "Session times" })
-    .getByRole("button", { name: /12:10–12:50/ })
-    .click();
-  await page
-    .getByRole("combobox", { name: /Trainer for .* at 12:10/ })
-    .selectOption({ index: 1 });
-  if (batch) {
+  const starts = journey?.starts ?? [
+    mechanism.startMs,
+    ...(batch ? [mechanism.startMs + 3000000] : []),
+  ];
+  for (const startMs of starts) {
+    const start = new Date(startMs + 28800000).toISOString().slice(11, 16);
     await page
       .getByRole("group", { name: "Session times" })
-      .getByRole("button", { name: /13:00–13:40/ })
+      .getByRole("button", { name: new RegExp(`${start}–`) })
       .click();
     await page
-      .getByRole("combobox", { name: /Trainer for .* at 13:00/ })
+      .getByRole("combobox", { name: new RegExp(`Trainer for .* at ${start}`) })
       .selectOption({ index: 1 });
   }
   await page.getByRole("link", { name: "Continue", exact: true }).click();
@@ -1613,7 +1625,7 @@ async function uncertainHolding(
         page.getByRole("heading", { name: "Review booking", exact: true }),
       ).toBeVisible();
       await expect(
-        page.getByText(/No booking or payment was started/),
+        page.getByText(/Nothing was booked or charged/),
       ).toBeVisible();
       expect(
         mechanism.calls.filter((call) => call.body?.method === "book"),
@@ -1636,7 +1648,7 @@ async function uncertainHolding(
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -1714,12 +1726,12 @@ test("real API revoked access at checkout retains the draft and denies protected
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("heading", {
-        name: "Confirmation unavailable",
+        name: "Can’t load confirmation",
         exact: true,
       }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Your access has expired or was revoked/),
+      page.getByText(/Contact the studio to view this booking/),
     ).toBeVisible();
     expect(
       await page.evaluate(() =>
@@ -1878,7 +1890,7 @@ test("real API payment creation failure preserves the hold and never returns to 
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2154,7 +2166,7 @@ test("real API batch checkout uses creation evidence and restores one complete u
     await page.goto("/book/payment/");
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2224,7 +2236,7 @@ async function failedBatch(page: Page, unknown: boolean) {
     await page.reload();
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2287,7 +2299,7 @@ test("real API exhausted browser checking window retains the original deadline a
       .click();
     await expect(
       page.getByRole("heading", {
-        name: "Payment status unresolved",
+        name: "Payment needs checking",
         exact: true,
       }),
     ).toBeVisible();
@@ -2371,7 +2383,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
     await bookStarted.promise;
     await expect(
       page.getByRole("status", {
-        name: "Opening secure payment…",
+        name: "Opening checkout…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2429,6 +2441,124 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         ),
       ).toHaveLength(1);
     }
+    if (!failReadback) {
+      const attemptId = transport.attemptId();
+      const paymentBefore = await mechanism.db
+        .prepare(
+          "SELECT attempt_id,reference,expires_ms FROM hitpay_payments WHERE attempt_id=?",
+        )
+        .bind(attemptId)
+        .first();
+      const pagesBefore = page.context().pages().length;
+      const creation = mechanism.calls.find(
+        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+      );
+      expect(creation?.body?.redirect_url).toBe(
+        `${mechanism.origin}/confirmation/?attempt=${attemptId}`,
+      );
+      // Simulate only the hosted provider's completion/redirect; application
+      // status still comes from the real isolated Worker and signed webhook.
+      const completeUrl = `${mechanism.checkoutUrl}/synthetic-complete`;
+      await page.route(mechanism.checkoutUrl, (route) =>
+        route.fulfill({
+          contentType: "text/html",
+          body: `<!doctype html><h1>Synthetic HitPay checkout</h1><a href="${completeUrl}">Complete synthetic payment</a>`,
+        }),
+      );
+      await page.route(completeUrl, async (route) => {
+        expect((await mechanism.completePayment()).status).toBe(202);
+        // WebKit interception cannot fulfill a synthetic HTTP redirect.
+        // Model the hosted completion page's same-tab browser navigation.
+        const returnUrl = `http://127.0.0.1:4173/confirmation/?attempt=${attemptId}`;
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<!doctype html><script>location.replace(${JSON.stringify(returnUrl)})</script>`,
+        });
+      });
+      const resumedContext = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname ===
+            `/api/attempts/${attemptId}/checkout` && response.status() === 200,
+      );
+      await page.goBack();
+      const resumedHeaders = await (await resumedContext).allHeaders();
+      expect(Number.isFinite(Date.parse(resumedHeaders.date))).toBe(true);
+      const continuation = page.getByRole("link", {
+        name: "Continue payment",
+        exact: true,
+      });
+      await expect(continuation).toHaveAttribute("href", mechanism.checkoutUrl);
+      await expect(continuation).not.toHaveAttribute("target", "_blank");
+      await expect(page.getByRole("timer")).toBeVisible();
+      await continuation.click();
+      await expect(page).toHaveURL(mechanism.checkoutUrl);
+      expect(page.context().pages()).toHaveLength(pagesBefore);
+      expect(
+        await mechanism.db
+          .prepare(
+            "SELECT attempt_id,reference,expires_ms FROM hitpay_payments WHERE attempt_id=?",
+          )
+          .bind(attemptId)
+          .first(),
+      ).toEqual(paymentBefore);
+      await page
+        .getByRole("link", { name: "Complete synthetic payment" })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
+      );
+      await expect(
+        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+      expect(page.context().pages()).toHaveLength(pagesBefore);
+      // Chain a fresh journey and revisit the old receipt without resetting the
+      // browser or isolated provider. Paid capacity must not return to the grid.
+      const nextCalendar = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname.startsWith("/api/calendar/") &&
+          response.status() === 200,
+      );
+      const dismissed = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname ===
+            `/api/attempts/${attemptId}/dismiss` && response.status() === 200,
+      );
+      await page
+        .getByRole("button", { name: "Make another booking", exact: true })
+        .click();
+      await expect(page).toHaveURL(/\/book\/account\/$/);
+      const refreshed = await (await nextCalendar).json();
+      expect(
+        refreshed.dates.flatMap(
+          (day: { offers?: unknown[] }) => day.offers ?? [],
+        ),
+      ).toEqual([]);
+      await dismissed;
+      await page.reload();
+      await expect(
+        page.getByRole("button", { name: "Continue as guest", exact: true }),
+      ).toBeVisible();
+      await page.goto(`/confirmation/?attempt=${attemptId}`);
+      await expect(
+        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+      expect(
+        mechanism.calls.filter(
+          (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+        ),
+      ).toHaveLength(1);
+      expect(
+        mechanism.calls.filter((call) => call.url.endsWith("/accept-payment")),
+      ).toHaveLength(1);
+      expect(transport.unexpected).toEqual([]);
+      expect(mechanism.unexpected).toEqual([]);
+    }
     expect(
       mechanism.calls.filter((call) => call.body?.method === "book"),
     ).toHaveLength(1);
@@ -2440,7 +2570,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
   }
 }
 
-test("real API editable Review creates nothing and checkout waits for verified creation before HitPay", async ({
+test("real API editable Review and same-tab Back continuation preserve payment identity through paid return", async ({
   page,
 }) => {
   await optimisticHold(page, false);
@@ -2476,7 +2606,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       .getByRole("button", { name: "Not now", exact: true })
       .click();
     await expect(
-      page.getByRole("status", { name: "Checking your booking…", exact: true }),
+      page.getByRole("status", { name: "Checking booking…", exact: true }),
     ).toBeVisible();
     await expect(
       page.locator(
@@ -2484,7 +2614,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       ),
     ).toBeVisible();
     await expect(page.locator(".confirmation-card")).toContainText(
-      "Loading booking details…",
+      "Loading summary…",
     );
     await expect(
       page.locator(".page-loading, .booking-flow-overlay"),
@@ -2507,10 +2637,14 @@ test("real API unpaid return shows the pending confirmation layout without claim
     ).toHaveCount(0);
     await expect(page.getByRole("timer")).toHaveCount(0);
     await expect(page.getByLabel("Booking summary")).toBeVisible();
-    await page.getByText("View full details", { exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "Client Details", exact: true }),
-    ).toBeVisible();
+      page.getByText("View full details", { exact: true }),
+    ).toHaveCount(0);
+    for (const name of ["Client Details", "Location", "Disclaimers"])
+      await expect(
+        page.getByRole("heading", { name, exact: true }),
+      ).toHaveCount(0);
+    await expect(page.getByText(/SimplyBook booking ID/)).toHaveCount(0);
     await expect(
       page
         .getByLabel("Booking summary")
@@ -2518,7 +2652,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
     ).toBeVisible();
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2535,13 +2669,10 @@ test("real API unpaid return shows the pending confirmation layout without claim
       page.locator(".booking-loading, .booking-flow-overlay"),
     ).toHaveCount(0);
     await expect(
-      page.getByText(
-        "Please don’t close or refresh this page while we finish.",
-        { exact: true },
-      ),
+      page.getByText("Don’t close or refresh.", { exact: true }),
     ).toBeVisible();
     const loader = page.getByRole("status", {
-      name: "Verifying your payment…",
+      name: "Checking payment…",
       exact: true,
     });
     expect(
@@ -2604,7 +2735,7 @@ test("real API expired unpaid Review retains its hold through the grace window w
       .getByRole("button", { name: "Continue to payment", exact: true })
       .click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "Your original booking has been kept",
+      "Still checking your payment",
     );
     await expect(page).toHaveURL(/\/book\/review\/$/);
     expect(
@@ -2689,9 +2820,7 @@ test("real API failed identity warming stays on Review without booking or paymen
     await expect(
       page.getByRole("heading", { name: "Review booking", exact: true }),
     ).toBeVisible();
-    await expect(
-      page.getByText(/No booking or payment was started/),
-    ).toBeVisible();
+    await expect(page.getByText(/Nothing was booked or charged/)).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Continue to payment", exact: true }),
     ).toBeEnabled();
@@ -2739,7 +2868,7 @@ test("real API 409 preparation rejection stays on Review without payment verific
       "We couldn’t start checkout. Please try again later.",
     );
     await expect(
-      page.getByText("Verifying your payment...", { exact: true }),
+      page.getByRole("status", { name: "Checking payment…", exact: true }),
     ).toHaveCount(0);
     await assertNoPaymentOrConfirmation(page, mechanism);
     expect(
@@ -2825,4 +2954,178 @@ test("email account actions return through booking options and sign in again wit
     ),
   ).toHaveLength(2);
   expect(evidence.unexpected).toEqual([]);
+});
+
+/** Exercise complete consecutive journeys in one browser and one real Worker runtime. */
+async function consecutivePaidJourneys(page: Page, sizes: number[]) {
+  let completed = Promise.withResolvers<void>();
+  const mechanism = await createBookingSequence(sizes, {
+    onLog(message) {
+      if (!message.startsWith("{")) return;
+      const event = JSON.parse(message);
+      if (
+        event.event === "confirmation_trace" &&
+        event.boundary === "recovery" &&
+        event.result === "complete"
+      )
+        completed.resolve();
+    },
+  });
+  const transport = await mechanismTransport(page, mechanism);
+  const ids: string[] = [];
+  const tabs = page.context().pages().length;
+  try {
+    for (const [index, journey] of mechanism.journeys.entries()) {
+      completed = Promise.withResolvers<void>();
+      let attemptId = "";
+      const completeUrl = journey.checkoutUrl + "/complete";
+      await page.route(journey.checkoutUrl, (route) =>
+        route.fulfill({
+          contentType: "text/html",
+          body: `<!doctype html><h1>Synthetic checkout ${index + 1}</h1><a href="${completeUrl}">Complete synthetic payment</a>`,
+        }),
+      );
+      await page.route(completeUrl, async (route) => {
+        expect((await mechanism.completeJourney(index)).status).toBe(202);
+        await completed.promise;
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<!doctype html><script>location.replace(${JSON.stringify(`http://127.0.0.1:4173/confirmation/?attempt=${attemptId}`)})</script>`,
+        });
+      });
+      await guestDetails(page, mechanism, sizes[index] > 1, {
+        starts: journey.starts,
+        enter: index === 0,
+      });
+      await page
+        .getByLabel("Full name", { exact: false })
+        .fill(`Sequence Guest ${index + 1}`);
+      const response = await checkoutHoldResponse(page);
+      const result = transport.json(response) as {
+        attemptId: string;
+        paymentAvailable: boolean;
+      };
+      expect(result.paymentAvailable).toBe(true);
+      attemptId = result.attemptId;
+      expect(ids).not.toContain(attemptId);
+      ids.push(attemptId);
+      await expect(page).toHaveURL(journey.checkoutUrl);
+      if (index === 1) {
+        const originalPayment = await mechanism.db
+          .prepare(
+            "SELECT request_id,reference,expires_ms,created_ms FROM hitpay_payments WHERE attempt_id=?",
+          )
+          .bind(attemptId)
+          .first();
+        await page.goBack();
+        const continuation = page.getByRole("link", {
+          name: "Continue payment",
+          exact: true,
+        });
+        await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
+        await expect(page.getByRole("timer")).toBeVisible();
+        await page.reload();
+        await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
+        // Reopen A while B is unpaid, then restore B without borrowing A's proof.
+        await page.goto(`/confirmation/?attempt=${ids[0]}`);
+        await expect(
+          page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("link", { name: "Continue payment", exact: true }),
+        ).toHaveCount(0);
+        await page.goto("/book/payment/");
+        await expect(
+          page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        ).toHaveCount(0);
+        await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
+        await continuation.click();
+        expect(
+          await mechanism.db
+            .prepare(
+              "SELECT request_id,reference,expires_ms,created_ms FROM hitpay_payments WHERE attempt_id=?",
+            )
+            .bind(attemptId)
+            .first(),
+        ).toEqual(originalPayment);
+      }
+      await page
+        .getByRole("link", { name: "Complete synthetic payment", exact: true })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
+      );
+      await expect(
+        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+      expect(page.context().pages()).toHaveLength(tabs);
+      const paid = await mechanism.db
+        .prepare(
+          "SELECT state,json_extract(scope_json,'$.invoiceId') AS invoice_id FROM hitpay_payments WHERE attempt_id=?",
+        )
+        .bind(attemptId)
+        .first();
+      expect(paid).toMatchObject({
+        state: "complete",
+        invoice_id: journey.invoiceId,
+      });
+      if (index < sizes.length - 1) {
+        const dismissed = page.waitForResponse(
+          (r) =>
+            new URL(r.url()).pathname ===
+              `/api/attempts/${attemptId}/dismiss` && r.status() === 200,
+        );
+        await page
+          .getByRole("button", { name: "Make another booking", exact: true })
+          .click();
+        await expect(page).toHaveURL(/\/book\/account\/$/);
+        await dismissed;
+      }
+    }
+    for (const [index, id] of ids.entries()) {
+      await page.goto(`/confirmation/?attempt=${id}`);
+      await expect(
+        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      ).toBeVisible();
+      await page.getByText("View full details", { exact: true }).click();
+      await expect(
+        page.getByText(`Sequence Guest ${index + 1}`, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+    }
+    expect(
+      mechanism.calls.filter((call) => call.body?.method === "book"),
+    ).toHaveLength(sizes.reduce((a, b) => a + b, 0));
+    expect(
+      mechanism.calls.filter(
+        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+      ),
+    ).toHaveLength(3);
+    expect(
+      mechanism.calls.filter((call) => call.url.endsWith("/accept-payment")),
+    ).toHaveLength(3);
+    expect(transport.unexpected).toEqual([]);
+    expect(mechanism.unexpected).toEqual([]);
+  } finally {
+    await stopMechanism(page, mechanism, transport);
+  }
+}
+
+test("three complete single-booking browser journeys preserve independent confirmations through Back reload and old links", async ({
+  page,
+}) => {
+  // Three complete journeys share one runtime; retain the usual individual action deadlines.
+  test.setTimeout(90000);
+  await consecutivePaidJourneys(page, [1, 1, 1]);
+});
+test("complete multi-session then two single-booking browser journeys reset selections and preserve old receipts", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await consecutivePaidJourneys(page, [2, 1, 1]);
 });

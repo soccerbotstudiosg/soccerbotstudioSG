@@ -53,6 +53,7 @@ export function Arrival({ compact = false }: { compact?: boolean } = {}) {
           ? "Wear activewear and soccer boots (preferred) or sports shoes; bring a towel."
           : "Wear training gear or activewear. Soccer boots are preferred; sports shoes are also suitable. Bring your own towel."}
       </p>
+      {compact && <p>Follow your instructor’s safety guidance.</p>}
     </section>
   );
 }
@@ -167,9 +168,9 @@ export function ReviewStep({
           }}
         >
           {verifying ? (
-            "Verifying your reservation…"
+            "Checking reservation…"
           ) : busy ? (
-            <BrandLoading compact label="Opening secure payment…" />
+            <BrandLoading compact label="Opening checkout…" />
           ) : (
             "Continue to payment"
           )}
@@ -177,9 +178,8 @@ export function ReviewStep({
         </button>
       </div>
       {verifying && (
-        <p role="status">
-          Please don’t close or refresh. Payment becomes available after your
-          reservation is verified.
+        <p className="notice" role="status">
+          Reservation checking. Don’t close or refresh.
         </p>
       )}
       {policy && (
