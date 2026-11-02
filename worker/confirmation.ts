@@ -46,7 +46,19 @@ export async function confirmation(
     // The deadline ends checking, not the validity of fresh authoritative proof.
     // Preserve the shared booking/money/paid decision without reopening polls.
     const guard = await hitpayConfirmationGuard(env, id, snapshot.payment);
-    if (!guard) return decideStoredConfirmation(row, access, now, p);
+    if (!guard) {
+      const decision = decideStoredConfirmation(row, access, now, p);
+      return decision.status === "confirmed"
+        ? {
+            ...decision,
+            customerConfirmation: await customerConfirmation(
+              env,
+              id,
+              snapshot.proof,
+            ),
+          }
+        : decision;
+    }
     return {
       ...guard,
       customerConfirmation: await customerConfirmation(env, id, snapshot.proof),

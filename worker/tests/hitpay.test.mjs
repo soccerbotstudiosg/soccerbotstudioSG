@@ -106,7 +106,7 @@ before(async () => {
       Buffer.from(normalized.outputFiles[0].text).toString("base64")
   );
 });
-beforeEach(async () => {
+beforeEach(async (context) => {
   outbound = 0;
   handler = null;
   logs = [];
@@ -169,7 +169,11 @@ beforeEach(async () => {
       "synthetic-idempotency",
       JSON.stringify(intent),
       scope.intentHash,
-      Date.now() - 60000,
+      Date.now() -
+        (context.name ===
+        "on-time HitPay payment reconciles after payment expiry only within the original hold"
+          ? 900000
+          : 60000),
       Date.now() + 600000,
       scope.associationJson,
     )
@@ -1972,7 +1976,9 @@ test("late verified payment cannot confirm an expired hold or release it for ano
 });
 
 test("on-time HitPay payment reconciles after payment expiry only within the original hold", async () => {
-  await seedHold();
+  const options = await seedHold(Date.now() + 119000);
+  const createdAtMs = Date.now() - 781000;
+  await seedCustomerProgress(createdAtMs);
   await seedPayment({ expired: true });
   await db
     .prepare(
@@ -1983,6 +1989,22 @@ test("on-time HitPay payment reconciles after payment expiry only within the ori
   const provider = providerFixture();
   await recover();
   assert.equal((await row()).state, "complete");
+  assert.equal(provider.writes(), 1);
+  const before = await row();
+  const response = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/confirmation`,
+    { headers: options.headers },
+  );
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.status, "confirmed", JSON.stringify(result));
+  assert.equal(result.customerConfirmation.attemptId, attemptId);
+  assert.equal(result.customerConfirmation.sessions.length, 1);
+  assert.equal(
+    Number(response.headers.get("X-Checking-Deadline")),
+    createdAtMs + 600000,
+  );
+  assert.deepEqual(await row(), before);
   assert.equal(provider.writes(), 1);
 });
 

@@ -7,7 +7,7 @@ import {
   isHitpayCheckoutUrl,
 } from "@/domain/native-checkout";
 import { z } from "zod";
-import type { ProtectedCheckoutService } from "./contracts";
+import type { CheckoutContext, ProtectedCheckoutService } from "./contracts";
 const idSchema = z.string().uuid();
 const decisionSchema = z.discriminatedUnion("status", [
   z.object({
@@ -212,9 +212,23 @@ export function bookingFromReceipt<
   };
   return { ...receipt, booking };
 }
+/** Advance server time with a conservative upper bound only for payment expiry. */
+export function checkoutNow(
+  clock?: CheckoutContext["clock"],
+  paymentExpiry = false,
+) {
+  if (!clock) return Date.now();
+  const elapsed = Math.max(0, performance.now() - clock.monotonicMs);
+  // Poll against the lower bound so uncertainty cannot dispatch early requests.
+  // Whole milliseconds preserve the persisted polling-budget integer contract.
+  return Math.floor(
+    clock.epochMs + elapsed + (paymentExpiry ? clock.uncertaintyMs : 0),
+  );
+}
 export const protectedCheckoutService: ProtectedCheckoutService = {
   /** Read and validate protected checkout context for the selected mode. */
   async context({ attemptId, mode, signal }) {
+    const started = performance.now();
     const { response } = await protectedRead(
       attemptId,
       "checkout",
@@ -222,6 +236,17 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
       true,
     );
     const context = contextSchema.parse(await response.json());
+    const serverDate = Date.parse(response.headers.get("Date") ?? "");
+    const received = performance.now();
+    // Date has second precision. Arrival anchors the lower bound for polling;
+    // the entire request and rounded second bound payment expiry conservatively.
+    const clock = Number.isFinite(serverDate)
+      ? {
+          epochMs: serverDate,
+          monotonicMs: received,
+          uncertaintyMs: 999 + Math.max(0, received - started),
+        }
+      : undefined;
     if (
       context.attemptId !== attemptId ||
       context.mode !== mode ||
@@ -238,12 +263,12 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
           : (!isNativeCheckoutUrl(context.checkout.url) &&
               !isHitpayCheckoutUrl(context.checkout.url)) ||
             context.checkout.expiresAtMs === undefined ||
-            context.checkout.expiresAtMs <= Date.now() ||
+            context.checkout.expiresAtMs <= checkoutNow(clock, true) ||
             context.checkout.expiresAtMs > context.checking.deadlineMs
       )
         throw new ConfirmationError("unavailable");
     }
-    return context;
+    return { ...context, clock };
   },
 };
 

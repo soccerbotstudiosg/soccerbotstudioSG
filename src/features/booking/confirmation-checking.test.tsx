@@ -159,30 +159,38 @@ it("an elapsed protected checkout window aborts checking without resetting its a
 
 it("hides the native payment capability at its expiry without claiming payment cancellation", async () => {
   vi.useFakeTimers();
+  const serverStart = Math.floor(Date.now() / 1000) * 1000;
+  vi.setSystemTime(serverStart);
   for (const url of [
     "https://soccerbotstudiosg.simplybook.asia/v2/client/pay-later/id/synthetic-id/hash/synthetic-hash",
     "https://checkout.sandbox.hit-pay.com/payment-request/@test/00000000-0000-4000-8000-000000000001/checkout",
   ]) {
     const hitpay = url.includes("hit-pay");
-    const now = Date.now();
+    const now = serverStart;
+    let elapsed = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => elapsed);
+    vi.setSystemTime(now + (hitpay ? 3600000 : -3600000));
     const fetch = vi.fn(async (path: string) =>
       path.endsWith("/checkout")
-        ? Response.json({
-            attemptId: id,
-            mode: "live",
-            checkout: { state: "available", url, expiresAtMs: now + 3000 },
-            summary: {
-              players: 1,
-              totalMinor: 8800,
-              currency: "SGD",
-              sessions: [{ startMs: now + 86400000, players: 1 }],
+        ? Response.json(
+            {
+              attemptId: id,
+              mode: "live",
+              checkout: { state: "available", url, expiresAtMs: now + 3000 },
+              summary: {
+                players: 1,
+                totalMinor: 8800,
+                currency: "SGD",
+                sessions: [{ startMs: now + 86400000, players: 1 }],
+              },
+              checking: {
+                deadlineMs: now + 60000,
+                nextCheckMs: 0,
+                pollAfterMs: 5000,
+              },
             },
-            checking: {
-              deadlineMs: now + 60000,
-              nextCheckMs: 0,
-              pollAfterMs: 5000,
-            },
-          })
+            { headers: { Date: new Date(now + elapsed).toUTCString() } },
+          )
         : pending(),
     );
     vi.stubGlobal("fetch", fetch);
@@ -200,6 +208,8 @@ it("hides the native payment capability at its expiry without claiming payment c
       expect(fetch.mock.calls.length).toBe(count);
     }
     await act(async () => {
+      elapsed += 1000;
+      vi.setSystemTime(now - 7200000);
       await vi.advanceTimersByTimeAsync(1000);
     });
     first.unmount();
@@ -207,6 +217,12 @@ it("hides the native payment capability at its expiry without claiming payment c
     await act(async () => {});
     if (hitpay) expect(screen.getByRole("timer")).toHaveTextContent("00:02");
     await act(async () => {
+      elapsed += 2000;
+      // Reject a click at expiry even before a throttled timer has rendered it.
+      if (hitpay)
+        expect(fireEvent.click(screen.getByRole("link", { name: label }))).toBe(
+          false,
+        );
       await vi.advanceTimersByTimeAsync(2000);
     });
     expect(screen.queryByRole("link", { name: label })).toBeNull();
@@ -215,6 +231,43 @@ it("hides the native payment capability at its expiry without claiming payment c
       screen.getByRole("status", { name: "Verifying your payment…" }),
     ).toBeVisible();
     cleanup();
+    localStorage.clear();
+    if (hitpay) {
+      // Without a usable server clock, retain checking but offer no payment link.
+      vi.setSystemTime(now);
+      fetch.mockImplementation(async (path: string) =>
+        path.endsWith("/checkout")
+          ? Response.json(
+              {
+                attemptId: id,
+                mode: "live",
+                checkout: { state: "available", url, expiresAtMs: now + 60000 },
+                summary: {
+                  players: 1,
+                  totalMinor: 8800,
+                  currency: "SGD",
+                  sessions: [{ startMs: now + 86400000, players: 1 }],
+                },
+                checking: {
+                  deadlineMs: now + 120000,
+                  nextCheckMs: 0,
+                  pollAfterMs: 5000,
+                },
+              },
+              { headers: { Date: "invalid" } },
+            )
+          : pending(),
+      );
+      render(<ProtectedConfirmation attemptId={id} checkoutMode="live" />);
+      await act(async () => {});
+      expect(screen.queryByRole("link", { name: label })).toBeNull();
+      expect(screen.queryByRole("timer")).toBeNull();
+      expect(
+        screen.getByRole("status", { name: "Verifying your payment…" }),
+      ).toBeVisible();
+      cleanup();
+    }
+    vi.restoreAllMocks();
     localStorage.clear();
   }
 });

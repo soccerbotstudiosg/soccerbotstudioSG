@@ -8,6 +8,7 @@ import { downloadBooking, downloadCalendar } from "@/services/exports";
 type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
 import { sitePath } from "@/content/site-path";
 import {
+  checkoutNow,
   readBookingReceipt,
   dismissCompletedBooking,
   expireBooking,
@@ -21,13 +22,15 @@ import { useConfirmationChecking } from "./confirmation-checking";
 function PaymentContinuation({
   url,
   expiresAtMs,
+  clock,
 }: {
   url: string;
   expiresAtMs: number;
+  clock: NonNullable<CheckoutContext["clock"]>;
 }) {
-  const [now, setNow] = useState(Date.now);
+  const [now, setNow] = useState(() => checkoutNow(clock, true));
   useEffect(() => {
-    const refresh = () => setNow(Date.now());
+    const refresh = () => setNow(checkoutNow(clock, true));
     const timer = setInterval(refresh, 1000);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
@@ -36,7 +39,7 @@ function PaymentContinuation({
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, []);
+  }, [clock]);
   const seconds = Math.max(0, Math.ceil((expiresAtMs - now) / 1000));
   if (!seconds) return null;
   return (
@@ -52,9 +55,9 @@ function PaymentContinuation({
         rel="noopener noreferrer"
         referrerPolicy="no-referrer"
         onClick={(event) => {
-          if (Date.now() >= expiresAtMs) {
+          if (checkoutNow(clock, true) >= expiresAtMs) {
             event.preventDefault();
-            setNow(Date.now());
+            setNow(checkoutNow(clock, true));
           }
         }}
       >
@@ -112,6 +115,7 @@ export function ProtectedConfirmation({
     (!checkoutMode || contextSettled) && !saved,
     contextMatches ? context.value.checking.deadlineMs : undefined,
     contextMatches ? context.value.checking.holdExpiresAtMs : undefined,
+    contextMatches ? context.value.clock : undefined,
   );
   const [receipt, setReceipt] = useState<{
     value: BookingReceipt;
@@ -239,10 +243,10 @@ export function ProtectedConfirmation({
     if (!link?.expiresAtMs) return;
     const timer = setTimeout(
       () => setExpiredLink(link.url),
-      Math.max(0, link.expiresAtMs - Date.now()),
+      Math.max(0, link.expiresAtMs - checkoutNow(current?.clock, true)),
     );
     return () => clearTimeout(timer);
-  }, [link]);
+  }, [link, current?.clock]);
   const recordedPayment = current?.payment;
   const historicalPayment =
     !!recordedPayment && ["unresolved", "unavailable"].includes(view);
@@ -357,10 +361,12 @@ export function ProtectedConfirmation({
       showLink &&
       !expired &&
       view === "checking" &&
+      current?.clock &&
       link?.expiresAtMs &&
       isHitpayCheckoutUrl(link.url) ? (
         <PaymentContinuation
           key={link.url}
+          clock={current.clock}
           url={link.url}
           expiresAtMs={link.expiresAtMs}
         />
@@ -480,7 +486,10 @@ export function ProtectedConfirmation({
                   rel="noopener noreferrer"
                   referrerPolicy="no-referrer"
                   onClick={(event) => {
-                    if (link?.expiresAtMs && Date.now() >= link.expiresAtMs) {
+                    if (
+                      link?.expiresAtMs &&
+                      checkoutNow(current?.clock, true) >= link.expiresAtMs
+                    ) {
                       event.preventDefault();
                       setExpiredLink(link.url);
                     } else setOpened(attemptId);
