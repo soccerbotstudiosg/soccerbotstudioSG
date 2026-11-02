@@ -1,6 +1,10 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ConfirmationError, readConfirmation } from "@/services/confirmation";
+import {
+  checkoutNow,
+  ConfirmationError,
+  readConfirmation,
+} from "@/services/confirmation";
 type View = "checking" | "confirmed" | "unavailable" | "unresolved" | "denied";
 type Window = {
   deadline: number;
@@ -52,6 +56,7 @@ export function useConfirmationChecking(
   enabled = true,
   serverDeadline?: number,
   holdExpiresAtMs?: number,
+  clock?: import("@/services/contracts").CheckoutContext["clock"],
 ) {
   const [result, setResult] = useState<{
     id: string;
@@ -72,12 +77,13 @@ export function useConfirmationChecking(
   );
   useEffect(() => {
     if (!enabled) return;
+    const now = () => checkoutNow(clock);
     let active = true,
       busy = false,
       generation = 0;
     let controller: AbortController | undefined,
       timer: ReturnType<typeof setTimeout> | undefined;
-    let budget = windowFor(attemptId, serverDeadline);
+    let budget = windowFor(attemptId, serverDeadline ?? now() + 600000);
     save(attemptId, budget);
     let unresolved = false;
     const show = (view: View) => {
@@ -110,7 +116,7 @@ export function useConfirmationChecking(
         )
           timer = setTimeout(
             () => void poll("hold"),
-            Math.max(1, holdExpiresAtMs - Date.now()),
+            Math.max(1, holdExpiresAtMs - now()),
           );
         return;
       }
@@ -118,18 +124,14 @@ export function useConfirmationChecking(
         () => void poll(),
         Math.max(
           1,
-          Math.min(
-            5000,
-            budget.next - Date.now(),
-            budget.deadline - Date.now(),
-          ),
+          Math.min(5000, budget.next - now(), budget.deadline - now()),
         ),
       );
     }
     /** Reserve a confirmation check within the attempt's polling limits. */
     function reserve(recheck: boolean) {
       const claim = () => {
-        const shared = windowFor(attemptId, serverDeadline);
+        const shared = windowFor(attemptId, serverDeadline ?? now() + 600000);
         budget = {
           deadline: Math.min(budget.deadline, shared.deadline),
           next: Math.max(budget.next, shared.next),
@@ -144,29 +146,25 @@ export function useConfirmationChecking(
         if (recheck) {
           const holdDue =
             holdExpiresAtMs !== undefined &&
-            Date.now() >= holdExpiresAtMs &&
+            now() >= holdExpiresAtMs &&
             budget.holdChecked !== holdExpiresAtMs;
-          if (!holdDue && Date.now() < (budget.refreshNext ?? 0)) return false;
-          budget.refreshNext = Date.now() + 30000;
+          if (!holdDue && now() < (budget.refreshNext ?? 0)) return false;
+          budget.refreshNext = now() + 30000;
           if (holdDue) budget.holdChecked = holdExpiresAtMs;
           save(attemptId, budget);
           return true;
         }
-        if (
-          (Date.now() >= budget.deadline && budget.final) ||
-          budget.count >= 120
-        ) {
+        if ((now() >= budget.deadline && budget.final) || budget.count >= 120) {
           terminal = true;
           show("unresolved");
           return false;
         }
-        if (Date.now() < budget.next && Date.now() < budget.deadline)
-          return false;
+        if (now() < budget.next && now() < budget.deadline) return false;
         budget = {
           ...budget,
-          next: Date.now() + 5000,
+          next: now() + 5000,
           count: budget.count + 1,
-          final: budget.final || Date.now() >= budget.deadline,
+          final: budget.final || now() >= budget.deadline,
         };
         save(attemptId, budget);
         return true;
@@ -183,7 +181,7 @@ export function useConfirmationChecking(
         terminal &&
         unresolved &&
         trigger !== undefined &&
-        Date.now() >= budget.deadline;
+        now() >= budget.deadline;
       if (!active || (terminal && !recheck) || busy || document.hidden) return;
       busy = true;
       const current = ++generation;
@@ -217,7 +215,7 @@ export function useConfirmationChecking(
               },
               budget.final
                 ? 10000
-                : Math.max(1, Math.min(10000, budget.deadline - Date.now())),
+                : Math.max(1, Math.min(10000, budget.deadline - now())),
             );
           }),
         ]);
@@ -240,6 +238,7 @@ export function useConfirmationChecking(
                 : undefined;
         expired = "expired" in response && response.expired === true;
         paymentReceived =
+          paymentReceived ||
           response.reason === "payment_received_booking_pending" ||
           response.status === "confirmed";
         if (response.status === "confirmed") {
@@ -248,10 +247,7 @@ export function useConfirmationChecking(
         } else if (response.status === "denied") {
           terminal = true;
           show("denied");
-        } else if (
-          response.status !== "pending" ||
-          Date.now() >= budget.deadline
-        ) {
+        } else if (response.status !== "pending" || now() >= budget.deadline) {
           terminal = true;
           show("unresolved");
         } else show("checking");
@@ -260,7 +256,7 @@ export function useConfirmationChecking(
         if (error instanceof ConfirmationError && error.kind === "denied") {
           terminal = true;
           show("denied");
-        } else if (Date.now() >= budget.deadline) {
+        } else if (now() >= budget.deadline) {
           terminal = true;
           show("unresolved");
         } else if (error instanceof ConfirmationError) {
@@ -301,7 +297,7 @@ export function useConfirmationChecking(
       // Checkout context and confirmation share the same server-owned window.
       // Bind it before exposing checkout, even when the first status read is
       // still pending. Neither a late context nor another tab may extend it.
-      const shared = windowFor(attemptId, serverDeadline);
+      const shared = windowFor(attemptId, serverDeadline ?? now() + 600000);
       budget = {
         deadline: Math.min(budget.deadline, shared.deadline, window.deadlineMs),
         next: Math.max(budget.next, shared.next, window.nextCheckMs),
@@ -311,11 +307,7 @@ export function useConfirmationChecking(
         holdChecked: shared.holdChecked ?? budget.holdChecked,
       };
       save(attemptId, budget);
-      if (
-        !terminal &&
-        Date.now() >= budget.deadline &&
-        (budget.final || busy)
-      ) {
+      if (!terminal && now() >= budget.deadline && (budget.final || busy)) {
         terminal = true;
         generation++;
         controller?.abort();
@@ -338,7 +330,14 @@ export function useConfirmationChecking(
       document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("focus", visibility);
     };
-  }, [attemptId, sessionRevision, enabled, serverDeadline, holdExpiresAtMs]);
+  }, [
+    attemptId,
+    sessionRevision,
+    enabled,
+    serverDeadline,
+    holdExpiresAtMs,
+    clock,
+  ]);
   return {
     customerConfirmation:
       result?.id === attemptId && result.revision === sessionRevision

@@ -132,6 +132,8 @@ export interface AssistantService {
 }
 
 export type CheckoutContext = {
+  /** Client-only server time anchor; never serialized as booking authority. */
+  clock?: { epochMs: number; monotonicMs: number; uncertaintyMs: number };
   customerConfirmation?: z.infer<typeof receiptSchema>;
   expired?: boolean;
   details?: z.infer<typeof bookingDetailsSchema>;

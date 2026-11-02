@@ -8,12 +8,49 @@ import ts from "typescript";
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(import.meta.dirname, "..");
-const { source: clockSource } = require(
-  path.join(
+/** Extract the installed injected clock without loading a browser or server bundle. */
+function installedClockSource() {
+  const bundle = path.join(
     path.dirname(require.resolve("playwright-core/package.json")),
-    "lib/generated/clockSource.js",
-  ),
-);
+    "lib/coreBundle.js",
+  );
+  const parsed = ts.createSourceFile(
+    bundle,
+    readFileSync(bundle, "utf8"),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const sources = [];
+  function visit(node) {
+    if (
+      ts.isMethodDeclaration(node) &&
+      ts.isStringLiteral(node.name) &&
+      node.name.text.endsWith("/generated/clockSource.ts")
+    ) {
+      function collect(child) {
+        if (
+          ts.isBinaryExpression(child) &&
+          child.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+          ts.isStringLiteral(child.right)
+        )
+          sources.push(child.right.text);
+        ts.forEachChild(child, collect);
+      }
+      ts.forEachChild(node, collect);
+      return;
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(parsed);
+  assert.equal(
+    sources.length,
+    1,
+    "Require exactly one installed Playwright clock source; do not substitute a mock",
+  );
+  assert.match(sources[0], /ClockController/);
+  return sources[0];
+}
+const clockSource = installedClockSource();
 const customerSource = readFileSync(
   path.join(root, "tests/customer.spec.ts"),
   "utf8",

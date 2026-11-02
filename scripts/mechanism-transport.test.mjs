@@ -95,6 +95,33 @@ test("real Worker transport preserves checkout bodies across navigation and repe
   );
   assert.equal(sequence, 2);
   await captured.drain();
+  // Model Playwright's removal of an active handler continuing its route.
+  // A delayed Worker response must settle before unrouteAll can claim it.
+  let releaseResponse;
+  const responseReady = new Promise((resolve) => {
+    releaseResponse = resolve;
+  });
+  mechanism.mf.dispatchFetch = async () => {
+    await responseReady;
+    return Response.json({ state: "pending" });
+  };
+  let removed = false;
+  const order = [];
+  page.unrouteAll = async () => {
+    removed = true;
+    order.push("unroute");
+  };
+  const work = handler({
+    request: () => replies[0].request(),
+    fulfill: async () => {
+      assert.equal(removed, false, "do not remove an active response handler");
+      order.push("fulfill");
+    },
+  });
+  const drain = captured.drain();
+  releaseResponse();
+  await Promise.all([work, drain]);
+  assert.deepEqual(order, ["fulfill", "unroute"]);
   page.isClosed = () => true;
   page.unrouteAll = async () => {
     throw new Error("closed page must not receive route API calls");

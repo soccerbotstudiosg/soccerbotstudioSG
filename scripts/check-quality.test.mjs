@@ -40,8 +40,8 @@ for (const [name, mutate] of [
     "browser image version drift",
     (p) =>
       (p.workflow = p.workflow.replace(
-        "playwright:v1.58.2-noble",
-        "playwright:v1.57.0-noble",
+        `playwright:v${p.pkg.devDependencies["@playwright/test"]}-noble`,
+        "playwright:v0.0.0-noble",
       )),
   ],
   [
@@ -133,7 +133,13 @@ for (const [name, mutate] of [
 ])
   test(`policy rejects ${name}`, () => {
     const p = inputs();
+    const before = JSON.stringify(p);
     mutate(p);
+    assert.notEqual(
+      JSON.stringify(p),
+      before,
+      "negative fixture must change the valid configuration",
+    );
     assert.ok(checkPolicy(p).length);
   });
 const inventory = [

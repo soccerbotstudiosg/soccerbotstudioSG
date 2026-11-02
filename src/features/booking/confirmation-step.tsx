@@ -83,6 +83,7 @@ export function BookingConfirmation({
   preview = false,
   pending = false,
   pendingLabel = "Verifying your payment…",
+  pendingAction,
   verifiedAtMs,
   onAgain,
   onHome,
@@ -93,6 +94,7 @@ export function BookingConfirmation({
   preview?: boolean;
   pending?: boolean;
   pendingLabel?: string;
+  pendingAction?: ReactNode;
   verifiedAtMs?: number;
   onAgain: () => void | Promise<void>;
   onHome?: () => void | Promise<void>;
@@ -238,6 +240,7 @@ export function BookingConfirmation({
             <strong>{money(booking.totalCents)} SGD</strong>
           </div>
         </div>
+        {pending && pendingAction}
         <details className="confirmation-full-details">
           <summary>View full details</summary>
           <div className="confirmation-details-grid">
