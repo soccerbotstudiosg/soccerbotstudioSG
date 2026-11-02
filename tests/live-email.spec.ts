@@ -2465,12 +2465,12 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       );
       await page.route(completeUrl, async (route) => {
         expect((await mechanism.completePayment()).status).toBe(202);
+        // WebKit interception cannot fulfill a synthetic HTTP redirect.
+        // Model the hosted completion page's same-tab browser navigation.
+        const returnUrl = `http://127.0.0.1:4173/confirmation/?attempt=${attemptId}`;
         await route.fulfill({
-          status: 302,
-          headers: {
-            location: `http://127.0.0.1:4173/confirmation/?attempt=${attemptId}`,
-          },
-          body: "",
+          contentType: "text/html",
+          body: `<!doctype html><script>location.replace(${JSON.stringify(returnUrl)})</script>`,
         });
       });
       const resumedContext = page.waitForResponse(
