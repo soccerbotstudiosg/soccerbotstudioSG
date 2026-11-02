@@ -1,6 +1,10 @@
 # SoccerBotStudioSG current task and handover
 
-Updated 31 October 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
+Updated 2 November 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
+
+## Active dependency maintenance — PR16 artifact download action
+
+Owner requested repairing Dependabot PRs16/17 to passing CI before personally reviewing/merging. This branch updates actions/download-artifact4.3.0→8.0.2 and removes the duplicated historical SHA from the deployment workflow test. The workflow remains the reviewed full-SHA owner; the test still requires the exact actions/download-artifact identity, a40-character commit pin, same-run/attempt evidence names, destination, unconditional download and credential isolation. Original CI41371387964 failed only frontend tooling at scripts/deployment-target.test.mjs:342; all browser shards and Worker groups passed. Upstream v8 uses Node24 and preserves the named/pattern artifact extraction used here. Local verification/new-head CI follow; no merge or deployment authorized. PR17's Playwright image/documentation/negative-fixture repair is separate. PR15 payment work remains on fix/payment-response-confirmation at c827924; it is not incorporated into this dependency branch.
 
 ## Loader logo cleanup — prepared 31 October 2026
 
