@@ -1,8 +1,14 @@
 # SoccerBotStudioSG current task and handover
 
+## Current owner UAT follow-up — 2 November 2026
+
+PR19 candidate `75891e9e8450880c02696c5d4682832e6ee4da6f` passed all13 CI jobs in41407426255 and staging41408849972; Worker version9b316f22-721f-40f5-8f03-18c7a55740c6 and revision independently read back. Owner test6 reports successful confirmation in the original tab, but resumed HitPay opens another tab, invoice prefix differs from Pay, and details download fails. Acceptance is not complete. No merge/production authorization; custom email remains on hold.
+
+Current repair: same-tab continuation and formal copy; WhatsApp Enquiry; instructor guidance inside arrival box with the separate footer removed. Owner subsequently removed both download actions; their UI handlers, local PDF/calendar module and unused jsPDF4.2.1 dependency are retired. Live invoice label is withheld: owner screenshot confirms O order and SI paid-invoice labels with different sequences, but the exact paid-document API mapping is unverified; no invented prefix. Protected receipt/financial/storage contracts remain. Existing browser journey now exercises Back → same-link continuation → synthetic signed payment/hosted redirect → confirmed in the same tab, preserving deadline, one booking/request and accounting effect. Two export-only tests retired (252→250 unit cases); multi-date/trainer assertions retained and renamed inventories synchronized. Initial source guard correctly rejected the now-unreachable export module; remove it rather than relax reachability. Download failure itself remains undiagnosed, not repaired; no need for further owner download capture after removal. Local failures retained: unreachable retired formatter, obsolete `let` in the browser fixture, and a five-action layout expectation after two actions were removed. Corresponding module cleanup, const correction, component/browser action assertions and exact inventory names are reconciled. Full revised verification/CI/staging pending.
+
 Updated 2 November 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
 
-## Current follow-up — customer invoice references, exports and notification drafts
+## Historical preparation — customer invoice references, exports and notification drafts
 
 PR19 on `fix/closed-deployment-propagation` remains ready/unmerged. Head `895091414674a513862685648cf1f7002a438146` passed all13 CI jobs in41402237300 and staging41403617840 (Worker version528f8f20-cc17-4059-b764-58ef14fc8c5c); runner revision/health passed. This includes pricing, provider documentation and earlier customer-feedback/render tracing work. Production remains4454b334. New local follow-up below is not covered by that staging receipt.
 

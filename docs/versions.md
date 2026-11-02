@@ -27,7 +27,6 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 | eslint                      | 9.39.5            |
 | eslint-config-next          | 16.4.3            |
 | jsdom                       | 30.1.1            |
-| jspdf                       | 4.2.1             |
 | miniflare                   | 5.20261023.0-beta |
 | next                        | 16.4.3            |
 | postcss                     | 8.5.28            |
@@ -46,7 +45,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 Includes transitive dependencies and optional platform packages. A locked package is not necessarily installed on every platform or included in the deployed application. Paths distinguish multiple versions of the same package.
 
 <details>
-<summary>All 666 locked package entries</summary>
+<summary>All 644 locked package entries</summary>
 
 | Lockfile path                                                                     | Version           | Development | Optional |
 | --------------------------------------------------------------------------------- | ----------------- | ----------- | -------- |
@@ -71,7 +70,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@babel/helper-validator-option                                       | 7.29.7            | yes         | no       |
 | node_modules/@babel/helpers                                                       | 7.29.7            | yes         | no       |
 | node_modules/@babel/parser                                                        | 7.29.9            | yes         | no       |
-| node_modules/@babel/runtime                                                       | 7.29.7            | no          | no       |
+| node_modules/@babel/runtime                                                       | 7.29.7            | yes         | no       |
 | node_modules/@babel/template                                                      | 7.29.7            | yes         | no       |
 | node_modules/@babel/traverse                                                      | 7.29.8            | yes         | no       |
 | node_modules/@babel/types                                                         | 7.29.8            | yes         | no       |
@@ -247,11 +246,8 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@types/json-schema                                                   | 7.0.15            | yes         | no       |
 | node_modules/@types/json5                                                         | 0.0.29            | yes         | no       |
 | node_modules/@types/node                                                          | 24.19.1           | yes         | no       |
-| node_modules/@types/pako                                                          | 2.0.4             | no          | no       |
-| node_modules/@types/raf                                                           | 3.4.3             | no          | yes      |
 | node_modules/@types/react                                                         | 19.3.0            | yes         | no       |
 | node_modules/@types/react-dom                                                     | 19.3.0            | yes         | no       |
-| node_modules/@types/trusted-types                                                 | 2.0.7             | no          | yes      |
 | node_modules/@typescript-eslint/eslint-plugin                                     | 8.71.0            | yes         | no       |
 | node_modules/@typescript-eslint/eslint-plugin/node_modules/ignore                 | 7.0.12            | yes         | no       |
 | node_modules/@typescript-eslint/parser                                            | 8.71.0            | yes         | no       |
@@ -315,7 +311,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/axe-core                                                             | 4.13.0            | yes         | no       |
 | node_modules/axobject-query                                                       | 4.1.0             | yes         | no       |
 | node_modules/balanced-match                                                       | 1.0.2             | yes         | no       |
-| node_modules/base64-arraybuffer                                                   | 1.0.2             | no          | yes      |
 | node_modules/baseline-browser-mapping                                             | 2.11.27           | no          | no       |
 | node_modules/bidi-js                                                              | 1.1.0             | yes         | no       |
 | node_modules/blake3-wasm                                                          | 2.1.5             | yes         | no       |
@@ -327,7 +322,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/call-bound                                                           | 1.0.4             | yes         | no       |
 | node_modules/callsites                                                            | 3.1.0             | yes         | no       |
 | node_modules/caniuse-lite                                                         | 1.0.30001814      | no          | no       |
-| node_modules/canvg                                                                | 3.0.11            | no          | yes      |
 | node_modules/chai                                                                 | 6.3.0             | yes         | no       |
 | node_modules/chalk                                                                | 4.1.2             | yes         | no       |
 | node_modules/client-only                                                          | 0.0.1             | no          | no       |
@@ -336,9 +330,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/concat-map                                                           | 0.0.1             | yes         | no       |
 | node_modules/convert-source-map                                                   | 2.0.0             | yes         | no       |
 | node_modules/cookie                                                               | 1.1.1             | yes         | no       |
-| node_modules/core-js                                                              | 3.50.0            | no          | yes      |
 | node_modules/cross-spawn                                                          | 7.0.6             | yes         | no       |
-| node_modules/css-line-break                                                       | 2.1.0             | no          | yes      |
 | node_modules/css-tree                                                             | 3.2.1             | yes         | no       |
 | node_modules/css.escape                                                           | 1.5.1             | yes         | no       |
 | node_modules/csstype                                                              | 3.2.3             | yes         | no       |
@@ -357,7 +349,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/detect-libc                                                          | 2.1.2             | no          | no       |
 | node_modules/doctrine                                                             | 2.1.0             | yes         | no       |
 | node_modules/dom-accessibility-api                                                | 0.5.16            | yes         | no       |
-| node_modules/dompurify                                                            | 3.4.17            | no          | yes      |
 | node_modules/dunder-proto                                                         | 1.0.1             | yes         | no       |
 | node_modules/electron-to-chromium                                                 | 1.5.444           | yes         | no       |
 | node_modules/emoji-regex                                                          | 9.2.2             | yes         | no       |
@@ -405,9 +396,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/fast-glob/node_modules/glob-parent                                   | 5.1.2             | yes         | no       |
 | node_modules/fast-json-stable-stringify                                           | 2.1.0             | yes         | no       |
 | node_modules/fast-levenshtein                                                     | 2.0.6             | yes         | no       |
-| node_modules/fast-png                                                             | 6.4.0             | no          | no       |
 | node_modules/fastq                                                                | 1.20.3            | yes         | no       |
-| node_modules/fflate                                                               | 0.8.3             | no          | no       |
 | node_modules/file-entry-cache                                                     | 8.0.0             | yes         | no       |
 | node_modules/fill-range                                                           | 7.1.1             | yes         | no       |
 | node_modules/find-up                                                              | 5.0.0             | yes         | no       |
@@ -439,13 +428,11 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/hermes-estree                                                        | 0.25.1            | yes         | no       |
 | node_modules/hermes-parser                                                        | 0.25.1            | yes         | no       |
 | node_modules/html-encoding-sniffer                                                | 7.0.0             | yes         | no       |
-| node_modules/html2canvas                                                          | 1.4.1             | no          | yes      |
 | node_modules/ignore                                                               | 5.3.2             | yes         | no       |
 | node_modules/import-fresh                                                         | 3.3.1             | yes         | no       |
 | node_modules/imurmurhash                                                          | 0.1.4             | yes         | no       |
 | node_modules/indent-string                                                        | 4.0.0             | yes         | no       |
 | node_modules/internal-slot                                                        | 1.1.0             | yes         | no       |
-| node_modules/iobuffer                                                             | 5.4.0             | no          | no       |
 | node_modules/is-array-buffer                                                      | 3.0.5             | yes         | no       |
 | node_modules/is-async-function                                                    | 2.1.1             | yes         | no       |
 | node_modules/is-bigint                                                            | 1.1.0             | yes         | no       |
@@ -487,7 +474,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/json-schema-traverse                                                 | 0.4.1             | yes         | no       |
 | node_modules/json-stable-stringify-without-jsonify                                | 1.0.1             | yes         | no       |
 | node_modules/json5                                                                | 2.2.3             | yes         | no       |
-| node_modules/jspdf                                                                | 4.2.1             | no          | no       |
 | node_modules/jsx-ast-utils                                                        | 3.3.5             | yes         | no       |
 | node_modules/keyv                                                                 | 4.5.4             | yes         | no       |
 | node_modules/kleur                                                                | 4.1.5             | yes         | no       |
@@ -543,7 +529,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/own-keys                                                             | 1.0.2             | yes         | no       |
 | node_modules/p-limit                                                              | 3.1.0             | yes         | no       |
 | node_modules/p-locate                                                             | 5.0.0             | yes         | no       |
-| node_modules/pako                                                                 | 2.2.0             | no          | no       |
 | node_modules/parent-module                                                        | 1.0.1             | yes         | no       |
 | node_modules/parse5                                                               | 8.0.1             | yes         | no       |
 | node_modules/path-exists                                                          | 4.0.0             | yes         | no       |
@@ -551,7 +536,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/path-parse                                                           | 1.0.7             | yes         | no       |
 | node_modules/path-to-regexp                                                       | 6.3.0             | yes         | no       |
 | node_modules/pathe                                                                | 2.0.3             | yes         | no       |
-| node_modules/performance-now                                                      | 2.1.0             | no          | yes      |
 | node_modules/picocolors                                                           | 1.1.1             | no          | no       |
 | node_modules/picomatch                                                            | 2.3.2             | yes         | no       |
 | node_modules/playwright                                                           | 1.64.1            | no          | no       |
@@ -566,20 +550,17 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/prop-types                                                           | 15.8.1            | yes         | no       |
 | node_modules/punycode                                                             | 2.3.1             | yes         | no       |
 | node_modules/queue-microtask                                                      | 1.2.3             | yes         | no       |
-| node_modules/raf                                                                  | 3.4.1             | no          | yes      |
 | node_modules/react                                                                | 19.3.0            | no          | no       |
 | node_modules/react-dom                                                            | 19.3.0            | no          | no       |
 | node_modules/react-is                                                             | 16.13.1           | yes         | no       |
 | node_modules/redent                                                               | 3.0.0             | yes         | no       |
 | node_modules/reflect.getprototypeof                                               | 1.0.10            | yes         | no       |
-| node_modules/regenerator-runtime                                                  | 0.13.11           | no          | yes      |
 | node_modules/regexp.prototype.flags                                               | 1.5.4             | yes         | no       |
 | node_modules/require-from-string                                                  | 2.0.2             | yes         | no       |
 | node_modules/resolve                                                              | 2.0.0-next.7      | yes         | no       |
 | node_modules/resolve-from                                                         | 4.0.0             | yes         | no       |
 | node_modules/resolve-pkg-maps                                                     | 1.0.0             | yes         | no       |
 | node_modules/reusify                                                              | 1.1.0             | yes         | no       |
-| node_modules/rgbcolor                                                             | 1.0.1             | no          | yes      |
 | node_modules/rolldown                                                             | 1.2.15            | yes         | no       |
 | node_modules/run-parallel                                                         | 1.2.0             | yes         | no       |
 | node_modules/safe-array-concat                                                    | 1.1.4             | yes         | no       |
@@ -600,7 +581,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/side-channel-weakmap                                                 | 1.0.2             | yes         | no       |
 | node_modules/source-map-js                                                        | 1.2.2             | no          | no       |
 | node_modules/stable-hash                                                          | 0.0.5             | yes         | no       |
-| node_modules/stackblur-canvas                                                     | 2.7.0             | no          | yes      |
 | node_modules/std-env                                                              | 4.3.0             | yes         | no       |
 | node_modules/stop-iteration-iterator                                              | 1.1.0             | yes         | no       |
 | node_modules/string.prototype.includes                                            | 2.0.1             | yes         | no       |
@@ -615,10 +595,8 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/styled-jsx                                                           | 5.1.6             | no          | no       |
 | node_modules/supports-color                                                       | 7.2.0             | yes         | no       |
 | node_modules/supports-preserve-symlinks-flag                                      | 1.0.0             | yes         | no       |
-| node_modules/svg-pathdata                                                         | 6.0.3             | no          | yes      |
 | node_modules/tailwindcss                                                          | 4.3.3             | yes         | no       |
 | node_modules/tapable                                                              | 2.3.3             | yes         | no       |
-| node_modules/text-segmentation                                                    | 1.0.3             | no          | yes      |
 | node_modules/tinybench                                                            | 6.2.0             | yes         | no       |
 | node_modules/tinyexec                                                             | 1.3.1             | yes         | no       |
 | node_modules/tinyglobby                                                           | 0.2.17            | yes         | no       |
@@ -647,7 +625,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/unrs-resolver                                                        | 1.12.2            | yes         | no       |
 | node_modules/update-browserslist-db                                               | 1.3.3             | yes         | no       |
 | node_modules/uri-js                                                               | 4.4.1             | yes         | no       |
-| node_modules/utrie                                                                | 1.0.2             | no          | yes      |
 | node_modules/vite                                                                 | 8.3.5             | yes         | no       |
 | node_modules/vite/node_modules/lightningcss                                       | 1.33.0            | yes         | no       |
 | node_modules/vite/node_modules/lightningcss-android-arm64                         | 1.33.0            | yes         | yes      |

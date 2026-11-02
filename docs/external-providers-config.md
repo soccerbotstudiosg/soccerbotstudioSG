@@ -132,9 +132,9 @@ For each change: identify the environment and setting, explain why it changes, r
 
 ## Booking support and notification drafts
 
-Owner supplied the change/cancellation contact on 2 November: **Glenna, +65 9014 3819**, [WhatsApp](https://wa.me/6590143819). A message is a request; the booking stays unchanged until the studio confirms it. Do not imply automatic cancellation, rescheduling or refund approval. The application confirmation and downloaded booking details use this contact.
+Owner supplied the change/cancellation contact on 2 November: **Glenna, +65 9014 3819**, [WhatsApp](https://wa.me/6590143819). A message is a request; the booking stays unchanged until the studio confirms it. Do not imply automatic cancellation, rescheduling or refund approval. The confirmation WhatsApp Enquiry action uses this contact; customer downloads are retired.
 
-Customer-facing invoice references use the validated SimplyBook invoice `number`, distinct from internal invoice ID, booking IDs and the application attempt ID. Read-only inspection found the field on paid client invoices. Match it to the document displayed in SimplyBook Pay during owner UAT; no claim of document/UI visual matching is made yet. Numbers may change when an invoice moves from pending to paid, so they are display metadata only. Never substitute them for immutable accounting identifiers. Older retained confirmations may lack the number; omit it without delaying success or inventing a replacement. Fresh authorized receipt checks may obtain current display data under the existing verification window.
+Invoice display is withheld pending comparison against the actual SimplyBook Pay document. The validated API `number` field was observed with an O prefix during owner staging UAT; the owner screenshot shows an O-prefixed timed-out order and SI-prefixed paid invoices with separate sequences; the exact API-to-paid-document mapping is still unverified. Do not infer equivalence or rewrite a prefix. Optional metadata remains retained for compatibility; no accounting identifiers, provider configuration or financial proof change.
 
 ### Complete HTML drafts and editor setup
 

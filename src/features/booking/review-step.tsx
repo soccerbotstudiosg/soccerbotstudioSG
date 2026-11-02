@@ -53,6 +53,7 @@ export function Arrival({ compact = false }: { compact?: boolean } = {}) {
           ? "Wear activewear and soccer boots (preferred) or sports shoes; bring a towel."
           : "Wear training gear or activewear. Soccer boots are preferred; sports shoes are also suitable. Bring your own towel."}
       </p>
+      {compact && <p>Follow your instructor’s safety guidance.</p>}
     </section>
   );
 }

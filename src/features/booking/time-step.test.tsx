@@ -126,7 +126,7 @@ test("crossing notices persist in the basket and review before payment", async (
   ).toBeDisabled();
 });
 
-test("confirmation places five actions above a compact summary and discloses complete details", async () => {
+test("confirmation places three retained actions above a compact summary and discloses complete details", async () => {
   const stored = loadBooking();
   const draft = {
     ...stored.draft,
@@ -156,7 +156,12 @@ test("confirmation places five actions above a compact summary and discloses com
   const disclosure = view.container.querySelector("details");
   expect(disclosure).not.toHaveAttribute("open");
   const actions = screen.getByLabelText("Booking actions");
-  expect(actions.querySelectorAll("button, a")).toHaveLength(5);
+  expect(
+    Array.from(
+      actions.querySelectorAll("button, a"),
+      (action) => action.textContent,
+    ),
+  ).toEqual(["Make another booking", "WhatsApp Enquiry", "Back to home"]);
   expect(actions.compareDocumentPosition(disclosure!)).toBe(
     Node.DOCUMENT_POSITION_FOLLOWING,
   );

@@ -944,7 +944,7 @@ test("real payment recovery confirms the browser return from verified provider s
     releaseDismiss = resolve;
   });
   let releaseReceipt!: () => void;
-  let receiptGate = new Promise<void>((resolve) => {
+  const receiptGate = new Promise<void>((resolve) => {
     releaseReceipt = resolve;
   });
   let receiptStarted!: () => void;
@@ -1099,38 +1099,12 @@ test("real payment recovery confirms the browser return from verified provider s
           (cardBox!.x + cardBox!.width / 2),
       ),
     ).toBeLessThanOrEqual(1);
-    // A download is a new protected read, independent of initial presentation.
-    const receiptReadsBeforeDownload = transport.calls.filter((call) =>
-      call.path.endsWith("/receipt"),
-    ).length;
-    receiptGate = new Promise<void>((resolve) => {
-      releaseReceipt = resolve;
-    });
-    const download = page.waitForEvent("download");
-    await page
-      .getByRole("button", { name: "Download booking details", exact: true })
-      .click();
     await expect(
-      page.getByRole("status", { name: "Preparing download…" }),
-    ).toBeVisible();
-    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
-    await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("status", {
-        name: "Preparing confirmation…",
-        exact: true,
+      page.getByRole("button", {
+        name: /Add to calendar|Download booking details/,
       }),
     ).toHaveCount(0);
-    releaseReceipt();
-    await download;
-    expect(
-      transport.calls.filter((call) => call.path.endsWith("/receipt")),
-    ).toHaveLength(receiptReadsBeforeDownload + 1);
-    await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
-    ).toBeVisible();
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     expect(
       mechanism.calls.filter((call) => call.url.endsWith("/accept-payment")),
     ).toHaveLength(1);
@@ -2462,6 +2436,83 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         ),
       ).toHaveLength(1);
     }
+    if (!failReadback) {
+      const attemptId = transport.attemptId();
+      const paymentBefore = await mechanism.db
+        .prepare(
+          "SELECT attempt_id,reference,expires_ms FROM hitpay_payments WHERE attempt_id=?",
+        )
+        .bind(attemptId)
+        .first();
+      const pagesBefore = page.context().pages().length;
+      const creation = mechanism.calls.find(
+        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+      );
+      expect(creation?.body?.redirect_url).toBe(
+        `${mechanism.origin}/confirmation/?attempt=${attemptId}`,
+      );
+      // Simulate only the hosted provider's completion/redirect; application
+      // status still comes from the real isolated Worker and signed webhook.
+      const completeUrl = `${mechanism.checkoutUrl}/synthetic-complete`;
+      await page.route(mechanism.checkoutUrl, (route) =>
+        route.fulfill({
+          contentType: "text/html",
+          body: `<!doctype html><h1>Synthetic HitPay checkout</h1><a href="${completeUrl}">Complete synthetic payment</a>`,
+        }),
+      );
+      await page.route(completeUrl, async (route) => {
+        expect((await mechanism.completePayment()).status).toBe(202);
+        await route.fulfill({
+          status: 302,
+          headers: {
+            location: `http://127.0.0.1:4173/confirmation/?attempt=${attemptId}`,
+          },
+          body: "",
+        });
+      });
+      await page.goBack();
+      const continuation = page.getByRole("link", {
+        name: "Continue payment",
+        exact: true,
+      });
+      await expect(continuation).toHaveAttribute("href", mechanism.checkoutUrl);
+      await expect(continuation).not.toHaveAttribute("target", "_blank");
+      await expect(page.getByRole("timer")).toBeVisible();
+      await continuation.click();
+      await expect(page).toHaveURL(mechanism.checkoutUrl);
+      expect(page.context().pages()).toHaveLength(pagesBefore);
+      expect(
+        await mechanism.db
+          .prepare(
+            "SELECT attempt_id,reference,expires_ms FROM hitpay_payments WHERE attempt_id=?",
+          )
+          .bind(attemptId)
+          .first(),
+      ).toEqual(paymentBefore);
+      await page
+        .getByRole("link", { name: "Complete synthetic payment" })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
+      );
+      await expect(
+        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+      expect(page.context().pages()).toHaveLength(pagesBefore);
+      expect(
+        mechanism.calls.filter(
+          (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+        ),
+      ).toHaveLength(1);
+      expect(
+        mechanism.calls.filter((call) => call.url.endsWith("/accept-payment")),
+      ).toHaveLength(1);
+      expect(transport.unexpected).toEqual([]);
+      expect(mechanism.unexpected).toEqual([]);
+    }
     expect(
       mechanism.calls.filter((call) => call.body?.method === "book"),
     ).toHaveLength(1);
@@ -2473,7 +2524,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
   }
 }
 
-test("real API editable Review creates nothing and checkout waits for verified creation before HitPay", async ({
+test("real API editable Review and same-tab Back continuation preserve payment identity through paid return", async ({
   page,
 }) => {
   await optimisticHold(page, false);

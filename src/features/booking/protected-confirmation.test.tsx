@@ -1,5 +1,4 @@
 import * as renderTrace from "./confirmation-render-trace";
-import * as exports from "@/services/exports";
 import ConfirmationPage from "@/app/confirmation/page";
 import { BookingProvider } from "./provider";
 import { liveBookingService } from "@/services/booking";
@@ -213,7 +212,7 @@ it("access denial hides a previously loaded checkout context", async () => {
   ).not.toBeInTheDocument();
 });
 
-it("verified live receipt uses demo sections and refuses exports after access is revoked", async () => {
+it("verified live receipt shows booking sections without export actions or unverified invoice labels", async () => {
   const now = Date.now();
   const receipt = {
     ...receiptFixture(now + 120000),
@@ -264,14 +263,18 @@ it("verified live receipt uses demo sections and refuses exports after access is
   expect(screen.queryByText("701")).not.toBeInTheDocument();
   expect(screen.queryByText("901")).not.toBeInTheDocument();
   expect(screen.queryByText(/SoccerBot reference/)).not.toBeInTheDocument();
-  expect(screen.getByText(/Invoice number/)).toHaveTextContent("INV-2026-TEST");
+  expect(screen.queryByText(/Invoice number/)).toBeNull();
+  expect(screen.queryByText("INV-2026-TEST")).toBeNull();
   expect(
-    screen.getByRole("link", { name: "Contact Glenna on WhatsApp" }),
+    screen.getByRole("link", { name: "WhatsApp Enquiry" }),
   ).toHaveAttribute("href", "https://wa.me/6590143819");
   expect(screen.queryByText("Paid · Preview")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent("Download failed");
-  expect(reads).toBe(2);
+  expect(
+    screen.queryByRole("button", {
+      name: /Add to calendar|Download booking details/,
+    }),
+  ).toBeNull();
+  expect(reads).toBe(1);
 });
 
 const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
@@ -507,12 +510,14 @@ it("reopening an expired paid booking shows the saved full confirmation without 
   fireEvent.click(await screen.findByText("View full details"));
   await screen.findByRole("heading", { name: "Client Details" });
   expect(fetch).toHaveBeenCalledTimes(2);
-  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent("Download failed");
+  expect(
+    screen.queryByRole("button", {
+      name: /Add to calendar|Download booking details/,
+    }),
+  ).toBeNull();
   expect(fetch.mock.calls.map(([url]) => url.split("/").at(-1))).toEqual([
     "checkout",
     "checkout",
-    "receipt",
   ]);
 
   const assign = vi.fn();
@@ -732,7 +737,7 @@ it("Back to home starts the shared background exit and navigates without awaitin
   expect(navigation.push).toHaveBeenCalledWith("/");
 });
 
-it("verified payment shows confirmation before reconciliation and only the requested download waits", async () => {
+it("verified payment shows confirmation before reconciliation without export actions", async () => {
   const proof = receiptFixture();
   let finish!: (value: Response) => void;
   const verification = new Promise<Response>((resolve) => {
@@ -770,10 +775,11 @@ it("verified payment shows confirmation before reconciliation and only the reque
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
   await screen.findByRole("heading", { name: "Booking confirmed" });
   expect(screen.getByText("Paid", { exact: true })).toBeVisible();
-  fireEvent.click(
-    screen.getByRole("button", { name: "Download booking details" }),
-  );
-  await screen.findByRole("status", { name: "Preparing download…" });
+  expect(
+    screen.queryByRole("button", {
+      name: /Add to calendar|Download booking details/,
+    }),
+  ).toBeNull();
   expect(
     screen.getByRole("heading", { name: "Booking confirmed" }),
   ).toBeVisible();
@@ -786,7 +792,12 @@ it("verified payment shows confirmation before reconciliation and only the reque
   await act(async () =>
     finish(Response.json({ status: "confirmed", reason: "verified" })),
   );
-  await screen.findByRole("alert");
+  await waitFor(() =>
+    expect(
+      fetch.mock.calls.filter(([url]) => url.endsWith("/receipt")),
+    ).toHaveLength(1),
+  );
+  expect(screen.queryByRole("alert")).toBeNull();
   expect(
     screen.getByRole("heading", { name: "Booking confirmed" }),
   ).toBeVisible();
@@ -1064,7 +1075,7 @@ it("shows payment received feedback with details while current booking evidence 
   const summary = screen.getByLabelText("Booking summary");
   const timer = screen.getByRole("timer");
   const continuation = screen.getByRole("link", { name: "Continue payment" });
-  const message = screen.getByText(/Paid\? We’ll confirm automatically/);
+  const message = screen.getByText(/Complete your payment below/);
   expect(
     message.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
@@ -1075,6 +1086,7 @@ it("shows payment received feedback with details while current booking evidence 
     timer.compareDocumentPosition(continuation) &
       Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
+  expect(continuation).not.toHaveAttribute("target");
   expect(continuation.nextElementSibling).toBeNull();
   expect(continuation.parentElement?.nextElementSibling).toBeNull();
   expect(screen.queryByText("View full details")).toBeNull();
@@ -1104,16 +1116,10 @@ it("shows payment received feedback with details while current booking evidence 
   );
 });
 
-it("revisiting a saved confirmation within its window refreshes each export without using saved proof", async () => {
+it("revisiting a saved confirmation exposes no export actions or refresh requests", async () => {
   const now = Date.now(),
     saved = receiptFixture(now - 120000);
-  const calendar = vi
-    .spyOn(exports, "downloadCalendar")
-    .mockImplementation(() => {});
-  const details = vi
-    .spyOn(exports, "downloadBooking")
-    .mockResolvedValue(undefined);
-  const fetch = vi.fn((url: string, init?: RequestInit) =>
+  const fetch = vi.fn((url: string) =>
     Promise.resolve(
       url.endsWith("/checkout")
         ? Response.json({
@@ -1134,42 +1140,18 @@ it("revisiting a saved confirmation within its window refreshes each export with
               pollAfterMs: 5000,
             },
           })
-        : url.endsWith("/receipt") &&
-            new Headers(init?.headers).get("X-Booking-Refresh") === "1"
-          ? Response.json(receiptFixture(now))
-          : new Response(null, { status: 409 }),
+        : new Response(null, { status: 409 }),
     ),
   );
   vi.stubGlobal("fetch", fetch);
-  try {
-    render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
-    await screen.findByText(/Saved confirmation/);
-    expect(calendar).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
-    await waitFor(() => expect(calendar).toHaveBeenCalledTimes(1));
-    fireEvent.click(
-      screen.getByRole("button", { name: /Download booking details/ }),
-    );
-    await waitFor(() => expect(details).toHaveBeenCalledTimes(1));
-    expect(calendar.mock.calls[0][0].createdAt).toBe(
-      new Date(now).toISOString(),
-    );
-    expect(details.mock.calls[0][0].createdAt).toBe(
-      new Date(now).toISOString(),
-    );
-    expect(fetch.mock.calls.map(([url]) => url.split("/").at(-1))).toEqual([
-      "checkout",
-      "receipt",
-      "receipt",
-    ]);
-    fetch.mockResolvedValueOnce(new Response(null, { status: 429 }));
-    fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Wait a few seconds, then download again.",
-    );
-    expect(calendar).toHaveBeenCalledTimes(1);
-  } finally {
-    calendar.mockRestore();
-    details.mockRestore();
-  }
+  render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
+  await screen.findByText(/Saved confirmation/);
+  expect(
+    screen.queryByRole("button", {
+      name: /Add to calendar|Download booking details/,
+    }),
+  ).toBeNull();
+  expect(fetch.mock.calls.map(([url]) => url.split("/").at(-1))).toEqual([
+    "checkout",
+  ]);
 });

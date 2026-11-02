@@ -4,7 +4,6 @@ import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookingConfirmation, PendingConfirmation } from "./confirmation-step";
-import { downloadBooking, downloadCalendar } from "@/services/exports";
 type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
 import { sitePath } from "@/content/site-path";
 import {
@@ -52,8 +51,6 @@ function PaymentContinuation({
       <a
         className="button wide"
         href={url}
-        target="_blank"
-        rel="noopener noreferrer"
         referrerPolicy="no-referrer"
         onClick={(event) => {
           if (checkoutNow(clock, true) >= expiresAtMs) {
@@ -130,32 +127,6 @@ export function ProtectedConfirmation({
     revision: number;
   } | null>(null);
   const [receiptRead, setReceiptRead] = useState(0);
-  const exportWaiter = useRef<{
-    resolve: () => void;
-    reject: () => void;
-  } | null>(null);
-  useEffect(() => {
-    if (
-      receipt?.value.attemptId === attemptId &&
-      receipt.revision === sessionRevision
-    ) {
-      exportWaiter.current?.resolve();
-      exportWaiter.current = null;
-    } else if (
-      ["denied", "unresolved", "unavailable"].includes(view) ||
-      receiptFailure
-    ) {
-      exportWaiter.current?.reject();
-      exportWaiter.current = null;
-    }
-  }, [receipt, receiptFailure, view, attemptId, sessionRevision]);
-  useEffect(
-    () => () => {
-      exportWaiter.current?.reject();
-      exportWaiter.current = null;
-    },
-    [attemptId, sessionRevision],
-  );
   const finishExpiry = useEffectEvent(() => {
     onExpired?.(attemptId);
     router.replace("/book/time/");
@@ -316,39 +287,6 @@ export function ProtectedConfirmation({
     receipt: receiptMatches ? receipt.value : undefined,
   });
   if (displayedReceipt && checkoutMode !== "synthetic") {
-    const exportReceipt = async (format: "calendar" | "details") => {
-      const controller =
-        receiptWork.current && !receiptWork.current.signal.aborted
-          ? receiptWork.current
-          : new AbortController();
-      receiptWork.current = controller;
-      if (!controller || controller.signal.aborted)
-        throw new Error("receipt_unavailable");
-      if (customerProof && view !== "confirmed" && !saved) {
-        if (["unresolved", "unavailable", "denied"].includes(view))
-          throw new Error("receipt_unavailable");
-        await new Promise<void>((resolve, reject) => {
-          exportWaiter.current = {
-            resolve,
-            reject: () => reject(new Error("receipt_unavailable")),
-          };
-        });
-      }
-      const current = await readBookingReceipt(
-        attemptId,
-        controller.signal,
-        true,
-      );
-      if (controller.signal.aborted) throw new Error("receipt_unavailable");
-      if (format === "calendar") downloadCalendar(current.booking, false);
-      else
-        await downloadBooking(
-          current.booking,
-          false,
-          current.taxMinor,
-          controller.signal,
-        );
-    };
     return (
       <BookingConfirmation
         booking={displayedReceipt.booking}
@@ -373,8 +311,6 @@ export function ProtectedConfirmation({
           onAgain?.();
           window.location.assign(sitePath("/"));
         }}
-        calendarDownload={() => exportReceipt("calendar")}
-        detailsDownload={() => exportReceipt("details")}
       />
     );
   }
@@ -417,7 +353,7 @@ export function ProtectedConfirmation({
         />
       ) : undefined;
     const pendingMessage = continuation
-      ? "Unpaid? Continue below. Paid? We’ll confirm automatically."
+      ? "Complete your payment below. If you have paid, please wait for confirmation."
       : undefined;
     if (current?.details) {
       const details = bookingFromReceipt(current.details);

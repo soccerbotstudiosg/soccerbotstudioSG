@@ -8,8 +8,6 @@ import { Icon } from "@/components/icon";
 import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { dateLabel, endTime, money } from "@/domain/dates";
-import { ConfirmationError } from "@/services/confirmation";
-import { downloadBooking, downloadCalendar } from "@/services/exports";
 import type { Booking } from "@/domain/booking";
 import { useBooking } from "./provider";
 import { SessionList } from "./summary";
@@ -81,7 +79,7 @@ export function ConfirmationStep() {
     />
   );
 }
-/** Render confirmed booking details and authorized export actions. */
+/** Render confirmed booking details and customer navigation. */
 export function BookingConfirmation({
   booking,
   preview = false,
@@ -92,8 +90,6 @@ export function BookingConfirmation({
   verifiedAtMs,
   onAgain,
   onHome,
-  calendarDownload,
-  detailsDownload,
 }: {
   booking: Booking;
   preview?: boolean;
@@ -104,11 +100,8 @@ export function BookingConfirmation({
   verifiedAtMs?: number;
   onAgain: () => void | Promise<void>;
   onHome?: () => void | Promise<void>;
-  calendarDownload?: () => Promise<void>;
-  detailsDownload?: () => Promise<void>;
 }) {
   const [error, setError] = useState(""),
-    [downloading, setDownloading] = useState(false),
     [leaving, setLeaving] = useState(false);
   async function leave(operation: () => void | Promise<void>) {
     if (leaving) return;
@@ -120,21 +113,6 @@ export function BookingConfirmation({
       setError("Please try again to leave this booking.");
     } finally {
       setLeaving(false);
-    }
-  }
-  async function download(operation: () => Promise<void> | void) {
-    setDownloading(true);
-    setError("");
-    try {
-      await operation();
-    } catch (error) {
-      setError(
-        error instanceof ConfirmationError && error.kind === "throttled"
-          ? "Wait a few seconds, then download again."
-          : "Download failed. Please try again.",
-      );
-    } finally {
-      setDownloading(false);
     }
   }
   return (
@@ -164,47 +142,15 @@ export function BookingConfirmation({
             (Singapore time)
           </p>
         )}
-        {!pending && (preview || booking.providerReferences?.invoiceNumber) && (
+        {!pending && preview && (
           <p className="reference">
-            {preview ? "Booking reference" : "Invoice number"}{" "}
-            <strong className="text-ink">
-              {preview
-                ? booking.reference
-                : booking.providerReferences?.invoiceNumber}
-            </strong>
+            Booking reference{" "}
+            <strong className="text-ink">{booking.reference}</strong>
           </p>
         )}
       </div>
       {!pending && (
         <div className="confirmation-actions" aria-label="Booking actions">
-          <button
-            className="button"
-            disabled={downloading}
-            onClick={() =>
-              void download(
-                calendarDownload ?? (() => downloadCalendar(booking)),
-              )
-            }
-          >
-            <Icon name="calendar" />
-            <span>Add to calendar</span>
-          </button>
-          <button
-            className="button"
-            disabled={downloading}
-            onClick={() =>
-              void download(detailsDownload ?? (() => downloadBooking(booking)))
-            }
-          >
-            <Icon name="download" />
-            <span>
-              {downloading ? (
-                <InlineLoading compact label="Preparing download…" />
-              ) : (
-                "Download booking details"
-              )}
-            </span>
-          </button>
           <button
             className="button secondary"
             disabled={leaving}
@@ -215,7 +161,7 @@ export function BookingConfirmation({
           </button>
           <a className="button secondary" href={BOOKING_SUPPORT.whatsappUrl}>
             <Icon name="phone" />
-            <span>Contact Glenna on WhatsApp</span>
+            <span>WhatsApp Enquiry</span>
           </a>
           <Link
             href="/"
@@ -304,11 +250,6 @@ export function BookingConfirmation({
                     </p>
                   ))}
                 <Arrival compact />
-                <p className="hint">
-                  Follow your instructor’s safety guidance.{" "}
-                  {BOOKING_SUPPORT.message} Your booking stays unchanged until
-                  the studio confirms your request.
-                </p>
                 {preview && (
                   <p className="payment-foot">
                     Payment preview · No money was charged.
