@@ -134,7 +134,12 @@ export function ProtectedConfirmation({
   const expiryWork = useRef<{ id: string; work: Promise<void> } | null>(null);
   const wantsExpiry =
     expired || (contextMatches && context.value.expired === true);
-  const [expiryFailure, setExpiryFailure] = useState(false);
+  const [failedExpiry, setFailedExpiry] = useState<{
+    id: string;
+    revision: number;
+  } | null>(null);
+  const expiryFailure =
+    failedExpiry?.id === attemptId && failedExpiry.revision === sessionRevision;
   useEffect(() => {
     if (!wantsExpiry) return;
     if (expiryWork.current?.id !== attemptId)
@@ -146,7 +151,8 @@ export function ProtectedConfirmation({
         finishExpiry();
       },
       () => {
-        if (active) setExpiryFailure(true);
+        if (active)
+          setFailedExpiry({ id: attemptId, revision: sessionRevision });
       },
     );
     return () => {

@@ -766,6 +766,7 @@ export function BookingProvider({
           // A completed booking changes availability even while its browser
           // snapshot is still within its display lifetime.
           invalidateAvailability();
+          pauseCalendar(false);
           setSelectionNotice(null);
           setRestoredOwner({ service, identityService });
           commit({ version: 2, draft: blankDraft(), attempt: null });

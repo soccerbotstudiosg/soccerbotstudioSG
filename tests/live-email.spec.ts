@@ -2512,6 +2512,40 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         page.getByRole("link", { name: "Continue payment", exact: true }),
       ).toHaveCount(0);
       expect(page.context().pages()).toHaveLength(pagesBefore);
+      // Chain a fresh journey and revisit the old receipt without resetting the
+      // browser or isolated provider. Paid capacity must not return to the grid.
+      const nextCalendar = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname.startsWith("/api/calendar/") &&
+          response.status() === 200,
+      );
+      const dismissed = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname ===
+            `/api/attempts/${attemptId}/dismiss` && response.status() === 200,
+      );
+      await page
+        .getByRole("button", { name: "Make another booking", exact: true })
+        .click();
+      await expect(page).toHaveURL(/\/book\/account\/$/);
+      const refreshed = await (await nextCalendar).json();
+      expect(
+        refreshed.dates.flatMap(
+          (day: { offers?: unknown[] }) => day.offers ?? [],
+        ),
+      ).toEqual([]);
+      await dismissed;
+      await page.reload();
+      await expect(
+        page.getByRole("button", { name: "Continue as guest", exact: true }),
+      ).toBeVisible();
+      await page.goto(`/confirmation/?attempt=${attemptId}`);
+      await expect(
+        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
       expect(
         mechanism.calls.filter(
           (call) => call.url.includes("hit-pay.com") && call.method === "POST",

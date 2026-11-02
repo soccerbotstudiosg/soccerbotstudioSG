@@ -872,20 +872,24 @@ it("authoritative unpaid expiry releases the original attempt before returning t
   const released = new Promise<Response>((resolve) => {
     release = resolve;
   });
+  let expired = true;
   const fetch = vi.fn((url: string) =>
     url.endsWith("/expire")
-      ? released
+      ? url.includes(second)
+        ? Promise.resolve(new Response(null, { status: 503 }))
+        : released
       : Promise.resolve(
           Response.json(
             url.endsWith("/checkout")
               ? {
-                  attemptId: first,
+                  attemptId: url.includes(second) ? second : first,
                   mode: "live",
-                  expired: true,
+                  expired,
                   details: Object.fromEntries(
-                    Object.entries(proof).filter(
-                      ([key]) => key !== "verifiedAtMs",
-                    ),
+                    Object.entries({
+                      ...proof,
+                      attemptId: url.includes(second) ? second : first,
+                    }).filter(([key]) => key !== "verifiedAtMs"),
                   ),
                   checkout: { state: "unavailable" },
                   summary: {
@@ -907,7 +911,7 @@ it("authoritative unpaid expiry releases the original attempt before returning t
         ),
   );
   vi.stubGlobal("fetch", fetch);
-  render(
+  const view = render(
     <ProtectedConfirmation
       attemptId={first}
       checkoutMode="live"
@@ -923,6 +927,31 @@ it("authoritative unpaid expiry releases the original attempt before returning t
   await act(async () => release(Response.json({ expired: true })));
   expect(onExpired).toHaveBeenCalledExactlyOnceWith(first);
   expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+  view.rerender(
+    <ProtectedConfirmation
+      attemptId={second}
+      checkoutMode="live"
+      onExpired={onExpired}
+    />,
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Still checking your payment",
+  );
+  expect(onExpired).toHaveBeenCalledTimes(1);
+  expired = false;
+  view.rerender(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      sessionRevision={1}
+      onExpired={onExpired}
+    />,
+  );
+  await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  expect(
+    screen.queryByRole("heading", { name: "Booking confirmed" }),
+  ).toBeNull();
+  expect(onExpired).toHaveBeenCalledTimes(1);
 });
 
 it("poll-confirmed payment retains its displayed proof while the final receipt is delayed", async () => {

@@ -110,7 +110,11 @@ afterEach(() => {
 });
 
 const completedId = "00000000-0000-4000-8000-000000000001";
-function RebookingProbe() {
+function RebookingProbe({
+  onRestartFailure,
+}: {
+  onRestartFailure?: () => void;
+}) {
   const state = useBooking();
   return (
     <>
@@ -124,7 +128,16 @@ function RebookingProbe() {
           ? "available"
           : "unavailable"}
       </output>
-      <button onClick={() => state.restartAfterConfirmation(completedId)}>
+      <button
+        onClick={() => {
+          try {
+            state.restartAfterConfirmation(completedId);
+          } catch (error) {
+            if (!onRestartFailure) throw error;
+            onRestartFailure();
+          }
+        }}
+      >
         Restart completed
       </button>
       <button
@@ -196,7 +209,16 @@ test("rebooking clears the view immediately but gates new checkout on background
     })
     .mockReturnValue(refreshedCalendar.promise);
   render(
-    <BookingProvider bookingService={{ ...demoBookingService, publicCalendar }}>
+    <BookingProvider
+      bookingService={{
+        ...demoBookingService,
+        publicCalendar,
+        checkout: async (input) => ({
+          ...(await demoBookingService.checkout(input)),
+          id: completedId,
+        }),
+      }}
+    >
       <RebookingProbe />
     </BookingProvider>,
   );
@@ -205,6 +227,10 @@ test("rebooking clears the view immediately but gates new checkout on background
     /^available$/,
   );
   expect(publicCalendar).toHaveBeenCalledTimes(1);
+  await act(async () =>
+    fireEvent.click(screen.getByRole("button", { name: "Review new booking" })),
+  );
+  expect(screen.getByTestId("restored-attempt")).toHaveTextContent(completedId);
   fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
   expect(screen.getByTestId("rebooking-calendar")).toHaveTextContent(
     /^unavailable$/,
@@ -265,16 +291,25 @@ test("reload resumes an interrupted completed exit without restoring that confir
     ...restored,
     id: "00000000-0000-4000-8000-000000000002",
   });
+  const restartFailure = vi.fn();
   render(
     <BookingProvider bookingService={service} identityService={identity}>
-      <RebookingProbe />
+      <RebookingProbe onRestartFailure={restartFailure} />
     </BookingProvider>,
   );
   await act(async () => {});
   expect(screen.getByTestId("restored-attempt")).toHaveTextContent(
     "00000000-0000-4000-8000-000000000002",
   );
+  // An old confirmation's exit must not clear the newer active checkout.
+  fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
+  expect(restartFailure).toHaveBeenCalledTimes(1);
   await act(async () => dismissal.resolve(Response.json({ dismissed: true })));
+  fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
+  expect(restartFailure).toHaveBeenCalledTimes(2);
+  expect(screen.getByTestId("restored-attempt")).toHaveTextContent(
+    "00000000-0000-4000-8000-000000000002",
+  );
 });
 
 test("calendar and basket share delayed availability once and preserve selection through loading success", async () => {
