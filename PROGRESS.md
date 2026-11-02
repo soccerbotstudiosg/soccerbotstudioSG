@@ -2,6 +2,12 @@
 
 Updated 2 November 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
 
+## Current follow-up — render timing and CI copy assertions
+
+PR19 head8e7691a failed run41396104194: browser cases retained two obsolete messages and one malformed partial replacement (`Your Contact...`). Frontend job125117654959, backend browser jobs125118478943/125118479054 and live-email shard1 job125118478993 failed those assertions across engines; Worker groups passed. Correct the message expectations while retaining denial/no-success/payment-uncertainty checks. Original logs remain in the immutable run artifacts. Earlier local code verification did not execute these owner/CI-only browser cases; it did not certify them.
+
+Owner requested explicit UI timing after the test4 HAR showed validated confirmation proof at6.99s after return, while the owner recalls earlier visual confirmation. Source and recorded bundle show the summary card before proof with pending labels; no false-success path was established. Add local-only bounded `confirmation_ui` Performance/console events for summary, payment received, verified confirmation and receipt readiness, matched to server traces by hashed recovery key. Document response/post-commit/visible-frame distinctions; no claim that animation callbacks prove actual paint. New hook tests, integration assertions, inventory and browser/UAT expectations accompany the change. Final local `npm run verify:code` passed with248 unit/component cases, exact inventory,182 tooling cases, installer checks, source/policy, format/lint/types and build/export; receipt `/tmp/pr19-render-final-code-receipt.json`. Evidence-only docs checked separately. Browser assertions are updated but await new-head CI; keep PR19 draft and do not merge/deploy.
+
 ## Active draft — PR19 consolidated customer feedback and deployment repair
 
 PR19 remains draft on published head1c3af975; new local changes are not covered by its earlier CI. Scope now includes confirmation-return continuation suppression, pending summary/timer/button ordering, shorter customer loading/error copy, raw-error fallback at account/enquiry boundaries, consistent alert/status presentation, and the draft→ready→actual staging→owner acceptance release procedure. Existing closed-deployment propagation repair remains included. No workflow automation gate has been added.

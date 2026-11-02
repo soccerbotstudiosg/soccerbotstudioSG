@@ -146,7 +146,9 @@ test("synthetic paid but invalid booking needs recovery instead of claiming succ
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByText(/The checking deadline does not cancel payment/),
+    page.getByText(
+      /We couldn’t confirm your payment. Don’t pay again; contact the studio./,
+    ),
   ).toBeVisible();
   await page.screenshot({
     path: info.outputPath("04-recovery.png"),

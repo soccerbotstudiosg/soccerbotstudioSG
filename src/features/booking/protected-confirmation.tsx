@@ -17,6 +17,7 @@ import {
 } from "@/services/confirmation";
 import type { CheckoutContext } from "@/services/contracts";
 import { money } from "@/domain/dates";
+import { useConfirmationRenderTrace } from "./confirmation-render-trace";
 import { useConfirmationChecking } from "./confirmation-checking";
 /** Reopen only the retained handoff within its original payment deadline. */
 function PaymentContinuation({
@@ -108,6 +109,7 @@ export function ProtectedConfirmation({
     check,
     bindWindow,
     paymentReceived,
+    responseEvidence,
     customerConfirmation,
     expired,
   } = useConfirmationChecking(
@@ -270,6 +272,49 @@ export function ProtectedConfirmation({
       : customerProof
         ? bookingFromReceipt(customerProof)
         : null;
+  const receiptUnavailable =
+    receiptFailure?.id === attemptId &&
+    receiptFailure.revision === sessionRevision;
+  const receiptMatches =
+    view === "confirmed" &&
+    receipt?.value.attemptId === attemptId &&
+    receipt.revision === sessionRevision;
+  const confirmedCard =
+    !!displayedReceipt || (view === "confirmed" && receiptUnavailable);
+  useConfirmationRenderTrace({
+    attemptId,
+    revision: sessionRevision,
+    state:
+      checkoutMode !== "live" || expiryFailure || view === "denied"
+        ? undefined
+        : confirmedCard
+          ? "confirmed"
+          : paymentReceived
+            ? "payment_received"
+            : current
+              ? "summary"
+              : undefined,
+    proofSource: saved
+      ? "saved"
+      : receiptMatches
+        ? "receipt"
+        : customerConfirmation
+          ? "status_proof"
+          : customerProof
+            ? "context_proof"
+            : view === "confirmed"
+              ? "confirmed_status"
+              : "none",
+    evidence:
+      saved ??
+      (receiptMatches
+        ? receipt.value
+        : (customerProof ??
+          (paymentReceived || view === "confirmed"
+            ? responseEvidence
+            : current))),
+    receipt: receiptMatches ? receipt.value : undefined,
+  });
   if (displayedReceipt && checkoutMode !== "synthetic") {
     const exportReceipt = async (format: "calendar" | "details") => {
       const controller =
@@ -339,9 +384,6 @@ export function ProtectedConfirmation({
         Still checking your payment. Don’t pay again.
       </p>
     );
-  const receiptUnavailable =
-    receiptFailure?.id === attemptId &&
-    receiptFailure.revision === sessionRevision;
   if (
     (view === "checking" &&
       !(showLink && link && !isHitpayCheckoutUrl(link.url))) ||

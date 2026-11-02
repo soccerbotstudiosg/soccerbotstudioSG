@@ -63,6 +63,7 @@ export function useConfirmationChecking(
     revision: number;
     view: View;
     paymentReceived: boolean;
+    responseEvidence?: object;
     customerConfirmation?: import("@/services/contracts").CheckoutContext["customerConfirmation"];
     expired?: boolean;
     busy: boolean;
@@ -94,6 +95,7 @@ export function useConfirmationChecking(
           revision: sessionRevision,
           view,
           paymentReceived,
+          responseEvidence,
           customerConfirmation,
           expired,
           busy,
@@ -102,6 +104,7 @@ export function useConfirmationChecking(
     };
     let terminal = false;
     let paymentReceived = false;
+    let responseEvidence: object | undefined;
     let customerConfirmation: import("@/services/contracts").CheckoutContext["customerConfirmation"];
     let expired = false;
     /** Schedule the next bounded confirmation check for the active attempt. */
@@ -228,6 +231,7 @@ export function useConfirmationChecking(
         // read. This never resets the shared count or the original deadline.
         budget.next = response.checking.nextCheckMs ?? budget.next;
         save(attemptId, budget);
+        responseEvidence = response;
         customerConfirmation =
           "customerConfirmation" in response
             ? response.customerConfirmation
@@ -339,6 +343,10 @@ export function useConfirmationChecking(
     clock,
   ]);
   return {
+    responseEvidence:
+      result?.id === attemptId && result.revision === sessionRevision
+        ? result.responseEvidence
+        : undefined,
     customerConfirmation:
       result?.id === attemptId && result.revision === sessionRevision
         ? result.customerConfirmation

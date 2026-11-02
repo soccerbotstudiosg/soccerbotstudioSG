@@ -1,5 +1,9 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { checkoutNow, protectedCheckoutService } from "./confirmation";
+import {
+  checkoutNow,
+  protectedCheckoutService,
+  confirmationResponseTime,
+} from "./confirmation";
 const id = "00000000-0000-4000-8000-000000000001";
 const context = {
   attemptId: id,
@@ -26,7 +30,13 @@ afterEach(() => {
 it("accepts only the protected synthetic checkout bound to the requested attempt", async () => {
   const fetch = vi.fn().mockResolvedValue(Response.json(context));
   vi.stubGlobal("fetch", fetch);
-  expect((await read()).checkout).toEqual(context.checkout);
+  const before = performance.now();
+  const result = await read();
+  expect(result.checkout).toEqual(context.checkout);
+  expect(confirmationResponseTime(result)).toBeGreaterThanOrEqual(before);
+  expect(confirmationResponseTime(result)).toBeLessThanOrEqual(
+    performance.now(),
+  );
   for (const url of [
     "https://evil.example/pay",
     "http://pay.example",

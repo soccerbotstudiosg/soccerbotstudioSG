@@ -1000,6 +1000,13 @@ test("real payment recovery confirms the browser return from verified provider s
       page.getByRole("heading", { name: "Booking confirmed", exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".confirmation-actions")).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () =>
+          performance.getEntriesByName("soccerbot:confirmation:confirmed")
+            .length,
+      ),
+    ).toBe(0);
     const pendingContext = await mechanism.mf.dispatchFetch(
       mechanism.origin + `/api/attempts/${attemptId}/checkout`,
       { headers },
@@ -1028,6 +1035,32 @@ test("real payment recovery confirms the browser return from verified provider s
         verifiedResponse.status === "confirmed",
     ).toBe(true);
     await receiptRead;
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            performance.getEntriesByName("soccerbot:confirmation:confirmed")
+              .length,
+        ),
+      )
+      .toBe(1);
+    const uiTiming = await page.evaluate(
+      () =>
+        (
+          performance.getEntriesByName(
+            "soccerbot:confirmation:confirmed",
+          )[0] as PerformanceMark
+        ).detail,
+    );
+    expect(uiTiming).toMatchObject({
+      event: "confirmation_ui",
+      stage: "confirmed",
+      measurement: "visible_animation_frame",
+    });
+    expect(uiTiming.proofSource).not.toBe("none");
+    expect(uiTiming.frameMs).toBeGreaterThanOrEqual(uiTiming.committedMs);
+    expect(uiTiming.recoveryKey).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(uiTiming)).not.toContain(attemptId);
     await expect(
       page.getByRole("status", {
         name: "Preparing confirmation…",
@@ -1719,7 +1752,7 @@ test("real API revoked access at checkout retains the draft and denies protected
       }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Your Contact the studio to view this booking/),
+      page.getByText(/Contact the studio to view this booking/),
     ).toBeVisible();
     expect(
       await page.evaluate(() =>

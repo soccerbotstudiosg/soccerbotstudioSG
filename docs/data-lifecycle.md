@@ -152,3 +152,5 @@ Start with explicit rules and modest bounded jobs when approved; introduce queue
 - [ ] Implemented revision, CI evidence and owner acceptance recorded only after actual execution.
 
 Current status: **source-based draft complete; policy mapping, external-account verification and cleanup implementation pending**. Review when client clauses arrive and whenever storage schemas, identity behavior, provider integrations or retention settings change. This document owns lifecycle policy mapping; the [runbook’s restore procedure](runbook.md#7-data-protection-and-restore) owns operational recovery execution.
+
+Browser confirmation timing retains response timestamps in a WeakMap and a bounded set of emitted stage keys within the mounted view. It adds no local/session storage or database records. Performance holds the latest diagnostic mark per stage; console retention depends on browser tooling and owner export. Exported diagnostic captures include pseudonymous correlation and must follow the same controlled handling as HAR evidence; the app does not upload them automatically.

@@ -1,3 +1,4 @@
+import * as renderTrace from "./confirmation-render-trace";
 import * as exports from "@/services/exports";
 import ConfirmationPage from "@/app/confirmation/page";
 import { BookingProvider } from "./provider";
@@ -613,6 +614,7 @@ it("pending checkout context uses the compact confirmation shell without checkou
 });
 
 it("pending confirmation retains the booking summary while hiding full details success and every action", async () => {
+  const trace = vi.spyOn(renderTrace, "useConfirmationRenderTrace");
   const receipt = receiptFixture();
   const details = { ...receipt };
   Reflect.deleteProperty(details, "verifiedAtMs");
@@ -665,6 +667,10 @@ it("pending confirmation retains the booking summary while hiding full details s
   expect(
     screen.getByRole("status", { name: "Checking payment…" }),
   ).toBeVisible();
+  expect(trace.mock.calls.at(-1)?.[0]).toMatchObject({
+    state: "summary",
+    proofSource: "none",
+  });
   expect(screen.queryByText("Paid", { exact: true })).toBeNull();
   expect(screen.queryByLabelText("Booking actions")).toBeNull();
   expect(screen.queryByRole("link", { name: "Back to home" })).toBeNull();
@@ -678,6 +684,9 @@ it("pending confirmation retains the booking summary while hiding full details s
   expect(document.querySelector(".confirmation-card")).toBe(card);
   expect(screen.getByLabelText("Booking actions")).toBeVisible();
   expect(screen.getByRole("link", { name: "Back to home" })).toBeVisible();
+  expect(trace.mock.calls.at(-1)?.[0].state).toBe("confirmed");
+  expect(trace.mock.calls.at(-1)?.[0].proofSource).not.toBe("none");
+  trace.mockRestore();
 });
 
 it("Back to home starts the shared background exit and navigates without awaiting dismissal", async () => {

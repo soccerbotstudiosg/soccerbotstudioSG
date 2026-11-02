@@ -376,6 +376,14 @@
     "title": "stops a hung read at the original deadline without claiming cancellation"
   },
   {
+    "file": "src/features/booking/confirmation-render-trace.test.tsx",
+    "title": "confirmation timing defers hidden frames and discards stale unmounted callbacks without affecting UI"
+  },
+  {
+    "file": "src/features/booking/confirmation-render-trace.test.tsx",
+    "title": "confirmation timing separates pending from verified UI and emits only allowlisted local diagnostics"
+  },
+  {
     "file": "src/features/booking/details-step.test.tsx",
     "title": "details contains only the five contact fields and validates them before review"
   },

@@ -199,3 +199,5 @@ Foundation setup through GitHub Actions is manual-only on trusted current main, 
 ### Customer-facing error boundary
 
 Account and enquiry UI render only locally authored `CustomerMessageError` guidance or an operation-specific fallback. Unexpected network, JSON/schema and server diagnostic strings are not customer messages. Booking/confirmation adapters retain their fixed error mappings; do not populate approved message types from server response text. This UI boundary does not replace server response redaction, authorization or logging controls. See BR-013 for wording, payment-safety and presentation requirements.
+
+Browser confirmation timing is local-only diagnostic output with allowlisted states, proof-source labels, monotonic times, build revision and a pseudonymous SHA-256 recovery key. It contains no raw attempt/provider IDs, customer details or credentials, and is not accepted as server payment evidence. No telemetry ingestion endpoint or new external destination is introduced.

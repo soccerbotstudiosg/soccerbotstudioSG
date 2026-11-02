@@ -924,7 +924,7 @@ test("protected confirmation waits for server evidence and rejects a tampered re
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "Your booking is confirmed, but its details could not be loaded.",
+    "Booking confirmed. Try loading your details again.",
   );
   await expect(
     page.getByRole("button", { name: "Load booking details", exact: true }),
