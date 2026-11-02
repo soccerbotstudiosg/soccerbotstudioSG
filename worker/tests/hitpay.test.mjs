@@ -36,7 +36,7 @@ const scope = {
 const fixtures = JSON.parse(
   readFileSync("worker/tests/native-fixtures.json", "utf8"),
 ).responses;
-let script, mf, db, contract, outbound, handler, logs;
+let script, mf, db, contract, normalization, outbound, handler, logs;
 const intent = {
   accountId: config.account_id,
   environmentId: "developer",
@@ -94,8 +94,19 @@ before(async () => {
   contract = await import(
     "data:text/javascript;base64," + Buffer.from(source).toString("base64")
   );
+  const normalized = await build({
+    entryPoints: ["worker/provider-normalization.ts"],
+    bundle: true,
+    write: false,
+    format: "esm",
+    platform: "node",
+  });
+  normalization = await import(
+    "data:text/javascript;base64," +
+      Buffer.from(normalized.outputFiles[0].text).toString("base64")
+  );
 });
-beforeEach(async () => {
+beforeEach(async (context) => {
   outbound = 0;
   handler = null;
   logs = [];
@@ -158,7 +169,11 @@ beforeEach(async () => {
       "synthetic-idempotency",
       JSON.stringify(intent),
       scope.intentHash,
-      Date.now() - 60000,
+      Date.now() -
+        (context.name ===
+        "on-time HitPay payment reconciles after payment expiry only within the original hold"
+          ? 900000
+          : 60000),
       Date.now() + 600000,
       scope.associationJson,
     )
@@ -637,6 +652,14 @@ test("HitPay alarm retains a webhook arriving while its earlier wakeup runs", as
 test("HitPay recovery independently verifies payment and bookings before one external write", async () => {
   await seedPayment();
   const provider = providerFixture();
+  let paidResponse;
+  const previous = handler;
+  handler = async (request) => {
+    const response = await previous(request);
+    if (new URL(request.url).pathname.endsWith("/accept-payment"))
+      paidResponse = await response.clone().json();
+    return response;
+  };
   assert.equal((await recover()).status, 200);
   const saved = await row();
   assert.equal(saved.state, "complete", saved.reason);
@@ -669,8 +692,67 @@ test("HitPay recovery independently verifies payment and bookings before one ext
   assert.equal(trace.operations.tariff.count, 1);
   assert.equal(trace.operations.hitpay_read.count, 1);
   assert.equal(trace.operations.accounting_write.count, 1);
-  assert.equal(trace.operations.booking_read.count, 2);
-  assert.equal(trace.operations.invoice_read.count, 2);
+  assert.equal(trace.operations.booking_read.count, 1);
+  assert.equal(trace.operations.invoice_read.count, 1);
+  assert.equal(trace.stages.booking_after.durationMs, 0);
+  const stored = await db
+    .prepare("SELECT observation_json FROM attempts WHERE id=?")
+    .bind(attemptId)
+    .first();
+  const before = JSON.parse(stored.observation_json);
+  const context = {
+    attemptId,
+    companyLogin: scope.companyLogin,
+    timezone: "Asia/Singapore",
+    intent,
+    association: JSON.parse(scope.associationJson),
+    paymentProcessor: "manual",
+    bookingObservedAtMs: Date.now(),
+    invoiceObservedAtMs: Date.now(),
+  };
+  assert.equal(
+    normalization.normalizeNativePaymentResponse(paidResponse, context, before)
+      .invoice.status,
+    "paid",
+  );
+  for (const mutate of [
+    (value) => {
+      value.id = "999";
+    },
+    (value) => {
+      value.client_id = "999";
+    },
+    (value) => {
+      value.amount = "1.00";
+    },
+    (value) => {
+      value.currency = "USD";
+    },
+    (value) => {
+      value.payment_received = false;
+    },
+    (value) => {
+      value.payment_processor = "foreign";
+    },
+    (value) => {
+      value.lines = [];
+    },
+    (value) => {
+      value.lines[0].bookings[0].is_confirmed = false;
+    },
+    (value) => {
+      value.lines[0].bookings[0].provider_id = "999";
+    },
+  ]) {
+    const invalid = structuredClone(paidResponse);
+    mutate(invalid);
+    assert.throws(() =>
+      normalization.normalizeNativePaymentResponse(invalid, context, before),
+    );
+  }
+  assert.throws(() =>
+    normalization.normalizeNativePaymentResponse({}, context, before),
+  );
   assert.equal(trace.caches.admin_miss, 1);
   assert.equal(trace.caches.public_miss, 1);
   assert.ok(trace.operations.d1.count > 0);
@@ -1570,7 +1652,10 @@ for (const legacy of [false, true]) {
           entered();
           await gate;
         }
-        return previous(request);
+        const response = await previous(request);
+        if (legacy && new URL(request.url).pathname.endsWith("/accept-payment"))
+          return Response.json({ accepted: true });
+        return response;
       };
       if (legacy) {
         // A legacy early-payment snapshot must not bypass the new evidence gate.
@@ -1659,6 +1744,21 @@ for (const legacy of [false, true]) {
           )
         ).json();
         assert.equal(saved.customerConfirmation.attemptId, attemptId);
+        await db
+          .prepare("UPDATE attempts SET confirmation_next_ms=0 WHERE id=?")
+          .bind(attemptId)
+          .run();
+        const decisionWithProof = await (
+          await mf.dispatchFetch(
+            origin + `/api/attempts/${attemptId}/confirmation`,
+            { headers },
+          )
+        ).json();
+        assert.equal(decisionWithProof.status, "confirmed");
+        assert.equal(
+          decisionWithProof.customerConfirmation.attemptId,
+          attemptId,
+        );
         const revisit = await (
           await mf.dispatchFetch(
             origin + `/api/attempts/${attemptId}/checkout`,
@@ -1876,7 +1976,9 @@ test("late verified payment cannot confirm an expired hold or release it for ano
 });
 
 test("on-time HitPay payment reconciles after payment expiry only within the original hold", async () => {
-  await seedHold();
+  const options = await seedHold(Date.now() + 119000);
+  const createdAtMs = Date.now() - 781000;
+  await seedCustomerProgress(createdAtMs);
   await seedPayment({ expired: true });
   await db
     .prepare(
@@ -1887,6 +1989,22 @@ test("on-time HitPay payment reconciles after payment expiry only within the ori
   const provider = providerFixture();
   await recover();
   assert.equal((await row()).state, "complete");
+  assert.equal(provider.writes(), 1);
+  const before = await row();
+  const response = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/confirmation`,
+    { headers: options.headers },
+  );
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.status, "confirmed", JSON.stringify(result));
+  assert.equal(result.customerConfirmation.attemptId, attemptId);
+  assert.equal(result.customerConfirmation.sessions.length, 1);
+  assert.equal(
+    Number(response.headers.get("X-Checking-Deadline")),
+    createdAtMs + 600000,
+  );
+  assert.deepEqual(await row(), before);
   assert.equal(provider.writes(), 1);
 });
 
@@ -2039,6 +2157,13 @@ for (const boundary of ["payment", "booking", "accounting", "paid-booking"]) {
           .bind(attemptId)
           .run();
       }
+      // Exercise the retained second-read boundary only when the mutation
+      // response is incomplete; the accounting case covers fast-path fencing.
+      if (
+        boundary === "paid-booking" &&
+        url.pathname.endsWith("/accept-payment")
+      )
+        return Response.json({ accepted: true });
       return response;
     };
     await recover();

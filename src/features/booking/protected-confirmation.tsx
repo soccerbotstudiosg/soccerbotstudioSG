@@ -8,6 +8,7 @@ import { downloadBooking, downloadCalendar } from "@/services/exports";
 type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
 import { sitePath } from "@/content/site-path";
 import {
+  checkoutNow,
   readBookingReceipt,
   dismissCompletedBooking,
   expireBooking,
@@ -17,6 +18,55 @@ import {
 import type { CheckoutContext } from "@/services/contracts";
 import { money } from "@/domain/dates";
 import { useConfirmationChecking } from "./confirmation-checking";
+/** Reopen only the retained handoff within its original payment deadline. */
+function PaymentContinuation({
+  url,
+  expiresAtMs,
+  clock,
+}: {
+  url: string;
+  expiresAtMs: number;
+  clock: NonNullable<CheckoutContext["clock"]>;
+}) {
+  const [now, setNow] = useState(() => checkoutNow(clock, true));
+  useEffect(() => {
+    const refresh = () => setNow(checkoutNow(clock, true));
+    const timer = setInterval(refresh, 1000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [clock]);
+  const seconds = Math.max(0, Math.ceil((expiresAtMs - now) / 1000));
+  if (!seconds) return null;
+  return (
+    <div>
+      <p role="timer" aria-live="off">
+        Time left to pay: {String(Math.floor(seconds / 60)).padStart(2, "0")}:
+        {String(seconds % 60).padStart(2, "0")}
+      </p>
+      <a
+        className="button wide"
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        referrerPolicy="no-referrer"
+        onClick={(event) => {
+          if (checkoutNow(clock, true) >= expiresAtMs) {
+            event.preventDefault();
+            setNow(checkoutNow(clock, true));
+          }
+        }}
+      >
+        Continue payment
+      </a>
+      <p>Already paid? We’ll confirm automatically.</p>
+    </div>
+  );
+}
 /** Present protected checkout status without trusting browser payment claims. */
 export function ProtectedConfirmation({
   attemptId,
@@ -65,6 +115,7 @@ export function ProtectedConfirmation({
     (!checkoutMode || contextSettled) && !saved,
     contextMatches ? context.value.checking.deadlineMs : undefined,
     contextMatches ? context.value.checking.holdExpiresAtMs : undefined,
+    contextMatches ? context.value.clock : undefined,
   );
   const [receipt, setReceipt] = useState<{
     value: BookingReceipt;
@@ -192,15 +243,16 @@ export function ProtectedConfirmation({
     if (!link?.expiresAtMs) return;
     const timer = setTimeout(
       () => setExpiredLink(link.url),
-      Math.max(0, link.expiresAtMs - Date.now()),
+      Math.max(0, link.expiresAtMs - checkoutNow(current?.clock, true)),
     );
     return () => clearTimeout(timer);
-  }, [link]);
+  }, [link, current?.clock]);
   const recordedPayment = current?.payment;
   const historicalPayment =
     !!recordedPayment && ["unresolved", "unavailable"].includes(view);
   const showLink =
     !recordedPayment &&
+    !paymentReceived &&
     current?.checkout.state === "available" &&
     current.checkout.url !== expiredLink &&
     !["confirmed", "denied", "unresolved"].includes(view);
@@ -305,6 +357,20 @@ export function ProtectedConfirmation({
           : paymentReceived
             ? "Payment received—verifying booking…"
             : "Verifying your payment…";
+    const continuation =
+      showLink &&
+      !expired &&
+      view === "checking" &&
+      current?.clock &&
+      link?.expiresAtMs &&
+      isHitpayCheckoutUrl(link.url) ? (
+        <PaymentContinuation
+          key={link.url}
+          clock={current.clock}
+          url={link.url}
+          expiresAtMs={link.expiresAtMs}
+        />
+      ) : undefined;
     if (current?.details) {
       const details = bookingFromReceipt(current.details);
       return (
@@ -312,6 +378,7 @@ export function ProtectedConfirmation({
           booking={details.booking}
           pending
           pendingLabel={pendingLabel}
+          pendingAction={continuation}
           onAgain={() => {}}
         />
       );
@@ -319,7 +386,10 @@ export function ProtectedConfirmation({
     return (
       <PendingConfirmation label={pendingLabel}>
         {current ? (
-          <ConfirmationSummary summary={current.summary} />
+          <>
+            <ConfirmationSummary summary={current.summary} />
+            {continuation}
+          </>
         ) : undefined}
       </PendingConfirmation>
     );
@@ -416,7 +486,10 @@ export function ProtectedConfirmation({
                   rel="noopener noreferrer"
                   referrerPolicy="no-referrer"
                   onClick={(event) => {
-                    if (link?.expiresAtMs && Date.now() >= link.expiresAtMs) {
+                    if (
+                      link?.expiresAtMs &&
+                      checkoutNow(current?.clock, true) >= link.expiresAtMs
+                    ) {
                       event.preventDefault();
                       setExpiredLink(link.url);
                     } else setOpened(attemptId);
