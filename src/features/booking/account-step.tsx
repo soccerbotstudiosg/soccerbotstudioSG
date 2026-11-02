@@ -220,7 +220,7 @@ export function AccountStep() {
                         setIdentity(current);
                         if (!current || current.remember !== true)
                           throw new CustomerMessageError(
-                            "Verify your email with Remember me selected to save contact details.",
+                            "Select Remember me and verify your email to save details.",
                           );
                         await proceed(signal, current.email, true);
                       });

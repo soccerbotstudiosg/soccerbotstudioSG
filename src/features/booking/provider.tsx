@@ -158,7 +158,7 @@ export function BookingProvider({
         work.failed = true;
         if (mounted.current && exitWork.current === work)
           setRebookingError(
-            "We couldn’t finish closing your previous booking. Your confirmation is saved. Please try again before reviewing a new booking.",
+            "Unable to start a new booking. Please try again. Your confirmed booking is unchanged.",
           );
         return false;
       },
@@ -414,7 +414,7 @@ export function BookingProvider({
           if (!finished)
             throw new BookingServiceError(
               "temporarily_unavailable",
-              "Your previous booking could not be closed. Please try again.",
+              "Unable to start a new booking. Please try again.",
             );
         }
         if (
@@ -424,7 +424,7 @@ export function BookingProvider({
         )
           throw new BookingServiceError(
             "conflict",
-            "Your email session has expired. Verify your email again.",
+            "Please verify your email again.",
           );
         const signal = request.controller.signal;
         if (operation === "review") {
@@ -469,7 +469,7 @@ export function BookingProvider({
         if (JSON.stringify(identity()) !== sessionKey)
           throw new BookingServiceError(
             "conflict",
-            "Your email session has changed. Verify your email again.",
+            "Please verify your email again.",
           );
         commit({ ...current, attempt });
         current = latest.current;
@@ -751,7 +751,7 @@ export function BookingProvider({
           });
           pauseCalendar(false);
           setSelectionNotice(
-            "Your reserved time expired. Choose again; your details are saved.",
+            "Reservation expired. Choose another time. Your details are saved.",
           );
           setAction({ status: "idle", returnToCalendar: true });
         },

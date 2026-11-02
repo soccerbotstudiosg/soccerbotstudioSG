@@ -528,6 +528,9 @@ test("leave booking uses equal-width sentence-case actions with home left and st
     .click();
   const dialog = page.getByRole("dialog", { name: "Leave this booking?" });
   await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText(
+    "Your selections are saved in this browser. Complete payment before checkout expires.",
+  );
   await expect(dialog.locator(".dialog-actions button")).toHaveText([
     "Back to home",
     "Stay",
@@ -938,7 +941,7 @@ test("protected confirmation waits for server evidence and rejects a tampered re
   );
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Can’t load confirmation" }),
+    page.getByRole("heading", { name: "Confirmation unavailable" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),

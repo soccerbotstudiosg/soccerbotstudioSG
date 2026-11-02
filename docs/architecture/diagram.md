@@ -1,11 +1,11 @@
 # Current system diagram
 
-Current developer setup; client production migration remains pending. Dashed telemetry links are prepared but disabled/unattached. [Architecture decisions](adr.md) · [System rules](../business-rules.md#current-system-rules).
+Application topology shared by developer staging and the separately installed client Worker. Client CI/deployment is operational; customer launch, domain routing and live provider acceptance remain pending. Dashed telemetry links are prepared but disabled/unattached. [Architecture decisions](adr.md) · [System rules](../business-rules.md#current-system-rules).
 
 ```mermaid
 flowchart TB
   Browser["Customer browser · Next.js static site"]
-  subgraph CF["Cloudflare · developer account"]
+  subgraph CF["Cloudflare · separate environment/account resources"]
     Assets["Worker Static Assets · HTML / JS / CSS"]
     Worker["Application Worker · protected HTTP API"]
     D1[("D1 · access, attempts, effects, payments, receipts, snapshots")]
@@ -18,7 +18,7 @@ flowchart TB
   SB["SimplyBook · schedules, bookings, invoices"]
   HP["HitPay sandbox · hosted payment and readback"]
   TS["Turnstile · bot verification"]
-  Mail["Resend · identity verification email"]
+  Mail["Resend · identity email when enabled"]
   Inbox["Customer inbox"]
   Grafana["Company central Grafana · not connected"]
   CI["GitHub · frontend / backend / live-email CI"]
@@ -38,7 +38,7 @@ flowchart TB
   Worker --> TS
   Worker --> Mail
   Mail --> Inbox
-  SB -->|accepted booking notification| Inbox
+  SB -.->|provider notifications require accepted settings| Inbox
   Cron --> Worker
   Worker --> Logs
   DO --> Logs
@@ -51,19 +51,21 @@ flowchart TB
 
 Reconciliation verifies provider state before confirmation; arrows do not imply parallel provider writes or that a callback proves payment. D1 and Durable Object SQLite are separate stores. The diagram shows current integrations, not authorization to provision or activate them.
 
-## Planned client delivery topology
+<a id="planned-client-delivery-topology"></a>
 
-Client pipeline topology implemented in source; repository cutover and cloud execution still require evidence. The initial client Worker uses its temporary Workers.dev hostname with customer/provider access disabled. Domain hookup and activation are later steps. The runtime components above apply independently to each environment.
+## Client delivery topology
+
+The client repository owns staging and production deployment; both paths have successful execution evidence in Progress. The initial client Worker uses its temporary Workers.dev hostname and the latest production release restores customer/provider access disabled. Domain hookup and activation are later steps. The runtime components above apply independently to each environment.
 
 ```mermaid
 flowchart TB
   Repo["One client-owned GitHub repository"]
-  PR["Feature branch / PR · three CI gates"]
+  PR["Ready trusted PR · all configured CI gates"]
   StageGate["Trusted candidate · passing CI · one shared staging candidate"]
   Stage["Developer Cloudflare account · existing Worker / D1 / DO retained"]
   TestProviders["Separate SimplyBook test account · HitPay sandbox"]
   Review["Owner staging acceptance · merge"]
-  Main["Main · three merged-revision CI gates"]
+  Main["Main · independent merged-revision CI gates"]
   Approval["Trusted-main controller · verified current main"]
   Prod["Client Cloudflare account · separate Worker / D1 / DO"]
   Registrar["Client registrar · transfer after zone activation"]

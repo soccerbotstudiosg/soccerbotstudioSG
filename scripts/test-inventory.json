@@ -477,7 +477,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "verified live receipt shows booking sections without export actions or unverified invoice labels"
+    "title": "verified live receipt shows provider invoice number without internal IDs or export actions"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",

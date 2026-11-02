@@ -281,7 +281,7 @@ it("identity failures distinguish throttling expired access bad codes and securi
     [429, "Wait a few minutes before requesting another code"],
     [401, "Return to booking options and sign in again"],
     [400, "Check your code or request a new one"],
-    [503, "Email verification is unavailable"],
+    [503, "Email verification unavailable. Please continue as a guest."],
   ] as const) {
     request.mockResolvedValueOnce(
       Response.json({ private: "must not appear" }, { status }),

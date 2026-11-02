@@ -208,7 +208,7 @@ async function directCase(scenario: string) {
       screen.getByRole("status", { name: "Opening checkout…" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Opening checkout… Don’t close or refresh."),
+      screen.getByText("Opening checkout… Please do not close or refresh."),
     ).toBeVisible();
     await act(async () => fireEvent.click(screen.getByText("Repeat checkout")));
     expect(pay).toHaveBeenCalledTimes(1);
@@ -971,7 +971,7 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
               : "checkout_window_blocked",
         message:
           error === "checkout_recovery_required"
-            ? "We’re checking your booking. Don’t book or pay again."
+            ? "Checking your booking. Do not book or pay again."
             : error === "checkout_selection_unavailable"
               ? "That time is unavailable. Choose another; your details are saved."
               : "We couldn’t start checkout. Please try again later.",

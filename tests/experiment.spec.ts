@@ -146,9 +146,7 @@ test("synthetic paid but invalid booking needs recovery instead of claiming succ
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByText(
-      /We couldn’t confirm your payment. Don’t pay again; contact the studio./,
-    ),
+    page.getByText(/Payment status unconfirmed. Do not pay again. Contact us./),
   ).toBeVisible();
   await page.screenshot({
     path: info.outputPath("04-recovery.png"),
@@ -161,7 +159,7 @@ test("synthetic access revocation hides protected details and stops checking", a
   await start(page);
   await outcome(page, "Expire synthetic access");
   await expect(
-    page.getByRole("heading", { name: "Can’t load confirmation" }),
+    page.getByRole("heading", { name: "Confirmation unavailable" }),
   ).toBeVisible();
   await expect(
     page.getByText(/Contact the studio to view this booking/),
@@ -281,7 +279,7 @@ test("the Payment preview entry and temporary checking failure retain customer s
   );
   await prepare(page);
   await expect(
-    page.getByRole("heading", { name: "Can’t load confirmation" }),
+    page.getByRole("heading", { name: "Confirmation unavailable" }),
   ).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Current booking summary" }),

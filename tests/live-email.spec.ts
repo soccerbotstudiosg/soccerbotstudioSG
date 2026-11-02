@@ -174,7 +174,7 @@ test("live guest denial stays on account without Preview fallback", async ({
   const evidence = await fixture(page);
   await page.getByRole("button", { name: "Continue as guest" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Email verification is unavailable. You can continue as a guest.",
+    "Email verification unavailable. Please continue as a guest.",
   );
   await expect(page).toHaveURL(/\/book\/account\/$/);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
@@ -245,7 +245,7 @@ test("synthetic live verification reads server identity and keeps native booking
     .click();
   await expect(page).toHaveURL(/\/book\/session\/$/);
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Session information is unavailable. Your details have been kept.",
+    "Sessions unavailable. Please try again. Your details are saved.",
   );
   await expect(
     page.getByRole("link", { name: "See available times" }),
@@ -398,7 +398,7 @@ test("remembered live account edits and rereads contact while native booking sta
     .getByRole("button", { name: "Continue signed in", exact: true })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Session information is unavailable. Your details have been kept.",
+    "Sessions unavailable. Please try again. Your details are saved.",
   );
   expect(evidence.unexpected).toEqual([]);
 });
@@ -996,7 +996,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await accounting;
     await expect(
       page.getByRole("status", {
-        name: "Paid—confirming booking…",
+        name: "Payment received. Confirming booking.",
         exact: true,
       }),
     ).toBeVisible();
@@ -1726,7 +1726,7 @@ test("real API revoked access at checkout retains the draft and denies protected
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("heading", {
-        name: "Can’t load confirmation",
+        name: "Confirmation unavailable",
         exact: true,
       }),
     ).toBeVisible();
@@ -2076,7 +2076,7 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
     await expect(page).toHaveURL(/\/book\/session\/$/);
     await expect(
       page.getByText(
-        "Session information is unavailable. Your details have been kept.",
+        "Sessions unavailable. Please try again. Your details are saved.",
         { exact: true },
       ),
     ).toBeVisible();
@@ -2090,7 +2090,7 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
     await retry;
     await expect(
       page.getByText(
-        "Session information is unavailable. Your details have been kept.",
+        "Sessions unavailable. Please try again. Your details are saved.",
         { exact: true },
       ),
     ).toBeVisible();
@@ -2669,7 +2669,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       page.locator(".booking-loading, .booking-flow-overlay"),
     ).toHaveCount(0);
     await expect(
-      page.getByText("Don’t close or refresh.", { exact: true }),
+      page.getByText("Please do not close or refresh.", { exact: true }),
     ).toBeVisible();
     const loader = page.getByRole("status", {
       name: "Checking payment…",

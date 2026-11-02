@@ -179,7 +179,7 @@ test("rebooking clears the view immediately but gates new checkout on background
   await act(async () => dismissal.resolve(new Response(null, { status: 503 })));
   expect(checkout).not.toHaveBeenCalled();
   expect(screen.getByTestId("rebooking-error")).toHaveTextContent(
-    "confirmation is saved",
+    "Your confirmed booking is unchanged.",
   );
   expect(sessionStorage.getItem("soccerbot.completed-exit")).toBe(completedId);
   request.mockResolvedValueOnce(Response.json({ dismissed: true }));
@@ -583,7 +583,9 @@ test("identity expiry during checkout rejects completion and preserves the membe
   await act(async () => {
     pending.resolve(demoBookingModel.checkout(member, null));
   });
-  expect(screen.getByRole("alert")).toHaveTextContent("session has changed");
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Please verify your email again.",
+  );
   expect(loadBooking().attempt).toBeNull();
   expect(loadBooking().draft).toEqual(member);
   expect(navigation.push).not.toHaveBeenCalled();

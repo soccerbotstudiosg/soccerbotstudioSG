@@ -284,18 +284,20 @@ export function TimeStep() {
           </>
         )}
         {live && !calendarBusy && (
-          <p role="status" className="notice">
-            {monthResult ? (
-              "Only dates with available sessions can be selected."
-            ) : calendar.failed.includes(month.slice(0, 7)) ? (
-              "Availability could not be checked. Your selections are saved."
-            ) : (
-              <BrandLoading overlay={false} compact label="Checking dates…" />
-            )}{" "}
-            <button className="text-link" onClick={calendar.retry}>
+          <div role="status" className="notice">
+            <p>
+              {monthResult ? (
+                "Only dates with available sessions can be selected."
+              ) : calendar.failed.includes(month.slice(0, 7)) ? (
+                "Please refresh availability. Your selections are saved."
+              ) : (
+                <BrandLoading overlay={false} compact label="Checking dates…" />
+              )}
+            </p>
+            <button className="button secondary" onClick={calendar.retry}>
               Refresh availability
             </button>
-          </p>
+          </div>
         )}
         {!calendarBusy && (
           <div className="calendar-legend">

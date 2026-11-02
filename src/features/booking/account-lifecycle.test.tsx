@@ -189,7 +189,7 @@ test("saved-contact entry revalidates expired identity before loading private de
   await act(async () => {});
   fireEvent.click(screen.getByRole("button", { name: "Manage saved contact" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Verify your email with Remember me selected",
+    "Select Remember me and verify your email to save details.",
   );
   expect(profile).not.toHaveBeenCalled();
   expect(

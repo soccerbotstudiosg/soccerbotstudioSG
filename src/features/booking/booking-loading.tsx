@@ -9,7 +9,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { BrandLoading } from "@/components/brand-loading";
-export const loadingMessage = "Don’t close or refresh.";
+export const loadingMessage = "Please do not close or refresh.";
 const feedbackMessage = (label?: string) =>
   label === "Opening checkout…" || label === "Checking payment…"
     ? `${label} ${loadingMessage}`

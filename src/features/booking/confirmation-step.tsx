@@ -142,6 +142,14 @@ export function BookingConfirmation({
             (Singapore time)
           </p>
         )}
+        {!pending && !preview && booking.providerReferences?.invoiceNumber && (
+          <p className="reference">
+            Invoice number{" "}
+            <strong className="text-ink">
+              {booking.providerReferences.invoiceNumber}
+            </strong>
+          </p>
+        )}
         {!pending && preview && (
           <p className="reference">
             Booking reference{" "}

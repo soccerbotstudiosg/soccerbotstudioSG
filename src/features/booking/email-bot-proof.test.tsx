@@ -13,7 +13,9 @@ afterEach(() => {
 it("email bot widget is unavailable without a bound public sitekey", () => {
   vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "");
   render(<EmailBotProof onToken={vi.fn()} />);
-  expect(screen.getByRole("status")).toHaveTextContent("not available");
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Email verification unavailable. Please continue as a guest.",
+  );
   expect(screen.queryByText("Load synthetic widget")).toBeNull();
 });
 it("email bot widget binds purpose clears expired proof and ignores callbacks after disposal", async () => {

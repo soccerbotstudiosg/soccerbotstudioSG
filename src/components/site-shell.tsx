@@ -167,8 +167,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
           {dialog === "leave" ? (
             <>
               <p className="mb-5 text-muted">
-                Your current selections are saved in this browser. Any payment
-                in progress remains available when you return.
+                Your selections are saved in this browser. Complete payment
+                before checkout expires.
               </p>
               <div className="dialog-actions">
                 <button
