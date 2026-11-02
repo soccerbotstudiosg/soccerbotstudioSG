@@ -1,5 +1,7 @@
 # Technical behavior and recovery map
 
+Price presentation: `session-price.tsx` resolves homepage rates from the validated public catalogue environment and the shared `session-pricing.ts` profile; `SessionStep` passes the same catalogue environment into its price label. Unknown/failed homepage catalogue reads show no numeric fallback. Preview alone uses developer rates. Display labels grant no booking/payment authority; native quotes and Worker price/amount checks remain unchanged.
+
 Source snapshot: `dffb24a` (28 October 2026). This is the function-level companion to the [feature ownership map](index.md): what each named operation does, what the customer or operator sees, what prevents unsafe actions, and where failure recovery belongs. It covers the principal feature entry points and state-changing functions; it is not an exhaustive catalogue of private parsing helpers, JSX callbacks or generated bindings. “Owner” means code responsibility, not an assigned responder.
 
 [Business rules](../business-rules.md) remain the authority for invariants, [API contracts](../api-contracts.md) own request/response shapes, and the [runbook](../runbook.md) owns operator procedures. Tables describe implemented behavior, not proof that client production is configured. SimplyBook staff scheduling and HitPay/Cloudflare administration are provider-console operations, not custom SoccerBot admin features. Enquiry and assistant currently use demo adapters.

@@ -1,5 +1,7 @@
 # Simulated user — SoccerBot acceptance worksheet
 
+Price-display acceptance: on the homepage and session selection, verify S$88/S$108 for developer staging and S$108/S$128 for the client profile (weekday versus weekend/Singapore public holiday). Verify the selected date's review/payment amount agrees with the corresponding provider quote. An unavailable live catalogue must not display demo prices on the homepage; it shows “See prices when booking”. Record environment/revision and actual result; this instruction is not completed acceptance.
+
 | Test session                                                       | Fill in |
 | ------------------------------------------------------------------ | ------- |
 | Tester / date (Singapore time)                                     |         |

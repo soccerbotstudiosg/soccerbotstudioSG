@@ -4,20 +4,21 @@
 
 This file is the authority for repository engineering instructions; linked procedures operate under it. User instructions take precedence; current repository instructions supersede stale external skill snapshots. The cloud skill’s older uppercase Journey, Rules & Architecture and CODEX_CLOUD paths are superseded. Use the current document map below.
 
-| File                                                         | Unique purpose                                                                                         |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| [Development guide](docs/development.md)                     | Development prerequisites, configuration and command reference.                                        |
-| [Agents](AGENTS.md)                                          | Engineering workflow, coding conventions, verification and action boundaries.                          |
-| [Runbook](docs/runbook.md)                                   | Dependency maintenance, observability interpretation and operational recovery procedures.              |
-| [Security infrastructure](docs/security.md)                  | Security boundaries, implemented controls, evidence limits and proposed additional layers.             |
-| [Data lifecycle](docs/data-lifecycle.md)                     | Source-based storage/expiry inventory and pending client privacy-clause mapping; no deletion approval. |
-| [North Star](NORTH_STAR.md)                                  | Campaign operating procedure, bounded iteration budgets, evidence states and handover.                 |
-| [Progress](PROGRESS.md)                                      | Detailed current task, exact leave-off, evidence, blockers and handover; link to Journey history.      |
-| [Architecture diagram](docs/architecture/diagram.md)         | Component topology and connections.                                                                    |
-| [Architecture decisions](docs/architecture/adr.md)           | Stack rationale, tradeoffs, scaling triggers and alternative designs.                                  |
-| [Business rules](docs/business-rules.md)                     | Numbered system invariants and acceptance boundaries.                                                  |
-| [Domain operations and API contracts](docs/api-contracts.md) | Named operations, source status, permissions, evidence and transport contracts.                        |
-| [Complete journey](docs/journey.md)                          | End-to-end flows, retained milestones and dated change evidence.                                       |
+| File                                                                  | Unique purpose                                                                                         |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [Development guide](docs/development.md)                              | Development prerequisites, configuration and command reference.                                        |
+| [Agents](AGENTS.md)                                                   | Engineering workflow, coding conventions, verification and action boundaries.                          |
+| [External providers configuration](docs/external-providers-config.md) | Environment-specific provider settings, explanations and dated verification limits.                    |
+| [Runbook](docs/runbook.md)                                            | Dependency maintenance, observability interpretation and operational recovery procedures.              |
+| [Security infrastructure](docs/security.md)                           | Security boundaries, implemented controls, evidence limits and proposed additional layers.             |
+| [Data lifecycle](docs/data-lifecycle.md)                              | Source-based storage/expiry inventory and pending client privacy-clause mapping; no deletion approval. |
+| [North Star](NORTH_STAR.md)                                           | Campaign operating procedure, bounded iteration budgets, evidence states and handover.                 |
+| [Progress](PROGRESS.md)                                               | Detailed current task, exact leave-off, evidence, blockers and handover; link to Journey history.      |
+| [Architecture diagram](docs/architecture/diagram.md)                  | Component topology and connections.                                                                    |
+| [Architecture decisions](docs/architecture/adr.md)                    | Stack rationale, tradeoffs, scaling triggers and alternative designs.                                  |
+| [Business rules](docs/business-rules.md)                              | Numbered system invariants and acceptance boundaries.                                                  |
+| [Domain operations and API contracts](docs/api-contracts.md)          | Named operations, source status, permissions, evidence and transport contracts.                        |
+| [Complete journey](docs/journey.md)                                   | End-to-end flows, retained milestones and dated change evidence.                                       |
 
 Function-level behavior, guards, failure recovery and evidence are in [Technical behavior](docs/code-owners/technical-behavior.md); start with the [feature map](docs/code-owners/index.md) for navigation.
 

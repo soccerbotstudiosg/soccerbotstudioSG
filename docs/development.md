@@ -1,5 +1,7 @@
 # Continuous development guide
 
+See [External providers configuration](external-providers-config.md) for SimplyBook, Resend, HitPay and Cloudflare settings, environment differences and verification limits.
+
 > **Guidance only, not a strict requirement.** These workflows are practical examples; adapt them to the task and available tools. [AGENTS.md](../AGENTS.md) remains the authority for repository engineering rules and action boundaries. This guide does not override those rules or authorise merges, deployments, provider changes or financial actions.
 
 Paths and commands below assume the repository root unless stated otherwise. GitHub is canonical; a local checkout, Codex workspace or attached ZIP is a revision snapshot. Always establish which revision you are editing before combining work.

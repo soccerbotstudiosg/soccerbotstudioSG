@@ -3,7 +3,7 @@ import { Arena } from "@/components/arena";
 import { BookingLink } from "@/components/booking-navigation";
 import { Icon } from "@/components/icon";
 import { homeMedia } from "@/content/media";
-import { SERVICE_NAME } from "@/domain/demo-catalog";
+import { SessionPrice } from "@/features/booking/session-price";
 /** Present the studio introduction and booking entry points. */
 export default function Home() {
   return (
@@ -91,7 +91,7 @@ export default function Home() {
             </span>
             <span className="offer-home-copy">
               <span className="offer-title" id="offer-title">
-                {SERVICE_NAME}
+                Kickoff Special
               </span>
               <span className="offer-description" id="offer-description">
                 A 40-minute studio session for up to four players. Explore
@@ -100,7 +100,9 @@ export default function Home() {
               </span>
               <span className="offer-meta">
                 <span>40 minutes · 1–4 players</span>
-                <strong>S$88.00 / session</strong>
+                <strong>
+                  <SessionPrice />
+                </strong>
               </span>
             </span>
           </BookingLink>

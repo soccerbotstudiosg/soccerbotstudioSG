@@ -1206,5 +1206,13 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "email account actions return through booking options and sign in again with either remember choice"
+  },
+  {
+    "file": "src/features/booking/session-price.test.tsx",
+    "title": "homepage prices follow the catalogue environment without a live preview fallback"
+  },
+  {
+    "file": "src/features/booking/session-price.test.tsx",
+    "title": "live session selection uses client prices while demo retains its own rates"
   }
 ]
