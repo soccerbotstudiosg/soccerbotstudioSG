@@ -464,6 +464,9 @@ async function mechanismTransport(
       },
     );
     const responseHeaders = Object.fromEntries(response.headers);
+    // dispatchFetch bypasses the HTTP server that normally supplies Date.
+    // Use the fixture host's server clock, never a browser-controlled timestamp.
+    responseHeaders.date ??= new Date().toUTCString();
     if (responseHeaders["set-cookie"]) {
       responseHeaders["set-cookie"] = responseHeaders["set-cookie"]
         .replace("__Host-soccerbot-access=", "soccerbot-mechanism-access=")
@@ -2470,7 +2473,14 @@ async function optimisticHold(page: Page, failReadback: boolean) {
           body: "",
         });
       });
+      const resumedContext = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname ===
+            `/api/attempts/${attemptId}/checkout` && response.status() === 200,
+      );
       await page.goBack();
+      const resumedHeaders = await (await resumedContext).allHeaders();
+      expect(Number.isFinite(Date.parse(resumedHeaders.date))).toBe(true);
       const continuation = page.getByRole("link", {
         name: "Continue payment",
         exact: true,
