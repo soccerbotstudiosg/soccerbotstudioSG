@@ -223,6 +223,8 @@ Checkpoint: 2 November 2026. Main at f99a1ee1d92b8413e54baf7600a82ebbc78ca60d an
 | Existing baseline; PR16 verification | 1.58.2     | 145.0.7632.6 / 1208         | 26.0 / 2248               | Head7d678dfa7866bd21673a3b4e4465bd94f44326e4, [run41373470332](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41373470332), all13 jobs passed |
 | PR17 proposed upgrade                | 1.64.1     | 156.0.8078.4 / 1248         | 27.2 / 2370               | Head45c59ce40446e1dc10a2deb714370c7db9ef7e95, [run41375585310](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41375585310), all13 jobs passed |
 
+Use explicit labels in release/PR reviews: **Testing-tool support** describes the hosts on which upstream supports running the tool; **Our verified test coverage** describes combinations exercised by our tests; **Customer impact** describes actual application behavior or customer requirements. An untested customer browser is unverified, not known broken. A test host dropped by upstream may stop installing/running the tool, but that does not itself block customers browsing the website. PR17 changes testing tooling, not application code or customer-browser restrictions; no customer breakage has been established by its host-support removals.
+
 These are two discrete tested configurations on different source heads, **not** coverage of Chromium145–156, WebKit26–27, or every intermediate/older/newer version. Main's merged revision and deployed artifact need their own evidence.
 
 The three projects in playwright.config.ts use the following profiles in both configurations:

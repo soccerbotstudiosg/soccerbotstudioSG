@@ -50,6 +50,8 @@ Include a before/after compatibility table in each dependency update PR, even if
 2. **Project-configured target:** the exact pins, images, peers, platform/profile choices and supported deployment configuration actually selected by this repository. Explain any narrower scope, exception or externally pending environment update.
 3. **Project-verified coverage:** exact tested versions/profiles, source SHA and CI run or owner-device evidence. Successful endpoint versions do not establish a continuous tested range. An emulated iPhone/WebKit profile is not physical iOS/Safari acceptance.
 
+Every PR assessment must also use the explicit labels **Testing-tool support**, **Our verified test coverage** and **Customer impact**. State whose support changed and for what. “Not tested by us” means unverified, not known broken; “upstream no longer supports this test host” means upstream no longer promises compatibility and installation/execution may fail. Neither alone establishes that customers cannot use the website. Under Customer impact, state whether application behavior, browser restrictions or minimum customer requirements actually change; distinguish demonstrated breakage, no application/restriction change and unresolved compatibility. Do not promise every older device works merely because no deliberate restriction was added.
+
 Use this compact PR table and add rows as relevant:
 
 | Compatibility surface                                                                 | Before                                          | After                                      | Added/removed support or impact | Source / verification                                                            |
