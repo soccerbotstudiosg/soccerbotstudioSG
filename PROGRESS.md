@@ -1,5 +1,11 @@
 # SoccerBotStudioSG current task and handover
 
+## Test8 rebooking investigation — 2 November 2026
+
+Starting candidate38c2134 passed all13 jobs in41417374930 and staging41418928595 (Worker be93da41-e491-4217-babd-aa507e0e8d5f). Owner test8 used normal checkout after Back → Continue → paid confirmation → Make another booking. HAR shows distinct attempts but the same service/trainer/start, no calendar read between bookings, and second checkout returning recovery_required before any HitPay call. Read-only staging D1 diagnostic confirms execution/book/provider_rpc_failed; it does not retain the provider's exact rejection reason. An occupied-slot rejection is plausible, not proven. No provider writes/replays or runtime changes were performed.
+
+Prepared repair: restartAfterConfirmation invalidates browser calendar/day availability before clearing the draft. Server post-write display invalidation/refresh already exists; no extra synchronous payment check, provider retry, financial proof change or recovery relaxation. Existing rebooking regression now proves a retained available calendar disappears while the replacement read is pending and resolves to unavailable, while preserving dismissal gating/failure assertions. The test fails against original source and all22 focused cases pass with the fix. Initial fixture failure (availability capability incorrectly retained as demo inside a live adapter) is preserved in /tmp/test8-focused.log; calendar coverage now uses a consistent demo adapter, separately from the retained live dismissal fixture. Inventories/titles/counts unchanged. Full local verification, final-head CI/staging and owner second-booking acceptance pending. UAT explicitly covers the second checkout and cross-trainer occupied-time exclusion. No merge/production authorization; email remains on hold.
+
 ## Current owner UAT follow-up — 2 November 2026
 
 PR19 candidate `75891e9e8450880c02696c5d4682832e6ee4da6f` passed all13 CI jobs in41407426255 and staging41408849972; Worker version9b316f22-721f-40f5-8f03-18c7a55740c6 and revision independently read back. Owner test6 reports successful confirmation in the original tab, but resumed HitPay opens another tab, invoice prefix differs from Pay, and details download fails. Acceptance is not complete. No merge/production authorization; custom email remains on hold.

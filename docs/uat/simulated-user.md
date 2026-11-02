@@ -111,4 +111,6 @@ Customer PDF/calendar actions are retired by owner decision. Confirm both button
 
 Mandatory owner sandbox sequence: open HitPay in the current tab, press browser Back, choose Continue payment, complete payment and verify the same tab returns to `/confirmation/` and displays confirmed status only after verified evidence. Check the retained link/deadline, no extra tab, one booking and one payment request, and no Continue payment on the return page. CI simulates the hosted provider redirect; actual HitPay/browser return behavior remains owner acceptance.
 
+After that same-tab confirmation, choose Make another booking and use the normal selection/checkout buttons. Verify a new calendar request occurs, the just-booked time is unavailable across trainers, and a different available session opens a new HitPay request in the same tab. Confirm the old booking remains confirmed and the new attempt/link are distinct. Capture the network recording if the calendar still offers the occupied time or checkout cannot open; do not repeatedly retry an uncertain booking. This second-booking provider sequence remains owner acceptance.
+
 Custom email remains on hold. Staff/customer notification drafts are not installed or accepted; use the Admin/Trainer UAT owners when setup resumes.

@@ -118,6 +118,12 @@ function RebookingProbe() {
         {state.attempt?.id ?? "none"}
       </output>
       <output data-testid="rebooking-error">{state.rebookingError}</output>
+      <output data-testid="rebooking-calendar">
+        {state.calendar.entry("2026-10", state.now)?.dates[0]?.available ===
+        true
+          ? "available"
+          : "unavailable"}
+      </output>
       <button onClick={() => state.restartAfterConfirmation(completedId)}>
         Restart completed
       </button>
@@ -140,7 +146,7 @@ test("rebooking clears the view immediately but gates new checkout on background
   const checkout = vi.fn(async () => {
     throw new Error("synthetic checkout stop");
   });
-  render(
+  const view = render(
     <BookingProvider
       bookingService={{
         ...demoBookingService,
@@ -173,6 +179,48 @@ test("rebooking clears the view immediately but gates new checkout on background
   );
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(request).toHaveBeenCalledTimes(2);
+  view.unmount();
+  const refreshedCalendar = deferred<{
+    month: string;
+    serviceId: string;
+    observedAtMs: number;
+    dates: { date: string; available: boolean }[];
+  }>();
+  const publicCalendar = vi
+    .fn()
+    .mockResolvedValueOnce({
+      month: "2026-10",
+      serviceId: "2",
+      observedAtMs: Date.now(),
+      dates: [{ date, available: true }],
+    })
+    .mockReturnValue(refreshedCalendar.promise);
+  render(
+    <BookingProvider bookingService={{ ...demoBookingService, publicCalendar }}>
+      <RebookingProbe />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  expect(screen.getByTestId("rebooking-calendar")).toHaveTextContent(
+    /^available$/,
+  );
+  expect(publicCalendar).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
+  expect(screen.getByTestId("rebooking-calendar")).toHaveTextContent(
+    /^unavailable$/,
+  );
+  expect(publicCalendar).toHaveBeenCalledTimes(2);
+  await act(async () =>
+    refreshedCalendar.resolve({
+      month: "2026-10",
+      serviceId: "2",
+      observedAtMs: Date.now(),
+      dates: [{ date, available: false }],
+    }),
+  );
+  expect(screen.getByTestId("rebooking-calendar")).toHaveTextContent(
+    /^unavailable$/,
+  );
 });
 
 test("reload resumes an interrupted completed exit without restoring that confirmation or suppressing another attempt", async () => {
