@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { ADDRESS, CONTACT } from "@/domain/catalog";
+import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { dateLabel, endTime, money } from "@/domain/dates";
 import { ConfirmationError } from "@/services/confirmation";
@@ -164,10 +164,16 @@ export function BookingConfirmation({
             (Singapore time)
           </p>
         )}
-        <p className="reference">
-          {preview ? "Booking reference" : "SoccerBot reference"}{" "}
-          <strong className="text-ink">{booking.reference}</strong>
-        </p>
+        {!pending && (preview || booking.providerReferences?.invoiceNumber) && (
+          <p className="reference">
+            {preview ? "Booking reference" : "Invoice number"}{" "}
+            <strong className="text-ink">
+              {preview
+                ? booking.reference
+                : booking.providerReferences?.invoiceNumber}
+            </strong>
+          </p>
+        )}
       </div>
       {!pending && (
         <div className="confirmation-actions" aria-label="Booking actions">
@@ -207,9 +213,9 @@ export function BookingConfirmation({
             <Icon name="plus" />
             <span>Make another booking</span>
           </button>
-          <a className="button secondary" href={`mailto:${CONTACT.email}`}>
-            <Icon name="mail" />
-            <span>Need help?</span>
+          <a className="button secondary" href={BOOKING_SUPPORT.whatsappUrl}>
+            <Icon name="phone" />
+            <span>Contact Glenna on WhatsApp</span>
           </a>
           <Link
             href="/"
@@ -299,8 +305,9 @@ export function BookingConfirmation({
                   ))}
                 <Arrival compact />
                 <p className="hint">
-                  Follow your instructor’s safety guidance. For changes,
-                  cancellations or refunds, contact the studio.
+                  Follow your instructor’s safety guidance.{" "}
+                  {BOOKING_SUPPORT.message} Your booking stays unchanged until
+                  the studio confirms your request.
                 </p>
                 {preview && (
                   <p className="payment-foot">
@@ -308,24 +315,6 @@ export function BookingConfirmation({
                   </p>
                 )}
               </section>
-              {booking.providerReferences && (
-                <div className="reference confirmation-provider-references">
-                  <p>
-                    SimplyBook booking ID
-                    {booking.providerReferences.bookingIds.length > 1
-                      ? "s"
-                      : ""}
-                    :{" "}
-                    <strong>
-                      {booking.providerReferences.bookingIds.join(", ")}
-                    </strong>
-                  </p>
-                  <p>
-                    SimplyBook invoice ID:{" "}
-                    <strong>{booking.providerReferences.invoiceId}</strong>
-                  </p>
-                </div>
-              )}
             </div>
           </details>
         )}

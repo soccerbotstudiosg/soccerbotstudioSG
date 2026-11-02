@@ -11,6 +11,13 @@ export const CONTACT = {
   email: "contact@soccerbotsg.com",
   instagram: "https://www.instagram.com/soccerbotstudiosg/",
 };
+export const BOOKING_SUPPORT = {
+  name: "Glenna",
+  phoneDisplay: "+65 9014 3819",
+  whatsappUrl: "https://wa.me/6590143819",
+  message:
+    "For changes or cancellations, contact Glenna on WhatsApp: +65 9014 3819.",
+};
 export const CONTACT_METHODS = {
   email: "Email",
   phone: "Call",

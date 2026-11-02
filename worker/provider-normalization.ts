@@ -1,3 +1,4 @@
+import { invoiceNumberSchema } from "../src/domain/provider-references";
 import {
   START_INTERVAL_MINUTES,
   SESSION_MINUTES,
@@ -617,8 +618,12 @@ function invoiceEvidence(raw: unknown, context: NativeReadContext) {
     invoice.payment_processor === null
   )
     status = "cancelled";
+  const documentNumber = invoiceNumberSchema.safeParse(invoice.number);
   return {
     invoice: {
+      ...(documentNumber.success
+        ? { documentNumber: documentNumber.data }
+        : {}),
       accountId: intent.accountId,
       environmentId: intent.environmentId,
       attemptId: context.attemptId,

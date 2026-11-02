@@ -760,8 +760,8 @@ test("header blue and the typography hierarchy stay consistent across every book
     "rgb(255, 255, 255)",
   );
   await expect(
-    page.getByRole("link", { name: "Need help?", exact: true }),
-  ).toHaveAttribute("href", "mailto:contact@soccerbotsg.com");
+    page.getByRole("link", { name: "Contact Glenna on WhatsApp", exact: true }),
+  ).toHaveAttribute("href", "https://wa.me/6590143819");
   await page.getByText("View full details", { exact: true }).click();
   await sectionType(
     ".confirmation-section > h2, .confirmation-summary > .section-title",

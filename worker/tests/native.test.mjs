@@ -193,6 +193,25 @@ test("native supplied unpaid and paid shapes use stable invoice identity and can
   );
   assert.equal(paid.result.observation.invoice.lines[0].bookingId, "701");
   assert.equal(
+    unpaid.result.observation.invoice.documentNumber,
+    "SYNTHETIC-ORDER",
+  );
+  assert.equal(
+    paid.result.observation.invoice.documentNumber,
+    "SYNTHETIC-PAID",
+  );
+  for (const number of [undefined, "", "x".repeat(129), "bad\nnumber"]) {
+    const data = input();
+    data.invoice.number = number;
+    const withoutNumber = await call("normalize", data);
+    assert.equal(withoutNumber.status, 200);
+    assert.equal(withoutNumber.result.decision.status, "confirmed");
+    assert.equal(
+      withoutNumber.result.observation.invoice.documentNumber,
+      undefined,
+    );
+  }
+  assert.equal(
     paid.result.observation.bookings[0].session.playEndMs -
       paid.result.observation.bookings[0].session.startMs,
     2400000,

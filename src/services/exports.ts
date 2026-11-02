@@ -1,5 +1,5 @@
 import { sessionInstructorName } from "@/domain/booking";
-import { ADDRESS } from "@/domain/catalog";
+import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { dateLabel, endTime, money } from "@/domain/dates";
 import type { Booking } from "@/domain/booking";
@@ -42,7 +42,7 @@ export function calendarText(booking: Booking, preview = true): string {
       `DTEND:${utcTime(slot.date, endTime(slot.start))}`,
       `SUMMARY:${escapeICS(slot.native?.serviceName ?? SERVICE_NAME)}`,
       `LOCATION:${escapeICS(`${slot.studio}, ${ADDRESS}`)}`,
-      `DESCRIPTION:${escapeICS(`${preview ? "Preview booking" : "Booking"} ${booking.reference}. Instructor: ${sessionInstructorName(slot)}. Arrive 10 minutes early.`)}`,
+      `DESCRIPTION:${escapeICS(`${preview ? `Preview booking ${booking.reference}` : booking.providerReferences?.invoiceNumber ? `Invoice ${booking.providerReferences.invoiceNumber}` : "Booking details"}. Instructor: ${sessionInstructorName(slot)}. Arrive 10 minutes early. ${BOOKING_SUPPORT.message}`)}`,
       "END:VEVENT",
     ]),
     "END:VCALENDAR",
@@ -71,7 +71,7 @@ export function downloadCalendar(booking: Booking, preview = true) {
     new Blob([calendarText(booking, preview)], {
       type: "text/calendar;charset=utf-8",
     }),
-    `${booking.reference}.ics`,
+    preview ? `${booking.reference}.ics` : "booking-calendar.ics",
   );
 }
 /** Generate and download a PDF of the booking details. */
@@ -98,18 +98,11 @@ export async function downloadBooking(
     }
   };
   line("SOCCERBOTSTUDIO Singapore", 19);
-  line(preview ? "Booking preview - no money charged" : "Verified booking", 10);
+  line(preview ? "Booking preview - no money charged" : "Booking details", 10);
   y += 6;
-  line(
-    `${preview ? "Booking reference" : "SoccerBot reference"}: ${booking.reference}`,
-    15,
-  );
-  if (booking.providerReferences) {
-    line(
-      `SimplyBook booking IDs: ${booking.providerReferences.bookingIds.join(", ")}`,
-    );
-    line(`SimplyBook invoice ID: ${booking.providerReferences.invoiceId}`);
-  }
+  if (preview) line(`Booking reference: ${booking.reference}`, 15);
+  else if (booking.providerReferences?.invoiceNumber)
+    line(`Invoice number: ${booking.providerReferences.invoiceNumber}`, 15);
   line(booking.slots[0]?.native?.serviceName ?? SERVICE_NAME);
   line(`${booking.draft.players} players per session`);
   line(ADDRESS);
@@ -132,5 +125,12 @@ export async function downloadBooking(
     "Arrive 10 minutes early. Have your SoccerBot Player App profile and QR card ready.",
   );
   signal?.throwIfAborted();
-  pdf.save(`${booking.reference}.pdf`);
+  line(BOOKING_SUPPORT.message);
+  line("Your booking stays unchanged until the studio confirms your request.");
+  if (!preview)
+    line(
+      "Booking summary only. Your official invoice is issued by SimplyBook Pay.",
+      9,
+    );
+  pdf.save(preview ? `${booking.reference}.pdf` : "booking-details.pdf");
 }

@@ -700,6 +700,7 @@ test("HitPay recovery independently verifies payment and bookings before one ext
     .bind(attemptId)
     .first();
   const before = JSON.parse(stored.observation_json);
+  assert.equal(before.invoice.documentNumber, "SYNTHETIC-PAID");
   const context = {
     attemptId,
     companyLogin: scope.companyLogin,
@@ -2000,6 +2001,10 @@ test("on-time HitPay payment reconciles after payment expiry only within the ori
   assert.equal(result.status, "confirmed", JSON.stringify(result));
   assert.equal(result.customerConfirmation.attemptId, attemptId);
   assert.equal(result.customerConfirmation.sessions.length, 1);
+  assert.equal(
+    result.customerConfirmation.providerReferences.invoiceNumber,
+    "SYNTHETIC-PAID",
+  );
   assert.equal(
     Number(response.headers.get("X-Checking-Deadline")),
     createdAtMs + 600000,

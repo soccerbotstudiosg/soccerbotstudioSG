@@ -1214,5 +1214,13 @@
   {
     "file": "src/features/booking/session-price.test.tsx",
     "title": "live session selection uses client prices while demo retains its own rates"
+  },
+  {
+    "file": "src/services/exports.test.ts",
+    "title": "live booking PDF shows the official document number and WhatsApp contact without internal IDs"
+  },
+  {
+    "file": "src/services/exports.test.ts",
+    "title": "calendar keeps stable event identities when the visible invoice number changes or is absent"
   }
 ]

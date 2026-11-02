@@ -220,6 +220,7 @@ it("verified live receipt uses demo sections and refuses exports after access is
     providerReferences: {
       bookingIds: ["701"],
       invoiceId: "901",
+      invoiceNumber: "INV-2026-TEST",
     },
   };
   let reads = 0;
@@ -260,9 +261,13 @@ it("verified live receipt uses demo sections and refuses exports after access is
     "bring a towel",
   );
   expect(screen.getByText("Native Trainer")).toBeInTheDocument();
-  expect(screen.getByText("701")).toBeInTheDocument();
-  expect(screen.getByText("901")).toBeInTheDocument();
-  expect(screen.getByText(/SoccerBot reference/)).toHaveTextContent(first);
+  expect(screen.queryByText("701")).not.toBeInTheDocument();
+  expect(screen.queryByText("901")).not.toBeInTheDocument();
+  expect(screen.queryByText(/SoccerBot reference/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Invoice number/)).toHaveTextContent("INV-2026-TEST");
+  expect(
+    screen.getByRole("link", { name: "Contact Glenna on WhatsApp" }),
+  ).toHaveAttribute("href", "https://wa.me/6590143819");
   expect(screen.queryByText("Paid · Preview")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("Download failed");
