@@ -14,7 +14,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 
 | Item                        | Version           |
 | --------------------------- | ----------------- |
-| @playwright/test            | 1.58.2            |
+| @playwright/test            | 1.64.1            |
 | @tailwindcss/postcss        | 4.3.3             |
 | @testing-library/jest-dom   | 7.0.1             |
 | @testing-library/react      | 16.3.3            |
@@ -46,7 +46,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 Includes transitive dependencies and optional platform packages. A locked package is not necessarily installed on every platform or included in the deployed application. Paths distinguish multiple versions of the same package.
 
 <details>
-<summary>All 661 locked package entries</summary>
+<summary>All 666 locked package entries</summary>
 
 | Lockfile path                                                                     | Version           | Development | Optional |
 | --------------------------------------------------------------------------------- | ----------------- | ----------- | -------- |
@@ -187,7 +187,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@nodelib/fs.walk                                                     | 1.2.8             | yes         | no       |
 | node_modules/@nolyfill/is-core-module                                             | 1.0.39            | yes         | no       |
 | node_modules/@oxc-project/types                                                   | 0.155.0           | yes         | no       |
-| node_modules/@playwright/test                                                     | 1.58.2            | no          | no       |
+| node_modules/@playwright/test                                                     | 1.64.1            | no          | no       |
 | node_modules/@poppinss/colors                                                     | 4.1.6             | yes         | no       |
 | node_modules/@poppinss/dumper                                                     | 0.6.5             | yes         | no       |
 | node_modules/@poppinss/dumper/node_modules/supports-color                         | 10.2.2            | yes         | no       |
@@ -224,6 +224,12 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@tailwindcss/oxide-linux-x64-gnu                                     | 4.3.3             | yes         | yes      |
 | node_modules/@tailwindcss/oxide-linux-x64-musl                                    | 4.3.3             | yes         | yes      |
 | node_modules/@tailwindcss/oxide-wasm32-wasi                                       | 4.3.3             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/core             | 1.11.1            | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/runtime          | 1.11.1            | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/wasi-threads     | 1.2.2             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@napi-rs/wasm-runtime    | 1.1.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@tybys/wasm-util         | 0.10.2            | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/tslib                    | 2.8.1             | yes         | yes      |
 | node_modules/@tailwindcss/oxide-win32-arm64-msvc                                  | 4.3.3             | yes         | yes      |
 | node_modules/@tailwindcss/oxide-win32-x64-msvc                                    | 4.3.3             | yes         | yes      |
 | node_modules/@tailwindcss/postcss                                                 | 4.3.3             | yes         | no       |
@@ -548,9 +554,8 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/performance-now                                                      | 2.1.0             | no          | yes      |
 | node_modules/picocolors                                                           | 1.1.1             | no          | no       |
 | node_modules/picomatch                                                            | 2.3.2             | yes         | no       |
-| node_modules/playwright                                                           | 1.58.2            | no          | no       |
-| node_modules/playwright-core                                                      | 1.58.2            | no          | no       |
-| node_modules/playwright/node_modules/fsevents                                     | 2.3.2             | no          | yes      |
+| node_modules/playwright                                                           | 1.64.1            | no          | no       |
+| node_modules/playwright-core                                                      | 1.64.1            | no          | no       |
 | node_modules/possible-typed-array-names                                           | 1.1.0             | yes         | no       |
 | node_modules/postcss                                                              | 8.5.28            | yes         | no       |
 | node_modules/prelude-ls                                                           | 1.2.1             | yes         | no       |

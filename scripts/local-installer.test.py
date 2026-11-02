@@ -223,6 +223,14 @@ class DeliveryTests(unittest.TestCase):
                 delivery.check_prerequisites(self.repo, self.repo)
             process.assert_not_called()
 
+    def test_installed_playwright_inventory_adapter_without_browser_execution(self):
+        browsers = delivery.browser_inventory(Path(__file__).resolve().parents[1])
+        self.assertEqual({item['name'] for item in browsers}, {'chromium-headless-shell', 'webkit'})
+        self.assertEqual(len(browsers), 2)
+        for item in browsers:
+            self.assertTrue(Path(item['path']).is_absolute())
+            self.assertTrue(item['path'].strip())
+
     def test_missing_browser_stops_preflight_without_downloading(self):
         self.dependency_fixture()
         browsers = [{'name': name, 'path': str(self.root / name)} for name in ('chromium-headless-shell', 'webkit')]

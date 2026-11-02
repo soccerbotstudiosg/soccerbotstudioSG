@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
     env:
       NEXT_PUBLIC_BASE_PATH: ""
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
     env:
       NEXT_PUBLIC_BASE_PATH: ""
@@ -104,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
     env:
       NEXT_PUBLIC_BASE_PATH: /SoccerBotStudioSG
@@ -136,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
     name: build / ${{ matrix.profile }}
     strategy:
@@ -177,7 +177,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: ${{ matrix.profile == 'live-email' && '--ipc=host --tmpfs /tmp:rw,size=2g' || '--ipc=host' }}
     needs: browser-build
     name: browser / ${{ matrix.profile }} / shard ${{ matrix.shard }}
@@ -222,7 +222,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
     name: verify / backend
     needs:
@@ -281,7 +281,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
     name: verify / live-email
     needs:

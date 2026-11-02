@@ -109,6 +109,16 @@ def select_manifest(root, source, run):
     raise RuntimeError('Unknown source edit, revision or partial candidate; no source overwritten. Upload the receipt and failure ZIP.')
 
 
+def browser_inventory(root):
+    """Inspect pinned Playwright executable paths without launching or installing browsers."""
+    # Playwright has no public headless-shell executablePath API. Keep this
+    # version-sensitive adapter isolated and exercised against the installed package.
+    probe = """const { registry: { registry } } = require('playwright-core/lib/coreBundle');
+console.log(JSON.stringify(['chromium-headless-shell', 'webkit'].map(name => ({name, path: registry.findExecutable(name).executablePath()}))));"""
+    output = subprocess.check_output(['node', '-e', probe], cwd=root, text=True, stderr=subprocess.PIPE)
+    return json.loads(output)
+
+
 def check_prerequisites(root, candidate):
     """Inspect installed tools and browsers without installing or launching them."""
     package = json.loads((candidate / 'package.json').read_text())
@@ -124,11 +134,7 @@ def check_prerequisites(root, candidate):
     for entry in ('next/dist/bin/next', 'vitest/vitest.mjs', 'typescript/bin/tsc', 'eslint/bin/eslint.js', 'prettier/bin/prettier.cjs', '@playwright/test/cli.js'):
         guard.require((root / 'node_modules' / entry).is_file(), f'Missing installed tooling entry: {entry}')
     banner('PASS', f'PREFLIGHT — {len(required)} required dependency versions match the reviewed lockfile; reusing node_modules')
-    probe = """const path = require('node:path');
-const { registry } = require(path.join(path.dirname(require.resolve('playwright-core/package.json')), 'lib/server/registry/index.js'));
-console.log(JSON.stringify(['chromium-headless-shell', 'webkit'].map(name => ({name, path: registry.findExecutable(name).executablePath()}))));"""
-    output = subprocess.check_output(['node', '-e', probe], cwd=root, text=True, stderr=subprocess.PIPE)
-    browsers = json.loads(output)
+    browsers = browser_inventory(root)
     guard.require(len(browsers) == 2 and {item['name'] for item in browsers} == {'chromium-headless-shell', 'webkit'}, 'Incomplete browser installation inventory')
     missing = []
     for item in browsers:
