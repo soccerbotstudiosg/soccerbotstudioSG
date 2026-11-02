@@ -4377,3 +4377,11 @@ Final consolidated `npm run verify:code` passed:250 unit/component cases,182 too
 ### 2 November 2026 — Consolidated candidate pre-publication audit
 
 Reviewed current AGENTS and repository testing/documentation skills, actual remote main fc52077, source diff, confirmed/pending invoice and animation guards, paid fallback, checkout expiry guidance, dialog semantics and test/inventory consumers. No new blocking logic issue found in this bounded pass. Worker contracts, dependencies, migrations, provider calls and workflow gates are unchanged. Existing full local verification is retained; browser CI and physical acceptance remain pending. Owner authorized publishing one draft follow-up PR and CI, not merge or deployment.
+
+### 3 November 2026 — PR20 browser CI repair
+
+[Run41512855656](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41512855656) on0bff7c6 failed in jobs125510336963 and125510336783. The dismissal test retained the obsolete “Your confirmation is saved” assertion on all three profiles. Desktop Chromium also measured the icon during its380ms scale animation (45.139px versus the48px minimum). Frontend, all Worker groups and backend browser shards passed; final backend/live-email aggregation was skipped, not accepted.
+
+Update the dismissal expectation to the approved full message; retain saved-receipt, retry, attempt-identity and provider-effect assertions. Await the actual icon animation finished promises before measuring its final rendered bounds; reduced motion returns immediately. Keep the48px minimum, with no sleeps, retries, skips, timeout increases or inventory changes. This is a browser-test repair, not an application/payment change. Original run/artifacts remain failure evidence; owner/CI browser execution remains required.
+
+Repair validation: source ownership/import/graph/test-control and policy guards, TypeScript, targeted ESLint and formatting passed. All1294 documentation links and50 Mermaid diagrams passed. No browser run was executed locally; the unchanged full application suite receipt is retained, and the repaired browser cases require new-head CI.

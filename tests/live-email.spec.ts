@@ -1081,6 +1081,15 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(
       page.getByRole("heading", { name: "Booking confirmed", exact: true }),
     ).toBeVisible();
+    // Measure the final icon size after its intentional confirmation pop.
+    // Reduced motion creates no animation, so this resolves immediately.
+    await page
+      .locator(".confirmation-shell .status-icon")
+      .evaluate(async (icon) => {
+        await Promise.all(
+          icon.getAnimations().map((animation) => animation.finished),
+        );
+      });
     const tick = page.locator(".confirmation-shell .status-icon svg");
     const tickBox = await tick.boundingBox();
     expect(tickBox).not.toBeNull();
@@ -2006,7 +2015,7 @@ test("real API failed completed dismissal opens the first step and explicit retr
       page.getByRole("button", { name: "Continue as guest", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "Your confirmation is saved",
+      "Unable to start a new booking. Please try again. Your confirmed booking is unchanged.",
     );
     expect(
       await page.evaluate(() =>
