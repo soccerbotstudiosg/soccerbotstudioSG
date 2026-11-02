@@ -19,6 +19,7 @@ import {
   validateDeployment,
   verifySandboxSettings,
   awaitDeploymentHealth,
+  readDeploymentPredecessor,
   verifySaasResources,
 } from "./deploy-cloudflare.mjs";
 const revision = "a".repeat(40);
@@ -508,5 +509,90 @@ test("closed deployment refuses missing or misleading registration and environme
       }),
       pause: async () => assert.fail(),
     }),
+  );
+});
+
+test("closed redeployment captures the actual predecessor and waits for the exact new revision", async (t) => {
+  const old = "b".repeat(40);
+  const observations = [old, old, revision];
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    calls++;
+    assert.equal(url, "https://worker.example/api/health");
+    assert.equal(options.redirect, "error");
+    assert.equal(options.cache, "no-store");
+    return Response.json({ revision: old });
+  });
+  const previous = await readDeploymentPredecessor(
+    "https://worker.example",
+    true,
+  );
+  assert.equal(calls, 1);
+  assert.equal(previous.revision, old);
+  const pauses = [];
+  const result = await awaitDeploymentHealth({
+    revision,
+    previousRevision: previous.revision,
+    closed: true,
+    read: async () => ({
+      revision: observations.shift(),
+      environment: "production",
+      liveCustomerAccess: "disabled",
+      effectiveProviderAccess: "disabled",
+      foundationRegistration: "registered",
+    }),
+    pause: async (ms) => pauses.push(ms),
+  });
+  assert.deepEqual(result.observedRevisions, [old, old, revision]);
+  assert.deepEqual(pauses, [2000, 2000]);
+  for (const previousRevision of [old, undefined]) {
+    await assert.rejects(
+      awaitDeploymentHealth({
+        revision,
+        previousRevision,
+        closed: true,
+        read: async () => ({ revision: "c".repeat(40) }),
+        pause: async () => assert.fail("Unknown revision must not be retried"),
+      }),
+      /Unexpected deployment revision/,
+    );
+  }
+});
+
+test("only closed first installation permits a missing predecessor; failed or malformed health fails closed", async (t) => {
+  let status = 404;
+  let body = {};
+  let transportError = false;
+  t.mock.method(globalThis, "fetch", async () => {
+    if (transportError) throw new Error("transport failed");
+    return Response.json(body, { status });
+  });
+  assert.equal(
+    await readDeploymentPredecessor("https://worker.example", true),
+    null,
+  );
+  await assert.rejects(
+    readDeploymentPredecessor("https://worker.example", false),
+  );
+  for (status of [401, 403, 429, 500, 503]) {
+    await assert.rejects(
+      readDeploymentPredecessor("https://worker.example", true),
+    );
+  }
+  status = 200;
+  for (body of [{}, { revision: "bad" }, null]) {
+    await assert.rejects(
+      readDeploymentPredecessor("https://worker.example", true),
+    );
+  }
+  body = { revision };
+  assert.equal(
+    (await readDeploymentPredecessor("https://worker.example", false)).revision,
+    revision,
+  );
+  transportError = true;
+  await assert.rejects(
+    readDeploymentPredecessor("https://worker.example", true),
+    /transport failed/,
   );
 });

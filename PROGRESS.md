@@ -2,11 +2,17 @@
 
 Updated 2 November 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
 
+## Active repair — closed deployment propagation
+
+Branch `fix/closed-deployment-propagation` builds on the verified PR18 stack, now merged into main4454b334. PR16–18 each passed all13 final-head checks before their authorized merges. Production release [41386001023](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41386001023), job125087292909, uploaded revision beb657a and Worker version9093bac7-b578-4f77-84a8-8f4d0a5581b0, then failed health verification: the old revision f99a1ee was compared with an undefined predecessor. Closed mode had skipped preflight predecessor capture since commit915de5f2; this is an existing propagation defect, not evidence of invalid closed configuration. New-version public health and owner acceptance remain unverified.
+
+The repair captures existing health for closed releases, permitting only HTTP404 for absent first-install health. It retains exact-revision/closed-state checks, the existing observation bound and unknown-revision/error rejection. The regression failed against the original shortcut, then all11 deployment tests passed after repair. Browser/Worker inventories and shards are unchanged; this adds tooling cases only. Full local `npm run verify:code` passed (including tooling, installer, source/policy, audit, formatting, lint, types, unit inventory and build/export); final-head CI remains required before merge; no runtime activation or provider effects. Next: publish the focused repair, require its final-head CI and review, then verify a fresh-main release. Leave507 untouched.
+
 ## Current merge campaign — PR15–18
 
 Owner authorized merging all ready PRs on 2 November after consultation. PR15 headc827924 passed all13 jobs in run41369195891 and merged as beb657a8363044445b57c57554cd08f5f21a00e3. Owner accepts testing on the not-yet-live client production Worker after deployment; pre-merge staging UAT is waived for this change. Keep repository production access closed; manual sandbox activation is the accepted testing procedure and a later deployment may close it again. This supersedes older statements treating that intentional setup as a merge blocker. Provider/device/latency acceptance remains outstanding.
 
-PR16's original final head7d678dfa passed all13 jobs in run41373470332. Incorporating merged PR15 exposed only Progress/Journey conflicts; retain both histories and update the checkpoint. This synchronized head requires fresh CI before merge. PR17/18 incorporate the reviewed predecessors and retain both documentation histories without additional product changes. PR16 synchronized head8cbb8d8 is now incorporated into PR17 so its new CI verifies payment changes, the artifact action and Playwright together. Source merges cleanly; only Progress/Journey required reconciliation. Final-head CI remains required. No live provider effects or manual activation are performed by this campaign. Leave507 untouched.
+PR16 synchronized head8cbb8d8 passed all13 jobs in run41384996754 and merged as872b62d. PR17 head807dd43 passed all13 jobs in run41385294723 and merged as7ceea60. PR18 headd741014 passed all13 jobs in run41385462579 and merged as4454b334. Both source and retained documentation histories are integrated. Fresh-main verification/deployment is separate; the propagation repair above is still pending. No live provider effects or manual activation were performed. Leave507 untouched.
 
 ## PR15 implementation checkpoint — historical before merge
 

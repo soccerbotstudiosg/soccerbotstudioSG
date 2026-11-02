@@ -170,8 +170,14 @@ export async function awaitDeploymentHealth({
   }
   throw new Error("Deployed revision did not propagate within 16 observations");
 }
+/** Capture the predecessor without requiring an existing closed first installation. */
+export async function readDeploymentPredecessor(origin, closed) {
+  const previous = await readHealth(origin, { allowMissing: closed });
+  if (previous) assert.match(previous.revision, /^[a-f0-9]{40}$/);
+  return previous;
+}
 /** Read canonical health with bounded transport and no redirects. */
-export async function readHealth(origin) {
+export async function readHealth(origin, { allowMissing = false } = {}) {
   const response = await fetch(`${origin}/api/health`, {
     headers: {
       accept: "application/json",
@@ -181,8 +187,11 @@ export async function readHealth(origin) {
     redirect: "error",
     signal: AbortSignal.timeout(15000),
   });
+  if (allowMissing && response.status === 404) return null;
   assert.equal(response.status, 200);
-  return response.json();
+  const health = await response.json();
+  assert.ok(health && typeof health === "object", "Invalid deployment health");
+  return health;
 }
 /** Reject foreign zones, inactive fallback origins and competing routes before writes. */
 export function verifySaasResources(
@@ -377,9 +386,10 @@ async function deploy() {
         env: { ...process.env, WRANGLER_SEND_METRICS: "false" },
       },
     );
-  // Closed first install needs no healthy predecessor. Open staging still requires one.
-  const previous = closed ? null : await readHealth(config.vars.APP_ORIGIN);
-  if (previous) assert.match(previous.revision, /^[a-f0-9]{40}$/);
+  const previous = await readDeploymentPredecessor(
+    config.vars.APP_ORIGIN,
+    closed,
+  );
   const checkpoint = (phase) =>
     writeFileSync(
       `${directory}/deployment.json`,
