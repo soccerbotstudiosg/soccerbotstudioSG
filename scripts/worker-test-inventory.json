@@ -384,6 +384,14 @@
     "title": "client sandbox disabled or foreign pairing refuses guest booking before provider dispatch"
   },
   {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "three consecutive paid single bookings retain independent receipts payments and active ownership"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "paid multi-session then two single bookings preserve totals capacity and old receipt isolation"
+  },
+  {
     "file": "worker/tests/foundation.test.mjs",
     "title": "foundation valid bindings emit correlated storage evidence without secret markers"
   },

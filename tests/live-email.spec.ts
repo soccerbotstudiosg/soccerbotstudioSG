@@ -1,3 +1,4 @@
+import { createBookingSequence } from "../worker/tests/booking-sequence-fixture.mjs";
 import { createBookingMechanism as createIsolatedMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
 import {
   expect,
@@ -1366,14 +1367,17 @@ async function guestDetails(
   page: Page,
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
   batch = false,
+  journey?: { starts: number[]; enter: boolean },
 ) {
   // Failure journeys start at the supported booking entry. The native guest
   // journey separately asserts homepage warming and navigation into booking.
-  await page.goto("/book/account/");
-  await page
-    .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-    .getByRole("button", { name: "Not now", exact: true })
-    .click();
+  if (journey?.enter !== false) {
+    await page.goto("/book/account/");
+    await page
+      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("button", { name: "Not now", exact: true })
+      .click();
+  }
   await page
     .getByRole("button", { name: "Continue as guest", exact: true })
     .click();
@@ -1401,20 +1405,18 @@ async function guestDetails(
     year: "numeric",
   }).format(new Date(`${mechanism.date}T04:00:00Z`));
   await page.getByRole("button", { name: label, exact: true }).click();
-  await page
-    .getByRole("group", { name: "Session times" })
-    .getByRole("button", { name: /12:10–12:50/ })
-    .click();
-  await page
-    .getByRole("combobox", { name: /Trainer for .* at 12:10/ })
-    .selectOption({ index: 1 });
-  if (batch) {
+  const starts = journey?.starts ?? [
+    mechanism.startMs,
+    ...(batch ? [mechanism.startMs + 3000000] : []),
+  ];
+  for (const startMs of starts) {
+    const start = new Date(startMs + 28800000).toISOString().slice(11, 16);
     await page
       .getByRole("group", { name: "Session times" })
-      .getByRole("button", { name: /13:00–13:40/ })
+      .getByRole("button", { name: new RegExp(`${start}–`) })
       .click();
     await page
-      .getByRole("combobox", { name: /Trainer for .* at 13:00/ })
+      .getByRole("combobox", { name: new RegExp(`Trainer for .* at ${start}`) })
       .selectOption({ index: 1 });
   }
   await page.getByRole("link", { name: "Continue", exact: true }).click();
@@ -2952,4 +2954,178 @@ test("email account actions return through booking options and sign in again wit
     ),
   ).toHaveLength(2);
   expect(evidence.unexpected).toEqual([]);
+});
+
+/** Exercise complete consecutive journeys in one browser and one real Worker runtime. */
+async function consecutivePaidJourneys(page: Page, sizes: number[]) {
+  let completed = Promise.withResolvers<void>();
+  const mechanism = await createBookingSequence(sizes, {
+    onLog(message) {
+      if (!message.startsWith("{")) return;
+      const event = JSON.parse(message);
+      if (
+        event.event === "confirmation_trace" &&
+        event.boundary === "recovery" &&
+        event.result === "complete"
+      )
+        completed.resolve();
+    },
+  });
+  const transport = await mechanismTransport(page, mechanism);
+  const ids: string[] = [];
+  const tabs = page.context().pages().length;
+  try {
+    for (const [index, journey] of mechanism.journeys.entries()) {
+      completed = Promise.withResolvers<void>();
+      let attemptId = "";
+      const completeUrl = journey.checkoutUrl + "/complete";
+      await page.route(journey.checkoutUrl, (route) =>
+        route.fulfill({
+          contentType: "text/html",
+          body: `<!doctype html><h1>Synthetic checkout ${index + 1}</h1><a href="${completeUrl}">Complete synthetic payment</a>`,
+        }),
+      );
+      await page.route(completeUrl, async (route) => {
+        expect((await mechanism.completeJourney(index)).status).toBe(202);
+        await completed.promise;
+        await route.fulfill({
+          contentType: "text/html",
+          body: `<!doctype html><script>location.replace(${JSON.stringify(`http://127.0.0.1:4173/confirmation/?attempt=${attemptId}`)})</script>`,
+        });
+      });
+      await guestDetails(page, mechanism, sizes[index] > 1, {
+        starts: journey.starts,
+        enter: index === 0,
+      });
+      await page
+        .getByLabel("Full name", { exact: false })
+        .fill(`Sequence Guest ${index + 1}`);
+      const response = await checkoutHoldResponse(page);
+      const result = transport.json(response) as {
+        attemptId: string;
+        paymentAvailable: boolean;
+      };
+      expect(result.paymentAvailable).toBe(true);
+      attemptId = result.attemptId;
+      expect(ids).not.toContain(attemptId);
+      ids.push(attemptId);
+      await expect(page).toHaveURL(journey.checkoutUrl);
+      if (index === 1) {
+        const originalPayment = await mechanism.db
+          .prepare(
+            "SELECT request_id,reference,expires_ms,created_ms FROM hitpay_payments WHERE attempt_id=?",
+          )
+          .bind(attemptId)
+          .first();
+        await page.goBack();
+        const continuation = page.getByRole("link", {
+          name: "Continue payment",
+          exact: true,
+        });
+        await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
+        await expect(page.getByRole("timer")).toBeVisible();
+        await page.reload();
+        await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
+        // Reopen A while B is unpaid, then restore B without borrowing A's proof.
+        await page.goto(`/confirmation/?attempt=${ids[0]}`);
+        await expect(
+          page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("link", { name: "Continue payment", exact: true }),
+        ).toHaveCount(0);
+        await page.goto("/book/payment/");
+        await expect(
+          page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        ).toHaveCount(0);
+        await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
+        await continuation.click();
+        expect(
+          await mechanism.db
+            .prepare(
+              "SELECT request_id,reference,expires_ms,created_ms FROM hitpay_payments WHERE attempt_id=?",
+            )
+            .bind(attemptId)
+            .first(),
+        ).toEqual(originalPayment);
+      }
+      await page
+        .getByRole("link", { name: "Complete synthetic payment", exact: true })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
+      );
+      await expect(
+        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+      expect(page.context().pages()).toHaveLength(tabs);
+      const paid = await mechanism.db
+        .prepare(
+          "SELECT state,json_extract(scope_json,'$.invoiceId') AS invoice_id FROM hitpay_payments WHERE attempt_id=?",
+        )
+        .bind(attemptId)
+        .first();
+      expect(paid).toMatchObject({
+        state: "complete",
+        invoice_id: journey.invoiceId,
+      });
+      if (index < sizes.length - 1) {
+        const dismissed = page.waitForResponse(
+          (r) =>
+            new URL(r.url()).pathname ===
+              `/api/attempts/${attemptId}/dismiss` && r.status() === 200,
+        );
+        await page
+          .getByRole("button", { name: "Make another booking", exact: true })
+          .click();
+        await expect(page).toHaveURL(/\/book\/account\/$/);
+        await dismissed;
+      }
+    }
+    for (const [index, id] of ids.entries()) {
+      await page.goto(`/confirmation/?attempt=${id}`);
+      await expect(
+        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      ).toBeVisible();
+      await page.getByText("View full details", { exact: true }).click();
+      await expect(
+        page.getByText(`Sequence Guest ${index + 1}`, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+    }
+    expect(
+      mechanism.calls.filter((call) => call.body?.method === "book"),
+    ).toHaveLength(sizes.reduce((a, b) => a + b, 0));
+    expect(
+      mechanism.calls.filter(
+        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+      ),
+    ).toHaveLength(3);
+    expect(
+      mechanism.calls.filter((call) => call.url.endsWith("/accept-payment")),
+    ).toHaveLength(3);
+    expect(transport.unexpected).toEqual([]);
+    expect(mechanism.unexpected).toEqual([]);
+  } finally {
+    await stopMechanism(page, mechanism, transport);
+  }
+}
+
+test("three complete single-booking browser journeys preserve independent confirmations through Back reload and old links", async ({
+  page,
+}) => {
+  // Three complete journeys share one runtime; retain the usual individual action deadlines.
+  test.setTimeout(90000);
+  await consecutivePaidJourneys(page, [1, 1, 1]);
+});
+test("complete multi-session then two single-booking browser journeys reset selections and preserve old receipts", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await consecutivePaidJourneys(page, [2, 1, 1]);
 });

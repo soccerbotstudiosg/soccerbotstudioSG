@@ -1208,6 +1208,14 @@
     "title": "email account actions return through booking options and sign in again with either remember choice"
   },
   {
+    "file": "tests/live-email.spec.ts",
+    "title": "three complete single-booking browser journeys preserve independent confirmations through Back reload and old links"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "complete multi-session then two single-booking browser journeys reset selections and preserve old receipts"
+  },
+  {
     "file": "src/features/booking/session-price.test.tsx",
     "title": "homepage prices follow the catalogue environment without a live preview fallback"
   },

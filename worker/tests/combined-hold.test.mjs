@@ -3616,3 +3616,156 @@ test("client sandbox disabled or foreign pairing refuses guest booking before pr
     }
   }
 });
+
+/** Complete three journeys without replacing the customer, runtime or provider history. */
+async function consecutiveJourneys(sizes) {
+  const { createBookingSequence } =
+    await import("./booking-sequence-fixture.mjs");
+  let completed = Promise.withResolvers();
+  const m = await createBookingSequence(sizes, {
+    onLog(message) {
+      if (!message.startsWith("{")) return;
+      const event = JSON.parse(message);
+      if (
+        event.event === "confirmation_trace" &&
+        event.boundary === "recovery" &&
+        event.result === "complete"
+      )
+        completed.resolve(event);
+    },
+  });
+  try {
+    const c = await customer(m);
+    const previous = [];
+    for (const [index, journey] of m.journeys.entries()) {
+      completed = Promise.withResolvers();
+      const key = crypto.randomUUID();
+      const input = {
+        ...c.input,
+        key,
+        accepted: true,
+        sessions: journey.starts.map((startMs) => ({
+          ...c.input.sessions[0],
+          startMs,
+          players: index + 1,
+        })),
+      };
+      const checkout = await checkoutResult(
+        m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${key}`, {
+          method: "POST",
+          headers: c.headers,
+          body: JSON.stringify(input),
+        }),
+        200,
+      );
+      assert.equal(checkout.attemptId, key);
+      assert.equal(checkout.paymentAvailable, true);
+      const context = () =>
+        checkoutResult(
+          m.mf.dispatchFetch(m.origin + `/api/attempts/${key}/checkout`, {
+            headers: c.headers,
+          }),
+          200,
+        );
+      const unpaid = await context();
+      assert.equal(unpaid.checkout.url, journey.checkoutUrl);
+      assert.equal(unpaid.summary.sessions.length, sizes[index]);
+      assert.equal(unpaid.summary.totalMinor, sizes[index] * 8800);
+      assert.equal(unpaid.confirmation, undefined);
+      for (const old of previous) {
+        const saved = await checkoutResult(
+          m.mf.dispatchFetch(m.origin + `/api/attempts/${old.id}/checkout`, {
+            headers: c.headers,
+          }),
+          200,
+        );
+        assert.deepEqual(saved.confirmation, old.proof);
+        await checkoutResult(
+          m.mf.dispatchFetch(m.origin + `/api/attempts/${old.id}/dismiss`, {
+            method: "POST",
+            headers: c.headers,
+          }),
+          200,
+        );
+      }
+      const current = await checkoutResult(
+        m.mf.dispatchFetch(m.origin + "/api/booking/current", {
+          headers: c.headers,
+        }),
+        200,
+      );
+      assert.equal(current.attemptId, key);
+      assert.equal((await m.completeJourney(index)).status, 202);
+      assert.equal((await completed.promise).outcome, "ok");
+      const paid = await context();
+      assert.equal(paid.confirmation.attemptId, key);
+      assert.equal(paid.confirmation.sessions.length, sizes[index]);
+      assert.equal(paid.confirmation.totalMinor, sizes[index] * 8800);
+      assert.deepEqual(
+        paid.confirmation.sessions.map((s) => s.startMs),
+        journey.starts,
+      );
+      assert.ok(
+        paid.confirmation.sessions.every(
+          (session) => session.players === index + 1,
+        ),
+      );
+      previous.push({ id: key, proof: paid.confirmation });
+      await checkoutResult(
+        m.mf.dispatchFetch(m.origin + `/api/attempts/${key}/dismiss`, {
+          method: "POST",
+          headers: c.headers,
+        }),
+        200,
+      );
+    }
+    const calendar = await checkoutResult(
+      m.mf.dispatchFetch(m.origin + `/api/calendar/${m.date.slice(0, 7)}`),
+      200,
+    );
+    assert.deepEqual(
+      calendar.dates.flatMap((day) => day.offers ?? []),
+      [],
+    );
+    const restored = await checkoutResult(
+      m.mf.dispatchFetch(m.origin + "/api/booking/current", {
+        headers: c.headers,
+      }),
+      200,
+    );
+    assert.equal(restored.state, "empty");
+    const rows = await m.db
+      .prepare(
+        "SELECT attempt_id,reference,request_id,state FROM hitpay_payments ORDER BY attempt_id",
+      )
+      .all();
+    assert.equal(rows.results.length, 3);
+    assert.equal(new Set(rows.results.map((row) => row.reference)).size, 3);
+    assert.equal(new Set(rows.results.map((row) => row.request_id)).size, 3);
+    assert.ok(rows.results.every((row) => row.state === "complete"));
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      sizes.reduce((a, b) => a + b, 0),
+    );
+    assert.equal(
+      m.calls.filter(
+        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+      ).length,
+      3,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.url.endsWith("/accept-payment")).length,
+      3,
+    );
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+}
+
+test("three consecutive paid single bookings retain independent receipts payments and active ownership", async () => {
+  await consecutiveJourneys([1, 1, 1]);
+});
+test("paid multi-session then two single bookings preserve totals capacity and old receipt isolation", async () => {
+  await consecutiveJourneys([2, 1, 1]);
+});
