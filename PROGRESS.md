@@ -1,6 +1,6 @@
 # SoccerBotStudioSG current task and handover
 
-Updated 31 October 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
+Updated 2 November 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
 
 ## Loader logo cleanup — prepared 31 October 2026
 
@@ -16,7 +16,13 @@ Application timing logs are enabled/persisted at sampling1; Cloudflare telemetry
 
 Automatic approval review rejected installation of the persistent once-per-minute schedule as not specifically authorized. Owner subsequently explicitly approved the persistent schedule. At 22:08:59 Singapore, PUT succeeded and GET readback confirmed exactly `* * * * *` on soccerbot-production. This proves schedule configuration, not execution or recovery acceptance. Pending: first scheduled execution, public health/calendar/provider checks, owner guest sandbox payment, correlated checkout/recovery timing report. Earlier closed checkpoints below are historical and superseded by this runtime observation.
 
-## Current task — client provider configuration and acceptance
+## Current task — dependency review skill
+
+Owner requested a dedicated repository skill for researched dependency suitability and justified application adaptations, without an Actions summary. Branch docs/dependency-review-skill starts from main f99a1ee1d92b8413e54baf7600a82ebbc78ca60d. Added soccerbot-dependencies and discovery links from AGENTS, the runbook and both companion skills. The skill owns upstream/version-range research, platform and supply-chain compatibility, application-versus-fixture decisions and merge/defer/reject recommendations; testing/documentation ownership and action boundaries remain unchanged. This is instruction-only work: no application, dependency, workflow, fixture or inventory change; source and CI-policy checks passed; formatting, skill metadata, instruction-only scope and 87 local link targets were validated. Publish a separate draft PR. Final-head CI/merge remain separate and pending.
+
+PR16 head7d678dfa7866bd21673a3b4e4465bd94f44326e4 passed all13 jobs in run41373470332; PR17 head45c59ce40446e1dc10a2deb714370c7db9ef7e95 passed all13 in run41375585310. Both were open/unmerged at the last GitHub review. PR17's full-interval research additionally identified removed macOS14 WebKit support and Debian11/Ubuntu20.04 support; Linux CI does not accept owner platforms. Cloud Containers bootstrap/browser publication remains separate. This branch does not include either dependency PR or payment PR15. No merges, deployments or provider operations are authorized by this skill addition.
+
+## Deployment continuation — client provider configuration and acceptance
 
 Client GitHub deployment ownership and closed Cloudflare foundation are established. Client customer operations are **not activated**. Continue on Workers.dev while domain delegation/transfer is pending; do not repeat completed bootstrap work. Leave test 507 untouched.
 

@@ -45,6 +45,8 @@ Do not run real bookings/payments or send test notifications merely to fill a mo
 
 ## 3. Dependency maintenance and Dependabot
 
+Apply the [dependency review skill](../.agents/skills/soccerbot-dependencies/SKILL.md) before changing dependencies or recommending merge. It owns upstream research, suitability, compatibility mapping, application-change decisions and the PR assessment; this section owns cadence and operational remediation/release steps. Use the existing testing and documentation skills for their respective evidence.
+
 [Dependabot configuration](../.github/dependabot.yml) schedules weekly npm and GitHub Actions **version updates** (Monday 09:00 Singapore), limited to one open version-update PR per ecosystem. Minor/patch updates are grouped; major upgrades and coordinated compiler, lint, Node-type, Playwright and Cloudflare tooling updates remain individual. Security updates have separate GitHub limits and are not constrained to this weekly schedule or two-PR limit.
 
 **Security setup is per repository.** In GitHub Settings → Advanced Security (or Code security), enable Dependency graph, Dependabot alerts and Dependabot security updates. Do this for both the canonical repository and the client repository when populated; copying YAML does not copy repository settings. Confirm the settings and review Security → Dependabot alerts; an empty PR list is not evidence that alerts are enabled or vulnerabilities absent. Progress records owner/API confirmation for each repository. The current connector cannot change these settings.

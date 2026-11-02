@@ -13,6 +13,8 @@ Review tests during implementation and before publishing the PR, not only after 
 
 No assistant browser execution, screenshots, `npm run verify`, `verify:browser` or browser-running installers. Owner/CI operates browsers and physical devices. Use isolated synthetic data and intercepted provider requests for local Worker tests. This procedure grants no live bookings, payments, refunds, cancellations, notification sends, DNS/email/registrar changes, production load or historical cleanup authority. The `live-email` gate name is not permission to send real email.
 
+For dependency additions, updates or replacements, also apply the [dependency review skill](../soccerbot-dependencies/SKILL.md) before implementation or recommending merge. It owns suitability research and the application-change decision; retain this skill's existing evidence responsibilities.
+
 ## 1. Map the whole change to existing tests
 
 1. Inspect the full PR diff against its actual base, exact source head, working tree and relevant CI receipts. For stacked PRs, identify inherited behavior separately from the current slice. Preserve unknown edits and original failures.

@@ -15,6 +15,8 @@ SoccerBot uses isolated workerd/D1/Durable Object tests with intercepted synthet
 
 Some hosts discover `.agents/skills/*/SKILL.md`; others do not. AGENTS explicitly directs readers here so the procedure remains available without automatic skill discovery. This is an instruction skill, **not a CI-enforced hook or unattended automation**. An agent must perform and report the checks.
 
+For dependency additions, updates or replacements, also apply the [dependency review skill](../soccerbot-dependencies/SKILL.md) before implementation or recommending merge. It owns suitability research and the application-change decision; retain this skill's existing evidence responsibilities.
+
 ## 1. Establish the change and checkpoint
 
 1. Identify the current user request, repository, branch, base/head, working tree, preserved work and open PR. Preserve unknown edits and stashes.
