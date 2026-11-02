@@ -1,6 +1,6 @@
 # SoccerBotStudioSG current task and handover
 
-Updated 31 October 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
+Updated 2 November 2026, Singapore. This file owns the current task and verified leave-off; [Journey](docs/journey.md) retains dated evidence and [AGENTS](AGENTS.md) owns engineering rules.
 
 ## Loader logo cleanup — prepared 31 October 2026
 
@@ -15,6 +15,10 @@ This is an explicitly authorized runtime override, not a change to the sealed re
 Application timing logs are enabled/persisted at sampling1; Cloudflare telemetry query returned production foundation_trace events, including the new runtime version `1170ba6b-b929-4b30-8c55-377d4f4861b9`. Query-string redaction is now enabled. Native distributed traces remain disabled; Grafana production export/alerts remain inactive. Payment/recovery timings cannot be claimed before the owner's test. Workspace HTTP health read was blocked by CONNECT403; dashboard settings evidence does not replace public route/provider acceptance.
 
 Automatic approval review rejected installation of the persistent once-per-minute schedule as not specifically authorized. Owner subsequently explicitly approved the persistent schedule. At 22:08:59 Singapore, PUT succeeded and GET readback confirmed exactly `* * * * *` on soccerbot-production. This proves schedule configuration, not execution or recovery acceptance. Pending: first scheduled execution, public health/calendar/provider checks, owner guest sandbox payment, correlated checkout/recovery timing report. Earlier closed checkpoints below are historical and superseded by this runtime observation.
+
+## Active dependency maintenance — PR17 Playwright runtime alignment
+
+Owner requested repairing Dependabot PRs16/17 to passing CI before personally reviewing/merging. This branch updates Playwright1.58.2→1.64.1 with matching Noble images in the active target workflow and retained legacy policy fixture. The version-drift negative test now derives its input version from package.json and verifies mutations change valid configuration. Generated versions are refreshed from the lockfile. Original CI41371551538 failed frontend's stale versions inventory and every browser shard at launch because the image still contained1.58.2 browser binaries; Worker groups passed. These failures did not exercise application browser behavior. Existing Node24 meets the new Node20 minimum. First local verification caught Playwright removing lib/generated/clockSource.js. The existing Node-VM clock regression now extracts the installed injected clock from coreBundle.js using TypeScript AST, requiring exactly one source and retaining both timing assertions; it never loads a browser or substitutes a mock. Original failure /tmp/dependabot17-code.log retained; clock/policy checks37/37 passed. Full consolidated local verification/new-head CI follow; browser/device compatibility remains CI/owner evidence. No merge/deployment. PR16's action guard repair and PR15's payment work remain separate branches.
 
 ## Current task — client provider configuration and acceptance
 
