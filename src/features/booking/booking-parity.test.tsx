@@ -467,9 +467,7 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
     expect(
       screen.getByRole("group", { name: "Session times" }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByText("Checking available times…"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Checking times…")).not.toBeInTheDocument();
   }
   fireEvent.click(screen.getByRole("button", { name: "Two players" }));
   await act(async () => {});
@@ -1219,7 +1217,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
     await waitFor(() => expect(gates.has("2026-10")).toBe(true));
     expect(region).toHaveAttribute("aria-busy", "true");
     expect(
-      within(region).getByRole("status", { name: "Checking available dates…" }),
+      within(region).getByRole("status", { name: "Checking dates…" }),
     ).toBeInTheDocument();
     expect(
       within(region).queryByRole("button", { name: dateLabel("2026-10-31") }),

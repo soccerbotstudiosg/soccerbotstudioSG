@@ -167,9 +167,9 @@ export function ReviewStep({
           }}
         >
           {verifying ? (
-            "Verifying your reservation…"
+            "Checking reservation…"
           ) : busy ? (
-            <BrandLoading compact label="Opening secure payment…" />
+            <BrandLoading compact label="Opening checkout…" />
           ) : (
             "Continue to payment"
           )}
@@ -177,9 +177,8 @@ export function ReviewStep({
         </button>
       </div>
       {verifying && (
-        <p role="status">
-          Please don’t close or refresh. Payment becomes available after your
-          reservation is verified.
+        <p className="notice" role="status">
+          Reservation checking. Don’t close or refresh.
         </p>
       )}
       {policy && (

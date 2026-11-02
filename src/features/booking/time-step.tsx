@@ -235,11 +235,7 @@ export function TimeStep() {
         </div>
         {calendarBusy ? (
           <div className="calendar-loading">
-            <BrandLoading
-              overlay={false}
-              compact
-              label="Checking available dates…"
-            />
+            <BrandLoading overlay={false} compact label="Checking dates…" />
             <p>Finding available sessions…</p>
           </div>
         ) : (
@@ -288,17 +284,13 @@ export function TimeStep() {
           </>
         )}
         {live && !calendarBusy && (
-          <p role="status" className="hint">
+          <p role="status" className="notice">
             {monthResult ? (
               "Only dates with available sessions can be selected."
             ) : calendar.failed.includes(month.slice(0, 7)) ? (
               "Availability could not be checked. Your selections are saved."
             ) : (
-              <BrandLoading
-                overlay={false}
-                compact
-                label="Checking available dates…"
-              />
+              <BrandLoading overlay={false} compact label="Checking dates…" />
             )}{" "}
             <button className="text-link" onClick={calendar.retry}>
               Refresh availability
@@ -331,11 +323,7 @@ export function TimeStep() {
                 saved.
               </p>
             ) : (
-              <BrandLoading
-                overlay={false}
-                compact
-                label="Checking available times…"
-              />
+              <BrandLoading overlay={false} compact label="Checking times…" />
             )
           ) : result.status !== "success" ? (
             <div className="alert" role="alert">

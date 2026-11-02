@@ -194,8 +194,32 @@ it("hides the native payment capability at its expiry without claiming payment c
         : pending(),
     );
     vi.stubGlobal("fetch", fetch);
+    if (hitpay) {
+      // A provider return is confirmation-only, even with a still-available
+      // context and pending status before the webhook/recovery catches up.
+      const returned = render(
+        <ProtectedConfirmation attemptId={id} checkoutMode="live" />,
+      );
+      await act(async () => {});
+      expect(
+        screen.queryByRole("link", { name: "Continue payment" }),
+      ).toBeNull();
+      expect(screen.queryByRole("timer")).toBeNull();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(
+        screen.queryByRole("link", { name: "Continue payment" }),
+      ).toBeNull();
+      returned.unmount();
+      localStorage.clear();
+    }
     const first = render(
-      <ProtectedConfirmation attemptId={id} checkoutMode="live" />,
+      <ProtectedConfirmation
+        attemptId={id}
+        checkoutMode="live"
+        allowPaymentContinuation
+      />,
     );
     await act(async () => {});
     const label = hitpay ? "Continue payment" : "Open checkout";
@@ -213,7 +237,13 @@ it("hides the native payment capability at its expiry without claiming payment c
       await vi.advanceTimersByTimeAsync(1000);
     });
     first.unmount();
-    render(<ProtectedConfirmation attemptId={id} checkoutMode="live" />);
+    render(
+      <ProtectedConfirmation
+        attemptId={id}
+        checkoutMode="live"
+        allowPaymentContinuation
+      />,
+    );
     await act(async () => {});
     if (hitpay) expect(screen.getByRole("timer")).toHaveTextContent("00:02");
     await act(async () => {
@@ -228,7 +258,7 @@ it("hides the native payment capability at its expiry without claiming payment c
     expect(screen.queryByRole("link", { name: label })).toBeNull();
     expect(screen.queryByRole("timer")).toBeNull();
     expect(
-      screen.getByRole("status", { name: "Verifying your payment…" }),
+      screen.getByRole("status", { name: "Checking payment…" }),
     ).toBeVisible();
     cleanup();
     localStorage.clear();
@@ -258,12 +288,18 @@ it("hides the native payment capability at its expiry without claiming payment c
             )
           : pending(),
       );
-      render(<ProtectedConfirmation attemptId={id} checkoutMode="live" />);
+      render(
+        <ProtectedConfirmation
+          attemptId={id}
+          checkoutMode="live"
+          allowPaymentContinuation
+        />,
+      );
       await act(async () => {});
       expect(screen.queryByRole("link", { name: label })).toBeNull();
       expect(screen.queryByRole("timer")).toBeNull();
       expect(
-        screen.getByRole("status", { name: "Verifying your payment…" }),
+        screen.getByRole("status", { name: "Checking payment…" }),
       ).toBeVisible();
       cleanup();
     }

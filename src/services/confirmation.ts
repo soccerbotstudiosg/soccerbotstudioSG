@@ -314,9 +314,7 @@ export async function dismissCompletedBooking(attemptId: string) {
     headers: { Accept: "application/json" },
   });
   if (!response.ok || !(await response.json()).dismissed)
-    throw new Error(
-      "Your booking could not be closed on this device. Please try again.",
-    );
+    throw new Error("Please try again to leave this booking.");
 }
 
 // Tab-local navigation intent only; the server still verifies completion and

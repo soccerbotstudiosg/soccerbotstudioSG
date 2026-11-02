@@ -5,7 +5,7 @@ import { Icon } from "@/components/icon";
 import { ENQUIRY_TYPES } from "@/domain/catalog";
 import { todaySG } from "@/domain/dates";
 import { services } from "@/services";
-import type { Enquiry } from "@/services/contracts";
+import { customerMessage, type Enquiry } from "@/services/contracts";
 const blank: Enquiry = {
   name: "",
   email: "",
@@ -108,7 +108,12 @@ export function EnquiryPage() {
                 const result = await services.enquiry.submit(value);
                 setReceipt(result.email);
               } catch (e) {
-                setError((e as Error).message);
+                setError(
+                  customerMessage(
+                    e,
+                    "We couldn’t send your enquiry. Please try again or contact the studio.",
+                  ),
+                );
               } finally {
                 setBusy(false);
               }

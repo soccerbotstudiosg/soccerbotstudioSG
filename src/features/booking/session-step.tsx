@@ -164,11 +164,7 @@ function SessionPresentation({
       <div className="actions">
         {pending ? (
           <button className="button" disabled>
-            <BrandLoading
-              overlay={false}
-              compact
-              label="Loading available times…"
-            />
+            <BrandLoading overlay={false} compact label="Loading times…" />
           </button>
         ) : (
           <Link href="/book/time/" className="button">

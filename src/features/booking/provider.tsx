@@ -650,8 +650,7 @@ export function BookingProvider({
               setAction({
                 status: "failure",
                 operation,
-                error:
-                  "Payment status is still being checked. Your original booking has been kept.",
+                error: "Still checking your payment. Don’t pay again.",
               });
           }
           return false;
@@ -752,7 +751,7 @@ export function BookingProvider({
           });
           pauseCalendar(false);
           setSelectionNotice(
-            "Your reservation expired. Please choose a time again. Your contact details have been kept.",
+            "Your reserved time expired. Choose again; your details are saved.",
           );
           setAction({ status: "idle", returnToCalendar: true });
         },

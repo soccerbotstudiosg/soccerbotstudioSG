@@ -104,9 +104,7 @@ test("verified details saves only on explicit action and ignores completion afte
   await user.type(screen.getByLabelText(/Full name/), " Edited");
   expect(saveProfile.mock.calls[0][1].aborted).toBe(true);
   await act(async () => finish());
-  expect(
-    screen.queryByText("Contact details saved for your next visit."),
-  ).not.toBeInTheDocument();
+  expect(screen.queryByText("Details saved.")).not.toBeInTheDocument();
   expect(screen.getByLabelText(/Full name/)).toHaveValue(
     "First Contact Edited",
   );
@@ -158,12 +156,10 @@ test("verified details reports an explicit save and retains editable contact on 
   );
   await user.click(screen.getByRole("button", { name: "Choose member" }));
   await user.click(screen.getByRole("button", { name: "Review booking" }));
-  expect(await screen.findByRole("status")).toHaveTextContent(
-    "Contact details saved for your next visit.",
-  );
+  expect(await screen.findByRole("status")).toHaveTextContent("Details saved.");
   await user.click(screen.getByRole("button", { name: "Review booking" }));
-  expect(await screen.findByRole("status")).toHaveTextContent(
-    "could not be saved",
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "We couldn’t save your details",
   );
   expect(screen.getByLabelText(/Full name/)).toHaveValue("Shared Contact");
   expect(mocks.push).toHaveBeenCalledExactlyOnceWith("/book/review/");

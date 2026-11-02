@@ -521,15 +521,32 @@
     display: block;
     margin-bottom: 10px;
   }
-  .alert {
+  .alert,
+  .notice {
     margin-bottom: 20px;
     padding: 15px 17px;
     border-radius: 8px;
     font-size: var(--text-body);
     line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+  .alert {
     border: 1px solid var(--color-danger-line);
     background: var(--color-danger-soft);
     color: var(--color-danger);
+  }
+  .notice {
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    color: var(--color-ink);
+  }
+  .alert > p,
+  .notice > p {
+    margin: 0;
+  }
+  .alert > .button,
+  .notice > .button {
+    margin-top: 12px;
   }
   .dialog-actions {
     display: grid;

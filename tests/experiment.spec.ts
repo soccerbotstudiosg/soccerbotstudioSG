@@ -140,7 +140,7 @@ test("synthetic paid but invalid booking needs recovery instead of claiming succ
   await start(page);
   await outcome(page, "Simulate payment needing review");
   await expect(
-    page.getByRole("heading", { name: "Payment status unresolved" }),
+    page.getByRole("heading", { name: "Payment needs checking" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
@@ -159,10 +159,10 @@ test("synthetic access revocation hides protected details and stops checking", a
   await start(page);
   await outcome(page, "Expire synthetic access");
   await expect(
-    page.getByRole("heading", { name: "Confirmation unavailable" }),
+    page.getByRole("heading", { name: "Can’t load confirmation" }),
   ).toBeVisible();
   await expect(
-    page.getByText(/access has expired or was revoked/),
+    page.getByText(/Contact the studio to view this booking/),
   ).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Current booking summary" }),
@@ -279,7 +279,7 @@ test("the Payment preview entry and temporary checking failure retain customer s
   );
   await prepare(page);
   await expect(
-    page.getByRole("heading", { name: "Confirmation unavailable" }),
+    page.getByRole("heading", { name: "Can’t load confirmation" }),
   ).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Current booking summary" }),
@@ -311,7 +311,7 @@ test("checkout stays unavailable while its protected context is pending", async 
   try {
     await requested;
     await expect(
-      page.getByRole("status", { name: "Checking your booking…", exact: true }),
+      page.getByRole("status", { name: "Checking booking…", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: /Open checkout/ })).toHaveCount(
       0,

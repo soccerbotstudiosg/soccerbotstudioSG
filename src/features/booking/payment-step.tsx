@@ -36,6 +36,7 @@ export function PaymentStep() {
         <ProtectedConfirmation
           attemptId={attempt.id}
           checkoutMode="live"
+          allowPaymentContinuation
           sessionRevision={revision}
           onExpired={restartAfterExpiry}
           onAgain={reset}
@@ -93,7 +94,7 @@ export function PaymentStep() {
               }}
             >
               {busy ? (
-                <BrandLoading compact label="Preparing secure checkout…" />
+                <BrandLoading compact label="Preparing checkout…" />
               ) : (
                 `Pay ${money(totalCents(attempt.draft))}`
               )}
@@ -131,7 +132,7 @@ export function PaymentStep() {
           </h1>
           <p className="text-muted">
             {checking
-              ? "Please give us a moment to confirm your payment and booking."
+              ? "Confirming payment and booking."
               : late
                 ? "The payment arrived after the reservation expired, or availability needs review. Contact the studio before making another payment."
                 : "Your payment is still processing. Please avoid starting another payment."}

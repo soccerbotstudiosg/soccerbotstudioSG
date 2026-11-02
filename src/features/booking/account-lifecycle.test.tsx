@@ -10,6 +10,7 @@ import { AccountStep } from "./account-step";
 import { BookingProvider } from "./provider";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { liveBookingService } from "@/services/booking";
+import { CustomerMessageError } from "@/services/contracts";
 import type {
   CustomerIdentityService,
   CustomerChallenge,
@@ -37,11 +38,11 @@ test("account waits for owned guest access and duplicate click cannot navigate e
   fireEvent.click(button);
   fireEvent.click(button);
   expect(
-    screen.getByRole("status", { name: "Preparing your booking…" }),
+    screen.getByRole("status", { name: "Preparing booking…" }),
   ).toHaveClass("sr-only");
   expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(button.closest("[inert]")).toBeNull();
-  expect(button).toHaveTextContent("Preparing your booking…");
+  expect(button).toHaveTextContent("Preparing booking…");
   expect(document.querySelector(".booking-loading-inline")).toBeNull();
   expect(
     screen.getByRole("button", { name: /Continue with email/ }),
@@ -253,9 +254,7 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
   };
   const signOut = vi
     .fn()
-    .mockRejectedValueOnce(
-      new Error("Could not sign out all devices. Please try again."),
-    )
+    .mockRejectedValueOnce(new Error("SQLITE_FULL private provider diagnostic"))
     .mockResolvedValueOnce(undefined);
   render(
     <BookingProvider
@@ -274,9 +273,13 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
   fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
   await waitFor(() =>
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Could not sign out all devices",
+      "We couldn’t continue. Please try again.",
     ),
   );
+  expect(
+    screen.queryByText(/SQLITE_FULL|private provider diagnostic/),
+  ).toBeNull();
+  expect(screen.getByRole("alert")).toHaveClass("alert");
   expect(screen.getByText(identity.email)).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
   await waitFor(() =>
@@ -485,7 +488,9 @@ test("failed profile saves keep the form and retry returns to booking options on
   await screen.findByRole("heading", { name: "Saved contact details" });
   fireEvent.click(screen.getByRole("button", { name: "Save contact details" }));
   await waitFor(() =>
-    expect(screen.getByRole("status")).toHaveTextContent("could not be saved"),
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "We couldn’t save your details",
+    ),
   );
   expect(
     screen.getByRole("heading", { name: "Saved contact details" }),
@@ -499,7 +504,7 @@ test("invalid code can change email or return to guest options without carrying 
   const verify = vi
     .fn()
     .mockRejectedValue(
-      new Error("This code is incorrect, expired or already used."),
+      new CustomerMessageError("Check your code or request a new one."),
     );
   render(
     <BookingProvider
@@ -539,7 +544,7 @@ test("invalid code can change email or return to guest options without carrying 
       .closest("form")!,
   );
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "This code is incorrect",
+    "Check your code or request a new one",
   );
   fireEvent.click(screen.getByRole("button", { name: "Change email" }));
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();

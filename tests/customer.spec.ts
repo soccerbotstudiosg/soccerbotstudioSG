@@ -914,7 +914,7 @@ test("protected confirmation waits for server evidence and rejects a tampered re
   );
   await openSite(page, `/confirmation/?attempt=${attempt}&paid=true`);
   await expect(
-    page.getByRole("status", { name: "Verifying your payment…" }),
+    page.getByRole("status", { name: "Checking payment…" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
@@ -939,7 +939,7 @@ test("protected confirmation waits for server evidence and rejects a tampered re
   );
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Confirmation unavailable" }),
+    page.getByRole("heading", { name: "Can’t load confirmation" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),

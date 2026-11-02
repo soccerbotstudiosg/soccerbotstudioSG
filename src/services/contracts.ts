@@ -80,7 +80,13 @@ export type BookingErrorCode =
   | "unavailable"
   | "temporarily_unavailable"
   | "cancelled";
-export class BookingServiceError extends Error {
+/** Mark locally authored customer guidance, never raw server or transport errors. */
+export class CustomerMessageError extends Error {}
+/** Display reviewed guidance or an operation-specific fallback for unexpected errors. */
+export function customerMessage(error: unknown, fallback: string) {
+  return error instanceof CustomerMessageError ? error.message : fallback;
+}
+export class BookingServiceError extends CustomerMessageError {
   constructor(
     public readonly code: BookingErrorCode,
     message: string,

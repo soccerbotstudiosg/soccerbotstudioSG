@@ -242,9 +242,7 @@ test("calendar and basket share delayed availability once and preserve selection
       <Probe />
     </BookingProvider>,
   );
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   expect(loadBooking().draft.slots).toHaveLength(1);
   expect(availability).toHaveBeenCalledTimes(1);
@@ -290,9 +288,7 @@ test("availability failure is not no slots and an explicit retry retains the bas
   expect(screen.queryByText(/synthetic private/)).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   await act(async () => {
     second.resolve(demoBookingModel.availability(date));
   });
@@ -347,15 +343,11 @@ test("reordered dates and player revisions discard old replies even when the ada
   });
   expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Change players" }));
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   await act(async () => {
     old.resolve(demoBookingModel.availability("2026-10-09"));
   });
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   await act(async () => {
     changed.resolve(demoBookingModel.availability(date));
   });
@@ -402,7 +394,7 @@ test("review waits before navigation and same-turn duplicate checkout has one lo
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(navigation.push).not.toHaveBeenCalled();
   expect(
-    screen.getByRole("button", { name: "Opening secure payment…" }),
+    screen.getByRole("button", { name: "Opening checkout…" }),
   ).toBeDisabled();
   const result = demoBookingModel.checkout(draft(), null);
   await act(async () => {
@@ -748,9 +740,7 @@ test("replacing an adapter with the same mode invalidates its completed availabi
       <Summary basket />
     </BookingProvider>,
   );
-  expect(
-    screen.getByRole("status", { name: "Checking available times…" }),
-  ).toBeVisible();
+  expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   await act(async () => {
     pending.resolve([]);
@@ -771,7 +761,7 @@ test("replacing an adapter cancels its pending action and releases the new revie
   );
   fireEvent.click(screen.getByRole("button", { name: "Continue to payment" }));
   expect(
-    screen.getByRole("button", { name: "Opening secure payment…" }),
+    screen.getByRole("button", { name: "Opening checkout…" }),
   ).toBeDisabled();
   view.rerender(
     <BookingProvider bookingService={replacement}>

@@ -553,8 +553,7 @@ test("queue busy returns clear retained-attempt feedback without an automatic re
     }),
   ).rejects.toMatchObject({
     code: "queue_busy",
-    message:
-      "The booking service is busy. Your details and existing attempt are saved. Please wait a moment before trying again.",
+    message: "Please wait a moment, then try again. Your details are saved.",
   });
   expect(fetch).toHaveBeenCalledTimes(1);
 });

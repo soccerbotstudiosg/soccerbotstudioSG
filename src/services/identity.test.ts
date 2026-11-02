@@ -17,7 +17,7 @@ it("live identity requires a fresh bot proof and sends it only after guest acces
   const service = createLiveIdentityService(),
     signal = new AbortController().signal;
   await expect(service.challenge(identity.email, signal)).rejects.toThrow(
-    "Complete the email security check",
+    "Complete the security check",
   );
   expect(request).not.toHaveBeenCalled();
   request
@@ -278,9 +278,9 @@ it("identity failures distinguish throttling expired access bad codes and securi
   vi.stubGlobal("fetch", request);
   const signal = new AbortController().signal;
   for (const [status, message] of [
-    [429, "Too many verification requests"],
-    [401, "Your session has expired"],
-    [400, "This code is incorrect"],
+    [429, "Wait a few minutes before requesting another code"],
+    [401, "Return to booking options and sign in again"],
+    [400, "Check your code or request a new one"],
     [503, "Email verification is unavailable"],
   ] as const) {
     request.mockResolvedValueOnce(
@@ -301,7 +301,7 @@ it("identity failures distinguish throttling expired access bad codes and securi
       signal,
       "synthetic-token",
     ),
-  ).rejects.toThrow("The email security check was not accepted");
+  ).rejects.toThrow("Complete the security check");
   request.mockResolvedValueOnce(Response.json({}, { status: 503 }));
   await expect(createLiveIdentityService().signOut(signal)).rejects.toThrow(
     "Could not sign out this browser",

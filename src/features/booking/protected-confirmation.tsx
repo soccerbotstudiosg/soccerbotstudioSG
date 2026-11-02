@@ -63,7 +63,6 @@ function PaymentContinuation({
       >
         Continue payment
       </a>
-      <p>Already paid? We’ll confirm automatically.</p>
     </div>
   );
 }
@@ -71,6 +70,7 @@ function PaymentContinuation({
 export function ProtectedConfirmation({
   attemptId,
   checkoutMode,
+  allowPaymentContinuation = false,
   sessionRevision = 0,
   onAgain,
   onRestart,
@@ -78,6 +78,7 @@ export function ProtectedConfirmation({
 }: {
   attemptId: string;
   checkoutMode?: "synthetic" | "live";
+  allowPaymentContinuation?: boolean;
   sessionRevision?: number;
   onAgain?: () => void;
   onExpired?: (attemptId: string) => void;
@@ -334,9 +335,8 @@ export function ProtectedConfirmation({
   }
   if (expiryFailure)
     return (
-      <p role="alert">
-        Payment status is still being checked. Your original booking has been
-        kept.
+      <p className="alert" role="alert">
+        Still checking your payment. Don’t pay again.
       </p>
     );
   const receiptUnavailable =
@@ -351,13 +351,16 @@ export function ProtectedConfirmation({
   ) {
     const pendingLabel =
       view === "confirmed"
-        ? "Preparing your confirmation…"
+        ? "Preparing confirmation…"
         : checkoutMode && preparation === "loading"
-          ? "Checking your booking…"
+          ? "Checking booking…"
           : paymentReceived
-            ? "Payment received—verifying booking…"
-            : "Verifying your payment…";
+            ? "Paid—confirming booking…"
+            : "Checking payment…";
+    // Only the original payment step may reopen an unpaid handoff. The provider
+    // return route remains confirmation-only, even before payment evidence arrives.
     const continuation =
+      allowPaymentContinuation &&
       showLink &&
       !expired &&
       view === "checking" &&
@@ -371,6 +374,9 @@ export function ProtectedConfirmation({
           expiresAtMs={link.expiresAtMs}
         />
       ) : undefined;
+    const pendingMessage = continuation
+      ? "Unpaid? Continue below. Paid? We’ll confirm automatically."
+      : undefined;
     if (current?.details) {
       const details = bookingFromReceipt(current.details);
       return (
@@ -378,13 +384,14 @@ export function ProtectedConfirmation({
           booking={details.booking}
           pending
           pendingLabel={pendingLabel}
+          pendingMessage={pendingMessage}
           pendingAction={continuation}
           onAgain={() => {}}
         />
       );
     }
     return (
-      <PendingConfirmation label={pendingLabel}>
+      <PendingConfirmation label={pendingLabel} message={pendingMessage}>
         {current ? (
           <>
             <ConfirmationSummary summary={current.summary} />
@@ -416,30 +423,30 @@ export function ProtectedConfirmation({
                 label={
                   checkoutMode && preparation === "loading"
                     ? "Preparing checkout…"
-                    : "Verifying your payment…"
+                    : "Checking payment…"
                 }
               />
             )
           ) : view === "confirmed" ? (
             "Booking confirmed"
           ) : view === "unresolved" ? (
-            "Payment status unresolved"
+            "Payment needs checking"
           ) : (
-            "Confirmation unavailable"
+            "Can’t load confirmation"
           )}
         </h1>
         <p>
           {historicalPayment
-            ? "Your payment was verified and recorded. Contact the studio if you need the latest booking status. Do not pay again."
+            ? "Payment received. Contact the studio for booking help. Don’t pay again."
             : view === "confirmed"
-              ? "Your payment and booking have been verified."
+              ? "Your booking is confirmed."
               : view === "denied"
-                ? "Your access has expired or was revoked. Contact the studio to recover access before trying another payment."
+                ? "Contact the studio to view this booking. Don’t pay again."
                 : view === "checking"
-                  ? "Please wait while we verify your booking."
+                  ? "Checking booking."
                   : view === "unavailable"
-                    ? "Status checking is temporarily unavailable. Your information is preserved. You can check again shortly."
-                    : "We haven’t resolved your previous payment yet. Your booking attempt and details are saved. Another checkout remains unavailable until its payment outcome is verified. The checking deadline does not cancel payment."}
+                    ? "We couldn’t check your payment. Try checking again shortly."
+                    : "We couldn’t confirm your payment. Don’t pay again; contact the studio."}
         </p>
         {historicalPayment && recordedPayment && (
           <p>
@@ -453,10 +460,8 @@ export function ProtectedConfirmation({
           </p>
         )}
         {view === "confirmed" && receiptUnavailable && (
-          <div role="alert">
-            <p>
-              Your booking is confirmed, but its details could not be loaded.
-            </p>
+          <div className="alert" role="alert">
+            <p>Booking confirmed. Try loading your details again.</p>
             <button
               className="button"
               onClick={() => {
@@ -474,9 +479,7 @@ export function ProtectedConfirmation({
           !(link && isHitpayCheckoutUrl(link.url)) && (
             <>
               <p>
-                Checkout opens separately. Your browser may use a tab or window.
-                Return to SoccerBot to check progress; opening or closing
-                checkout does not confirm payment.
+                Checkout opens separately. Return here to check your booking.
               </p>
               {showLink && current?.checkout.state === "available" ? (
                 <a
@@ -500,11 +503,11 @@ export function ProtectedConfirmation({
                     : "Open checkout"}
                 </a>
               ) : view === "checking" || view === "unavailable" ? (
-                <p role="status">
+                <p className="notice" role="status">
                   {preparation === "loading" ? (
                     <BrandLoading compact label="Preparing checkout…" />
                   ) : (
-                    "Checkout unavailable. Do not start another payment."
+                    "Checkout unavailable. Don’t pay again; contact the studio."
                   )}
                 </p>
               ) : null}

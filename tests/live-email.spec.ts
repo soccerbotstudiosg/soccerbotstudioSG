@@ -203,7 +203,7 @@ test("live email requires the supplied widget proof before protected requests", 
     .getByRole("button", { name: "Continue with email", exact: true })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Complete the email security check, then try again.",
+    "Complete the security check and try again.",
   );
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
     { path: "/api/access", method: "POST", body: null },
@@ -360,7 +360,7 @@ test("remembered live account edits and rereads contact while native booking sta
     .getByRole("button", { name: "Save contact details", exact: true })
     .click();
   await expect(
-    page.getByRole("status", { name: "Saving contact details…", exact: true }),
+    page.getByRole("status", { name: "Saving details…", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Start your booking", exact: true }),
@@ -992,7 +992,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await accounting;
     await expect(
       page.getByRole("status", {
-        name: "Payment received—verifying booking…",
+        name: "Paid—confirming booking…",
         exact: true,
       }),
     ).toBeVisible();
@@ -1030,7 +1030,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await receiptRead;
     await expect(
       page.getByRole("status", {
-        name: "Preparing your confirmation…",
+        name: "Preparing confirmation…",
         exact: true,
       }),
     ).toHaveCount(0);
@@ -1086,7 +1086,7 @@ test("real payment recovery confirms the browser return from verified provider s
     ).toBeVisible();
     await expect(
       page.getByRole("status", {
-        name: "Preparing your confirmation…",
+        name: "Preparing confirmation…",
         exact: true,
       }),
     ).toHaveCount(0);
@@ -1613,7 +1613,7 @@ async function uncertainHolding(
         page.getByRole("heading", { name: "Review booking", exact: true }),
       ).toBeVisible();
       await expect(
-        page.getByText(/No booking or payment was started/),
+        page.getByText(/Nothing was booked or charged/),
       ).toBeVisible();
       expect(
         mechanism.calls.filter((call) => call.body?.method === "book"),
@@ -1636,7 +1636,7 @@ async function uncertainHolding(
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -1714,12 +1714,12 @@ test("real API revoked access at checkout retains the draft and denies protected
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("heading", {
-        name: "Confirmation unavailable",
+        name: "Can’t load confirmation",
         exact: true,
       }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Your access has expired or was revoked/),
+      page.getByText(/Your Contact the studio to view this booking/),
     ).toBeVisible();
     expect(
       await page.evaluate(() =>
@@ -1878,7 +1878,7 @@ test("real API payment creation failure preserves the hold and never returns to 
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2154,7 +2154,7 @@ test("real API batch checkout uses creation evidence and restores one complete u
     await page.goto("/book/payment/");
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2224,7 +2224,7 @@ async function failedBatch(page: Page, unknown: boolean) {
     await page.reload();
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2287,7 +2287,7 @@ test("real API exhausted browser checking window retains the original deadline a
       .click();
     await expect(
       page.getByRole("heading", {
-        name: "Payment status unresolved",
+        name: "Payment needs checking",
         exact: true,
       }),
     ).toBeVisible();
@@ -2371,7 +2371,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
     await bookStarted.promise;
     await expect(
       page.getByRole("status", {
-        name: "Opening secure payment…",
+        name: "Opening checkout…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2476,7 +2476,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       .getByRole("button", { name: "Not now", exact: true })
       .click();
     await expect(
-      page.getByRole("status", { name: "Checking your booking…", exact: true }),
+      page.getByRole("status", { name: "Checking booking…", exact: true }),
     ).toBeVisible();
     await expect(
       page.locator(
@@ -2484,7 +2484,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       ),
     ).toBeVisible();
     await expect(page.locator(".confirmation-card")).toContainText(
-      "Loading booking details…",
+      "Loading summary…",
     );
     await expect(
       page.locator(".page-loading, .booking-flow-overlay"),
@@ -2507,10 +2507,14 @@ test("real API unpaid return shows the pending confirmation layout without claim
     ).toHaveCount(0);
     await expect(page.getByRole("timer")).toHaveCount(0);
     await expect(page.getByLabel("Booking summary")).toBeVisible();
-    await page.getByText("View full details", { exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "Client Details", exact: true }),
-    ).toBeVisible();
+      page.getByText("View full details", { exact: true }),
+    ).toHaveCount(0);
+    for (const name of ["Client Details", "Location", "Disclaimers"])
+      await expect(
+        page.getByRole("heading", { name, exact: true }),
+      ).toHaveCount(0);
+    await expect(page.getByText(/SimplyBook booking ID/)).toHaveCount(0);
     await expect(
       page
         .getByLabel("Booking summary")
@@ -2518,7 +2522,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
     ).toBeVisible();
     await expect(
       page.getByRole("status", {
-        name: "Verifying your payment…",
+        name: "Checking payment…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2535,13 +2539,10 @@ test("real API unpaid return shows the pending confirmation layout without claim
       page.locator(".booking-loading, .booking-flow-overlay"),
     ).toHaveCount(0);
     await expect(
-      page.getByText(
-        "Please don’t close or refresh this page while we finish.",
-        { exact: true },
-      ),
+      page.getByText("Don’t close or refresh.", { exact: true }),
     ).toBeVisible();
     const loader = page.getByRole("status", {
-      name: "Verifying your payment…",
+      name: "Checking payment…",
       exact: true,
     });
     expect(
@@ -2604,7 +2605,7 @@ test("real API expired unpaid Review retains its hold through the grace window w
       .getByRole("button", { name: "Continue to payment", exact: true })
       .click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "Your original booking has been kept",
+      "Still checking your payment",
     );
     await expect(page).toHaveURL(/\/book\/review\/$/);
     expect(
@@ -2689,9 +2690,7 @@ test("real API failed identity warming stays on Review without booking or paymen
     await expect(
       page.getByRole("heading", { name: "Review booking", exact: true }),
     ).toBeVisible();
-    await expect(
-      page.getByText(/No booking or payment was started/),
-    ).toBeVisible();
+    await expect(page.getByText(/Nothing was booked or charged/)).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Continue to payment", exact: true }),
     ).toBeEnabled();
@@ -2739,7 +2738,7 @@ test("real API 409 preparation rejection stays on Review without payment verific
       "We couldn’t start checkout. Please try again later.",
     );
     await expect(
-      page.getByText("Verifying your payment...", { exact: true }),
+      page.getByRole("status", { name: "Checking payment…", exact: true }),
     ).toHaveCount(0);
     await assertNoPaymentOrConfirmation(page, mechanism);
     expect(

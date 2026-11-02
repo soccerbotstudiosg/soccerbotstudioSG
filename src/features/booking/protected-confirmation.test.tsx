@@ -63,10 +63,10 @@ it("shows checking before the protected server result and confirms only verified
   vi.stubGlobal("fetch", fetch);
   render(<ProtectedConfirmation attemptId={first} />);
   expect(
-    screen.getByRole("status", { name: "Verifying your payment…" }),
+    screen.getByRole("status", { name: "Checking payment…" }),
   ).toBeInTheDocument();
   finish(Response.json({ status: "confirmed", reason: "verified" }));
-  await screen.findByRole("status", { name: "Preparing your confirmation…" });
+  await screen.findByRole("status", { name: "Preparing confirmation…" });
   expect(
     screen.queryByRole("heading", { name: "Booking confirmed" }),
   ).not.toBeInTheDocument();
@@ -92,13 +92,13 @@ it("denied and malformed responses cannot show confirmation or protected details
   vi.stubGlobal("fetch", fetch);
   const view = render(<ProtectedConfirmation attemptId={first} />);
   expect(
-    await screen.findByRole("heading", { name: "Confirmation unavailable" }),
+    await screen.findByRole("heading", { name: "Can’t load confirmation" }),
   ).toBeInTheDocument();
   fetch.mockResolvedValue(new Response(null, { status: 401 }));
   view.rerender(<ProtectedConfirmation attemptId={second} />);
   await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
   expect(
-    await screen.findByRole("heading", { name: "Confirmation unavailable" }),
+    await screen.findByRole("heading", { name: "Can’t load confirmation" }),
   ).toBeInTheDocument();
   expect(
     screen.queryByRole("heading", { name: "Booking confirmed" }),
@@ -121,7 +121,7 @@ it("a late reply from a previous attempt cannot confirm the current attempt", as
   const view = render(<ProtectedConfirmation attemptId={first} />);
   view.rerender(<ProtectedConfirmation attemptId={second} />);
   expect(
-    await screen.findByRole("heading", { name: "Payment status unresolved" }),
+    await screen.findByRole("heading", { name: "Payment needs checking" }),
   ).toBeInTheDocument();
   finishFirst(Response.json({ status: "confirmed", reason: "verified" }));
   await waitFor(() =>
@@ -157,7 +157,7 @@ it("temporary checking failure preserves the protected summary and repeat checko
   );
   vi.stubGlobal("fetch", fetch);
   render(<ProtectedConfirmation attemptId={first} checkoutMode="synthetic" />);
-  await screen.findByRole("heading", { name: "Confirmation unavailable" });
+  await screen.findByRole("heading", { name: "Can’t load confirmation" });
   const link = await screen.findByRole("link", {
     name: "Open checkout",
   });
@@ -203,7 +203,7 @@ it("access denial hides a previously loaded checkout context", async () => {
     ),
   );
   render(<ProtectedConfirmation attemptId={first} checkoutMode="synthetic" />);
-  await screen.findByText(/access has expired or was revoked/);
+  await screen.findByText(/Contact the studio to view this booking/);
   expect(
     screen.queryByRole("region", { name: "Current booking summary" }),
   ).not.toBeInTheDocument();
@@ -264,9 +264,7 @@ it("verified live receipt uses demo sections and refuses exports after access is
   expect(screen.getByText(/SoccerBot reference/)).toHaveTextContent(first);
   expect(screen.queryByText("Paid · Preview")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent(
-    "download could not be created",
-  );
+  expect(await screen.findByRole("alert")).toHaveTextContent("Download failed");
   expect(reads).toBe(2);
 });
 
@@ -408,7 +406,7 @@ it("expired checking shows authenticated recorded payment without confirming or 
       name: "Payment received",
     }),
   ).toBeInTheDocument();
-  expect(screen.getByText(/Do not pay again/)).toBeInTheDocument();
+  expect(screen.getByText(/Don’t pay again/)).toBeInTheDocument();
   expect(
     screen.queryByRole("heading", { name: "Booking confirmed" }),
   ).not.toBeInTheDocument();
@@ -504,9 +502,7 @@ it("reopening an expired paid booking shows the saved full confirmation without 
   await screen.findByRole("heading", { name: "Client Details" });
   expect(fetch).toHaveBeenCalledTimes(2);
   fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent(
-    "download could not be created",
-  );
+  expect(await screen.findByRole("alert")).toHaveTextContent("Download failed");
   expect(fetch.mock.calls.map(([url]) => url.split("/").at(-1))).toEqual([
     "checkout",
     "checkout",
@@ -529,7 +525,7 @@ it("reopening an expired paid booking shows the saved full confirmation without 
     expect(fetch.mock.calls.at(-1)?.[0]).toBe(`/api/attempts/${first}/dismiss`),
   );
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "could not be closed",
+    "Please try again to leave this booking",
   );
   expect(assign).not.toHaveBeenCalled();
   fetch.mockImplementationOnce(() =>
@@ -564,7 +560,7 @@ it("pending checkout context uses the compact confirmation shell without checkou
   vi.stubGlobal("fetch", fetch);
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
   expect(
-    screen.getByRole("status", { name: "Checking your booking…" }),
+    screen.getByRole("status", { name: "Checking booking…" }),
   ).toBeVisible();
   const shell = document.querySelector(".confirmation-shell");
   expect(
@@ -574,7 +570,7 @@ it("pending checkout context uses the compact confirmation shell without checkou
     shell?.querySelector(".confirmation-card .booking-loading-inline"),
   ).toBeNull();
   expect(screen.getByLabelText("Booking summary")).toHaveTextContent(
-    "Loading booking details…",
+    "Loading summary…",
   );
   expect(
     document.querySelector(".page-loading, .booking-flow-overlay"),
@@ -616,7 +612,7 @@ it("pending checkout context uses the compact confirmation shell without checkou
   ).not.toBeInTheDocument();
 });
 
-it("pending confirmation retains the final detail layout while hiding success and every action", async () => {
+it("pending confirmation retains the booking summary while hiding full details success and every action", async () => {
   const receipt = receiptFixture();
   const details = { ...receipt };
   Reflect.deleteProperty(details, "verifiedAtMs");
@@ -653,24 +649,21 @@ it("pending confirmation retains the final detail layout while hiding success an
     }),
   );
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
-  fireEvent.click(await screen.findByText("View full details"));
-  await screen.findByRole("heading", { name: "Client Details" });
-  expect(
-    screen.getByText(
-      "Please don’t close or refresh this page while we finish.",
-    ),
-  ).toBeVisible();
-  expect(screen.getByText("Verifying your payment…")).toBeVisible();
+  await screen.findByText("Checking payment…");
+  expect(screen.queryByText("View full details")).toBeNull();
+  expect(screen.getByLabelText("Booking summary")).toBeVisible();
+  expect(screen.getByText("Don’t close or refresh.")).toBeVisible();
+  expect(screen.getByText("Checking payment…")).toBeVisible();
   const card = document.querySelector(".confirmation-card");
   expect(document.querySelector(".booking-loading")).toBeNull();
   expect(
     document.querySelector(".booking-loading-inline .page-loading-orbit"),
   ).not.toBeNull();
-  for (const name of ["Location", "Disclaimers"])
-    expect(screen.getByRole("heading", { name })).toBeVisible();
-  expect(screen.getByText("Synthetic Customer")).toBeVisible();
+  for (const name of ["Client Details", "Location", "Disclaimers"])
+    expect(screen.queryByRole("heading", { name })).toBeNull();
+  expect(screen.queryByText("Synthetic Customer")).toBeNull();
   expect(
-    screen.getByRole("status", { name: "Verifying your payment…" }),
+    screen.getByRole("status", { name: "Checking payment…" }),
   ).toBeVisible();
   expect(screen.queryByText("Paid", { exact: true })).toBeNull();
   expect(screen.queryByLabelText("Booking actions")).toBeNull();
@@ -949,13 +942,9 @@ it("poll-confirmed payment retains its displayed proof while the final receipt i
       heading,
     );
     expect(
-      screen.queryByRole("status", { name: "Preparing your confirmation…" }),
+      screen.queryByRole("status", { name: "Preparing confirmation…" }),
     ).toBeNull();
-    expect(
-      screen.queryByText(
-        "Please don’t close or refresh this page while we finish.",
-      ),
-    ).toBeNull();
+    expect(screen.queryByText("Don’t close or refresh.")).toBeNull();
     expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
     await act(async () => {
       finishReceipt(Response.json(proof));
@@ -1000,7 +989,7 @@ it("retains verified customer confirmation across pending responses that omit pr
     screen.getByRole("heading", { name: "Booking confirmed" }),
   ).toBeVisible();
   expect(
-    screen.queryByRole("status", { name: "Verifying your payment…" }),
+    screen.queryByRole("status", { name: "Checking payment…" }),
   ).toBeNull();
 });
 
@@ -1013,43 +1002,76 @@ it("shows payment received feedback with details while current booking evidence 
   );
   const fetch = vi.fn(async (url: string) => {
     if (url.endsWith("/checkout"))
-      return Response.json({
-        attemptId: first,
-        mode: "live",
-        checkout: {
-          state: "available",
-          url: "https://checkout.sandbox.hit-pay.com/payment-request/@test/00000000-0000-4000-8000-000000000001/checkout",
-          expiresAtMs: Date.now() + 60000,
+      return Response.json(
+        {
+          attemptId: first,
+          mode: "live",
+          checkout: {
+            state: "available",
+            url: "https://checkout.sandbox.hit-pay.com/payment-request/@test/00000000-0000-4000-8000-000000000001/checkout",
+            expiresAtMs: Date.now() + 60000,
+          },
+          details,
+          summary: {
+            players: 2,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: proof.sessions[0].startMs, players: 2 }],
+          },
+          checking: {
+            deadlineMs: Date.now() + 600000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
         },
-        details,
-        summary: {
-          players: 2,
-          totalMinor: 8800,
-          currency: "SGD",
-          sessions: [{ startMs: proof.sessions[0].startMs, players: 2 }],
-        },
-        checking: {
-          deadlineMs: Date.now() + 600000,
-          nextCheckMs: 0,
-          pollAfterMs: 5000,
-        },
-      });
+        { headers: { Date: new Date().toUTCString() } },
+      );
     if (url.endsWith("/confirmation"))
       return Response.json({
         status: "pending",
         reason:
           ++reads === 1
-            ? "payment_received_booking_pending"
-            : "invoice_pending",
+            ? "payment_verification_pending"
+            : reads === 2
+              ? "payment_received_booking_pending"
+              : "invoice_pending",
       });
     throw new Error("No receipt or other request before booking verification");
   });
   vi.stubGlobal("fetch", fetch);
-  render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
+  render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      allowPaymentContinuation
+    />,
+  );
   await act(async () => {});
+  const summary = screen.getByLabelText("Booking summary");
+  const timer = screen.getByRole("timer");
+  const continuation = screen.getByRole("link", { name: "Continue payment" });
+  const message = screen.getByText(/Paid\? We’ll confirm automatically/);
+  expect(
+    message.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(
+    summary.compareDocumentPosition(timer) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(
+    timer.compareDocumentPosition(continuation) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(continuation.nextElementSibling).toBeNull();
+  expect(continuation.parentElement?.nextElementSibling).toBeNull();
+  expect(screen.queryByText("View full details")).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Disclaimers" })).toBeNull();
+  expect(screen.queryByText(/SimplyBook booking ID/)).toBeNull();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
   expect(
     screen.getByRole("status", {
-      name: "Payment received—verifying booking…",
+      name: "Paid—confirming booking…",
     }),
   ).toBeVisible();
   expect(
@@ -1129,7 +1151,7 @@ it("revisiting a saved confirmation within its window refreshes each export with
     fetch.mockResolvedValueOnce(new Response(null, { status: 429 }));
     fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Please wait a few seconds before requesting another download.",
+      "Wait a few seconds, then download again.",
     );
     expect(calendar).toHaveBeenCalledTimes(1);
   } finally {

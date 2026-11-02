@@ -1013,7 +1013,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "pending confirmation retains the final detail layout while hiding success and every action"
+    "title": "pending confirmation retains the booking summary while hiding full details success and every action"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",

@@ -50,7 +50,7 @@ export function EmailBotProof({
   }, [ready, sitekey, onToken]);
   if (!sitekey)
     return (
-      <p role="status">
+      <p className="notice" role="status">
         Email verification is not available yet. You can continue as a guest.
       </p>
     );

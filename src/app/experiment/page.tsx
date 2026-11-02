@@ -54,7 +54,7 @@ function Experiment() {
           {busy ? "Preparing preview…" : "Start synthetic checkout"}
         </button>
         {error && (
-          <p role="alert">
+          <p className="alert" role="alert">
             Synthetic checkout is unavailable on this host. Use the documented
             local Preview server.
           </p>

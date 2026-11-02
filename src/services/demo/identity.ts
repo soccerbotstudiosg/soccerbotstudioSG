@@ -1,3 +1,4 @@
+import { CustomerMessageError } from "../contracts";
 import { z } from "zod";
 import { blankContact, normalizeContact, validEmail } from "@/domain/contact";
 import type {
@@ -41,7 +42,7 @@ export const demoIdentityService: IdentityService = {
   challenge(email) {
     const normalized = email.trim().toLowerCase();
     if (!validEmail(normalized))
-      throw new Error("Enter a valid email address.");
+      throw new CustomerMessageError("Enter a valid email address.");
     return {
       email: normalized,
       expiresAt: Date.now() + 600_000,
@@ -56,10 +57,12 @@ export const demoIdentityService: IdentityService = {
       challenge.expiresAt <= Date.now() ||
       challenge.attempts >= 5
     )
-      throw new Error("This code has expired. Request a new code.");
+      throw new CustomerMessageError(
+        "This code has expired. Request a new code.",
+      );
     challenge.attempts++;
     if (code !== DEMO_CODE)
-      throw new Error("The verification code is incorrect.");
+      throw new CustomerMessageError("The verification code is incorrect.");
     challenge.used = true;
     const identity = {
       email: challenge.email,
@@ -115,7 +118,7 @@ export const demoCustomerIdentity: CustomerIdentityService = {
   verify: async (challenge, code, remember) => {
     const value = previewChallenges.get(challenge.challengeId);
     if (!value || value.email !== challenge.email)
-      throw new Error("Request a new verification code.");
+      throw new CustomerMessageError("Request a new verification code.");
     return demoIdentityService.verify(value, code, remember);
   },
   profile: async (email) => demoIdentityService.profile(email),
@@ -125,7 +128,7 @@ export const demoCustomerIdentity: CustomerIdentityService = {
       read()?.email !== contact.email ||
       read()?.remember !== true
     )
-      throw new Error("Verify your email again.");
+      throw new CustomerMessageError("Verify your email again.");
     saveContact(contact);
   },
   signOut: async () => {
