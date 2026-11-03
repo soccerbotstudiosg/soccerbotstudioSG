@@ -721,8 +721,6 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
             this.env,
             Date.now(),
           );
-          if (scope.fresh && this.displayWarmingEnabled())
-            this.snapshots().invalidateCalendars();
           const result = await windowAvailability({
             ...this.calendarReadOptions(),
             ...scope,
@@ -770,7 +768,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   async publicCalendar(month: string, correlationId: string) {
     return rpcOutcome(() =>
       traced(correlationId, "coordinator", async () => {
-        const store = this.displayWarmingEnabled()
+        const store = liveCustomerAccess(this.env)
           ? this.snapshots()
           : undefined;
         const cached = store?.read("calendar", `calendar:${month}`);
@@ -810,18 +808,53 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         }),
     };
   }
-  private invalidateDisplay() {
-    this.calendarReads.invalidate();
-    if (this.displayWarmingEnabled()) this.snapshots().invalidateCalendars();
-  }
-  private refreshDisplayAfterWrite() {
-    this.invalidateDisplay();
-    // Queue behind the current financial operation; do not wait before redirect.
-    this.ctx.waitUntil(
-      this.warmDisplay().catch(() => {
-        console.error(JSON.stringify({ event: "display_refresh_unavailable" }));
-      }),
-    );
+  /** Apply retained dispatch evidence to display without starting a month rebuild. */
+  private async refreshDisplayAfterWrite(attemptId: string, ownerId: string) {
+    if (!liveCustomerAccess(this.env)) {
+      this.calendarReads.invalidate();
+      return;
+    }
+    try {
+      const rows = await this.env.STATE.withSession("first-primary")
+        .prepare(
+          "SELECT a.intent_json,e.step,g.result_json FROM attempts a LEFT JOIN session_effects e ON e.attempt_id=a.id AND e.step GLOB 'session:[0-9]*' LEFT JOIN native_checkout_grants g ON g.attempt_id=a.id WHERE a.id=? AND a.owner_id=?",
+        )
+        .bind(attemptId, ownerId)
+        .all<{
+          intent_json: string;
+          step: string | null;
+          result_json: string | null;
+        }>();
+      const sessions = rows.results.flatMap((row) => {
+        const intent = intentSchema.parse(JSON.parse(row.intent_json));
+        if (row.step === null) {
+          const result = z
+            .object({
+              state: z.string(),
+              rejectedSessionIndex: z.number().int().nonnegative().optional(),
+            })
+            .safeParse(JSON.parse(row.result_json ?? "null"));
+          if (result.success && result.data.state === "selection_unavailable") {
+            const rejected =
+              intent.sessions[result.data.rejectedSessionIndex ?? 0];
+            if (rejected) this.snapshots().excludeSessions([rejected], false);
+          }
+          return [];
+        }
+        const session =
+          intent.sessions[Number(row.step.slice("session:".length))];
+        return session ? [session] : [];
+      });
+      this.snapshots().excludeSessions(sessions);
+      for (const session of sessions)
+        this.calendarReads.invalidateDate(
+          new Date(session.startMs + 28800000).toISOString().slice(0, 10),
+        );
+    } catch {
+      // Display maintenance cannot replace a durable checkout/payment outcome.
+      // Stale display grants no booking authority; preserve the original result.
+      console.error(JSON.stringify({ event: "display_update_unavailable" }));
+    }
   }
   /** Refresh display snapshots and eligible tokens through the display queue. */
   async warmDisplay() {
@@ -829,24 +862,42 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     const store = this.snapshots();
     const months = store.months();
     if (!store.claimRefresh(Date.now())) return;
-    for (const month of months)
-      await this.providerQueue.run("display", async () => {
-        await this.provider.refreshPublicTokenAhead(
-          this.env,
-          this.providerControl(false, true),
-        );
-        const generation = store.generation();
-        // Force fresh range evidence without discarding the last retained display.
-        this.calendarReads.invalidate();
-        const calendar = await publicCalendar({
-          ...this.calendarReadOptions(),
-          month,
+    const beforeProviderRead = () => {
+      if (this.providerQueue.hasCustomerWaiting())
+        throw new ApiError(503, "display_refresh_deferred");
+    };
+    try {
+      for (const month of months)
+        await this.providerQueue.run("display", async () => {
+          beforeProviderRead();
+          await this.provider.refreshPublicTokenAhead(
+            this.env,
+            this.providerControl(false, true),
+          );
+          const generation = store.generation();
+          // Partial refreshes never replace the retained complete month.
+          this.calendarReads.invalidate();
+          const calendar = await publicCalendar({
+            ...this.calendarReadOptions(),
+            month,
+            beforeProviderRead,
+          });
+          beforeProviderRead();
+          const catalogue = await windowCatalogue(this.calendarReadOptions());
+          store.save("calendar", `calendar:${month}`, calendar, generation);
+          store.save("catalogue", "catalogue", catalogue, generation);
         });
-        const catalogue = await windowCatalogue(this.calendarReadOptions());
-        store.save("calendar", `calendar:${month}`, calendar, generation);
-        store.save("catalogue", "catalogue", catalogue, generation);
-      });
+    } catch (error) {
+      if (
+        !(error instanceof ApiError) ||
+        error.code !== "display_refresh_deferred"
+      )
+        throw error;
+      store.deferRefresh();
+      console.log(JSON.stringify({ event: "display_refresh_deferred" }));
+    }
   }
+
   private async displayRead<T>(
     read: (cacheOnly: boolean) => Promise<T>,
   ): Promise<T> {
@@ -866,6 +917,16 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     return {
       env: this.env,
       cache: this.calendarReads,
+      onFreshDay: (day: Parameters<DisplaySnapshots["updateDay"]>[0]) => {
+        if (!liveCustomerAccess(this.env)) return;
+        try {
+          this.snapshots().updateDay(day);
+        } catch {
+          console.error(
+            JSON.stringify({ event: "display_update_unavailable" }),
+          );
+        }
+      },
       provider: this.provider,
       control: this.providerControl(false, true),
       accounting: () => this.providerAccounting(),
@@ -977,24 +1038,23 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     correlationId: string,
   ) {
     return rpcOutcome(() =>
-      this.providerQueue.run("foreground", () =>
-        traced(correlationId, "coordinator", () =>
-          dismissCompletedCheckout(
-            new Request(this.env.APP_ORIGIN, {
-              headers: { cookie: scope.cookie },
-            }),
-            this.env,
-            scope.attemptId,
-          ),
+      traced(correlationId, "coordinator", () =>
+        dismissCompletedCheckout(
+          new Request(this.env.APP_ORIGIN, {
+            headers: { cookie: scope.cookie },
+          }),
+          this.env,
+          scope.attemptId,
         ),
       ),
     );
   }
+
   /** Read catalogue data within the bounded calendar window. */
   async windowCatalogue(correlationId: string) {
     return rpcOutcome(() =>
       traced(correlationId, "coordinator", async () => {
-        const store = this.displayWarmingEnabled()
+        const store = liveCustomerAccess(this.env)
           ? this.snapshots()
           : undefined;
         const cached = store?.read("catalogue", "catalogue");
@@ -1158,7 +1218,6 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
             );
             throw new ApiError(error.status, code);
           });
-          this.invalidateDisplay();
           return executeNativeCheckout({
             request,
             env,
@@ -1184,7 +1243,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
             control: this.providerControl(false, true),
             recoveryControl: this.providerControl(true, true),
             accounting: () => this.providerAccounting(),
-          }).finally(() => {
+          }).finally(async () => {
             if (scope.checkout)
               this.ctx.waitUntil(
                 this.bookingComments(attemptId).catch(() => {
@@ -1193,7 +1252,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
                   );
                 }),
               );
-            this.refreshDisplayAfterWrite();
+            await this.refreshDisplayAfterWrite(attemptId, access.owner_id);
           });
         }),
       ),
@@ -1219,13 +1278,15 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     scope: { attemptId: string; cookie: string; holding?: boolean },
     correlationId: string,
   ) {
-    this.invalidateDisplay();
     const pending = this.providerQueue.run("foreground", () =>
-      traced(correlationId, "coordinator", () =>
-        executeNativeCheckout({
-          request: new Request(this.env.APP_ORIGIN, {
-            headers: { cookie: scope.cookie },
-          }),
+      traced(correlationId, "coordinator", async () => {
+        const request = new Request(this.env.APP_ORIGIN, {
+          headers: { cookie: scope.cookie },
+        });
+        const access = await authenticate(request, this.env, Date.now());
+        return executeNativeCheckout({
+          request,
+          access,
           env: { ...this.env, STATE: instrumentStorage(this.env.STATE, "d1") },
           attemptId: scope.attemptId,
           holding: scope.holding,
@@ -1233,8 +1294,10 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           control: this.providerControl(false, true),
           recoveryControl: this.providerControl(true, true),
           accounting: () => this.providerAccounting(),
-        }).finally(() => this.refreshDisplayAfterWrite()),
-      ),
+        }).finally(() =>
+          this.refreshDisplayAfterWrite(scope.attemptId, access.owner_id),
+        );
+      }),
     );
     return rpcOutcome(() => pending);
   }

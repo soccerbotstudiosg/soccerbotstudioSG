@@ -13,18 +13,18 @@ This file is the authority for repository engineering instructions; linked proce
 | [Security infrastructure](docs/security.md)                           | Security boundaries, implemented controls, evidence limits and proposed additional layers.             |
 | [Data lifecycle](docs/data-lifecycle.md)                              | Source-based storage/expiry inventory and pending client privacy-clause mapping; no deletion approval. |
 | [North Star](NORTH_STAR.md)                                           | Campaign operating procedure, bounded iteration budgets, evidence states and handover.                 |
-| [Progress](PROGRESS.md)                                               | Detailed current task, exact leave-off, evidence, blockers and handover; link to Journey history.      |
+| [Progress](PROGRESS.md)                                               | Latest checkpoint and immediate remaining tasks only; historical evidence belongs in Journey.          |
 | [Architecture diagram](docs/architecture/diagram.md)                  | Component topology and connections.                                                                    |
 | [Architecture decisions](docs/architecture/adr.md)                    | Stack rationale, tradeoffs, scaling triggers and alternative designs.                                  |
 | [Business rules](docs/business-rules.md)                              | Numbered system invariants and acceptance boundaries.                                                  |
 | [Domain operations and API contracts](docs/api-contracts.md)          | Named operations, source status, permissions, evidence and transport contracts.                        |
-| [Complete journey](docs/journey.md)                                   | End-to-end flows, retained milestones and dated change evidence.                                       |
+| [Complete journey](docs/journey.md)                                   | Retained milestones, dated decisions and change evidence; flows belong in booking scenarios.           |
 
 [Booking scenarios and messages](docs/booking-flows.md) owns the small customer action/message diagrams and the embedded copy review/approval disposition; role UAT owns actual acceptance. Update the scenario map and approved-message rows when an affected UI state or message changes. This document does not duplicate payment authority or replace tests.
 
 Function-level behavior, guards, failure recovery and evidence are in [Technical behavior](docs/code-owners/technical-behavior.md); start with the [feature map](docs/code-owners/index.md) for navigation.
 
-Use North Star for sustained multi-step campaigns; scale it down for small corrections. Progress owns the active outcome and priority. Read North Star, Progress, Architecture and the relevant Business rules and API contracts before work. Refresh branch/HEAD/index and the remote revision; GitHub is canonical, but the local checkout may differ. Preserve unknown edits, worktrees, dependency symlinks and original evidence. Update the owning document and link to it elsewhere; do not maintain parallel rules, setup guides or status ledgers. Historical entries remain dated evidence, not current instructions or renewed authorization. Preserve milestone IDs and record history once in Complete journey’s dated history.
+Use North Star for sustained multi-step campaigns; scale it down for small corrections. Progress owns the active outcome and priority. Read North Star, Progress, Architecture and the relevant Business rules and API contracts before work. Refresh branch/HEAD/index and the remote revision; GitHub is canonical, but the local checkout may differ. Preserve unknown edits, worktrees, dependency symlinks and original evidence. Replace Progress when the checkpoint changes; never append checkpoint history or completed verification journals there. Journey owns dated history; booking scenarios, role UAT and the runbook own flow explanations. Update the owning document and link to it elsewhere; do not maintain parallel rules, setup guides or status ledgers. Historical entries remain dated evidence, not current instructions or renewed authorization. Preserve milestone IDs and record history once in Complete journey’s dated history.
 
 ## Route the request
 
@@ -43,6 +43,8 @@ For every task, read these instructions, then North Star and Progress. Use the e
 | Understand topology / hand over       | [System diagram](docs/architecture/diagram.md) → [Architecture](docs/architecture/adr.md) → [Code owners](docs/code-owners/index.md) → [Handover](docs/runbook.md#9-operational-records-and-handover)                                | [Milestones](docs/journey.md#milestones-and-retained-acceptance-criteria), access inventory and recorded acceptance |
 
 ## Implement
+
+Apply the [code-writing skill](.agents/skills/soccerbot-code-writing/SKILL.md) before writing or reviewing application, service, Worker, styling, configuration or tooling code. It defines root-cause repair, authoritative value sources, permitted constants/pins and proof that guards execute; use it with the testing and documentation skills.
 
 Use one feature branch and edit existing component/domain/service/style owners. Remove superseded logic; no duplicate patched owners, CSS override tails or speculative abstractions. Preserve approved presentation, unrelated behavior and strict source/import/type/lint boundaries. Apply system invariants from Business rules at every affected execution path; never modify accepted migrations or expose secrets/customer data.
 

@@ -1495,6 +1495,21 @@ test("anonymous calendar is bounded and shared without exposing provider slots o
     /display_cache_miss/,
   );
   assert.equal(calls, 0);
+  let checkpoints = 0;
+  await assert.rejects(
+    publicCalendar({
+      ...input,
+      beforeProviderRead: () => {
+        if (++checkpoints === 3) throw new Error("display_refresh_deferred");
+      },
+    }),
+    /display_refresh_deferred/,
+  );
+  assert.equal(
+    calls,
+    0,
+    "queued customer work interrupts warming before another provider read",
+  );
   const first = await publicCalendar(input);
   assert.deepEqual(first.dates, [{ date, available: true }]);
   assert.deepEqual(Object.keys(first).sort(), [
@@ -2156,6 +2171,89 @@ test("persistent display snapshots retain original deadlines across restarts and
     assert.equal(restarted.claimRefresh(now), true);
     // A failed refresh changes neither content nor its original deadline.
     assert.deepEqual(restarted.read("calendar", key), expected);
+    const date = month + "-15";
+    const startMs = Date.parse(date + "T12:00:00+08:00");
+    const offer = {
+      serviceId: "2",
+      serviceName: "Session",
+      instructorId: "1",
+      instructorName: "Trainer",
+      startMs,
+      priceMinor: 8800,
+      currency: "SGD",
+    };
+    const populated = {
+      ...value,
+      dates: [
+        {
+          date,
+          available: true,
+          offers: [
+            offer,
+            { ...offer, instructorId: "2" },
+            { ...offer, startMs: startMs + 3000000 },
+          ],
+        },
+      ],
+    };
+    restarted.save("calendar", key, populated, restarted.generation());
+    restarted.excludeSessions([offer], false);
+    assert.deepEqual(
+      restarted
+        .read("calendar", key)
+        .dates[0].offers.map((x) => x.instructorId),
+      ["2", "1"],
+      "rejected trainer selection cannot remove another eligible trainer",
+    );
+    restarted.save("calendar", key, populated, restarted.generation());
+    const preWriteGeneration = restarted.generation();
+    restarted.excludeSessions([{ startMs }]);
+    const edited = restarted.read("calendar", key);
+    assert.deepEqual(
+      edited.dates[0].offers.map((x) => x.startMs),
+      [startMs + 3000000],
+      "shared studio booking removes every trainer at that time, retaining other sessions",
+    );
+    assert.equal(edited.displayExpiresAtMs, expected.displayExpiresAtMs);
+    restarted.save("calendar", key, populated, preWriteGeneration);
+    assert.deepEqual(
+      restarted.read("calendar", key),
+      edited,
+      "late pre-booking refresh cannot restore an occupied time",
+    );
+    now += 1000;
+    assert.deepEqual(
+      new DisplaySnapshots(sql, "account/source").read("calendar", key),
+      edited,
+      "elapsed local time and restart cannot release a hold",
+    );
+    restarted.updateDay({ date, observedAtMs: now, offers: [offer] });
+    assert.deepEqual(
+      restarted.read("calendar", key).dates[0].offers,
+      [offer],
+      "provider-confirmed day can restore released availability",
+    );
+    assert.equal(
+      restarted.read("calendar", key).displayExpiresAtMs,
+      expected.displayExpiresAtMs,
+    );
+    restarted.save("calendar", key, value, restarted.generation());
+    restarted.deferRefresh();
+    assert.equal(
+      restarted.claimRefresh(now),
+      true,
+      "interrupted warming retries on the next scheduler turn",
+    );
+    assert.equal(
+      restarted.claimRefresh(now),
+      false,
+      "the next turn remains single-claimed",
+    );
+    assert.deepEqual(
+      restarted.read("calendar", key),
+      expected,
+      "deferral does not expire the retained snapshot",
+    );
     const oldGeneration = restarted.generation();
     restarted.invalidateCalendars();
     assert.equal(restarted.read("calendar", key), undefined);

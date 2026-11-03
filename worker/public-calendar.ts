@@ -43,6 +43,8 @@ export type ReadOptions = {
   accounting: () => { used: number; active: number };
   lastDispatchMs?: () => number;
   cacheOnly?: boolean;
+  beforeProviderRead?: () => void;
+  onFreshDay?: (day: z.infer<typeof nativeAvailabilitySchema>) => void;
 };
 /** Check whether a public calendar read window is configured. */
 export function hasPublicCalendarWindow(env: Env) {
@@ -206,7 +208,9 @@ export async function windowCalendar(
   let cataloguePending: ReturnType<ProviderSession["catalogue"]> | undefined;
   const catalogueForMonth = () =>
     (cataloguePending ??= (async () => {
+      options.beforeProviderRead?.();
       await provider.identity(env, control);
+      options.beforeProviderRead?.();
       return provider.catalogue(
         env,
         control,
@@ -238,7 +242,9 @@ export async function windowCalendar(
         return catalogue;
       },
       exchange: async (request) => {
+        options.beforeProviderRead?.();
         await provider.identity(env, control);
+        options.beforeProviderRead?.();
         return provider.nativeRead(env, control, request);
       },
     });
@@ -310,7 +316,9 @@ export async function windowAvailability(
   });
   const day = value.dates.find((day) => day.date === options.date);
   if (!day) throw new ApiError(503, "calendar_date_unknown");
-  return nativeAvailabilitySchema.parse(day);
+  const result = nativeAvailabilitySchema.parse(day);
+  if (options.fresh) options.onFreshDay?.(result);
+  return result;
 }
 
 /** Serve a bounded public calendar read through the account's read controls. */

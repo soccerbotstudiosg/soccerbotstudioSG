@@ -13,6 +13,8 @@ Review tests during implementation and before publishing the PR, not only after 
 
 No assistant browser execution, screenshots, `npm run verify`, `verify:browser` or browser-running installers. Owner/CI operates browsers and physical devices. Use isolated synthetic data and intercepted provider requests for local Worker tests. This procedure grants no live bookings, payments, refunds, cancellations, notification sends, DNS/email/registrar changes, production load or historical cleanup authority. The `live-email` gate name is not permission to send real email.
 
+For implementation changes, use the [code-writing skill](../soccerbot-code-writing/SKILL.md) for owning-cause repair and value sourcing; this skill owns detailed regression and guard-execution evidence.
+
 For dependency additions, updates or replacements, also apply the [dependency review skill](../soccerbot-dependencies/SKILL.md) before implementation or recommending merge. It owns suitability research and the application-change decision; retain this skill's existing evidence responsibilities.
 
 ## 1. Map the whole change to existing tests
@@ -51,6 +53,14 @@ Expected results must come from the rule/contract, not by invoking the implement
 
 When requirements legitimately change, update obsolete tests and their fixtures in the **same PR**, explaining the old/new contract. When requirements do not change, do not rewrite expectations to make defective code pass. Removing or renaming tests must preserve their behavioral coverage or explain the authorized retirement; old failures remain evidence in Journey.
 
+### Prove the test can detect the defect
+
+For a substantive bug fix, prefer a bounded pre-fix or narrow mutation demonstration: restore only the defect in an isolated worktree/fixture, run the named regression and require failure at the intended assertion, then require the corrected case to pass. Assert that the mutation actually changed its input. Compilation/setup failure, an unrelated failure or an unchanged replacement is not regression proof. Never reset the user's working tree or invoke prohibited browser/provider work. Record the test, mutation/pre-fix revision, observed reason and result; if execution requires owner/CI or is disproportionate for harmless copy/style work, record that limitation rather than claiming mutation coverage. This is targeted evidence, not a requirement to install a mutation framework or repeatedly run the full suite.
+
+Pair negative safety assertions with positive evidence that the scenario ran: expected result/state, meaningful response content, relevant provider effect or preserved original attempt. Absence of error text, empty output or a generic success code alone cannot prove the behavior. Negative assertions remain essential for unauthorized access, duplicate effects and protected data; do not remove them in favor of positive-only checks.
+
+For UI copy changes, search old full messages and distinctive substrings across component and browser assertions, accessible names, fixtures and inventories. For motion/layout changes, distinguish interim animated geometry from final dimensions: synchronize the actual lifecycle where final size is required, without arbitrary sleeps or relaxing dimensions. Keep immediate confirmation/timing assertions before any purely visual completion wait.
+
 ## 3. Synchronize fixtures and strict inventories
 
 Review fixtures for valid and intentionally invalid cases, correct account/environment scope, deterministic clocks and the same constraints as the real boundary. Keep provider calls intercepted; fixture defaults must not silently grant permission the production path would reject.
@@ -58,6 +68,8 @@ Review fixtures for valid and intentionally invalid cases, correct account/envir
 `scripts/test-inventory.json` records frontend/browser file-title pairs inspected by `scripts/test-inventory.mjs`; `scripts/worker-test-inventory.json` records Worker runtime file/title pairs validated by `scripts/verify-worker.mjs`. Adding, renaming, moving or retiring inventoried tests requires the matching inventory edit in the same PR. Inspect discovered and executed cases against the declared inventory; unchanged totals do not prove unchanged coverage. Do not regenerate a reduced inventory to conceal missing execution, skips or failures. Tooling/Python tests have their own runners; do not pretend these two inventories cover every repository test.
 
 ### Required dependent-guard review
+
+Prove guard execution, not merely guard presence: inspect the actual workflow/runner invocation and its result receipt. A missing or skipped required guard, empty test collection or absent report must not count as success. Check executable Git index modes when a hook/script is invoked directly; filesystem permissions alone may mask a broken committed mode. Retain or add meaningful rejection fixtures in the existing guard suites when that execution boundary changes.
 
 A test update is not complete when its own assertions and inventory entries pass. Whenever tests, fixtures, schemas, counts, titles, file placement or execution order change, search their consumers and reconcile **all affected guards in the same PR**:
 
