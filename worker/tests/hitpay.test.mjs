@@ -799,11 +799,45 @@ test("HitPay recovery preserves unknown writes and reads back without repeating 
   await recover();
   assert.equal((await row()).external_state, "unknown", (await row()).reason);
   assert.equal(provider.writes(), 1);
+  const retry = await row();
+  const wakeups = await (
+    await mf.dispatchFetch(origin + "/test/wakeups")
+  ).json();
+  assert.equal(wakeups.length, 1);
+  assert.equal(
+    wakeups[0].ready_ms,
+    retry.ready_ms,
+    "alarm deadline must match the committed D1 retry",
+  );
+  assert.ok(retry.ready_ms > Date.now());
+  const beforeEarlyAlarm = outbound;
+  assert.equal((await mf.dispatchFetch(origin + "/test/alarm")).status, 200);
+  assert.equal(
+    outbound,
+    beforeEarlyAlarm,
+    "an early alarm must not spend a retry or call providers",
+  );
+  assert.equal((await row()).tries, retry.tries);
   await recover();
   assert.equal((await row()).reason, "cooldown");
   assert.equal(provider.writes(), 1);
   await mf.dispatchFetch(origin + "/test/elapsed-cooldown");
-  await recover();
+  await db
+    .prepare("UPDATE hitpay_payments SET ready_ms=0 WHERE attempt_id=?")
+    .bind(attemptId)
+    .run();
+  await mf.dispatchFetch(origin + "/test/elapsed-wakeup");
+  const beforeDeadlineAlarm = (await row()).tries;
+  assert.equal((await mf.dispatchFetch(origin + "/test/alarm")).status, 200);
+  assert.equal(
+    (await row()).tries,
+    beforeDeadlineAlarm + 1,
+    "due alarm performs recovery without a cron invocation",
+  );
+  assert.deepEqual(
+    await (await mf.dispatchFetch(origin + "/test/wakeups")).json(),
+    [],
+  );
   assert.equal((await row()).state, "complete", (await row()).reason);
   assert.equal(provider.writes(), 1);
 });

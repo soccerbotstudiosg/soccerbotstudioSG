@@ -139,6 +139,7 @@ export function confirmationTransport(operation: string) {
   const map: Record<string, Label> = {
     "public-auth": "public_auth",
     "admin-auth": "admin_auth",
+    "admin-refresh": "admin_auth",
     identity: "identity",
     tariff: "tariff",
     "booking-read": "booking_read",

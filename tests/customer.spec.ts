@@ -501,7 +501,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   ).toHaveCount(1);
   await expect(
     page.locator(".confirmation-card .session-instructor"),
-  ).toHaveText(["Faisal Shahril", "Daniel Tan"]);
+  ).toHaveText(["Trainer: Faisal Shahril", "Trainer: Daniel Tan"]);
   await expect(page.getByText("Preview controls", { exact: true })).toHaveCount(
     0,
   );

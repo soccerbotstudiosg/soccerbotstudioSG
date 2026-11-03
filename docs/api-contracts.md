@@ -97,6 +97,8 @@ Access and remembered cookies are Secure, HttpOnly, SameSite=Strict, Path=/; acc
 
 Challenge email is trimmed/lowercased, valid and at most 254 characters; botToken is 1–2048 characters. Contact-profile names are trimmed 2–80 characters; phone accepts an optional plus and digits/spaces/parentheses/hyphens, 8–24 characters with 8–15 digits. This profile payload is deliberately smaller than booking contact. Verification uses generic failure messaging; `verification_request_limited` is 429 and disabled delivery is 503. Do not infer a provider customer exists from a challenge response.
 
+Admin authentication uses the fixed `POST /admin/auth/refresh-token` endpoint with the provider-returned refresh token. It shares the existing account admission and authentication claim. The refresh token is encrypted at rest and consumed durably before transport; a lost response never reuses it. No browser response exposes access or refresh credentials. Authentication repair does not replay a financial operation. Payment recovery persists the next alarm deadline from its committed D1 state, without changing retry budgets or leases. Nonessential booking comments become eligible only after payment recovery records complete/observed accounting, retaining their original effect fences.
+
 ## 4. Catalogue and selection contracts
 
 | Method and path                                  | Inputs                                         | Success / meaning                                                     | Authority                                                                        |

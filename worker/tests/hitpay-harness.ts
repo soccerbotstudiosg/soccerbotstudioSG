@@ -16,8 +16,14 @@ export class SoccerBotAccountCoordinator extends ProductionCoordinator {
   }
   syntheticWakeups() {
     return this.ctx.storage.sql
-      .exec("SELECT attempt_id,generation FROM payment_wakeups ORDER BY rowid")
+      .exec(
+        "SELECT attempt_id,generation,ready_ms FROM payment_wakeups ORDER BY rowid",
+      )
       .toArray();
+  }
+
+  expireSyntheticWakeups() {
+    this.ctx.storage.sql.exec("UPDATE payment_wakeups SET ready_ms=0");
   }
 
   expireSyntheticCooldown() {
@@ -77,6 +83,13 @@ const harness = {
       ) as unknown as DurableObjectStub<SoccerBotAccountCoordinator>;
       if (url.pathname === "/test/alarm") await stub.drainSyntheticAlarm();
       return Response.json(await stub.syntheticWakeups());
+    }
+    if (url.pathname === "/test/elapsed-wakeup") {
+      const stub = env.COORDINATOR.getByName(
+        "simplybook-developer-account",
+      ) as unknown as DurableObjectStub<SoccerBotAccountCoordinator>;
+      await stub.expireSyntheticWakeups();
+      return Response.json({ done: true });
     }
     if (url.pathname === "/test/elapsed-cooldown") {
       const stub = env.COORDINATOR.getByName(

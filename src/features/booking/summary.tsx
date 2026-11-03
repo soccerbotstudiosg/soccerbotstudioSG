@@ -48,7 +48,7 @@ export function SessionList({
                 {slot.start}–{endTime(slot.start)} SGT
               </span>
               <span className="session-instructor">
-                {sessionInstructorName(slot)}
+                Trainer: {sessionInstructorName(slot)}
               </span>
               {showRotation && slot.rotationAt && (
                 <span className="rotation-notice">

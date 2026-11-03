@@ -44,6 +44,7 @@ export function checkWorker(root) {
             "https://user-api-v2.simplybook.me/admin/webhooks/",
             "https://soccerbot-dev.limyousheng-94.workers.dev",
             "https://user-api-v2.simplybook.me/admin/auth",
+            "https://user-api-v2.simplybook.me/admin/auth/refresh-token",
             "https://user-api-v2.simplybook.me/admin/company/info",
             "https://user-api-v2.simplybook.me/admin/tariff/current",
             "https://user-api-v2.simplybook.me/admin/bookings/23",

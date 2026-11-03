@@ -334,7 +334,7 @@ test("provider identity mismatch prevents tariff read and never exposes account 
 test("provider rate failures consume budget enforce cooldown and never retry", async () => {
   for (const operation of ["public-auth", "admin-auth"]) {
     const count = operation === "public-auth" ? 1 : 2;
-    for (const status of [401, 403, 429]) {
+    for (const status of [401, 403, 419, 429]) {
       const f = await fixture({
         respond: (request) =>
           operation === "public-auth" || request.url.endsWith("/admin/auth")
@@ -348,6 +348,7 @@ test("provider rate failures consume budget enforce cooldown and never retry", a
             : undefined,
       });
       try {
+        const startedAt = Date.now();
         assert.equal(
           (await f.call(await f.grant())).body.result.reason,
           status === 429 ? "provider_http_failed" : "provider_auth_failed",
@@ -367,6 +368,27 @@ test("provider rate failures consume budget enforce cooldown and never retry", a
         assert.equal(failures.length, 1);
         assert.equal(failures[0].httpStatus, status);
         assert.equal(failures[0].operation, operation);
+        assert.equal(
+          failures[0].failureClass,
+          status === 403
+            ? "forbidden_unclassified"
+            : status === 429
+              ? "rate_limited"
+              : "authentication_expired_or_invalid",
+        );
+        assert.ok(Number.isSafeInteger(failures[0].retryNotBeforeMs));
+        assert.ok(failures[0].retryNotBeforeMs >= startedAt + 60000);
+        assert.ok(failures[0].retryNotBeforeMs <= Date.now() + 60000);
+        assert.deepEqual(Object.keys(failures[0]).sort(), [
+          "correlationId",
+          "durationMs",
+          "event",
+          "failureClass",
+          "httpStatus",
+          "operation",
+          "reason",
+          "retryNotBeforeMs",
+        ]);
         assert.doesNotMatch(
           JSON.stringify({ logs: f.logs }),
           /private-auth-response|private-auth-token|synthetic-public-secret/,
@@ -1474,7 +1496,10 @@ test("discovery failed read releases concurrency but remains counted across evic
       "event",
       "operation",
       "reason",
+      "retryNotBeforeMs",
     ]);
+    assert.ok(Number.isSafeInteger(failures[0].retryNotBeforeMs));
+    assert.ok(failures[0].retryNotBeforeMs > Date.now());
 
     assert.equal(result.body.result.accounting.used, 9);
     assert.equal(result.body.result.accounting.active, 0);
@@ -4380,4 +4405,108 @@ test("provider tokens survive coordinator eviction and admin rejection preserves
   } finally {
     await f.mf.dispose();
   }
+  await assertAdminRefreshAcrossEviction();
 });
+
+/** Verify refresh through the real coordinator governor after durable restoration. */
+async function assertAdminRefreshAcrossEviction() {
+  let reject = false,
+    rotated = false;
+  const f = await fixture({
+    respond: (request, body) => {
+      const pathname = new URL(request.url).pathname;
+      if (pathname === "/admin/auth")
+        return Response.json({
+          token: "synthetic-admin-token",
+          refresh_token: "synthetic-refresh-original",
+        });
+      if (pathname === "/admin/auth/refresh-token") {
+        assert.deepEqual(body, {
+          company: "synthetic-developer",
+          refresh_token: "synthetic-refresh-original",
+        });
+        assert.equal(request.headers.get("X-Token"), null);
+        rotated = true;
+        return Response.json({
+          token: "synthetic-rotated-admin-token",
+          refresh_token: "synthetic-refresh-replacement",
+        });
+      }
+      if (pathname === "/admin/company/info" && reject)
+        return new Response(null, { status: 401 });
+      if (rotated && pathname === "/admin/company/info") {
+        assert.equal(
+          request.headers.get("X-Token"),
+          "synthetic-rotated-admin-token",
+        );
+        return Response.json({ login: "synthetic-developer" });
+      }
+      if (rotated && pathname === "/admin/tariff/current")
+        return Response.json({ limits: [] });
+    },
+  });
+  const evict = async () => {
+    await f.sql("UPDATE admissions SET started_ms=started_ms-60000");
+    await f.mf.unsafeEvictDurableObject(
+      "provider-test",
+      "SoccerBotAccountCoordinator",
+      { name: "simplybook-developer-account" },
+    );
+  };
+  try {
+    assert.equal((await f.call(await f.grant())).body.result.verified, true);
+    await evict();
+    reject = true;
+    assert.equal(
+      (await f.call(await f.grant())).body.result.reason,
+      "provider_auth_failed",
+    );
+    assert.equal(
+      f.calls.filter((call) => call.url.endsWith("/refresh-token")).length,
+      0,
+      "rejected request cannot immediately replay itself",
+    );
+    assert.equal(
+      (await f.sql("SELECT COUNT(*) AS n FROM provider_token_cache"))[0].n,
+      2,
+      "early access rejection retains encrypted refresh material",
+    );
+    reject = false;
+    await f.sql("UPDATE budget SET cooldown_ms=0");
+    await f.sql("UPDATE admissions SET started_ms=started_ms-60000");
+    await f.sql("UPDATE refreshes SET expires_ms=0,completed_ms=0");
+    await evict();
+    assert.equal((await f.call(await f.grant())).body.result.verified, true);
+    assert.equal(
+      f.calls.filter((call) => call.url.endsWith("/admin/auth")).length,
+      1,
+    );
+    assert.equal(
+      f.calls.filter((call) => call.url.endsWith("/refresh-token")).length,
+      1,
+    );
+    await evict();
+    assert.equal((await f.call(await f.grant())).body.result.verified, true);
+    assert.equal(
+      f.calls.filter((call) => call.url.endsWith("/refresh-token")).length,
+      1,
+      "rotated token survives another eviction without refresh replay",
+    );
+    assert.equal(
+      (await f.sql("SELECT COUNT(*) AS n FROM admissions WHERE finished=0"))[0]
+        .n,
+      0,
+    );
+    assert.equal(
+      f.calls.filter((call) => !["GET", "POST"].includes(call.method)).length,
+      0,
+    );
+    assert.doesNotMatch(
+      JSON.stringify(await f.sql("SELECT * FROM provider_token_cache")) +
+        f.logs.join("\n"),
+      /synthetic-refresh-original|synthetic-refresh-replacement|synthetic-rotated-admin-token/,
+    );
+  } finally {
+    await f.mf.dispose();
+  }
+}

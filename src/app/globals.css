@@ -3110,6 +3110,7 @@
   .payment-continuation [role="timer"] {
     margin: 12px 0 8px;
     text-align: center;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
   .month-picker {

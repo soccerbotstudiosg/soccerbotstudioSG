@@ -183,6 +183,8 @@ flowchart TD
   C --> F["Choose a new time"]
 ```
 
+Confirmation summary follows review: provider service name, player count per session and full instructor guidance; each session uses “Trainer: <name>”. Supporting client/location/disclaimer details remain collapsed under View full details. The continuation countdown is centred and bold above its payment button. Missing validated display metadata never substitutes a guessed trainer.
+
 ## 14. Confirmed details temporarily unavailable
 
 A receipt-read failure does not undo verified confirmation or authorize another payment.

@@ -211,10 +211,8 @@ export function BookingConfirmation({
           </strong>
           <p>
             {booking.draft.players}{" "}
-            {booking.draft.players === 1 ? "player" : "players"} ·{" "}
-            {booking.slots.length}{" "}
-            {booking.slots.length === 1 ? "session" : "sessions"} · Singapore
-            time
+            {booking.draft.players === 1 ? "player" : "players"} per session ·
+            Full instructor guidance
           </p>
           <SessionList slots={booking.slots} showRotation={false} />
           <div className="paid">
