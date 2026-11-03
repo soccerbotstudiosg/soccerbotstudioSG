@@ -6,7 +6,7 @@ This is the implementation contract for the current repository revision, not a p
 
 ### Named service operation matrix
 
-Format follows [Fitfinity’s domain operation inventory](https://github.com/LimYouSheng/FitfinityReact/blob/main/docs/SERVICE_CONTRACTS.md#domain-operation-inventory): name, source status, permission policy and evidence owners. The rows below describe the current source, **not a new all-tests-passed or production-acceptance count**. Tests linked are relevant evidence owners; current run outcomes belong in Progress. Worker tests use isolated workerd/D1/DO and synthetic provider interception, not real SimplyBook/HitPay payment execution.
+Each operation records its name, source status, permission policy and evidence owners. The rows below describe the current source, **not a new all-tests-passed or production-acceptance count**. Tests linked are relevant evidence owners; current run outcomes belong in Progress. Worker tests use isolated workerd/D1/DO and synthetic provider interception, not real SimplyBook/HitPay payment execution.
 
 [Composition](../src/services/index.ts) selects booking/customerIdentity at build time; failed live requests never switch to demo. The separate `services.identity`, enquiry and assistant objects remain local demo implementations. The active public catalogue is `customerCatalogueService`, not the unavailable legacy `catalogueService`. The protected confirmation service handles live checks instead of the disabled generic booking check/resolve methods.
 
@@ -427,4 +427,4 @@ Normalized invoice observations may contain optional `documentNumber` from the a
 
 The accounting fast path includes this metadata in the same durable publication; no additional provider read or expiry extension is added. Legacy observations/confirmations without the field remain readable. Protected receipt reads use current validated observation data within the existing authorization/window rules. Internal IDs remain in protected protocol/journal data for compatibility and reconciliation but are not customer-facing labels. The display number is never an idempotency key, calendar UID or substitute invoice identity.
 
-The customer invoice label is currently withheld: API `number` has not been verified against the actual SimplyBook Pay document prefix. Retain optional metadata for protocol/storage compatibility, without displaying or rewriting it as an official invoice number.
+At owner request, confirmed customer cards display optional `providerReferences.invoiceNumber` unchanged. Missing metadata or pending confirmation omits the label; internal invoice/booking IDs are never fallbacks. API `number` still requires comparison with the actual SimplyBook Pay document during full-flow UAT; display does not certify an SI prefix or contribute payment proof.

@@ -544,6 +544,18 @@
   .notice > p {
     margin: 0;
   }
+  .alert > p + p,
+  .notice > p + p {
+    margin-top: 8px;
+  }
+  .message-heading {
+    margin: 0 0 12px;
+    font-size: var(--text-card);
+    font-weight: var(--weight-heading);
+    line-height: var(--leading-heading);
+    color: inherit;
+    overflow-wrap: anywhere;
+  }
   .alert > .button,
   .notice > .button {
     margin-top: 12px;
@@ -3611,7 +3623,11 @@
   .status-heading p {
     color: var(--color-muted);
   }
+  .status-heading > p + p {
+    margin-top: 12px;
+  }
   .reference {
+    overflow-wrap: anywhere;
     letter-spacing: 0.02em;
     margin-top: 9px;
   }
@@ -3720,6 +3736,22 @@
     margin-bottom: 16px;
     background: var(--color-confirmation);
     color: var(--color-on-brand);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .confirmation-shell .status-icon {
+      animation: confirmation-pop 380ms ease-out;
+    }
+  }
+  @keyframes confirmation-pop {
+    0% {
+      transform: scale(0.75);
+    }
+    65% {
+      transform: scale(1.08);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
   .confirmation-shell .status-icon svg {
     width: 48px;

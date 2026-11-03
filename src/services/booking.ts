@@ -395,7 +395,7 @@ async function nativeRequest(
       if (error?.error === "checkout_recovery_required")
         throw new BookingServiceError(
           "temporarily_unavailable",
-          "We’re checking your booking. Don’t book or pay again.",
+          "Checking your booking. Do not book or pay again.",
         );
       if (error?.error === "checkout_selection_unavailable")
         throw new BookingServiceError(
@@ -424,7 +424,7 @@ async function nativeRequest(
       if (response.status === 409 && body?.error === "hitpay_hold_expired")
         throw new BookingServiceError(
           "reservation_expired",
-          "Your reserved time expired. Choose again; your details are saved.",
+          "Reservation expired. Choose another time. Your details are saved.",
         );
       throw new BookingServiceError(
         "payment_unavailable",
@@ -747,7 +747,7 @@ export const liveBookingService: BookingService = defineBookingService({
         result.state === "selection_unavailable"
           ? "selection_unavailable"
           : "selection_changed",
-        "This selection is no longer available or has changed. Please choose again. Your details have been kept.",
+        "Selection unavailable. Choose again. Your details are saved.",
         result.rejectedSessionIndex,
       );
     }

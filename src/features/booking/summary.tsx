@@ -221,14 +221,12 @@ export function Summary({ basket = false }: { basket?: boolean }) {
                   label="Checking sessions…"
                 />
               ) : (
-                "Your selections are saved. Availability could not be checked."
+                "Please refresh availability. Your selections are saved."
               )}
             </p>
           )}
           {basket && (
-            <p className="hint">
-              Your selections are not reserved until booking is confirmed.
-            </p>
+            <p className="hint">Selecting a time does not reserve it.</p>
           )}
         </div>
       </aside>

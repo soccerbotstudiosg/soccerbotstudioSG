@@ -1,5 +1,5 @@
 "use client";
-import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Icon } from "./icon";
 /** Manage modal focus, dismissal and restoration for shared dialogs. */
 export function Dialog({
@@ -12,6 +12,7 @@ export function Dialog({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useLayoutEffect(() => {
     const dialog = ref.current;
     const opener = document.activeElement;
@@ -28,7 +29,7 @@ export function Dialog({
     <dialog
       ref={ref}
       className="fixed m-auto max-h-[85dvh] w-[calc(100%-32px)] max-w-xl overflow-auto rounded-2xl border border-line p-6 text-ink shadow-2xl backdrop:bg-navy/65"
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(event) => {
         if (event.target === ref.current) {
@@ -44,11 +45,11 @@ export function Dialog({
       }}
     >
       <div className="mb-5 flex items-center justify-between gap-4">
-        <h2 className="dialog-title" id="dialog-title">
+        <h2 className="dialog-title" id={titleId}>
           {title}
         </h2>
         <button
-          className="grid h-11 w-11 place-items-center rounded-lg border border-line"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-line"
           onClick={onClose}
           aria-label="Close dialog"
         >

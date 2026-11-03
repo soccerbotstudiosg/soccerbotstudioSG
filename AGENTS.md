@@ -20,6 +20,8 @@ This file is the authority for repository engineering instructions; linked proce
 | [Domain operations and API contracts](docs/api-contracts.md)          | Named operations, source status, permissions, evidence and transport contracts.                        |
 | [Complete journey](docs/journey.md)                                   | End-to-end flows, retained milestones and dated change evidence.                                       |
 
+[Booking scenarios and messages](docs/booking-flows.md) owns the small customer action/message diagrams and the embedded copy review/approval disposition; role UAT owns actual acceptance. Update the scenario map and approved-message rows when an affected UI state or message changes. This document does not duplicate payment authority or replace tests.
+
 Function-level behavior, guards, failure recovery and evidence are in [Technical behavior](docs/code-owners/technical-behavior.md); start with the [feature map](docs/code-owners/index.md) for navigation.
 
 Use North Star for sustained multi-step campaigns; scale it down for small corrections. Progress owns the active outcome and priority. Read North Star, Progress, Architecture and the relevant Business rules and API contracts before work. Refresh branch/HEAD/index and the remote revision; GitHub is canonical, but the local checkout may differ. Preserve unknown edits, worktrees, dependency symlinks and original evidence. Update the owning document and link to it elsewhere; do not maintain parallel rules, setup guides or status ledgers. Historical entries remain dated evidence, not current instructions or renewed authorization. Preserve milestone IDs and record history once in Complete journey’s dated history.

@@ -1021,7 +1021,7 @@ test("failed public calendar releases full-page loading and leaves refresh avail
   fireEvent.click(screen.getByRole("button", { name: "Choose test session" }));
   expect(
     await screen.findByText(
-      "Availability could not be checked. Your selections are saved.",
+      "Please refresh availability. Your selections are saved.",
     ),
   ).toBeInTheDocument();
   await waitFor(() =>
@@ -1243,7 +1243,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
       await act(async () => gates.get("2026-10")!());
       if (scenario === "failure") {
         await screen.findByText(
-          "Availability could not be checked. Your selections are saved.",
+          "Please refresh availability. Your selections are saved.",
         );
         expect(publicCalendar).toHaveBeenCalledTimes(1);
         expect(region).toHaveAttribute("aria-busy", "false");

@@ -50,7 +50,7 @@ export function LiveCatalogue({
     return (
       <section className="surface">
         <p className="alert" role="alert">
-          Session information is unavailable. Your details have been kept.
+          Sessions unavailable. Please try again. Your details are saved.
         </p>
         <button className="button" onClick={() => retry((n) => n + 1)}>
           Try again

@@ -6,16 +6,18 @@ Configuration reference reviewed 2 November 2026, Singapore. This document expla
 
 ## Environment boundaries
 
-| Area                                      | Developer staging                                         | Client deployment                                                                        |
-| ----------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Purpose                                   | Development and owner acceptance with developer resources | Client infrastructure; currently scoped guest sandbox testing, not accepted live trading |
-| SimplyBook company                        | `soccerbot`                                               | `soccerbotadmin`                                                                         |
-| Weekday / weekend and public-holiday rate | S$88 / S$108                                              | S$108 / S$128                                                                            |
-| HitPay                                    | Approved app404 sandbox                                   | Same approved sandbox temporarily; live merchant setup pending                           |
-| Cloudflare Worker                         | `soccerbot-dev`                                           | `soccerbot-production`                                                                   |
-| Source of intended settings               | [Staging target](../deployment/staging.json)              | [Production target](../deployment/production.json)                                       |
+| Area                                      | Developer staging                                         | Client deployment                                                           |
+| ----------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Purpose                                   | Development and owner acceptance with developer resources | Client infrastructure; closed after PR19 release, not accepted live trading |
+| SimplyBook company                        | `soccerbot`                                               | `soccerbotadmin`                                                            |
+| Weekday / weekend and public-holiday rate | S$88 / S$108                                              | S$108 / S$128                                                               |
+| HitPay                                    | Approved app404 sandbox                                   | Same approved sandbox temporarily; live merchant setup pending              |
+| Cloudflare Worker                         | `soccerbot-dev`                                           | `soccerbot-production`                                                      |
+| Source of intended settings               | [Staging target](../deployment/staging.json)              | [Production target](../deployment/production.json)                          |
 
 The same application implements both profiles. Public catalogue metadata selects the displayed price profile; calendar quotes, booking validation and payment matching remain authoritative. Display text cannot authorize a charge. Staging tests exercise the shared UI and recovery logic, but do not establish client account settings, exact client amounts, live payments, email delivery or production latency. The two deployments may temporarily run different revisions; check release receipts before comparing behavior.
+
+Latest release evidence (2 November2026,22:51 Singapore): productionfc52077 passed deployment health with customer/provider/HitPay checkout/identity delivery/client sandbox disabled. Earlier sandbox overrides are historical, not current activation. Staging retains its independently verified7634a29 candidate. [Progress](../PROGRESS.md) owns exact run/version receipts.
 
 ## SimplyBook — schedules, bookings and invoices
 
@@ -76,7 +78,7 @@ Record actual domain verification and sender configuration when available. Use [
 
 ## HitPay — hosted payment and webhook recovery
 
-Both environments currently use the owner-approved app404 **sandbox**. This is a temporary testing arrangement, not client live merchant ownership or proof of production readiness. The client Worker can create real SimplyBook booking/invoice records even when payment is sandboxed; owner tests need deliberate dates and capacity.
+Both environment mappings use the owner-approved app404 **sandbox**; the client release is currently closed. This is a temporary testing arrangement, not client live merchant ownership or proof of production readiness. The client Worker can create real SimplyBook booking/invoice records even when payment is sandboxed; owner tests need deliberate dates and capacity.
 
 | Setting                | Configuration / explanation                                                                                                                                                        |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -134,7 +136,7 @@ For each change: identify the environment and setting, explain why it changes, r
 
 Owner supplied the change/cancellation contact on 2 November: **Glenna, +65 9014 3819**, [WhatsApp](https://wa.me/6590143819). A message is a request; the booking stays unchanged until the studio confirms it. Do not imply automatic cancellation, rescheduling or refund approval. The confirmation WhatsApp Enquiry action uses this contact; customer downloads are retired.
 
-Invoice display is withheld pending comparison against the actual SimplyBook Pay document. The validated API `number` field was observed with an O prefix during owner staging UAT; the owner screenshot shows an O-prefixed timed-out order and SI-prefixed paid invoices with separate sequences; the exact API-to-paid-document mapping is still unverified. Do not infer equivalence or rewrite a prefix. Optional metadata remains retained for compatibility; no accounting identifiers, provider configuration or financial proof change.
+Merged PR19 withholds invoice display. The unpublished owner-requested follow-up restores the optional provider number unchanged on confirmed cards for comparison against SimplyBook Pay; see Progress for delivery state. The validated API `number` field was observed with an O prefix during owner staging UAT; the owner screenshot shows an O-prefixed timed-out order and SI-prefixed paid invoices with separate sequences; the exact API-to-paid-document mapping is still unverified. Do not infer equivalence or rewrite a prefix. Optional metadata remains retained for compatibility; no accounting identifiers, provider configuration or financial proof change.
 
 ### Complete HTML drafts and editor setup
 

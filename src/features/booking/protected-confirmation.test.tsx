@@ -92,13 +92,13 @@ it("denied and malformed responses cannot show confirmation or protected details
   vi.stubGlobal("fetch", fetch);
   const view = render(<ProtectedConfirmation attemptId={first} />);
   expect(
-    await screen.findByRole("heading", { name: "Can’t load confirmation" }),
+    await screen.findByRole("heading", { name: "Confirmation unavailable" }),
   ).toBeInTheDocument();
   fetch.mockResolvedValue(new Response(null, { status: 401 }));
   view.rerender(<ProtectedConfirmation attemptId={second} />);
   await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
   expect(
-    await screen.findByRole("heading", { name: "Can’t load confirmation" }),
+    await screen.findByRole("heading", { name: "Confirmation unavailable" }),
   ).toBeInTheDocument();
   expect(
     screen.queryByRole("heading", { name: "Booking confirmed" }),
@@ -157,7 +157,7 @@ it("temporary checking failure preserves the protected summary and repeat checko
   );
   vi.stubGlobal("fetch", fetch);
   render(<ProtectedConfirmation attemptId={first} checkoutMode="synthetic" />);
-  await screen.findByRole("heading", { name: "Can’t load confirmation" });
+  await screen.findByRole("heading", { name: "Confirmation unavailable" });
   const link = await screen.findByRole("link", {
     name: "Open checkout",
   });
@@ -212,7 +212,7 @@ it("access denial hides a previously loaded checkout context", async () => {
   ).not.toBeInTheDocument();
 });
 
-it("verified live receipt shows booking sections without export actions or unverified invoice labels", async () => {
+it("verified live receipt shows provider invoice number without internal IDs or export actions", async () => {
   const now = Date.now();
   const receipt = {
     ...receiptFixture(now + 120000),
@@ -263,8 +263,8 @@ it("verified live receipt shows booking sections without export actions or unver
   expect(screen.queryByText("701")).not.toBeInTheDocument();
   expect(screen.queryByText("901")).not.toBeInTheDocument();
   expect(screen.queryByText(/SoccerBot reference/)).not.toBeInTheDocument();
-  expect(screen.queryByText(/Invoice number/)).toBeNull();
-  expect(screen.queryByText("INV-2026-TEST")).toBeNull();
+  expect(screen.getByText(/Invoice number/)).toBeInTheDocument();
+  expect(screen.getByText("INV-2026-TEST")).toBeInTheDocument();
   expect(
     screen.getByRole("link", { name: "WhatsApp Enquiry" }),
   ).toHaveAttribute("href", "https://wa.me/6590143819");
@@ -415,7 +415,7 @@ it("expired checking shows authenticated recorded payment without confirming or 
       name: "Payment received",
     }),
   ).toBeInTheDocument();
-  expect(screen.getByText(/Don’t pay again/)).toBeInTheDocument();
+  expect(screen.getByText(/Do not pay again/)).toBeInTheDocument();
   expect(
     screen.queryByRole("heading", { name: "Booking confirmed" }),
   ).not.toBeInTheDocument();
@@ -664,7 +664,7 @@ it("pending confirmation retains the booking summary while hiding full details s
   await screen.findByText("Checking payment…");
   expect(screen.queryByText("View full details")).toBeNull();
   expect(screen.getByLabelText("Booking summary")).toBeVisible();
-  expect(screen.getByText("Don’t close or refresh.")).toBeVisible();
+  expect(screen.getByText("Please do not close or refresh.")).toBeVisible();
   expect(screen.getByText("Checking payment…")).toBeVisible();
   const card = document.querySelector(".confirmation-card");
   expect(document.querySelector(".booking-loading")).toBeNull();
@@ -854,6 +854,10 @@ it("manual review supersedes an earlier customer confirmation without exposing d
   await screen.findByRole("heading", {
     name: "Payment received; booking confirmation pending",
   });
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Payment received. Contact us about your booking. Do not pay again.",
+  );
+  expect(screen.queryByText(/Payment status unconfirmed/)).toBeNull();
   expect(
     screen.queryByRole("heading", { name: "Booking confirmed" }),
   ).toBeNull();
@@ -998,7 +1002,7 @@ it("poll-confirmed payment retains its displayed proof while the final receipt i
     expect(
       screen.queryByRole("status", { name: "Preparing confirmation…" }),
     ).toBeNull();
-    expect(screen.queryByText("Don’t close or refresh.")).toBeNull();
+    expect(screen.queryByText("Please do not close or refresh.")).toBeNull();
     expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
     await act(async () => {
       finishReceipt(Response.json(proof));
@@ -1104,7 +1108,7 @@ it("shows payment received feedback with details while current booking evidence 
   const summary = screen.getByLabelText("Booking summary");
   const timer = screen.getByRole("timer");
   const continuation = screen.getByRole("link", { name: "Continue payment" });
-  const message = screen.getByText(/Complete your payment below/);
+  const message = screen.getByText(/Continue to pay/);
   expect(
     message.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
@@ -1126,7 +1130,7 @@ it("shows payment received feedback with details while current booking evidence 
   });
   expect(
     screen.getByRole("status", {
-      name: "Paid—confirming booking…",
+      name: "Payment received. Confirming booking.",
     }),
   ).toBeVisible();
   expect(

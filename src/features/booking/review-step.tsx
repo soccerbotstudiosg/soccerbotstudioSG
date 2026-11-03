@@ -179,7 +179,7 @@ export function ReviewStep({
       </div>
       {verifying && (
         <p className="notice" role="status">
-          Reservation checking. Don’t close or refresh.
+          Reservation checking. Please do not close or refresh.
         </p>
       )}
       {policy && (
@@ -191,8 +191,8 @@ export function ReviewStep({
             </p>
             <p>
               {attempt?.held
-                ? "Your selected sessions are temporarily held. Payment uses this existing reservation; it does not check the slots as available again. If the hold expires, payment cannot proceed."
-                : "Selecting a time does not reserve it. Availability is checked before the reservation is created."}{" "}
+                ? "Your sessions are temporarily reserved. Complete payment before the reservation expires."
+                : "Selecting a time does not reserve it."}{" "}
               Follow the instructor’s safety guidance.
             </p>
             <p>

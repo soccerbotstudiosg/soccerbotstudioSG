@@ -28,7 +28,7 @@ const savedSchema = z.strictObject({
 });
 const unavailable = () =>
   new CustomerMessageError(
-    "Email verification is unavailable. You can continue as a guest.",
+    "Email verification unavailable. Please continue as a guest.",
   );
 /** Send an identity request with bounded transport and response validation. */
 async function identityRequest(

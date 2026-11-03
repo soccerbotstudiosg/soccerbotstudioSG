@@ -339,7 +339,7 @@ export function ProtectedConfirmation({
         : checkoutMode && preparation === "loading"
           ? "Checking booking…"
           : paymentReceived
-            ? "Paid—confirming booking…"
+            ? "Payment received. Confirming booking."
             : "Checking payment…";
     // Only the original payment step may reopen an unpaid handoff. The provider
     // return route remains confirmation-only, even before payment evidence arrives.
@@ -359,7 +359,7 @@ export function ProtectedConfirmation({
         />
       ) : undefined;
     const pendingMessage = continuation
-      ? "Complete your payment below. If you have paid, please wait for confirmation."
+      ? "Continue to pay. If already paid, please wait..."
       : undefined;
     if (current?.details) {
       const details = bookingFromReceipt(current.details);
@@ -393,45 +393,60 @@ export function ProtectedConfirmation({
             Experiment 1 · Synthetic Preview · No payment or booking is made
           </p>
         )}
-        <h1>
-          {historicalPayment ? (
-            "Payment received"
-          ) : paymentReceived && view !== "confirmed" && view !== "denied" ? (
-            "Payment received; booking confirmation pending"
-          ) : view === "checking" ? (
-            showLink && link && !isHitpayCheckoutUrl(link.url) ? (
-              "Complete your payment"
+        <div
+          className={
+            ["denied", "unresolved", "unavailable"].includes(view)
+              ? "alert"
+              : "notice"
+          }
+          role={
+            ["denied", "unresolved", "unavailable"].includes(view)
+              ? "alert"
+              : "status"
+          }
+        >
+          <h1 className="message-heading">
+            {historicalPayment ? (
+              "Payment received"
+            ) : paymentReceived && view !== "confirmed" && view !== "denied" ? (
+              "Payment received; booking confirmation pending"
+            ) : view === "checking" ? (
+              showLink && link && !isHitpayCheckoutUrl(link.url) ? (
+                "Complete your payment"
+              ) : (
+                <BrandLoading
+                  compact
+                  label={
+                    checkoutMode && preparation === "loading"
+                      ? "Preparing checkout…"
+                      : "Checking payment…"
+                  }
+                />
+              )
+            ) : view === "confirmed" ? (
+              "Booking confirmed"
+            ) : view === "unresolved" ? (
+              "Payment needs checking"
             ) : (
-              <BrandLoading
-                compact
-                label={
-                  checkoutMode && preparation === "loading"
-                    ? "Preparing checkout…"
-                    : "Checking payment…"
-                }
-              />
-            )
-          ) : view === "confirmed" ? (
-            "Booking confirmed"
-          ) : view === "unresolved" ? (
-            "Payment needs checking"
-          ) : (
-            "Can’t load confirmation"
-          )}
-        </h1>
-        <p>
-          {historicalPayment
-            ? "Payment received. Contact the studio for booking help. Don’t pay again."
-            : view === "confirmed"
-              ? "Your booking is confirmed."
-              : view === "denied"
-                ? "Contact the studio to view this booking. Don’t pay again."
-                : view === "checking"
-                  ? "Checking booking."
-                  : view === "unavailable"
-                    ? "We couldn’t check your payment. Try checking again shortly."
-                    : "We couldn’t confirm your payment. Don’t pay again; contact the studio."}
-        </p>
+              "Confirmation unavailable"
+            )}
+          </h1>
+          <p>
+            {historicalPayment
+              ? "Payment received. Contact us about your booking. Do not pay again."
+              : view === "confirmed"
+                ? "Your booking is confirmed."
+                : view === "denied"
+                  ? "Contact the studio to view this booking. Don’t pay again."
+                  : view === "checking"
+                    ? "Checking booking."
+                    : paymentReceived
+                      ? "Payment received. Contact us about your booking. Do not pay again."
+                      : view === "unavailable"
+                        ? "Payment status unavailable. Please check again shortly."
+                        : "Payment status unconfirmed. Do not pay again. Contact us."}
+          </p>
+        </div>
         {historicalPayment && recordedPayment && (
           <p>
             Payment verified:{" "}
