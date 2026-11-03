@@ -22,6 +22,7 @@ export async function confirmationSnapshot(
       `
     SELECT a.id,a.created_ms,a.deadline_ms,a.state,a.intent_json,a.intent_hash,
       a.association_json,a.observation_json,a.confirmation_next_ms,
+      CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,
       r.route,c.booking_created_ms,c.payment_window_ms,c.confirmation_json,
       (SELECT expires_ms FROM hitpay_holds WHERE attempt_id=a.id) AS hold_expires_ms,
       CASE WHEN p.attempt_id IS NULL THEN NULL ELSE json_object(
@@ -36,6 +37,7 @@ export async function confirmationSnapshot(
        UNION ALL SELECT availability_json FROM completed_native_checkout_grants WHERE attempt_id=a.id
        UNION ALL SELECT availability_json FROM expired_native_checkout_grants WHERE attempt_id=a.id) AS availability_json
     FROM attempts a
+    LEFT JOIN invoice_documents d ON d.attempt_id=a.id AND d.association_json=a.association_json
     LEFT JOIN checkout_payment_routes r ON r.attempt_id=a.id
     LEFT JOIN hitpay_payments p ON p.attempt_id=a.id
     LEFT JOIN checkout_progress c ON c.attempt_id=a.id
@@ -45,6 +47,7 @@ export async function confirmationSnapshot(
     .bind(id, owner)
     .first<
       StoredAttempt & {
+        invoice_document_json: string | null;
         intent_hash: string;
         confirmation_next_ms: number;
         route: string | null;
@@ -75,6 +78,7 @@ export async function confirmationSnapshot(
       payment.external_state === "observed"
         ? {
             confirmation_json: row.confirmation_json,
+            invoice_document_json: row.invoice_document_json,
             scope_json: payment.scope_json,
           }
         : null,

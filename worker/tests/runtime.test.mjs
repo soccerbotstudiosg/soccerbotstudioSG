@@ -231,6 +231,11 @@ before(async () => {
       .replace(/^--.*$/gm, "")
       .replace(/\n/g, " "),
   );
+  await db.exec(
+    readFileSync("migrations/0036_invoice_documents.sql", "utf8")
+      .replace(/^--.*$/gm, "")
+      .replace(/\n/g, " "),
+  );
 });
 after(async () => {
   if (mf) await mf.dispose();
@@ -1380,10 +1385,19 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
       "UPDATE attempts SET association_json=?,observation_json=? WHERE id=?",
     )
     .bind(
-      JSON.stringify({ invoiceId: "invoice-1", bookingIds: ["booking-1"] }),
+      JSON.stringify({
+        invoiceId: "invoice-1",
+        bookingIds: ["booking-1"],
+      }),
       JSON.stringify(evidence),
       a.id,
     )
+    .run();
+  await db
+    .prepare(
+      "INSERT INTO invoice_documents(attempt_id,association_json,order_number,observed_ms) SELECT id,association_json,?,? FROM attempts WHERE id=?",
+    )
+    .bind("ORDER-SYNTHETIC-42", Date.now(), a.id)
     .run();
   const offer = {
     serviceId: "12",
@@ -1427,7 +1441,51 @@ test("receipt export rechecks ownership paid evidence and revocation without pro
   });
   assert.equal(receipt.sessions[0].serviceName, "Native Session");
   assert.equal(JSON.stringify(receipt).includes("capability"), false);
-  // Clicking an export can refresh stale proof, but never reuse a saved receipt.
+  // Fresh proof can enrich display metadata without replaying financial recovery.
+  const order = structuredClone(evidence);
+  order.invoice.documentNumber = "ORDER-SYNTHETIC-42";
+  await db
+    .prepare(
+      "UPDATE attempts SET observation_json=?,confirmation_next_ms=0 WHERE id=?",
+    )
+    .bind(JSON.stringify(order), a.id)
+    .run();
+  const pendingDocument = await (await readReceipt()).json();
+  assert.equal(pendingDocument.providerReferences.invoiceNumber, undefined);
+  const enrichedResponse = await mf.dispatchFetch(
+    origin + "/test/receipt-refresh",
+    {
+      method: "POST",
+      headers: { cookie: a.cookie },
+      body: JSON.stringify({
+        id: a.id,
+        owner: a.owner,
+        scenario: "fresh",
+        observation: evidence,
+      }),
+    },
+  );
+  assert.equal(enrichedResponse.status, 200);
+  const enriched = await enrichedResponse.json();
+  assert.equal(enriched.refreshes, 1);
+  assert.equal(
+    enriched.receipt.providerReferences.invoiceNumber,
+    "INV-SYNTHETIC-42",
+  );
+  const afterEnrichment = await db
+    .prepare("SELECT observation_json FROM attempts WHERE id=?")
+    .bind(a.id)
+    .first();
+  assert.equal(afterEnrichment.observation_json, JSON.stringify(order));
+  assert.equal(
+    (await (await readReceipt()).json()).providerReferences.invoiceNumber,
+    "INV-SYNTHETIC-42",
+  );
+  await db
+    .prepare("UPDATE attempts SET observation_json=? WHERE id=?")
+    .bind(JSON.stringify(evidence), a.id)
+    .run();
+  // Stale evidence still requires complete read-only verification.
   const original = await db
     .prepare("SELECT * FROM attempts WHERE id=?")
     .bind(a.id)

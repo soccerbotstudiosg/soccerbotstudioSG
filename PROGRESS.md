@@ -1,23 +1,21 @@
 # Current checkpoint
 
-Observed 3 November 2026, Singapore. Replace this checkpoint when work advances; dated evidence belongs in [Journey](docs/journey.md#part-2--dated-changes-and-evidence).
+Observed 3 November 2026, Singapore. Historical evidence belongs in [Journey](docs/journey.md#part-2--dated-changes-and-evidence).
 
 ## Current state
 
-- [PR20](https://github.com/soccerbotstudiosg/soccerbotstudioSG/pull/20) merged at owner request as `662bea3764bb7546a216f1f4f3790fbcb1e28a67`. All13 checks passed for PR head61ff22e in [CI41544574146](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41544574146).
-- Owner requested trial runs after merge. PR20 staging deployment/physical acceptance was not established before this merge; do not describe CI as provider acceptance. Main CI41555359170 and production deployment41557099523 succeeded for662bea3. Guest sandbox checkout activation was subsequently verified through Cloudflare settings.
-- The consolidated local changes and new repository code-writing skill are prepared for the owner-authorized draft PR on `fix/shared-calendar-cache`; merged PR20 contains the application/test changes, not this cleanup.
-- Staging remains last recorded PR19 source7634a29. Production runs662bea3 with guest sandbox checkout/recovery/webhook enabled; identity email stays disabled. Public HTTP is blocked by the workspace proxy, so owner browser acceptance is still pending.
+- PR21 merged as `86e3cd58316bb60b1c43989e9180451661e9d44b` at the owner's request. Main CI41571261491 and production deployment41572619343 passed. Production runs that revision; checkout/recovery/webhook and public display warming were enabled and independently read back. HitPay remains sandbox; identity email and token refresh-ahead remain disabled.
+- Owner test10 completed numbered trials1,2,4 and reported oversized calendar controls, countdown alignment and incorrect invoice numbers. These trials are not blanket acceptance. Email reportedly carried the correct invoice almost immediately.
+- Local follow-up on `fix/test10-confirmation-details`: compact calendar controls, redundant helper removed, centred payment countdown, and separate bounded paid-document enrichment. The [database schema map](docs/architecture/database-schema.md) is included in this local batch. The owner has authorized publication and CI for this consolidated branch; deployment remains pending.
 
 ## Immediate remaining tasks
 
-1. Complete the remaining test9 invoice-number repair: enrich final paid document metadata without delaying safe confirmation or guessing prefixes. This remains an explicit open item; owner has now requested CI for the tested cache/UI/documentation batch.
-2. Keep the accounting-response fallback until its rejection reason is evidenced; do not remove authoritative verification to improve timing. Exact UI paint remains owner-trace evidence.
-3. Publish the owner-authorized consolidated candidate as a draft PR and inspect exact-head CI: shared-cache restoration/safety audit, matching Refresh layout, documentation cleanup and local skills are together on `fix/shared-calendar-cache`. CI is pending publication at this checkpoint; no merge or source deployment is authorized by this push.
-4. After authorized deployment, recheck warming and perform the documented stale-tab and consecutive single/multi-session provider trials. An in-flight provider read can still delay checkout; local simulation is not provider acceptance.
+1. Review the consolidated test10 candidate and its generated local verification receipts (`test-results/verification-code.json`, `test-results/verification-worker.json`); focused regression and mutation evidence is retained in Journey. Migration0036 must deploy before its Worker.
+2. Publish `fix/test10-confirmation-details` as a draft PR and inspect exact-head CI. Keep the PR as the delivery receipt; staging, owner acceptance, merge and production deployment remain separate steps.
+3. Owner retest: compare invoice with the email/SimplyBook Pay, wait for late metadata, reload, and run consecutive single/multi journeys with checkout back/continue. Confirm no order number or animation replay, and inspect compact controls on phone and desktop.
+4. Complete remaining stale-tab, capacity-release and scheduled-warming trials. Custom email remains on hold.
+5. Special-contact form remains preview-only and sends no email. Its live delivery/recipient wiring is unimplemented; the public contact address is contact@soccerbotsg.com.
 
-## Latest local evidence
+## Verification limits
 
-Shared-cache repair and safety audit are implemented. At the owner's request, the complete local Worker wrapper was rerun after the assertion repair and passed472/472 in one run, with zero failures, skips or cancellations. Source checks, both type-generation steps, Worker type checking and runtime inventory validation all passed; `test-results/verification-worker.json` reports `passed`, with log `/tmp/cache-complete-rerun.log`. This supersedes the earlier mixed full/group evidence; the original failure remains in Journey. Additional cache/queue contracts53/53, targeted consecutive journeys and blocked-refresh dismissal4/4, guard tests4/4, lint/format and documentation links passed. Isolated exclusion/yield mutations failed as intended. Refresh-layout17-case evidence remains valid for unchanged UI source. GitHub and owner browser/provider acceptance remain pending.
-
-Production still runs662bea3. `PUBLIC_DISPLAY_WARMING=enabled` was independently read back; token refresh-ahead and identity email remain disabled. The local cache repair is not deployed. Owner test9 evidence and this audit are retained in [Journey](docs/journey.md#3-november-2026--shared-calendar-restoration-and-safety-audit-local). Custom email stays on hold.
+The new invoice design captures the authenticated unpaid number before SimplyBook accounting, then accepts a changed number only under confirmed paid proof. Historical bookings without that captured baseline omit an unverified number; no guessed prefix or historical backfill is applied. Provider issuance timing and visual acceptance still require owner testing. The consolidated application checks passed250 frontend/unit tests and472 Worker tests. The subsequent schema documentation change is checked against final D1/DO inventories and local links; executable tests are not repeated for documentation-only changes. See Journey for prior failures and evidence.

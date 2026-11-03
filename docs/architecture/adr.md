@@ -2,7 +2,7 @@
 
 Recorded: 28 October 2026. These records explain the current stack and its tradeoffs. **Status distinguishes implemented choices from prepared or proposed choices.** Rationale is reconstructed from the current code, constraints and [recorded contracts](../business-rules.md); it is not a claim that every alternative was previously benchmarked or formally rejected. Alternatives below are contingency options for review, not authorised migrations or ready standby systems.
 
-[System topology](diagram.md) shows the components; [code owners](../code-owners/index.md) maps implementation; [runbook](../runbook.md) owns operational recovery. Business rules remain in the business-rules document. Version pins belong to [versions.md](../versions.md), not this document. Amend a decision explicitly or add a superseding ADR when its assumptions change; preserve the rationale and evidence for the prior choice.
+[System topology](diagram.md) shows the components; [database schema](database-schema.md) maps tables and relationships; [code owners](../code-owners/index.md) maps implementation; [runbook](../runbook.md) owns operational recovery. Business rules remain in the business-rules document. Version pins belong to [versions.md](../versions.md), not this document. Amend a decision explicitly or add a superseding ADR when its assumptions change; preserve the rationale and evidence for the prior choice.
 
 ## Context and decision drivers
 

@@ -1,5 +1,7 @@
 # Code owners and feature map
 
+[Database schema](../architecture/database-schema.md) maps all application tables, keys and relationships; implementation owners remain below.
+
 Source map reconciled 2 November2026. “Owner” means the module responsible for a behavior, not a person or GitHub review assignment. Start at the overview, then follow the numbered sections into smaller diagrams and linked source files. Arrows show responsibility breakdown unless explicitly labelled as a request/data flow; they are not an exhaustive import graph or a promise of execution order.
 
 This document owns code navigation. [System topology](../architecture/diagram.md) owns infrastructure diagrams, [Architecture](../architecture/adr.md) explains runtime relationships, and [Business rules](../business-rules.md) owns behavioral rules. Update this map when responsibility moves between modules. The map describes implemented feature ownership. Test evidence and client deployment status remain separate in [Progress](../../PROGRESS.md).

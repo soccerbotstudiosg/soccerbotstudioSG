@@ -1,3 +1,4 @@
+import { invoiceNumberSchema } from "../src/domain/provider-references";
 import {
   normalizeNativePaymentResponse,
   nativeValidationReason,
@@ -42,7 +43,7 @@ export async function recoverHitpay(
   const initial = await env.STATE.withSession("first-primary").batch([
     ...hitpayClaimStatements(env, id, Date.now()),
     env.STATE.prepare(
-      "SELECT a.id,a.created_ms,a.intent_json,a.intent_hash,a.association_json,a.version,h.expires_ms AS hold_expires_ms,c.booking_created_ms,c.payment_window_ms,(SELECT availability_json FROM native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM completed_native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM expired_native_checkout_grants WHERE attempt_id=a.id) AS availability_json FROM attempts a LEFT JOIN hitpay_holds h ON h.attempt_id=a.id LEFT JOIN checkout_progress c ON c.attempt_id=a.id WHERE a.id=?",
+      "SELECT CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,a.id,a.created_ms,a.intent_json,a.intent_hash,a.association_json,a.version,h.expires_ms AS hold_expires_ms,c.booking_created_ms,c.payment_window_ms,(SELECT availability_json FROM native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM completed_native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM expired_native_checkout_grants WHERE attempt_id=a.id) AS availability_json FROM attempts a LEFT JOIN invoice_documents d ON d.attempt_id=a.id AND d.association_json=a.association_json LEFT JOIN hitpay_holds h ON h.attempt_id=a.id LEFT JOIN checkout_progress c ON c.attempt_id=a.id WHERE a.id=?",
     ).bind(id),
     env.STATE.prepare(
       "SELECT step,reference_id FROM session_effects WHERE attempt_id=? AND outcome='observed' AND (step='native-booking-key' OR step GLOB 'native-booking-key:[0-9]*')",
@@ -89,6 +90,7 @@ export async function recoverHitpay(
     await assertPaymentScope(env, scope);
     const attempt = initial[3].results[0] as
       | {
+          invoice_document_json: string | null;
           id: string;
           created_ms: number;
           intent_json: string;
@@ -225,6 +227,26 @@ export async function recoverHitpay(
         throw new ApiError(409, "hitpay_late_payment_review");
     };
     if (observation.invoice.status !== "paid") {
+      const orderNumber = invoiceNumberSchema.safeParse(
+        observation.invoice.documentNumber,
+      );
+      const orderStatement = orderNumber.success
+        ? // Preserve the unpaid document before accounting changes its number.
+          // An immutable first observation prevents later order numbers replacing it.
+          env.STATE.prepare(
+            `INSERT OR IGNORE INTO invoice_documents(attempt_id,association_json,order_number,observed_ms)
+           SELECT a.id,a.association_json,?,? FROM attempts a JOIN hitpay_payments p ON p.attempt_id=a.id
+           WHERE a.id=? AND a.association_json=? AND p.state='claimed' AND p.generation=? AND p.scope_json=? AND p.ready_ms>?`,
+          ).bind(
+            orderNumber.data,
+            Date.now(),
+            id,
+            scope.associationJson,
+            row.generation,
+            row.scope_json,
+            Date.now(),
+          )
+        : undefined;
       confirmationStage("accounting");
       assertLiveHold();
       if (row.external_state !== "none") {
@@ -238,18 +260,25 @@ export async function recoverHitpay(
       const processor = hitpaySetting(env, "SIMPLYBOOK_EXTERNAL_PROCESSOR");
       if (!/^[A-Za-z0-9_-]{1,64}$/.test(processor))
         throw new ApiError(503, "external_payment_disabled");
-      const reservation = await env.STATE.prepare(
+      const reserveStatement = env.STATE.prepare(
         "UPDATE hitpay_payments SET external_state='unknown' WHERE attempt_id=? AND state='claimed' AND generation=? AND ready_ms>? AND external_state='none' AND paid_ms IS NOT NULL AND payment_id=? AND scope_json=? AND COALESCE((SELECT expires_ms FROM hitpay_holds WHERE attempt_id=hitpay_payments.attempt_id),expires_ms)>? RETURNING attempt_id",
-      )
-        .bind(
-          id,
-          row.generation,
-          Date.now(),
-          verified.paymentId,
-          row.scope_json,
-          Date.now(),
-        )
-        .first();
+      ).bind(
+        id,
+        row.generation,
+        Date.now(),
+        verified.paymentId,
+        row.scope_json,
+        Date.now(),
+      );
+      const reservation = orderStatement
+        ? (await env.STATE.batch([orderStatement, reserveStatement]))[1]
+            .results[0]
+        : await reserveStatement.first();
+      if (reservation && orderNumber.success && !attempt.invoice_document_json)
+        attempt.invoice_document_json = JSON.stringify({
+          order_number: orderNumber.data,
+          document_number: null,
+        });
       if (!reservation) {
         await diagnoseClaim();
         throw new ApiError(409, "external_payment_reserved");

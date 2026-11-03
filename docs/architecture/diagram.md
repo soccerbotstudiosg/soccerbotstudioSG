@@ -1,6 +1,6 @@
 # Current system diagram
 
-Application topology shared by developer staging and the separately installed client Worker. Client CI/deployment is operational; customer launch, domain routing and live provider acceptance remain pending. Dashed telemetry links are prepared but disabled/unattached. [Architecture decisions](adr.md) · [System rules](../business-rules.md#current-system-rules).
+Application topology shared by developer staging and the separately installed client Worker. Client CI/deployment is operational; customer launch, domain routing and live provider acceptance remain pending. Dashed telemetry links are prepared but disabled/unattached. [Architecture decisions](adr.md) · [Database schema](database-schema.md) · [System rules](../business-rules.md#current-system-rules).
 
 ```mermaid
 flowchart TB

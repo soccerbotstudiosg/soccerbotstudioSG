@@ -1137,7 +1137,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "revisiting a saved confirmation exposes no export actions or refresh requests"
+    "title": "revisiting a saved confirmation enriches its invoice without replaying confirmation or export actions"
   },
   {
     "file": "src/services/async-booking.test.ts",

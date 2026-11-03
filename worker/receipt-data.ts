@@ -1,4 +1,4 @@
-import { invoiceNumberSchema } from "../src/domain/provider-references";
+import { retainedInvoiceNumber } from "./invoice-document";
 import { z } from "zod";
 import { ApiError } from "./policy";
 import { associationSchema, intentSchema } from "./journal";
@@ -17,6 +17,7 @@ export async function bookingDetailsData(
     association_json: string | null;
     availability_json?: string | null;
     observation_json?: string | null;
+    invoice_document_json?: string | null;
   },
 ) {
   const intent = intentSchema.parse(JSON.parse(row.intent_json));
@@ -51,16 +52,30 @@ export async function bookingDetailsData(
   );
   if (association.bookingIds.length !== slots.length)
     throw new ApiError(503, "receipt_details_unavailable");
-  // Display metadata is optional for old records and never triggers a provider read.
-  let invoiceNumber: string | undefined;
+  // The original unpaid number and final document are display-only metadata.
+  let candidate: unknown;
+  let paidInvoice = false;
   try {
     const invoice = JSON.parse(row.observation_json || "null")?.invoice;
-    const number = invoiceNumberSchema.safeParse(invoice?.documentNumber);
-    if (invoice?.invoiceId === association.invoiceId && number.success)
-      invoiceNumber = number.data;
+    if (
+      invoice?.invoiceId === association.invoiceId &&
+      invoice.status === "paid"
+    ) {
+      paidInvoice = true;
+      candidate = invoice.documentNumber;
+    }
   } catch {
     // Invalid display metadata must not block otherwise verified confirmation.
   }
+  const invoiceNumber = paidInvoice
+    ? await retainedInvoiceNumber(
+        env,
+        row.id,
+        row.association_json!,
+        candidate,
+        row.invoice_document_json,
+      )
+    : undefined;
   return bookingDetailsSchema.parse({
     providerReferences: {
       bookingIds: association.bookingIds,
