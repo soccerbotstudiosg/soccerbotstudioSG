@@ -22,6 +22,11 @@ export class ProviderQueue {
     },
   ) {}
 
+  /** Let background readers yield between completed operations to customer work. */
+  hasCustomerWaiting() {
+    return this.recovery.length > 0 || this.foreground.length > 0;
+  }
+
   /** Queue provider work with bounded waits and reserved recovery capacity. */
   run<T>(priority: Priority, operation: () => Promise<T>): Promise<T> {
     const waiting =

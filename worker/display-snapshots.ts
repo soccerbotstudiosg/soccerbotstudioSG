@@ -3,7 +3,11 @@ import {
   customerCatalogueSchema,
   DISPLAY_SNAPSHOT_MAX_AGE_MS,
 } from "../src/domain/catalog";
-import { publicCalendarSchema } from "../src/domain/native-checkout";
+import { SESSION_MINUTES } from "../src/domain/booking-policy";
+import {
+  publicCalendarSchema,
+  nativeAvailabilitySchema,
+} from "../src/domain/native-checkout";
 
 const schemas = {
   catalogue: customerCatalogueSchema,
@@ -86,6 +90,76 @@ export class DisplaySnapshots {
       expires,
     );
   }
+  /** Remove occupied studio times without expiring unrelated display data. */
+  excludeSessions(
+    sessions: { startMs: number; instructorId?: string; serviceId?: string }[],
+    sharedStudio = true,
+  ) {
+    if (!sessions.length) return;
+    this.sql.exec(
+      "UPDATE display_refresh SET generation=generation+1 WHERE scope=?",
+      this.scope,
+    );
+    for (const month of new Set(
+      sessions.map((session) =>
+        new Date(session.startMs + 28800000).toISOString().slice(0, 7),
+      ),
+    )) {
+      const key = `calendar:${month}`;
+      const value = this.read("calendar", key);
+      if (!value) continue;
+      const dates = value.dates.map((day) => {
+        if (!day.offers) return day;
+        // All trainers share one studio; changing trainer cannot restore capacity.
+        const offers = day.offers.filter(
+          (offer) =>
+            !sessions.some(
+              (session) =>
+                Math.abs(offer.startMs - session.startMs) <
+                  SESSION_MINUTES * 60000 &&
+                (sharedStudio ||
+                  (offer.instructorId === session.instructorId &&
+                    offer.serviceId === session.serviceId)),
+            ),
+        );
+        return { ...day, offers, available: offers.length > 0 };
+      });
+      this.save("calendar", key, { ...value, dates }, this.generation());
+    }
+  }
+  /** Replace only an authoritative day; retain the month's original deadline. */
+  updateDay(day: z.infer<typeof nativeAvailabilitySchema>) {
+    const parsed = nativeAvailabilitySchema.parse(day);
+    const key = `calendar:${parsed.date.slice(0, 7)}`;
+    const value = this.read("calendar", key);
+    if (
+      !value ||
+      parsed.observedAtMs < value.observedAtMs ||
+      parsed.observedAtMs > Date.now()
+    )
+      return;
+    this.sql.exec(
+      "UPDATE display_refresh SET generation=generation+1 WHERE scope=?",
+      this.scope,
+    );
+    this.save(
+      "calendar",
+      key,
+      {
+        ...value,
+        dates: value.dates.map((current) =>
+          current.date === parsed.date
+            ? {
+                date: parsed.date,
+                offers: parsed.offers,
+                available: parsed.offers.length > 0,
+              }
+            : current,
+        ),
+      },
+      this.generation(),
+    );
+  }
   invalidateCalendars() {
     this.sql.exec(
       "UPDATE display_refresh SET generation=generation+1,dirty=1 WHERE scope=?",
@@ -94,6 +168,13 @@ export class DisplaySnapshots {
     this.sql.exec(
       "UPDATE display_snapshots SET expires_ms=? WHERE scope=? AND key LIKE 'calendar:%'",
       Date.now(),
+      this.scope,
+    );
+  }
+  /** Retry an interrupted warm-up on the next scheduler turn without expiring data. */
+  deferRefresh() {
+    this.sql.exec(
+      "UPDATE display_refresh SET dirty=1 WHERE scope=?",
       this.scope,
     );
   }

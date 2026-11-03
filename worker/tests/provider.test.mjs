@@ -2891,11 +2891,16 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
     const publicData = await anonymousCatalogue.json();
     assert.deepEqual(Object.keys(publicData).sort(), [
       "complete",
+      "displayExpiresAtMs",
       "environment",
       "instructors",
       "observedAtMs",
       "services",
     ]);
+    assert.equal(
+      publicData.displayExpiresAtMs,
+      publicData.observedAtMs + 1800000,
+    );
     assert.equal(publicData.services[0].id, "2");
     assert.equal(
       f.calls.length,

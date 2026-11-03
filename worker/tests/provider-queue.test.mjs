@@ -32,10 +32,12 @@ test("provider queue advances checkout ahead of waiting months without overlappi
   const first = queue.run("display", job("active-month", gate.promise));
   await started.promise;
   const month = queue.run("display", job("waiting-month"));
+  assert.equal(queue.hasCustomerWaiting(), false);
   const prepare = queue.run("foreground", job("prepare"));
   const hold = queue.run("foreground", job("hold"));
   const payment = queue.run("foreground", job("payment"));
   const recovery = queue.run("foreground", job("recovery"));
+  assert.equal(queue.hasCustomerWaiting(), true);
   assert.deepEqual(order, ["active-month"]);
   gate.resolve();
   assert.deepEqual(
@@ -51,6 +53,7 @@ test("provider queue advances checkout ahead of waiting months without overlappi
     "waiting-month",
   ]);
   assert.equal(active, 0);
+  assert.equal(queue.hasCustomerWaiting(), false);
 });
 
 test("provider queue preserves FIFO and gives waiting calendars a bounded turn", async () => {

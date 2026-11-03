@@ -1,6 +1,6 @@
-# Complete journey
+# Project journey and evidence
 
-This document follows the customer, trainer, administrator and release journey, then preserves the original milestone criteria and dated implementation history. It describes implemented behavior without claiming every environment is deployed or accepted. [Progress](../PROGRESS.md) owns current blockers and verification status. [Business rules](business-rules.md) owns BR requirements; [Domain operations and API contracts](api-contracts.md) owns transport and operation details; [Runbook](runbook.md) owns operating procedures.
+This document owns retained milestones, dated decisions, implementation history and verification evidence. [Progress](../PROGRESS.md) contains only the latest checkpoint and immediate tasks. [Booking scenarios and messages](booking-flows.md) owns customer flow diagrams and copy; [role UAT](uat/simulated-user.md), [Admin UAT](uat/admin.md) and [Trainers UAT](uat/trainers.md) own acceptance; [Runbook](runbook.md) owns deployment and operational procedures. Current rules and contracts remain in their existing owners.
 
 ## Initial milestone overview
 
@@ -199,97 +199,6 @@ Retained milestone ID/title; PDF/calendar actions were retired by owner decision
 ### M9.4 — Ongoing changes and eventual exit
 
 [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m94--ongoing-changes-and-eventual-exit).
-
-## End-to-end overview
-
-```mermaid
-flowchart TD
-  A[Admin configures SimplyBook services, trainers and shared studio] --> B[Trainer maintains working hours and exceptions]
-  B --> C[Customer opens website]
-  C --> E[Guest access or verified email identity]
-  E --> D[Select sessions, trainers and player count]
-  D --> F[Details and editable Review]
-  F --> G[Consent and protected checkout preparation]
-  G --> H[Create and validate every booking]
-  H --> I[Create and save HitPay payment request]
-  I --> J[Customer uses hosted checkout]
-  J --> K[Server verifies payment and booking evidence]
-  K --> L{Valid paid booking?}
-  L -->|Yes| M[Verified confirmation and WhatsApp enquiry]
-  L -->|Pending or uncertain| N[Preserve original attempt and recover]
-  N --> K
-  L -->|Access denied| O[Hide protected information]
-  M --> P[Dismiss completed booking and book again]
-```
-
-## Customer journey
-
-The current source view below supersedes historical UI descriptions in Part2. Exact delivery state is in [Progress](../PROGRESS.md); customer copy proposals are in [the message review](booking-flows.md#copy-review-baseline-and-disposition). Booking notifications remain provider-configured acceptance, with custom HTML drafts on hold; they are not a guaranteed side effect of website confirmation.
-
-| Stage            | Customer experience                                                                                          | Implementation and authority                                                                                       | Failure and recovery                                                                                                    | Rules / acceptance                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| Discover         | Home/Studio entry, branded transition, location map on demand, Player App offer and navigation               | [UI ownership](code-owners/index.md); public content does not authorize a booking                                  | Dismissed app prompt stays dismissed; back/forward and reduced motion retain navigation                                 | [Simulated-user UAT](uat/simulated-user.md) |
-| Browse           | Browse month, choose available day, time and 1–4 players; retain multiple sessions                           | Public display snapshots → protected availability; Singapore time and four-hour lead are checked again server-side | Empty/failed month is honest; an elapsed choice remains removable; do not silently change the basket                    | BR-001, BR-002, BR-006                      |
-| Choose access    | Continue as guest or verify email, optionally Remember me                                                    | Server guest capability; Turnstile and email challenge; protected identity before lookup                           | Wrong/expired/limited challenge does not reveal another customer; guest cannot gain verified profile authority          | BR-003, BR-004                              |
-| Enter details    | Enter contact details or restore consented saved details                                                     | [Contact validation](../src/domain/contact.ts), identity/profile service and booking state                         | Missing/duplicate/shared email does not leak provider profile; retain edits during recoverable errors                   | BR-003, BR-004                              |
-| Review           | Review sessions, instructors, price and consent; navigate back to edit                                       | Review is display/consent only; server revalidates selected intent and configured account                          | Selection changes require review again; Review alone creates no booking                                                 | BR-002, BR-006, BR-007                      |
-| Prepare checkout | Start one protected attempt and show actual preparation progress                                             | Durable grants/effects precede provider writes; complete batch association before payment                          | Explicit no-start/slot rejection returns to Review; uncertain dispatch retains original attempt                         | BR-007, BR-008, BR-009                      |
-| Pay              | Follow the validated hosted HitPay URL                                                                       | Server binds merchant, invoice, amount, currency and payment request                                               | Closing checkout, navigating back or a return URL never proves payment; no duplicate payment on uncertain outcome       | BR-010, BR-011                              |
-| Return/check     | See checking, payment-received-but-pending, unresolved, denied or confirmed state                            | Protected context/status, original checking deadline and shared allowance; current provider evidence               | Hidden page catches up when visible; expired polling does not authorize cancellation; denied state hides protected data | BR-010, BR-011, BR-012                      |
-| Confirm          | View verified booking details and WhatsApp Enquiry; optional provider invoice display in the local follow-up | Confirmation proof/receipt requires protected authority; invoice metadata is not payment proof                     | Cached browser success cannot bypass access; retired PDF/calendar actions remain absent                                 | BR-013                                      |
-| Book again       | Dismiss completed result, return to calendar; retain appropriate contact/session preferences                 | Idempotent completion dismissal and active-attempt restoration                                                     | Lost dismissal acknowledgement must not create another financial effect                                                 | BR-012                                      |
-| Manage identity  | Sign out, sign out all devices, or return using remembered identity                                          | Server revocation; all-device action requires current verified email authority                                     | Guest/expired/revoked authority cannot revoke another identity; retained contact evidence is not deleted by sign-out    | BR-003, BR-004                              |
-
-Rule IDs above link through the [rule-to-owner index](code-owners/index.md#11-business-rule-to-owner-index). The [API document](api-contracts.md) maps each stage to named operations and requests.
-
-## Failure and recovery branches
-
-```mermaid
-flowchart TD
-  A[Checkout requested] --> B{Dispatch/effect evidence?}
-  B -->|Explicitly not started| C[Keep Review and allow corrected selection]
-  B -->|Created or uncertain| D[Retain original attempt, grants and references]
-  D --> E[Protected readback and reconciliation]
-  E --> F{Authoritative outcome}
-  F -->|Paid and valid booking| G[Confirm once]
-  F -->|Paid but booking invalid| H[Recovery/contact path; no new payment]
-  F -->|Unknown| D
-  F -->|Verified releasable expiry| I[Server-controlled release]
-  J[Browser timeout or closed tab] --> D
-```
-
-A preparation 409 is not automatically a safe retry: read back original owned authority and distinguish no dispatch from uncertain dispatch. Batch later-item failure retains all observed references; never pay for an incomplete batch. A webhook is authenticated, deduplicated and followed by authoritative verification. Late settlement and financial ambiguity preserve claims; cancellation is not a refund. See BR-008–BR-012 and [incident recovery](runbook.md#5-incident-response-and-recovery).
-
-## Trainer journey
-
-Trainers use the SimplyBook staff portal, not a custom website admin endpoint. Sign in with the intended role, maintain recurring working hours, breaks and date-specific time off, and inspect assigned appointments. Admin owns service/instructor mappings and shared capacity. An instructor being free does not establish studio capacity. After schedule changes, verify their effect through the provider and customer availability path; cached display is not write authority. Follow [Trainers UAT](uat/trainers.md), BR-002/BR-006/BR-022.
-
-## Administrator journey
-
-1. Confirm client account, services, prices, schedules, lead time, booking/payment deadlines and studio capacity with the owner. Current source settings and old chat values do not constitute new commercial approval.
-2. Operate SimplyBook service/staff/customer/booking/invoice and notification configuration with the appropriate role. Reconcile records by provider references and original attempt evidence.
-3. Operate HitPay merchant/payment/webhook/settlement and refund tooling with owner authority. Read-only checks precede any separately authorized financial operation.
-4. Verify Cloudflare account, authoritative DNS, fallback/custom hostname, certificate validation and renewal prerequisites. Subdomain acceptance does not establish apex acceptance; preserve email records.
-5. Review dependency alerts and Grafana evidence using the [runbook](runbook.md). Telemetry export acceptance and client activation remain separately recorded.
-
-Use [Admin UAT](uat/admin.md); the assistant does not perform real bookings, notifications, DNS edits or financial operations as part of this documentation task.
-
-## Deployment, acceptance and handover journey
-
-```mermaid
-flowchart LR
-  A[Reviewed source and configuration] --> B[PR frontend, backend and live-email gates]
-  B --> C[Merge with authorization]
-  C --> D[Independent main verification]
-  D --> E[Exact tested artifact]
-  E --> F[Correct account and resource preflight]
-  F --> G[Authorized deployment]
-  G --> H[Domain, provider and owner UAT]
-  H --> I[Rollback and monitoring evidence]
-  I --> J[Access, billing, MFA and handover]
-```
-
-Keep developer staging and client production identities, provider mappings and credentials separate. Follow the owner’s registrar-transfer-first decision for `soccerbotsg.com`, then prepare client Cloudflare DNS/delegation and supported Worker hosting. Transfer and DNS migration are not verified complete. Preserve mail/DNS records and reassess the earlier SaaS target; prove the exact apex/hostname routing and managed TLS before activation. Current client deployment is prepared, not established. Keep production closed until configuration, first-install/rerun/interruption/account mismatch and rollback checks, owner booking/payment acceptance, monitoring and operational access are complete. CI/browser success is revision-specific and cannot replace provider or owner acceptance. See BR-021–BR-032, [development](development.md), [runbook](runbook.md) and [Progress](../PROGRESS.md).
 
 ## Reading the retained record
 
@@ -4385,3 +4294,101 @@ Reviewed current AGENTS and repository testing/documentation skills, actual remo
 Update the dismissal expectation to the approved full message; retain saved-receipt, retry, attempt-identity and provider-effect assertions. Await the actual icon animation finished promises before measuring its final rendered bounds; reduced motion returns immediately. Keep the48px minimum, with no sleeps, retries, skips, timeout increases or inventory changes. This is a browser-test repair, not an application/payment change. Original run/artifacts remain failure evidence; owner/CI browser execution remains required.
 
 Repair validation: source ownership/import/graph/test-control and policy guards, TypeScript, targeted ESLint and formatting passed. All1294 documentation links and50 Mermaid diagrams passed. No browser run was executed locally; the unchanged full application suite receipt is retained, and the repaired browser cases require new-head CI.
+
+### 3 November 2026 — Retained checkpoint before Progress cleanup
+
+The following snapshot preserves prior implementation details, receipts, failures and deferred setup items moved out of Progress. Its status statements describe the earlier observation only; use Progress and PR20 for the current checkpoint.
+
+#### SoccerBotStudioSG current task and handover
+
+Updated 2 November 2026, Singapore. [Journey](journey.md#part-2--dated-changes-and-evidence) owns historical decisions and retained failures; its archived handover subsection preserves the former Progress checkpoints. This file is the only active checkpoint.
+
+#### Current outcome and scope
+
+Working branch `fix/confirmation-invoice-number`; draft [PR20](https://github.com/soccerbotstudiosg/soccerbotstudioSG/pull/20), inspected head `0bff7c6080992aee2bd37790000451c92c7e0058`. CI run41512855656 started automatically after publication and failed in live-email browser shards. Repairing two browser-test assumptions before one new push; no merge or deployment authorized.
+
+Owner requested restoring optional provider invoice display for flow tests, a brief confirmation pop, a complete customer-message review, and reconciliation of all documentation. Current local implementation restores the provider number unchanged only on confirmed live cards when present; internal IDs stay hidden. The O/SI discrepancy is unresolved: same-tab navigation is a hypothesis, not proof of the provider's final paid-document mapping. The confirmed icon animates for380ms only when reduced motion is not requested. Neither change modifies payment/booking proof, expiry, accounting or provider calls.
+
+[Customer message review](booking-flows.md#copy-review-baseline-and-disposition) contains251 message/guidance entries, current wording, proposed wording, safety constraints and recovery/reconciliation state mappings. The owner-approved twelve-row selection is applied locally; the additional frontend hardening suggestions are also approved and applied locally. Remaining unapproved proposals stay unapplied. Paid-evidence/unresolved fallback now preserves the payment-received message instead of contradicting it. Feedback uses shared alert/notice styling with explicit heading/body spacing. Consolidate any further owner copy changes before CI publication. No follow-up merge authorization. Custom email remains **on hold**.
+
+#### Verified delivery state
+
+| Surface    | Exact evidence                                                                                                                                                         | Meaning                                                                                                                                                                                                       |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR19       | Head7634a29; all13 jobs passed in [CI41458664464](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41458664464)                                     | Includes472 Worker cases and the two three-journey browser sequences on all three configured profiles                                                                                                         |
+| Staging    | [Deployment41461046935](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41461046935), source7634a29; Worker9751ec72-2d61-4cff-80b2-6d440f182e9d    | Verified staging candidate; no later staging deployment claimed                                                                                                                                               |
+| Merge      | [PR19](https://github.com/soccerbotstudiosg/soccerbotstudioSG/pull/19) merged asfc52077 at explicit owner instruction                                                  | Owner elected to merge before remaining physical/provider acceptance; not a standing waiver                                                                                                                   |
+| Main CI    | [41463340174](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41463340174), success                                                                | Independent merged-revision verification completed                                                                                                                                                            |
+| Production | [Deployment41465604404](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41465604404), job125346381997; Worker e18d326e-f191-4f4a-92f0-cda7e2efcfa8 | Exactfc52077 deployed at22:51 Singapore; release health passed. Deployment log records customer/provider/checkout/identity-delivery/client-sandbox switches disabled. Not live trading or provider acceptance |
+
+The production release restores closed source defaults. Earlier manually enabled sandbox settings are historical and must not be described as currently enabled. No runtime activation was performed during this documentation work.
+
+#### Local verification and remaining acceptance
+
+- Invoice-only change:21 protected-confirmation component cases and complete non-browser `npm run verify:code` passed; logs `/tmp/invoice-restore-focused.log` and `/tmp/invoice-restore-code.log`. Existing test title/inventory updated together; case counts unchanged.
+- Subsequent animation: source ownership/import/graph/test-control check passed. Full combined non-browser verification passed before this receipt-only documentation update; browser rendering and CI remain pending. No assistant browser/provider execution.
+- Documentation reconciliation: archive competing Progress checkpoints, remove cross-project naming/links at owner request, reconcile retired exports, invoice visibility, client topology, production closed state and pending UAT. Review all canonical owners; unchanged dependencies, storage schemas and operational permissions require no invented changes. The initial link audit found four links affected by the archive/heading move; corrected relative paths and retained the former topology anchor. Initial Mermaid audit parsed all31 existing diagrams including historical Journey diagrams. Final checks passed: all50 Mermaid diagrams (including historical ones),1294 local links/anchors across25 Markdown files after consolidation, and no cross-project naming references. Normalized comparison confirms all original committed Progress evidence survives in the archive.
+- [Booking scenarios](booking-flows.md) now contains19 small Mermaid diagrams at owner request, each with one-line scenario description and actions/messages. Includes revoked identity/confirmation access, unknown writes, partial batches, paid reconciliation, expiry/grace, OTP return, retained receipts and three consecutive journeys. Journey retains overview/history; contracts retain authority; role UAT retains acceptance.
+
+#### Pending owner setup and acceptance
+
+- Full provider/device tests: single → single → single; multi → single → single; Back → Continue → pay → same-tab return; reload/old links; correct separate receipts/payment identity; expiry/grace and interrupted card OTP/3DS/bank-app return. Synthetic passes do not establish issuer/browser behavior.
+- Compare provider invoice number at first confirmation, saved confirmation, reload and old/new tabs with SimplyBook Pay. PDF/calendar actions are retired; no download acceptance remains required. WhatsApp Enquiry is implemented for Glenna +65 9014 3819; confirm staff handling/policies. Enquiry/dismissal does not cancel or refund.
+- Productionize email: client DNS/sender verification, reviewed credential/sender scope, identity actions and duplicate-free provider booking notifications. Keep [HTML drafts](external-providers-config.md#complete-html-drafts-and-editor-setup) inactive until variables, paid triggers, recipients and layout are accepted.
+- Junior employee/trainer individual SimplyBook accounts on mobile phones: owner creates/invites accounts, validates roles, costs, recovery/MFA and allowed/denied tasks. Proposed matrices remain in [Admin](uat/admin.md) and [Trainer](uat/trainers.md) UAT.
+- Domain/email preservation and registrar transfer remain vendor/owner work. Destination zone nameservers were recorded as `daniella.ns.cloudflare.com` and `merlin.ns.cloudflare.com`; current delegation/DNSSEC/HTTPS acceptance has not been rechecked. Preserve mail hosting; never record EPP secrets.
+- Live HitPay merchant/bank setup, sender delivery, controlled shared-studio capacity checks, rollback/recovery rehearsal, monitoring ingestion/alert delivery and operator access handover remain separately accepted work. Existing sandbox credentials do not establish live readiness.
+
+#### Next action and budget
+
+Push the bounded PR20 browser-test repair after local source/type/lint/format and documentation checks. Preserve original run41512855656. The icon-size assertion now awaits the actual finite animation completion before retaining the48px rendered-size checks; dismissal feedback expects approved wording while saved receipt, identity, retry and effect-count checks remain unchanged. Test titles/counts/inventories and workflow gates are unchanged. Verify the new exact-head CI; draft status still prevents staging.
+
+Focused copy verification:149/151 initially passed; two obsolete substring assertions updated for the approved wording, then all22 cases in the affected file passed. Logs `/tmp/approved-copy-focused.log` and `/tmp/approved-copy-retest.log`; no skipped cases, retries or relaxed guards. Full `npm run verify:code` passed on the frozen application/test/diagram candidate:250 unit/component cases,182 tooling cases, installer/source/policy, format/lint/types/build and11-route export. Evidence `/tmp/combined-feedback-code.log` and `/tmp/combined-feedback-code-receipt.json`. This subsequent edit records results only; executable source is unchanged, documentation checks rerun, and new-head browser CI remains pending.
+
+Documentation consolidation: owner requested one scenario/message document. Current messages stay in the19 small diagrams; the complete251-row review and remaining proposals are preserved in an expandable section of docs/booking-flows.md. Removed the separate message Markdown file and updated AGENTS, the documentation skill and all references. Application/test source unchanged; document/link/diagram checks passed for this consolidation. No separate message-document path remains.
+
+Frontend hardening approved and implemented: shorter identity/availability/transition copy, accurate checkout-expiry guidance, consistent retry action layout, long invoice wrapping, unique dialog heading IDs and nonshrinking close controls. Updated existing assertions; no new or removed cases. First focused run166/169 retained in `/tmp/frontend-hardening-focused.log`; three obsolete copy expectations corrected. Final consolidated `npm run verify:code` passed:250 unit/component cases,182 tooling cases, installer/source/policy guards, formatting, lint, types, production build and11-route export. Evidence: `/tmp/frontend-final-code.log` and `/tmp/frontend-final-code-receipt.json`. Documentation checks passed:50 Mermaid diagrams and1294 local links across25 Markdown files. Browser/physical acceptance remains pending; no new CI, publication or deployment.
+
+Repair validation: source ownership/import/graph/test-control and policy guards, TypeScript, targeted ESLint and formatting passed. All1294 documentation links and50 Mermaid diagrams passed. No browser run was executed locally; the unchanged full application suite receipt is retained, and the repaired browser cases require new-head CI.
+
+### 3 November 2026 — Documentation ownership correction
+
+Reduce Progress to one current checkpoint and immediate tasks. Preserve its former detailed evidence above, alongside the earlier archived checkpoints. Remove duplicated end-to-end, customer, recovery, staff and deployment overviews; their current owners are booking-flows, role UAT, business rules/contracts and the runbook. In particular, the removed deployment sketch omitted the required staging acceptance step and must not be used as a release procedure. Original milestone criteria and dated history remain intact. Update AGENTS and the documentation skill to prevent appending historical receipts to Progress again. This is a documentation-only change; no application, tests, workflow or provider configuration changes.
+
+### 3 November 2026 — PR20 merged for owner trial runs
+
+All13 jobs in CI41544574146 passed for61ff22e, including the corrected browser assertions. Owner then explicitly requested merge followed by trial runs. PR20 merged as662bea3764bb7546a216f1f4f3790fbcb1e28a67. Actual PR20 staging/provider acceptance was not established before this merge; it must not be inferred from green CI. Independent main verification/release remains separately checked. The local Progress/Journey cleanup is unpushed and excluded from the merge.
+
+### 3 November 2026 — Formalize code-writing rules
+
+Owner requested a repository code-writing skill guided by ZY-Ang/clawdy CLAUDE.md. Added soccerbot-code-writing: root-cause repair in existing owners, removal of superseded workarounds, authoritative configuration/provider values, legitimate literals/pins, positive outcome assertions, bounded regression/mutation evidence and proof of guard execution. The external repository's commands, hooks and merge policy are not imported. AGENTS routes code work to the skill; documentation skill cross-links its ownership. This is local instruction/documentation work, not a new automated enforcement hook or an application/configuration change; kept with the unpushed documentation batch.
+
+Owner also requested adapting the reference to existing skills. Testing now owns bounded pre-fix/mutation proof, positive evidence of execution, copy-substring/animation review and missing-guard rejection; CI diagnosis checks these before treating an absent failure as success. Code-writing cross-links these procedures rather than duplicating them. Documentation skill links code-writing ownership. Reviewed dependency/deployment skills remain unchanged: the reference does not justify altering version pins, release permissions or provider acceptance. No mutation, browser or CI execution is claimed for this instruction-only update.
+
+### 3 November 2026 — Guest sandbox checkout reactivated on production
+
+Owner requested activation for trial runs on662bea3. The first broad settings update was rejected by automatic approval review; no mutation occurred. After checking the sandbox-only payment transport and required gates, a narrower settings PATCH succeeded: guest/customer/provider access, HitPay sandbox checkout/recovery/webhook and the previously reviewed app404/company soccerbotadmin/services3/4 pairing. Background warming, ongoing native readback, observability, email, schedules and resource settings were not changed. Independent settings readback confirms activation and retention of eight secret bindings. Public HTTP remains blocked by this workspace proxy; browser/provider acceptance belongs to the owner. Repository defaults stay closed and the next deployment can disable this override. No CI or assistant booking/payment operation.
+
+### 3 November 2026 — test9 owner trial and diagnosed gaps
+
+Owner accepted confirmation animation and requested a compact Refresh control right of the month chooser. Implemented locally with equal grid columns and44px minimum height; retained accessible name and retry owner. All17 booking-parity component cases passed; browser layout remains owner/CI acceptance. No push/deployment.
+
+Offline HAR test9: checkout4210ms; initial catalogue6001ms; calendar16922ms initially and16683ms after Make another booking; first confirmed response approximately8792ms after return checks started. This HAR does not contain browser performance-mark entries, so it does not establish exact confirmation paint time. Server confirmation tracing establishes6120ms recovery: booking_before3030ms, accounting1737ms, booking_after1006ms, plus other stages. The booking_after fallback means the direct accounting response did not satisfy the existing validator; do not remove safety readback based only on latency. Approximately1.9s passed between recovery completion and the browser's confirmed response.
+
+Server telemetry fills the missing HAR failure: catalogue and completed-dismissal requests each returned503 after approximately15.7s; display queue expiry was15000ms while the month calendar performed25 provider operations and returned200. Confirmed defect: long calendar work blocks catalogue and foreground dismissal. Runtime display warming/token refresh were left disabled during the narrower sandbox activation; this differs from earlier warm-cache trials, so timings are not an equivalent regression benchmark. Backend repair must prevent starvation while retaining provider admission, response correlation, bounded queues and transactional dismissal safety; it is not implemented in this checkpoint.
+
+Receipt supplied order number O-00000006; owner supplied paid invoice SI-2026000005. Read-only SimplyBook Production invoice lookup independently confirmed the same provider invoice ID6 is now paid with number SI-2026000005. Thus number is stale provider metadata, not a UI-generated prefix. The current receipt reads retained observation data; correct final-document enrichment must remain separate from immediate safe confirmation, validate invoice association and avoid guessed prefixes. This backend repair also remains pending. Original telemetry/HAR retained, no assistant booking/payment/cancel/email actions.
+
+### 3 November 2026 — shared calendar restoration and safety audit (local)
+
+Owner requested restoring the shared calendar design, enabling warming before the next trial, consolidating the existing local changes and auditing unsafe paths. Branch `fix/shared-calendar-cache` starts from merged main `662bea3`; existing skills, documentation reconciliation and Refresh layout edits were preserved. Checkout no longer invalidates all month snapshots or starts a whole-month rebuild. Owner-scoped journalled dispatch excludes affected shared-studio times, including uncertain dispatches; preflight rejection removes only the rejected trainer/service offer. Price/transient errors are not occupancy evidence. Authoritative fresh day reads merge into retained display data without extending original expiry. Provider-confirmed day/scheduled reads can restore released capacity; local timeout alone cannot. Generation fences prevent older refreshes restoring exclusions. Cache-maintenance errors are diagnosed without replacing durable payment results. D1-only completed dismissal bypasses provider work and concurrent acknowledgements retain a single archive. Scheduled warming yields between provider operations when checkout/recovery waits; started reads drain, incomplete months remain unpublished, and deferred refresh retries on the next scheduler turn.
+
+Configuration PATCH and independent readback verified production `PUBLIC_DISPLAY_WARMING=enabled`, preserving the other45 bindings and eight secrets on source662bea3. Minute cron already exists; token refresh-ahead remains disabled. This is configuration evidence, not deployment or provider acceptance of the local repair. Recheck activation after the next deployment because closed source defaults may overwrite runtime settings.
+
+Intermediate local evidence:98 catalogue/combined-hold cases passed before the safety-audit additions; four focused warming, blocked-refresh concurrent dismissal and consecutive single/multi journeys passed; the rejection-cache regression and snapshot tests passed. An intermediate sustained wrapper executed192 cases successfully, but its source-identity check was invalidated by the continuing audit edits and branch update; it is not final-head evidence. Final verification remains pending in Progress. Test inventories retain existing case titles; assertions were strengthened in their owning cases. Invoice metadata enrichment remains a separate unresolved test9 item; no new CI, source deployment, merge or browser acceptance is claimed here.
+
+Final local audit evidence: the full Worker wrapper ran472 cases against the repaired application source:471 passed, with one outdated `provider.test.mjs` catalogue-key assertion failing because persisted catalogue responses now include `displayExpiresAtMs`. Updated the strict expected key list and asserted the fixed30-minute expiry; the focused case passed and the complete recovery-group wrapper passed164/164 with its inventory/source-identity checks. No application change was needed for that repair. The original full-run failure is retained in `/tmp/cache-full-runtime-first.log` and `/tmp/cache-full-receipt-first.json`; repaired-group evidence is `/tmp/cache-recovery-final.log` and `test-results/worker-group-recovery.json`. All472 cases are covered across those executions, not a fabricated single green full-run receipt. Additional evidence:53 cache/queue cases, four focused journey/dismissal cases, four guard cases, Worker types, source/policy/lint/format and26-file1297-link checks passed. Isolated exclusion and yield mutations failed their intended assertions; the first yield-mutation setup missed its copied manifest, was preserved, then corrected before meaningful mutation evidence. No browser, real booking/payment or notification was executed. No new CI or source deployment was started. Remaining acceptance: provider shared-studio enforcement with stale tabs, real release timing, scheduled-read handoff, invoice metadata repair and owner physical flows. A single in-flight provider operation is deliberately not preempted.
+
+Owner requested one complete local green run rather than combined evidence. Executed `node scripts/verify-worker.mjs` again without application edits during execution:472/472 passed, zero failures/skips/cancellations, runtime522.514s. Source checks, Worker and telemetry type generation, type checking and runtime inventory validation all passed. Receipt `test-results/verification-worker.json` has status `passed`; full log `/tmp/cache-complete-rerun.log`. This is now a single complete green local run; the prior failed receipt remains historical evidence. No CI push, merge, source deployment or provider/browser acceptance was performed.
+
+Owner subsequently authorized pushing this tested consolidated batch to CI. Prepare a draft PR on `fix/shared-calendar-cache` against main662bea3, reusing the complete472/472 local evidence. Include the preserved Refresh layout and skills/documentation work. Invoice metadata enrichment remains explicitly open; this publication is not a claim that it is repaired. Draft CI does not deploy staging, and this instruction does not authorize merge or production deployment. Record the exact PR/run in the publication receipt rather than making a status-only follow-up commit.

@@ -2,7 +2,7 @@ import { authenticate } from "./access";
 import { checkoutContext } from "./confirmation";
 import { ApiError } from "./policy";
 
-// Called in the account's foreground queue. Only explicit confirmed-page exit
+// This D1-only transaction needs no provider queue. Only explicit confirmed-page exit
 // releases the current grant; ownership, payment and receipt evidence stay put.
 /** Release an eligible completed checkout without erasing unresolved outcomes. */
 export async function dismissCompletedCheckout(
@@ -45,7 +45,16 @@ export async function dismissCompletedCheckout(
       `DELETE FROM native_checkout_grants WHERE ${eligible} AND EXISTS(SELECT 1 FROM completed_native_checkout_grants h WHERE h.attempt_id=native_checkout_grants.attempt_id AND h.capability_hash=native_checkout_grants.capability_hash)`,
     ).bind(...values),
   ]);
-  if (result[1].meta.changes !== 1)
-    throw new ApiError(409, "booking_exit_unavailable");
+  if (result[1].meta.changes !== 1) {
+    // A concurrent authenticated exit may have committed the same archival first.
+    await authenticate(request, env, Date.now());
+    const completed = await env.STATE.withSession("first-primary")
+      .prepare(
+        "SELECT 1 FROM completed_native_checkout_grants WHERE attempt_id=? AND capability_hash=?",
+      )
+      .bind(id, access.capability_hash)
+      .first();
+    if (!completed) throw new ApiError(409, "booking_exit_unavailable");
+  }
   return { dismissed: true as const };
 }

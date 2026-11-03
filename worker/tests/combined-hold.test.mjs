@@ -229,9 +229,36 @@ test("combined hold rejects changed price and unavailable selection before creat
         (await m.db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first()).n,
         0,
       );
+    const calendarUrl = m.origin + `/api/calendar/${m.date.slice(0, 7)}`;
+    const before = await (await m.mf.dispatchFetch(calendarUrl)).json();
+    assert.ok(
+      before.dates
+        .flatMap((day) => day.offers ?? [])
+        .some((offer) => offer.startMs === m.startMs),
+      "price rejection does not mark the session occupied",
+    );
     const response = await c.send();
     assert.equal(response.status, 200, await response.clone().text());
     assert.equal((await response.json()).state, "selection_unavailable");
+    const rangeReads = m.calls.filter(
+      (call) => call.body?.method === "getStartTimeMatrix",
+    ).length;
+    const after = await (await m.mf.dispatchFetch(calendarUrl)).json();
+    assert.ok(
+      after.dates
+        .flatMap((day) => day.offers ?? [])
+        .every(
+          (offer) =>
+            offer.startMs !== m.startMs ||
+            offer.instructorId !== c.input.sessions[0].instructorId,
+        ),
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "getStartTimeMatrix")
+        .length,
+      rangeReads,
+      "rejected selection edits the shared cache without rebuilding the month",
+    );
     assert.equal(
       m.calls.some((call) => call.body?.method === "book"),
       false,
@@ -1251,20 +1278,7 @@ test("batch closure fallback and failed hold persistence preserve one original a
 });
 
 test("scheduled display warming survives idle entry and booking refresh never delays payment handoff", async () => {
-  let paymentCreated = false;
-  const refreshStarted = Promise.withResolvers();
-  const releaseRefresh = Promise.withResolvers();
-  const m = await createBookingMechanism({
-    displayWarming: true,
-    respond: async (call) => {
-      if (call.url.endsWith("/v1/payment-requests") && call.method === "POST")
-        paymentCreated = true;
-      if (paymentCreated && call.body?.method === "getStartTimeMatrix") {
-        refreshStarted.resolve();
-        await releaseRefresh.promise;
-      }
-    },
-  });
+  const m = await createBookingMechanism({ displayWarming: true });
   try {
     await (await m.mf.getWorker()).scheduled();
     const before = m.calls.length;
@@ -1299,7 +1313,9 @@ test("scheduled display warming survives idle entry and booking refresh never de
     );
     assert.equal(response.status, 200);
     assert.equal((await response.json()).paymentAvailable, true);
-    await refreshStarted.promise;
+    const readsAfterCheckout = m.calls.filter(
+      (call) => call.body?.method === "getStartTimeMatrix",
+    ).length;
     const context = await m.mf.dispatchFetch(
       m.origin + `/api/attempts/${c.input.key}/checkout`,
       { headers: c.headers },
@@ -1307,7 +1323,7 @@ test("scheduled display warming survives idle entry and booking refresh never de
     assert.equal(
       context.status,
       200,
-      "checkout context is available while display refresh is blocked",
+      "checkout context remains available after the cached calendar is updated",
     );
     assert.equal(
       m.calls.filter((call) => call.body?.method === "book").length,
@@ -1320,7 +1336,6 @@ test("scheduled display warming survives idle entry and booking refresh never de
       ).length,
       1,
     );
-    releaseRefresh.resolve();
     const updated = await m.mf.dispatchFetch(
       m.origin + "/api/calendar/" + m.date.slice(0, 7),
     );
@@ -1332,9 +1347,15 @@ test("scheduled display warming survives idle entry and booking refresh never de
         .some((offer) => offer.startMs === m.startMs),
       false,
     );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "getStartTimeMatrix")
+        .length,
+      readsAfterCheckout,
+      "another calendar visit serves the edited snapshot without rebuilding the month",
+    );
+    assert.equal(updatedCalendar.observedAtMs, calendar.observedAtMs);
     assert.deepEqual(m.unexpected, []);
   } finally {
-    releaseRefresh.resolve();
     await m.close();
   }
 });
@@ -3326,8 +3347,19 @@ test("409 preparation preserves an existing original booking for recovery", asyn
 
 test("automatic recovery completion publishes a receipt before dismissal and repeat acknowledgement", async () => {
   const completion = Promise.withResolvers();
+  const displayStarted = Promise.withResolvers();
+  const releaseDisplay = Promise.withResolvers();
+  let blockDisplay = false;
+  let displayWork;
+
   const m = await createBookingMechanism({
     observationMaxAgeMs: 1000,
+    respond: async (call) => {
+      if (blockDisplay && call.body?.method === "getStartTimeMatrix") {
+        displayStarted.resolve();
+        await releaseDisplay.promise;
+      }
+    },
     onLog(message) {
       if (!message.startsWith("{")) return;
       const event = JSON.parse(message);
@@ -3392,13 +3424,34 @@ test("automatic recovery completion publishes a receipt before dismissal and rep
         .first(),
       journalBefore,
     );
-    for (let acknowledgement = 0; acknowledgement < 2; acknowledgement++) {
-      const dismissed = await m.mf.dispatchFetch(
-        m.origin + `/api/attempts/${id}/dismiss`,
-        { method: "POST", headers: c.headers },
-      );
+    blockDisplay = true;
+    displayWork = m.mf.dispatchFetch(
+      m.origin + `/api/calendar/${m.date.slice(0, 7)}`,
+    );
+    await displayStarted.promise;
+    const acknowledgements = await Promise.all(
+      [0, 1].map(() =>
+        m.mf.dispatchFetch(m.origin + `/api/attempts/${id}/dismiss`, {
+          method: "POST",
+          headers: c.headers,
+        }),
+      ),
+    );
+    for (const dismissed of acknowledgements)
       assert.equal(dismissed.status, 200, await dismissed.text());
-    }
+    assert.equal(
+      (
+        await m.db
+          .prepare(
+            "SELECT COUNT(*) AS count FROM completed_native_checkout_grants WHERE attempt_id=?",
+          )
+          .bind(id)
+          .first()
+      ).count,
+      1,
+    );
+    releaseDisplay.resolve();
+    assert.equal((await displayWork).status, 200);
     const receipt = await m.mf.dispatchFetch(
       m.origin + `/api/attempts/${id}/receipt`,
       { headers: c.headers },
@@ -3417,6 +3470,8 @@ test("automatic recovery completion publishes a receipt before dismissal and rep
     );
     assert.deepEqual(m.unexpected, []);
   } finally {
+    releaseDisplay.resolve();
+    if (displayWork) await displayWork;
     await m.close();
   }
 });
@@ -3623,6 +3678,7 @@ async function consecutiveJourneys(sizes) {
     await import("./booking-sequence-fixture.mjs");
   let completed = Promise.withResolvers();
   const m = await createBookingSequence(sizes, {
+    displayWarming: true,
     onLog(message) {
       if (!message.startsWith("{")) return;
       const event = JSON.parse(message);
@@ -3637,6 +3693,13 @@ async function consecutiveJourneys(sizes) {
   try {
     const c = await customer(m);
     const previous = [];
+    await checkoutResult(
+      m.mf.dispatchFetch(m.origin + `/api/calendar/${m.date.slice(0, 7)}`),
+      200,
+    );
+    const originalRangeReads = m.calls.filter(
+      (call) => call.body?.method === "getStartTimeMatrix",
+    ).length;
     for (const [index, journey] of m.journeys.entries()) {
       completed = Promise.withResolvers();
       const key = crypto.randomUUID();
@@ -3711,6 +3774,33 @@ async function consecutiveJourneys(sizes) {
         ),
       );
       previous.push({ id: key, proof: paid.confirmation });
+      const displayed = await checkoutResult(
+        m.mf.dispatchFetch(m.origin + `/api/calendar/${m.date.slice(0, 7)}`),
+        200,
+      );
+      const remainingStarts = displayed.dates
+        .flatMap((day) => day.offers ?? [])
+        .map((offer) => offer.startMs);
+      assert.ok(
+        previous.every((old) =>
+          old.proof.sessions.every(
+            (session) => !remainingStarts.includes(session.startMs),
+          ),
+        ),
+      );
+      assert.ok(
+        m.journeys
+          .slice(index + 1)
+          .every((next) =>
+            next.starts.every((start) => remainingStarts.includes(start)),
+          ),
+      );
+      assert.equal(
+        m.calls.filter((call) => call.body?.method === "getStartTimeMatrix")
+          .length,
+        originalRangeReads,
+        "back-to-back confirmation uses shared snapshot without provider month rebuild",
+      );
       await checkoutResult(
         m.mf.dispatchFetch(m.origin + `/api/attempts/${key}/dismiss`, {
           method: "POST",

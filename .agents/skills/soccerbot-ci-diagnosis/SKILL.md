@@ -19,6 +19,8 @@ Read job logs and relevant reports/receipts, not just the red badge. Locate the 
 
 Retain original logs, artifacts and failure context. Redact credentials and customer data from any diagnostic excerpts. Establish the expected outcome from the owning contract and describe observed behavior. Separate evidence, hypothesis and unknowns; a successful rerun alone does not explain a previous failure or establish flakiness.
 
+Before treating an absent failure as success, verify the expected guard/test invocation and receipt exist. Use the [testing skill's dependent-guard review](../soccerbot-testing/SKILL.md#required-dependent-guard-review) for missing/skipped/empty execution and executable-mode checks. A successful wrapper with an unexecuted child is a guard defect; do not repair it by accepting an empty report. Apply the [code-writing skill](../soccerbot-code-writing/SKILL.md) to fix the owning cause rather than masking it with retries or fallback success.
+
 ## 2. Classify before choosing a repair
 
 | Class                           | Evidence and owning repair                                                                                                                                                                   |
