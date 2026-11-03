@@ -259,7 +259,7 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   expect(screen.getByRole("region", { name: "Disclaimers" })).toHaveTextContent(
     "bring a towel",
   );
-  expect(screen.getByText("Native Trainer")).toBeInTheDocument();
+  expect(screen.getByText("Trainer: Native Trainer")).toBeInTheDocument();
   expect(screen.queryByText("701")).not.toBeInTheDocument();
   expect(screen.queryByText("901")).not.toBeInTheDocument();
   expect(screen.queryByText(/SoccerBot reference/)).not.toBeInTheDocument();

@@ -174,10 +174,12 @@ test("confirmation places three retained actions above a compact summary and dis
   expect(disclosure).toHaveAttribute("open");
   expect(screen.getAllByText("Demo Customer", { exact: true })).toHaveLength(1);
   expect(screen.getAllByText("Studio 1", { exact: true })).toHaveLength(1);
-  expect(screen.getAllByText("Faisal Shahril", { exact: true })).toHaveLength(
-    1,
-  );
-  expect(screen.getAllByText("Daniel Tan", { exact: true })).toHaveLength(1);
+  expect(
+    screen.getAllByText("Trainer: Faisal Shahril", { exact: true }),
+  ).toHaveLength(1);
+  expect(
+    screen.getAllByText("Trainer: Daniel Tan", { exact: true }),
+  ).toHaveLength(1);
   expect(
     screen.getByText(/Crosses the 15:00 instructor rotation/),
   ).toBeVisible();

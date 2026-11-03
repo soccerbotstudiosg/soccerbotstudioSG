@@ -2058,7 +2058,7 @@ test("provider identity renewal keeps native reads valid across token retention 
     });
     assert.deepEqual(response.body, fixtures().services);
     assert.equal(calls.filter((path) => path === "/login").length, 1);
-    assert.equal(calls.filter((path) => path === "/admin/auth").length, 2);
+    assert.equal(calls.filter((path) => path === "/admin/auth").length, 1);
     assert.equal(reserved, calls.length);
     assert.equal(finished, calls.length);
     const before = calls.length;
@@ -2418,7 +2418,165 @@ test("durable provider tokens retain original expiry and reject changed credenti
   } finally {
     db.close();
   }
+  await assertAdminRotation(t);
 });
+
+/** Exercise single-use admin rotation against encrypted SQLite and intercepted transport. */
+async function assertAdminRotation(t) {
+  const f = refreshFixture(t);
+  let logins = 0,
+    refreshes = 0,
+    rejectAccess = false,
+    loseRefresh = false;
+  const used = new Set();
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    const path = new URL(url).pathname;
+    const body = options.body ? JSON.parse(options.body) : null;
+    if (path === "/login")
+      return Response.json({ id: body.id, result: "synthetic-public-token" });
+    if (path === "/admin/auth") {
+      logins++;
+      return Response.json({
+        token: `synthetic-access-login-${logins}`,
+        refresh_token: `synthetic-refresh-login-${logins}`,
+      });
+    }
+    if (path === "/admin/auth/refresh-token") {
+      assert.equal(body.company, "synthetic-company");
+      assert.equal(options.headers["X-Token"], undefined);
+      assert.equal(
+        used.has(body.refresh_token),
+        false,
+        "single-use token must never be replayed",
+      );
+      used.add(body.refresh_token);
+      refreshes++;
+      assert.equal(
+        f.db
+          .prepare(
+            "SELECT COUNT(*) AS count FROM provider_token_cache WHERE family='admin'",
+          )
+          .get().count,
+        0,
+        "consumption persists before transport",
+      );
+      if (loseRefresh) throw new Error("synthetic-lost-response");
+      return Response.json({
+        token: `synthetic-access-refresh-${refreshes}`,
+        refresh_token: `synthetic-refresh-rotated-${refreshes}`,
+      });
+    }
+    if (path === "/admin/company/info") {
+      if (rejectAccess) {
+        rejectAccess = false;
+        return new Response(null, { status: 401 });
+      }
+      return Response.json({ login: "synthetic-company" });
+    }
+    assert.equal(path, "/admin/tariff/current");
+    return Response.json({ limits: [] });
+  });
+  let session = new ProviderSession(f.sql);
+  await session.identity(f.env, f.control);
+  f.advance(61000);
+  await session.identity(f.env, f.control);
+  assert.equal(logins, 1, "minute boundary must not initiate another login");
+  f.advance(50 * 60000);
+  session = new ProviderSession(f.sql);
+  await Promise.all([
+    session.identity(f.env, f.control),
+    session.identity(f.env, f.control),
+  ]);
+  assert.equal(logins, 1);
+  assert.equal(refreshes, 1);
+  assert.equal(
+    (await f.cache.load(f.env, "admin")).refreshToken,
+    "synthetic-refresh-rotated-1",
+  );
+  assert.doesNotMatch(
+    JSON.stringify(f.db.prepare("SELECT * FROM provider_token_cache").all()),
+    /synthetic-access|synthetic-refresh/,
+  );
+  f.advance(31000);
+  rejectAccess = true;
+  await assert.rejects(
+    session.identity(f.env, f.control),
+    /provider_auth_failed/,
+  );
+  assert.equal(refreshes, 1, "failed protected request must not replay itself");
+  session = new ProviderSession(f.sql);
+  await session.identity(f.env, f.control);
+  assert.equal(
+    refreshes,
+    2,
+    "earlier provider expiry rotates on the next operation after restoration",
+  );
+  f.advance(50 * 60000);
+  loseRefresh = true;
+  await assert.rejects(
+    session.identity(f.env, f.control),
+    /provider_transport_uncertain/,
+  );
+  assert.equal(refreshes, 3);
+  loseRefresh = false;
+  await new ProviderSession(f.sql).identity(f.env, f.control);
+  assert.equal(
+    logins,
+    2,
+    "lost refresh response cannot reuse the consumed token after restart",
+  );
+  assert.equal(refreshes, 3);
+  const newer = {
+    value: "synthetic-newer-access",
+    issued: f.now(),
+    until: f.now() + 50 * 60000,
+  };
+  await f.cache.save(f.env, "admin", newer);
+  assert.equal(
+    await f.cache.save(
+      f.env,
+      "admin",
+      { ...newer, value: "synthetic-stale-access" },
+      () => false,
+    ),
+    false,
+  );
+  assert.equal(
+    (await f.cache.load(f.env, "admin")).value,
+    newer.value,
+    "lost claim cannot publish an encrypted response",
+  );
+  f.cache.remove("admin");
+  session = new ProviderSession(f.sql);
+  const save = ProviderTokenCache.prototype.save;
+  const intercepted = t.mock.method(
+    ProviderTokenCache.prototype,
+    "save",
+    async function (...args) {
+      const published = await save.apply(this, args);
+      if (args[1] === "admin") {
+        await assert.rejects(
+          session.checkoutToken(
+            {
+              ...f.env,
+              SIMPLYBOOK_DEV_ADMIN_API_USER_KEY: "rotated-during-publication",
+            },
+            f.control,
+          ),
+          /provider_credentials_changed/,
+        );
+      }
+      return published;
+    },
+  );
+  await assert.rejects(
+    session.identity(f.env, f.control),
+    /provider_auth_stale/,
+    "credential invalidation after durable publication must not resurrect access in memory",
+  );
+  assert.equal(await f.cache.load(f.env, "admin"), undefined);
+  intercepted.mock.restore();
+}
 
 test("late authentication rejection cannot evict a newer token", async (t) => {
   let now = Date.now(),
@@ -2482,7 +2640,92 @@ test("late authentication rejection cannot evict a newer token", async (t) => {
     2,
     "old rejection cannot clear the newly verified token",
   );
+  await assertLateRejectionDuringRefresh(t, 401);
+  await assertLateRejectionDuringRefresh(t, 403);
 });
+
+/** Keep a replacement usable when an older access request rejects during refresh. */
+async function assertLateRejectionDuringRefresh(t, status) {
+  const f = refreshFixture(t);
+  const oldEntered = Promise.withResolvers(),
+    oldRelease = Promise.withResolvers();
+  const refreshEntered = Promise.withResolvers(),
+    refreshRelease = Promise.withResolvers();
+  let logins = 0,
+    refreshes = 0;
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    const pathname = new URL(url).pathname;
+    const body = options.body ? JSON.parse(options.body) : null;
+    if (pathname === "/login")
+      return Response.json({ id: body.id, result: "synthetic-public-token" });
+    if (pathname === "/admin/auth") {
+      logins++;
+      return Response.json({
+        token: "synthetic-old-access",
+        refresh_token: "synthetic-old-refresh",
+      });
+    }
+    if (pathname === "/admin/auth/refresh-token") {
+      refreshes++;
+      assert.equal(body.refresh_token, "synthetic-old-refresh");
+      refreshEntered.resolve();
+      await refreshRelease.promise;
+      return Response.json({
+        token: "synthetic-new-access",
+        refresh_token: "synthetic-new-refresh",
+      });
+    }
+    if (pathname === "/admin/invoices/1") {
+      assert.equal(options.headers["X-Token"], "synthetic-old-access");
+      oldEntered.resolve();
+      await oldRelease.promise;
+      return new Response(null, { status });
+    }
+    if (pathname === "/admin/company/info")
+      return Response.json({ login: "synthetic-company" });
+    assert.equal(pathname, "/admin/tariff/current");
+    return Response.json({ limits: [] });
+  });
+  const session = new ProviderSession(f.sql);
+  await session.identity(f.env, f.control);
+  const oldRead = assert.rejects(
+    session.nativeRead(f.env, f.control, {
+      kind: "invoice-read",
+      invoiceId: "1",
+    }),
+    /provider_auth_failed/,
+  );
+  await oldEntered.promise;
+  f.advance(50 * 60000 + 1);
+  const renewing = session.identity(f.env, f.control);
+  await refreshEntered.promise;
+  oldRelease.resolve();
+  await oldRead;
+  refreshRelease.resolve();
+  if (status === 403) {
+    await assert.rejects(renewing, /provider_auth_stale/);
+    assert.equal(
+      await f.cache.load(f.env, "admin"),
+      undefined,
+      "forbidden access still invalidates the in-flight family",
+    );
+    assert.equal(logins, 1);
+    assert.equal(refreshes, 1);
+    return;
+  }
+  assert.equal((await renewing).verified, true);
+  await new ProviderSession(f.sql).identity(f.env, f.control);
+  assert.equal(
+    logins,
+    1,
+    "late expired access cannot force a fresh credential login",
+  );
+  assert.equal(refreshes, 1, "the single-use refresh is not replayed");
+  assert.equal(
+    (await f.cache.load(f.env, "admin")).refreshToken,
+    "synthetic-new-refresh",
+  );
+}
 
 function refreshFixture(t) {
   let now = Date.now();

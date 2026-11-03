@@ -227,19 +227,21 @@ flowchart LR
   provider_token_cache["provider_token_cache · encrypted tokens"]
 ```
 
-| Table                         | Primary key  | Purpose                                                                  |
-| ----------------------------- | ------------ | ------------------------------------------------------------------------ |
-| `budget`                      | `campaign`   | Campaign provider-call usage and cooldown.                               |
-| `refreshes`                   | `key`        | Refresh claim, generation and completion/expiry timestamps.              |
-| `admissions`                  | `id`         | Reserved provider-call accounting and completion state.                  |
-| `admission_releases`          | `id`         | Evidence for releasing a read admission.                                 |
-| `financial_releases`          | `id`         | Attempt-bound financial admission release evidence.                      |
-| `payment_wakeups`             | `attempt_id` | Durable payment-recovery wakeup, correlation and generation.             |
-| `provider_request_admissions` | `id`         | Active transport claims, operation, instance, read-only flag and expiry. |
-| `provider_transport_releases` | `id`         | Recorded transport completion/release evidence.                          |
-| `provider_token_cache`        | `family`     | Token family, scope/expiry, encryption IV and ciphertext.                |
+| Table                         | Primary key  | Purpose                                                                           |
+| ----------------------------- | ------------ | --------------------------------------------------------------------------------- |
+| `budget`                      | `campaign`   | Campaign provider-call usage and cooldown.                                        |
+| `refreshes`                   | `key`        | Refresh claim, generation and completion/expiry timestamps.                       |
+| `admissions`                  | `id`         | Reserved provider-call accounting and completion state.                           |
+| `admission_releases`          | `id`         | Evidence for releasing a read admission.                                          |
+| `financial_releases`          | `id`         | Attempt-bound financial admission release evidence.                               |
+| `payment_wakeups`             | `attempt_id` | Durable payment-recovery wakeup, correlation, generation and `ready_ms` deadline. |
+| `provider_request_admissions` | `id`         | Active transport claims, operation, instance, read-only flag and expiry.          |
+| `provider_transport_releases` | `id`         | Recorded transport completion/release evidence.                                   |
+| `provider_token_cache`        | `family`     | Token family, scope/expiry, encryption IV and ciphertext.                         |
 
 `refreshes` governs general refresh claims; `display_refresh` below governs public display snapshots. Their similar names do not mean shared rows or a foreign-key relationship. Token plaintext is not a schema field; tokens are encrypted before storage.
+
+The coordinator adds `payment_wakeups.ready_ms` to existing DO SQLite tables at initialization (default0 preserves immediate legacy wakeups). No D1 migration is required. `provider_token_cache` keeps its existing columns; its encrypted admin payload now includes rotating refresh material. Legacy access-only rows remain readable at their original expiry. Older binaries cannot restore the new encrypted payload and will fall back to authentication; do not restore a pre-consumption token-cache backup.
 
 ## Durable Object SQLite: public display cache
 

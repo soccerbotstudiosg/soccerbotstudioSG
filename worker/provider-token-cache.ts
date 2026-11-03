@@ -5,9 +5,11 @@ export type CachedProviderToken = {
   value: string;
   issued: number;
   until: number;
+  refreshToken?: string;
+  accessRejected?: boolean;
+  storageVersion?: string;
 };
-export const providerTokenLifetime = (family: ProviderFamily) =>
-  family === "public" ? 50 * 60000 : 60000;
+export const providerTokenLifetime = 50 * 60000;
 const bytes = (value: string) => new TextEncoder().encode(value);
 const hex = (value: ArrayBuffer | Uint8Array) =>
   Array.from(new Uint8Array(value))
@@ -86,10 +88,15 @@ export class ProviderTokenCache {
     if (
       row.scope !== binding.scope ||
       row.issued_ms > now ||
-      row.expires_ms <= now ||
-      row.expires_ms - row.issued_ms !== providerTokenLifetime(family)
+      ![providerTokenLifetime, ...(family === "admin" ? [60000] : [])].includes(
+        row.expires_ms - row.issued_ms,
+      )
     ) {
-      this.remove(family);
+      this.sql.exec(
+        "DELETE FROM provider_token_cache WHERE family=? AND ciphertext=?",
+        family,
+        row.ciphertext,
+      );
       tokenCacheEvent(
         family,
         row.scope !== binding.scope ? "scope_changed" : "expired",
@@ -97,7 +104,7 @@ export class ProviderTokenCache {
       return;
     }
     try {
-      const value = new TextDecoder().decode(
+      const plaintext = new TextDecoder().decode(
         await crypto.subtle.decrypt(
           {
             name: "AES-GCM",
@@ -115,18 +122,62 @@ export class ProviderTokenCache {
           unhex(row.ciphertext),
         ),
       );
-      if (value.length < 16 || value.length > 8192 || /[\r\n]/.test(value))
+      const payload = plaintext.startsWith("{")
+        ? JSON.parse(plaintext)
+        : { value: plaintext };
+      const { value, refreshToken, accessRejected } = payload;
+      if (
+        typeof value !== "string" ||
+        value.length < 16 ||
+        value.length > 8192 ||
+        /[\r\n]/.test(value)
+      )
         throw new Error("invalid_token");
+      if (
+        refreshToken !== undefined &&
+        (family !== "admin" ||
+          typeof refreshToken !== "string" ||
+          refreshToken.length < 16 ||
+          refreshToken.length > 8192 ||
+          /[\r\n]/.test(refreshToken))
+      )
+        throw new Error("invalid_refresh_token");
+      if (row.expires_ms <= now && !refreshToken) {
+        this.sql.exec(
+          "DELETE FROM provider_token_cache WHERE family=? AND ciphertext=?",
+          family,
+          row.ciphertext,
+        );
+        tokenCacheEvent(family, "expired");
+        return;
+      }
       tokenCacheEvent(family, "restored");
-      return { value, issued: row.issued_ms, until: row.expires_ms };
+      return {
+        value,
+        issued: row.issued_ms,
+        until: row.expires_ms,
+        ...(accessRejected === true ? { accessRejected: true } : {}),
+        ...(refreshToken
+          ? { refreshToken, storageVersion: row.ciphertext }
+          : {}),
+      };
     } catch {
-      this.remove(family);
+      this.sql.exec(
+        "DELETE FROM provider_token_cache WHERE family=? AND ciphertext=?",
+        family,
+        row.ciphertext,
+      );
       tokenCacheEvent(family, "invalid");
       return;
     }
   }
   /** Persist the encrypted token with its original absolute expiry. */
-  async save(env: Env, family: ProviderFamily, token: CachedProviderToken) {
+  async save(
+    env: Env,
+    family: ProviderFamily,
+    token: CachedProviderToken,
+    publish: () => boolean = () => true,
+  ) {
     const { scope, key } = await this.binding(env, family);
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const encrypted = await crypto.subtle.encrypt(
@@ -138,8 +189,17 @@ export class ProviderTokenCache {
         ),
       },
       key,
-      bytes(token.value),
+      bytes(
+        token.refreshToken
+          ? JSON.stringify({
+              value: token.value,
+              refreshToken: token.refreshToken,
+              ...(token.accessRejected ? { accessRejected: true } : {}),
+            })
+          : token.value,
+      ),
     );
+    if (!publish()) return false;
     this.sql.exec(
       "INSERT INTO provider_token_cache VALUES(?,?,?,?,?,?) ON CONFLICT(family) DO UPDATE SET scope=excluded.scope,issued_ms=excluded.issued_ms,expires_ms=excluded.expires_ms,iv=excluded.iv,ciphertext=excluded.ciphertext",
       family,
@@ -148,6 +208,20 @@ export class ProviderTokenCache {
       token.until,
       hex(iv),
       hex(encrypted),
+    );
+    if (token.refreshToken) token.storageVersion = hex(encrypted);
+    return true;
+  }
+  /** Consume a single-use refresh token before dispatch, including across restarts. */
+  consumeRefresh(token: CachedProviderToken) {
+    if (!token.storageVersion) return false;
+    return (
+      this.sql
+        .exec(
+          "DELETE FROM provider_token_cache WHERE family='admin' AND ciphertext=? RETURNING family",
+          token.storageVersion,
+        )
+        .toArray().length === 1
     );
   }
 }

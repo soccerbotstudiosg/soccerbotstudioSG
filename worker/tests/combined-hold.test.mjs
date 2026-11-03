@@ -1434,6 +1434,18 @@ test("checkout returns its durable URL while comments are blocked and annotation
     const response = await send();
     assert.equal(response.status, 200);
     const result = await response.json();
+    assert.equal(
+      m.calls.filter((call) => call.url.endsWith("/comment")).length,
+      0,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.url.endsWith("/admin/auth")).length,
+      0,
+    );
+    const webhook = await m.completePayment();
+    await webhook.text();
+    assert.equal(webhook.status, 202);
+    const recovering = m.recover();
     await started.promise;
     assert.equal(result.checkout.url, m.checkoutUrl);
     const saved = await m.db
@@ -1460,13 +1472,13 @@ test("checkout returns its durable URL while comments are blocked and annotation
     );
     assert.equal(
       m.calls.filter((c) => c.body?.method === "getBookingDetails").length,
-      0,
+      1,
     );
     assert.equal(
       m.calls.filter(
         (c) => c.url.endsWith("/admin/invoices/901") && c.method === "GET",
       ).length,
-      0,
+      1,
     );
     assert.ok(
       m.calls.findIndex(
@@ -1474,6 +1486,7 @@ test("checkout returns its durable URL while comments are blocked and annotation
       ) < m.calls.findIndex((c) => c.url.endsWith("/comment")),
     );
     gate.resolve();
+    await recovering;
     assert.equal((await send()).status, 200);
     await m.recover();
     await m.recover();
@@ -1888,6 +1901,20 @@ test("direct single checkout uses only public authentication and creation before
       const result = await response.json();
       assert.equal(result.paymentAvailable, true);
       assert.equal(result.checkout.url, m.checkoutUrl);
+      const current = await checkoutResult(
+        m.mf.dispatchFetch(m.origin + "/api/booking/current", {
+          headers: c.headers,
+        }),
+        200,
+      );
+      assert.equal(
+        current.sessions[0].serviceName,
+        warm ? "Native Session" : "Your session",
+      );
+      assert.equal(
+        current.sessions[0].instructorName,
+        warm ? "Native Trainer" : "Details unavailable",
+      );
       const markers = await m.db
         .prepare(
           "SELECT step,outcome FROM session_effects WHERE attempt_id=? AND step IN ('finalize','native-comments-pending') ORDER BY step",

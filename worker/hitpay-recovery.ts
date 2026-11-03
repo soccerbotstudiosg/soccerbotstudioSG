@@ -33,6 +33,7 @@ export async function recoverHitpay(
   id: string,
   provider: ProviderSession,
   base: ProviderControl,
+  schedule?: (readyMs: number) => Promise<void>,
 ) {
   if (
     !hitpayRecoveryEnabled(env) ||
@@ -48,9 +49,18 @@ export async function recoverHitpay(
     env.STATE.prepare(
       "SELECT step,reference_id FROM session_effects WHERE attempt_id=? AND outcome='observed' AND (step='native-booking-key' OR step GLOB 'native-booking-key:[0-9]*')",
     ).bind(id),
+    env.STATE.prepare(
+      "SELECT state,ready_ms FROM hitpay_payments WHERE attempt_id=?",
+    ).bind(id),
   ]);
   const row = initial[2].results[0] as HitpayRow | undefined;
-  if (!row) return;
+  if (!row) {
+    const retained = initial[5].results[0] as
+      { state: string; ready_ms: number } | undefined;
+    if (retained && ["due", "claimed"].includes(retained.state))
+      await schedule?.(retained.ready_ms);
+    return;
+  }
   confirmationResult("pending");
   // The 120-second durable claim is never renewed here. Read-only provider
   // work uses this bounded 90-second lease; each physical call still passes
@@ -430,10 +440,10 @@ export async function recoverHitpay(
     }
     // Commit the terminal decision and the pending-receipt wake-up together.
     // If storage fails, the retained claim lease remains reclaimable by cron.
-    if (!terminalCommitted)
-      await env.STATE.batch([
+    if (!terminalCommitted) {
+      const committed = await env.STATE.batch([
         env.STATE.prepare(
-          "UPDATE hitpay_payments SET state=?,reason=?,ready_ms=? WHERE attempt_id=? AND state='claimed' AND generation=?",
+          "UPDATE hitpay_payments SET state=?,reason=?,ready_ms=? WHERE attempt_id=? AND state='claimed' AND generation=? RETURNING state,ready_ms",
         ).bind(
           result,
           reason,
@@ -446,6 +456,20 @@ export async function recoverHitpay(
         ),
         reopenHitpayReview(env.STATE, id, Date.now()),
       ]);
+      const retained = committed[0].results[0] as
+        { state: string; ready_ms: number } | undefined;
+      if (retained?.state === "due") {
+        console.log(
+          JSON.stringify({
+            event: "payment_recovery_retry",
+            reason,
+            readyAtMs: retained.ready_ms,
+            generation: row.generation,
+          }),
+        );
+        await schedule?.(retained.ready_ms);
+      }
+    }
     confirmationResult(
       result === "complete"
         ? "complete"

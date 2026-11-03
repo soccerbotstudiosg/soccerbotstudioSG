@@ -1,5 +1,6 @@
 import { claimNativeDispatch, claimNativeEffect } from "./native-dispatch";
 import type { Grant } from "./customer-authority";
+import type { CustomerCatalogue } from "../src/domain/catalog";
 import {
   retainHoldEvidence,
   holdEvidenceStatement,
@@ -120,6 +121,7 @@ export async function executeNativeCheckout(options: {
   holding?: boolean;
   combinedHold?: boolean;
   creationOnly?: boolean;
+  displayCatalogue?: CustomerCatalogue;
   prepared?: PreparedCheckout;
   access?: Access;
   onVerifiedHold?: (proof: VerifiedHold) => Promise<{
@@ -587,9 +589,17 @@ export async function executeNativeCheckout(options: {
                 day.offers.push({
                   serviceId: session.serviceId,
                   productServiceId: contract.serviceId,
-                  serviceName: "SoccerBot session",
+                  // Labels come from account-scoped display data, never from
+                  // the browser or as authority for capacity, price or payment.
+                  serviceName:
+                    options.displayCatalogue?.services.find(
+                      (service) => service.id === contract.serviceId,
+                    )?.name ?? "Your session",
                   instructorId: session.instructorId,
-                  instructorName: "Selected instructor",
+                  instructorName:
+                    options.displayCatalogue?.instructors.find(
+                      (instructor) => instructor.id === session.instructorId,
+                    )?.name ?? "Details unavailable",
                   startMs: session.startMs,
                   priceMinor: session.totalMinor,
                   currency: value.currency,

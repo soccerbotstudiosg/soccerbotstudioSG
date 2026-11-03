@@ -130,6 +130,15 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     ctx.storage.sql.exec(
       "CREATE TABLE IF NOT EXISTS payment_wakeups(attempt_id TEXT PRIMARY KEY, correlation_id TEXT NOT NULL, generation INTEGER NOT NULL)",
     );
+    if (
+      !ctx.storage.sql
+        .exec<{ name: string }>("PRAGMA table_info(payment_wakeups)")
+        .toArray()
+        .some((column) => column.name === "ready_ms")
+    )
+      ctx.storage.sql.exec(
+        "ALTER TABLE payment_wakeups ADD COLUMN ready_ms INTEGER NOT NULL DEFAULT 0",
+      );
     ctx.storage.sql.exec(
       "CREATE TABLE IF NOT EXISTS provider_request_admissions(id TEXT PRIMARY KEY,operation TEXT NOT NULL,read_only INTEGER NOT NULL CHECK(read_only IN (0,1)),instance_id TEXT NOT NULL,expires_ms INTEGER NOT NULL)",
     );
@@ -1225,6 +1234,9 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
             holding: true,
             combinedHold: true,
             creationOnly,
+            displayCatalogue: creationOnly
+              ? this.snapshots().read("catalogue", "catalogue")
+              : undefined,
             prepared:
               "snapshot" in preparation ? preparation.snapshot : undefined,
             access,
@@ -1328,11 +1340,11 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     z.string().uuid().parse(correlationId);
     if (!hitpayRecoveryEnabled(this.env)) return;
     this.sql.exec(
-      "INSERT INTO payment_wakeups(attempt_id,correlation_id,generation) VALUES(?,?,1) ON CONFLICT(attempt_id) DO UPDATE SET correlation_id=excluded.correlation_id,generation=payment_wakeups.generation+1",
+      "INSERT INTO payment_wakeups(attempt_id,correlation_id,generation,ready_ms) VALUES(?,?,1,0) ON CONFLICT(attempt_id) DO UPDATE SET correlation_id=excluded.correlation_id,generation=payment_wakeups.generation+1,ready_ms=0",
       attemptId,
       correlationId,
     );
-    await this.ctx.storage.setAlarm(Date.now());
+    await this.schedulePaymentAlarm();
   }
   /** Process retained payment wakeups without discarding newer generations. */
   async alarm() {
@@ -1341,11 +1353,16 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         attempt_id: string;
         correlation_id: string;
         generation: number;
+        ready_ms: number;
       }>(
-        "SELECT attempt_id,correlation_id,generation FROM payment_wakeups ORDER BY rowid LIMIT 1",
+        "SELECT attempt_id,correlation_id,generation,ready_ms FROM payment_wakeups ORDER BY ready_ms,rowid LIMIT 1",
       )
       .toArray()[0];
     if (!wake) return;
+    if (wake.ready_ms > Date.now()) {
+      await this.schedulePaymentAlarm();
+      return;
+    }
     await this.hitpayRecovery(wake.attempt_id, wake.correlation_id);
     // A receipt arriving during recovery retains its newer wake-up. Recovery
     // itself owns the durable payment lease, retry budget and effect journal.
@@ -1354,11 +1371,42 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       wake.attempt_id,
       wake.generation,
     );
-    if (this.sql.exec("SELECT 1 FROM payment_wakeups LIMIT 1").toArray().length)
-      await this.ctx.storage.setAlarm(Date.now());
+    await this.schedulePaymentAlarm();
+  }
+  private paymentAlarmSchedule: Promise<void> = Promise.resolve();
+  /** Serialize alarm writes so a concurrent receipt cannot be postponed. */
+  private schedulePaymentAlarm() {
+    const pending = this.paymentAlarmSchedule.then(async () => {
+      const next = this.sql
+        .exec<{ ready_ms: number }>(
+          "SELECT ready_ms FROM payment_wakeups ORDER BY ready_ms LIMIT 1",
+        )
+        .toArray()[0];
+      if (next)
+        await this.ctx.storage.setAlarm(Math.max(Date.now(), next.ready_ms));
+    });
+    this.paymentAlarmSchedule = pending.catch(() => {});
+    return pending;
   }
   /** Run HitPay reconciliation with recovery priority and sanitized tracing. */
   async hitpayRecovery(attemptId: string, correlationId: string) {
+    const generation = this.sql
+      .exec<{ generation: number }>(
+        "SELECT generation FROM payment_wakeups WHERE attempt_id=?",
+        attemptId,
+      )
+      .toArray()[0]?.generation;
+    const schedule = async (readyMs: number) => {
+      // Do not postpone an authenticated receipt that arrived while recovery ran.
+      this.sql.exec(
+        "INSERT INTO payment_wakeups(attempt_id,correlation_id,generation,ready_ms) VALUES(?,?,1,?) ON CONFLICT(attempt_id) DO UPDATE SET ready_ms=excluded.ready_ms,generation=payment_wakeups.generation+1 WHERE payment_wakeups.generation=?",
+        attemptId,
+        correlationId,
+        readyMs,
+        generation ?? 0,
+      );
+      await this.schedulePaymentAlarm();
+    };
     const key = await confirmationTraceKey(attemptId);
     const trace = createConfirmationTrace(correlationId);
     let failed = false;
@@ -1371,6 +1419,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
               attemptId,
               this.provider,
               this.providerControl(true, false, true),
+              schedule,
             ),
           ),
         ),

@@ -16,6 +16,7 @@ import { ApiError, sandboxPolicy, liveCustomerAccess } from "./policy";
 import { historicalComparison } from "./provider-normalization";
 import {
   providerRequest,
+  ProviderAuthenticationError,
   providerSecrets,
   type ProviderFamily,
   type NativeRequest,
@@ -93,7 +94,7 @@ export class ProviderSession {
       this.restoredFamilies.add(family);
       if (
         token &&
-        token.until > Date.now() &&
+        (token.until > Date.now() || token.refreshToken) &&
         epoch === (this.tokenEpoch.get(family) ?? 0)
       )
         this.tokens.set(family, token);
@@ -258,7 +259,8 @@ export class ProviderSession {
       const token = await this.token("admin", env, control);
       const identity = object(
         await providerRequest("identity", secrets, token, control).catch(
-          (error: unknown) => this.rejectAuthentication(error, "admin", token),
+          (error: unknown) =>
+            this.rejectAuthentication(env, error, "admin", token),
         ),
       );
       if (identity.login !== secrets.company)
@@ -270,7 +272,7 @@ export class ProviderSession {
           token,
           control,
         ).catch((error: unknown) =>
-          this.rejectAuthentication(error, "admin", token),
+          this.rejectAuthentication(env, error, "admin", token),
         ),
       );
       const invoice = object(
@@ -280,7 +282,7 @@ export class ProviderSession {
           token,
           control,
         ).catch((error: unknown) =>
-          this.rejectAuthentication(error, "admin", token),
+          this.rejectAuthentication(env, error, "admin", token),
         ),
       );
       if (String(booking.id) !== "23" || String(invoice.id) !== "23")
@@ -359,7 +361,7 @@ export class ProviderSession {
       request,
       signal,
     ).catch((error: unknown) =>
-      this.rejectAuthentication(error, family, token.value),
+      this.rejectAuthentication(env, error, family, token.value),
     );
     return { body, receivedAtMs: Date.now() };
   }
@@ -508,23 +510,55 @@ export class ProviderSession {
         : control,
       request,
     ).catch((error: unknown) =>
-      this.rejectAuthentication(error, family, token.value),
+      this.rejectAuthentication(env, error, family, token.value),
     );
     return { body, receivedAtMs: Date.now() };
   }
 
-  private rejectAuthentication(
+  private async rejectAuthentication(
+    env: Env,
     error: unknown,
     family: ProviderFamily,
     rejectedToken?: string,
-  ): never {
+  ): Promise<never> {
     if (error instanceof ApiError && error.code === "provider_auth_failed") {
       if (
         rejectedToken !== undefined &&
         this.tokens.get(family)?.value !== rejectedToken
       ) {
         tokenCacheEvent(family, "stale_rejection");
-      } else this.invalidateToken(family);
+      } else {
+        const current = this.tokens.get(family);
+        if (
+          error instanceof ProviderAuthenticationError &&
+          error.expired &&
+          rejectedToken !== undefined &&
+          current?.accessRejected
+        ) {
+          // Expiry of an already retired access token cannot cancel its
+          // in-flight replacement. A rejected refresh itself still invalidates.
+          this.cachedIdentity = undefined;
+          tokenCacheEvent(family, "stale_rejection");
+        } else if (
+          error instanceof ProviderAuthenticationError &&
+          error.expired &&
+          current?.refreshToken
+        ) {
+          current.accessRejected = true;
+          this.cachedIdentity = undefined;
+          const epoch = this.tokenEpoch.get(family) ?? 0;
+          const refresh = current.refreshToken;
+          await this.durableTokens?.save(
+            env,
+            family,
+            current,
+            () =>
+              epoch === (this.tokenEpoch.get(family) ?? 0) &&
+              this.tokens.get(family) === current &&
+              current.refreshToken === refresh,
+          );
+        } else this.invalidateToken(family);
+      }
     }
     throw error;
   }
@@ -537,7 +571,7 @@ export class ProviderSession {
   ) {
     await this.restoreToken(env, family);
     const current = this.tokens.get(family);
-    if (current && current.until > Date.now()) {
+    if (current && !current.accessRejected && current.until > Date.now()) {
       confirmationCache(family, "hit");
       return current.value;
     }
@@ -551,43 +585,76 @@ export class ProviderSession {
     const epoch = this.tokenEpoch.get(family) ?? 0;
     const authenticate = async () => {
       const claim = control.claim(family);
+      if (current) {
+        current.accessRejected = true;
+        this.cachedIdentity = undefined;
+      }
+      const refresh = family === "admin" ? current?.refreshToken : undefined;
       const result = await providerRequest(
-        family === "public" ? "public-auth" : "admin-auth",
+        family === "public"
+          ? "public-auth"
+          : refresh
+            ? "admin-refresh"
+            : "admin-auth",
         providerSecrets(env),
-        undefined,
+        refresh,
         control,
-      ).catch((error: unknown) => this.rejectAuthentication(error, family));
+        undefined,
+        undefined,
+        refresh
+          ? () => {
+              // Consume before transport: a lost response cannot replay a single-use token.
+              if (
+                this.durableTokens &&
+                !this.durableTokens.consumeRefresh(current!)
+              )
+                throw new ApiError(503, "provider_auth_stale");
+              delete current!.refreshToken;
+              delete current!.storageVersion;
+            }
+          : undefined,
+      ).catch((error: unknown) =>
+        this.rejectAuthentication(env, error, family),
+      );
       if (family === "admin") {
         const challenge = object(result).require2fa;
         if (challenge !== undefined && challenge !== false)
           throw new ApiError(503, "provider_auth_representation_unknown");
       }
       const value = family === "public" ? result : object(result).token;
+      const refreshToken =
+        family === "admin" ? object(result).refresh_token : undefined;
+      const valid = (candidate: unknown): candidate is string =>
+        typeof candidate === "string" &&
+        candidate.length >= 16 &&
+        candidate.length <= 8192 &&
+        !/[\r\n]/.test(candidate);
       if (
-        typeof value !== "string" ||
-        value.length < 16 ||
-        value.length > 8192 ||
-        /[\r\n]/.test(value)
+        !valid(value) ||
+        (refreshToken !== undefined && !valid(refreshToken)) ||
+        (refresh && !valid(refreshToken))
       )
         throw new ApiError(503, "provider_auth_representation_unknown");
-      if (!control.complete(family, claim.claim, claim.generation))
-        throw new ApiError(503, "provider_auth_stale");
-      // Public tokens have a documented one-hour lifetime; retain for 50
-      // minutes. Admin lifetime can be account-configured, so keep its
-      // conservative minute until an explicit expiry contract is verified.
+      // Normal admin/public access lifetime is one hour. Shorter account expiry
+      // remains authoritative: rejection never replays the protected operation.
       const issued = Date.now();
-      const token = {
+      const token: CachedProviderToken = {
         value,
         issued,
-        until: issued + providerTokenLifetime(family),
+        until: issued + providerTokenLifetime,
+        ...(refreshToken ? { refreshToken: refreshToken as string } : {}),
       };
-      if (epoch !== (this.tokenEpoch.get(family) ?? 0))
+      // Fence after encryption, immediately before synchronous SQL publication.
+      const publish = () =>
+        epoch === (this.tokenEpoch.get(family) ?? 0) &&
+        control.complete(family, claim.claim, claim.generation);
+      const published = this.durableTokens
+        ? await this.durableTokens.save(env, family, token, publish)
+        : publish();
+      // Awaiting durable publication is another interleaving boundary: a
+      // credential change/rejection may have retired this generation meanwhile.
+      if (!published || epoch !== (this.tokenEpoch.get(family) ?? 0))
         throw new ApiError(503, "provider_auth_stale");
-      await this.durableTokens?.save(env, family, token);
-      if (epoch !== (this.tokenEpoch.get(family) ?? 0)) {
-        this.durableTokens?.remove(family);
-        throw new ApiError(503, "provider_auth_stale");
-      }
       this.tokens.set(family, token);
       return value;
     };
@@ -638,7 +705,8 @@ export class ProviderSession {
       const authMs = performance.now() - start;
       const info = object(
         await providerRequest("identity", secrets, admin, control).catch(
-          (error: unknown) => this.rejectAuthentication(error, "admin", admin),
+          (error: unknown) =>
+            this.rejectAuthentication(env, error, "admin", admin),
         ),
       );
       // Unrecognised fields are a blocked representation, never an account match.
@@ -647,7 +715,8 @@ export class ProviderSession {
       const identityMs = performance.now() - start - authMs;
       const tariff = object(
         await providerRequest("tariff", secrets, admin, control).catch(
-          (error: unknown) => this.rejectAuthentication(error, "admin", admin),
+          (error: unknown) =>
+            this.rejectAuthentication(env, error, "admin", admin),
         ),
       );
       const limits = Array.isArray(tariff.limits) ? tariff.limits : [];

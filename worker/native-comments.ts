@@ -6,7 +6,7 @@ import { providerSecrets } from "./provider-transport";
 import type { ProviderSession, ProviderControl } from "./provider-session";
 
 // Durable annotation intent is saved before association. Dispatch is claimed
-// separately after checkout, under the same account admission limits. A missing
+// separately after confirmed payment, under the same account admission limits. A missing
 // response remains unknown; neither cron nor another request resends it.
 /** Annotate eligible pending bookings using retained effect accounting. */
 export async function annotatePendingBooking(
@@ -19,7 +19,7 @@ export async function annotatePendingBooking(
   if (attemptId !== undefined) z.string().uuid().parse(attemptId);
   const row = await env.STATE.withSession("first-primary")
     .prepare(
-      "SELECT a.id,a.intent_json,a.intent_hash,a.association_json,e.reference_id,g.contract_json FROM session_effects e JOIN attempts a ON a.id=e.attempt_id JOIN native_checkout_grants g ON g.attempt_id=a.id JOIN checkout_payment_routes p ON p.attempt_id=a.id JOIN guest_access x ON x.capability_hash=g.capability_hash AND x.owner_id=a.owner_id WHERE e.step='native-comments-pending' AND e.outcome='observed' AND a.association_json IS NOT NULL AND g.ongoing=1 AND g.state IN ('complete','blocked') AND g.expires_ms>? AND p.route='hitpay' AND x.revoked_ms IS NULL AND x.expires_ms>? AND (? IS NULL OR a.id=?) AND EXISTS(SELECT 1 FROM json_each(e.reference_id) j WHERE NOT EXISTS(SELECT 1 FROM session_effects c WHERE c.attempt_id=a.id AND c.step='native-comment:'||j.key)) ORDER BY a.created_ms,a.id LIMIT 1",
+      "SELECT a.id,a.intent_json,a.intent_hash,a.association_json,e.reference_id,g.contract_json FROM session_effects e JOIN attempts a ON a.id=e.attempt_id JOIN (SELECT * FROM native_checkout_grants UNION ALL SELECT * FROM completed_native_checkout_grants) g ON g.attempt_id=a.id JOIN checkout_payment_routes p ON p.attempt_id=a.id JOIN guest_access x ON x.capability_hash=g.capability_hash AND x.owner_id=a.owner_id WHERE e.step='native-comments-pending' AND e.outcome='observed' AND a.association_json IS NOT NULL AND EXISTS(SELECT 1 FROM hitpay_payments h WHERE h.attempt_id=a.id AND h.state='complete' AND h.external_state='observed') AND g.ongoing=1 AND g.state IN ('complete','blocked') AND g.expires_ms>? AND p.route='hitpay' AND x.revoked_ms IS NULL AND x.expires_ms>? AND (? IS NULL OR a.id=?) AND EXISTS(SELECT 1 FROM json_each(e.reference_id) j WHERE NOT EXISTS(SELECT 1 FROM session_effects c WHERE c.attempt_id=a.id AND c.step='native-comment:'||j.key)) ORDER BY a.created_ms,a.id LIMIT 1",
     )
     .bind(Date.now(), Date.now(), attemptId ?? null, attemptId ?? null)
     .first<{
@@ -60,7 +60,7 @@ export async function annotatePendingBooking(
         throw new ApiError(503, "provider_access_disabled");
       const current = await env.STATE.withSession("first-primary")
         .prepare(
-          "SELECT 1 FROM attempts a JOIN native_checkout_grants g ON g.attempt_id=a.id JOIN guest_access x ON x.capability_hash=g.capability_hash AND x.owner_id=a.owner_id WHERE a.id=? AND a.intent_hash=? AND a.association_json=? AND g.ongoing=1 AND g.state IN ('complete','blocked') AND g.expires_ms>? AND x.revoked_ms IS NULL AND x.expires_ms>?",
+          "SELECT 1 FROM attempts a JOIN (SELECT * FROM native_checkout_grants UNION ALL SELECT * FROM completed_native_checkout_grants) g ON g.attempt_id=a.id JOIN guest_access x ON x.capability_hash=g.capability_hash AND x.owner_id=a.owner_id WHERE EXISTS(SELECT 1 FROM hitpay_payments h WHERE h.attempt_id=a.id AND h.state='complete' AND h.external_state='observed') AND a.id=? AND a.intent_hash=? AND a.association_json=? AND g.ongoing=1 AND g.state IN ('complete','blocked') AND g.expires_ms>? AND x.revoked_ms IS NULL AND x.expires_ms>?",
         )
         .bind(
           row.id,

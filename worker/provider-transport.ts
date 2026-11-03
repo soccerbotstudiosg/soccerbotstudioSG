@@ -100,10 +100,17 @@ export async function identityRequest(
   }
 }
 
+/** Distinguish access expiry without retaining upstream messages or credentials. */
+export class ProviderAuthenticationError extends ApiError {
+  constructor(readonly expired: boolean) {
+    super(503, "provider_auth_failed");
+  }
+}
 export type ProviderFamily = "public" | "admin";
 export type ProviderOperation =
   | "public-auth"
   | "admin-auth"
+  | "admin-refresh"
   | "identity"
   | "tariff"
   | "historical-booking"
@@ -259,12 +266,14 @@ export async function providerRequest(
   },
   native?: NativeRequest,
   signal?: AbortSignal,
+  beforeDispatch?: () => void,
 ): Promise<unknown> {
   // Explicit operation semantics, never HTTP method: payment-link GET can mutate.
   const readOnly =
     [
       "public-auth",
       "admin-auth",
+      "admin-refresh",
       "identity",
       "tariff",
       "historical-booking",
@@ -305,6 +314,12 @@ export async function providerRequest(
         login: secrets.login,
         password: secrets.adminKey,
       });
+      break;
+    case "admin-refresh":
+      if (!token) throw new ApiError(503, "provider_auth_required");
+      url = "https://user-api-v2.simplybook.me/admin/auth/refresh-token";
+      method = "POST";
+      body = JSON.stringify({ company: secrets.company, refresh_token: token });
       break;
     case "identity":
       url = "https://user-api-v2.simplybook.me/admin/company/info";
@@ -518,7 +533,11 @@ export async function providerRequest(
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-  if (operation !== "public-auth" && operation !== "admin-auth") {
+  if (
+    operation !== "public-auth" &&
+    operation !== "admin-auth" &&
+    operation !== "admin-refresh"
+  ) {
     if (!token) throw new ApiError(503, "provider_auth_required");
     headers["X-Company-Login"] = secrets.company;
     headers["X-Token"] = token;
@@ -558,7 +577,7 @@ export async function providerRequest(
     const transportTiming =
       operation === "public-auth"
         ? providerTransportTiming("public_auth")
-        : operation === "admin-auth"
+        : operation === "admin-auth" || operation === "admin-refresh"
           ? providerTransportTiming("admin_auth")
           : native &&
               ["book", "batch-create", "batch-close"].includes(native.kind)
@@ -584,6 +603,7 @@ export async function providerRequest(
       finishConfirmationProvider = confirmationTransport(
         native?.kind ?? operation,
       );
+      beforeDispatch?.();
       const response = await fetch(url, {
         method,
         headers,
@@ -603,12 +623,9 @@ export async function providerRequest(
         await response.body?.cancel();
         complete = true;
         cooldown = 60000;
-        throw new ApiError(
-          503,
-          response.status === 401 || response.status === 403
-            ? "provider_auth_failed"
-            : "provider_http_failed",
-        );
+        if ([401, 403, 419].includes(response.status))
+          throw new ProviderAuthenticationError(response.status !== 403);
+        throw new ApiError(503, "provider_http_failed");
       }
       if (native?.kind === "webhook-delete") {
         // DELETE's body has no documented representation. HTTP acknowledgement
@@ -690,7 +707,20 @@ export async function providerRequest(
       console.log(
         JSON.stringify({
           event: "provider_failure",
-          ...(httpStatus === undefined ? {} : { httpStatus }),
+          ...(httpStatus === undefined
+            ? {}
+            : {
+                httpStatus,
+                failureClass:
+                  httpStatus === 401 || httpStatus === 419
+                    ? "authentication_expired_or_invalid"
+                    : httpStatus === 403
+                      ? "forbidden_unclassified"
+                      : httpStatus === 429
+                        ? "rate_limited"
+                        : "http_error",
+              }),
+          retryNotBeforeMs: Date.now() + cooldown,
           correlationId: traceId(),
           operation: operation === "native" ? native?.kind : operation,
           durationMs: Math.max(0, performance.now() - started),
