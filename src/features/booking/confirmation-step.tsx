@@ -88,6 +88,7 @@ export function BookingConfirmation({
   pendingMessage,
   pendingAction,
   verifiedAtMs,
+  invoicePending = false,
   onAgain,
   onHome,
 }: {
@@ -98,6 +99,7 @@ export function BookingConfirmation({
   pendingMessage?: string;
   pendingAction?: ReactNode;
   verifiedAtMs?: number;
+  invoicePending?: boolean;
   onAgain: () => void | Promise<void>;
   onHome?: () => void | Promise<void>;
 }) {
@@ -142,14 +144,29 @@ export function BookingConfirmation({
             (Singapore time)
           </p>
         )}
-        {!pending && !preview && booking.providerReferences?.invoiceNumber && (
-          <p className="reference">
-            Invoice number{" "}
-            <strong className="text-ink">
-              {booking.providerReferences.invoiceNumber}
-            </strong>
-          </p>
-        )}
+        {!pending &&
+          !preview &&
+          (booking.providerReferences?.invoiceNumber || invoicePending) && (
+            <p className="reference" aria-live="polite" aria-atomic="true">
+              Invoice number{" "}
+              {booking.providerReferences?.invoiceNumber ? (
+                <strong
+                  className="text-ink confirmation-invoice-value"
+                  key={booking.providerReferences.invoiceNumber}
+                >
+                  {booking.providerReferences.invoiceNumber}
+                </strong>
+              ) : (
+                <span
+                  className="confirmation-invoice-loader"
+                  role="status"
+                  aria-label="Checking invoice number"
+                >
+                  <Icon name="spinner" className="spinner" />
+                </span>
+              )}
+            </p>
+          )}
         {!pending && preview && (
           <p className="reference">
             Booking reference{" "}

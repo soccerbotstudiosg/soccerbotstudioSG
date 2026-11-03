@@ -1,3 +1,4 @@
+import { retainedInvoiceNumber } from "./invoice-document";
 import { authenticate } from "./access";
 import { ApiError, digest } from "./policy";
 import { receiptSchema } from "../src/domain/native-checkout";
@@ -15,10 +16,11 @@ export async function retainCustomerConfirmation(
 ) {
   const row = await env.STATE.withSession("first-primary")
     .prepare(
-      "SELECT a.id,a.created_ms,a.intent_json,a.association_json,a.observation_json,a.intent_hash,h.expires_ms,(SELECT availability_json FROM native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM completed_native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM expired_native_checkout_grants WHERE attempt_id=a.id) AS availability_json FROM attempts a JOIN hitpay_holds h ON h.attempt_id=a.id JOIN checkout_progress c ON c.attempt_id=a.id WHERE a.id=? AND a.state='observed' AND a.intent_hash=h.intent_hash AND a.association_json=h.association_json",
+      "SELECT CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,a.id,a.created_ms,a.intent_json,a.association_json,a.observation_json,a.intent_hash,h.expires_ms,(SELECT availability_json FROM native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM completed_native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM expired_native_checkout_grants WHERE attempt_id=a.id) AS availability_json FROM attempts a LEFT JOIN invoice_documents d ON d.attempt_id=a.id AND d.association_json=a.association_json JOIN hitpay_holds h ON h.attempt_id=a.id JOIN checkout_progress c ON c.attempt_id=a.id WHERE a.id=? AND a.state='observed' AND a.intent_hash=h.intent_hash AND a.association_json=h.association_json",
     )
     .bind(payment.attempt_id)
     .first<{
+      invoice_document_json: string | null;
       id: string;
       created_ms: number;
       intent_json: string;
@@ -50,23 +52,44 @@ export async function retainCustomerConfirmation(
 export async function customerConfirmation(
   env: Env,
   id: string,
-  snapshot?: { confirmation_json: string; scope_json: string } | null,
+  snapshot?: {
+    confirmation_json: string;
+    scope_json: string;
+    invoice_document_json?: string | null;
+  } | null,
 ) {
   const row =
     snapshot === undefined
       ? await env.STATE.withSession("first-primary")
           .prepare(
-            "SELECT c.confirmation_json,p.scope_json FROM checkout_progress c JOIN hitpay_payments p ON p.attempt_id=c.attempt_id WHERE c.attempt_id=? AND c.confirmation_json IS NOT NULL AND p.paid_ms IS NOT NULL AND p.payment_id IS NOT NULL AND p.state!='manual_review' AND p.external_state='observed'",
+            "SELECT CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,c.confirmation_json,p.scope_json FROM checkout_progress c JOIN hitpay_payments p ON p.attempt_id=c.attempt_id LEFT JOIN invoice_documents d ON d.attempt_id=c.attempt_id AND d.association_json=json_extract(p.scope_json,'$.associationJson') WHERE c.attempt_id=? AND c.confirmation_json IS NOT NULL AND p.paid_ms IS NOT NULL AND p.payment_id IS NOT NULL AND p.state!='manual_review' AND p.external_state='observed'",
           )
           .bind(id)
-          .first<{ confirmation_json: string; scope_json: string }>()
+          .first<{
+            confirmation_json: string;
+            scope_json: string;
+            invoice_document_json: string | null;
+          }>()
       : snapshot;
   if (!row) return undefined;
   await assertPaymentScope(
     env,
     paymentScopeSchema.parse(JSON.parse(row.scope_json)),
   );
-  return receiptSchema.parse(JSON.parse(row.confirmation_json));
+  const receipt = receiptSchema.parse(JSON.parse(row.confirmation_json));
+  const scope = paymentScopeSchema.parse(JSON.parse(row.scope_json));
+  if (receipt.providerReferences) {
+    const number = await retainedInvoiceNumber(
+      env,
+      id,
+      scope.associationJson,
+      receipt.providerReferences.invoiceNumber,
+      row.invoice_document_json,
+    );
+    if (number) receipt.providerReferences.invoiceNumber = number;
+    else delete receipt.providerReferences.invoiceNumber;
+  }
+  return receipt;
 }
 
 // Time alone is not proof of non-payment.

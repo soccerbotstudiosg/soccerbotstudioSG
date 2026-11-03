@@ -136,7 +136,7 @@ For each change: identify the environment and setting, explain why it changes, r
 
 Owner supplied the change/cancellation contact on 2 November: **Glenna, +65 9014 3819**, [WhatsApp](https://wa.me/6590143819). A message is a request; the booking stays unchanged until the studio confirms it. Do not imply automatic cancellation, rescheduling or refund approval. The confirmation WhatsApp Enquiry action uses this contact; customer downloads are retired.
 
-Merged PR19 withholds invoice display. The unpublished owner-requested follow-up restores the optional provider number unchanged on confirmed cards for comparison against SimplyBook Pay; see Progress for delivery state. The validated API `number` field was observed with an O prefix during owner staging UAT; the owner screenshot shows an O-prefixed timed-out order and SI-prefixed paid invoices with separate sequences; the exact API-to-paid-document mapping is still unverified. Do not infer equivalence or rewrite a prefix. Optional metadata remains retained for compatibility; no accounting identifiers, provider configuration or financial proof change.
+Production PR21 displays the retained API number, which owner test10 showed as an O-prefixed order while SimplyBook later returned SI-2026000006/7 for the same invoice IDs. The owner reports the client email already had the correct number almost immediately. The local follow-up captures the unpaid number before accounting and enriches the paid document separately; see Progress for deployment state and API contracts for bounds. Prefixes are not configurable proof and must never be rewritten. Old records without a captured baseline omit the unverified number.
 
 ### Complete HTML drafts and editor setup
 
@@ -157,3 +157,5 @@ Suggested subjects: customer “Booking confirmed — [[SESSION_DATE]]”; admin
 ### 3 November 2026 — production calendar warming re-enabled
 
 Owner authorized restoration before the next trial. Cloudflare settings PATCH and independent GET verified `PUBLIC_DISPLAY_WARMING=enabled` on `soccerbot-production`, source `662bea3764bb7546a216f1f4f3790fbcb1e28a67`; all other 45 bindings were inherited, including eight secrets. Existing cron remains `* * * * *`; application admission limits calendar warming to approximately 15 minutes. `PUBLIC_TOKEN_REFRESH_AHEAD` remains disabled. This confirms configuration, not successful scheduled execution or deployment of the local cache repair. Source deployment may restore closed defaults: recheck warming after deploying the consolidated candidate and before owner trials.
+
+Special-contact enquiry check (3 November2026): deployed86e3cd5 uses the local preview adapter for `services.enquiry.submit`; no email is sent and no recipient binding is configured. contact@soccerbotsg.com is the published contact address, not a verified delivery destination for this form. Identity-email configuration does not activate enquiry delivery. No live email was sent during this check.

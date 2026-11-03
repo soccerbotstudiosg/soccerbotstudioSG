@@ -43,7 +43,7 @@ function PaymentContinuation({
   const seconds = Math.max(0, Math.ceil((expiresAtMs - now) / 1000));
   if (!seconds) return null;
   return (
-    <div>
+    <div className="payment-continuation">
       <p role="timer" aria-live="off">
         Time left to pay: {String(Math.floor(seconds / 60)).padStart(2, "0")}:
         {String(seconds % 60).padStart(2, "0")}
@@ -127,6 +127,11 @@ export function ProtectedConfirmation({
     revision: number;
   } | null>(null);
   const [receiptRead, setReceiptRead] = useState(0);
+  const [invoiceFinished, setInvoiceFinished] = useState<{
+    id: string;
+    revision: number;
+    read: number;
+  } | null>(null);
   const finishExpiry = useEffectEvent(() => {
     onExpired?.(attemptId);
     router.replace("/book/time/");
@@ -159,21 +164,88 @@ export function ProtectedConfirmation({
       active = false;
     };
   }, [wantsExpiry, attemptId, sessionRevision]);
+  const invoiceDeadline = contextMatches
+    ? context.value.checking.deadlineMs
+    : undefined;
+  const invoiceClock = contextMatches ? context.value.clock : undefined;
+  const hasSavedConfirmation = !!saved;
   useEffect(() => {
-    if (view !== "confirmed" || checkoutMode === "synthetic") return;
+    if (
+      (view !== "confirmed" && !hasSavedConfirmation) ||
+      checkoutMode === "synthetic" ||
+      (hasSavedConfirmation &&
+        (!invoiceDeadline || checkoutNow(invoiceClock) >= invoiceDeadline))
+    )
+      return;
     const controller = new AbortController();
     receiptWork.current = controller;
-    void readBookingReceipt(attemptId, controller.signal)
-      .then((value) => {
-        if (!controller.signal.aborted)
-          setReceipt({ value, revision: sessionRevision });
-      })
-      .catch(() => {
-        if (!controller.signal.aborted)
-          setReceiptFailure({ id: attemptId, revision: sessionRevision });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let reads = 0;
+    const finish = () =>
+      setInvoiceFinished({
+        id: attemptId,
+        revision: sessionRevision,
+        read: receiptRead,
       });
-    return () => controller.abort();
-  }, [attemptId, view, checkoutMode, sessionRevision, receiptRead]);
+    const deadlineTimer = invoiceDeadline
+      ? setTimeout(
+          () => {
+            controller.abort();
+            clearTimeout(timer);
+            finish();
+          },
+          Math.max(0, invoiceDeadline - checkoutNow(invoiceClock, true)),
+        )
+      : undefined;
+    // Optional invoice enrichment shares the server's original checking window.
+    // Six paced reads bound work even when a provider never issues a document.
+    const read = async () => {
+      const refresh = reads++ > 0;
+      try {
+        const value = await readBookingReceipt(
+          attemptId,
+          controller.signal,
+          refresh,
+        );
+        if (controller.signal.aborted) return;
+        setReceipt({ value, revision: sessionRevision });
+        if (value.booking.providerReferences?.invoiceNumber) {
+          clearTimeout(deadlineTimer);
+          finish();
+          return;
+        }
+      } catch {
+        if (controller.signal.aborted) return;
+        if (!refresh)
+          setReceiptFailure({ id: attemptId, revision: sessionRevision });
+      }
+      if (
+        reads < 6 &&
+        invoiceDeadline &&
+        checkoutNow(invoiceClock) + 10000 < invoiceDeadline
+      )
+        timer = setTimeout(() => void read(), 10000);
+      else {
+        clearTimeout(deadlineTimer);
+        finish();
+      }
+    };
+    void read();
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+      clearTimeout(deadlineTimer);
+    };
+  }, [
+    attemptId,
+    view,
+    checkoutMode,
+    sessionRevision,
+    receiptRead,
+    hasSavedConfirmation,
+    invoiceDeadline,
+    invoiceClock,
+  ]);
   const [expiredLink, setExpiredLink] = useState<string | null>(null);
   const [opened, setOpened] = useState<string | null>(null);
   const [preparation, setPreparation] = useState("loading");
@@ -240,20 +312,21 @@ export function ProtectedConfirmation({
     ? (customerConfirmation ??
       (contextMatches ? context.value.customerConfirmation : undefined))
     : undefined;
-  const displayedReceipt = saved
-    ? bookingFromReceipt(saved)
-    : view === "confirmed" &&
-        receipt?.value.attemptId === attemptId &&
-        receipt.revision === sessionRevision
+  const displayedReceipt =
+    (view === "confirmed" || saved) &&
+    receipt?.value.attemptId === attemptId &&
+    receipt.revision === sessionRevision
       ? receipt.value
-      : customerProof
-        ? bookingFromReceipt(customerProof)
-        : null;
+      : saved
+        ? bookingFromReceipt(saved)
+        : customerProof
+          ? bookingFromReceipt(customerProof)
+          : null;
   const receiptUnavailable =
     receiptFailure?.id === attemptId &&
     receiptFailure.revision === sessionRevision;
   const receiptMatches =
-    view === "confirmed" &&
+    (view === "confirmed" || !!saved) &&
     receipt?.value.attemptId === attemptId &&
     receipt.revision === sessionRevision;
   const confirmedCard =
@@ -271,10 +344,10 @@ export function ProtectedConfirmation({
             : current
               ? "summary"
               : undefined,
-    proofSource: saved
-      ? "saved"
-      : receiptMatches
-        ? "receipt"
+    proofSource: receiptMatches
+      ? "receipt"
+      : saved
+        ? "saved"
         : customerConfirmation
           ? "status_proof"
           : customerProof
@@ -283,19 +356,24 @@ export function ProtectedConfirmation({
               ? "confirmed_status"
               : "none",
     evidence:
-      saved ??
-      (receiptMatches
-        ? receipt.value
-        : (customerProof ??
-          (paymentReceived || view === "confirmed"
-            ? responseEvidence
-            : current))),
+      (receiptMatches ? receipt.value : saved) ??
+      customerProof ??
+      (paymentReceived || view === "confirmed" ? responseEvidence : current),
     receipt: receiptMatches ? receipt.value : undefined,
   });
   if (displayedReceipt && checkoutMode !== "synthetic") {
     return (
       <BookingConfirmation
         booking={displayedReceipt.booking}
+        invoicePending={
+          !!invoiceDeadline &&
+          checkoutNow(invoiceClock) < invoiceDeadline &&
+          !(
+            invoiceFinished?.id === attemptId &&
+            invoiceFinished.revision === sessionRevision &&
+            invoiceFinished.read === receiptRead
+          )
+        }
         verifiedAtMs={customerProof?.verifiedAtMs ?? saved?.verifiedAtMs}
         onAgain={async () => {
           if (onRestart) {

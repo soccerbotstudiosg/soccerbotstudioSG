@@ -1149,10 +1149,14 @@ it("shows payment received feedback with details while current booking evidence 
   );
 });
 
-it("revisiting a saved confirmation exposes no export actions or refresh requests", async () => {
+it("revisiting a saved confirmation enriches its invoice without replaying confirmation or export actions", async () => {
   const now = Date.now(),
     saved = receiptFixture(now - 120000);
-  const fetch = vi.fn((url: string) =>
+  let receiptReads = 0;
+  let finalAvailable = true;
+  const fetch = vi.fn<
+    (url: string, options?: RequestInit) => Promise<Response>
+  >((url) =>
     Promise.resolve(
       url.endsWith("/checkout")
         ? Response.json({
@@ -1173,12 +1177,46 @@ it("revisiting a saved confirmation exposes no export actions or refresh request
               pollAfterMs: 5000,
             },
           })
-        : new Response(null, { status: 409 }),
+        : url.endsWith("/receipt")
+          ? Response.json({
+              ...receiptFixture(),
+              providerReferences: {
+                bookingIds: ["701"],
+                invoiceId: "901",
+                ...(++receiptReads > 1 && finalAvailable
+                  ? { invoiceNumber: "FINAL-DOCUMENT-7" }
+                  : {}),
+              },
+            })
+          : new Response(null, { status: 409 }),
     ),
   );
   vi.stubGlobal("fetch", fetch);
-  render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
-  await screen.findByText(/Saved confirmation/);
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  const page = render(
+    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+  );
+  await act(async () => {});
+  expect(screen.getByText(/Saved confirmation/)).toBeInTheDocument();
+  expect(
+    screen.getByRole("status", { name: "Checking invoice number" }),
+  ).toBeInTheDocument();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10000);
+  });
+  expect(screen.getByText("FINAL-DOCUMENT-7")).toHaveClass(
+    "confirmation-invoice-value",
+  );
+  expect(
+    screen.queryByRole("status", { name: "Checking invoice number" }),
+  ).toBeNull();
+  expect(
+    new Headers(fetch.mock.calls.at(-1)?.[1]?.headers).get("X-Booking-Refresh"),
+  ).toBe("1");
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(60000);
+  });
+  expect(receiptReads).toBe(2);
   expect(
     screen.queryByRole("button", {
       name: /Add to calendar|Download booking details/,
@@ -1186,5 +1224,36 @@ it("revisiting a saved confirmation exposes no export actions or refresh request
   ).toBeNull();
   expect(fetch.mock.calls.map(([url]) => url.split("/").at(-1))).toEqual([
     "checkout",
+    "receipt",
+    "receipt",
   ]);
+  page.unmount();
+  finalAvailable = false;
+  receiptReads = 0;
+  const missing = render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      sessionRevision={2}
+    />,
+  );
+  await act(async () => {});
+  expect(
+    screen.getByRole("status", { name: "Checking invoice number" }),
+  ).toBeInTheDocument();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(60000);
+  });
+  expect(receiptReads).toBe(6);
+  expect(
+    screen.queryByRole("status", { name: "Checking invoice number" }),
+  ).toBeNull();
+  expect(
+    screen.getByRole("heading", { name: "Booking confirmed" }),
+  ).toBeInTheDocument();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(60000);
+  });
+  expect(receiptReads).toBe(6);
+  missing.unmount();
 });

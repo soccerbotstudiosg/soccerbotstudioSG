@@ -15,6 +15,7 @@ This file is the authority for repository engineering instructions; linked proce
 | [North Star](NORTH_STAR.md)                                           | Campaign operating procedure, bounded iteration budgets, evidence states and handover.                 |
 | [Progress](PROGRESS.md)                                               | Latest checkpoint and immediate remaining tasks only; historical evidence belongs in Journey.          |
 | [Architecture diagram](docs/architecture/diagram.md)                  | Component topology and connections.                                                                    |
+| [Database schema](docs/architecture/database-schema.md)               | Source-derived D1/DO table inventories, keys and physical versus application-managed relationships.    |
 | [Architecture decisions](docs/architecture/adr.md)                    | Stack rationale, tradeoffs, scaling triggers and alternative designs.                                  |
 | [Business rules](docs/business-rules.md)                              | Numbered system invariants and acceptance boundaries.                                                  |
 | [Domain operations and API contracts](docs/api-contracts.md)          | Named operations, source status, permissions, evidence and transport contracts.                        |

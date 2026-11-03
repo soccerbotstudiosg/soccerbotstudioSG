@@ -292,12 +292,10 @@ export function TimeStep() {
             </div>
           </>
         )}
-        {live && !calendarBusy && (
+        {live && !calendarBusy && !monthResult && (
           <div role="status" className="notice">
             <p>
-              {monthResult ? (
-                "Only dates with available sessions can be selected."
-              ) : calendar.failed.includes(month.slice(0, 7)) ? (
+              {calendar.failed.includes(month.slice(0, 7)) ? (
                 "Please refresh availability. Your selections are saved."
               ) : (
                 <BrandLoading overlay={false} compact label="Checking dates…" />
