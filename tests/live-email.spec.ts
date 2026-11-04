@@ -633,10 +633,10 @@ test("native guest journey preserves players contact and one checkout across ref
     await page.getByRole("button", { name: label, exact: true }).click();
     await page
       .getByRole("group", { name: "Session times" })
-      .getByRole("button", { name: /12:10–12:50/ })
+      .getByRole("button", { name: /12:00–12:40/ })
       .click();
     await page
-      .getByRole("combobox", { name: /Trainer for .* at 12:10/ })
+      .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
       .selectOption({ index: 1 });
     expect(
       calls.filter((c) => c.path.startsWith("/api/calendar/")),
@@ -1804,7 +1804,7 @@ test("real API lost successful hold response restores the existing reservation w
           slots: [
             {
               date,
-              start: "12:10",
+              start: "12:00",
               instructor: "14",
               native: {
                 serviceId: "2",
