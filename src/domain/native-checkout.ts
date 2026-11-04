@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isStudioSessionStart } from "./booking-policy";
 import { validDisplayDeadline } from "./catalog";
 import { providerReferencesSchema } from "./provider-references";
 // Initial sandbox checkout URL only; the server binds merchant and request ID.
@@ -186,21 +187,39 @@ export function nativeDisplaySlots(
   date: string,
   offers: z.infer<typeof nativeOfferSchema>[],
 ) {
-  return offers.map((offer) => ({
-    date,
-    start: new Date(offer.startMs + 28800000).toISOString().slice(11, 16),
-    instructor: offer.instructorId,
-    available: true,
-    native: {
-      serviceId: offer.serviceId,
-      ...(offer.productServiceId
-        ? { productServiceId: offer.productServiceId }
-        : {}),
-      serviceName: offer.serviceName,
-      instructorName: offer.instructorName,
-      priceMinor: offer.priceMinor,
-      currency: offer.currency,
-    },
-  }));
+  return offers
+    .filter((offer) => isStudioSessionStart(offer.startMs))
+    .map((offer) => ({
+      date,
+      start: new Date(offer.startMs + 28800000).toISOString().slice(11, 16),
+      instructor: offer.instructorId,
+      available: true,
+      native: {
+        serviceId: offer.serviceId,
+        ...(offer.productServiceId
+          ? { productServiceId: offer.productServiceId }
+          : {}),
+        serviceName: offer.serviceName,
+        instructorName: offer.instructorName,
+        priceMinor: offer.priceMinor,
+        currency: offer.currency,
+      },
+    }));
 }
 export const BROWSER_CALENDAR_MAX_AGE_MS = 5 * 60_000;
+
+/** Remove off-grid calendar offers without extending their original freshness. */
+export function studioDisplayCalendar(
+  value: z.infer<typeof publicCalendarSchema>,
+) {
+  return {
+    ...value,
+    dates: value.dates.map((day) => {
+      if (!day.offers) return day;
+      const offers = day.offers.filter((offer) =>
+        isStudioSessionStart(offer.startMs),
+      );
+      return { ...day, offers, available: day.available && offers.length > 0 };
+    }),
+  };
+}

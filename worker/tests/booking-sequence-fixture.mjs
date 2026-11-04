@@ -92,7 +92,11 @@ export async function createBookingSequence(sizes, options = {}) {
         }
         return Response.json(j.invoice);
       }
-      if (body?.method === "getStartTimeMatrix") {
+      if (
+        ["getStartTimeMatrix", "getAvailableTimeIntervals"].includes(
+          body?.method,
+        )
+      ) {
         const matrix = {};
         for (
           let d = new Date(body.params[0] + "T00:00:00Z");
@@ -106,7 +110,23 @@ export async function createBookingSequence(sizes, options = {}) {
               .map((s) => wall(s.startMs).slice(11)),
           );
         }
-        return rpc(matrix);
+        return rpc(
+          body.method === "getAvailableTimeIntervals"
+            ? Object.fromEntries(
+                Object.entries(matrix).map(([date, starts]) => [
+                  date,
+                  {
+                    [String(body.params[3])]: starts.map((start) => [
+                      start,
+                      new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                        .toISOString()
+                        .slice(11, 19),
+                    ]),
+                  },
+                ]),
+              )
+            : matrix,
+        );
       }
       if (body?.method === "getAvailableUnits")
         return rpc(

@@ -956,7 +956,14 @@ test("cached calendar offers obey opening hours and the four-hour cutoff without
               {
                 date: "2027-01-05",
                 available: true,
-                offers: ["11:59", "12:00", "19:20", "19:21"].map((time) => ({
+                offers: [
+                  "11:59",
+                  "12:00",
+                  "14:40",
+                  "18:40",
+                  "19:20",
+                  "19:21",
+                ].map((time) => ({
                   serviceId: "12",
                   serviceName: "Synthetic session",
                   instructorId: "2",
@@ -996,9 +1003,9 @@ test("cached calendar offers obey opening hours and the four-hour cutoff without
   }
   const view = render(<Probe now={initial} />);
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
-  expect(screen.getByTestId("eligible")).toHaveTextContent("12:00,19:20");
+  expect(screen.getByTestId("eligible")).toHaveTextContent("12:00,18:40");
   view.rerender(<Probe now={initial + 1} />);
-  expect(screen.getByTestId("eligible")).toHaveTextContent(/^19:20$/);
+  expect(screen.getByTestId("eligible")).toHaveTextContent(/^18:40$/);
   expect(publicCalendar).toHaveBeenCalledTimes(1);
 });
 

@@ -29,7 +29,7 @@ export async function createBookingMechanism(options = {}) {
   const day = new Date(Date.now() + 3 * 86400000);
   while (day.getUTCDay() !== 3) day.setUTCDate(day.getUTCDate() + 1);
   const date = day.toISOString().slice(0, 10);
-  const startMs = Date.parse(date + "T12:10:00+08:00");
+  const startMs = Date.parse(date + "T12:00:00+08:00");
   const fixtures = JSON.parse(
     readFileSync("worker/tests/native-fixtures.json", "utf8"),
   ).responses;
@@ -324,7 +324,11 @@ export async function createBookingMechanism(options = {}) {
           if (url.pathname === "/admin/invoices/901")
             return Response.json(invoice);
           const matrix = {};
-          if (body?.method === "getStartTimeMatrix")
+          if (
+            ["getStartTimeMatrix", "getAvailableTimeIntervals"].includes(
+              body?.method,
+            )
+          )
             for (
               let cursor = new Date(body.params[0] + "T00:00:00Z");
               cursor.toISOString().slice(0, 10) <= body.params[1];
@@ -338,7 +342,7 @@ export async function createBookingMechanism(options = {}) {
                         wall(startMs + i * 3000000).slice(11),
                       ).slice(batchBooks)
                     : !booked
-                      ? ["12:10:00"]
+                      ? ["12:00:00"]
                       : []
                   : [];
             }
@@ -391,6 +395,19 @@ export async function createBookingMechanism(options = {}) {
                 ? []
                 : trainerIds,
             getStartTimeMatrix: matrix,
+            getAvailableTimeIntervals: Object.fromEntries(
+              Object.entries(matrix).map(([date, starts]) => [
+                date,
+                {
+                  [String(body.params[3])]: starts.map((start) => [
+                    start,
+                    new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                      .toISOString()
+                      .slice(11, 19),
+                  ]),
+                },
+              ]),
+            ),
             book: creation,
             getBookingDetails:
               bookingDetails.find(

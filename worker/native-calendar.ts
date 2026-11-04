@@ -8,6 +8,7 @@ import {
 import type { ProviderCatalogue } from "../src/domain/catalog";
 import type { NativeExchange } from "./provider-transport";
 import { ApiError } from "./policy";
+import { studioStartsFromIntervals } from "./native-grid";
 import { offeredStarts } from "./prebooking";
 import { freshReceipt } from "./catalogue";
 import { parallelReads } from "./parallel-reads";
@@ -73,6 +74,7 @@ export class NativeCalendarReads {
     serviceId: string;
     dates: string[];
     cacheOnly?: boolean;
+    studioGrid?: boolean;
     parallelReads?: boolean;
     catalogue: () => Promise<ProviderCatalogue>;
     exchange: NativeExchange;
@@ -83,6 +85,7 @@ export class NativeCalendarReads {
       input.serviceId,
       input.month,
       dates,
+      input.studioGrid === true,
     ]);
     let entry = this.entries.get(key);
     if (
@@ -135,6 +138,7 @@ export class NativeCalendarReads {
         ranges.map((range) => async () => {
           const response = await input.exchange({
             kind: "availability-range",
+            ...(input.studioGrid ? { intervals: true } : {}),
             serviceId: service.id,
             instructorId: instructor.id,
             from: range.from,
@@ -150,7 +154,13 @@ export class NativeCalendarReads {
             if (!(date in matrix))
               throw new ApiError(503, "calendar_date_unknown");
             const day = offers.get(date)!;
-            for (const time of offeredStarts({ [date]: matrix[date] }, date)) {
+            for (const time of input.studioGrid
+              ? studioStartsFromIntervals(
+                  { [date]: matrix[date] },
+                  date,
+                  instructor.id,
+                )
+              : offeredStarts({ [date]: matrix[date] }, date)) {
               if (
                 day.length >= MAX_DAILY_NATIVE_OFFERS ||
                 offerCount >= MAX_CALENDAR_NATIVE_OFFERS

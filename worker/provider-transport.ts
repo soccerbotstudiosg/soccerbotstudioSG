@@ -170,6 +170,7 @@ export type NativeRequest =
     }
   | {
       kind: "availability-range";
+      intervals?: boolean;
       serviceId: string;
       instructorId: string;
       from: string;
@@ -188,6 +189,7 @@ export type NativeRequest =
   | { kind: "required-fields"; serviceId: string }
   | {
       kind: "availability";
+      intervals?: boolean;
       serviceId: string;
       instructorId: string;
       date: string;
@@ -437,7 +439,9 @@ export async function providerRequest(
         rpcMethod =
           native.kind === "working-hours"
             ? "getWorkDaysInfo"
-            : "getStartTimeMatrix";
+            : native.intervals
+              ? "getAvailableTimeIntervals"
+              : "getStartTimeMatrix";
         const service =
           native.serviceId === null
             ? null
@@ -495,7 +499,9 @@ export async function providerRequest(
           if (!/^\d{4}-\d{2}-\d{2}$/.test(native.date))
             throw new ApiError(503, "provider_date_invalid");
           if (native.kind === "availability") {
-            rpcMethod = "getStartTimeMatrix";
+            rpcMethod = native.intervals
+              ? "getAvailableTimeIntervals"
+              : "getStartTimeMatrix";
             params = [native.date, native.date, service, provider, 1];
           } else {
             if (!/^([01]\d|2[0-3]):[0-5]\d:00$/.test(native.time))

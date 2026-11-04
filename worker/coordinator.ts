@@ -26,7 +26,7 @@ import { expireCheckout } from "./checkout-progress";
 import { dismissCompletedCheckout } from "./completed-checkout";
 import {
   BOOKING_LEAD_MS,
-  withinOpeningHours,
+  isStudioSessionStart,
 } from "../src/domain/booking-policy";
 import { ProviderQueue } from "./provider-queue";
 import { payHitpayHold } from "./hitpay-hold";
@@ -807,7 +807,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         .map((day) => {
           const offers = day.offers?.filter(
             (offer) =>
-              withinOpeningHours(offer.startMs) &&
+              isStudioSessionStart(offer.startMs) &&
               offer.startMs - now >= BOOKING_LEAD_MS,
           );
           return {
@@ -846,7 +846,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           if (result.success && result.data.state === "selection_unavailable") {
             const rejected =
               intent.sessions[result.data.rejectedSessionIndex ?? 0];
-            if (rejected) this.snapshots().excludeSessions([rejected], false);
+            if (rejected) return [rejected];
           }
           return [];
         }

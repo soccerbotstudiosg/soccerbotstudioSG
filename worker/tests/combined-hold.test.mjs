@@ -107,7 +107,7 @@ test("combined hold performs one preflight and preserves immutable identity acro
       "getUnitList",
       "getAdditionalFields",
       "getAvailableUnits",
-      "getStartTimeMatrix",
+      "getAvailableTimeIntervals",
       "book",
       "getBookingDetails",
     ])
@@ -133,7 +133,7 @@ test("combined hold performs one preflight and preserves immutable identity acro
       m.calls
         .slice(creation + 1)
         .some((call) =>
-          ["getStartTimeMatrix", "getAvailableUnits"].includes(
+          ["getAvailableTimeIntervals", "getAvailableUnits"].includes(
             call.body?.method,
           ),
         ),
@@ -211,8 +211,9 @@ test("combined hold rejects changed price and unavailable selection before creat
       error: "checkout_window_unresolved",
     });
     assert.equal(
-      m.calls.filter((call) => call.body?.method === "getStartTimeMatrix")
-        .length,
+      m.calls.filter(
+        (call) => call.body?.method === "getAvailableTimeIntervals",
+      ).length,
       1,
     );
     assert.equal(
@@ -241,7 +242,7 @@ test("combined hold rejects changed price and unavailable selection before creat
     assert.equal(response.status, 200, await response.clone().text());
     assert.equal((await response.json()).state, "selection_unavailable");
     const rangeReads = m.calls.filter(
-      (call) => call.body?.method === "getStartTimeMatrix",
+      (call) => call.body?.method === "getAvailableTimeIntervals",
     ).length;
     const after = await (await m.mf.dispatchFetch(calendarUrl)).json();
     assert.ok(
@@ -254,8 +255,9 @@ test("combined hold rejects changed price and unavailable selection before creat
         ),
     );
     assert.equal(
-      m.calls.filter((call) => call.body?.method === "getStartTimeMatrix")
-        .length,
+      m.calls.filter(
+        (call) => call.body?.method === "getAvailableTimeIntervals",
+      ).length,
       rangeReads,
       "rejected selection edits the shared cache without rebuilding the month",
     );
@@ -331,7 +333,10 @@ test("combined hold rechecks revocation at the write boundary and preserves crea
     let m;
     m = await createBookingMechanism({
       respond: async (call) => {
-        if (fault === "revoke" && call.body?.method === "getStartTimeMatrix")
+        if (
+          fault === "revoke" &&
+          call.body?.method === "getAvailableTimeIntervals"
+        )
           await m.db
             .prepare("UPDATE guest_access SET revoked_ms=?")
             .bind(Date.now())
@@ -840,7 +845,8 @@ test(
           await fields.promise;
           fieldsPending = false;
         }
-        if (call.body?.method === "getStartTimeMatrix") slotEntered.resolve();
+        if (call.body?.method === "getAvailableTimeIntervals")
+          slotEntered.resolve();
         if (call.body?.method === "book") assert.equal(fieldsPending, false);
       },
     });
@@ -884,7 +890,8 @@ test(
     const m = await createBookingMechanism({
       respond: async (call) => {
         if (call.body?.method === "getAdditionalFields") await fields.promise;
-        if (call.body?.method === "getStartTimeMatrix") slotEntered.resolve();
+        if (call.body?.method === "getAvailableTimeIntervals")
+          slotEntered.resolve();
       },
     });
     let pending;
@@ -1314,7 +1321,7 @@ test("scheduled display warming survives idle entry and booking refresh never de
     assert.equal(response.status, 200);
     assert.equal((await response.json()).paymentAvailable, true);
     const readsAfterCheckout = m.calls.filter(
-      (call) => call.body?.method === "getStartTimeMatrix",
+      (call) => call.body?.method === "getAvailableTimeIntervals",
     ).length;
     const context = await m.mf.dispatchFetch(
       m.origin + `/api/attempts/${c.input.key}/checkout`,
@@ -1348,8 +1355,9 @@ test("scheduled display warming survives idle entry and booking refresh never de
       false,
     );
     assert.equal(
-      m.calls.filter((call) => call.body?.method === "getStartTimeMatrix")
-        .length,
+      m.calls.filter(
+        (call) => call.body?.method === "getAvailableTimeIntervals",
+      ).length,
       readsAfterCheckout,
       "another calendar visit serves the edited snapshot without rebuilding the month",
     );
@@ -1365,7 +1373,7 @@ test("failed scheduled display refresh retains a bounded snapshot without renewi
   const m = await createBookingMechanism({
     displayWarming: true,
     respond: async (call) => {
-      if (fail && call.body?.method === "getStartTimeMatrix")
+      if (fail && call.body?.method === "getAvailableTimeIntervals")
         return new Response("synthetic unavailable", { status: 503 });
     },
   });
@@ -3178,7 +3186,8 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
     assert.equal(
       m.calls
         .slice(before)
-        .filter((call) => call.body?.method === "getStartTimeMatrix").length,
+        .filter((call) => call.body?.method === "getAvailableTimeIntervals")
+        .length,
       1,
     );
     assert.equal(
@@ -3195,13 +3204,17 @@ test("rejected unbound window checks fresh availability and preserves failed or 
     let inspect = false;
     const m = await createBookingMechanism({
       respond: async (call) => {
-        if (!inspect || call.body?.method !== "getStartTimeMatrix") return;
+        if (!inspect || call.body?.method !== "getAvailableTimeIntervals")
+          return;
         if (outcome === "failed") return new Response(null, { status: 503 });
         return Response.json({
           jsonrpc: "2.0",
           id: call.body.id,
           result: {
-            [call.body.params[0]]: outcome === "occupied" ? [] : ["12:10:00"],
+            [call.body.params[0]]: {
+              [String(call.body.params[3])]:
+                outcome === "occupied" ? [] : [["12:00:00", "12:50:00"]],
+            },
           },
         });
       },
@@ -3259,7 +3272,8 @@ test("rejected unbound window checks fresh availability and preserves failed or 
       assert.equal(
         m.calls
           .slice(before)
-          .filter((call) => call.body?.method === "getStartTimeMatrix").length,
+          .filter((call) => call.body?.method === "getAvailableTimeIntervals")
+          .length,
         1,
       );
       assert.equal(
@@ -3299,11 +3313,17 @@ test("409 preparation readback distinguishes unavailable selection from unresolv
   for (const occupied of [false, true]) {
     const m = await createBookingMechanism({
       respond: async (call) => {
-        if (call.body?.method !== "getStartTimeMatrix") return;
+        if (call.body?.method !== "getAvailableTimeIntervals") return;
         return Response.json({
           jsonrpc: "2.0",
           id: call.body.id,
-          result: { [call.body.params[0]]: occupied ? [] : ["12:10:00"] },
+          result: {
+            [call.body.params[0]]: {
+              [String(call.body.params[3])]: occupied
+                ? []
+                : [["12:00:00", "12:50:00"]],
+            },
+          },
         });
       },
     });
@@ -3382,7 +3402,7 @@ test("automatic recovery completion publishes a receipt before dismissal and rep
   const m = await createBookingMechanism({
     observationMaxAgeMs: 1000,
     respond: async (call) => {
-      if (blockDisplay && call.body?.method === "getStartTimeMatrix") {
+      if (blockDisplay && call.body?.method === "getAvailableTimeIntervals") {
         displayStarted.resolve();
         await releaseDisplay.promise;
       }
@@ -3725,7 +3745,7 @@ async function consecutiveJourneys(sizes) {
       200,
     );
     const originalRangeReads = m.calls.filter(
-      (call) => call.body?.method === "getStartTimeMatrix",
+      (call) => call.body?.method === "getAvailableTimeIntervals",
     ).length;
     for (const [index, journey] of m.journeys.entries()) {
       completed = Promise.withResolvers();
@@ -3823,8 +3843,9 @@ async function consecutiveJourneys(sizes) {
           ),
       );
       assert.equal(
-        m.calls.filter((call) => call.body?.method === "getStartTimeMatrix")
-          .length,
+        m.calls.filter(
+          (call) => call.body?.method === "getAvailableTimeIntervals",
+        ).length,
         originalRangeReads,
         "back-to-back confirmation uses shared snapshot without provider month rebuild",
       );

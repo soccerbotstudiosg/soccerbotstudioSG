@@ -170,7 +170,7 @@ test("confirmation places three retained actions above a compact summary and dis
     screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent),
-  ).toEqual(["Client Details", "Location", "Disclaimers"]);
+  ).toEqual(["Your sessions", "Client Details", "Location", "Disclaimers"]);
   expect(disclosure).toHaveAttribute("open");
   expect(screen.getAllByText("Demo Customer", { exact: true })).toHaveLength(1);
   expect(screen.getAllByText("Studio 1", { exact: true })).toHaveLength(1);

@@ -3,9 +3,10 @@ import {
   customerCatalogueSchema,
   DISPLAY_SNAPSHOT_MAX_AGE_MS,
 } from "../src/domain/catalog";
-import { SESSION_MINUTES } from "../src/domain/booking-policy";
+import { START_INTERVAL_MINUTES } from "../src/domain/booking-policy";
 import {
   publicCalendarSchema,
+  studioDisplayCalendar,
   nativeAvailabilitySchema,
 } from "../src/domain/native-checkout";
 
@@ -58,8 +59,23 @@ export class DisplaySnapshots {
     if (!row) return;
     try {
       const result = schemas[kind].safeParse(JSON.parse(row.payload));
-      if (result.success && result.data.observedAtMs <= Date.now())
+      if (result.success && result.data.observedAtMs <= Date.now()) {
+        if (kind === "calendar") {
+          const clean = studioDisplayCalendar(
+            publicCalendarSchema.parse(result.data),
+          );
+          // Repair retained legacy snapshots without renewing their deadline.
+          if (JSON.stringify(clean) !== JSON.stringify(result.data))
+            this.sql.exec(
+              "UPDATE display_snapshots SET payload=? WHERE scope=? AND key=?",
+              JSON.stringify(clean),
+              this.scope,
+              key,
+            );
+          return clean;
+        }
         return result.data;
+      }
     } catch {
       /* Corrupt display data is a cache miss, never write authority. */
     }
@@ -72,7 +88,10 @@ export class DisplaySnapshots {
     generation: number,
   ) {
     if (generation !== this.generation()) return;
-    const parsed = schemas[kind].parse(value);
+    const parsed =
+      kind === "calendar"
+        ? studioDisplayCalendar(publicCalendarSchema.parse(value))
+        : schemas[kind].parse(value);
     if (parsed.observedAtMs > Date.now()) return;
     const expires = parsed.observedAtMs + DISPLAY_SNAPSHOT_MAX_AGE_MS;
     if (expires <= Date.now()) return;
@@ -93,7 +112,6 @@ export class DisplaySnapshots {
   /** Remove occupied studio times without expiring unrelated display data. */
   excludeSessions(
     sessions: { startMs: number; instructorId?: string; serviceId?: string }[],
-    sharedStudio = true,
   ) {
     if (!sessions.length) return;
     this.sql.exec(
@@ -116,10 +134,7 @@ export class DisplaySnapshots {
             !sessions.some(
               (session) =>
                 Math.abs(offer.startMs - session.startMs) <
-                  SESSION_MINUTES * 60000 &&
-                (sharedStudio ||
-                  (offer.instructorId === session.instructorId &&
-                    offer.serviceId === session.serviceId)),
+                START_INTERVAL_MINUTES * 60000,
             ),
         );
         return { ...day, offers, available: offers.length > 0 };

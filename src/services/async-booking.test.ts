@@ -268,7 +268,7 @@ test("native availability carries provider identities labels and reviewed prices
           serviceName: "Current Native Session",
           instructorId: "33",
           instructorName: "Current Native Instructor",
-          startMs: Date.parse("2026-10-15T08:10:00+08:00"),
+          startMs: Date.parse("2026-10-15T12:00:00+08:00"),
           priceMinor: 9900,
           currency: "SGD",
         },
@@ -283,7 +283,7 @@ test("native availability carries provider identities labels and reviewed prices
   expect(result).toEqual([
     {
       date: "2026-10-15",
-      start: "08:10",
+      start: "12:00",
       instructor: "33",
       available: true,
       native: {

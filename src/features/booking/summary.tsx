@@ -1,6 +1,7 @@
 "use client";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
 import { PRICE_CENTS, SERVICE_NAME } from "@/domain/demo-catalog";
 import {
@@ -20,6 +21,33 @@ import { dateLabel, endTime, money } from "@/domain/dates";
 import { bookingCover } from "@/content/media";
 import { InstructorProfile } from "./instructor";
 import { useBooking } from "./provider";
+/** Present the same session heading and service description across booking summaries. */
+export function SessionSummaryHeading({
+  draft,
+  action,
+}: {
+  draft: Pick<BookingDraft, "slots" | "players" | "nativeServiceId">;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="session-summary-heading">
+      <div className="review-head">
+        <h2>Your sessions</h2>
+        {action}
+      </div>
+      <p>
+        <strong>
+          {draft.slots[0]?.native?.serviceName ??
+            (draft.nativeServiceId ? "Your session" : SERVICE_NAME)}
+        </strong>
+        <br />
+        {draft.players} {draft.players === 1 ? "player" : "players"} per session
+        · Full instructor guidance
+      </p>
+    </div>
+  );
+}
+
 /** Render selected sessions with their dates, times and instructors. */
 export function SessionList({
   slots,
@@ -141,14 +169,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
           </span>
         </div>
         <div className="summary-body">
-          <h2>
-            {draft.slots[0]?.native?.serviceName ??
-              (draft.nativeServiceId ? "Your session" : SERVICE_NAME)}
-          </h2>
-          <p className="subline">
-            {draft.players} {draft.players === 1 ? "player" : "players"} ·
-            Instructor included
-          </p>
+          <SessionSummaryHeading draft={draft} />
           {draft.slots.length ? (
             <>
               {basket && (

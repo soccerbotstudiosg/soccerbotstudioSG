@@ -7,10 +7,9 @@ import { Icon } from "@/components/icon";
 import { Dialog } from "@/components/dialog";
 import { selectionErrors } from "@/domain/booking";
 import { CONTACT_METHODS } from "@/domain/catalog";
-import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { normalizeContact, type ContactDetails } from "@/domain/contact";
 import { useBooking } from "./provider";
-import { PriceSummary, SessionList } from "./summary";
+import { PriceSummary, SessionList, SessionSummaryHeading } from "./summary";
 /** Render the customer's contact details for booking review. */
 export function ClientDetails({ contact }: { contact: ContactDetails }) {
   const c = normalizeContact(contact);
@@ -83,23 +82,16 @@ export function ReviewStep({
       <p className="lead">Check your details before payment.</p>
       <section className="surface booking-document">
         <div className="review-block">
-          <div className="review-head">
-            <h2>Your sessions</h2>
-            {!locked && (
-              <Link className="text-link" href="/book/session/">
-                Edit players
-              </Link>
-            )}
-          </div>
-          <p>
-            <strong>
-              {draft.slots[0]?.native?.serviceName ??
-                (draft.nativeServiceId ? "Your session" : SERVICE_NAME)}
-            </strong>
-            <br />
-            {draft.players} {draft.players === 1 ? "player" : "players"} per
-            session · Full instructor guidance
-          </p>
+          <SessionSummaryHeading
+            draft={draft}
+            action={
+              !locked && (
+                <Link className="text-link" href="/book/session/">
+                  Edit players
+                </Link>
+              )
+            }
+          />
         </div>
         <div className="review-block">
           <div className="review-head">
