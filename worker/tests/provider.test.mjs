@@ -1,3 +1,4 @@
+import { isHitPayApiCall } from "./provider-url-fixture.mjs";
 import { initializeFixture } from "./foundation-fixture.mjs";
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -4342,9 +4343,7 @@ test("held checkout crosses authenticated HTTP routes and durable coordination w
     assert.ok(bookingIndex >= 0);
     assert.equal(f.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
-      f.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      f.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
     assert.equal(

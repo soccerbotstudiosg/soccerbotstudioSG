@@ -1,3 +1,4 @@
+import { isHitPayApiCall } from "./provider-url-fixture.mjs";
 import { setTimeout as waitForClockBoundary } from "node:timers/promises";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -121,7 +122,7 @@ test("combined hold performs one preflight and preserves immutable identity acro
       1,
     );
     assert.equal(
-      m.calls.some((call) => call.url.includes("hit-pay.com")),
+      m.calls.some((call) => isHitPayApiCall(call)),
       false,
     );
     assert.match(
@@ -615,10 +616,7 @@ test("single hold exposes creation progress while independent readbacks are pend
       m.calls.filter((call) => call.body?.method === "book").length,
       1,
     );
-    assert.equal(
-      m.calls.filter((call) => call.url.includes("hit-pay.com")).length,
-      0,
-    );
+    assert.equal(m.calls.filter((call) => isHitPayApiCall(call)).length, 0);
   } finally {
     releaseBook();
     releaseComment();
@@ -819,7 +817,7 @@ test("single hold progress requires validated retained creation before comments 
       }
     }
     assert.equal(
-      m.calls.some((call) => call.url.includes("hit-pay.com")),
+      m.calls.some((call) => isHitPayApiCall(call)),
       false,
     );
     assert.equal(
@@ -1040,18 +1038,14 @@ test("checkout reuses complete creation evidence for one HitPay request without 
       0,
     );
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
     const repeat = await send(true);
     assert.equal(repeat.status, 200);
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
     assert.deepEqual(m.unexpected, []);
@@ -1084,16 +1078,10 @@ test("combined checkout never creates HitPay after failed booking verification a
       paymentAvailable: false,
     });
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
-    assert.equal(
-      m.calls.filter((c) => c.url.includes("hit-pay.com")).length,
-      0,
-    );
+    assert.equal(m.calls.filter((c) => isHitPayApiCall(c)).length, 0);
     await send();
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
-    assert.equal(
-      m.calls.filter((c) => c.url.includes("hit-pay.com")).length,
-      0,
-    );
+    assert.equal(m.calls.filter((c) => isHitPayApiCall(c)).length, 0);
     assert.equal(
       (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
       1,
@@ -1167,16 +1155,14 @@ test("combined batch checkout retains one payment effect and exact booking assoc
       accessDeadline,
     );
     assert.equal(
-      m.calls.find((c) => c.url.includes("hit-pay.com") && c.method === "POST")
-        .body.expires_after,
+      m.calls.find((c) => isHitPayApiCall(c) && c.method === "POST").body
+        .expires_after,
       "7 mins",
     );
     await send();
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 2);
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
     assert.deepEqual(m.unexpected, []);
@@ -1272,9 +1258,7 @@ test("batch closure fallback and failed hold persistence preserve one original a
         1,
       );
       assert.equal(
-        m.calls.filter(
-          (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-        ).length,
+        m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
         failure === "missing-deadline" ? 1 : 0,
       );
       assert.deepEqual(m.unexpected, []);
@@ -1489,9 +1473,8 @@ test("checkout returns its durable URL while comments are blocked and annotation
       1,
     );
     assert.ok(
-      m.calls.findIndex(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ) < m.calls.findIndex((c) => c.url.endsWith("/comment")),
+      m.calls.findIndex((c) => isHitPayApiCall(c) && c.method === "POST") <
+        m.calls.findIndex((c) => c.url.endsWith("/comment")),
     );
     gate.resolve();
     await recovering;
@@ -1501,9 +1484,7 @@ test("checkout returns its durable URL while comments are blocked and annotation
     assert.equal(m.calls.filter((c) => c.url.endsWith("/comment")).length, 1);
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
     assert.equal(
@@ -1528,7 +1509,7 @@ test("checkout never exposes a HitPay URL when its durable save loses the creati
   let m;
   m = await createBookingMechanism({
     respond: async (call) => {
-      if (call.url.includes("hit-pay.com") && call.method === "POST")
+      if (isHitPayApiCall(call) && call.method === "POST")
         await m.db
           .prepare("UPDATE hitpay_payments SET generation=generation+1")
           .run();
@@ -1559,9 +1540,7 @@ test("checkout never exposes a HitPay URL when its durable save loses the creati
     await send();
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
   } finally {
@@ -1866,9 +1845,7 @@ test("failed identity warming proves checkout never started and permits a fresh 
     await send(next);
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
   } finally {
@@ -1884,7 +1861,7 @@ test("direct single checkout uses only public authentication and creation before
     const m = await createBookingMechanism({
       onLog: (message) => logs.push(message),
       respond: async (call) => {
-        if (call.url.includes("hit-pay.com") && call.method === "POST")
+        if (isHitPayApiCall(call) && call.method === "POST")
           beforePayment.push(...m.calls.slice(before));
         return undefined;
       },
@@ -2045,9 +2022,7 @@ test("direct single checkout uses only public authentication and creation before
       );
       assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
       assert.equal(
-        m.calls.filter(
-          (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-        ).length,
+        m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
         1,
       );
     } finally {
@@ -2059,7 +2034,7 @@ test("direct single checkout uses only public authentication and creation before
 test("direct single completion retains payment but denies handoff after access revocation", async () => {
   const m = await createBookingMechanism({
     respond: async (call) => {
-      if (call.url.includes("hit-pay.com") && call.method === "POST")
+      if (isHitPayApiCall(call) && call.method === "POST")
         await m.db
           .prepare("UPDATE guest_access SET revoked_ms=?")
           .bind(Date.now())
@@ -2088,9 +2063,7 @@ test("direct single completion retains payment but denies handoff after access r
     assert.equal(payment.checkout_url, m.checkoutUrl);
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
   } finally {
@@ -2108,7 +2081,7 @@ test("checkout failure timing survives token booking and payment failures withou
           (fault === "token" && call.body?.method === "getToken") ||
           (fault === "booking" && call.body?.method === "book") ||
           (fault === "payment" &&
-            call.url.includes("hit-pay.com") &&
+            isHitPayApiCall(call) &&
             call.method === "POST")
         )
           return new Response(null, { status: 503 });
@@ -2173,7 +2146,7 @@ test("direct batch checkout uses creation responses for two four and eight sessi
       batchSize: count,
       onLog: (message) => logs.push(message),
       respond: async (call) => {
-        if (call.url.includes("hit-pay.com") && call.method === "POST")
+        if (isHitPayApiCall(call) && call.method === "POST")
           creationCalls = m.calls.slice(before);
         return undefined;
       },
@@ -2292,7 +2265,7 @@ test("direct batch checkout uses creation responses for two four and eight sessi
       );
       assert.equal(
         m.calls.filter(
-          (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+          (call) => isHitPayApiCall(call) && call.method === "POST",
         ).length,
         1,
       );
@@ -2382,8 +2355,7 @@ test("direct batch rejection lost response and invalid invoice retain original e
         assert.equal(dispatched, count);
         assert.equal(
           m.calls.filter(
-            (call) =>
-              call.url.includes("hit-pay.com") && call.method === "POST",
+            (call) => isHitPayApiCall(call) && call.method === "POST",
           ).length,
           0,
         );
@@ -2468,7 +2440,7 @@ test("consolidated single checkout guards failed transactions and retained refer
         fault,
       );
       const payments = m.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+        (call) => isHitPayApiCall(call) && call.method === "POST",
       ).length;
       assert.equal(payments, fault === "payment-save" ? 1 : 0, fault);
       const attempt = await m.db
@@ -2522,7 +2494,7 @@ test("consolidated single checkout guards failed transactions and retained refer
       );
       assert.equal(
         m.calls.filter(
-          (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+          (call) => isHitPayApiCall(call) && call.method === "POST",
         ).length,
         payments,
         fault,
@@ -2608,9 +2580,8 @@ test("protected confirmation traces correlate context status and denied receipt 
       1,
     );
     assert.equal(
-      m.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
-      ).length,
+      m.calls.filter((call) => isHitPayApiCall(call) && call.method === "POST")
+        .length,
       1,
     );
     assert.deepEqual(m.unexpected, []);
@@ -2685,9 +2656,8 @@ test("confirmation snapshots reduce reads and observe manual review after poll a
       1,
     );
     assert.equal(
-      m.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
-      ).length,
+      m.calls.filter((call) => isHitPayApiCall(call) && call.method === "POST")
+        .length,
       1,
     );
     assert.equal(
@@ -2740,9 +2710,7 @@ test("batch transport claims recheck revocation at each creation boundary withou
         count,
       );
       assert.equal(
-        m.calls.filter(
-          (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-        ).length,
+        m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
         0,
       );
       assert.equal((await send()).status, 401);
@@ -2841,9 +2809,7 @@ test("single and batch recovery retain verified evidence with bounded read overl
         count,
       );
       assert.equal(
-        m.calls.filter(
-          (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-        ).length,
+        m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
         1,
       );
       assert.deepEqual(m.unexpected, []);
@@ -2899,9 +2865,8 @@ test("deferred single and batch checkout reject failed foundation and conditiona
           fault,
         );
         assert.equal(
-          m.calls.filter(
-            (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-          ).length,
+          m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST")
+            .length,
           0,
           fault,
         );
@@ -2974,9 +2939,7 @@ test("five-call single checkout retains malformed response evidence and blocks p
         fault,
       );
       assert.equal(
-        m.calls.filter(
-          (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-        ).length,
+        m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
         0,
         fault,
       );
@@ -3007,9 +2970,7 @@ test("five-call fresh snapshots cannot duplicate checkout across overlapping req
     assert.ok(bodies.some((r) => r.paymentAvailable === true));
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
     assert.equal(
@@ -3075,10 +3036,7 @@ test("five-call speculative preparation cannot change a colliding foreign attemp
         0,
       );
       assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 0);
-      assert.equal(
-        m.calls.filter((c) => c.url.includes("hit-pay.com")).length,
-        0,
-      );
+      assert.equal(m.calls.filter((c) => isHitPayApiCall(c)).length, 0);
     } finally {
       await m.close();
     }
@@ -3510,9 +3468,7 @@ test("automatic recovery completion publishes a receipt before dismissal and rep
       1,
     );
     assert.equal(
-      m.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ).length,
+      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
     assert.deepEqual(m.unexpected, []);
@@ -3618,9 +3574,8 @@ test("direct checkout preserves provider shared-studio rejection across differen
     await checkoutResult(send(second), 200);
     assert.equal(books, 2);
     assert.equal(
-      m.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
-      ).length,
+      m.calls.filter((call) => isHitPayApiCall(call) && call.method === "POST")
+        .length,
       1,
     );
     assert.deepEqual(m.unexpected, []);
@@ -3687,7 +3642,7 @@ test("client sandbox guest checkout preserves production scope through duplicate
     );
     assert.ok(
       m.calls
-        .filter((c) => c.url.includes("hit-pay.com"))
+        .filter((c) => isHitPayApiCall(c))
         .every((c) => new URL(c.url).hostname === "api.sandbox.hit-pay.com"),
     );
     assert.deepEqual(m.unexpected, []);
@@ -3886,9 +3841,8 @@ async function consecutiveJourneys(sizes) {
       sizes.reduce((a, b) => a + b, 0),
     );
     assert.equal(
-      m.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
-      ).length,
+      m.calls.filter((call) => isHitPayApiCall(call) && call.method === "POST")
+        .length,
       3,
     );
     assert.equal(

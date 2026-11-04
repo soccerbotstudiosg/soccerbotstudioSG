@@ -1,3 +1,4 @@
+import { isHitPayApiCall } from "./provider-url-fixture.mjs";
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -3510,9 +3511,7 @@ test("finite hold creates one unpaid appointment without payment or post-reserva
     assert.ok(index >= 0);
     assert.equal(sent.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
-      sent.some(
-        (c) => c.url.includes("hit-pay.com") || c.url.endsWith("/payment-link"),
-      ),
+      sent.some((c) => isHitPayApiCall(c) || c.url.endsWith("/payment-link")),
       false,
     );
     assert.equal(
@@ -3641,7 +3640,7 @@ test("HitPay hold rejection retains redacted creation flags and invoice joins be
         1,
       );
       assert.equal(
-        calls.slice(before).some((c) => c.url.includes("hit-pay.com")),
+        calls.slice(before).some((c) => isHitPayApiCall(c)),
         false,
       );
     } finally {
