@@ -1,3 +1,4 @@
+import { isHitPayApiCall } from "../worker/tests/provider-url-fixture.mjs";
 import { createBookingSequence } from "../worker/tests/booking-sequence-fixture.mjs";
 import { createBookingMechanism as createIsolatedMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
 import {
@@ -794,7 +795,7 @@ test("native guest journey preserves players contact and one checkout across ref
     ).toHaveLength(0);
     expect(unexpected).toEqual([]);
     const paymentIndex = mechanism.calls.findIndex(
-      (c) => c.url.includes("hit-pay.com") && c.method === "POST",
+      (c) => isHitPayApiCall(c) && c.method === "POST",
     );
     expect(paymentIndex).toBeGreaterThan(checkoutProviderStart);
     expect(
@@ -811,9 +812,7 @@ test("native guest journey preserves players contact and one checkout across ref
       mechanism.calls.filter((c) => c.body?.method === "book"),
     ).toHaveLength(1);
     expect(
-      mechanism.calls.filter(
-        (c) => c.url.includes("hit-pay.com") && c.method === "POST",
-      ),
+      mechanism.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST"),
     ).toHaveLength(1);
     expect(
       mechanism.calls.slice(bookingIndex + 1).filter((c) => {
@@ -1871,7 +1870,7 @@ test("real API lost successful hold response restores the existing reservation w
     ).toHaveLength(1);
     expect(
       mechanism.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+        (call) => isHitPayApiCall(call) && call.method === "POST",
       ),
     ).toHaveLength(1);
     expect(mechanism.unexpected).toEqual([]);
@@ -2054,7 +2053,7 @@ test("real API failed completed dismissal opens the first step and explicit retr
     ).toHaveLength(2);
     expect(
       mechanism.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+        (call) => isHitPayApiCall(call) && call.method === "POST",
       ),
     ).toHaveLength(1);
     expect(mechanism.unexpected).toEqual([]);
@@ -2164,9 +2163,7 @@ test("real API batch checkout uses creation evidence and restores one complete u
     expect(
       mechanism.calls
         .slice(before)
-        .filter(
-          (call) => call.url.includes("hit-pay.com") && call.method === "POST",
-        ),
+        .filter((call) => isHitPayApiCall(call) && call.method === "POST"),
     ).toHaveLength(1);
     const held = await mechanism.db
       .prepare("SELECT attempt_id FROM hitpay_holds")
@@ -2187,7 +2184,7 @@ test("real API batch checkout uses creation evidence and restores one complete u
     ).toHaveLength(2);
     expect(
       mechanism.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+        (call) => isHitPayApiCall(call) && call.method === "POST",
       ),
     ).toHaveLength(1);
     await expect(
@@ -2354,7 +2351,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         await readGate.promise;
         if (failReadback) return new Response(null, { status: 503 });
       }
-      if (call.url.includes("hit-pay.com") && call.method === "POST") {
+      if (isHitPayApiCall(call) && call.method === "POST") {
         checkoutStarted.resolve();
         await checkoutGate.promise;
       }
@@ -2446,7 +2443,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       ).toHaveLength(1);
       expect(
         mechanism.calls.filter(
-          (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+          (call) => isHitPayApiCall(call) && call.method === "POST",
         ),
       ).toHaveLength(1);
     }
@@ -2460,7 +2457,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         .first();
       const pagesBefore = page.context().pages().length;
       const creation = mechanism.calls.find(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+        (call) => isHitPayApiCall(call) && call.method === "POST",
       );
       expect(creation?.body?.redirect_url).toBe(
         `${mechanism.origin}/confirmation/?attempt=${attemptId}`,
@@ -2559,7 +2556,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       ).toHaveCount(0);
       expect(
         mechanism.calls.filter(
-          (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+          (call) => isHitPayApiCall(call) && call.method === "POST",
         ),
       ).toHaveLength(1);
       expect(
@@ -3112,7 +3109,7 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
     ).toHaveLength(sizes.reduce((a, b) => a + b, 0));
     expect(
       mechanism.calls.filter(
-        (call) => call.url.includes("hit-pay.com") && call.method === "POST",
+        (call) => isHitPayApiCall(call) && call.method === "POST",
       ),
     ).toHaveLength(3);
     expect(

@@ -45,7 +45,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 Includes transitive dependencies and optional platform packages. A locked package is not necessarily installed on every platform or included in the deployed application. Paths distinguish multiple versions of the same package.
 
 <details>
-<summary>All 644 locked package entries</summary>
+<summary>All 645 locked package entries</summary>
 
 | Lockfile path                                                                     | Version           | Development | Optional |
 | --------------------------------------------------------------------------------- | ----------------- | ----------- | -------- |
@@ -163,6 +163,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@img/sharp-win32-arm64                                               | 0.35.5            | no          | yes      |
 | node_modules/@img/sharp-win32-ia32                                                | 0.35.5            | no          | yes      |
 | node_modules/@img/sharp-win32-x64                                                 | 0.35.5            | no          | yes      |
+| node_modules/@isaacs/nonrecursive-glob-match                                      | 1.0.3             | yes         | no       |
 | node_modules/@jridgewell/gen-mapping                                              | 0.3.13            | yes         | no       |
 | node_modules/@jridgewell/remapping                                                | 2.3.5             | yes         | no       |
 | node_modules/@jridgewell/resolve-uri                                              | 3.1.2             | yes         | no       |
@@ -259,7 +260,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@typescript-eslint/typescript-estree                                 | 8.71.0            | yes         | no       |
 | node_modules/@typescript-eslint/typescript-estree/node_modules/balanced-match     | 4.0.4             | yes         | no       |
 | node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion    | 5.0.12            | yes         | no       |
-| node_modules/@typescript-eslint/typescript-estree/node_modules/minimatch          | 10.2.6            | yes         | no       |
+| node_modules/@typescript-eslint/typescript-estree/node_modules/minimatch          | 11.0.4            | yes         | no       |
 | node_modules/@typescript-eslint/utils                                             | 8.71.0            | yes         | no       |
 | node_modules/@typescript-eslint/visitor-keys                                      | 8.71.0            | yes         | no       |
 | node_modules/@typescript-eslint/visitor-keys/node_modules/eslint-visitor-keys     | 5.0.1             | yes         | no       |
