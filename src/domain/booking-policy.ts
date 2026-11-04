@@ -22,3 +22,13 @@ export function withinOpeningHours(startMs: number): boolean {
     elapsedMs + SESSION_MINUTES * 60000 <= CLOSING_MINUTE * 60000
   );
 }
+
+/** Accept only complete sessions on the studio-wide noon-anchored grid. */
+export function isStudioSessionStart(startMs: number): boolean {
+  if (!withinOpeningHours(startMs)) return false;
+  const elapsedMs = (startMs + 8 * 3600000) % 86400000;
+  return (
+    (elapsedMs - OPENING_MINUTE * 60000) % (START_INTERVAL_MINUTES * 60000) ===
+    0
+  );
+}

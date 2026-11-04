@@ -14,6 +14,7 @@ import { SESSION_STARTS, STUDIOS } from "../domain/demo-catalog";
 import {
   START_INTERVAL_MINUTES,
   withinOpeningHours,
+  isStudioSessionStart,
 } from "../domain/booking-policy";
 import { addDays, todaySG, clock } from "../domain/dates";
 import { demoBookingModel as service } from "@/services/demo/booking";
@@ -21,6 +22,7 @@ import {
   demoIdentityService as identity,
   DEMO_CODE,
 } from "@/services/demo/identity";
+import { nativeDisplaySlots } from "@/domain/native-checkout";
 import { demoSession } from "@/services/demo/schedule";
 import {
   loadBooking,
@@ -301,6 +303,29 @@ describe("opening hours and demo instructor rotation", () => {
       expect(withinOpeningHours(Date.parse(`2026-10-16T${time}+08:00`))).toBe(
         allowed,
       );
+    }
+    for (const [time, allowed] of [
+      ["12:00:00", true],
+      ["12:50:00", true],
+      ["18:40:00", true],
+      ["14:40:00", false],
+      ["19:20:00", false],
+      ["12:00:00.001", false],
+    ] as const) {
+      const startMs = Date.parse(`2026-10-16T${time}+08:00`);
+      expect(isStudioSessionStart(startMs)).toBe(allowed);
+      const offers = nativeDisplaySlots("2026-10-16", [
+        {
+          startMs,
+          serviceId: "3",
+          serviceName: "Kickoff Special",
+          instructorId: "2",
+          instructorName: "Trainer",
+          priceMinor: 10800,
+          currency: "SGD",
+        },
+      ]);
+      expect(offers).toHaveLength(allowed ? 1 : 0);
     }
     expect(demoSession({ date: tomorrow(), start: "08:10" })).toBeNull();
     expect(demoSession({ date: tomorrow(), start: "20:40" })).toBeNull();

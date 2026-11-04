@@ -1,3 +1,4 @@
+import { studioStartsFromIntervals } from "./native-grid";
 import { claimNativeDispatch, claimNativeEffect } from "./native-dispatch";
 import type { Grant } from "./customer-authority";
 import type { CustomerCatalogue } from "../src/domain/catalog";
@@ -1475,12 +1476,17 @@ export async function customerNativeAvailability(options: {
       await provider.identity(env, control);
       const response = await provider.nativeRead(env, control, {
         kind: "availability",
+        ...(contract.bookingLeadMinutes !== undefined
+          ? { intervals: true }
+          : {}),
         serviceId,
         instructorId: instructor.id,
         date,
       });
       observedAtMs = Math.min(observedAtMs, response.receivedAtMs);
-      for (const time of offeredStarts(response.body, date)) {
+      for (const time of contract.bookingLeadMinutes !== undefined
+        ? studioStartsFromIntervals(response.body, date, instructor.id)
+        : offeredStarts(response.body, date)) {
         const startMs = Date.parse(`${date}T${time}+08:00`);
         const now = Date.now();
         if (
@@ -1673,6 +1679,7 @@ export async function customerNativeCalendar(options: {
   try {
     const raw = await options.cache.read({
       scope: JSON.stringify([binding, p.SOURCE_REVISION]),
+      studioGrid: contract.bookingLeadMinutes !== undefined,
       month,
       serviceId,
       dates: approved,

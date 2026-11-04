@@ -5,7 +5,7 @@ import {
   nativeDisplaySlots,
 } from "@/domain/native-checkout";
 import { monthAt, todaySG } from "@/domain/dates";
-import { BOOKING_LEAD_MS, withinOpeningHours } from "@/domain/booking-policy";
+import { BOOKING_LEAD_MS, isStudioSessionStart } from "@/domain/booking-policy";
 import { CATALOGUE_MAX_AGE_MS } from "@/domain/catalog";
 import type {
   AvailableSlot,
@@ -215,7 +215,7 @@ export function useCalendarAvailability(
               if (!day.offers) return day;
               const offers = day.offers.filter(
                 (offer) =>
-                  withinOpeningHours(offer.startMs) &&
+                  isStudioSessionStart(offer.startMs) &&
                   offer.startMs - observedNow >= BOOKING_LEAD_MS,
               );
               return {

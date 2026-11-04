@@ -300,7 +300,6 @@
   .arrival-information p,
   .basket-empty p,
   .basket-list li span,
-  .summary .subline,
   .summary .hint,
   .price-breakdown .line-item small,
   .time .time-rate,
@@ -3051,11 +3050,14 @@
   .summary-body {
     padding: 23px;
   }
-  .summary h2 {
-    margin-bottom: 8px;
+  .session-summary-heading h2 {
+    margin: 0;
   }
-  .summary .subline {
-    color: var(--color-muted);
+  .session-summary-heading p {
+    margin: 0;
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    color: var(--color-ink);
   }
   .summary-total {
     margin-top: 21px;
@@ -3748,6 +3750,9 @@
     align-items: center;
     margin-top: 0;
     padding-top: 0;
+  }
+  .confirmation-card .paid.settled {
+    justify-content: flex-end;
   }
   .confirmation-shell {
     padding-top: 20px;

@@ -8,9 +8,10 @@ import {
 } from "./contact";
 import {
   BOOKING_LEAD_MS,
-  withinOpeningHours,
+  isStudioSessionStart,
   MAX_PLAYERS,
   SESSION_MINUTES,
+  CHANGEOVER_MINUTES,
 } from "./booking-policy";
 import { INSTRUCTORS, PRICE_CENTS, SESSION_STARTS } from "./demo-catalog";
 import { sessionRate } from "./session-pricing";
@@ -107,7 +108,8 @@ export const paymentLocked = (attempt: Attempt | null) =>
   !!attempt && ["checking", "pending", "late", "paid"].includes(attempt.status);
 /** Check whether two session selections overlap in time. */
 export function overlaps(a: Slot, b: Slot) {
-  const duration = SESSION_MINUTES + ("native" in a && a.native ? 10 : 0);
+  const duration =
+    SESSION_MINUTES + ("native" in a && a.native ? CHANGEOVER_MINUTES : 0);
   return (
     a.date === b.date &&
     clockMinutes(a.start) < clockMinutes(b.start) + duration &&
@@ -130,7 +132,7 @@ export function selectionErrors(slots: Slot[], now = Date.now()): string[] {
     slots.some(
       (slot) =>
         !slotSchema.safeParse(slot).success ||
-        !withinOpeningHours(
+        !isStudioSessionStart(
           Date.parse(`${slot.date}T${slot.start}:00+08:00`),
         ) ||
         slot.date > max.toISOString().slice(0, 10) ||

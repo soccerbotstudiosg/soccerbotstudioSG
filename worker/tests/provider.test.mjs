@@ -2785,7 +2785,7 @@ test("inspection window serves session catalogue and cached times without granti
 
 test("ongoing customer access survives campaign closure and preserves fresh consent and booking replay guards", async () => {
   const date = new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10);
-  const startMs = Date.parse(date + "T13:00:00+08:00");
+  const startMs = Date.parse(date + "T12:50:00+08:00");
   const samples = JSON.parse(
     readFileSync("worker/tests/native-fixtures.json", "utf8"),
   ).responses;
@@ -2795,16 +2795,16 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
   for (const row of [booking, creation.bookings[0]]) {
     row.event_id = "2";
     row.unit_id = "2";
-    row.start_date_time = date + " 13:00:00";
-    row.end_date_time = date + " 13:50:00";
+    row.start_date_time = date + " 12:50:00";
+    row.end_date_time = date + " 13:40:00";
   }
   creation.bookings[0].client_hash = "synthetic-client-hash";
   for (const value of [invoice, creation.invoice]) {
     const row = value.lines[0].bookings[0];
     row.service_id = 2;
     row.provider_id = 2;
-    row.start_datetime = date + " 13:00:00";
-    row.end_datetime = date + " 13:50:00";
+    row.start_datetime = date + " 12:50:00";
+    row.end_datetime = date + " 13:40:00";
   }
   invoice.due_datetime = new Date(Date.now() + 1200000)
     .toISOString()
@@ -2823,7 +2823,7 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
       SIMPLYBOOK_DEV_SIGNING_SECRET: "synthetic-signing-secret",
     },
     respond: async (request, body) => {
-      if (body?.method === "getStartTimeMatrix" && browsingGate) {
+      if (body?.method === "getAvailableTimeIntervals" && browsingGate) {
         browsingStarted.resolve();
         await browsingGate.promise;
       }
@@ -2842,14 +2842,14 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
         return Response.json(invoice);
       if (!body) return;
       const matrix = {};
-      if (body.method === "getStartTimeMatrix")
+      if (body.method === "getAvailableTimeIntervals")
         for (
           let day = new Date(body.params[0] + "T00:00:00Z");
           day.toISOString().slice(0, 10) <= body.params[1];
           day.setUTCDate(day.getUTCDate() + 1)
         ) {
           const key = day.toISOString().slice(0, 10);
-          matrix[key] = key === date && available ? ["13:00:00"] : [];
+          matrix[key] = key === date && available ? ["12:50:00"] : [];
         }
       const results = {
         getEventList: {
@@ -2868,7 +2868,19 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
         getUnitList: {
           2: { id: 2, name: "Synthetic Trainer", is_active: "1" },
         },
-        getStartTimeMatrix: matrix,
+        getAvailableTimeIntervals: Object.fromEntries(
+          Object.entries(matrix).map(([date, starts]) => [
+            date,
+            {
+              [String(body.params[3])]: starts.map((start) => [
+                start,
+                new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                  .toISOString()
+                  .slice(11, 19),
+              ]),
+            },
+          ]),
+        ),
         getAdditionalFields: [],
         getAvailableUnits: [2],
         book: creation,
@@ -2902,7 +2914,7 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
         serviceName: "Synthetic Session",
         instructorId: "2",
         instructorName: "Synthetic Trainer",
-        startMs: Date.parse(date + "T13:00:00+08:00"),
+        startMs: Date.parse(date + "T12:50:00+08:00"),
         priceMinor: 8800,
         currency: "SGD",
       },
@@ -4086,14 +4098,14 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
     respond: (_request, body) => {
       if (!body) return;
       const matrix = {};
-      if (body.method === "getStartTimeMatrix")
+      if (body.method === "getAvailableTimeIntervals")
         for (
           let cursor = new Date(body.params[0] + "T00:00:00Z");
           cursor.toISOString().slice(0, 10) <= body.params[1];
           cursor.setUTCDate(cursor.getUTCDate() + 1)
         ) {
           const key = cursor.toISOString().slice(0, 10);
-          matrix[key] = key === date ? ["13:00:00"] : [];
+          matrix[key] = key === date ? ["12:50:00"] : [];
         }
       const results = {
         getEventList: Object.fromEntries(
@@ -4115,7 +4127,19 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
         getUnitList: {
           2: { id: 2, name: "Synthetic Trainer", is_active: "1" },
         },
-        getStartTimeMatrix: matrix,
+        getAvailableTimeIntervals: Object.fromEntries(
+          Object.entries(matrix).map(([date, starts]) => [
+            date,
+            {
+              [String(body.params[3])]: starts.map((start) => [
+                start,
+                new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                  .toISOString()
+                  .slice(11, 19),
+              ]),
+            },
+          ]),
+        ),
         getAdditionalFields: [],
         getAvailableUnits: [2],
       };
@@ -4150,7 +4174,7 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
           {
             serviceId: "3",
             instructorId: "2",
-            startMs: Date.parse(date + "T13:00:00+08:00"),
+            startMs: Date.parse(date + "T12:50:00+08:00"),
             players: 2,
             totalMinor: 10800,
           },
@@ -4168,7 +4192,7 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
     assert.equal(JSON.parse(grant.contract_json).bookingLeadMinutes, 240);
     assert.equal(JSON.parse(grant.contract_json).premiumServiceId, "3");
     assert.ok(
-      f.calls.some((call) => call.body?.method === "getStartTimeMatrix"),
+      f.calls.some((call) => call.body?.method === "getAvailableTimeIntervals"),
     );
     assert.ok(f.calls.every((call) => call.body?.method !== "book"));
   } finally {
@@ -4327,7 +4351,11 @@ test("held checkout crosses authenticated HTTP routes and durable coordination w
       f.calls
         .slice(bookingIndex + 1)
         .some((c) =>
-          ["getStartTimeMatrix", "getAvailableUnits"].includes(c.body?.method),
+          [
+            "getStartTimeMatrix",
+            "getAvailableTimeIntervals",
+            "getAvailableUnits",
+          ].includes(c.body?.method),
         ),
       false,
     );

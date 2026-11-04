@@ -19,13 +19,14 @@ import {
   type Attempt,
 } from "@/domain/booking";
 import { isDate, clockMinutes } from "@/domain/dates";
-import { MAX_PLAYERS } from "@/domain/booking-policy";
+import { MAX_PLAYERS, isStudioSessionStart } from "@/domain/booking-policy";
 import { SESSION_STARTS } from "@/domain/demo-catalog";
 import { BookingServiceError, type BookingService } from "./contracts";
 import {
   publicCalendarSchema,
   MAX_DAILY_NATIVE_OFFERS,
   nativeDisplaySlots,
+  studioDisplayCalendar,
   nativeAvailabilitySchema,
   nativeCalendarSchema,
   hitpayHandoffSchema,
@@ -522,7 +523,9 @@ export const liveBookingService: BookingService = defineBookingService({
       headers: { Accept: "application/json" },
     });
     if (!response.ok) throw invalidResponse();
-    return decode(publicCalendarSchema, await response.json());
+    return studioDisplayCalendar(
+      decode(publicCalendarSchema, await response.json()),
+    );
   },
   /** Read eligible dates from the native calendar endpoint. */
   async calendar({ month, serviceId, signal }) {
@@ -550,7 +553,10 @@ export const liveBookingService: BookingService = defineBookingService({
       observedAtMs: value.observedAtMs,
       dates: value.dates.map((day) => ({
         date: day.date,
-        available: day.offers.some((offer) => offer.startMs > Date.now()),
+        available: day.offers.some(
+          (offer) =>
+            isStudioSessionStart(offer.startMs) && offer.startMs > Date.now(),
+        ),
       })),
     };
   },

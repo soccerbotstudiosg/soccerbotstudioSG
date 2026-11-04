@@ -153,7 +153,7 @@ flowchart TB
   Window --> Functions["windowCatalogue / windowCalendar / windowAvailability"]
 ```
 
-Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calendar](../../worker/public-calendar.ts), [display snapshots](../../worker/display-snapshots.ts), [native calendar](../../worker/native-calendar.ts), [prebooking](../../worker/prebooking.ts), [catalogue](../../worker/catalogue.ts), [parallel reads](../../worker/parallel-reads.ts). Display snapshots help browsing; they do not reserve capacity or authorize checkout. `prepareCustomerNative` and customer calendar/availability operations are in [native-checkout.ts](../../worker/native-checkout.ts).
+Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calendar](../../worker/public-calendar.ts), [display snapshots](../../worker/display-snapshots.ts), [native calendar](../../worker/native-calendar.ts), [fixed-grid interval normalization](../../worker/native-grid.ts), [prebooking](../../worker/prebooking.ts), [catalogue](../../worker/catalogue.ts), [parallel reads](../../worker/parallel-reads.ts). Display snapshots help browsing; they do not reserve capacity or authorize checkout. `prepareCustomerNative` and customer calendar/availability operations are in [native-checkout.ts](../../worker/native-checkout.ts).
 
 ## 7. Booking and payment
 

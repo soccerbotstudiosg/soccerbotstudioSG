@@ -1,3 +1,4 @@
+import { studioStartsFromIntervals } from "./native-grid";
 import { parallelReads } from "./parallel-reads";
 import { z } from "zod";
 import { sessionPrices, sessionRate } from "../src/domain/session-pricing";
@@ -10,7 +11,7 @@ import {
 } from "../src/domain/catalog";
 import {
   BOOKING_LEAD_MINUTES,
-  withinOpeningHours,
+  isStudioSessionStart,
   BOOKING_LEAD_MS,
   NATIVE_TRIAL_LEAD_MS,
   SESSION_MINUTES,
@@ -133,7 +134,7 @@ export function nativeCustomerHours(
   startMs: number,
 ) {
   return (
-    contract?.bookingLeadMinutes === undefined || withinOpeningHours(startMs)
+    contract?.bookingLeadMinutes === undefined || isStudioSessionStart(startMs)
   );
 }
 // Lead policy comes from a trusted server-owned account contract, never a
@@ -258,6 +259,9 @@ export class NativePrebooking {
     const readSlot = () =>
       this.exchange({
         kind: "availability" as const,
+        ...(this.accountContract?.bookingLeadMinutes !== undefined
+          ? { intervals: true }
+          : {}),
         serviceId: service.id,
         instructorId: instructor.id,
         date,
@@ -323,7 +327,11 @@ export class NativePrebooking {
       throw new ApiError(409, "native_trial_lead_time");
     if (
       !ids.includes(instructor.id) ||
-      !offeredStarts(slot.body, date).includes(time)
+      !(
+        this.accountContract?.bookingLeadMinutes !== undefined
+          ? studioStartsFromIntervals(slot.body, date, instructor.id)
+          : offeredStarts(slot.body, date)
+      ).includes(time)
     )
       return { state: "selection_unavailable" as const, intent };
     const review = {

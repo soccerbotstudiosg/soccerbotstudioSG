@@ -6,11 +6,10 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
-import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { dateLabel, endTime, money } from "@/domain/dates";
 import type { Booking } from "@/domain/booking";
 import { useBooking } from "./provider";
-import { SessionList } from "./summary";
+import { SessionList, SessionSummaryHeading } from "./summary";
 import { Arrival, ClientDetails } from "./review-step";
 function PendingConfirmationHeading({
   label,
@@ -206,16 +205,11 @@ export function BookingConfirmation({
       )}
       <section className="surface confirmation-card booking-document">
         <div className="confirmation-summary" aria-label="Booking summary">
-          <strong className="section-title">
-            {booking.slots[0]?.native?.serviceName ?? SERVICE_NAME}
-          </strong>
-          <p>
-            {booking.draft.players}{" "}
-            {booking.draft.players === 1 ? "player" : "players"} per session ·
-            Full instructor guidance
-          </p>
+          <SessionSummaryHeading
+            draft={{ ...booking.draft, slots: booking.slots }}
+          />
           <SessionList slots={booking.slots} showRotation={false} />
-          <div className="paid">
+          <div className={pending ? "paid" : "paid settled"}>
             <span className={pending ? undefined : "pill success"}>
               {pending ? "Total" : preview ? "Paid · Preview" : "Paid"}
             </span>

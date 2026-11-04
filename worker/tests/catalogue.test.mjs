@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 const bundle = await build({
   stdin: {
-    contents: `export * from './worker/hitpay-contract'; export * from './worker/policy'; export * from './worker/provider-token-cache'; export * from './worker/display-snapshots'; export * from './worker/parallel-reads'; export * from './worker/customer-catalogue'; export * from './worker/public-calendar'; export * from './worker/native-calendar'; export * from './worker/catalogue'; export * from './worker/prebooking'; export * from './worker/provider-session'; export * from './worker/provider-transport';`,
+    contents: `export * from './worker/hitpay-contract'; export * from './worker/policy'; export * from './worker/provider-token-cache'; export * from './worker/display-snapshots'; export * from './worker/parallel-reads'; export * from './worker/customer-catalogue'; export * from './worker/public-calendar'; export * from './worker/native-calendar'; export * from './worker/native-grid'; export * from './worker/catalogue'; export * from './worker/prebooking'; export * from './worker/provider-session'; export * from './worker/provider-transport';`,
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -15,6 +15,7 @@ const bundle = await build({
   format: "esm",
 });
 const {
+  studioStartsFromIntervals,
   ProviderTokenCache,
   DisplaySnapshots,
   parallelReads,
@@ -121,7 +122,22 @@ function exchangeFor(data, intent = approved()) {
     async exchange(request) {
       calls.push(request);
       return {
-        body: structuredClone(bodies[request.kind]),
+        body:
+          request.intervals && request.kind === "availability"
+            ? Object.fromEntries(
+                Object.entries(bodies.availability).map(([day, starts]) => [
+                  day,
+                  {
+                    [request.instructorId]: starts.map((start) => [
+                      start,
+                      new Date(Date.parse(`${day}T${start}Z`) + 50 * 60000)
+                        .toISOString()
+                        .slice(11, 19),
+                    ]),
+                  },
+                ]),
+              )
+            : structuredClone(bodies[request.kind]),
         receivedAtMs: Date.now() - age,
       };
     },
@@ -1712,9 +1728,14 @@ test("priced customer calendar chooses native service by Singapore weekday and p
           day.toISOString().slice(0, 10) <= request.to;
           day.setUTCDate(day.getUTCDate() + 1)
         )
-          body[day.toISOString().slice(0, 10)] = available
-            ? ["11:59:00", "12:00:00", "19:21:00"]
-            : [];
+          body[day.toISOString().slice(0, 10)] = {
+            [request.instructorId]: available
+              ? [
+                  ["11:59:00", "12:50:00"],
+                  ["19:21:00", "20:00:00"],
+                ]
+              : [],
+          };
         return { receivedAtMs: Date.now(), body };
       },
     },
@@ -1892,6 +1913,47 @@ test("customer booking accepts exactly 240 minutes and rechecks the cutoff after
     contactMethod: "email",
     academy: "",
   };
+  const free = (ranges) =>
+    studioStartsFromIntervals(
+      { "2026-11-06": { 14: ranges } },
+      "2026-11-06",
+      "14",
+    );
+  assert.deepEqual(free([["14:00:00", "16:00:00"]]), ["14:30:00"]);
+  assert.deepEqual(
+    free([
+      ["12:00:00", "13:00:00"],
+      ["13:50:00", "15:20:00"],
+    ]),
+    ["12:00:00", "14:30:00"],
+  );
+  assert.deepEqual(free([["12:00:00", "12:40:00"]]), []);
+  assert.deepEqual(
+    free([
+      ["12:00:00", "12:25:00"],
+      ["12:25:01", "12:50:00"],
+    ]),
+    [],
+  );
+  assert.deepEqual(
+    free([
+      ["12:25:00", "12:50:00"],
+      ["12:00:00", "12:25:00"],
+    ]),
+    ["12:00:00"],
+  );
+  assert.deepEqual(free([["18:40:00", "20:00:00"]]), ["18:40:00"]);
+  assert.deepEqual(free([]), []);
+  for (const raw of [
+    {},
+    { "2026-11-06": [] },
+    { "2026-11-06": { 15: [] } },
+    { "2026-11-06": { 14: [["13:00:00", "12:00:00"]] } },
+  ])
+    assert.throws(
+      () => studioStartsFromIntervals(raw, "2026-11-06", "14"),
+      /availability_representation_unavailable/,
+    );
   const contract = {
     ...binding,
     serviceId: "12",
@@ -1962,7 +2024,10 @@ test("customer booking accepts exactly 240 minutes and rechecks the cutoff after
   for (const [time, allowed] of [
     ["11:59:00", false],
     ["12:00:00", true],
-    ["19:20:00", true],
+    ["19:20:00", false],
+    ["18:40:00", true],
+    ["14:40:00", false],
+    ["12:00:00.001", false],
     ["19:21:00", false],
     ["20:00:00", false],
   ]) {
@@ -2197,13 +2262,47 @@ test("persistent display snapshots retain original deadlines across restarts and
       ],
     };
     restarted.save("calendar", key, populated, restarted.generation());
-    restarted.excludeSessions([offer], false);
+    restarted.excludeSessions([offer]);
     assert.deepEqual(
       restarted
         .read("calendar", key)
         .dates[0].offers.map((x) => x.instructorId),
-      ["2", "1"],
-      "rejected trainer selection cannot remove another eligible trainer",
+      ["1"],
+      "rejected selection conservatively removes every trainer in the shared studio window",
+    );
+    // A retained pre-upgrade payload must be repaired on read, without renewal.
+    const legacy = {
+      ...populated,
+      displayExpiresAtMs: expected.displayExpiresAtMs,
+      dates: [
+        {
+          ...populated.dates[0],
+          offers: [offer, { ...offer, startMs: startMs + 600000 }],
+        },
+      ],
+    };
+    db.prepare("UPDATE display_snapshots SET payload=? WHERE key=?").run(
+      JSON.stringify(legacy),
+      key,
+    );
+    assert.deepEqual(restarted.read("calendar", key).dates[0].offers, [offer]);
+    assert.deepEqual(
+      JSON.parse(
+        db.prepare("SELECT payload FROM display_snapshots WHERE key=?").get(key)
+          .payload,
+      ).dates[0].offers,
+      [offer],
+    );
+    assert.equal(
+      restarted.read("calendar", key).displayExpiresAtMs,
+      expected.displayExpiresAtMs,
+    );
+    restarted.save("calendar", key, populated, restarted.generation());
+    restarted.excludeSessions([{ startMs: startMs + 5 * 60000 }]);
+    assert.deepEqual(
+      restarted.read("calendar", key).dates[0].offers,
+      [],
+      "a legacy off-grid booking also blocks the next slot inside its changeover",
     );
     restarted.save("calendar", key, populated, restarted.generation());
     const preWriteGeneration = restarted.generation();

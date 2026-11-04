@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   BOOKING_LEAD_MS,
-  withinOpeningHours,
+  isStudioSessionStart,
   NATIVE_TRIAL_LEAD_MS,
 } from "../src/domain/booking-policy";
 import { sessionPrices, sessionRate } from "../src/domain/session-pricing";
@@ -220,6 +220,7 @@ export async function windowCalendar(
   const read = (serviceId: string) =>
     options.cache.read({
       cacheOnly: options.cacheOnly,
+      studioGrid: liveCustomerAccess(env),
       parallelReads: liveCustomerAccess(env) && control.parallelReads !== false,
       scope: JSON.stringify([binding, p.SOURCE_REVISION]),
       month,
@@ -296,7 +297,7 @@ export async function windowCalendar(
       offers: day.offers.filter(
         (offer) =>
           (!liveCustomerAccess(options.env) ||
-            withinOpeningHours(offer.startMs)) &&
+            isStudioSessionStart(offer.startMs)) &&
           offer.startMs - Date.now() >=
             (liveCustomerAccess(options.env)
               ? BOOKING_LEAD_MS
@@ -335,7 +336,7 @@ export async function publicCalendar(options: ReadOptions & { month: string }) {
       available: day.offers.some(
         (offer) =>
           (!liveCustomerAccess(options.env) ||
-            withinOpeningHours(offer.startMs)) &&
+            isStudioSessionStart(offer.startMs)) &&
           offer.startMs - Date.now() >=
             (liveCustomerAccess(options.env)
               ? BOOKING_LEAD_MS
