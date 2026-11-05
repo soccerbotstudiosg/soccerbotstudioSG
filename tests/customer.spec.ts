@@ -21,7 +21,10 @@ async function chooseSlots(page: Page, multiple = false) {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as guest" }).click();
   await page
-    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+      exact: true,
+    })
     .click();
   await page.getByRole("link", { name: "See available times" }).click();
   await page
@@ -379,7 +382,10 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     : (cardWidths.grid - 2 * cardWidths.gap) / 3;
   expect(Math.abs(cardWidths.card - expectedCardWidth)).toBeLessThanOrEqual(1);
   await page
-    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+      exact: true,
+    })
     .click();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator(".session-product")).toContainText("40 minutes");
@@ -701,7 +707,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   await guest.click();
   await pageHeading("Your session");
   await page
-    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+      exact: true,
+    })
     .click();
   await sectionType(".session-product-name, .session-inclusions h2");
   await expect(page.locator(".session-product-price")).toHaveCSS(
@@ -1078,7 +1087,10 @@ test("per-slot trainer dropdowns group times under trainer cards and retain chan
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as guest" }).click();
   await page
-    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+      exact: true,
+    })
     .click();
   await page.getByRole("link", { name: "See available times" }).click();
   const date = addDays(DEMO_TODAY, 1);

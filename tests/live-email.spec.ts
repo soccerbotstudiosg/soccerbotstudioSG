@@ -2881,8 +2881,12 @@ test("real API 409 preparation rejection stays on Review without payment verific
       page.getByRole("heading", { name: "Review booking", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "We couldn’t start checkout. Please try again later.",
+      "You already have a checkout in progress. These selections were not booked.",
     );
+    await expect(
+      page.getByRole("link", { name: "View existing checkout", exact: true }),
+    ).toHaveAttribute("href", `/confirmation?attempt=${prepared.attemptId}`);
+    await expect(page).toHaveURL(/\/book\/review\/?$/);
     await expect(
       page.getByRole("status", { name: "Checking payment…", exact: true }),
     ).toHaveCount(0);
