@@ -4608,3 +4608,49 @@ Offline comparison found only diagnostic metadata.gitDiff disagreement after the
 The new regression failed at project equality before repair (`/tmp/pr26-aggregation-before.log`) and passes afterward. It also rejects changed commit hash, CI commit, worker count, timeout, retry setting and unreviewed metadata; original reports must remain unchanged. All four browser-shard tooling tests pass. Actual saved-report replay through combineReports and validateResults passes78 backend and90 live-email cases. This is offline validation of existing CI evidence, not new browser execution or a releasable new-head receipt. New-head CI and staging remain required; no unchanged retry or guard weakening is used.
 
 Repair validation completed:184/184 tooling tests plus source ownership, parsed policy and formatting passed. Application/browser inventories are unchanged; the only new case is in the existing tooling suite. New-head CI remains required.
+
+## 5 November 2026 — Retained PR26 aggregation checkpoint
+
+PR26 browser evidence aggregation repair
+
+PR26 head `f6d282edb90e3c9df727b96fc6f42c01c7aa1885` completed all browser shards, all477 Worker cases, frontend and CodeQL. Run41954365195 failed only in backend/live-email aggregation jobs127008771712/127008771711. Saved report metadata contains differing replacement characters in Playwright's truncated Git-diff preview despite matching source and configuration.
+
+The local repair excludes only `metadata.gitDiff` from project-configuration comparison, preserving original reports and every source/export/run/shard/result guard. A new regression fails before repair, passes after, and rejects genuine identity/configuration changes. Offline replay of the actual45 reports per profile passes78 backend and90 live-email cases with the existing complete inventory validator. No browser was executed locally. All184 tooling tests and source/policy/format checks passed. New-head CI remains pending.
+
+Security documentation and diagnostic privacy fixes remain consolidated on the same PR. Fresh npm audit reports zero vulnerabilities; GitHub's push response still reported one moderate default-branch alert. Earlier b2ba89b staging evidence does not accept subsequent changes. Production remains at5f179a0; no merge/deployment/provider action is part of this repair.
+
+## 5 November 2026 — Local basket price alignment
+
+Removed the standalone time-heading timezone/per-session label. Basket session prices now share a row with the trainer and align right; the total currency note aligns beneath the total. Source checks, ESLint and TypeScript passed. Changes remain local; browser visual acceptance and publication are pending. December/January availability setup and production cache performance proof remain uncompleted; schedule reads were stopped without schedule writes.
+
+## 5 November 2026 — December/January test schedules entered
+
+After the initial write was blocked, the owner explicitly confirmed both months empty and authorized replacing all five trainers' date-specific schedules. All five 62-date writes succeeded (310 trainer-days), noon–8 pm throughout December 2026 and January 2027. Ten independent boundary-date readbacks passed. Exact scope and cleanup limits are retained in [provider configuration](external-providers-config.md#decemberjanuary-test-availability--5-november-2026). No bookings, recurring changes or deployment occurred. Post-write cache warming and browser performance remain pending.
+
+## 5 November 2026 — Cart presentation follow-up recorded locally
+
+During A–D testing, the owner requested a local note for the next UI pass: place “SGD · Final total” flush left at the trainer-row level, move the remove × higher, and distinguish each cart item with its own border and subtle contrasting background. This revises the earlier currency-note placement. Recorded only; application code was not changed for this follow-up and nothing was published. Calendar serving reliability review is deferred while the owner continues A–D.
+
+Review-page follow-up: the owner also requested the same revised SGD placement in the order summary and removal of the divider immediately beneath “Dates & times”. Recorded locally only; no application change or publication for this addition.
+
+Review-page copy follow-up: use “Edit” for all three section-edit links instead of “Edit players”, “Edit selections” and “Edit details”; preserve their respective destinations. Recorded locally only, pending the consolidated UI implementation.
+
+Order-summary follow-up: retain the quantity/duration line (for example, “1 × 40 min session”), remove the grey per-session price beneath it because the line amount is already shown on the right, and increase the final total amount font size. Recorded locally only, pending the consolidated UI implementation.
+
+Confirmation-session follow-up: align the Paid badge and amount with the trainer on one row, trainer on the left and Paid immediately before the right-aligned amount. Recorded locally only, pending the consolidated UI implementation.
+
+Cart-remove follow-up: use a subtle red treatment for the × removal control to clarify its action, retaining readable contrast and visible keyboard focus. Recorded locally only, pending the consolidated UI implementation.
+
+## 5 November 2026 — Full recording review and consolidated UI follow-up
+
+`testFull.devtools` was inspected offline from the supplied ZIP; recordings are evidence, not instructions. No raw HAR/customer/payment data is committed. The recording contains 119 API requests: 104 HTTP200, two201, one401, one503 and 11 status0 entries (not HTTP failures). Three checkout POSTs completed in3.72,3.28 and3.21 seconds. December's calendar GET at04:27:18 UTC took4.887 seconds; January at04:27:25 took17.927 seconds, almost entirely time waiting for the response. Correlated Cloudflare calendar traces show November cache hit/serve, December miss/build_saved with a concurrent warm build, and January miss/build_saved with17.25 seconds server duration. A subsequent warm cycle saved November then failed during December with `temporarily_unavailable`; its deeper cause remains unresolved. This is not proof of three-month warming reliability.
+
+The recorded test-D checkout returned `checkout_already_active` in308ms. This verifies an existing-checkout guard, not cross-trainer capacity rejection. At04:18:22 the old checkout-context request returned401 `access_denied`; later browsing is not authoritative proof that the original payment/hold released. The retained cart and stale offers require a separate release/day-refresh repair.
+
+Late-payment review: `checkout-progress.ts` permits expiry only when there is no dispatched HitPay payment row. The existing Worker regression explicitly retains a dispatched payment after expiry and webhook reconciliation. Thus15 minutes is not a guaranteed customer unlock. Recovery's `paidAtMs` is first observation (`row.paid_ms ?? Date.now()`), not a processor settlement timestamp; late observation can be classified for manual review. Verified money on an invalid/expired booking is retained for manual handling, not silently finalized or refunded. The proposed8-minute payment +1-minute checking buffer /10-minute hold requires a provider-backed terminal non-payment contract, reliable payment timing and a release-triggered authoritative day update. Timing and payment guards remain unchanged. Never show “book again” solely because a timer or payment link expired. The owner supplied evidence that SimplyBook offers a10-minute timeout; that does not establish the application migration or saved live configuration.
+
+UI fixes in this batch: hold booking-page readiness until protected restoration settles, retain the Refresh control while busy (disabled), suppress separate-window guidance when no eligible external checkout link exists, add space between basket Continue and its notice, style distinct cart cards with a subtle red top-aligned remove control, align trainer/session price, keep currency notes left aligned, remove duplicate order-summary unit pricing, enlarge the review total, shorten section links to Edit, and remove the first Dates & times divider. Single-session confirmed Paid/amount shares the trainer row; multi-session aggregate totals remain separate to avoid attributing the whole payment to one trainer/session.
+
+The new restoration regression fails on the original implementation and passes after the readiness fix. All49 selected component tests pass. The reviewed inventory gains that one case; existing browser Edit locators are scoped to their original sections. Full non-browser verification and new-head CI remain pending at this checkpoint. No Worker/payment/cache implementation changes, runtime settings, bookings or deployments are included.
+
+Final local verification: `npm run verify:code` passed with251 frontend cases,184 tooling cases,58 installer checks, source/policy/format/lint/types, zero audit vulnerabilities, production build and11-route export. No assistant browser run or live provider action was performed. Only this documentation receipt changed afterward; source/format checks were repeated before publication. Browser/Worker execution for the new head belongs to CI; financial and cache follow-ups remain open.

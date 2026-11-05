@@ -1,18 +1,14 @@
 # Current checkpoint
 
-Observed5 November2026, Singapore. Historical evidence belongs in [Journey](docs/journey.md).
+Observed 5 November 2026. Historical evidence belongs in [Journey](docs/journey.md).
 
-## Current task — PR26 browser evidence aggregation repair
+## Current task — Full-recording UI fixes and CI preparation
 
-PR26 head `f6d282edb90e3c9df727b96fc6f42c01c7aa1885` completed all browser shards, all477 Worker cases, frontend and CodeQL. Run41954365195 failed only in backend/live-email aggregation jobs127008771712/127008771711. Saved report metadata contains differing replacement characters in Playwright's truncated Git-diff preview despite matching source and configuration.
-
-The local repair excludes only `metadata.gitDiff` from project-configuration comparison, preserving original reports and every source/export/run/shard/result guard. A new regression fails before repair, passes after, and rejects genuine identity/configuration changes. Offline replay of the actual45 reports per profile passes78 backend and90 live-email cases with the existing complete inventory validator. No browser was executed locally. All184 tooling tests and source/policy/format checks passed. New-head CI remains pending.
-
-Security documentation and diagnostic privacy fixes remain consolidated on the same PR. Fresh npm audit reports zero vulnerabilities; GitHub's push response still reported one moderate default-branch alert. Earlier b2ba89b staging evidence does not accept subsequent changes. Production remains at5f179a0; no merge/deployment/provider action is part of this repair.
+Local branch `fix/booking-price-alignment` is based on merged main `eb0649475c9fe80a4349d87dc945fccbb7bba06b`. The consolidated UI changes are implemented: restoration gate, persistent disabled refresh control, correct external-checkout guidance, cart spacing/cards/remove control, trainer/price alignment, consistent Edit links, review divider/unit-price removal and larger total. Single-session Paid/amount aligns with the trainer; aggregate multi-session totals remain separate. Currency notes remain left aligned. The restoration regression failed before repair; all49 selected component tests pass. Full non-browser verification passed: 251 frontend tests, 184 tooling tests, 58 installer checks, source/policy/format/lint/type checks, dependency audit, production build and export validation. Push CI and mark the PR ready as authorized. Browser/CI/staging acceptance remain distinct.
 
 ## Immediate remaining tasks
 
-1. Publish the checked repair on PR26 and inspect new-head CI. New source requires new exact-head CI and staging evidence; the earlier staged head does not accept this follow-up. Owner staging acceptance and merge authorization remain required.
-2. After production release is separately authorized, verify settings, the calendar response/cache traces and the [A–D continuation](docs/uat/simulated-user.md#5-november-ad-continuation). Owner performs browser/payment tests. Confirm the account-wide booking limit before capacity acceptance; do not infer cancellation from a zero timer.
-3. Retain HAR/screen recordings, exact timings and invoice comparison. Paid unresolved outcomes retain their original attempt; no repeated payment. Preserve historical overlapping bookings.
-4. Keep the unverified GitHub legacy minimatch alert state and external security/quality proof explicit in [assessments](docs/security/false-positives.md). Provider journeys, operator MFA, edge configuration, ingestion/alerts and populated recovery cannot be certified by synthetic source tests.
+1. Publish the locally verified consolidated branch and mark the PR ready for staging; exact-head CI and staging deployment/owner acceptance remain pending. No merge or production deployment is authorized by this request.
+2. Resolve the separate late-payment release contract before changing8/13/15-minute application deadlines to8/9/10. A dispatched HitPay request currently prevents automatic expiry release; neither15 minutes nor an expired link proves safe rebooking. Do not replace uncertain-payment guidance with permission to pay again.
+3. Diagnose failed three-month warming and add authoritative day-refresh behavior after safe release. HAR December/January requests took4.887/17.927 seconds with correlated cache misses. Test D returned `checkout_already_active`; shared-capacity acceptance remains pending. See [retained findings](docs/journey.md#5-november-2026--full-recording-review-and-consolidated-ui-follow-up).
+4. Resume owner A–D checks after staged changes are accepted. December/January test availability was entered; [provider configuration](docs/external-providers-config.md#decemberjanuary-test-availability--5-november-2026) records cleanup scope. No cleanup was performed.

@@ -172,7 +172,7 @@ flowchart TD
 
 ## 13. Expiry, grace and late payment
 
-A timer ending hides payment continuation; only verified releasable expiry permits a restart.
+A timer ending hides payment continuation; only verified releasable expiry permits a restart. The current expiry predicate requires no dispatched HitPay payment row: a dispatched request remains protected even after its link expires. The15-minute hold is not a guaranteed customer unlock; the proposed10-minute hold and shorter checking buffer remain unimplemented pending a verified non-payment release contract.
 
 ```mermaid
 flowchart TD

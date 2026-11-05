@@ -720,6 +720,7 @@ export function BookingProvider({
     <Context.Provider
       value={{
         ...value,
+        ready: value.ready && !restorationPending,
         now,
         bookingService: service,
         identityService,

@@ -215,10 +215,11 @@ export function TimeStep() {
               ))}
             </select>
           </div>
-          {live && !calendarBusy && (
+          {live && (
             <button
               className="calendar-refresh"
               aria-label="Refresh availability"
+              disabled={calendarBusy}
               onClick={calendar.retry}
             >
               Refresh
@@ -315,7 +316,6 @@ export function TimeStep() {
         <>
           <div className="time-heading">
             <h2>{dateLabel(date)}</h2>
-            <span>SGT · Per session</span>
           </div>
           {!result ? (
             calendarFailed ? (

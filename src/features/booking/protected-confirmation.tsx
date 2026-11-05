@@ -552,8 +552,10 @@ export function ProtectedConfirmation({
         )}
         {current && <ConfirmationSummary summary={current.summary} />}
         {checkoutMode &&
+          showLink &&
           !recordedPayment &&
-          !(link && isHitpayCheckoutUrl(link.url)) && (
+          !!link &&
+          !isHitpayCheckoutUrl(link.url) && (
             <>
               <p>
                 Checkout opens separately. Return here to check your booking.

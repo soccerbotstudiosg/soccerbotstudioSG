@@ -2366,10 +2366,16 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       page.getByRole("heading", { name: "Review booking", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Edit details", exact: true }),
+      page
+        .getByRole("heading", { name: "Booking contact", exact: true })
+        .locator("..")
+        .getByRole("link", { name: "Edit", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Edit selections", exact: true }),
+      page
+        .getByRole("heading", { name: "Dates & times", exact: true })
+        .locator("..")
+        .getByRole("link", { name: "Edit", exact: true }),
     ).toBeVisible();
     expect(
       mechanism.calls.filter((call) => call.body?.method === "book"),

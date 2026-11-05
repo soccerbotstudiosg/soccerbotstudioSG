@@ -3,7 +3,7 @@ import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
-import { PRICE_CENTS, SERVICE_NAME } from "@/domain/demo-catalog";
+import { SERVICE_NAME } from "@/domain/demo-catalog";
 import {
   orderedSlots,
   sessionInstructorName,
@@ -57,11 +57,13 @@ export function SessionList({
   slots,
   remove,
   showRotation = true,
+  trainerAction,
   now,
 }: {
   slots: Session[];
   now?: number;
   showRotation?: boolean;
+  trainerAction?: ReactNode;
   remove?: (slot: Session) => void;
 }) {
   const list = (
@@ -79,9 +81,14 @@ export function SessionList({
               <span>
                 {slot.start}–{endTime(slot.start)} SGT
               </span>
-              <span className="session-instructor">
-                Trainer: {sessionInstructorName(slot)}
-              </span>
+              {!remove && (
+                <div className="session-trainer-row">
+                  <span className="session-instructor">
+                    Trainer: {sessionInstructorName(slot)}
+                  </span>
+                  {slots.length === 1 && trainerAction}
+                </div>
+              )}
               {showRotation && slot.rotationAt && (
                 <span className="rotation-notice">
                   Crosses the {slot.rotationAt} instructor rotation. Your
@@ -93,7 +100,6 @@ export function SessionList({
                   Session has started — remove to continue.
                 </span>
               )}
-              {remove && <small>{money(sessionPrice(slot))}</small>}
             </div>
             {remove && (
               <button
@@ -103,6 +109,14 @@ export function SessionList({
               >
                 <Icon name="close" />
               </button>
+            )}
+            {remove && (
+              <div className="basket-price-row">
+                <span className="session-instructor">
+                  Trainer: {sessionInstructorName(slot)}
+                </span>
+                <small>{money(sessionPrice(slot))}</small>
+              </div>
             )}
           </li>
         );
@@ -114,27 +128,17 @@ export function SessionList({
 
 /** Present the total derived from the selected sessions. */
 export function PriceSummary({ draft }: { draft: BookingDraft }) {
-  const prices = [...new Set(draft.slots.map(sessionPrice))].sort(
-    (a, b) => a - b,
-  );
   return (
     <div className="price-breakdown">
       <div className="line-item">
-        <span>
-          {draft.slots.length} × 40 min session
-          <small>
-            {prices.length > 1
-              ? `${prices.map(money).join(" / ")} by date`
-              : `${money(prices[0] ?? PRICE_CENTS)} each`}
-          </small>
-        </span>
+        <span>{draft.slots.length} × 40 min session</span>
         <strong>{money(totalCents(draft))}</strong>
       </div>
       <div className="line-item total">
         <span>Total due</span>
         <strong>{money(totalCents(draft))}</strong>
       </div>
-      <p className="hint">
+      <p className="hint summary-currency">
         {draft.nativeServiceId ? "SGD · Final total" : "SGD · Inclusive of GST"}
       </p>
     </div>
@@ -216,7 +220,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
             <span>Total</span>
             <strong>{money(totalCents(draft))}</strong>
           </div>
-          <p className="hint">
+          <p className="hint summary-currency">
             {draft.nativeServiceId
               ? "SGD · Final total"
               : "SGD · Inclusive of GST"}

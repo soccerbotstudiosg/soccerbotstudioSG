@@ -53,6 +53,12 @@ The approved prices are centralized in `src/domain/session-pricing.ts`. Changing
 
 API, Accept Payments, Multiple Bookings, Limit Bookings and custom booking interval features were previously observed enabled. Enablement is not proof of current plan entitlements or each feature's settings. Verify the four-hour cutoff, 15-minute timeout and capacity controls in the intended company before accepting real bookings.
 
+### December/January test availability — 5 November 2026
+
+Owner confirmed both months empty and explicitly authorized replacing date-specific availability. Production SimplyBook account `soccerbotadmin`: entered all 62 dates from 1 December 2026 through 31 January 2027, 12:00–20:00 Singapore time, no breaks, for Faisal (2), Nabil (3), Caelan (4), Rifqi (5) and Azam (6): 310 trainer-days. All five batch updates returned success. Independent reads of 1 December and 31 January for every trainer confirmed the hours, active special-day status and no breaks (10 checks). This is sampled readback, not a read of every saved date.
+
+Cleanup scope: only those date-specific entries for provider IDs 2–6 over the inclusive date range above. Re-read before removing to protect later edits; clearing a special day returns it to the weekly schedule. No cleanup was executed and no bookings were created. Recurring weekly schedules, company/service hours and November were not changed. Cache rebuilding and browser latency acceptance remain separate and unverified after these writes.
+
 ### Admin authentication investigation — 3 November 2026
 
 Test11 production telemetry shows six admin-auth requests between07:13 and07:21 UTC, including one403 during deferred checkout work. Before that rejection, observed successful logins were roughly61 and72 seconds apart; the next login failed roughly69 seconds later. This matches the deployed application's conservative60-second admin-token cache (`worker/provider-token-cache.ts`), not verified provider expiry. At the captured revision, `ProviderSession.token` retained only the access token, discarded refresh material and used a new credential login after local expiry. Source and RPC timing identify deferred booking comments as the post-checkout admin-auth path; the failing annotation itself was not dispatched if authentication failed.

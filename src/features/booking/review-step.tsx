@@ -87,7 +87,7 @@ export function ReviewStep({
             action={
               !locked && (
                 <Link className="text-link" href="/book/session/">
-                  Edit players
+                  Edit
                 </Link>
               )
             }
@@ -98,7 +98,7 @@ export function ReviewStep({
             <h2>Dates &amp; times</h2>
             {!locked && (
               <Link className="text-link" href="/book/time/">
-                Edit selections
+                Edit
               </Link>
             )}
           </div>
@@ -109,7 +109,7 @@ export function ReviewStep({
             <h2>Booking contact</h2>
             {!locked && (
               <Link className="text-link" href="/book/details/">
-                Edit details
+                Edit
               </Link>
             )}
           </div>
