@@ -159,6 +159,8 @@ flowchart LR
 
 ## 12. Unresolved payment or reconciliation
 
+After unresolved checking, Check status displays “Status checked. Payment is still unconfirmed.” after an unchanged result, a wait message when rate-limited, or a retry message after failure. The button is absent from the active automatic-checking layout. Structured booking details remain visible across the transition.
+
 After unresolved checking, the message distinguishes verified payment from an unknown payment outcome. Unknown payment uses a neutral notice. Check status shares the existing30-second foreground recheck limit; it cannot reset the original checking budget.
 
 ```mermaid
@@ -172,7 +174,7 @@ flowchart TD
 
 ## 13. Expiry, grace and late payment
 
-A timer ending hides payment continuation; only verified releasable expiry permits a restart. New attempts use8 minutes to pay,1 further minute of checking and a maximum10-minute hold. Old attempts retain their windows. After both original deadlines, an authenticated matching expired/canceled request with an explicit empty payment list may release; ambiguous evidence and unprocessed receipts stay protected. The original financial journal is retained for late payment. Authoritative affected-day reads update retained calendar snapshots before return; a local timer never adds a session back.
+A timer ending hides payment continuation; only verified releasable expiry permits a restart. New attempts use8 minutes to pay,1 further minute of checking and a configured10-minute hold deadline; provider cancellation may occur later. Old attempts retain their windows. After both original deadlines, an authenticated matching expired/canceled request with an explicit empty list or only matching, zero-refund unstarted payment-method entries may release; ambiguous evidence and unprocessed receipts stay protected. The original financial journal is retained for late payment. Authoritative affected-day reads update retained calendar snapshots before return; a local timer never adds a session back. Bounded affected-day probes handle delayed provider release independently of browser life; the slot remains unavailable until current provider capacity permits it.
 
 ```mermaid
 flowchart TD
@@ -757,3 +759,14 @@ Routine controls do not need copy changes unless the matching action changes. In
 Frontend audit: modal headings have unique accessible IDs, close controls keep their44px width, long invoice references wrap, and calendar retry uses the shared notice/action spacing. The leave dialog now explicitly mentions checkout expiry; basket guidance no longer implies there is no reservation during checkout. These are local source changes, pending browser visual acceptance.
 
 The shared session-summary heading keeps one “Your sessions” title. It shows the provider product name when available; an unselected live service no longer repeats “Your session” as a fallback product name. The calendar prebuilds and permits browsing only the current Singapore month and the next two.
+
+## TestFull-2 copy and popup disposition — 5 November 2026
+
+| Surface                        | Prepared copy/behavior                                                        | State                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Manual check, unchanged result | Status checked. Payment is still unconfirmed.                                 | Local; owner/CI verification pending                              |
+| Manual check, rate limited     | Please wait a moment before checking again. Your booking is unchanged.        | Local; no checking-budget reset                                   |
+| Manual check, failed read      | We couldn’t check your payment just now. Please try again in a moment.        | Local; never implies failed payment                               |
+| First-visit Player App prompt  | Your data. Your highlights. Your progress.; App Store / Google Play / Web App | Owner-supplied URLs and dark/cyan styling; browser review pending |
+
+Old-confirmation exit preserves a newer active checkout. Provider-native Back may offer Continue payment for the same eligible unpaid request; paid, expired and unresolved states remain protected.

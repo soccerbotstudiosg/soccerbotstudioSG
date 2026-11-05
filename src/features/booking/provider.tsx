@@ -570,8 +570,18 @@ export function BookingProvider({
           error instanceof BookingServiceError &&
           error.code === "checkout_window_blocked"
         ) {
-          // This rejected preparation has no payment handoff. Keep its identity
-          // and show the readback result here instead of polling confirmation.
+          // Preparation was rejected before a new payment handoff. Restore the
+          // actual active checkout, never trap the UI behind this local draft.
+          const restored = await service
+            .restore?.(request.controller.signal)
+            .catch(() => null);
+          if (!isCurrent()) return false;
+          commit({
+            ...latest.current,
+            attempt: restored ?? null,
+            ...(restored ? { draft: restored.draft } : {}),
+          });
+          pauseCalendar(false);
           setAction({ status: "failure", operation, error: error.message });
           return false;
         }
@@ -789,11 +799,10 @@ export function BookingProvider({
           setAction({ status: "idle", returnToCalendar: true });
         },
         restartAfterConfirmation(id) {
-          if (
-            active.current ||
-            (latest.current.attempt && latest.current.attempt.id !== id)
-          )
-            throw new Error("booking_exit_changed");
+          if (active.current) throw new Error("booking_exit_changed");
+          // Leaving an older receipt must not reset or dismiss a newer booking.
+          if (latest.current.attempt && latest.current.attempt.id !== id)
+            return;
           if (service.mode === "live") void finishExit(id);
           cancel();
           // A completed booking changes availability even while its browser

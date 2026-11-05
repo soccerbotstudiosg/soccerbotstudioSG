@@ -6,10 +6,12 @@ export function Dialog({
   title,
   onClose,
   children,
+  variant,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  variant?: "player-app";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -28,7 +30,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className="fixed m-auto max-h-[85dvh] w-[calc(100%-32px)] max-w-xl overflow-auto rounded-2xl border border-line p-6 text-ink shadow-2xl backdrop:bg-navy/65"
+      className={`fixed m-auto max-h-[85dvh] w-[calc(100%-32px)] max-w-xl overflow-auto rounded-2xl border border-line p-6 text-ink shadow-2xl backdrop:bg-navy/65${variant === "player-app" ? " player-app-dialog" : ""}`}
       aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(event) => {

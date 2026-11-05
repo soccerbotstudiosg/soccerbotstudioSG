@@ -303,10 +303,10 @@ test("reload resumes an interrupted completed exit without restoring that confir
   );
   // An old confirmation's exit must not clear the newer active checkout.
   fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
-  expect(restartFailure).toHaveBeenCalledTimes(1);
+  expect(restartFailure).not.toHaveBeenCalled();
   await act(async () => dismissal.resolve(Response.json({ dismissed: true })));
   fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
-  expect(restartFailure).toHaveBeenCalledTimes(2);
+  expect(restartFailure).not.toHaveBeenCalled();
   expect(screen.getByTestId("restored-attempt")).toHaveTextContent(
     "00000000-0000-4000-8000-000000000002",
   );

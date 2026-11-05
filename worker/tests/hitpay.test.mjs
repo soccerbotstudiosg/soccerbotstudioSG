@@ -118,6 +118,7 @@ beforeEach(async (context) => {
       compatibilityDate: config.compatibility_date,
       compatibilityFlags: config.compatibility_flags,
       cf: false,
+      unsafeInspectDurableObjects: true,
       handleStructuredLogs: (entry) => logs.push(entry.message),
       bindings: {
         ...config.vars,
@@ -2365,7 +2366,7 @@ test("verified empty expired payment releases checkout but retains late payment 
   );
 });
 
-test("terminal payment requests require explicit empty evidence for release", async () => {
+test("terminal payment requests require explicit empty or unstarted evidence for release", async () => {
   for (const status of [
     "pending",
     "failed",
@@ -2378,6 +2379,35 @@ test("terminal payment requests require explicit empty evidence for release", as
       [],
       paymentResponse().payments,
       [{ ...paymentResponse().payments[0], status: "pending" }],
+      [
+        {
+          ...paymentResponse().payments[0],
+          status: "requires_payment_method",
+          refunded_amount: "0.00",
+        },
+      ],
+      [
+        {
+          ...paymentResponse().payments[0],
+          status: "requires_payment_method",
+          refunded_amount: "1.00",
+        },
+      ],
+      [
+        {
+          ...paymentResponse().payments[0],
+          status: "requires_payment_method",
+          refunded_amount: undefined,
+        },
+      ],
+      [
+        {
+          ...paymentResponse().payments[0],
+          status: "requires_payment_method",
+          currency: "USD",
+          refunded_amount: "0.00",
+        },
+      ],
     ]) {
       const raw = { ...paymentResponse(), status, payments };
       if (
@@ -2401,7 +2431,12 @@ test("terminal payment requests require explicit empty evidence for release", as
         );
         assert.equal(
           value.unpaidTerminal,
-          ["expired", "canceled"].includes(status) && payments?.length === 0,
+          ["expired", "canceled"].includes(status) &&
+            payments !== undefined &&
+            (payments.length === 0 ||
+              (payments[0].status === "requires_payment_method" &&
+                payments[0].refunded_amount === "0.00" &&
+                payments[0].currency.toUpperCase() === "SGD")),
         );
       }
     }
@@ -2494,6 +2529,89 @@ test("unpaid release refreshes only its cached day and preserves the month deadl
     0,
   );
   assert.equal(occupied.displayExpiresAtMs, before.displayExpiresAtMs);
+  const storage = await mf.unsafeGetDurableObjectStorage(
+    "soccerbot-hitpay-test",
+    "SoccerBotAccountCoordinator",
+    { name: "simplybook-developer-account" },
+  );
+  ranges.length = 0;
+  await mf.dispatchFetch(origin + "/test/alarm");
+  assert.deepEqual(
+    ranges,
+    [[date, date]],
+    "first release probe reads only its occupied day",
+  );
+  ranges.length = 0;
+  await mf.dispatchFetch(origin + "/test/alarm");
+  assert.equal(ranges.length, 0, "early alarms do not spend provider reads");
+  await storage.exec("UPDATE display_release_probes SET ready_ms=0");
+  released = true;
+  // Synthetic original time is not necessarily on grid; use an actual returned offer.
+  const start = Date.parse(date + "T12:00:00+08:00");
+  await storage.exec(
+    "UPDATE display_release_probes SET starts_json=?",
+    JSON.stringify([start]),
+  );
+  await mf.unsafeEvictDurableObject(
+    "soccerbot-hitpay-test",
+    "SoccerBotAccountCoordinator",
+    { name: "simplybook-developer-account" },
+  );
+  await Promise.all([
+    mf.dispatchFetch(origin + "/test/alarm"),
+    mf.dispatchFetch(origin + "/test/alarm"),
+  ]);
+  assert.deepEqual(
+    ranges,
+    [[date, date]],
+    "concurrent alarms share one release read",
+  );
+  const recovered = await (await mf.dispatchFetch(url)).json();
+  assert.ok(
+    recovered.dates
+      .find((d) => d.date === date)
+      .offers.some((o) => o.startMs === start),
+  );
+  assert.equal(recovered.displayExpiresAtMs, before.displayExpiresAtMs);
+  assert.equal(
+    (await storage.exec("SELECT step FROM display_release_probes"))[0].step,
+    -1,
+  );
+  await mf.dispatchFetch(origin + "/test/alarm");
+  assert.equal(ranges.length, 1, "confirmed release stops probing");
+  // Transport failure retains the last complete day and consumes only its bounded probe.
+  const afterRestart = await mf.unsafeGetDurableObjectStorage(
+    "soccerbot-hitpay-test",
+    "SoccerBotAccountCoordinator",
+    { name: "simplybook-developer-account" },
+  );
+  await afterRestart.exec(
+    "UPDATE display_release_probes SET step=0,base_ms=?,ready_ms=0",
+    Date.now(),
+  );
+  handler = async () => new Response(null, { status: 503 });
+  await mf.dispatchFetch(origin + "/test/alarm");
+  const failedProbe = (
+    await afterRestart.exec("SELECT step,ready_ms FROM display_release_probes")
+  )[0];
+  assert.ok(failedProbe.step > 0);
+  assert.ok(failedProbe.ready_ms > Date.now());
+  assert.deepEqual(
+    await (await mf.dispatchFetch(url)).json(),
+    recovered,
+    "failed read cannot clear or fabricate availability",
+  );
+  await afterRestart.exec(
+    "UPDATE display_release_probes SET step=7,base_ms=?,ready_ms=0",
+    Date.now() - 900001,
+  );
+  await mf.dispatchFetch(origin + "/test/alarm");
+  assert.equal(
+    (await afterRestart.exec("SELECT step FROM display_release_probes"))[0]
+      .step,
+    -1,
+    "exhausted release probes stop; ordinary warming remains the fallback",
+  );
 });
 
 test("verified nonpayment at checking expiry still waits for the original hold", async () => {
@@ -2504,7 +2622,13 @@ test("verified nonpayment at checking expiry still waits for the original hold",
     Response.json({
       ...paymentResponse(),
       status: "expired",
-      payments: [],
+      payments: [
+        {
+          ...paymentResponse().payments[0],
+          status: "requires_payment_method",
+          refunded_amount: "0.00",
+        },
+      ],
       expiry_date: new Date(Date.now() + 28800000 - 60000)
         .toISOString()
         .slice(0, 19),

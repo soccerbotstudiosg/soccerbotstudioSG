@@ -1,5 +1,6 @@
 "use client";
 import { isHitpayCheckoutUrl } from "@/domain/native-checkout";
+import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -104,6 +105,7 @@ export function ProtectedConfirmation({
     view,
     busy,
     check,
+    feedback,
     bindWindow,
     paymentReceived,
     responseEvidence,
@@ -419,8 +421,8 @@ export function ProtectedConfirmation({
           : paymentReceived
             ? "Payment received. Confirming booking."
             : "Checking payment…";
-    // Only the original payment step may reopen an unpaid handoff. The provider
-    // return route remains confirmation-only, even before payment evidence arrives.
+    // Both payment and provider return may reopen the same server-authorized
+    // unpaid handoff. Known money or an expired deadline still hides it.
     const continuation =
       allowPaymentContinuation &&
       showLink &&
@@ -456,7 +458,10 @@ export function ProtectedConfirmation({
       <PendingConfirmation label={pendingLabel} message={pendingMessage}>
         {current ? (
           <>
-            <ConfirmationSummary summary={current.summary} />
+            <ConfirmationSummary
+              summary={current.summary}
+              details={current.details}
+            />
             {continuation}
           </>
         ) : undefined}
@@ -552,7 +557,12 @@ export function ProtectedConfirmation({
             </button>
           </div>
         )}
-        {current && <ConfirmationSummary summary={current.summary} />}
+        {current && (
+          <ConfirmationSummary
+            summary={current.summary}
+            details={current.details}
+          />
+        )}
         {checkoutMode &&
           showLink &&
           !recordedPayment &&
@@ -594,6 +604,11 @@ export function ProtectedConfirmation({
               ) : null}
             </>
           )}
+        {feedback && !busy && !["confirmed", "denied"].includes(view) && (
+          <p className="hint" role="status">
+            {feedback}
+          </p>
+        )}
         {!["confirmed", "denied"].includes(view) && (
           <button
             className="button secondary wide payment-status-action"
@@ -615,14 +630,34 @@ export function ProtectedConfirmation({
 /** Render the retained session summary while confirmation is unresolved. */
 function ConfirmationSummary({
   summary,
+  details,
 }: {
   summary: CheckoutContext["summary"];
+  details?: CheckoutContext["details"];
 }) {
+  if (details) {
+    const { booking } = bookingFromReceipt(details);
+    return (
+      <section
+        className="booking-document"
+        aria-label="Current booking summary"
+      >
+        <SessionSummaryHeading
+          draft={{ ...booking.draft, slots: booking.slots }}
+        />
+        <SessionList slots={booking.slots} />
+        <p className="line-item total">
+          Total <strong>{money(summary.totalMinor)}</strong>
+        </p>
+      </section>
+    );
+  }
   return (
     <section aria-label="Current booking summary">
       <h2 className="section-title">Your booking</h2>
       <p>
-        {summary.players} players · {summary.sessions.length} session
+        {summary.players} player{summary.players === 1 ? "" : "s"} ·{" "}
+        {summary.sessions.length} session
         {summary.sessions.length === 1 ? "" : "s"}
       </p>
       <ul>
@@ -633,7 +668,7 @@ function ConfirmationSummary({
               dateStyle: "medium",
               timeStyle: "short",
             }).format(session.startMs)}{" "}
-            · {session.players} players
+            · {session.players} player{session.players === 1 ? "" : "s"}
           </li>
         ))}
       </ul>

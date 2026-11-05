@@ -94,7 +94,9 @@ async function protectedRead(
       credentials: "same-origin",
       cache: "no-store",
       redirect: "error",
-      signal,
+      // Bound optional receipt/context reads too; a provider stall must not
+      // strand the customer behind an unbounded loading screen.
+      signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
       headers: {
         Accept: "application/json",
         ...(displayDetails ? { "X-Booking-Details": "1" } : {}),

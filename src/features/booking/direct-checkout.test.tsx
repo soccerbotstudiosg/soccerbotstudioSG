@@ -903,14 +903,14 @@ it("queue rejection keeps the original attempt on Review for an explicit retry",
   expect(fetch.mock.calls[1][1]?.body).toBe(fetch.mock.calls[0][1]?.body);
 });
 
-it("rejected checkout window retains its attempt and displays the readback without payment confirmation polling", async () => {
+it("rejected checkout window clears the undispatched draft attempt without payment confirmation polling", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const fetch = vi.fn(async () =>
     Response.json({ error: "checkout_already_active" }, { status: 503 }),
   );
   vi.stubGlobal("fetch", fetch);
-  render(
+  const view = render(
     <BookingProvider
       bookingService={{
         ...liveBookingService,
@@ -929,12 +929,44 @@ it("rejected checkout window retains its attempt and displays the readback witho
   await screen.findByText(
     "We couldn’t start checkout. Please try again later.",
   );
-  expect(screen.getByTestId("retained").textContent).toMatch(/^[0-9a-f-]{36}$/);
+  expect(screen.getByTestId("retained")).toBeEmptyDOMElement();
   expect(screen.getByTestId("action")).toHaveTextContent("failure");
   expect(navigation.push).not.toHaveBeenCalled();
   expect(navigation.replace).not.toHaveBeenCalled();
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(screen.queryByText("Checking payment…")).not.toBeInTheDocument();
+  view.unmount();
+  const active: Attempt = {
+    id,
+    draft,
+    status: "checking",
+    outcome: "pending",
+    checkUntil: Date.now() + 600000,
+    booking: null,
+  };
+  const restore = vi.fn().mockResolvedValueOnce(null).mockResolvedValue(active);
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore,
+        calendar: undefined,
+        publicCalendar: undefined,
+      }}
+      identityService={{ ...demoCustomerIdentity, mode: "live" }}
+    >
+      <Seed />
+      <ReviewStep />
+    </BookingProvider>,
+  );
+  await waitFor(() => expect(restore).toHaveBeenCalledTimes(1));
+  fireEvent.click(screen.getByRole("button", { name: "Seed" }));
+  fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
+  await waitFor(() =>
+    expect(screen.getByTestId("retained")).toHaveTextContent(id),
+  );
+  expect(restore).toHaveBeenCalledTimes(2);
+  expect(fetch).toHaveBeenCalledTimes(2);
 });
 
 it("checkout readback uses slot-specific messaging only for verified unavailability", async () => {

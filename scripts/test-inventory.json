@@ -1161,7 +1161,7 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "rejected checkout window retains its attempt and displays the readback without payment confirmation polling"
+    "title": "rejected checkout window clears the undispatched draft attempt without payment confirmation polling"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",

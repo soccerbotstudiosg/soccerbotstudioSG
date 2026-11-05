@@ -69,6 +69,11 @@ export function useConfirmationChecking(
     busy: boolean;
     next: number;
   } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    id: string;
+    revision: number;
+    text: string;
+  } | null>(null);
   const refresh = useRef<() => void>(() => {});
   const check = useCallback(() => refresh.current(), []);
   const bind = useRef<(window: ServerWindow) => void>(() => {});
@@ -194,6 +199,12 @@ export function useConfirmationChecking(
       ) {
         busy = false;
         if (active) {
+          if (trigger === "focus")
+            setFeedback({
+              id: attemptId,
+              revision: sessionRevision,
+              text: "Please wait a moment before checking again. Your booking is unchanged.",
+            });
           if (!terminal) show("checking");
           schedule();
         }
@@ -232,6 +243,15 @@ export function useConfirmationChecking(
         budget.next = response.checking.nextCheckMs ?? budget.next;
         save(attemptId, budget);
         responseEvidence = response;
+        if (trigger === "focus")
+          setFeedback({
+            id: attemptId,
+            revision: sessionRevision,
+            text:
+              response.status === "pending" || response.status === "unresolved"
+                ? "Status checked. Payment is still unconfirmed."
+                : "Status checked.",
+          });
         customerConfirmation =
           "customerConfirmation" in response
             ? response.customerConfirmation
@@ -257,6 +277,12 @@ export function useConfirmationChecking(
         } else show("checking");
       } catch (error) {
         if (!active || generation !== current) return;
+        if (trigger === "focus")
+          setFeedback({
+            id: attemptId,
+            revision: sessionRevision,
+            text: "We couldn’t check your payment just now. Please try again in a moment.",
+          });
         if (error instanceof ConfirmationError && error.kind === "denied") {
           terminal = true;
           show("denied");
@@ -343,6 +369,10 @@ export function useConfirmationChecking(
     clock,
   ]);
   return {
+    feedback:
+      feedback?.id === attemptId && feedback.revision === sessionRevision
+        ? feedback.text
+        : null,
     responseEvidence:
       result?.id === attemptId && result.revision === sessionRevision
         ? result.responseEvidence

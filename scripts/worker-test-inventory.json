@@ -645,7 +645,7 @@
   },
   {
     "file": "worker/tests/hitpay.test.mjs",
-    "title": "terminal payment requests require explicit empty evidence for release"
+    "title": "terminal payment requests require explicit empty or unstarted evidence for release"
   },
   {
     "file": "worker/tests/hitpay.test.mjs",

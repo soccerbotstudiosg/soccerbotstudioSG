@@ -3096,6 +3096,60 @@
   .summary-total strong {
     color: var(--color-action);
   }
+  .player-app-dialog {
+    background: var(--color-brand);
+    color: white;
+  }
+  .player-app-dialog .dialog-title {
+    color: var(--color-on-brand);
+  }
+  .player-app-dialog .app-prompt-eyebrow {
+    color: var(--color-arena-accent);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-heading);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 20px 0;
+  }
+  .app-prompt-copy {
+    margin-bottom: 24px;
+  }
+  .app-store-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .player-app-dialog .app-store-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-arena-accent);
+    border-radius: 20px;
+    color: white;
+  }
+  .app-store-link svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .app-store-link span {
+    display: grid;
+  }
+  .app-store-link small {
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+  }
+  .app-store-link strong {
+    font-size: var(--text-body);
+  }
+  .app-store-link:hover {
+    background: var(--color-action-hover);
+  }
+  .app-prompt-dismiss {
+    color: white;
+    margin-top: 20px;
+  }
   .summary-currency {
     text-align: right;
   }

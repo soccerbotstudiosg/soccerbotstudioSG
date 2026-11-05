@@ -387,11 +387,16 @@ it("expired checking shows authenticated recorded payment without confirming or 
       mode: "live",
       checkout: { state: "unavailable" },
       payment: { status: "recorded", paidAtMs: deadline - 60000 },
+      details: Object.fromEntries(
+        Object.entries(receiptFixture()).filter(
+          ([key]) => key !== "verifiedAtMs",
+        ),
+      ),
       summary: {
-        players: 1,
-        totalMinor: 10800,
+        players: 2,
+        totalMinor: 8800,
         currency: "SGD",
-        sessions: [{ startMs: Date.now() + 86400000, players: 1 }],
+        sessions: [{ startMs: Date.now() + 86400000, players: 2 }],
       },
       checking: { deadlineMs: deadline, nextCheckMs: 0, pollAfterMs: 5000 },
     });
@@ -416,6 +421,8 @@ it("expired checking shows authenticated recorded payment without confirming or 
     }),
   ).toBeInTheDocument();
   expect(screen.getByText(/Do not pay again/)).toBeInTheDocument();
+  expect(screen.getByText("Trainer: Native Trainer")).toBeVisible();
+  expect(screen.getByLabelText("Current booking summary")).toBeVisible();
   expect(
     screen.queryByRole("heading", { name: "Booking confirmed" }),
   ).not.toBeInTheDocument();
@@ -1098,11 +1105,17 @@ it("shows payment received feedback with details while current booking evidence 
   });
   vi.stubGlobal("fetch", fetch);
   render(
-    <ProtectedConfirmation
-      attemptId={first}
-      checkoutMode="live"
-      allowPaymentContinuation
-    />,
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        publicCalendar: undefined,
+        calendar: undefined,
+      }}
+      identityService={demoCustomerIdentity}
+    >
+      <ConfirmationPage />
+    </BookingProvider>,
   );
   await act(async () => {});
   const summary = screen.getByLabelText("Booking summary");

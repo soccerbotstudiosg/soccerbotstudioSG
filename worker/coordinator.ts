@@ -919,10 +919,73 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         this.calendarReads.invalidateDate(
           new Date(session.startMs + 28800000).toISOString().slice(0, 10),
         );
+      const hold = await this.env.STATE.prepare(
+        "SELECT expires_ms FROM hitpay_holds WHERE attempt_id=?",
+      )
+        .bind(attemptId)
+        .first<{ expires_ms: number }>();
+      if (hold && sessions.length) {
+        this.snapshots().scheduleRelease(attemptId, sessions, hold.expires_ms);
+        await this.schedulePaymentAlarm();
+      }
     } catch {
       // Display maintenance cannot replace a durable checkout/payment outcome.
       // Stale display grants no booking authority; preserve the original result.
       console.error(JSON.stringify({ event: "display_update_unavailable" }));
+    }
+  }
+  private releaseRead: Promise<void> | undefined;
+  /** Share concurrent alarm/cron reads of the same release job. */
+  private refreshReleasedDay() {
+    if (!this.releaseRead)
+      this.releaseRead = this.readReleasedDay().finally(() => {
+        this.releaseRead = undefined;
+      });
+    return this.releaseRead;
+  }
+  /** Refresh only a due release date from current provider capacity, independent of browser life. */
+  private async readReleasedDay() {
+    if (!liveCustomerAccess(this.env)) return;
+    const store = this.snapshots();
+    const job = store.nextRelease();
+    if (!job || job.ready_ms > Date.now()) return;
+    let released = false;
+    try {
+      await this.providerQueue.run("display", async () => {
+        const paid = await this.env.STATE.prepare(
+          "SELECT 1 FROM hitpay_payments WHERE attempt_id=? AND (paid_ms IS NOT NULL OR payment_id IS NOT NULL OR external_state!='none')",
+        )
+          .bind(job.attempt_id)
+          .first();
+        if (paid || !store.months().includes(job.date.slice(0, 7))) {
+          released = true;
+          return;
+        }
+        const options = this.calendarReadOptions();
+        const { window } = calendarWindow(options);
+        const day = await windowAvailability({
+          ...options,
+          date: job.date,
+          serviceId: window.serviceId,
+          fresh: true,
+        });
+        const starts = z.array(z.number()).parse(JSON.parse(job.starts_json));
+        released = starts.every(
+          (start) =>
+            start - Date.now() < BOOKING_LEAD_MS ||
+            day.offers.some((offer) => offer.startMs === start),
+        );
+      });
+    } catch {
+      console.error(
+        JSON.stringify({
+          event: "display_release_probe_failed",
+          date: job.date,
+        }),
+      );
+    } finally {
+      store.finishRelease(job, released);
+      await this.schedulePaymentAlarm();
     }
   }
   /** Refresh display snapshots and eligible tokens through the display queue. */
@@ -930,6 +993,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     const correlationId = crypto.randomUUID();
     return traced(correlationId, "scheduled", async () => {
       if (!this.displayWarmingEnabled()) return;
+      await this.refreshReleasedDay();
       const store = this.snapshots();
       const month = store.claimRefresh(Date.now());
       const started = performance.now();
@@ -1056,16 +1120,17 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     correlationId: string,
   ) {
     return rpcOutcome(() =>
-      this.providerQueue.run("foreground", () =>
-        traced(correlationId, "coordinator", () =>
-          bookingReceipt(
-            new Request(this.env.APP_ORIGIN, {
-              headers: { cookie: scope.cookie },
-            }),
-            this.env,
-            scope.attemptId,
-            Date.now(),
-            async (snapshot, signal) => {
+      traced(correlationId, "coordinator", () =>
+        bookingReceipt(
+          new Request(this.env.APP_ORIGIN, {
+            headers: { cookie: scope.cookie },
+          }),
+          this.env,
+          scope.attemptId,
+          Date.now(),
+          (snapshot, signal) =>
+            this.providerQueue.run("foreground", async () => {
+              signal.throwIfAborted();
               const intent = intentSchema.parse(
                 JSON.parse(snapshot.row.intent_json),
               );
@@ -1124,8 +1189,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
                   ),
               });
               return result.observation;
-            },
-          ),
+            }),
         ),
       ),
     );
@@ -1153,6 +1217,12 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
               const intent = intentSchema.parse(
                 JSON.parse(attempt.intent_json),
               );
+              this.snapshots().scheduleRelease(
+                scope.attemptId,
+                intent.sessions,
+                Date.now(),
+              );
+              await this.schedulePaymentAlarm();
               const options = this.calendarReadOptions();
               const { window } = calendarWindow(options);
               for (const date of new Set(
@@ -1512,19 +1582,16 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         "SELECT attempt_id,correlation_id,generation,ready_ms FROM payment_wakeups ORDER BY ready_ms,rowid LIMIT 1",
       )
       .toArray()[0];
-    if (!wake) return;
-    if (wake.ready_ms > Date.now()) {
-      await this.schedulePaymentAlarm();
-      return;
+    if (wake && wake.ready_ms <= Date.now()) {
+      await this.hitpayRecovery(wake.attempt_id, wake.correlation_id);
+      // Keep a newer receipt generation even when it arrives during recovery.
+      this.sql.exec(
+        "DELETE FROM payment_wakeups WHERE attempt_id=? AND generation=?",
+        wake.attempt_id,
+        wake.generation,
+      );
     }
-    await this.hitpayRecovery(wake.attempt_id, wake.correlation_id);
-    // A receipt arriving during recovery retains its newer wake-up. Recovery
-    // itself owns the durable payment lease, retry budget and effect journal.
-    this.sql.exec(
-      "DELETE FROM payment_wakeups WHERE attempt_id=? AND generation=?",
-      wake.attempt_id,
-      wake.generation,
-    );
+    await this.refreshReleasedDay();
     await this.schedulePaymentAlarm();
   }
   private paymentAlarmSchedule: Promise<void> = Promise.resolve();
@@ -1536,8 +1603,15 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           "SELECT ready_ms FROM payment_wakeups ORDER BY ready_ms LIMIT 1",
         )
         .toArray()[0];
-      if (next)
-        await this.ctx.storage.setAlarm(Math.max(Date.now(), next.ready_ms));
+      const release = liveCustomerAccess(this.env)
+        ? this.snapshots().nextRelease()
+        : undefined;
+      const deadline = Math.min(
+        next?.ready_ms ?? Infinity,
+        release?.ready_ms ?? Infinity,
+      );
+      if (Number.isFinite(deadline))
+        await this.ctx.storage.setAlarm(Math.max(Date.now(), deadline));
     });
     this.paymentAlarmSchedule = pending.catch(() => {});
     return pending;

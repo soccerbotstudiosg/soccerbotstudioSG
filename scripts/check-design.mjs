@@ -3,6 +3,7 @@ const functional =
   /\.(?:booking|page-title|section-title|lead|surface|field|hint|small|button|text-link|back|pill|alert|dialog|access|auth|session|player|counter|inclusion|summary|aside|basket|calendar|date|dates|month|legend|series|time|times|rotation|note|empty|check-label|review|line-item|payment|merchant|method|status|reference|confirmation|trainer|fixed-session|arrival|progress|checking)(?:\b|-)/;
 const artwork = /\.(?:arena|pitch|studio-bottom|studio-book-arrow)\b/;
 const palettePairs = [
+  ["--color-arena-accent", "--color-brand", 4.5],
   ["--color-on-brand", "--color-confirmation", 4.5],
   ["--color-confirmation-heading", "--color-paper", 4.5],
   ["--color-ink", "--color-surface", 4.5],
@@ -117,7 +118,13 @@ export function designAudit(text) {
   css.walkRules((rule) => {
     if (!artwork.test(rule.selector))
       rule.walkDecls((d) => {
-        if (d.value.includes("var(--color-arena-accent)"))
+        // Owner-approved dark Player App promotion; keep booking controls blue.
+        const appAccent =
+          (rule.selector === ".player-app-dialog .app-prompt-eyebrow" &&
+            d.prop === "color") ||
+          (rule.selector === ".player-app-dialog .app-store-link" &&
+            d.prop === "border");
+        if (d.value.includes("var(--color-arena-accent)") && !appAccent)
           errors.push(`Decorative accent used in interface: ${rule.selector}`);
       });
     if (!functional.test(rule.selector) || artwork.test(rule.selector)) return;
