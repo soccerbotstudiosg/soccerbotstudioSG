@@ -3107,6 +3107,15 @@
   .player-app-dialog .dialog-title {
     color: var(--color-on-brand);
   }
+  .player-app-close {
+    color: var(--color-on-brand);
+    border: 0;
+  }
+  .player-app-close svg {
+    width: 28px;
+    height: 28px;
+    stroke-width: 2.5;
+  }
   .player-app-dialog .app-prompt-eyebrow {
     color: var(--color-arena-accent);
     font-size: var(--text-caption);
@@ -3149,10 +3158,6 @@
   }
   .app-store-link:hover {
     background: var(--color-action-hover);
-  }
-  .app-prompt-dismiss {
-    color: white;
-    margin-top: 20px;
   }
   .summary-currency {
     text-align: right;
@@ -3354,6 +3359,11 @@
   .series-date strong {
     display: block;
     font-weight: 500;
+  }
+  .session-trainer-row .session-item-price {
+    margin-left: auto;
+    font-weight: var(--weight-heading);
+    white-space: nowrap;
   }
   .series-date span {
     display: block;

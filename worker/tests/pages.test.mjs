@@ -102,11 +102,30 @@ test("Pages service binding reaches the actual Worker with guest cookie continui
       setCookie,
       /__Host-soccerbot-access=[a-f0-9]{64}; Path=\/; Secure; HttpOnly; SameSite=Strict/,
     );
+    const originalAccess = await db
+      .prepare("SELECT owner_id,capability_hash FROM guest_access")
+      .first();
+    await db
+      .prepare("UPDATE guest_access SET expires_ms=?")
+      .bind(Date.now() + 60000)
+      .run();
+    const beforeRenew = Date.now();
     const again = await mf.dispatchFetch(origin + "/api/access", {
       method: "POST",
       headers: { origin, cookie: setCookie.split(";")[0] },
     });
     assert.equal(again.status, 200);
+    assert.equal(
+      again.headers.get("set-cookie").split(";")[0],
+      setCookie.split(";")[0],
+    );
+    const renewed = await db.prepare("SELECT * FROM guest_access").first();
+    assert.equal(renewed.owner_id, originalAccess.owner_id);
+    assert.equal(renewed.capability_hash, originalAccess.capability_hash);
+    assert.ok(
+      renewed.expires_ms >=
+        beforeRenew + Number(config.vars.ACCESS_LIFETIME_MS),
+    );
     assert.equal(
       (await db.prepare("SELECT COUNT(*) AS count FROM guest_access").first())
         .count,
@@ -119,6 +138,30 @@ test("Pages service binding reaches the actual Worker with guest cookie continui
       missingOrigin.status,
       403,
       "backend still enforces mutation origin",
+    );
+    await db
+      .prepare("UPDATE guest_access SET revoked_ms=? WHERE capability_hash=?")
+      .bind(Date.now(), originalAccess.capability_hash)
+      .run();
+    const revoked = await mf.dispatchFetch(origin + "/api/access", {
+      method: "POST",
+      headers: { origin, cookie: setCookie.split(";")[0] },
+    });
+    assert.equal(revoked.status, 201);
+    assert.notEqual(
+      revoked.headers.get("set-cookie").split(";")[0],
+      setCookie.split(";")[0],
+    );
+    assert.equal(
+      (
+        await db
+          .prepare(
+            "SELECT expires_ms FROM guest_access WHERE capability_hash=?",
+          )
+          .bind(originalAccess.capability_hash)
+          .first()
+      ).expires_ms,
+      renewed.expires_ms,
     );
     assert.equal(outbound, 0);
   } finally {

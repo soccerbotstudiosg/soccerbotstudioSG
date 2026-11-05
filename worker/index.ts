@@ -26,6 +26,7 @@ import { inputBody } from "./identity-delivery";
 import { identityDelivery, assertIdentityProofOpen } from "./identity-delivery";
 import {
   createAccess,
+  renewAccess,
   authenticateCheckout,
   authenticate,
   revokeAccess,
@@ -245,6 +246,16 @@ export default {
               ...env,
               STATE: instrumentStorage(env.STATE, "d1"),
             });
+          if (checkoutAccess) {
+            const renewed = await renewAccess(
+              request,
+              env,
+              checkoutAccess,
+              Date.now(),
+            );
+            checkoutAccess.expires_ms = renewed.expiresMs;
+            checkingHeaders["Set-Cookie"] = renewed.cookie;
+          }
           const outcome = await coordinatorStub(env).holdCustomer(
             {
               attemptId: holdMatch[2],
@@ -542,8 +553,11 @@ export default {
             request.headers.get("cookie")?.includes("__Host-soccerbot-access=")
           ) {
             try {
-              await authenticate(request, env, now);
-              return json({ access: "guest" });
+              const access = await authenticate(request, env, now);
+              return json({ access: "guest" }, 200, {
+                "Set-Cookie": (await renewAccess(request, env, access, now))
+                  .cookie,
+              });
             } catch (error) {
               if (!(error instanceof ApiError) || error.status !== 401)
                 throw error;

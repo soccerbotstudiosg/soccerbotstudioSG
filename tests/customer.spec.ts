@@ -12,7 +12,9 @@ async function openSite(page: Page, route: string) {
     name: "Get the SoccerBot Player App",
   });
   await expect(prompt).toBeVisible();
-  await prompt.getByRole("button", { name: "Not now", exact: true }).click();
+  await prompt
+    .getByRole("button", { name: "Close dialog", exact: true })
+    .click();
   await expect(prompt).toHaveCount(0);
 }
 async function chooseSlots(page: Page, multiple = false) {
@@ -595,7 +597,16 @@ test("first visit offers the Player App and dismissal persists while the navbar 
     await expect(
       prompt.getByRole("link", { name, exact: true }),
     ).toHaveAttribute("href", href);
-  await prompt.getByRole("button", { name: "Not now", exact: true }).click();
+  await expect(
+    prompt.getByRole("button", { name: "Not now", exact: true }),
+  ).toHaveCount(0);
+  const close = prompt.getByRole("button", {
+    name: "Close dialog",
+    exact: true,
+  });
+  await expect(close).toHaveCSS("border-top-width", "0px");
+  await expect(close).toHaveCSS("color", "rgb(255, 255, 255)");
+  await close.click();
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Your next session starts here." }),

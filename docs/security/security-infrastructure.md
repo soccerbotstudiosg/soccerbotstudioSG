@@ -91,7 +91,7 @@ API responses explicitly set no-store, JSON content type, nosniff and no-referre
 
 ## 3. Customer identity, sessions and abuse controls
 
-[Access](../../worker/access.ts) issues the server-owned `__Host-soccerbot-access` capability. It uses Secure, HttpOnly, SameSite=Strict and Path=/; storage binds capability to an owner and enforces expiry/revocation. Browser storage and attempt IDs are not authentication. An invalid old guest cookie cannot inherit the prior owner's attempts.
+[Access](../../worker/access.ts) issues the server-owned `__Host-soccerbot-access` capability. It uses Secure, HttpOnly, SameSite=Strict and Path=/; storage binds capability to an owner and enforces expiry/revocation. Browser storage and attempt IDs are not authentication. An invalid old guest cookie cannot inherit the prior owner's attempts. Explicit access entry and checkout POST renew only still-valid, unrevoked capabilities for the configured lifetime while preserving owner/grants; read polling does not renew access, and financial/identity deadlines remain unchanged.
 
 [Identity](../../worker/identity.ts) and [delivery](../../worker/identity-delivery.ts) require current access, scoped delivery, normalized email, a bounded challenge and a valid code. Turnstile is checked server-side before permitted email delivery; request/attempt limits and expiry restrict abuse. Codes are stored as keyed hashes rather than plaintext. Resend delivers verification email; it is not the authority for booking or payment confirmation. A successful email challenge establishes access to that mailbox, not a real-world identity or permission to administer the business.
 

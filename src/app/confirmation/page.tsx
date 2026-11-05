@@ -17,7 +17,8 @@ function ConfirmationRoute() {
   return (
     <ProtectedConfirmation
       attemptId={params.get("attempt") || ""}
-      allowPaymentContinuation
+      // Provider return hints may suppress payment, never establish paid status.
+      allowPaymentContinuation={params.get("status") !== "completed"}
       sessionRevision={confirmationRevision}
       checkoutMode={bookingService.mode === "live" ? "live" : undefined}
       onExpired={restartAfterExpiry}

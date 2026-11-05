@@ -165,7 +165,9 @@ async function fixture(
     name: "Get the SoccerBot Player App",
   });
   await expect(prompt).toBeVisible();
-  await prompt.getByRole("button", { name: "Not now", exact: true }).click();
+  await prompt
+    .getByRole("button", { name: "Close dialog", exact: true })
+    .click();
   return { calls, unexpected };
 }
 
@@ -573,7 +575,7 @@ test("native guest journey preserves players contact and one checkout across ref
     await page.goto("/");
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await calendarReady;
     expect(
@@ -991,7 +993,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await accounting;
     await expect(
@@ -1384,7 +1386,7 @@ async function guestDetails(
     await page.goto("/book/account/");
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
   }
   await page
@@ -1822,7 +1824,7 @@ test("real API lost successful hold response restores the existing reservation w
     await page.goto("/book/review/");
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
       page.getByRole("heading", { name: "Review booking", exact: true }),
@@ -1998,7 +2000,7 @@ test("real API failed completed dismissal opens the first step and explicit retr
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await savedConfirmation;
     await expect(
@@ -2078,7 +2080,7 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
     await page.goto("/book/account/");
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await page
       .getByRole("button", { name: "Continue as guest", exact: true })
@@ -2303,7 +2305,7 @@ test("real API exhausted browser checking window retains the original deadline a
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
       page.getByRole("heading", {
@@ -2375,7 +2377,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
     ).toBeVisible();
     await expect(
       page
-        .getByRole("heading", { name: "Dates & times", exact: true })
+        .getByRole("heading", { name: "Order summary", exact: true })
         .locator("..")
         .getByRole("link", { name: "Edit", exact: true }),
     ).toBeVisible();
@@ -2617,7 +2619,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
       page.getByRole("status", { name: "Checking booking…", exact: true }),
@@ -2735,7 +2737,7 @@ test("real API expired unpaid Review retains its hold through the grace window w
     await page.goto("/book/review/");
     await page
       .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-      .getByRole("button", { name: "Not now", exact: true })
+      .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
       page.getByRole("heading", { name: "Review booking", exact: true }),

@@ -55,6 +55,7 @@ type ActionState = {
   operation?: Action;
   error?: string;
   returnToCalendar?: boolean;
+  resumeAttemptId?: string;
 };
 interface BookingContextValue extends StoredBooking {
   availability: ReturnType<typeof useBookingAvailability>;
@@ -80,7 +81,7 @@ interface BookingContextValue extends StoredBooking {
   resolve: () => Promise<boolean>;
   reset: () => void;
   restartAfterExpiry: (attemptId: string) => void;
-  restartAfterConfirmation: (attemptId: string) => void;
+  restartAfterConfirmation: (attemptId: string) => Promise<void>;
   rebookingError: string | null;
   retryRebooking: () => void;
 }
@@ -570,19 +571,22 @@ export function BookingProvider({
           error instanceof BookingServiceError &&
           error.code === "checkout_window_blocked"
         ) {
-          // Preparation was rejected before a new payment handoff. Restore the
-          // actual active checkout, never trap the UI behind this local draft.
+          // Keep the rejected draft visible. Offer an explicit route to the
+          // existing checkout rather than silently replacing these selections.
           const restored = await service
             .restore?.(request.controller.signal)
             .catch(() => null);
           if (!isCurrent()) return false;
-          commit({
-            ...latest.current,
-            attempt: restored ?? null,
-            ...(restored ? { draft: restored.draft } : {}),
-          });
+          commit({ ...latest.current, attempt: null });
           pauseCalendar(false);
-          setAction({ status: "failure", operation, error: error.message });
+          setAction({
+            status: "failure",
+            operation,
+            error: restored
+              ? "You already have a checkout in progress. These selections were not booked."
+              : error.message,
+            resumeAttemptId: restored?.id,
+          });
           return false;
         }
         // A lost write response is not permission to create another booking.
@@ -798,11 +802,28 @@ export function BookingProvider({
           );
           setAction({ status: "idle", returnToCalendar: true });
         },
-        restartAfterConfirmation(id) {
+        async restartAfterConfirmation(id) {
           if (active.current) throw new Error("booking_exit_changed");
-          // Leaving an older receipt must not reset or dismiss a newer booking.
-          if (latest.current.attempt && latest.current.attempt.id !== id)
-            return;
+          const current = latest.current;
+          if (current.attempt && current.attempt.id !== id) {
+            if (service.mode !== "live") return;
+            const otherId = current.attempt.id;
+            const context = await protectedCheckoutService.context({
+              attemptId: otherId,
+              mode: "live",
+              signal: new AbortController().signal,
+            });
+            if (latest.current !== current || active.current)
+              throw new Error("booking_exit_changed");
+            // Only independently verified completion permits clearing the newer
+            // attempt. An unpaid/uncertain checkout remains recoverable.
+            if (!context.confirmation && !context.customerConfirmation) return;
+            if (!(await finishExit(otherId)))
+              throw new Error("booking_exit_changed");
+            if (latest.current !== current || active.current)
+              throw new Error("booking_exit_changed");
+            id = otherId;
+          }
           if (service.mode === "live") void finishExit(id);
           cancel();
           // A completed booking changes availability even while its browser

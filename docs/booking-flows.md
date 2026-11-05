@@ -570,181 +570,181 @@ Field-level validation, less common notices and remaining copy proposals are ret
 
 Routine controls do not need copy changes unless the matching action changes. Included so the review does not silently omit alternate buttons/headings.
 
-| Source owner                                        | Text                                                                                    | Recommendation                  |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------- |
-| src/features/assistant/assistant.tsx:16             | Welcome to SOCCERBOTSTUDIO. How can I help with your session?                           | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:64             | Studio assistant                                                                        | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:66             | Booking preview                                                                         | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:70             | Close assistant                                                                         | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:92             | Sessions & prices                                                                       | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:92             | Location                                                                                | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:92             | My booking                                                                              | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:110            | Ask the studio assistant                                                                | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:117            | Ask a question…                                                                         | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:123            | Send message                                                                            | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:133            | Contact the studio                                                                      | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:140            | Hide studio assistant                                                                   | Keep; supporting label/control. |
-| src/features/assistant/assistant.tsx:140            | Open studio assistant                                                                   | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:136           | Start your booking                                                                      | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:141           | Try again                                                                               | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:162           | Book as a guest                                                                         | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:166           | Continue as guest                                                                       | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:206           | Continue signed in                                                                      | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:229           | Manage saved contact                                                                    | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:245           | Use another email                                                                       | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:258           | Sign out all devices                                                                    | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:315           | Email address                                                                           | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:335           | Remember me                                                                             | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:341           | Verification code                                                                       | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:375           | Verify and continue                                                                     | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:388           | Resend code                                                                             | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:401           | Change email                                                                            | Keep; supporting label/control. |
-| src/features/booking/account-step.tsx:417           | Back to booking options                                                                 | Keep; supporting label/control. |
-| src/features/booking/booking-page.tsx:19            | Booking                                                                                 | Keep; supporting label/control. |
-| src/features/booking/booking-page.tsx:20            | Session                                                                                 | Keep; supporting label/control. |
-| src/features/booking/booking-page.tsx:21            | Time                                                                                    | Keep; supporting label/control. |
-| src/features/booking/booking-page.tsx:22            | Details                                                                                 | Keep; supporting label/control. |
-| src/features/booking/booking-page.tsx:23            | Review                                                                                  | Keep; supporting label/control. |
-| src/features/booking/booking-page.tsx:108           | Back                                                                                    | Keep; supporting label/control. |
-| src/features/booking/booking-page.tsx:116           | Back to home                                                                            | Keep; supporting label/control. |
-| src/features/booking/booking-page.tsx:121           | Booking progress                                                                        | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:51       | Booking summary                                                                         | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:52       | Your booking                                                                            | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:161      | Booking actions                                                                         | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:168      | Make another booking                                                                    | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:172      | WhatsApp Enquiry                                                                        | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:186      | Back to home                                                                            | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:213      | View full details                                                                       | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:220      | Client Details                                                                          | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:229      | Location                                                                                | Keep; supporting label/control. |
-| src/features/booking/confirmation-step.tsx:246      | Disclaimers                                                                             | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:126           | Optional                                                                                | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:189           | Saved contact details                                                                   | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:189           | Your details                                                                            | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:251           | Full name                                                                               | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:255           | Email address (verified)                                                                | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:256           | Email address                                                                           | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:261           | Mobile number                                                                           | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:265           | Preferred contact method                                                                | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:271           | Academy / school / organisation                                                         | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:289           | Save contact details                                                                    | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:298           | Back to booking options                                                                 | Keep; supporting label/control. |
-| src/features/booking/details-step.tsx:333           | Review booking                                                                          | Keep; supporting label/control. |
-| src/features/booking/email-bot-proof.tsx:66         | Email security check                                                                    | Keep; supporting label/control. |
-| src/features/booking/instructor.tsx:48              | Sessions with ${instructor.name}                                                        | Keep; supporting label/control. |
-| src/features/booking/live-catalogue.tsx:56          | Try again                                                                               | Keep; supporting label/control. |
-| src/features/booking/live-catalogue.tsx:63          | Current sessions                                                                        | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:50            | Back to review                                                                          | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:56            | Order summary                                                                           | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:64            | Payment                                                                                 | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:65            | Total due · SGD                                                                         | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:71            | Your session                                                                            | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:77            | Checkout                                                                                | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:78            | Payment method                                                                          | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:99            | Pay ${money(totalCents(attempt.draft))}                                                 | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:145           | Payment amount                                                                          | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:158           | Contact the studio                                                                      | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:171           | Check payment status                                                                    | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:182           | Back to your booking                                                                    | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:194           | Total due · SGD · Inclusive of GST                                                      | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:226           | Card                                                                                    | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:226           | PayNow                                                                                  | Keep; supporting label/control. |
-| src/features/booking/payment-step.tsx:232           | Card payment                                                                            | Keep; supporting label/control. |
-| src/features/booking/protected-confirmation.tsx:525 | Current booking summary                                                                 | Keep; supporting label/control. |
-| src/features/booking/protected-confirmation.tsx:526 | Your booking                                                                            | Keep; supporting label/control. |
-| src/features/booking/protected-confirmation.tsx:544 | Total                                                                                   | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:19             | Full name                                                                               | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:21             | Email address                                                                           | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:23             | Mobile number                                                                           | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:25             | Preferred contact method                                                                | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:31             | Academy / school / organisation                                                         | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:87             | Your sessions                                                                           | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:90             | Edit players                                                                            | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:97             | Your session                                                                            | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:106            | Dates &amp; times                                                                       | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:109            | Edit selections                                                                         | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:117            | Booking contact                                                                         | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:120            | Edit details                                                                            | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:127            | Order summary                                                                           | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:151            | Review selections                                                                       | Keep; supporting label/control. |
-| src/features/booking/review-step.tsx:175            | Continue to payment                                                                     | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:47            | Your session                                                                            | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:95            | Remove one player                                                                       | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:105           | Add one player                                                                          | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:125           | Interactive football in a 360° arena, for individual players and groups.                | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:139           | Included with your session                                                              | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:143           | Arena access                                                                            | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:144           | Access to the arena’s 360° projection wall and interactive training system.             | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:147           | Full instructor guidance                                                                | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:148           | Your instructor introduces the activities and guides your group throughout the session. | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:151           | Single, Team and Battle play                                                            | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:152           | Explore all three play modes during your studio session.                                | Keep; supporting label/control. |
-| src/features/booking/session-step.tsx:174           | See available times                                                                     | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:38                 | Selected sessions                                                                       | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:69                 | Remove ${slot.date} at ${slot.start}                                                    | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:102                | Total due                                                                               | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:134                | Your booking summary                                                                    | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:140                | Your booking basket                                                                     | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:140                | Booking summary                                                                         | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:146                | Your session                                                                            | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:164                | Clear all                                                                               | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:191                | Total                                                                                   | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:205                | Continue                                                                                | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:241                | Your instructors                                                                        | Keep; supporting label/control. |
-| src/features/booking/summary.tsx:258                | Instructor                                                                              | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:182              | Select dates and times                                                                  | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:194              | Booking calendar                                                                        | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:200              | Calendar month                                                                          | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:220              | Previous month                                                                          | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:228              | Next month                                                                              | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:244              | Mon                                                                                     | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:244              | Tue                                                                                     | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:244              | Wed                                                                                     | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:244              | Thu                                                                                     | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:244              | Fri                                                                                     | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:244              | Sat                                                                                     | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:244              | Sun                                                                                     | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:304              | Selected day                                                                            | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:308              | In your booking                                                                         | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:333              | Try again                                                                               | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:338              | Session times                                                                           | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:389              | Per session                                                                             | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:389              | Trial price                                                                             | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:417              | Trainer                                                                                 | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:419              | Trainer for ${slot.date} at ${slot.start}                                               | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:486              | See next available day                                                                  | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:487              | See next month                                                                          | Keep; supporting label/control. |
-| src/features/booking/time-step.tsx:488              | See next day                                                                            | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:49            | Optional                                                                                | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:69            | Back to home                                                                            | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:90            | Send another enquiry                                                                    | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:124           | Your details                                                                            | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:126           | Full name                                                                               | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:127           | Email address                                                                           | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:128           | Contact number                                                                          | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:129           | Academy, school or organisation                                                         | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:133           | Your plans                                                                              | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:137           | Enquiry type *                                                                          | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:146           | Select an arrangement                                                                   | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:152           | Number of guests                                                                        | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:153           | Preferred date                                                                          | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:154           | Preferred time                                                                          | Keep; supporting label/control. |
-| src/features/enquiry/enquiry-page.tsx:157           | Your requirements *                                                                     | Keep; supporting label/control. |
-| src/components/player-app-prompt.tsx:31             | Not now                                                                                 | Keep; supporting label/control. |
-| src/components/player-app-prompt.tsx:41             | Download app                                                                            | Keep; supporting label/control. |
-| src/components/site-shell.tsx:35                    | Skip to content                                                                         | Keep; supporting label/control. |
-| src/components/site-shell.tsx:38                    | Main navigation                                                                         | Keep; supporting label/control. |
-| src/components/site-shell.tsx:59                    | The studio                                                                              | Keep; supporting label/control. |
-| src/components/site-shell.tsx:67                    | Download app                                                                            | Keep; supporting label/control. |
-| src/components/site-shell.tsx:70                    | Book now                                                                                | Keep; supporting label/control. |
-| src/components/site-shell.tsx:97                    | Find Us                                                                                 | Keep; supporting label/control. |
-| src/components/site-shell.tsx:122                   | Connect With Us                                                                         | Keep; supporting label/control. |
-| src/components/site-shell.tsx:140                   | Contact Us                                                                              | Keep; supporting label/control. |
-| src/components/site-shell.tsx:153                   | Get in touch                                                                            | Keep; supporting label/control. |
-| src/components/site-shell.tsx:154                   | Disclaimer                                                                              | Keep; supporting label/control. |
-| src/components/site-shell.tsx:181                   | Back to home                                                                            | Keep; supporting label/control. |
-| src/components/site-shell.tsx:184                   | Stay                                                                                    | Keep; supporting label/control. |
-| src/app/not-found.tsx:11                            | Back to home                                                                            | Keep; supporting label/control. |
+| Source owner                                        | Text                                                                                    | Recommendation                   |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------- |
+| src/features/assistant/assistant.tsx:16             | Welcome to SOCCERBOTSTUDIO. How can I help with your session?                           | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:64             | Studio assistant                                                                        | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:66             | Booking preview                                                                         | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:70             | Close assistant                                                                         | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:92             | Sessions & prices                                                                       | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:92             | Location                                                                                | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:92             | My booking                                                                              | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:110            | Ask the studio assistant                                                                | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:117            | Ask a question…                                                                         | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:123            | Send message                                                                            | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:133            | Contact the studio                                                                      | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:140            | Hide studio assistant                                                                   | Keep; supporting label/control.  |
+| src/features/assistant/assistant.tsx:140            | Open studio assistant                                                                   | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:136           | Start your booking                                                                      | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:141           | Try again                                                                               | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:162           | Book as a guest                                                                         | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:166           | Continue as guest                                                                       | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:206           | Continue signed in                                                                      | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:229           | Manage saved contact                                                                    | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:245           | Use another email                                                                       | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:258           | Sign out all devices                                                                    | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:315           | Email address                                                                           | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:335           | Remember me                                                                             | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:341           | Verification code                                                                       | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:375           | Verify and continue                                                                     | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:388           | Resend code                                                                             | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:401           | Change email                                                                            | Keep; supporting label/control.  |
+| src/features/booking/account-step.tsx:417           | Back to booking options                                                                 | Keep; supporting label/control.  |
+| src/features/booking/booking-page.tsx:19            | Booking                                                                                 | Keep; supporting label/control.  |
+| src/features/booking/booking-page.tsx:20            | Session                                                                                 | Keep; supporting label/control.  |
+| src/features/booking/booking-page.tsx:21            | Time                                                                                    | Keep; supporting label/control.  |
+| src/features/booking/booking-page.tsx:22            | Details                                                                                 | Keep; supporting label/control.  |
+| src/features/booking/booking-page.tsx:23            | Review                                                                                  | Keep; supporting label/control.  |
+| src/features/booking/booking-page.tsx:108           | Back                                                                                    | Keep; supporting label/control.  |
+| src/features/booking/booking-page.tsx:116           | Back to home                                                                            | Keep; supporting label/control.  |
+| src/features/booking/booking-page.tsx:121           | Booking progress                                                                        | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:51       | Booking summary                                                                         | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:52       | Your booking                                                                            | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:161      | Booking actions                                                                         | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:168      | Make another booking                                                                    | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:172      | WhatsApp Enquiry                                                                        | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:186      | Back to home                                                                            | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:213      | View full details                                                                       | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:220      | Client Details                                                                          | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:229      | Location                                                                                | Keep; supporting label/control.  |
+| src/features/booking/confirmation-step.tsx:246      | Disclaimers                                                                             | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:126           | Optional                                                                                | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:189           | Saved contact details                                                                   | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:189           | Your details                                                                            | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:251           | Full name                                                                               | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:255           | Email address (verified)                                                                | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:256           | Email address                                                                           | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:261           | Mobile number                                                                           | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:265           | Preferred contact method                                                                | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:271           | Academy / school / organisation                                                         | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:289           | Save contact details                                                                    | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:298           | Back to booking options                                                                 | Keep; supporting label/control.  |
+| src/features/booking/details-step.tsx:333           | Review booking                                                                          | Keep; supporting label/control.  |
+| src/features/booking/email-bot-proof.tsx:66         | Email security check                                                                    | Keep; supporting label/control.  |
+| src/features/booking/instructor.tsx:48              | Sessions with ${instructor.name}                                                        | Keep; supporting label/control.  |
+| src/features/booking/live-catalogue.tsx:56          | Try again                                                                               | Keep; supporting label/control.  |
+| src/features/booking/live-catalogue.tsx:63          | Current sessions                                                                        | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:50            | Back to review                                                                          | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:56            | Order summary                                                                           | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:64            | Payment                                                                                 | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:65            | Total due · SGD                                                                         | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:71            | Your session                                                                            | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:77            | Checkout                                                                                | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:78            | Payment method                                                                          | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:99            | Pay ${money(totalCents(attempt.draft))}                                                 | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:145           | Payment amount                                                                          | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:158           | Contact the studio                                                                      | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:171           | Check payment status                                                                    | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:182           | Back to your booking                                                                    | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:194           | Total due · SGD · Inclusive of GST                                                      | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:226           | Card                                                                                    | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:226           | PayNow                                                                                  | Keep; supporting label/control.  |
+| src/features/booking/payment-step.tsx:232           | Card payment                                                                            | Keep; supporting label/control.  |
+| src/features/booking/protected-confirmation.tsx:525 | Current booking summary                                                                 | Keep; supporting label/control.  |
+| src/features/booking/protected-confirmation.tsx:526 | Your booking                                                                            | Keep; supporting label/control.  |
+| src/features/booking/protected-confirmation.tsx:544 | Total                                                                                   | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:19             | Full name                                                                               | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:21             | Email address                                                                           | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:23             | Mobile number                                                                           | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:25             | Preferred contact method                                                                | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:31             | Academy / school / organisation                                                         | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:87             | Your sessions                                                                           | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:90             | Edit players                                                                            | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:97             | Your session                                                                            | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:106            | Dates &amp; times                                                                       | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:109            | Edit selections                                                                         | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:117            | Booking contact                                                                         | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:120            | Edit details                                                                            | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:127            | Order summary                                                                           | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:151            | Review selections                                                                       | Keep; supporting label/control.  |
+| src/features/booking/review-step.tsx:175            | Continue to payment                                                                     | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:47            | Your session                                                                            | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:95            | Remove one player                                                                       | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:105           | Add one player                                                                          | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:125           | Interactive football in a 360° arena, for individual players and groups.                | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:139           | Included with your session                                                              | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:143           | Arena access                                                                            | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:144           | Access to the arena’s 360° projection wall and interactive training system.             | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:147           | Full instructor guidance                                                                | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:148           | Your instructor introduces the activities and guides your group throughout the session. | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:151           | Single, Team and Battle play                                                            | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:152           | Explore all three play modes during your studio session.                                | Keep; supporting label/control.  |
+| src/features/booking/session-step.tsx:174           | See available times                                                                     | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:38                 | Selected sessions                                                                       | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:69                 | Remove ${slot.date} at ${slot.start}                                                    | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:102                | Total due                                                                               | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:134                | Your booking summary                                                                    | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:140                | Your booking basket                                                                     | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:140                | Booking summary                                                                         | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:146                | Your session                                                                            | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:164                | Clear all                                                                               | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:191                | Total                                                                                   | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:205                | Continue                                                                                | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:241                | Your instructors                                                                        | Keep; supporting label/control.  |
+| src/features/booking/summary.tsx:258                | Instructor                                                                              | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:182              | Select dates and times                                                                  | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:194              | Booking calendar                                                                        | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:200              | Calendar month                                                                          | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:220              | Previous month                                                                          | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:228              | Next month                                                                              | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:244              | Mon                                                                                     | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:244              | Tue                                                                                     | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:244              | Wed                                                                                     | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:244              | Thu                                                                                     | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:244              | Fri                                                                                     | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:244              | Sat                                                                                     | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:244              | Sun                                                                                     | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:304              | Selected day                                                                            | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:308              | In your booking                                                                         | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:333              | Try again                                                                               | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:338              | Session times                                                                           | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:389              | Per session                                                                             | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:389              | Trial price                                                                             | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:417              | Trainer                                                                                 | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:419              | Trainer for ${slot.date} at ${slot.start}                                               | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:486              | See next available day                                                                  | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:487              | See next month                                                                          | Keep; supporting label/control.  |
+| src/features/booking/time-step.tsx:488              | See next day                                                                            | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:49            | Optional                                                                                | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:69            | Back to home                                                                            | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:90            | Send another enquiry                                                                    | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:124           | Your details                                                                            | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:126           | Full name                                                                               | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:127           | Email address                                                                           | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:128           | Contact number                                                                          | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:129           | Academy, school or organisation                                                         | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:133           | Your plans                                                                              | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:137           | Enquiry type *                                                                          | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:146           | Select an arrangement                                                                   | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:152           | Number of guests                                                                        | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:153           | Preferred date                                                                          | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:154           | Preferred time                                                                          | Keep; supporting label/control.  |
+| src/features/enquiry/enquiry-page.tsx:157           | Your requirements *                                                                     | Keep; supporting label/control.  |
+| src/components/player-app-prompt.tsx:31             | Close dialog                                                                            | Use borderless ×; remove footer. |
+| src/components/player-app-prompt.tsx:41             | Download app                                                                            | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:35                    | Skip to content                                                                         | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:38                    | Main navigation                                                                         | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:59                    | The studio                                                                              | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:67                    | Download app                                                                            | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:70                    | Book now                                                                                | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:97                    | Find Us                                                                                 | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:122                   | Connect With Us                                                                         | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:140                   | Contact Us                                                                              | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:153                   | Get in touch                                                                            | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:154                   | Disclaimer                                                                              | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:181                   | Back to home                                                                            | Keep; supporting label/control.  |
+| src/components/site-shell.tsx:184                   | Stay                                                                                    | Keep; supporting label/control.  |
+| src/app/not-found.tsx:11                            | Back to home                                                                            | Keep; supporting label/control.  |
 
 ## Not separate customer messages
 
@@ -772,3 +772,9 @@ The shared session-summary heading keeps one “Your sessions” title. It shows
 Old-confirmation exit preserves a newer active checkout. Provider-native Back may offer Continue payment for the same eligible unpaid request; paid, expired and unresolved states remain protected.
 
 Session step presentation: choose the priced session card to open player selection and the three included features. Continue with See available times inside the dialog; Close or Escape returns to the cards with the player count retained. Cards occupy one of three desktop columns and the full mobile width.
+
+Player App popup: dismiss with the clear, borderless × (or Escape/backdrop). The Not now footer is removed; the three destination links are followed only by the normal dialog bottom padding. Keyboard focus remains visible.
+
+Details/review summary follow-up: Your details shows each session price right-aligned on its trainer row. Review moves the numbered date/time/trainer list into Order summary with per-session prices and an Edit link to time selection; the separate Dates & times section and aggregate “N × 40 min session” row are removed. The final total and currency remain below the list.
+
+TestFull-3: completed HitPay return shows checking without Continue payment until server proof determines the outcome. Pending payment summaries show each price beside its trainer and the total with right-aligned SGD · Final total. An older receipt starts a new draft after any newer completed attempt is independently verified and dismissed; a newer unpaid attempt stays protected. Rejected checkout remains on Review with “You already have a checkout in progress. These selections were not booked.” and View existing checkout; it does not automatically navigate into another attempt.

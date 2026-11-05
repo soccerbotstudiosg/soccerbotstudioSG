@@ -51,7 +51,7 @@ export function Dialog({
           {title}
         </h2>
         <button
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-line"
+          className={`grid h-11 w-11 shrink-0 place-items-center ${variant === "player-app" ? "player-app-close rounded-full" : "rounded-lg border border-line"}`}
           onClick={onClose}
           aria-label="Close dialog"
         >
