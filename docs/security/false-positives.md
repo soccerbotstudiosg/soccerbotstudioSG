@@ -34,3 +34,7 @@ Exact commands, failures and completed validation belong in [Journey](../journey
 ## Proof requiring separate acceptance
 
 Do not manufacture local tests for external settings. Current-account secret scanning/push protection, protection rules and alert state require actual GitHub evidence. DNS/TLS renewal, WAF/edge abuse controls, operator roles/MFA, provider entitlements, final payment journeys, actual telemetry ingestion/alert delivery and populated backup/restore require their respective environment or owner checks. [Security infrastructure](security-infrastructure.md#11-additional-layers-to-adopt) links the remaining layers; [Runbook](../runbook.md) owns procedures. They remain unverified until evidenced; no service activation, external action or blanket security acceptance follows from this PR.
+
+### Browser evidence metadata
+
+PR26's first follow-up CI passed browser execution but failed report aggregation because Playwright's truncated diagnostic Git-diff preview differed in Unicode replacement characters. The combiner compares substantive configuration while retaining the original preview as evidence; only `metadata.gitDiff` is excluded. [Regression tests](../../scripts/browser-shards.test.mjs) prove that changed commit identity, worker count, retries and other configuration remain rejected. Exact source/export/run binding remains independently required. Saved-report replay proves the aggregation repair, not acceptance of a new source head; see [Journey](../journey.md) for the failed run and replay counts.

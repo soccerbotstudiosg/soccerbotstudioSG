@@ -195,3 +195,56 @@ test("CI core filtering excludes memory without changing execution and fails clo
     }),
   );
 });
+
+test("browser aggregation ignores only diagnostic git diffs and retains source and configuration guards", () => {
+  const reports = reportsFor("demo");
+  for (const report of reports)
+    for (const project of report.config.projects)
+      project.metadata = {
+        gitDiff: "time-step · loading",
+        gitCommit: { hash: "a".repeat(40) },
+        ci: { commitHash: "b".repeat(40), buildHref: "synthetic-run" },
+        actualWorkers: 1,
+      };
+  reports[1].config.projects[0].metadata.gitDiff = "time-step �� loading";
+  const retained = structuredClone(reports);
+  assert.deepEqual(
+    validateResults(
+      "browser",
+      combineReports(reports),
+      inventory,
+      process.cwd(),
+      "demo",
+    ),
+    [],
+  );
+  assert.deepEqual(
+    reports,
+    retained,
+    "Original diagnostic evidence must be retained",
+  );
+  for (const mutate of [
+    (project) => {
+      project.metadata.gitCommit.hash = "c".repeat(40);
+    },
+    (project) => {
+      project.metadata.ci.commitHash = "c".repeat(40);
+    },
+    (project) => {
+      project.metadata.actualWorkers = 2;
+    },
+    (project) => {
+      project.timeout = 999;
+    },
+    (project) => {
+      project.retries = 1;
+    },
+    (project) => {
+      project.metadata.unreviewed = true;
+    },
+  ]) {
+    const changed = structuredClone(reports);
+    mutate(changed[1].config.projects[0]);
+    assert.throws(() => combineReports(changed));
+  }
+});
