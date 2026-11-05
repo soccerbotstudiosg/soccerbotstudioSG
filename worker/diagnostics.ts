@@ -235,19 +235,38 @@ export function providerTransportTiming(
   };
 }
 
-/** Record cache lifecycle metadata without provider payloads or customer data. */
+// Diagnostic vocabulary is deliberately narrower than arbitrary API/error text.
+const calendarPhases = [
+  "hit",
+  "miss",
+  "build_started",
+  "build_saved",
+  "build_discarded",
+  "build_failed",
+  "serve",
+  "refresh_skipped",
+  "refresh_deferred",
+] as const;
+const calendarErrorCodes = new Set([
+  "temporarily_unavailable",
+  "availability_representation_unavailable",
+  "calendar_month_invalid",
+  "calendar_scope_unavailable",
+  "calendar_date_unknown",
+  "public_calendar_closed",
+  "public_calendar_budget_exhausted",
+  "native_service_price_changed",
+  "native_pricing_configuration_invalid",
+  "native_pricing_calendar_unavailable",
+  "display_cache_miss",
+  "display_refresh_deferred",
+  "provider_queue_busy",
+]);
+
+/** Record only bounded cache metadata, never caller payloads or error text. */
 export function traceCalendar(
   correlationId: string,
-  phase:
-    | "hit"
-    | "miss"
-    | "build_started"
-    | "build_saved"
-    | "build_discarded"
-    | "build_failed"
-    | "serve"
-    | "refresh_skipped"
-    | "refresh_deferred",
+  phase: (typeof calendarPhases)[number],
   details: {
     trigger: "customer" | "warming";
     month?: string;
@@ -260,13 +279,53 @@ export function traceCalendar(
     code?: string;
   },
 ) {
+  if (
+    typeof correlationId !== "string" ||
+    !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
+      correlationId,
+    ) ||
+    !calendarPhases.includes(phase) ||
+    !["customer", "warming"].includes(details.trigger)
+  )
+    return;
+  const metadata: Record<string, string | number | boolean> = {
+    trigger: details.trigger,
+  };
+  if (
+    typeof details.month === "string" &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(details.month)
+  )
+    metadata.month = details.month;
+  for (const key of [
+    "durationMs",
+    "observedAtMs",
+    "ageMs",
+    "dateCount",
+    "offerCount",
+  ] as const) {
+    const value = details[key];
+    if (
+      typeof value === "number" &&
+      Number.isFinite(value) &&
+      value >= 0 &&
+      value <= Number.MAX_SAFE_INTEGER &&
+      (key === "durationMs" || key === "ageMs" || Number.isSafeInteger(value))
+    )
+      metadata[key] = value;
+  }
+  if (typeof details.persisted === "boolean")
+    metadata.persisted = details.persisted;
+  if (details.code !== undefined)
+    metadata.code = calendarErrorCodes.has(details.code)
+      ? details.code
+      : "temporarily_unavailable";
   console.log(
     JSON.stringify({
       event: "calendar_cache_trace",
       correlationId,
       phase,
       outcome: phase === "build_failed" ? "error" : "ok",
-      ...details,
+      ...metadata,
     }),
   );
 }

@@ -1864,6 +1864,14 @@
     "title": "D1 diagnostics preserve promise identity and count batch statements separately from round trips"
   },
   {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "calendar diagnostics retain lifecycle evidence without exporting it to Grafana"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "calendar diagnostics reject sensitive payloads and malformed runtime metadata"
+  },
+  {
     "file": "worker/tests/webhook.test.mjs",
     "title": "webhook capture defaults closed and requires exact source account environment and origin"
   },
