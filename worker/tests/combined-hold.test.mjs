@@ -3457,6 +3457,49 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
       await m.close();
     }
   }
+  const prepared = await createBookingMechanism();
+  try {
+    const c = await customer(prepared);
+    const first = await prepared.mf.dispatchFetch(
+      prepared.origin + "/api/booking/prepare",
+      {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify(c.input),
+      },
+    );
+    assert.equal(first.status, 201);
+    const before = prepared.calls.length;
+    const key = crypto.randomUUID();
+    const rejected = await prepared.mf.dispatchFetch(
+      prepared.origin + `/api/booking/hold/${key}`,
+      {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify({ ...c.input, key }),
+      },
+    );
+    assert.equal(rejected.status, 409);
+    assert.deepEqual(await rejected.json(), {
+      error: "checkout_already_active",
+    });
+    assert.equal(
+      prepared.calls.length,
+      before,
+      "undispatched preparation needs no capacity read",
+    );
+    assert.equal(
+      (await prepared.db.prepare("SELECT COUNT(*) AS n FROM attempts").first())
+        .n,
+      1,
+    );
+    assert.equal(
+      prepared.calls.filter((call) => call.body?.method === "book").length,
+      0,
+    );
+  } finally {
+    await prepared.close();
+  }
 });
 
 test("rejected unbound window checks fresh availability and preserves failed or available readback as unresolved", async () => {

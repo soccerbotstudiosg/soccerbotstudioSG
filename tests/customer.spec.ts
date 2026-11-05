@@ -773,6 +773,7 @@ test("header blue and the typography hierarchy stay consistent across every book
             size: style.fontSize,
             family: style.fontFamily,
             element: node.outerHTML,
+            total: node.matches(".line-item.total"),
           };
         }),
       );
@@ -780,11 +781,11 @@ test("header blue and the typography hierarchy stay consistent across every book
     expect(
       styles.filter(
         (style) =>
-          style.size !== "16px" ||
+          style.size !== (style.total ? "20px" : "16px") ||
           style.family !== styles[0].family ||
           !style.family.includes("Roboto"),
       ),
-      "Every booking body element must share the 16px Roboto body role",
+      "Booking body uses 16px Roboto; total labels use the approved 20px role",
     ).toEqual([]);
   }
   await details(page);
@@ -803,8 +804,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     brand,
   );
   await payAttempt(page);
-  // Confirmation has its own approved success accent; every earlier heading
-  // and the site header retain navy, with the same type and overflow checks.
+  // H1s share the approved teal accent; the site header retains navy.
   await pageHeading("Booking confirmed", "rgb(23, 96, 120)");
   await expect(page.locator(".site-header")).toHaveCSS(
     "background-color",
@@ -1081,7 +1081,7 @@ test("Back during hero entry stays on home even when the previous page was Studi
   await expect(page.getByRole("main")).not.toHaveAttribute("inert");
 });
 
-test("per-slot trainer dropdowns group times under trainer cards and retain changed choices after reload", async ({
+test("per-slot trainer dropdowns show unique trainer biographies and retain changed choices after reload", async ({
   page,
 }) => {
   await openSite(page, "/book/account/");
@@ -1125,26 +1125,27 @@ test("per-slot trainer dropdowns group times under trainer cards and retain chan
   const cards = page.getByRole("region", { name: "Your instructors" });
   await expect(cards.getByRole("article")).toHaveCount(1);
   await expect(
-    cards
-      .getByRole("article", { name: "Daniel Tan", exact: true })
-      .getByRole("listitem"),
-  ).toHaveCount(2);
+    cards.getByRole("article", { name: "Daniel Tan", exact: true }),
+  ).toContainText("Demonstration profile. Guides players through ball control");
+  await expect(cards.getByRole("listitem")).toHaveCount(0);
   await noon.selectOption(`${date}|12:00|demo|faisal`);
   await expect(cards.getByRole("article")).toHaveCount(2);
   await expect(
     cards.getByRole("article", { name: "Faisal Shahril", exact: true }),
-  ).toContainText("12:00–12:40");
+  ).toContainText("A football player, trainer and coach");
   await expect(
     cards.getByRole("article", { name: "Daniel Tan", exact: true }),
-  ).toContainText("15:20–16:00");
+  ).toContainText("Demonstration profile. Guides players through ball control");
   await page.reload();
   await expect(noon).toHaveValue(`${date}|12:00|demo|faisal`);
+  await expect(
+    page.getByRole("combobox", { name: `Trainer for ${date} at 15:20` }),
+  ).toHaveValue(`${date}|15:20|demo|daniel`);
   await expect(cards.getByRole("article")).toHaveCount(2);
   await page.getByRole("button", { name: /15:20–16:00/ }).click();
   await expect(cards.getByRole("article")).toHaveCount(1);
   await expect(
-    cards
-      .getByRole("article", { name: "Faisal Shahril", exact: true })
-      .getByRole("listitem"),
-  ).toHaveCount(1);
+    cards.getByRole("article", { name: "Faisal Shahril", exact: true }),
+  ).toContainText("A football player, trainer and coach");
+  await expect(cards.getByRole("listitem")).toHaveCount(0);
 });
