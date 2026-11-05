@@ -23,7 +23,7 @@ export async function confirmationSnapshot(
     SELECT a.id,a.created_ms,a.deadline_ms,a.state,a.intent_json,a.intent_hash,
       a.association_json,a.observation_json,a.confirmation_next_ms,
       CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,
-      r.route,c.booking_created_ms,c.payment_window_ms,c.confirmation_json,
+      r.route,c.booking_created_ms,c.payment_window_ms,c.checking_buffer_ms,c.confirmation_json,
       (SELECT expires_ms FROM hitpay_holds WHERE attempt_id=a.id) AS hold_expires_ms,
       CASE WHEN p.attempt_id IS NULL THEN NULL ELSE json_object(
         'attempt_id',p.attempt_id,'scope_json',p.scope_json,'reference',p.reference,
@@ -53,6 +53,7 @@ export async function confirmationSnapshot(
         route: string | null;
         booking_created_ms: number | null;
         payment_window_ms: number | null;
+        checking_buffer_ms: number | null;
         hold_expires_ms: number | null;
         confirmation_json: string | null;
         payment_json: string | null;
@@ -69,7 +70,9 @@ export async function confirmationSnapshot(
     deadline:
       row.booking_created_ms === null
         ? row.deadline_ms
-        : row.booking_created_ms + row.payment_window_ms! + 300000,
+        : row.booking_created_ms +
+          row.payment_window_ms! +
+          row.checking_buffer_ms!,
     proof:
       row.confirmation_json &&
       payment?.paid_ms != null &&

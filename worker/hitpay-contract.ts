@@ -192,5 +192,10 @@ export function verifyHitpayRequest(
     status: value.status,
     paymentId,
     expiresAtMs,
+    // Missing, processing, refunded or inconsistent payments are not nonpayment.
+    unpaidTerminal:
+      (value.status === "expired" || value.status === "canceled") &&
+      value.payments !== undefined &&
+      value.payments.length === 0,
   };
 }

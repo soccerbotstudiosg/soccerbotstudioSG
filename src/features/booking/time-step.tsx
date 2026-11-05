@@ -220,7 +220,7 @@ export function TimeStep() {
               className="calendar-refresh"
               aria-label="Refresh availability"
               disabled={calendarBusy}
-              onClick={calendar.retry}
+              onClick={() => calendar.retry()}
             >
               Refresh
             </button>

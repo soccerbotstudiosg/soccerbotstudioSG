@@ -1226,5 +1226,9 @@
   {
     "file": "src/features/booking/session-price.test.tsx",
     "title": "live session selection uses client prices while demo retains its own rates"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "calendar refresh replaces only the selected month and retains loaded siblings"
   }
 ]

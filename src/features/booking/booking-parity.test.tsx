@@ -1293,3 +1293,48 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
     view.unmount();
   }
 });
+
+test("calendar refresh replaces only the selected month and retains loaded siblings", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2027-01-01T00:00:00Z"));
+  const publicCalendar = vi.fn(async ({ month }: { month: string }) => ({
+    month,
+    serviceId: "12",
+    observedAtMs: Date.now(),
+    dates: [],
+  }));
+  const service: BookingService = { ...demoBookingService, publicCalendar };
+  function Probe({ month }: { month: string }) {
+    const calendar = useCalendarAvailability(
+      service,
+      "12",
+      month,
+      "public",
+      false,
+    );
+    return (
+      <>
+        <button onClick={() => calendar.retry()}>Refresh month</button>
+        <output>
+          {calendar.entry(month, Date.parse("2027-01-01T00:00:00Z"))
+            ? month
+            : "Loading"}
+        </output>
+      </>
+    );
+  }
+  const view = render(<Probe month="2027-01" />);
+  await screen.findByText("2027-01");
+  view.rerender(<Probe month="2027-02" />);
+  await screen.findByText("2027-02");
+  fireEvent.click(screen.getByText("Refresh month"));
+  await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(3));
+  await screen.findByText("2027-02");
+  view.rerender(<Probe month="2027-01" />);
+  await screen.findByText("2027-01");
+  expect(publicCalendar.mock.calls.map(([value]) => value.month)).toEqual([
+    "2027-01",
+    "2027-02",
+    "2027-02",
+  ]);
+});

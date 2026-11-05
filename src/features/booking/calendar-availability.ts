@@ -38,7 +38,6 @@ export function useCalendarAvailability(
   const key = JSON.stringify([
     service.publicCalendar ? "public" : serviceId,
     scope,
-    reload,
   ]);
   const [state, setState] = useState<{
     owner: BookingService;
@@ -119,7 +118,7 @@ export function useCalendarAvailability(
       }
     })();
     return () => controller.abort();
-  }, [service, protectedServiceId, month, scope, paused, key]);
+  }, [service, protectedServiceId, month, scope, paused, key, reload]);
   // Expire display entries at their actual receipt deadline, independently of
   // the booking page's minute clock. No provider polling or silent retries.
   useEffect(() => {
@@ -232,6 +231,17 @@ export function useCalendarAvailability(
         : null;
     },
     failed: current?.failed ?? [],
-    retry: () => setReload((value) => value + 1),
+    retry: (months: string[] = [month]) => {
+      // Drop only requested months; retained siblings keep their fixed deadline.
+      const previous = retained.current;
+      if (previous?.owner === service && previous.key === key) {
+        const entries = { ...previous.entries };
+        for (const selected of months) delete entries[selected];
+        const next = { ...previous, entries, failed: [] };
+        retained.current = next;
+        setState(next);
+      }
+      setReload((value) => value + 1);
+    },
   };
 }

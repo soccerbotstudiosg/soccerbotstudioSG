@@ -2305,7 +2305,7 @@ test("real API exhausted browser checking window retains the original deadline a
       .click();
     await expect(
       page.getByRole("heading", {
-        name: "Payment needs checking",
+        name: "Please check your payment",
         exact: true,
       }),
     ).toBeVisible();

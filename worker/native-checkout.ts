@@ -1,4 +1,9 @@
-import { BOOKING_MONTH_COUNT } from "../src/domain/booking-policy";
+import {
+  BOOKING_MONTH_COUNT,
+  PAYMENT_WINDOW_MS,
+  CHECKING_BUFFER_MS,
+  HOLD_WINDOW_MS,
+} from "../src/domain/booking-policy";
 import { studioStartsFromIntervals } from "./native-grid";
 import { claimNativeDispatch, claimNativeEffect } from "./native-dispatch";
 import type { Grant } from "./customer-authority";
@@ -690,9 +695,15 @@ export async function executeNativeCheckout(options: {
         createdAtMs = creationEvidence?.receivedAtMs ?? receivedAtMs;
         if (consolidated) return;
         await env.STATE.prepare(
-          "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms) VALUES(?,?,480000,900000) ON CONFLICT(attempt_id) DO NOTHING",
+          "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms) VALUES(?,?,?,?,?) ON CONFLICT(attempt_id) DO NOTHING",
         )
-          .bind(attemptId, createdAtMs)
+          .bind(
+            attemptId,
+            createdAtMs,
+            PAYMENT_WINDOW_MS,
+            HOLD_WINDOW_MS,
+            CHECKING_BUFFER_MS,
+          )
           .run();
       };
     if (consolidated)
@@ -711,9 +722,15 @@ export async function executeNativeCheckout(options: {
         if (!fresh || !evidence || createdAtMs === undefined) {
           if (createdAtMs !== undefined)
             await env.STATE.prepare(
-              "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms) VALUES(?,?,480000,900000) ON CONFLICT(attempt_id) DO NOTHING",
+              "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms) VALUES(?,?,?,?,?) ON CONFLICT(attempt_id) DO NOTHING",
             )
-              .bind(attemptId, createdAtMs)
+              .bind(
+                attemptId,
+                createdAtMs,
+                PAYMENT_WINDOW_MS,
+                HOLD_WINDOW_MS,
+                CHECKING_BUFFER_MS,
+              )
               .run();
           return bindAssociation(
             env.STATE,
@@ -730,16 +747,16 @@ export async function executeNativeCheckout(options: {
           throw new ApiError(409, "native_checkout_state_changed");
         const verifiedAtMs = Date.now();
         const expiresMs = Math.min(
-          createdAtMs + 900000,
+          createdAtMs + HOLD_WINDOW_MS,
           nativeCheckoutDeadline(
             {
               invoiceId: refs.invoiceId,
               dueDatetime: evidence.dueDatetime,
-              supervisionDeadlineMs: Date.now() + 900000,
+              supervisionDeadlineMs: Date.now() + HOLD_WINDOW_MS,
               handoffAtMs: Date.now(),
             },
             Date.now(),
-            900000,
+            HOLD_WINDOW_MS,
           ),
         );
         const associationJson = JSON.stringify(associationSchema.parse(refs));
@@ -889,7 +906,7 @@ export async function executeNativeCheckout(options: {
           // Its remaining lifetime must not become a new booking/payment TTL.
           supervisionDeadlineMs:
             ongoing && paymentRoute === "hitpay"
-              ? Date.now() + 900000
+              ? Date.now() + HOLD_WINDOW_MS
               : grant.expires_ms,
           handoffAtMs: Date.now(),
         };
@@ -900,7 +917,7 @@ export async function executeNativeCheckout(options: {
                 scope,
                 associated.association_json,
                 row.intent_hash,
-                nativeCheckoutDeadline(timing, Date.now(), 900000),
+                nativeCheckoutDeadline(timing, Date.now(), HOLD_WINDOW_MS),
               )
             : undefined;
         if (!hold)
@@ -966,7 +983,7 @@ export async function executeNativeCheckout(options: {
                       expires_ms: integratedHold.expiresMs,
                       intent_json: row.intent_json,
                       booking_created_ms: integratedHold.createdAtMs,
-                      payment_window_ms: 480000,
+                      payment_window_ms: PAYMENT_WINDOW_MS,
                       has_payment: 0,
                     },
                   }

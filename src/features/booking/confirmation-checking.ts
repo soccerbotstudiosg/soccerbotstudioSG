@@ -320,7 +320,7 @@ export function useConfirmationChecking(
       }
       schedule();
     };
-    refresh.current = () => void poll();
+    refresh.current = () => void poll("focus");
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("focus", visibility);
     void poll();

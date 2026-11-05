@@ -710,7 +710,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   async function bookingDocumentBody() {
     const styles = await page
       .locator(
-        ".booking-document p, .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .line-item.total strong, .booking-document .paid strong",
+        ".booking-document p, .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .paid strong",
       )
       .evaluateAll((nodes) =>
         nodes.map((node) => {
@@ -736,6 +736,9 @@ test("header blue and the typography hierarchy stay consistent across every book
   await details(page);
   await pageHeading("Review booking");
   await bookingDocumentBody();
+  const reviewTotal = page.locator(".booking-document .line-item.total strong");
+  await expect(reviewTotal).toHaveCSS("font-size", "24px");
+  await expect(reviewTotal).toHaveCSS("font-family", /Roboto/);
   await sectionType(".review-head h2, .review-block > h2");
   await expect(page.locator(".booking-facts")).toHaveCSS("font-size", "16px");
   await page.getByRole("button", { name: "Continue to payment" }).click();

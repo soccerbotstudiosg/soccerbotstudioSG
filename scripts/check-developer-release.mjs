@@ -428,6 +428,7 @@ try {
   if (config.vars.ENVIRONMENT !== "production")
     await migrate("0035_portable_foundation_identity.sql");
   await migrate("0036_invoice_documents.sql");
+  await migrate("0037_checkout_checking_buffer.sql");
   assert.deepEqual(
     await db.prepare("SELECT * FROM foundation_identity").first(),
     identity,
