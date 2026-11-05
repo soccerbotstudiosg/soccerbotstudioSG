@@ -868,6 +868,7 @@ export function BookingProvider({
             return;
           cancel();
           if (action.returnToCalendar) setAction({ status: "idle" });
+          setSelectionNotice(null);
           pauseCalendar(false);
           commit({
             ...current,

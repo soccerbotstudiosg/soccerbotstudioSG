@@ -1033,7 +1033,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "per-slot trainer dropdowns group times under trainer cards and retain changed choices after reload"
+    "title": "per-slot trainer dropdowns show unique trainer biographies and retain changed choices after reload"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -1230,5 +1230,13 @@
   {
     "file": "src/features/booking/booking-parity.test.tsx",
     "title": "calendar refresh replaces only the selected month and retains loaded siblings"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "incomplete provider booking shows reservation recovery without a payment spinner or checkout link"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "editing a new selection clears the previous unpaid reservation notice"
   }
 ]

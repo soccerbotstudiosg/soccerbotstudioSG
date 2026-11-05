@@ -312,6 +312,11 @@ export async function checkoutContext(
     payment,
     confirmation: savedConfirmation,
     details,
+    ...(row.state === "recovery_required" &&
+    !row.association_json &&
+    !snapshot.payment.payment
+      ? { bookingIssue: "incomplete" as const }
+      : {}),
     customerConfirmation:
       hitpayCheckout === null
         ? undefined
@@ -343,7 +348,17 @@ export async function checkoutContext(
       deadlineMs: snapshot.deadline,
       ...(row.hold_expires_ms === null
         ? {}
-        : { holdExpiresAtMs: row.hold_expires_ms }),
+        : {
+            holdExpiresAtMs: row.hold_expires_ms,
+            ...(row.booking_created_ms !== null && row.recovery_buffer_ms
+              ? {
+                  recoveryEndsAtMs: Math.max(
+                    row.hold_expires_ms,
+                    snapshot.deadline + row.recovery_buffer_ms,
+                  ),
+                }
+              : {}),
+          }),
       nextCheckMs: row.confirmation_next_ms,
       pollAfterMs: policy(env).POLL_INTERVAL_MS,
     },

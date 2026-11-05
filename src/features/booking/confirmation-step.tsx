@@ -218,7 +218,10 @@ export function BookingConfirmation({
                   <span className="pill success">
                     {preview ? "Paid · Preview" : "Paid"}
                   </span>
-                  <strong>{money(booking.totalCents)} SGD</strong>
+                  <strong>
+                    <span className="total-currency">SGD</span>{" "}
+                    {money(booking.totalCents)}
+                  </strong>
                 </div>
               ) : undefined
             }
@@ -227,16 +230,21 @@ export function BookingConfirmation({
             <>
               <div className="summary-total">
                 <span>Total</span>
-                <strong>{money(booking.totalCents)}</strong>
+                <strong>
+                  <span className="total-currency">SGD</span>{" "}
+                  {money(booking.totalCents)}
+                </strong>
               </div>
-              <p className="hint summary-currency">SGD · Final total</p>
             </>
           ) : booking.slots.length !== 1 ? (
             <div className="paid settled">
               <span className="pill success">
                 {preview ? "Paid · Preview" : "Paid"}
               </span>
-              <strong>{money(booking.totalCents)} SGD</strong>
+              <strong>
+                <span className="total-currency">SGD</span>{" "}
+                {money(booking.totalCents)}
+              </strong>
             </div>
           ) : null}
         </div>

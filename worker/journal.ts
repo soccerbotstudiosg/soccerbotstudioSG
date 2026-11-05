@@ -3,6 +3,7 @@ import {
   MAX_PLAYERS,
   PAYMENT_WINDOW_MS,
   CHECKING_BUFFER_MS,
+  RECOVERY_BUFFER_MS,
   HOLD_WINDOW_MS,
 } from "../src/domain/booking-policy";
 import type { Access } from "./access";
@@ -265,13 +266,14 @@ export async function bindAssociation(
     ? [
         db
           .prepare(
-            "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms) SELECT id,?,?,?,? FROM attempts WHERE id=? AND version=? AND state='dispatching' ON CONFLICT(attempt_id) DO NOTHING",
+            "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms,recovery_buffer_ms) SELECT id,?,?,?,?,? FROM attempts WHERE id=? AND version=? AND state='dispatching' ON CONFLICT(attempt_id) DO NOTHING",
           )
           .bind(
             completion.createdAtMs,
             PAYMENT_WINDOW_MS,
             HOLD_WINDOW_MS,
             CHECKING_BUFFER_MS,
+            RECOVERY_BUFFER_MS,
             id,
             fence,
           ),

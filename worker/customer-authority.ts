@@ -246,7 +246,7 @@ export async function rejectedCheckoutReadback(
       .bind(input.key),
     db
       .prepare(
-        "SELECT a.id,a.intent_json,a.association_json FROM native_checkout_grants g JOIN attempts a ON a.id=g.attempt_id WHERE g.capability_hash=? AND a.owner_id=? LIMIT 1",
+        "SELECT a.id,a.state,a.intent_json,a.association_json FROM native_checkout_grants g JOIN attempts a ON a.id=g.attempt_id WHERE g.capability_hash=? AND a.owner_id=? LIMIT 1",
       )
       .bind(access.capability_hash, access.owner_id),
   ]);
@@ -264,11 +264,12 @@ export async function rejectedCheckoutReadback(
     // An owned attempt for another studio start, or an unobserved write, cannot
     // establish that this selection is occupied. Never disclose its details.
     if (
-      typeof owned.association_json !== "string" ||
-      typeof owned.intent_json !== "string"
+      typeof owned.intent_json !== "string" ||
+      (!owned.association_json && owned.state !== "recovery_required")
     )
       return "checkout_already_active";
-    associationSchema.parse(JSON.parse(owned.association_json));
+    if (typeof owned.association_json === "string")
+      associationSchema.parse(JSON.parse(owned.association_json));
     const intent = intentSchema.parse(JSON.parse(owned.intent_json));
     if (
       !input.sessions.some((session) =>

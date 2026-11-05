@@ -264,6 +264,7 @@ export function useConfirmationChecking(
         paymentReceived =
           paymentReceived ||
           response.reason === "payment_received_booking_pending" ||
+          response.reason === "paid_booking_invalid" ||
           response.status === "confirmed";
         if (response.status === "confirmed") {
           terminal = true;

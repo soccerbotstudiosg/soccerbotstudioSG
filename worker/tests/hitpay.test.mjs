@@ -1614,13 +1614,14 @@ test("HitPay creation mismatch retains only a redacted field diagnostic and neve
 async function seedCustomerProgress(
   createdAtMs = Date.now() - 1000,
   currentWindows = false,
+  recoveryBufferMs = 0,
 ) {
   const date = new Date(intent.sessions[0].startMs + 28800000)
     .toISOString()
     .slice(0, 10);
   await db
     .prepare(
-      "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms) VALUES(?,?,?,?,?)",
+      "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms,recovery_buffer_ms) VALUES(?,?,?,?,?,?)",
     )
     .bind(
       attemptId,
@@ -1628,6 +1629,7 @@ async function seedCustomerProgress(
       currentWindows ? 480000 : 300000,
       600000,
       currentWindows ? 60000 : 300000,
+      recoveryBufferMs,
     )
     .run();
   await db
@@ -2645,5 +2647,74 @@ test("verified nonpayment at checking expiry still waits for the original hold",
       .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
       .bind(attemptId)
       .first(),
+  );
+});
+
+test("new recovery buffer blocks verified nonpayment after the provider hold ends", async () => {
+  const options = await seedHold(Date.now() - 60000);
+  await seedCustomerProgress(Date.now() - 660000, true, 180000);
+  await seedPayment({ expired: true });
+  handler = async () =>
+    Response.json({
+      ...paymentResponse(),
+      status: "expired",
+      payments: [
+        {
+          ...paymentResponse().payments[0],
+          status: "requires_payment_method",
+          refunded_amount: "0.00",
+        },
+      ],
+      expiry_date: new Date(Date.now() + 28800000 - 60000)
+        .toISOString()
+        .slice(0, 19),
+    });
+  await recover();
+  assert.equal((await row()).reason, "hitpay_unpaid_verified");
+  const response = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/expire`,
+    { method: "POST", headers: options.headers },
+  );
+  assert.equal(response.status, 409);
+  assert.ok(
+    await db
+      .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
+      .bind(attemptId)
+      .first(),
+  );
+});
+
+test("new recovery buffer releases verified nonpayment after twelve minutes", async () => {
+  const options = await seedHold(Date.now() - 60000);
+  await seedCustomerProgress(Date.now() - 721000, true, 180000);
+  await seedPayment({ expired: true });
+  handler = async () =>
+    Response.json({
+      ...paymentResponse(),
+      status: "expired",
+      payments: [
+        {
+          ...paymentResponse().payments[0],
+          status: "requires_payment_method",
+          refunded_amount: "0.00",
+        },
+      ],
+      expiry_date: new Date(Date.now() + 28800000 - 60000)
+        .toISOString()
+        .slice(0, 19),
+    });
+  await recover();
+  assert.equal((await row()).reason, "hitpay_unpaid_verified");
+  const response = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/expire`,
+    { method: "POST", headers: options.headers },
+  );
+  assert.equal(response.status, 200);
+  assert.equal(
+    await db
+      .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
+      .bind(attemptId)
+      .first(),
+    null,
   );
 });

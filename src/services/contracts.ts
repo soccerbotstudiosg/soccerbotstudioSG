@@ -138,6 +138,7 @@ export interface AssistantService {
 }
 
 export type CheckoutContext = {
+  bookingIssue?: "incomplete";
   /** Client-only server time anchor; never serialized as booking authority. */
   clock?: { epochMs: number; monotonicMs: number; uncertaintyMs: number };
   customerConfirmation?: z.infer<typeof receiptSchema>;
@@ -161,6 +162,7 @@ export type CheckoutContext = {
     nextCheckMs: number;
     pollAfterMs: number;
     holdExpiresAtMs?: number;
+    recoveryEndsAtMs?: number;
   };
 };
 export interface ProtectedCheckoutService {

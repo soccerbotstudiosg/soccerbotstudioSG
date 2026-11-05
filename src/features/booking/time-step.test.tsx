@@ -80,15 +80,25 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   );
   expect(within(instructors).getAllByRole("article")).toHaveLength(2);
   expect(
+    within(instructors)
+      .getByRole("article", { name: "Faisal Shahril" })
+      .querySelector(".trainer-bio"),
+  ).not.toBeEmptyDOMElement();
+  expect(
     within(
       within(instructors).getByRole("article", { name: "Faisal Shahril" }),
-    ).getAllByRole("listitem"),
-  ).toHaveLength(2);
+    ).queryByRole("list"),
+  ).not.toBeInTheDocument();
+  expect(
+    within(instructors)
+      .getByRole("article", { name: "Daniel Tan" })
+      .querySelector(".trainer-bio"),
+  ).not.toBeEmptyDOMElement();
   expect(
     within(
       within(instructors).getByRole("article", { name: "Daniel Tan" }),
-    ).getAllByRole("listitem"),
-  ).toHaveLength(1);
+    ).queryByRole("list"),
+  ).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
   expect(within(instructors).getAllByRole("article")).toHaveLength(1);
   await user.click(screen.getByRole("button", { name: "Clear all" }));

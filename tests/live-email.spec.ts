@@ -1659,10 +1659,12 @@ async function uncertainHolding(
     expect(transport.json(response).state).toBe("recovery_required");
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
-      page.getByRole("status", {
-        name: "Checking payment…",
-        exact: true,
-      }),
+      fault === "readback"
+        ? page.getByRole("status", { name: "Checking payment…", exact: true })
+        : page.getByText(
+            "Unable to complete this booking. Contact the studio for help with this reservation.",
+            { exact: true },
+          ),
     ).toBeVisible();
     await assertNoPaymentOrConfirmation(page, mechanism);
     const row = await mechanism.db
@@ -2243,10 +2245,10 @@ async function failedBatch(page: Page, unknown: boolean) {
     ).toEqual({ n: 0 });
     await page.reload();
     await expect(
-      page.getByRole("status", {
-        name: "Checking payment…",
-        exact: true,
-      }),
+      page.getByText(
+        "Unable to complete this booking. Contact the studio for help with this reservation.",
+        { exact: true },
+      ),
     ).toBeVisible();
     expect(creations).toBe(2);
     expect(
@@ -2306,10 +2308,10 @@ test("real API exhausted browser checking window retains the original deadline a
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", {
-        name: "Please check your payment",
-        exact: true,
-      }),
+      page.getByText(
+        "Unable to complete this booking. Contact the studio for help with this reservation.",
+        { exact: true },
+      ),
     ).toBeVisible();
     await assertNoPaymentOrConfirmation(page, mechanism);
     expect(

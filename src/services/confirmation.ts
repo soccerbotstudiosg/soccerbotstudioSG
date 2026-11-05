@@ -48,6 +48,7 @@ const contextSchema = z.strictObject({
   payment: z
     .strictObject({ status: z.literal("recorded"), paidAtMs: instant })
     .optional(),
+  bookingIssue: z.literal("incomplete").optional(),
   attemptId: idSchema,
   mode: z.enum(["synthetic", "live"]),
   checkout: z.discriminatedUnion("state", [
@@ -75,6 +76,7 @@ const contextSchema = z.strictObject({
   checking: z.strictObject({
     deadlineMs: instant,
     holdExpiresAtMs: instant.optional(),
+    recoveryEndsAtMs: instant.optional(),
     nextCheckMs: instant,
     pollAfterMs: z.number().int().min(1000).max(30000),
   }),

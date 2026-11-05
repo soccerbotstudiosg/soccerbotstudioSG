@@ -142,13 +142,17 @@ test("synthetic paid but invalid booking needs recovery instead of claiming succ
   await start(page);
   await outcome(page, "Simulate payment needing review");
   await expect(
-    page.getByRole("heading", { name: "Please check your payment" }),
+    page.getByRole("heading", {
+      name: "Payment received; booking confirmation pending",
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByText(/We’re still checking your payment./),
+    page.getByText(
+      "Payment received. Contact us about your booking. Do not pay again.",
+    ),
   ).toBeVisible();
   await page.screenshot({
     path: info.outputPath("04-recovery.png"),

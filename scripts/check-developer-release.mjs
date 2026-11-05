@@ -76,12 +76,16 @@ const mf = new Miniflare({
 try {
   await mf.ready;
   const db = await mf.getD1Database("STATE");
-  const migrate = async (name) =>
-    db.exec(
+  const migrated = new Set();
+  const migrate = async (name) => {
+    assert.equal(migrated.has(name), false, `Duplicate migration: ${name}`);
+    await db.exec(
       readFileSync(`${directory}/migrations/${name}`, "utf8")
         .replace(/^--.*$/gm, "")
         .replace(/\n/g, " "),
     );
+    migrated.add(name);
+  };
   const names = Object.keys(manifest.files)
     .filter((f) => f.startsWith("migrations/"))
     .map((f) => f.slice(11))
@@ -429,6 +433,12 @@ try {
     await migrate("0035_portable_foundation_identity.sql");
   await migrate("0036_invoice_documents.sql");
   await migrate("0037_checkout_checking_buffer.sql");
+  await migrate("0038_checkout_recovery_buffer.sql");
+  assert.deepEqual(
+    [...migrated].sort(),
+    names,
+    "Every packaged migration must be exercised",
+  );
   assert.deepEqual(
     await db.prepare("SELECT * FROM foundation_identity").first(),
     identity,

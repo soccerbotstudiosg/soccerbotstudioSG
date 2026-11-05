@@ -2,6 +2,7 @@ import {
   BOOKING_MONTH_COUNT,
   PAYMENT_WINDOW_MS,
   CHECKING_BUFFER_MS,
+  RECOVERY_BUFFER_MS,
   HOLD_WINDOW_MS,
 } from "../src/domain/booking-policy";
 import { studioStartsFromIntervals } from "./native-grid";
@@ -695,7 +696,7 @@ export async function executeNativeCheckout(options: {
         createdAtMs = creationEvidence?.receivedAtMs ?? receivedAtMs;
         if (consolidated) return;
         await env.STATE.prepare(
-          "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms) VALUES(?,?,?,?,?) ON CONFLICT(attempt_id) DO NOTHING",
+          "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms,recovery_buffer_ms) VALUES(?,?,?,?,?,?) ON CONFLICT(attempt_id) DO NOTHING",
         )
           .bind(
             attemptId,
@@ -703,6 +704,7 @@ export async function executeNativeCheckout(options: {
             PAYMENT_WINDOW_MS,
             HOLD_WINDOW_MS,
             CHECKING_BUFFER_MS,
+            RECOVERY_BUFFER_MS,
           )
           .run();
       };
@@ -722,7 +724,7 @@ export async function executeNativeCheckout(options: {
         if (!fresh || !evidence || createdAtMs === undefined) {
           if (createdAtMs !== undefined)
             await env.STATE.prepare(
-              "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms) VALUES(?,?,?,?,?) ON CONFLICT(attempt_id) DO NOTHING",
+              "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms,recovery_buffer_ms) VALUES(?,?,?,?,?,?) ON CONFLICT(attempt_id) DO NOTHING",
             )
               .bind(
                 attemptId,
@@ -730,6 +732,7 @@ export async function executeNativeCheckout(options: {
                 PAYMENT_WINDOW_MS,
                 HOLD_WINDOW_MS,
                 CHECKING_BUFFER_MS,
+                RECOVERY_BUFFER_MS,
               )
               .run();
           return bindAssociation(
