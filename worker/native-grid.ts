@@ -9,7 +9,12 @@ import {
 const boundary = z
   .string()
   .regex(/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$|^24:00:00$/);
-const intervals = z.array(z.tuple([boundary, boundary])).max(288);
+// SimplyBook returns named boundaries; retain its documented tuple form too.
+const interval = z.union([
+  z.object({ from: boundary, to: boundary }).strict(),
+  z.tuple([boundary, boundary]).transform(([from, to]) => ({ from, to })),
+]);
+const intervals = z.array(interval).max(288);
 const seconds = (time: string) => {
   const [h, m, s] = time.split(":").map(Number);
   return h * 3600 + m * 60 + s;
@@ -29,7 +34,7 @@ export function studioStartsFromIntervals(
   if (Object.keys(day).some((id) => id !== instructorId))
     throw new ApiError(503, "availability_representation_unavailable");
   const ranges = (day[instructorId] ?? [])
-    .map(([from, to]) => ({ from: seconds(from), to: seconds(to) }))
+    .map(({ from, to }) => ({ from: seconds(from), to: seconds(to) }))
     .sort((a, b) => a.from - b.from);
   if (ranges.some((range) => range.from >= range.to))
     throw new ApiError(503, "availability_representation_unavailable");

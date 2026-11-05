@@ -1,3 +1,4 @@
+import { BOOKING_MONTH_COUNT } from "../src/domain/booking-policy";
 import { studioStartsFromIntervals } from "./native-grid";
 import { claimNativeDispatch, claimNativeEffect } from "./native-dispatch";
 import type { Grant } from "./customer-authority";
@@ -1640,7 +1641,7 @@ export async function customerNativeCalendar(options: {
     await customerNativeWindow(request, env);
   const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
   const monthStart = new Date(today.slice(0, 7) + "-01T00:00:00Z");
-  monthStart.setUTCMonth(monthStart.getUTCMonth() + 3);
+  monthStart.setUTCMonth(monthStart.getUTCMonth() + BOOKING_MONTH_COUNT - 1);
   if (
     month < today.slice(0, 7) ||
     month > monthStart.toISOString().slice(0, 7) ||

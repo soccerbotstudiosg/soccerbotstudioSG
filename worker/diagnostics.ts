@@ -234,3 +234,39 @@ export function providerTransportTiming(
     },
   };
 }
+
+/** Record cache lifecycle metadata without provider payloads or customer data. */
+export function traceCalendar(
+  correlationId: string,
+  phase:
+    | "hit"
+    | "miss"
+    | "build_started"
+    | "build_saved"
+    | "build_discarded"
+    | "build_failed"
+    | "serve"
+    | "refresh_skipped"
+    | "refresh_deferred",
+  details: {
+    trigger: "customer" | "warming";
+    month?: string;
+    durationMs?: number;
+    observedAtMs?: number;
+    ageMs?: number;
+    dateCount?: number;
+    offerCount?: number;
+    persisted?: boolean;
+    code?: string;
+  },
+) {
+  console.log(
+    JSON.stringify({
+      event: "calendar_cache_trace",
+      correlationId,
+      phase,
+      outcome: phase === "build_failed" ? "error" : "ok",
+      ...details,
+    }),
+  );
+}

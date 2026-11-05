@@ -1277,6 +1277,24 @@ test("scheduled display warming survives idle entry and booking refresh never de
     const home = await m.mf.dispatchFetch(m.origin + "/api/calendar/" + month);
     const calendar = await home.json();
     assert.equal(home.status, 200);
+    for (const offset of [1, 2]) {
+      const next = new Date(month + "-01T00:00:00Z");
+      next.setUTCMonth(next.getUTCMonth() + offset);
+      const warmed = await m.mf.dispatchFetch(
+        m.origin + "/api/calendar/" + next.toISOString().slice(0, 7),
+      );
+      assert.equal(warmed.status, 200);
+      assert.ok((await warmed.json()).dates.length > 0);
+    }
+    const fourthMonth = new Date(month + "-01T00:00:00Z");
+    fourthMonth.setUTCMonth(fourthMonth.getUTCMonth() + 3);
+    const rejected = await m.mf.dispatchFetch(
+      m.origin + "/api/calendar/" + fourthMonth.toISOString().slice(0, 7),
+    );
+    assert.equal(rejected.status, 400);
+    assert.deepEqual(await rejected.json(), {
+      error: "calendar_month_invalid",
+    });
     assert.equal(calendar.displayExpiresAtMs, calendar.observedAtMs + 1800000);
     const catalogue = await m.mf.dispatchFetch(m.origin + "/api/catalogue");
     assert.equal(catalogue.status, 200);
@@ -1352,6 +1370,198 @@ test("scheduled display warming survives idle entry and booking refresh never de
   }
 });
 
+test("warming reuses fresh customer range reads while prebuilding the other two months", async () => {
+  const m = await createBookingMechanism({ displayWarming: true });
+  try {
+    const month = new Date(Date.now() + 28800000).toISOString().slice(0, 7);
+    const url = m.origin + "/api/calendar/" + month;
+    const initial = await m.mf.dispatchFetch(url);
+    assert.equal(initial.status, 200);
+    const calendar = await initial.json();
+    const before = m.calls.length;
+    await (await m.mf.getWorker()).scheduled();
+    const ranges = m.calls
+      .slice(before)
+      .filter((call) => call.body?.method === "getAvailableTimeIntervals");
+    assert.ok(ranges.length > 0, "future months are actually populated");
+    assert.ok(
+      ranges.every((call) => !call.body.params[0].startsWith(month)),
+      "the still-fresh current month is not fetched again",
+    );
+    assert.deepEqual(await (await m.mf.dispatchFetch(url)).json(), calendar);
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});
+
+test("cold calendar failure preserves diagnostics and recovers without waiting for warming", async () => {
+  let fail = true;
+  const logs = [];
+  const m = await createBookingMechanism({
+    displayWarming: true,
+    onLog: (message) => logs.push(message),
+    respond: async (call) => {
+      if (fail && call.body?.method === "getAvailableTimeIntervals")
+        return Response.json({ jsonrpc: "2.0", id: call.body.id, result: {} });
+    },
+  });
+  try {
+    await (await m.mf.getWorker()).scheduled();
+    const month = new Date(Date.now() + 28800000).toISOString().slice(0, 7);
+    const url = m.origin + "/api/calendar/" + month;
+    const failed = await m.mf.dispatchFetch(url);
+    assert.equal(failed.status, 503);
+    assert.deepEqual(await failed.json(), { error: "calendar_date_unknown" });
+    const storage = await m.mf.unsafeGetDurableObjectStorage(
+      "booking-mechanism",
+      "SoccerBotAccountCoordinator",
+      { name: "simplybook-developer-account" },
+    );
+    const retained = await storage.exec(
+      "SELECT key FROM display_snapshots WHERE key LIKE 'calendar:%'",
+    );
+    assert.equal(
+      retained.length,
+      0,
+      "a failed build must not publish a partial month",
+    );
+    const diagnostics = logs.flatMap((message) => {
+      try {
+        return [JSON.parse(message)];
+      } catch {
+        return [];
+      }
+    });
+    for (const trigger of ["customer", "warming"])
+      assert.ok(
+        diagnostics.some(
+          (entry) =>
+            entry.event === "calendar_cache_trace" &&
+            entry.phase === "build_failed" &&
+            entry.trigger === trigger &&
+            entry.code === "calendar_date_unknown",
+        ),
+        trigger,
+      );
+    fail = false;
+    const recovered = await m.mf.dispatchFetch(url);
+    assert.equal(recovered.status, 200);
+    const calendar = await recovered.json();
+    assert.ok(calendar.dates.length > 0);
+    assert.equal(
+      recovered.headers.get("X-Calendar-Observed-At"),
+      String(calendar.observedAtMs),
+    );
+    assert.equal(
+      recovered.headers.get("X-Calendar-Expires-At"),
+      String(calendar.displayExpiresAtMs),
+    );
+    assert.equal(calendar.displayExpiresAtMs, calendar.observedAtMs + 1800000);
+    const before = m.calls.length;
+    assert.deepEqual(await (await m.mf.dispatchFetch(url)).json(), calendar);
+    assert.equal(
+      m.calls.length,
+      before,
+      "recovered calendar is persisted and reused",
+    );
+    const events = logs
+      .flatMap((message) => {
+        try {
+          return [JSON.parse(message)];
+        } catch {
+          return [];
+        }
+      })
+      .filter((entry) => entry.event === "calendar_cache_trace");
+    const served = events.find(
+      (entry) =>
+        entry.phase === "serve" &&
+        entry.correlationId === recovered.headers.get("X-Request-ID"),
+    );
+    assert.equal(served.observedAtMs, calendar.observedAtMs);
+    assert.equal(served.persisted, true);
+    assert.equal(served.dateCount, calendar.dates.length);
+    assert.ok(events.some((entry) => entry.phase === "hit"));
+    assert.ok(
+      events.some((entry) => entry.phase === "build_saved" && entry.persisted),
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      0,
+    );
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});
+
+test("explicitly unavailable calendar days are cached and expired snapshots rebuild", async () => {
+  let closed = true;
+  const m = await createBookingMechanism({
+    displayWarming: true,
+    respond: async (call) => {
+      if (!closed || call.body?.method !== "getAvailableTimeIntervals") return;
+      const [from, to, , instructor] = call.body.params;
+      const result = {};
+      for (
+        let cursor = Date.parse(from + "T00:00:00Z");
+        cursor <= Date.parse(to + "T00:00:00Z");
+        cursor += 86400000
+      )
+        result[new Date(cursor).toISOString().slice(0, 10)] = {
+          [String(instructor)]: [],
+        };
+      return Response.json({ jsonrpc: "2.0", id: call.body.id, result });
+    },
+  });
+  try {
+    const url = m.origin + "/api/calendar/" + m.date.slice(0, 7);
+    const response = await m.mf.dispatchFetch(url);
+    assert.equal(response.status, 200);
+    const empty = await response.json();
+    assert.ok(empty.dates.length > 0);
+    assert.ok(
+      empty.dates.every((day) => !day.available && day.offers.length === 0),
+    );
+    const before = m.calls.length;
+    assert.deepEqual(await (await m.mf.dispatchFetch(url)).json(), empty);
+    assert.equal(
+      m.calls.length,
+      before,
+      "zero offers is a valid complete cached month",
+    );
+    const storage = await m.mf.unsafeGetDurableObjectStorage(
+      "booking-mechanism",
+      "SoccerBotAccountCoordinator",
+      { name: "simplybook-developer-account" },
+    );
+    await storage.exec("UPDATE display_snapshots SET expires_ms=0");
+    // A new isolate clears only the short in-memory reads, preserving expired SQL evidence.
+    await m.mf.unsafeEvictDurableObject(
+      "booking-mechanism",
+      "SoccerBotAccountCoordinator",
+      { name: "simplybook-developer-account" },
+    );
+    closed = false;
+    const rebuilt = await m.mf.dispatchFetch(url);
+    assert.equal(rebuilt.status, 200);
+    const restored = await rebuilt.json();
+    assert.ok(
+      restored.dates.some((day) =>
+        day.offers.some((offer) => offer.startMs === m.startMs),
+      ),
+    );
+    assert.ok(m.calls.length > before);
+    const after = m.calls.length;
+    assert.deepEqual(await (await m.mf.dispatchFetch(url)).json(), restored);
+    assert.equal(m.calls.length, after);
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
+  }
+});
+
 test("failed scheduled display refresh retains a bounded snapshot without renewing its expiry", async () => {
   let fail = false;
   const m = await createBookingMechanism({
@@ -1373,6 +1583,12 @@ test("failed scheduled display refresh retains a bounded snapshot without renewi
     );
     await storage.exec("UPDATE display_refresh SET started_ms=0");
     fail = true;
+    // Eviction removes the short-lived read cache while preserving the snapshot.
+    await m.mf.unsafeEvictDurableObject(
+      "booking-mechanism",
+      "SoccerBotAccountCoordinator",
+      { name: "simplybook-developer-account" },
+    );
     await (await m.mf.getWorker()).scheduled();
     const before = m.calls.length;
     assert.deepEqual(await (await m.mf.dispatchFetch(url)).json(), original);

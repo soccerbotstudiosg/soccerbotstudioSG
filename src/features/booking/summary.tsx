@@ -29,6 +29,9 @@ export function SessionSummaryHeading({
   draft: Pick<BookingDraft, "slots" | "players" | "nativeServiceId">;
   action?: ReactNode;
 }) {
+  const serviceName =
+    draft.slots[0]?.native?.serviceName ??
+    (draft.nativeServiceId ? undefined : SERVICE_NAME);
   return (
     <div className="session-summary-heading">
       <div className="review-head">
@@ -36,11 +39,12 @@ export function SessionSummaryHeading({
         {action}
       </div>
       <p>
-        <strong>
-          {draft.slots[0]?.native?.serviceName ??
-            (draft.nativeServiceId ? "Your session" : SERVICE_NAME)}
-        </strong>
-        <br />
+        {serviceName && (
+          <>
+            <strong>{serviceName}</strong>
+            <br />
+          </>
+        )}
         {draft.players} {draft.players === 1 ? "player" : "players"} per session
         · Full instructor guidance
       </p>
@@ -245,9 +249,6 @@ export function Summary({ basket = false }: { basket?: boolean }) {
                 "Please refresh availability. Your selections are saved."
               )}
             </p>
-          )}
-          {basket && (
-            <p className="hint">Selecting a time does not reserve it.</p>
           )}
         </div>
       </aside>

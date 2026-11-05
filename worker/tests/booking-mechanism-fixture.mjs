@@ -399,12 +399,12 @@ export async function createBookingMechanism(options = {}) {
               Object.entries(matrix).map(([date, starts]) => [
                 date,
                 {
-                  [String(body.params[3])]: starts.map((start) => [
-                    start,
-                    new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
+                  [String(body.params[3])]: starts.map((start) => ({
+                    from: start,
+                    to: new Date(Date.parse(`${date}T${start}Z`) + 50 * 60000)
                       .toISOString()
                       .slice(11, 19),
-                  ]),
+                  })),
                 },
               ]),
             ),

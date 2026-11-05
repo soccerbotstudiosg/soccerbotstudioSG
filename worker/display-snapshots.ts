@@ -3,7 +3,10 @@ import {
   customerCatalogueSchema,
   DISPLAY_SNAPSHOT_MAX_AGE_MS,
 } from "../src/domain/catalog";
-import { START_INTERVAL_MINUTES } from "../src/domain/booking-policy";
+import {
+  START_INTERVAL_MINUTES,
+  BOOKING_MONTH_COUNT,
+} from "../src/domain/booking-policy";
 import {
   publicCalendarSchema,
   studioDisplayCalendar,
@@ -210,22 +213,10 @@ export class DisplaySnapshots {
   /** Select the calendar months eligible for display warming. */
   months() {
     const today = new Date(Date.now() + 28800000).toISOString().slice(0, 7);
-    const end = new Date(today + "-01T00:00:00Z");
-    end.setUTCMonth(end.getUTCMonth() + 3);
-    const last = end.toISOString().slice(0, 7);
-    const rows = this.sql
-      .exec<{ key: string }>(
-        "SELECT key FROM display_snapshots WHERE scope=? AND key LIKE 'calendar:%' ORDER BY key",
-        this.scope,
-      )
-      .toArray();
-    return [
-      ...new Set([
-        today,
-        ...rows
-          .map((row) => row.key.slice(9))
-          .filter((month) => month >= today && month <= last),
-      ]),
-    ].slice(0, 4);
+    return Array.from({ length: BOOKING_MONTH_COUNT }, (_, offset) => {
+      const date = new Date(today + "-01T00:00:00Z");
+      date.setUTCMonth(date.getUTCMonth() + offset);
+      return date.toISOString().slice(0, 7);
+    });
   }
 }

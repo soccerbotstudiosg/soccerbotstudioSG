@@ -416,15 +416,22 @@ export default {
         const publicMonth = /^\/api\/calendar\/(\d{4}-(?:0[1-9]|1[0-2]))$/.exec(
           url.pathname,
         );
-        if (publicMonth && request.method === "GET")
-          return json(
-            unwrapRpcOutcome(
-              await coordinatorStub(env).publicCalendar(
-                publicMonth[1],
-                correlationId,
-              ),
+        if (publicMonth && request.method === "GET") {
+          const calendar = unwrapRpcOutcome(
+            await coordinatorStub(env).publicCalendar(
+              publicMonth[1],
+              correlationId,
             ),
           );
+          return json(calendar, 200, {
+            "X-Calendar-Observed-At": String(calendar.observedAtMs),
+            ...(calendar.displayExpiresAtMs === undefined
+              ? {}
+              : {
+                  "X-Calendar-Expires-At": String(calendar.displayExpiresAtMs),
+                }),
+          });
+        }
         const calendarMatch =
           /^\/api\/booking\/calendar\/([1-9]\d{0,14})\/(\d{4}-(?:0[1-9]|1[0-2]))$/.exec(
             url.pathname,

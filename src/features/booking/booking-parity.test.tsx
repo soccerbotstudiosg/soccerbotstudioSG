@@ -1028,12 +1028,17 @@ test("failed public calendar releases full-page loading and leaves refresh avail
   fireEvent.click(screen.getByRole("button", { name: "Choose test session" }));
   expect(
     await screen.findByText(
-      "Please refresh availability. Your selections are saved.",
+      "Refresh availability to choose a session. Your selections are saved.",
     ),
   ).toBeInTheDocument();
   await waitFor(() =>
     expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
   );
+  expect(
+    screen.queryByText(
+      "Please refresh availability. Your selections are saved.",
+    ),
+  ).not.toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: "Refresh availability" }),
   ).toBeEnabled();
@@ -1147,22 +1152,15 @@ test("cold calendar entry and refresh select an available day while retaining a 
     ).toBe(true),
   );
   await screen.findByText("No times on this day.");
-  fireEvent.click(screen.getByRole("button", { name: "See next month" }));
-  await waitFor(() =>
-    expect(
-      publicCalendar.mock.calls.some(([input]) => input.month === "2027-01"),
-    ).toBe(true),
-  );
-  await screen.findByText("No times on this day.");
   expect(screen.getByRole("button", { name: "See next month" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   expect(
     within(
       screen.getByRole("combobox", { name: "Calendar month" }),
     ).getAllByRole("option"),
-  ).toHaveLength(4);
+  ).toHaveLength(3);
   expect(
-    publicCalendar.mock.calls.some(([input]) => input.month > "2027-01"),
+    publicCalendar.mock.calls.some(([input]) => input.month > "2026-12"),
   ).toBe(false);
   first.unmount();
   dates = ["2026-10-22", "2026-10-23"];
@@ -1250,7 +1248,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
       await act(async () => gates.get("2026-10")!());
       if (scenario === "failure") {
         await screen.findByText(
-          "Please refresh availability. Your selections are saved.",
+          "Refresh availability to choose a session. Your selections are saved.",
         );
         expect(publicCalendar).toHaveBeenCalledTimes(1);
         expect(region).toHaveAttribute("aria-busy", "false");
@@ -1275,7 +1273,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
           ]);
           expect(region).toHaveAttribute("aria-busy", "false");
         } else {
-          for (const month of ["2026-12", "2027-01"]) {
+          for (const month of ["2026-12"]) {
             await waitFor(() => expect(gates.has(month)).toBe(true));
             await act(async () => gates.get(month)!());
           }
@@ -1284,7 +1282,6 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
             "2026-10",
             "2026-11",
             "2026-12",
-            "2027-01",
           ]);
           expect(
             screen.getByRole("button", { name: "Next month" }),

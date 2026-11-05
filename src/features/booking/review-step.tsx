@@ -182,9 +182,8 @@ export function ReviewStep({
               the shared studio. Start times are 50 minutes apart.
             </p>
             <p>
-              {attempt?.held
-                ? "Your sessions are temporarily reserved. Complete payment before the reservation expires."
-                : "Selecting a time does not reserve it."}{" "}
+              {attempt?.held &&
+                "Your sessions are temporarily reserved. Complete payment before the reservation expires. "}
               Follow the instructor’s safety guidance.
             </p>
             <p>

@@ -1,6 +1,7 @@
 "use client";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useMemo, useState } from "react";
+import { BOOKING_MONTH_COUNT } from "@/domain/booking-policy";
 import { Icon } from "@/components/icon";
 
 import {
@@ -56,7 +57,7 @@ export function TimeStep() {
   const [findingInitialDay, setFindingInitialDay] = useState(
     () => publicCalendarReady && draft.slots.length === 0,
   );
-  const maxMonthOffset = publicCalendarReady ? 3 : 11;
+  const maxMonthOffset = publicCalendarReady ? BOOKING_MONTH_COUNT - 1 : 11;
   const offset = Math.max(
     0,
     Math.min(
@@ -292,15 +293,9 @@ export function TimeStep() {
             </div>
           </>
         )}
-        {live && !calendarBusy && !monthResult && (
+        {live && !calendarBusy && !monthResult && !calendarFailed && (
           <div role="status" className="notice">
-            <p>
-              {calendar.failed.includes(month.slice(0, 7)) ? (
-                "Please refresh availability. Your selections are saved."
-              ) : (
-                <BrandLoading overlay={false} compact label="Checking dates…" />
-              )}
-            </p>
+            <BrandLoading overlay={false} compact label="Checking dates…" />
           </div>
         )}
         {!calendarBusy && (

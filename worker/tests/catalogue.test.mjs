@@ -1944,11 +1944,21 @@ test("customer booking accepts exactly 240 minutes and rechecks the cutoff after
   );
   assert.deepEqual(free([["18:40:00", "20:00:00"]]), ["18:40:00"]);
   assert.deepEqual(free([]), []);
+  assert.deepEqual(free([{ from: "12:00:00", to: "13:40:00" }]), [
+    "12:00:00",
+    "12:50:00",
+  ]);
+  assert.deepEqual(free([{ from: "12:00:00", to: "12:40:00" }]), []);
   for (const raw of [
     {},
     { "2026-11-06": [] },
     { "2026-11-06": { 15: [] } },
     { "2026-11-06": { 14: [["13:00:00", "12:00:00"]] } },
+    { "2026-11-06": { 14: [{ from: "13:00:00", to: "12:00:00" }] } },
+    { "2026-11-06": { 14: [{ from: "12:00:00" }] } },
+    {
+      "2026-11-06": { 14: [{ from: "12:00:00", to: "13:40:00", extra: true }] },
+    },
   ])
     assert.throws(
       () => studioStartsFromIntervals(raw, "2026-11-06", "14"),
@@ -2219,6 +2229,12 @@ test("persistent display snapshots retain original deadlines across restarts and
   Date.now = () => now;
   try {
     const store = new DisplaySnapshots(sql, "account/source");
+    const initialNow = now;
+    now = Date.parse("2026-11-30T15:59:59Z");
+    assert.deepEqual(store.months(), ["2026-11", "2026-12", "2027-01"]);
+    now = Date.parse("2026-11-30T16:00:00Z");
+    assert.deepEqual(store.months(), ["2026-12", "2027-01", "2027-02"]);
+    now = initialNow;
     const month = new Date(now + 28800000).toISOString().slice(0, 7);
     const key = `calendar:${month}`;
     const value = { month, serviceId: "2", observedAtMs: now, dates: [] };

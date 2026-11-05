@@ -257,6 +257,18 @@
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
+    "title": "warming reuses fresh customer range reads while prebuilding the other two months"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "cold calendar failure preserves diagnostics and recovers without waiting for warming"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "explicitly unavailable calendar days are cached and expired snapshots rebuild"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
     "title": "failed scheduled display refresh retains a bounded snapshot without renewing its expiry"
   },
   {
