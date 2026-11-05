@@ -241,6 +241,8 @@ These examples are fictional documentation fixtures, not captured traffic or ins
 
 ### A. Create guest access, then request email verification
 
+An authenticated `POST /api/access` renews only an unexpired, unrevoked guest capability for the configured access lifetime, retaining the same owner/token/grants and refreshing its secure cookie. Initial checkout POST also renews valid access before coordination so browsing does not consume the payment window. Expired/revoked access cannot be revived or inherit previous attempts. Neither renewal extends payment/hold/checking deadlines or email identity.
+
 `POST /api/access` has **no body**. A newly issued capability returns HTTP 201:
 
 ```json
@@ -319,6 +321,20 @@ Return to editable selection/Review according to the adapter's classification. D
 
 Retain the original attempt/key and protected recovery state. An HTTP 503 `temporarily_unavailable`, response loss or browser abort is also not proof of no provider effect. See [rejected readback](../worker/customer-authority.ts) and [combined composition](../worker/coordinator.ts).
 
+#### Conflict recovery decision contract
+
+Apply [BR-001](business-rules.md#br-001) independently of HTTP status; a 409/503 alone does not identify the safe recovery action.
+
+| Evidence                                                                     | Required classification and behavior                                                                                                                                                                                                                               |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Original owned attempt has dispatched/retained effect evidence               | `checkout_recovery_required`; recover that same attempt. Never replace its key or infer no booking.                                                                                                                                                                |
+| Owned active checkout shares a current studio start with the request         | Compare time independently of trainer/service, then read fresh affected-day availability. The overlap alone does not establish unpaid release or payment failure.                                                                                                  |
+| Fresh read proves a requested offer unavailable before new dispatch          | `checkout_selection_unavailable`; adapter emits `selection_unavailable`. Remove the rejected index when supplied, otherwise conservatively reject the submitted selections; repair affected browser cache before selection recovery. No new booking/payment write. |
+| Owned active checkout is unrelated, or its write has no observed association | `checkout_already_active`; retain the requested draft and offer View existing checkout explicitly. Never automatically adopt the other attempt.                                                                                                                    |
+| Read fails, is incomplete, or still offers the selection                     | Keep the appropriate unresolved/recovery classification. Do not report proven occupancy, manufacture available slots or replay a possible write.                                                                                                                   |
+
+Fresh affected-day reads update that day in the shared display snapshot while retaining its original expiry; browser reconciliation retains other valid cached dates/months. The local cache path adds no full calendar rebuild or mandatory warm wait. This is not an SLA for the provider read. Pending/in-flight data must remain scoped and must not overwrite newer invalidation evidence. Provider rejection during creation remains a separate guarded execution outcome, with no payment handoff for an unverified booking.
+
 ### D. Checkout context without payment authority
 
 `GET /api/attempts/22222222-2222-4222-8222-222222222222/checkout`, HTTP 200:
@@ -344,6 +360,8 @@ Retain the original attempt/key and protected recovery state. An HTTP 503 `tempo
 ```
 
 Show protected summary/checking state, keep checkout unavailable and do not fabricate a payment URL. A later valid available context can expose its saved URL, but merely opening that URL does not confirm payment. The original server clocks remain in force across refreshes/tabs.
+
+Return and receipt recovery: a completed provider-return hint suppresses payment continuation only; server evidence remains mandatory for confirmation. Leaving an older receipt may dismiss a newer attempt only after protected confirmation proof and server dismissal, with revision checks around awaits. Explicit checkout-window rejection keeps the requested draft on Review and offers an owned existing-checkout link. Same studio start across different trainers receives fresh availability classification rather than being treated as an unrelated checkout.
 
 ### E. Paid, but booking confirmation still pending
 

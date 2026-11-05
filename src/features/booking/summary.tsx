@@ -1,4 +1,8 @@
 "use client";
+import {
+  SESSION_UNAVAILABLE,
+  AVAILABILITY_LOAD_FAILED,
+} from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -58,12 +62,14 @@ export function SessionList({
   remove,
   showRotation = true,
   trainerAction,
+  showPrices = false,
   now,
 }: {
   slots: Session[];
   now?: number;
   showRotation?: boolean;
   trainerAction?: ReactNode;
+  showPrices?: boolean;
   remove?: (slot: Session) => void;
 }) {
   const list = (
@@ -86,6 +92,11 @@ export function SessionList({
                   <span className="session-instructor">
                     Trainer: {sessionInstructorName(slot)}
                   </span>
+                  {showPrices && (
+                    <strong className="session-item-price">
+                      {money(sessionPrice(slot))}
+                    </strong>
+                  )}
                   {slots.length === 1 && trainerAction}
                 </div>
               )}
@@ -130,10 +141,6 @@ export function SessionList({
 export function PriceSummary({ draft }: { draft: BookingDraft }) {
   return (
     <div className="price-breakdown">
-      <div className="line-item">
-        <span>{draft.slots.length} × 40 min session</span>
-        <strong>{money(totalCents(draft))}</strong>
-      </div>
       <div className="line-item total">
         <span>Total due</span>
         <strong>{money(totalCents(draft))}</strong>
@@ -196,6 +203,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
               )}
               <SessionList
                 slots={draft.slots}
+                showPrices
                 now={now}
                 remove={
                   basket
@@ -242,7 +250,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
             <p className="notice" role="status">
               {selectionErrors(draft.slots, now).length > 0 ||
               result?.status === "success" ? (
-                "A selected session is no longer available. Remove it and choose another time."
+                SESSION_UNAVAILABLE
               ) : !result ? (
                 <BrandLoading
                   overlay={false}
@@ -250,7 +258,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
                   label="Checking sessions…"
                 />
               ) : (
-                "Please refresh availability. Your selections are saved."
+                AVAILABILITY_LOAD_FAILED
               )}
             </p>
           )}

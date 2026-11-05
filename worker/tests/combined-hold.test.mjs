@@ -1159,10 +1159,14 @@ test("combined batch checkout retains one payment effect and exact booking assoc
       .first();
     assert.equal(payment.expires_ms, payment.booking_created_ms + 480000);
     assert.ok(payment.expires_ms > accessDeadline);
+    const renewedAccess = await m.db
+      .prepare("SELECT expires_ms FROM guest_access")
+      .first();
+    assert.ok(renewedAccess.expires_ms > payment.expires_ms);
+    assert.ok(renewedAccess.expires_ms > accessDeadline);
     assert.equal(
-      (await m.db.prepare("SELECT expires_ms FROM guest_access").first())
-        .expires_ms,
-      accessDeadline,
+      response.headers.get("set-cookie").split(";")[0],
+      c.headers.cookie,
     );
     assert.equal(
       m.calls.find((c) => isHitPayApiCall(c) && c.method === "POST").body
@@ -3320,7 +3324,7 @@ test("recovery publication rolls back on storage failure and resumes without dup
 });
 
 test("rejected concurrent checkout reads the owned active attempt without repeating provider effects", async () => {
-  const m = await createBookingMechanism();
+  const m = await createBookingMechanism({ trainerIds: [14, 15] });
   try {
     const c = await customer(m);
     assert.equal((await c.send()).status, 200);
@@ -3369,15 +3373,45 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
     assert.deepEqual(await same.json(), {
       error: "checkout_selection_unavailable",
     });
-    assert.equal(
+    assert.deepEqual(
       m.calls
         .slice(before)
         .filter((call) => call.body?.method === "getAvailableTimeIntervals")
-        .length,
-      1,
+        .map((call) => String(call.body.params[3]))
+        .sort(),
+      ["14", "15"],
     );
     assert.equal(
       m.calls.filter((call) => call.body?.method === "book").length,
+      1,
+    );
+    const otherKey = crypto.randomUUID();
+    const otherTrainer = await m.mf.dispatchFetch(
+      m.origin + `/api/booking/checkout/${otherKey}`,
+      {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify({
+          ...c.input,
+          key: otherKey,
+          accepted: true,
+          sessions: c.input.sessions.map((session) => ({
+            ...session,
+            instructorId: "15",
+          })),
+        }),
+      },
+    );
+    assert.equal(otherTrainer.status, 503);
+    assert.deepEqual(await otherTrainer.json(), {
+      error: "checkout_selection_unavailable",
+    });
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      1,
+    );
+    assert.equal(
+      (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
       1,
     );
   } finally {

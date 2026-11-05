@@ -211,6 +211,7 @@ export function BookingConfirmation({
           <SessionList
             slots={booking.slots}
             showRotation={false}
+            showPrices={pending}
             trainerAction={
               !pending && booking.slots.length === 1 ? (
                 <div className="paid settled">
@@ -222,14 +223,22 @@ export function BookingConfirmation({
               ) : undefined
             }
           />
-          {(pending || booking.slots.length !== 1) && (
-            <div className={pending ? "paid" : "paid settled"}>
-              <span className={pending ? undefined : "pill success"}>
-                {pending ? "Total" : preview ? "Paid · Preview" : "Paid"}
+          {pending ? (
+            <>
+              <div className="summary-total">
+                <span>Total</span>
+                <strong>{money(booking.totalCents)}</strong>
+              </div>
+              <p className="hint summary-currency">SGD · Final total</p>
+            </>
+          ) : booking.slots.length !== 1 ? (
+            <div className="paid settled">
+              <span className="pill success">
+                {preview ? "Paid · Preview" : "Paid"}
               </span>
               <strong>{money(booking.totalCents)} SGD</strong>
             </div>
-          )}
+          ) : null}
         </div>
         {pending && pendingAction}
         {!pending && (

@@ -261,7 +261,7 @@ export async function rejectedCheckoutReadback(
       : "checkout_window_unresolved";
   const owned = active.results[0];
   if (owned) {
-    // An owned attempt for another session, or an unobserved write, cannot
+    // An owned attempt for another studio start, or an unobserved write, cannot
     // establish that this selection is occupied. Never disclose its details.
     if (
       typeof owned.association_json !== "string" ||
@@ -273,10 +273,7 @@ export async function rejectedCheckoutReadback(
     if (
       !input.sessions.some((session) =>
         intent.sessions.some(
-          (existing) =>
-            existing.serviceId === session.serviceId &&
-            existing.instructorId === session.instructorId &&
-            existing.startMs === session.startMs,
+          (existing) => existing.startMs === session.startMs,
         ),
       )
     )

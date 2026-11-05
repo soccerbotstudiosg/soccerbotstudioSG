@@ -81,7 +81,7 @@ export function ProtectedConfirmation({
   sessionRevision?: number;
   onAgain?: () => void;
   onExpired?: (attemptId: string) => void;
-  onRestart?: (attemptId: string) => void;
+  onRestart?: (attemptId: string) => void | Promise<void>;
 }) {
   const router = useRouter();
   const [context, setContext] = useState<{
@@ -379,7 +379,7 @@ export function ProtectedConfirmation({
         verifiedAtMs={customerProof?.verifiedAtMs ?? saved?.verifiedAtMs}
         onAgain={async () => {
           if (onRestart) {
-            onRestart(attemptId);
+            await onRestart(attemptId);
             router.push("/book/account/");
             return;
           }
@@ -389,7 +389,7 @@ export function ProtectedConfirmation({
         }}
         onHome={async () => {
           if (onRestart) {
-            onRestart(attemptId);
+            await onRestart(attemptId);
             router.push("/");
             return;
           }
@@ -645,10 +645,12 @@ function ConfirmationSummary({
         <SessionSummaryHeading
           draft={{ ...booking.draft, slots: booking.slots }}
         />
-        <SessionList slots={booking.slots} />
-        <p className="line-item total">
-          Total <strong>{money(summary.totalMinor)}</strong>
-        </p>
+        <SessionList slots={booking.slots} showPrices />
+        <div className="summary-total">
+          <span>Total</span>
+          <strong>{money(summary.totalMinor)}</strong>
+        </div>
+        <p className="hint summary-currency">SGD · Final total</p>
       </section>
     );
   }

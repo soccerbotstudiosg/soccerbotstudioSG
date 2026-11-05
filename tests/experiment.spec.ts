@@ -6,7 +6,9 @@ async function start(page: Page) {
     name: "Get the SoccerBot Player App",
   });
   await expect(prompt).toBeVisible();
-  await prompt.getByRole("button", { name: "Not now", exact: true }).click();
+  await prompt
+    .getByRole("button", { name: "Close dialog", exact: true })
+    .click();
   await expect(prompt).toHaveCount(0);
   await prepare(page);
   const link = page.getByRole("link", { name: "Open checkout", exact: true });
@@ -235,9 +237,15 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page.goto(sitePath("/book/account/"));
   await page
     .getByRole("dialog", { name: "Get the SoccerBot Player App" })
-    .getByRole("button", { name: "Not now", exact: true })
+    .getByRole("button", { name: "Close dialog", exact: true })
     .click();
   await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page
+    .getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+      exact: true,
+    })
+    .click();
   await page.getByRole("link", { name: "See available times" }).click();
   await page
     .getByRole("button", {

@@ -95,17 +95,6 @@ export function ReviewStep({
         </div>
         <div className="review-block">
           <div className="review-head">
-            <h2>Dates &amp; times</h2>
-            {!locked && (
-              <Link className="text-link" href="/book/time/">
-                Edit
-              </Link>
-            )}
-          </div>
-          <SessionList slots={draft.slots} now={now} />
-        </div>
-        <div className="review-block">
-          <div className="review-head">
             <h2>Booking contact</h2>
             {!locked && (
               <Link className="text-link" href="/book/details/">
@@ -116,7 +105,15 @@ export function ReviewStep({
           <ClientDetails contact={draft.contact} />
         </div>
         <div className="review-block">
-          <h2 className="section-title">Order summary</h2>
+          <div className="review-head">
+            <h2>Order summary</h2>
+            {!locked && (
+              <Link className="text-link" href="/book/time/">
+                Edit
+              </Link>
+            )}
+          </div>
+          <SessionList slots={draft.slots} now={now} showPrices />
           <PriceSummary draft={draft} />
         </div>
         <Arrival />
@@ -138,6 +135,14 @@ export function ReviewStep({
       {error && (
         <div className="alert mt-5" role="alert">
           {error}
+          {action.resumeAttemptId && (
+            <Link
+              className="text-link ml-3"
+              href={`/confirmation/?attempt=${encodeURIComponent(action.resumeAttemptId)}`}
+            >
+              View existing checkout
+            </Link>
+          )}
           {!attempt?.held && (
             <Link className="text-link ml-3" href="/book/time/">
               Review selections

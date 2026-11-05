@@ -547,14 +547,32 @@ it("Review performs no provider reads and checkout verifies one booking before H
     </BookingProvider>,
   );
   fireEvent.click(screen.getByText("Seed"));
+  const detailsSummary = screen.getByRole("complementary", {
+    name: "Your booking summary",
+  });
+  expect(
+    detailsSummary.querySelector(".session-trainer-row .session-item-price"),
+  ).toHaveTextContent("$88.00");
   await act(async () =>
     fireEvent.click(screen.getByRole("button", { name: "Review booking" })),
   );
   expect(screen.getByRole("heading", { name: "Review booking" })).toBeVisible();
+  expect(
+    screen.queryByRole("heading", { name: "Dates & times" }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText(/× 40 min session/)).not.toBeInTheDocument();
+  const order = screen.getByRole("heading", { name: "Order summary" })
+    .parentElement!.parentElement!;
+  expect(
+    within(order).getByRole("list", { name: "Selected sessions" }),
+  ).toBeVisible();
+  expect(order.querySelector(".session-item-price")).toHaveTextContent(
+    "$88.00",
+  );
   expect(availability).not.toHaveBeenCalled();
   expect(checkout).not.toHaveBeenCalled();
   expect(pay).not.toHaveBeenCalled();
-  for (const heading of ["Booking contact", "Dates & times"]) {
+  for (const heading of ["Booking contact", "Order summary"]) {
     const section = screen.getByRole("heading", {
       name: heading,
     }).parentElement!;
@@ -962,9 +980,14 @@ it("rejected checkout window clears the undispatched draft attempt without payme
   await waitFor(() => expect(restore).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole("button", { name: "Seed" }));
   fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
-  await waitFor(() =>
-    expect(screen.getByTestId("retained")).toHaveTextContent(id),
+  await screen.findByText(
+    "You already have a checkout in progress. These selections were not booked.",
   );
+  expect(screen.getByTestId("retained")).toBeEmptyDOMElement();
+  expect(
+    screen.getByRole("link", { name: "View existing checkout" }),
+  ).toHaveAttribute("href", `/confirmation?attempt=${id}`);
+  expect(navigation.replace).not.toHaveBeenCalled();
   expect(restore).toHaveBeenCalledTimes(2);
   expect(fetch).toHaveBeenCalledTimes(2);
 });
@@ -1008,7 +1031,7 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
           error === "checkout_recovery_required"
             ? "Checking your booking. Do not book or pay again."
             : error === "checkout_selection_unavailable"
-              ? "That time is unavailable. Choose another; your details are saved."
+              ? "Session no longer available."
               : "We couldn’t start checkout. Please try again later.",
       });
       expect(fetch).toHaveBeenCalledTimes(1);

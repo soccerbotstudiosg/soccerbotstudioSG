@@ -1,4 +1,8 @@
 "use client";
+import {
+  AVAILABILITY_LOAD_FAILED,
+  NO_SESSIONS_ON_DATE,
+} from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useMemo, useState } from "react";
 import { BOOKING_MONTH_COUNT } from "@/domain/booking-policy";
@@ -278,7 +282,7 @@ export function TimeStep() {
                         ? dayAvailability.get(value) === true
                           ? "Available sessions"
                           : dayAvailability.get(value) === false
-                            ? "No available sessions"
+                            ? NO_SESSIONS_ON_DATE
                             : "Availability not verified"
                         : undefined
                     }
@@ -319,10 +323,7 @@ export function TimeStep() {
           </div>
           {!result ? (
             calendarFailed ? (
-              <p>
-                Refresh availability to choose a session. Your selections are
-                saved.
-              </p>
+              <p>{AVAILABILITY_LOAD_FAILED}</p>
             ) : (
               <BrandLoading overlay={false} compact label="Checking times…" />
             )
@@ -465,7 +466,7 @@ export function TimeStep() {
           ) : (
             <div className="empty-state">
               <Icon name="calendar" />
-              <h3>No times on this day.</h3>
+              <h3>{NO_SESSIONS_ON_DATE}</h3>
               <p>Choose another date. Your selections are saved.</p>
               <button
                 className="button secondary"

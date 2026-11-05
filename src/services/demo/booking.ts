@@ -1,3 +1,4 @@
+import { SESSION_UNAVAILABLE } from "@/domain/booking-messages";
 import { z } from "zod";
 import {
   bookingSchema,
@@ -91,15 +92,9 @@ export const demoBookingModel = {
         );
       })
     )
-      throw new BookingServiceError(
-        "conflict",
-        "A selected instructor is no longer available. Review your selected sessions.",
-      );
+      throw new BookingServiceError("conflict", SESSION_UNAVAILABLE);
     if (!draft.slots.every((slot) => availableStudios(slot).length > 0))
-      throw new BookingServiceError(
-        "conflict",
-        "A selected session is no longer available. No sessions were booked. Please review your selections.",
-      );
+      throw new BookingServiceError("conflict", SESSION_UNAVAILABLE);
     if (
       previous?.status === "ready" &&
       JSON.stringify(snapshot(previous.draft)) ===

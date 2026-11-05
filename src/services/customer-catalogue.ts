@@ -1,3 +1,4 @@
+import { AVAILABILITY_LOAD_FAILED } from "@/domain/booking-messages";
 import {
   customerCatalogueSchema,
   CATALOGUE_MAX_AGE_MS,
@@ -14,10 +15,7 @@ const transport: CustomerCatalogueService = {
   /** Fetch customer catalogue data within the supplied request context. */
   async read(signal) {
     const unavailable = () =>
-      new BookingServiceError(
-        "unavailable",
-        "Session information is unavailable. Please contact the studio.",
-      );
+      new BookingServiceError("unavailable", AVAILABILITY_LOAD_FAILED);
     const response = await fetch("/api/catalogue", {
       signal,
       credentials: "same-origin",

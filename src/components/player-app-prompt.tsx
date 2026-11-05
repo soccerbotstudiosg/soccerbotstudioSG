@@ -81,9 +81,6 @@ export function PlayerAppPrompt() {
           </a>
         ))}
       </div>
-      <button className="text-link app-prompt-dismiss" onClick={close}>
-        Not now
-      </button>
     </Dialog>
   );
 }

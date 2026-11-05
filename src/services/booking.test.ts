@@ -402,13 +402,13 @@ describe("opening hours and demo instructor rotation", () => {
         },
         null,
       ),
-    ).toThrow(/selected instructor is no longer available/);
+    ).toThrow(/Session no longer available/);
     expect(() =>
       service.checkout(
         { ...validDraft(), slots: [{ ...slots[0], rotationAt: undefined }] },
         null,
       ),
-    ).toThrow(/selected instructor is no longer available/);
+    ).toThrow(/Session no longer available/);
   });
 });
 it("keeps payment checking for exactly five seconds and preserves the deadline through storage", () => {

@@ -44,6 +44,7 @@ const receiptFixture = (now = Date.now()) => ({
 });
 afterEach(() => {
   cleanup();
+  navigation.status = "canceled";
   vi.useRealTimers();
   localStorage.clear();
   vi.unstubAllGlobals();
@@ -277,12 +278,18 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   expect(reads).toBe(1);
 });
 
-const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const navigation = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+  status: "canceled",
+}));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useRouter: () => navigation,
   useSearchParams: () =>
-    new URLSearchParams("attempt=00000000-0000-4000-8000-000000000001"),
+    new URLSearchParams(
+      `attempt=00000000-0000-4000-8000-000000000001&status=${navigation.status}`,
+    ),
 }));
 it("booking restoration does not restart a protected confirmation read", async () => {
   let finishRestore!: (attempt: Attempt | null) => void;
@@ -741,7 +748,7 @@ it("Back to home starts the shared background exit and navigates without awaitin
   await screen.findByRole("heading", { name: "Booking confirmed" });
   fireEvent.click(screen.getByRole("link", { name: "Back to home" }));
   expect(restart).toHaveBeenCalledWith(first);
-  expect(navigation.push).toHaveBeenCalledWith("/");
+  await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/"));
 });
 
 it("verified payment shows confirmation before reconciliation without export actions", async () => {
@@ -1119,6 +1126,10 @@ it("shows payment received feedback with details while current booking evidence 
   );
   await act(async () => {});
   const summary = screen.getByLabelText("Booking summary");
+  expect(summary.querySelector(".session-item-price")).toHaveTextContent(
+    "$88.00",
+  );
+  expect(screen.getByText("SGD · Final total")).toBeVisible();
   const timer = screen.getByRole("timer");
   const continuation = screen.getByRole("link", { name: "Continue payment" });
   const message = screen.getByText(/Continue to pay/);
@@ -1138,6 +1149,32 @@ it("shows payment received feedback with details while current booking evidence 
   expect(screen.queryByText("View full details")).toBeNull();
   expect(screen.queryByRole("heading", { name: "Disclaimers" })).toBeNull();
   expect(screen.queryByText(/SimplyBook booking ID/)).toBeNull();
+  navigation.status = "completed";
+  // A completed redirect can only hide payment. Pending server evidence must
+  // still display checking, never a fabricated confirmation.
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1000);
+  });
+  // Force the route to consume the changed synthetic search parameters.
+  cleanup();
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        publicCalendar: undefined,
+        calendar: undefined,
+      }}
+      identityService={demoCustomerIdentity}
+    >
+      <ConfirmationPage />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+  expect(
+    screen.queryByRole("heading", { name: "Booking confirmed" }),
+  ).toBeNull();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(5000);
   });

@@ -275,8 +275,14 @@ test("live session preserves demo product player and inclusion presentation usin
       <SessionStep />
     </BookingProvider>,
   );
+  const card = await screen.findByRole("button", {
+    name: "Choose Real session",
+  });
+  expect(card).toHaveTextContent("S$88 weekdays");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(card);
   expect(
-    await screen.findByRole("heading", { name: "Real session" }),
+    screen.getByRole("dialog", { name: "Real session" }),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: "Included with your session" }),
@@ -288,6 +294,10 @@ test("live session preserves demo product player and inclusion presentation usin
     screen.getByRole("button", { name: "Remove one player" }),
   ).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Add one player" }));
+  expect(screen.getByText("2 players")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(card);
   expect(screen.getByText("2 players")).toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: "Select session" }),
@@ -1028,17 +1038,15 @@ test("failed public calendar releases full-page loading and leaves refresh avail
   fireEvent.click(screen.getByRole("button", { name: "Choose test session" }));
   expect(
     await screen.findByText(
-      "Refresh availability to choose a session. Your selections are saved.",
+      "Unable to load available sessions. Please try again.",
     ),
   ).toBeInTheDocument();
   await waitFor(() =>
     expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
   );
   expect(
-    screen.queryByText(
-      "Please refresh availability. Your selections are saved.",
-    ),
-  ).not.toBeInTheDocument();
+    screen.getAllByText("Unable to load available sessions. Please try again."),
+  ).toHaveLength(1);
   expect(
     screen.getByRole("button", { name: "Refresh availability" }),
   ).toBeEnabled();
@@ -1123,7 +1131,7 @@ test("cold calendar entry and refresh select an available day while retaining a 
   );
   dates = [];
   fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
-  await screen.findByText("No times on this day.");
+  await screen.findByText("No sessions available on this date.");
   expect(day("2026-10-24")).toHaveAttribute("aria-pressed", "true");
   // An empty October must still allow an explicit move to November.
   expect(
@@ -1144,14 +1152,14 @@ test("cold calendar entry and refresh select an available day while retaining a 
   expect(day("2026-11-04")).toHaveAttribute("aria-pressed", "true");
   dates = [];
   fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
-  await screen.findByText("No times on this day.");
+  await screen.findByText("No sessions available on this date.");
   fireEvent.click(screen.getByRole("button", { name: "See next month" }));
   await waitFor(() =>
     expect(
       publicCalendar.mock.calls.some(([input]) => input.month === "2026-12"),
     ).toBe(true),
   );
-  await screen.findByText("No times on this day.");
+  await screen.findByText("No sessions available on this date.");
   expect(screen.getByRole("button", { name: "See next month" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   expect(
@@ -1168,7 +1176,9 @@ test("cold calendar entry and refresh select an available day while retaining a 
   await waitFor(() =>
     expect(day("2026-10-22")).toHaveAttribute("aria-pressed", "true"),
   );
-  expect(screen.queryByText("No times on this day.")).not.toBeInTheDocument();
+  expect(
+    screen.queryByText("No sessions available on this date."),
+  ).not.toBeInTheDocument();
 });
 
 test("initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation", async () => {
@@ -1227,7 +1237,9 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
     expect(
       within(region).queryByRole("button", { name: dateLabel("2026-10-31") }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText("No times on this day.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No sessions available on this date."),
+    ).not.toBeInTheDocument();
     if (scenario === "manual") {
       fireEvent.change(
         screen.getByRole("combobox", { name: "Calendar month" }),
@@ -1236,7 +1248,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
       await waitFor(() => expect(gates.has("2026-12")).toBe(true));
       await act(async () => gates.get("2026-10")!());
       await act(async () => gates.get("2026-12")!());
-      await screen.findByText("No times on this day.");
+      await screen.findByText("No sessions available on this date.");
       expect(publicCalendar.mock.calls.map(([q]) => q.month)).toEqual([
         "2026-10",
         "2026-12",
@@ -1248,7 +1260,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
       await act(async () => gates.get("2026-10")!());
       if (scenario === "failure") {
         await screen.findByText(
-          "Refresh availability to choose a session. Your selections are saved.",
+          "Unable to load available sessions. Please try again.",
         );
         expect(publicCalendar).toHaveBeenCalledTimes(1);
         expect(region).toHaveAttribute("aria-busy", "false");
@@ -1277,7 +1289,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
             await waitFor(() => expect(gates.has(month)).toBe(true));
             await act(async () => gates.get(month)!());
           }
-          await screen.findByText("No times on this day.");
+          await screen.findByText("No sessions available on this date.");
           expect(publicCalendar.mock.calls.map(([q]) => q.month)).toEqual([
             "2026-10",
             "2026-11",

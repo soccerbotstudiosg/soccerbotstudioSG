@@ -1,4 +1,5 @@
 "use client";
+import { AVAILABILITY_LOAD_FAILED } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useState, type ReactNode } from "react";
 import type { CustomerCatalogue } from "@/domain/catalog";
@@ -50,7 +51,7 @@ export function LiveCatalogue({
     return (
       <section className="surface">
         <p className="alert" role="alert">
-          Sessions unavailable. Please try again. Your details are saved.
+          {AVAILABILITY_LOAD_FAILED}
         </p>
         <button className="button" onClick={() => retry((n) => n + 1)}>
           Try again

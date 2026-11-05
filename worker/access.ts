@@ -62,6 +62,30 @@ export async function createAccess(env: Env, now: number) {
     .run();
   return `${cookieName}=${token}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(duration / 1000)}`;
 }
+/** Renew only a currently valid capability without replacing its owner or grants. */
+export async function renewAccess(
+  request: Request,
+  env: Env,
+  access: Access,
+  now: number,
+) {
+  const duration = policy(env).ACCESS_LIFETIME_MS;
+  const result = await env.STATE.prepare(
+    "UPDATE guest_access SET expires_ms=MAX(expires_ms,?) WHERE capability_hash=? AND revoked_ms IS NULL AND issued_ms<=? AND expires_ms>?",
+  )
+    .bind(now + duration, access.capability_hash, now, now)
+    .run();
+  if (result.meta.changes !== 1) throw new ApiError(401, "access_denied");
+  const cookie = (request.headers.get("cookie") || "")
+    .split(";")
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(cookieName + "="));
+  return {
+    cookie: `${cookie}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(duration / 1000)}`,
+    expiresMs: Math.max(access.expires_ms, now + duration),
+  };
+}
+
 /** Revoke the retained access capability. */
 export async function revokeAccess(env: Env, access: Access, now: number) {
   await env.STATE.prepare(
