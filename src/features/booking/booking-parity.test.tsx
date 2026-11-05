@@ -275,8 +275,14 @@ test("live session preserves demo product player and inclusion presentation usin
       <SessionStep />
     </BookingProvider>,
   );
+  const card = await screen.findByRole("button", {
+    name: "Choose Real session",
+  });
+  expect(card).toHaveTextContent("S$88 weekdays");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(card);
   expect(
-    await screen.findByRole("heading", { name: "Real session" }),
+    screen.getByRole("dialog", { name: "Real session" }),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: "Included with your session" }),
@@ -288,6 +294,10 @@ test("live session preserves demo product player and inclusion presentation usin
     screen.getByRole("button", { name: "Remove one player" }),
   ).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Add one player" }));
+  expect(screen.getByText("2 players")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(card);
   expect(screen.getByText("2 players")).toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: "Select session" }),

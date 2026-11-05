@@ -238,6 +238,9 @@ test("the Payment preview entry and temporary checking failure retain customer s
     .getByRole("button", { name: "Not now", exact: true })
     .click();
   await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page
+    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .click();
   await page.getByRole("link", { name: "See available times" }).click();
   await page
     .getByRole("button", {

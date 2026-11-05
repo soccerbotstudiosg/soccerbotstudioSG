@@ -84,7 +84,7 @@ test("live session selection uses client prices while demo retains its own rates
   const view = render(<SessionStep />);
   expect(
     await screen.findByText(
-      "S$108 weekdays · S$128 weekends and Singapore public holidays. Per session for 1–4 players.",
+      "S$108 weekdays · S$128 weekends and Singapore public holidays",
     ),
   ).toBeInTheDocument();
   expect(screen.queryByText(/S\$88 weekdays/)).not.toBeInTheDocument();
@@ -92,7 +92,7 @@ test("live session selection uses client prices while demo retains its own rates
   view.rerender(<SessionStep />);
   expect(
     screen.getByText(
-      "S$88 weekdays · S$108 weekends and Singapore public holidays. Per session for 1–4 players.",
+      "S$88 weekdays · S$108 weekends and Singapore public holidays",
     ),
   ).toBeInTheDocument();
   read.mockRestore();

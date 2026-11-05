@@ -18,6 +18,9 @@ async function openSite(page: Page, route: string) {
 async function chooseSlots(page: Page, multiple = false) {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page
+    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .click();
   await page.getByRole("link", { name: "See available times" }).click();
   await page
     .getByRole("button", {
@@ -361,10 +364,23 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
+  const cardWidths = await page
+    .locator(".session-products")
+    .evaluate((grid) => ({
+      grid: grid.getBoundingClientRect().width,
+      card: grid.children[0].getBoundingClientRect().width,
+      gap: parseFloat(getComputedStyle(grid).columnGap),
+      mobile: matchMedia("(max-width: 700px)").matches,
+    }));
+  const expectedCardWidth = cardWidths.mobile
+    ? cardWidths.grid
+    : (cardWidths.grid - 2 * cardWidths.gap) / 3;
+  expect(Math.abs(cardWidths.card - expectedCardWidth)).toBeLessThanOrEqual(1);
+  await page
+    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .click();
   await fullWidth(".actions .button", ".actions");
-  await expect(
-    page.locator(".session-product .fixed-session-length"),
-  ).toContainText("40 minutes");
+  await expect(page.locator(".session-product")).toContainText("40 minutes");
   const playerWidth = await page
     .locator(".player-selection")
     .evaluate((element) => {
@@ -382,7 +398,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await page.getByRole("button", { name: "Add one player" }).click();
   await expect(page.locator(".counter output")).toHaveText("2 players");
   const productFontSize = await page
-    .locator(".session-product h2")
+    .locator(".session-product-name")
     .evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
   expect(productFontSize).toBeCloseTo(20, 5);
   await expect(page.locator(".section-title")).toHaveCSS(
@@ -673,8 +689,11 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(guest).toHaveCSS("font-size", "16px");
   await guest.click();
   await pageHeading("Your session");
-  await sectionType(".session-product h2, .session-inclusions h2");
-  await expect(page.locator(".session-product p")).toHaveCSS(
+  await page
+    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .click();
+  await sectionType(".session-product-name, .session-inclusions h2");
+  await expect(page.locator(".session-product-price")).toHaveCSS(
     "font-size",
     "16px",
   );
@@ -1047,6 +1066,9 @@ test("per-slot trainer dropdowns group times under trainer cards and retain chan
 }) => {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page
+    .getByRole("button", { name: "Choose Kickoff Special", exact: true })
+    .click();
   await page.getByRole("link", { name: "See available times" }).click();
   const date = addDays(DEMO_TODAY, 1);
   await page

@@ -211,10 +211,10 @@
     color: var(--color-brand);
   }
   .booking-document .arrival-information h3,
+  .session-product-name,
   .section-title,
   .review-head h2,
   .access-option h2,
-  .session-product h2,
   .summary h2,
   .time-heading h2 {
     font-size: var(--text-section);
@@ -261,9 +261,9 @@
   .booking-document .payment-foot,
   .booking-document .paid strong,
   .booking-document .text-link,
+  .session-product-price,
   .lead,
   .access-option p,
-  .session-product p,
   .review-block p,
   .payment-item p,
   .status-heading p,
@@ -2473,21 +2473,6 @@
   }
 }
 @layer components {
-  .fixed-session-length {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 50px;
-    padding: 13px 17px;
-    background: var(--color-brand-soft);
-    border: 1px solid var(--color-line);
-    border-radius: 9px;
-    color: var(--color-brand);
-  }
-  .fixed-session-length strong {
-    font-size: var(--text-body);
-    font-weight: 500;
-  }
   .arrival-information {
     margin-top: 25px;
     padding: 22px 24px;
@@ -2893,11 +2878,40 @@
     background: var(--color-brand-soft);
     color: var(--color-muted);
   }
+  .session-products {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
   .session-product {
     display: flex;
     align-items: flex-start;
-    gap: 18px;
+    gap: 14px;
     min-width: 0;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
+  .session-product:hover {
+    border-color: var(--color-brand);
+  }
+  .session-product-details {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+  .session-product-choose {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+  }
+  .session-product-choose svg {
+    width: 20px;
+    height: 20px;
+  }
+  .session-options .inclusion-list {
+    grid-template-columns: 1fr;
   }
   .session-product-icon {
     display: grid;
@@ -2913,18 +2927,8 @@
     width: 24px;
     height: 24px;
   }
-  .session-product h2 {
-    margin: 0 0 8px;
-  }
-  .session-product p {
-    color: var(--color-muted);
-    margin: 0;
-  }
   .player-selection {
     margin-top: 22px;
-  }
-  .session-product .fixed-session-length {
-    margin-top: 14px;
   }
   .counter {
     display: flex;
@@ -4069,6 +4073,9 @@
     .nav .brand {
       min-width: 0;
       flex-shrink: 1;
+    }
+    .session-products {
+      grid-template-columns: 1fr;
     }
     .session-product {
       gap: 13px;

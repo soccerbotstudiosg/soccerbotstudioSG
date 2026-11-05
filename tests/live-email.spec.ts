@@ -603,6 +603,7 @@ test("native guest journey preserves players contact and one checkout across ref
     else expect(Math.abs(guestBox.x - emailBox.x)).toBeLessThanOrEqual(1);
     await guest.click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
+    await page.getByRole("button", { name: /^Choose / }).click();
     await page
       .getByRole("button", { name: "Add one player", exact: true })
       .click();
@@ -1389,6 +1390,7 @@ async function guestDetails(
   await page
     .getByRole("button", { name: "Continue as guest", exact: true })
     .click();
+  await page.getByRole("button", { name: /^Choose / }).click();
   await page
     .getByRole("link", { name: "See available times", exact: true })
     .click();
