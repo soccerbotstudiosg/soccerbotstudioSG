@@ -79,7 +79,7 @@ export function TimeStep() {
     monthResult?.dates
       .filter((day) => day.available && day.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date)) ?? [];
-  // Initial discovery visits at most the four supported months, one at a time.
+  // Initial discovery visits at most the three supported months, one at a time.
   // Once resolved or manually navigated, refresh never resumes this search.
   if (publicCalendarReady && monthResult) {
     if (dayAvailability.get(date) !== true) {
@@ -215,11 +215,12 @@ export function TimeStep() {
               ))}
             </select>
           </div>
-          {live && !calendarBusy && (
+          {live && (
             <button
               className="calendar-refresh"
               aria-label="Refresh availability"
-              onClick={calendar.retry}
+              disabled={calendarBusy}
+              onClick={() => calendar.retry()}
             >
               Refresh
             </button>
@@ -315,7 +316,6 @@ export function TimeStep() {
         <>
           <div className="time-heading">
             <h2>{dateLabel(date)}</h2>
-            <span>SGT · Per session</span>
           </div>
           {!result ? (
             calendarFailed ? (

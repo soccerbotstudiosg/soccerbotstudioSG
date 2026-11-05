@@ -119,7 +119,7 @@ The public customer catalogue accepts the supported `developer` and `production`
 
 Production calendar selection requires explicit, distinct primary/premium service IDs from the sealed target mapping and an expected company login; it never defaults to staging service 2. Provider authentication selects production secret names and rejects a company mismatch. Developer selection retains service 2. Native grants and payment scopes can retain production identity for the explicitly configured client guest sandbox. Client grants require the S$108 base price, premium mapping, customer-choice scheduling and four-hour notice, without historical trial exceptions. This schema support does not authorize customer operations: production access remains disabled in target rendering/artifact validation.
 
-Public browsing and warming share `BOOKING_MONTH_COUNT=3`: current Singapore month plus the next two. The fourth month is rejected even if a legacy snapshot remains. Warming reuses range reads only while their independent60-second deadline remains valid; known changes still invalidate affected dates. Provider queries cover at most15 consecutive approved days per trainer/service, and no change feed is assumed for manual admin edits.
+Public browsing and warming share `BOOKING_MONTH_COUNT=3`: current Singapore month plus the next two. The fourth month is rejected even if a legacy snapshot remains. Warming claims one due month per minute using persisted per-month attempts. Missing months precede older valid months; failures rotate rather than aborting the entire three-month pass. A successful month becomes due after15 minutes; failed attempts wait at least one minute. Warming reuses range reads only while their independent60-second deadline remains valid; known changes still invalidate affected dates. Provider queries cover at most15 consecutive approved days per trainer/service, and no change feed is assumed for manual admin edits.
 
 Ongoing public/protected availability and prebooking use SimplyBook `getAvailableTimeIntervals(dateFrom,dateTo,eventId,unitId,1)`, through the existing scoped availability transport. The response is date → provider ID → arrays of free intervals. A bounded read-only developer-account probe on5 November2026 returned named boundaries (`{"from":"14:00:00","to":"16:00:00"}`); the official reference illustrates two-item `[from,to]` arrays. Both strict forms normalize into the same wall-clock boundaries. This probe establishes the provider representation, not production capacity acceptance. `studioStartsFromIntervals` merges touching/overlapping free intervals, never bridges a gap, and emits only BR-001 grid starts whose complete50 minutes fit within one continuous free interval. Each trainer/day is bounded to288 free intervals; endpoints use HH:mm:ss, with24:00:00 accepted only as an end boundary by interval ordering. Malformed boundaries, reversed intervals or a foreign trainer reject the read. Explicit empty intervals mean unavailable and can form a valid cached month. A missing date, malformed interval or unexpected trainer remains an error; it is never converted to an empty/free result. Legacy finite experiments retain the generated-start matrix contract. Public calendar responses include `X-Request-ID`, `X-Calendar-Observed-At` and, when persisted expiry is present, `X-Calendar-Expires-At`; these identify the served evidence, not browser rendering. Request budgets, provider auth, two-lane admission, original freshness and generation fencing are unchanged; this substitution adds no provider call per trainer/range. New checkout also checks grid alignment locally; direct creation still relies on provider booking authority without an extra availability preflight.
 
@@ -164,13 +164,13 @@ Native execution results are state-dependent saved results, not a guarantee that
 
 ## 6. Protected confirmation, receipt and recovery
 
-| Method and path                             | Input                                    | Output / effect                                             | Guard                                                                     |
-| ------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
-| GET `/api/attempts/:attemptId/checkout`     | No body; optional `X-Booking-Details: 1` | CheckoutContext below, with supported display details       | Current owned access; context is not payment proof                        |
-| GET `/api/attempts/:attemptId/confirmation` | No body                                  | Decision below plus checking headers                        | Shared server check budget, original deadline, provider verification      |
-| GET `/api/attempts/:attemptId/receipt`      | No body; optional `X-Booking-Refresh: 1` | Verified Receipt from [receipt owner](../worker/receipt.ts) | Revalidate authority; display details carry no confirmation timestamp     |
-| POST `/api/attempts/:attemptId/expire`      | No body                                  | `{expired:true}` after permitted release                    | Server evidence determines releasability; browser timeout is insufficient |
-| POST `/api/attempts/:attemptId/dismiss`     | No body                                  | `{dismissed:true}` after permitted dismissal                | Repeatable completed dismissal; uncertain attempts stay protected         |
+| Method and path                             | Input                                    | Output / effect                                             | Guard                                                                                                                     |
+| ------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| GET `/api/attempts/:attemptId/checkout`     | No body; optional `X-Booking-Details: 1` | CheckoutContext below, with supported display details       | Current owned access; context is not payment proof                                                                        |
+| GET `/api/attempts/:attemptId/confirmation` | No body                                  | Decision below plus checking headers                        | Shared server check budget, original deadline, provider verification                                                      |
+| GET `/api/attempts/:attemptId/receipt`      | No body; optional `X-Booking-Refresh: 1` | Verified Receipt from [receipt owner](../worker/receipt.ts) | Revalidate authority; display details carry no confirmation timestamp                                                     |
+| POST `/api/attempts/:attemptId/expire`      | No body                                  | `{expired:true}` after permitted release                    | Original deadlines plus verified terminal empty-payment evidence determine releasability; browser timeout is insufficient |
+| POST `/api/attempts/:attemptId/dismiss`     | No body                                  | `{dismissed:true}` after permitted dismissal                | Repeatable completed dismissal; uncertain attempts stay protected                                                         |
 
 **CheckoutContext** ([browser runtime schema](../src/services/confirmation.ts), [server](../worker/confirmation.ts)):
 
@@ -192,6 +192,10 @@ Native execution results are state-dependent saved results, not a guarantee that
 ```
 
 `pollAfterMs` is 1000–30000 in the response schema; this validation range does not override the tighter server checking policy. Summary has 1–12 sessions and 1–4 players. Client verifies the requested attempt/mode and accepted destination, not just JSON shape. `payment.status:"recorded"` alone does not imply a valid confirmed booking.
+
+Verified terminal nonpayment may be recorded at the checking deadline so the hold-expiry status read can observe it; release still waits for the original hold deadline. Explicit Check status shares the existing30-second foreground recheck admission and never renews the polling budget.
+
+New attempts persist8-minute payment,1-minute checking-buffer and10-minute hold windows. Existing attempts retain their original values. Release requires no dispatched request, or an authenticated matching expired/canceled request with explicit `payments: []`, past provider expiry, no known paid/accounting evidence and no unprocessed receipt. Release archives only the active grant. The immutable payment journal remains eligible for bounded late-webhook reconciliation. The expired/canceled semantics follow [HitPay's authoritative status contract](https://docs.hitpayapp.com/apis/payment-request/get-payment-status); missing payment lists remain unresolved. A release then refreshes each affected day only in retained backend months; display failures do not roll back release or fabricate free slots. The browser drops affected month entries and fetches the updated snapshot while preserving other months.
 
 **Decision:** `{status:"confirmed",reason:"verified"}`, `{status:"pending"|"unresolved",reason,customerConfirmation?,expired?}`, `{status:"invalid",reason}`, or `{status:"denied",reason:"access_denied"}`. Authentication can also fail at HTTP level. Check responses can expose `X-Checking-Deadline`, `X-Next-Check`, `X-Checks-Remaining`; protected reads attach `X-Recovery-Trace` and `Server-Timing`. A 429 with remaining zero is exhausted, otherwise throttled; use supplied schedule without resetting the original window. No timeout/absence of webhook proves nonpayment.
 
@@ -331,10 +335,10 @@ Retain the original attempt/key and protected recovery state. An HTTP 503 `tempo
     "sessions": [{ "startMs": 1800014400000, "players": 1 }]
   },
   "checking": {
-    "deadlineMs": 1800000780000,
+    "deadlineMs": 1800000540000,
     "nextCheckMs": 1800000002000,
     "pollAfterMs": 2000,
-    "holdExpiresAtMs": 1800000900000
+    "holdExpiresAtMs": 1800000600000
   }
 }
 ```
@@ -365,7 +369,7 @@ This is a status decision, not the receipt payload. Read `/receipt` under curren
 If the caller checks too early, HTTP 429 may include:
 
 ```http
-X-Checking-Deadline: 1800000780000
+X-Checking-Deadline: 1800000540000
 X-Next-Check: 1800000010000
 X-Checks-Remaining: 99
 ```

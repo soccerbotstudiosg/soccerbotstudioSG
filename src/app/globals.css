@@ -260,7 +260,6 @@
   .booking-document .rotation-notice,
   .booking-document .payment-foot,
   .booking-document .paid strong,
-  .booking-document .line-item.total strong,
   .booking-document .text-link,
   .lead,
   .access-option p,
@@ -337,6 +336,16 @@
   .calendar-weekdays span,
   .series-index {
     font-size: var(--text-caption);
+  }
+  .review-head + .series-list > li:first-child {
+    border-top: 0;
+  }
+  .session-trainer-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
   }
   .button,
   .button.secondary,
@@ -2530,18 +2539,31 @@
     margin: 18px 0 8px;
   }
   .basket-list li {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 12px;
-    padding: 13px 9px;
-    border-bottom: 1px solid var(--color-line);
+    gap: 5px 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-brand-soft);
   }
   .basket-list li > div {
     display: flex;
     flex-direction: column;
     gap: 5px;
     min-width: 0;
+  }
+  .basket-list .basket-price-row {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .basket-price-row small {
+    flex-shrink: 0;
   }
   .basket-list li span {
     color: var(--color-muted);
@@ -2550,18 +2572,19 @@
     color: var(--color-brand);
   }
   .basket-remove {
+    align-self: start;
     display: grid;
     place-items: center;
-    border: 1px solid var(--color-line);
+    border: 1px solid var(--color-danger-line);
     border-radius: 8px;
-    background: var(--color-surface);
-    color: var(--color-muted);
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
     min-width: var(--icon-control-size);
     min-height: var(--icon-control-size);
   }
   .basket-remove:hover {
-    background: var(--color-brand-soft);
-    color: var(--color-brand);
+    background: var(--color-danger-line);
+    color: var(--color-danger);
   }
   .basket-remove svg {
     width: 16px;
@@ -2569,6 +2592,9 @@
   }
   .basket-continue {
     margin-top: 20px;
+  }
+  .basket-continue + .notice {
+    margin-top: 16px;
   }
   .price-breakdown .line-item {
     align-items: center;
@@ -3069,6 +3095,9 @@
   }
   .summary-total strong {
     color: var(--color-action);
+  }
+  .summary-currency {
+    text-align: right;
   }
   .summary .hint {
     margin-top: 12px;
@@ -3750,6 +3779,11 @@
     align-items: center;
     margin-top: 0;
     padding-top: 0;
+  }
+  .confirmation-card .session-trainer-row .paid {
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: 0;
   }
   .confirmation-card .paid.settled {
     justify-content: flex-end;

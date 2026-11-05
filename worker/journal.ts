@@ -1,9 +1,12 @@
-import type { Access } from "./access";
-import { contactSchema, contactErrors } from "../src/domain/contact";
 import {
   START_INTERVAL_MINUTES,
   MAX_PLAYERS,
+  PAYMENT_WINDOW_MS,
+  CHECKING_BUFFER_MS,
+  HOLD_WINDOW_MS,
 } from "../src/domain/booking-policy";
+import type { Access } from "./access";
+import { contactSchema, contactErrors } from "../src/domain/contact";
 import { z } from "zod";
 import { ApiError, digest } from "./policy";
 // Internal server-approved intent only. No HTTP endpoint accepts this envelope.
@@ -262,9 +265,16 @@ export async function bindAssociation(
     ? [
         db
           .prepare(
-            "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms) SELECT id,?,480000,900000 FROM attempts WHERE id=? AND version=? AND state='dispatching' ON CONFLICT(attempt_id) DO NOTHING",
+            "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms) SELECT id,?,?,?,? FROM attempts WHERE id=? AND version=? AND state='dispatching' ON CONFLICT(attempt_id) DO NOTHING",
           )
-          .bind(completion.createdAtMs, id, fence),
+          .bind(
+            completion.createdAtMs,
+            PAYMENT_WINDOW_MS,
+            HOLD_WINDOW_MS,
+            CHECKING_BUFFER_MS,
+            id,
+            fence,
+          ),
       ]
     : [];
   const results = await db.batch([

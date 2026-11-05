@@ -87,7 +87,7 @@ it("stops a hung read at the original deadline without claiming cancellation", a
     await vi.advanceTimersByTimeAsync(100000);
     hook.result.current.check();
   });
-  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(fetch).toHaveBeenCalledTimes(2);
 });
 it("aborts stale session reads and cannot reuse their confirmed result", async () => {
   let finish: (r: Response) => void = () => {};
@@ -151,7 +151,7 @@ it("an elapsed protected checkout window aborts checking without resetting its a
     await vi.advanceTimersByTimeAsync(20000);
     hook.result.current.check();
   });
-  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(fetch).toHaveBeenCalledTimes(2);
   expect(
     JSON.parse(localStorage.getItem(`soccerbot-checking:${id}`)!).count,
   ).toBe(1);
@@ -405,6 +405,7 @@ it("rechecks unresolved status on focus without renewing the window and coalesce
   await act(async () => {});
   expect(fetch).not.toHaveBeenCalled();
   await act(async () => {
+    hook.result.current.check();
     window.dispatchEvent(new Event("focus"));
     document.dispatchEvent(new Event("visibilitychange"));
   });

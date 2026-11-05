@@ -6,6 +6,10 @@ export const MAX_PLAYERS = 4;
 // Current Singapore month plus the following two calendar months.
 export const BOOKING_MONTH_COUNT = 3;
 export const STUDIO_CAPACITY = 1;
+// New checkout attempts: eight minutes to pay, one to check, ten-minute hold.
+export const PAYMENT_WINDOW_MS = 480000;
+export const CHECKING_BUFFER_MS = 60000;
+export const HOLD_WINDOW_MS = 600000;
 // Current customer booking rule: booking closes 240 minutes before the start.
 export const BOOKING_LEAD_MINUTES = 240;
 export const BOOKING_LEAD_MS = BOOKING_LEAD_MINUTES * 60 * 1000;

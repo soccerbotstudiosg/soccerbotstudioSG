@@ -44,7 +44,7 @@ export async function recoverHitpay(
   const initial = await env.STATE.withSession("first-primary").batch([
     ...hitpayClaimStatements(env, id, Date.now()),
     env.STATE.prepare(
-      "SELECT CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,a.id,a.created_ms,a.intent_json,a.intent_hash,a.association_json,a.version,h.expires_ms AS hold_expires_ms,c.booking_created_ms,c.payment_window_ms,(SELECT availability_json FROM native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM completed_native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM expired_native_checkout_grants WHERE attempt_id=a.id) AS availability_json FROM attempts a LEFT JOIN invoice_documents d ON d.attempt_id=a.id AND d.association_json=a.association_json LEFT JOIN hitpay_holds h ON h.attempt_id=a.id LEFT JOIN checkout_progress c ON c.attempt_id=a.id WHERE a.id=?",
+      "SELECT CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,a.id,a.created_ms,a.intent_json,a.intent_hash,a.association_json,a.version,h.expires_ms AS hold_expires_ms,c.booking_created_ms,c.payment_window_ms,c.checking_buffer_ms,(SELECT availability_json FROM native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM completed_native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM expired_native_checkout_grants WHERE attempt_id=a.id) AS availability_json FROM attempts a LEFT JOIN invoice_documents d ON d.attempt_id=a.id AND d.association_json=a.association_json LEFT JOIN hitpay_holds h ON h.attempt_id=a.id LEFT JOIN checkout_progress c ON c.attempt_id=a.id WHERE a.id=?",
     ).bind(id),
     env.STATE.prepare(
       "SELECT step,reference_id FROM session_effects WHERE attempt_id=? AND outcome='observed' AND (step='native-booking-key' OR step GLOB 'native-booking-key:[0-9]*')",
@@ -91,6 +91,7 @@ export async function recoverHitpay(
     },
   };
   let checkingDeadline = row.expires_ms + 300000;
+  let releaseDeadline = checkingDeadline;
   let result = "due",
     reason = "verification_pending";
   let terminalCommitted = false;
@@ -110,12 +111,19 @@ export async function recoverHitpay(
           hold_expires_ms: number | null;
           booking_created_ms: number | null;
           payment_window_ms: number | null;
+          checking_buffer_ms: number | null;
           availability_json: string | null;
         }
       | undefined;
     if (attempt?.booking_created_ms != null)
       checkingDeadline =
-        attempt.booking_created_ms + attempt.payment_window_ms! + 300000;
+        attempt.booking_created_ms +
+        attempt.payment_window_ms! +
+        attempt.checking_buffer_ms!;
+    releaseDeadline = Math.max(
+      checkingDeadline,
+      attempt?.hold_expires_ms ?? checkingDeadline,
+    );
     if (
       !attempt ||
       attempt.intent_hash !== scope.intentHash ||
@@ -163,8 +171,19 @@ export async function recoverHitpay(
       if (["failed", "expired", "canceled"].includes(verified.status)) {
         // Recheck terminal-looking request states through the fixed grace
         // window; expiry alone is not proof that settlement is impossible.
-        result = Date.now() >= checkingDeadline ? "manual_review" : "due";
+        result = Date.now() >= releaseDeadline ? "manual_review" : "due";
         reason = "hitpay_payment_" + verified.status;
+      }
+      if (
+        verified.unpaidTerminal &&
+        Date.now() >= checkingDeadline &&
+        row.external_state === "none" &&
+        attempt.hold_expires_ms !== null &&
+        verified.expiresAtMs !== null &&
+        verified.expiresAtMs <= Date.now()
+      ) {
+        result = "manual_review";
+        reason = "hitpay_unpaid_verified";
       }
       return;
     }
@@ -449,7 +468,9 @@ export async function recoverHitpay(
           reason,
           Date.now() < checkingDeadline
             ? Math.min(checkingDeadline, Date.now() + 90000)
-            : Date.now() +
+            : Date.now() < releaseDeadline
+              ? Math.min(releaseDeadline, Date.now() + 90000)
+              : Date.now() +
                 Math.min(3600000, 90000 * 2 ** Math.min(row.tries - 1, 6)),
           id,
           row.generation,

@@ -121,7 +121,7 @@ it("a late reply from a previous attempt cannot confirm the current attempt", as
   const view = render(<ProtectedConfirmation attemptId={first} />);
   view.rerender(<ProtectedConfirmation attemptId={second} />);
   expect(
-    await screen.findByRole("heading", { name: "Payment needs checking" }),
+    await screen.findByRole("heading", { name: "Please check your payment" }),
   ).toBeInTheDocument();
   finishFirst(Response.json({ status: "confirmed", reason: "verified" }));
   await waitFor(() =>
@@ -857,7 +857,7 @@ it("manual review supersedes an earlier customer confirmation without exposing d
   expect(screen.getByRole("alert")).toHaveTextContent(
     "Payment received. Contact us about your booking. Do not pay again.",
   );
-  expect(screen.queryByText(/Payment status unconfirmed/)).toBeNull();
+  expect(screen.queryByText(/We’re still checking your payment/)).toBeNull();
   expect(
     screen.queryByRole("heading", { name: "Booking confirmed" }),
   ).toBeNull();

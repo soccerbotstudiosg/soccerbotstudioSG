@@ -1168,6 +1168,10 @@
     "title": "checkout readback uses slot-specific messaging only for verified unavailability"
   },
   {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "keeps booking UI unready until protected restoration finishes"
+  },
+  {
     "file": "src/features/booking/booking-parity.test.tsx",
     "title": "cold calendar entry and refresh select an available day while retaining a valid chosen day"
   },
@@ -1222,5 +1226,9 @@
   {
     "file": "src/features/booking/session-price.test.tsx",
     "title": "live session selection uses client prices while demo retains its own rates"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "calendar refresh replaces only the selected month and retains loaded siblings"
   }
 ]

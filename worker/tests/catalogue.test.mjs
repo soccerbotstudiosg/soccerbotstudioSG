@@ -2241,15 +2241,9 @@ test("persistent display snapshots retain original deadlines across restarts and
     store.save("calendar", key, value, store.generation());
     const expected = store.read("calendar", key);
     assert.equal(expected.displayExpiresAtMs, now + 1800000);
-    assert.equal(store.claimRefresh(now), true);
-    assert.equal(
-      new DisplaySnapshots(sql, "account/source").claimRefresh(now),
-      false,
-    );
     now += 900000;
     const restarted = new DisplaySnapshots(sql, "account/source");
     assert.deepEqual(restarted.read("calendar", key), expected);
-    assert.equal(restarted.claimRefresh(now), true);
     // A failed refresh changes neither content nor its original deadline.
     assert.deepEqual(restarted.read("calendar", key), expected);
     const date = month + "-15";
@@ -2353,29 +2347,12 @@ test("persistent display snapshots retain original deadlines across restarts and
       expected.displayExpiresAtMs,
     );
     restarted.save("calendar", key, value, restarted.generation());
-    restarted.deferRefresh();
-    assert.equal(
-      restarted.claimRefresh(now),
-      true,
-      "interrupted warming retries on the next scheduler turn",
-    );
-    assert.equal(
-      restarted.claimRefresh(now),
-      false,
-      "the next turn remains single-claimed",
-    );
-    assert.deepEqual(
-      restarted.read("calendar", key),
-      expected,
-      "deferral does not expire the retained snapshot",
-    );
     const oldGeneration = restarted.generation();
     restarted.invalidateCalendars();
     assert.equal(restarted.read("calendar", key), undefined);
     assert.ok(restarted.months().includes(month));
     restarted.save("calendar", key, value, oldGeneration);
     assert.equal(restarted.read("calendar", key), undefined);
-    assert.equal(restarted.claimRefresh(now), true);
     restarted.save("calendar", key, value, restarted.generation());
     assert.deepEqual(restarted.read("calendar", key), expected);
     assert.equal(
@@ -3273,4 +3250,59 @@ test("client sandbox contracts bind merchant company environment and pricing wit
       nativeAccountContractSchema.safeParse({ ...contract, ...patch }).success,
       false,
     );
+});
+
+test("warming rotates failed months across restarts without rebuilding fresh siblings", () => {
+  const db = new DatabaseSync(":memory:");
+  const sql = {
+    exec(query, ...args) {
+      const rows = db.prepare(query).all(...args);
+      return { toArray: () => rows, one: () => rows[0] };
+    },
+  };
+  const original = Date.now;
+  let now = Date.parse("2026-11-05T04:00:00Z");
+  Date.now = () => now;
+  try {
+    let store = new DisplaySnapshots(sql, "scope");
+    assert.equal(store.claimRefresh(now), "2026-11");
+    store.save(
+      "calendar",
+      "calendar:2026-11",
+      { month: "2026-11", serviceId: "2", observedAtMs: now, dates: [] },
+      store.generation(),
+    );
+    now += 60000;
+    store = new DisplaySnapshots(sql, "scope");
+    assert.equal(store.claimRefresh(now), "2026-12");
+    // December failed. January must still get its next scheduled turn.
+    now += 60000;
+    assert.equal(store.claimRefresh(now), "2027-01");
+    store.save(
+      "calendar",
+      "calendar:2027-01",
+      { month: "2027-01", serviceId: "2", observedAtMs: now, dates: [] },
+      store.generation(),
+    );
+    now += 60000;
+    assert.equal(store.claimRefresh(now), "2026-12");
+    assert.equal(store.claimRefresh(now), undefined);
+    store.save(
+      "calendar",
+      "calendar:2026-12",
+      { month: "2026-12", serviceId: "2", observedAtMs: now, dates: [] },
+      store.generation(),
+    );
+    now += 60000;
+    assert.equal(store.claimRefresh(now), undefined);
+    now += 11 * 60000;
+    assert.equal(store.claimRefresh(now), "2026-11");
+    assert.equal(
+      store.read("calendar", "calendar:2026-11").displayExpiresAtMs,
+      Date.parse("2026-11-05T04:30:00Z"),
+    );
+  } finally {
+    Date.now = original;
+    db.close();
+  }
 });

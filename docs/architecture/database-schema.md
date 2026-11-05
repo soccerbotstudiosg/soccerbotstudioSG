@@ -1,8 +1,8 @@
 # Database schema
 
-Source map reviewed 3 November 2026 (Singapore), based on main `86e3cd5` plus the local test10 batch. **32 application D1 tables** result from migrations0001–0036; **11 application SQLite tables** are initialized inside the account Durable Object. Platform-internal tables, migration bookkeeping and test-only tables are excluded.
+Source map updated5 November2026 against main `eb06494` and the local PR27 recovery batch. **32 application D1 tables** result from migrations0001–0037; **12 application SQLite tables** are initialized inside the account Durable Object. Platform-internal tables, migration bookkeeping and test-only tables are excluded.
 
-**Deployment distinction:** production was last verified at `86e3cd5`, through migration0035. `invoice_documents` (0036) is **local and not yet deployed**. This is a source-derived schema map, not a new inspection of production table contents. Table presence does not mean a feature is enabled; enquiry email delivery remains unimplemented.
+**Deployment distinction:** main includes migration0036. Migration0037 and `display_warm_month` are local candidate changes, not yet deployed. This task has not reinspected production table contents. Table presence does not mean a feature is enabled; enquiry email delivery remains unimplemented.
 
 The schema source is [D1 migrations](../../migrations), [coordinator initialization](../../worker/coordinator.ts), [token-cache initialization](../../worker/provider-token-cache.ts) and [display-cache initialization](../../worker/display-snapshots.ts). Retention, expiry and deletion policy belongs to [Data lifecycle](../data-lifecycle.md); authorization and payment invariants belong to [Business rules](../business-rules.md). This document owns table structure and relationships only.
 
@@ -108,7 +108,13 @@ erDiagram
     TEXT digest PK
     TEXT attempt_id FK
   }
-  checkout_progress { TEXT attempt_id PK, FK }
+  checkout_progress {
+    TEXT attempt_id PK, FK
+    INTEGER booking_created_ms
+    INTEGER payment_window_ms
+    INTEGER hold_window_ms
+    INTEGER checking_buffer_ms
+  }
   invoice_documents {
     TEXT attempt_id PK, FK
     TEXT association_json
@@ -118,16 +124,18 @@ erDiagram
   }
 ```
 
-**Local migration0036:** `document_number` is nullable while the final paid document is unavailable. Its association is checked against the attempt by application code; the JSON column itself is not a foreign key. Updating display metadata does not update immutable `checkout_progress.confirmation_json` or authorize payment/booking success. See [invoice contract](../api-contracts.md#optional-invoice-document-display-metadata).
+**Migration0037:** adds immutable `checking_buffer_ms`, default300000 for existing rows; new attempts explicitly record60000. It does not rewrite old timing or payment evidence. Deploy this additive migration before the new Worker; old code can continue using the extended table.
 
-| Table                     | Key              | Purpose                                                                                              |
-| ------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------- |
-| `checkout_payment_routes` | PK: `attempt_id` | Immutable choice of native or HitPay payment route for an attempt.                                   |
-| `hitpay_holds`            | PK: `attempt_id` | Original reservation scope, association and expiry used to guard payment.                            |
-| `hitpay_payments`         | PK: `attempt_id` | HitPay request identity, verified payment evidence and accounting/recovery state.                    |
-| `hitpay_receipts`         | PK: `digest`     | Deduplicated authenticated HitPay webhook receipt digests.                                           |
-| `checkout_progress`       | PK: `attempt_id` | Booking creation time, original windows and immutable saved confirmation.                            |
-| `invoice_documents`       | PK: `attempt_id` | Original unpaid number and later paid document number; optional display metadata (0036, local only). |
+**Migration0036:** `document_number` is nullable while the final paid document is unavailable. Its association is checked against the attempt by application code; the JSON column itself is not a foreign key. Updating display metadata does not update immutable `checkout_progress.confirmation_json` or authorize payment/booking success. See [invoice contract](../api-contracts.md#optional-invoice-document-display-metadata).
+
+| Table                     | Key              | Purpose                                                                                  |
+| ------------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
+| `checkout_payment_routes` | PK: `attempt_id` | Immutable choice of native or HitPay payment route for an attempt.                       |
+| `hitpay_holds`            | PK: `attempt_id` | Original reservation scope, association and expiry used to guard payment.                |
+| `hitpay_payments`         | PK: `attempt_id` | HitPay request identity, verified payment evidence and accounting/recovery state.        |
+| `hitpay_receipts`         | PK: `digest`     | Deduplicated authenticated HitPay webhook receipt digests.                               |
+| `checkout_progress`       | PK: `attempt_id` | Booking creation time, original windows and immutable saved confirmation.                |
+| `invoice_documents`       | PK: `attempt_id` | Original unpaid number and later paid document number; optional display metadata (0036). |
 
 ## D1: Access, identity and contact details
 
@@ -255,6 +263,11 @@ erDiagram
     INTEGER started_ms
     INTEGER dirty
   }
+  display_warm_month {
+    TEXT scope PK
+    TEXT month PK
+    INTEGER started_ms
+  }
   display_snapshots {
     TEXT scope PK
     TEXT key PK
@@ -263,10 +276,11 @@ erDiagram
   }
 ```
 
-| Table               | Primary key    | Purpose                                                                         |
-| ------------------- | -------------- | ------------------------------------------------------------------------------- |
-| `display_refresh`   | `scope`        | Refresh generation, start time and dirty flag used to fence stale cache writes. |
-| `display_snapshots` | `(scope, key)` | Scoped calendar/catalogue payload and original read expiry.                     |
+| Table                | Primary key      | Purpose                                                                                                      |
+| -------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------ |
+| `display_refresh`    | `scope`          | Generation fences stale writes; legacy start/dirty columns remain compatible but no longer schedule warming. |
+| `display_warm_month` | `(scope, month)` | Last attempted warm per month; rotates failure/restart work without renewing snapshots.                      |
+| `display_snapshots`  | `(scope, key)`   | Scoped calendar/catalogue payload and original read expiry.                                                  |
 
 The matching `scope` is an application-managed link, **not a foreign key**. Public display expiry does not release a provider reservation. Cache behavior belongs to [Technical behavior](../code-owners/technical-behavior.md); disposal/retention belongs to [Data lifecycle](../data-lifecycle.md).
 

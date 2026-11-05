@@ -10,6 +10,7 @@ import {
   forgetCompletedExit,
 } from "@/services/confirmation";
 import { isHitpayCheckoutUrl } from "@/domain/native-checkout";
+import { START_INTERVAL_MINUTES } from "@/domain/booking-policy";
 import { todaySG } from "@/domain/dates";
 import { slotKey, selectionErrors } from "@/domain/booking";
 import { useCalendarAvailability } from "./calendar-availability";
@@ -632,6 +633,12 @@ export function BookingProvider({
           try {
             await expireBooking(latest.current.attempt.id);
             if (!isCurrent()) return false;
+            calendar.retry([
+              calendarMonth,
+              ...new Set(
+                latest.current.draft.slots.map((slot) => slot.date.slice(0, 7)),
+              ),
+            ]);
             commit({
               ...latest.current,
               attempt: null,
@@ -668,7 +675,18 @@ export function BookingProvider({
           const rejectedKeys = new Set(rejectedSlots.map(slotKey));
           for (const date of new Set(rejectedSlots.map((slot) => slot.date))) {
             const remaining = (calendar.cachedDates[date] ?? []).filter(
-              (slot) => !rejectedKeys.has(slotKey(slot)),
+              (slot) =>
+                !rejectedSlots.some(
+                  (rejected) =>
+                    rejected.date === slot.date &&
+                    Math.abs(
+                      Date.parse(`${slot.date}T${slot.start}:00+08:00`) -
+                        Date.parse(
+                          `${rejected.date}T${rejected.start}:00+08:00`,
+                        ),
+                    ) <
+                      START_INTERVAL_MINUTES * 60000,
+                ),
             );
             calendar.reconcile(date, remaining.length > 0, remaining);
           }
@@ -704,7 +722,15 @@ export function BookingProvider({
         if (mounted.current && !latest.current.attempt) pauseCalendar(false);
       }
     },
-    [service, commit, setAction, identityService, calendar, finishExit],
+    [
+      service,
+      commit,
+      setAction,
+      identityService,
+      calendar,
+      calendarMonth,
+      finishExit,
+    ],
   );
   useEffect(() => {
     if (service.mode !== "demo" || value.attempt?.status !== "checking") return;
@@ -720,6 +746,7 @@ export function BookingProvider({
     <Context.Provider
       value={{
         ...value,
+        ready: value.ready && !restorationPending,
         now,
         bookingService: service,
         identityService,
@@ -743,6 +770,12 @@ export function BookingProvider({
           )
             return;
           cancel();
+          calendar.retry([
+            calendarMonth,
+            ...new Set(
+              latest.current.draft.slots.map((slot) => slot.date.slice(0, 7)),
+            ),
+          ]);
           setRestoredOwner({ service, identityService });
           commit({
             ...latest.current,
@@ -751,7 +784,7 @@ export function BookingProvider({
           });
           pauseCalendar(false);
           setSelectionNotice(
-            "Reservation expired. Choose another time. Your details are saved.",
+            "Your unpaid reservation has ended. You can book again. Your details are saved.",
           );
           setAction({ status: "idle", returnToCalendar: true });
         },

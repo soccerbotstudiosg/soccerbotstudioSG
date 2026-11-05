@@ -184,6 +184,10 @@
     "title": "client sandbox contracts bind merchant company environment and pricing without enabling live payments"
   },
   {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "warming rotates failed months across restarts without rebuilding fresh siblings"
+  },
+  {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "combined hold performs one preflight and preserves immutable identity across concurrent requests and restoration"
   },
@@ -634,6 +638,22 @@
   {
     "file": "worker/tests/hitpay.test.mjs",
     "title": "HitPay recovery rejects a replaced claim after paid-booking response without further accounting or success"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "verified empty expired payment releases checkout but retains late payment reconciliation"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "terminal payment requests require explicit empty evidence for release"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "unpaid release refreshes only its cached day and preserves the month deadline"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "verified nonpayment at checking expiry still waits for the original hold"
   },
   {
     "file": "worker/tests/identity-delivery.test.mjs",

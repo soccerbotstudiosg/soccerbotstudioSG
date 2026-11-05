@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { BookingProvider, useBooking } from "./provider";
@@ -323,9 +324,7 @@ it("explicit reservation reuses its hold for payment without preparing or checki
   );
   expect(screen.getByTestId("hold-state")).toHaveTextContent("held");
   expect(assign).not.toHaveBeenCalled();
-  expect(
-    screen.queryByRole("link", { name: "Edit selections" }),
-  ).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Edit" })).not.toBeInTheDocument();
   const readsAtHold = availability.mock.calls.length;
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
@@ -555,8 +554,12 @@ it("Review performs no provider reads and checkout verifies one booking before H
   expect(availability).not.toHaveBeenCalled();
   expect(checkout).not.toHaveBeenCalled();
   expect(pay).not.toHaveBeenCalled();
-  expect(screen.getByRole("link", { name: "Edit details" })).toBeVisible();
-  expect(screen.getByRole("link", { name: "Edit selections" })).toBeVisible();
+  for (const heading of ["Booking contact", "Dates & times"]) {
+    const section = screen.getByRole("heading", {
+      name: heading,
+    }).parentElement!;
+    expect(within(section).getByRole("link", { name: "Edit" })).toBeVisible();
+  }
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
@@ -978,4 +981,30 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
       });
       expect(fetch).toHaveBeenCalledTimes(1);
     }
+});
+
+it("keeps booking UI unready until protected restoration finishes", async () => {
+  let finish!: (attempt: Attempt | null) => void;
+  const restore = vi.fn(
+    () =>
+      new Promise<Attempt | null>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  function Probe() {
+    const { ready } = useBooking();
+    return <output data-testid="restoration-ready">{String(ready)}</output>;
+  }
+  render(
+    <BookingProvider
+      bookingService={{ ...liveBookingService, restore }}
+      identityService={{ ...demoCustomerIdentity, mode: "live" }}
+    >
+      <Probe />
+    </BookingProvider>,
+  );
+  expect(restore).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId("restoration-ready")).toHaveTextContent("false");
+  await act(async () => finish(null));
+  expect(screen.getByTestId("restoration-ready")).toHaveTextContent("true");
 });

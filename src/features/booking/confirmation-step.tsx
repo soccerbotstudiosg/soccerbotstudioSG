@@ -208,13 +208,28 @@ export function BookingConfirmation({
           <SessionSummaryHeading
             draft={{ ...booking.draft, slots: booking.slots }}
           />
-          <SessionList slots={booking.slots} showRotation={false} />
-          <div className={pending ? "paid" : "paid settled"}>
-            <span className={pending ? undefined : "pill success"}>
-              {pending ? "Total" : preview ? "Paid · Preview" : "Paid"}
-            </span>
-            <strong>{money(booking.totalCents)} SGD</strong>
-          </div>
+          <SessionList
+            slots={booking.slots}
+            showRotation={false}
+            trainerAction={
+              !pending && booking.slots.length === 1 ? (
+                <div className="paid settled">
+                  <span className="pill success">
+                    {preview ? "Paid · Preview" : "Paid"}
+                  </span>
+                  <strong>{money(booking.totalCents)} SGD</strong>
+                </div>
+              ) : undefined
+            }
+          />
+          {(pending || booking.slots.length !== 1) && (
+            <div className={pending ? "paid" : "paid settled"}>
+              <span className={pending ? undefined : "pill success"}>
+                {pending ? "Total" : preview ? "Paid · Preview" : "Paid"}
+              </span>
+              <strong>{money(booking.totalCents)} SGD</strong>
+            </div>
+          )}
         </div>
         {pending && pendingAction}
         {!pending && (

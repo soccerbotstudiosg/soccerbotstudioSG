@@ -75,7 +75,7 @@ test("combined hold performs one preflight and preserves immutable identity acro
     assert.ok(results.some((result) => result.state === "associated"));
     const timing = await m.db
       .prepare(
-        "SELECT c.booking_created_ms,c.payment_window_ms,c.hold_window_ms,h.expires_ms FROM checkout_progress c JOIN hitpay_holds h USING(attempt_id) WHERE attempt_id=?",
+        "SELECT c.booking_created_ms,c.payment_window_ms,c.hold_window_ms,c.checking_buffer_ms,h.expires_ms FROM checkout_progress c JOIN hitpay_holds h USING(attempt_id) WHERE attempt_id=?",
       )
       .bind(c.input.key)
       .first();
@@ -85,9 +85,19 @@ test("combined hold performs one preflight and preserves immutable identity acro
     );
     const checking = (await context.json()).checking;
     assert.equal(checking.holdExpiresAtMs, timing.expires_ms);
-    assert.equal(checking.deadlineMs, timing.booking_created_ms + 780000);
+    assert.equal(checking.deadlineMs, timing.booking_created_ms + 540000);
     assert.equal(timing.payment_window_ms, 480000);
-    assert.equal(timing.hold_window_ms, 900000);
+    assert.equal(timing.hold_window_ms, 600000);
+    assert.equal(timing.checking_buffer_ms, 60000);
+    await assert.rejects(
+      m.db
+        .prepare(
+          "UPDATE checkout_progress SET checking_buffer_ms=300000 WHERE attempt_id=?",
+        )
+        .bind(c.input.key)
+        .run(),
+      /checkout_buffer_immutable/,
+    );
     await assert.rejects(
       m.db
         .prepare(
@@ -98,9 +108,9 @@ test("combined hold performs one preflight and preserves immutable identity acro
       /checkout_windows_immutable/,
     );
     assert.ok(timing.booking_created_ms <= Date.now());
-    assert.ok(timing.expires_ms <= timing.booking_created_ms + 900000);
+    assert.ok(timing.expires_ms <= timing.booking_created_ms + 600000);
     assert.ok(timing.expires_ms > timing.booking_created_ms);
-    assert.ok(timing.expires_ms > timing.booking_created_ms + 840000);
+    assert.ok(timing.expires_ms > timing.booking_created_ms + 540000);
 
     assert.ok(results.every((result) => result.attemptId === c.input.key));
     for (const method of [
@@ -1272,6 +1282,8 @@ test("scheduled display warming survives idle entry and booking refresh never de
   const m = await createBookingMechanism({ displayWarming: true });
   try {
     await (await m.mf.getWorker()).scheduled();
+    await (await m.mf.getWorker()).scheduled();
+    await (await m.mf.getWorker()).scheduled();
     const before = m.calls.length;
     const month = new Date(Date.now() + 28800000).toISOString().slice(0, 7);
     const home = await m.mf.dispatchFetch(m.origin + "/api/calendar/" + month);
@@ -1581,7 +1593,7 @@ test("failed scheduled display refresh retains a bounded snapshot without renewi
       "SoccerBotAccountCoordinator",
       { name: "simplybook-developer-account" },
     );
-    await storage.exec("UPDATE display_refresh SET started_ms=0");
+    await storage.exec("UPDATE display_warm_month SET started_ms=0");
     fail = true;
     // Eviction removes the short-lived read cache while preserving the snapshot.
     await m.mf.unsafeEvictDurableObject(

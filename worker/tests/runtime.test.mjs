@@ -236,6 +236,11 @@ before(async () => {
       .replace(/^--.*$/gm, "")
       .replace(/\n/g, " "),
   );
+  await db.exec(
+    readFileSync("migrations/0037_checkout_checking_buffer.sql", "utf8")
+      .replace(/^--.*$/gm, "")
+      .replace(/\n/g, " "),
+  );
 });
 after(async () => {
   if (mf) await mf.dispose();

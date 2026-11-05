@@ -931,9 +931,9 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     return traced(correlationId, "scheduled", async () => {
       if (!this.displayWarmingEnabled()) return;
       const store = this.snapshots();
-      const months = store.months();
+      const month = store.claimRefresh(Date.now());
       const started = performance.now();
-      if (!store.claimRefresh(Date.now())) {
+      if (!month) {
         traceCalendar(correlationId, "refresh_skipped", { trigger: "warming" });
         return;
       }
@@ -942,50 +942,51 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           throw new ApiError(503, "display_refresh_deferred");
       };
       try {
-        for (const month of months)
-          await this.providerQueue.run("display", async () => {
-            beforeProviderRead();
-            await this.provider.refreshPublicTokenAhead(
-              this.env,
-              this.providerControl(false, true),
-            );
-            const generation = store.generation();
-            traceCalendar(correlationId, "build_started", {
+        await this.providerQueue.run("display", async () => {
+          beforeProviderRead();
+          await this.provider.refreshPublicTokenAhead(
+            this.env,
+            this.providerControl(false, true),
+          );
+          const generation = store.generation();
+          traceCalendar(correlationId, "build_started", {
+            trigger: "warming",
+            month,
+          });
+          // One month per scheduler invocation bounds provider calls and lets
+          // failed or missing months make progress on subsequent turns.
+          // Reuse only reads still inside their independent 60-second deadline.
+          // Known writes invalidate affected dates; partial refreshes never
+          // replace the retained complete month.
+          const calendar = await publicCalendar({
+            ...this.calendarReadOptions(),
+            month,
+            beforeProviderRead,
+          });
+          beforeProviderRead();
+          const catalogue = await windowCatalogue(this.calendarReadOptions());
+          store.save("calendar", `calendar:${month}`, calendar, generation);
+          store.save("catalogue", "catalogue", catalogue, generation);
+          const persisted =
+            store.generation() === generation &&
+            store.read("calendar", `calendar:${month}`) !== undefined;
+          traceCalendar(
+            correlationId,
+            persisted ? "build_saved" : "build_discarded",
+            {
               trigger: "warming",
               month,
-            });
-            // Reuse only reads still inside their independent 60-second deadline.
-            // Known writes invalidate affected dates; partial refreshes never
-            // replace the retained complete month.
-            const calendar = await publicCalendar({
-              ...this.calendarReadOptions(),
-              month,
-              beforeProviderRead,
-            });
-            beforeProviderRead();
-            const catalogue = await windowCatalogue(this.calendarReadOptions());
-            store.save("calendar", `calendar:${month}`, calendar, generation);
-            store.save("catalogue", "catalogue", catalogue, generation);
-            const persisted =
-              store.generation() === generation &&
-              store.read("calendar", `calendar:${month}`) !== undefined;
-            traceCalendar(
-              correlationId,
-              persisted ? "build_saved" : "build_discarded",
-              {
-                trigger: "warming",
-                month,
-                persisted,
-                observedAtMs: calendar.observedAtMs,
-                durationMs: performance.now() - started,
-                dateCount: calendar.dates.length,
-                offerCount: calendar.dates.reduce(
-                  (n, day) => n + (day.offers?.length ?? 0),
-                  0,
-                ),
-              },
-            );
-          });
+              persisted,
+              observedAtMs: calendar.observedAtMs,
+              durationMs: performance.now() - started,
+              dateCount: calendar.dates.length,
+              offerCount: calendar.dates.reduce(
+                (n, day) => n + (day.offers?.length ?? 0),
+                0,
+              ),
+            },
+          );
+        });
       } catch (error) {
         if (
           !(error instanceof ApiError) ||
@@ -1001,7 +1002,6 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           });
           throw error;
         }
-        store.deferRefresh();
         traceCalendar(correlationId, "refresh_deferred", {
           trigger: "warming",
         });
@@ -1132,15 +1132,67 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   }
   async expireCheckout(scope: { attemptId: string; cookie: string }) {
     return rpcOutcome(() =>
-      this.providerQueue.run("foreground", () =>
-        expireCheckout(
+      this.providerQueue.run("foreground", async () => {
+        const result = await expireCheckout(
           new Request(this.env.APP_ORIGIN, {
             headers: { cookie: scope.cookie },
           }),
           this.env,
           scope.attemptId,
-        ),
-      ),
+        );
+        // Release authority is already committed. Availability is read from the
+        // provider, never reconstructed by adding the old selection back.
+        try {
+          if (liveCustomerAccess(this.env)) {
+            const attempt = await this.env.STATE.prepare(
+              "SELECT intent_json FROM attempts WHERE id=?",
+            )
+              .bind(scope.attemptId)
+              .first<{ intent_json: string }>();
+            if (attempt) {
+              const intent = intentSchema.parse(
+                JSON.parse(attempt.intent_json),
+              );
+              const options = this.calendarReadOptions();
+              const { window } = calendarWindow(options);
+              for (const date of new Set(
+                intent.sessions.map((session) =>
+                  new Date(session.startMs + 28800000)
+                    .toISOString()
+                    .slice(0, 10),
+                ),
+              )) {
+                if (
+                  !this.snapshots().read(
+                    "calendar",
+                    `calendar:${date.slice(0, 7)}`,
+                  )
+                )
+                  continue;
+                try {
+                  await windowAvailability({
+                    ...options,
+                    date,
+                    serviceId: window.serviceId,
+                    fresh: true,
+                  });
+                } catch {
+                  // Never replace the durable release with a display failure.
+                  console.error(
+                    JSON.stringify({ event: "display_update_unavailable" }),
+                  );
+                }
+              }
+            }
+          }
+        } catch {
+          // A failed cache/storage read cannot undo an already committed release.
+          console.error(
+            JSON.stringify({ event: "display_update_unavailable" }),
+          );
+        }
+        return result;
+      }),
     );
   }
   /** Coordinate authenticated dismissal of a completed attempt. */

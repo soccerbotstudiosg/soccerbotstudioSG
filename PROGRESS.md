@@ -1,18 +1,15 @@
 # Current checkpoint
 
-Observed5 November2026, Singapore. Historical evidence belongs in [Journey](docs/journey.md).
+Observed 5 November 2026. Historical evidence belongs in [Journey](docs/journey.md).
 
-## Current task — PR26 browser evidence aggregation repair
+## Current task — PR27 final layout and safety audit
 
-PR26 head `f6d282edb90e3c9df727b96fc6f42c01c7aa1885` completed all browser shards, all477 Worker cases, frontend and CodeQL. Run41954365195 failed only in backend/live-email aggregation jobs127008771712/127008771711. Saved report metadata contains differing replacement characters in Playwright's truncated Git-diff preview despite matching source and configuration.
+Branch `fix/booking-price-alignment`, base `eb0649475c9fe80a4349d87dc945fccbb7bba06b`. Candidate `af169dfcd08f0d02d3105ed454fc07b54a9cea14` passed CI41975407857. User authorized publishing the consolidated local follow-up to the same PR for CI. No merge or production deployment authorized.
 
-The local repair excludes only `metadata.gitDiff` from project-configuration comparison, preserving original reports and every source/export/run/shard/result guard. A new regression fails before repair, passes after, and rejects genuine identity/configuration changes. Offline replay of the actual45 reports per profile passes78 backend and90 live-email cases with the existing complete inventory validator. No browser was executed locally. All184 tooling tests and source/policy/format checks passed. New-head CI remains pending.
+Follow-up: right-align currency labels beneath cart/review totals; restore the caption selector group; assert calendar weekday typography in the existing browser test; extend existing isolated payment tests for receipts arriving during proof, invalid access, idempotent release, archived late-payment denial and newly occupied provider availability. Correct the stale four-month comment to three. No Worker production logic or test inventory changes in this follow-up.
 
-Security documentation and diagnostic privacy fixes remain consolidated on the same PR. Fresh npm audit reports zero vulnerabilities; GitHub's push response still reported one moderate default-branch alert. Earlier b2ba89b staging evidence does not accept subsequent changes. Production remains at5f179a0; no merge/deployment/provider action is part of this repair.
+## Verification and next actions
 
-## Immediate remaining tasks
+Previous candidate passed full local code/Worker verification and CI. Follow-up passed four focused isolated Worker cases, source/lint/format and diff checks. Browser rendering/assertions require exact-new-head CI; do not reuse prior-head CI as acceptance. Retain existing evidence rather than repeat unaffected full suites merely to publish.
 
-1. Publish the checked repair on PR26 and inspect new-head CI. New source requires new exact-head CI and staging evidence; the earlier staged head does not accept this follow-up. Owner staging acceptance and merge authorization remain required.
-2. After production release is separately authorized, verify settings, the calendar response/cache traces and the [A–D continuation](docs/uat/simulated-user.md#5-november-ad-continuation). Owner performs browser/payment tests. Confirm the account-wide booking limit before capacity acceptance; do not infer cancellation from a zero timer.
-3. Retain HAR/screen recordings, exact timings and invoice comparison. Paid unresolved outcomes retain their original attempt; no repeated payment. Preserve historical overlapping bookings.
-4. Keep the unverified GitHub legacy minimatch alert state and external security/quality proof explicit in [assessments](docs/security/false-positives.md). Provider journeys, operator MFA, edge configuration, ingestion/alerts and populated recovery cannot be certified by synthetic source tests.
+Commit/push this consolidated follow-up and update PR27, then verify all three exact-head CI gates before staging. Provider10-minute timeout, deployed calendar speed, C/D retests and owner staging acceptance remain pending. A provider read failure after release can still leave conservative unavailable offers until a successful refresh; no slot is blindly restored. No assistant browser execution, live provider writes, merge or production deployment occurred.

@@ -32,6 +32,9 @@ export class DisplaySnapshots {
       "CREATE TABLE IF NOT EXISTS display_refresh(scope TEXT PRIMARY KEY,generation INTEGER NOT NULL DEFAULT 0,started_ms INTEGER NOT NULL DEFAULT 0,dirty INTEGER NOT NULL DEFAULT 0)",
     );
     sql.exec("INSERT OR IGNORE INTO display_refresh(scope) VALUES(?)", scope);
+    sql.exec(
+      "CREATE TABLE IF NOT EXISTS display_warm_month(scope TEXT NOT NULL,month TEXT NOT NULL,started_ms INTEGER NOT NULL,PRIMARY KEY(scope,month))",
+    );
   }
   generation() {
     return this.sql
@@ -189,26 +192,41 @@ export class DisplaySnapshots {
       this.scope,
     );
   }
-  /** Retry an interrupted warm-up on the next scheduler turn without expiring data. */
-  deferRefresh() {
+  /** Claim one due month per scheduler turn, prioritizing missing and oldest work. */
+  claimRefresh(now: number): string | undefined {
+    const candidates = this.months()
+      .map((month) => ({
+        month,
+        snapshot: this.read("calendar", `calendar:${month}`),
+        started:
+          this.sql
+            .exec<{ started_ms: number }>(
+              "SELECT started_ms FROM display_warm_month WHERE scope=? AND month=?",
+              this.scope,
+              month,
+            )
+            .toArray()[0]?.started_ms ?? 0,
+      }))
+      .filter(
+        ({ snapshot, started }) =>
+          (!snapshot || snapshot.observedAtMs <= now - 15 * 60000) &&
+          started <= now - 60000,
+      )
+      .sort(
+        (a, b) =>
+          Number(!!a.snapshot) - Number(!!b.snapshot) ||
+          a.started - b.started ||
+          a.month.localeCompare(b.month),
+      );
+    const month = candidates[0]?.month;
+    if (!month) return;
     this.sql.exec(
-      "UPDATE display_refresh SET dirty=1 WHERE scope=?",
+      "INSERT INTO display_warm_month(scope,month,started_ms) VALUES(?,?,?) ON CONFLICT(scope,month) DO UPDATE SET started_ms=excluded.started_ms",
       this.scope,
+      month,
+      now,
     );
-  }
-  claimRefresh(now: number) {
-    // Persist the claim before queueing: overlapping cron/booking triggers and
-    // restarts cannot duplicate the refresh. Failure retries on the next cycle.
-    return (
-      this.sql
-        .exec(
-          "UPDATE display_refresh SET started_ms=?,dirty=0 WHERE scope=? AND (dirty=1 OR started_ms<=?) RETURNING scope",
-          now,
-          this.scope,
-          now - 15 * 60_000,
-        )
-        .toArray().length === 1
-    );
+    return month;
   }
   /** Select the calendar months eligible for display warming. */
   months() {

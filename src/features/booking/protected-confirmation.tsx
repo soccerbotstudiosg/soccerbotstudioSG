@@ -473,12 +473,14 @@ export function ProtectedConfirmation({
         )}
         <div
           className={
-            ["denied", "unresolved", "unavailable"].includes(view)
+            ["denied", "unavailable"].includes(view) ||
+            (view === "unresolved" && (paymentReceived || historicalPayment))
               ? "alert"
               : "notice"
           }
           role={
-            ["denied", "unresolved", "unavailable"].includes(view)
+            ["denied", "unavailable"].includes(view) ||
+            (view === "unresolved" && (paymentReceived || historicalPayment))
               ? "alert"
               : "status"
           }
@@ -504,7 +506,7 @@ export function ProtectedConfirmation({
             ) : view === "confirmed" ? (
               "Booking confirmed"
             ) : view === "unresolved" ? (
-              "Payment needs checking"
+              "Please check your payment"
             ) : (
               "Confirmation unavailable"
             )}
@@ -522,7 +524,7 @@ export function ProtectedConfirmation({
                       ? "Payment received. Contact us about your booking. Do not pay again."
                       : view === "unavailable"
                         ? "Payment status unavailable. Please check again shortly."
-                        : "Payment status unconfirmed. Do not pay again. Contact us."}
+                        : "We’re still checking your payment. If you haven’t paid, please wait a moment while we check whether you can book again. If you were charged, don’t pay again; contact us."}
           </p>
         </div>
         {historicalPayment && recordedPayment && (
@@ -552,8 +554,10 @@ export function ProtectedConfirmation({
         )}
         {current && <ConfirmationSummary summary={current.summary} />}
         {checkoutMode &&
+          showLink &&
           !recordedPayment &&
-          !(link && isHitpayCheckoutUrl(link.url)) && (
+          !!link &&
+          !isHitpayCheckoutUrl(link.url) && (
             <>
               <p>
                 Checkout opens separately. Return here to check your booking.
@@ -590,7 +594,7 @@ export function ProtectedConfirmation({
               ) : null}
             </>
           )}
-        {!["confirmed", "unresolved", "denied"].includes(view) && (
+        {!["confirmed", "denied"].includes(view) && (
           <button
             className="button secondary wide payment-status-action"
             disabled={busy}
