@@ -389,6 +389,19 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     .click();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator(".session-product")).toContainText("40 minutes");
+  await expect(page.locator(".session-product")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.locator(".session-product-prices")).toContainText(
+    "Weekdays",
+  );
+  const selectedCardWidth = await page
+    .locator(".session-product")
+    .evaluate((element) => element.getBoundingClientRect().width);
+  expect(Math.abs(selectedCardWidth - expectedCardWidth)).toBeLessThanOrEqual(
+    1,
+  );
   const playerWidth = await page
     .locator(".player-selection")
     .evaluate((element) => {
