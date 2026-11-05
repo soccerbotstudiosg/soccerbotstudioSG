@@ -334,6 +334,9 @@
   .booking-top .eyebrow,
   .summary-cover .eyebrow,
   .calendar-weekdays span,
+  .series-index {
+    font-size: var(--text-caption);
+  }
   .review-head + .series-list > li:first-child {
     border-top: 0;
   }
@@ -343,9 +346,6 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 8px 16px;
-  }
-  .series-index {
-    font-size: var(--text-caption);
   }
   .button,
   .button.secondary,
@@ -3097,7 +3097,7 @@
     color: var(--color-action);
   }
   .summary-currency {
-    text-align: left;
+    text-align: right;
   }
   .summary .hint {
     margin-top: 12px;

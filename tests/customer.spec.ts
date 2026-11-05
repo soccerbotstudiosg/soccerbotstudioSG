@@ -669,6 +669,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   );
   await page.getByRole("link", { name: "See available times" }).click();
   await pageHeading("Select dates and times");
+  await expect(page.locator(".calendar-weekdays span").first()).toHaveCSS(
+    "font-size",
+    "12px",
+  );
   await page
     .getByRole("button", {
       name: dateLabel(addDays(DEMO_TODAY, 1)),

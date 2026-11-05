@@ -2243,9 +2243,17 @@ test("verified empty expired payment releases checkout but retains late payment 
   const options = await seedHold(Date.now() - 1000);
   await seedCustomerProgress(Date.now() - 900001);
   await seedPayment({ expired: true });
+  let receiptDuringRead = true;
   handler = async (request) => {
     assert.equal(new URL(request.url).hostname, "api.sandbox.hit-pay.com");
     assert.equal(request.method, "GET");
+    if (receiptDuringRead) {
+      receiptDuringRead = false;
+      await db
+        .prepare("INSERT INTO hitpay_receipts VALUES(?,?,?)")
+        .bind("receipt-during-proof", attemptId, Date.now())
+        .run();
+    }
     return Response.json({
       ...paymentResponse(),
       status: "expired",
@@ -2255,6 +2263,21 @@ test("verified empty expired payment releases checkout but retains late payment 
         .slice(0, 19),
     });
   };
+  await recover();
+  assert.equal(
+    (await row()).state,
+    "due",
+    "a receipt arriving during proof revokes release eligibility",
+  );
+  assert.equal(
+    (
+      await mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+        method: "POST",
+        headers: options.headers,
+      })
+    ).status,
+    409,
+  );
   await recover();
   assert.equal((await row()).reason, "hitpay_unpaid_verified");
   await db
@@ -2272,6 +2295,15 @@ test("verified empty expired payment releases checkout but retains late payment 
   );
   await recover();
   assert.equal((await row()).reason, "hitpay_unpaid_verified");
+  assert.equal(
+    (
+      await mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+        method: "POST",
+        headers: { ...options.headers, cookie: "sb_guest=foreign" },
+      })
+    ).status,
+    401,
+  );
   const response = await mf.dispatchFetch(
     origin + `/api/attempts/${attemptId}/expire`,
     { method: "POST", headers: options.headers },
@@ -2294,15 +2326,43 @@ test("verified empty expired payment releases checkout but retains late payment 
       .first(),
   );
   assert.equal((await row()).request_id, requestId);
+  const replay = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/expire`,
+    {
+      method: "POST",
+      headers: options.headers,
+    },
+  );
+  assert.equal(replay.status, 200, "released checkout replay is idempotent");
   await db
     .prepare("INSERT INTO hitpay_receipts VALUES(?,?,?)")
     .bind("late-payment", attemptId, Date.now())
     .run();
+  assert.equal(
+    (
+      await mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+        method: "POST",
+        headers: options.headers,
+      })
+    ).status,
+    409,
+    "a late receipt revokes even archived release eligibility",
+  );
   const provider = providerFixture();
   await recover();
   assert.equal((await row()).payment_id, paymentId);
   assert.equal((await row()).reason, "hitpay_late_payment_review");
   assert.equal(provider.writes(), 0);
+  assert.equal(
+    (
+      await mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+        method: "POST",
+        headers: options.headers,
+      })
+    ).status,
+    409,
+    "known late money cannot be reported as unpaid expiry",
+  );
 });
 
 test("terminal payment requests require explicit empty evidence for release", async () => {
@@ -2420,6 +2480,20 @@ test("unpaid release refreshes only its cached day and preserves the month deadl
     [[date, date]],
     "serving the updated month performs no extra provider read",
   );
+  // Another booking/manual event can occupy the day after this checkout ends.
+  // Replaying release must use fresh provider capacity, not restore old slots.
+  released = false;
+  const replay = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/expire`,
+    { method: "POST", headers: options.headers },
+  );
+  assert.equal(replay.status, 200);
+  const occupied = await (await mf.dispatchFetch(url)).json();
+  assert.equal(
+    occupied.dates.find((day) => day.date === date).offers.length,
+    0,
+  );
+  assert.equal(occupied.displayExpiresAtMs, before.displayExpiresAtMs);
 });
 
 test("verified nonpayment at checking expiry still waits for the original hold", async () => {
