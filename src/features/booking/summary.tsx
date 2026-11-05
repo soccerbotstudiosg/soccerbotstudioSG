@@ -1,4 +1,8 @@
 "use client";
+import {
+  SESSION_UNAVAILABLE,
+  AVAILABILITY_LOAD_FAILED,
+} from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -246,7 +250,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
             <p className="notice" role="status">
               {selectionErrors(draft.slots, now).length > 0 ||
               result?.status === "success" ? (
-                "Session no longer available."
+                SESSION_UNAVAILABLE
               ) : !result ? (
                 <BrandLoading
                   overlay={false}
@@ -254,7 +258,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
                   label="Checking sessions…"
                 />
               ) : (
-                "Please refresh availability. Your selections are saved."
+                AVAILABILITY_LOAD_FAILED
               )}
             </p>
           )}

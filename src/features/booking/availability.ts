@@ -1,4 +1,5 @@
 "use client";
+import { AVAILABILITY_LOAD_FAILED } from "@/domain/booking-messages";
 import { useEffect, useMemo, useState } from "react";
 import { BOOKING_LEAD_MS, withinOpeningHours } from "@/domain/booking-policy";
 import {
@@ -147,8 +148,9 @@ export function useBookingAvailability(
                 ? "cancelled"
                 : "failure",
           message:
-            known?.message ??
-            "We couldn’t check availability. Please try again.",
+            known?.code === "cancelled"
+              ? known.message
+              : AVAILABILITY_LOAD_FAILED,
         });
       },
     );

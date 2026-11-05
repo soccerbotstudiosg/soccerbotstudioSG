@@ -248,7 +248,7 @@ test("synthetic live verification reads server identity and keeps native booking
     .click();
   await expect(page).toHaveURL(/\/book\/session\/$/);
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Sessions unavailable. Please try again. Your details are saved.",
+    "Unable to load available sessions. Please try again.",
   );
   await expect(
     page.getByRole("link", { name: "See available times" }),
@@ -401,7 +401,7 @@ test("remembered live account edits and rereads contact while native booking sta
     .getByRole("button", { name: "Continue signed in", exact: true })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Sessions unavailable. Please try again. Your details are saved.",
+    "Unable to load available sessions. Please try again.",
   );
   expect(evidence.unexpected).toEqual([]);
 });
@@ -2087,10 +2087,9 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
       .click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
     await expect(
-      page.getByText(
-        "Sessions unavailable. Please try again. Your details are saved.",
-        { exact: true },
-      ),
+      page.getByText("Unable to load available sessions. Please try again.", {
+        exact: true,
+      }),
     ).toBeVisible();
     const before = mechanism.calls.length;
     const retry = page.waitForResponse(
@@ -2101,10 +2100,9 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
     await page.getByRole("button", { name: "Try again", exact: true }).click();
     await retry;
     await expect(
-      page.getByText(
-        "Sessions unavailable. Please try again. Your details are saved.",
-        { exact: true },
-      ),
+      page.getByText("Unable to load available sessions. Please try again.", {
+        exact: true,
+      }),
     ).toBeVisible();
     expect(mechanism.calls).toHaveLength(before);
     await expect(

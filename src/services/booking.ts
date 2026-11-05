@@ -1,3 +1,4 @@
+import { SESSION_UNAVAILABLE } from "@/domain/booking-messages";
 import {
   CATALOGUE_MAX_AGE_MS,
   displayDeadline,
@@ -401,7 +402,7 @@ async function nativeRequest(
       if (error?.error === "checkout_selection_unavailable")
         throw new BookingServiceError(
           "selection_unavailable",
-          "Session no longer available.",
+          SESSION_UNAVAILABLE,
         );
       if (
         [
@@ -754,7 +755,7 @@ export const liveBookingService: BookingService = defineBookingService({
           ? "selection_unavailable"
           : "selection_changed",
         result.state === "selection_unavailable"
-          ? "Session no longer available."
+          ? SESSION_UNAVAILABLE
           : "Selection unavailable. Choose again. Your details are saved.",
         result.rejectedSessionIndex,
       );

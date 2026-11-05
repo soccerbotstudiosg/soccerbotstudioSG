@@ -361,6 +361,8 @@ Fresh affected-day reads update that day in the shared display snapshot while re
 
 Show protected summary/checking state, keep checkout unavailable and do not fabricate a payment URL. A later valid available context can expose its saved URL, but merely opening that URL does not confirm payment. The original server clocks remain in force across refreshes/tabs.
 
+Return and receipt recovery: a completed provider-return hint suppresses payment continuation only; server evidence remains mandatory for confirmation. Leaving an older receipt may dismiss a newer attempt only after protected confirmation proof and server dismissal, with revision checks around awaits. Explicit checkout-window rejection keeps the requested draft on Review and offers an owned existing-checkout link. Same studio start across different trainers receives fresh availability classification rather than being treated as an unrelated checkout.
+
 ### E. Paid, but booking confirmation still pending
 
 `GET /api/attempts/:attemptId/confirmation` can return HTTP 200:
@@ -458,5 +460,3 @@ Receipt enrichment uses the existing authenticated `X-Booking-Refresh: 1` read-o
 A refreshed, verified number is retained separately from immutable confirmation JSON under association/proof/access predicates. Saved confirmation reads project that metadata; a matching newer receipt takes precedence in the UI. Metadata updates neither restart the main confirmation animation nor authorize another booking/payment/accounting action. Internal invoice/booking IDs remain protocol-only. Late numbers beyond the original window and historical records without baseline evidence remain omitted; no historical repair is inferred from a prefix.
 
 Invoice presentation: while bounded enrichment is active, the confirmed card shows a16px general spinner in the invoice value position. A final number uses the same380ms pop as the confirmation checkmark, under the existing reduced-motion preference. The checkmark does not remount. Exhaustion, checking expiry or unmount stops the loader; no provisional number is displayed.
-
-TestFull-3 recovery: a completed provider-return hint suppresses payment continuation only; server evidence remains mandatory for confirmation. Leaving an older receipt may dismiss a newer attempt only after protected confirmation proof and server dismissal, with revision checks around awaits. Explicit checkout-window rejection keeps the requested draft on Review and offers an owned existing-checkout link. Same studio start across different trainers receives fresh availability classification rather than being treated as an unrelated checkout.

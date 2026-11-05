@@ -418,9 +418,11 @@ test("availability failure is not no slots and an explicit retry retains the bas
     first.reject(new Error("synthetic private transport detail"));
   });
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "We couldn’t complete that request",
+    "Unable to load available sessions. Please try again.",
   );
-  expect(screen.queryByText("No times on this day.")).not.toBeInTheDocument();
+  expect(
+    screen.queryByText("No sessions available on this date."),
+  ).not.toBeInTheDocument();
   expect(screen.queryByText(/synthetic private/)).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -448,13 +450,15 @@ test("malformed availability is displayed as failure while valid empty availabil
     result.resolve([{ available: true } as AvailableSlot]);
   });
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "couldn’t check this information",
+    "Unable to load available sessions. Please try again.",
   );
-  expect(screen.queryByText("No times on this day.")).not.toBeInTheDocument();
+  expect(
+    screen.queryByText("No sessions available on this date."),
+  ).not.toBeInTheDocument();
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   });
-  expect(screen.getByText("No times on this day.")).toBeVisible();
+  expect(screen.getByText("No sessions available on this date.")).toBeVisible();
 });
 test("reordered dates and player revisions discard old replies even when the adapter ignores abort", async () => {
   saveBooking({ version: 2, draft: { ...draft(), slots: [] }, attempt: null });
@@ -489,7 +493,9 @@ test("reordered dates and player revisions discard old replies even when the ada
   });
   expect(availability.mock.calls[2][0].players).toBe(2);
   expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled();
-  expect(screen.queryByText("No times on this day.")).not.toBeInTheDocument();
+  expect(
+    screen.queryByText("No sessions available on this date."),
+  ).not.toBeInTheDocument();
 });
 test("unmount aborts the shared read and a late reply cannot replace remounted session data", async () => {
   const old = deferred<AvailableSlot[]>();
@@ -511,7 +517,7 @@ test("unmount aborts the shared read and a late reply cannot replace remounted s
   await act(async () => {
     old.resolve(demoBookingModel.availability(date));
   });
-  expect(screen.getByText("No times on this day.")).toBeVisible();
+  expect(screen.getByText("No sessions available on this date.")).toBeVisible();
   expect(
     screen.queryByRole("button", { name: /12:00–12:40/ }),
   ).not.toBeInTheDocument();
@@ -668,12 +674,14 @@ test("unsupported live mode exposes unavailable state and cannot restore a paid 
   );
   await act(async () => {});
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "Online booking is not available yet",
+    "Unable to load available sessions. Please try again.",
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent("none");
   expect(loadBooking().attempt?.id).toBe(paid.id);
   expect(fetch).not.toHaveBeenCalled();
-  expect(screen.queryByText("No times on this day.")).not.toBeInTheDocument();
+  expect(
+    screen.queryByText("No sessions available on this date."),
+  ).not.toBeInTheDocument();
 });
 test("payment resolution failure ends loading and explicit status recovery keeps the original attempt", async () => {
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
@@ -732,7 +740,7 @@ test("a changed booking session invalidates availability even if the old date re
   await act(async () => {
     old.resolve(demoBookingModel.availability(date));
   });
-  expect(screen.getByText("No times on this day.")).toBeVisible();
+  expect(screen.getByText("No sessions available on this date.")).toBeVisible();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   expect(loadBooking().draft.accountEmail).toBe("changed@example.com");
   expect(availability.mock.calls[0][0].signal.aborted).toBe(true);
@@ -883,7 +891,7 @@ test("replacing an adapter with the same mode invalidates its completed availabi
   await act(async () => {
     pending.resolve([]);
   });
-  expect(screen.getByText("No times on this day.")).toBeVisible();
+  expect(screen.getByText("No sessions available on this date.")).toBeVisible();
 });
 
 test("replacing an adapter cancels its pending action and releases the new review screen", async () => {
