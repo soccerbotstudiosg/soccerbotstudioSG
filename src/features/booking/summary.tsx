@@ -246,7 +246,7 @@ export function Summary({ basket = false }: { basket?: boolean }) {
             <p className="notice" role="status">
               {selectionErrors(draft.slots, now).length > 0 ||
               result?.status === "success" ? (
-                "A selected session is no longer available. Remove it and choose another time."
+                "Session no longer available."
               ) : !result ? (
                 <BrandLoading
                   overlay={false}

@@ -96,10 +96,7 @@ export const demoBookingModel = {
         "A selected instructor is no longer available. Review your selected sessions.",
       );
     if (!draft.slots.every((slot) => availableStudios(slot).length > 0))
-      throw new BookingServiceError(
-        "conflict",
-        "A selected session is no longer available. No sessions were booked. Please review your selections.",
-      );
+      throw new BookingServiceError("conflict", "Session no longer available.");
     if (
       previous?.status === "ready" &&
       JSON.stringify(snapshot(previous.draft)) ===

@@ -4734,3 +4734,7 @@ PR29 staging verification run42030590522 at dcb36be: all Worker groups and runti
 The same run also exposed exact demo-card selectors that omitted the existing “(Trial Price)” suffix, blocking customer/experiment journeys before checkout. Corrected all five selectors to the actual explicit demo fixture name; no runtime, timeout or case inventory changes. The 409 message mismatch appeared across all three devices.
 
 Revised run42032521894 at61e0122 passed frontend, all Worker groups/runtime and both backend browser shards. The remaining live-email case failed only the newly added exact href assertion: the real Next export (trailingSlash:true) renders /confirmation/?attempt=…, whereas the component mock normalizes to /confirmation?attempt=…. Corrected the browser expectation to the configured exported route, preserving exact attempt identity and all no-write/no-payment checks. Original failures retained; no application source changed.
+
+Owner paused publication and requested shorter session-conflict copy: “Session no longer available.” Applied locally to basket/live/demo capacity feedback and synchronized the existing exact-message test and scenario owner. No push or deployment authorized for this follow-up.
+
+Owner subsequently authorized pushing the conflict-copy change. Focused booking service/direct-checkout verification passed all48 cases; no conflict classification, cache, hold or payment logic changed.

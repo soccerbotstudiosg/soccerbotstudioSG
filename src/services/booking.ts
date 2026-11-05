@@ -401,7 +401,7 @@ async function nativeRequest(
       if (error?.error === "checkout_selection_unavailable")
         throw new BookingServiceError(
           "selection_unavailable",
-          "That time is unavailable. Choose another; your details are saved.",
+          "Session no longer available.",
         );
       if (
         [
@@ -753,7 +753,9 @@ export const liveBookingService: BookingService = defineBookingService({
         result.state === "selection_unavailable"
           ? "selection_unavailable"
           : "selection_changed",
-        "Selection unavailable. Choose again. Your details are saved.",
+        result.state === "selection_unavailable"
+          ? "Session no longer available."
+          : "Selection unavailable. Choose again. Your details are saved.",
         result.rejectedSessionIndex,
       );
     }

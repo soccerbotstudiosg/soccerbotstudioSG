@@ -1031,7 +1031,7 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
           error === "checkout_recovery_required"
             ? "Checking your booking. Do not book or pay again."
             : error === "checkout_selection_unavailable"
-              ? "That time is unavailable. Choose another; your details are saved."
+              ? "Session no longer available."
               : "We couldn’t start checkout. Please try again later.",
       });
       expect(fetch).toHaveBeenCalledTimes(1);
