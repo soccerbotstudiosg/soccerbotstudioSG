@@ -263,12 +263,9 @@ export async function rejectedCheckoutReadback(
   if (owned) {
     // An owned attempt for another studio start, or an unobserved write, cannot
     // establish that this selection is occupied. Never disclose its details.
-    if (
-      typeof owned.association_json !== "string" ||
-      typeof owned.intent_json !== "string"
-    )
-      return "checkout_already_active";
-    associationSchema.parse(JSON.parse(owned.association_json));
+    if (typeof owned.intent_json !== "string") return "checkout_already_active";
+    if (typeof owned.association_json === "string")
+      associationSchema.parse(JSON.parse(owned.association_json));
     const intent = intentSchema.parse(JSON.parse(owned.intent_json));
     if (
       !input.sessions.some((session) =>

@@ -45,7 +45,9 @@ export async function createBookingMechanism(options = {}) {
   }
   for (const value of [invoice, creation.invoice]) {
     value.lines[0].bookings[0].service_id = serviceId;
-    value.due_datetime = new Date(Date.now() + 900000)
+    value.due_datetime = new Date(
+      Date.now() + (options.invoiceWindowMs ?? 900000),
+    )
       .toISOString()
       .replace(/\.\d{3}Z$/, "Z");
     value.lines[0].bookings[0].start_datetime = wall(startMs);

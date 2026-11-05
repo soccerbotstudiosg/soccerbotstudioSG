@@ -208,7 +208,7 @@
     line-height: var(--leading-heading);
     letter-spacing: -0.025em;
     text-transform: uppercase;
-    color: var(--color-brand);
+    color: var(--color-identity);
   }
   .booking-document .arrival-information h3,
   .session-product-name,
@@ -261,7 +261,6 @@
   .booking-document .payment-foot,
   .booking-document .paid strong,
   .booking-document .text-link,
-  .session-product-price,
   .lead,
   .access-option p,
   .review-block p,
@@ -323,7 +322,6 @@
   .trainer-identity > span,
   .trainer-bio,
   .trainer-choice,
-  .trainer-sessions,
   .time-instructor,
   .rotation-notice {
     font-size: var(--text-meta);
@@ -2591,20 +2589,33 @@
     color: var(--color-muted);
   }
   .time-details {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    flex: 1;
     gap: 6px;
     text-align: left;
     min-width: 0;
   }
   .time .time-rate {
+    justify-self: end;
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
     gap: 3px 8px;
     color: var(--color-muted);
   }
+  .time-instructor {
+    grid-column: 1 / -1;
+    padding-right: 24px;
+    font-size: var(--text-meta);
+    font-weight: var(--weight-body);
+    color: var(--color-muted);
+  }
+  .time.selected .time-instructor {
+    color: var(--color-on-brand-muted);
+  }
   .time-rate strong {
+    font-size: var(--text-card);
     color: var(--color-brand);
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -2884,7 +2895,8 @@
     gap: 20px;
   }
   .session-product {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: flex-start;
     gap: 14px;
     min-width: 0;
@@ -2900,18 +2912,26 @@
     gap: 12px;
     min-width: 0;
   }
-  .session-product-choose {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 700;
+  .session-product-meta {
+    color: var(--color-muted);
+    font-size: var(--text-meta);
   }
-  .session-product-choose svg {
-    width: 20px;
-    height: 20px;
+  .session-product-prices {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 4px;
+    justify-items: end;
+    margin-top: 8px;
+    font-size: var(--text-meta);
+    color: var(--color-ink);
   }
-  .session-options .inclusion-list {
-    grid-template-columns: 1fr;
+  .session-product-prices strong {
+    font-size: var(--text-section);
+    color: var(--color-brand);
+    margin-left: 6px;
+  }
+  .session-expanded {
+    cursor: default;
   }
   .session-product-icon {
     display: grid;
@@ -3100,6 +3120,18 @@
   .summary-total strong {
     color: var(--color-action);
   }
+  .summary-total > span,
+  .payment-total-label,
+  .line-item.total {
+    font-size: var(--text-section);
+    font-weight: var(--weight-heading);
+  }
+  .total-currency {
+    font-size: var(--text-meta);
+    font-weight: var(--weight-body);
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
   .player-app-dialog {
     background: var(--color-brand);
     color: white;
@@ -3158,9 +3190,6 @@
   }
   .app-store-link:hover {
     background: var(--color-action-hover);
-  }
-  .summary-currency {
-    text-align: right;
   }
   .summary .hint {
     margin-top: 12px;
@@ -3412,7 +3441,6 @@
   }
   .time-choice > .time {
     width: 100%;
-    flex: 1;
     border: 0;
     border-radius: 0;
   }
@@ -3436,11 +3464,13 @@
     color: var(--color-ink);
   }
   .times {
+    align-items: start;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 11px;
   }
   .time {
+    position: relative;
     min-height: 54px;
     border: 1px solid var(--color-control-border);
     border-radius: 10px;
@@ -3457,7 +3487,10 @@
     background: var(--color-action);
     border-color: var(--color-action);
   }
-  .time svg {
+  .time > svg {
+    position: absolute;
+    right: 15px;
+    bottom: 13px;
     width: 18px;
     flex-shrink: 0;
   }
@@ -3786,11 +3819,6 @@
     display: grid;
     gap: 16px;
     margin-top: 18px;
-  }
-  .trainer-sessions {
-    margin: 0;
-    padding: 18px 20px 20px 36px;
-    line-height: var(--leading-body);
   }
   .trainer-card {
     border: 1px solid var(--color-line);

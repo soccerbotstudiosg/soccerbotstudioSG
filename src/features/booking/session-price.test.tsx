@@ -83,18 +83,14 @@ test("live session selection uses client prices while demo retains its own rates
     .mockResolvedValue(catalogue("production"));
   const view = render(<SessionStep />);
   expect(
-    await screen.findByText(
-      "S$108 weekdays · S$128 weekends and Singapore public holidays",
-    ),
-  ).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Choose Kickoff Special" }),
+  ).toHaveTextContent("Weekdays $108Weekends/Public Holiday $128");
   expect(screen.queryByText(/S\$88 weekdays/)).not.toBeInTheDocument();
   context.bookingService.mode = "demo";
   view.rerender(<SessionStep />);
   expect(
-    screen.getByText(
-      "S$88 weekdays · S$108 weekends and Singapore public holidays",
-    ),
-  ).toBeInTheDocument();
+    screen.getByRole("button", { name: /Choose Kickoff Special/ }),
+  ).toHaveTextContent("Weekdays $88Weekends/Public Holiday $108");
   read.mockRestore();
   context.bookingService.mode = "live";
 });

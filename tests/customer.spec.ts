@@ -639,7 +639,7 @@ test("header blue and the typography hierarchy stay consistent across every book
 }) => {
   const brand = "rgb(5, 10, 47)";
   const pageSize = page.viewportSize()!.width <= 700 ? 32 : 40;
-  async function pageHeading(name: string, color = brand) {
+  async function pageHeading(name: string, color = "rgb(23, 96, 120)") {
     const heading = page
       .getByRole("main")
       .getByRole("heading", { level: 1, name, exact: true });
@@ -713,10 +713,10 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   await sectionType(".session-product-name, .session-inclusions h2");
-  await expect(page.locator(".session-product-price")).toHaveCSS(
-    "font-size",
-    "16px",
-  );
+  await expect(
+    page.getByRole("dialog", { name: "Kickoff Special (Trial Price)" }),
+  ).toHaveCount(0);
+  await expect(page.locator(".player-selection")).toBeVisible();
   await page.getByRole("link", { name: "See available times" }).click();
   await pageHeading("Select dates and times");
   await expect(page.locator(".calendar-weekdays span").first()).toHaveCSS(

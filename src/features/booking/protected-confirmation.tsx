@@ -116,7 +116,10 @@ export function ProtectedConfirmation({
     sessionRevision,
     (!checkoutMode || contextSettled) && !saved,
     contextMatches ? context.value.checking.deadlineMs : undefined,
-    contextMatches ? context.value.checking.holdExpiresAtMs : undefined,
+    contextMatches
+      ? (context.value.checking.recoveryEndsAtMs ??
+          context.value.checking.holdExpiresAtMs)
+      : undefined,
     contextMatches ? context.value.clock : undefined,
   );
   const [receipt, setReceipt] = useState<{
@@ -400,6 +403,25 @@ export function ProtectedConfirmation({
       />
     );
   }
+  if (
+    current?.bookingIssue === "incomplete" &&
+    !paymentReceived &&
+    !recordedPayment &&
+    view !== "confirmed" &&
+    view !== "denied"
+  )
+    return (
+      <section className="surface booking-document">
+        <p className="notice" role="status">
+          Unable to complete this booking. Contact the studio for help with this
+          reservation.
+        </p>
+        <ConfirmationSummary
+          summary={current.summary}
+          details={current.details}
+        />
+      </section>
+    );
   if (expiryFailure)
     return (
       <p className="alert" role="alert">
@@ -490,32 +512,40 @@ export function ProtectedConfirmation({
               : "status"
           }
         >
-          <h1 className="message-heading">
-            {historicalPayment ? (
-              "Payment received"
-            ) : paymentReceived && view !== "confirmed" && view !== "denied" ? (
-              "Payment received; booking confirmation pending"
-            ) : view === "checking" ? (
-              showLink && link && !isHitpayCheckoutUrl(link.url) ? (
-                "Complete your payment"
+          {!(
+            view === "unresolved" &&
+            !paymentReceived &&
+            !historicalPayment
+          ) && (
+            <h1 className="message-heading">
+              {historicalPayment ? (
+                "Payment received"
+              ) : paymentReceived &&
+                view !== "confirmed" &&
+                view !== "denied" ? (
+                "Payment received; booking confirmation pending"
+              ) : view === "checking" ? (
+                showLink && link && !isHitpayCheckoutUrl(link.url) ? (
+                  "Complete your payment"
+                ) : (
+                  <BrandLoading
+                    compact
+                    label={
+                      checkoutMode && preparation === "loading"
+                        ? "Preparing checkout…"
+                        : "Checking payment…"
+                    }
+                  />
+                )
+              ) : view === "confirmed" ? (
+                "Booking confirmed"
+              ) : view === "unresolved" ? (
+                "Please check your payment"
               ) : (
-                <BrandLoading
-                  compact
-                  label={
-                    checkoutMode && preparation === "loading"
-                      ? "Preparing checkout…"
-                      : "Checking payment…"
-                  }
-                />
-              )
-            ) : view === "confirmed" ? (
-              "Booking confirmed"
-            ) : view === "unresolved" ? (
-              "Please check your payment"
-            ) : (
-              "Confirmation unavailable"
-            )}
-          </h1>
+                "Confirmation unavailable"
+              )}
+            </h1>
+          )}
           <p>
             {historicalPayment
               ? "Payment received. Contact us about your booking. Do not pay again."
@@ -529,7 +559,7 @@ export function ProtectedConfirmation({
                       ? "Payment received. Contact us about your booking. Do not pay again."
                       : view === "unavailable"
                         ? "Payment status unavailable. Please check again shortly."
-                        : "We’re still checking your payment. If you haven’t paid, please wait a moment while we check whether you can book again. If you were charged, don’t pay again; contact us."}
+                        : "Check the calendar again in up to 5 minutes to rebook your session."}
           </p>
         </div>
         {historicalPayment && recordedPayment && (
@@ -648,9 +678,11 @@ function ConfirmationSummary({
         <SessionList slots={booking.slots} showPrices />
         <div className="summary-total">
           <span>Total</span>
-          <strong>{money(summary.totalMinor)}</strong>
+          <strong>
+            <span className="total-currency">SGD</span>{" "}
+            {money(summary.totalMinor)}
+          </strong>
         </div>
-        <p className="hint summary-currency">SGD · Final total</p>
       </section>
     );
   }
@@ -675,7 +707,11 @@ function ConfirmationSummary({
         ))}
       </ul>
       <p className="line-item total">
-        Total <strong>{money(summary.totalMinor)}</strong>
+        Total{" "}
+        <strong>
+          <span className="total-currency">SGD</span>{" "}
+          {money(summary.totalMinor)}
+        </strong>
       </p>
     </section>
   );

@@ -75,7 +75,7 @@ test("combined hold performs one preflight and preserves immutable identity acro
     assert.ok(results.some((result) => result.state === "associated"));
     const timing = await m.db
       .prepare(
-        "SELECT c.booking_created_ms,c.payment_window_ms,c.hold_window_ms,c.checking_buffer_ms,h.expires_ms FROM checkout_progress c JOIN hitpay_holds h USING(attempt_id) WHERE attempt_id=?",
+        "SELECT c.booking_created_ms,c.payment_window_ms,c.hold_window_ms,c.checking_buffer_ms,c.recovery_buffer_ms,h.expires_ms FROM checkout_progress c JOIN hitpay_holds h USING(attempt_id) WHERE attempt_id=?",
       )
       .bind(c.input.key)
       .first();
@@ -85,10 +85,21 @@ test("combined hold performs one preflight and preserves immutable identity acro
     );
     const checking = (await context.json()).checking;
     assert.equal(checking.holdExpiresAtMs, timing.expires_ms);
+    assert.equal(checking.recoveryEndsAtMs, timing.booking_created_ms + 720000);
     assert.equal(checking.deadlineMs, timing.booking_created_ms + 540000);
     assert.equal(timing.payment_window_ms, 480000);
     assert.equal(timing.hold_window_ms, 600000);
     assert.equal(timing.checking_buffer_ms, 60000);
+    assert.equal(timing.recovery_buffer_ms, 180000);
+    await assert.rejects(
+      m.db
+        .prepare(
+          "UPDATE checkout_progress SET recovery_buffer_ms=0 WHERE attempt_id=?",
+        )
+        .bind(c.input.key)
+        .run(),
+      /checkout_recovery_immutable/,
+    );
     await assert.rejects(
       m.db
         .prepare(
@@ -3324,98 +3335,127 @@ test("recovery publication rolls back on storage failure and resumes without dup
 });
 
 test("rejected concurrent checkout reads the owned active attempt without repeating provider effects", async () => {
-  const m = await createBookingMechanism({ trainerIds: [14, 15] });
-  try {
-    const c = await customer(m);
-    assert.equal((await c.send()).status, 200);
-    const before = m.calls.length;
-    const key = crypto.randomUUID();
-    const result = await m.mf.dispatchFetch(
-      m.origin + `/api/booking/checkout/${key}`,
-      {
-        method: "POST",
-        headers: c.headers,
-        body: JSON.stringify({
-          ...c.input,
-          key,
-          accepted: true,
-          sessions: c.input.sessions.map((session) => ({
-            ...session,
-            startMs: session.startMs + 3000000,
-          })),
-        }),
-      },
-    );
-    assert.equal(result.status, 503);
-    assert.deepEqual(await result.json(), { error: "checkout_already_active" });
-    assert.equal(m.calls.length, before);
-    assert.equal(
-      (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
-      1,
-    );
-    assert.equal(
-      (await m.db.prepare("SELECT COUNT(*) AS n FROM hitpay_payments").first())
-        .n,
-      0,
-    );
-    assert.equal(
-      m.calls.filter((call) => call.body?.method === "book").length,
-      1,
-    );
-    const same = await m.mf.dispatchFetch(
-      m.origin + `/api/booking/checkout/${key}`,
-      {
-        method: "POST",
-        headers: c.headers,
-        body: JSON.stringify({ ...c.input, key, accepted: true }),
-      },
-    );
-    assert.deepEqual(await same.json(), {
-      error: "checkout_selection_unavailable",
+  for (const incomplete of [false, true]) {
+    const m = await createBookingMechanism({
+      trainerIds: [14, 15],
+      invoiceWindowMs: incomplete ? 120000 : 900000,
     });
-    assert.deepEqual(
-      m.calls
-        .slice(before)
-        .filter((call) => call.body?.method === "getAvailableTimeIntervals")
-        .map((call) => String(call.body.params[3]))
-        .sort(),
-      ["14", "15"],
-    );
-    assert.equal(
-      m.calls.filter((call) => call.body?.method === "book").length,
-      1,
-    );
-    const otherKey = crypto.randomUUID();
-    const otherTrainer = await m.mf.dispatchFetch(
-      m.origin + `/api/booking/checkout/${otherKey}`,
-      {
-        method: "POST",
-        headers: c.headers,
-        body: JSON.stringify({
-          ...c.input,
-          key: otherKey,
-          accepted: true,
-          sessions: c.input.sessions.map((session) => ({
-            ...session,
-            instructorId: "15",
-          })),
-        }),
-      },
-    );
-    assert.equal(otherTrainer.status, 503);
-    assert.deepEqual(await otherTrainer.json(), {
-      error: "checkout_selection_unavailable",
-    });
-    assert.equal(
-      m.calls.filter((call) => call.body?.method === "book").length,
-      1,
-    );
-    assert.equal(
-      (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
-      1,
-    );
-  } finally {
-    await m.close();
+    try {
+      const c = await customer(m);
+      const initial = incomplete
+        ? await m.mf.dispatchFetch(
+            m.origin + `/api/booking/checkout/${c.input.key}`,
+            {
+              method: "POST",
+              headers: c.headers,
+              body: JSON.stringify({ ...c.input, accepted: true }),
+            },
+          )
+        : await c.send();
+      assert.equal(initial.status, 200);
+      if (incomplete) {
+        const response = await m.mf.dispatchFetch(
+          m.origin + `/api/attempts/${c.input.key}/checkout`,
+          { headers: c.headers },
+        );
+        const context = await response.json();
+        assert.equal(context.bookingIssue, "incomplete");
+        assert.equal(context.checkout.state, "unavailable");
+      }
+      const before = m.calls.length;
+      const key = crypto.randomUUID();
+      const result = await m.mf.dispatchFetch(
+        m.origin + `/api/booking/checkout/${key}`,
+        {
+          method: "POST",
+          headers: c.headers,
+          body: JSON.stringify({
+            ...c.input,
+            key,
+            accepted: true,
+            sessions: c.input.sessions.map((session) => ({
+              ...session,
+              startMs: session.startMs + 3000000,
+            })),
+          }),
+        },
+      );
+      assert.equal(result.status, 503);
+      assert.deepEqual(await result.json(), {
+        error: "checkout_already_active",
+      });
+      assert.equal(m.calls.length, before);
+      assert.equal(
+        (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
+        1,
+      );
+      assert.equal(
+        (
+          await m.db
+            .prepare("SELECT COUNT(*) AS n FROM hitpay_payments")
+            .first()
+        ).n,
+        0,
+      );
+      assert.equal(
+        m.calls.filter((call) => call.body?.method === "book").length,
+        1,
+      );
+      const same = await m.mf.dispatchFetch(
+        m.origin + `/api/booking/checkout/${key}`,
+        {
+          method: "POST",
+          headers: c.headers,
+          body: JSON.stringify({ ...c.input, key, accepted: true }),
+        },
+      );
+      assert.deepEqual(await same.json(), {
+        error: "checkout_selection_unavailable",
+      });
+      assert.deepEqual(
+        m.calls
+          .slice(before)
+          .filter((call) => call.body?.method === "getAvailableTimeIntervals")
+          .map((call) => String(call.body.params[3]))
+          .sort(),
+        ["14", "15"],
+      );
+      assert.equal(
+        m.calls.filter((call) => call.body?.method === "book").length,
+        1,
+      );
+      const otherKey = crypto.randomUUID();
+      const otherTrainer = await m.mf.dispatchFetch(
+        m.origin + `/api/booking/checkout/${otherKey}`,
+        {
+          method: "POST",
+          headers: c.headers,
+          body: JSON.stringify({
+            ...c.input,
+            key: otherKey,
+            accepted: true,
+            sessions: c.input.sessions.map((session) => ({
+              ...session,
+              instructorId: "15",
+            })),
+          }),
+        },
+      );
+      assert.equal(otherTrainer.status, 503);
+      assert.deepEqual(await otherTrainer.json(), {
+        error: "checkout_selection_unavailable",
+      });
+      assert.equal(
+        m.calls.filter((call) => call.body?.method === "book").length,
+        1,
+      );
+      assert.equal(
+        (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
+        1,
+      );
+    } finally {
+      await m.close();
+    }
   }
 });
 

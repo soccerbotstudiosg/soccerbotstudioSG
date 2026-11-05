@@ -122,7 +122,9 @@ it("a late reply from a previous attempt cannot confirm the current attempt", as
   const view = render(<ProtectedConfirmation attemptId={first} />);
   view.rerender(<ProtectedConfirmation attemptId={second} />);
   expect(
-    await screen.findByRole("heading", { name: "Please check your payment" }),
+    await screen.findByText(
+      "Payment received. Contact us about your booking. Do not pay again.",
+    ),
   ).toBeInTheDocument();
   finishFirst(Response.json({ status: "confirmed", reason: "verified" }));
   await waitFor(() =>
@@ -246,7 +248,7 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   for (const name of ["Location", "Disclaimers"])
     expect(screen.getByRole("heading", { name })).toBeInTheDocument();
   expect(screen.getByLabelText("Booking summary")).toHaveTextContent(
-    "$88.00 SGD",
+    "SGD $88.00",
   );
   expect(
     screen.queryByRole("region", { name: "Amount" }),
@@ -1129,7 +1131,10 @@ it("shows payment received feedback with details while current booking evidence 
   expect(summary.querySelector(".session-item-price")).toHaveTextContent(
     "$88.00",
   );
-  expect(screen.getByText("SGD · Final total")).toBeVisible();
+  expect(summary.querySelector(".summary-total")).toHaveTextContent(
+    "TotalSGD $88.00",
+  );
+  expect(screen.queryByText("SGD · Final total")).not.toBeInTheDocument();
   const timer = screen.getByRole("timer");
   const continuation = screen.getByRole("link", { name: "Continue payment" });
   const message = screen.getByText(/Continue to pay/);
@@ -1306,4 +1311,49 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
   });
   expect(receiptReads).toBe(6);
   missing.unmount();
+});
+
+it("incomplete provider booking shows reservation recovery without a payment spinner or checkout link", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) =>
+      Response.json(
+        url.endsWith("/checkout")
+          ? {
+              attemptId: first,
+              mode: "live",
+              bookingIssue: "incomplete",
+              checkout: { state: "unavailable" },
+              summary: {
+                players: 1,
+                totalMinor: 10800,
+                currency: "SGD",
+                sessions: [{ startMs: Date.now() + 86400000, players: 1 }],
+              },
+              checking: {
+                deadlineMs: Date.now() + 600000,
+                nextCheckMs: 0,
+                pollAfterMs: 5000,
+              },
+            }
+          : { status: "pending", reason: "payment_verification_pending" },
+      ),
+    ),
+  );
+  render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
+  expect(
+    await screen.findByText(/Unable to complete this booking/),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("status", { name: "Checking payment…" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: /payment|checkout/i }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("heading", { name: "Booking confirmed" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Current booking summary")).toHaveTextContent(
+    "SGD $108.00",
+  );
 });

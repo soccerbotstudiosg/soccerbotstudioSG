@@ -387,9 +387,6 @@ export function TimeStep() {
                           ) : slot.available ? (
                             <>
                               <strong>{money(sessionPrice(slot))}</strong>
-                              <span>
-                                {slot.native ? "Per session" : "Trial price"}
-                              </span>
                             </>
                           ) : (
                             "Unavailable"
@@ -399,7 +396,7 @@ export function TimeStep() {
                           {selected
                             ? sessionInstructorName(selected)
                             : available
-                              ? `Choose trainer: ${offers
+                              ? `${offers
                                   .filter((offer) => offer.available)
                                   .map(sessionInstructorName)
                                   .join(" / ")}`

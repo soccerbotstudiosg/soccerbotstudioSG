@@ -656,6 +656,14 @@
     "title": "verified nonpayment at checking expiry still waits for the original hold"
   },
   {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "new recovery buffer blocks verified nonpayment after the provider hold ends"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "new recovery buffer releases verified nonpayment after twelve minutes"
+  },
+  {
     "file": "worker/tests/identity-delivery.test.mjs",
     "title": "delivery default empty window and disabled mode reject before external dispatch"
   },

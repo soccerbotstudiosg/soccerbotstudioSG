@@ -62,8 +62,9 @@ export function PaymentStep() {
               SOCCERBOTSTUDIO Singapore
             </div>
             <h1 className="payment-title">Payment</h1>
-            <p className="text-sm text-muted">Total due · SGD</p>
+            <p className="payment-total-label">Total due</p>
             <strong className="payment-total block">
+              <span className="total-currency">SGD</span>{" "}
               {money(totalCents(attempt.draft))}
             </strong>
             <div className="payment-item">
@@ -143,7 +144,10 @@ export function PaymentStep() {
           <SessionList slots={attempt.draft.slots} />
           <div className="line-item total">
             <span>Payment amount</span>
-            <strong>{money(totalCents(attempt.draft))}</strong>
+            <strong>
+              <span className="total-currency">SGD</span>{" "}
+              {money(totalCents(attempt.draft))}
+            </strong>
           </div>
           {error && (
             <p className="alert" role="alert">
@@ -190,10 +194,9 @@ export function PaymentStep() {
             SOCCERBOTSTUDIO Singapore
           </div>
           <h1 className="payment-title">Payment</h1>
-          <p className="text-sm text-muted">
-            Total due · SGD · Inclusive of GST
-          </p>
+          <p className="payment-total-label">Total due</p>
           <strong className="payment-total block">
+            <span className="total-currency">SGD</span>{" "}
             {money(totalCents(attempt.draft))}
           </strong>
           <div className="payment-item">

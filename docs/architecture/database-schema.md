@@ -114,6 +114,7 @@ erDiagram
     INTEGER payment_window_ms
     INTEGER hold_window_ms
     INTEGER checking_buffer_ms
+    INTEGER recovery_buffer_ms
   }
   invoice_documents {
     TEXT attempt_id PK, FK
@@ -124,18 +125,20 @@ erDiagram
   }
 ```
 
+**Migration0038:** adds immutable `recovery_buffer_ms`, default0 for existing rows; new attempts record180000. It delays unpaid grant release without changing provider hold/payment validity. `checking.recoveryEndsAtMs` exposes the separate release-check boundary; `holdExpiresAtMs` retains the actual provider hold deadline.
+
 **Migration0037:** adds immutable `checking_buffer_ms`, default300000 for existing rows; new attempts explicitly record60000. It does not rewrite old timing or payment evidence. Deploy this additive migration before the new Worker; old code can continue using the extended table.
 
 **Migration0036:** `document_number` is nullable while the final paid document is unavailable. Its association is checked against the attempt by application code; the JSON column itself is not a foreign key. Updating display metadata does not update immutable `checkout_progress.confirmation_json` or authorize payment/booking success. See [invoice contract](../api-contracts.md#optional-invoice-document-display-metadata).
 
-| Table                     | Key              | Purpose                                                                                  |
-| ------------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
-| `checkout_payment_routes` | PK: `attempt_id` | Immutable choice of native or HitPay payment route for an attempt.                       |
-| `hitpay_holds`            | PK: `attempt_id` | Original reservation scope, association and expiry used to guard payment.                |
-| `hitpay_payments`         | PK: `attempt_id` | HitPay request identity, verified payment evidence and accounting/recovery state.        |
-| `hitpay_receipts`         | PK: `digest`     | Deduplicated authenticated HitPay webhook receipt digests.                               |
-| `checkout_progress`       | PK: `attempt_id` | Booking creation time, original windows and immutable saved confirmation.                |
-| `invoice_documents`       | PK: `attempt_id` | Original unpaid number and later paid document number; optional display metadata (0036). |
+| Table                     | Key              | Purpose                                                                                    |
+| ------------------------- | ---------------- | ------------------------------------------------------------------------------------------ |
+| `checkout_payment_routes` | PK: `attempt_id` | Immutable choice of native or HitPay payment route for an attempt.                         |
+| `hitpay_holds`            | PK: `attempt_id` | Original reservation scope, association and expiry used to guard payment.                  |
+| `hitpay_payments`         | PK: `attempt_id` | HitPay request identity, verified payment evidence and accounting/recovery state.          |
+| `hitpay_receipts`         | PK: `digest`     | Deduplicated authenticated HitPay webhook receipt digests.                                 |
+| `checkout_progress`       | PK: `attempt_id` | Booking creation time, original windows, immutable recovery buffer and saved confirmation. |
+| `invoice_documents`       | PK: `attempt_id` | Original unpaid number and later paid document number; optional display metadata (0036).   |
 
 ## D1: Access, identity and contact details
 

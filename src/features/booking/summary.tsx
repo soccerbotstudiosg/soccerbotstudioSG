@@ -49,8 +49,7 @@ export function SessionSummaryHeading({
             <br />
           </>
         )}
-        {draft.players} {draft.players === 1 ? "player" : "players"} per session
-        · Full instructor guidance
+        {draft.players} {draft.players === 1 ? "player" : "players"}
       </p>
     </div>
   );
@@ -143,11 +142,10 @@ export function PriceSummary({ draft }: { draft: BookingDraft }) {
     <div className="price-breakdown">
       <div className="line-item total">
         <span>Total due</span>
-        <strong>{money(totalCents(draft))}</strong>
+        <strong>
+          <span className="total-currency">SGD</span> {money(totalCents(draft))}
+        </strong>
       </div>
-      <p className="hint summary-currency">
-        {draft.nativeServiceId ? "SGD · Final total" : "SGD · Inclusive of GST"}
-      </p>
     </div>
   );
 }
@@ -226,13 +224,12 @@ export function Summary({ basket = false }: { basket?: boolean }) {
           )}
           <div className="summary-total">
             <span>Total</span>
-            <strong>{money(totalCents(draft))}</strong>
+            <strong>
+              <span className="total-currency">SGD</span>{" "}
+              {money(totalCents(draft))}
+            </strong>
           </div>
-          <p className="hint summary-currency">
-            {draft.nativeServiceId
-              ? "SGD · Final total"
-              : "SGD · Inclusive of GST"}
-          </p>
+
           {basket &&
             (draft.slots.length > 0 && valid ? (
               <Link
@@ -275,9 +272,6 @@ export function Summary({ basket = false }: { basket?: boolean }) {
           {instructors.map((slot) => (
             <InstructorProfile
               key={slot.instructor}
-              sessions={draft.slots.filter(
-                (session) => session.instructor === slot.instructor,
-              )}
               {...(slot.native
                 ? {
                     profile: {

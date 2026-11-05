@@ -2306,10 +2306,10 @@ test("real API exhausted browser checking window retains the original deadline a
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", {
-        name: "Please check your payment",
-        exact: true,
-      }),
+      page.getByText(
+        "Check the calendar again in up to 5 minutes to rebook your session.",
+        { exact: true },
+      ),
     ).toBeVisible();
     await assertNoPaymentOrConfirmation(page, mechanism);
     expect(

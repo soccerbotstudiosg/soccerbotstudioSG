@@ -1063,3 +1063,30 @@ it("keeps booking UI unready until protected restoration finishes", async () => 
   await act(async () => finish(null));
   expect(screen.getByTestId("restoration-ready")).toHaveTextContent("true");
 });
+
+it("editing a new selection clears the previous unpaid reservation notice", async () => {
+  function State() {
+    const { restartAfterExpiry, update, selectionNotice } = useBooking();
+    return (
+      <>
+        <button onClick={() => restartAfterExpiry(id)}>Released</button>
+        <button onClick={() => update({ players: 2 })}>New selection</button>
+        {selectionNotice && <p role="status">{selectionNotice}</p>}
+      </>
+    );
+  }
+  render(
+    <BookingProvider>
+      <State />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByText("Released"));
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Your unpaid reservation has ended.",
+  );
+  fireEvent.click(screen.getByText("New selection"));
+  expect(
+    screen.queryByText(/Your unpaid reservation has ended/),
+  ).not.toBeInTheDocument();
+});
