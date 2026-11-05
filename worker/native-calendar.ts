@@ -26,7 +26,7 @@ export function calendarDates(month: string, approved: string[]) {
     .sort();
 }
 // Do not bridge unapproved gaps; each request is at most the existing 15-day
-// transport bound. Four months therefore need ranges, not 120 daily reads.
+// transport bound. Months therefore use bounded ranges rather than individual daily reads.
 /** Partition calendar dates into supported provider query ranges. */
 export function calendarRanges(dates: string[]) {
   const ranges: { from: string; to: string; dates: string[] }[] = [];

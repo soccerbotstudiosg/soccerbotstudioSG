@@ -76,7 +76,12 @@ import {
   type ResidualAuthority,
 } from "./native-residual";
 import { DurableObject } from "cloudflare:workers";
-import { traced, measure, instrumentStorage } from "./diagnostics";
+import {
+  traced,
+  measure,
+  instrumentStorage,
+  traceCalendar,
+} from "./diagnostics";
 import {
   providerCredentialName,
   ApiError,
@@ -775,23 +780,78 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   }
   /** Serve a valid display snapshot or queue a provider calendar read. */
   async publicCalendar(month: string, correlationId: string) {
-    return rpcOutcome(() =>
+    const started = performance.now();
+    const outcome = await rpcOutcome(() =>
       traced(correlationId, "coordinator", async () => {
         const store = liveCustomerAccess(this.env)
           ? this.snapshots()
           : undefined;
         const cached = store?.read("calendar", `calendar:${month}`);
-        if (cached && store?.months().includes(month))
-          return this.filterDisplayCalendar(cached);
-        const generation = store?.generation() ?? 0;
-        const value = await this.displayRead((cacheOnly) =>
-          publicCalendar({ ...this.calendarReadOptions(), month, cacheOnly }),
-        );
-        store?.save("calendar", `calendar:${month}`, value, generation);
-        return store?.read("calendar", `calendar:${month}`) ?? value;
+        let value;
+        let persisted = false;
+        if (cached && store?.months().includes(month)) {
+          traceCalendar(correlationId, "hit", { trigger: "customer", month });
+          value = this.filterDisplayCalendar(cached);
+          persisted = true;
+        } else {
+          traceCalendar(correlationId, "miss", { trigger: "customer", month });
+          const generation = store?.generation() ?? 0;
+          traceCalendar(correlationId, "build_started", {
+            trigger: "customer",
+            month,
+          });
+          const built = await this.displayRead((cacheOnly) =>
+            publicCalendar({ ...this.calendarReadOptions(), month, cacheOnly }),
+          );
+          store?.save("calendar", `calendar:${month}`, built, generation);
+          const saved = store?.read("calendar", `calendar:${month}`);
+          persisted = saved !== undefined;
+          value = saved ?? built;
+          const savedBuild = persisted && store?.generation() === generation;
+          traceCalendar(
+            correlationId,
+            savedBuild ? "build_saved" : "build_discarded",
+            {
+              trigger: "customer",
+              month,
+              persisted: savedBuild,
+            },
+          );
+        }
+        traceCalendar(correlationId, "serve", {
+          trigger: "customer",
+          month,
+          persisted,
+          durationMs: performance.now() - started,
+          observedAtMs: value.observedAtMs,
+          ageMs: Math.max(0, Date.now() - value.observedAtMs),
+          dateCount: value.dates.length,
+          offerCount: value.dates.reduce(
+            (n, day) => n + (day.offers?.length ?? 0),
+            0,
+          ),
+        });
+        return value;
       }),
-    );
+    ).catch((error: unknown) => {
+      traceCalendar(correlationId, "build_failed", {
+        trigger: "customer",
+        month,
+        code: "temporarily_unavailable",
+        durationMs: performance.now() - started,
+      });
+      throw error;
+    });
+    if (!outcome.ok)
+      traceCalendar(correlationId, "build_failed", {
+        trigger: "customer",
+        month,
+        code: outcome.error.code,
+        durationMs: performance.now() - started,
+      });
+    return outcome;
   }
+
   /** Filter cached display dates using the current booking cutoff. */
   private filterDisplayCalendar(
     value: Awaited<ReturnType<typeof publicCalendar>>,
@@ -867,44 +927,86 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   }
   /** Refresh display snapshots and eligible tokens through the display queue. */
   async warmDisplay() {
-    if (!this.displayWarmingEnabled()) return;
-    const store = this.snapshots();
-    const months = store.months();
-    if (!store.claimRefresh(Date.now())) return;
-    const beforeProviderRead = () => {
-      if (this.providerQueue.hasCustomerWaiting())
-        throw new ApiError(503, "display_refresh_deferred");
-    };
-    try {
-      for (const month of months)
-        await this.providerQueue.run("display", async () => {
-          beforeProviderRead();
-          await this.provider.refreshPublicTokenAhead(
-            this.env,
-            this.providerControl(false, true),
-          );
-          const generation = store.generation();
-          // Partial refreshes never replace the retained complete month.
-          this.calendarReads.invalidate();
-          const calendar = await publicCalendar({
-            ...this.calendarReadOptions(),
-            month,
-            beforeProviderRead,
+    const correlationId = crypto.randomUUID();
+    return traced(correlationId, "scheduled", async () => {
+      if (!this.displayWarmingEnabled()) return;
+      const store = this.snapshots();
+      const months = store.months();
+      const started = performance.now();
+      if (!store.claimRefresh(Date.now())) {
+        traceCalendar(correlationId, "refresh_skipped", { trigger: "warming" });
+        return;
+      }
+      const beforeProviderRead = () => {
+        if (this.providerQueue.hasCustomerWaiting())
+          throw new ApiError(503, "display_refresh_deferred");
+      };
+      try {
+        for (const month of months)
+          await this.providerQueue.run("display", async () => {
+            beforeProviderRead();
+            await this.provider.refreshPublicTokenAhead(
+              this.env,
+              this.providerControl(false, true),
+            );
+            const generation = store.generation();
+            traceCalendar(correlationId, "build_started", {
+              trigger: "warming",
+              month,
+            });
+            // Reuse only reads still inside their independent 60-second deadline.
+            // Known writes invalidate affected dates; partial refreshes never
+            // replace the retained complete month.
+            const calendar = await publicCalendar({
+              ...this.calendarReadOptions(),
+              month,
+              beforeProviderRead,
+            });
+            beforeProviderRead();
+            const catalogue = await windowCatalogue(this.calendarReadOptions());
+            store.save("calendar", `calendar:${month}`, calendar, generation);
+            store.save("catalogue", "catalogue", catalogue, generation);
+            const persisted =
+              store.generation() === generation &&
+              store.read("calendar", `calendar:${month}`) !== undefined;
+            traceCalendar(
+              correlationId,
+              persisted ? "build_saved" : "build_discarded",
+              {
+                trigger: "warming",
+                month,
+                persisted,
+                observedAtMs: calendar.observedAtMs,
+                durationMs: performance.now() - started,
+                dateCount: calendar.dates.length,
+                offerCount: calendar.dates.reduce(
+                  (n, day) => n + (day.offers?.length ?? 0),
+                  0,
+                ),
+              },
+            );
           });
-          beforeProviderRead();
-          const catalogue = await windowCatalogue(this.calendarReadOptions());
-          store.save("calendar", `calendar:${month}`, calendar, generation);
-          store.save("catalogue", "catalogue", catalogue, generation);
+      } catch (error) {
+        if (
+          !(error instanceof ApiError) ||
+          error.code !== "display_refresh_deferred"
+        ) {
+          traceCalendar(correlationId, "build_failed", {
+            trigger: "warming",
+            code:
+              error instanceof ApiError
+                ? error.code
+                : "temporarily_unavailable",
+            durationMs: performance.now() - started,
+          });
+          throw error;
+        }
+        store.deferRefresh();
+        traceCalendar(correlationId, "refresh_deferred", {
+          trigger: "warming",
         });
-    } catch (error) {
-      if (
-        !(error instanceof ApiError) ||
-        error.code !== "display_refresh_deferred"
-      )
-        throw error;
-      store.deferRefresh();
-      console.log(JSON.stringify({ event: "display_refresh_deferred" }));
-    }
+      }
+    });
   }
 
   private async displayRead<T>(

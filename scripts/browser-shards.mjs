@@ -52,6 +52,13 @@ export function combineReports(reports) {
     report.config.projects.map((project) => {
       const config = { ...project };
       delete config.outputDir;
+      // Playwright's truncated Git diff is diagnostic text, not project config.
+      // Keep original reports intact; exact source/export/run binding is checked
+      // independently by checkBuild/validateShards, and commit metadata stays here.
+      if (config.metadata) {
+        config.metadata = { ...config.metadata };
+        delete config.metadata.gitDiff;
+      }
       return config;
     });
   for (const [index, report] of reports.entries()) {

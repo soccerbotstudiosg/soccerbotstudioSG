@@ -257,6 +257,18 @@
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
+    "title": "warming reuses fresh customer range reads while prebuilding the other two months"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "cold calendar failure preserves diagnostics and recovers without waiting for warming"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "explicitly unavailable calendar days are cached and expired snapshots rebuild"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
     "title": "failed scheduled display refresh retains a bounded snapshot without renewing its expiry"
   },
   {
@@ -1850,6 +1862,14 @@
   {
     "file": "worker/tests/telemetry.test.mjs",
     "title": "D1 diagnostics preserve promise identity and count batch statements separately from round trips"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "calendar diagnostics retain lifecycle evidence without exporting it to Grafana"
+  },
+  {
+    "file": "worker/tests/telemetry.test.mjs",
+    "title": "calendar diagnostics reject sensitive payloads and malformed runtime metadata"
   },
   {
     "file": "worker/tests/webhook.test.mjs",

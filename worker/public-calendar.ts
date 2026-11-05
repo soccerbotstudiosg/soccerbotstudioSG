@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   BOOKING_LEAD_MS,
+  BOOKING_MONTH_COUNT,
   isStudioSessionStart,
   NATIVE_TRIAL_LEAD_MS,
 } from "../src/domain/booking-policy";
@@ -71,7 +72,7 @@ export function calendarWindow(options: ReadOptions) {
   if (live) {
     const today = new Date(Date.now() + 28800000).toISOString().slice(0, 10);
     const end = new Date(today.slice(0, 7) + "-01T00:00:00Z");
-    end.setUTCMonth(end.getUTCMonth() + 4);
+    end.setUTCMonth(end.getUTCMonth() + BOOKING_MONTH_COUNT);
     const dates: string[] = [];
     for (
       let day = new Date(today + "T00:00:00Z");
@@ -186,7 +187,7 @@ export async function windowCalendar(
   const { window, assertOpen, control, binding, p } = calendarWindow(options);
   const today = new Date(Date.now() + 28800000).toISOString().slice(0, 10);
   const last = new Date(today.slice(0, 7) + "-01T00:00:00Z");
-  last.setUTCMonth(last.getUTCMonth() + 3);
+  last.setUTCMonth(last.getUTCMonth() + BOOKING_MONTH_COUNT - 1);
   if (
     !/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ||
     month < today.slice(0, 7) ||

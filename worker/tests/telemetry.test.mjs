@@ -366,3 +366,113 @@ test("D1 diagnostics preserve promise identity and count batch statements separa
   assert.equal(transport.durationMs, transport.headersMs + transport.bodyMs);
   assert.doesNotMatch(JSON.stringify(logs), /SECRET/);
 });
+
+test("calendar diagnostics retain lifecycle evidence without exporting it to Grafana", async (t) => {
+  const compiled = await build({
+    entryPoints: ["worker/diagnostics.ts"],
+    bundle: true,
+    write: false,
+    platform: "node",
+    format: "esm",
+  });
+  const { traceCalendar } = await import(
+    `data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString("base64")}`
+  );
+  const logs = [];
+  t.mock.method(console, "log", (line) => logs.push(JSON.parse(line)));
+  const phases = [
+    "hit",
+    "miss",
+    "build_started",
+    "build_saved",
+    "build_discarded",
+    "build_failed",
+    "serve",
+    "refresh_skipped",
+    "refresh_deferred",
+  ];
+  for (const phase of phases)
+    traceCalendar(correlationId, phase, {
+      trigger: "warming",
+      month: "2026-11",
+      durationMs: 1.5,
+      observedAtMs: 1793842841876,
+      ageMs: 0,
+      dateCount: 26,
+      offerCount: 141,
+      persisted: false,
+      code: "availability_representation_unavailable",
+    });
+  assert.equal(logs.length, phases.length);
+  for (const [index, record] of logs.entries()) {
+    assert.deepEqual(record, {
+      event: "calendar_cache_trace",
+      correlationId,
+      phase: phases[index],
+      outcome: phases[index] === "build_failed" ? "error" : "ok",
+      trigger: "warming",
+      month: "2026-11",
+      durationMs: 1.5,
+      observedAtMs: 1793842841876,
+      ageMs: 0,
+      dateCount: 26,
+      offerCount: 141,
+      persisted: false,
+      code: "availability_representation_unavailable",
+    });
+    assert.equal(sanitizeDiagnostic(record), undefined);
+  }
+});
+
+test("calendar diagnostics reject sensitive payloads and malformed runtime metadata", async (t) => {
+  const compiled = await build({
+    entryPoints: ["worker/diagnostics.ts"],
+    bundle: true,
+    write: false,
+    platform: "node",
+    format: "esm",
+  });
+  const { traceCalendar } = await import(
+    `data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString("base64")}`
+  );
+  const logs = [];
+  t.mock.method(console, "log", (line) => logs.push(JSON.parse(line)));
+  traceCalendar(correlationId, "build_failed", {
+    trigger: "customer",
+    month: "2026-13",
+    durationMs: Infinity,
+    observedAtMs: Number.MAX_SAFE_INTEGER + 1,
+    ageMs: -1,
+    dateCount: 1.5,
+    offerCount: NaN,
+    persisted: "SECRET",
+    code: "SECRET",
+    customer: "SECRET",
+    token: "SECRET",
+    url: "https://example.test/SECRET",
+    event: "SECRET",
+    correlationId: "SECRET",
+    phase: "SECRET",
+    outcome: "SECRET",
+  });
+  assert.deepEqual(logs, [
+    {
+      event: "calendar_cache_trace",
+      correlationId,
+      phase: "build_failed",
+      outcome: "error",
+      trigger: "customer",
+      code: "temporarily_unavailable",
+    },
+  ]);
+  for (const [id, phase, trigger] of [
+    ["SECRET", "serve", "customer"],
+    [correlationId, "SECRET", "customer"],
+    [correlationId, "serve", "SECRET"],
+    ["-".repeat(36), "serve", "customer"],
+    [{ toString: () => correlationId, secret: "SECRET" }, "serve", "customer"],
+  ])
+    traceCalendar(id, phase, { trigger });
+  assert.equal(logs.length, 1);
+  assert.doesNotMatch(JSON.stringify(logs), /SECRET/);
+});

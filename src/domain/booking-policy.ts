@@ -3,6 +3,8 @@ export const SESSION_MINUTES = 40;
 export const CHANGEOVER_MINUTES = 10;
 export const START_INTERVAL_MINUTES = SESSION_MINUTES + CHANGEOVER_MINUTES;
 export const MAX_PLAYERS = 4;
+// Current Singapore month plus the following two calendar months.
+export const BOOKING_MONTH_COUNT = 3;
 export const STUDIO_CAPACITY = 1;
 // Current customer booking rule: booking closes 240 minutes before the start.
 export const BOOKING_LEAD_MINUTES = 240;

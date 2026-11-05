@@ -5,7 +5,11 @@ import {
   nativeDisplaySlots,
 } from "@/domain/native-checkout";
 import { monthAt, todaySG } from "@/domain/dates";
-import { BOOKING_LEAD_MS, isStudioSessionStart } from "@/domain/booking-policy";
+import {
+  BOOKING_LEAD_MS,
+  BOOKING_MONTH_COUNT,
+  isStudioSessionStart,
+} from "@/domain/booking-policy";
 import { CATALOGUE_MAX_AGE_MS } from "@/domain/catalog";
 import type {
   AvailableSlot,
@@ -58,10 +62,10 @@ export function useCalendarAvailability(
       const next = month;
       if (
         next >
-        monthAt(todaySG(new Date(Date.now())).slice(0, 7) + "-01", 3).slice(
-          0,
-          7,
-        )
+        monthAt(
+          todaySG(new Date(Date.now())).slice(0, 7) + "-01",
+          BOOKING_MONTH_COUNT - 1,
+        ).slice(0, 7)
       )
         return;
       if (controller.signal.aborted) return;
@@ -97,7 +101,7 @@ export function useCalendarAvailability(
               : {};
           entries[next] = { ...result, receivedAtMs };
           const retained = Object.fromEntries(
-            Object.entries(entries).slice(-4),
+            Object.entries(entries).slice(-BOOKING_MONTH_COUNT),
           );
           return { owner: service, key, entries: retained, failed: [] };
         });
