@@ -208,3 +208,14 @@ If practical, resume a normal journey at50–60 minutes to observe natural authe
 #### Calendar repair recheck before A–D
 
 Pending owner execution after deployment: cold-load the month, confirm the grid and trainer choices, then revisit without creating a booking. Retain the calendar JSON and `X-Request-ID`/`X-Calendar-Observed-At`/`X-Calendar-Expires-At` headers. Correlate a persisted build followed by a cache hit/serve in Cloudflare logs, with identical served observation metadata. After the next due warming, verify a new persisted observation is served. A full date list with no offers means unavailable; a malformed/incomplete provider result must remain an error. Test manual blocks/shared capacity separately; the developer representation probe does not accept those production rules. Grafana work is deferred.
+
+#### TestFull-2 follow-up — pending staging acceptance
+
+Use the final staged follow-up revision, not the historical PR25 baseline above. Keep the existing A–D sequence; add these observations without clearing browser storage:
+
+- A: use HitPay’s own Back as well as browser Back. Only the same eligible unpaid request may show Continue payment; payment hides it. Check the three Player App destinations and dark popup layout on phone/desktop.
+- B: while a newer checkout exists, use Make another booking and Back to home on an older confirmation. Navigation works and the newer checkout remains recoverable.
+- C: refresh near expiry; structured trainer/session/amount stays visible after context loads. Check status shows busy/result or rate-limit feedback. After SimplyBook releases the original session, refresh availability during the bounded affected-day retries; the session must return only if currently free. Include a closed/backgrounded browser case. Provider cancellation timing is observed, not promised.
+- D: distinguish actual capacity rejection from checkout_already_active. Capacity rejection removes the invalid selection; an active-checkout rejection restores that existing attempt, without a new payment, lingering local verification attempt or stuck calendar loader.
+
+Record actual provider release and calendar observation times separately. Synthetic retry/restart checks do not establish these browser/provider results.

@@ -13,6 +13,11 @@ import {
   nativeAvailabilitySchema,
 } from "../src/domain/native-checkout";
 
+// Short release probes followed by bounded backoff; never provider write retries.
+const releaseProbeOffsets = [
+  0, 10000, 30000, 60000, 120000, 300000, 600000, 900000,
+];
+
 const schemas = {
   catalogue: customerCatalogueSchema,
   calendar: publicCalendarSchema,
@@ -33,7 +38,80 @@ export class DisplaySnapshots {
     );
     sql.exec("INSERT OR IGNORE INTO display_refresh(scope) VALUES(?)", scope);
     sql.exec(
+      "CREATE TABLE IF NOT EXISTS display_release_probes(scope TEXT NOT NULL,attempt_id TEXT NOT NULL,date TEXT NOT NULL,starts_json TEXT NOT NULL,base_ms INTEGER NOT NULL,step INTEGER NOT NULL DEFAULT 0,ready_ms INTEGER NOT NULL,PRIMARY KEY(scope,attempt_id,date))",
+    );
+    sql.exec(
       "CREATE TABLE IF NOT EXISTS display_warm_month(scope TEXT NOT NULL,month TEXT NOT NULL,started_ms INTEGER NOT NULL,PRIMARY KEY(scope,month))",
+    );
+  }
+  /** Retain one bounded release-read schedule per attempt/date without extending replays. */
+  scheduleRelease(
+    attemptId: string,
+    sessions: { startMs: number }[],
+    dueMs: number,
+  ) {
+    for (const date of new Set(
+      sessions.map((s) =>
+        new Date(s.startMs + 28800000).toISOString().slice(0, 10),
+      ),
+    )) {
+      const starts = sessions
+        .filter(
+          (s) =>
+            new Date(s.startMs + 28800000).toISOString().slice(0, 10) === date,
+        )
+        .map((s) => s.startMs);
+      this.sql.exec(
+        "INSERT OR IGNORE INTO display_release_probes(scope,attempt_id,date,starts_json,base_ms,ready_ms) VALUES(?,?,?,?,?,?)",
+        this.scope,
+        attemptId,
+        date,
+        JSON.stringify(starts),
+        dueMs,
+        dueMs,
+      );
+    }
+  }
+  /** Select the next retained release read, including completed tombstones only for cleanup. */
+  nextRelease() {
+    this.sql.exec(
+      "DELETE FROM display_release_probes WHERE scope=? AND base_ms<?",
+      this.scope,
+      Date.now() - 86400000,
+    );
+    return this.sql
+      .exec<{
+        attempt_id: string;
+        date: string;
+        starts_json: string;
+        base_ms: number;
+        step: number;
+        ready_ms: number;
+      }>(
+        "SELECT attempt_id,date,starts_json,base_ms,step,ready_ms FROM display_release_probes WHERE scope=? AND step>=0 ORDER BY ready_ms,attempt_id,date LIMIT 1",
+        this.scope,
+      )
+      .toArray()[0];
+  }
+  /** Advance a claimed release read without replaying overdue probes in a burst. */
+  finishRelease(
+    job: NonNullable<ReturnType<DisplaySnapshots["nextRelease"]>>,
+    released: boolean,
+  ) {
+    const step = released
+      ? -1
+      : releaseProbeOffsets.findIndex(
+          (offset, index) =>
+            index > job.step && job.base_ms + offset > Date.now(),
+        );
+    this.sql.exec(
+      "UPDATE display_release_probes SET step=?,ready_ms=? WHERE scope=? AND attempt_id=? AND date=? AND step=?",
+      step,
+      step < 0 ? 0 : job.base_ms + releaseProbeOffsets[step],
+      this.scope,
+      job.attempt_id,
+      job.date,
+      job.step,
     );
   }
   generation() {

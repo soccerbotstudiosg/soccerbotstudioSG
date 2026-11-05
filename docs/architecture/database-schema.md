@@ -276,11 +276,12 @@ erDiagram
   }
 ```
 
-| Table                | Primary key      | Purpose                                                                                                      |
-| -------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------ |
-| `display_refresh`    | `scope`          | Generation fences stale writes; legacy start/dirty columns remain compatible but no longer schedule warming. |
-| `display_warm_month` | `(scope, month)` | Last attempted warm per month; rotates failure/restart work without renewing snapshots.                      |
-| `display_snapshots`  | `(scope, key)`   | Scoped calendar/catalogue payload and original read expiry.                                                  |
+| Table                    | Primary key                 | Purpose                                                                                                          |
+| ------------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `display_refresh`        | `scope`                     | Generation fences stale writes; legacy start/dirty columns remain compatible but no longer schedule warming.     |
+| `display_warm_month`     | `(scope, month)`            | Last attempted warm per month; rotates failure/restart work without renewing snapshots.                          |
+| `display_release_probes` | `(scope, attempt_id, date)` | Original grid starts, base deadline, bounded probe step and next read time; completed tombstones prevent replay. |
+| `display_snapshots`      | `(scope, key)`              | Scoped calendar/catalogue payload and original read expiry.                                                      |
 
 The matching `scope` is an application-managed link, **not a foreign key**. Public display expiry does not release a provider reservation. Cache behavior belongs to [Technical behavior](../code-owners/technical-behavior.md); disposal/retention belongs to [Data lifecycle](../data-lifecycle.md).
 

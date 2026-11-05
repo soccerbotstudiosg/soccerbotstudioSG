@@ -192,10 +192,18 @@ export function verifyHitpayRequest(
     status: value.status,
     paymentId,
     expiresAtMs,
-    // Missing, processing, refunded or inconsistent payments are not nonpayment.
+    // An expired request may retain an unstarted payment-method entry.
+    // Missing, processing, refunded or inconsistent evidence is never nonpayment.
     unpaidTerminal:
       (value.status === "expired" || value.status === "canceled") &&
       value.payments !== undefined &&
-      value.payments.length === 0,
+      value.payments.every(
+        (p) =>
+          p.status === "requires_payment_method" &&
+          p.currency.toUpperCase() === scope.currency &&
+          minorAmount(p.amount) === scope.totalMinor &&
+          p.refunded_amount !== undefined &&
+          minorAmount(p.refunded_amount) === 0,
+      ),
   };
 }

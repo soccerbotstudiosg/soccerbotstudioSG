@@ -565,9 +565,20 @@ test("first visit offers the Player App and dismissal persists while the navbar 
     name: "Get the SoccerBot Player App",
   });
   await expect(prompt).toBeVisible();
-  await expect(
-    prompt.getByRole("link", { name: "Download app", exact: true }),
-  ).toHaveAttribute("href", "https://soccerbot360.com/en/player-app");
+  for (const [name, href] of [
+    [
+      "App Store",
+      "https://apps.apple.com/us/app/soccerbot-player-app/id6751052041",
+    ],
+    [
+      "Google Play",
+      "https://play.google.com/store/apps/details?id=com.umbrella.soccerbot.playerapp&hl=en&pli=1",
+    ],
+    ["Web App", "https://app.soccerbot360.com/login"],
+  ])
+    await expect(
+      prompt.getByRole("link", { name, exact: true }),
+    ).toHaveAttribute("href", href);
   await prompt.getByRole("button", { name: "Not now", exact: true }).click();
   await page.reload();
   await expect(

@@ -411,6 +411,9 @@ it("rechecks unresolved status on focus without renewing the window and coalesce
   });
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(hook.result.current.expired).toBe(true);
+  expect(hook.result.current.feedback).toBe(
+    "Status checked. Payment is still unconfirmed.",
+  );
   expect(
     JSON.parse(localStorage.getItem(`soccerbot-checking:${id}`)!),
   ).toMatchObject({ deadline, count: 120, final: true });
@@ -419,6 +422,13 @@ it("rechecks unresolved status on focus without renewing the window and coalesce
     await vi.advanceTimersByTimeAsync(60000);
   });
   expect(fetch).toHaveBeenCalledTimes(1);
+  expect(hook.result.current.feedback).toMatch(/Please wait a moment/);
+  fetch.mockRejectedValueOnce(new Error("synthetic failed status read"));
+  await act(async () => {
+    hook.result.current.check();
+  });
+  expect(hook.result.current.feedback).toMatch(/couldn’t check your payment/);
+  expect(hook.result.current.view).toBe("unresolved");
 });
 
 it("checks once at the original hold expiry after polling ends and preserves that check across reload", async () => {

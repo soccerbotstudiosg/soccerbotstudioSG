@@ -134,6 +134,14 @@ Source defaults and temporary runtime activation are different evidence. A norma
 
 Client custom-domain delegation/registrar transfer, DNS preservation and HTTPS acceptance remain separate setup work. Workers.dev hosting does not prove `soccerbotsg.com` is connected. Central telemetry configuration and actual receiver/alert acceptance are also separate; see the runbook rather than assuming a log switch establishes complete monitoring.
 
+### 5 November 2026 — PR27 production sandbox reactivation
+
+Cloudflare runtime readback confirms production source `c2b7c1cae4d18f1d45bc1837fb3c3f068e3aeb22`. Under owner authorization, restored customer/client sandbox access, trusted provider reads, HitPay checkout/recovery/webhook and reviewed merchant pairing, manual external accounting, ongoing readback and public display warming. Identity email delivery and public-token refresh-ahead remain disabled. Existing eight secrets, D1/coordinator bindings and once-per-minute cron were preserved. This supersedes earlier closed-default activation evidence; it does not establish actual payment/calendar acceptance. Provider timeout remains owner-verified separately. No live booking/payment action was performed.
+
+### 5 November 2026 — observed timeout delay
+
+Owner HAR and invoice evidence align creation around14:52 with due time15:02; cancellation was observed around15:11 (Asia/Singapore). The exact provider cancellation event time is not established. [Accept Payments documentation](https://help.simplybook.me/wiki/Accept_payments_custom_feature) describes automatic cancellation, but publishes no exact scheduler cadence in the reviewed material. [Support thread570](https://tech-support.simplybook.me/t/570-when-booking-with-api-payment-timeout-does-not-work/576) contains a historical customer report of30-minute cancellation for a20-minute timeout; it supports possible delay, not a guaranteed extra10 minutes. Our API creation already supplies `handle_invoice: true`, as advised in [thread601](https://tech-support.simplybook.me/t/601-confirm-booking-after-taking-payment-externally-via-api/607). Treat the configured deadline and observed provider release as separate evidence. No provider setting or cancellation was changed during this investigation.
+
 ## Secret locations and configuration changes
 
 Only names and storage locations are recorded here. Never include values, API response headers, EPP codes, passwords, bank details or customer records in this file.
