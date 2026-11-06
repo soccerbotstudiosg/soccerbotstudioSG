@@ -2,13 +2,15 @@
 
 Observed 6 November 2026 (Singapore). History: [Journey](docs/journey.md).
 
-## PR32 muted-orange Contact banner
+## PR32 consolidated gallery, closing banners and footer app links
 
-Branch `fix/hero-session-copy`; baseline `bf8e57f` passed CI42164028674, CodeQL42164022847 and staging42164958647 with matching public health. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
+Branch `fix/hero-session-copy`; baseline `ea15f2a` passed CI42166327165, CodeQL42166324049 and staging42167287713 with matching public health. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
 
-Owner confirmed the bottom Contact banner for a new muted burnt-orange treatment. Apply scoped #d99058 with soft abstract highlights, navy text and navy/white action states; preserve its straight edges, compact geometry and alignment. The Studio footer retains its navy treatment. Light homepage/Studio image sections, restored original performance strip, header, booking states and all other behavior remain unchanged.
+Current owner direction: Studio tagline directly below header/above video; all five light picture/content rows form one continuous group with top/bottom outer curves, no internal gaps, and24px before separate Book now banner. Both closing banners centre content, target30% lower minimum height (192→134px) with proportionate type/spacing, share soft radial gradient styling and meet the unchanged footer without a gap. Contact CTA uses a tonal peach fill with dark text/border. Promotional CTAs use larger bold italic theme-heading type; closing-banner controls remain proportionate to their reduced height.
 
-Extend existing contrast/mutation and public-route palette assertions without adding test cases or changing inventories. Reconcile current presentation owners, verify the consolidated source, publish to PR32 and verify exact-head CI/staging. Physical visual and post-merge A–D acceptance remain owner-operated; final delivery receipt belongs in PR32.
+Homepage second/third promotion height/spacing/heading targets scale by0.90/0.78; natural mobile Studio photo and curve clearance remain protected, and content may grow rather than clip. Idle custom cursor becomes gentle grey; interactive/text/disabled cursor behavior stays unchanged. Footer adds three official app links using the same component/destinations/icons as the popup; footer blue-background proposal was cancelled and no such restyling is included.
+
+Extend existing public-route/popup geometry and destination checks, plus contrast mutation coverage, without changing test inventory. Verify the consolidated candidate, publish to PR32 and check exact-head CI/staging. Browser/device and post-merge A–D acceptance remain owner-operated. Final delivery receipt belongs in PR32.
 
 ## Remaining work
 

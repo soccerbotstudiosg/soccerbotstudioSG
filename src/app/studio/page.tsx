@@ -6,6 +6,7 @@ export const metadata = { title: "The studio" };
 export default function Studio() {
   return (
     <>
+      <p className="studio-signature">Performance · Experience · Production</p>
       <figure className="studio-hero">
         <video
           src={studioHero.src}
@@ -20,9 +21,15 @@ export default function Studio() {
         <h1 className="sr-only" id="studio-title">
           SOCCERBOTSTUDIO Singapore
         </h1>
-        <p className="studio-signature">
-          Performance · Experience · Production
-        </p>
+        <svg
+          className="promotion-edge promotion-edge--top"
+          viewBox="0 0 1440 40"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M0 0H1440V23Q720 57 0 23Z" />
+        </svg>
         {studioMedia.map((photo, index) => (
           <section
             key={photo.src}
@@ -48,22 +55,31 @@ export default function Studio() {
             </figure>
           </section>
         ))}
-        <section
-          className="studio-bottom abstract-promotion"
-          aria-labelledby="studio-book-title"
+        <svg
+          className="promotion-edge promotion-edge--bottom"
+          viewBox="0 0 1440 40"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
         >
-          <div className="abstract-promotion-heading">
-            <span className="promotion-eyebrow">Step into the arena</span>
-            <h2 id="studio-book-title">Your move.</h2>
-          </div>
-          <p>
-            Single, Team and Battle play, with full instructor guidance for your
-            group.
-          </p>
-          <BookingLink className="button promotion-cta" href="/book/account/">
-            Book now <Icon name="chevron" />
-          </BookingLink>
-        </section>
+          <path d="M0 0H1440V23Q720 57 0 23Z" />
+        </svg>
+      </section>
+      <section
+        className="studio-bottom abstract-promotion"
+        aria-labelledby="studio-book-title"
+      >
+        <div className="abstract-promotion-heading">
+          <span className="promotion-eyebrow">Step into the arena</span>
+          <h2 id="studio-book-title">Your move.</h2>
+        </div>
+        <p>
+          Single, Team and Battle play, with full instructor guidance for your
+          group.
+        </p>
+        <BookingLink className="button promotion-cta" href="/book/account/">
+          Book now <Icon name="chevron" />
+        </BookingLink>
       </section>
     </>
   );

@@ -37,6 +37,9 @@
   --color-focus: #5666a8;
   --color-identity: #176078;
   --color-contact-promotion: #d99058;
+  --color-contact-button: #f3c7a5;
+  --color-contact-button-hover: #f8d9bf;
+  --color-contact-button-border: #704024;
   --color-on-brand: #ffffff;
   --color-on-brand-muted: #dce1f1;
   --color-ink: #101636;
@@ -98,7 +101,7 @@
   body,
   body * {
     cursor:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Ccircle cx='14' cy='14' r='10' fill='%23050a2f' fill-opacity='.85' stroke='white' stroke-opacity='.9' stroke-width='1.5'/%3E%3C/svg%3E")
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Ccircle cx='14' cy='14' r='10' fill='%2392979e' fill-opacity='.85' stroke='white' stroke-opacity='.9' stroke-width='1.5'/%3E%3C/svg%3E")
         14 14,
       auto;
   }
@@ -1359,7 +1362,7 @@
   .studio-hero {
     position: relative;
     width: 100%;
-    margin: 0 0 12px;
+    margin: 0;
     background: var(--color-navy);
   }
   .studio-hero > video {
@@ -1371,18 +1374,15 @@
     object-position: center;
   }
   .studio-showcase {
+    position: relative;
     width: 100%;
     margin: 0;
-    background: var(--color-surface);
+    padding-block: 40px;
+    background: var(--color-paper);
     color: var(--color-ink);
   }
 
-  .studio-photo {
-    position: relative;
-  }
   .studio-photo img {
-    position: absolute;
-    inset: 0;
     transform: scale(var(--photo-zoom, 1));
   }
   .home-promotion,
@@ -1391,12 +1391,22 @@
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
     width: 100%;
-    margin-block: 12px;
     background: var(--color-paper);
     color: var(--color-ink);
   }
+  .home-promotion {
+    margin-block: 12px;
+  }
+  .home-promotion--studio {
+    --promotion-height-scale: 0.9;
+  }
+  .home-promotion--booking {
+    --promotion-height-scale: 0.78;
+  }
   .home-promotion--studio .promotion-copy {
-    padding-block: calc(clamp(24px, 3.75vw, 57px) + 30px);
+    padding-block: calc(
+      (clamp(24px, 3.75vw, 57px) + 30px) * var(--promotion-height-scale)
+    );
   }
   .promotion-edge {
     position: absolute;
@@ -1420,15 +1430,18 @@
   }
   .promotion-image,
   .studio-photo {
+    position: relative;
     grid-column: 1;
     grid-row: 1;
     min-width: 0;
-    min-height: 360px;
+    min-height: calc(360px * var(--promotion-height-scale, 1));
     margin: 0;
     overflow: hidden;
   }
   .promotion-image img,
   .studio-photo img {
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
     height: 100%;
@@ -1444,7 +1457,8 @@
     align-items: flex-start;
     justify-content: center;
     min-width: 0;
-    padding: clamp(24px, 3.75vw, 57px);
+    padding: calc(clamp(24px, 3.75vw, 57px) * var(--promotion-height-scale, 1))
+      clamp(24px, 3.75vw, 57px);
   }
   .home-promotion--booking .promotion-image,
   .studio-row.reverse .studio-photo {
@@ -1455,7 +1469,7 @@
     grid-column: 1;
   }
   .promotion-eyebrow {
-    margin-bottom: 16px;
+    margin-bottom: calc(16px * var(--promotion-height-scale, 1));
     font-size: var(--text-caption);
     font-weight: var(--weight-heading);
     letter-spacing: 0.14em;
@@ -1465,7 +1479,9 @@
   .studio-copy h2,
   .abstract-promotion h2 {
     max-width: 12ch;
-    font-size: clamp(2.25rem, 4vw, 4.5rem);
+    font-size: calc(
+      clamp(2.25rem, 4vw, 4.5rem) * var(--promotion-height-scale, 1)
+    );
     font-weight: var(--weight-display);
     font-style: italic;
     line-height: 1.02;
@@ -1481,11 +1497,11 @@
   }
   .promotion-copy h2,
   .studio-copy h2 {
-    margin: 0 0 18px;
+    margin: 0 0 calc(18px * var(--promotion-height-scale, 1));
   }
   .promotion-copy p,
   .studio-description {
-    margin: 0 0 21px;
+    margin: 0 0 calc(21px * var(--promotion-height-scale, 1));
   }
   .abstract-promotion h2,
   .abstract-promotion > p {
@@ -1496,7 +1512,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 12px 24px;
-    margin-bottom: 21px;
+    margin-bottom: calc(21px * var(--promotion-height-scale, 1));
     font-size: var(--text-body);
   }
   .promotion-details strong {
@@ -1506,15 +1522,28 @@
   .home-promotion .promotion-cta,
   .abstract-promotion .promotion-cta {
     border-radius: 3px 12px 3px 12px;
+    min-height: 64px;
+    padding: 18px 30px;
+    font-family: var(--font-sans);
+    font-size: var(--text-section);
+    font-weight: var(--weight-display);
+    font-style: italic;
+    letter-spacing: -0.015em;
   }
   .abstract-promotion .promotion-cta {
     background: var(--promotion-button-background, var(--color-on-brand));
-    border-color: var(--promotion-button-background, var(--color-on-brand));
+    border-color: var(
+      --promotion-button-border,
+      var(--promotion-button-background, var(--color-on-brand))
+    );
     color: var(--promotion-button-color, var(--color-brand));
   }
   .abstract-promotion .promotion-cta:hover {
     background: var(--promotion-button-hover, var(--color-brand-tint));
-    border-color: var(--promotion-button-hover, var(--color-brand-tint));
+    border-color: var(
+      --promotion-button-border,
+      var(--promotion-button-hover, var(--color-brand-tint))
+    );
     color: var(--promotion-button-color, var(--color-brand));
   }
   .abstract-promotion .promotion-cta:focus-visible {
@@ -1524,11 +1553,11 @@
   @media (max-width: 900px) {
     .promotion-image,
     .studio-photo {
-      min-height: 330px;
+      min-height: calc(330px * var(--promotion-height-scale, 1));
     }
     .promotion-copy,
     .studio-copy {
-      padding: 27px 28px;
+      padding: calc(27px * var(--promotion-height-scale, 1)) 28px;
     }
   }
   @media (max-width: 700px) {
@@ -1544,14 +1573,15 @@
       grid-column: 1;
       grid-row: 1;
       min-height: 0;
-      aspect-ratio: 16 / 10;
+      aspect-ratio: 16 / calc(10 * var(--promotion-height-scale, 1));
     }
     .home-promotion .promotion-copy,
     .studio-row .studio-copy,
     .studio-row.reverse .studio-copy {
       grid-column: 1;
       grid-row: 2;
-      padding: 24px 24px 27px;
+      padding: calc(24px * var(--promotion-height-scale, 1)) 24px
+        calc(27px * var(--promotion-height-scale, 1));
     }
     .home-promotion--studio {
       padding-top: 40px;
@@ -1560,10 +1590,11 @@
       aspect-ratio: auto;
     }
     .home-promotion--studio .promotion-image img {
+      position: static;
       height: auto;
     }
     .home-promotion--studio .promotion-copy {
-      padding-bottom: 67px;
+      padding-bottom: calc(40px + 27px * var(--promotion-height-scale));
     }
     .promotion-copy h2,
     .studio-copy h2,
@@ -1579,16 +1610,17 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: center;
-    gap: 24px;
-    min-height: 192px;
-    padding: 28px max(40px, calc((100vw - 1080px) / 2));
+    gap: 18px;
+    min-height: 134px;
+    padding: 20px max(40px, calc((100vw - 1080px) / 2));
     background-color: var(--color-brand);
     background-image:
       radial-gradient(
         ellipse at 4% 140%,
         color-mix(
           in srgb,
-          var(--promotion-accent, var(--color-identity)) 65%,
+          var(--promotion-accent, var(--color-identity))
+            var(--promotion-highlight-strong, 65%),
           transparent
         ),
         transparent 62%
@@ -1597,7 +1629,8 @@
         ellipse at 98% 0%,
         color-mix(
           in srgb,
-          var(--promotion-accent, var(--color-identity)) 35%,
+          var(--promotion-accent, var(--color-identity))
+            var(--promotion-highlight-soft, 35%),
           transparent
         ),
         transparent 65%
@@ -1606,14 +1639,27 @@
   }
   .home-promotion--contact {
     --promotion-accent: var(--color-on-brand);
-    --promotion-button-background: var(--color-brand);
-    --promotion-button-color: var(--color-on-brand);
-    --promotion-button-hover: var(--color-action-hover);
+    --promotion-button-background: var(--color-contact-button);
+    --promotion-button-color: var(--color-brand);
+    --promotion-button-hover: var(--color-contact-button-hover);
+    --promotion-button-border: var(--color-contact-button-border);
     --promotion-focus: var(--color-brand);
-    margin-block: 12px;
-    align-items: end;
+    margin: 24px 0 0;
     background-color: var(--color-contact-promotion);
     color: var(--color-brand);
+  }
+  .studio-bottom {
+    --promotion-accent: var(--color-on-brand);
+    --promotion-highlight-strong: 18%;
+    --promotion-highlight-soft: 10%;
+    margin: 24px 0 0;
+  }
+  .abstract-promotion h2 {
+    font-size: clamp(1.75rem, 2.8vw, 3.15rem);
+  }
+  .abstract-promotion > p {
+    font-size: var(--text-meta);
+    line-height: var(--leading-body);
   }
   .abstract-promotion-heading {
     min-width: 0;
@@ -1622,9 +1668,12 @@
   .abstract-promotion .promotion-eyebrow {
     text-align: center;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .abstract-promotion .promotion-cta {
+    min-height: 56px;
+    padding: 14px 24px;
+    font-size: var(--text-card);
     justify-self: end;
     width: auto;
     white-space: nowrap;
@@ -1632,7 +1681,7 @@
   @media (max-width: 900px) {
     .abstract-promotion {
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 20px 32px;
+      gap: 14px 24px;
       padding-inline: 28px;
     }
     .abstract-promotion-heading {
@@ -1649,7 +1698,7 @@
   @media (max-width: 600px) {
     .abstract-promotion {
       grid-template-columns: minmax(0, 1fr);
-      gap: 20px;
+      gap: 14px;
       padding-inline: 24px;
     }
     .abstract-promotion .promotion-cta {
@@ -1774,6 +1823,25 @@
     padding: 0 40px;
     color: var(--color-muted);
     background: var(--color-surface);
+  }
+  .footer-apps {
+    max-width: 1160px;
+    margin: auto;
+    padding: 24px 0;
+    border-top: 1px solid var(--color-line);
+    color: var(--color-ink);
+  }
+  .footer-apps h2 {
+    margin: 0 0 16px;
+    font-size: var(--text-section);
+    font-weight: var(--weight-heading);
+  }
+  .footer-apps .app-store-link {
+    border-color: var(--color-line);
+    border-radius: 3px 12px 3px 12px;
+  }
+  .footer-apps .app-store-link:hover {
+    background: var(--color-brand-soft);
   }
   .footer-inner {
     max-width: 1160px;
@@ -2820,14 +2888,14 @@
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 12px;
   }
-  .player-app-dialog .app-store-link {
+  .app-store-link {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 16px;
     border: 1px solid var(--color-action-hover);
     border-radius: 20px;
-    color: white;
+    color: inherit;
   }
   .app-store-link svg {
     width: 24px;

@@ -7,6 +7,7 @@ import { darkLogo, logo, singaporeFlag } from "@/content/media";
 import { useBooking } from "@/features/booking/provider";
 import { Dialog } from "./dialog";
 import { BookingLink } from "./booking-navigation";
+import { PlayerAppLinks } from "./player-app-links";
 import { PlayerAppPrompt } from "./player-app-prompt";
 import { Icon } from "./icon";
 /** Render shared navigation, footer and customer support controls. */
@@ -145,6 +146,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
+        <section className="footer-apps" aria-labelledby="footer-apps-title">
+          <h2 id="footer-apps-title">SOCCERBOT360 Player App</h2>
+          <PlayerAppLinks />
+        </section>
         <div className="footer-inner">
           <span>© 2026 SOCCERBOTSTUDIO Singapore. All rights reserved.</span>
           <div className="footer-links">

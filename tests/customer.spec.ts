@@ -146,7 +146,7 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(contactBanner).toHaveCSS("color", "rgb(5, 10, 47)");
   await expect(contactBanner.locator(".promotion-cta")).toHaveCSS(
     "background-color",
-    "rgb(5, 10, 47)",
+    "rgb(243, 199, 165)",
   );
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
@@ -154,6 +154,10 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(contactBox).not.toBeNull();
   expect(contactBox!.x).toBeCloseTo(0, 0);
   expect(contactBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
+  const homeFooterBox = await page.locator(".site-footer").boundingBox();
+  expect(homeFooterBox).not.toBeNull();
+  expect(homeFooterBox!.y).toBeCloseTo(contactBox!.y + contactBox!.height, 0);
+  await expect(page.locator(".footer-apps .app-store-link")).toHaveCount(3);
   await expect(
     contactBanner.getByRole("link", { name: "Contact us", exact: true }),
   ).toHaveAttribute("href", sitePath("/enquiry/"));
@@ -180,16 +184,46 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(heroBox).not.toBeNull();
   expect(contentBox).not.toBeNull();
   expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
-  expect(contentBox!.y - (heroBox!.y + heroBox!.height)).toBe(12);
+  expect(contentBox!.y).toBeCloseTo(heroBox!.y + heroBox!.height, 0);
+  const signatureBox = await page.locator(".studio-signature").boundingBox();
+  const studioHeaderBox = await page.locator(".site-header").boundingBox();
+  expect(signatureBox).not.toBeNull();
+  expect(studioHeaderBox).not.toBeNull();
+  expect(signatureBox!.y).toBeCloseTo(
+    studioHeaderBox!.y + studioHeaderBox!.height,
+    0,
+  );
+  expect(heroBox!.y).toBeCloseTo(signatureBox!.y + signatureBox!.height, 0);
+  await expect(page.locator(".studio-showcase > .promotion-edge")).toHaveCount(
+    2,
+  );
   await expect(page.locator(".studio-row")).toHaveCount(5);
+  let precedingRowBottom: number | undefined;
   for (const row of await page.locator(".studio-row").all()) {
     await expect(row).toHaveCSS("background-color", "rgb(245, 246, 250)");
     await expect(row).toHaveCSS("color", "rgb(16, 22, 54)");
+    const rowBox = await row.boundingBox();
+    expect(rowBox).not.toBeNull();
+    if (precedingRowBottom !== undefined)
+      expect(rowBox!.y).toBeCloseTo(precedingRowBottom, 0);
+    precedingRowBottom = rowBox!.y + rowBox!.height;
   }
   const studioBanner = page.locator(".studio-bottom.abstract-promotion");
   await expect(studioBanner).toBeAttached();
   await expect(studioBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(studioBanner.locator("img")).toHaveCount(0);
+  const studioBannerBox = await studioBanner.boundingBox();
+  const studioFooterBox = await page.locator(".site-footer").boundingBox();
+  expect(studioBannerBox).not.toBeNull();
+  expect(studioFooterBox).not.toBeNull();
+  expect(studioBannerBox!.y - (contentBox!.y + contentBox!.height)).toBeCloseTo(
+    24,
+    0,
+  );
+  expect(studioFooterBox!.y).toBeCloseTo(
+    studioBannerBox!.y + studioBannerBox!.height,
+    0,
+  );
   await expect(
     studioBanner.getByRole("link", { name: "Book now", exact: true }),
   ).toHaveAttribute("href", sitePath("/book/account/"));
@@ -735,7 +769,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   await expect(prompt).toBeVisible();
   await expect(prompt.locator("p")).toHaveCount(0);
   await expect(prompt.getByRole("link")).toHaveCount(3);
-  for (const [name, href] of [
+  const storeDestinations = [
     [
       "App Store",
       "https://apps.apple.com/us/app/soccerbot-player-app/id6751052041",
@@ -745,10 +779,12 @@ test("first visit offers the Player App with only store links and dismissal pers
       "https://play.google.com/store/apps/details?id=com.umbrella.soccerbot.playerapp&hl=en&pli=1",
     ],
     ["Web App", "https://app.soccerbot360.com/login"],
-  ])
+  ];
+  for (const [name, href] of storeDestinations) {
     await expect(
       prompt.getByRole("link", { name, exact: true }),
     ).toHaveAttribute("href", href);
+  }
   await expect(
     prompt.getByRole("button", { name: "Not now", exact: true }),
   ).toHaveCount(0);
@@ -759,6 +795,11 @@ test("first visit offers the Player App with only store links and dismissal pers
   await expect(close).toHaveCSS("border-top-width", "0px");
   await expect(close).toHaveCSS("color", "rgb(255, 255, 255)");
   await close.click();
+  for (const [name, href] of storeDestinations) {
+    await expect(
+      page.locator(".footer-apps").getByRole("link", { name, exact: true }),
+    ).toHaveAttribute("href", href);
+  }
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Your next session starts here." }),
