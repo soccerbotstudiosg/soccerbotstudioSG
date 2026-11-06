@@ -4930,3 +4930,7 @@ The first local source gate rejected the retired footer-detail-link selector aft
 ### 6 November 2026 — Make Studio booking gradient visible
 
 Owner reported the Book now radial highlights still looked flat. Add an identity-blue-to-navy linear gradient beneath the shared radial highlights, preserving the107px minimum-height target and zero grey spacer. Extend the existing browser background assertion and contrast policy (22→23 endpoint pairs); no test cases removed or added. Retain01950da as the previous local-verified candidate; final-head CI/staging remains pending. No merge or settings changes.
+
+### 6 November 2026 — Synchronize confirmation alignment with section motion
+
+CI42173734802 at29c0a7f, backend browser shard1/job127748244100 (artifact13483045959), failed the existing desktop confirmation label/value alignment assertion: sequential rectangle reads differed by0.646px during the new reveal animation. Read ancestor animation completion, then measure the label/value pair together in one browser frame. Preserve the original0.5px tolerance, positive confirmation assertions and all cases; no retries, sleeps or timeout changes. Worker contract/recovery/sustained/runtime checks and backend browser shard2 passed on that run; remaining gates were pending when preparing this repair. Original failure remains retained. Final-head CI/staging acceptance is still required.

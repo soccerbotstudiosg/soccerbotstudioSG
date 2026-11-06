@@ -1121,8 +1121,23 @@ test("header blue and the typography hierarchy stay consistent across every book
     page.locator(".confirmation-summary .series-list li").first(),
   ).toHaveCSS("flex-direction", "row");
   const facts = page.locator(".confirmation-details-grid .booking-facts");
-  const labelBox = await facts.locator("dt").first().boundingBox();
-  const valueBox = await facts.locator("dd").first().boundingBox();
+  const { labelBox, valueBox } = await facts.evaluate(async (element) => {
+    const animations: Animation[] = [];
+    for (
+      let ancestor: Element | null = element;
+      ancestor;
+      ancestor = ancestor.parentElement
+    )
+      animations.push(...ancestor.getAnimations());
+    await Promise.all(animations.map((animation) => animation.finished));
+    // Read the aligned pair in one frame after the containing section settles.
+    return {
+      labelBox:
+        element.querySelector("dt")?.getBoundingClientRect().toJSON() ?? null,
+      valueBox:
+        element.querySelector("dd")?.getBoundingClientRect().toJSON() ?? null,
+    };
+  });
   expect(labelBox).not.toBeNull();
   expect(valueBox).not.toBeNull();
   if (page.viewportSize()!.width <= 700) {

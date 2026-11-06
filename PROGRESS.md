@@ -25,3 +25,5 @@ Extend existing public-route/popup geometry and destination checks, plus contras
 Sticky header with measured scroll clearance; shared once-per-section scroll reveals across routes, skipping initially visible content and respecting reduced motion/focus/live announcements. Footer and legal placeholder bodies remain pure white. Local code verification and new-head CI/staging pending for this follow-up; prior6e15e65 local verification does not accept these changes. Keep PR32 open/unmerged and settings unchanged.
 
 Studio Book now now includes a visible identity-blue-to-navy linear gradient beneath the shared radial highlights; Contact keeps its orange gradient. White text contrast is checked against both gradient endpoint colours; owner visual acceptance remains pending.
+
+CI42173734802 at29c0a7f exposed sequential confirmation geometry reads during section motion (backend shard1). The prepared repair waits for ancestor animations and reads both rectangles in one frame, preserving alignment tolerance. Final-head verification/staging remains pending.
