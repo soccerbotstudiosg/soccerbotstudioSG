@@ -5,27 +5,65 @@ description: Write and review SoccerBot code by fixing the owning cause, avoidin
 
 # Code writing and repair
 
-## Authority and scope
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-Apply before application, service, Worker, styling, configuration or tooling changes and during code review. Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), then the affected business rule, contract and [code owner](../../../docs/code-owners/index.md). Inspect current source, branch/head and preserved edits; do not infer current behavior from old chat or a historical skill.
+- [1. Authority and scope](#authority-and-scope)
+- [2. “Do not patch”: repair the owning cause](#1-do-not-patch-repair-the-owning-cause)
+- [3. “Do not hardcode”: choose the authoritative source](#2-do-not-hardcode-choose-the-authoritative-source)
+- [4. Prove behavior and guard execution](#3-prove-behavior-and-guard-execution)
+- [5. Review before publication](#4-review-before-publication)
+- [6. Reference and adaptation](#reference-and-adaptation)
 
-AGENTS and explicit user instructions govern permissions. This skill does not authorize publication, merge, deployment, live provider effects or browser execution. Use the [testing](../soccerbot-testing/SKILL.md) and [documentation](../soccerbot-documentation/SKILL.md) skills; use the dependency skill when dependencies change. This is an instruction procedure, not a newly installed automated guard.
+</details>
+<!-- /document-chapter-menu -->
 
-## 1. “Do not patch”: repair the owning cause
+<a id="authority-and-scope"></a>
 
-“Patch” here means a symptom-hiding workaround layered over faulty behavior. It does not prohibit small diffs, Git patches, or the apply_patch editing tool. Prefer the smallest complete correction that preserves the contract.
+## 1. Authority and scope
 
-Before editing, identify the expected behavior, observed failure, causal path, authoritative owner and affected callers. Distinguish a product defect from obsolete tests, invalid fixtures, provider failure or missing configuration. If the cause is uncertain, gather discriminating evidence rather than guessing a repair.
+- Apply before application, service, Worker, styling, configuration or tooling changes and during code review.
+- Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), then the affected business rule, contract and [code owner](../../../docs/code-owners/index.md).
+- Inspect current source, branch/head and preserved edits; do not infer current behavior from old chat or a historical skill.
 
-- Edit the existing component, service, state transition, adapter or style owner. Remove superseded logic and update its callers in the same change. Do not add `Fixed`/`V2` duplicates, parallel state, injected DOM repairs, CSS override tails or wrapper chains that leave the original defect active.
-- Do not hide failures with catch-and-ignore, success-shaped fallback data, frontend payment assumptions, arbitrary delays, repeated verification calls or broad retry loops. A retry requires the operation's documented idempotency, bounded policy and preserved attempt identity.
-- Preserve server authority, ownership, correlation of late responses, expiry, capacity, price and duplicate-effect protection. Fix every affected path, including reload, return, recovery and consecutive bookings; a normal first journey alone is insufficient evidence.
-- Legitimate boundaries remain valid: adapters translate external contracts, caches improve reads, and compatibility paths support a documented requirement. They must have one owner, explicit entry/exit conditions and meaningful coverage; remove obsolete paths when support ends.
-- Avoid speculative rewrites or generic frameworks. If a temporary mitigation is necessary, record its evidence, limitation, owner, removal condition and regression coverage in the existing PR/Journey. Do not present it as a permanent root-cause repair or silently relax a guard.
+- AGENTS and explicit user instructions govern permissions.
+- This skill does not authorize publication, merge, deployment, live provider effects or browser execution.
+- Use the [testing](../soccerbot-testing/SKILL.md) and [documentation](../soccerbot-documentation/SKILL.md) skills; use the dependency skill when dependencies change.
+- This is an instruction procedure, not a newly installed automated guard.
 
-## 2. “Do not hardcode”: choose the authoritative source
+<a id="1-do-not-patch-repair-the-owning-cause"></a>
 
-Hardcoding means embedding a value where it can disagree with the environment, provider, approved business configuration or authoritative state. Not every literal is hardcoding. Naming a copied value as a constant does not fix the source-of-truth problem.
+## 2. “Do not patch”: repair the owning cause
+
+- “Patch” here means a symptom-hiding workaround layered over faulty behavior.
+- It does not prohibit small diffs, Git patches, or the apply_patch editing tool.
+- Prefer the smallest complete correction that preserves the contract.
+
+- Before editing, identify the expected behavior, observed failure, causal path, authoritative owner and affected callers.
+- Distinguish a product defect from obsolete tests, invalid fixtures, provider failure or missing configuration.
+- If the cause is uncertain, gather discriminating evidence rather than guessing a repair.
+
+- Edit the existing component, service, state transition, adapter or style owner.
+  - Remove superseded logic and update its callers in the same change.
+  - Do not add `Fixed`/`V2` duplicates, parallel state, injected DOM repairs, CSS override tails or wrapper chains that leave the original defect active.
+- Do not hide failures with catch-and-ignore, success-shaped fallback data, frontend payment assumptions, arbitrary delays, repeated verification calls or broad retry loops.
+  - A retry requires the operation's documented idempotency, bounded policy and preserved attempt identity.
+- Preserve server authority, ownership, correlation of late responses, expiry, capacity, price and duplicate-effect protection.
+  - Fix every affected path, including reload, return, recovery and consecutive bookings; a normal first journey alone is insufficient evidence.
+- Legitimate boundaries remain valid: adapters translate external contracts, caches improve reads, and compatibility paths support a documented requirement.
+  - They must have one owner, explicit entry/exit conditions and meaningful coverage; remove obsolete paths when support ends.
+- Avoid speculative rewrites or generic frameworks.
+  - If a temporary mitigation is necessary, record its evidence, limitation, owner, removal condition and regression coverage in the existing PR/Journey.
+  - Do not present it as a permanent root-cause repair or silently relax a guard.
+
+<a id="2-do-not-hardcode-choose-the-authoritative-source"></a>
+
+## 3. “Do not hardcode”: choose the authoritative source
+
+- Hardcoding means embedding a value where it can disagree with the environment, provider, approved business configuration or authoritative state.
+- Not every literal is hardcoding.
+- Naming a copied value as a constant does not fix the source-of-truth problem.
 
 | Value                                                                       | Required owner / treatment                                                                                                                               |
 | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -38,31 +76,57 @@ Hardcoding means embedding a value where it can disagree with the environment, p
 | Dependency, runtime and Action versions                                     | Keep reviewed exact pins and lockfiles; apply the dependency skill, do not replace pins with “latest” to avoid hardcoding                                |
 | Test expectations and fixtures                                              | Independent, explicit synthetic values are appropriate; never compute the expected result using the implementation under test or copy real customer data |
 
-Trace each changed value to its source and consumers. Use the existing configuration mechanism rather than adding an environment variable for every literal. Validate required values and fail clearly when absent; do not silently fall back to demo, stale cached authority, a different provider or an invented default. Defaults are acceptable only where the contract explicitly permits them.
+- Trace each changed value to its source and consumers.
+- Use the existing configuration mechanism rather than adding an environment variable for every literal.
+- Validate required values and fail clearly when absent; do not silently fall back to demo, stale cached authority, a different provider or an invented default.
+- Defaults are acceptable only where the contract explicitly permits them.
 
-Do not turn workflow versions or strict inventories into unexplained magic counts. Use authoritative enumeration where designed, while retaining independent expected counts/fixtures when they deliberately detect missing execution. Update all affected discovery, ordering, aggregation and rejection guards together.
+- Do not turn workflow versions or strict inventories into unexplained magic counts.
+- Use authoritative enumeration where designed, while retaining independent expected counts/fixtures when they deliberately detect missing execution.
+- Update all affected discovery, ordering, aggregation and rejection guards together.
 
-## 3. Prove behavior and guard execution
+<a id="3-prove-behavior-and-guard-execution"></a>
 
-State independently what must happen and what must not happen. Assert the positive result and relevant state/effects, together with negative safety assertions. “No error text” or exit status alone cannot prove the operation occurred. For payment/recovery, retain original attempt identity, receipt ownership and effect-count assertions.
+## 4. Prove behavior and guard execution
 
-Use the [testing skill's regression-evidence procedure](../soccerbot-testing/SKILL.md#prove-the-test-can-detect-the-defect) for bounded pre-fix/mutation proof, legitimate execution limitations and positive/negative assertions. Its [dependent-guard review](../soccerbot-testing/SKILL.md#required-dependent-guard-review) owns proof of actual guard execution, committed executable modes and rejection of missing/skipped evidence. A present test or hook is not proof that it runs or detects the defect. Use this repository's actual tools, not commands copied from another project.
+- State independently what must happen and what must not happen.
+- Assert the positive result and relevant state/effects, together with negative safety assertions.
+- “No error text” or exit status alone cannot prove the operation occurred.
+- For payment/recovery, retain original attempt identity, receipt ownership and effect-count assertions.
 
-Preserve failures. Never weaken assertions, add sleeps/retries, force clicks, enlarge deadlines, drop cases or bypass guards to obtain green. Intentional animations may be synchronized through their actual lifecycle before measuring final geometry; preserve the size requirement and confirmation timing assertions.
+- Use the [testing skill's regression-evidence procedure](../soccerbot-testing/SKILL.md#prove-the-test-can-detect-the-defect) for bounded pre-fix/mutation proof, legitimate execution limitations and positive/negative assertions.
+- Its [dependent-guard review](../soccerbot-testing/SKILL.md#required-dependent-guard-review) owns proof of actual guard execution, committed executable modes and rejection of missing/skipped evidence.
+- A present test or hook is not proof that it runs or detects the defect.
+- Use this repository's actual tools, not commands copied from another project.
 
-## 4. Review before publication
+- Preserve failures.
+- Never weaken assertions, add sleeps/retries, force clicks, enlarge deadlines, drop cases or bypass guards to obtain green.
+- Intentional animations may be synchronized through their actual lifecycle before measuring final geometry; preserve the size requirement and confirmation timing assertions.
 
-Review the full candidate, not just the latest hunk:
+<a id="4-review-before-publication"></a>
+
+## 5. Review before publication
+
+- Review the full candidate, not just the latest hunk:
 
 1. Does each change correct the owning cause without leaving a competing implementation?
 2. Are business/environment/provider values read from their correct owner, with secrets kept server-side?
 3. Are unchanged invariants preserved through alternate, failed, stale and consecutive flows?
 4. Are callers, copy locators, fixtures, titles, inventories and all dependent guards reconciled?
-5. Do checks prove intended outcomes and actual execution? Record local, CI, provider and physical evidence separately.
-6. Are code owners, contracts, scenarios and acceptance docs updated only where affected? Progress holds the latest checkpoint; Journey holds dated evidence.
+5. Do checks prove intended outcomes and actual execution?
+   - Record local, CI, provider and physical evidence separately.
+6. Are code owners, contracts, scenarios and acceptance docs updated only where affected?
+   - Progress holds the latest checkpoint;
+   - Journey holds dated evidence.
 
-Keep related work on the current appropriate branch/PR, consolidate before expensive CI and preserve existing publication/merge authority. Record a concise root-cause/owner, value-source, test-impact and remaining-risk summary in the existing PR description; no separate checklist document is required.
+- Keep related work on the current appropriate branch/PR, consolidate before expensive CI and preserve existing publication/merge authority.
+- Record a concise root-cause/owner, value-source, test-impact and remaining-risk summary in the existing PR description; no separate checklist document is required.
 
-## Reference and adaptation
+<a id="reference-and-adaptation"></a>
 
-Inspired by [ZY-Ang/clawdy CLAUDE.md](https://github.com/ZY-Ang/clawdy/blob/main/CLAUDE.md), read on 3 November 2026: explicit authority, outcome-based tests, mutation evidence and guards that fail loudly when absent. Its repository-specific `backlog-claim`, `pr-watch`, hooks and merge policy are not installed or imported here. The no-workaround and value-ownership rules above formalize this project's existing requirements. Current SoccerBot instructions and user authorization remain authoritative.
+## 6. Reference and adaptation
+
+- Inspired by [ZY-Ang/clawdy CLAUDE.md](https://github.com/ZY-Ang/clawdy/blob/main/CLAUDE.md), read on 3 November 2026: explicit authority, outcome-based tests, mutation evidence and guards that fail loudly when absent.
+- Its repository-specific `backlog-claim`, `pr-watch`, hooks and merge policy are not installed or imported here.
+- The no-workaround and value-ownership rules above formalize this project's existing requirements.
+- Current SoccerBot instructions and user authorization remain authoritative.

@@ -5,30 +5,81 @@ description: Establish SoccerBot deployment and configuration readiness from act
 
 # Deployment and configuration readiness
 
-## Authority and owners
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), the [deployment runbook](../../../docs/runbook.md#6-deployments-and-rollback), [configuration guide](../../../docs/development.md#configuration) and [deployment rules](../../../docs/business-rules.md#deployment-migration-and-acceptance). Inspect the current workflow, target manifests and release scripts; historical checkpoints do not establish current readiness.
+- [1. Authority and owners](#authority-and-owners)
+- [2. Identify the intended operation](#1-identify-the-intended-operation)
+- [3. Trace source to the release artifact](#2-trace-source-to-the-release-artifact)
+- [4. Reconcile configuration at each store](#3-reconcile-configuration-at-each-store)
+- [5. Inspect resources and operational behavior](#4-inspect-resources-and-operational-behavior)
+- [6. Diagnose deployment and verify acceptance](#5-diagnose-deployment-and-verify-acceptance)
+- [7. Readiness receipt](#6-readiness-receipt)
+- [8. Draft, staging and merge evidence](#draft-staging-and-merge-evidence)
 
-This skill owns readiness investigation and evidence-based go/hold recommendations. The runbook owns operational commands and recovery procedures; manifests own intended configuration; Progress owns current state. Apply the [testing](../soccerbot-testing/SKILL.md) and [documentation](../soccerbot-documentation/SKILL.md) skills for repairs and delivery-state changes. Use the [CI diagnosis skill](../soccerbot-ci-diagnosis/SKILL.md) for failed verification and the dependency skill when runtime/package compatibility changes. Load applicable Cloudflare/runtime skills before operating their tools.
+</details>
+<!-- /document-chapter-menu -->
 
-Explicit user instructions take precedence. Reuse authorization already given for the same scope; do not repeatedly request it. A readiness review is not permission to merge, provision, change secrets, activate schedules/providers, deploy or roll back. Prepare concrete reviewable changes and identify any still-required authorization only after completing independent authorized preparation. No assistant bookings, payments, refunds, cancellations or notification sends. Never print secret values, tokens, EPP codes or customer records. This skill is not an automatic deploy hook or standing monitor.
+<a id="authority-and-owners"></a>
 
-## 1. Identify the intended operation
+## 1. Authority and owners
 
-State the exact target and intended outcome: read-only inspection, installation with effects disabled, separate foundation setup, normal release, configuration repair, activation or rollback. Distinguish sandbox credentials on a production-named Worker from real production payment readiness. Identify existing authorizations and explicit exclusions, including any protected run/resource; preserve unknown edits and existing deployments.
+- Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), the [deployment runbook](../../../docs/runbook.md#6-deployments-and-rollback), [configuration guide](../../../docs/development.md#configuration) and [deployment rules](../../../docs/business-rules.md#deployment-migration-and-acceptance).
+- Inspect the current workflow, target manifests and release scripts; historical checkpoints do not establish current readiness.
 
-Verify the repository, branch/head, checkout path, PR/merge status, workflow event and actor against current evidence. Confirm which repository owns deployment and prevent the retired repository from remaining a second deployer. A display name, authenticated connector or ready token does not prove account/resource ownership. Verify numeric account IDs and resource IDs against the reviewed target; compare staging and production explicitly. Never copy credentials or replace resource identity merely to make a deployment pass.
+- This skill owns readiness investigation and evidence-based go/hold recommendations.
+- The runbook owns operational commands and recovery procedures; manifests own intended configuration;
+- Progress owns current state.
+- Apply the [testing](../soccerbot-testing/SKILL.md) and [documentation](../soccerbot-documentation/SKILL.md) skills for repairs and delivery-state changes.
+- Use the [CI diagnosis skill](../soccerbot-ci-diagnosis/SKILL.md) for failed verification and the dependency skill when runtime/package compatibility changes.
+- Load applicable Cloudflare/runtime skills before operating their tools.
 
-## 2. Trace source to the release artifact
+- Explicit user instructions take precedence.
+- Reuse authorization already given for the same scope; do not repeatedly request it.
+- A readiness review is not permission to merge, provision, change secrets, activate schedules/providers, deploy or roll back.
+- Prepare concrete reviewable changes and identify any still-required authorization only after completing independent authorized preparation.
+- No assistant bookings, payments, refunds, cancellations or notification sends.
+- Never print secret values, tokens, EPP codes or customer records.
+- This skill is not an automatic deploy hook or standing monitor.
 
-- Match the exact source revision, repository, target/configuration, successful verification run and attempt, expected job set, artifact identity/digest and release receipt. Read the actual eligibility logic; do not assume a skipped deployment failed or that a green PR deployed anything.
-- For trusted PR staging, verify the current PR head and trust/eligibility rules. Keep forks, Dependabot and other untrusted events away from deployment credentials. For main production, independently verify the merged main revision; PR CI is not main evidence. Retain every configured release prerequisite, including Worker verification.
-- Deploy the reviewed artifact through the existing release procedure; do not silently rebuild under different environment values. Confirm embedded public build-time configuration separately from Worker runtime bindings.
-- Before recommending a release, inspect rollback compatibility, known prior artifact availability and any storage/migration constraints. Source rollback does not undo data changes, provider effects or secrets. Do not modify accepted migrations or reset storage to recover a failed release.
+<a id="1-identify-the-intended-operation"></a>
 
-## 3. Reconcile configuration at each store
+## 2. Identify the intended operation
 
-Build a compact expected/observed/gap comparison in the existing PR or operational owner, not a duplicate secret inventory. For sensitive values record names, scope and verification state only; presence does not prove correctness, validity or provider ownership.
+- State the exact target and intended outcome: read-only inspection, installation with effects disabled, separate foundation setup, normal release, configuration repair, activation or rollback.
+- Distinguish sandbox credentials on a production-named Worker from real production payment readiness.
+- Identify existing authorizations and explicit exclusions, including any protected run/resource; preserve unknown edits and existing deployments.
+
+- Verify the repository, branch/head, checkout path, PR/merge status, workflow event and actor against current evidence.
+- Confirm which repository owns deployment and prevent the retired repository from remaining a second deployer.
+- A display name, authenticated connector or ready token does not prove account/resource ownership.
+- Verify numeric account IDs and resource IDs against the reviewed target; compare staging and production explicitly.
+- Never copy credentials or replace resource identity merely to make a deployment pass.
+
+<a id="2-trace-source-to-the-release-artifact"></a>
+
+## 3. Trace source to the release artifact
+
+- Match the exact source revision, repository, target/configuration, successful verification run and attempt, expected job set, artifact identity/digest and release receipt.
+  - Read the actual eligibility logic; do not assume a skipped deployment failed or that a green PR deployed anything.
+- For trusted PR staging, verify the current PR head and trust/eligibility rules.
+  - Keep forks, Dependabot and other untrusted events away from deployment credentials.
+  - For main production, independently verify the merged main revision;
+  - PR CI is not main evidence.
+  - Retain every configured release prerequisite, including Worker verification.
+- Deploy the reviewed artifact through the existing release procedure; do not silently rebuild under different environment values.
+  - Confirm embedded public build-time configuration separately from Worker runtime bindings.
+- Before recommending a release, inspect rollback compatibility, known prior artifact availability and any storage/migration constraints.
+  - Source rollback does not undo data changes, provider effects or secrets.
+  - Do not modify accepted migrations or reset storage to recover a failed release.
+
+<a id="3-reconcile-configuration-at-each-store"></a>
+
+## 4. Reconcile configuration at each store
+
+- Build a compact expected/observed/gap comparison in the existing PR or operational owner, not a duplicate secret inventory.
+- For sensitive values record names, scope and verification state only; presence does not prove correctness, validity or provider ownership.
 
 | Surface                      | What to verify                                                                                                                                                                                                               |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,28 +90,64 @@ Build a compact expected/observed/gap comparison in the existing PR or operation
 | Cloud Containers/local setup | Selected checkout and pins, installed dependencies/browser image, helper/runtime instructions and externally published settings. Repository updates do not republish the environment.                                        |
 | Provider configuration       | Correct company/merchant/sender, entitlements, schedules and capacity, callback/webhook/return URLs, enabled events, signing/authentication pairing and domain/sitekey origins. Preserve unrelated staging mappings.         |
 
-Use existing validators and safe names-only metadata first. If a connector cannot inspect secret presence or a platform blocks access, state the specific unknown and request only the minimum owner evidence. Never ask for a secret to be pasted into chat. Do not interpret a placeholder, absent metadata or masked value as working credentials. Keep DNS activation, registrar transfer, email authentication and certificate issuance/renewal evidence separate; preserve existing mail records.
+- Use existing validators and safe names-only metadata first.
+- If a connector cannot inspect secret presence or a platform blocks access, state the specific unknown and request only the minimum owner evidence.
+- Never ask for a secret to be pasted into chat.
+- Do not interpret a placeholder, absent metadata or masked value as working credentials.
+- Keep DNS activation, registrar transfer, email authentication and certificate issuance/renewal evidence separate; preserve existing mail records.
 
-## 4. Inspect resources and operational behavior
+<a id="4-inspect-resources-and-operational-behavior"></a>
 
-Confirm existing subscriptions, resource ownership, migrations and bindings before any authorized provisioning. Preserve D1 data, DO namespace/class/name/ID and foundation registration; repeated deployment must not create a second coordinator or reset state. Check installation/recovery and incorrect-account rejection through the existing tests and receipts. Idempotency must be demonstrated for the actual operation, including behavior after partial failure, not inferred from a second successful invocation.
+## 5. Inspect resources and operational behavior
 
-Treat D1 placement, Worker execution and coordinator execution as different observations. A placement hint is not a guarantee; a Worker edge location does not prove DO location. Correlate authorized telemetry with the exact coordinator identity and invocation, distinguish storage placement from observed execution, and label historical observations.
+- Confirm existing subscriptions, resource ownership, migrations and bindings before any authorized provisioning.
+- Preserve D1 data, DO namespace/class/name/ID and foundation registration; repeated deployment must not create a second coordinator or reset state.
+- Check installation/recovery and incorrect-account rejection through the existing tests and receipts.
+- Idempotency must be demonstrated for the actual operation, including behavior after partial failure, not inferred from a second successful invocation.
 
-Review persistent schedules, recovery switches, calendar warming, monitoring ingestion/redaction, alerts, access protection and cost implications when affected. A configured cron is not evidence of successful execution; an installed secret is not proof of provider authentication; a telemetry flag is not proof of receiver ingestion. Staging can remain reachable after production launches: assess its exposure and test-data boundary explicitly without assuming it inherits production access controls.
+- Treat D1 placement, Worker execution and coordinator execution as different observations.
+- A placement hint is not a guarantee; a Worker edge location does not prove DO location.
+- Correlate authorized telemetry with the exact coordinator identity and invocation, distinguish storage placement from observed execution, and label historical observations.
 
-## 5. Diagnose deployment and verify acceptance
+- Review persistent schedules, recovery switches, calendar warming, monitoring ingestion/redaction, alerts, access protection and cost implications when affected.
+- A configured cron is not evidence of successful execution; an installed secret is not proof of provider authentication; a telemetry flag is not proof of receiver ingestion.
+- Staging can remain reachable after production launches: assess its exposure and test-data boundary explicitly without assuming it inherits production access controls.
 
-Read the failing step and receipt before changing configuration or rerunning. Distinguish eligibility rejection, build/artifact failure, account/API permission failure, partial upload, runtime configuration error, foundation state, route propagation and provider failure. A failed workflow may still have created resources or deployed a version: inspect actual state before retrying. A later successful request does not prove the earlier cause was propagation.
+<a id="5-diagnose-deployment-and-verify-acceptance"></a>
 
-After an authorized operation, verify the actual revision/configuration and public health where accessible. Distinguish Worker-created, closed foundation ready, enabled sandbox checkout, live-provider readiness and owner acceptance. A dashboard/API deployment record cannot substitute for public-route health; a network-policy failure cannot prove the site is down. Use bounded checks through approved paths, preserve failures and identify remaining evidence. Do not bypass network controls or extend production traffic without scope.
+## 6. Diagnose deployment and verify acceptance
 
-Use the existing Admin/Trainer/Simulated-user UAT owners for real provider/device acceptance. Do not mark payment, email, webhook, recovery, rollback or monitoring delivery accepted from configuration or synthetic CI alone.
+- Read the failing step and receipt before changing configuration or rerunning.
+- Distinguish eligibility rejection, build/artifact failure, account/API permission failure, partial upload, runtime configuration error, foundation state, route propagation and provider failure.
+- A failed workflow may still have created resources or deployed a version: inspect actual state before retrying.
+- A later successful request does not prove the earlier cause was propagation.
 
-## 6. Readiness receipt
+- After an authorized operation, verify the actual revision/configuration and public health where accessible.
+- Distinguish Worker-created, closed foundation ready, enabled sandbox checkout, live-provider readiness and owner acceptance.
+- A dashboard/API deployment record cannot substitute for public-route health; a network-policy failure cannot prove the site is down.
+- Use bounded checks through approved paths, preserve failures and identify remaining evidence.
+- Do not bypass network controls or extend production traffic without scope.
 
-Report the target/operation and authorization; exact repository/source/run/artifact; verified account/resource identities; configuration gaps without secret values; observed health/runtime/provider evidence; rollback constraints; and a **go** or **hold** recommendation with the exact remaining step. Distinguish prepared, verified, deployed, activated and owner-accepted states. Update existing Progress/Journey and affected operational owners under the documentation skill. No unconditional readiness claim while required evidence is missing, and no extra status-only commits merely to restate green CI.
+- Use the existing Admin/Trainer/Simulated-user UAT owners for real provider/device acceptance.
+- Do not mark payment, email, webhook, recovery, rollback or monitoring delivery accepted from configuration or synthetic CI alone.
 
-## Draft, staging and merge evidence
+<a id="6-readiness-receipt"></a>
 
-Apply the mandatory draft→ready→verified staging→owner acceptance→merge sequence in root AGENTS.md and the runbook deployment procedure. Continue related changes on the existing draft and disclose inherited changes for dependent PRs. Verify an actual successful staging deployment and exact revision; draft CI, ready status and green eligibility-only workflows are insufficient. A source change invalidates acceptance of the prior candidate. Bot/fork automatic exclusions require the reviewed trusted staging path rather than an implied exception. Report the current automation gap honestly: main production deployment does not yet require a staging-acceptance receipt. Consolidate source/fixture/guard/docs changes before CI and reuse valid evidence.
+## 7. Readiness receipt
+
+- Report the target/operation and authorization; exact repository/source/run/artifact; verified account/resource identities; configuration gaps without secret values; observed health/runtime/provider evidence; rollback constraints; and a **go** or **hold** recommendation with the exact remaining step.
+- Distinguish prepared, verified, deployed, activated and owner-accepted states.
+- Update existing Progress/Journey and affected operational owners under the documentation skill.
+- No unconditional readiness claim while required evidence is missing, and no extra status-only commits merely to restate green CI.
+
+<a id="draft-staging-and-merge-evidence"></a>
+
+## 8. Draft, staging and merge evidence
+
+- Apply the mandatory draft→ready→verified staging→owner acceptance→merge sequence in root AGENTS.md and the runbook deployment procedure.
+- Continue related changes on the existing draft and disclose inherited changes for dependent PRs.
+- Verify an actual successful staging deployment and exact revision; draft CI, ready status and green eligibility-only workflows are insufficient.
+- A source change invalidates acceptance of the prior candidate.
+- Bot/fork automatic exclusions require the reviewed trusted staging path rather than an implied exception.
+- Report the current automation gap honestly: main production deployment does not yet require a staging-acceptance receipt.
+- Consolidate source/fixture/guard/docs changes before CI and reuse valid evidence.

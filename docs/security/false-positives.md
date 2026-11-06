@@ -1,40 +1,119 @@
 # Security finding assessments and false positives
 
-This document owns source-specific assessments, confirmed repairs, regression evidence and remaining proof. [Security infrastructure](security-infrastructure.md) owns controls and trust boundaries. An assessment is not an alert dismissal, scanner suppression, penetration test or universal safety claim. Reassess when the source, dependency, caller or trust boundary changes.
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-## Observed findings and disposition
+- [1. Observed findings and disposition](#observed-findings-and-disposition)
+  - [1.1. Minimatch advisory disposition](#minimatch-advisory-disposition)
+- [2. Regression evidence and remaining proof](#regression-evidence-and-remaining-proof)
+- [3. Proof requiring separate acceptance](#proof-requiring-separate-acceptance)
+  - [3.1. Browser evidence metadata](#browser-evidence-metadata)
 
-| Finding                                                              | Evidence and disposition                                                                                                                                                                                                                                                                                                                                                                                                             | Limit / next action                                                                                                                                                                                                                                                                |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CodeQL incomplete URL substring sanitization in HitPay test fixtures | Confirmed weak test-call classification: `url.includes("hit-pay.com")` accepted a hostile URL containing the string in its path, query or hostname. The shared fixture now parses the URL and compares the exact approved hostname. [Adversarial regression](../../scripts/provider-url-fixture.test.mjs) retains positive sandbox/live API classification and rejects deceptive hosts, userinfo-to-foreign-host, paths and queries. | This is test-fixture classification, not production checkout URL authorization. Do not classify all 51 reported findings as false positives. Owner's dated main screenshot showed 0 open / 51 closed after PR25; that is not a fresh API inventory or proof of no vulnerabilities. |
-| Minimatch advisory                                                   | Modern scoped dependency updated; legacy v3 was reported on4 November. The5 November npm audit reports zero findings. See the detailed disposition below.                                                                                                                                                                                                                                                                            | GitHub alert closure remains unverified. No audit suppression, alert dismissal or global incompatible override.                                                                                                                                                                    |
-| Cache diagnostic metadata                                            | PR26's original logger spread all supplied details into console output. A synthetic payload could add customer/token/URL fields and overwrite event identity. Current call sites supply controlled metadata; no observed customer leak is claimed. Runtime field/value allowlisting now rejects that unsafe extension path.                                                                                                          | Confirmed hardening gap, not a false positive. Unknown error codes lose specificity rather than exporting unreviewed text. Extend the reviewed vocabulary only with corresponding evidence.                                                                                        |
+</details>
+<!-- /document-chapter-menu -->
 
-### Minimatch advisory disposition (4 November 2026)
+- This document owns source-specific assessments, confirmed repairs, regression evidence and remaining proof.
+- [Security infrastructure](security-infrastructure.md) owns controls and trust boundaries.
+- An assessment is not an alert dismissal, scanner suppression, penetration test or universal safety claim.
+- Reassess when the source, dependency, caller or trust boundary changes.
 
-[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) reports versions below 11.0.1. The lint dependency tree contained 10.2.6 under typescript-estree and 3.1.5 under ESLint/plugins. The scoped manifest override upgrades only typescript-estree to 11.0.4, whose named `minimatch()` API matches that caller. Remove the override when its upstream dependency range includes the reviewed fixed release.
+<a id="observed-findings-and-disposition"></a>
 
-Legacy 3.1.5 was reported on4 November by the advisory's broad range. Its source lacks the described `firstPhasePreProcess`/`optimizationLevel` machinery, introduced in later majors; this is evidence about that mechanism, not a dismissed alert or a clean vulnerability report. Version 3 callers require the callable CommonJS export and, in some rules, `makeRe()`. Version 11 removes those APIs, so a global override is incompatible. Do not dismiss the GitHub alert solely from this source assessment; verify its current disposition and advisory range before claiming closure. Do not suppress the audit or downgrade ESLint to follow an unsafe automatic fix suggestion. These are development dependencies; installed CI tooling still warrants security review.
+## 1. Observed findings and disposition
 
-A fresh locked-tree `npm audit --json` on5 November2026 returned zero findings at every severity and exit0; `/tmp/security-followup-audit.json` retains the receipt. The installed legacy3.1.5 still exposes its callable CommonJS API and `makeRe()`, and its source lacks the named amplification preprocessor. No dependency was changed by this follow-up. The fresh audit supersedes the old npm count, but does not establish GitHub alert closure or deployed remediation.
+- **CodeQL incomplete URL substring sanitization in HitPay test fixtures**
+  - **Evidence and disposition:** Confirmed weak test-call classification: `url.includes("hit-pay.com")` accepted a hostile URL containing the string in its path, query or hostname.
+    - The shared fixture now parses the URL and compares the exact approved hostname.
+    - [Adversarial regression](../../scripts/provider-url-fixture.test.mjs) retains positive sandbox/live API classification and rejects deceptive hosts, userinfo-to-foreign-host, paths and queries.
+  - **Limit / next action:** This is test-fixture classification, not production checkout URL authorization.
+    - Do not classify all 51 reported findings as false positives.
+    - Current alert closure requires fresh account evidence; it is not proof of no vulnerabilities.
 
-## Regression evidence and remaining proof
+- **Minimatch advisory**
+  - **Evidence and disposition:** Scoped dependency override is reviewed below; assess the current audit and GitHub alert independently.
+  - **Limit / next action:** GitHub alert closure remains unverified.
+    - No audit suppression, alert dismissal or global incompatible override.
 
-| Boundary / disposition                             | Independent expectation and evidence owner                                                                                                                                                                                                                                                                                                                                                                                 | What this does not prove                                                                                                    |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Cache logging — add two cases                      | [Telemetry suite](../../worker/tests/telemetry.test.mjs): all nine lifecycle phases retain exact safe fields and false/zero values; sensitive extra fields cannot override identity, malformed UUID/phase/trigger emits nothing, invalid month/count/timing is omitted, unreviewed error text becomes a fixed fallback. The synthetic canary regression fails on the original spread at the exact logged-object assertion. | No claim of past exploitation, complete account-log review or active Grafana ingestion.                                     |
-| Deferred cache export — retain boundary explicitly | The same suite passes actual cache records to the existing Tail sanitizer and requires rejection. Existing tests cover raw Tail payload rejection, sensitive labels, sampling, receiver URL restrictions and exporter timeout/failure isolation.                                                                                                                                                                           | Not a newly activated exporter or guaranteed log delivery.                                                                  |
-| HitPay URL classification — retain                 | [URL fixture regression](../../scripts/provider-url-fixture.test.mjs) checks known positive hosts and hostile lookalikes. Prior substring implementation failed the spoofed-path assertion in PR25.                                                                                                                                                                                                                        | Does not permit live payments or replace production transport checks.                                                       |
-| Payment, signatures and recovery — retain          | [HitPay](../../worker/tests/hitpay.test.mjs) verifies raw-byte signatures, foreign references, money/currency/refund/status mismatch, duplicate delivery and unknown-write recovery without another POST. [Webhook](../../worker/tests/webhook.test.mjs) verifies forged signatures, body bounds, replay and durable acknowledgement.                                                                                      | Synthetic provider/storage tests do not establish actual merchant configuration or live payment acceptance.                 |
-| Identity, isolation and retained secrets — retain  | [Identity](../../worker/tests/identity.test.mjs), [foundation](../../worker/tests/foundation.test.mjs) and [provider](../../worker/tests/provider.test.mjs) exercise owner/scope/revocation and provider-token persistence/recovery. See the control map for the owning contracts.                                                                                                                                         | No verification of operator MFA, external mailbox security, production secret rotation or restore.                          |
-| Verification completeness — update                 | [Worker guard suite](../../scripts/worker-groups.test.mjs) checks exact suite coverage, declaration ordering and rejection of incomplete/foreign/mixed receipts. The prior diagnostic batch raised475→477. The PR27 recovery/cache batch adds five cases:482 total, groups123/195/164; original completeness/rejection guards remain.                                                                                      | An inventory match alone does not prove a test detects a defect; the pre-fix failure supplies that evidence for the logger. |
+- **Cache diagnostic metadata**
+  - **Evidence and disposition:** Unrestricted logger detail spreading can expose sensitive fields.
+    - A synthetic payload could add customer/token/URL fields and overwrite event identity.
+    - Current call sites supply controlled metadata; no observed customer leak is claimed.
+    - Runtime field/value allowlisting now rejects that unsafe extension path.
+  - **Limit / next action:** Confirmed hardening gap, not a false positive.
+    - Unknown error codes lose specificity rather than exporting unreviewed text.
+    - Extend the reviewed vocabulary only with corresponding evidence.
 
-Exact commands, failures and completed validation belong in [Journey](../journey.md); [Progress](../../PROGRESS.md) owns the current checkpoint. A former green revision does not accept a changed head.
+<a id="minimatch-advisory-disposition"></a>
 
-## Proof requiring separate acceptance
+### 1.1. Minimatch advisory disposition
 
-Do not manufacture local tests for external settings. Current-account secret scanning/push protection, protection rules and alert state require actual GitHub evidence. DNS/TLS renewal, WAF/edge abuse controls, operator roles/MFA, provider entitlements, final payment journeys, actual telemetry ingestion/alert delivery and populated backup/restore require their respective environment or owner checks. [Security infrastructure](security-infrastructure.md#11-additional-layers-to-adopt) links the remaining layers; [Runbook](../runbook.md) owns procedures. They remain unverified until evidenced; no service activation, external action or blanket security acceptance follows from this PR.
+- [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) reports versions below 11.0.1.
+- The lint dependency tree contained 10.2.6 under typescript-estree and 3.1.5 under ESLint/plugins.
+- The scoped manifest override upgrades only typescript-estree to 11.0.4, whose named `minimatch()` API matches that caller.
+- Remove the override when its upstream dependency range includes the reviewed fixed release.
 
-### Browser evidence metadata
+- Legacy3.1.5 requires separate mechanism/API compatibility assessment.
+- Its source lacks the described `firstPhasePreProcess`/`optimizationLevel` machinery, introduced in later majors; this is evidence about that mechanism, not a dismissed alert or a clean vulnerability report.
+- Version 3 callers require the callable CommonJS export and, in some rules, `makeRe()`.
+- Version 11 removes those APIs, so a global override is incompatible.
+- Do not dismiss the GitHub alert solely from this source assessment; verify its current disposition and advisory range before claiming closure.
+- Do not suppress the audit or downgrade ESLint to follow an unsafe automatic fix suggestion.
+- These are development dependencies; installed CI tooling still warrants security review.
 
-PR26's first follow-up CI passed browser execution but failed report aggregation because Playwright's truncated diagnostic Git-diff preview differed in Unicode replacement characters. The combiner compares substantive configuration while retaining the original preview as evidence; only `metadata.gitDiff` is excluded. [Regression tests](../../scripts/browser-shards.test.mjs) prove that changed commit identity, worker count, retries and other configuration remain rejected. Exact source/export/run binding remains independently required. Saved-report replay proves the aggregation repair, not acceptance of a new source head; see [Journey](../journey.md) for the failed run and replay counts.
+- The installed legacy3.1.5 still exposes its callable CommonJS API and `makeRe()`, and its source lacks the named amplification preprocessor.
+
+<a id="regression-evidence-and-remaining-proof"></a>
+
+## 2. Regression evidence and remaining proof
+
+- **Cache logging — add two cases**
+  - **Independent expectation and evidence owner:** [Telemetry suite](../../worker/tests/telemetry.test.mjs): all nine lifecycle phases retain exact safe fields and false/zero values; sensitive extra fields cannot override identity, malformed UUID/phase/trigger emits nothing, invalid month/count/timing is omitted, unreviewed error text becomes a fixed fallback.
+    - The synthetic canary regression fails on the original spread at the exact logged-object assertion.
+  - **What this does not prove:** No claim of past exploitation, complete account-log review or active Grafana ingestion.
+
+- **Deferred cache export — retain boundary explicitly**
+  - **Independent expectation and evidence owner:** The same suite passes actual cache records to the existing Tail sanitizer and requires rejection.
+    - Existing tests cover raw Tail payload rejection, sensitive labels, sampling, receiver URL restrictions and exporter timeout/failure isolation.
+  - **What this does not prove:** Not a newly activated exporter or guaranteed log delivery.
+
+- **HitPay URL classification — retain**
+  - **Independent expectation and evidence owner:** [URL fixture regression](../../scripts/provider-url-fixture.test.mjs) checks known positive hosts and hostile lookalikes.
+    - Spoofed-path rejection is a required regression.
+  - **What this does not prove:** Does not permit live payments or replace production transport checks.
+
+- **Payment, signatures and recovery — retain**
+  - **Independent expectation and evidence owner:** [HitPay](../../worker/tests/hitpay.test.mjs) verifies raw-byte signatures, foreign references, money/currency/refund/status mismatch, duplicate delivery and unknown-write recovery without another POST.
+    - [Webhook](../../worker/tests/webhook.test.mjs) verifies forged signatures, body bounds, replay and durable acknowledgement.
+  - **What this does not prove:** Synthetic provider/storage tests do not establish actual merchant configuration or live payment acceptance.
+
+- **Identity, isolation and retained secrets — retain**
+  - **Independent expectation and evidence owner:** [Identity](../../worker/tests/identity.test.mjs), [foundation](../../worker/tests/foundation.test.mjs) and [provider](../../worker/tests/provider.test.mjs) exercise owner/scope/revocation and provider-token persistence/recovery.
+    - See the control map for the owning contracts.
+  - **What this does not prove:** No verification of operator MFA, external mailbox security, production secret rotation or restore.
+
+- **Verification completeness — update**
+  - **Independent expectation and evidence owner:** [Worker guard suite](../../scripts/worker-groups.test.mjs) checks exact suite coverage, declaration ordering and rejection of incomplete/foreign/mixed receipts.
+    - Current exact inventory is owned by `scripts/worker-test-inventory.json`; completeness/rejection guards remain mandatory.
+  - **What this does not prove:** An inventory match alone does not prove a test detects a defect; the pre-fix failure supplies that evidence for the logger.
+
+- Exact commands, failures and completed validation belong in [Journey](../journey.md); [Progress](../../PROGRESS.md) owns the current checkpoint.
+- A former green revision does not accept a changed head.
+
+<a id="proof-requiring-separate-acceptance"></a>
+
+## 3. Proof requiring separate acceptance
+
+- Do not manufacture local tests for external settings.
+- Current-account secret scanning/push protection, protection rules and alert state require actual GitHub evidence.
+- DNS/TLS renewal, WAF/edge abuse controls, operator roles/MFA, provider entitlements, final payment journeys, actual telemetry ingestion/alert delivery and populated backup/restore require their respective environment or owner checks.
+- [Security infrastructure](security-infrastructure.md#11-additional-layers-to-adopt) links the remaining layers; [Runbook](../runbook.md) owns procedures.
+- They remain unverified until evidenced; no service activation, external action or blanket security acceptance follows from this PR.
+
+<a id="browser-evidence-metadata"></a>
+
+### 3.1. Browser evidence metadata
+
+- The combiner compares substantive configuration while retaining the original preview as evidence; only `metadata.gitDiff` is excluded.
+- [Regression tests](../../scripts/browser-shards.test.mjs) prove that changed commit identity, worker count, retries and other configuration remain rejected.
+- Exact source/export/run binding remains independently required.

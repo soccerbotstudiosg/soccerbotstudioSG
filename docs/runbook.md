@@ -1,10 +1,51 @@
 # SoccerBot operations runbook
 
-See [External providers configuration](external-providers-config.md) for SimplyBook, Resend, HitPay and Cloudflare settings, environment differences and verification limits.
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-Draft — 28 October 2026. For authorised operators of the existing developer deployment and the forthcoming client deployment. Procedures marked pending are handover work, not evidence that an integration is running. Confirm the current revision, account and environment before acting. [Progress](../PROGRESS.md) owns current evidence/blockers; [Business rules](business-rules.md) owns system rules; [Development guide](development.md#configuration) owns configuration reference. This document owns operational procedures. [Security infrastructure](security/security-infrastructure.md) explains trust boundaries, current controls and proposed additional layers.
+- [1. Ownership and access](#1-ownership-and-access)
+- [2. Routine checks](#2-routine-checks)
+- [3. Dependency maintenance and Dependabot](#3-dependency-maintenance-and-dependabot)
+  - [3.1. What to expect on Mondays](#what-to-expect-on-mondays)
+  - [3.2. Update and remediation procedure](#update-and-remediation-procedure)
+- [4. Monitoring and observability](#4-monitoring-and-observability)
+  - [4.1. Current implementation and activation status](#current-implementation-and-activation-status)
+  - [4.2. What is exported and what it means](#what-is-exported-and-what-it-means)
+  - [4.3. Token event dictionary](#token-event-dictionary)
+  - [4.4. Dashboard panels and investigation](#dashboard-panels-and-investigation)
+  - [4.5. Sampling, gaps and export diagnostics](#sampling-gaps-and-export-diagnostics)
+  - [4.6. Alerts to configure before handover](#alerts-to-configure-before-handover)
+  - [4.7. Alert routing and acceptance record](#alert-routing-and-acceptance-record)
+- [5. Incident response and recovery](#5-incident-response-and-recovery)
+  - [5.1. Protected receipt diagnostics and retired downloads](#protected-receipt-diagnostics-and-retired-downloads)
+- [6. Deployments and rollback](#6-deployments-and-rollback)
+  - [6.1. Closed production foundation registration](#closed-production-foundation-registration)
+  - [6.2. Trainer-choice rollout and recovery](#trainer-choice-rollout-and-recovery)
+- [7. Data protection and restore](#7-data-protection-and-restore)
+  - [7.1. Recovery targets and actual capability](#recovery-targets-and-actual-capability)
+  - [7.2. Restore procedure to rehearse — not yet executed](#restore-procedure-to-rehearse--not-yet-executed)
+  - [7.3. Restore evidence worksheet](#restore-evidence-worksheet)
+- [8. Domain, DNS and HTTPS](#8-domain-dns-and-https)
+- [9. Operational records and handover](#9-operational-records-and-handover)
+  - [9.1. Client bootstrap and staging exposure](#client-bootstrap-and-staging-exposure)
+  - [9.2. Calendar cache population failures](#calendar-cache-population-failures)
+  - [9.3. Growing trainer rosters — calendar readiness](#growing-trainer-rosters--calendar-readiness)
+  - [9.4. Browser confirmation timing capture](#browser-confirmation-timing-capture)
 
-Navigation: [Ownership](#1-ownership-and-access) · [Routine checks](#2-routine-checks) · [Dependencies](#3-dependency-maintenance-and-dependabot) · [Grafana](#4-monitoring-and-observability) · [Incidents](#5-incident-response-and-recovery) · [Deployments](#6-deployments-and-rollback) · [Data recovery](#7-data-protection-and-restore) · [DNS/HTTPS](#8-domain-dns-and-https) · [Handover](#9-operational-records-and-handover).
+</details>
+<!-- /document-chapter-menu -->
+
+- See [External providers configuration](external-providers-config.md) for SimplyBook, Resend, HitPay and Cloudflare settings, environment differences and verification limits.
+
+- For authorised operators of the existing developer deployment and the forthcoming client deployment.
+- Procedures marked pending are handover work, not evidence that an integration is running.
+- Confirm the current revision, account and environment before acting.
+- [Progress](../PROGRESS.md) owns current evidence/blockers; [Business rules](business-rules.md) owns system rules; [Development guide](development.md#configuration) owns configuration reference.
+- This document owns operational procedures.
+- [Security infrastructure](security/security-infrastructure.md) explains trust boundaries, current controls and proposed additional layers.
+
+- Navigation: [Ownership](#1-ownership-and-access) · [Routine checks](#2-routine-checks) · [Dependencies](#3-dependency-maintenance-and-dependabot) · [Grafana](#4-monitoring-and-observability) · [Incidents](#5-incident-response-and-recovery) · [Deployments](#6-deployments-and-rollback) · [Data recovery](#7-data-protection-and-restore) · [DNS/HTTPS](#8-domain-dns-and-https) · [Handover](#9-operational-records-and-handover).
 
 ## 1. Ownership and access
 
@@ -19,9 +60,12 @@ Navigation: [Ownership](#1-ownership-and-access) · [Routine checks](#2-routine-
 | Customer-domain DNS                             | Current DNS operator → client operator after accepted migration | Preserves existing DNS/email during registrar transfer; client DNS ownership starts only after verified delegation |
 | Central Grafana and alert delivery              | Owner company monitoring operator                               | Separate environment credentials, dashboards, alert receivers and retention                                        |
 
-Populate named primary/backup contacts and provider support channels in the owner-controlled access inventory before handover. Do not store passwords, API keys, bank details or recovery codes here. Complete MFA and billing arrangements. Confirm least-privilege access with each provider; being a SimplyBook Admin does not grant HitPay or Cloudflare authority.
+- Populate named primary/backup contacts and provider support channels in the owner-controlled access inventory before handover.
+- Do not store passwords, API keys, bank details or recovery codes here.
+- Complete MFA and billing arrangements.
+- Confirm least-privilege access with each provider; being a SimplyBook Admin does not grant HitPay or Cloudflare authority.
 
-Current identity reference (verify against the actual target before changes):
+- Current identity reference (verify against the actual target before changes):
 
 | Environment                | Identity / source                                                                                                               |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,7 +77,7 @@ Current identity reference (verify against the actual target before changes):
 
 ## 2. Routine checks
 
-Suggested operating cadence; owner must assign coverage and confirm alert delivery before handover.
+- Suggested operating cadence; owner must assign coverage and confirm alert delivery before handover.
 
 | When                                     | Check                                                                                                                          | Evidence / follow-up                                                                                          |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
@@ -43,60 +87,140 @@ Suggested operating cadence; owner must assign coverage and confirm alert delive
 | Monthly and before handover              | Access/MFA/billing, certificate renewal prerequisites, alert receivers, retention/restore readiness and unused credentials     | Revalidate actual provider settings; track missing coverage                                                   |
 | After an incident                        | Reconcile affected attempts/payments, confirm recovery, capture root cause and update procedures                               | Avoid closing on a single green graph or provider response                                                    |
 
-Do not run real bookings/payments or send test notifications merely to fill a monitoring gap. Arrange owner-operated test transactions separately. Monitoring checks must not consume customer capacity or create financial effects.
+- Do not run real bookings/payments or send test notifications merely to fill a monitoring gap.
+- Arrange owner-operated test transactions separately.
+- Monitoring checks must not consume customer capacity or create financial effects.
 
 ## 3. Dependency maintenance and Dependabot
 
-Apply the [dependency review skill](../.agents/skills/soccerbot-dependencies/SKILL.md) before changing dependencies or recommending merge. It owns upstream research, suitability, compatibility mapping, application-change decisions and the PR assessment; this section owns cadence and operational remediation/release steps. Use the existing testing and documentation skills for their respective evidence.
+- Apply the [dependency review skill](../.agents/skills/soccerbot-dependencies/SKILL.md) before changing dependencies or recommending merge.
+- It owns upstream research, suitability, compatibility mapping, application-change decisions and the PR assessment; this section owns cadence and operational remediation/release steps.
+- Use the existing testing and documentation skills for their respective evidence.
 
-[Dependabot configuration](../.github/dependabot.yml) schedules weekly npm and GitHub Actions **version updates** (Monday 09:00 Singapore), limited to one open version-update PR per ecosystem. Minor/patch updates are grouped; major upgrades and coordinated compiler, lint, Node-type, Playwright and Cloudflare tooling updates remain individual. Security updates have separate GitHub limits and are not constrained to this weekly schedule or two-PR limit.
+- [Dependabot configuration](../.github/dependabot.yml) schedules weekly npm and GitHub Actions **version updates** (Monday 09:00 Singapore), limited to one open version-update PR per ecosystem.
+- Minor/patch updates are grouped; major upgrades and coordinated compiler, lint, Node-type, Playwright and Cloudflare tooling updates remain individual.
+- Security updates have separate GitHub limits and are not constrained to this weekly schedule or two-PR limit.
 
-**Security setup is per repository.** In GitHub Settings → Advanced Security (or Code security), enable Dependency graph, Dependabot alerts and Dependabot security updates. Do this for both the canonical repository and the client repository when populated; copying YAML does not copy repository settings. Confirm the settings and review Security → Dependabot alerts; an empty PR list is not evidence that alerts are enabled or vulnerabilities absent. Progress records owner/API confirmation for each repository. The current connector cannot change these settings.
+- **Security setup is per repository.** In GitHub Settings → Advanced Security (or Code security), enable Dependency graph, Dependabot alerts and Dependabot security updates.
+- Do this for both the canonical repository and the client repository when populated; copying YAML does not copy repository settings.
+- Confirm the settings and review Security → Dependabot alerts; an empty PR list is not evidence that alerts are enabled or vulnerabilities absent.
+- Progress records owner/API confirmation for each repository.
+- The current connector cannot change these settings.
 
-The `npm-security` group applies only to minor/patch security updates. Major and coordinated tooling fixes remain individual PRs; exclusions from grouping do not ignore those updates. Alerts identify known vulnerable dependencies; security updates attempt a fixing PR when GitHub can resolve one. No automatic merge is enabled. Triage severity, affected dependency path and actual runtime/development usage. Prefer a compatible patched release; when none exists, adapt the source/toolchain rather than dismissing a vulnerability because CI fails. Track any temporary mitigation and remaining exposure. Do not run `npm audit fix --force` or accept a runtime downgrade without review.
+- The `npm-security` group applies only to minor/patch security updates.
+- Major and coordinated tooling fixes remain individual PRs; exclusions from grouping do not ignore those updates.
+- Alerts identify known vulnerable dependencies; security updates attempt a fixing PR when GitHub can resolve one.
+- No automatic merge is enabled.
+- Triage severity, affected dependency path and actual runtime/development usage.
+- Prefer a compatible patched release; when none exists, adapt the source/toolchain rather than dismissing a vulnerability because CI fails.
+- Track any temporary mitigation and remaining exposure.
+- Do not run `npm audit fix --force` or accept a runtime downgrade without review.
 
-For an update, preserve exact package/lockfile agreement and run all three CI gates. Playwright upgrades must include matching CI container images; TypeScript upgrades must retain the compiler APIs used by source checks and satisfy lint peers. Workflow files own action revisions; CI enforces approved action names, full commit SHA pins and deployment gates. Tests must validate those contracts without duplicating a particular approved SHA. Version-drift negative fixtures must derive the current pin from configuration and prove their mutation actually changes it. Passing PR CI is followed by actual staging deployment and owner acceptance before an authorized merge, then independent main verification and production release. Follow section 6 for the deployed client-repository controller and its enforcement gap. A fixed branch or merged lockfile alone does not establish that the deployed version is fixed; Dependabot/forks remain excluded from automatic deployment credentials.
+- For an update, preserve exact package/lockfile agreement and run all three CI gates.
+- Playwright upgrades must include matching CI container images;
+- TypeScript upgrades must retain the compiler APIs used by source checks and satisfy lint peers.
+- Workflow files own action revisions;
+- CI enforces approved action names, full commit SHA pins and deployment gates.
+- Tests must validate those contracts without duplicating a particular approved SHA.
+- Version-drift negative fixtures must derive the current pin from configuration and prove their mutation actually changes it.
+- Passing PR CI is followed by actual staging deployment and owner acceptance before an authorized merge, then independent main verification and production release.
+- Follow section 6 for the deployed client-repository controller and its enforcement gap.
+- A fixed branch or merged lockfile alone does not establish that the deployed version is fixed;
+- Dependabot/forks remain excluded from automatic deployment credentials.
 
-Use `npm audit --json` to supplement GitHub alerts and retain the report when triaging. Audit severity is not proof of exploitability or compromise, and a clean report covers only known advisories. Repository security settings, audit findings, remediation evidence and deployment status are recorded in Progress.
+- Use `npm audit --json` to supplement GitHub alerts and retain the report when triaging.
+- Audit severity is not proof of exploitability or compromise, and a clean report covers only known advisories.
+- Repository security settings, audit findings, remediation evidence and deployment status are recorded in Progress.
 
-### What to expect on Mondays
+<a id="what-to-expect-on-mondays"></a>
 
-GitHub schedules npm and GitHub Actions checks for Monday 09:00 Asia/Singapore; actual start may be delayed. “Dependabot Updates” jobs labelled `main` inspect the default branch and propose updates: they do not merge or deploy it. No eligible updates may mean no new PR. New/refreshed PR commits trigger Verify. At most one version-update PR per ecosystem is open; manual remediation and security PRs are outside that combined two-PR limit. Security alerts/updates can arrive on any day. GitHub notification preferences control email/in-app notifications; this chat is not a standing monitor.
+### 3.1. What to expect on Mondays
 
-### Update and remediation procedure
+- GitHub schedules npm and GitHub Actions checks for Monday 09:00 Asia/Singapore; actual start may be delayed.
+- “Dependabot Updates” jobs labelled `main` inspect the default branch and propose updates: they do not merge or deploy it.
+- No eligible updates may mean no new PR.
+- New/refreshed PR commits trigger Verify.
+- At most one version-update PR per ecosystem is open; manual remediation and security PRs are outside that combined two-PR limit.
+- Security alerts/updates can arrive on any day.
+- GitHub notification preferences control email/in-app notifications; this chat is not a standing monitor.
 
-Every dependency update PR must include the [before/after support-range comparison](../.agents/skills/soccerbot-dependencies/SKILL.md#required-support-range-comparison-in-every-dependency-pr), including unchanged requirements, removed support, exact tested configurations and unverified targets. Update the [browser coverage matrix](development.md#browser-testing-coverage) when affected.
+<a id="update-and-remediation-procedure"></a>
 
-1. Read the PR Files changed and upstream release/advisory notes. Identify direct/transitive packages, compatibility changes and runtime versus tooling exposure. SHA-pinned Actions still need review of the upstream commit change.
-2. Update package and lockfile together. Coordinate Wrangler/Miniflare, compiler/lint peers, Playwright/container versions and Node types where necessary; no blanket major upgrades or historical runtime downgrades.
-3. Run `node scripts/versions.mjs write` and commit `docs/versions.md` with the update. A Dependabot PR that changes locked versions will otherwise fail the freshness check. This is deliberate: the repository snapshot must match the reviewed lockfile. A trusted maintainer refreshes the bot branch or incorporates the update into a reviewed remediation branch; CI never pushes generated files to main.
-4. Run relevant local checks under AGENTS, then require all three final-head CI gates: frontend, backend and live-email. Owner/CI operates browsers. Preserve original failure evidence; diagnose incompatibility instead of weakening tests, suppressing alerts or retrying blindly.
-5. Review and explicitly authorise merge. Main verifies its merged revision independently. Confirm the deployment receipt and `/api/health` revision before reporting a deployed patch.
-6. Recheck GitHub Open Dependabot alerts and the audit report. Closed-as-fixed differs from dismissed. GitHub counts advisories; npm may count affected packages/meta-vulnerabilities, so counts need not match. Capture both results and the deployed revision.
+### 3.2. Update and remediation procedure
 
-`npm audit --audit-level=high` blocks full/code verification on high/critical advisories and audit-service errors. Lower-severity alerts still require triage. If a combined reviewed PR supersedes bot PRs, check each diff and close only covered duplicates. A failed update is an unresolved proposal, not a change already applied to production. Do not merge a failing compatibility update simply because an advisory exists; patch the incompatibility or document an approved temporary mitigation and deadline.
+- Every dependency update PR must include the [before/after support-range comparison](../.agents/skills/soccerbot-dependencies/SKILL.md#required-support-range-comparison-in-every-dependency-pr), including unchanged requirements, removed support, exact tested configurations and unverified targets.
+- Update the [browser coverage matrix](development.md#browser-testing-coverage) when affected.
 
-Version lookup: [versions.md](versions.md) shows configured tools and the entire locked inventory. Actions Summary and `versions.json`/`versions.md` in each verification artifact show observed tools and checkout revision. Python is a verification tool; its CI series can remain 3.12 while the observed patch version changes. Cloudflare controls the production Worker runtime; local workerd is the test runtime, not its exact production version.
+1. Read the PR Files changed and upstream release/advisory notes.
+   - Identify direct/transitive packages, compatibility changes and runtime versus tooling exposure.
+   - SHA-pinned Actions still need review of the upstream commit change.
+2. Update package and lockfile together.
+   - Coordinate Wrangler/Miniflare, compiler/lint peers, Playwright/container versions and Node types where necessary; no blanket major upgrades or historical runtime downgrades.
+3. Run `node scripts/versions.mjs write` and commit `docs/versions.md` with the update.
+   - A Dependabot PR that changes locked versions will otherwise fail the freshness check.
+   - This is deliberate: the repository snapshot must match the reviewed lockfile.
+   - A trusted maintainer refreshes the bot branch or incorporates the update into a reviewed remediation branch;
+   - CI never pushes generated files to main.
+4. Run relevant local checks under AGENTS, then require all three final-head CI gates: frontend, backend and live-email.
+   - Owner/CI operates browsers.
+   - Preserve original failure evidence; diagnose incompatibility instead of weakening tests, suppressing alerts or retrying blindly.
+5. Review and explicitly authorise merge.
+   - Main verifies its merged revision independently.
+   - Confirm the deployment receipt and `/api/health` revision before reporting a deployed patch.
+6. Recheck GitHub Open Dependabot alerts and the audit report.
+   - Closed-as-fixed differs from dismissed.
+   - GitHub counts advisories; npm may count affected packages/meta-vulnerabilities, so counts need not match.
+   - Capture both results and the deployed revision.
+
+- `npm audit --audit-level=high` blocks full/code verification on high/critical advisories and audit-service errors.
+- Lower-severity alerts still require triage.
+- If a combined reviewed PR supersedes bot PRs, check each diff and close only covered duplicates.
+- A failed update is an unresolved proposal, not a change already applied to production.
+- Do not merge a failing compatibility update simply because an advisory exists; patch the incompatibility or document an approved temporary mitigation and deadline.
+
+- Version lookup: [versions.md](versions.md) shows configured tools and the entire locked inventory.
+- Actions Summary and `versions.json`/`versions.md` in each verification artifact show observed tools and checkout revision.
+- Python is a verification tool; its CI series can remain 3.12 while the observed patch version changes.
+- Cloudflare controls the production Worker runtime; local workerd is the test runtime, not its exact production version.
 
 ## 4. Monitoring and observability
 
-### Current implementation and activation status
+<a id="current-implementation-and-activation-status"></a>
 
-The [Tail Worker](../worker/telemetry.ts) reconstructs allowlisted diagnostic summaries as OTLP **traces in Grafana Tempo**, outside the customer request path. It does not forward raw Tail logs, create a Loki log archive or emit a complete native distributed trace tree. The [dashboard](../observability/grafana-dashboard.json) uses TraceQL metrics; the chosen Tempo service must support those queries.
+### 4.1. Current implementation and activation status
 
-The committed [telemetry configuration](../wrangler.telemetry.jsonc) has `EXPORT_ENABLED=false`, an empty endpoint and no enabled attachment established here. The exporter accepts only producer `soccerbot-dev` and writes only resource `service.name=soccerbot-dev`. Dashboard queries also hardcode that service. There is **no current configurable production service/environment label**. Separate production credentials alone are insufficient: reviewed code/config/dashboard changes and producer matching are required before client telemetry can be activated. Central company Grafana remains the intended destination; verify actual deployment and receiver state in Progress.
+- The [Tail Worker](../worker/telemetry.ts) reconstructs allowlisted diagnostic summaries as OTLP **traces in Grafana Tempo**, outside the customer request path.
+- It does not forward raw Tail logs, create a Loki log archive or emit a complete native distributed trace tree.
+- The [dashboard](../observability/grafana-dashboard.json) uses TraceQL metrics; the chosen Tempo service must support those queries.
 
-Activation checklist for the authorised operator:
+- The committed [telemetry configuration](../wrangler.telemetry.jsonc) has `EXPORT_ENABLED=false`, an empty endpoint and no enabled attachment established here.
+- The exporter accepts only producer `soccerbot-dev` and writes only resource `service.name=soccerbot-dev`.
+- Dashboard queries also hardcode that service.
+- There is **no current configurable production service/environment label**.
+- Separate production credentials alone are insufficient: reviewed code/config/dashboard changes and producer matching are required before client telemetry can be activated.
+- Central company Grafana remains the intended destination; verify actual deployment and receiver state in Progress.
 
-1. Confirm producer account, Worker and intended service/environment separation. Implement and verify any production mapping first; avoid mixing staging and production observations.
-2. Configure the supported Grafana OTLP gateway endpoint and securely install `GRAFANA_AUTHORIZATION`; never commit it. Current endpoint format is `https://otlp-gateway-<region>.grafana.net/otlp`, with Basic authorization; the exporter appends `/v1/traces`.
-3. Review sampling and receiver permissions, attach the separately deployed Tail Worker to the correct producer and enable only after configuration is validated. These are pending operator actions, not instructions to mutate live resources automatically.
-4. Use an arranged diagnostic observation to verify actual Tempo ingestion, correct service, dashboard queries, redaction and overhead. Export HTTP success alone is insufficient.
-5. Configure and exercise alert receivers, retention and an independent availability/TLS check. The dashboard JSON contains panels, **not provisioned alert rules**. Record the accepted setup and owner.
+- Activation checklist for the authorised operator:
 
-### What is exported and what it means
+1. Confirm producer account, Worker and intended service/environment separation.
+   - Implement and verify any production mapping first; avoid mixing staging and production observations.
+2. Configure the supported Grafana OTLP gateway endpoint and securely install `GRAFANA_AUTHORIZATION`; never commit it.
+   - Current endpoint format is `https://otlp-gateway-<region>.grafana.net/otlp`, with Basic authorization; the exporter appends `/v1/traces`.
+3. Review sampling and receiver permissions, attach the separately deployed Tail Worker to the correct producer and enable only after configuration is validated.
+   - These are pending operator actions, not instructions to mutate live resources automatically.
+4. Use an arranged diagnostic observation to verify actual Tempo ingestion, correct service, dashboard queries, redaction and overhead.
+   - Export HTTP success alone is insufficient.
+5. Configure and exercise alert receivers, retention and an independent availability/TLS check.
+   - The dashboard JSON contains panels, **not provisioned alert rules**.
+   - Record the accepted setup and owner.
 
-All exported attributes below use the `soccerbot.` prefix; in TraceQL they appear as `span.soccerbot.<field>`. Each admitted diagnostic requires a valid correlation UUID. Only allowlisted, bounded numeric/string fields are exported; additional source log fields may be intentionally omitted.
+<a id="what-is-exported-and-what-it-means"></a>
+
+### 4.2. What is exported and what it means
+
+- All exported attributes below use the `soccerbot.` prefix; in TraceQL they appear as `span.soccerbot.<field>`.
+- Each admitted diagnostic requires a valid correlation UUID.
+- Only allowlisted, bounded numeric/string fields are exported; additional source log fields may be intentionally omitted.
 
 | Event                       | Exported detail                                                                                                                                                                                                                                                    | Meaning / interpretation                                                                                                                                                                                                                |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -107,11 +231,18 @@ All exported attributes below use the `soccerbot.` prefix; in TraceQL they appea
 | `provider_token_cache`      | `family` = public/admin; `result` listed below                                                                                                                                                                                                                     | Persistent-token lifecycle observations. No token value or credential is sent.                                                                                                                                                          |
 | `hitpay_transport_failure`  | `operation` = create/read/search; `representation` = json/html/other/missing; bounded numeric `status`; `outcome=error`                                                                                                                                            | Safe classification of payment transport failure. HTML can indicate an upstream gateway/security response; it is not proof of the cause. Response text and source `validationFields` are not forwarded by this exporter.                |
 
-Confirmation stage fields are `stage.<name>.durationMs`: queue, claim, hitpay, payment_evidence, booking_before, accounting, booking_after, publish, commit, status, context and receipt. Operation fields are `<name>.count/durationMs/errors`: d1, admission, public_auth, admin_auth, identity, tariff, booking_read, invoice_read, accounting_write, hitpay_read and hitpay_search. Cache counters are `cache.public_hit/miss/shared`, `cache.admin_hit/miss/shared` and `cache.identity_hit/miss/shared`. A missing field is not a fabricated zero.
+- Confirmation stage fields are `stage.<name>.durationMs`: queue, claim, hitpay, payment_evidence, booking_before, accounting, booking_after, publish, commit, status, context and receipt.
+- Operation fields are `<name>.count/durationMs/errors`: d1, admission, public_auth, admin_auth, identity, tariff, booking_read, invoice_read, accounting_write, hitpay_read and hitpay_search.
+- Cache counters are `cache.public_hit/miss/shared`, `cache.admin_hit/miss/shared` and `cache.identity_hit/miss/shared`.
+- A missing field is not a fabricated zero.
 
-Common metadata: `correlation_id`, `retention` (`failure` or `sampled_success`), `sample_rate`, `timing=diagnostic_summary`, `truncated`, optional `execution_model` and `worker_version`. The Worker version UUID is not the Git commit; use deployment evidence to map it. Correlation attributes join related HTTP/RPC/alarms; each invocation has its own trace and no invented parent chain.
+- Common metadata: `correlation_id`, `retention` (`failure` or `sampled_success`), `sample_rate`, `timing=diagnostic_summary`, `truncated`, optional `execution_model` and `worker_version`.
+- The Worker version UUID is not the Git commit; use deployment evidence to map it.
+- Correlation attributes join related HTTP/RPC/alarms; each invocation has its own trace and no invented parent chain.
 
-### Token event dictionary
+<a id="token-event-dictionary"></a>
+
+### 4.3. Token event dictionary
 
 | Result                      | Meaning                                                       | What to check / possible correction                                                                                              |
 | --------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -124,11 +255,22 @@ Common metadata: `correlation_id`, `retention` (`failure` or `sampled_success`),
 | `stale_rejection`           | Rejection belongs to replaced or already-retired access       | Check that current generation remains usable; do not invalidate the replacement manually                                         |
 | `refresh_due` / `refreshed` | Proactive public-token refresh became due / completed         | Check configured refresh-ahead and provider health; failed replacement retires the old generation and is not immediately retried |
 
-Public and admin access retention is 50 minutes. Admin rotation uses the provider-returned single-use refresh token; public refresh-ahead, when enabled, triggers with at most 20 minutes remaining in the serialized warming workflow. Earlier provider rejection still invalidates access. A late401/419 from access already retired for renewal cannot discard the replacement, but the original request still fails and the account cooldown remains.403 or rejection of the refresh request itself invalidates the family. A lost refresh response consumes the old refresh token permanently; a later admitted operation can log in again. Never restore a consumed refresh token or replay a financial write to repair authentication.
+- Public and admin access retention is 50 minutes.
+- Admin rotation uses the provider-returned single-use refresh token; public refresh-ahead, when enabled, triggers with at most 20 minutes remaining in the serialized warming workflow.
+- Earlier provider rejection still invalidates access.
+- A late401/419 from access already retired for renewal cannot discard the replacement, but the original request still fails and the account cooldown remains.403 or rejection of the refresh request itself invalidates the family.
+- A lost refresh response consumes the old refresh token permanently; a later admitted operation can log in again.
+- Never restore a consumed refresh token or replay a financial write to repair authentication.
 
-`provider_failure` reports a status-derived `failureClass` and `retryNotBeforeMs` for the local account cooldown. A403 remains `forbidden_unclassified`: this is not proof of throttling or revocation. No upstream message, body or token is logged. `payment_recovery_retry` records the sanitized reason, generation and committed `readyAtMs`. Payment alarms use that existing D1 deadline, preserve newer receipt generations, and retain cron as fallback; retry limits and payment leases are unchanged.
+- `provider_failure` reports a status-derived `failureClass` and `retryNotBeforeMs` for the local account cooldown.
+- A403 remains `forbidden_unclassified`: this is not proof of throttling or revocation.
+- No upstream message, body or token is logged.
+- `payment_recovery_retry` records the sanitized reason, generation and committed `readyAtMs`.
+- Payment alarms use that existing D1 deadline, preserve newer receipt generations, and retain cron as fallback; retry limits and payment leases are unchanged.
 
-### Dashboard panels and investigation
+<a id="dashboard-panels-and-investigation"></a>
+
+### 4.4. Dashboard panels and investigation
 
 | Existing panel                                      | What to notice                                                  | Investigate / potential fix                                                                                                                                                                                                                                                |
 | --------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -143,9 +285,10 @@ Public and admin access retention is 50 minutes. Admin rotation uses the provide
 | Retained failure summaries — not unique incidents   | More exported failure summaries                                 | Group by correlation, event and recovery key. One incident may emit many summaries; do not call this an error rate.                                                                                                                                                        |
 | Confirmation D1 round trips — sampled successes     | Counts change for a specific boundary                           | Compare like operations and recovery outcomes. Successful reconciliation baseline is five D1 trips, not a cap on failures or every status request.                                                                                                                         |
 
-These are the existing dashboard panels. Raw transport details, D1 SQL timings and several recovery fields are available in trace attributes but do not all have dedicated panels.
+- These are the existing dashboard panels.
+- Raw transport details, D1 SQL timings and several recovery fields are available in trace attributes but do not all have dedicated panels.
 
-Useful Explore queries for the current developer service (select the correct Tempo datasource and time range):
+- Useful Explore queries for the current developer service (select the correct Tempo datasource and time range):
 
 ```text
 { resource.service.name = "soccerbot-dev" && span.soccerbot.retention = "failure" }
@@ -154,13 +297,22 @@ Useful Explore queries for the current developer service (select the correct Tem
 { resource.service.name = "soccerbot-dev" && span.soccerbot.recovery_key = "<hashed recovery key>" }
 ```
 
-### Sampling, gaps and export diagnostics
+<a id="sampling-gaps-and-export-diagnostics"></a>
 
-Successful correlations are deterministically sampled at 10% by default. Recognized failed invocations/errors, manual-review results, invalid cache records and authentication rejections bypass success sampling, within export bounds. A retained record is not necessarily itself an error: other summaries from that failed invocation are retained too. This does not guarantee every failure is stored.
+### 4.5. Sampling, gaps and export diagnostics
 
-Bounds: first 32 Tail events, first 256 log messages per event, one parseable string per message up to 32 KiB, at most 128 emitted spans and 512,000 bytes of outbound JSON; five-second export timeout and 50 ms CPU configuration. No redirects, persistent spool or exporter retry. Malformed, unrelated, nonmatching-producer and uncorrelated records are discarded. `dropped` is a bounded exporter counter, not a complete measure of all discarded input. `truncated=true` means source evidence may be incomplete.
+- Successful correlations are deterministically sampled at 10% by default.
+- Recognized failed invocations/errors, manual-review results, invalid cache records and authentication rejections bypass success sampling, within export bounds.
+- A retained record is not necessarily itself an error: other summaries from that failed invocation are retained too.
+- This does not guarantee every failure is stored.
 
-The Tail Worker’s own `telemetry_export` logs remain **Cloudflare exporter diagnostics**, not one of the six exported Grafana events:
+- Bounds: first 32 Tail events, first 256 log messages per event, one parseable string per message up to 32 KiB, at most 128 emitted spans and 512,000 bytes of outbound JSON; five-second export timeout and 50 ms CPU configuration.
+- No redirects, persistent spool or exporter retry.
+- Malformed, unrelated, nonmatching-producer and uncorrelated records are discarded.
+- `dropped` is a bounded exporter counter, not a complete measure of all discarded input.
+- `truncated=true` means source evidence may be incomplete.
+
+- The Tail Worker’s own `telemetry_export` logs remain **Cloudflare exporter diagnostics**, not one of the six exported Grafana events:
 
 | Result           | Operator action                                                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -170,11 +322,18 @@ The Tail Worker’s own `telemetry_export` logs remain **Cloudflare exporter dia
 | `rejected_http`  | Check status, receiver credential scope, endpoint and Grafana capacity/account state; do not log receiver response bodies            |
 | `unavailable`    | Check connectivity, timeout/provider availability; restore configuration/service and observe new events, as there is no replay spool |
 
-No exporter log can also mean export disabled, no matching producer, no accepted diagnostics or success sampling excluded that invocation. Check those before diagnosing a receiver outage.
+- No exporter log can also mean export disabled, no matching producer, no accepted diagnostics or success sampling excluded that invocation.
+- Check those before diagnosing a receiver outage.
 
-### Alerts to configure before handover
+<a id="alerts-to-configure-before-handover"></a>
 
-**Configuration status:** the repository contains dashboard panels, not provisioned alert rules. Actual deployed thresholds, Grafana contact points and delivery are **not verified/configured by this document**. Owner instructed on 28 October 2026 to leave primary responder, backup and destinations unassigned. The values below are concrete starting proposals for review, not an agreed SLA or a report that alerts are running. Do not enable an unattended alert and treat it as operational coverage.
+### 4.6. Alerts to configure before handover
+
+- **Configuration status:** the repository contains dashboard panels, not provisioned alert rules.
+- Actual deployed thresholds, Grafana contact points and delivery are **not verified/configured by this document**.
+- Primary responder, backup and destinations remain unassigned pending owner decision.
+- The values below are concrete starting proposals for review, not an agreed SLA or a report that alerts are running.
+- Do not enable an unattended alert and treat it as operational coverage.
 
 | ID / signal                          | Proposed trigger and clear condition                                                                                                                                                                 | Data prerequisite / limitations                                                                                                                                              | First response                                                                                                                   |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -186,9 +345,13 @@ No exporter log can also mean export disabled, no matching producer, no accepted
 | AL-06 Exporter/monitoring blind spot | Warning for 3 observed export failures in 5 minutes, or loss of a separately configured heartbeat for 10 minutes; clear after successful ingestion/heartbeat evidence                                | Platform exporter outcomes plus an independent heartbeat/receiver test; no traffic is not proof of broken telemetry and HTTP export success is not ingestion proof           | Check endpoint/auth/service mapping, receiver and platform logs; do not expose authorization values                              |
 | AL-07 Dependency security            | Triage each new high/critical advisory on detection; clear on verified remediation and deployment/re-scan, not simply PR creation                                                                    | GitHub alerts and npm audit; security notification preferences are account settings, independent of Grafana                                                                  | Apply section 3; inspect actual affected path, patch compatibility and deployed revision                                         |
 
-A monetary integrity event needs prompt escalation even at low traffic. All other thresholds require tuning against observed production traffic and false positives without removing financial/identity safeguards. Transport duration includes provider processing, so a high duration alone does not identify network fault.
+- A monetary integrity event needs prompt escalation even at low traffic.
+- All other thresholds require tuning against observed production traffic and false positives without removing financial/identity safeguards.
+- Transport duration includes provider processing, so a high duration alone does not identify network fault.
 
-### Alert routing and acceptance record
+<a id="alert-routing-and-acceptance-record"></a>
+
+### 4.7. Alert routing and acceptance record
 
 | Field                                          | Current value                                                                                                                      |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -201,17 +364,29 @@ A monetary integrity event needs prompt escalation even at low traffic. All othe
 | Proposed warning triage                        | Next staffed business period; tighten for active customer/financial impact                                                         |
 | Actual rule UIDs / receiver delivery evidence  | Not configured or verified here                                                                                                    |
 
-Before activation, record the environment/service, exact query, approved threshold/evaluation/no-data/error policy, rule UID, contact-point UID, named primary/backup, coverage hours, escalation and runbook link. Group related alerts by environment/service/symptom; do not group by raw customer/payment identifiers. Separate monitoring-query errors from application failures. Maintenance silences need an owner, reason and expiry; never mute unresolved financial integrity findings as routine maintenance.
+- Before activation, record the environment/service, exact query, approved threshold/evaluation/no-data/error policy, rule UID, contact-point UID, named primary/backup, coverage hours, escalation and runbook link.
+- Group related alerts by environment/service/symptom; do not group by raw customer/payment identifiers.
+- Separate monitoring-query errors from application failures.
+- Maintenance silences need an owner, reason and expiry; never mute unresolved financial integrity findings as routine maintenance.
 
-Acceptance: use an owner-authorized synthetic alert fixture, observe firing, delivery to the intended receiver, acknowledgement/escalation, resolution and any reminder/deduplication behavior. Record timestamps and redacted evidence. Perform the delivery test without a real booking, payment or customer email. No alert notification is sent as part of writing this runbook.
+- Acceptance: use an owner-authorized synthetic alert fixture, observe firing, delivery to the intended receiver, acknowledgement/escalation, resolution and any reminder/deduplication behavior.
+- Record timestamps and redacted evidence.
+- Perform the delivery test without a real booking, payment or customer email.
+- No alert notification is sent as part of writing this runbook.
 
 ## 5. Incident response and recovery
 
-1. Record start time in Singapore time and UTC, environment, hostname, deployed revision/version, symptoms, affected case IDs and safe correlation/recovery keys. Protect personal and financial data in restricted incident evidence.
-2. Classify impact: payment correctness/data exposure first, then booking availability, then degraded performance/telemetry. Assign an incident owner and update cadence; involve the authorised financial operator for uncertain payments.
-3. Check recent deployments/config changes, `/api/health`, Cloudflare and provider service status. Read retained evidence before mutation. Coordinate any containment through reviewed access controls; do not improvise a new flag or stop scheduled recovery blindly.
-4. Make the smallest justified correction through the proper change path. Do not replay an uncertain write, delete evidence, rename the DO, mark invoices paid manually to force a pass, or weaken queue/security checks.
-5. Verify authoritative booking/payment state and deployment health, then run an arranged owner smoke check if required. Record recovery and remaining affected attempts; observation of one successful request does not close all cases.
+1. Record start time in Singapore time and UTC, environment, hostname, deployed revision/version, symptoms, affected case IDs and safe correlation/recovery keys.
+   - Protect personal and financial data in restricted incident evidence.
+2. Classify impact: payment correctness/data exposure first, then booking availability, then degraded performance/telemetry.
+   - Assign an incident owner and update cadence; involve the authorised financial operator for uncertain payments.
+3. Check recent deployments/config changes, `/api/health`, Cloudflare and provider service status.
+   - Read retained evidence before mutation.
+   - Coordinate any containment through reviewed access controls; do not improvise a new flag or stop scheduled recovery blindly.
+4. Make the smallest justified correction through the proper change path.
+   - Do not replay an uncertain write, delete evidence, rename the DO, mark invoices paid manually to force a pass, or weaken queue/security checks.
+5. Verify authoritative booking/payment state and deployment health, then run an arranged owner smoke check if required.
+   - Record recovery and remaining affected attempts; observation of one successful request does not close all cases.
 
 | Symptom                             | First checks                                                                                             | Potential recovery / stop condition                                                                                                          |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -225,67 +400,187 @@ Acceptance: use an owner-authorized synthetic alert fixture, observe firing, del
 | D1/DO errors after release          | Migration ledger, foundation/account IDs, bindings and coordinator identity                              | Stop wrong-account deployment; diagnose last successful phase. Never reset foundation/data to satisfy preflight.                             |
 | Grafana empty                       | Export status/attachment, exact producer, sample/time range, datasource and exporter logs                | Follow section 4; do not conclude application health from no traces                                                                          |
 
-### Protected receipt diagnostics and retired downloads
+<a id="protected-receipt-diagnostics-and-retired-downloads"></a>
 
-Customer PDF/calendar controls and local formatters are retired. The retained protected receipt API supports `X-Booking-Refresh: 1` for bounded refresh; it is no longer triggered by a customer download button. Fresh retained evidence returns immediately; stale evidence can trigger read-only booking/invoice verification during the original checking window. Inspect the receipt HTTP result and its `X-Recovery-Trace`: 401/403 requires valid access, 409 means evidence is invalid/stale or the refresh window has ended, 429 means the shared check quota/pacing refused another refresh, and provider failures require transport/account investigation. Never reset payment tries, extend a deadline, or export a saved confirmation to bypass the failure. Historical download failure was not diagnosed: the owner recording ended before the failing click, and the owner subsequently removed the feature. Do not claim the underlying failure was repaired. Booking change/cancellation requests go to Glenna on WhatsApp at +65 9014 3819; the confirmation contact link opens WhatsApp without changing the booking. Email contact remains `contact@soccerbotsg.com`.
+### 5.1. Protected receipt diagnostics and retired downloads
+
+- Customer PDF/calendar controls and local formatters are retired.
+- The retained protected receipt API supports `X-Booking-Refresh: 1` for bounded refresh; it is no longer triggered by a customer download button.
+- Fresh retained evidence returns immediately; stale evidence can trigger read-only booking/invoice verification during the original checking window.
+- Inspect the receipt HTTP result and its `X-Recovery-Trace`: 401/403 requires valid access, 409 means evidence is invalid/stale or the refresh window has ended, 429 means the shared check quota/pacing refused another refresh, and provider failures require transport/account investigation.
+- Never reset payment tries, extend a deadline, or export a saved confirmation to bypass the failure.
+- Historical download failure was not diagnosed: the owner recording ended before the failing click, and the owner subsequently removed the feature.
+- Do not claim the underlying failure was repaired.
+- Booking change/cancellation requests go to Glenna on WhatsApp at +65 9014 3819; the confirmation contact link opens WhatsApp without changing the booking.
+- Email contact remains `contact@soccerbotsg.com`.
 
 ## 6. Deployments and rollback
 
-Apply the [deployment-readiness skill](../.agents/skills/soccerbot-deployment/SKILL.md) to reconcile source/artifact, account/resource and configuration evidence before a release recommendation; use this section for operational steps. For verification failures or resource pressure, apply the [CI-diagnosis skill](../.agents/skills/soccerbot-ci-diagnosis/SKILL.md) with the testing skill before rerunning or changing limits. Neither instruction expands deployment authority.
+- Apply the [deployment-readiness skill](../.agents/skills/soccerbot-deployment/SKILL.md) to reconcile source/artifact, account/resource and configuration evidence before a release recommendation; use this section for operational steps.
+- For verification failures or resource pressure, apply the [CI-diagnosis skill](../.agents/skills/soccerbot-ci-diagnosis/SKILL.md) with the testing skill before rerunning or changing limits.
+- Neither instruction expands deployment authority.
 
-Required release sequence: draft → ready → exact-head CI → actual staging deployment/health → owner staging acceptance and merge authorization → merge → independent main verification → production release. Continue related fixes on the existing draft; identify any separate dependent PR and verify its combined candidate. A ready transition alone does not establish a deployment or guarantee another automatic staging attempt. Check the deployment job and receipt, not only the workflow badge. Any source change requires evidence and acceptance for the new candidate. Owner exceptions are explicit and limited to their stated scope.
+- Required release sequence: draft → ready → exact-head CI → actual staging deployment/health → owner staging acceptance and merge authorization → merge → independent main verification → production release.
+- Continue related fixes on the existing draft; identify any separate dependent PR and verify its combined candidate.
+- A ready transition alone does not establish a deployment or guarantee another automatic staging attempt.
+- Check the deployment job and receipt, not only the workflow badge.
+- Any source change requires evidence and acceptance for the new candidate.
+- Owner exceptions are explicit and limited to their stated scope.
 
-Current automation does **not** enforce staging acceptance before production: successful current-main verification can still trigger production deployment. Until a reviewed gate is implemented, agents/operators must enforce the sequence before merging. Draft, bot, closed and superseded PR exclusions are not permission to skip staging. The retired developer repository's Verify workflow is owner-confirmed disabled; the client repository owns deployment. The standalone GitHub Pages export remains separate from the Cloudflare customer backend.
+- Current automation does **not** enforce staging acceptance before production: successful current-main verification can still trigger production deployment.
+- Until a reviewed gate is implemented, agents/operators must enforce the sequence before merging.
+- Draft, bot, closed and superseded PR exclusions are not permission to skip staging.
+- The retired developer repository's Verify workflow is owner-confirmed disabled; the client repository owns deployment.
+- The standalone GitHub Pages export remains separate from the Cloudflare customer backend.
 
-Client deployment procedure (after repository/credential cutover):
+- Client deployment procedure (after repository/credential cutover):
 
-1. Validate the target account, existing D1 and coordinator identity. Preserve `apac-ne` for first client coordinator acquisition; it is not proof of actual placement.
-2. Populate the client repository with reviewed source and trusted main deployment controllers. Disable the former repository's Cloudflare deployer with `DEPLOYMENT_MODE=portable` before enabling client staging. Keep production and staging credentials separately scoped.
-3. A PR runs **Verify deployment target** on its exact head for staging without credentials. A completed successful run triggers the trusted-main staging controller. It requires an open non-draft same-repository PR, a human author with current write access, current head and all four matching gate results (including Worker/runtime). Fork/bot PRs cannot deploy. A credential-free trusted-main eligibility job now classifies expected automatic PR exclusions (including draft, closed and superseded heads) as skipped deployment; eligible candidates still undergo complete validation again immediately before credentials are used.
-4. Merge produces independent production target verification on the new main revision. The trusted controller rejects a superseded main or failed/mixed-attempt gates and consumes the sealed artifact without rebuilding. The configured client bootstrap stays closed on Workers.dev; domain, foundation and provider activation are separate.
-5. Manual staging (including a reviewed dependency candidate or merged-main catch-up): run **Verify deployment target**, selecting the candidate branch and target `staging`; record its exact SHA and successful run ID/attempt. Set repository variable `STAGING_RESERVED_REVISION` to that full SHA. Run **Deploy verified release** from trusted `main`, operation `deploy`, target `staging`, supplying that SHA and verification run ID; leave foundation namespace blank. Reuse an existing valid manually verified staging artifact rather than rerunning CI. Production-target artifacts cannot substitute for staging configuration. Verify actual staging deployment/health and owner acceptance. Deployment enable variables and account-specific secrets remain required. Repository-variable management/workflow dispatch may need owner UI action when connector tools cannot perform them; do not claim an action completed merely from prepared inputs.
-6. Retain deployment receipts and observed version/health. Artifacts retain for 14 days. Prove staging provider/device behavior and recovery separately; do not infer these from CI. Never allow both repositories to control the staging Worker concurrently.
+1. Validate the target account, existing D1 and coordinator identity.
+   - Preserve `apac-ne` for first client coordinator acquisition; it is not proof of actual placement.
+2. Populate the client repository with reviewed source and trusted main deployment controllers.
+   - Disable the former repository's Cloudflare deployer with `DEPLOYMENT_MODE=portable` before enabling client staging.
+   - Keep production and staging credentials separately scoped.
+3. A PR runs **Verify deployment target** on its exact head for staging without credentials.
+   - A completed successful run triggers the trusted-main staging controller.
+   - It requires an open non-draft same-repository PR, a human author with current write access, current head and all four matching gate results (including Worker/runtime).
+   - Fork/bot PRs cannot deploy.
+   - A credential-free trusted-main eligibility job now classifies expected automatic PR exclusions (including draft, closed and superseded heads) as skipped deployment; eligible candidates still undergo complete validation again immediately before credentials are used.
+4. Merge produces independent production target verification on the new main revision.
+   - The trusted controller rejects a superseded main or failed/mixed-attempt gates and consumes the sealed artifact without rebuilding.
+   - The configured client bootstrap stays closed on Workers.dev; domain, foundation and provider activation are separate.
+5. Manual staging (including a reviewed dependency candidate or merged-main catch-up): run **Verify deployment target**, selecting the candidate branch and target `staging`; record its exact SHA and successful run ID/attempt.
+   - Set repository variable `STAGING_RESERVED_REVISION` to that full SHA.
+   - Run **Deploy verified release** from trusted `main`, operation `deploy`, target `staging`, supplying that SHA and verification run ID; leave foundation namespace blank.
+   - Reuse an existing valid manually verified staging artifact rather than rerunning CI.
+   - Production-target artifacts cannot substitute for staging configuration.
+   - Verify actual staging deployment/health and owner acceptance.
+   - Deployment enable variables and account-specific secrets remain required.
+   - Repository-variable management/workflow dispatch may need owner UI action when connector tools cannot perform them; do not claim an action completed merely from prepared inputs.
+6. Retain deployment receipts and observed version/health.
+   - Artifacts retain for 14 days.
+   - Prove staging provider/device behavior and recovery separately; do not infer these from CI.
+   - Never allow both repositories to control the staging Worker concurrently.
 
-Worker group failure: inspect the named contracts, sustained or recovery artifact and original TAP. Whole suites and their scenarios must stay intact. The final Worker gate requires every group from the same source/target/run/attempt and successful sustained load smoke. Do not drop a group, weaken its inventory, or reset storage inside a recovery scenario to obtain green. See [Development](development.md#verification-commands) for membership and lifecycle limits.
+- Worker group failure: inspect the named contracts, sustained or recovery artifact and original TAP.
+- Whole suites and their scenarios must stay intact.
+- The final Worker gate requires every group from the same source/target/run/attempt and successful sustained load smoke.
+- Do not drop a group, weaken its inventory, or reset storage inside a recovery scenario to obtain green.
+- See [Development](development.md#verification-commands) for membership and lifecycle limits.
 
-Browser CI storage failure: retain the original run and batch evidence. Browser children must report a zero core-dump memory filter in CI; the parent configures only its own inherited process setting. Process failures and Playwright traces remain authoritative; full memory cores are deliberately excluded to limit host-side storage. Confirm storage headroom rather than inferring success from green tests. Compare `storage-before.json` and `storage-after.json` for each fresh Playwright process, then per-test resources and any unlinked-file observations. Do not delete failed reports, increase deadlines, rerun unchanged failures blindly or treat inaccessible mappings as proof of no leak. A green shard is not a release: aggregation must validate every original case/device, same build and same run attempt, followed by independent merged-main verification. See [Development](development.md#configuration) for the execution and artifact boundaries.
+- Browser CI storage failure: retain the original run and batch evidence.
+- Browser children must report a zero core-dump memory filter in CI; the parent configures only its own inherited process setting.
+- Process failures and Playwright traces remain authoritative; full memory cores are deliberately excluded to limit host-side storage.
+- Confirm storage headroom rather than inferring success from green tests.
+- Compare `storage-before.json` and `storage-after.json` for each fresh Playwright process, then per-test resources and any unlinked-file observations.
+- Do not delete failed reports, increase deadlines, rerun unchanged failures blindly or treat inaccessible mappings as proof of no leak.
+- A green shard is not a release: aggregation must validate every original case/device, same build and same run attempt, followed by independent merged-main verification.
+- See [Development](development.md#configuration) for the execution and artifact boundaries.
 
-Deployment propagation: capture the existing health revision before upload for both closed production and open staging. Only closed first installation permits an HTTP 404 as an absent predecessor; transport errors, other HTTP errors and malformed revision evidence stop deployment. After upload, accept only the exact new revision with its required health state; the captured predecessor may remain visible for the existing bounded 16-observation window. Never accept an unknown third revision or broaden retries to conceal a failed health read. A failed post-upload check may still mean the Worker was deployed: inspect the receipt and actual health before retrying.
+- Deployment propagation: capture the existing health revision before upload for both closed production and open staging.
+- Only closed first installation permits an HTTP 404 as an absent predecessor; transport errors, other HTTP errors and malformed revision evidence stop deployment.
+- After upload, accept only the exact new revision with its required health state; the captured predecessor may remain visible for the existing bounded 16-observation window.
+- Never accept an unknown third revision or broaden retries to conceal a failed health read.
+- A failed post-upload check may still mean the Worker was deployed: inspect the receipt and actual health before retrying.
 
-Closed-install health: require the exact revision, configured production environment, disabled customer/provider access and an explicit `foundationRegistration` of `pending` or `registered`. Pending confirms an installed closed Worker only; separately reviewed foundation registration and provider acceptance remain prerequisites for customer operations. An unreadable/missing schema or mismatched existing identity must fail. The health route must never register storage to make a deployment green. Open staging requires registered foundation and provider credential presence.
+- Closed-install health: require the exact revision, configured production environment, disabled customer/provider access and an explicit `foundationRegistration` of `pending` or `registered`.
+- Pending confirms an installed closed Worker only; separately reviewed foundation registration and provider acceptance remain prerequisites for customer operations.
+- An unreadable/missing schema or mismatched existing identity must fail.
+- The health route must never register storage to make a deployment green.
+- Open staging requires registered foundation and provider credential presence.
 
-### Closed production foundation registration
+<a id="closed-production-foundation-registration"></a>
 
-When the client credential is available only in GitHub Actions, use **Deploy verified release → Run workflow**, branch `main`, operation `setup-foundation`, target `production`, the exact current-main revision and successful production verification run ID, and the existing reviewed namespace ID. First require that same revision to be deployed: the management client rejects any mismatch. The manual setup operation uses the existing production secret and `deploy-cloudflare-production` concurrency lock. It runs inspection, registration and initialization in order without redeployment, then requires exact-revision registered/closed health. Each phase receives the same inspected identity receipt. A failure stops dependent phases; the always-uploaded receipt artifact preserves whichever phases completed. Repeat execution re-inspects state and must never reset an identity or recreate a coordinator. Automatic workflow-run events remain deployment-only. Dispatch to a PR branch or staging cannot execute production setup. The GitHub connector does not expose workflow dispatch; an authorized owner uses this UI when shell/API execution is unavailable.
+### 6.1. Closed production foundation registration
 
-`scripts/foundation-setup.mjs` owns three explicit management phases. It consumes the downloaded, sealed production verification artifact and exact deployed revision; it does not deploy, migrate, open access or create a replacement namespace. Use an authenticated client-account operator context with Worker service-binding/remote-development access and D1 read access. Keep the token in `CLOUDFLARE_API_TOKEN`, never command arguments or receipts; set `CLOUDFLARE_ACCOUNT_ID` to the reviewed client account. Stop concurrent deployments/configuration changes during these phases. Remote service-binding transport must be verified in the client account before claiming cloud acceptance.
+- When the client credential is available only in GitHub Actions, use **Deploy verified release → Run workflow**, branch `main`, operation `setup-foundation`, target `production`, the exact current-main revision and successful production verification run ID, and the existing reviewed namespace ID.
+- First require that same revision to be deployed: the management client rejects any mismatch.
+- The manual setup operation uses the existing production secret and `deploy-cloudflare-production` concurrency lock.
+- It runs inspection, registration and initialization in order without redeployment, then requires exact-revision registered/closed health.
+- Each phase receives the same inspected identity receipt.
+- A failure stops dependent phases; the always-uploaded receipt artifact preserves whichever phases completed.
+- Repeat execution re-inspects state and must never reset an identity or recreate a coordinator.
+- Automatic workflow-run events remain deployment-only.
+- Dispatch to a PR branch or staging cannot execute production setup.
+- The GitHub connector does not expose workflow dispatch; an authorized owner uses this UI when shell/API execution is unavailable.
 
-1. Run `node scripts/foundation-setup.mjs inspect ARTIFACT_DIR REVISION NAMESPACE_ID INSPECTION.json`. Placeholder arguments must be replaced with the reviewed artifact, 40-character revision and existing namespace ID. The script checks sealed verification evidence, actual Worker bindings, all migration names and disabled effects. The internal `FoundationManagement` service entrypoint derives the object ID with `idFromName`; it does not obtain a stub or initialize the object. Review the resulting account/database/name/ID/hint and target digest.
-2. Run `node scripts/foundation-setup.mjs register ARTIFACT_DIR REVISION NAMESPACE_ID REGISTRATION.json INSPECTION.json` only for the reviewed identity. The management entrypoint inserts the singleton if absent, preserves a matching existing row, rejects a foreign identity and verifies a primary read afterward. This is a management operation, never public health or automatic deployment. No reset/update/delete fallback exists.
-3. Run `node scripts/foundation-setup.mjs initialize ARTIFACT_DIR REVISION NAMESPACE_ID INITIALIZATION.json INSPECTION.json` separately. Registration must match first. The existing placement owner obtains the named coordinator with the approved hint; constructor initialization creates internal SQLite tables. The diagnostic reads its ID, alarm and wakeup count without provider transport or scheduling. Unexpected retained work/alarm stops acceptance; do not clear it to pass.
-4. Verify public health reports the exact revision, production, registered and disabled access. Record namespace/object existence and independent placement evidence. The diagnostic deliberately reports `location: null`; D1 KIX and `apac-ne` are not proof of actual DO location. Customer/provider activation remains separate.
+- `scripts/foundation-setup.mjs` owns three explicit management phases.
+- It consumes the downloaded, sealed production verification artifact and exact deployed revision; it does not deploy, migrate, open access or create a replacement namespace.
+- Use an authenticated client-account operator context with Worker service-binding/remote-development access and D1 read access.
+- Keep the token in `CLOUDFLARE_API_TOKEN`, never command arguments or receipts; set `CLOUDFLARE_ACCOUNT_ID` to the reviewed client account.
+- Stop concurrent deployments/configuration changes during these phases.
+- Remote service-binding transport must be verified in the client account before claiming cloud acceptance.
 
-Use a new receipt filename each time; preserve failed receipts and outputs. After a lost acknowledgement, inspect again: a matching registered identity is a successful retained write and repeat registration is safe. A mismatch is an incident, not permission to overwrite. Restart/redeploy must preserve D1 and namespace identity. Code rollback does not undo immutable registration or first placement; retain the registered resources and diagnose before changing configuration. Do not use the management SQL-by-name API to bootstrap the object because that path does not carry the reviewed location hint.
+1. Run `node scripts/foundation-setup.mjs inspect ARTIFACT_DIR REVISION NAMESPACE_ID INSPECTION.json`.
+   - Placeholder arguments must be replaced with the reviewed artifact, 40-character revision and existing namespace ID.
+   - The script checks sealed verification evidence, actual Worker bindings, all migration names and disabled effects.
+   - The internal `FoundationManagement` service entrypoint derives the object ID with `idFromName`; it does not obtain a stub or initialize the object.
+   - Review the resulting account/database/name/ID/hint and target digest.
+2. Run `node scripts/foundation-setup.mjs register ARTIFACT_DIR REVISION NAMESPACE_ID REGISTRATION.json INSPECTION.json` only for the reviewed identity.
+   - The management entrypoint inserts the singleton if absent, preserves a matching existing row, rejects a foreign identity and verifies a primary read afterward.
+   - This is a management operation, never public health or automatic deployment.
+   - No reset/update/delete fallback exists.
+3. Run `node scripts/foundation-setup.mjs initialize ARTIFACT_DIR REVISION NAMESPACE_ID INITIALIZATION.json INSPECTION.json` separately.
+   - Registration must match first.
+   - The existing placement owner obtains the named coordinator with the approved hint; constructor initialization creates internal SQLite tables.
+   - The diagnostic reads its ID, alarm and wakeup count without provider transport or scheduling.
+   - Unexpected retained work/alarm stops acceptance; do not clear it to pass.
+4. Verify public health reports the exact revision, production, registered and disabled access.
+   - Record namespace/object existence and independent placement evidence.
+   - The diagnostic deliberately reports `location: null`;
+   - D1 KIX and `apac-ne` are not proof of actual DO location.
+   - Customer/provider activation remains separate.
 
-Interrupted deployment: inspect the receipt’s last completed phase, current Worker revision, D1 migration ledger and route state. A failed job can have applied migrations or uploaded code. Reuse the same reviewed resource identities/artifact only after diagnosing the interruption and validating rerun eligibility; do not blindly dispatch repeatedly.
+- Use a new receipt filename each time; preserve failed receipts and outputs.
+- After a lost acknowledgement, inspect again: a matching registered identity is a successful retained write and repeat registration is safe.
+- A mismatch is an incident, not permission to overwrite.
+- Restart/redeploy must preserve D1 and namespace identity.
+- Code rollback does not undo immutable registration or first placement; retain the registered resources and diagnose before changing configuration.
+- Do not use the management SQL-by-name API to bootstrap the object because that path does not carry the reviewed location hint.
 
-Rollback is **not an automated arbitrary historical-revision switch**. Production workflow requires verified current main, so an older SHA can be rejected. Normal code rollback is a reviewed revert on main, fresh target verification and deployment of the resulting verified artifact, provided schema compatibility is established. Emergency restoration of a retained prior Cloudflare version/artifact requires a separately approved operator procedure and resource/schema review; do not bypass workflow gates or claim that this path is already rehearsed. Code rollback does not reverse D1 migrations, bookings, payments, notifications or provider-side effects.
+- Interrupted deployment: inspect the receipt’s last completed phase, current Worker revision, D1 migration ledger and route state.
+- A failed job can have applied migrations or uploaded code.
+- Reuse the same reviewed resource identities/artifact only after diagnosing the interruption and validating rerun eligibility; do not blindly dispatch repeatedly.
 
-### Trainer-choice rollout and recovery
+- Rollback is **not an automated arbitrary historical-revision switch**.
+- Production workflow requires verified current main, so an older SHA can be rejected.
+- Normal code rollback is a reviewed revert on main, fresh target verification and deployment of the resulting verified artifact, provided schema compatibility is established.
+- Emergency restoration of a retained prior Cloudflare version/artifact requires a separately approved operator procedure and resource/schema review; do not bypass workflow gates or claim that this path is already rehearsed.
+- Code rollback does not reverse D1 migrations, bookings, payments, notifications or provider-side effects.
 
-Before enabling overlapping trainer schedules, Admin must confirm that all relevant SimplyBook services/trainers consume the same one-capacity studio resource, including the ten-minute changeover, and record [the cross-trainer UAT](uat/admin.md#per-slot-trainer-choice). The calendar includes the complete linked roster within the request, offer and payload budgets in [calendar contracts](api-contracts.md#4-catalogue-and-selection-contracts); over-budget or incomplete responses fail closed. Multiple offers are choices, not extra studio capacity. A single serialized Worker workflow does not establish provider resource exclusivity.
+<a id="trainer-choice-rollout-and-recovery"></a>
 
-If a chosen trainer disappears, refresh availability and choose another trainer for that session; never silently reassign a held booking. Investigate `native_selection_changed` against the selected service/trainer/start and `native_provider_schedule_overlap` against a legacy finite trial contract. New customer grants store `providerSchedules: "customer-choice"`; legacy contracts remain `"non-overlapping"`. An older build that accepts only the latter cannot safely restore new grants. Use a compatible rollback build or forward fix while retaining active attempt/payment evidence; do not edit stored contracts, reset D1, or retry uncertain bookings to make an old build accept them. Provider schedule/resource changes and deployment remain owner-authorized operations.
+### 6.2. Trainer-choice rollout and recovery
+
+- Before enabling overlapping trainer schedules, Admin must confirm that all relevant SimplyBook services/trainers consume the same one-capacity studio resource, including the ten-minute changeover, and record [the cross-trainer UAT](tests/uat/admin.md).
+- The calendar includes the complete linked roster within the request, offer and payload budgets in [calendar contracts](api-contracts.md#4-catalogue-and-selection-contracts); over-budget or incomplete responses fail closed.
+- Multiple offers are choices, not extra studio capacity.
+- A single serialized Worker workflow does not establish provider resource exclusivity.
+
+- If a chosen trainer disappears, refresh availability and choose another trainer for that session; never silently reassign a held booking.
+- Investigate `native_selection_changed` against the selected service/trainer/start and `native_provider_schedule_overlap` against a legacy finite trial contract.
+- New customer grants store `providerSchedules: "customer-choice"`; legacy contracts remain `"non-overlapping"`.
+- An older build that accepts only the latter cannot safely restore new grants.
+- Use a compatible rollback build or forward fix while retaining active attempt/payment evidence; do not edit stored contracts, reset D1, or retry uncertain bookings to make an old build accept them.
+- Provider schedule/resource changes and deployment remain owner-authorized operations.
 
 ## 7. Data protection and restore
 
-D1 stores access/attempt/effect/payment/recovery evidence; the Durable Object separately stores coordination and encrypted token state. SimplyBook and HitPay hold their own authoritative records. A D1 backup alone is not a full system recovery point, and restoring application storage does not undo an external payment.
+- D1 stores access/attempt/effect/payment/recovery evidence; the Durable Object separately stores coordination and encrypted token state.
+- SimplyBook and HitPay hold their own authoritative records.
+- A D1 backup alone is not a full system recovery point, and restoring application storage does not undo an external payment.
 
-The [data lifecycle draft](data-lifecycle.md) owns the source-based storage inventory, expiry versus deletion distinctions and pending client privacy-clause mapping. Its validity periods are not approved disposal periods; cleanup remains a separate reviewed implementation.
+- The [data lifecycle draft](data-lifecycle.md) owns the source-based storage inventory, expiry versus deletion distinctions and pending client privacy-clause mapping.
+- Its validity periods are not approved disposal periods; cleanup remains a separate reviewed implementation.
 
-### Recovery targets and actual capability
+<a id="recovery-targets-and-actual-capability"></a>
 
-RPO is the maximum acceptable data-loss window; RTO is the time from incident declaration to safe service restoration. Neither is yet an agreed production commitment. Record measured recovery time separately from targets. Provider recovery entitlements/retention must be verified for the selected account/plan; this document does not assume a particular platform backup window or automatic DO restore facility.
+### 7.1. Recovery targets and actual capability
+
+- RPO is the maximum acceptable data-loss window;
+- RTO is the time from incident declaration to safe service restoration.
+- Neither is yet an agreed production commitment.
+- Record measured recovery time separately from targets.
+- Provider recovery entitlements/retention must be verified for the selected account/plan; this document does not assume a particular platform backup window or automatic DO restore facility.
 
 | Asset / failure                                           | Proposed planning target                                                                                                              | Actual status and acceptance requirement                                                                                                                                   |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -296,25 +591,50 @@ RPO is the maximum acceptable data-loss window; RTO is the time from incident de
 | Provider records                                          | Provider-owned recovery/retention and support arrangements                                                                            | Verify SimplyBook/HitPay account entitlements and restricted export/support options; the website cannot restore their authority from a local browser snapshot              |
 | Diagnostics and audit evidence                            | Agree retention and incident-evidence hold separately from application RPO                                                            | Tempo samples are not a complete financial audit record; restrict exports and preserve investigation evidence                                                              |
 
-Owner must approve achievable targets, coverage and retention before handover. These draft values neither change existing commercial commitments nor establish a zero-loss guarantee. Primary/backup recovery operators and support destinations remain unassigned until nominated.
+- Owner must approve achievable targets, coverage and retention before handover.
+- These draft values neither change existing commercial commitments nor establish a zero-loss guarantee.
+- Primary/backup recovery operators and support destinations remain unassigned until nominated.
 
-### Restore procedure to rehearse — not yet executed
+<a id="restore-procedure-to-rehearse--not-yet-executed"></a>
 
-1. **Declare and scope.** Record incident, environment/account, affected stores, current deployment revision, first observed fault and the intended recovery cutoff. Separate bad code from bad data; prefer a verified release rollback when storage is sound.
-2. **Contain without destroying evidence.** Authorized operator closes affected writes/schedulers/integrations through reviewed controls; preserve current database/DO evidence, migration ledger, original identities and read-only provider records. Stop if external effects cannot be fenced. Do not revoke/delete records just to produce a clean test.
-3. **Verify recoverability.** Record supported recovery mechanism, available recovery points and retention, encryption/access controls, operator permissions and expected scope. Verify access to the previous artifact/configuration and provider reconciliation evidence before changing the target.
-4. **Prepare isolation.** Restore to an approved isolated target with external booking/payment/notification writes and automatic replay disabled. A copied foundation must not be silently re-registered as production; use a reviewed inspection/test configuration and do not bypass production identity guards. If this cannot be done safely, mark the drill blocked.
-5. **Restore and inspect.** Record recovery point, start/end time and tool/provider receipt. Check expected migration sequence, schema, row relationships, original attempt/grant/effect/payment associations, revocation/identity state and integrity of retained evidence. Keep customer data and backup credentials outside public artifacts.
-6. **Reconcile external truth.** Inspect provider changes after the restore point under separately authorized read access. Match booking/invoice/payment references, amount/currency/account and effects; preserve unresolved/late/duplicate cases. Restored old tokens, grants or claims must not authorize replay. Re-establish safe access/token state through its owner, not arbitrary SQL edits.
-7. **Verify failure handling.** In isolation with synthetic provider interception, demonstrate that pre-restore completed/unknown effects cannot be duplicated; revoked access stays denied or is deliberately invalidated under an approved plan. Check context/receipt protection, queue/recovery behavior and migration compatibility. Owner/CI operates any browser test.
-8. **Decide cutover.** Compare measured RPO/RTO with approved targets; list unresolved discrepancies. Owner approves cutover only with a safe write boundary and reconciled financial state. If not safe, retain the current containment and recovery evidence rather than enabling checkout.
-9. **Validate and close.** Verify exact deployed artifact/target, health/DNS, authorized identity/receipt reads, monitoring and scheduled recovery. Arrange any real booking/payment acceptance separately with the owner. Record rollback path, support ownership, residual risk and the next drill date.
+### 7.2. Restore procedure to rehearse — not yet executed
 
-Stop conditions include wrong account/foundation, unsupported/incomplete backup, missing effect references, ambiguous provider settlement, unable-to-disable writes, newly exposed sensitive data or failed revocation protection. Escalate with evidence; do not “repair” by deleting rows, resetting migration history, or creating a replacement coordinator.
+1. **Declare and scope.** Record incident, environment/account, affected stores, current deployment revision, first observed fault and the intended recovery cutoff.
+   - Separate bad code from bad data; prefer a verified release rollback when storage is sound.
+2. **Contain without destroying evidence.** Authorized operator closes affected writes/schedulers/integrations through reviewed controls; preserve current database/DO evidence, migration ledger, original identities and read-only provider records.
+   - Stop if external effects cannot be fenced.
+   - Do not revoke/delete records just to produce a clean test.
+3. **Verify recoverability.** Record supported recovery mechanism, available recovery points and retention, encryption/access controls, operator permissions and expected scope.
+   - Verify access to the previous artifact/configuration and provider reconciliation evidence before changing the target.
+4. **Prepare isolation.** Restore to an approved isolated target with external booking/payment/notification writes and automatic replay disabled.
+   - A copied foundation must not be silently re-registered as production; use a reviewed inspection/test configuration and do not bypass production identity guards.
+   - If this cannot be done safely, mark the drill blocked.
+5. **Restore and inspect.** Record recovery point, start/end time and tool/provider receipt.
+   - Check expected migration sequence, schema, row relationships, original attempt/grant/effect/payment associations, revocation/identity state and integrity of retained evidence.
+   - Keep customer data and backup credentials outside public artifacts.
+6. **Reconcile external truth.** Inspect provider changes after the restore point under separately authorized read access.
+   - Match booking/invoice/payment references, amount/currency/account and effects; preserve unresolved/late/duplicate cases.
+   - Restored old tokens, grants or claims must not authorize replay.
+   - Re-establish safe access/token state through its owner, not arbitrary SQL edits.
+7. **Verify failure handling.** In isolation with synthetic provider interception, demonstrate that pre-restore completed/unknown effects cannot be duplicated; revoked access stays denied or is deliberately invalidated under an approved plan.
+   - Check context/receipt protection, queue/recovery behavior and migration compatibility.
+   - Owner/CI operates any browser test.
+8. **Decide cutover.** Compare measured RPO/RTO with approved targets; list unresolved discrepancies.
+   - Owner approves cutover only with a safe write boundary and reconciled financial state.
+   - If not safe, retain the current containment and recovery evidence rather than enabling checkout.
+9. **Validate and close.** Verify exact deployed artifact/target, health/DNS, authorized identity/receipt reads, monitoring and scheduled recovery.
+   - Arrange any real booking/payment acceptance separately with the owner.
+   - Record rollback path, support ownership, residual risk and the next drill date.
 
-### Restore evidence worksheet
+- Stop conditions include wrong account/foundation, unsupported/incomplete backup, missing effect references, ambiguous provider settlement, unable-to-disable writes, newly exposed sensitive data or failed revocation protection.
+- Escalate with evidence; do not “repair” by deleting rows, resetting migration history, or creating a replacement coordinator.
 
-Keep this as the blank master; store completed results in restricted owner-controlled evidence. No successful restore or measured RPO/RTO is claimed until this is completed.
+<a id="restore-evidence-worksheet"></a>
+
+### 7.3. Restore evidence worksheet
+
+- Keep this as the blank master; store completed results in restricted owner-controlled evidence.
+- No successful restore or measured RPO/RTO is claimed until this is completed.
 
 | Field                                                              | Result / evidence                                    |
 | ------------------------------------------------------------------ | ---------------------------------------------------- |
@@ -334,53 +654,135 @@ Keep this as the blank master; store completed results in restricted owner-contr
 
 ## 8. Domain, DNS and HTTPS
 
-Use [Admin Cloudflare UAT](uat/admin.md#cloudflare-domain-dns-and-https-checks) for inspection. Confirm registrar, authoritative DNS owner, Cloudflare account IDs and hosting owner separately. Cloudflare nameservers do not identify which account owns the zone. `app404.ai` remains outside the proof.
+- Use [Admin Cloudflare UAT](tests/uat/admin.md#cloudflare-domain-dns-and-https-checks) for inspection.
+- Confirm registrar, authoritative DNS owner, Cloudflare account IDs and hosting owner separately.
+- Cloudflare nameservers do not identify which account owns the zone.
+- `app404.ai` remains outside the proof.
 
-Current owner decision is **closed Workers.dev bootstrap first, domain hookup later** for `soccerbotsg.com`; Cloudflare Registrar transfer requires the destination zone active first. Neither transfer nor delegation has been verified complete. Confirm registrar unlock/transfer eligibility and destination account without storing transfer codes in repository evidence. During registrar transfer, preserve existing nameservers and DNS service unless the owner separately approves a reviewed migration. Populate and compare the destination zone, including MX/SPF/DKIM/DMARC and other existing records, before changing delegation. Assess DS/DNSSEC coordination and record the old nameservers/zone for rollback. A completed registrar transfer alone does not copy DNS or establish client hosting.
+- Current owner decision is **closed Workers.dev bootstrap first, domain hookup later** for `soccerbotsg.com`;
+- Cloudflare Registrar transfer requires the destination zone active first.
+- Neither transfer nor delegation has been verified complete.
+- Confirm registrar unlock/transfer eligibility and destination account without storing transfer codes in repository evidence.
+- During registrar transfer, preserve existing nameservers and DNS service unless the owner separately approves a reviewed migration.
+- Populate and compare the destination zone, including MX/SPF/DKIM/DMARC and other existing records, before changing delegation.
+- Assess DS/DNSSEC coordination and record the old nameservers/zone for rollback.
+- A completed registrar transfer alone does not copy DNS or establish client hosting.
 
-Reassess the prepared SaaS deployment target against supported same-account Worker hosting after ownership is confirmed; do not skip SaaS checks while still using that target. [ADR-008](architecture/adr.md#adr-008--managed-custom-hostnames-with-vendor-controlled-dns) records the amended decision.
+- Reassess the prepared SaaS deployment target against supported same-account Worker hosting after ownership is confirmed; do not skip SaaS checks while still using that target.
+- [ADR-008](architecture/adr.md#adr-008--managed-custom-hostnames-with-vendor-controlled-dns) records the amended decision.
 
-Before any owner/vendor change, save the approved DNS baseline and exact record/TTL/proxy/validation/CAA instructions and rollback contact. Preserve MX/SPF/DKIM/DMARC. For SaaS, inspect fallback origin, custom hostname status, route ownership and persistent automated validation. A subdomain proof cannot establish apex support. Verify trusted coverage, redirects, same-origin API and secure cookies on each approved hostname.
+- Before any owner/vendor change, save the approved DNS baseline and exact record/TTL/proxy/validation/CAA instructions and rollback contact.
+- Preserve MX/SPF/DKIM/DMARC.
+- For SaaS, inspect fallback origin, custom hostname status, route ownership and persistent automated validation.
+- A subdomain proof cannot establish apex support.
+- Verify trusted coverage, redirects, same-origin API and secure cookies on each approved hostname.
 
-Certificate incident: distinguish DNS validation/CAA, hostname activation, routing and actual certificate expiry. Correct the failed prerequisite through the authorised DNS/hosting operator, then verify issuance and availability. Prefer persistent managed renewal; do not introduce routine manual TXT changes/uploads as the fix. Record initial issuance and actual renewal separately, with expiry/availability alert evidence. Exact owner/operator DNS instructions and apex acceptance remain required before production handover.
+- Certificate incident: distinguish DNS validation/CAA, hostname activation, routing and actual certificate expiry.
+- Correct the failed prerequisite through the authorised DNS/hosting operator, then verify issuance and availability.
+- Prefer persistent managed renewal; do not introduce routine manual TXT changes/uploads as the fix.
+- Record initial issuance and actual renewal separately, with expiry/availability alert evidence.
+- Exact owner/operator DNS instructions and apex acceptance remain required before production handover.
 
 ## 9. Operational records and handover
 
-For each incident/change, record: owner, timestamps, environment/account IDs, revision/run/artifact, reason and scope, affected rule/case IDs, redacted evidence, before/after observations, approval where required, verification, residual risks and next review date. Keep actual customer/payment identifiers in restricted evidence rather than public PR descriptions.
+- For each incident/change, record: owner, timestamps, environment/account IDs, revision/run/artifact, reason and scope, affected rule/case IDs, redacted evidence, before/after observations, approval where required, verification, residual risks and next review date.
+- Keep actual customer/payment identifiers in restricted evidence rather than public PR descriptions.
 
-Keep [Admin](uat/admin.md), [Trainers](uat/trainers.md) and [Simulated user](uat/simulated-user.md) worksheets as blank masters; store completed results with revision/environment and preserve failures/retests. [Code owners](code-owners/index.md) locates implementation responsibility, not on-call people. Name primary/backup responders, verify billing/MFA, prove monitoring receiver delivery, rehearse recovery/rollback and obtain owner sign-off before handover. SMS, packages and MCP admin integration remain separately quoted scope.
+- Keep [Admin](tests/uat/admin.md), [Trainers](tests/uat/trainers.md) and [Simulated user](tests/uat/customer.md) worksheets as blank masters; store completed results with revision/environment and preserve failures/retests.
+- [Code owners](code-owners/index.md) locates implementation responsibility, not on-call people.
+- Name primary/backup responders, verify billing/MFA, prove monitoring receiver delivery, rehearse recovery/rollback and obtain owner sign-off before handover.
+- SMS, packages and MCP admin integration remain separately quoted scope.
 
-### Client bootstrap and staging exposure checkpoint — 31 October 2026
+<a id="client-bootstrap-and-staging-exposure"></a>
 
-Closed production revision `21c3f16eb0e31ede252bbc08e809584cb4371e0d` passed main verification 41081622665 and deployment 41083613159. Foundation setup 41084843753 registered the existing D1/coordinator identity and initialized the same named object; its repeat passed. Object listing confirms stored data. Native telemetry at 00:07:57 SGT tied the exact coordinator ID to KIX/Osaka; this is observed execution, not a permanent location guarantee. Temporary native tracing was restored to disabled. [Progress](../PROGRESS.md) owns the current resource IDs and provider setup queue; [Journey](journey.md) retains the initial failure and follow-up evidence.
+### 9.1. Client bootstrap and staging exposure
 
-Preserve the D1, namespace and coordinator name through releases. Normal `deploy` releases do not repeat foundation setup. Customer/provider access remains disabled. Owner-installed client secret presence is recorded in Progress; production contracts and provider authentication acceptance remain pending, and Grafana production activation is separate. For capacity acceptance in both environments, verify an account-wide limit of one and no admin exemption; test customer and admin cross-trainer conflicts with owner-approved records. Trainers use date-specific availability with weekly days off.
+- [Progress](../PROGRESS.md) owns the current resource IDs and provider setup queue; [Journey](journey.md) retains the initial failure and follow-up evidence.
 
-Developer staging remains a separate resource after client production starts; production deployment does not automatically stop it. Its Workers.dev endpoint is enabled with previews disabled, but the Access API reports Access is not enabled. Repository visibility does not protect that endpoint. Proposed exposure control is an Access allowlist for the developer/approved testers with explicit review of machine health checks and alternate hostnames; it is not configured. The developer source repository is now private. Owner confirmed its old Verify workflow disabled; later retire obsolete credentials after confirming client-owned deployment; existing history/test 507 must remain untouched. Owner UI confirmation is required where the available connector cannot manage settings.
+- Preserve the D1, namespace and coordinator name through releases.
+- Normal `deploy` releases do not repeat foundation setup.
+- Customer/provider access remains disabled.
+- Owner-installed client secret presence is recorded in Progress; production contracts and provider authentication acceptance remain pending, and Grafana production activation is separate.
+- For capacity acceptance in both environments, verify an account-wide limit of one and no admin exemption; test customer and admin cross-trainer conflicts with owner-approved records.
+- Trainers use date-specific availability with weekly days off.
 
-### Calendar cache population failures
+- Developer staging remains a separate resource after client production starts; production deployment does not automatically stop it.
+- Its Workers.dev endpoint is enabled with previews disabled, but the Access API reports Access is not enabled.
+- Repository visibility does not protect that endpoint.
+- Proposed exposure control is an Access allowlist for the developer/approved testers with explicit review of machine health checks and alternate hostnames; it is not configured.
+- The developer source repository is now private.
+- Owner confirmed its old Verify workflow disabled; later retire obsolete credentials after confirming client-owned deployment; existing history/test 507 must remain untouched.
+- Owner UI confirmation is required where the available connector cannot manage settings.
 
-Warming prebuilds exactly the current Singapore month and the next two; the UI and server reject the fourth. Each provider request covers up to15 consecutive approved dates per trainer/service. Warming preserves still-fresh short reads instead of clearing every month; it does not extend their60-second freshness bound. Manual provider edits still require periodic reconciliation because no reliable change feed is implemented.
+<a id="calendar-cache-population-failures"></a>
 
-A release revision changes the display-cache scope. A missing snapshot triggers a queued provider read; it does not require waiting for scheduled warming. Only a complete, validated month is persisted. Each scheduler invocation attempts one due month. Persisted per-month admission waits at least a minute after failure, prioritizes missing months and rotates older attempts; successful snapshots are reused for15 minutes. A cold three-month horizon therefore needs three successful minute turns, while customer misses can build immediately. An unexpired retained snapshot keeps its original deadline after a failed refresh.
+### 9.2. Calendar cache population failures
 
-For a calendar503, retain the HTTP JSON error and `X-Request-ID`. `calendar_cache_trace` records correlated phases: `hit`, `miss`, `build_started`, `build_saved`, `build_discarded`, `build_failed`, `serve`, `refresh_skipped` and `refresh_deferred`. Each event identifies a customer or warming trigger. Completed builds/serves include duration, observed timestamp, date/offer counts and persistence disposition; serves also include age. A generation-rejected or already-expired save is a discarded build, never reported as a saved month. Failure records contain a reviewed error classification; unknown codes map to `temporarily_unavailable`, without raw payloads/exception text. Runtime metadata allowlisting drops extra fields and rejects invalid correlation/phase/trigger values. The vocabulary and adversarial proof are in [security assessments](security/false-positives.md#regression-evidence-and-remaining-proof). Scheduled traces share one correlation ID across provider/storage work. The existing scheduler `display_refresh_unavailable` event alone cannot identify the cause.
+- Warming prebuilds exactly the current Singapore month and the next two; the UI and server reject the fourth.
+- Each provider request covers up to15 consecutive approved dates per trainer/service.
+- Warming preserves still-fresh short reads instead of clearing every month; it does not extend their60-second freshness bound.
+- Manual provider edits still require periodic reconciliation because no reliable change feed is implemented.
 
-After deployment, use Cloudflare Worker logs to find a `build_saved` with `persisted=true`, then a customer `hit` and `serve`. Match the serve correlation ID to the browser response's `X-Request-ID`, and its `observedAtMs` to `X-Calendar-Observed-At` and the JSON body. `X-Calendar-Expires-At` identifies the retained deadline. A later visit should reuse the snapshot without a provider build; a later due warming should save a new observation. Zero offers with a complete date list is a valid unavailable month. Failed refreshes must preserve any still-valid snapshot without renewing its deadline; expired snapshots cannot hide failed provider evidence. This proves API delivery, not DOM rendering or acceptance of the provider's shared capacity configuration. Do not clear caches or accept malformed availability to make the error disappear.
+- A release revision changes the display-cache scope.
+- A missing snapshot triggers a queued provider read; it does not require waiting for scheduled warming.
+- Only a complete, validated month is persisted.
+- Each scheduler invocation attempts one due month.
+- Persisted per-month admission waits at least a minute after failure, prioritizes missing months and rotates older attempts; successful snapshots are reused for15 minutes.
+- A cold three-month horizon therefore needs three successful minute turns, while customer misses can build immediately.
+- An unexpired retained snapshot keeps its original deadline after a failed refresh.
 
-Grafana export/dashboard changes for these new events are deferred by owner direction. The current Tail exporter does not export `calendar_cache_trace`; source presence is not evidence of production deployment, Grafana ingestion or configured alerts.
+- For a calendar503, retain the HTTP JSON error and `X-Request-ID`.
+- `calendar_cache_trace` records correlated phases: `hit`, `miss`, `build_started`, `build_saved`, `build_discarded`, `build_failed`, `serve`, `refresh_skipped` and `refresh_deferred`.
+- Each event identifies a customer or warming trigger.
+- Completed builds/serves include duration, observed timestamp, date/offer counts and persistence disposition; serves also include age.
+- A generation-rejected or already-expired save is a discarded build, never reported as a saved month.
+- Failure records contain a reviewed error classification; unknown codes map to `temporarily_unavailable`, without raw payloads/exception text.
+- Runtime metadata allowlisting drops extra fields and rejects invalid correlation/phase/trigger values.
+- The vocabulary and adversarial proof are in [security assessments](security/false-positives.md#regression-evidence-and-remaining-proof).
+- Scheduled traces share one correlation ID across provider/storage work.
+- The existing scheduler `display_refresh_unavailable` event alone cannot identify the cause.
 
-### Growing trainer rosters — calendar readiness
+- After deployment, use Cloudflare Worker logs to find a `build_saved` with `persisted=true`, then a customer `hit` and `serve`.
+- Match the serve correlation ID to the browser response's `X-Request-ID`, and its `observedAtMs` to `X-Calendar-Observed-At` and the JSON body.
+- `X-Calendar-Expires-At` identifies the retained deadline.
+- A later visit should reuse the snapshot without a provider build; a later due warming should save a new observation.
+- Zero offers with a complete date list is a valid unavailable month.
+- Failed refreshes must preserve any still-valid snapshot without renewing its deadline; expired snapshots cannot hide failed provider evidence.
+- This proves API delivery, not DOM rendering or acceptance of the provider's shared capacity configuration.
+- Do not clear caches or accept malformed availability to make the error disappear.
 
-After adding providers, confirm service relationships and approved date-specific schedules. The reader includes all active linked providers; it does not select the first three or truncate a large roster. Review `calendar_read_budget_exceeded`, `calendar_offer_budget_exceeded` and `calendar_date_unknown` against [calendar contract limits](api-contracts.md#4-catalogue-and-selection-contracts). Provider admission and the 60-second source freshness bound may reject work before a count limit is reached. Check full-month and daily payload sizes and provider latency before expanding beyond the verified roster; do not increase limits blindly or extend freshness to hide slow reads. Synthetic 20-trainer coverage is not a real-provider latency benchmark. Failed reads retain an unavailable state rather than installing partial trainer choices; existing unexpired display snapshots keep their original expiry.
+- Grafana export/dashboard changes for these new events are deferred by owner direction.
+- The current Tail exporter does not export `calendar_cache_trace`; source presence is not evidence of production deployment, Grafana ingestion or configured alerts.
 
-PR32 current authority (6 November): the owner revoked merge with “dont merge” after successful staging. Keep the PR open and runtime settings unchanged. The earlier planned sequence (merge → independent main CI/deployment → client-sandbox restoration → owner A–D) is on hold, not standing permission. If authorized later, inherit existing resources/secrets and verify the complete merchant/contract pairing and runtime readback; live merchant and email activation remain separate.
+<a id="growing-trainer-rosters--calendar-readiness"></a>
 
-Client sandbox activation and live-payment readiness are separate. The owner-authorized production-named sandbox has dated activation/readback evidence in [External providers configuration](external-providers-config.md); committed closed defaults and a later deployment may change effective runtime settings. Inspect the exact deployed revision, switches and reviewed merchant pairing before declaring current readiness. Synthetic or guest sandbox tests do not establish live merchant, email, Turnstile/device or provider acceptance. Resend domain/DNS readiness remains separately evidenced; do not infer it from booking access. No production configuration was changed by this documentation reconciliation.
+### 9.3. Growing trainer rosters — calendar readiness
 
-### Browser confirmation timing capture
+- After adding providers, confirm service relationships and approved date-specific schedules.
+- The reader includes all active linked providers; it does not select the first three or truncate a large roster.
+- Review `calendar_read_budget_exceeded`, `calendar_offer_budget_exceeded` and `calendar_date_unknown` against [calendar contract limits](api-contracts.md#4-catalogue-and-selection-contracts).
+- Provider admission and the 60-second source freshness bound may reject work before a count limit is reached.
+- Check full-month and daily payload sizes and provider latency before expanding beyond the verified roster; do not increase limits blindly or extend freshness to hide slow reads.
+- Synthetic 20-trainer coverage is not a real-provider latency benchmark.
+- Failed reads retain an unavailable state rather than installing partial trainer choices; existing unexpired display snapshots keep their original expiry.
 
-The protected live confirmation UI emits local `confirmation_ui` console records and Performance marks named `soccerbot:confirmation:<stage>` for `summary`, `payment_received`, `confirmed` and `receipt_ready`. Keep the browser console open with Preserve log during owner UAT. A network-only HAR does not include these events. Export the console records alongside the HAR, or copy the marks' `detail` from DevTools:
+- Check current owner authority in [Progress](../PROGRESS.md) before merge or activation; preparation and staging acceptance grant neither.
+- If authorized later, inherit existing resources/secrets and verify the complete merchant/contract pairing and runtime readback; live merchant and email activation remain separate.
+
+- Client sandbox activation and live-payment readiness are separate.
+- The owner-authorized production-named sandbox has dated activation/readback evidence in [Journey](journey.md); committed closed defaults and a later deployment may change effective runtime settings.
+- Inspect the exact deployed revision, switches and reviewed merchant pairing before declaring current readiness.
+- Synthetic or guest sandbox tests do not establish live merchant, email, Turnstile/device or provider acceptance.
+- Resend domain/DNS readiness remains separately evidenced; do not infer it from booking access.
+
+<a id="browser-confirmation-timing-capture"></a>
+
+### 9.4. Browser confirmation timing capture
+
+- The protected live confirmation UI emits local `confirmation_ui` console records and Performance marks named `soccerbot:confirmation:<stage>` for `summary`, `payment_received`, `confirmed` and `receipt_ready`.
+- Keep the browser console open with Preserve log during owner UAT.
+- A network-only HAR does not include these events.
+- Export the console records alongside the HAR, or copy the marks' `detail` from DevTools:
 
 ```js
 performance
@@ -389,8 +791,21 @@ performance
   .map((entry) => entry.detail);
 ```
 
-`recoveryKey` uses the same SHA-256 correlation as server `confirmation_trace`; `buildRevision` is the actual Git checkout used by the static build (a tested PR merge commit may differ from the PR head). Use the release manifest to map tested checkout to source revision. `responseReadyMs` is when validated evidence became available locally, `committedMs` is the React effect's post-commit observation, and `frameMs` is the next animation-frame callback while the document is visible. Add `timeOriginMs` for correlation with HAR wall-clock timestamps. A null response time means that particular evidence timestamp is unavailable; never treat it as zero. `proofSource` distinguishes context/status proof, saved confirmation, receipt, or confirmed status without loaded details.
+- `recoveryKey` uses the same SHA-256 correlation as server `confirmation_trace`; `buildRevision` is the actual Git checkout used by the static build (a tested PR merge commit may differ from the PR head).
+- Use the release manifest to map tested checkout to source revision.
+- `responseReadyMs` is when validated evidence became available locally, `committedMs` is the React effect's post-commit observation, and `frameMs` is the next animation-frame callback while the document is visible.
+- Add `timeOriginMs` for correlation with HAR wall-clock timestamps.
+- A null response time means that particular evidence timestamp is unavailable; never treat it as zero.
+- `proofSource` distinguishes context/status proof, saved confirmation, receipt, or confirmed status without loaded details.
 
-These events are diagnostic observations, not payment authority or proof of physical screen paint, foreground focus or lack of an obscuring dialog. They do not add a provider request, telemetry endpoint, Cloudflare ingestion, persistent browser storage or a new Grafana panel. Performance retains the latest mark per stage; console records retain transitions when captured. Emissions are bounded/deduplicated per mounted view, delayed while hidden and cancelled if removed before observation; unavailable diagnostics never block booking. No contact data, raw attempt/provider identifiers, response bodies, credentials or payment URLs are included. Treat hashed correlation as pseudonymous diagnostic data.
+- These events are diagnostic observations, not payment authority or proof of physical screen paint, foreground focus or lack of an obscuring dialog.
+- They do not add a provider request, telemetry endpoint, Cloudflare ingestion, persistent browser storage or a new Grafana panel.
+- Performance retains the latest mark per stage; console records retain transitions when captured.
+- Emissions are bounded/deduplicated per mounted view, delayed while hidden and cancelled if removed before observation; unavailable diagnostics never block booking.
+- No contact data, raw attempt/provider identifiers, response bodies, credentials or payment URLs are included.
+- Treat hashed correlation as pseudonymous diagnostic data.
 
-Invoice-display rollout/rollback: new readers accept legacy observations and receipts without document numbers. Earlier strict-schema binaries may reject new `documentNumber`/`invoiceNumber` metadata. A rollback/revert must retain the optional schema readers, or use a separately reviewed compatibility plan; do not blindly deploy an older binary or delete stored evidence. No schema/data cleanup is authorized by this display change.
+- Invoice-display rollout/rollback: new readers accept legacy observations and receipts without document numbers.
+- Earlier strict-schema binaries may reject new `documentNumber`/`invoiceNumber` metadata.
+- A rollback/revert must retain the optional schema readers, or use a separately reviewed compatibility plan; do not blindly deploy an older binary or delete stored evidence.
+- No schema/data cleanup is authorized by this display change.

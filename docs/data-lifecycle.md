@@ -1,10 +1,37 @@
 # Data lifecycle — source-based draft
 
-[Database schema](architecture/database-schema.md) owns the D1 and Durable Object table diagrams and keys; this document owns lifecycle and retention.
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-**Draft for client policy mapping, 28 October 2026.** This document describes what the application currently stores, how access expires and where physical cleanup exists. It does not approve retention periods, authorize deletion or certify compliance. Before implementing cleanup or publishing customer promises, map the client’s PDPA/privacy clauses to these records, resolve exceptions and approve the resulting rules. No customer data, provider settings or cleanup behavior was changed to prepare this draft.
+- [1. Lifecycle and evidence boundaries](#1-lifecycle-and-evidence-boundaries)
+- [2. Current storage inventory](#2-current-storage-inventory)
+  - [2.1. Browser and downloaded data](#browser-and-downloaded-data)
+  - [2.2. D1 application state](#d1-application-state)
+  - [2.3. Durable Object, caches and external copies](#durable-object-caches-and-external-copies)
+- [3. Implemented validity periods are not disposal periods](#3-implemented-validity-periods-are-not-disposal-periods)
+- [4. Existing cleanup and important gaps](#4-existing-cleanup-and-important-gaps)
+- [5. External systems must be mapped separately](#5-external-systems-must-be-mapped-separately)
+- [6. Clause-to-implementation worksheet — complete before cleanup work](#6-clause-to-implementation-worksheet--complete-before-cleanup-work)
+- [7. Proposed implementation sequence — not implemented or authorised by this draft](#7-proposed-implementation-sequence--not-implemented-or-authorised-by-this-draft)
+- [8. Review checklist and handover](#8-review-checklist-and-handover)
+  - [8.1. Verified unpaid release and warming claims](#verified-unpaid-release-and-warming-claims)
 
-Source baseline: application code at `dffb24a`, carried unchanged through documentation branch `b137a79`. Inspection covered the 35 migrations, application storage statements, browser persistence, scheduler and telemetry/export paths. Migrations were applied to an empty in-memory SQLite database only to inspect the final schema; no deployed database was queried. Account-level backup, log and provider retention settings have not been verified. [Business rules](business-rules.md) own invariants, [API contracts](api-contracts.md) own interfaces, [technical behavior](code-owners/technical-behavior.md) maps functions and [runbook](runbook.md) owns recovery procedures.
+</details>
+<!-- /document-chapter-menu -->
+
+- [Database schema](architecture/database-schema.md) owns the D1 and Durable Object table diagrams and keys; this document owns lifecycle and retention.
+
+- **Draft for client policy mapping.** This document describes what the application currently stores, how access expires and where physical cleanup exists.
+- It does not approve retention periods, authorize deletion or certify compliance.
+- Before implementing cleanup or publishing customer promises, map the client’s PDPA/privacy clauses to these records, resolve exceptions and approve the resulting rules.
+- This reference grants no authority to change customer data, provider settings or cleanup behaviour.
+
+- Source baseline: application code at `dffb24a`, carried unchanged through documentation branch `b137a79`.
+- Inspection covered the 35 migrations, application storage statements, browser persistence, scheduler and telemetry/export paths.
+- Migrations were applied to an empty in-memory SQLite database only to inspect the final schema; no deployed database was queried.
+- Account-level backup, log and provider retention settings have not been verified.
+- [Business rules](business-rules.md) own invariants, [API contracts](api-contracts.md) own interfaces, [technical behavior](code-owners/technical-behavior.md) maps functions and [runbook](runbook.md) owns recovery procedures.
 
 ## 1. Lifecycle and evidence boundaries
 
@@ -26,20 +53,29 @@ flowchart TB
   Cleanup -.-> Backup["Backup expiry and deletion-aware restore · pending design"]
 ```
 
-Four terms must not be confused:
+- Four terms must not be confused:
 
-- **Expiry:** a token, grant, cache or checking window stops being valid. Its stored record may remain.
-- **Revocation:** retained state prevents future access. Revocation is not account/data erasure.
-- **Archival:** an eligible record moves from an active table into a history table. It still exists.
-- **Deletion/anonymisation:** data is removed or transformed so the intended identifying relationship is no longer available. This needs an approved scope across copies, linked records and providers. Hashes, attempt IDs and encrypted data are not automatically anonymous.
+- **Expiry:** a token, grant, cache or checking window stops being valid.
+  - Its stored record may remain.
+- **Revocation:** retained state prevents future access.
+  - Revocation is not account/data erasure.
+- **Archival:** an eligible record moves from an active table into a history table.
+  - It still exists.
+- **Deletion/anonymisation:** data is removed or transformed so the intended identifying relationship is no longer available.
+  - This needs an approved scope across copies, linked records and providers.
+  - Hashes, attempt IDs and encrypted data are not automatically anonymous.
 
-In this document, **implemented** means inspected source behavior, **not found** means no corresponding general path was identified in that source review, and **pending policy/account verification** means a client decision or external setting is still needed. Neither expiry nor a green CI result establishes production retention compliance.
+- In this document, **implemented** means inspected source behavior, **not found** means no corresponding general path was identified in that source review, and **pending policy/account verification** means a client decision or external setting is still needed.
+- Neither expiry nor a green CI result establishes production retention compliance.
 
 ## 2. Current storage inventory
 
-All rows below need an approved disposal rule even where expiry is already enforced. “No general purge found” does not prove a provider will retain data forever; it means this application does not establish its deletion deadline.
+- All rows below need an approved disposal rule even where expiry is already enforced.
+- “No general purge found” does not prove a provider will retain data forever; it means this application does not establish its deletion deadline.
 
-### Browser and downloaded data
+<a id="browser-and-downloaded-data"></a>
+
+### 2.1. Browser and downloaded data
 
 | ID    | Data / location and purpose                                                                                | Current behavior                                                                                                                                                                                                                                                   | Remaining decision                                                                                                                  |
 | ----- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -49,7 +85,9 @@ All rows below need an approved disposal rule even where expiry is already enfor
 | DL-04 | `soccerbot-player-app-prompt` localStorage preference; demo draft, identity, profiles and receipt fixtures | [Prompt](../src/components/player-app-prompt.tsx), [storage](../src/services/storage.ts) and [demo adapters](../src/services/demo) use different keys/stores. Demo sign-out removes its identity keys, not a system-wide customer erasure.                         | Preference lifetime and test-data hygiene; do not enter real customer data into demo fixtures.                                      |
 | DL-05 | Secure HttpOnly access/remembered cookies; downloaded PDF/calendar files                                   | Cookie expiry/revocation is enforced by [access](../worker/access.ts) and [remembered identity](../worker/remembered-identity.ts). Customer PDF/calendar generation is retired; previously downloaded files remain customer-held.                                  | Explain cookies and downloads appropriately. Server deletion does not recall downloaded files or recipient inbox copies.            |
 
-### D1 application state
+<a id="d1-application-state"></a>
+
+### 2.2. D1 application state
 
 | ID    | Tables and identifying content / purpose                                                                                                                                                                                                                                       | Current expiry, revocation or movement                                                                                                                                                                                                      | Physical cleanup / gap                                                                                                                                                        |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -63,20 +101,50 @@ All rows below need an approved disposal rule even where expiry is already enfor
 | DL-13 | `webhook_capture_windows`, `webhook_event_scopes`, `webhook_receipts`, `webhook_pending_hints`, `webhook_recovery_scopes`, `webhook_subscription_grants`: account/window metadata, body digest/size/shape, selected booking hints, attempt links, subscription baseline/result | [Capture](../worker/webhook.ts) uses a bounded authenticated capture window and deduplication; retained receipts describe permitted shape rather than a raw webhook-body archive. Related hints/recovery links can still identify bookings. | No general purge found. Review provider retry/replay behavior and retained recovery dependencies before deleting receipts or subscription proofs.                             |
 | DL-14 | `developer_operations`, `identity_delivery_window`, `foundation_identity`: authorized-operation results, delivery sender/recipient/window and immutable deployment identity                                                                                                    | Operation/window checks limit execution; foundation checks bind the expected environment/resources.                                                                                                                                         | No general purge found. Some records contain recipient/account identifiers. Foundation identity is not a customer record and must not be swept by customer cleanup.           |
 
-The D1 table list is based on the final schema after all [migrations](../migrations), not comments from an early migration. Later migrations extend the original developer-only schema for ongoing customer operation. In particular, `intent_json`, `contract_json`, `result_json`, `observation_json` and `confirmation_json` require field-level review; a policy cannot safely classify them as “technical metadata” by name alone.
+- The D1 table list is based on the final schema after all [migrations](../migrations), not comments from an early migration.
+- Later migrations extend the original developer-only schema for ongoing customer operation.
+- In particular, `intent_json`, `contract_json`, `result_json`, `observation_json` and `confirmation_json` require field-level review; a policy cannot safely classify them as “technical metadata” by name alone.
 
-### Durable Object, caches and external copies
+<a id="durable-object-caches-and-external-copies"></a>
 
-| ID    | Store and purpose                                                                                                                                                          | Current behavior                                                                                                                                                                                                                                                                                                                                                                                                                              | Gap / verification required                                                                                                                                                                                                                                                                                                                                                                           |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DL-15 | DO SQLite `provider_token_cache`: encrypted provider tokens and scope/expiry metadata                                                                                      | [Token cache](../worker/provider-token-cache.ts) deletes invalid/wrong-scope entries when loaded or explicitly invalidated; expired access without a refresh token is removed. Encrypted admin refresh material survives access expiry until consumed, replaced or invalidated; conditional deletion precedes refresh transport. Saves replace that token family. This is access-driven cleanup, not a wall-clock purge of every idle object. | Secret/token lifecycle and external credential rotation are separate from customer-data erasure.                                                                                                                                                                                                                                                                                                      |
-| DL-16 | DO SQLite `display_snapshots`, `display_refresh`, `display_warm_month`, `display_release_probes`; memory catalogue/calendar caches                                         | [Display snapshots](../worker/display-snapshots.ts) store public display DTOs with read expiry; saving removes foreign-scope and sufficiently old snapshots. Generation changes fence stale writes. Memory caches are bounded/invalidation-driven.                                                                                                                                                                                            | Release probes retain an attempt ID, date and grid starts; queue inspection purges rows whose base deadline is over one day old. Completed tombstones prevent repeated expiry from restarting probes. Idle expired rows may remain until another save/queue inspection. These caches are not booking/payment authority; verify permitted provider labels before treating all content as non-personal. |
-| DL-17 | DO SQLite `budget`, `refreshes`, `admissions`, `admission_releases`, `financial_releases`, `provider_request_admissions`, `provider_transport_releases`, `payment_wakeups` | [Coordinator](../worker/coordinator.ts) retains accounting/admission/release evidence. Payment wakeups retain their next retry deadline; terminal processing removes only the matching generation.                                                                                                                                                                                                                                            | No general historical purge found for accounting/release tables. Do not reset them to clear capacity or erase customer-linked financial fences.                                                                                                                                                                                                                                                       |
-| DL-18 | Worker/platform logs, optional Grafana/Tempo data, CI artifacts, operator exports and backups                                                                              | [Diagnostics](../worker/diagnostics.ts) and [telemetry](../worker/telemetry.ts) bound/sanitise known events and apply sampling. CI upload steps declare 14-day artifact retention.                                                                                                                                                                                                                                                            | Sampling and the telemetry `retention` label do not configure storage expiry. Grafana activation/retention, Cloudflare logs/backups, GitHub logs/settings and separately downloaded copies need account verification.                                                                                                                                                                                 |
+### 2.3. Durable Object, caches and external copies
+
+- **DL-15**
+  - **Store and purpose:** DO SQLite `provider_token_cache`: encrypted provider tokens and scope/expiry metadata
+  - **Current behavior:** [Token cache](../worker/provider-token-cache.ts) deletes invalid/wrong-scope entries when loaded or explicitly invalidated; expired access without a refresh token is removed.
+    - Encrypted admin refresh material survives access expiry until consumed, replaced or invalidated; conditional deletion precedes refresh transport.
+    - Saves replace that token family.
+    - This is access-driven cleanup, not a wall-clock purge of every idle object.
+  - **Gap / verification required:** Secret/token lifecycle and external credential rotation are separate from customer-data erasure.
+
+- **DL-16**
+  - **Store and purpose:** DO SQLite `display_snapshots`, `display_refresh`, `display_warm_month`, `display_release_probes`; memory catalogue/calendar caches
+  - **Current behavior:** [Display snapshots](../worker/display-snapshots.ts) store public display DTOs with read expiry; saving removes foreign-scope and sufficiently old snapshots.
+    - Generation changes fence stale writes.
+    - Memory caches are bounded/invalidation-driven.
+  - **Gap / verification required:** Release probes retain an attempt ID, date and grid starts; queue inspection purges rows whose base deadline is over one day old.
+    - Completed tombstones prevent repeated expiry from restarting probes.
+    - Idle expired rows may remain until another save/queue inspection.
+    - These caches are not booking/payment authority; verify permitted provider labels before treating all content as non-personal.
+
+- **DL-17**
+  - **Store and purpose:** DO SQLite `budget`, `refreshes`, `admissions`, `admission_releases`, `financial_releases`, `provider_request_admissions`, `provider_transport_releases`, `payment_wakeups`
+  - **Current behavior:** [Coordinator](../worker/coordinator.ts) retains accounting/admission/release evidence.
+    - Payment wakeups retain their next retry deadline; terminal processing removes only the matching generation.
+  - **Gap / verification required:** No general historical purge found for accounting/release tables.
+    - Do not reset them to clear capacity or erase customer-linked financial fences.
+
+- **DL-18**
+  - **Store and purpose:** Worker/platform logs, optional Grafana/Tempo data, CI artifacts, operator exports and backups
+  - **Current behavior:** [Diagnostics](../worker/diagnostics.ts) and [telemetry](../worker/telemetry.ts) bound/sanitise known events and apply sampling.
+    - CI upload steps declare 14-day artifact retention.
+  - **Gap / verification required:** Sampling and the telemetry `retention` label do not configure storage expiry.
+    - Grafana activation/retention, Cloudflare logs/backups, GitHub logs/settings and separately downloaded copies need account verification.
 
 ## 3. Implemented validity periods are not disposal periods
 
-These are source facts, not proposed client retention commitments. Recheck the target configuration and source revision before deployment.
+- These are source facts, not proposed client retention commitments.
+- Recheck the target configuration and source revision before deployment.
 
 | Mechanism                        | Current source behavior                                                                                                                                                                                                             | What it does not mean                                                                                             |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -91,13 +159,18 @@ These are source facts, not proposed client retention commitments. Recheck the t
 
 ## 4. Existing cleanup and important gaps
 
-**Implemented, narrow cleanup:** token-cache invalidation/removal; save-triggered public snapshot cleanup; generation-safe removal of processed payment wakeups; matched browser completed-exit removal; bounded memory caches; and copy-then-delete movement of eligible active grants into history tables. None is a general personal-data retention service.
+- **Implemented, narrow cleanup:** token-cache invalidation/removal; save-triggered public snapshot cleanup; generation-safe removal of processed payment wakeups; matched browser completed-exit removal; bounded memory caches; and copy-then-delete movement of eligible active grants into history tables.
+- None is a general personal-data retention service.
 
-**Preview only:** [retentionPreview](../worker/recovery.ts) validates the cutoff and limit, examines at most 100 expired access candidates, excludes owners with attempts and reports `cleanupEnabled: false` / `retention_decision_required`. It explicitly retains attempts, effects, dispatches, recovery, operator proofs and coordinator accounting. It is not an implemented deletion endpoint or scheduled purge. Do not treat “orphan access candidate” as approved deletion eligibility across every identity/profile/provider relationship.
+- **Preview only:** [retentionPreview](../worker/recovery.ts) validates the cutoff and limit, examines at most 100 expired access candidates, excludes owners with attempts and reports `cleanupEnabled: false` / `retention_decision_required`.
+- It explicitly retains attempts, effects, dispatches, recovery, operator proofs and coordinator accounting.
+- It is not an implemented deletion endpoint or scheduled purge.
+- Do not treat “orphan access candidate” as approved deletion eligibility across every identity/profile/provider relationship.
 
-**Not found in the reviewed application paths:** a general age-based D1 purge, a complete customer erasure/anonymisation workflow, a saved-contact deletion endpoint, a cross-provider deletion orchestrator, or deletion-aware backup restoration. [The scheduler](../worker/index.ts) performs recovery, booking-comment work and configured display warming; it is not a general customer-data cleanup scheduler.
+- **Not found in the reviewed application paths:** a general age-based D1 purge, a complete customer erasure/anonymisation workflow, a saved-contact deletion endpoint, a cross-provider deletion orchestrator, or deletion-aware backup restoration.
+- [The scheduler](../worker/index.ts) performs recovery, booking-comment work and configured display warming; it is not a general customer-data cleanup scheduler.
 
-**Consequences to resolve before implementation:** terminal histories can accumulate; expiry may leave personal fields stored; account sign-out is not a deletion request; provider records survive application-row deletion; and restored backups can reintroduce older personal data or revoked access unless a specific restoration procedure prevents it.
+- **Consequences to resolve before implementation:** terminal histories can accumulate; expiry may leave personal fields stored; account sign-out is not a deletion request; provider records survive application-row deletion; and restored backups can reintroduce older personal data or revoked access unless a specific restoration procedure prevents it.
 
 ## 5. External systems must be mapped separately
 
@@ -111,11 +184,12 @@ These are source facts, not proposed client retention commitments. Recheck the t
 | Company Grafana                     | Intended central destination for bounded diagnostic summaries; client ingestion/alerts remain unaccepted.                                         | Tenant/service separation, storage retention, receiver settings, access and deletion. Hashed correlation keys can remain linkable.                                                                                 |
 | GitHub and operator-managed storage | Repository, CI evidence, deployment receipts and downloaded UAT/incident/backup exports.                                                          | Artifact/log settings, who can download, where copies go and their disposal. Never commit customer data, raw tokens or transfer codes as evidence.                                                                 |
 
-Contractual roles and legal obligations must be confirmed with the client and relevant provider agreements; this source audit does not assign controller/intermediary roles or certify the adequacy of a clause.
+- Contractual roles and legal obligations must be confirmed with the client and relevant provider agreements; this source audit does not assign controller/intermediary roles or certify the adequacy of a clause.
 
 ## 6. Clause-to-implementation worksheet — complete before cleanup work
 
-All policy values below are **pending client clauses and approval**. Preserve the distinction between a source validity limit, an agreed business retention period and a provider’s independently configured retention.
+- All policy values below are **pending client clauses and approval**.
+- Preserve the distinction between a source validity limit, an agreed business retention period and a provider’s independently configured retention.
 
 | Decision                            | Inventory scope                | Required client input                                                                            | Engineering mapping to prepare                                                                                | Approval / evidence |
 | ----------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------- |
@@ -128,19 +202,30 @@ All policy values below are **pending client clauses and approval**. Preserve th
 | Diagnostics and exports             | DL-04–05, DL-18                | Log/evidence purpose, duration, access and treatment of downloaded copies                        | Platform/Grafana/GitHub settings and operator procedure                                                       | Pending             |
 | Provider disclosures/transfers      | External-system inventory      | Approved provider clauses, agreements and required disclosures                                   | Actual accounts/settings, field flow and location evidence                                                    | Pending             |
 
-For every approved rule, record: `rule ID → clause ID/version → data category → store/fields → trigger → period → exceptions → action → owner → test evidence → deployed revision`. Broad wording such as “as long as necessary” still needs a concrete operational decision; do not invent a duration during implementation.
+- For every approved rule, record: `rule ID → clause ID/version → data category → store/fields → trigger → period → exceptions → action → owner → test evidence → deployed revision`.
+- Broad wording such as “as long as necessary” still needs a concrete operational decision; do not invent a duration during implementation.
 
 ## 7. Proposed implementation sequence — not implemented or authorised by this draft
 
-1. Obtain and review the client’s clauses; finish the worksheet and resolve contradictions with existing source behavior. If policy requires behavior the app lacks, record the implementation gap before making that customer-facing promise.
-2. Perform an authorised, minimised production inventory/count assessment. Confirm actual deployments, provider accounts, backup/log settings and growth; do not export raw customer rows merely to estimate size.
-3. Design dependency-aware eligibility and deletion/anonymisation for each category. Immutable attempt/grant triggers, revocation fences and linked JSON require explicit migration/design review; a blanket email-based delete is insufficient.
-4. Prepare a read-only dry-run report with counts/reasons and protected-state exclusions. Decide whether minimal deletion evidence is required, what it contains and its own retention; do not create an indefinite duplicate customer record as a deletion receipt.
-5. Test bounded batches, stable pagination/indexes, concurrency, safe reruns and interrupted progress on isolated fixtures. Cover expired-but-referenced access, revoked identities, uncertain payments, webhook replay, archived grants and provider failures. Never turn unknown writes into fresh checkout eligibility by deleting evidence.
-6. Exercise deletion-aware restore and cross-provider handling. Specify how subsequent approved deletions/revocations are re-applied or otherwise protected after restoring an older backup, with appropriate financial reconciliation before access resumes.
-7. Review/approve the concrete change, deploy through normal verified-artifact gates and validate results. Monitor eligible backlog, processed counts, errors and job freshness without logging personal payloads. Keep owner/CI control of browsers and any separately authorised provider operations.
+1. Obtain and review the client’s clauses; finish the worksheet and resolve contradictions with existing source behavior.
+   - If policy requires behavior the app lacks, record the implementation gap before making that customer-facing promise.
+2. Perform an authorised, minimised production inventory/count assessment.
+   - Confirm actual deployments, provider accounts, backup/log settings and growth; do not export raw customer rows merely to estimate size.
+3. Design dependency-aware eligibility and deletion/anonymisation for each category.
+   - Immutable attempt/grant triggers, revocation fences and linked JSON require explicit migration/design review; a blanket email-based delete is insufficient.
+4. Prepare a read-only dry-run report with counts/reasons and protected-state exclusions.
+   - Decide whether minimal deletion evidence is required, what it contains and its own retention; do not create an indefinite duplicate customer record as a deletion receipt.
+5. Test bounded batches, stable pagination/indexes, concurrency, safe reruns and interrupted progress on isolated fixtures.
+   - Cover expired-but-referenced access, revoked identities, uncertain payments, webhook replay, archived grants and provider failures.
+   - Never turn unknown writes into fresh checkout eligibility by deleting evidence.
+6. Exercise deletion-aware restore and cross-provider handling.
+   - Specify how subsequent approved deletions/revocations are re-applied or otherwise protected after restoring an older backup, with appropriate financial reconciliation before access resumes.
+7. Review/approve the concrete change, deploy through normal verified-artifact gates and validate results.
+   - Monitor eligible backlog, processed counts, errors and job freshness without logging personal payloads.
+   - Keep owner/CI control of browsers and any separately authorised provider operations.
 
-Start with explicit rules and modest bounded jobs when approved; introduce queues, archival storage or more elaborate orchestration only when measured growth, job duration, request volume or operational requirements justify them. There is no need to wait for a large customer base to define policy, and no reason to deploy destructive cleanup before the policy and dependencies are understood.
+- Start with explicit rules and modest bounded jobs when approved; introduce queues, archival storage or more elaborate orchestration only when measured growth, job duration, request volume or operational requirements justify them.
+- There is no need to wait for a large customer base to define policy, and no reason to deploy destructive cleanup before the policy and dependencies are understood.
 
 ## 8. Review checklist and handover
 
@@ -153,14 +238,33 @@ Start with explicit rules and modest bounded jobs when approved; introduce queue
 - [ ] Operational owner and review cadence assigned; alert responders remain separate and currently unassigned.
 - [ ] Implemented revision, CI evidence and owner acceptance recorded only after actual execution.
 
-Current status: **source-based draft complete; policy mapping, external-account verification and cleanup implementation pending**. Review when client clauses arrive and whenever storage schemas, identity behavior, provider integrations or retention settings change. This document owns lifecycle policy mapping; the [runbook’s restore procedure](runbook.md#7-data-protection-and-restore) owns operational recovery execution.
+- Current status: **source-based draft complete; policy mapping, external-account verification and cleanup implementation pending**.
+- Review when client clauses arrive and whenever storage schemas, identity behavior, provider integrations or retention settings change.
+- This document owns lifecycle policy mapping; the [runbook’s restore procedure](runbook.md#7-data-protection-and-restore) owns operational recovery execution.
 
-Browser confirmation timing retains response timestamps in a WeakMap and a bounded set of emitted stage keys within the mounted view. It adds no local/session storage or database records. Performance holds the latest diagnostic mark per stage; console retention depends on browser tooling and owner export. Exported diagnostic captures include pseudonymous correlation and must follow the same controlled handling as HAR evidence; the app does not upload them automatically.
+- Browser confirmation timing retains response timestamps in a WeakMap and a bounded set of emitted stage keys within the mounted view.
+- It adds no local/session storage or database records.
+- Performance holds the latest diagnostic mark per stage; console retention depends on browser tooling and owner export.
+- Exported diagnostic captures include pseudonymous correlation and must follow the same controlled handling as HAR evidence; the app does not upload them automatically.
 
-Invoice display metadata: optional provider numbers remain in observations and saved confirmation JSON. Migration0036 adds `invoice_documents`, keyed by attempt and immutable association, containing the original unpaid number, optional paid document number and observation time. It contains no new contact fields, has no automatic expiry/deletion and follows the pending attempt-record retention policy; cleanup remains unapproved. Only authenticated verified receipt enrichment updates the paid display value. Old records are not backfilled by inference. Customer PDF/calendar generation remains retired; historical files may retain earlier data outside server revocation. Email drafts create no delivery store.
+- Invoice display metadata: optional provider numbers remain in observations and saved confirmation JSON.
+- Migration0036 adds `invoice_documents`, keyed by attempt and immutable association, containing the original unpaid number, optional paid document number and observation time.
+- It contains no new contact fields, has no automatic expiry/deletion and follows the pending attempt-record retention policy; cleanup remains unapproved.
+- Only authenticated verified receipt enrichment updates the paid display value.
+- Old records are not backfilled by inference.
+- Customer PDF/calendar generation remains retired; historical files may retain earlier data outside server revocation.
+- Email drafts create no delivery store.
 
-### Verified unpaid release and warming claims
+<a id="verified-unpaid-release-and-warming-claims"></a>
 
-Migration0037 adds immutable per-attempt checking-buffer timing. Verified unpaid release moves the active grant to its existing archive; it deletes neither the payment request journal nor webhook/booking evidence. Later payment remains associated with the original attempt. DO `display_warm_month` stores only scope/month/last-attempt time, with no customer or financial data. Snapshot expiry and affected-day replacement retain the existing original deadline.
+### 8.1. Verified unpaid release and warming claims
 
-Guest capability expiry now renews for the configured lifetime on valid explicit access entry and checkout POST. Issuance identity, revocation, related grants and financial deadlines remain unchanged; expiry/revocation prevents renewal. No new storage table or purge behavior.
+- Migration0037 adds immutable per-attempt checking-buffer timing.
+- Verified unpaid release moves the active grant to its existing archive; it deletes neither the payment request journal nor webhook/booking evidence.
+- Later payment remains associated with the original attempt.
+- DO `display_warm_month` stores only scope/month/last-attempt time, with no customer or financial data.
+- Snapshot expiry and affected-day replacement retain the existing original deadline.
+
+- Guest capability expiry now renews for the configured lifetime on valid explicit access entry and checkout POST.
+- Issuance identity, revocation, related grants and financial deadlines remain unchanged; expiry/revocation prevents renewal.
+- No new storage table or purge behavior.

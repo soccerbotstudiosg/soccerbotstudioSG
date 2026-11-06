@@ -1,31 +1,31 @@
 # Current checkpoint
 
-Observed 6 November 2026. Historical decisions and evidence: [Journey](docs/journey.md).
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-## UI — publish and stage first
+- [1. Next actions](#next-actions)
 
-- Branch: `fix/hero-session-copy`; existing PR32. Do not merge or enable settings.
-- Last verified staging revision: `904414b642ca4de2497601026ef0e269b13a72e9`; newer local changes require final CI/staging.
-- Consolidated changes:
-  - Desktop footer rows align with40% tighter pitch; logo aligns at the app-column bottom. Phones pair Services/Connect With Us and centre Find Us/app links/logo.
-  - Phone header navigation centred; booking Back row has6px divider clearance.
-  - Continue floats only until its reserved original position, remaining above the footer.
-  - Phone Time/Details/Review use cart/trainer popups with live session/distinct-trainer counts and confirmation-style badge pops; reduced motion disables pops.
-  - Time heading: “Select dates” / “and times”. Panels approximately72vw wide, maximum65dvh tall, internally scrollable.
-  - App links visibly white; all shared popup close controls plain × with44px targets.
-- Local component verification: time-step9/9 passed. Full non-browser verification and exact-head frontend/backend/live-email/CodeQL/staging pending for this candidate.
-- Browser/physical acceptance belongs to owner/CI. No assistant browser execution.
+</details>
+<!-- /document-chapter-menu -->
 
-## Separate documentation PR
+- Documentation branch: `docs/test-guides-and-reference-cleanup`; UI parent `fix/hero-session-copy`; [PR32](https://github.com/soccerbotstudiosg/soccerbotstudioSG/pull/32) remains open.
+  - **Do not merge or enable settings.**
+- Prepared: current-reference docs in point form, Journey-only history, one-page suite guide and two-page UAT per customer/admin/trainer; documentation skill requires in-place reconciliation without patch-style appendices. Every document now has its own chapter menu and numbered sections; AGENTS remains the only main router.
+- Source candidate: `2b907c56a362d793bf1d88e70321de96c730419f`; mobile cart/trainer panels, distinct-count pop badges, original-position Continue, footer/header refinements and app-popup contrast implemented.
+  - UI parent includes compact aligned desktop rows, paired phone Services/Connect With Us and centred remaining groups; address, official app heading and Enquire removal. UI CI42191700781 and CodeQL42191693711 passed. Staging42192988061 attempt2 passed; public health confirms2b907c5/versionf07adbd5-784c-426d-991b-b34a2d4a26dc. Exact receipt belongs in PR32; owner/device acceptance remains pending.
+- Audit against2b907c5 passed:6,379 retained units,123 stable IDs,84 role cases,2,588 links and56 parsed diagrams;29 Markdown files have no top-level prose paragraphs. Numbering/menu checks and final code verification/CI/publication remain. No application/test-inventory changes; version-report generator changes prose formatting only.
 
-- Prepared/pushed branch: `docs/test-guides-and-reference-cleanup`, commit`27e8e75bb885a02f5ea71fd091bea6064b851833` based on UI904414b.
-- Completed baseline audit:6,362 retained units,123 stable IDs,84 mapped role cases,1,410 valid local links,56 parsed diagrams; no information loss detected.
-- After UI publication: merge latest UI branch into docs branch, reconcile changes in place, rerun audit, publish separate dependent draft PR.
-- Refactor rules: point form; only Journey journals; no patch-style corrections; retain diagrams unless stale. New one-page suite guide and two-page UAT per stakeholder.
+<a id="next-actions"></a>
 
-## Provider and external acceptance
+## 1. Next actions
 
-- SimplyBook10-minute timeout selected in owner screenshot; saved/effective new invoice deadline still needs owner verification.
-- App8-minute payment +1-minute checking +3-minute recovery unchanged. Owner A–D tests remain pending; activation held.
-- Domain/WAF/rate-limit work deferred until owner tests finish. Prior Cloudflare zone/ruleset reads do not prove workers.dev protection.
-- Other external tasks: [Runbook](docs/runbook.md), [Admin UAT](docs/uat/admin.md), [Trainer UAT](docs/uat/trainers.md).
+- Publish the separate dependent documentation PR after final verification; inspect its exact-head CI.
+  - Retain failures/history only in [Journey](docs/journey.md); documentation PR owns its final checks.
+- Owner runs [Customer UAT](docs/tests/uat/customer.md), [Admin UAT](docs/tests/uat/admin.md) and [Trainer UAT](docs/tests/uat/trainers.md) on the accepted target.
+- Provider timeout target:10 minutes; saved/effective fresh-invoice deadline unverified.
+  - App timing remains8/1/3 minutes.
+  - A–D testing follows separately authorised merge/activation; neither is currently authorised.
+- Domain/WAF/rate-limit work waits for owner tests.
+  - See [provider settings](docs/external-providers-config.md) and [Runbook](docs/runbook.md);
+  - Workers.dev protection must not be inferred from the domain zone.

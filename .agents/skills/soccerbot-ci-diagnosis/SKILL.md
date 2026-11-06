@@ -5,23 +5,61 @@ description: Diagnose SoccerBot CI failures and resource inefficiency from prese
 
 # CI failure diagnosis and efficiency
 
-## Authority and owners
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), the [verification guide](../../../docs/development.md#verification-commands), actual workflows and relevant runners. Apply the [testing skill](../soccerbot-testing/SKILL.md) for acceptance, dependent guards, fixtures and inventories, and the [documentation skill](../soccerbot-documentation/SKILL.md) for evidence and handover. Use the [dependency skill](../soccerbot-dependencies/SKILL.md) when package/runtime compatibility is involved and the [deployment skill](../soccerbot-deployment/SKILL.md) for release/configuration effects.
+- [1. Authority and owners](#authority-and-owners)
+- [2. Establish which run and what actually failed](#1-establish-which-run-and-what-actually-failed)
+- [3. Classify before choosing a repair](#2-classify-before-choosing-a-repair)
+- [4. Investigate resource and lifecycle failures](#3-investigate-resource-and-lifecycle-failures)
+- [5. Preserve test meaning while optimizing](#4-preserve-test-meaning-while-optimizing)
+- [6. Use bounded experiments and consolidate repairs](#5-use-bounded-experiments-and-consolidate-repairs)
+- [7. Diagnosis and handover receipt](#6-diagnosis-and-handover-receipt)
 
-This skill owns diagnosis, experiment selection and CI resource assessment; it does not duplicate test contracts or runner commands. Follow existing authorization, preserve explicitly protected runs and unknown local work, and do not change billing, runner plans, credentials, protection or deployment policy merely to unblock CI. Owner/CI operates browsers; no assistant browser execution or real provider effects. This is an instruction source, not a standing monitor or automatic Actions summary.
+</details>
+<!-- /document-chapter-menu -->
 
-## 1. Establish which run and what actually failed
+<a id="authority-and-owners"></a>
 
-Capture repository, workflow/event, PR/branch, exact source SHA, target/profile, run ID, attempt, job/matrix shard, timestamps and conclusion. Match the head to the current PR before calling it final. Distinguish old/superseded runs and jobs with similar names; trace reusable workflows and triggers before claiming duplicate execution.
+## 1. Authority and owners
 
-Read job logs and relevant reports/receipts, not just the red badge. Locate the earliest causal failure and any independent failures; downstream skipped gates or missing artifacts can be consequences. An intentionally skipped deploy is different from a failed verification. A queued job or a billing/permission rejection that never started is not a test failure. Verify runner labels, image/version and resource evidence rather than inferring public/private repository hardware from visibility alone.
+- Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), the [verification guide](../../../docs/development.md#verification-commands), actual workflows and relevant runners.
+- Apply the [testing skill](../soccerbot-testing/SKILL.md) for acceptance, dependent guards, fixtures and inventories, and the [documentation skill](../soccerbot-documentation/SKILL.md) for evidence and handover.
+- Use the [dependency skill](../soccerbot-dependencies/SKILL.md) when package/runtime compatibility is involved and the [deployment skill](../soccerbot-deployment/SKILL.md) for release/configuration effects.
 
-Retain original logs, artifacts and failure context. Redact credentials and customer data from any diagnostic excerpts. Establish the expected outcome from the owning contract and describe observed behavior. Separate evidence, hypothesis and unknowns; a successful rerun alone does not explain a previous failure or establish flakiness.
+- This skill owns diagnosis, experiment selection and CI resource assessment; it does not duplicate test contracts or runner commands.
+- Follow existing authorization, preserve explicitly protected runs and unknown local work, and do not change billing, runner plans, credentials, protection or deployment policy merely to unblock CI.
+- Owner/CI operates browsers; no assistant browser execution or real provider effects.
+- This is an instruction source, not a standing monitor or automatic Actions summary.
 
-Before treating an absent failure as success, verify the expected guard/test invocation and receipt exist. Use the [testing skill's dependent-guard review](../soccerbot-testing/SKILL.md#required-dependent-guard-review) for missing/skipped/empty execution and executable-mode checks. A successful wrapper with an unexecuted child is a guard defect; do not repair it by accepting an empty report. Apply the [code-writing skill](../soccerbot-code-writing/SKILL.md) to fix the owning cause rather than masking it with retries or fallback success.
+<a id="1-establish-which-run-and-what-actually-failed"></a>
 
-## 2. Classify before choosing a repair
+## 2. Establish which run and what actually failed
+
+- Capture repository, workflow/event, PR/branch, exact source SHA, target/profile, run ID, attempt, job/matrix shard, timestamps and conclusion.
+- Match the head to the current PR before calling it final.
+- Distinguish old/superseded runs and jobs with similar names; trace reusable workflows and triggers before claiming duplicate execution.
+
+- Read job logs and relevant reports/receipts, not just the red badge.
+- Locate the earliest causal failure and any independent failures; downstream skipped gates or missing artifacts can be consequences.
+- An intentionally skipped deploy is different from a failed verification.
+- A queued job or a billing/permission rejection that never started is not a test failure.
+- Verify runner labels, image/version and resource evidence rather than inferring public/private repository hardware from visibility alone.
+
+- Retain original logs, artifacts and failure context.
+- Redact credentials and customer data from any diagnostic excerpts.
+- Establish the expected outcome from the owning contract and describe observed behavior.
+- Separate evidence, hypothesis and unknowns; a successful rerun alone does not explain a previous failure or establish flakiness.
+
+- Before treating an absent failure as success, verify the expected guard/test invocation and receipt exist.
+- Use the [testing skill's dependent-guard review](../soccerbot-testing/SKILL.md#required-dependent-guard-review) for missing/skipped/empty execution and executable-mode checks.
+- A successful wrapper with an unexecuted child is a guard defect; do not repair it by accepting an empty report.
+- Apply the [code-writing skill](../soccerbot-code-writing/SKILL.md) to fix the owning cause rather than masking it with retries or fallback success.
+
+<a id="2-classify-before-choosing-a-repair"></a>
+
+## 3. Classify before choosing a repair
 
 | Class                           | Evidence and owning repair                                                                                                                                                                   |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,35 +71,74 @@ Before treating an absent failure as success, verify the expected guard/test inv
 | Infrastructure or account issue | Logs show service outage, download/rate-limit failure, runner availability, permission or billing rejection. Keep platform remediation separate from source changes.                         |
 | Unresolved                      | Record competing explanations and the smallest experiment that discriminates them. Do not force a convenient classification.                                                                 |
 
-## 3. Investigate resource and lifecycle failures
+<a id="3-investigate-resource-and-lifecycle-failures"></a>
 
-For SQLite-full or similar failures, locate the affected database/file and mount. Inspect available bytes/inodes, tmpfs capacity, memory limits, database/journal/WAL growth, temporary files, process counts and open/deleted file descriptors where authorized and available. Distinguish peak within a case from cumulative growth between cases. Free space after cleanup does not prove there was adequate space at the failure; missing counters mean unknown, not zero.
+## 4. Investigate resource and lifecycle failures
 
-Inspect the complete lifecycle: runtime construction, browser/Worker processes, storage handles, callbacks, timers/alarms, pending requests and final disposal. Deleting a pathname may leave disk allocated while a process holds the file open. Disposal calls do not prove awaited shutdown or OS resource release. A smaller filesystem/tmpfs is a bound, not additional capacity; check memory consequences before moving storage there. Preserve evidence rather than deleting arbitrary files or state to produce a pass.
+- For SQLite-full or similar failures, locate the affected database/file and mount.
+- Inspect available bytes/inodes, tmpfs capacity, memory limits, database/journal/WAL growth, temporary files, process counts and open/deleted file descriptors where authorized and available.
+- Distinguish peak within a case from cumulative growth between cases.
+- Free space after cleanup does not prove there was adequate space at the failure; missing counters mean unknown, not zero.
 
-Check route/event and teardown ordering against the actual dependency API. Stop scenario traffic, await owned work and dispose in a justified order; do not suppress all cleanup exceptions or broadly ignore route errors. Reproduce lifecycle bugs with a controlled non-browser regression where possible, then let CI exercise the real browser/runtime. Fix the cause before proposing a larger runner; paid GitHub plans, spending budgets, concurrency allowances and larger-runner hardware are separate decisions with separate costs.
+- Inspect the complete lifecycle: runtime construction, browser/Worker processes, storage handles, callbacks, timers/alarms, pending requests and final disposal.
+- Deleting a pathname may leave disk allocated while a process holds the file open.
+- Disposal calls do not prove awaited shutdown or OS resource release.
+- A smaller filesystem/tmpfs is a bound, not additional capacity; check memory consequences before moving storage there.
+- Preserve evidence rather than deleting arbitrary files or state to produce a pass.
 
-## 4. Preserve test meaning while optimizing
+- Check route/event and teardown ordering against the actual dependency API.
+- Stop scenario traffic, await owned work and dispose in a justified order; do not suppress all cleanup exceptions or broadly ignore route errors.
+- Reproduce lifecycle bugs with a controlled non-browser regression where possible, then let CI exercise the real browser/runtime.
+- Fix the cause before proposing a larger runner; paid GitHub plans, spending budgets, concurrency allowances and larger-runner hardware are separate decisions with separate costs.
 
-Keep these execution models distinct:
+<a id="4-preserve-test-meaning-while-optimizing"></a>
+
+## 5. Preserve test meaning while optimizing
+
+- Keep these execution models distinct:
 
 - Independent tests need isolated storage and predictable fixtures; grouping alone does not repair shared state.
 - Journey/concurrency scenarios retain the same runtime and storage for the whole scenario, including overlapping operations, retries and recovery.
-- Restart scenarios deliberately replace the runtime while retaining durable storage. Helper reconstruction, DO eviction and full runtime restart are different evidence; never erase the state under test to lower resource usage.
+- Restart scenarios deliberately replace the runtime while retaining durable storage.
+  - Helper reconstruction, DO eviction and full runtime restart are different evidence; never erase the state under test to lower resource usage.
 
-Shard at independent case/suite boundaries, not inside a journey. Rebalance from measured duration and peak resources while preserving sustained-runtime and restart coverage. Bound browser/runtime lifetimes between independent cases where appropriate; do not periodically restart the very scenario intended to detect sustained-state failures. More shards may reduce elapsed time while increasing total runner minutes, setup/download cost and resource contention. Compare both wall time and total cost before recommending expansion.
+- Shard at independent case/suite boundaries, not inside a journey.
+- Rebalance from measured duration and peak resources while preserving sustained-runtime and restart coverage.
+- Bound browser/runtime lifetimes between independent cases where appropriate; do not periodically restart the very scenario intended to detect sustained-state failures.
+- More shards may reduce elapsed time while increasing total runner minutes, setup/download cost and resource contention.
+- Compare both wall time and total cost before recommending expansion.
 
-Under the testing skill, verify the complete discovered and executed file/title set and order, not counts alone. Preserve device/engine coverage, zero-retry policy, timeouts, strict guards and rejection of missing/duplicate/skipped/failed/foreign-revision evidence. Check build-once artifact consumers, per-shard receipts, grouping policy and final aggregation. Do not edit thresholds, inventory or assertions merely to make the badge green.
+- Under the testing skill, verify the complete discovered and executed file/title set and order, not counts alone.
+- Preserve device/engine coverage, zero-retry policy, timeouts, strict guards and rejection of missing/duplicate/skipped/failed/foreign-revision evidence.
+- Check build-once artifact consumers, per-shard receipts, grouping policy and final aggregation.
+- Do not edit thresholds, inventory or assertions merely to make the badge green.
 
-## 5. Use bounded experiments and consolidate repairs
+<a id="5-use-bounded-experiments-and-consolidate-repairs"></a>
 
-1. State the hypothesis, original failure, discriminating observation, affected scope and resource budget under North Star. Inspect all available failed jobs before assuming one repair covers everything.
-2. Run the smallest meaningful permitted check. Where practical, prove the regression fails before and passes after the repair. Replay retained exact evidence for a guard-only defect when valid; source/runtime changes need new execution.
-3. Review adjacent fixtures and dependent guards using the testing skill. Consolidate known source, tooling, environment and documentation repairs before another expensive full CI run. Do not issue unchanged reruns to hunt for green or repeatedly install matching dependencies.
-4. If an infrastructure failure is evidenced and recovered, a scoped rerun may be justified; record why, retain the first failure and distinguish the new attempt. A partial rerun is not complete final-head acceptance until all required evidence is present and release rules accept it.
-5. Inspect active, pending and superseded runs before managing them. Preserve explicit user instructions to let a run finish or leave it untouched. Any authorized cancellation must preserve available evidence and must not be represented as a successful run; unavailable cancellation tools are not a reason to bypass access controls.
-6. Recheck the exact head and every required gate after completion. Distinguish PR verification, main verification, staged release and production deployment. Report remaining failures or blockers without weakening the release rules.
+## 6. Use bounded experiments and consolidate repairs
 
-## 6. Diagnosis and handover receipt
+1. State the hypothesis, original failure, discriminating observation, affected scope and resource budget under North Star.
+   - Inspect all available failed jobs before assuming one repair covers everything.
+2. Run the smallest meaningful permitted check.
+   - Where practical, prove the regression fails before and passes after the repair.
+   - Replay retained exact evidence for a guard-only defect when valid; source/runtime changes need new execution.
+3. Review adjacent fixtures and dependent guards using the testing skill.
+   - Consolidate known source, tooling, environment and documentation repairs before another expensive full CI run.
+   - Do not issue unchanged reruns to hunt for green or repeatedly install matching dependencies.
+4. If an infrastructure failure is evidenced and recovered, a scoped rerun may be justified; record why, retain the first failure and distinguish the new attempt.
+   - A partial rerun is not complete final-head acceptance until all required evidence is present and release rules accept it.
+5. Inspect active, pending and superseded runs before managing them.
+   - Preserve explicit user instructions to let a run finish or leave it untouched.
+   - Any authorized cancellation must preserve available evidence and must not be represented as a successful run; unavailable cancellation tools are not a reason to bypass access controls.
+6. Recheck the exact head and every required gate after completion.
+   - Distinguish PR verification, main verification, staged release and production deployment.
+   - Report remaining failures or blockers without weakening the release rules.
 
-Record the original run/job/case and artifact links; expected versus observed behavior; confirmed cause and unresolved hypotheses; changed owner and why it is correct; regression/guard evidence; resource and timing measurements where relevant; final source/run/attempt and gate results; and the next action. Use the existing PR description and Progress/Journey owners, not a separate permanent incident ledger. A later pass cannot erase the original failure. Report any unverified platform/provider or resource limit explicitly; do not promise future CI cannot fail.
+<a id="6-diagnosis-and-handover-receipt"></a>
+
+## 7. Diagnosis and handover receipt
+
+- Record the original run/job/case and artifact links; expected versus observed behavior; confirmed cause and unresolved hypotheses; changed owner and why it is correct; regression/guard evidence; resource and timing measurements where relevant; final source/run/attempt and gate results; and the next action.
+- Use the existing PR description and Progress/Journey owners, not a separate permanent incident ledger.
+- A later pass cannot erase the original failure.
+- Report any unverified platform/provider or resource limit explicitly; do not promise future CI cannot fail.

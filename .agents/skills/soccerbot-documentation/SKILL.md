@@ -5,70 +5,184 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 
 # Documentation state reconciliation
 
-## Purpose and authority
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-Keep every documentation owner's relevant state consistent with the actual change and available evidence. Apply this skill to **every PR, including documentation-only, dependency, workflow and automated update PRs**, and again when its delivery state changes. AGENTS.md is the engineering authority; explicit user instructions take precedence. This skill owns the reconciliation procedure, not business requirements, a second backlog or deployment permission. The companion `.agents/skills/soccerbot-testing/SKILL.md` owns test-impact review, fixture/inventory maintenance and the PR test-impact receipt; apply both without duplicating their evidence.
+- [1. Purpose and authority](#purpose-and-authority)
+- [2. Establish the change and checkpoint](#1-establish-the-change-and-checkpoint)
+- [3. Review every owner; edit the affected ones](#2-review-every-owner-edit-the-affected-ones)
+- [4. Validate the documentation delta](#3-validate-the-documentation-delta)
+- [5. Keep delivery state current without an endless commit loop](#4-keep-delivery-state-current-without-an-endless-commit-loop)
+- [6. PR documentation-state receipt](#5-pr-documentation-state-receipt)
+- [7. Exit criteria](#6-exit-criteria)
+- [8. In-place reconciliation — no patch-style documentation](#in-place-reconciliation--no-patch-style-documentation)
 
-Read root AGENTS.md, NORTH_STAR.md and PROGRESS.md first. Resolve all paths below from the repository root. Inspect source and actual PR/CI evidence before editing. A checked box, generated proposal or old receipt does not establish a current implementation or acceptance state.
+</details>
+<!-- /document-chapter-menu -->
 
-SoccerBot uses isolated workerd/D1/Durable Object tests with intercepted synthetic providers. This procedure does not authorize assistant browser execution, live bookings/payments, cancellations/refunds, notification sends, DNS/email changes, registrar actions or historical cleanup. Follow AGENTS for publication and explicit merge/deployment authority.
+<a id="purpose-and-authority"></a>
 
-Some hosts discover `.agents/skills/*/SKILL.md`; others do not. AGENTS explicitly directs readers here so the procedure remains available without automatic skill discovery. This is an instruction skill, **not a CI-enforced hook or unattended automation**. An agent must perform and report the checks.
+## 1. Purpose and authority
 
-For code changes, apply the [code-writing skill](../soccerbot-code-writing/SKILL.md) for root-cause repair and authoritative value ownership; retain this skill as the documentation-state owner.
+- Keep every documentation owner's relevant state consistent with the actual change and available evidence.
+- Apply this skill to **every PR, including documentation-only, dependency, workflow and automated update PRs**, and again when its delivery state changes.
+- AGENTS.md is the engineering authority; explicit user instructions take precedence.
+- This skill owns the reconciliation procedure, not business requirements, a second backlog or deployment permission.
+- The companion `.agents/skills/soccerbot-testing/SKILL.md` owns test-impact review, fixture/inventory maintenance and the PR test-impact receipt; apply both without duplicating their evidence.
 
-For dependency additions, updates or replacements, also apply the [dependency review skill](../soccerbot-dependencies/SKILL.md) before implementation or recommending merge. It owns suitability research and the application-change decision; retain this skill's existing evidence responsibilities.
+- Read root AGENTS.md, NORTH_STAR.md and PROGRESS.md first.
+- Resolve all paths below from the repository root.
+- Inspect source and actual PR/CI evidence before editing.
+- A checked box, generated proposal or old receipt does not establish a current implementation or acceptance state.
 
-## 1. Establish the change and checkpoint
+- SoccerBot uses isolated workerd/D1/Durable Object tests with intercepted synthetic providers.
+- This procedure does not authorize assistant browser execution, live bookings/payments, cancellations/refunds, notification sends, DNS/email changes, registrar actions or historical cleanup.
+- Follow AGENTS for publication and explicit merge/deployment authority.
 
-1. Identify the current user request, repository, branch, base/head, working tree, preserved work and open PR. Preserve unknown edits and stashes.
-2. Compare the entire PR against its actual base, not just the most recent commit. For a stacked PR, distinguish parent-branch implementation from accepted main.
-3. Inspect affected source, tests, contracts and delivery workflow. Confirm which evidence applies to the exact head and which is historical.
-4. Classify the change: behavior, API/schema, UI/role, architecture/security, dependency/runtime, data lifecycle, operational workflow, documentation or a combination. Use the owner map below for the impact review.
-5. Identify state transitions explicitly: planned → implemented → tested → CI-verified → merged → deployed → accepted. Transitions may have different scopes; a synthetic-provider pass does not accept a real provider.
+- Some hosts discover `.agents/skills/*/SKILL.md`; others do not.
+- AGENTS explicitly directs readers here so the procedure remains available without automatic skill discovery.
+- This is an instruction skill, **not a CI-enforced hook or unattended automation**.
+- An agent must perform and report the checks.
 
-## 2. Review every owner; edit the affected ones
+- For code changes, apply the [code-writing skill](../soccerbot-code-writing/SKILL.md) for root-cause repair and authoritative value ownership; retain this skill as the documentation-state owner.
 
-For every PR, review all rows for impact. Update every affected owner; leave unaffected content unchanged and explain that conclusion in the PR's concise documentation-state receipt. Do not make token edits to every file or copy the same status into several owners.
+- For dependency additions, updates or replacements, also apply the [dependency review skill](../soccerbot-dependencies/SKILL.md) before implementation or recommending merge.
+- It owns suitability research and the application-change decision; retain this skill's existing evidence responsibilities.
 
-| Owner                                                                     | Required reconciliation when affected                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PROGRESS.md` — every PR                                                  | Replace the current-task/leave-off checkpoint with actual outcome, branch/PR, tested/inspected source, validations, failures, blockers and next action. Move completed work out of the active queue; preserve remaining work and current campaign budget. Keep only the latest checkpoint and immediate remaining tasks. Move detailed completed checks, earlier delivery tables and superseded checkpoints into Journey; link deferred setup to its owner rather than expanding the immediate queue. Never append historical receipts or accumulate competing “latest” notes. |
-| `docs/journey.md` — every PR                                              | Append a dated Singapore-time record of the material change, decision and available evidence. Preserve original failures and full historical content. Keep Journey as milestones and dated evidence, not a second current-flow manual: booking-flows owns customer diagrams/messages, role UAT owns acceptance and the runbook owns deployment procedures. A follow-up updates delivery evidence without rewriting an earlier event to pretend it already knew the outcome.                                                                                                    |
-| `AGENTS.md`                                                               | Update reading paths, unique owners and engineering instructions if tools, commands, permissions, document paths or ownership change. Do not silently broaden standing authority.                                                                                                                                                                                                                                                                                                                                                                                              |
-| `NORTH_STAR.md`                                                           | Update only when the reusable campaign/loop/budget procedure changes. Active product status stays in Progress; avoid embedding each PR's checkpoint here.                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `docs/business-rules.md`                                                  | Reconcile permanent requirements with the final behavior. Preserve BR IDs/anchors and link changed/new rules to code owners; move superseded implementation checkpoints to Journey. Do not silently change an undecided product policy.                                                                                                                                                                                                                                                                                                                                        |
-| `docs/api-contracts.md`                                                   | Reconcile operation status/evidence, actual methods/paths/schemas, authorization, errors and recovery. Check Worker route dispatch, owning TypeScript/Zod schemas and service contracts; schema-check examples and preserve synthetic-only data. Do not assume a checked-in OpenAPI specification or generated fingerprint exists. Do not count endpoints or mocked tests as operation completion.                                                                                                                                                                             |
-| `docs/code-owners/index.md` and `technical-behavior.md`                   | Update moved/new owners, diagrams, named functions, visible behavior, guards, failure/recovery and evidence links. Every BR remains mapped to implementation or an explicit planned/operational owner.                                                                                                                                                                                                                                                                                                                                                                         |
-| `docs/architecture/database-schema.md`                                    | Reconcile final D1 migrations and Durable Object runtime tables, keys, relationship notation and deployment scope. Keep retention policy in data-lifecycle; distinguish declared foreign keys from application-managed links.                                                                                                                                                                                                                                                                                                                                                  |
-| `docs/architecture/adr.md` and `diagram.md`                               | Reconcile architecture choices, consequences, alternatives and topology/test-suite diagrams when boundaries or services change. Label proposed tools and unimplemented suites.                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `docs/security/security-infrastructure.md`                                                        | Reflect actual controls/tools, trust boundaries, defaults, permissions and remaining gaps. Distinguish source configuration, deployed settings, audit results and expired exceptions.                                                                                                                                                                                                                                                                                                                                                                                          |
-| `docs/security/false-positives.md` | Reconcile source-specific assessments, adversarial evidence, confirmed fixes and unresolved alerts; never equate assessment with dismissal. |
-| `docs/data-lifecycle.md`                                                  | Reconcile storage/fields, browser copies, expiry, revocation, archival, physical cleanup, logs/backups/providers and policy gaps. Do not equate logical expiry with erasure or source cleanup with deployed scheduling.                                                                                                                                                                                                                                                                                                                                                        |
-| `docs/development.md`                                                     | Update setup/runtime/verification commands and budgets when their executable owners change. Preserve isolated-data and environment boundaries.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `docs/external-providers-config.md`                                       | Reconcile provider settings and environment differences; label API-observed, owner-confirmed and pending evidence. Keep credentials/customer records out; link executable configuration and operational procedures rather than duplicating them.                                                                                                                                                                                                                                                                                                                               |
-| `docs/runbook.md`                                                         | Reconcile operator steps, release/rollback compatibility, maintenance, monitoring and recovery. Keep proposed targets, unassigned responders and unexecuted restore/alert drills explicit.                                                                                                                                                                                                                                                                                                                                                                                     |
-| `docs/versions.md`                                                        | Refresh affected manifests, locks, image references, browser engines, Action pins and fingerprints in the same PR. Keep deployed/OS values unknown unless observed. Security remediation is separate from optional upgrades and deployed patch acceptance.                                                                                                                                                                                                                                                                                                                     |
-| `docs/uat/admin.md`, `docs/uat/trainers.md`, `docs/uat/simulated-user.md` | Update affected role workflows, expected outcomes and permission boundaries. Preserve blank worksheet masters; never turn a newly drafted case into a completed physical/live test.                                                                                                                                                                                                                                                                                                                                                                                            |
-| This skill                                                                | Reconcile the procedure and owner map if documentation ownership or delivery mechanics change; preserve its AGENTS entry point.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+<a id="1-establish-the-change-and-checkpoint"></a>
 
-A reviewer should be able to answer: **what changed, what is true now, what evidence supports it, what remains unverified, and where does the next developer resume?**
+## 2. Establish the change and checkpoint
 
-For customer-state or message changes, reconcile `docs/booking-flows.md` (small scenario diagrams with current messages and an embedded review of baseline copy, approved local replacements and remaining proposals). Keep implemented, published and accepted states distinct; do not copy payment authority or test results into every diagram.
+1. Identify the current user request, repository, branch, base/head, working tree, preserved work and open PR.
+   - Preserve unknown edits and stashes.
+2. Compare the entire PR against its actual base, not just the most recent commit.
+   - For a stacked PR, distinguish parent-branch implementation from accepted main.
+3. Inspect affected source, tests, contracts and delivery workflow.
+   - Confirm which evidence applies to the exact head and which is historical.
+4. Classify the change: behavior, API/schema, UI/role, architecture/security, dependency/runtime, data lifecycle, operational workflow, documentation or a combination.
+   - Use the owner map below for the impact review.
+5. Identify state transitions explicitly: planned → implemented → tested → CI-verified → merged → deployed → accepted.
+   - Transitions may have different scopes; a synthetic-provider pass does not accept a real provider.
 
-## 3. Validate the documentation delta
+<a id="2-review-every-owner-edit-the-affected-ones"></a>
+
+## 3. Review every owner; edit the affected ones
+
+- For every PR, review all rows for impact.
+- Update every affected owner; leave unaffected content unchanged and explain that conclusion in the PR's concise documentation-state receipt.
+- Do not make token edits to every file or copy the same status into several owners.
+
+- **`PROGRESS.md` — every PR**
+  - **Required reconciliation when affected:** Replace the current-task/leave-off checkpoint with actual outcome, branch/PR, tested/inspected source, validations, failures, blockers and next action.
+    - Move completed work out of the active queue; preserve remaining work and current campaign budget.
+    - Keep only the latest checkpoint and immediate remaining tasks.
+    - Move detailed completed checks, earlier delivery tables and superseded checkpoints into Journey; link deferred setup to its owner rather than expanding the immediate queue.
+    - Never append historical receipts or accumulate competing “latest” notes.
+
+- **`docs/journey.md` — every PR**
+  - **Required reconciliation when affected:** Record material history once in Journey, using concise dated bullets and evidence links; do not duplicate existing receipts.
+    - Preserve original failures and full historical content.
+    - Keep Journey as milestones and dated evidence, not a second current-flow manual: booking-flows owns customer diagrams/messages, role UAT owns acceptance and the runbook owns deployment procedures.
+    - A follow-up updates delivery evidence without rewriting an earlier event to pretend it already knew the outcome.
+
+- **`AGENTS.md`**
+  - **Required reconciliation when affected:** Update reading paths, unique owners and engineering instructions if tools, commands, permissions, document paths or ownership change.
+    - Do not silently broaden standing authority.
+
+- **`NORTH_STAR.md`**
+  - **Required reconciliation when affected:** Update only when the reusable campaign/loop/budget procedure changes.
+    - Active product status stays in Progress; avoid embedding each PR's checkpoint here.
+
+- **`docs/business-rules.md`**
+  - **Required reconciliation when affected:** Reconcile permanent requirements with the final behavior.
+    - Preserve BR IDs/anchors and link changed/new rules to code owners; move superseded implementation checkpoints to Journey.
+    - Do not silently change an undecided product policy.
+
+- **`docs/api-contracts.md`**
+  - **Required reconciliation when affected:** Reconcile operation status/evidence, actual methods/paths/schemas, authorization, errors and recovery.
+    - Check Worker route dispatch, owning TypeScript/Zod schemas and service contracts; schema-check examples and preserve synthetic-only data.
+    - Do not assume a checked-in OpenAPI specification or generated fingerprint exists.
+    - Do not count endpoints or mocked tests as operation completion.
+
+- **`docs/code-owners/index.md` and `technical-behavior.md`**
+  - **Required reconciliation when affected:** Update moved/new owners, diagrams, named functions, visible behavior, guards, failure/recovery and evidence links.
+    - Every BR remains mapped to implementation or an explicit planned/operational owner.
+
+- **`docs/architecture/database-schema.md`**
+  - **Required reconciliation when affected:** Reconcile final D1 migrations and Durable Object runtime tables, keys, relationship notation and deployment scope.
+    - Keep retention policy in data-lifecycle; distinguish declared foreign keys from application-managed links.
+
+- **`docs/architecture/adr.md` and `diagram.md`**
+  - **Required reconciliation when affected:** Reconcile architecture choices, consequences, alternatives and topology/test-suite diagrams when boundaries or services change.
+    - Label proposed tools and unimplemented suites.
+
+- **`docs/security/security-infrastructure.md`**
+  - **Required reconciliation when affected:** Reflect actual controls/tools, trust boundaries, defaults, permissions and remaining gaps.
+    - Distinguish source configuration, deployed settings, audit results and expired exceptions.
+
+- **`docs/security/false-positives.md`**
+  - **Required reconciliation when affected:** Reconcile source-specific assessments, adversarial evidence, confirmed fixes and unresolved alerts; never equate assessment with dismissal.
+
+- **`docs/data-lifecycle.md`**
+  - **Required reconciliation when affected:** Reconcile storage/fields, browser copies, expiry, revocation, archival, physical cleanup, logs/backups/providers and policy gaps.
+    - Do not equate logical expiry with erasure or source cleanup with deployed scheduling.
+
+- **`docs/development.md`**
+  - **Required reconciliation when affected:** Update setup/runtime/verification commands and budgets when their executable owners change.
+    - Preserve isolated-data and environment boundaries.
+
+- **`docs/external-providers-config.md`**
+  - **Required reconciliation when affected:** Reconcile provider settings and environment differences; label API-observed, owner-confirmed and pending evidence.
+    - Keep credentials/customer records out; link executable configuration and operational procedures rather than duplicating them.
+
+- **`docs/runbook.md`**
+  - **Required reconciliation when affected:** Reconcile operator steps, release/rollback compatibility, maintenance, monitoring and recovery.
+    - Keep proposed targets, unassigned responders and unexecuted restore/alert drills explicit.
+
+- **`docs/versions.md`**
+  - **Required reconciliation when affected:** Refresh affected manifests, locks, image references, browser engines, Action pins and fingerprints in the same PR.
+    - Keep deployed/OS values unknown unless observed.
+    - Security remediation is separate from optional upgrades and deployed patch acceptance.
+
+- **`docs/tests/uat/admin.md`, `docs/tests/uat/trainers.md`, `docs/tests/uat/customer.md`**
+  - **Required reconciliation when affected:** Update affected role workflows, expected outcomes and permission boundaries.
+    - Preserve blank worksheet masters; never turn a newly drafted case into a completed physical/live test.
+
+- **This skill**
+  - **Required reconciliation when affected:** Reconcile the procedure and owner map if documentation ownership or delivery mechanics change; preserve its AGENTS entry point.
+
+- A reviewer should be able to answer: **what changed, what is true now, what evidence supports it, what remains unverified, and where does the next developer resume?**
+
+- For customer-state or message changes, reconcile `docs/booking-flows.md` (small scenario diagrams with current messages and an embedded review of baseline copy, approved local replacements and remaining proposals).
+- Keep implemented, published and accepted states distinct; do not copy payment authority or test results into every diagram.
+
+<a id="3-validate-the-documentation-delta"></a>
+
+## 4. Validate the documentation delta
 
 - Inspect the final diff for contradictions, duplicate instructions, stale filenames, accidental history/rule loss and misleading acceptance claims.
-- Validate local links and anchors, including root docs and this skill. Check fenced blocks and GFM tables; parse every changed Mermaid diagram locally. Owner/CI performs browser rendering under AGENTS; record visual rendering as pending until evidenced, and never claim a parser pass proves GitHub visual layout. For a structural move or a requested full audit, include historical diagrams in Journey as well as current architecture diagrams.
-- For contract changes, compare matrix/endpoint/schema references with actual source and validate example payloads against the owning schemas plus relevant domain restrictions. Placeholders must be unmistakable and must not contain real credentials or customer data.
-- For code-owner changes, confirm named paths/functions exist and the behavior/guard/recovery description matches their implementation and evidence. A link existing alone does not prove the description.
+- Validate local links and anchors, including root docs and this skill.
+  - Check fenced blocks and GFM tables; parse every changed Mermaid diagram locally.
+  - Owner/CI performs browser rendering under AGENTS; record visual rendering as pending until evidenced, and never claim a parser pass proves GitHub visual layout.
+  - For a structural move or a requested full audit, include historical diagrams in Journey as well as current architecture diagrams.
+- For contract changes, compare matrix/endpoint/schema references with actual source and validate example payloads against the owning schemas plus relevant domain restrictions.
+  - Placeholders must be unmistakable and must not contain real credentials or customer data.
+- For code-owner changes, confirm named paths/functions exist and the behavior/guard/recovery description matches their implementation and evidence.
+  - A link existing alone does not prove the description.
 - For rule moves, preserve stable IDs/anchors and all decisions; for history moves, compare retained content and record any purely syntactic rendering correction.
 - For dependency changes, compare the inventory with manifests/locks/workflows; do not invent current vulnerability or deployed-image status without a receipt.
-- Use meaningful existing checks and applicable complete gates under AGENTS. A documentation check does not replace required exact-final-head `verify / frontend`, `verify / backend` and `verify / live-email` gates. Do not weaken assertions or rerun unchanged failures to obtain green.
+- Use meaningful existing checks and applicable complete gates under AGENTS.
+  - A documentation check does not replace required exact-final-head `verify / frontend`, `verify / backend` and `verify / live-email` gates.
+  - Do not weaken assertions or rerun unchanged failures to obtain green.
 
-Record actual commands/tools, source head, environment and outcome. If a check cannot run, say which one and why; do not call the review complete without the required evidence. An external link's existence or a local renderer pass does not prove GitHub's current UI or an external service's acceptance.
+- Record actual commands/tools, source head, environment and outcome.
+- If a check cannot run, say which one and why; do not call the review complete without the required evidence.
+- An external link's existence or a local renderer pass does not prove GitHub's current UI or an external service's acceptance.
 
-## 4. Keep delivery state current without an endless commit loop
+<a id="4-keep-delivery-state-current-without-an-endless-commit-loop"></a>
+
+## 5. Keep delivery state current without an endless commit loop
 
 | Event                                  | Required action                                                                                                                                                                                                                                                                                                                         |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -80,11 +194,15 @@ Record actual commands/tools, source head, environment and outcome. If a check c
 | Deployment / provider / UAT acceptance | Only after authorized execution, record exact environment/source/artifact, result and evidence in the appropriate owner. A source merge grants no new Cloudflare, DNS/registrar, email or provider authority.                                                                                                                           |
 | Pause / resume                         | State last-observed status and timestamp, pending facts and next action. Before new implementation, reconcile stale repository checkpoints against GitHub/source. Do not represent the last commit's checkpoint as live monitoring.                                                                                                     |
 
-“All states current” means each claim is accurate for its clearly stated observation point, and later evidence is discoverable from the delivery receipt until the next repository checkpoint. It does not mean every historical paragraph must be rewritten after every workflow event.
+- “All states current” means each claim is accurate for its clearly stated observation point, and later evidence is discoverable from the delivery receipt until the next repository checkpoint.
+- It does not mean every historical paragraph must be rewritten after every workflow event.
 
-## 5. PR documentation-state receipt
+<a id="5-pr-documentation-state-receipt"></a>
 
-Add a short paragraph or compact table to the existing PR description; follow its established structure instead of creating a second report. Include:
+## 6. PR documentation-state receipt
+
+- Add a short paragraph or compact table to the existing PR description; follow its established structure instead of creating a second report.
+- Include:
 
 - **Updated owners:** paths and the state/behavior reconciled.
 - **Reviewed unchanged:** grouped owners and why the change does not affect them.
@@ -92,8 +210,31 @@ Add a short paragraph or compact table to the existing PR description; follow it
 - **Pending:** CI/merge/main/deployment/provider/device/recovery states that are not yet accepted.
 - **Next checkpoint:** concrete remaining action and where the next developer resumes.
 
-For automated dependency PRs, perform this review before an eligible merge; the bot's release notes do not replace the version/security/runbook impact assessment. Do not mark the skill satisfied solely because Progress and Journey were touched while affected contracts, diagrams or version inventories remain stale.
+- For automated dependency PRs, perform this review before an eligible merge; the bot's release notes do not replace the version/security/runbook impact assessment.
+- Do not mark the skill satisfied solely because Progress and Journey were touched while affected contracts, diagrams or version inventories remain stale.
 
-## 6. Exit criteria
+<a id="6-exit-criteria"></a>
 
-The PR is documentation-ready when all affected owners agree with the final source, permanent rules and acceptance evidence; unaffected owners have a reasoned no-change classification; validations passed; prior decisions/failures remain retained; and the current handover is usable. Overall merge readiness still requires AGENTS' complete final-head gates and GitHub requirements. Report incomplete or externally blocked work explicitly; do not invent acceptance to close a checklist.
+## 7. Exit criteria
+
+- The PR is documentation-ready when all affected owners agree with the final source, permanent rules and acceptance evidence; unaffected owners have a reasoned no-change classification; validations passed; prior decisions/failures remain retained; and the current handover is usable.
+- Overall merge readiness still requires AGENTS' complete final-head gates and GitHub requirements.
+- Report incomplete or externally blocked work explicitly; do not invent acceptance to close a checklist.
+
+<a id="in-place-reconciliation--no-patch-style-documentation"></a>
+
+## 8. In-place reconciliation — no patch-style documentation
+
+- **No patch-style documentation:** edit the existing owning section in place. Replace superseded wording and remove duplicate explanations; do not append corrections, follow-up notes, competing summaries or another owner to compensate for stale text.
+- **No journalling outside Journey:** dated changes, investigations, run results, failures and superseded decisions belong only in `docs/journey.md`.
+- Journey is the only journal.
+  - Current owners retain requirements, reference values, procedures and pending acceptance;
+  - Progress holds only the current checkpoint and next action.
+- Give every document its own linked chapter menu immediately below its title; number sections/subsections consistently and keep the menu synchronized.
+  - AGENTS.md is the sole main document router; do not add shared menus/directories to other documents.
+  - Preserve existing inbound anchors, stable rule/test IDs, dates and diagram content when numbering headings.
+- Use short point-form statements; at most one opening paragraph per document.
+  - Split chunky prose/table cells without deleting conditions or exceptions.
+- Reconcile all other documents in place: current requirements, reference values, procedures and pending acceptance only. Link to the canonical owner and Journey evidence rather than copying a chronological narrative.
+- Keep the test suite overview in `docs/tests/test-suite.md` and two-page role worksheets in `docs/tests/uat/`.
+- For a full refactor, compare baseline blocks, rule/case IDs, code/diagram blocks, numeric constraints and links against the resulting corpus; resolve every missing detail before claiming no information loss.

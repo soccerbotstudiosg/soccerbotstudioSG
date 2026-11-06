@@ -1,8 +1,24 @@
 # Versions
 
-Versions configured on this branch, generated from the manifests and lockfile. This is not a deployed-version receipt. Python is a verification tool, not the Cloudflare application runtime; its exact patch version is recorded in each Actions run.
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
 
-## Toolchain
+- [1. Toolchain](#toolchain)
+- [2. Direct dependencies](#direct-dependencies)
+- [3. Full locked dependency inventory](#full-locked-dependency-inventory)
+- [4. Refresh and inspect](#refresh-and-inspect)
+
+</details>
+<!-- /document-chapter-menu -->
+
+- Versions configured on this branch, generated from the manifests and lockfile.
+- This is not a deployed-version receipt.
+- Python is a verification tool, not the Cloudflare application runtime; its exact patch version is recorded in each Actions run.
+
+<a id="toolchain"></a>
+
+## 1. Toolchain
 
 | Item               | Version    |
 | ------------------ | ---------- |
@@ -10,7 +26,9 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 | npm                | npm@11.9.0 |
 | Python (CI series) | 3.12       |
 
-## Direct dependencies
+<a id="direct-dependencies"></a>
+
+## 2. Direct dependencies
 
 | Item                        | Version           |
 | --------------------------- | ----------------- |
@@ -40,9 +58,13 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 | yaml                        | 2.9.1             |
 | zod                         | 4.6.7             |
 
-## Full locked dependency inventory
+<a id="full-locked-dependency-inventory"></a>
 
-Includes transitive dependencies and optional platform packages. A locked package is not necessarily installed on every platform or included in the deployed application. Paths distinguish multiple versions of the same package.
+## 3. Full locked dependency inventory
+
+- Includes transitive dependencies and optional platform packages.
+- A locked package is not necessarily installed on every platform or included in the deployed application.
+- Paths distinguish multiple versions of the same package.
 
 <details>
 <summary>All 645 locked package entries</summary>
@@ -697,8 +719,15 @@ Includes transitive dependencies and optional platform packages. A locked packag
 
 </details>
 
-## Refresh and inspect
+<a id="refresh-and-inspect"></a>
 
-Run `node scripts/versions.mjs write` after dependency or toolchain changes and commit this file with the update. CI checks it against the source manifests; it never commits back to main. Dependabot PRs that change these versions need this generated file refreshed before merging.
+## 4. Refresh and inspect
 
-Actions verification summaries show observed Node, npm and Python versions, checked-out commit, job and target. Download that job's evidence artifact for `versions.json` (full lock inventory) and `versions.md`. Reports describe the verification environment; use the deployment receipt to establish which revision was deployed. Cloudflare manages its production runtime independently of the local workerd test package.
+- Run `node scripts/versions.mjs write` after dependency or toolchain changes and commit this file with the update.
+- CI checks it against the source manifests; it never commits back to main.
+- Dependabot PRs that change these versions need this generated file refreshed before merging.
+
+- Actions verification summaries show observed Node, npm and Python versions, checked-out commit, job and target.
+- Download that job's evidence artifact for `versions.json` (full lock inventory) and `versions.md`.
+- Reports describe the verification environment; use the deployment receipt to establish which revision was deployed.
+- Cloudflare manages its production runtime independently of the local workerd test package.
