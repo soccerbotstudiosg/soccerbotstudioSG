@@ -4916,3 +4916,7 @@ Footer restyling to blue/white was explicitly cancelled. The existing light foot
 ### 6 November 2026 — Footer fourth column and Studio image edges
 
 Follow-up to verified PR32 baseline a77aef6 (CI42169819231, CodeQL42169815176, staging42170759529): move app downloads into the fourth footer column after Contact Us, headed Download App with accessible Apple/Android/web icon links. Remove legacy logo offset and centre the entire logo/column group; keep the light palette and popup behavior. Studio gallery outer masks now overlay the image edges, with text-only clearance, and the grey gap before Book now is removed. Existing route geometry/destination coverage is revised without adding or removing cases. Local verification and new-head CI/staging are pending at preparation; final evidence belongs in PR32. No merge, settings or provider changes authorized or performed; owner visual/device acceptance remains pending.
+
+### 6 November 2026 — Further closing-banner reduction
+
+Owner requested another20% reduction to both Contact us and Book now banners after d7b89a5 was pushed. Shared minimum height changes134→107px, vertical padding20→16px and heading scale reduces proportionately; controls retain48px minimum height and responsive copy can grow without clipping. Preserve the fourth footer icon column, gallery photo curves and zero grey spacer. Superseded d7b89a5 CI42171896941 and CodeQL42171890073 are retained; newest-head checks/staging must be verified separately. No merge or settings changes.

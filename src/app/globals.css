@@ -1615,9 +1615,9 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: center;
-    gap: 18px;
-    min-height: 134px;
-    padding: 20px max(40px, calc((100vw - 1080px) / 2));
+    gap: 11px;
+    min-height: 107px;
+    padding: 16px max(40px, calc((100vw - 1080px) / 2));
     background-color: var(--color-brand);
     background-image:
       radial-gradient(
@@ -1660,7 +1660,7 @@
     margin: 0;
   }
   .abstract-promotion h2 {
-    font-size: clamp(1.75rem, 2.8vw, 3.15rem);
+    font-size: clamp(1.4rem, 2.24vw, 2.52rem);
   }
   .abstract-promotion > p {
     font-size: var(--text-meta);
@@ -1676,8 +1676,8 @@
     margin-bottom: 6px;
   }
   .abstract-promotion .promotion-cta {
-    min-height: 56px;
-    padding: 14px 24px;
+    min-height: 48px;
+    padding: 10px 24px;
     font-size: var(--text-card);
     justify-self: end;
     width: auto;
@@ -1686,7 +1686,7 @@
   @media (max-width: 900px) {
     .abstract-promotion {
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 14px 24px;
+      gap: 11px 24px;
       padding-inline: 28px;
     }
     .abstract-promotion-heading {
@@ -1703,7 +1703,7 @@
   @media (max-width: 600px) {
     .abstract-promotion {
       grid-template-columns: minmax(0, 1fr);
-      gap: 14px;
+      gap: 11px;
       padding-inline: 24px;
     }
     .abstract-promotion .promotion-cta {
