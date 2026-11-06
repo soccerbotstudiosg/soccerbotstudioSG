@@ -2,18 +2,26 @@
 
 Observed 6 November 2026 (Singapore time). History belongs to [Journey](docs/journey.md).
 
-## Booking presentation polish — PR32
+## Public homepage and Studio redesign — PR32
 
-Branch `fix/hero-session-copy`, based on merged main `a4185c8`. The hero-strip removal, shared blue selected-card highlight, calendar arrows, responsive contact/price alignment, contact typography and summary spacing are implemented. Session typography and booking/payment/provider behavior remain unchanged.
+Branch `fix/hero-session-copy`, based on merged main `a4185c8`. The owner supplied the missing local handover and requested completion on [PR32](https://github.com/soccerbotstudiosg/soccerbotstudioSG/pull/32). Earlier presentation polish remains included. The five new UI tasks are implemented:
 
-PR32 application candidate `7f5075904847b2e809fa34836b2b8e3c2346142d` passed all required gates in [42137785715](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/42137785715) and staging [42139117805](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/42139117805). Public staging health independently matched that source and version `256dff7b-55c7-4b72-aea6-3118ad9b8ce0` on resume. The original typography failure is retained in Journey.
+- Rectangular Singapore flag immediately left of the three public header buttons.
+- Persistent mock assistant, reply service/contract, icon/styles and two obsolete component tests removed; enquiry remains separate and preview-only.
+- Two full-width navy/teal promotional image banners with a small gap and **Explore the studio** / **Book now** CTAs; original main hero and contact banner preserved.
+- Full-width official image hero at the top of Studio, then a 12px gap and all five existing content sections.
+- Enlarged two-line clickable hero address (18px / 14px), preserving the on-demand location dialog.
 
-This follow-up reconciles the handover and provider-setting evidence only. Tests, inventories, application code and configuration remain unchanged. Record the new final-head CI and staging outcomes in [PR32](https://github.com/soccerbotstudiosg/soccerbotstudioSG/pull/32), avoiding another status-only commit after verification.
+Official `/en` and `/en/studio` pages were accessible and rechecked; the earlier handover's network blocker is resolved. Existing local official images and provenance are reused; no remote video/autoplay or browser execution was added. Updated existing browser cases cover flag order, full-width banners, distinct backgrounds, Studio hero/content, address typography/dialog, enquiry without assistant and booking CTA navigation. Two retired assistant-only cases are removed from the strict inventory; no remaining coverage is skipped or weakened.
 
 ## Immediate remaining work
 
-- Verify this follow-up's exact-head CI and staged revision; earlier green evidence belongs to `7f50759`. The PR receipt owns the final delivery result.
-- Owner reviews the staged presentation. **Hold PR32 open and unmerged until explicitly asked to merge**; this supersedes the earlier conditional merge instruction. Continuing work or adding to this PR does not lift that hold.
-- Owner decision on 6 November: **retain the two-minute experiment and hold activation**. The observed two-minute invoice does not support the eight-minute customer payment window. Do not change the provider timeout or application payment window; activation remains blocked until a separately approved compatible policy and provider acceptance are verified. See [provider timing evidence](docs/external-providers-config.md#checkout-timing-follow-up--5-november-2026) and [Admin UAT](docs/uat/admin.md). No provider setting change or real booking/payment is included in this PR.
+- Complete local non-browser validation, publish the consolidated candidate on PR32, then verify its exact-head CI and staged revision. Record final results in the PR receipt without another status-only commit. Earlier green CI42137785715 and staging42139117805 belong to pre-redesign `7f50759` and do not accept this candidate.
+- Owner reviews the new staged presentation on desktop, phone and tablet under [Customer UAT](docs/uat/simulated-user.md). **Hold PR32 open and unmerged until explicitly asked to merge.**
+- Owner decision: **retain the two-minute experiment and hold activation**. No provider timeout or eight-minute payment/one-minute checking/three-minute recovery policy change is included. Provider invoices remain authoritative; incomplete unassociated creation still needs assistance. See [provider settings](docs/external-providers-config.md).
 
-PR31's merged main `a4185c8` passed independent verification and production deployment; Journey records the exact runs. Production installation does not establish current activation, provider/device acceptance or compatible provider/payment timing. Direct production health from this workspace is blocked at the network proxy; staging health is accessible.
+## Separate owner/provider acceptance
+
+The handover's wider work remains in its existing owners: booking conflict/expiry/late-payment/reload/multiple-session UAT; release runtime/resource/health and custom-domain/live-merchant acceptance; Resend sender/DNS and identity-email acceptance; uninstalled SimplyBook notification templates and preview-only enquiry; individual provider staff/trainer roles/MFA/access; Grafana attachment/ingestion/redaction/alerts; security/offboarding/renewal/recovery evidence. See [Runbook](docs/runbook.md), [Security](docs/security/security-infrastructure.md), [Admin UAT](docs/uat/admin.md) and [Trainer UAT](docs/uat/trainers.md). These require the named external setup or owner execution; they are not silently implemented or accepted by this UI PR.
+
+PR31 merged main `a4185c8` passed independent verification and production deployment. That proves installation, not current activation or provider/device acceptance. Direct production health from this workspace is blocked by the network policy; staging health is accessible. Preserve shared studio capacity, D1/DO identity and existing sandbox/live boundaries.

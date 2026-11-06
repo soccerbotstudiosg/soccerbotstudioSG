@@ -98,12 +98,52 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(
     page.getByText(/staff login|staff access|command centre/i),
   ).toHaveCount(0);
+  const flag = page.getByRole("img", { name: "Singapore", exact: true });
+  await expect(flag).toBeVisible();
+  const flagBox = await flag.boundingBox();
+  const studioButton = page.getByRole("link", {
+    name: "The studio",
+    exact: true,
+  });
+  const studioButtonBox = await studioButton.boundingBox();
+  expect(flagBox).not.toBeNull();
+  expect(studioButtonBox).not.toBeNull();
+  expect(flagBox!.width / flagBox!.height).toBeCloseTo(1.5, 1);
+  expect(flagBox!.x + flagBox!.width).toBeLessThan(studioButtonBox!.x);
+  const promotions = page.locator(".home-promotion");
+  await expect(promotions).toHaveCount(2);
+  const backgrounds: string[] = [];
+  for (const promotion of await promotions.all()) {
+    const box = await promotion.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeCloseTo(0, 0);
+    expect(box!.width).toBeCloseTo(page.viewportSize()!.width, 0);
+    await expect(promotion.locator("img")).toHaveAttribute("alt", /.+/);
+    backgrounds.push(
+      await promotion.evaluate(
+        (element) => getComputedStyle(element).backgroundColor,
+      ),
+    );
+  }
+  expect(backgrounds[0]).not.toBe(backgrounds[1]);
+  await expect(
+    page.getByRole("button", { name: /studio assistant/i }),
+  ).toHaveCount(0);
   await page.getByRole("link", { name: "The studio", exact: true }).click();
   await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Inside the arena." }),
   ).toBeVisible();
+  const studioHero = page.locator(".studio-hero");
+  await expect(studioHero.locator("img")).toBeVisible();
+  const heroBox = await studioHero.boundingBox();
+  const contentBox = await page.locator(".studio-showcase").boundingBox();
+  expect(heroBox).not.toBeNull();
+  expect(contentBox).not.toBeNull();
+  expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
+  expect(contentBox!.y - (heroBox!.y + heroBox!.height)).toBe(12);
+  await expect(page.locator(".studio-row")).toHaveCount(5);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth - innerWidth,
@@ -253,7 +293,7 @@ test("email verification rejects an incorrect code and continues after correctio
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
 });
-test("enquiry and assistant work without external submission", async ({
+test("enquiry remains available without external submission or a mock assistant", async ({
   page,
 }) => {
   await openSite(page, "/enquiry/");
@@ -267,15 +307,10 @@ test("enquiry and assistant work without external submission", async ({
     .fill("A group session for our team.");
   await page.getByRole("button", { name: "Send enquiry" }).click();
   await expect(page.getByText("Preview · No enquiry sent.")).toBeVisible();
-  await page.getByRole("button", { name: "Open studio assistant" }).click();
-  await page
-    .getByRole("button", { name: "Sessions & prices", exact: true })
-    .click();
-  await expect(page.getByRole("log")).toContainText("S$88");
-  await page.keyboard.press("Escape");
   await expect(
-    page.getByRole("button", { name: "Open studio assistant" }),
-  ).toBeFocused();
+    page.getByRole("button", { name: /studio assistant/i }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("log")).toHaveCount(0);
 });
 
 test("hero entry restores the arena scene and click-to-skip without a logo overlay", async ({
@@ -306,7 +341,7 @@ test("home navigation offer and studio booking buttons display the branded loade
   await openSite(page, "/");
   for (const [route, selector] of [
     ["/", ".nav-book"],
-    ["/", ".offer-home"],
+    ["/", ".home-promotion--booking .promotion-cta"],
     ["/studio/", ".studio-bottom .button"],
   ]) {
     await page.goto(sitePath(route));
@@ -1069,6 +1104,8 @@ test("hero location opens its map only on demand without entering booking and he
     name: "View studio location",
     exact: true,
   });
+  await expect(location.locator("strong")).toHaveCSS("font-size", "18px");
+  await expect(location.locator("small")).toHaveCSS("font-size", "14px");
   const target = await location.boundingBox();
   expect(target?.height).toBeGreaterThanOrEqual(68);
   // The padded corner must open the map rather than the underlying hero.

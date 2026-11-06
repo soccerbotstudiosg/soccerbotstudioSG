@@ -3,9 +3,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { ADDRESS, CONTACT, LOCATION, PLAYER_APP_URL } from "@/domain/catalog";
-import { darkLogo, logo } from "@/content/media";
+import { darkLogo, logo, singaporeFlag } from "@/content/media";
 import { useBooking } from "@/features/booking/provider";
-import { Assistant } from "@/features/assistant/assistant";
 import { Dialog } from "./dialog";
 import { BookingLink } from "./booking-navigation";
 import { PlayerAppPrompt } from "./player-app-prompt";
@@ -51,6 +50,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
             />
           </Link>
           <div className="nav-links" hidden={pathname.startsWith("/book/")}>
+            <img
+              className="nav-flag"
+              src={singaporeFlag}
+              alt="Singapore"
+              width={36}
+              height={24}
+            />
             <BookingLink
               href="/studio/"
               className="nav-studio"
@@ -155,7 +161,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </footer>
-      <Assistant />
       <PlayerAppPrompt />
       {dialog && (
         <Dialog

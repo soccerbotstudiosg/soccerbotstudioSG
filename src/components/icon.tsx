@@ -70,9 +70,6 @@ const paths: Record<string, ReactNode> = {
       <path d="M10 18h4" />
     </>
   ),
-  chat: (
-    <path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-7l-5 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-  ),
   lock: (
     <>
       <rect x="4" y="10" width="16" height="11" rx="2" />

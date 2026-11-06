@@ -73,7 +73,7 @@ test("design policy rejects local booking colour and type overrides", () => {
   assert.ok(
     designAudit(
       css +
-        "\n.offer-home:focus-visible { outline: 3px solid var(--color-arena-accent); }",
+        "\n.promotion-cta:focus-visible { outline: 3px solid var(--color-arena-accent); }",
     ).errors.some((e) => e.includes("Decorative accent")),
   );
 });

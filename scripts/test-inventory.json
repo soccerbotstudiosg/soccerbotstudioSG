@@ -180,14 +180,6 @@
     "title": "bounds calendar day month and UTF-8 payload sizes without truncating offers"
   },
   {
-    "file": "src/features/assistant/assistant.test.tsx",
-    "title": "Escape closes the assistant after a touch reply leaves focus outside the panel"
-  },
-  {
-    "file": "src/features/assistant/assistant.test.tsx",
-    "title": "the assistant stops handling Escape when closed or unmounted"
-  },
-  {
     "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "account leaving email challenge ignores delayed completion and live mode never displays demo code"
   },
@@ -861,7 +853,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "enquiry and assistant work without external submission"
+    "title": "enquiry remains available without external submission or a mock assistant"
   },
   {
     "file": "tests/customer.spec.ts",

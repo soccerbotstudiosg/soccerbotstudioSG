@@ -1,6 +1,7 @@
 import { sitePath } from "./site-path";
 export const bookingCover = sitePath("/assets/68b1a1790591.jpg");
 export const darkLogo = sitePath("/assets/7a29f38b3c34.webp");
+export const singaporeFlag = sitePath("/assets/singapore-flag.svg");
 export const logo = sitePath("/assets/c275ccd87afb.svg");
 export const studioMedia = [
   {
@@ -83,3 +84,6 @@ export const homeMedia = {
     zoom: 1.13,
   },
 };
+
+// Official /en/studio image, rechecked 6 November 2026; reuse the local asset.
+export const studioHero = homeMedia.studio;

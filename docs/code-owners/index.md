@@ -44,7 +44,7 @@ flowchart TB
   Public --> Visual["components/arena*.tsx + content/media.ts<br/>Arena presentation and imagery"]
 ```
 
-Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/book/[step]/page.tsx), [BookingPage](../../src/features/booking/booking-page.tsx), [booking provider](../../src/features/booking/provider.tsx). Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css). [Enquiry](../../src/features/enquiry/enquiry-page.tsx) and [assistant](../../src/features/assistant/assistant.tsx) are separate feature surfaces.
+Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/book/[step]/page.tsx), [BookingPage](../../src/features/booking/booking-page.tsx), [booking provider](../../src/features/booking/provider.tsx). Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css). [Enquiry](../../src/features/enquiry/enquiry-page.tsx) remains a separate preview-only feature; the persistent mock assistant is retired.
 
 ### 2.1 Booking UI expansion
 
@@ -73,7 +73,7 @@ flowchart TB
   Services["services/index.ts · build-time adapter selection"]
   Services --> Booking["services/booking.ts<br/>Booking command and response validation"]
   Services --> Identity["services/identity.ts<br/>Server-backed customer identity"]
-  Services --> Demo["services/demo/*<br/>Demo booking, identity, enquiry and assistant"]
+  Services --> Demo["services/demo/*<br/>Demo booking, identity and enquiry"]
   Browser["Booking feature consumers"] --> Services
   Browser --> Catalogue["services/customer-catalogue.ts · catalogue API"]
   Browser --> Confirm["services/confirmation.ts · protected checkout API"]
@@ -83,7 +83,7 @@ flowchart TB
   Rules -.-> Browser
 ```
 
-[Service composition](../../src/services/index.ts) selects live or demo booking/customer identity at build time. Enquiry and assistant are currently composed with demo adapters; do not infer a live messaging or AI integration. [contracts.ts](../../src/services/contracts.ts) defines the boundary. [booking.ts](../../src/services/booking.ts) owns `defineBookingService` and `liveBookingService`; [identity.ts](../../src/services/identity.ts) owns `createLiveIdentityService`. Customer PDF/calendar generation is retired.
+[Service composition](../../src/services/index.ts) selects live or demo booking/customer identity at build time. Enquiry is composed with a demo adapter; do not infer live message delivery. There is no chat-assistant adapter or floating chat surface. [contracts.ts](../../src/services/contracts.ts) defines the boundary. [booking.ts](../../src/services/booking.ts) owns `defineBookingService` and `liveBookingService`; [identity.ts](../../src/services/identity.ts) owns `createLiveIdentityService`. Customer PDF/calendar generation is retired.
 
 ### 3.1 Domain expansion
 
