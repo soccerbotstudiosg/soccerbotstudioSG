@@ -1,5 +1,29 @@
 # Code owners and feature map
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Overview](#1-overview)
+- [2. Customer experience](#2-customer-experience)
+  - [2.1. Booking UI expansion](#21-booking-ui-expansion)
+- [3. Browser contracts and domain rules](#3-browser-contracts-and-domain-rules)
+  - [3.1. Domain expansion](#31-domain-expansion)
+- [4. Server entry and provider coordination](#4-server-entry-and-provider-coordination)
+- [5. Identity and saved details](#5-identity-and-saved-details)
+- [6. Catalogue and availability](#6-catalogue-and-availability)
+- [7. Booking and payment](#7-booking-and-payment)
+  - [7.1. Booking expansion](#71-booking-expansion)
+  - [7.2. Payment expansion](#72-payment-expansion)
+- [8. Confirmation and recovery](#8-confirmation-and-recovery)
+- [9. Persistence and observability](#9-persistence-and-observability)
+- [10. Verification and delivery](#10-verification-and-delivery)
+  - [10.1. Verification expansion](#101-verification-expansion)
+- [11. Business rule to owner index](#11-business-rule-to-owner-index)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - [Database schema](../architecture/database-schema.md) maps all application tables, keys and relationships; implementation owners remain below.
 
 - Source map reconciled 2 November2026.
@@ -55,7 +79,7 @@ flowchart TB
 - Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css).
 - [Enquiry](../../src/features/enquiry/enquiry-page.tsx) remains a separate preview-only feature; the persistent mock assistant is retired.
 
-### 2.1 Booking UI expansion
+### 2.1. Booking UI expansion
 
 ```mermaid
 flowchart TB
@@ -102,7 +126,7 @@ flowchart TB
 - [booking.ts](../../src/services/booking.ts) owns `defineBookingService` and `liveBookingService`; [identity.ts](../../src/services/identity.ts) owns `createLiveIdentityService`.
 - Customer PDF/calendar generation is retired.
 
-### 3.1 Domain expansion
+### 3.1. Domain expansion
 
 ```mermaid
 flowchart TB
@@ -200,7 +224,7 @@ flowchart TB
 - [native-dispatch.ts](../../worker/native-dispatch.ts) claims dispatch/effects before external writes.
 - These boundaries prevent a repeated browser action from being treated as permission to recreate an uncertain booking.
 
-### 7.1 Booking expansion
+### 7.1. Booking expansion
 
 ```mermaid
 flowchart TB
@@ -219,7 +243,7 @@ flowchart TB
 - [native-setup.ts](../../worker/native-setup.ts) and [field-discovery.ts](../../worker/field-discovery.ts) support scoped provider setup/discovery; [native-comments.ts](../../worker/native-comments.ts) owns booking annotations.
 - The adapter also contains scoped compensation logic; its existence does not authorize operator cancellations or refunds.
 
-### 7.2 Payment expansion
+### 7.2. Payment expansion
 
 ```mermaid
 flowchart TB
@@ -305,7 +329,7 @@ flowchart TB
 - [worker/pages.ts](../../worker/pages.ts) is the optional Pages adapter; the prepared client target selects SaaS-to-Worker hosting.
 - Client production and repository cutover remain incomplete.
 
-### 10.1 Verification expansion
+### 10.1. Verification expansion
 
 ```mermaid
 flowchart TB

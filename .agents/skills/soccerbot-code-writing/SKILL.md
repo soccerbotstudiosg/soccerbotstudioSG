@@ -5,7 +5,23 @@ description: Write and review SoccerBot code by fixing the owning cause, avoidin
 
 # Code writing and repair
 
-## Authority and scope
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Authority and scope](#authority-and-scope)
+- [2. “Do not patch”: repair the owning cause](#1-do-not-patch-repair-the-owning-cause)
+- [3. “Do not hardcode”: choose the authoritative source](#2-do-not-hardcode-choose-the-authoritative-source)
+- [4. Prove behavior and guard execution](#3-prove-behavior-and-guard-execution)
+- [5. Review before publication](#4-review-before-publication)
+- [6. Reference and adaptation](#reference-and-adaptation)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="authority-and-scope"></a>
+
+## 1. Authority and scope
 
 - Apply before application, service, Worker, styling, configuration or tooling changes and during code review.
 - Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), then the affected business rule, contract and [code owner](../../../docs/code-owners/index.md).
@@ -16,7 +32,9 @@ description: Write and review SoccerBot code by fixing the owning cause, avoidin
 - Use the [testing](../soccerbot-testing/SKILL.md) and [documentation](../soccerbot-documentation/SKILL.md) skills; use the dependency skill when dependencies change.
 - This is an instruction procedure, not a newly installed automated guard.
 
-## 1. “Do not patch”: repair the owning cause
+<a id="1-do-not-patch-repair-the-owning-cause"></a>
+
+## 2. “Do not patch”: repair the owning cause
 
 - “Patch” here means a symptom-hiding workaround layered over faulty behavior.
 - It does not prohibit small diffs, Git patches, or the apply_patch editing tool.
@@ -39,7 +57,9 @@ description: Write and review SoccerBot code by fixing the owning cause, avoidin
   - If a temporary mitigation is necessary, record its evidence, limitation, owner, removal condition and regression coverage in the existing PR/Journey.
   - Do not present it as a permanent root-cause repair or silently relax a guard.
 
-## 2. “Do not hardcode”: choose the authoritative source
+<a id="2-do-not-hardcode-choose-the-authoritative-source"></a>
+
+## 3. “Do not hardcode”: choose the authoritative source
 
 - Hardcoding means embedding a value where it can disagree with the environment, provider, approved business configuration or authoritative state.
 - Not every literal is hardcoding.
@@ -65,7 +85,9 @@ description: Write and review SoccerBot code by fixing the owning cause, avoidin
 - Use authoritative enumeration where designed, while retaining independent expected counts/fixtures when they deliberately detect missing execution.
 - Update all affected discovery, ordering, aggregation and rejection guards together.
 
-## 3. Prove behavior and guard execution
+<a id="3-prove-behavior-and-guard-execution"></a>
+
+## 4. Prove behavior and guard execution
 
 - State independently what must happen and what must not happen.
 - Assert the positive result and relevant state/effects, together with negative safety assertions.
@@ -81,7 +103,9 @@ description: Write and review SoccerBot code by fixing the owning cause, avoidin
 - Never weaken assertions, add sleeps/retries, force clicks, enlarge deadlines, drop cases or bypass guards to obtain green.
 - Intentional animations may be synchronized through their actual lifecycle before measuring final geometry; preserve the size requirement and confirmation timing assertions.
 
-## 4. Review before publication
+<a id="4-review-before-publication"></a>
+
+## 5. Review before publication
 
 - Review the full candidate, not just the latest hunk:
 
@@ -98,7 +122,9 @@ description: Write and review SoccerBot code by fixing the owning cause, avoidin
 - Keep related work on the current appropriate branch/PR, consolidate before expensive CI and preserve existing publication/merge authority.
 - Record a concise root-cause/owner, value-source, test-impact and remaining-risk summary in the existing PR description; no separate checklist document is required.
 
-## Reference and adaptation
+<a id="reference-and-adaptation"></a>
+
+## 6. Reference and adaptation
 
 - Inspired by [ZY-Ang/clawdy CLAUDE.md](https://github.com/ZY-Ang/clawdy/blob/main/CLAUDE.md), read on 3 November 2026: explicit authority, outcome-based tests, mutation evidence and guards that fail loudly when absent.
 - Its repository-specific `backlog-claim`, `pr-watch`, hooks and merge policy are not installed or imported here.

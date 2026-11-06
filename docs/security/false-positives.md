@@ -1,11 +1,26 @@
 # Security finding assessments and false positives
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Observed findings and disposition](#observed-findings-and-disposition)
+  - [1.1. Minimatch advisory disposition](#minimatch-advisory-disposition)
+- [2. Regression evidence and remaining proof](#regression-evidence-and-remaining-proof)
+- [3. Proof requiring separate acceptance](#proof-requiring-separate-acceptance)
+  - [3.1. Browser evidence metadata](#browser-evidence-metadata)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - This document owns source-specific assessments, confirmed repairs, regression evidence and remaining proof.
 - [Security infrastructure](security-infrastructure.md) owns controls and trust boundaries.
 - An assessment is not an alert dismissal, scanner suppression, penetration test or universal safety claim.
 - Reassess when the source, dependency, caller or trust boundary changes.
 
-## Observed findings and disposition
+<a id="observed-findings-and-disposition"></a>
+
+## 1. Observed findings and disposition
 
 - **CodeQL incomplete URL substring sanitization in HitPay test fixtures**
   - **Evidence and disposition:** Confirmed weak test-call classification: `url.includes("hit-pay.com")` accepted a hostile URL containing the string in its path, query or hostname.
@@ -29,7 +44,9 @@
     - Unknown error codes lose specificity rather than exporting unreviewed text.
     - Extend the reviewed vocabulary only with corresponding evidence.
 
-### Minimatch advisory disposition
+<a id="minimatch-advisory-disposition"></a>
+
+### 1.1. Minimatch advisory disposition
 
 - [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) reports versions below 11.0.1.
 - The lint dependency tree contained 10.2.6 under typescript-estree and 3.1.5 under ESLint/plugins.
@@ -46,7 +63,9 @@
 
 - The installed legacy3.1.5 still exposes its callable CommonJS API and `makeRe()`, and its source lacks the named amplification preprocessor.
 
-## Regression evidence and remaining proof
+<a id="regression-evidence-and-remaining-proof"></a>
+
+## 2. Regression evidence and remaining proof
 
 - **Cache logging — add two cases**
   - **Independent expectation and evidence owner:** [Telemetry suite](../../worker/tests/telemetry.test.mjs): all nine lifecycle phases retain exact safe fields and false/zero values; sensitive extra fields cannot override identity, malformed UUID/phase/trigger emits nothing, invalid month/count/timing is omitted, unreviewed error text becomes a fixed fallback.
@@ -81,7 +100,9 @@
 - Exact commands, failures and completed validation belong in [Journey](../journey.md); [Progress](../../PROGRESS.md) owns the current checkpoint.
 - A former green revision does not accept a changed head.
 
-## Proof requiring separate acceptance
+<a id="proof-requiring-separate-acceptance"></a>
+
+## 3. Proof requiring separate acceptance
 
 - Do not manufacture local tests for external settings.
 - Current-account secret scanning/push protection, protection rules and alert state require actual GitHub evidence.
@@ -89,7 +110,9 @@
 - [Security infrastructure](security-infrastructure.md#11-additional-layers-to-adopt) links the remaining layers; [Runbook](../runbook.md) owns procedures.
 - They remain unverified until evidenced; no service activation, external action or blanket security acceptance follows from this PR.
 
-### Browser evidence metadata
+<a id="browser-evidence-metadata"></a>
+
+### 3.1. Browser evidence metadata
 
 - The combiner compares substantive configuration while retaining the original preview as evidence; only `metadata.gitDiff` is excluded.
 - [Regression tests](../../scripts/browser-shards.test.mjs) prove that changed commit identity, worker count, retries and other configuration remain rejected.

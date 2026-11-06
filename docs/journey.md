@@ -1,11 +1,906 @@
 # Project journey and evidence
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Initial milestone overview](#initial-milestone-overview)
+  - [1.1. Milestones and retained acceptance criteria](#milestones-and-retained-acceptance-criteria)
+  - [1.2. M1.1 — Reconcile the accepted baseline](#m11--reconcile-the-accepted-baseline)
+  - [1.3. M1.2 — Enforce the reviewed release path](#m12--enforce-the-reviewed-release-path)
+  - [1.4. M1.3 — Close tooling and delivery findings](#m13--close-tooling-and-delivery-findings)
+  - [1.5. M1.4 — Accept the deployed demo visually](#m14--accept-the-deployed-demo-visually)
+  - [1.6. M2.1 — Account readiness and temporary setup](#m21--account-readiness-and-temporary-setup)
+  - [1.7. M2.2 — Prove scheduling and single-studio slot protection](#m22--prove-scheduling-and-single-studio-slot-protection)
+  - [1.8. M2.3 — Prove the native hosted payment route](#m23--prove-the-native-hosted-payment-route)
+  - [1.9. M2.4 — Prove failure and recovery semantics](#m24--prove-failure-and-recovery-semantics)
+  - [1.10. M2.5 — Freeze the integration contract and mappings](#m25--freeze-the-integration-contract-and-mappings)
+  - [1.11. M3.1 — Worker and environment foundation](#m31--worker-and-environment-foundation)
+  - [1.12. M3.2 — Named asynchronous service contracts](#m32--named-asynchronous-service-contracts)
+  - [1.13. M3.3 — Minimal durable state and migrations](#m33--minimal-durable-state-and-migrations)
+  - [1.14. M3.4 — Email challenge and abuse controls](#m34--email-challenge-and-abuse-controls)
+  - [1.15. M3.5 — Protected sessions and guest checkout capability](#m35--protected-sessions-and-guest-checkout-capability)
+  - [1.16. M3.6 — Safe returning customer prefill](#m36--safe-returning-customer-prefill)
+  - [1.17. M4.1 — Authoritative availability and eligible instructors](#m41--authoritative-availability-and-eligible-instructors)
+  - [1.18. M4.2 — Connect selection and server revalidation](#m42--connect-selection-and-server-revalidation)
+  - [1.19. M4.3 — Create and recover a checkout attempt](#m43--create-and-recover-a-checkout-attempt)
+  - [1.20. M4.4 — Create every selected session safely](#m44--create-every-selected-session-safely)
+  - [1.21. M4.5 — Handle partial failure and compensation](#m45--handle-partial-failure-and-compensation)
+  - [1.22. M4.6 — Close booking recovery end to end](#m46--close-booking-recovery-end-to-end)
+  - [1.23. M5.1 — Validate invoice and checkout association](#m51--validate-invoice-and-checkout-association)
+  - [1.24. M5.2 — Hosted payment and safe customer return](#m52--hosted-payment-and-safe-customer-return)
+  - [1.25. M5.3 — Verify payment status](#m53--verify-payment-status)
+  - [1.26. M5.4 — Resolve pending expired late and unknown outcomes](#m54--resolve-pending-expired-late-and-unknown-outcomes)
+  - [1.27. M5.5 — Protect the final confirmation](#m55--protect-the-final-confirmation)
+  - [1.28. M6.1 — Booking summary and calendar exports](#m61--booking-summary-and-calendar-exports)
+  - [1.29. M6.2 — Native emails and approved public content](#m62--native-emails-and-approved-public-content)
+  - [1.30. M6.3 — Client staging configuration and full rehearsal](#m63--client-staging-configuration-and-full-rehearsal)
+  - [1.31. M6.4 — Production build and deployment pipeline](#m64--production-build-and-deployment-pipeline)
+  - [1.32. M6.5 — Monitoring alerts and recovery rehearsal](#m65--monitoring-alerts-and-recovery-rehearsal)
+  - [1.33. M6.6 — Release audit and UAT package](#m66--release-audit-and-uat-package)
+  - [1.34. M7.1 — Run the full client UAT suite](#m71--run-the-full-client-uat-suite)
+  - [1.35. M7.2 — Physical devices and operational walkthrough](#m72--physical-devices-and-operational-walkthrough)
+  - [1.36. M7.3 — Close defects and rerun affected acceptance](#m73--close-defects-and-rerun-affected-acceptance)
+  - [1.37. M7.4 — Record written build acceptance](#m74--record-written-build-acceptance)
+  - [1.38. M8.1 — Production readiness and go live decision](#m81--production-readiness-and-go-live-decision)
+  - [1.39. M8.2 — Deploy the verified production candidate](#m82--deploy-the-verified-production-candidate)
+  - [1.40. M8.3 — Verify live operation](#m83--verify-live-operation)
+  - [1.41. M8.4 — Complete training handover and launch acceptance](#m84--complete-training-handover-and-launch-acceptance)
+  - [1.42. M9.1 — Launch stabilization review](#m91--launch-stabilization-review)
+  - [1.43. M9.2 — Six month warranty operations](#m92--six-month-warranty-operations)
+  - [1.44. M9.3 — Optional maintenance service](#m93--optional-maintenance-service)
+  - [1.45. M9.4 — Ongoing changes and eventual exit](#m94--ongoing-changes-and-eventual-exit)
+- [2. Reading the retained record](#reading-the-retained-record)
+- [3. Part 2 — Dated changes and evidence](#part-2--dated-changes-and-evidence)
+  - [3.1. 30 October 2026 — Merged-main I/O stall and bounded temporary storage](#30-october-2026--merged-main-io-stall-and-bounded-temporary-storage)
+  - [3.2. 30 October 2026 — Instrument intermittent isolated runtime stalls](#30-october-2026--instrument-intermittent-isolated-runtime-stalls)
+  - [3.3. 30 October 2026 — Remove repeated homepage setup from failure journeys](#30-october-2026--remove-repeated-homepage-setup-from-failure-journeys)
+  - [3.4. 30 October 2026 — Diagnose client CI and review test-flow freshness](#30-october-2026--diagnose-client-ci-and-review-test-flow-freshness)
+  - [3.5. 30 October 2026 — Retire legacy sidebar workflow](#30-october-2026--retire-legacy-sidebar-workflow)
+  - [3.6. 30 October 2026 — Consolidate client Actions entries](#30-october-2026--consolidate-client-actions-entries)
+  - [3.7. 30 October 2026 — Separate target verification stages for private runners](#30-october-2026--separate-target-verification-stages-for-private-runners)
+  - [3.8. 30 October 2026 — Client setup and skip-interaction clock repair](#30-october-2026--client-setup-and-skip-interaction-clock-repair)
+  - [3.9. 30 October 2026 — Client GitHub pipeline and closed Worker bootstrap](#30-october-2026--client-github-pipeline-and-closed-worker-bootstrap)
+  - [3.10. 29 October 2026 — PR122 rotation-notice cascade correction](#29-october-2026--pr122-rotation-notice-cascade-correction)
+  - [3.11. 29 October 2026 — PR122 confirmation typography correction](#29-october-2026--pr122-confirmation-typography-correction)
+  - [3.12. 29 October 2026 — calendar navigation and fresh confirmation exports](#29-october-2026--calendar-navigation-and-fresh-confirmation-exports)
+  - [3.13. 26 October 2026 — PR90 Worker inventory correction](#26-october-2026--pr90-worker-inventory-correction)
+  - [3.14. 26 October 2026 — All-device sign-out from valid remembered sessions](#26-october-2026--all-device-sign-out-from-valid-remembered-sessions)
+  - [3.15. 26 October 2026 — Client account verification and Pages routing preparation](#26-october-2026--client-account-verification-and-pages-routing-preparation)
+  - [3.16. 22 October 2026 — Client staging and production delivery plan](#22-october-2026--client-staging-and-production-delivery-plan)
+  - [3.17. 22 October 2026 — Unique documentation ownership after PR88](#22-october-2026--unique-documentation-ownership-after-pr88)
+  - [3.18. 22 October 2026 — One-line major-function documentation](#22-october-2026--one-line-major-function-documentation)
+  - [3.19. 22 October 2026 — Retire obsolete examples, receipts and proof packet](#22-october-2026--retire-obsolete-examples-receipts-and-proof-packet)
+  - [3.20. 22 October 2026 — Owner waives real-checkout placement experiment](#22-october-2026--owner-waives-real-checkout-placement-experiment)
+  - [3.21. 22 October 2026 — Real checkout experiment preparation and isolation correction](#22-october-2026--real-checkout-experiment-preparation-and-isolation-correction)
+  - [3.22. 22 October 2026 — Execution location correction and client placement strategy](#22-october-2026--execution-location-correction-and-client-placement-strategy)
+  - [3.23. 22 October 2026 — Bounded placement screening after auth patch publication](#22-october-2026--bounded-placement-screening-after-auth-patch-publication)
+  - [3.24. 22 October 2026 — Public token refresh-ahead and placement diagnostics](#22-october-2026--public-token-refresh-ahead-and-placement-diagnostics)
+  - [3.25. 22 October 2026 — Security scanning and weekly notification scope](#22-october-2026--security-scanning-and-weekly-notification-scope)
+  - [3.26. 22 October 2026 — Dependency security maintenance added to backlog](#22-october-2026--dependency-security-maintenance-added-to-backlog)
+  - [3.27. 22 October 2026 — Documentation consolidation and client migration plan](#22-october-2026--documentation-consolidation-and-client-migration-plan)
+  - [3.28. Acceptance checkpoint — 22 October 2026 SGT](#acceptance-checkpoint--22-october-2026-sgt)
+  - [3.29. 21 October 2026 — overload recovery and explicit retry qualification](#21-october-2026--overload-recovery-and-explicit-retry-qualification)
+  - [3.30. 21 October 2026 — scope the409 browser alert to main](#21-october-2026--scope-the409-browser-alert-to-main)
+  - [3.31. 21 October 2026 — full burst campaign reaches queue limit](#21-october-2026--full-burst-campaign-reaches-queue-limit)
+  - [3.32. 21 October 2026 — isolated load campaign preparation](#21-october-2026--isolated-load-campaign-preparation)
+  - [3.33. 21 October 2026 — PR82 browser alert locator correction](#21-october-2026--pr82-browser-alert-locator-correction)
+  - [3.34. 21 October 2026 — acceptance consolidated and next campaign planned in PR82](#21-october-2026--acceptance-consolidated-and-next-campaign-planned-in-pr82)
+  - [3.35. 21 October 2026 — preparation409 readback and owner atomicity decision](#21-october-2026--preparation409-readback-and-owner-atomicity-decision)
+  - [3.36. Consistent calendar selection — 21 October 2026 SGT](#consistent-calendar-selection--21-october-2026-sgt)
+  - [3.37. 21 October 2026 — concurrent checkout rejection readback](#21-october-2026--concurrent-checkout-rejection-readback)
+  - [3.38. 21 October 2026 — unresolved focus and hold-expiry refresh](#21-october-2026--unresolved-focus-and-hold-expiry-refresh)
+  - [3.39. 21 October 2026 — acceptance resumed and confirmation details simplified](#21-october-2026--acceptance-resumed-and-confirmation-details-simplified)
+  - [3.40. 21 October 2026 — PR79 deployment and backend telemetry preparation](#21-october-2026--pr79-deployment-and-backend-telemetry-preparation)
+  - [3.41. 21 October 2026 — PR79 browser colour expectation repair](#21-october-2026--pr79-browser-colour-expectation-repair)
+  - [3.42. 21 October 2026 — PR78 handoff and documentation/presentation audit](#21-october-2026--pr78-handoff-and-documentationpresentation-audit)
+  - [3.43. Batch checkout and token retention — 21 October 2026 SGT](#batch-checkout-and-token-retention--21-october-2026-sgt)
+  - [3.44. Five-round-trip recovery experiment — 21 October 2026 SGT](#five-round-trip-recovery-experiment--21-october-2026-sgt)
+  - [3.45. Five-call experiment accepted for integration — 21 October 2026 SGT](#five-call-experiment-accepted-for-integration--21-october-2026-sgt)
+  - [3.46. Hometest06 and optimization experiments — 20 October 2026 SGT](#hometest06-and-optimization-experiments--20-october-2026-sgt)
+  - [3.47. Confirmation read experiment — 20 October 2026 SGT](#confirmation-read-experiment--20-october-2026-sgt)
+  - [3.48. Hometest05 telemetry — 20 October 2026 SGT](#hometest05-telemetry--20-october-2026-sgt)
+  - [3.49. Pending confirmation layout consistency — 20 October 2026 SGT](#pending-confirmation-layout-consistency--20-october-2026-sgt)
+  - [3.50. PR72 lost-response test setup — 20 October 2026 SGT](#pr72-lost-response-test-setup--20-october-2026-sgt)
+  - [3.51. Confirmation tracing — 20 October 2026 SGT](#confirmation-tracing--20-october-2026-sgt)
+  - [3.52. Ten-call single checkout integration — 20 October 2026 SGT](#ten-call-single-checkout-integration--20-october-2026-sgt)
+  - [3.53. PR70 initial receipt versus download gate — 20 October 2026 SGT](#pr70-initial-receipt-versus-download-gate--20-october-2026-sgt)
+  - [3.54. PR70 browser reconciliation-gate correction — 20 October 2026 SGT](#pr70-browser-reconciliation-gate-correction--20-october-2026-sgt)
+  - [3.55. Confirmation and queue audit repair — 20 October 2026](#confirmation-and-queue-audit-repair--20-october-2026)
+  - [3.56. PR69 main integration — 20 October 2026 SGT](#pr69-main-integration--20-october-2026-sgt)
+  - [3.57. Checkout phase tracing — 20 October 2026 SGT](#checkout-phase-tracing--20-october-2026-sgt)
+  - [3.58. Batch checkout creation path — 20 October 2026 SGT](#batch-checkout-creation-path--20-october-2026-sgt)
+  - [3.59. Checkout D1 consolidation — 20 October 2026 SGT](#checkout-d1-consolidation--20-october-2026-sgt)
+  - [3.60. Lean single checkout — 20 October 2026 SGT](#lean-single-checkout--20-october-2026-sgt)
+  - [3.61. PR66 CI cookie-adapter correction — 20 October 2026 SGT](#pr66-ci-cookie-adapter-correction--20-october-2026-sgt)
+  - [3.62. Authentication rejection diagnostic follow-up — 20 October 2026 SGT](#authentication-rejection-diagnostic-follow-up--20-october-2026-sgt)
+  - [3.63. HAR10 confirmation stability and pre-dispatch authentication failure — 20 October 2026 SGT](#har10-confirmation-stability-and-pre-dispatch-authentication-failure--20-october-2026-sgt)
+  - [3.64. Confirmation read timestamp race — 20 October 2026 SGT](#confirmation-read-timestamp-race--20-october-2026-sgt)
+  - [3.65. Independent payment deadlines — 20 October 2026 SGT](#independent-payment-deadlines--20-october-2026-sgt)
+  - [3.66. Interrupted provider transport recovery — 20 October 2026 SGT](#interrupted-provider-transport-recovery--20-october-2026-sgt)
+  - [3.67. Lost checkout response test ordering — 20 October 2026](#lost-checkout-response-test-ordering--20-october-2026)
+  - [3.68. PR62 checkout transport verification — 20 October 2026 SGT](#pr62-checkout-transport-verification--20-october-2026-sgt)
+  - [3.69. Actual batch response investigation and optimization — 20 October 2026 SGT](#actual-batch-response-investigation-and-optimization--20-october-2026-sgt)
+  - [3.70. Owner prioritizes checkout URL handoff — 19 October 2026 SGT](#owner-prioritizes-checkout-url-handoff--19-october-2026-sgt)
+  - [3.71. Owner adds recurring display warm-up — 19 October 2026 SGT](#owner-adds-recurring-display-warm-up--19-october-2026-sgt)
+  - [3.72. Browsing loading and cache investigation — 19 October 2026 SGT](#browsing-loading-and-cache-investigation--19-october-2026-sgt)
+  - [3.73. PR60 flow implementation and CI diagnosis — 19 October 2026 SGT](#pr60-flow-implementation-and-ci-diagnosis--19-october-2026-sgt)
+  - [3.74. Editable Review, combined checkout and compact confirmation — 19 October 2026 SGT](#editable-review-combined-checkout-and-compact-confirmation--19-october-2026-sgt)
+  - [3.75. HAR08 confirmation continuity and record reconciliation — 19 October 2026 SGT](#har08-confirmation-continuity-and-record-reconciliation--19-october-2026-sgt)
+  - [3.76. Email-code browser interaction repair — 19 October 2026 SGT](#email-code-browser-interaction-repair--19-october-2026-sgt)
+  - [3.77. Fifteen-minute hold and eight-minute payment policy — 19 October 2026 SGT](#fifteen-minute-hold-and-eight-minute-payment-policy--19-october-2026-sgt)
+  - [3.78. Completed-dismissal CI setup repair — 19 October 2026 SGT](#completed-dismissal-ci-setup-repair--19-october-2026-sgt)
+  - [3.79. Pre-creation concurrency implementation — 19 October 2026 SGT](#pre-creation-concurrency-implementation--19-october-2026-sgt)
+  - [3.80. HAR07 upstream failure and measured hold delay — 19 October 2026 SGT](#har07-upstream-failure-and-measured-hold-delay--19-october-2026-sgt)
+  - [3.81. Payment-first confirmation and expiry implementation — 19 October 2026 SGT](#payment-first-confirmation-and-expiry-implementation--19-october-2026-sgt)
+  - [3.82. Creation-first optimistic Review clarification — 19 October 2026 SGT](#creation-first-optimistic-review-clarification--19-october-2026-sgt)
+  - [3.83. HAR06 Details-to-Review latency follow-up — 19 October 2026 SGT](#har06-details-to-review-latency-follow-up--19-october-2026-sgt)
+  - [3.84. HAR06 checkout abort and compact pending return — 19 October 2026 SGT](#har06-checkout-abort-and-compact-pending-return--19-october-2026-sgt)
+  - [3.85. Owner requires a test-impact pass after every change — 19 October 2026](#owner-requires-a-test-impact-pass-after-every-change--19-october-2026)
+  - [3.86. One-month browser expectation repair — 19 October 2026 SGT](#one-month-browser-expectation-repair--19-october-2026-sgt)
+  - [3.87. One-month calendar preload — 19 October 2026 SGT](#one-month-calendar-preload--19-october-2026-sgt)
+  - [3.88. Final single-booking optimization pass — 19 October 2026 SGT](#final-single-booking-optimization-pass--19-october-2026-sgt)
+  - [3.89. Three UI follow-ups to PR55 — 19 October 2026 SGT](#three-ui-follow-ups-to-pr55--19-october-2026-sgt)
+  - [3.90. Follow-up latency review and earlier Review — 19 October 2026 SGT](#follow-up-latency-review-and-earlier-review--19-october-2026-sgt)
+  - [3.91. Latest05 duplicated loading and measured delay — 19 October 2026 SGT](#latest05-duplicated-loading-and-measured-delay--19-october-2026-sgt)
+  - [3.92. Optimistic Review milestone test — 19 October 2026 SGT](#optimistic-review-milestone-test--19-october-2026-sgt)
+  - [3.93. Pending-checkout accessible status repair — 19 October 2026 SGT](#pending-checkout-accessible-status-repair--19-october-2026-sgt)
+  - [3.94. Latency review, main failure and comment reconciliation — 19 October 2026 SGT](#latency-review-main-failure-and-comment-reconciliation--19-october-2026-sgt)
+  - [3.95. Partial-batch recovery CI repair — 19 October 2026 SGT](#partial-batch-recovery-ci-repair--19-october-2026-sgt)
+  - [3.96. Location dialog focus repair — 19 October 2026 SGT](#location-dialog-focus-repair--19-october-2026-sgt)
+  - [3.97. Latest04 and batch sequencing — 19 October 2026 SGT](#latest04-and-batch-sequencing--19-october-2026-sgt)
+  - [3.98. Independent checking-window regression — 19 October 2026 SGT](#independent-checking-window-regression--19-october-2026-sgt)
+  - [3.99. Browser failure regression expansion — 18 October 2026](#browser-failure-regression-expansion--18-october-2026)
+  - [3.100. Owner-approved combined hold — 18 October 2026](#owner-approved-combined-hold--18-october-2026)
+  - [3.101. Latest03 returning-session report and immediate rebooking — 18 October 2026](#latest03-returning-session-report-and-immediate-rebooking--18-october-2026)
+  - [3.102. Latest02 investigation, payment wake-up and email blocker — 18 October 2026](#latest02-investigation-payment-wake-up-and-email-blocker--18-october-2026)
+  - [3.103. Checkout grant-read consolidation — 18 October 2026](#checkout-grant-read-consolidation--18-october-2026)
+  - [3.104. Owner directs initial comments — 18 October 2026](#owner-directs-initial-comments--18-october-2026)
+  - [3.105. Handoff flash and missing comments — 18 October 2026](#handoff-flash-and-missing-comments--18-october-2026)
+  - [3.106. PR46 browser status assertion repair — 18 October 2026](#pr46-browser-status-assertion-repair--18-october-2026)
+  - [3.107. Completed booking exit and provider diagnostics — 18 October 2026](#completed-booking-exit-and-provider-diagnostics--18-october-2026)
+  - [3.108. Circular mouse cursor — 18 October 2026](#circular-mouse-cursor--18-october-2026)
+  - [3.109. Single-session booking validation optimization — 18 October 2026](#single-session-booking-validation-optimization--18-october-2026)
+  - [3.110. Full confirmation, return continuity and transition loading — 17 October 2026](#full-confirmation-return-continuity-and-transition-loading--17-october-2026)
+  - [3.111. Paid return continuity and restore-before-prefetch — 17 October 2026](#paid-return-continuity-and-restore-before-prefetch--17-october-2026)
+  - [3.112. PR41 CI repair and paid-return diagnosis — 17 October 2026](#pr41-ci-repair-and-paid-return-diagnosis--17-october-2026)
+  - [3.113. HAR-fixed-01 booking loading and latency review — 17 October 2026](#har-fixed-01-booking-loading-and-latency-review--17-october-2026)
+  - [3.114. Owner-requested migration process and testing documentation — 16 October 2026](#owner-requested-migration-process-and-testing-documentation--16-october-2026)
+  - [3.115. Migration sweep: remove old-account session preload — 16 October 2026](#migration-sweep-remove-old-account-session-preload--16-october-2026)
+  - [3.116. Migration version activated — 16 October 2026](#migration-version-activated--16-october-2026)
+  - [3.117. Deployed provider mismatch — 16 October 2026](#deployed-provider-mismatch--16-october-2026)
+  - [3.118. 16 October 2026 — acceptance preparation and inactive legacy work](#16-october-2026--acceptance-preparation-and-inactive-legacy-work)
+  - [3.119. Environment readiness and owner confirmations — 16 October 2026](#environment-readiness-and-owner-confirmations--16-october-2026)
+  - [3.120. 16 October 2026 — fresh runtime, migration readback and queue optimization](#16-october-2026--fresh-runtime-migration-readback-and-queue-optimization)
+  - [3.121. Opening hours, four-hour lead and observed HitPay host — 16 October 2026](#opening-hours-four-hour-lead-and-observed-hitpay-host--16-october-2026)
+  - [3.122. HAR06 checkout latency and payment diagnostics — 16 October 2026](#har06-checkout-latency-and-payment-diagnostics--16-october-2026)
+  - [3.123. Sandbox deployment and recovery correction — 16 October 2026](#sandbox-deployment-and-recovery-correction--16-october-2026)
+  - [3.124. Hold-state experiment evidence — 16 October 2026](#hold-state-experiment-evidence--16-october-2026)
+  - [3.125. Complete sandbox configuration readback — 16 October 2026](#complete-sandbox-configuration-readback--16-october-2026)
+  - [3.126. Calendar return and local reconciliation — 16 October 2026](#calendar-return-and-local-reconciliation--16-october-2026)
+  - [3.127. Stable guest option and HAR04/05 — 16 October 2026](#stable-guest-option-and-har0405--16-october-2026)
+  - [3.128. Confirmation restoration race exposed by mechanism tests — 16 October 2026](#confirmation-restoration-race-exposed-by-mechanism-tests--16-october-2026)
+  - [3.129. Test longevity audit — 16 October 2026](#test-longevity-audit--16-october-2026)
+  - [3.130. Mechanism browser transport and checking evidence — 16 October 2026](#mechanism-browser-transport-and-checking-evidence--16-october-2026)
+  - [3.131. Main CI weekday fixture failure — 16 October 2026](#main-ci-weekday-fixture-failure--16-october-2026)
+  - [3.132. HAR03 holding request rejected before provider dispatch — 15 October 2026](#har03-holding-request-rejected-before-provider-dispatch--15-october-2026)
+  - [3.133. Owner HAR: Review booking interrupted — 15 October 2026](#owner-har-review-booking-interrupted--15-october-2026)
+  - [3.134. Preserve hosted navigation until document unload — 15 October 2026](#preserve-hosted-navigation-until-document-unload--15-october-2026)
+  - [3.135. HitPay browser handoff correction and activation request — 15 October 2026](#hitpay-browser-handoff-correction-and-activation-request--15-october-2026)
+  - [3.136. Direct HitPay final local verification — 15 October 2026](#direct-hitpay-final-local-verification--15-october-2026)
+  - [3.137. Direct hosted HitPay implementation resumed — 15 October 2026](#direct-hosted-hitpay-implementation-resumed--15-october-2026)
+  - [3.138. Post-reset verification and ongoing email preparation — 15 October 2026](#post-reset-verification-and-ongoing-email-preparation--15-october-2026)
+  - [3.139. Coordinator optimization and security-widget layout — 14 October 2026](#coordinator-optimization-and-security-widget-layout--14-october-2026)
+  - [3.140. Deployed customer rule; final month exposes token timing — 14 October 2026](#deployed-customer-rule-final-month-exposes-token-timing--14-october-2026)
+  - [3.141. Owner replaces customer 48-hour lead — 14 October 2026](#owner-replaces-customer-48-hour-lead--14-october-2026)
+  - [3.142. Homepage browser gate catches impossible-date display reads — 14 October 2026](#homepage-browser-gate-catches-impossible-date-display-reads--14-october-2026)
+  - [3.143. Homepage public metadata regression alignment — 14 October 2026](#homepage-public-metadata-regression-alignment--14-october-2026)
+  - [3.144. Owner refines homepage prefetch and loading presentation — 14 October 2026](#owner-refines-homepage-prefetch-and-loading-presentation--14-october-2026)
+  - [3.145. Live prices verified; reproduce cold-prefetch expiry before repair — 14 October 2026](#live-prices-verified-reproduce-cold-prefetch-expiry-before-repair--14-october-2026)
+  - [3.146. Preserve two deployment findings and repair their owners — 14 October 2026](#preserve-two-deployment-findings-and-repair-their-owners--14-october-2026)
+  - [3.147. Complete browser cache, branded loading and dual native prices — 14 October 2026](#complete-browser-cache-branded-loading-and-dual-native-prices--14-october-2026)
+  - [3.148. Replace experiment closure with ordinary customer access — 14 October 2026](#replace-experiment-closure-with-ordinary-customer-access--14-october-2026)
+  - [3.149. Physical calendar inspection preparation — 14 October 2026](#physical-calendar-inspection-preparation--14-october-2026)
+  - [3.150. Post-merge diagnostic assertion collision — 14 October 2026](#post-merge-diagnostic-assertion-collision--14-october-2026)
+  - [3.151. Protected reload readiness — 14 October 2026](#protected-reload-readiness--14-october-2026)
+  - [3.152. WebKit exposed a calendar clock race — 14 October 2026](#webkit-exposed-a-calendar-clock-race--14-october-2026)
+  - [3.153. Final local checks and inventory correction — 14 October 2026](#final-local-checks-and-inventory-correction--14-october-2026)
+  - [3.154. Finish pending code and deploy — 14 October 2026](#finish-pending-code-and-deploy--14-october-2026)
+  - [3.155. Interface-first North Star and calendar cache — 14 October 2026](#interface-first-north-star-and-calendar-cache--14-october-2026)
+  - [3.156. Owner rejects homepage detour; readiness checked — 14 October 2026](#owner-rejects-homepage-detour-readiness-checked--14-october-2026)
+  - [3.157. Invoice34 body and fuller journey proposal — 14 October 2026](#invoice34-body-and-fuller-journey-proposal--14-october-2026)
+  - [3.158. Homepage-first checkout34 rendered after displayed due time — 14 October 2026](#homepage-first-checkout34-rendered-after-displayed-due-time--14-october-2026)
+  - [3.159. Broader community research: related precedents, no exact verified fix — 13 October 2026](#broader-community-research-related-precedents-no-exact-verified-fix--13-october-2026)
+  - [3.160. Existing-evidence diagnosis replaces repeated checkout experiments — 13 October 2026](#existing-evidence-diagnosis-replaces-repeated-checkout-experiments--13-october-2026)
+  - [3.161. Same original reference34 link reaches both checkout and e403 — 13 October 2026](#same-original-reference34-link-reaches-both-checkout-and-e403--13-october-2026)
+  - [3.162. Native checkout34 reached intermittently with30-minute window — 13 October 2026](#native-checkout34-reached-intermittently-with30-minute-window--13-october-2026)
+  - [3.163. Native invoice33 exists; displayed due time confounds the control — 13 October 2026](#native-invoice33-exists-displayed-due-time-confounds-the-control--13-october-2026)
+  - [3.164. SBPay transaction33 explicitly has no related invoice document — 13 October 2026](#sbpay-transaction33-explicitly-has-no-related-invoice-document--13-october-2026)
+  - [3.165. Native control exact error and post-failure pending state — 13 October 2026](#native-control-exact-error-and-post-failure-pending-state--13-october-2026)
+  - [3.166. Native emailed link reproduces invoice-details403 with cookies sent — 13 October 2026](#native-emailed-link-reproduces-invoice-details403-with-cookies-sent--13-october-2026)
+  - [3.167. Native dashboard Pay Later link issued; navigation stopped — 13 October 2026](#native-dashboard-pay-later-link-issued-navigation-stopped--13-october-2026)
+  - [3.168. Ten-minute payment timeout compared with original failure — 13 October 2026](#ten-minute-payment-timeout-compared-with-original-failure--13-october-2026)
+  - [3.169. Invoice 32 now cancelled by timeout — 13 October 2026](#invoice-32-now-cancelled-by-timeout--13-october-2026)
+  - [3.170. Owner allowance snapshot and closed browser log — 13 October 2026](#owner-allowance-snapshot-and-closed-browser-log--13-october-2026)
+  - [3.171. Invoice403 authorization traced against source and public contract — 13 October 2026](#invoice403-authorization-traced-against-source-and-public-contract--13-october-2026)
+  - [3.172. Fresh native link isolates a403 invoice-access failure — 13 October 2026](#fresh-native-link-isolates-a403-invoice-access-failure--13-october-2026)
+  - [3.173. Checkout-opening diagnostic stopped at availability — 13 October 2026](#checkout-opening-diagnostic-stopped-at-availability--13-october-2026)
+  - [3.174. Checkout-only diagnostic source prerequisite — 13 October 2026](#checkout-only-diagnostic-source-prerequisite--13-october-2026)
+  - [3.175. Owner readback narrows checkout investigation — 13 October 2026](#owner-readback-narrows-checkout-investigation--13-october-2026)
+  - [3.176. Native settings checked through the connected account — 13 October 2026](#native-settings-checked-through-the-connected-account--13-october-2026)
+  - [3.177. Read-only checkout diagnosis — 13 October 2026](#read-only-checkout-diagnosis--13-october-2026)
+  - [3.178. Owner payment flight reached an immediate checkout 404 — 13 October 2026](#owner-payment-flight-reached-an-immediate-checkout-404--13-october-2026)
+  - [3.179. Checkout verification selected; finite budget source prepared — 13 October 2026](#checkout-verification-selected-finite-budget-source-prepared--13-october-2026)
+  - [3.180. Owner requests payment before further webhook investigation — 13 October 2026](#owner-requests-payment-before-further-webhook-investigation--13-october-2026)
+  - [3.181. Paired-control ingress investigation completed — 13 October 2026](#paired-control-ingress-investigation-completed--13-october-2026)
+  - [3.182. Paired control executed; no signed receipts on either channel — 13 October 2026](#paired-control-executed-no-signed-receipts-on-either-channel--13-october-2026)
+  - [3.183. Paired webhook control preparation — 13 October 2026](#paired-webhook-control-preparation--13-october-2026)
+  - [3.184. Deeper diagnosis identified an unproven event prerequisite — 13 October 2026](#deeper-diagnosis-identified-an-unproven-event-prerequisite--13-october-2026)
+  - [3.185. Read-only delivery diagnosis completed — 13 October 2026](#read-only-delivery-diagnosis-completed--13-october-2026)
+  - [3.186. Live acknowledgement fix accepted; no signed receipt at observation — 13 October 2026](#live-acknowledgement-fix-accepted-no-signed-receipt-at-observation--13-october-2026)
+  - [3.187. DELETE acknowledgement regression and repair — 13 October 2026](#delete-acknowledgement-regression-and-repair--13-october-2026)
+  - [3.188. Empty active list confirmed after unknown DELETE — 13 October 2026](#empty-active-list-confirmed-after-unknown-delete--13-october-2026)
+  - [3.189. Cleanup crossed the parser guard and stopped at DELETE response — 13 October 2026](#cleanup-crossed-the-parser-guard-and-stopped-at-delete-response--13-october-2026)
+  - [3.190. Subscription flag mismatch repaired in its owner — 13 October 2026](#subscription-flag-mismatch-repaired-in-its-owner--13-october-2026)
+  - [3.191. Actual subscription string mismatch observed — 13 October 2026](#actual-subscription-string-mismatch-observed--13-october-2026)
+  - [3.192. Webhook flight stopped; access closed, subscription unresolved — 13 October 2026](#webhook-flight-stopped-access-closed-subscription-unresolved--13-october-2026)
+  - [3.193. Approved technical payment/webhook campaign — 13 October 2026](#approved-technical-paymentwebhook-campaign--13-october-2026)
+  - [3.194. Subscription source verification — 13 October 2026](#subscription-source-verification--13-october-2026)
+  - [3.195. Payment/webhook investigation and first repair — 13 October 2026](#paymentwebhook-investigation-and-first-repair--13-october-2026)
+  - [3.196. Developer native booking accepted and independently closed — 13 October 2026](#developer-native-booking-accepted-and-independently-closed--13-october-2026)
+  - [3.197. Owner roster and instructor priority — 12 October 2026](#owner-roster-and-instructor-priority--12-october-2026)
+  - [3.198. Approved setup inspection completed and closed — 12 October 2026](#approved-setup-inspection-completed-and-closed--12-october-2026)
+  - [3.199. Full native acceptance execution resumed — 12 October2026](#full-native-acceptance-execution-resumed--12-october2026)
+  - [3.200. Native campaign stopped on actual date availability — 12 October2026](#native-campaign-stopped-on-actual-date-availability--12-october2026)
+  - [3.201. Actual calendar discovery before the final native gate — 12 October2026](#actual-calendar-discovery-before-the-final-native-gate--12-october2026)
+  - [3.202. Native single proof accepted and closed — 12 October2026](#native-single-proof-accepted-and-closed--12-october2026)
+  - [3.203. Availability-only stop and actual-attempt accounting — 12 October2026](#availability-only-stop-and-actual-attempt-accounting--12-october2026)
+  - [3.204. 12 October — same-date native checkout accepted](#12-october--same-date-native-checkout-accepted)
+  - [3.205. 12 October — first autonomous flight reaches batch closure](#12-october--first-autonomous-flight-reaches-batch-closure)
+  - [3.206. Owner requests execution to native acceptance — 12 October2026](#owner-requests-execution-to-native-acceptance--12-october2026)
+  - [3.207. Approved live trial reaches the second book — 12 October2026](#approved-live-trial-reaches-the-second-book--12-october2026)
+  - [3.208. Live test requested; amended limits approved — 12 October2026](#live-test-requested-amended-limits-approved--12-october2026)
+  - [3.209. 12 October2026 — local experiment for missing batch echo](#12-october2026--local-experiment-for-missing-batch-echo)
+  - [3.210. 12 October2026 — approved follow-up reached batch membership validation](#12-october2026--approved-follow-up-reached-batch-membership-validation)
+  - [3.211. 12 October2026 — prepare owner-requested follow-up experiment](#12-october2026--prepare-owner-requested-follow-up-experiment)
+  - [3.212. 12 October2026 — exact approved diagnostic found the first failing field](#12-october2026--exact-approved-diagnostic-found-the-first-failing-field)
+  - [3.213. 12 October 2026 — audit the intermediate creation contract before a new proof](#12-october-2026--audit-the-intermediate-creation-contract-before-a-new-proof)
+  - [3.214. 12 October 2026 — actual retained-booking read passed all independent predicates](#12-october-2026--actual-retained-booking-read-passed-all-independent-predicates)
+  - [3.215. 12 October 2026 — owner requests a real format read](#12-october-2026--owner-requests-a-real-format-read)
+  - [3.216. 12 October 2026 — diagnose the failed192 checkout without another booking trial](#12-october-2026--diagnose-the-failed192-checkout-without-another-booking-trial)
+  - [3.217. 12 October 2026 — owner-approved192 preparation after budget preflight](#12-october-2026--owner-approved192-preparation-after-budget-preflight)
+  - [3.218. Owner corrected unfinished-cart interpretation — 12 October 2026](#owner-corrected-unfinished-cart-interpretation--12-october-2026)
+  - [3.219. Corrected identity proof retained a partial booking — 12 October 2026](#corrected-identity-proof-retained-a-partial-booking--12-october-2026)
+  - [3.220. Preview failure reporting during identity-fix CI — 12 October 2026](#preview-failure-reporting-during-identity-fix-ci--12-october-2026)
+  - [3.221. Idle readiness passed; identity expiry reproduced and repaired — 12 October 2026](#idle-readiness-passed-identity-expiry-reproduced-and-repaired--12-october-2026)
+  - [3.222. Configuration mismatch isolated; owner requests a controlled fix — 12 October 2026](#configuration-mismatch-isolated-owner-requests-a-controlled-fix--12-october-2026)
+  - [3.223. Approved128 proof closed before provider dispatch — 12 October 2026](#approved128-proof-closed-before-provider-dispatch--12-october-2026)
+  - [3.224. Owner-approved128-call preparation — 12 October 2026](#owner-approved128-call-preparation--12-october-2026)
+  - [3.225. Native prerequisite diagnosis source — 12 October 2026](#native-prerequisite-diagnosis-source--12-october-2026)
+  - [3.226. Signing amendment execution and closure — 12 October 2026](#signing-amendment-execution-and-closure--12-october-2026)
+  - [3.227. Backend proof first stop — 12 October 2026](#backend-proof-first-stop--12-october-2026)
+  - [3.228. 11 October — native uncertainty and compensation continuation](#11-october--native-uncertainty-and-compensation-continuation)
+  - [3.229. Native browser fixture correction — 11 October](#native-browser-fixture-correction--11-october)
+  - [3.230. 11 October — customer-native continuation after5878001](#11-october--customer-native-continuation-after5878001)
+  - [3.231. 11 October — native checkout implementation and owner configuration confirmation](#11-october--native-checkout-implementation-and-owner-configuration-confirmation)
+  - [3.232. Metadata discovery accepted and closed — 11 October 2026](#metadata-discovery-accepted-and-closed--11-october-2026)
+  - [3.233. 2026-10-11 — Defer physical flight until native and webhook technical completion](#2026-10-11--defer-physical-flight-until-native-and-webhook-technical-completion)
+  - [3.234. 2026-10-11 — Execute the six native completion items](#2026-10-11--execute-the-six-native-completion-items)
+  - [3.235. 2026-10-11 — Final native checkout decisions](#2026-10-11--final-native-checkout-decisions)
+  - [3.236. 2026-10-11 — Native-first North Star and one-studio clarification](#2026-10-11--native-first-north-star-and-one-studio-clarification)
+  - [3.237. 2026-10-11 — Remember me consent and reachable contact editing](#2026-10-11--remember-me-consent-and-reachable-contact-editing)
+  - [3.238. 2026-10-11 — Owner replaces provider-only prefill with website contact profile](#2026-10-11--owner-replaces-provider-only-prefill-with-website-contact-profile)
+  - [3.239. 2026-10-11 — Merged North Star execution package](#2026-10-11--merged-north-star-execution-package)
+  - [3.240. 2026-10-10 — PR19 owner proof and explicit closure](#2026-10-10--pr19-owner-proof-and-explicit-closure)
+  - [3.241. 2026-10-10 — PR18 merge and finite identity-proof preparation](#2026-10-10--pr18-merge-and-finite-identity-proof-preparation)
+  - [3.242. 2026-10-10 — PR18 release-preservation checker repair](#2026-10-10--pr18-release-preservation-checker-repair)
+  - [3.243. 2026-10-10 — M3.5 source continuation from merged PR17](#2026-10-10--m35-source-continuation-from-merged-pr17)
+  - [3.244. 2026-10-10 — Quotation A3 and next quick-rebooking North Star](#2026-10-10--quotation-a3-and-next-quick-rebooking-north-star)
+  - [3.245. 2026-10-10 — Owner email test and explicit closure](#2026-10-10--owner-email-test-and-explicit-closure)
+  - [3.246. Unused email window replacement — 10 October 2026](#unused-email-window-replacement--10-october-2026)
+  - [3.247. 2026-10-10 — Email activation packet review](#2026-10-10--email-activation-packet-review)
+  - [3.248. 8 October 2026 — Developer integration continuation](#8-october-2026--developer-integration-continuation)
+  - [3.249. 2026-10-04 — Frontend foundation](#2026-10-04--frontend-foundation)
+  - [3.250. Inputs and authority](#inputs-and-authority)
+  - [3.251. 2026-10-04 — Documentation/process review before GitHub](#2026-10-04--documentationprocess-review-before-github)
+  - [3.252. Scope and reviewed sources](#scope-and-reviewed-sources)
+  - [3.253. 2026-10-04 — Reference restoration and standardized guarded update](#2026-10-04--reference-restoration-and-standardized-guarded-update)
+  - [3.254. Baseline, authorization and root cause](#baseline-authorization-and-root-cause)
+  - [3.255. 4 October 2026 — macOS temporary-directory repair](#4-october-2026--macos-temporary-directory-repair)
+  - [3.256. 4 October 2026 — case-insensitive filesystem test repair](#4-october-2026--case-insensitive-filesystem-test-repair)
+  - [3.257. 4 October 2026 — restore the required installer delivery format](#4-october-2026--restore-the-required-installer-delivery-format)
+  - [3.258. 4 October 2026 — local verification format corrected](#4-october-2026--local-verification-format-corrected)
+  - [3.259. 4 October 2026 — correct headless browser preflight](#4-october-2026--correct-headless-browser-preflight)
+  - [3.260. 4 October 2026 — first complete user browser run and bounded repair](#4-october-2026--first-complete-user-browser-run-and-bounded-repair)
+  - [3.261. 4 October 2026 — enquiry hydration input loss](#4-october-2026--enquiry-hydration-input-loss)
+  - [3.262. 4 October 2026 — duplicated generated Next.js types](#4-october-2026--duplicated-generated-nextjs-types)
+  - [3.263. 4 October 2026 — PR 2 browser selector failure](#4-october-2026--pr-2-browser-selector-failure)
+  - [3.264. 4 October 2026 — frozen-clock regression in the attempted CI repair](#4-october-2026--frozen-clock-regression-in-the-attempted-ci-repair)
+  - [3.265. 4 October 2026 — GitHub Pages was publishing the README](#4-october-2026--github-pages-was-publishing-the-readme)
+  - [3.266. 4 October 2026 — accepted Pages evidence and complete iteration baseline](#4-october-2026--accepted-pages-evidence-and-complete-iteration-baseline)
+  - [3.267. 4 October 2026 — Booking oracle follow-up and instructor rotation](#4-october-2026--booking-oracle-follow-up-and-instructor-rotation)
+  - [3.268. 5 October 2026 — instructor selection failure repair](#5-october-2026--instructor-selection-failure-repair)
+  - [3.269. 5 October 2026 — accepted local repair and booking-flow update](#5-october-2026--accepted-local-repair-and-booking-flow-update)
+  - [3.270. 5 October 2026 — header-blue and typography standardization](#5-october-2026--header-blue-and-typography-standardization)
+  - [3.271. 5 October 2026 — latency architecture and measurement planning](#5-october-2026--latency-architecture-and-measurement-planning)
+  - [3.272. 6 October 2026 — client read-only discovery and boundary repair](#6-october-2026--client-read-only-discovery-and-boundary-repair)
+  - [3.273. 6 October 2026 — Codex Cloud transition and external project source adaptation](#6-october-2026--codex-cloud-transition-and-external-project-source-adaptation)
+  - [3.274. 6 October 2026 — verified Mac baseline and separate sync PR](#6-october-2026--verified-mac-baseline-and-separate-sync-pr)
+  - [3.275. 6 October 2026 — merge approval failure and enforced check naming](#6-october-2026--merge-approval-failure-and-enforced-check-naming)
+  - [3.276. 6 October 2026 — CI status-check naming](#6-october-2026--ci-status-check-naming)
+  - [3.277. 6 October 2026 — Cloud experiment refreshed from latest main](#6-october-2026--cloud-experiment-refreshed-from-latest-main)
+  - [3.278. 7 October 2026 — booking-page readiness test repair](#7-october-2026--booking-page-readiness-test-repair)
+  - [3.279. 7 October 2026 — M2.1 capability reconciliation with Cloud preview deferred](#7-october-2026--m21-capability-reconciliation-with-cloud-preview-deferred)
+  - [3.280. 7 October 2026 — elapsed-slot Cloud application trial](#7-october-2026--elapsed-slot-cloud-application-trial)
+  - [3.281. 7 October 2026 — YS merge and developer payment evidence reconciliation](#7-october-2026--ys-merge-and-developer-payment-evidence-reconciliation)
+  - [3.282. 7 October 2026 — developer API access and planned Cloudflare release workflow](#7-october-2026--developer-api-access-and-planned-cloudflare-release-workflow)
+  - [3.283. 7 October 2026 — native invoice checkout research and owner evidence](#7-october-2026--native-invoice-checkout-research-and-owner-evidence)
+  - [3.284. 7 October 2026 — staged native checkout experiments replace support gate](#7-october-2026--staged-native-checkout-experiments-replace-support-gate)
+  - [3.285. 2026-10-08 — Native developer Card proof reconciled; browser-return reliability preparation](#2026-10-08--native-developer-card-proof-reconciled-browser-return-reliability-preparation)
+  - [3.286. 8 October 2026 — Owner canary failed; automatic return control prepared](#8-october-2026--owner-canary-failed-automatic-return-control-prepared)
+  - [3.287. 8 October 2026 — CAP05 Cloud-only capacity preparation; no overlapping instructor fixture](#8-october-2026--cap05-cloud-only-capacity-preparation-no-overlapping-instructor-fixture)
+  - [3.288. 8 October 2026 — DUP06 scope decision and offline executable preparation](#8-october-2026--dup06-scope-decision-and-offline-executable-preparation)
+  - [3.289. DUP06 contact-control correction — 8 October 2026](#dup06-contact-control-correction--8-october-2026)
+  - [3.290. 8 October 2026 — approved DUP06 stopped at first authentication](#8-october-2026--approved-dup06-stopped-at-first-authentication)
+  - [3.291. 8 October 2026 — agreed payment-confirmation design recorded](#8-october-2026--agreed-payment-confirmation-design-recorded)
+  - [3.292. Capacity request43 offline diagnosis and proposed diagnostic continuation — 8 October 2026](#capacity-request43-offline-diagnosis-and-proposed-diagnostic-continuation--8-october-2026)
+  - [3.293. 8 October 2026 — bounded developer evidence campaign](#8-october-2026--bounded-developer-evidence-campaign)
+  - [3.294. 8 October 2026 — focused continuation, native reconciliation and publication authority](#8-october-2026--focused-continuation-native-reconciliation-and-publication-authority)
+  - [3.295. 8 October 2026 — offline protected-confirmation component](#8-october-2026--offline-protected-confirmation-component)
+  - [3.296. 8 October 2026 — Cloudflare development foundation campaign](#8-october-2026--cloudflare-development-foundation-campaign)
+  - [3.297. 8 October 2026 — Cloudflare campaign publication receipt](#8-october-2026--cloudflare-campaign-publication-receipt)
+  - [3.298. 9 October 2026 — M3.2 asynchronous booking implementation](#9-october-2026--m32-asynchronous-booking-implementation)
+  - [3.299. 9 October 2026 — M3.3 durable recovery implementation](#9-october-2026--m33-durable-recovery-implementation)
+  - [3.300. 9 October 2026 — Experiment 1 separate checkout](#9-october-2026--experiment-1-separate-checkout)
+  - [3.301. 9 October 2026 — native sandbox preparation after merged Experiment1](#9-october-2026--native-sandbox-preparation-after-merged-experiment1)
+  - [3.302. 9 October 2026 — historical responses to native adapter implementation](#9-october-2026--historical-responses-to-native-adapter-implementation)
+  - [3.303. 9 October 2026 — SimplyBook-owned dynamic data continuation](#9-october-2026--simplybook-owned-dynamic-data-continuation)
+  - [3.304. 9 October 2026 — precise native discovery after owner-merged PR13](#9-october-2026--precise-native-discovery-after-owner-merged-pr13)
+  - [3.305. 9 October 2026 — approved discovery execution stopped before provider dispatch](#9-october-2026--approved-discovery-execution-stopped-before-provider-dispatch)
+  - [3.306. 9 October main integration engineering checkpoint](#9-october-main-integration-engineering-checkpoint)
+  - [3.307. 9 October 2026 — recovered environment and bounded Resend composition](#9-october-2026--recovered-environment-and-bounded-resend-composition)
+  - [3.308. 9 October 2026 — public Turnstile binding and separate live-email evidence](#9-october-2026--public-turnstile-binding-and-separate-live-email-evidence)
+  - [3.309. Progress ledger archive — through PR78](#progress-ledger-archive--through-pr78)
+  - [3.310. Batch checkout and durable token cache — 21 October 2026 SGT](#batch-checkout-and-durable-token-cache--21-october-2026-sgt)
+  - [3.311. Five-round-trip reconciliation experiment — 21 October 2026 SGT](#five-round-trip-reconciliation-experiment--21-october-2026-sgt)
+  - [3.312. Five-D1 single checkout integration — 21 October 2026 SGT](#five-d1-single-checkout-integration--21-october-2026-sgt)
+  - [3.313. Batch checkout and reconciliation optimization — 20 October 2026 SGT](#batch-checkout-and-reconciliation-optimization--20-october-2026-sgt)
+  - [3.314. Confirmation read consolidation — 20 October 2026 SGT](#confirmation-read-consolidation--20-october-2026-sgt)
+  - [3.315. Unified pending confirmation presentation — 20 October 2026 SGT](#unified-pending-confirmation-presentation--20-october-2026-sgt)
+  - [3.316. Confirmation tracing — 20 October 2026 SGT](#confirmation-tracing--20-october-2026-sgt-1)
+  - [3.317. Ten-call checkout implementation — 20 October 2026 SGT](#ten-call-checkout-implementation--20-october-2026-sgt)
+  - [3.318. PR70 initial receipt versus download gate — 20 October 2026 SGT](#pr70-initial-receipt-versus-download-gate--20-october-2026-sgt-1)
+  - [3.319. PR70 browser reconciliation-gate correction — 20 October 2026 SGT](#pr70-browser-reconciliation-gate-correction--20-october-2026-sgt-1)
+  - [3.320. Active audit repair — 20 October 2026](#active-audit-repair--20-october-2026)
+  - [3.321. PR69 main integration — 20 October 2026 SGT](#pr69-main-integration--20-october-2026-sgt-1)
+  - [3.322. Checkout phase tracing — 20 October 2026 SGT](#checkout-phase-tracing--20-october-2026-sgt-1)
+  - [3.323. Batch checkout creation path — 20 October 2026 SGT](#batch-checkout-creation-path--20-october-2026-sgt-1)
+  - [3.324. Checkout D1 consolidation — 20 October 2026 SGT](#checkout-d1-consolidation--20-october-2026-sgt-1)
+  - [3.325. Lean single checkout — 20 October 2026 SGT](#lean-single-checkout--20-october-2026-sgt-1)
+  - [3.326. PR66 CI cookie-adapter correction — 20 October 2026 SGT](#pr66-ci-cookie-adapter-correction--20-october-2026-sgt-1)
+  - [3.327. Authentication rejection diagnostic follow-up — 20 October 2026 SGT](#authentication-rejection-diagnostic-follow-up--20-october-2026-sgt-1)
+  - [3.328. HAR10 confirmation stability and pre-dispatch authentication failure — 20 October 2026 SGT](#har10-confirmation-stability-and-pre-dispatch-authentication-failure--20-october-2026-sgt-1)
+  - [3.329. Confirmation read timestamp race — 20 October 2026 SGT](#confirmation-read-timestamp-race--20-october-2026-sgt-1)
+  - [3.330. Independent payment deadlines — 20 October 2026 SGT](#independent-payment-deadlines--20-october-2026-sgt-1)
+  - [3.331. Interrupted provider transport recovery — 20 October 2026 SGT](#interrupted-provider-transport-recovery--20-october-2026-sgt-1)
+  - [3.332. Lost checkout response test ordering — 20 October 2026](#lost-checkout-response-test-ordering--20-october-2026-1)
+  - [3.333. PR62 checkout transport verification — 20 October 2026 SGT](#pr62-checkout-transport-verification--20-october-2026-sgt-1)
+  - [3.334. Batch closure fast path — 20 October 2026 SGT](#batch-closure-fast-path--20-october-2026-sgt)
+  - [3.335. Active checkout optimization on PR61](#active-checkout-optimization-on-pr61)
+  - [3.336. PR61 extension — persistent display snapshots](#pr61-extension--persistent-display-snapshots)
+  - [3.337. Browsing-loading successor — 19 October 2026 SGT](#browsing-loading-successor--19-october-2026-sgt)
+  - [3.338. PR60 streamed Review restoration race — 19 October 2026 SGT](#pr60-streamed-review-restoration-race--19-october-2026-sgt)
+  - [3.339. PR60 final request-count correction — 19 October 2026 SGT](#pr60-final-request-count-correction--19-october-2026-sgt)
+  - [3.340. PR60 live-email follow-up — 19 October 2026 SGT](#pr60-live-email-follow-up--19-october-2026-sgt)
+  - [3.341. Active PR60 implementation — 19 October 2026 SGT](#active-pr60-implementation--19-october-2026-sgt)
+  - [3.342. Editable Review, combined checkout and compact confirmation — 19 October 2026 SGT](#editable-review-combined-checkout-and-compact-confirmation--19-october-2026-sgt-1)
+  - [3.343. HAR08 confirmation continuity and record reconciliation — 19 October 2026 SGT](#har08-confirmation-continuity-and-record-reconciliation--19-october-2026-sgt-1)
+  - [3.344. Email-code browser interaction repair — 19 October 2026 SGT](#email-code-browser-interaction-repair--19-october-2026-sgt-1)
+  - [3.345. Fifteen-minute hold and eight-minute payment policy — 19 October 2026 SGT](#fifteen-minute-hold-and-eight-minute-payment-policy--19-october-2026-sgt-1)
+  - [3.346. Completed-dismissal CI setup repair — 19 October 2026 SGT](#completed-dismissal-ci-setup-repair--19-october-2026-sgt-1)
+  - [3.347. Bounded pre-creation concurrency — 19 October 2026 SGT](#bounded-pre-creation-concurrency--19-october-2026-sgt)
+  - [3.348. HAR07 payment transport investigation — 19 October 2026 SGT](#har07-payment-transport-investigation--19-october-2026-sgt)
+  - [3.349. Shared checkout expiry and payment-first confirmation — 19 October 2026 SGT](#shared-checkout-expiry-and-payment-first-confirmation--19-october-2026-sgt)
+  - [3.350. Pending task: controlled coordinator concurrency — 19 October 2026 SGT](#pending-task-controlled-coordinator-concurrency--19-october-2026-sgt)
+  - [3.351. Creation-first optimistic Review clarification — 19 October 2026 SGT](#creation-first-optimistic-review-clarification--19-october-2026-sgt-1)
+  - [3.352. Checkout handoff repair — 19 October 2026 SGT](#checkout-handoff-repair--19-october-2026-sgt)
+  - [3.353. Mandatory test-impact pass — 19 October 2026](#mandatory-test-impact-pass--19-october-2026)
+  - [3.354. One-month browser expectation repair — 19 October 2026 SGT](#one-month-browser-expectation-repair--19-october-2026-sgt-1)
+  - [3.355. One-month calendar preload — 19 October 2026 SGT](#one-month-calendar-preload--19-october-2026-sgt-1)
+  - [3.356. Final single-booking optimization pass — 19 October 2026 SGT](#final-single-booking-optimization-pass--19-october-2026-sgt-1)
+  - [3.357. Review continuity, pending confirmation and immediate home — 19 October 2026 SGT](#review-continuity-pending-confirmation-and-immediate-home--19-october-2026-sgt)
+  - [3.358. Comment milestone and D1 latency pass — 19 October 2026 SGT](#comment-milestone-and-d1-latency-pass--19-october-2026-sgt)
+  - [3.359. Latest05 Review transition repair — 19 October 2026 SGT](#latest05-review-transition-repair--19-october-2026-sgt)
+  - [3.360. Single-booking verification latency and reference clarity — 19 October 2026 SGT](#single-booking-verification-latency-and-reference-clarity--19-october-2026-sgt)
+  - [3.361. Latest04 UI and combined batch follow-up — 19 October 2026 SGT](#latest04-ui-and-combined-batch-follow-up--19-october-2026-sgt)
+  - [3.362. Independent checking-window regression — 19 October 2026 SGT](#independent-checking-window-regression--19-october-2026-sgt-1)
+  - [3.363. Browser failure coverage expansion — 18 October 2026](#browser-failure-coverage-expansion--18-october-2026)
+  - [3.364. Combined Details-to-Review hold — 18 October 2026](#combined-details-to-review-hold--18-october-2026)
+  - [3.365. Latest03 immediate rebooking — 18 October 2026](#latest03-immediate-rebooking--18-october-2026)
+  - [3.366. Latest02 performance and email access — 18 October 2026](#latest02-performance-and-email-access--18-october-2026)
+  - [3.367. Checkout authority optimization — 18 October 2026](#checkout-authority-optimization--18-october-2026)
+  - [3.368. Booking presentation repair and measured latency — 17 October 2026](#booking-presentation-repair-and-measured-latency--17-october-2026)
+  - [3.369. Migration process and testing requirements documentation — 16 October 2026](#migration-process-and-testing-requirements-documentation--16-october-2026)
+  - [3.370. Migration sweep: remove old-account session preload — 16 October 2026](#migration-sweep-remove-old-account-session-preload--16-october-2026-1)
+  - [3.371. Migration version activated — 16 October 2026](#migration-version-activated--16-october-2026-1)
+  - [3.372. Deployed provider mismatch — 16 October 2026](#deployed-provider-mismatch--16-october-2026-1)
+  - [3.373. First new-account acceptance preparation — 16 October 2026](#first-new-account-acceptance-preparation--16-october-2026)
+  - [3.374. Environment readiness and owner confirmations — 16 October 2026](#environment-readiness-and-owner-confirmations--16-october-2026-1)
+  - [3.375. Migration verification and booking queue review — 16 October 2026](#migration-verification-and-booking-queue-review--16-october-2026)
+  - [3.376. Opening hours, four-hour lead and observed HitPay host — 16 October 2026](#opening-hours-four-hour-lead-and-observed-hitpay-host--16-october-2026-1)
+  - [3.377. HAR06 checkout latency and payment diagnostics — 16 October 2026](#har06-checkout-latency-and-payment-diagnostics--16-october-2026-1)
+  - [3.378. Sandbox deployment and recovery correction — 16 October 2026](#sandbox-deployment-and-recovery-correction--16-october-2026-1)
+  - [3.379. Hold-state experiment evidence — 16 October 2026](#hold-state-experiment-evidence--16-october-2026-1)
+  - [3.380. Complete sandbox configuration readback — 16 October 2026](#complete-sandbox-configuration-readback--16-october-2026-1)
+  - [3.381. Calendar return and local reconciliation — 16 October 2026](#calendar-return-and-local-reconciliation--16-october-2026-1)
+  - [3.382. Stable guest option and HAR04/05 — 16 October 2026](#stable-guest-option-and-har0405--16-october-2026-1)
+  - [3.383. Confirmation restoration race exposed by mechanism tests — 16 October 2026](#confirmation-restoration-race-exposed-by-mechanism-tests--16-october-2026-1)
+  - [3.384. Test reliability audit — 16 October 2026](#test-reliability-audit--16-october-2026)
+  - [3.385. Deterministic booking test clock — 16 October 2026](#deterministic-booking-test-clock--16-october-2026)
+  - [3.386. Holding HTTP boundary repair — 15 October 2026](#holding-http-boundary-repair--15-october-2026)
+  - [3.387. Review booking owner-test repair — 15 October 2026](#review-booking-owner-test-repair--15-october-2026)
+  - [3.388. Direct hosted HitPay implementation resumed — 15 October 2026](#direct-hosted-hitpay-implementation-resumed--15-october-2026-1)
+  - [3.389. Durable Object read optimization and Turnstile layout — 14 October 2026](#durable-object-read-optimization-and-turnstile-layout--14-october-2026)
+  - [3.390. Preparing one checkout-opening diagnostic — 13 October 2026](#preparing-one-checkout-opening-diagnostic--13-october-2026)
+  - [3.391. Owner settings evidence received — 13 October 2026](#owner-settings-evidence-received--13-october-2026)
+  - [3.392. Read-only native settings checked; owner browser results pending — 13 October 2026](#read-only-native-settings-checked-owner-browser-results-pending--13-october-2026)
+  - [3.393. Checkout diagnosis: endpoint and handoff match; native error unresolved — 13 October 2026](#checkout-diagnosis-endpoint-and-handoff-match-native-error-unresolved--13-october-2026)
+  - [3.394. Owner checkout 404; test stopped and independently closed — 13 October 2026](#owner-checkout-404-test-stopped-and-independently-closed--13-october-2026)
+  - [3.395. Owner payment packet preparation continues — 13 October 2026](#owner-payment-packet-preparation-continues--13-october-2026)
+  - [3.396. Payment test preparation, access still closed — 13 October 2026](#payment-test-preparation-access-still-closed--13-october-2026)
+  - [3.397. Paired control source prepared — 13 October 2026](#paired-control-source-prepared--13-october-2026)
+  - [3.398. Webhook investigation: verify the event prerequisite — 13 October 2026](#webhook-investigation-verify-the-event-prerequisite--13-october-2026)
+  - [3.399. Live DELETE fix passed; signed delivery not observed — 13 October 2026](#live-delete-fix-passed-signed-delivery-not-observed--13-october-2026)
+  - [3.400. Active subscription baseline restored — 13 October 2026](#active-subscription-baseline-restored--13-october-2026)
+  - [3.401. Latest live result: DELETE unknown, test stopped — 13 October 2026](#latest-live-result-delete-unknown-test-stopped--13-october-2026)
+  - [3.402. Current source repair — 13 October 2026](#current-source-repair--13-october-2026)
+  - [3.403. Latest result: subscription diagnostic closed — 13 October 2026](#latest-result-subscription-diagnostic-closed--13-october-2026)
+  - [3.404. Webhook flight stopped; access closed, subscription unresolved — 13 October 2026](#webhook-flight-stopped-access-closed-subscription-unresolved--13-october-2026-1)
+  - [3.405. Approved technical payment/webhook campaign — 13 October 2026](#approved-technical-paymentwebhook-campaign--13-october-2026-1)
+  - [3.406. Payment/webhook source increment — 13 October 2026](#paymentwebhook-source-increment--13-october-2026)
+  - [3.407. Developer native booking accepted and independently closed — 13 October 2026](#developer-native-booking-accepted-and-independently-closed--13-october-2026-1)
+  - [3.408. Owner roster and instructor priority — 12 October 2026](#owner-roster-and-instructor-priority--12-october-2026-1)
+  - [3.409. Approved setup inspection completed and closed — 12 October 2026](#approved-setup-inspection-completed-and-closed--12-october-2026-1)
+  - [3.410. Full native acceptance execution resumed — 12 October2026](#full-native-acceptance-execution-resumed--12-october2026-1)
+  - [3.411. Native campaign stopped on actual date availability — 12 October2026](#native-campaign-stopped-on-actual-date-availability--12-october2026-1)
+  - [3.412. Actual calendar discovery before the final native gate — 12 October2026](#actual-calendar-discovery-before-the-final-native-gate--12-october2026-1)
+  - [3.413. Native single proof accepted and closed — 12 October2026](#native-single-proof-accepted-and-closed--12-october2026-1)
+  - [3.414. Availability-only stop and actual-attempt accounting — 12 October2026](#availability-only-stop-and-actual-attempt-accounting--12-october2026-1)
+  - [3.415. Native campaign flight2 accepted same-date; independently closed — 12 October2026](#native-campaign-flight2-accepted-same-date-independently-closed--12-october2026)
+  - [3.416. Native campaign flight1 closed; batch closure phase isolated — 12 October2026](#native-campaign-flight1-closed-batch-closure-phase-isolated--12-october2026)
+  - [3.417. Current task — complete native-booking acceptance, 12 October2026](#current-task--complete-native-booking-acceptance-12-october2026)
+  - [3.418. 256 trial executed; second receipt cardinality failure — 12 October2026](#256-trial-executed-second-receipt-cardinality-failure--12-october2026)
+  - [3.419. Approved live-test amendment preparation — 12 October2026](#approved-live-test-amendment-preparation--12-october2026)
+  - [3.420. Current task — synthetic batch-membership experiment, 12 October2026](#current-task--synthetic-batch-membership-experiment-12-october2026)
+  - [3.421. Current task — follow-up experiment identified missing batch echo, 12 October2026](#current-task--follow-up-experiment-identified-missing-batch-echo-12-october2026)
+  - [3.422. Next finite experiment prepared — 12 October2026](#next-finite-experiment-prepared--12-october2026)
+  - [3.423. Current task — live field identified and correction prepared, 12 October2026](#current-task--live-field-identified-and-correction-prepared-12-october2026)
+  - [3.424. Current task — intermediate contract audit and finite proof preparation, 12 October2026](#current-task--intermediate-contract-audit-and-finite-proof-preparation-12-october2026)
+  - [3.425. Current task — creation-envelope evidence after the successful read, 12 October 2026](#current-task--creation-envelope-evidence-after-the-successful-read-12-october-2026)
+  - [3.426. Historical checkpoint — inspect the retained booking format, 12 October 2026](#historical-checkpoint--inspect-the-retained-booking-format-12-october-2026)
+  - [3.427. Historical checkpoint — precise native diagnostics, 12 October 2026](#historical-checkpoint--precise-native-diagnostics-12-october-2026)
+  - [3.428. Historical checkpoint — approved192 checkout-proof preparation, 12 October2026](#historical-checkpoint--approved192-checkout-proof-preparation-12-october2026)
+  - [3.429. Historical checkpoint — correct the cart lifecycle, 12 October 2026](#historical-checkpoint--correct-the-cart-lifecycle-12-october-2026)
+  - [3.430. Historical checkpoint — existing residual recovery, 12 October 2026](#historical-checkpoint--existing-residual-recovery-12-october-2026)
+  - [3.431. Preview failure reporting during identity-fix CI — 12 October 2026](#preview-failure-reporting-during-identity-fix-ci--12-october-2026-1)
+  - [3.432. Historical checkpoint — identity refresh across native reads, 12 October 2026](#historical-checkpoint--identity-refresh-across-native-reads-12-october-2026)
+  - [3.433. Historical checkpoint — test coordinator idle-lifecycle activation, 12 October 2026](#historical-checkpoint--test-coordinator-idle-lifecycle-activation-12-october-2026)
+  - [3.434. Historical checkpoint — coordinator readiness and private window diagnosis, 12 October 2026](#historical-checkpoint--coordinator-readiness-and-private-window-diagnosis-12-october-2026)
+  - [3.435. Historical checkpoint — exact128-call continuation preparation, 12 October 2026](#historical-checkpoint--exact128-call-continuation-preparation-12-october-2026)
+  - [3.436. Historical checkpoint — preserve private prerequisite evidence, 12 October 2026](#historical-checkpoint--preserve-private-prerequisite-evidence-12-october-2026)
+  - [3.437. Historical checkpoint — native HTTP/RPC diagnosis after verified closure, 12 October 2026](#historical-checkpoint--native-httprpc-diagnosis-after-verified-closure-12-october-2026)
+  - [3.438. Historical checkpoint — missing deployed signing binding, 12 October 2026](#historical-checkpoint--missing-deployed-signing-binding-12-october-2026)
+  - [3.439. Historical checkpoint — native failure-path closure, 11 October 2026](#historical-checkpoint--native-failure-path-closure-11-october-2026)
+  - [3.440. 11 October — protected native customer flow](#11-october--protected-native-customer-flow)
+  - [3.441. 11 October — native checkout implementation and owner configuration confirmation](#11-october--native-checkout-implementation-and-owner-configuration-confirmation-1)
+  - [3.442. Metadata discovery accepted and closed — 11 October 2026](#metadata-discovery-accepted-and-closed--11-october-2026-1)
+  - [3.443. Current direction — technical integration before combined testing](#current-direction--technical-integration-before-combined-testing)
+  - [3.444. Native booking completion task — six deliverables, 11 October 2026](#native-booking-completion-task--six-deliverables-11-october-2026)
+  - [3.445. Previous task — native one-studio policy and North Star execution, 11 October 2026](#previous-task--native-one-studio-policy-and-north-star-execution-11-october-2026)
+  - [3.446. Previous checkpoint — website-confirmed contact profile, 11 October 2026](#previous-checkpoint--website-confirmed-contact-profile-11-october-2026)
+  - [3.447. Previous checkpoint — North Star planning package, 11 October 2026](#previous-checkpoint--north-star-planning-package-11-october-2026)
+  - [3.448. Historical checkpoint — PR19 identity proof closed, 10 October 2026](#historical-checkpoint--pr19-identity-proof-closed-10-october-2026)
+  - [3.449. Replacement email test closed — 10 October 2026](#replacement-email-test-closed--10-october-2026)
+  - [3.450. Historical checkpoints — superseded by the current ledger](#historical-checkpoints--superseded-by-the-current-ledger)
+  - [3.451. Unused email window replacement — 10 October 2026](#unused-email-window-replacement--10-october-2026-1)
+  - [3.452. Email execution preparation — 10 October 2026](#email-execution-preparation--10-october-2026)
+  - [3.453. Live-email preparation continuation — 9 October 2026](#live-email-preparation-continuation--9-october-2026)
+  - [3.454. Resend composition continuation — 9 October 2026](#resend-composition-continuation--9-october-2026)
+  - [3.455. Main integration campaign — active 9 October 2026](#main-integration-campaign--active-9-october-2026)
+  - [3.456. Approved discovery execution — closed 9 October 2026](#approved-discovery-execution--closed-9-october-2026)
+  - [3.457. Historical native mapping discovery preparation — 9 October 2026](#historical-native-mapping-discovery-preparation--9-october-2026)
+  - [3.458. Historical native adapter checkpoint — completed 9 October 2026](#historical-native-adapter-checkpoint--completed-9-october-2026)
+  - [3.459. Historical native preparation checkpoint (completed in PR12)](#historical-native-preparation-checkpoint-completed-in-pr12)
+  - [3.460. Preparation history](#preparation-history)
+  - [3.461. Historical Experiment1 handover (superseded current status)](#historical-experiment1-handover-superseded-current-status)
+  - [3.462. M3.3 technical handover — 9 October 2026](#m33-technical-handover--9-october-2026)
+  - [3.463. M3.2 technical handover — 9 October 2026](#m32-technical-handover--9-october-2026)
+  - [3.464. M3.1 technical handover — 08 October 2026, 23:21 SGT](#m31-technical-handover--08-october-2026-2321-sgt)
+  - [3.465. M3.1 execution record — 8 October 2026, 22:26 SGT](#m31-execution-record--8-october-2026-2226-sgt)
+  - [3.466. Closed continuation — 8 October 2026, 18:38 SGT](#closed-continuation--8-october-2026-1838-sgt)
+  - [3.467. Continuation execution record — 8 October 2026](#continuation-execution-record--8-october-2026)
+  - [3.468. Historical Cloudflare developer campaign — 8 October 2026](#historical-cloudflare-developer-campaign--8-october-2026)
+  - [3.469. Finite accounting and resume boundary](#finite-accounting-and-resume-boundary)
+  - [3.470. Historical provider continuation checkpoint — 8 October 2026](#historical-provider-continuation-checkpoint--8-october-2026)
+  - [3.471. Historical campaign checkpoint — superseded by continuation above](#historical-campaign-checkpoint--superseded-by-continuation-above)
+  - [3.472. Historical pre-campaign checkpoint — 8 October 2026](#historical-pre-campaign-checkpoint--8-october-2026)
+  - [3.473. Checkpoint — 7 October 2026](#checkpoint--7-october-2026)
+  - [3.474. Historical task ledger — superseded by current campaign checkpoint](#historical-task-ledger--superseded-by-current-campaign-checkpoint)
+  - [3.475. Native checkout staged preparation — 7 October 2026](#native-checkout-staged-preparation--7-october-2026)
+  - [3.476. Developer access and backend-plan reconciliation — 7 October 2026](#developer-access-and-backend-plan-reconciliation--7-october-2026)
+  - [3.477. C3 runtime restoration evidence — 7 October 2026](#c3-runtime-restoration-evidence--7-october-2026)
+  - [3.478. C4 evidence review — 7 October 2026](#c4-evidence-review--7-october-2026)
+  - [3.479. Preparation evidence](#preparation-evidence)
+  - [3.480. Provider evidence and remaining work](#provider-evidence-and-remaining-work)
+  - [3.481. Documentation handoff — 7 October 2026](#documentation-handoff--7-october-2026)
+  - [3.482. Bounded CI repair — 7 October 2026](#bounded-ci-repair--7-october-2026)
+  - [3.483. M2.1 reconciliation — 7 October 2026](#m21-reconciliation--7-october-2026)
+  - [3.484. Elapsed-slot application trial — 7 October 2026](#elapsed-slot-application-trial--7-october-2026)
+  - [3.485. Historical developer native-payment reconciliation — before PR #7 merge](#historical-developer-native-payment-reconciliation--before-pr-7-merge)
+  - [3.486. Next run](#next-run)
+  - [3.487. Update discipline](#update-discipline)
+  - [3.488. Historical contract and rule source index](#historical-contract-and-rule-source-index)
+  - [3.489. 26 October 2026 — deployment scaffold and account follow-up](#26-october-2026--deployment-scaffold-and-account-follow-up)
+  - [3.490. 27 October 2026 — Client D1 created and primary placement verified](#27-october-2026--client-d1-created-and-primary-placement-verified)
+  - [3.491. 27 October 2026 — Explicit coordinator first-use placement prepared](#27-october-2026--explicit-coordinator-first-use-placement-prepared)
+  - [3.492. 27 October 2026 — SaaS Worker entry and delivery ownership preparation](#27-october-2026--saas-worker-entry-and-delivery-ownership-preparation)
+  - [3.493. 27 October 2026 — Dependency update grouping and action-pin ownership](#27-october-2026--dependency-update-grouping-and-action-pin-ownership)
+  - [3.494. 27 October 2026 — Compatible dependency vulnerability remediation](#27-october-2026--compatible-dependency-vulnerability-remediation)
+  - [3.495. 27 October 2026 — Security updates and remediation integrated with dependency maintenance](#27-october-2026--security-updates-and-remediation-integrated-with-dependency-maintenance)
+  - [3.496. 28 October 2026 — Repository version inventory](#28-october-2026--repository-version-inventory)
+  - [3.497. 28 October 2026 — Feature ownership diagrams and rule identifiers](#28-october-2026--feature-ownership-diagrams-and-rule-identifiers)
+  - [3.498. 28 October 2026 — Role-based UAT preparation](#28-october-2026--role-based-uat-preparation)
+  - [3.499. 28 October 2026 — Operational runbook drafted](#28-october-2026--operational-runbook-drafted)
+  - [3.500. 28 October 2026 — Agent instructions own task routing](#28-october-2026--agent-instructions-own-task-routing)
+  - [3.501. 28 October 2026 — Standard agent filename restored](#28-october-2026--standard-agent-filename-restored)
+  - [3.502. 28 October 2026 — Continuous development guidance replaces root README](#28-october-2026--continuous-development-guidance-replaces-root-readme)
+  - [3.503. 28 October 2026 — Architecture decision records](#28-october-2026--architecture-decision-records)
+  - [3.504. 28 October 2026 — Business rules, operation contracts and journey split](#28-october-2026--business-rules-operation-contracts-and-journey-split)
+  - [3.505. 28 October 2026 — Progress becomes the current-task handover](#28-october-2026--progress-becomes-the-current-task-handover)
+  - [3.506. 28 October 2026 — API contract filename standardized](#28-october-2026--api-contract-filename-standardized)
+  - [3.507. 28 October 2026 — Documentation stack merge begins](#28-october-2026--documentation-stack-merge-begins)
+  - [3.508. 28 October 2026 — Security infrastructure documented](#28-october-2026--security-infrastructure-documented)
+  - [3.509. 28 October 2026 — Status, API examples and operational readiness expanded](#28-october-2026--status-api-examples-and-operational-readiness-expanded)
+  - [3.510. 28 October 2026 — PR114 concurrent response lifetime repair](#28-october-2026--pr114-concurrent-response-lifetime-repair)
+  - [3.511. 28 October 2026 — PR115 dismissal readiness synchronized](#28-october-2026--pr115-dismissal-readiness-synchronized)
+  - [3.512. 28 October 2026 — Documentation stack merged and developer main verified](#28-october-2026--documentation-stack-merged-and-developer-main-verified)
+    - [3.512.1. Retained PR112 tablet WebKit failure evidence](#retained-pr112-tablet-webkit-failure-evidence)
+  - [3.513. 28 October 2026 — Current ownership plan and technical behavior reconciled](#28-october-2026--current-ownership-plan-and-technical-behavior-reconciled)
+  - [3.514. 28 October 2026 — Source-based data lifecycle draft](#28-october-2026--source-based-data-lifecycle-draft)
+  - [3.515. 28 October 2026 — PR116 checking-budget test initialization repair](#28-october-2026--pr116-checking-budget-test-initialization-repair)
+  - [3.516. 29 October 2026 — Repair recovery sequence diagram syntax](#29-october-2026--repair-recovery-sequence-diagram-syntax)
+  - [3.517. 29 October 2026 — Campaign operating guide and repository-wide rendering audit](#29-october-2026--campaign-operating-guide-and-repository-wide-rendering-audit)
+  - [3.518. 29 October 2026 — per-slot trainer choice and grouped trainer cards](#29-october-2026--per-slot-trainer-choice-and-grouped-trainer-cards)
+  - [3.519. 29 October 2026 — Documentation reconciliation skill and PR118 checkpoint](#29-october-2026--documentation-reconciliation-skill-and-pr118-checkpoint)
+  - [3.520. 29 October 2026 — Test-maintenance skill added to PR119](#29-october-2026--test-maintenance-skill-added-to-pr119)
+  - [3.521. 29 October 2026 — Reconcile PR119 after trainer selection and spacing](#29-october-2026--reconcile-pr119-after-trainer-selection-and-spacing)
+  - [3.522. 30 October 2026 — PR4 storage evidence and backend disk exhaustion](#30-october-2026--pr4-storage-evidence-and-backend-disk-exhaustion)
+  - [3.523. 30 October 2026 — PR4 merge, repeated main disk failure and browser-lifetime evidence](#30-october-2026--pr4-merge-repeated-main-disk-failure-and-browser-lifetime-evidence)
+  - [3.524. 30 October 2026 — Bounded browser batches and concurrent runner shards](#30-october-2026--bounded-browser-batches-and-concurrent-runner-shards)
+  - [3.525. 30 October 2026 — Main verification, core-memory containment and deployment eligibility](#30-october-2026--main-verification-core-memory-containment-and-deployment-eligibility)
+  - [3.526. 30 October 2026 — Deliberate Worker groups after verified storage containment](#30-october-2026--deliberate-worker-groups-after-verified-storage-containment)
+  - [3.527. 30 October 2026 — Closed bootstrap health and retained client resources](#30-october-2026--closed-bootstrap-health-and-retained-client-resources)
+  - [3.528. 30 October 2026 — closed-install foundation management prepared](#30-october-2026--closed-install-foundation-management-prepared)
+  - [3.529. 30 October 2026 — production deployed; management execution bridge prepared](#30-october-2026--production-deployed-management-execution-bridge-prepared)
+  - [3.530. 31 October 2026 — verified client foundation, Osaka execution and provider-rule reconciliation](#31-october-2026--verified-client-foundation-osaka-execution-and-provider-rule-reconciliation)
+  - [3.531. 31 October 2026 — owner-authorized pre-opening trainer availability](#31-october-2026--owner-authorized-pre-opening-trainer-availability)
+  - [3.532. 31 October 2026 — PR11 deterministic Payment preview calendar fixture](#31-october-2026--pr11-deterministic-payment-preview-calendar-fixture)
+  - [3.533. 31 October 2026 — client pricing preparation and growing trainer rosters](#31-october-2026--client-pricing-preparation-and-growing-trainer-rosters)
+  - [3.534. 31 October 2026 — PR12 dependent-guard failure and testing-skill correction](#31-october-2026--pr12-dependent-guard-failure-and-testing-skill-correction)
+  - [3.535. 31 October 2026 — client credential installation checkpoint](#31-october-2026--client-credential-installation-checkpoint)
+  - [3.536. 31 October 2026 — Local client credential and service wiring](#31-october-2026--local-client-credential-and-service-wiring)
+  - [3.537. 31 October 2026 — Reuse app404 sandbox for client setup](#31-october-2026--reuse-app404-sandbox-for-client-setup)
+  - [3.538. 31 October 2026 — Client guest sandbox scope implementation](#31-october-2026--client-guest-sandbox-scope-implementation)
+  - [3.539. 31 October — staging calendar/trainer request audit](#31-october--staging-calendartrainer-request-audit)
+  - [3.540. 31 October 2026 — Correct initial calendar discovery and unify time/trainer presentation](#31-october-2026--correct-initial-calendar-discovery-and-unify-timetrainer-presentation)
+  - [3.541. 31 October 2026, 22:05 Singapore — client guest sandbox runtime activation](#31-october-2026-2205-singapore--client-guest-sandbox-runtime-activation)
+  - [3.542. 31 October 2026 — loader logo cleanup](#31-october-2026--loader-logo-cleanup)
+  - [3.543. PR13 first CI failure and repair — 31 October 2026](#pr13-first-ci-failure-and-repair--31-october-2026)
+  - [3.544. 1 November 2026 Singapore — guest sandbox re-enabled after logo release](#1-november-2026-singapore--guest-sandbox-re-enabled-after-logo-release)
+  - [3.545. Client public catalogue portability repair — 1 November 2026 Singapore](#client-public-catalogue-portability-repair--1-november-2026-singapore)
+  - [3.546. 1 November 2026 — restore sandbox after catalogue repair release](#1-november-2026--restore-sandbox-after-catalogue-repair-release)
+  - [3.547. 1 November 2026 — configuration presence and webhook recovery audit](#1-november-2026--configuration-presence-and-webhook-recovery-audit)
+  - [3.548. 1 November 2026 — successful owner webhook and confirmation timing](#1-november-2026--successful-owner-webhook-and-confirmation-timing)
+  - [3.549. 1 November 2026 — return-latency diagnosis](#1-november-2026--return-latency-diagnosis)
+  - [3.550. 1 November 2026 — proposed pre-accounting success boundary review](#1-november-2026--proposed-pre-accounting-success-boundary-review)
+  - [3.551. 1 November 2026 — payment-recording response fast confirmation candidate](#1-november-2026--payment-recording-response-fast-confirmation-candidate)
+  - [3.552. 1 November 2026 — retained payment continuation and dependent browser repair](#1-november-2026--retained-payment-continuation-and-dependent-browser-repair)
+  - [3.553. 2 November 2026 — clock-independent continuation and late confirmation proof](#2-november-2026--clock-independent-continuation-and-late-confirmation-proof)
+  - [3.554. 2 November 2026 — Dependabot artifact action guard repair](#2-november-2026--dependabot-artifact-action-guard-repair)
+  - [3.555. 2 November 2026 — authorized merge campaign and PR16 synchronization](#2-november-2026--authorized-merge-campaign-and-pr16-synchronization)
+  - [3.556. 2 November 2026 — Dependabot Playwright runtime alignment](#2-november-2026--dependabot-playwright-runtime-alignment)
+  - [3.557. 2 November 2026 — dependency coupling audit and installer compatibility](#2-november-2026--dependency-coupling-audit-and-installer-compatibility)
+  - [3.558. 2 November 2026 — Playwright route teardown ordering](#2-november-2026--playwright-route-teardown-ordering)
+  - [3.559. 2 November 2026 — PR17 combined-source verification candidate](#2-november-2026--pr17-combined-source-verification-candidate)
+  - [3.560. 2 November 2026 — dependency suitability review skill](#2-november-2026--dependency-suitability-review-skill)
+  - [3.561. 2 November 2026 — deployment readiness and CI diagnosis skills](#2-november-2026--deployment-readiness-and-ci-diagnosis-skills)
+  - [3.562. 2 November 2026 — dependency support ranges and browser coverage](#2-november-2026--dependency-support-ranges-and-browser-coverage)
+  - [3.563. 2 November 2026 — explicit support semantics and PR review cleanup](#2-november-2026--explicit-support-semantics-and-pr-review-cleanup)
+  - [3.564. 2 November 2026 — PR18 synchronized merge candidate](#2-november-2026--pr18-synchronized-merge-candidate)
+- [4. 2 November 2026 — closed deployment propagation repair](#2-november-2026--closed-deployment-propagation-repair)
+- [5. 2 November 2026 — production sandbox re-enabled for owner timing tests](#2-november-2026--production-sandbox-re-enabled-for-owner-timing-tests)
+- [6. 2 November 2026 — PR19 customer feedback consolidation (prepared)](#2-november-2026--pr19-customer-feedback-consolidation-prepared)
+- [7. 2 November 2026 — confirmation render timing and preserved CI failure](#2-november-2026--confirmation-render-timing-and-preserved-ci-failure)
+- [8. 2 November 2026 — environment pricing and provider configuration reference](#2-november-2026--environment-pricing-and-provider-configuration-reference)
+- [9. 2 November 2026 — invoice document references and notification preparation](#2-november-2026--invoice-document-references-and-notification-preparation)
+  - [9.1. 2 November 2026 — PR19 staging physical follow-up](#2-november-2026--pr19-staging-physical-follow-up)
+- [10. 2 November 2026 — test8 second-checkout calendar repair (prepared)](#2-november-2026--test8-second-checkout-calendar-repair-prepared)
+- [11. 2 November 2026 — combined booking-journey audit (prepared)](#2-november-2026--combined-booking-journey-audit-prepared)
+- [12. 2 November 2026 — two-pass full consecutive-journey audit (prepared)](#2-november-2026--two-pass-full-consecutive-journey-audit-prepared)
+  - [12.1. 2 November 2026 — Restore provider invoice display for owner UAT](#2-november-2026--restore-provider-invoice-display-for-owner-uat)
+  - [12.2. 2 November 2026 — Archived handover checkpoints](#2-november-2026--archived-handover-checkpoints)
+    - [12.2.1. Two-pass consecutive-journey audit — 2 November 2026](#two-pass-consecutive-journey-audit--2-november-2026)
+    - [12.2.2. Previous combination-journey audit — 2 November 2026](#previous-combination-journey-audit--2-november-2026)
+    - [12.2.3. Test8 rebooking investigation — 2 November 2026](#test8-rebooking-investigation--2-november-2026)
+    - [12.2.4. Current owner UAT follow-up — 2 November 2026](#current-owner-uat-follow-up--2-november-2026)
+    - [12.2.5. Historical preparation — customer invoice references, exports and notification drafts](#historical-preparation--customer-invoice-references-exports-and-notification-drafts)
+    - [12.2.6. Pending owner setup and acceptance](#pending-owner-setup-and-acceptance)
+    - [12.2.7. Retained owner-test checkpoint — production sandbox on merged PR15–18](#retained-owner-test-checkpoint--production-sandbox-on-merged-pr1518)
+    - [12.2.8. Active repair — closed deployment propagation](#active-repair--closed-deployment-propagation)
+    - [12.2.9. Current merge campaign — PR15–18](#current-merge-campaign--pr1518)
+    - [12.2.10. PR15 implementation checkpoint — historical before merge](#pr15-implementation-checkpoint--historical-before-merge)
+    - [12.2.11. Latest owner sandbox acceptance — 1 November 2026, Singapore](#latest-owner-sandbox-acceptance--1-november-2026-singapore)
+    - [12.2.12. Current configuration audit — 1 November 2026, Singapore](#current-configuration-audit--1-november-2026-singapore)
+    - [12.2.13. Loader logo cleanup — prepared 31 October 2026](#loader-logo-cleanup--prepared-31-october-2026)
+    - [12.2.14. Runtime acceptance checkpoint — 31 October 2026, 22:05 Singapore](#runtime-acceptance-checkpoint--31-october-2026-2205-singapore)
+    - [12.2.15. PR17 implementation checkpoint — historical before synchronization](#pr17-implementation-checkpoint--historical-before-synchronization)
+    - [12.2.16. Current task — client provider configuration and acceptance](#current-task--client-provider-configuration-and-acceptance)
+    - [12.2.17. PR18 scope and validation checkpoint](#pr18-scope-and-validation-checkpoint)
+    - [12.2.18. Deployment continuation — client provider configuration and acceptance](#deployment-continuation--client-provider-configuration-and-acceptance)
+      - [12.2.18.1. Verified deployment checkpoint](#verified-deployment-checkpoint)
+      - [12.2.18.2. Confirmed provider rules and inspected configuration](#confirmed-provider-rules-and-inspected-configuration)
+      - [12.2.18.3. Test and documentation reconciliation](#test-and-documentation-reconciliation)
+    - [12.2.19. Current domain handover — pending vendor action](#current-domain-handover--pending-vendor-action)
+    - [12.2.20. Historical deployment checkpoint — retained context, not current task status](#historical-deployment-checkpoint--retained-context-not-current-task-status)
+    - [12.2.21. Verified main and completed PR stack](#verified-main-and-completed-pr-stack)
+    - [12.2.22. Remaining deployment and handover work](#remaining-deployment-and-handover-work)
+    - [12.2.23. Active implementation — pricing and growing rosters](#active-implementation--pricing-and-growing-rosters)
+      - [12.2.23.1. Owner-installed client credentials — 31 October 2026](#owner-installed-client-credentials--31-october-2026)
+      - [12.2.23.2. Active slice — client guest sandbox integration](#active-slice--client-guest-sandbox-integration)
+      - [12.2.23.3. 31 October — staging calendar/trainer request audit](#31-october--staging-calendartrainer-request-audit-1)
+      - [12.2.23.4. Active UI correction — calendar discovery and unified time/trainer card](#active-ui-correction--calendar-discovery-and-unified-timetrainer-card)
+      - [12.2.23.5. PR13 first CI failure and repair — 31 October 2026](#pr13-first-ci-failure-and-repair--31-october-2026-1)
+      - [12.2.23.6. 1 November 2026 Singapore — guest sandbox re-enabled after logo release](#1-november-2026-singapore--guest-sandbox-re-enabled-after-logo-release-1)
+      - [12.2.23.7. Client public catalogue portability repair — 1 November 2026 Singapore](#client-public-catalogue-portability-repair--1-november-2026-singapore-1)
+      - [12.2.23.8. 1 November 2026 — restore sandbox after catalogue repair release](#1-november-2026--restore-sandbox-after-catalogue-repair-release-1)
+      - [12.2.23.9. 1 November 2026 — return-latency diagnosis](#1-november-2026--return-latency-diagnosis-1)
+      - [12.2.23.10. 1 November 2026 — proposed pre-accounting success boundary review](#1-november-2026--proposed-pre-accounting-success-boundary-review-1)
+  - [12.3. 2 November 2026 — Documentation reconciliation after PR19](#2-november-2026--documentation-reconciliation-after-pr19)
+  - [12.4. 2 November2026 — Approved copy, feedback spacing and scenario diagrams](#2-november2026--approved-copy-feedback-spacing-and-scenario-diagrams)
+  - [12.5. 2 November2026 — One scenario and message owner](#2-november2026--one-scenario-and-message-owner)
+  - [12.6. 2 November 2026 — Approved frontend hardening follow-up](#2-november-2026--approved-frontend-hardening-follow-up)
+  - [12.7. 2 November 2026 — Consolidated candidate pre-publication audit](#2-november-2026--consolidated-candidate-pre-publication-audit)
+  - [12.8. 3 November 2026 — PR20 browser CI repair](#3-november-2026--pr20-browser-ci-repair)
+  - [12.9. 3 November 2026 — Retained checkpoint before Progress cleanup](#3-november-2026--retained-checkpoint-before-progress-cleanup)
+    - [12.9.1. SoccerBotStudioSG current task and handover](#soccerbotstudiosg-current-task-and-handover)
+    - [12.9.2. Current outcome and scope](#current-outcome-and-scope)
+    - [12.9.3. Verified delivery state](#verified-delivery-state)
+    - [12.9.4. Local verification and remaining acceptance](#local-verification-and-remaining-acceptance)
+    - [12.9.5. Pending owner setup and acceptance](#pending-owner-setup-and-acceptance-1)
+    - [12.9.6. Next action and budget](#next-action-and-budget)
+  - [12.10. 3 November 2026 — Documentation ownership correction](#3-november-2026--documentation-ownership-correction)
+  - [12.11. 3 November 2026 — PR20 merged for owner trial runs](#3-november-2026--pr20-merged-for-owner-trial-runs)
+  - [12.12. 3 November 2026 — Formalize code-writing rules](#3-november-2026--formalize-code-writing-rules)
+  - [12.13. 3 November 2026 — Guest sandbox checkout reactivated on production](#3-november-2026--guest-sandbox-checkout-reactivated-on-production)
+  - [12.14. 3 November 2026 — test9 owner trial and diagnosed gaps](#3-november-2026--test9-owner-trial-and-diagnosed-gaps)
+  - [12.15. 3 November 2026 — shared calendar restoration and safety audit (local)](#3-november-2026--shared-calendar-restoration-and-safety-audit-local)
+  - [12.16. 3 November 2026 — PR21 production and test10 follow-up](#3-november-2026--pr21-production-and-test10-follow-up)
+  - [12.17. 3 November 2026 — schema map added to the local test10 batch](#3-november-2026--schema-map-added-to-the-local-test10-batch)
+  - [12.18. 3 November 2026 — test10 batch authorized for CI](#3-november-2026--test10-batch-authorized-for-ci)
+  - [12.19. 3 November 2026 — PR22 deployment, sandbox activation and test11](#3-november-2026--pr22-deployment-sandbox-activation-and-test11)
+  - [12.20. 3 November 2026 — test11 admin-auth investigation](#3-november-2026--test11-admin-auth-investigation)
+  - [12.21. 3 November 2026 — Local admin rotation and deadline recovery implementation](#3-november-2026--local-admin-rotation-and-deadline-recovery-implementation)
+  - [12.22. 3 November 2026 — Owner-requested authentication and recovery safety audit](#3-november-2026--owner-requested-authentication-and-recovery-safety-audit)
+  - [12.23. 3 November 2026 — Second owner-requested concurrency audit](#3-november-2026--second-owner-requested-concurrency-audit)
+  - [12.24. 3 November 2026 — Repeat audit until a clean pass](#3-november-2026--repeat-audit-until-a-clean-pass)
+  - [12.25. 3 November 2026 — Deeper combined-failure and journey audit](#3-november-2026--deeper-combined-failure-and-journey-audit)
+  - [12.26. 3 November 2026 — Consolidated batch prepared for CI](#3-november-2026--consolidated-batch-prepared-for-ci)
+  - [12.27. 4 November 2026 — PR23 deployed and owner sandbox testing restored](#4-november-2026--pr23-deployed-and-owner-sandbox-testing-restored)
+  - [12.28. 4 November 2026 — Recording A presentation and scheduling findings](#4-november-2026--recording-a-presentation-and-scheduling-findings)
+  - [12.29. 4 November 2026 — Fixed-grid availability and cache follow-up](#4-november-2026--fixed-grid-availability-and-cache-follow-up)
+  - [12.30. 4 November 2026 — Recording A batch authorized for draft CI](#4-november-2026--recording-a-batch-authorized-for-draft-ci)
+  - [12.31. 4 November 2026 — Public repository CI retry and browser-fixture correction](#4-november-2026--public-repository-ci-retry-and-browser-fixture-correction)
+  - [12.32. 4 November 2026 — HitPay test URL classification and minimatch triage](#4-november-2026--hitpay-test-url-classification-and-minimatch-triage)
+  - [12.33. 5 November 2026 — A–D trials resumed after PR25 release](#5-november-2026--ad-trials-resumed-after-pr25-release)
+  - [12.34. 5 November 2026 — calendar503 investigation (local, unresolved)](#5-november-2026--calendar503-investigation-local-unresolved)
+  - [12.35. 5 November 2026 — interval representation identified and local repair](#5-november-2026--interval-representation-identified-and-local-repair)
+  - [12.36. 5 November 2026 — consolidated calendar window, efficiency and copy](#5-november-2026--consolidated-calendar-window-efficiency-and-copy)
+  - [12.37. 5 November 2026 — PR26 calendar staging and security follow-up](#5-november-2026--pr26-calendar-staging-and-security-follow-up)
+  - [12.38. 5 November 2026 — PR26 browser report aggregation diagnosis](#5-november-2026--pr26-browser-report-aggregation-diagnosis)
+- [13. 5 November 2026 — Retained PR26 aggregation checkpoint](#5-november-2026--retained-pr26-aggregation-checkpoint)
+- [14. 5 November 2026 — Local basket price alignment](#5-november-2026--local-basket-price-alignment)
+- [15. 5 November 2026 — December/January test schedules entered](#5-november-2026--decemberjanuary-test-schedules-entered)
+- [16. 5 November 2026 — Cart presentation follow-up recorded locally](#5-november-2026--cart-presentation-follow-up-recorded-locally)
+- [17. 5 November 2026 — Full recording review and consolidated UI follow-up](#5-november-2026--full-recording-review-and-consolidated-ui-follow-up)
+- [18. 5 November 2026 — Verified unpaid release and calendar recovery follow-up](#5-november-2026--verified-unpaid-release-and-calendar-recovery-follow-up)
+- [19. 5 November 2026 — Unsafe-flow audit of PR27](#5-november-2026--unsafe-flow-audit-of-pr27)
+- [20. 5 November 2026 — Original testFull concern reconciliation](#5-november-2026--original-testfull-concern-reconciliation)
+  - [20.1. 5 November 2026 — TestFull-2 recovery and targeted release reads](#5-november-2026--testfull-2-recovery-and-targeted-release-reads)
+  - [20.2. 5 November 2026 — local session card and dialog](#5-november-2026--local-session-card-and-dialog)
+  - [20.3. 5 November2026 — TestFull-3 evidence and local repair](#5-november2026--testfull-3-evidence-and-local-repair)
+  - [20.4. 5 November 2026 — round-four recovery and presentation investigation](#5-november-2026--round-four-recovery-and-presentation-investigation)
+  - [20.5. 6 November 2026 — Retain the selected session card](#6-november-2026--retain-the-selected-session-card)
+  - [20.6. 6 November 2026 — Local hero information-strip removal](#6-november-2026--local-hero-information-strip-removal)
+  - [20.7. 6 November 2026 — PR32 delivery and outstanding-work reconciliation](#6-november-2026--pr32-delivery-and-outstanding-work-reconciliation)
+  - [20.8. 6 November 2026 — Resume the missing public-page redesign handover](#6-november-2026--resume-the-missing-public-page-redesign-handover)
+  - [20.9. 6 November 2026 — Reference-led presentation and outlet-first selection](#6-november-2026--reference-led-presentation-and-outlet-first-selection)
+  - [20.10. 6 November 2026 — compact abstract banners and reversible selection](#6-november-2026--compact-abstract-banners-and-reversible-selection)
+  - [20.11. 6 November 2026 — mobile Studio promotion curve clearance](#6-november-2026--mobile-studio-promotion-curve-clearance)
+  - [20.12. 6 November 2026 — revised post-merge A–D worksheet prepared locally](#6-november-2026--revised-post-merge-ad-worksheet-prepared-locally)
+  - [20.13. 6 November 2026 — local outlet and Contact alignment refinements](#6-november-2026--local-outlet-and-contact-alignment-refinements)
+  - [20.14. 6 November 2026 — consolidated refinements authorized for CI/staging](#6-november-2026--consolidated-refinements-authorized-for-cistaging)
+  - [20.15. 6 November 2026 — shorter homepage promotion targets](#6-november-2026--shorter-homepage-promotion-targets)
+  - [20.16. 6 November 2026 — consistent banner button shape](#6-november-2026--consistent-banner-button-shape)
+  - [20.17. 6 November 2026 — tighter banner composition and shared chevrons](#6-november-2026--tighter-banner-composition-and-shared-chevrons)
+  - [20.18. 6 November 2026 — contrasting performance strip, header retained](#6-november-2026--contrasting-performance-strip-header-retained)
+  - [20.19. 6 November 2026 — neutral blue-grey performance strip](#6-november-2026--neutral-blue-grey-performance-strip)
+  - [20.20. 6 November 2026 — Studio footer and flag centring](#6-november-2026--studio-footer-and-flag-centring)
+  - [20.21. 6 November 2026 — darker performance strip](#6-november-2026--darker-performance-strip)
+  - [20.22. 6 November 2026 — restore strip and lighten homepage promotions](#6-november-2026--restore-strip-and-lighten-homepage-promotions)
+  - [20.23. 6 November 2026 — Studio sections share the homepage promotion standard](#6-november-2026--studio-sections-share-the-homepage-promotion-standard)
+  - [20.24. 6 November 2026 — muted-orange bottom Contact banner](#6-november-2026--muted-orange-bottom-contact-banner)
+  - [20.25. 6 November 2026 — consolidated Studio gallery, banner spacing and footer app links](#6-november-2026--consolidated-studio-gallery-banner-spacing-and-footer-app-links)
+  - [20.26. 6 November 2026 — Footer fourth column and Studio image edges](#6-november-2026--footer-fourth-column-and-studio-image-edges)
+  - [20.27. 6 November 2026 — Further closing-banner reduction](#6-november-2026--further-closing-banner-reduction)
+  - [20.28. 6 November 2026 — Shared scroll motion, sticky header and footer regrouping](#6-november-2026--shared-scroll-motion-sticky-header-and-footer-regrouping)
+  - [20.29. 6 November 2026 — Make Studio booking gradient visible](#6-november-2026--make-studio-booking-gradient-visible)
+  - [20.30. 6 November 2026 — Synchronize confirmation alignment with section motion](#6-november-2026--synchronize-confirmation-alignment-with-section-motion)
+  - [20.31. 6 November 2026 — Exact four-column footer grouping](#6-november-2026--exact-four-column-footer-grouping)
+  - [20.32. 6 November 2026 — Thin mobile booking navigation and primary action bar](#6-november-2026--thin-mobile-booking-navigation-and-primary-action-bar)
+  - [20.33. 6 November 2026 — Keep navigation and banner hit targets stable](#6-november-2026--keep-navigation-and-banner-hit-targets-stable)
+- [21. Documentation consolidation evidence](#documentation-consolidation-evidence)
+  - [21.1. UAT detail retained — admin](#uat-detail-retained--admin)
+- [22. SimplyBook access and configuration](#simplybook-access-and-configuration)
+- [23. Trainer schedules in SimplyBook](#trainer-schedules-in-simplybook)
+- [24. Booking, invoice and payment reconciliation](#booking-invoice-and-payment-reconciliation)
+- [25. Daily operations and staff boundaries](#daily-operations-and-staff-boundaries)
+- [26. HitPay merchant access and payment operations](#hitpay-merchant-access-and-payment-operations)
+- [27. Cloudflare domain, DNS and HTTPS checks](#cloudflare-domain-dns-and-https-checks)
+- [28. Session outcome](#session-outcome)
+- [29. Per-slot trainer choice](#per-slot-trainer-choice)
+- [30. Pending mobile staff onboarding and notifications](#pending-mobile-staff-onboarding-and-notifications)
+  - [30.1. UAT detail retained — trainers](#uat-detail-retained--trainers)
+- [31. SimplyBook staff access](#simplybook-staff-access)
+- [32. Enter and maintain your schedule](#enter-and-maintain-your-schedule)
+- [33. Bookings and customer operations](#bookings-and-customer-operations)
+- [34. Session outcome](#session-outcome-1)
+- [35. Per-slot trainer choice](#per-slot-trainer-choice-1)
+- [36. Pending individual mobile accounts](#pending-individual-mobile-accounts)
+  - [36.1. UAT detail retained — simulated-user](#uat-detail-retained--simulated-user)
+- [37. Access, email and saved details](#access-email-and-saved-details)
+- [38. Calendar, selection and review](#calendar-selection-and-review)
+- [39. Hosted payment, return and confirmation](#hosted-payment-return-and-confirmation)
+- [40. Devices, navigation and response time](#devices-navigation-and-response-time)
+- [41. Session outcome](#session-outcome-2)
+- [42. Per-slot trainer choice](#per-slot-trainer-choice-2)
+  - [42.1. Client pricing and growing trainer roster acceptance](#client-pricing-and-growing-trainer-roster-acceptance)
+- [43. Confirmation actions and same-tab payment acceptance](#confirmation-actions-and-same-tab-payment-acceptance)
+- [44. Combined journey audit matrix](#combined-journey-audit-matrix)
+  - [44.1. Three complete journeys before physical acceptance](#three-complete-journeys-before-physical-acceptance)
+  - [44.2. Shared calendar regression after test9](#shared-calendar-regression-after-test9)
+  - [44.3. Test10 follow-up acceptance](#test10-follow-up-acceptance)
+  - [44.4. Test11 follow-up acceptance](#test11-follow-up-acceptance)
+  - [44.5. 4 November full owner test round](#4-november-full-owner-test-round)
+  - [44.6. Fixed public grid with manual admin bookings — pending owner acceptance](#fixed-public-grid-with-manual-admin-bookings--pending-owner-acceptance)
+  - [44.7. A–D acceptance worksheet](#ad-acceptance-worksheet)
+- [45. Public presentation redesign — owner acceptance pending](#public-presentation-redesign--owner-acceptance-pending)
+  - [45.1. Reference consolidation — December/January test availability — 5 November 2026](#reference-consolidation--decemberjanuary-test-availability--5-november-2026)
+  - [45.2. December/January test availability — 5 November 2026](#decemberjanuary-test-availability--5-november-2026)
+  - [45.3. Reference consolidation — Admin authentication investigation — 3 November 2026](#reference-consolidation--admin-authentication-investigation--3-november-2026)
+  - [45.4. Admin authentication investigation — 3 November 2026](#admin-authentication-investigation--3-november-2026)
+  - [45.5. Reference consolidation — 5 November 2026 — PR27 production sandbox reactivation](#reference-consolidation--5-november-2026--pr27-production-sandbox-reactivation)
+  - [45.6. 5 November 2026 — PR27 production sandbox reactivation](#5-november-2026--pr27-production-sandbox-reactivation)
+  - [45.7. Reference consolidation — 5 November 2026 — observed timeout delay](#reference-consolidation--5-november-2026--observed-timeout-delay)
+  - [45.8. 5 November 2026 — observed timeout delay](#5-november-2026--observed-timeout-delay)
+  - [45.9. Reference consolidation — 3 November 2026 — production calendar warming re-enabled](#reference-consolidation--3-november-2026--production-calendar-warming-re-enabled)
+  - [45.10. 3 November 2026 — production calendar warming re-enabled](#3-november-2026--production-calendar-warming-re-enabled)
+  - [45.11. Reference consolidation — 5 November 2026 — resume owner A–D production sandbox trials](#reference-consolidation--5-november-2026--resume-owner-ad-production-sandbox-trials)
+  - [45.12. 5 November 2026 — resume owner A–D production sandbox trials](#5-november-2026--resume-owner-ad-production-sandbox-trials)
+  - [45.13. Reference consolidation — Checkout timing follow-up — 5 November 2026](#reference-consolidation--checkout-timing-follow-up--5-november-2026)
+- [46. Checkout timing follow-up — 5 November 2026](#checkout-timing-follow-up--5-november-2026)
+  - [46.1. Reference consolidation — 6 November 2026 — final delivery and sandbox restoration scope](#reference-consolidation--6-november-2026--final-delivery-and-sandbox-restoration-scope)
+  - [46.2. 6 November 2026 — final delivery and sandbox restoration scope](#6-november-2026--final-delivery-and-sandbox-restoration-scope)
+  - [46.3. Provider reference evidence](#provider-reference-evidence)
+  - [46.4. Provider reference evidence](#provider-reference-evidence-1)
+  - [46.5. Provider reference evidence](#provider-reference-evidence-2)
+  - [46.6. Provider reference evidence](#provider-reference-evidence-3)
+  - [46.7. Provider reference evidence](#provider-reference-evidence-4)
+  - [46.8. Schedule sampling evidence](#schedule-sampling-evidence)
+  - [46.9. Schedule sampling evidence](#schedule-sampling-evidence-1)
+  - [46.10. Copy review retained](#copy-review-retained)
+- [47. Archived copy review (historical baseline and disposition)](#archived-copy-review-historical-baseline-and-disposition)
+  - [47.1. Identity and customer details](#identity-and-customer-details)
+  - [47.2. Preview / demo branches](#preview--demo-branches)
+  - [47.3. Availability and selection](#availability-and-selection)
+  - [47.4. Shared loading, navigation and guidance](#shared-loading-navigation-and-guidance)
+  - [47.5. Payment, confirmation and recovery](#payment-confirmation-and-recovery)
+  - [47.6. Review and checkout](#review-and-checkout)
+  - [47.7. Booking errors and restart recovery](#booking-errors-and-restart-recovery)
+  - [47.8. Enquiry](#enquiry)
+- [48. Additional controls and labels](#additional-controls-and-labels)
+- [49. Not separate customer messages](#not-separate-customer-messages)
+  - [49.1. Browser coverage evidence retained](#browser-coverage-evidence-retained)
+- [50. Browser testing coverage](#browser-testing-coverage)
+  - [50.1. Checkpoint superseded by documentation consolidation](#checkpoint-superseded-by-documentation-consolidation)
+- [51. PR32 footer refinement](#pr32-footer-refinement)
+- [52. Remaining work](#remaining-work)
+  - [52.1. 6 November 2026 — mobile action-bar content-width assertion](#6-november-2026--mobile-action-bar-content-width-assertion)
+  - [52.2. Retained reference detail — docs/business-rules.md](#retained-reference-detail--docsbusiness-rulesmd)
+  - [52.3. Retained reference detail — docs/architecture/adr.md](#retained-reference-detail--docsarchitectureadrmd)
+  - [52.4. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd)
+  - [52.5. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-1)
+  - [52.6. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-2)
+  - [52.7. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-3)
+  - [52.8. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-4)
+  - [52.9. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-5)
+  - [52.10. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-6)
+  - [52.11. Retained reference detail — docs/security/security-infrastructure.md](#retained-reference-detail--docssecuritysecurity-infrastructuremd)
+  - [52.12. Retained reference detail — docs/security/security-infrastructure.md](#retained-reference-detail--docssecuritysecurity-infrastructuremd-1)
+  - [52.13. Retained reference detail — docs/code-owners/technical-behavior.md](#retained-reference-detail--docscode-ownerstechnical-behaviormd)
+  - [52.14. Retained reference detail — docs/business-rules.md](#retained-reference-detail--docsbusiness-rulesmd-1)
+  - [52.15. Retained reference detail — docs/business-rules.md](#retained-reference-detail--docsbusiness-rulesmd-2)
+  - [52.16. Retained reference detail — docs/data-lifecycle.md](#retained-reference-detail--docsdata-lifecyclemd)
+  - [52.17. Retained reference detail — docs/data-lifecycle.md](#retained-reference-detail--docsdata-lifecyclemd-1)
+  - [52.18. Retained reference detail — docs/code-owners/technical-behavior.md](#retained-reference-detail--docscode-ownerstechnical-behaviormd-1)
+  - [52.19. Retained reference detail — docs/code-owners/technical-behavior.md](#retained-reference-detail--docscode-ownerstechnical-behaviormd-2)
+  - [52.20. Retained reference detail — docs/code-owners/technical-behavior.md](#retained-reference-detail--docscode-ownerstechnical-behaviormd-3)
+  - [52.21. Retained reference detail — docs/code-owners/technical-behavior.md](#retained-reference-detail--docscode-ownerstechnical-behaviormd-4)
+  - [52.22. Retained reference detail — docs/code-owners/index.md](#retained-reference-detail--docscode-ownersindexmd)
+  - [52.23. Retained reference detail — docs/api-contracts.md](#retained-reference-detail--docsapi-contractsmd)
+  - [52.24. Retained reference detail — docs/api-contracts.md](#retained-reference-detail--docsapi-contractsmd-1)
+  - [52.25. Retained reference detail — docs/architecture/adr.md](#retained-reference-detail--docsarchitectureadrmd-1)
+  - [52.26. Retained reference detail — docs/architecture/adr.md](#retained-reference-detail--docsarchitectureadrmd-2)
+  - [52.27. Retained reference detail — docs/architecture/adr.md](#retained-reference-detail--docsarchitectureadrmd-3)
+  - [52.28. Closed-install registration control path — 30 October 2026](#closed-install-registration-control-path--30-october-2026)
+  - [52.29. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-7)
+  - [52.30. Client bootstrap and staging exposure checkpoint — 31 October 2026](#client-bootstrap-and-staging-exposure-checkpoint--31-october-2026)
+  - [52.31. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-8)
+  - [52.32. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-9)
+  - [52.33. Retained reference detail — docs/runbook.md](#retained-reference-detail--docsrunbookmd-10)
+  - [52.34. Retained reference detail — docs/architecture/database-schema.md](#retained-reference-detail--docsarchitecturedatabase-schemamd)
+  - [52.35. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd)
+  - [52.36. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-1)
+  - [52.37. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-2)
+  - [52.38. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-3)
+  - [52.39. Minimatch advisory disposition (4 November 2026)](#minimatch-advisory-disposition-4-november-2026)
+  - [52.40. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-4)
+  - [52.41. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-5)
+  - [52.42. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-6)
+  - [52.43. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-7)
+  - [52.44. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-8)
+  - [52.45. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-9)
+  - [52.46. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-10)
+  - [52.47. Retained reference detail — docs/security/false-positives.md](#retained-reference-detail--docssecurityfalse-positivesmd-11)
+  - [52.48. Retained reference detail — docs/booking-flows.md](#retained-reference-detail--docsbooking-flowsmd)
+- [53. Public entry surfaces](#public-entry-surfaces)
+  - [53.1. Information-retention review — original wording and superseded references](#information-retention-review--original-wording-and-superseded-references)
+  - [53.2. Scenario reference provenance](#scenario-reference-provenance)
+  - [53.3. 6 November 2026 — footer bottom alignment and spacing](#6-november-2026--footer-bottom-alignment-and-spacing)
+  - [53.4. 6 November 2026 — footer bottom alignment and spacing](#6-november-2026--footer-bottom-alignment-and-spacing-1)
+  - [53.5. 6 November 2026 — remove footer Enquire link](#6-november-2026--remove-footer-enquire-link)
+  - [53.6. 6 November 2026 — footer column grouping and app heading](#6-november-2026--footer-column-grouping-and-app-heading)
+  - [53.7. UI-parent wording retained for documentation audit](#ui-parent-wording-retained-for-documentation-audit)
+  - [53.8. 6 November 2026 — documentation refactor and information-loss audit](#6-november-2026--documentation-refactor-and-information-loss-audit)
+  - [53.9. 6 November 2026 — footer text alignment and true row compression](#6-november-2026--footer-text-alignment-and-true-row-compression)
+- [54. 6 November 2026 — mobile booking panels and final UI consolidation](#6-november-2026--mobile-booking-panels-and-final-ui-consolidation)
+  - [54.1. Previous current checkpoint](#previous-current-checkpoint)
+    - [54.1.1. PR32 footer refinement](#pr32-footer-refinement-1)
+    - [54.1.2. Remaining work](#remaining-work-1)
+  - [54.2. 6 November 2026 — consolidated UI-parent wording retained for audit](#6-november-2026--consolidated-ui-parent-wording-retained-for-audit)
+  - [54.3. 6 November 2026 — final documentation audit against mobile UI2b907c5](#6-november-2026--final-documentation-audit-against-mobile-ui2b907c5)
+  - [54.4. 6 November 2026 — document chapter menus and staging rerun](#document-chapter-menus-and-staging-rerun)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - This document owns retained milestones, dated decisions, implementation history and verification evidence.
 - [Progress](../PROGRESS.md) contains only the latest checkpoint and immediate tasks.
 - [Booking scenarios and messages](booking-flows.md) owns customer flow diagrams and copy; [role UAT](tests/uat/customer.md), [Admin UAT](tests/uat/admin.md) and [Trainers UAT](tests/uat/trainers.md) own acceptance; [Runbook](runbook.md) owns deployment and operational procedures.
 - Current rules and contracts remain in their existing owners.
 
-## Initial milestone overview
+<a id="initial-milestone-overview"></a>
+
+## 1. Initial milestone overview
 
 - The original nine phases and 44 subiterations remain below.
 - This is the retained delivery plan, not a blanket completion claim.
@@ -23,118 +918,174 @@
 | M8    | M8.1–M8.4     | Readiness, verified deployment, live validation and handover              |
 | M9    | M9.1–M9.4     | Stabilization, warranty, optional maintenance and retained closeout scope |
 
-### Milestones and retained acceptance criteria
+<a id="milestones-and-retained-acceptance-criteria"></a>
+
+### 1.1. Milestones and retained acceptance criteria
 
 - Milestone labels are retained scope, not a live completion ledger; use Progress for the current position.
 - M7 UAT, M8 launch/handover and M9 support remain separate.
 - Preserve the original 44 IDs and commercial schedule.
 - The original criteria below are historical release requirements, not an instruction to repeat waived experiments or use superseded provider designs.
 
-### M1.1 — Reconcile the accepted baseline
+<a id="m11--reconcile-the-accepted-baseline"></a>
+
+### 1.2. M1.1 — Reconcile the accepted baseline
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m11--reconcile-the-accepted-baseline).
 
-### M1.2 — Enforce the reviewed release path
+<a id="m12--enforce-the-reviewed-release-path"></a>
+
+### 1.3. M1.2 — Enforce the reviewed release path
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m12--enforce-the-reviewed-release-path).
 
-### M1.3 — Close tooling and delivery findings
+<a id="m13--close-tooling-and-delivery-findings"></a>
+
+### 1.4. M1.3 — Close tooling and delivery findings
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m13--close-tooling-and-delivery-findings).
 
-### M1.4 — Accept the deployed demo visually
+<a id="m14--accept-the-deployed-demo-visually"></a>
+
+### 1.5. M1.4 — Accept the deployed demo visually
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m14--accept-the-deployed-demo-visually).
 
-### M2.1 — Account readiness and temporary setup
+<a id="m21--account-readiness-and-temporary-setup"></a>
+
+### 1.6. M2.1 — Account readiness and temporary setup
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m21--account-readiness-and-temporary-setup).
 
-### M2.2 — Prove scheduling and single-studio slot protection
+<a id="m22--prove-scheduling-and-single-studio-slot-protection"></a>
+
+### 1.7. M2.2 — Prove scheduling and single-studio slot protection
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m22--prove-scheduling-and-single-studio-slot-protection).
 
-### M2.3 — Prove the native hosted payment route
+<a id="m23--prove-the-native-hosted-payment-route"></a>
+
+### 1.8. M2.3 — Prove the native hosted payment route
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m23--prove-the-native-hosted-payment-route).
 
-### M2.4 — Prove failure and recovery semantics
+<a id="m24--prove-failure-and-recovery-semantics"></a>
+
+### 1.9. M2.4 — Prove failure and recovery semantics
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m24--prove-failure-and-recovery-semantics).
 
-### M2.5 — Freeze the integration contract and mappings
+<a id="m25--freeze-the-integration-contract-and-mappings"></a>
+
+### 1.10. M2.5 — Freeze the integration contract and mappings
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m25--freeze-the-integration-contract-and-mappings).
 
-### M3.1 — Worker and environment foundation
+<a id="m31--worker-and-environment-foundation"></a>
+
+### 1.11. M3.1 — Worker and environment foundation
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m31--worker-and-environment-foundation).
 
-### M3.2 — Named asynchronous service contracts
+<a id="m32--named-asynchronous-service-contracts"></a>
+
+### 1.12. M3.2 — Named asynchronous service contracts
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m32--named-asynchronous-service-contracts).
 
-### M3.3 — Minimal durable state and migrations
+<a id="m33--minimal-durable-state-and-migrations"></a>
+
+### 1.13. M3.3 — Minimal durable state and migrations
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m33--minimal-durable-state-and-migrations).
 
-### M3.4 — Email challenge and abuse controls
+<a id="m34--email-challenge-and-abuse-controls"></a>
+
+### 1.14. M3.4 — Email challenge and abuse controls
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m34--email-challenge-and-abuse-controls).
 
-### M3.5 — Protected sessions and guest checkout capability
+<a id="m35--protected-sessions-and-guest-checkout-capability"></a>
+
+### 1.15. M3.5 — Protected sessions and guest checkout capability
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m35--protected-sessions-and-guest-checkout-capability).
 
-### M3.6 — Safe returning customer prefill
+<a id="m36--safe-returning-customer-prefill"></a>
+
+### 1.16. M3.6 — Safe returning customer prefill
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m36--safe-returning-customer-prefill).
 
-### M4.1 — Authoritative availability and eligible instructors
+<a id="m41--authoritative-availability-and-eligible-instructors"></a>
+
+### 1.17. M4.1 — Authoritative availability and eligible instructors
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m41--authoritative-availability-and-eligible-instructors).
 
-### M4.2 — Connect selection and server revalidation
+<a id="m42--connect-selection-and-server-revalidation"></a>
+
+### 1.18. M4.2 — Connect selection and server revalidation
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m42--connect-selection-and-server-revalidation).
 
-### M4.3 — Create and recover a checkout attempt
+<a id="m43--create-and-recover-a-checkout-attempt"></a>
+
+### 1.19. M4.3 — Create and recover a checkout attempt
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m43--create-and-recover-a-checkout-attempt).
 
-### M4.4 — Create every selected session safely
+<a id="m44--create-every-selected-session-safely"></a>
+
+### 1.20. M4.4 — Create every selected session safely
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m44--create-every-selected-session-safely).
 
-### M4.5 — Handle partial failure and compensation
+<a id="m45--handle-partial-failure-and-compensation"></a>
+
+### 1.21. M4.5 — Handle partial failure and compensation
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m45--handle-partial-failure-and-compensation).
 
-### M4.6 — Close booking recovery end to end
+<a id="m46--close-booking-recovery-end-to-end"></a>
+
+### 1.22. M4.6 — Close booking recovery end to end
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m46--close-booking-recovery-end-to-end).
 
-### M5.1 — Validate invoice and checkout association
+<a id="m51--validate-invoice-and-checkout-association"></a>
+
+### 1.23. M5.1 — Validate invoice and checkout association
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m51--validate-invoice-and-checkout-association).
 
-### M5.2 — Hosted payment and safe customer return
+<a id="m52--hosted-payment-and-safe-customer-return"></a>
+
+### 1.24. M5.2 — Hosted payment and safe customer return
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m52--hosted-payment-and-safe-customer-return).
 
-### M5.3 — Verify payment status
+<a id="m53--verify-payment-status"></a>
+
+### 1.25. M5.3 — Verify payment status
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m53--verify-payment-status).
 
-### M5.4 — Resolve pending expired late and unknown outcomes
+<a id="m54--resolve-pending-expired-late-and-unknown-outcomes"></a>
+
+### 1.26. M5.4 — Resolve pending expired late and unknown outcomes
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m54--resolve-pending-expired-late-and-unknown-outcomes).
 
-### M5.5 — Protect the final confirmation
+<a id="m55--protect-the-final-confirmation"></a>
+
+### 1.27. M5.5 — Protect the final confirmation
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m55--protect-the-final-confirmation).
 
-### M6.1 — Booking summary and calendar exports
+<a id="m61--booking-summary-and-calendar-exports"></a>
+
+### 1.28. M6.1 — Booking summary and calendar exports
 
 - Retained milestone ID/title;
 - PDF/calendar actions were retired by owner decision on2 November2026.
@@ -142,84 +1093,124 @@
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m61--booking-summary-and-calendar-exports).
 
-### M6.2 — Native emails and approved public content
+<a id="m62--native-emails-and-approved-public-content"></a>
+
+### 1.29. M6.2 — Native emails and approved public content
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m62--native-emails-and-approved-public-content).
 
-### M6.3 — Client staging configuration and full rehearsal
+<a id="m63--client-staging-configuration-and-full-rehearsal"></a>
+
+### 1.30. M6.3 — Client staging configuration and full rehearsal
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m63--client-staging-configuration-and-full-rehearsal).
 
-### M6.4 — Production build and deployment pipeline
+<a id="m64--production-build-and-deployment-pipeline"></a>
+
+### 1.31. M6.4 — Production build and deployment pipeline
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m64--production-build-and-deployment-pipeline).
 
-### M6.5 — Monitoring alerts and recovery rehearsal
+<a id="m65--monitoring-alerts-and-recovery-rehearsal"></a>
+
+### 1.32. M6.5 — Monitoring alerts and recovery rehearsal
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m65--monitoring-alerts-and-recovery-rehearsal).
 
-### M6.6 — Release audit and UAT package
+<a id="m66--release-audit-and-uat-package"></a>
+
+### 1.33. M6.6 — Release audit and UAT package
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m66--release-audit-and-uat-package).
 
-### M7.1 — Run the full client UAT suite
+<a id="m71--run-the-full-client-uat-suite"></a>
+
+### 1.34. M7.1 — Run the full client UAT suite
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m71--run-the-full-client-uat-suite).
 
-### M7.2 — Physical devices and operational walkthrough
+<a id="m72--physical-devices-and-operational-walkthrough"></a>
+
+### 1.35. M7.2 — Physical devices and operational walkthrough
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m72--physical-devices-and-operational-walkthrough).
 
-### M7.3 — Close defects and rerun affected acceptance
+<a id="m73--close-defects-and-rerun-affected-acceptance"></a>
+
+### 1.36. M7.3 — Close defects and rerun affected acceptance
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m73--close-defects-and-rerun-affected-acceptance).
 
-### M7.4 — Record written build acceptance
+<a id="m74--record-written-build-acceptance"></a>
+
+### 1.37. M7.4 — Record written build acceptance
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m74--record-written-build-acceptance).
 
-### M8.1 — Production readiness and go live decision
+<a id="m81--production-readiness-and-go-live-decision"></a>
+
+### 1.38. M8.1 — Production readiness and go live decision
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m81--production-readiness-and-go-live-decision).
 
-### M8.2 — Deploy the verified production candidate
+<a id="m82--deploy-the-verified-production-candidate"></a>
+
+### 1.39. M8.2 — Deploy the verified production candidate
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m82--deploy-the-verified-production-candidate).
 
-### M8.3 — Verify live operation
+<a id="m83--verify-live-operation"></a>
+
+### 1.40. M8.3 — Verify live operation
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m83--verify-live-operation).
 
-### M8.4 — Complete training handover and launch acceptance
+<a id="m84--complete-training-handover-and-launch-acceptance"></a>
+
+### 1.41. M8.4 — Complete training handover and launch acceptance
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m84--complete-training-handover-and-launch-acceptance).
 
-### M9.1 — Launch stabilization review
+<a id="m91--launch-stabilization-review"></a>
+
+### 1.42. M9.1 — Launch stabilization review
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m91--launch-stabilization-review).
 
-### M9.2 — Six month warranty operations
+<a id="m92--six-month-warranty-operations"></a>
+
+### 1.43. M9.2 — Six month warranty operations
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m92--six-month-warranty-operations).
 
-### M9.3 — Optional maintenance service
+<a id="m93--optional-maintenance-service"></a>
+
+### 1.44. M9.3 — Optional maintenance service
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m93--optional-maintenance-service).
 
-### M9.4 — Ongoing changes and eventual exit
+<a id="m94--ongoing-changes-and-eventual-exit"></a>
+
+### 1.45. M9.4 — Ongoing changes and eventual exit
 
 - [Original scope and exit evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#m94--ongoing-changes-and-eventual-exit).
 
-## Reading the retained record
+<a id="reading-the-retained-record"></a>
+
+## 2. Reading the retained record
 
 - The following milestone IDs and history are preserved from the former service-contracts document.
 - Historical “current”, “next” and approval language applies to its recorded date only.
 - Superseded provider designs and waived experiments are evidence, not active instructions.
 - New history belongs here once; current status belongs in Progress.
 
-## Part 2 — Dated changes and evidence
+<a id="part-2--dated-changes-and-evidence"></a>
 
-### 30 October 2026 — Merged-main I/O stall and bounded temporary storage
+## 3. Part 2 — Dated changes and evidence
+
+<a id="30-october-2026--merged-main-io-stall-and-bounded-temporary-storage"></a>
+
+### 3.1. 30 October 2026 — Merged-main I/O stall and bounded temporary storage
 
 - Owner approved PR1 merge as `930aa230ef1aaa41f4d3e49f9ca2fc26e4e115eb` after head `7a9d96b73ae5ad1532c09543c6a783d04ae678ea` passed all four jobs in run 41001585832.
 - Client-repository staging run 41004241912 succeeded; the two-workflow cleanup is now on main.
@@ -241,7 +1232,9 @@
 - No new paid resources, production/storage migration or assistant browser/provider operation.
 - Further merge authorization is separate.
 
-### 30 October 2026 — Instrument intermittent isolated runtime stalls
+<a id="30-october-2026--instrument-intermittent-isolated-runtime-stalls"></a>
+
+### 3.2. 30 October 2026 — Instrument intermittent isolated runtime stalls
 
 - Run 40995800145 passed frontend/Worker/backend and 82/84 live-email cases; phone booking-readback and tablet unpaid-return exceeded the unchanged test budget (job 123879760699, artifact 12952654625).
 - Previous price-drift/payment-creation cases passed all devices.
@@ -259,7 +1252,9 @@
 - No test deadline, inventory, assertion, provider implementation, runtime isolation, deployment configuration or browser execution permission changes.
 - Exact-head CI measurements are the next evidence required, not a claimed repair.
 
-### 30 October 2026 — Remove repeated homepage setup from failure journeys
+<a id="30-october-2026--remove-repeated-homepage-setup-from-failure-journeys"></a>
+
+### 3.3. 30 October 2026 — Remove repeated homepage setup from failure journeys
 
 - Owner let run 40991915866 finish to collect new failures: frontend, Worker/runtime and backend passed; live-email passed 82/84.
 - Phone payment-creation failure and tablet price drift hit the existing 30-second budget (job 123861479806, artifact 12950643550).
@@ -274,7 +1269,9 @@
 - Exact-head browser CI remains pending; existing run 40994040151 is left to finish per owner direction.
 - No merge, deployment or external provider action.
 
-### 30 October 2026 — Diagnose client CI and review test-flow freshness
+<a id="30-october-2026--diagnose-client-ci-and-review-test-flow-freshness"></a>
+
+### 3.4. 30 October 2026 — Diagnose client CI and review test-flow freshness
 
 - Run 40988799036 passed Worker/runtime, frontend and backend but failed three of 84 live-email cases at the existing 30-second test deadline (job 123851207800, artifact 12949079810).
 - Text traces retained revoked-access setup, exhausted-window setup and unpaid-return teardown timing.
@@ -299,7 +1296,9 @@
 - Original/repair receipts are under `/workspace/work/client-pipeline/`.
 - The source review is not a guarantee that every stale assumption is absent; exact-head browser CI, merge/main, deployment and provider/device acceptance remain separate and pending.
 
-### 30 October 2026 — Retire legacy sidebar workflow
+<a id="30-october-2026--retire-legacy-sidebar-workflow"></a>
+
+### 3.5. 30 October 2026 — Retire legacy sidebar workflow
 
 - Owner requested removal of unnecessary sidebar workflows.
 - Move the inherited developer verification definition from `.github/workflows` to `.github/legacy/verify.yml`, keeping it only for existing historical-policy regression fixtures.
@@ -308,7 +1307,9 @@
 - Default-branch/sidebar adoption remains pending merge; old run history is not deleted.
 - Dependabot remains enabled and is managed separately by GitHub.
 
-### 30 October 2026 — Consolidate client Actions entries
+<a id="30-october-2026--consolidate-client-actions-entries"></a>
+
+### 3.6. 30 October 2026 — Consolidate client Actions entries
 
 - Owner requested cleanup of duplicate verification and skipped deployment entries.
 - Make inherited `verify.yml` manual-only and replace the two deployment workflows with one `deploy-release.yml`.
@@ -319,7 +1320,9 @@
 - The first tooling run exposed a now-no-op mutation of the removed legacy PR trigger; replace it with explicit rejection of restored automatic triggers and retain exact unfiltered PR/main assertions on target verification.
 - Preserve tooling-workflow-cleanup.log; all 161 tooling tests passed after correction, alongside source/policy/version, formatting and affected lint checks.
 
-### 30 October 2026 — Separate target verification stages for private runners
+<a id="30-october-2026--separate-target-verification-stages-for-private-runners"></a>
+
+### 3.7. 30 October 2026 — Separate target verification stages for private runners
 
 - Client run 40985961618 at `8488cc3` passed the repaired animation-skip case across all three devices.
 - Frontend job 123837833215 passed 77 browser cases but reached the overall tablet expired-selection deadline; artifact 12947831460's text trace shows successful expiry/removal assertions, replacement payment and confirmation before time ran out after reload.
@@ -338,7 +1341,9 @@
 - GitHub Team/protection is also deferred.
 - Test 507 remains untouched.
 
-### 30 October 2026 — Client setup and skip-interaction clock repair
+<a id="30-october-2026--client-setup-and-skip-interaction-clock-repair"></a>
+
+### 3.8. 30 October 2026 — Client setup and skip-interaction clock repair
 
 - Owner confirmed the staging secret and supplied the client Actions variables for portable deployment to the existing developer account, with staging enabled.
 - The previous developer-repository screenshot showed portable mode for deployer cutover.
@@ -350,7 +1355,9 @@
 - This is a test-fixture repair, with CI browser confirmation pending; it changes no application animation or provider behavior.
 - PR1 remains unmerged and client deployment remains unverified.
 
-### 30 October 2026 — Client GitHub pipeline and closed Worker bootstrap
+<a id="30-october-2026--client-github-pipeline-and-closed-worker-bootstrap"></a>
+
+### 3.9. 30 October 2026 — Client GitHub pipeline and closed Worker bootstrap
 
 - Owner clarified that staging must deploy from `soccerbotstudiosg/soccerbotstudioSG`, with PR checks then staging, and merged-main checks then client Cloudflare production.
 - Owner authorized Workers.dev before domain hookup and required the intended first-use placement hint.
@@ -371,7 +1378,9 @@
 - Read-only HTTP checks passed for 11 pages, assets and health with wrong-Origin rejection.
 - This does not establish client deployment ownership or provider/device acceptance; 507 remains untouched.
 
-### 29 October 2026 — PR122 rotation-notice cascade correction
+<a id="29-october-2026--pr122-rotation-notice-cascade-correction"></a>
+
+### 3.10. 29 October 2026 — PR122 rotation-notice cascade correction
 
 - Run [40837922507](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40837922507), frontend job 123327046300 at `a47f4ba`, passed the repaired amount assertion but failed on `<p class="rotation-notice">`: 14px instead of 16px across desktop, phone and tablet.
 - The other 75 frontend browser cases passed.
@@ -384,7 +1393,9 @@
 - Local `verify:code` passed (242 tests, types/lint/build/export), together with 973 links and formatting/diff checks.
 - Final-head browser CI remains required.
 
-### 29 October 2026 — PR122 confirmation typography correction
+<a id="29-october-2026--pr122-confirmation-typography-correction"></a>
+
+### 3.11. 29 October 2026 — PR122 confirmation typography correction
 
 - Run [40836216699](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40836216699), frontend job 123321499184, failed the typography assertion in all three browser projects: confirmation paid amount computed as 24px instead of the requested 16px.
 - The other 75 frontend browser cases passed.
@@ -396,7 +1407,9 @@
 - The repair passed full local `verify:code` (242 tests, lint/types/build/export), source/policy/format checks and 974 links.
 - New exact-head browser CI remains required; no browser acceptance is inferred from static inspection.
 
-### 29 October 2026 — calendar navigation and fresh confirmation exports
+<a id="29-october-2026--calendar-navigation-and-fresh-confirmation-exports"></a>
+
+### 3.12. 29 October 2026 — calendar navigation and fresh confirmation exports
 
 - Preceding verified checkpoints: PR120 merged as `a07e31514369e2992ffc9f61e3502a0d5cbc286d`; main run 40820126089 passed verification and existing developer deployments.
 - PR121 passed PR run 40827202583 and merged as `9938fdda23deb5a5a0e5da00deb7a234e6339748`; its main deployment was not reverified in this reconciliation.
@@ -427,7 +1440,9 @@
 - Original failure: `/tmp/soccerbot-receipt-first-failure.log`.
 - No production or owner-device acceptance is claimed.
 
-### 26 October 2026 — PR90 Worker inventory correction
+<a id="26-october-2026--pr90-worker-inventory-correction"></a>
+
+### 3.13. 26 October 2026 — PR90 Worker inventory correction
 
 - PR90 run `40278282678` passed frontend.
 - Both backend and live-email jobs completed all 442 Worker runtime tests with zero failures/skips/cancellations, then the strict verifier rejected the unchanged Worker inventory: the sign-out test title changed and one expiry regression was added without updating `scripts/worker-test-inventory.json`.
@@ -438,7 +1453,9 @@
 - The complete local Worker verifier now passes 442/442 tests with zero provider requests; source/policy and formatting checks also pass.
 - New final-commit CI remains required.
 
-### 26 October 2026 — All-device sign-out from valid remembered sessions
+<a id="26-october-2026--all-device-sign-out-from-valid-remembered-sessions"></a>
+
+### 3.14. 26 October 2026 — All-device sign-out from valid remembered sessions
 
 - Owner reports a flicker with the signed-in email retained.
 - Inspection found the button available while the server required verification within five minutes and rejected remembered restoration; the reported request itself was not captured.
@@ -447,7 +1464,9 @@
 - Test-impact review updates the obsolete freshness expectation and adds expiry, guest, UI failure/retry and service-error coverage.
 - No live sign-outs or browser experiments performed; final-commit CI and deployed owner acceptance remain separate.
 
-### 26 October 2026 — Client account verification and Pages routing preparation
+<a id="26-october-2026--client-account-verification-and-pages-routing-preparation"></a>
+
+### 3.15. 26 October 2026 — Client account verification and Pages routing preparation
 
 - Read-only connector checks verified access to the private, empty client repository and the supplied Cloudflare account;
 - Pages, Worker and D1 lists were empty.
@@ -463,7 +1482,9 @@
 - Final-commit CI remains required.
 - Release packaging, first-install configuration and owner browser acceptance remain pending; this is not a deployed Pages site.
 
-### 22 October 2026 — Client staging and production delivery plan
+<a id="22-october-2026--client-staging-and-production-delivery-plan"></a>
+
+### 3.16. 22 October 2026 — Client staging and production delivery plan
 
 - Owner agrees to one client repository controlling developer-account staging and client-account production.
 - The [architecture diagram](architecture/diagram.md#planned-client-delivery-topology) and [explanation](architecture/adr.md) describe the planned relationships, provider isolation, approval flow and handover.
@@ -471,7 +1492,9 @@
 - This documentation update changes no workflows, resources, secrets or provider configuration.
 - Test-impact review: inspect delivery workflow references and documentation checks; runtime tests and inventories are unchanged.
 
-### 22 October 2026 — Unique documentation ownership after PR88
+<a id="22-october-2026--unique-documentation-ownership-after-pr88"></a>
+
+### 3.17. 22 October 2026 — Unique documentation ownership after PR88
 
 - Owner requests that each file have one purpose without duplicated instructions.
 - AGENTS owns engineering policy and the document map; the local skill becomes a discovery entry point;
@@ -491,7 +1514,9 @@
 - Saved trace evidence indicates slow fixture startup/execution, but the root cause is not established.
 - Preserve that failure independently of the documentation cleanup.
 
-### 22 October 2026 — One-line major-function documentation
+<a id="22-october-2026--one-line-major-function-documentation"></a>
+
+### 3.18. 22 October 2026 — One-line major-function documentation
 
 - Owner requests conventional one-line function documentation.
 - Add JSDoc/TSDoc summaries to major frontend, service, Worker and JavaScript tooling functions, and PEP 257 docstrings to Python installer functions.
@@ -501,7 +1526,9 @@
 - Python function `__doc__` metadata intentionally changes; no business logic, API, dependency or deployment changes are intended.
 - Final-commit frontend/backend/live-email CI remains required.
 
-### 22 October 2026 — Retire obsolete examples, receipts and proof packet
+<a id="22-october-2026--retire-obsolete-examples-receipts-and-proof-packet"></a>
+
+### 3.19. 22 October 2026 — Retire obsolete examples, receipts and proof packet
 
 - Owner approves removal of `.env.example`, the three historical JSON receipts (`verification`, `review-verification`, `source-fingerprint`) and `scripts/prepare-identity-proof.mjs` with its dedicated test.
 - The packet is tied to the expired 12 October identity-proof campaign and has no current workflow caller.
@@ -512,7 +1539,9 @@
 - Remaining source/policy/tooling/installer checks and final-commit frontend/backend/live-email CI remain required.
 - No runtime or provider behavior changes.
 
-### 22 October 2026 — Owner waives real-checkout placement experiment
+<a id="22-october-2026--owner-waives-real-checkout-placement-experiment"></a>
+
+### 3.20. 22 October 2026 — Owner waives real-checkout placement experiment
 
 - Owner elects to waive the separate four-checkout regional comparison and use the evidence-informed client initial placement strategy.
 - No experiment deployment, cold-token reset, booking or provider operation occurred.
@@ -522,7 +1551,9 @@
 - Documentation-only test-impact review: no runtime/browser/fixture/inventory changes; source/policy/format/diff checks apply.
 - PR86 remains unmerged; final-head CI remains required.
 
-### 22 October 2026 — Real checkout experiment preparation and isolation correction
+<a id="22-october-2026--real-checkout-experiment-preparation-and-isolation-correction"></a>
+
+### 3.21. 22 October 2026 — Real checkout experiment preparation and isolation correction
 
 - Owner requests preparation of an actual checkout placement comparison without a merge.
 - Source inspection found immutable one-coordinator D1 identity, database-wide recovery selection, background token consumers and a main/existing-resource-only release path.
@@ -532,7 +1563,9 @@
 - Required experiment profile, bootstrap and cold-token control remain implementation gates, not completed work.
 - Test-impact review searched foundation, provider cache/queue, scheduled recovery, browser/CI and release owners; this change itself is documentation-only and uses source/policy/format/diff checks.
 
-### 22 October 2026 — Execution location correction and client placement strategy
+<a id="22-october-2026--execution-location-correction-and-client-placement-strategy"></a>
+
+### 3.22. 22 October 2026 — Execution location correction and client placement strategy
 
 - Read-only Cloudflare GraphQL analytics for 22 October identify the existing `soccerbot-dev` account DO (`simplybook-developer-account`) in **SJC (San Jose)** in both invocation and periodic datasets.
 - The bounded probe's D1 primary reads were served in **KIX (Osaka)**: current compute and database are not both in Japan.
@@ -546,7 +1579,9 @@
 - Test-impact review: documentation-only rules/history/progress update; existing runtime, browser and inventory assertions remain applicable.
 - Source/policy/format/diff checks apply; final-head CI remains required.
 
-### 22 October 2026 — Bounded placement screening after auth patch publication
+<a id="22-october-2026--bounded-placement-screening-after-auth-patch-publication"></a>
+
+### 3.23. 22 October 2026 — Bounded placement screening after auth patch publication
 
 - After auth patch `9f74969268e76a051f3f287f5a7b8eb99138ea4b` was pushed to PR86, the owner authorized a bounded placement experiment.
 - Temporary Worker `soccerbot-placement-20261022` version `838f8834-6736-4d58-b517-50e006360d3d` used a separate DO namespace with hints `apac-se`, `apac-ne`, `weur`; no public endpoint or provider credentials.
@@ -582,7 +1617,9 @@
 - Probe source SHA256: `bdd87f50950ca8619192979e2d106d48f9f05e951b78346ccb17392b9992051b`.
 - The result update is documentation-only; source/policy/format/diff checks apply and final-head CI remains required.
 
-### 22 October 2026 — Public token refresh-ahead and placement diagnostics
+<a id="22-october-2026--public-token-refresh-ahead-and-placement-diagnostics"></a>
+
+### 3.24. 22 October 2026 — Public token refresh-ahead and placement diagnostics
 
 - Owner requests implementation of refresh-ahead and preparation for placement experiments.
 - The background display queue retires and replaces a public token with at most 20 minutes left, preserving absolute expiry, encrypted persistence, admission and generation protections.
@@ -593,7 +1630,9 @@
 - No coordinator relocation, deployment, live booking or measured speedup is claimed.
 - Test-impact review covers provider session/cache, queue warming, transport timing, D1 instrumentation, Tail privacy, release profiles and exact Worker inventory; local and final-head CI receipts are recorded in PROGRESS.
 
-### 22 October 2026 — Security scanning and weekly notification scope
+<a id="22-october-2026--security-scanning-and-weekly-notification-scope"></a>
+
+### 3.25. 22 October 2026 — Security scanning and weekly notification scope
 
 - Owner adds dependency vulnerability scanning (Dependabot and npm audit), CodeQL/code scanning, secret scanning/push protection where available, and weekly Dependabot security-email notifications to the future setup.
 - Keep targeted authentication/payment/configuration tests and security review; runtime Grafana monitoring and a clean vulnerability scan do not establish security acceptance.
@@ -603,7 +1642,9 @@
 - Documentation-only task: no scanner, account setting, dependency or deployment changed.
 - Source/policy/format/diff checks cover the backlog edit; test inventory and current runtime gates are unchanged.
 
-### 22 October 2026 — Dependency security maintenance added to backlog
+<a id="22-october-2026--dependency-security-maintenance-added-to-backlog"></a>
+
+### 3.26. 22 October 2026 — Dependency security maintenance added to backlog
 
 - Owner requests a to-do item for automatic security detection and update preparation: Dependabot alerts, security-update PRs and weekly grouped routine npm/GitHub Actions updates.
 - Review pinned Node and Worker compatibility-date changes deliberately; preserve exact pins and the lockfile.
@@ -612,7 +1653,9 @@
 - This records future work only: no repository settings, dependencies or deployment behavior changed.
 - Test-impact review: documentation-only backlog/history update; existing test inventories and workflows remain applicable.
 
-### 22 October 2026 — Documentation consolidation and client migration plan
+<a id="22-october-2026--documentation-consolidation-and-client-migration-plan"></a>
+
+### 3.27. 22 October 2026 — Documentation consolidation and client migration plan
 
 - Owner replaces three overlapping canonical documents with Architecture (diagram and one-page explanation) and this two-part Service Contracts document.
 - Cloud setup essentials move into AGENTS.
@@ -635,56 +1678,72 @@
 - Old plans are not current rules or renewed authorization.
 - Historical verification, review-verification and source-fingerprint JSON receipts are retained unchanged in the [pre-cleanup revision](https://github.com/LimYouSheng/SoccerBotStudioSG/tree/d7a8d2b209b535d23a62702e4d59538e00a47012/docs), not the current source tree.
 
-### Acceptance checkpoint — 22 October 2026 SGT
+<a id="acceptance-checkpoint--22-october-2026-sgt"></a>
+
+### 3.28. Acceptance checkpoint — 22 October 2026 SGT
 
 - PR84 final head `be31bb91360dc07c37879072d69c1aefa87eae30` passed all three PR gates, then merged as `37adaa3a02fda2fa86e852b1538029dc37749557`.
 - Refreshed main run [39626576749](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/39626576749) passed frontend, backend, live-email and deployment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#acceptance-checkpoint--22-october-2026-sgt).
 
-### 21 October 2026 — overload recovery and explicit retry qualification
+<a id="21-october-2026--overload-recovery-and-explicit-retry-qualification"></a>
+
+### 3.29. 21 October 2026 — overload recovery and explicit retry qualification
 
 - Merge follow-through: PR82 main39576113663 passed all gates and Cloudflare deployment.
 - PR83 merge-resolution9de4c1c passed all three gates in39576302620, then merged as7ced699b1e4fbc25a4d889be8d2e67d0c208faba.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--overload-recovery-and-explicit-retry-qualification).
 
-### 21 October 2026 — scope the409 browser alert to main
+<a id="21-october-2026--scope-the409-browser-alert-to-main"></a>
+
+### 3.30. 21 October 2026 — scope the409 browser alert to main
 
 - PR82 be37f73 run39570386559 passed frontend/backend; live-email again passed78/81.
 - All three new409 executions failed because the unscoped alert locator matched both the actual Review error and Next.js’s route announcer.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--scope-the409-browser-alert-to-main).
 
-### 21 October 2026 — full burst campaign reaches queue limit
+<a id="21-october-2026--full-burst-campaign-reaches-queue-limit"></a>
+
+### 3.31. 21 October 2026 — full burst campaign reaches queue limit
 
 - Owner authorized the next isolated campaign.
 - Ran npm run test:load on clean 21bc10c47562d42029be59638552e39699aba594.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--full-burst-campaign-reaches-queue-limit).
 
-### 21 October 2026 — isolated load campaign preparation
+<a id="21-october-2026--isolated-load-campaign-preparation"></a>
+
+### 3.32. 21 October 2026 — isolated load campaign preparation
 
 - Owner requested planning/preparing the combined load, rate-limit and webhook test.
 - Created test/resilience-load-preparation from unmerged PR82, preserving the dependency symlink.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--isolated-load-campaign-preparation).
 
-### 21 October 2026 — PR82 browser alert locator correction
+<a id="21-october-2026--pr82-browser-alert-locator-correction"></a>
+
+### 3.33. 21 October 2026 — PR82 browser alert locator correction
 
 - Final documentation head ae5694c run39567290859 passed frontend/backend, including435 Worker cases.
 - Live-email passed78/81: the new409 case failed on all three devices at its exact-text locator.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--pr82-browser-alert-locator-correction).
 
-### 21 October 2026 — acceptance consolidated and next campaign planned in PR82
+<a id="21-october-2026--acceptance-consolidated-and-next-campaign-planned-in-pr82"></a>
+
+### 3.34. 21 October 2026 — acceptance consolidated and next campaign planned in PR82
 
 - Owner confirms payment attempted after expiry previously failed and completed dismissal permits another booking.
 - These join earlier accepted normal payment, unpaid timeout/rebooking and close/reopen checks; do not repeat normal paths.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--acceptance-consolidated-and-next-campaign-planned-in-pr82).
 
-### 21 October 2026 — preparation409 readback and owner atomicity decision
+<a id="21-october-2026--preparation409-readback-and-owner-atomicity-decision"></a>
+
+### 3.35. 21 October 2026 — preparation409 readback and owner atomicity decision
 
 - PR81 merged asab478e0e926ac8b74a1f4157e99ca892691e942e; main run39559855205 succeeded and health matched that revision (Worker1e01a671-3190-4513-9a6d-469fbd7028c3).
 - HAR20 contains successful single checkout;
@@ -692,189 +1751,243 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--preparation409-readback-and-owner-atomicity-decision).
 
-### Consistent calendar selection — 21 October 2026 SGT
+<a id="consistent-calendar-selection--21-october-2026-sgt"></a>
+
+### 3.36. Consistent calendar selection — 21 October 2026 SGT
 
 - Owner observed initial entry choosing an available day but browser refresh selecting unavailable today.
 - TimeStep initialized the date before asynchronous month data arrived and never adjusted it.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#consistent-calendar-selection--21-october-2026-sgt).
 
-### 21 October 2026 — concurrent checkout rejection readback
+<a id="21-october-2026--concurrent-checkout-rejection-readback"></a>
+
+### 3.37. 21 October 2026 — concurrent checkout rejection readback
 
 - Owner waived the old unresolved-page refresh retest because home permits another booking after expiry; this is excluded by owner decision, not proven deployed repair.
 - Owner reported abandonment/dismissal and return to selection worked; replacement checkout was not independently evidenced.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--concurrent-checkout-rejection-readback).
 
-### 21 October 2026 — unresolved focus and hold-expiry refresh
+<a id="21-october-2026--unresolved-focus-and-hold-expiry-refresh"></a>
+
+### 3.38. 21 October 2026 — unresolved focus and hold-expiry refresh
 
 - Owner requested combining confirmation detail cleanup with foreground/focus and original15-minute hold-expiry checks in PR81.
 - Test1 mostly demonstrated retained unpaid recovery and provider timeout, but the existing page remained unresolved; home later permitted a new booking.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--unresolved-focus-and-hold-expiry-refresh).
 
-### 21 October 2026 — acceptance resumed and confirmation details simplified
+<a id="21-october-2026--acceptance-resumed-and-confirmation-details-simplified"></a>
+
+### 3.39. 21 October 2026 — acceptance resumed and confirmation details simplified
 
 - PR80 headb4d452c2ad10d18ed16e4044dd39ca05a4e361d6 passed frontend/backend/live-email in39542179705.
 - Owner deferred Grafana hookup and resumed acceptance; no merge/deployment of PR80 occurred.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--acceptance-resumed-and-confirmation-details-simplified).
 
-### 21 October 2026 — PR79 deployment and backend telemetry preparation
+<a id="21-october-2026--pr79-deployment-and-backend-telemetry-preparation"></a>
+
+### 3.40. 21 October 2026 — PR79 deployment and backend telemetry preparation
 
 - Owner explicitly approved PR79 merge.
 - Final repaired head e8989b4e61b9a58e5dc0f4855861ac744ca69ebc passed all three PR gates in39528606402; merge3e74b10a8e96f81051c6c257d6c93a5c277f3f11 passed all three main gates and both deployment jobs in39530449830.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--pr79-deployment-and-backend-telemetry-preparation).
 
-### 21 October 2026 — PR79 browser colour expectation repair
+<a id="21-october-2026--pr79-browser-colour-expectation-repair"></a>
+
+### 3.41. 21 October 2026 — PR79 browser colour expectation repair
 
 - Run39525183294 on6ea34d5 passed live-email; frontend/backend each passed72/75 browser cases and failed the same typography journey on desktop Chromium, phone WebKit and tablet WebKit. tests/customer.spec.ts pageHeading still required navy rgb(5,10,47) for Booking confirmed; the observed rgb(23,96,120) is the owner-requested new confirmation accent.
 - The earlier impact pass missed that generic helper.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--pr79-browser-colour-expectation-repair).
 
-### 21 October 2026 — PR78 handoff and documentation/presentation audit
+<a id="21-october-2026--pr78-handoff-and-documentationpresentation-audit"></a>
+
+### 3.42. 21 October 2026 — PR78 handoff and documentation/presentation audit
 
 - PR78 owner-merged as69945cc4ecae4593799f7205beedbc82513f9945; handoff records frontend/backend/live-email CI39481563606 passed on acc82ec11bb00dbcf26a4de322d31e8998ca7cec.
 - Remote main fetched at the merge.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#21-october-2026--pr78-handoff-and-documentationpresentation-audit).
 
-### Batch checkout and token retention — 21 October 2026 SGT
+<a id="batch-checkout-and-token-retention--21-october-2026-sgt"></a>
+
+### 3.43. Batch checkout and token retention — 21 October 2026 SGT
 
 - Owner accepts confirmation presentation and asks only for minimal batch checkout D1 and reliable tokens.
 - Hometest07: single5 total D1/4.68s redirect; two-session batch17/8.30s; both public-token misses about964ms six minutes apart.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#batch-checkout-and-token-retention--21-october-2026-sgt).
 
-### Five-round-trip recovery experiment — 21 October 2026 SGT
+<a id="five-round-trip-recovery-experiment--21-october-2026-sgt"></a>
+
+### 3.44. Five-round-trip recovery experiment — 21 October 2026 SGT
 
 - Simulated providers measured5 D1 executions for1/2/4/8 sessions; the predecessor measured25/29/37 for1/2/4.
 - With150ms injected D1 latency and400ms booking/invoice reads, matched single-run baseline→candidate times were5561→3232ms,6679→4146ms and8716→5951ms.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#five-round-trip-recovery-experiment--21-october-2026-sgt).
 
-### Five-call experiment accepted for integration — 21 October 2026 SGT
+<a id="five-call-experiment-accepted-for-integration--21-october-2026-sgt"></a>
+
+### 3.45. Five-call experiment accepted for integration — 21 October 2026 SGT
 
 - Owner requested integration and CI after the fresh single-checkout prototype reached five total D1 round trips including HTTP foundation/authentication.
 - Matched simulations with150ms per D1 execution,900ms token,1200ms booking and800ms HitPay gave cold4344→3744ms and warm3576→2824ms means across two fixtures each.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#five-call-experiment-accepted-for-integration--21-october-2026-sgt).
 
-### Hometest06 and optimization experiments — 20 October 2026 SGT
+<a id="hometest06-and-optimization-experiments--20-october-2026-sgt"></a>
+
+### 3.46. Hometest06 and optimization experiments — 20 October 2026 SGT
 
 - Owner two-session HAR: checkout HTTP11.444seconds, redirect starts11.454seconds after checkout request.
 - Preparation15 D1/2007ms; booking work27 D1/3580ms; payment save2 D1/264ms.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#hometest06-and-optimization-experiments--20-october-2026-sgt).
 
-### Confirmation read experiment — 20 October 2026 SGT
+<a id="confirmation-read-experiment--20-october-2026-sgt"></a>
+
+### 3.47. Confirmation read experiment — 20 October 2026 SGT
 
 - The first consolidation candidate failed a deterministic manual-review-during-admission race: it returned confirmed from its old snapshot.
 - It was rejected.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-read-experiment--20-october-2026-sgt).
 
-### Hometest05 telemetry — 20 October 2026 SGT
+<a id="hometest05-telemetry--20-october-2026-sgt"></a>
+
+### 3.48. Hometest05 telemetry — 20 October 2026 SGT
 
 - PR72 main2c19288 passed CI/deployment39421510974.
 - Owner HAR checkout-to-HitPay navigation5.521seconds: one creation1.696seconds, one HitPay1.016seconds, nine coordinator D1 executions1.301seconds, public-token miss941ms, zero queue wait.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#hometest05-telemetry--20-october-2026-sgt).
 
-### Pending confirmation layout consistency — 20 October 2026 SGT
+<a id="pending-confirmation-layout-consistency--20-october-2026-sgt"></a>
+
+### 3.49. Pending confirmation layout consistency — 20 October 2026 SGT
 
 - Owner hometest05 requests one presentation through confirmation checking and verification.
 - Source inspection finds a full-page route Suspense loader and a separate context-loading card before the compact detailed confirmation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pending-confirmation-layout-consistency--20-october-2026-sgt).
 
-### PR72 lost-response test setup — 20 October 2026 SGT
+<a id="pr72-lost-response-test-setup--20-october-2026-sgt"></a>
+
+### 3.50. PR72 lost-response test setup — 20 October 2026 SGT
 
 - Run39415858902 on767f760 passed frontend/backend and77/78 live-email cases, including all three new timing-header assertions.
 - Offline phone-WebKit trace shows roughly8.5seconds of fixture setup and10seconds of initial calendar loading.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr72-lost-response-test-setup--20-october-2026-sgt).
 
-### Confirmation tracing — 20 October 2026 SGT
+<a id="confirmation-tracing--20-october-2026-sgt"></a>
+
+### 3.51. Confirmation tracing — 20 October 2026 SGT
 
 - PR71 merged as78098bf after all three gates passed; main CI/deployment run39410852918 succeeded.
 - Owner hometest04 records single checkout5.30seconds, nine coordinator D1 calls/1.303seconds, public token cache miss957ms, and return-to-confirmed20.407seconds/receipt21.209seconds.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-tracing--20-october-2026-sgt).
 
-### Ten-call single checkout integration — 20 October 2026 SGT
+<a id="ten-call-single-checkout-integration--20-october-2026-sgt"></a>
+
+### 3.52. Ten-call single checkout integration — 20 October 2026 SGT
 
 - Owner authorized merging PR70 after all three CI gates passed on5b350aa (run39401212504).
 - PR70 merged as18ccde0; the D1 integration branch starts there.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#ten-call-single-checkout-integration--20-october-2026-sgt).
 
-### PR70 initial receipt versus download gate — 20 October 2026 SGT
+<a id="pr70-initial-receipt-versus-download-gate--20-october-2026-sgt"></a>
+
+### 3.53. PR70 initial receipt versus download gate — 20 October 2026 SGT
 
 - Run39394733331 on a51594a passed frontend/backend and74/78 live-email cases.
 - Downloaded logs confirm the same recovery case failed at the blocked initial receipt on all three devices.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr70-initial-receipt-versus-download-gate--20-october-2026-sgt).
 
-### PR70 browser reconciliation-gate correction — 20 October 2026 SGT
+<a id="pr70-browser-reconciliation-gate-correction--20-october-2026-sgt"></a>
+
+### 3.54. PR70 browser reconciliation-gate correction — 20 October 2026 SGT
 
 - Run39391908409 passed frontend/backend and75/78 live-email cases.
 - The same payment-recovery journey failed on all three devices because it deliberately blocked accept-payment but still expected Booking confirmed before releasing that gate.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr70-browser-reconciliation-gate-correction--20-october-2026-sgt).
 
-### Confirmation and queue audit repair — 20 October 2026
+<a id="confirmation-and-queue-audit-repair--20-october-2026"></a>
+
+### 3.55. Confirmation and queue audit repair — 20 October 2026
 
 - Against main194cb5f, owner identified early customer confirmation before SimplyBook readback, unbounded workflow queues, missing physical capacity acceptance and conflicting documentation.
 - The candidate moves success retention after current confirmed-booking/paid-invoice observation and rejects legacy premature proof until reconciliation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-and-queue-audit-repair--20-october-2026).
 
-### PR69 main integration — 20 October 2026 SGT
+<a id="pr69-main-integration--20-october-2026-sgt"></a>
+
+### 3.56. PR69 main integration — 20 October 2026 SGT
 
 - PR69 had no CI run because its tracing branch conflicted with main after PR68 merged.
 - Integrate main194cb5f without rewriting branch history: retain batch creation-only behavior inside request-bound tracing, retain both test sets and ordered inventory, and preserve both historical entries.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr69-main-integration--20-october-2026-sgt).
 
-### Checkout phase tracing — 20 October 2026 SGT
+<a id="checkout-phase-tracing--20-october-2026-sgt"></a>
+
+### 3.57. Checkout phase tracing — 20 October 2026 SGT
 
 - Owner requests measurement of the7.6-second single checkout before pursuing3seconds.
 - Separate tracing branch starts from merged PR67/main dc74690; batch optimization PR68 remains independent.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-phase-tracing--20-october-2026-sgt).
 
-### Batch checkout creation path — 20 October 2026 SGT
+<a id="batch-checkout-creation-path--20-october-2026-sgt"></a>
+
+### 3.58. Batch checkout creation path — 20 October 2026 SGT
 
 - After HAR13 single checkout reached HitPay in7.60seconds, owner stops single optimization and authorizes the same provider strategy for direct batch checkout.
 - Extend the ongoing creation-only path to batch: public token, createBatch, one sequential book per session, closeBatch, validated complete unpaid invoice and one HitPay request.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#batch-checkout-creation-path--20-october-2026-sgt).
 
-### Checkout D1 consolidation — 20 October 2026 SGT
+<a id="checkout-d1-consolidation--20-october-2026-sgt"></a>
+
+### 3.59. Checkout D1 consolidation — 20 October 2026 SGT
 
 - The follow-up reduces isolated warm/cold single checkout from34 to27 D1 executions (HAR12 baseline47).
 - Archive/read grants in one primary batch; pass the committed canonical association/version forward; batch checkout completion with the final authenticated access read.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-d1-consolidation--20-october-2026-sgt).
 
-### Lean single checkout — 20 October 2026 SGT
+<a id="lean-single-checkout--20-october-2026-sgt"></a>
+
+### 3.60. Lean single checkout — 20 October 2026 SGT
 
 - Owner authorizes SimplyBook settings as the one-studio capacity authority and removes per-checkout admin identity/plan, catalogue, required-field, instructor eligibility and slot reads.
 - Apply first to ongoing direct single checkout; historical split holds and batch preflight remain unchanged for the staged experiment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#lean-single-checkout--20-october-2026-sgt).
 
-### PR66 CI cookie-adapter correction — 20 October 2026 SGT
+<a id="pr66-ci-cookie-adapter-correction--20-october-2026-sgt"></a>
+
+### 3.61. PR66 CI cookie-adapter correction — 20 October 2026 SGT
 
 - Run39365196455 on77f06d3 passed frontend/backend and75/78 live-email cases.
 - Only the new identity-warming test failed on all three devices, after its UI/no-effect assertions passed: its direct current-status fetch copied the preview cookie name instead of using the existing adapter that maps it to the real Worker cookie.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr66-ci-cookie-adapter-correction--20-october-2026-sgt).
 
-### Authentication rejection diagnostic follow-up — 20 October 2026 SGT
+<a id="authentication-rejection-diagnostic-follow-up--20-october-2026-sgt"></a>
+
+### 3.62. Authentication rejection diagnostic follow-up — 20 October 2026 SGT
 
 - The60-second admin-token cache already refreshes on the next identity operation after expiry;
 - HAR10 failed during fresh admin-auth, not a missing refresh.
@@ -882,35 +1995,45 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#authentication-rejection-diagnostic-follow-up--20-october-2026-sgt).
 
-### HAR10 confirmation stability and pre-dispatch authentication failure — 20 October 2026 SGT
+<a id="har10-confirmation-stability-and-pre-dispatch-authentication-failure--20-october-2026-sgt"></a>
+
+### 3.63. HAR10 confirmation stability and pre-dispatch authentication failure — 20 October 2026 SGT
 
 - Owner HAR10 ran deployed5e9e2d8 after PR65.
 - Its first checkout returned the HitPay handoff in14.8seconds and payment subsequently reconciled.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har10-confirmation-stability-and-pre-dispatch-authentication-failure--20-october-2026-sgt).
 
-### Confirmation read timestamp race — 20 October 2026 SGT
+<a id="confirmation-read-timestamp-race--20-october-2026-sgt"></a>
+
+### 3.64. Confirmation read timestamp race — 20 October 2026 SGT
 
 - PR64 passed all PR gates and owner merged it as c7ee697.
 - Main run39355419233 passed frontend/backend and74/75 live-email cases; tablet WebKit payment recovery timed out and Cloudflare deployment was skipped.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-read-timestamp-race--20-october-2026-sgt).
 
-### Independent payment deadlines — 20 October 2026 SGT
+<a id="independent-payment-deadlines--20-october-2026-sgt"></a>
+
+### 3.65. Independent payment deadlines — 20 October 2026 SGT
 
 - HAR09 records a29.1second four-session checkout ending in recovery_required.
 - The saved batch-close evidence confirms four bookings and an unpaid invoice; correlated deployed c08aa04 telemetry proves HitPay creation returned422 JSON.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#independent-payment-deadlines--20-october-2026-sgt).
 
-### Interrupted provider transport recovery — 20 October 2026 SGT
+<a id="interrupted-provider-transport-recovery--20-october-2026-sgt"></a>
+
+### 3.66. Interrupted provider transport recovery — 20 October 2026 SGT
 
 - Owner requires errors to be logged and isolated while unrelated customers continue.
 - A06:07:38SGT Cloudflare storage reset during read-only warmDisplay left one unclassified admission unfinished; parallel reads then exhausted the remaining slot.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#interrupted-provider-transport-recovery--20-october-2026-sgt).
 
-### Lost checkout response test ordering — 20 October 2026
+<a id="lost-checkout-response-test-ordering--20-october-2026"></a>
+
+### 3.67. Lost checkout response test ordering — 20 October 2026
 
 - PR62 merged as de71b72 after all three PR gates passed.
 - Main run39340832488 passed frontend/backend but failed one of75 live-email cases;
@@ -918,98 +2041,126 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#lost-checkout-response-test-ordering--20-october-2026).
 
-### PR62 checkout transport verification — 20 October 2026 SGT
+<a id="pr62-checkout-transport-verification--20-october-2026-sgt"></a>
+
+### 3.68. PR62 checkout transport verification — 20 October 2026 SGT
 
 - Owner explicitly authorizes merging PR62 after all three final-head CI gates pass.
 - Initial head0b5a76c passed frontend/backend and73/75 live-email cases; two desktop Chromium checkout assertions lost response resources after immediate HitPay navigation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr62-checkout-transport-verification--20-october-2026-sgt).
 
-### Actual batch response investigation and optimization — 20 October 2026 SGT
+<a id="actual-batch-response-investigation-and-optimization--20-october-2026-sgt"></a>
+
+### 3.69. Actual batch response investigation and optimization — 20 October 2026 SGT
 
 - Read-only D1 evidence for owner hometest03 proves cumulative intermediate booking arrays1–4, require_confirm=true and no invoice; final closure invoice has four lines with nested is_confirmed=true, status=new, payment_received=false and a due_datetime equal to subsequent invoice readback.
 - Closure receipt to final invoice-read receipt spans5.937seconds, including intervening processing; no promised speedup.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#actual-batch-response-investigation-and-optimization--20-october-2026-sgt).
 
-### Owner prioritizes checkout URL handoff — 19 October 2026 SGT
+<a id="owner-prioritizes-checkout-url-handoff--19-october-2026-sgt"></a>
+
+### 3.70. Owner prioritizes checkout URL handoff — 19 October 2026 SGT
 
 - Owner authorizes removing awaited comment I/O and the extra context request before initial HitPay navigation.
 - Added durable deferred comments with account queue/cron ownership and one-write claims; the checkout reply carries only its validated, saved URL and expiry to a transient client callback.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-prioritizes-checkout-url-handoff--19-october-2026-sgt).
 
-### Owner adds recurring display warm-up — 19 October 2026 SGT
+<a id="owner-adds-recurring-display-warm-up--19-october-2026-sgt"></a>
+
+### 3.71. Owner adds recurring display warm-up — 19 October 2026 SGT
 
 - After history review established the old fifteen-minute warmer was proposed but excluded, owner authorizes implementing it with PR61 and requests immediate updates for booking creation.
 - Implement account-DO persistent public snapshots, fifteen-minute due claims on existing minute cron, creation-triggered invalidation/background refresh and original thirty-minute display deadlines.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-adds-recurring-display-warm-up--19-october-2026-sgt).
 
-### Browsing loading and cache investigation — 19 October 2026 SGT
+<a id="browsing-loading-and-cache-investigation--19-october-2026-sgt"></a>
+
+### 3.72. Browsing loading and cache investigation — 19 October 2026 SGT
 
 - Started successor from actual main d15caba after PR60 merge.
 - Owner reports homepage/guest flicker, awkward locking and slow initial calendar.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#browsing-loading-and-cache-investigation--19-october-2026-sgt).
 
-### PR60 flow implementation and CI diagnosis — 19 October 2026 SGT
+<a id="pr60-flow-implementation-and-ci-diagnosis--19-october-2026-sgt"></a>
+
+### 3.73. PR60 flow implementation and CI diagnosis — 19 October 2026 SGT
 
 - Inspected failed run39209839579 atf03049e.
 - Frontend/backend browser lanes each failed two journeys on all three devices: assertions targeted Studio1 and Selected sessions inside the new collapsed full-details disclosure.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr60-flow-implementation-and-ci-diagnosis--19-october-2026-sgt).
 
-### Editable Review, combined checkout and compact confirmation — 19 October 2026 SGT
+<a id="editable-review-combined-checkout-and-compact-confirmation--19-october-2026-sgt"></a>
+
+### 3.74. Editable Review, combined checkout and compact confirmation — 19 October 2026 SGT
 
 - Owner supersedes creation-during-Review and queued provider edits: Details runs fresh read-only availability checks, then opens editable Review without creating a customer, booking or payment.
 - Changed details reset consent.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#editable-review-combined-checkout-and-compact-confirmation--19-october-2026-sgt).
 
-### HAR08 confirmation continuity and record reconciliation — 19 October 2026 SGT
+<a id="har08-confirmation-continuity-and-record-reconciliation--19-october-2026-sgt"></a>
+
+### 3.75. HAR08 confirmation continuity and record reconciliation — 19 October 2026 SGT
 
 - Owner reports successful checkout and asks for pending do-not-refresh guidance, removal of repeated confirmation loading, and read-only record reconciliation.
 - HAR08 shows customerConfirmation in a pending response, followed by confirmed without that snapshot; the hook discarded the proof while the611ms receipt request completed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har08-confirmation-continuity-and-record-reconciliation--19-october-2026-sgt).
 
-### Email-code browser interaction repair — 19 October 2026 SGT
+<a id="email-code-browser-interaction-repair--19-october-2026-sgt"></a>
+
+### 3.76. Email-code browser interaction repair — 19 October 2026 SGT
 
 - Final-policy CI39200175005 frontend passed74/75 browser cases.
 - Tablet WebKit filled the code while main was still inert during the loading transition; the trace retained an empty input, so native required validation prevented the expected incorrect-code response.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#email-code-browser-interaction-repair--19-october-2026-sgt).
 
-### Fifteen-minute hold and eight-minute payment policy — 19 October 2026 SGT
+<a id="fifteen-minute-hold-and-eight-minute-payment-policy--19-october-2026-sgt"></a>
+
+### 3.77. Fifteen-minute hold and eight-minute payment policy — 19 October 2026 SGT
 
 - Owner authorizes adding this policy to PR59 and merging only after final-commit required CI passes.
 - Owner reports SimplyBook's timeout changed to15minutes; provider behavior is not independently verified.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#fifteen-minute-hold-and-eight-minute-payment-policy--19-october-2026-sgt).
 
-### Completed-dismissal CI setup repair — 19 October 2026 SGT
+<a id="completed-dismissal-ci-setup-repair--19-october-2026-sgt"></a>
+
+### 3.78. Completed-dismissal CI setup repair — 19 October 2026 SGT
 
 - Merged-main50656c9 CI39198249437 passed74/75 live-email cases; phone WebKit timed out before reaching dismissal.
 - Trace shows about22seconds spent creating the synthetic hold/payment before navigation, then waiting for fully reconciled confirmation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#completed-dismissal-ci-setup-repair--19-october-2026-sgt).
 
-### Pre-creation concurrency implementation — 19 October 2026 SGT
+<a id="pre-creation-concurrency-implementation--19-october-2026-sgt"></a>
+
+### 3.79. Pre-creation concurrency implementation — 19 October 2026 SGT
 
 - Owner requests implementing all safe independent pre-creation overlap.
 - Source audit found sequential token acquisition, independent preflight reads and provider identity preparation after local persistence.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pre-creation-concurrency-implementation--19-october-2026-sgt).
 
-### HAR07 upstream failure and measured hold delay — 19 October 2026 SGT
+<a id="har07-upstream-failure-and-measured-hold-delay--19-october-2026-sgt"></a>
+
+### 3.80. HAR07 upstream failure and measured hold delay — 19 October 2026 SGT
 
 - HAR07's11:38SGT trial used Worker version4acf4e0f, correlated with deployed sourcef966884.
 - Holding succeeded in16.678seconds; the first verifying poll began13.295seconds after dispatch.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har07-upstream-failure-and-measured-hold-delay--19-october-2026-sgt).
 
-### Payment-first confirmation and expiry implementation — 19 October 2026 SGT
+<a id="payment-first-confirmation-and-expiry-implementation--19-october-2026-sgt"></a>
+
+### 3.81. Payment-first confirmation and expiry implementation — 19 October 2026 SGT
 
 - Owner clarified that verified matching payment should immediately complete the customer-facing booking when the existing hold remains valid;
 - SimplyBook reconciliation must continue regardless of the page.
@@ -1017,210 +2168,270 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#payment-first-confirmation-and-expiry-implementation--19-october-2026-sgt).
 
-### Creation-first optimistic Review clarification — 19 October 2026 SGT
+<a id="creation-first-optimistic-review-clarification--19-october-2026-sgt"></a>
+
+### 3.82. Creation-first optimistic Review clarification — 19 October 2026 SGT
 
 - Owner clarifies that Review should appear after booking creation, with comments/readback continuing while payment stays disabled.
 - Earlier source waited for comment acknowledgement.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#creation-first-optimistic-review-clarification--19-october-2026-sgt).
 
-### HAR06 Details-to-Review latency follow-up — 19 October 2026 SGT
+<a id="har06-details-to-review-latency-follow-up--19-october-2026-sgt"></a>
+
+### 3.83. HAR06 Details-to-Review latency follow-up — 19 October 2026 SGT
 
 - Owner manually measures13–14seconds.
 - The hold starts09:11:29.401; the last running poll completes about09:11:42.586, the first verifying poll about09:11:43.907 (14.506s after start), and the hold response about09:11:45.135 (15.734s).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har06-details-to-review-latency-follow-up--19-october-2026-sgt).
 
-### HAR06 checkout abort and compact pending return — 19 October 2026 SGT
+<a id="har06-checkout-abort-and-compact-pending-return--19-october-2026-sgt"></a>
+
+### 3.84. HAR06 checkout abort and compact pending return — 19 October 2026 SGT
 
 - Safely inspected owner HAR06, captured09:11:00–09:13:02 SGT.
 - It records one hold POST200 (15.734s), one HitPay-preparation POST200 (3.407s, paymentAvailable=true), an aborted checkout-context request (28ms), then a successful context read containing an available sandbox HitPay URL.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har06-checkout-abort-and-compact-pending-return--19-october-2026-sgt).
 
-### Owner requires a test-impact pass after every change — 19 October 2026
+<a id="owner-requires-a-test-impact-pass-after-every-change--19-october-2026"></a>
+
+### 3.85. Owner requires a test-impact pass after every change — 19 October 2026
 
 - Repeated CI repairs exposed an incomplete impact review: the one-month preload updated guestDetails and component expectations but missed a separate native guest journey's warmedMonths wait and two four-call assertions.
 - CI39176339093 passed frontend/backend but failed that journey on all three devices (69/72 live-email).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-requires-a-test-impact-pass-after-every-change--19-october-2026).
 
-### One-month browser expectation repair — 19 October 2026 SGT
+<a id="one-month-browser-expectation-repair--19-october-2026-sgt"></a>
+
+### 3.86. One-month browser expectation repair — 19 October 2026 SGT
 
 - CI39176339093 on3a34e2a passed frontend/backend, but live-email passed69/72: the same native guest journey timed out on all three engines.
 - Its separate warmedMonths setup still waited for four responses, then asserted four calendar calls twice.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#one-month-browser-expectation-repair--19-october-2026-sgt).
 
-### One-month calendar preload — 19 October 2026 SGT
+<a id="one-month-calendar-preload--19-october-2026-sgt"></a>
+
+### 3.87. One-month calendar preload — 19 October 2026 SGT
 
 - Owner reduces eager calendar loading from four months to the displayed month only.
 - Homepage preloads the current Singapore calendar month; another month is fetched only when opened.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#one-month-calendar-preload--19-october-2026-sgt).
 
-### Final single-booking optimization pass — 19 October 2026 SGT
+<a id="final-single-booking-optimization-pass--19-october-2026-sgt"></a>
+
+### 3.88. Final single-booking optimization pass — 19 October 2026 SGT
 
 - CatalogueReads overlaps the independent service/instructor reads only for ongoing customer access under the existing ProviderSession and serialized admission owner.
 - The initial full runtime run exposed three finite-path rate rejections; finite/historical reads retain their original sequential dispatch.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#final-single-booking-optimization-pass--19-october-2026-sgt).
 
-### Three UI follow-ups to PR55 — 19 October 2026 SGT
+<a id="three-ui-follow-ups-to-pr55--19-october-2026-sgt"></a>
+
+### 3.89. Three UI follow-ups to PR55 — 19 October 2026 SGT
 
 - Additional owner requests: preferred communication has Email as its default with exactly Email, Call (existing phone identifier), SMS and WhatsApp; remove the placeholder and retain stored preferences.
 - The shared method catalogue also supplies SimplyBook comment labels.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#three-ui-follow-ups-to-pr55--19-october-2026-sgt).
 
-### Follow-up latency review and earlier Review — 19 October 2026 SGT
+<a id="follow-up-latency-review-and-earlier-review--19-october-2026-sgt"></a>
+
+### 3.90. Follow-up latency review and earlier Review — 19 October 2026 SGT
 
 - Owner requests a full bottleneck pass together with duplicate reference acknowledgement removal, then explicitly asks to show Review after step3 of8 (comment), while readback continues.
 - Source confirms progress previously waited for association persistence after comment handling.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#follow-up-latency-review-and-earlier-review--19-october-2026-sgt).
 
-### Latest05 duplicated loading and measured delay — 19 October 2026 SGT
+<a id="latest05-duplicated-loading-and-measured-delay--19-october-2026-sgt"></a>
+
+### 3.91. Latest05 duplicated loading and measured delay — 19 October 2026 SGT
 
 - The owner reports two loading phases and ineffective optimistic Review.
 - Offline HAR confirms holding14.112s and first verifying response at about12.75s; earlier replies are running.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest05-duplicated-loading-and-measured-delay--19-october-2026-sgt).
 
-### Optimistic Review milestone test — 19 October 2026 SGT
+<a id="optimistic-review-milestone-test--19-october-2026-sgt"></a>
+
+### 3.92. Optimistic Review milestone test — 19 October 2026 SGT
 
 - PR53 candidate8d3571b passed frontend/backend and71/72 live browser runs.
 - Offline tablet trace showed two protected progress responses still running, before creation was associated; the test incorrectly started its five-second UI assertion from the Details click, including all preflight/provider setup.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#optimistic-review-milestone-test--19-october-2026-sgt).
 
-### Pending-checkout accessible status repair — 19 October 2026 SGT
+<a id="pending-checkout-accessible-status-repair--19-october-2026-sgt"></a>
+
+### 3.93. Pending-checkout accessible status repair — 19 October 2026 SGT
 
 - PR52 main39149579852 passed all three gates and deployed verified692cf92 to the developer Worker.
 - PR53 CI39151457912 passed Worker verification; frontend/backend each passed69/72 browser runs, failing the same pending-checkout status assertion on three devices.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pending-checkout-accessible-status-repair--19-october-2026-sgt).
 
-### Latency review, main failure and comment reconciliation — 19 October 2026 SGT
+<a id="latency-review-main-failure-and-comment-reconciliation--19-october-2026-sgt"></a>
+
+### 3.94. Latency review, main failure and comment reconciliation — 19 October 2026 SGT
 
 - PR51/52 exact PR gates passed and both were owner-authorized merged.
 - PR51 main39149518497 subsequently failed one tablet dismissal-retry case:53/54 live runs passed, both other gates passed, Cloudflare skipped.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latency-review-main-failure-and-comment-reconciliation--19-october-2026-sgt).
 
-### Partial-batch recovery CI repair — 19 October 2026 SGT
+<a id="partial-batch-recovery-ci-repair--19-october-2026-sgt"></a>
+
+### 3.95. Partial-batch recovery CI repair — 19 October 2026 SGT
 
 - PR52 eb4573c passes frontend and backend gates.
 - Live-email passes58/63; later-conflict reload returns native_snapshot_unavailable because the rejected session never acquires a validated offer snapshot.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#partial-batch-recovery-ci-repair--19-october-2026-sgt).
 
-### Location dialog focus repair — 19 October 2026 SGT
+<a id="location-dialog-focus-repair--19-october-2026-sgt"></a>
+
+### 3.96. Location dialog focus repair — 19 October 2026 SGT
 
 - PR52 candidate179ae0d failed the same desktop Chromium focus-return assertion in both frontend and backend browser gates (71/72 passed in each).
 - Closing the location dialog removed it before passive-effect cleanup could reliably restore native focus.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#location-dialog-focus-repair--19-october-2026-sgt).
 
-### Latest04 and batch sequencing — 19 October 2026 SGT
+<a id="latest04-and-batch-sequencing--19-october-2026-sgt"></a>
+
+### 3.97. Latest04 and batch sequencing — 19 October 2026 SGT
 
 - Owner supplies latest04, requests contact spacing, signed-in email prominence, header hover repair, studio-location popup and batch duplicate removal.
 - Map preference: lowest latency.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest04-and-batch-sequencing--19-october-2026-sgt).
 
-### Independent checking-window regression — 19 October 2026 SGT
+<a id="independent-checking-window-regression--19-october-2026-sgt"></a>
+
+### 3.98. Independent checking-window regression — 19 October 2026 SGT
 
 - The repaired dismissal journey passes all3 devices on4fc8ce3.
 - Two tablet cases timed out when combining full guest selection, uncertain holding, reload and checking-window exhaustion.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#independent-checking-window-regression--19-october-2026-sgt).
 
-### Browser failure regression expansion — 18 October 2026
+<a id="browser-failure-regression-expansion--18-october-2026"></a>
+
+### 3.99. Browser failure regression expansion — 18 October 2026
 
 - Owner challenged the unchanged69 browser runs and requested comprehensive failure coverage.
 - That number is23 legacy scenarios across3 devices; it did not include new failure journeys.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#browser-failure-regression-expansion--18-october-2026).
 
-### Owner-approved combined hold — 18 October 2026
+<a id="owner-approved-combined-hold--18-october-2026"></a>
+
+### 3.100. Owner-approved combined hold — 18 October 2026
 
 - Source review of merged PR49/main87fde3c found Details → Review still performed preparation-stage fresh calendar reads followed by authoritative prebooking reads. latest03 measured8.691s preparation plus15.984s holding.
 - Owner requested removal of that sequential duplication and initially proposed deleting mutable D1 rows on failure.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-approved-combined-hold--18-october-2026).
 
-### Latest03 returning-session report and immediate rebooking — 18 October 2026
+<a id="latest03-returning-session-report-and-immediate-rebooking--18-october-2026"></a>
+
+### 3.101. Latest03 returning-session report and immediate rebooking — 18 October 2026
 
 - Owner reports unavailable-session display after returning with email and requests immediate first-step rebooking with backend work in the background.
 - Refreshed main includes merged PR48 atd89ad5e.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest03-returning-session-report-and-immediate-rebooking--18-october-2026).
 
-### Latest02 investigation, payment wake-up and email blocker — 18 October 2026
+<a id="latest02-investigation-payment-wake-up-and-email-blocker--18-october-2026"></a>
+
+### 3.102. Latest02 investigation, payment wake-up and email blocker — 18 October 2026
 
 - Owner requested at least80% latency reduction after latest02.har.
 - Fresh deployed revision matches mergedPR47/main45ec58c.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest02-investigation-payment-wake-up-and-email-blocker--18-october-2026).
 
-### Checkout grant-read consolidation — 18 October 2026
+<a id="checkout-grant-read-consolidation--18-october-2026"></a>
+
+### 3.103. Checkout grant-read consolidation — 18 October 2026
 
 - Owner requested removing repeated ownership checks after reviewing the latest single-session HAR.
 - Actual observed Details → Review improved28.866s→27.271s while provider calls fell28→24; roughly10s remained outside provider spans.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-grant-read-consolidation--18-october-2026).
 
-### Owner directs initial comments — 18 October 2026
+<a id="owner-directs-initial-comments--18-october-2026"></a>
+
+### 3.104. Owner directs initial comments — 18 October 2026
 
 - Owner says to send the comment without further considerations.
 - Apply that current decision over the earlier conditional-update prerequisite: wire the already validated formatter into the admitted admin comment write for the newly created booking set.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-directs-initial-comments--18-october-2026).
 
-### Handoff flash and missing comments — 18 October 2026
+<a id="handoff-flash-and-missing-comments--18-october-2026"></a>
+
+### 3.105. Handoff flash and missing comments — 18 October 2026
 
 - Owner reports Review flashing after the spinner before the first HitPay navigation, plus missing players, school and communication method in provider Comments.
 - A focused regression reproduces loading becoming success before navigation completes.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#handoff-flash-and-missing-comments--18-october-2026).
 
-### PR46 browser status assertion repair — 18 October 2026
+<a id="pr46-browser-status-assertion-repair--18-october-2026"></a>
+
+### 3.106. PR46 browser status assertion repair — 18 October 2026
 
 - CI39120279412 passed frontend/backend gates and17/18 live-email browser cases.
 - The new completed-exit journey passed desktop Chromium, phone WebKit and tablet WebKit.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr46-browser-status-assertion-repair--18-october-2026).
 
-### Completed booking exit and provider diagnostics — 18 October 2026
+<a id="completed-booking-exit-and-provider-diagnostics--18-october-2026"></a>
+
+### 3.107. Completed booking exit and provider diagnostics — 18 October 2026
 
 - Owner reports Make another booking returns to confirmation after successful payment and requests both explicit exit actions deactivate that routing.
 - Source reset rejects restored checking attempts; hard navigation restores the same server-bound grant.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#completed-booking-exit-and-provider-diagnostics--18-october-2026).
 
-### Circular mouse cursor — 18 October 2026
+<a id="circular-mouse-cursor--18-october-2026"></a>
+
+### 3.108. Circular mouse cursor — 18 October 2026
 
 - Owner requests a circular cursor with a lagging centre dot.
 - Added one root-level pointer decoration with bounded dot travel and an animation loop that stops when settled.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#circular-mouse-cursor--18-october-2026).
 
-### Single-session booking validation optimization — 18 October 2026
+<a id="single-session-booking-validation-optimization--18-october-2026"></a>
+
+### 3.109. Single-session booking validation optimization — 18 October 2026
 
 - Owner chooses single-session optimization first; multi-session atomicity testing remains deferred.
 - Refreshed main6b8555a includes merged PR43.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#single-session-booking-validation-optimization--18-october-2026).
 
-### Full confirmation, return continuity and transition loading — 17 October 2026
+<a id="full-confirmation-return-continuity-and-transition-loading--17-october-2026"></a>
+
+### 3.110. Full confirmation, return continuity and transition loading — 17 October 2026
 
 - Owner HAR captured two sessions: prepare5.311s, hold44.370s, payment creation8.483s and checkout context0.737s.
 - Return polling starts18:37:52SGT, first reports payment received at18:38:38 and confirmed at18:38:49; receipt200 completes around18:38:51.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#full-confirmation-return-continuity-and-transition-loading--17-october-2026).
 
-### Paid return continuity and restore-before-prefetch — 17 October 2026
+<a id="paid-return-continuity-and-restore-before-prefetch--17-october-2026"></a>
+
+### 3.111. Paid return continuity and restore-before-prefetch — 17 October 2026
 
 - Owner requests repair after merged main4b59217 failed live-email CI39016144380.
 - Frontend/backend passed;
@@ -1228,154 +2439,198 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#paid-return-continuity-and-restore-before-prefetch--17-october-2026).
 
-### PR41 CI repair and paid-return diagnosis — 17 October 2026
+<a id="pr41-ci-repair-and-paid-return-diagnosis--17-october-2026"></a>
+
+### 3.112. PR41 CI repair and paid-return diagnosis — 17 October 2026
 
 - PR41 run39012995799 failed browser checks: remembered identity expanded the email card and moved the guest action on desktop/tablet; confirmation tests still expected an inline heading; overlapping context/status work exposed the wrong accessible loading label.
 - Keep the guest card independent of secondary account actions, reserve equal description space, and preserve equal primary button dimensions.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr41-ci-repair-and-paid-return-diagnosis--17-october-2026).
 
-### HAR-fixed-01 booking loading and latency review — 17 October 2026
+<a id="har-fixed-01-booking-loading-and-latency-review--17-october-2026"></a>
+
+### 3.113. HAR-fixed-01 booking loading and latency review — 17 October 2026
 
 - Owner reports unequal guest/email buttons, layout movement during requests, a long Review booking wait, and requests the same full-page logo loader used for home-to-studio navigation.
 - Stretch the account cards and give both primary actions the same full width/minimum height.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har-fixed-01-booking-loading-and-latency-review--17-october-2026).
 
-### Owner-requested migration process and testing documentation — 16 October 2026
+<a id="owner-requested-migration-process-and-testing-documentation--16-october-2026"></a>
+
+### 3.114. Owner-requested migration process and testing documentation — 16 October 2026
 
 - Owner asks whether the booking optimization is available for the next test and requests a separate documentation PR for the full migration process, environment files, actual-API browser tests, mutation testing and latency/performance requirements.
 - At this checkpoint PR39 head2c03fe1 is unmerged; the Worker serves source be9982b3 using activated new-account version140 c2a562d1.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-requested-migration-process-and-testing-documentation--16-october-2026).
 
-### Migration sweep: remove old-account session preload — 16 October 2026
+<a id="migration-sweep-remove-old-account-session-preload--16-october-2026"></a>
+
+### 3.115. Migration sweep: remove old-account session preload — 16 October 2026
 
 - The owner-requested final pass found the experimental NativeSessionInit frame still loading soccerbotstudiosg on every live booking selection.
 - Direct HitPay checkout does not use that native hosted-session experiment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#migration-sweep-remove-old-account-session-preload--16-october-2026).
 
-### Migration version activated — 16 October 2026
+<a id="migration-version-activated--16-october-2026"></a>
+
+### 3.116. Migration version activated — 16 October 2026
 
 - Owner explicitly authorized activation.
 - Deployment ad3432df-b58f-4c74-b1a6-d5db7fb6729a activated saved version140 c2a562d1-3469-4b5c-8ecc-cd22837377f4 at17:29:45SGT,100% traffic.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#migration-version-activated--16-october-2026).
 
-### Deployed provider mismatch — 16 October 2026
+<a id="deployed-provider-mismatch--16-october-2026"></a>
+
+### 3.117. Deployed provider mismatch — 16 October 2026
 
 - Ordinary curl through the supported managed network returns HTTP200 for Worker health, catalogue and October calendar; the earlier Python HTTP403/1010 is client-dependent evidence, not general Cloudflare unreachability.
 - Health still identifies source be9982b3 and version f2400190-6db5-4436-8c74-16371055b117.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#deployed-provider-mismatch--16-october-2026).
 
-### 16 October 2026 — acceptance preparation and inactive legacy work
+<a id="16-october-2026--acceptance-preparation-and-inactive-legacy-work"></a>
+
+### 3.118. 16 October 2026 — acceptance preparation and inactive legacy work
 
 - Owner confirms HitPay works locally, old records are noncritical test history, new-account settings complete, webhook unchanged and the new environment shell saved.
 - They request verification and readiness for the first owner acceptance.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#16-october-2026--acceptance-preparation-and-inactive-legacy-work).
 
-### Environment readiness and owner confirmations — 16 October 2026
+<a id="environment-readiness-and-owner-confirmations--16-october-2026"></a>
+
+### 3.119. Environment readiness and owner confirmations — 16 October 2026
 
 - Owner reports latest environment changes installed, confirms migration checklist item3 complete (new-account signing/settings/schedules), and confirms item4 webhook configuration remains unchanged.
 - Record these as owner confirmations, separate from independently observed provider evidence.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#environment-readiness-and-owner-confirmations--16-october-2026).
 
-### 16 October 2026 — fresh runtime, migration readback and queue optimization
+<a id="16-october-2026--fresh-runtime-migration-readback-and-queue-optimization"></a>
+
+### 3.120. 16 October 2026 — fresh runtime, migration readback and queue optimization
 
 - Refreshed remote main and actual Cloudflare SOURCE_REVISION: be9982b3b0420db88907ecb727d049cd87a86ee4.
 - The clean historical experiment checkout 897cbfe was 196 commits behind, with no unique commits; it remains unchanged.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#16-october-2026--fresh-runtime-migration-readback-and-queue-optimization).
 
-### Opening hours, four-hour lead and observed HitPay host — 16 October 2026
+<a id="opening-hours-four-hour-lead-and-observed-hitpay-host--16-october-2026"></a>
+
+### 3.121. Opening hours, four-hour lead and observed HitPay host — 16 October 2026
 
 - Owner requested the noon–20:00 permanent opening window and four-hour lead together with the diagnosed HitPay fix.
 - Read-only owner-local API checks returned HTTP200, one exact reference, matching amount/currency and path, and the checkout.sandbox.hit-pay.com host.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#opening-hours-four-hour-lead-and-observed-hitpay-host--16-october-2026).
 
-### HAR06 checkout latency and payment diagnostics — 16 October 2026
+<a id="har06-checkout-latency-and-payment-diagnostics--16-october-2026"></a>
+
+### 3.122. HAR06 checkout latency and payment diagnostics — 16 October 2026
 
 - Owner HAR06 and redacted Worker/D1 evidence establish booking49/invoice40 created successfully at11:38SGT, with confirmed booking flags and an unpaid invoice.
 - Details-to-Review took about53seconds: roughly20seconds queued behind background month work,5seconds for the browser-triggered fresh day read,6seconds for preparation (another fresh read), and21seconds for holding creation/readback (19 provider calls).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har06-checkout-latency-and-payment-diagnostics--16-october-2026).
 
-### Sandbox deployment and recovery correction — 16 October 2026
+<a id="sandbox-deployment-and-recovery-correction--16-october-2026"></a>
+
+### 3.123. Sandbox deployment and recovery correction — 16 October 2026
 
 - Expanded local verification exposed an existing fixture calling Date.now separately for the start and end of an exactly20-minute grant.
 - A millisecond boundary violates the unchanged database maximum.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#sandbox-deployment-and-recovery-correction--16-october-2026).
 
-### Hold-state experiment evidence — 16 October 2026
+<a id="hold-state-experiment-evidence--16-october-2026"></a>
+
+### 3.124. Hold-state experiment evidence — 16 October 2026
 
 - CI38836809759 passed frontend verification and all337 runtime tests in both Worker jobs, but the strict ordered inventory rejected the two new titles appended at the end.
 - Move only those two entries to their native-test execution position; all335 existing titles and every assertion remain unchanged.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#hold-state-experiment-evidence--16-october-2026).
 
-### Complete sandbox configuration readback — 16 October 2026
+<a id="complete-sandbox-configuration-readback--16-october-2026"></a>
+
+### 3.125. Complete sandbox configuration readback — 16 October 2026
 
 - Owner requested a full configuration check, which exposed five missing bindings beyond the previously restored route/enablement flags.
 - Owner then authorized setting them.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#complete-sandbox-configuration-readback--16-october-2026).
 
-### Calendar return and local reconciliation — 16 October 2026
+<a id="calendar-return-and-local-reconciliation--16-october-2026"></a>
+
+### 3.126. Calendar return and local reconciliation — 16 October 2026
 
 - Owner verified24October09:00 is correctly unavailable; that report is withdrawn.
 - A separate frontend pause survives successful fresh validation followed by preparation failure, leaving Back-to-calendar loading until a selection edit.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#calendar-return-and-local-reconciliation--16-october-2026).
 
-### Stable guest option and HAR04/05 — 16 October 2026
+<a id="stable-guest-option-and-har0405--16-october-2026"></a>
+
+### 3.127. Stable guest option and HAR04/05 — 16 October 2026
 
 - PR34 is owner-merged as4e98eae after all three PR gates passed in38828870612.
 - Owner reports guest-button movement when saved identity restores.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#stable-guest-option-and-har0405--16-october-2026).
 
-### Confirmation restoration race exposed by mechanism tests — 16 October 2026
+<a id="confirmation-restoration-race-exposed-by-mechanism-tests--16-october-2026"></a>
+
+### 3.128. Confirmation restoration race exposed by mechanism tests — 16 October 2026
 
 - CI38823092566 reaches real holding/payment on all browser projects.
 - Paid return passes on phone/tablet, while desktop receives confirmed200 then remains Checking: initial BookingProvider hydration/restoration changes the revision and cancels that protected read before a second request is throttled.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-restoration-race-exposed-by-mechanism-tests--16-october-2026).
 
-### Test longevity audit — 16 October 2026
+<a id="test-longevity-audit--16-october-2026"></a>
+
+### 3.129. Test longevity audit — 16 October 2026
 
 - Owner requests a review of all tests following the weekday-dependent CI failure.
 - Inventory:50 files, comprising24 frontend/unit,10 Worker,3 browser and13 tooling/installer files.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#test-longevity-audit--16-october-2026).
 
-### Mechanism browser transport and checking evidence — 16 October 2026
+<a id="mechanism-browser-transport-and-checking-evidence--16-october-2026"></a>
+
+### 3.130. Mechanism browser transport and checking evidence — 16 October 2026
 
 - Run38820026896 exposed assumptions hidden by instantaneous API mocks: calendar warming/holding require response-based synchronization, and WebKit interception omitted the guest cookie.
 - Run38821167567 passed335 Worker tests and frontend CI; its desktop journey reached payment and confirmation but an immediate second read met the real five-second quota.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#mechanism-browser-transport-and-checking-evidence--16-october-2026).
 
-### Main CI weekday fixture failure — 16 October 2026
+<a id="main-ci-weekday-fixture-failure--16-october-2026"></a>
+
+### 3.131. Main CI weekday fixture failure — 16 October 2026
 
 - Owner merged PR33 as6a88134.
 - Main run38816624792 failed frontend unit verification: two booking receipt tests expected8800 but received10800 after Singapore midnight made their real-clock tomorrow a Saturday.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#main-ci-weekday-fixture-failure--16-october-2026).
 
-### HAR03 holding request rejected before provider dispatch — 15 October 2026
+<a id="har03-holding-request-rejected-before-provider-dispatch--15-october-2026"></a>
+
+### 3.132. HAR03 holding request rejected before provider dispatch — 15 October 2026
 
 - PR32 merged/deployed40cca80; main run38755799186 succeeded.
 - HAR02 exposed reset sandbox flags; these were restored/read back with unrelated bindings and secrets preserved.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har03-holding-request-rejected-before-provider-dispatch--15-october-2026).
 
-### Owner HAR: Review booking interrupted — 15 October 2026
+<a id="owner-har-review-booking-interrupted--15-october-2026"></a>
+
+### 3.133. Owner HAR: Review booking interrupted — 15 October 2026
 
 - PR31 merged as1971d26;
 - GitHub main run38747070570 passed verification and deployment.
@@ -1383,301 +2638,387 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-har-review-booking-interrupted--15-october-2026).
 
-### Preserve hosted navigation until document unload — 15 October 2026
+<a id="preserve-hosted-navigation-until-document-unload--15-october-2026"></a>
+
+### 3.134. Preserve hosted navigation until document unload — 15 October 2026
 
 - PR31 run38742439558 passed frontend/backend gates and the desktop live checkout journey.
 - Phone/tablet WebKit exposed a second race: setting checkout success after location.assign lets the route guard issue an internal payment navigation before the external document commits.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#preserve-hosted-navigation-until-document-unload--15-october-2026).
 
-### HitPay browser handoff correction and activation request — 15 October 2026
+<a id="hitpay-browser-handoff-correction-and-activation-request--15-october-2026"></a>
+
+### 3.135. HitPay browser handoff correction and activation request — 15 October 2026
 
 - PR31 run38740776215 passed frontend and Worker checks but the live-email journey failed on all three browser projects: the route guard changed review to /book/payment/ while protected HitPay context was still loading, unmounting review and cancelling its request.
 - Keep review mounted during the active live checkout handoff; cancellation/unknown outcomes retain existing recovery behavior.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#hitpay-browser-handoff-correction-and-activation-request--15-october-2026).
 
-### Direct HitPay final local verification — 15 October 2026
+<a id="direct-hitpay-final-local-verification--15-october-2026"></a>
+
+### 3.136. Direct HitPay final local verification — 15 October 2026
 
 - Final non-browser application verification passed177 unit tests plus source/tooling/lint/types and the production export.
 - Final Worker verification passed333 tests with zero failures/skips and zero provider requests.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#direct-hitpay-final-local-verification--15-october-2026).
 
-### Direct hosted HitPay implementation resumed — 15 October 2026
+<a id="direct-hosted-hitpay-implementation-resumed--15-october-2026"></a>
+
+### 3.137. Direct hosted HitPay implementation resumed — 15 October 2026
 
 - Owner approves source implementation and hosted HitPay navigation after disclaimer; no intermediate payment screen.
 - Owner moves fresh availability checking to after Details and requires retained details on calendar reselection.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#direct-hosted-hitpay-implementation-resumed--15-october-2026).
 
-### Post-reset verification and ongoing email preparation — 15 October 2026
+<a id="post-reset-verification-and-ongoing-email-preparation--15-october-2026"></a>
+
+### 3.138. Post-reset verification and ongoing email preparation — 15 October 2026
 
 - Live health/SQL confirmed deployedb20f481/versionfdd603d2, both admission indexes and1 row read for each targeted indexed query.
 - Catalogue and October calendar succeeded.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#post-reset-verification-and-ongoing-email-preparation--15-october-2026).
 
-### Coordinator optimization and security-widget layout — 14 October 2026
+<a id="coordinator-optimization-and-security-widget-layout--14-october-2026"></a>
+
+### 3.139. Coordinator optimization and security-widget layout — 14 October 2026
 
 - Owner reports roughly1,461 rows per admission query and4,690,285 daily rows read.
 - Source optimization adds two indexes without relaxing provider limits or deleting history.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#coordinator-optimization-and-security-widget-layout--14-october-2026).
 
-### Deployed customer rule; final month exposes token timing — 14 October 2026
+<a id="deployed-customer-rule-final-month-exposes-token-timing--14-october-2026"></a>
+
+### 3.140. Deployed customer rule; final month exposes token timing — 14 October 2026
 
 - PR27/source95df33c passed172 local unit/component tests and all three PR gates, merged as9d1d107, then passed all main gates and GitHub Cloudflare deployment.
 - Worker suite303 and live browser15 passed; user browser execution and paid/webhook acceptance remain separate.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#deployed-customer-rule-final-month-exposes-token-timing--14-october-2026).
 
-### Owner replaces customer 48-hour lead — 14 October 2026
+<a id="owner-replaces-customer-48-hour-lead--14-october-2026"></a>
+
+### 3.141. Owner replaces customer 48-hour lead — 14 October 2026
 
 - YS sets the latest business decision to 2.5 hours before session start and explicitly confirms it supersedes 48 hours.
 - Implementation shares 150 minutes across customer display and server checks; finite historical trials remain unchanged.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-replaces-customer-48-hour-lead--14-october-2026).
 
-### Homepage browser gate catches impossible-date display reads — 14 October 2026
+<a id="homepage-browser-gate-catches-impossible-date-display-reads--14-october-2026"></a>
+
+### 3.142. Homepage browser gate catches impossible-date display reads — 14 October 2026
 
 - CI38508429832 passed Worker boundaries and frontend browsers.
 - The expanded native homepage flight rejected two pre-Continue daily requests for today, while retaining the expected four calendar requests and one catalogue request.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#homepage-browser-gate-catches-impossible-date-display-reads--14-october-2026).
 
-### Homepage public metadata regression alignment — 14 October 2026
+<a id="homepage-public-metadata-regression-alignment--14-october-2026"></a>
+
+### 3.143. Homepage public metadata regression alignment — 14 October 2026
 
 - CI38507816042 rejected the old ongoing-access assertion that anonymous /api/catalogue returns401.
 - The authorized homepage contract now returns only public service metadata.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#homepage-public-metadata-regression-alignment--14-october-2026).
 
-### Owner refines homepage prefetch and loading presentation — 14 October 2026
+<a id="owner-refines-homepage-prefetch-and-loading-presentation--14-october-2026"></a>
+
+### 3.144. Owner refines homepage prefetch and loading presentation — 14 October 2026
 
 - While PR27 cold-cache CI ran, YS requested immediate homepage warming, no new cache request on guest/email entry, a larger centred spinning logo without visible status text, and a check of Details ordering.
 - Inspection found public months already start on homepage but member/service transitions could restart reads; session metadata was only fetched after entry.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-refines-homepage-prefetch-and-loading-presentation--14-october-2026).
 
-### Live prices verified; reproduce cold-prefetch expiry before repair — 14 October 2026
+<a id="live-prices-verified-reproduce-cold-prefetch-expiry-before-repair--14-october-2026"></a>
+
+### 3.145. Live prices verified; reproduce cold-prefetch expiry before repair — 14 October 2026
 
 - PR26 passed all PR/main gates and deployed46b3201/versiona42014f2-3171-401c-ba78-9ce1d3cf0d46 through successful GitHub run38504874365.
 - October public offers now validate at the intended two native service prices.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#live-prices-verified-reproduce-cold-prefetch-expiry-before-repair--14-october-2026).
 
-### Preserve two deployment findings and repair their owners — 14 October 2026
+<a id="preserve-two-deployment-findings-and-repair-their-owners--14-october-2026"></a>
+
+### 3.146. Preserve two deployment findings and repair their owners — 14 October 2026
 
 - PR25/source45655ab passed all three gates, merged asb8917b1, and all three main gates passed.
 - GitHub uploaded and activated Worker75b5c5d8 at10:51 Singapore, but its immediate health response still named36b84bd.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#preserve-two-deployment-findings-and-repair-their-owners--14-october-2026).
 
-### Complete browser cache, branded loading and dual native prices — 14 October 2026
+<a id="complete-browser-cache-branded-loading-and-dual-native-prices--14-october-2026"></a>
+
+### 3.147. Complete browser cache, branded loading and dual native prices — 14 October 2026
 
 - Owner requested immediate cached date/time selection, fresh validation at main Continue, SoccerBot spinning-logo loading throughout booking, and SGD88 weekday / SGD108 weekend/public-holiday native checkout.
 - Created premium service3 with the explicitly approved three providers.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#complete-browser-cache-branded-loading-and-dual-native-prices--14-october-2026).
 
-### Replace experiment closure with ordinary customer access — 14 October 2026
+<a id="replace-experiment-closure-with-ordinary-customer-access--14-october-2026"></a>
+
+### 3.148. Replace experiment closure with ordinary customer access — 14 October 2026
 
 - YS asked to remove automatic live-access closure, enable native checkout continuously and deploy from GitHub.
 - Clarified that private browsing resets browser state but shares the backend/cache and produces real booking/payment effects.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#replace-experiment-closure-with-ordinary-customer-access--14-october-2026).
 
-### Physical calendar inspection preparation — 14 October 2026
+<a id="physical-calendar-inspection-preparation--14-october-2026"></a>
+
+### 3.149. Physical calendar inspection preparation — 14 October 2026
 
 - Fresh Cloudflare settings confirm a39cee7 deployed, provider/delivery disabled, end0, ceiling704 and no public calendar window.
 - YS requested live access after observing unavailable session information.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#physical-calendar-inspection-preparation--14-october-2026).
 
-### Post-merge diagnostic assertion collision — 14 October 2026
+<a id="post-merge-diagnostic-assertion-collision--14-october-2026"></a>
+
+### 3.150. Post-merge diagnostic assertion collision — 14 October 2026
 
 - PR22 merged as4536186.
 - Main run38476420076 passed frontend, live-email and Pages deployment, but backend passed294/295 Worker cases: the privacy assertion's unanchored2099 marker matched the generated correlation UUID, not leaked provider data.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#post-merge-diagnostic-assertion-collision--14-october-2026).
 
-### Protected reload readiness — 14 October 2026
+<a id="protected-reload-readiness--14-october-2026"></a>
+
+### 3.151. Protected reload readiness — 14 October 2026
 
 - CI run38444619826 passed backend and live-email, including the repaired native guest journey on all three browser projects and295 Worker cases.
 - Frontend passed165 unit/component cases and68 browser cases; one phone-WebKit synthetic reload assertion expired while its protected checkout read was still pending.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#protected-reload-readiness--14-october-2026).
 
-### WebKit exposed a calendar clock race — 14 October 2026
+<a id="webkit-exposed-a-calendar-clock-race--14-october-2026"></a>
+
+### 3.152. WebKit exposed a calendar clock race — 14 October 2026
 
 - CI run38442449150 passed frontend and all295 live Worker cases, but the live guest journey timed out on phone/tablet WebKit clicking a disabled known-available date.
 - The provider receipt was newer than BookingProvider's minute-based display clock, so the freshness upper bound rejected it until the next minute.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#webkit-exposed-a-calendar-clock-race--14-october-2026).
 
-### Final local checks and inventory correction — 14 October 2026
+<a id="final-local-checks-and-inventory-correction--14-october-2026"></a>
+
+### 3.153. Final local checks and inventory correction — 14 October 2026
 
 - Full website non-browser verification passed with164 unit/component cases, production build and export checks.
 - All295 Worker cases passed with zero failures/skips, but the verification wrapper correctly rejected the reviewed inventory because its file ordering differed from Node execution ordering.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#final-local-checks-and-inventory-correction--14-october-2026).
 
-### Finish pending code and deploy — 14 October 2026
+<a id="finish-pending-code-and-deploy--14-october-2026"></a>
+
+### 3.154. Finish pending code and deploy — 14 October 2026
 
 - YS requested completion and deployment.
 - Refreshed PR22/local b2862e0 and retained preceding changes.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#finish-pending-code-and-deploy--14-october-2026).
 
-### Interface-first North Star and calendar cache — 14 October 2026
+<a id="interface-first-north-star-and-calendar-cache--14-october-2026"></a>
+
+### 3.155. Interface-first North Star and calendar cache — 14 October 2026
 
 - YS requested a North Star making the live interface1:1 with demo first, retaining Turnstile and security additions, and explicitly removed trainer priority.
 - YS then requested shared prefetch up to four months and updating both view/cache after failed selection.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#interface-first-north-star-and-calendar-cache--14-october-2026).
 
-### Owner rejects homepage detour; readiness checked — 14 October 2026
+<a id="owner-rejects-homepage-detour-readiness-checked--14-october-2026"></a>
+
+### 3.156. Owner rejects homepage detour; readiness checked — 14 October 2026
 
 - Owner clarified that customers must not open SimplyBook homepage and asked whether the website is ready.
 - Inspected local HEAD/status and relevant source: b2862e0, documentation-only modifications, unchanged direct checkout anchor and no browser initialization candidate.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-rejects-homepage-detour-readiness-checked--14-october-2026).
 
-### Invoice34 body and fuller journey proposal — 14 October 2026
+<a id="invoice34-body-and-fuller-journey-proposal--14-october-2026"></a>
+
+### 3.157. Invoice34 body and fuller journey proposal — 14 October 2026
 
 - Owner supplied actual invoice-details body linking34 to confirmed booking43 for SGD88, not released by timeout, but with status paid / payment_received false / processor delay / null payment date.
 - Recorded safe projection; no payment acceptance inferred.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#invoice34-body-and-fuller-journey-proposal--14-october-2026).
 
-### Homepage-first checkout34 rendered after displayed due time — 14 October 2026
+<a id="homepage-first-checkout34-rendered-after-displayed-due-time--14-october-2026"></a>
+
+### 3.158. Homepage-first checkout34 rendered after displayed due time — 14 October 2026
 
 - Owner reports loading the public homepage, then opening the original reference34 link exactly once in this trial at00:09 Singapore on14October.
 - Supplied screenshot shows checkout with HitPay option,Payment pending,Pay later,$88,Kickoff Special15October19:00,created13October17:48 and due13October18:18.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#homepage-first-checkout34-rendered-after-displayed-due-time--14-october-2026).
 
-### Broader community research: related precedents, no exact verified fix — 13 October 2026
+<a id="broader-community-research-related-precedents-no-exact-verified-fix--13-october-2026"></a>
+
+### 3.159. Broader community research: related precedents, no exact verified fix — 13 October 2026
 
 - YS requested looking beyond documentation.
 - Searched WordPress support, Reddit, Stack Overflow, GitHub, runtime issue trackers, general web and provider user reports.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#broader-community-research-related-precedents-no-exact-verified-fix--13-october-2026).
 
-### Existing-evidence diagnosis replaces repeated checkout experiments — 13 October 2026
+<a id="existing-evidence-diagnosis-replaces-repeated-checkout-experiments--13-october-2026"></a>
+
+### 3.160. Existing-evidence diagnosis replaces repeated checkout experiments — 13 October 2026
 
 - YS challenged repeated403 tests and authorized analysis of retained evidence instead.
 - Compared six exact b2862e0 source owners and public provider/HTTP documentation; app link flow matches documented generate-and-redirect contract.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#existing-evidence-diagnosis-replaces-repeated-checkout-experiments--13-october-2026).
 
-### Same original reference34 link reaches both checkout and e403 — 13 October 2026
+<a id="same-original-reference34-link-reaches-both-checkout-and-e403--13-october-2026"></a>
+
+### 3.161. Same original reference34 link reaches both checkout and e403 — 13 October 2026
 
 - Owner confirms pasting the same provider-issued /v2/client/pay-later/id/{id}/hash/{token} entry link.
 - Success redirects to #invoice/pay/{id}/direct-link/1; failure redirects to #error/e403.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#same-original-reference34-link-reaches-both-checkout-and-e403--13-october-2026).
 
-### Native checkout34 reached intermittently with30-minute window — 13 October 2026
+<a id="native-checkout34-reached-intermittently-with30-minute-window--13-october-2026"></a>
+
+### 3.162. Native checkout34 reached intermittently with30-minute window — 13 October 2026
 
 - Owner requested one more native test opening immediately, proposed a temporary payment timeout30 minutes, and reported the change complete.
 - Manual protocole208ef1793fe bounded one new booking/link/navigation, existing automatic test notifications, no payment or retry, and restoration to10 minutes.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-checkout34-reached-intermittently-with30-minute-window--13-october-2026).
 
-### Native invoice33 exists; displayed due time confounds the control — 13 October 2026
+<a id="native-invoice33-exists-displayed-due-time-confounds-the-control--13-october-2026"></a>
+
+### 3.163. Native invoice33 exists; displayed due time confounds the control — 13 October 2026
 
 - Owner supplied SimplyBook invoice detail #O-0000033: Pending payment / Pending(Pay Later), created13October17:02, due13October17:12, matching existing test client, Kickoff Special15October18:00,quantity1,SGD88,tax0.
 - This establishes the SimplyBook invoice/order exists despite SBPay showing no related invoice document.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-invoice33-exists-displayed-due-time-confounds-the-control--13-october-2026).
 
-### SBPay transaction33 explicitly has no related invoice document — 13 October 2026
+<a id="sbpay-transaction33-explicitly-has-no-related-invoice-document--13-october-2026"></a>
+
+### 3.164. SBPay transaction33 explicitly has no related invoice document — 13 October 2026
 
 - Owner supplied transaction33 detail and status-log screenshots: Pending Pay later,SGD88, existing test customer39; booking line Kickoff Special15October18:00,quantity1, with Nabil tag.
 - Created and last changed both display13October17:02.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#sbpay-transaction33-explicitly-has-no-related-invoice-document--13-october-2026).
 
-### Native control exact error and post-failure pending state — 13 October 2026
+<a id="native-control-exact-error-and-post-failure-pending-state--13-october-2026"></a>
+
+### 3.165. Native control exact error and post-failure pending state — 13 October 2026
 
 - Owner supplied the exact reference33 response {"error":"Access denied","data":[]} and confirmed payment remains Pending after the403.
 - This matches the earlier invoice32 error; no visible timeout cancellation explains the current control, though pending alone does not prove every link/session authority remains valid.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-control-exact-error-and-post-failure-pending-state--13-october-2026).
 
-### Native emailed link reproduces invoice-details403 with cookies sent — 13 October 2026
+<a id="native-emailed-link-reproduces-invoice-details403-with-cookies-sent--13-october-2026"></a>
+
+### 3.166. Native emailed link reproduces invoice-details403 with cookies sent — 13 October 2026
 
 - Owner approved successor manual packetb750ac59776c to open existing payment reference33 email link once after reporting it still pending and previously unopened.
 - No new booking/link or Worker action.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-emailed-link-reproduces-invoice-details403-with-cookies-sent--13-october-2026).
 
-### Native dashboard Pay Later link issued; navigation stopped — 13 October 2026
+<a id="native-dashboard-pay-later-link-issued-navigation-stopped--13-october-2026"></a>
+
+### 3.167. Native dashboard Pay Later link issued; navigation stopped — 13 October 2026
 
 - Owner approved sealed manual packet36f2efe5b74a for one existing-test-client/Nabil/Kickoff Special booking on15October18:00–18:50, leaving the displayed50-minute interval unchanged as a native-path control, not app40-minute acceptance.
 - Pending (Pay Later) was selected.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-dashboard-pay-later-link-issued-navigation-stopped--13-october-2026).
 
-### Ten-minute payment timeout compared with original failure — 13 October 2026
+<a id="ten-minute-payment-timeout-compared-with-original-failure--13-october-2026"></a>
+
+### 3.168. Ten-minute payment timeout compared with original failure — 13 October 2026
 
 - Owner reports the payment timeout is10 minutes.
 - Invoice32 dashboard creation is15:41 Singapore (minute precision); retained handoff occurred15:41:32 and the owner failure report was received15:43:33.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#ten-minute-payment-timeout-compared-with-original-failure--13-october-2026).
 
-### Invoice 32 now cancelled by timeout — 13 October 2026
+<a id="invoice-32-now-cancelled-by-timeout--13-october-2026"></a>
+
+### 3.169. Invoice 32 now cancelled by timeout — 13 October 2026
 
 - Owner dashboard screenshot shows invoice #O-00000032, SGD88, created 13 October 15:41, item 15 October 16:30, payment status “Cancelled by timeout” and no payment received shown.
 - Rows31 and30 visibly show the same status.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#invoice-32-now-cancelled-by-timeout--13-october-2026).
 
-### Owner allowance snapshot and closed browser log — 13 October 2026
+<a id="owner-allowance-snapshot-and-closed-browser-log--13-october-2026"></a>
+
+### 3.170. Owner allowance snapshot and closed browser log — 13 October 2026
 
 - YS reported the original Network log closed, leaving native cookie/session handling unverified.
 - Later supplied account valid until19October2026,6 days displayed,9 bookings remaining and0 SMS/WhatsApp/AI booking credits; blank custom-feature allowance recorded as unknown.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-allowance-snapshot-and-closed-browser-log--13-october-2026).
 
-### Invoice403 authorization traced against source and public contract — 13 October 2026
+<a id="invoice403-authorization-traced-against-source-and-public-contract--13-october-2026"></a>
+
+### 3.171. Invoice403 authorization traced against source and public contract — 13 October 2026
 
 - YS authorized investigation after supplying GET invoice-details403 and Access denied.
 - Verified five exact b2862e0 source owners and the private handoff shape without publishing its hash.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#invoice403-authorization-traced-against-source-and-public-contract--13-october-2026).
 
-### Fresh native link isolates a403 invoice-access failure — 13 October 2026
+<a id="fresh-native-link-isolates-a403-invoice-access-failure--13-october-2026"></a>
+
+### 3.172. Fresh native link isolates a403 invoice-access failure — 13 October 2026
 
 - After YS requested the next step, prepared b78955c40c72 using the same exact tested b2862e0 artifact and current25-migration state.
 - A new complete-history SELECT consumed1 management request, bringing the carried count532.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#fresh-native-link-isolates-a403-invoice-access-failure--13-october-2026).
 
-### Checkout-opening diagnostic stopped at availability — 13 October 2026
+<a id="checkout-opening-diagnostic-stopped-at-availability--13-october-2026"></a>
+
+### 3.173. Checkout-opening diagnostic stopped at availability — 13 October 2026
 
 - YS chose desktop Chrome/Edge and approved sealed ae8d4e8ba18b once.
 - CI38360169797 passed frontend/backend/live-email on b2862e0; exact artifact11795270145 and287 Worker tests verified.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-opening-diagnostic-stopped-at-availability--13-october-2026).
 
-### Checkout-only diagnostic source prerequisite — 13 October 2026
+<a id="checkout-only-diagnostic-source-prerequisite--13-october-2026"></a>
+
+### 3.174. Checkout-only diagnostic source prerequisite — 13 October 2026
 
 - YS authorized proceeding with the next fresh checkout-opening diagnostic.
 - Preparation found native_checkout_grants still capped624 while carried usage is618, so even the32-call availability admission cannot proceed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-only-diagnostic-source-prerequisite--13-october-2026).
 
-### Owner readback narrows checkout investigation — 13 October 2026
+<a id="owner-readback-narrows-checkout-investigation--13-october-2026"></a>
+
+### 3.175. Owner readback narrows checkout investigation — 13 October 2026
 
 - YS answered: “1.
 - Yes 2.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-readback-narrows-checkout-investigation--13-october-2026).
 
-### Native settings checked through the connected account — 13 October 2026
+<a id="native-settings-checked-through-the-connected-account--13-october-2026"></a>
+
+### 3.176. Native settings checked through the connected account — 13 October 2026
 
 - After YS authorized the next read-only step, verified the connector company matches configured developer identity, then read Accept Payments and the complete90-feature list.
 - Accept Payments is enabled/configured;
@@ -1686,648 +3027,840 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-settings-checked-through-the-connected-account--13-october-2026).
 
-### Read-only checkout diagnosis — 13 October 2026
+<a id="read-only-checkout-diagnosis--13-october-2026"></a>
+
+### 3.177. Read-only checkout diagnosis — 13 October 2026
 
 - YS requested diagnosis after confirming the link came directly from SimplyBook.
 - Local/remote branch heads remainadd9cc2; retained outcome documentation is uncommitted.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#read-only-checkout-diagnosis--13-october-2026).
 
-### Owner payment flight reached an immediate checkout 404 — 13 October 2026
+<a id="owner-payment-flight-reached-an-immediate-checkout-404--13-october-2026"></a>
+
+### 3.178. Owner payment flight reached an immediate checkout 404 — 13 October 2026
 
 - YS approved packet301173108ab6 and the finite amended budgets.
 - Exact-source CI38355111288 passed all three gates onadd9cc2, artifact11792912177 verified151 sealed files/287 Worker tests.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-payment-flight-reached-an-immediate-checkout-404--13-october-2026).
 
-### Checkout verification selected; finite budget source prepared — 13 October 2026
+<a id="checkout-verification-selected-finite-budget-source-prepared--13-october-2026"></a>
+
+### 3.179. Checkout verification selected; finite budget source prepared — 13 October 2026
 
 - YS says "verify on checkout", removing the dashboard-name lookup dependency.
 - Added explicit704 policy support because the proposed80-call payment/capture flight cannot fit the remaining57 ordinary calls under640.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-verification-selected-finite-budget-source-prepared--13-october-2026).
 
-### Owner requests payment before further webhook investigation — 13 October 2026
+<a id="owner-requests-payment-before-further-webhook-investigation--13-october-2026"></a>
+
+### 3.180. Owner requests payment before further webhook investigation — 13 October 2026
 
 - YS reports that SimplyBook provides no developer support, asks to test payment first, and suggests payment-link completion may activate callbacks.
 - YS explicitly agrees to prepare an owner-operated payment test.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-requests-payment-before-further-webhook-investigation--13-october-2026).
 
-### Paired-control ingress investigation completed — 13 October 2026
+<a id="paired-control-ingress-investigation-completed--13-october-2026"></a>
+
+### 3.181. Paired-control ingress investigation completed — 13 October 2026
 
 - Following YS's “ok lets do that”, used a bounded five-request maximum read-only inspection; four management requests were consumed.
 - The first callback-prefix query returned zero events through 12:31:07 Singapore.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#paired-control-ingress-investigation-completed--13-october-2026).
 
-### Paired control executed; no signed receipts on either channel — 13 October 2026
+<a id="paired-control-executed-no-signed-receipts-on-either-channel--13-october-2026"></a>
+
+### 3.182. Paired control executed; no signed receipts on either channel — 13 October 2026
 
 - Retained preparation failures: packet221ce3fe2188 stopped before live mutation because its expected subscription fingerprint came from a prior preservation subset with two rows, omitting that prior flight's own closed third record.
 - A read-only closure proved all23 historical tables unchanged.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#paired-control-executed-no-signed-receipts-on-either-channel--13-october-2026).
 
-### Paired webhook control preparation — 13 October 2026
+<a id="paired-webhook-control-preparation--13-october-2026"></a>
+
+### 3.183. Paired webhook control preparation — 13 October 2026
 
 - After the owner said “ok do it”, implemented separate fixed capture routes for booking and invoice notifications.
 - Structural-only capture cannot safely infer event identity, so immutable per-window scope metadata isolates the diagnostic channels without storing payload values.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#paired-webhook-control-preparation--13-october-2026).
 
-### Deeper diagnosis identified an unproven event prerequisite — 13 October 2026
+<a id="deeper-diagnosis-identified-an-unproven-event-prerequisite--13-october-2026"></a>
+
+### 3.184. Deeper diagnosis identified an unproven event prerequisite — 13 October 2026
 
 - YS requested looking deeper.
 - Rechecked the exact subscription destination/event proof and fixed-origin routing, extended stored-log search through10:44:54 Singapore, read Cloudflare Access/subdomain configuration and retained subscription2's closed local reference.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#deeper-diagnosis-identified-an-unproven-event-prerequisite--13-october-2026).
 
-### Read-only delivery diagnosis completed — 13 October 2026
+<a id="read-only-delivery-diagnosis-completed--13-october-2026"></a>
+
+### 3.185. Read-only delivery diagnosis completed — 13 October 2026
 
 - After YS said “ok determine”, compared stored developer HTTP telemetry with the sealed test's request IDs.
 - All 14 expected operator requests matched correlation ID and status; all returned events were untruncated.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#read-only-delivery-diagnosis-completed--13-october-2026).
 
-### Live acknowledgement fix accepted; no signed receipt at observation — 13 October 2026
+<a id="live-acknowledgement-fix-accepted-no-signed-receipt-at-observation--13-october-2026"></a>
+
+### 3.186. Live acknowledgement fix accepted; no signed receipt at observation — 13 October 2026
 
 - YS approved packet7ec56094976f and amended limits.
 - Exact-source CI and the282-test artifact were verified before execution.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#live-acknowledgement-fix-accepted-no-signed-receipt-at-observation--13-october-2026).
 
-### DELETE acknowledgement regression and repair — 13 October 2026
+<a id="delete-acknowledgement-regression-and-repair--13-october-2026"></a>
+
+### 3.187. DELETE acknowledgement regression and repair — 13 October 2026
 
 - YS requested resolving response handling and another acceptance test after the empty active list was verified.
 - Official webhook documentation describes DELETE and active-list semantics without prescribing the DELETE body.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#delete-acknowledgement-regression-and-repair--13-october-2026).
 
-### Empty active list confirmed after unknown DELETE — 13 October 2026
+<a id="empty-active-list-confirmed-after-unknown-delete--13-october-2026"></a>
+
+### 3.188. Empty active list confirmed after unknown DELETE — 13 October 2026
 
 - After clarifying that subscription DELETE does not cancel a booking, YS requested the read-only check and approved the one-extra-deployment amendment31→32.
 - Packet1089bf8b452a reused tested source1e6bfbe and executed one authenticated active-list read.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#empty-active-list-confirmed-after-unknown-delete--13-october-2026).
 
-### Cleanup crossed the parser guard and stopped at DELETE response — 13 October 2026
+<a id="cleanup-crossed-the-parser-guard-and-stopped-at-delete-response--13-october-2026"></a>
+
+### 3.189. Cleanup crossed the parser guard and stopped at DELETE response — 13 October 2026
 
 - YS approved packet10c62a001eea with amended limits, then asked for status.
 - The packet executed once on CI-passing source1e6bfbe.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#cleanup-crossed-the-parser-guard-and-stopped-at-delete-response--13-october-2026).
 
-### Subscription flag mismatch repaired in its owner — 13 October 2026
+<a id="subscription-flag-mismatch-repaired-in-its-owner--13-october-2026"></a>
+
+### 3.190. Subscription flag mismatch repaired in its owner — 13 October 2026
 
 - YS requested “ok fix” after the read-only diagnostic.
 - A new lifecycle regression with string flags failed on the prior numeric-only parser with `webhook_subscription_proof_incomplete`; the private failing receipt is retained.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#subscription-flag-mismatch-repaired-in-its-owner--13-october-2026).
 
-### Actual subscription string mismatch observed — 13 October 2026
+<a id="actual-subscription-string-mismatch-observed--13-october-2026"></a>
+
+### 3.191. Actual subscription string mismatch observed — 13 October 2026
 
 - After YS approved packet46b93ebc17fa7, its exact CI-passing source27f03fc executed one active-subscription read.
 - Five physical calls advanced455→460.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#actual-subscription-string-mismatch-observed--13-october-2026).
 
-### Webhook flight stopped; access closed, subscription unresolved — 13 October 2026
+<a id="webhook-flight-stopped-access-closed-subscription-unresolved--13-october-2026"></a>
+
+### 3.192. Webhook flight stopped; access closed, subscription unresolved — 13 October 2026
 
 - Packet `b918a81d06e991549f9d67e449098bf87e8109bc9ea6affc98d69d7773d06a99` executed once under the approved campaign on source `f2e0a3e91824f569a161f29447471d5081259719`.
 - All three gates passed in CI38313369930; artifact11776470322/SHA256 `ed0207005a4ce1a38bc3f8c9302e05895be968d9afbeddf40a05d5725c3d1e14` matched150 sealed files and273 strict Worker tests.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#webhook-flight-stopped-access-closed-subscription-unresolved--13-october-2026).
 
-### Approved technical payment/webhook campaign — 13 October 2026
+<a id="approved-technical-paymentwebhook-campaign--13-october-2026"></a>
+
+### 3.193. Approved technical payment/webhook campaign — 13 October 2026
 
 - Current subscription increment: all273 Worker runtime tests passed with zero failures/skips and no external provider calls; generated types, source/policy guards, affected lint and checker regressions passed.
 - The packaged release now verifies preservation through pending0022/0023.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#approved-technical-paymentwebhook-campaign--13-october-2026).
 
-### Subscription source verification — 13 October 2026
+<a id="subscription-source-verification--13-october-2026"></a>
+
+### 3.194. Subscription source verification — 13 October 2026
 
 - The first focused run retained six passing and two failed subscription cases: immediate create-to-cleanup transition hit the existing four-per-second account limiter because each operation initialized pacing at zero.
 - Initialize each bounded operation's first admission at the current time, preserving the300ms physical-request spacing across the boundary.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#subscription-source-verification--13-october-2026).
 
-### Payment/webhook investigation and first repair — 13 October 2026
+<a id="paymentwebhook-investigation-and-first-repair--13-october-2026"></a>
+
+### 3.195. Payment/webhook investigation and first repair — 13 October 2026
 
 - YS approved merging PR21 because of its size.
 - It merged as383cc2e at00:17:30Singapore; main CI38276366243 passed frontend/backend/live-email and demo deployment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#paymentwebhook-investigation-and-first-repair--13-october-2026).
 
-### Developer native booking accepted and independently closed — 13 October 2026
+<a id="developer-native-booking-accepted-and-independently-closed--13-october-2026"></a>
+
+### 3.196. Developer native booking accepted and independently closed — 13 October 2026
 
 - Packet `217dfd4e4df2` executed once after YS approved the exact packet and amended resource limits.
 - Source `8bd66c1` passed all three CI gates in run `38273011816`; artifact `11758121123` matched 148 sealed files, 257 Worker tests and all 21 immutable migrations.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#developer-native-booking-accepted-and-independently-closed--13-october-2026).
 
-### Owner roster and instructor priority — 12 October 2026
+<a id="owner-roster-and-instructor-priority--12-october-2026"></a>
+
+### 3.197. Owner roster and instructor priority — 12 October 2026
 
 - YS supplied the October 2026 roster and explicitly set instructor priority **Faisal → Caelan → Nabil** when multiple instructors are available.
 - Apply priority only among instructors eligible and freshly available for the entire selected session; do not replace an unavailable preferred instructor with an unverified one.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-roster-and-instructor-priority--12-october-2026).
 
-### Approved setup inspection completed and closed — 12 October 2026
+<a id="approved-setup-inspection-completed-and-closed--12-october-2026"></a>
+
+### 3.198. Approved setup inspection completed and closed — 12 October 2026
 
 - Packet `87a458a946d513e8e466dcf52f1f0cc9888d7bdf313cd1c0b347224bec94f87e` consumed the explicitly approved read-only scope on source `3af1323eda250b29f2bd95e2583d5dc49cbe161b`.
 - Company, service 2, instructor 3 and combined working-hour reads all returned 15 October 09:00–21:00 Singapore and an empty interval list for 16 October.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#approved-setup-inspection-completed-and-closed--12-october-2026).
 
-### Full native acceptance execution resumed — 12 October2026
+<a id="full-native-acceptance-execution-resumed--12-october2026"></a>
+
+### 3.199. Full native acceptance execution resumed — 12 October2026
 
 - YS instructed “execute it now” against the consolidated full native acceptance draft.
 - Continue technical implementation, evidence-backed discovery preparation, tests and PR21 publication.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#full-native-acceptance-execution-resumed--12-october2026).
 
-### Native campaign stopped on actual date availability — 12 October2026
+<a id="native-campaign-stopped-on-actual-date-availability--12-october2026"></a>
+
+### 3.200. Native campaign stopped on actual date availability — 12 October2026
 
 - Sealed packet3f6019db7880 ran sourcee122ba5 after all-three CI38236452119/artifact11740802365 passed.
 - The authenticated15–29October calendar returned14 start times on15October and no other offered date.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-campaign-stopped-on-actual-date-availability--12-october2026).
 
-### Actual calendar discovery before the final native gate — 12 October2026
+<a id="actual-calendar-discovery-before-the-final-native-gate--12-october2026"></a>
+
+### 3.201. Actual calendar discovery before the final native gate — 12 October2026
 
 - Flight4 accepted single booking35/invoice27; its independent22October availability probe returned zero offers.
 - Two Cloudflare settings GET timeouts during closure were both charged as unknown management reads.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#actual-calendar-discovery-before-the-final-native-gate--12-october2026).
 
-### Native single proof accepted and closed — 12 October2026
+<a id="native-single-proof-accepted-and-closed--12-october2026"></a>
+
+### 3.202. Native single proof accepted and closed — 12 October2026
 
 - Flight4 consumed packet50e2a1263ac7 on24153c3, all-three CI38232933900/artifact11740055253. single proof at15 October 14:00Singapore: bookings35, invoice27, 1 signed confirmed booking reads, authoritative unpaid invoice, SGD88/tax0 and one native link retained unopened.
 - Attempt375bbc00-297f-43fd-9671-2b0961aa5979 is observed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-single-proof-accepted-and-closed--12-october2026).
 
-### Availability-only stop and actual-attempt accounting — 12 October2026
+<a id="availability-only-stop-and-actual-attempt-accounting--12-october2026"></a>
+
+### 3.203. Availability-only stop and actual-attempt accounting — 12 October2026
 
 - Flight3 consumed packet8e6824f42e2b on ee2853a (all-three CI38230887077/artifact11739086074).16October returned zero offers.
 - The grant cache and request ledger prove no prepare/native POST, no attempt and no booking dispatch.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#availability-only-stop-and-actual-attempt-accounting--12-october2026).
 
-### 12 October — same-date native checkout accepted
+<a id="12-october--same-date-native-checkout-accepted"></a>
+
+### 3.204. 12 October — same-date native checkout accepted
 
 - Flight2 used exact-source6ac6165 from all-green CI38229148061/artifact11737163517 under sealed packet5eb211c4ac62.
 - New15October12:20/13:10Singapore selections completed batch7/bookings33/34 and invoice26.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october--same-date-native-checkout-accepted).
 
-### 12 October — first autonomous flight reaches batch closure
+<a id="12-october--first-autonomous-flight-reaches-batch-closure"></a>
+
+### 3.205. 12 October — first autonomous flight reaches batch closure
 
 - The exact-source a206106 artifact passed all three CI38226503628 gates.
 - Sealed packet dea4fe21baae ran once under YS's bounded campaign approval, applied0021 preserving history, and selected15October10:40/11:30Singapore.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october--first-autonomous-flight-reaches-batch-closure).
 
-### Owner requests execution to native acceptance — 12 October2026
+<a id="owner-requests-execution-to-native-acceptance--12-october2026"></a>
+
+### 3.206. Owner requests execution to native acceptance — 12 October2026
 
 - Current public book-response prose permits multi-entry batch responses; the accompanying recurring example does not supply aliases or a membership rule.
 - A reproduced synthetic cumulative response failed on old code at the observed creation.bookings/mismatch.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-requests-execution-to-native-acceptance--12-october2026).
 
-### Approved live trial reaches the second book — 12 October2026
+<a id="approved-live-trial-reaches-the-second-book--12-october2026"></a>
+
+### 3.207. Approved live trial reaches the second book — 12 October2026
 
 - YS approved exact packet c0916326b895 after the limits amendment and final-source CI.
 - Artifact11735290126 bound6bc54f7,147 sealed files and241 passing Worker cases.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#approved-live-trial-reaches-the-second-book--12-october2026).
 
-### Live test requested; amended limits approved — 12 October2026
+<a id="live-test-requested-amended-limits-approved--12-october2026"></a>
+
+### 3.208. Live test requested; amended limits approved — 12 October2026
 
 - After the batch-association correction passed all three final-source CI38220464328 gates, YS requested live testing.
 - The carried196/224 ledger leaves12 ordinary calls and cannot admit normal availability/checkout.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#live-test-requested-amended-limits-approved--12-october2026).
 
-### 12 October2026 — local experiment for missing batch echo
+<a id="12-october2026--local-experiment-for-missing-batch-echo"></a>
+
+### 3.209. 12 October2026 — local experiment for missing batch echo
 
 - YS requested “start experiment” after the approved follow-up identified creation.batch_id/missing.
 - Refreshed current6759773/PR21 and canonical evidence.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october2026--local-experiment-for-missing-batch-echo).
 
-### 12 October2026 — approved follow-up reached batch membership validation
+<a id="12-october2026--approved-follow-up-reached-batch-membership-validation"></a>
+
+### 3.210. 12 October2026 — approved follow-up reached batch membership validation
 
 - YS approved sealed packet a14dfea95559506c2a78c664d9436a22e29cfd38587a355399b5ab1139f27c4e with “approved, go”.
 - Executed exact4671f3791560f9a7d09ba87de1643130a8267b69 after all three CI38217379501 gates passed and live-email artifact11732905946/archive2f0215674d0abe1085521e7bafead7e9cadbf026dd1304238b6ed4873afedf47 verified146 sealed files.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october2026--approved-follow-up-reached-batch-membership-validation).
 
-### 12 October2026 — prepare owner-requested follow-up experiment
+<a id="12-october2026--prepare-owner-requested-follow-up-experiment"></a>
+
+### 3.211. 12 October2026 — prepare owner-requested follow-up experiment
 
 - YS requested another experiment after the precise require_payment correction and all three final-source CI38216192722 gates passed.
 - Checked local/remote d21e2b8 and the private independent closure receipt.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october2026--prepare-owner-requested-follow-up-experiment).
 
-### 12 October2026 — exact approved diagnostic found the first failing field
+<a id="12-october2026--exact-approved-diagnostic-found-the-first-failing-field"></a>
+
+### 3.212. 12 October2026 — exact approved diagnostic found the first failing field
 
 - YS approved sealed packet5a170ff0d98c54ff012d4980d8138942238afc9e0db1e61dd55bf717e30b82c7 with “approve go”.
 - Executed exact source47b37dbb46480e66e17cfa763bb2acff1ea2b574 after all three CI38213290654 gates passed and artifact11729658054 verified145 sealed files (archive SHA2567f8b9247c1a30081b70e99ccac078d8c79eaf5bef9cfd5b03d66c5c1181a4967).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october2026--exact-approved-diagnostic-found-the-first-failing-field).
 
-### 12 October 2026 — audit the intermediate creation contract before a new proof
+<a id="12-october-2026--audit-the-intermediate-creation-contract-before-a-new-proof"></a>
+
+### 3.213. 12 October 2026 — audit the intermediate creation contract before a new proof
 
 - YS requested all three proposed steps: inspect official contract/examples, compare every consumed field, correct demonstrated mismatches with tests, and prepare a bounded diagnostic proof if documentation remains incomplete.
 - Reviewed the public wiki's actual response-example section, current API index and provider staff batch/client-signature guidance.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october-2026--audit-the-intermediate-creation-contract-before-a-new-proof).
 
-### 12 October 2026 — actual retained-booking read passed all independent predicates
+<a id="12-october-2026--actual-retained-booking-read-passed-all-independent-predicates"></a>
+
+### 3.214. 12 October 2026 — actual retained-booking read passed all independent predicates
 
 - Owner approved packet120046b5 with “Approve, go”.
 - Preflight corroborated the handover closed version,125/192/active0,18 applied migrations and exact retained key/session custody.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october-2026--actual-retained-booking-read-passed-all-independent-predicates).
 
-### 12 October 2026 — owner requests a real format read
+<a id="12-october-2026--owner-requests-a-real-format-read"></a>
+
+### 3.215. 12 October 2026 — owner requests a real format read
 
 - YS challenged continuing from guessed response semantics and requested a current read checked against all applicable fields.
 - The preceding private-diagnostics source a9ecf38 passed all three CI38207930497 jobs.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october-2026--owner-requests-a-real-format-read).
 
-### 12 October 2026 — diagnose the failed192 checkout without another booking trial
+<a id="12-october-2026--diagnose-the-failed192-checkout-without-another-booking-trial"></a>
+
+### 3.216. 12 October 2026 — diagnose the failed192 checkout without another booking trial
 
 - Owner handover reports the approved exact192 packet executed from5dacab5, applied0018 with historical preservation, passed readiness/availability/immutable preparation and retained one batch/booking.
 - Integration validation stopped at book/session0 with native_representation_unverified and125 cumulative provider calls after independent cleanup reads.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october-2026--diagnose-the-failed192-checkout-without-another-booking-trial).
 
-### 12 October 2026 — owner-approved192 preparation after budget preflight
+<a id="12-october-2026--owner-approved192-preparation-after-budget-preflight"></a>
+
+### 3.217. 12 October 2026 — owner-approved192 preparation after budget preflight
 
 - Cart lifecycle source9843246 passed all three CI38201415046 gates and229 local Worker tests.
 - User requested the live checkout proof.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#12-october-2026--owner-approved192-preparation-after-budget-preflight).
 
-### Owner corrected unfinished-cart interpretation — 12 October 2026
+<a id="owner-corrected-unfinished-cart-interpretation--12-october-2026"></a>
+
+### 3.218. Owner corrected unfinished-cart interpretation — 12 October 2026
 
 - The approved residual-only pass installed the verified source, passed readiness and read the retained booking.
 - No invoice reference was present.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-corrected-unfinished-cart-interpretation--12-october-2026).
 
-### Corrected identity proof retained a partial booking — 12 October 2026
+<a id="corrected-identity-proof-retained-a-partial-booking--12-october-2026"></a>
+
+### 3.219. Corrected identity proof retained a partial booking — 12 October 2026
 
 - Exact-source CI for6e845cb passed all three gates after the preview diagnostic correction.
 - Its approved developer proof passed baseline/active readiness, availability and immutable preparation, then returned recovery_required.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#corrected-identity-proof-retained-a-partial-booking--12-october-2026).
 
-### Preview failure reporting during identity-fix CI — 12 October 2026
+<a id="preview-failure-reporting-during-identity-fix-ci--12-october-2026"></a>
+
+### 3.220. Preview failure reporting during identity-fix CI — 12 October 2026
 
 - The corrected identity source passed backend and live-email CI, including224 Worker cases and their browser/release gates.
 - Frontend passed68/69 browser cases; one tablet synthetic checkout received HTML404 instead of200.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#preview-failure-reporting-during-identity-fix-ci--12-october-2026).
 
-### Idle readiness passed; identity expiry reproduced and repaired — 12 October 2026
+<a id="idle-readiness-passed-identity-expiry-reproduced-and-repaired--12-october-2026"></a>
+
+### 3.221. Idle readiness passed; identity expiry reproduced and repaired — 12 October 2026
 
 - The exact approved idle-lifecycle experiment passed baseline, activation and closure readiness.
 - Availability and immutable preparation succeeded; native checkout stopped before effects at provider_identity_expired while reading catalogue instructors for the second session.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#idle-readiness-passed-identity-expiry-reproduced-and-repaired--12-october-2026).
 
-### Configuration mismatch isolated; owner requests a controlled fix — 12 October 2026
+<a id="configuration-mismatch-isolated-owner-requests-a-controlled-fix--12-october-2026"></a>
+
+### 3.222. Configuration mismatch isolated; owner requests a controlled fix — 12 October 2026
 
 - The latest finite proof confirmed Worker activation while protected coordinator readiness retained the previous disabled configuration.
 - All bounded observations agreed; execution stopped before native authority, provider calls or bookings, then verified closure.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#configuration-mismatch-isolated-owner-requests-a-controlled-fix--12-october-2026).
 
-### Approved128 proof closed before provider dispatch — 12 October 2026
+<a id="approved128-proof-closed-before-provider-dispatch--12-october-2026"></a>
+
+### 3.223. Approved128 proof closed before provider dispatch — 12 October 2026
 
 - YS approved the exact finite packet.
 - It applied0017 while preserving all historical rows and installed the reviewed128 policy.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#approved128-proof-closed-before-provider-dispatch--12-october-2026).
 
-### Owner-approved128-call preparation — 12 October 2026
+<a id="owner-approved128-call-preparation--12-october-2026"></a>
+
+### 3.224. Owner-approved128-call preparation — 12 October 2026
 
 - YS approved preparing a128-call cumulative continuation with33 already consumed and16 reserved for recovery.
 - Implemented an explicit80-or128 configuration policy with80 as the committed default, preserving the account/campaign ledger and old per-grant limits.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-approved128-call-preparation--12-october-2026).
 
-### Native prerequisite diagnosis source — 12 October 2026
+<a id="native-prerequisite-diagnosis-source--12-october-2026"></a>
+
+### 3.225. Native prerequisite diagnosis source — 12 October 2026
 
 - Inspection found orchestration deliberately converted preflight failures into prerequisites_unavailable while the finite checkout retained no private cause.
 - Added a bounded private diagnostic in the existing grant result, with observation of existing prebooking reads.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-prerequisite-diagnosis-source--12-october-2026).
 
-### Signing amendment execution and closure — 12 October 2026
+<a id="signing-amendment-execution-and-closure--12-october-2026"></a>
+
+### 3.226. Signing amendment execution and closure — 12 October 2026
 
 - YS explicitly approved the prepared signing amendment.
 - Execution applied only0015/0016, preserved every historical row, uploaded the exact sealed native release and installed the missing encrypted binding.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#signing-amendment-execution-and-closure--12-october-2026).
 
-### Backend proof first stop — 12 October 2026
+<a id="backend-proof-first-stop--12-october-2026"></a>
+
+### 3.227. Backend proof first stop — 12 October 2026
 
 - After explicit owner approval, the backend proof ran its first two read-only management checks at00:14:28–00:14:29SGT.
 - The current deployment version matched the expected baseline, but the returned binding inventory lacked the required native signing secret.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#backend-proof-first-stop--12-october-2026).
 
-### 11 October — native uncertainty and compensation continuation
+<a id="11-october--native-uncertainty-and-compensation-continuation"></a>
+
+### 3.228. 11 October — native uncertainty and compensation continuation
 
 - YS requested native booking be carried through settlement rather than stopped at another PR checkpoint.
 - Inspection found returned references could be lost before strict creation validation, and a failed checkout handoff could leave saved state dispatching.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#11-october--native-uncertainty-and-compensation-continuation).
 
-### Native browser fixture correction — 11 October
+<a id="native-browser-fixture-correction--11-october"></a>
+
+### 3.229. Native browser fixture correction — 11 October
 
 - At2972d2d, CI38135134330 passed the Worker gates and all12 existing live identity/browser cases.
 - The three new native journey cases stopped at the Details action because the new fixture asked for a button named Continue; the existing product action is Review booking (also used by the original customer suite).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-browser-fixture-correction--11-october).
 
-### 11 October — customer-native continuation after5878001
+<a id="11-october--customer-native-continuation-after5878001"></a>
+
+### 3.230. 11 October — customer-native continuation after5878001
 
 - Checkpoint5878001 passed CI38133435815.
 - Continued immediately into native availability/selection/Details/Review/preparation/checkout/restore in the existing owners, with no provider or remote account operations.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#11-october--customer-native-continuation-after5878001).
 
-### 11 October — native checkout implementation and owner configuration confirmation
+<a id="11-october--native-checkout-implementation-and-owner-configuration-confirmation"></a>
+
+### 3.231. 11 October — native checkout implementation and owner configuration confirmation
 
 - Owner answered that tax is disabled,S$88 is the full total,40+10minutes is configured and Client Login is disabled.
 - Implemented a scoped expiring owner declaration, fresh guest/native-client separation, native multi-session batching/line joins, durable keys and signed known-ID recovery, and a finite protected checkout composition under new empty0016.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#11-october--native-checkout-implementation-and-owner-configuration-confirmation).
 
-### Metadata discovery accepted and closed — 11 October 2026
+<a id="metadata-discovery-accepted-and-closed--11-october-2026"></a>
+
+### 3.232. Metadata discovery accepted and closed — 11 October 2026
 
 - YS approved packet SHA256 `e535f54372e47d6cde632f8b643b91dd669cb90eade2efbcdc9c50343831321a` in this session.
 - Executed10:07:35–10:09:04UTC (18:07:35–18:09:04SGT),89.318 seconds within the20-minute limit.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#metadata-discovery-accepted-and-closed--11-october-2026).
 
-### 2026-10-11 — Defer physical flight until native and webhook technical completion
+<a id="2026-10-11--defer-physical-flight-until-native-and-webhook-technical-completion"></a>
+
+### 3.233. 2026-10-11 — Defer physical flight until native and webhook technical completion
 
 - YS asked for webhook instructions after native technical readiness, with a strong directive to resolve the integration, and clarified that the whole flight should be tested together.
 - Recorded one combined acceptance stage, preserving automated/contract validation now and physical acceptance pending.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-11--defer-physical-flight-until-native-and-webhook-technical-completion).
 
-### 2026-10-11 — Execute the six native completion items
+<a id="2026-10-11--execute-the-six-native-completion-items"></a>
+
+### 3.234. 2026-10-11 — Execute the six native completion items
 
 - YS asked to draft and execute the six remaining native-booking items, then merged PR20 after exact head2d48ed0 CI38128735760 completed frontend/backend/live-email successfully.
 - Verified merge25aac892.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-11--execute-the-six-native-completion-items).
 
-### 2026-10-11 — Final native checkout decisions
+<a id="2026-10-11--final-native-checkout-decisions"></a>
+
+### 3.235. 2026-10-11 — Final native checkout decisions
 
 - Every booking automatically attempts a Comments entry `Number of players: N` (default1, range1–4).
 - When the optional fifth Details field is filled, append `School / organisation: VALUE` on the next line; omit that line when blank.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-11--final-native-checkout-decisions).
 
-### 2026-10-11 — Native-first North Star and one-studio clarification
+<a id="2026-10-11--native-first-north-star-and-one-studio-clarification"></a>
+
+### 3.236. 2026-10-11 — Native-first North Star and one-studio clarification
 
 - YS requested the full plan and immediate execution with native booking followed by webhooks.
 - Refreshed cleanf881510/PR20 and green three-job CI38116387515; drafted the complete dependency sequence through client UAT/launch/support.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-11--native-first-north-star-and-one-studio-clarification).
 
-### 2026-10-11 — Remember me consent and reachable contact editing
+<a id="2026-10-11--remember-me-consent-and-reachable-contact-editing"></a>
+
+### 3.237. 2026-10-11 — Remember me consent and reachable contact editing
 
 - YS specified that contact details save only when Remember me is selected, on Details form submission, without a separate booking save button or duration in the label.
 - The90-day absolute policy remains.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-11--remember-me-consent-and-reachable-contact-editing).
 
-### 2026-10-11 — Owner replaces provider-only prefill with website contact profile
+<a id="2026-10-11--owner-replaces-provider-only-prefill-with-website-contact-profile"></a>
+
+### 3.238. 2026-10-11 — Owner replaces provider-only prefill with website contact profile
 
 - YS explicitly selected latest name/phone confirmed on this website, including one shared profile for a shared email and no changes to old bookings.
 - This replaces the prior prerequisite for SimplyBook-only prefill.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-11--owner-replaces-provider-only-prefill-with-website-contact-profile).
 
-### 2026-10-11 — Merged North Star execution package
+<a id="2026-10-11--merged-north-star-execution-package"></a>
+
+### 3.239. 2026-10-11 — Merged North Star execution package
 
 - Owner merged PR19 at298c9c8f443063f8b21a2e7b006993a1ec76a9e7.
 - Main CI38112617043 passed all three verification jobs and Pages deployment; this is separate from PR-headc2f2506/CI38049449145 and deployed Worker4a10133.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-11--merged-north-star-execution-package).
 
-### 2026-10-10 — PR19 owner proof and explicit closure
+<a id="2026-10-10--pr19-owner-proof-and-explicit-closure"></a>
+
+### 3.240. 2026-10-10 — PR19 owner proof and explicit closure
 
 - User approved the exact37-management/4-deployment packet and confirmed two-profile readiness.
 - Seven preflight reads matched closed sourcef2795a1/version3bb98b99, secret binding types, no schedules,0001–0012 schema/history and two closed windows.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-10--pr19-owner-proof-and-explicit-closure).
 
-### 2026-10-10 — PR18 merge and finite identity-proof preparation
+<a id="2026-10-10--pr18-merge-and-finite-identity-proof-preparation"></a>
+
+### 3.241. 2026-10-10 — PR18 merge and finite identity-proof preparation
 
 - Owner merged PR18 atfe179d205437850884d5fb5dc7ed177245ccead9.
 - Main independently passed38044816610 frontend/backend/live-email and Pages deployment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-10--pr18-merge-and-finite-identity-proof-preparation).
 
-### 2026-10-10 — PR18 release-preservation checker repair
+<a id="2026-10-10--pr18-release-preservation-checker-repair"></a>
+
+### 3.242. 2026-10-10 — PR18 release-preservation checker repair
 
 - Candidate47cc928 CI38043587921 passed172 Worker cases and9 live-browser executions before sealed-release validation failed on a read of `_cf_METADATA.key` with SQLITE_AUTH.
 - The new preservation inventory accidentally included D1's protected internal table.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-10--pr18-release-preservation-checker-repair).
 
-### 2026-10-10 — M3.5 source continuation from merged PR17
+<a id="2026-10-10--m35-source-continuation-from-merged-pr17"></a>
+
+### 3.243. 2026-10-10 — M3.5 source continuation from merged PR17
 
 - Refreshed GitHub and local state: main2f08b1c contains PR17/headb94b14a and PR16 functionality; main's separate CI38041760947 passed.
 - Preserved the clean historical experiment checkout897cbfe and opened a new feature worktree.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-10--m35-source-continuation-from-merged-pr17).
 
-### 2026-10-10 — Quotation A3 and next quick-rebooking North Star
+<a id="2026-10-10--quotation-a3-and-next-quick-rebooking-north-star"></a>
+
+### 3.244. 2026-10-10 — Quotation A3 and next quick-rebooking North Star
 
 - Owner clarified that quick rebooking is a core requirement, then supplied APP404-SBS-Q-WEB-001.pdf.
 - Read p3 A3 directly: verified approved SimplyBook name/phone prefill, customer review/correction, safe duplicate/shared-email handling and expiring single-use verification/rate limits.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-10--quotation-a3-and-next-quick-rebooking-north-star).
 
-### 2026-10-10 — Owner email test and explicit closure
+<a id="2026-10-10--owner-email-test-and-explicit-closure"></a>
+
+### 3.245. 2026-10-10 — Owner email test and explicit closure
 
 - Replacement sourcef2795a1 passed all three CI jobs and local139-file seal plus17 compiled-Worker cases.
 - Approved0012 preserved the original closed record and every baseline table fingerprint.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-10--owner-email-test-and-explicit-closure).
 
-### Unused email window replacement — 10 October 2026
+<a id="unused-email-window-replacement--10-october-2026"></a>
+
+### 3.246. Unused email window replacement — 10 October 2026
 
 - The first live-email candidate087576ed was deployed after preserving original asset202 and URL-check failures; corrected account HTML/sitekey JS matched sealed bytes.
 - Source/version readiness passed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#unused-email-window-replacement--10-october-2026).
 
-### 2026-10-10 — Email activation packet review
+<a id="2026-10-10--email-activation-packet-review"></a>
+
+### 3.247. 2026-10-10 — Email activation packet review
 
 - Reconciled owner Dashboard setup and five approved read-only checks: initial plaintext bindings were corrected by owner, then secret_text types verified.
 - Prior deployment budget is exhausted; unknown Dashboard usage remains explicit.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-10--email-activation-packet-review).
 
-### 8 October 2026 — Developer integration continuation
+<a id="8-october-2026--developer-integration-continuation"></a>
+
+### 3.248. 8 October 2026 — Developer integration continuation
 
 - Fresh deployed Worker authentication now succeeds for both public and admin credentials; company login matches and booking allowance is26/50.
 - Four durably reserved requests, active0; operator grant closed after identical read-back.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--developer-integration-continuation).
 
-### 2026-10-04 — Frontend foundation
+<a id="2026-10-04--frontend-foundation"></a>
 
-### Inputs and authority
+### 3.249. 2026-10-04 — Frontend foundation
+
+<a id="inputs-and-authority"></a>
+
+### 3.250. Inputs and authority
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-04--frontend-foundation).
 
-### 2026-10-04 — Documentation/process review before GitHub
+<a id="2026-10-04--documentationprocess-review-before-github"></a>
 
-### Scope and reviewed sources
+### 3.251. 2026-10-04 — Documentation/process review before GitHub
+
+<a id="scope-and-reviewed-sources"></a>
+
+### 3.252. Scope and reviewed sources
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-04--documentationprocess-review-before-github).
 
-### 2026-10-04 — Reference restoration and standardized guarded update
+<a id="2026-10-04--reference-restoration-and-standardized-guarded-update"></a>
 
-### Baseline, authorization and root cause
+### 3.253. 2026-10-04 — Reference restoration and standardized guarded update
+
+<a id="baseline-authorization-and-root-cause"></a>
+
+### 3.254. Baseline, authorization and root cause
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-04--reference-restoration-and-standardized-guarded-update).
 
-### 4 October 2026 — macOS temporary-directory repair
+<a id="4-october-2026--macos-temporary-directory-repair"></a>
+
+### 3.255. 4 October 2026 — macOS temporary-directory repair
 
 - User reached Node 24.19.0, then the delivered installer refused its own temporary candidate under `/var/folders/.../T`.
   - The stack ends in candidate preflight, before backup or source application.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--macos-temporary-directory-repair).
 
-### 4 October 2026 — case-insensitive filesystem test repair
+<a id="4-october-2026--case-insensitive-filesystem-test-repair"></a>
+
+### 3.256. 4 October 2026 — case-insensitive filesystem test repair
 
 - User's macOS receipt confirms the restoration applied and source/policy gates passed.
   - The tooling gate executed 43 cases: 41 passed and two failed (`rejects case-colliding files`, `rejects case-colliding parent directories`).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--case-insensitive-filesystem-test-repair).
 
-### 4 October 2026 — restore the required installer delivery format
+<a id="4-october-2026--restore-the-required-installer-delivery-format"></a>
+
+### 3.257. 4 October 2026 — restore the required installer delivery format
 
 - User supplied the completed macOS run of `SoccerBotStudioSG_MacOS_Checks_2026-10-04.sh`: 45 tooling, 24 installer and 29 application/component cases passed, with formatting, lint, types, exact unit receipt and production export.
   - Node was 24.19.0 and npm 11.17.0.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--restore-the-required-installer-delivery-format).
 
-### 4 October 2026 — local verification format corrected
+<a id="4-october-2026--local-verification-format-corrected"></a>
+
+### 3.258. 4 October 2026 — local verification format corrected
 
 - The user supplied two external local-delivery and publication shell examples dated 4 October 2026.
 - Both were decoded and inspected as text, never executed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--local-verification-format-corrected).
 
-### 4 October 2026 — correct headless browser preflight
+<a id="4-october-2026--correct-headless-browser-preflight"></a>
+
+### 3.259. 4 October 2026 — correct headless browser preflight
 
 - User run `SoccerBotStudioSG_Standard_Local_2026-10-04.icv43q_h` passed runtime, Git/source, staged health and all 25 installed dependency-version checks, then stopped on full Chromium before source writes.
 - The supplied external project local reference does not make this additional executable check.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--correct-headless-browser-preflight).
 
-### 4 October 2026 — first complete user browser run and bounded repair
+<a id="4-october-2026--first-complete-user-browser-run-and-bounded-repair"></a>
+
+### 3.260. 4 October 2026 — first complete user browser run and bounded repair
 
 - Uploaded log `Pasted markdown(2).md`, run `SoccerBotStudioSG_Standard_Local_2026-10-04.7vmw50eb`: runtime/source/dependency/browser/port preflight passed, source applied, code checks and all 29 unit/component cases passed, and a fresh static export completed.
 - The browser matrix executed all 30 cases: 25 passed and five failed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--first-complete-user-browser-run-and-bounded-repair).
 
-### 4 October 2026 — enquiry hydration input loss
+<a id="4-october-2026--enquiry-hydration-input-loss"></a>
+
+### 3.261. 4 October 2026 — enquiry hydration input loss
 
 - User run `SoccerBotStudioSG_Standard_Local_2026-10-04.m_abcjyr` passed code/build and 29 of 30 browser cases.
 - Guardian cases passed on all projects; the assistant journey passed desktop/tablet.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--enquiry-hydration-input-loss).
 
-### 4 October 2026 — duplicated generated Next.js types
+<a id="4-october-2026--duplicated-generated-nextjs-types"></a>
+
+### 3.262. 4 October 2026 — duplicated generated Next.js types
 
 - User run `SoccerBotStudioSG_Standard_Local_2026-10-04.62mfyqb4` applied the enquiry hydration candidate (`8062281fbed3a75a2eb6aa0b6963cfe895477c5ab759c41325a47c6c34703a6f`) and retained unchanged Git state.
 - Source, policy, tooling, installer, formatting and lint gates passed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--duplicated-generated-nextjs-types).
 
-### 4 October 2026 — PR 2 browser selector failure
+<a id="4-october-2026--pr-2-browser-selector-failure"></a>
+
+### 3.263. 4 October 2026 — PR 2 browser selector failure
 
 - PR 2 was published at `b987f01c10f1c3822eb0cbe0713938da7d224ccd`.
 - Its complete remote tree matches the reviewed generated-type repair candidate.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--pr-2-browser-selector-failure).
 
-### 4 October 2026 — frozen-clock regression in the attempted CI repair
+<a id="4-october-2026--frozen-clock-regression-in-the-attempted-ci-repair"></a>
+
+### 3.264. 4 October 2026 — frozen-clock regression in the attempted CI repair
 
 - User receipt and failure archive `SoccerBotStudioSG_Standard_Local_2026-10-04.wqezwg0h` bind to candidate `201d73121041b176510749c4212d3f63799da2ae1ac64c6e63d247c816fcb6a0` on unchanged PR head `b987f01c10f1c3822eb0cbe0713938da7d224ccd`.
 - Every non-browser gate passed, including all 33 application cases and the build.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--frozen-clock-regression-in-the-attempted-ci-repair).
 
-### 4 October 2026 — GitHub Pages was publishing the README
+<a id="4-october-2026--github-pages-was-publishing-the-readme"></a>
+
+### 3.265. 4 October 2026 — GitHub Pages was publishing the README
 
 - PR #2 merged at `168b19bc7ab680ac236cb348b48514df64a26c7b`; previous feature head `02dc272d54b3b3cb3f0ab3e4ba9b935ec9ee043e` shares tree `0516f3c2d7cd9bc936df1535d387f022ad9d1ef9`.
 - All 109 reviewed files matched that remote tree byte-for-byte before this repair.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--github-pages-was-publishing-the-readme).
 
-### 4 October 2026 — accepted Pages evidence and complete iteration baseline
+<a id="4-october-2026--accepted-pages-evidence-and-complete-iteration-baseline"></a>
+
+### 3.266. 4 October 2026 — accepted Pages evidence and complete iteration baseline
 
 - The user requested durable engineering rules and exact installer examples after repeated wrong-file/fingerprint mistakes, then a numbered roadmap through deployment/post-deployment and a guarded local installer for that plan.
 - Reviewed the attached iteration handoff, current repository owners, latest external project handbook, general guidelines, exact external project local example and SoccerBot Pages local/R2 publication shells as data.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--accepted-pages-evidence-and-complete-iteration-baseline).
 
-### 4 October 2026 — Booking oracle follow-up and instructor rotation
+<a id="4-october-2026--booking-oracle-follow-up-and-instructor-rotation"></a>
+
+### 3.267. 4 October 2026 — Booking oracle follow-up and instructor rotation
 
 - YS reported “ok pass” for the planning installer, then requested exact rolling/footer logos and booking sizing/placement, full-width actions, instructor choice retained at the time step, and instructor names on slots across 9am–9pm in three-hour blocks.
 - A temporary instruction prohibited crossing rotations; the subsequent repeated correction allows crossings with a customer disclaimer.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#4-october-2026--booking-oracle-follow-up-and-instructor-rotation).
 
-### 5 October 2026 — instructor selection failure repair
+<a id="5-october-2026--instructor-selection-failure-repair"></a>
+
+### 3.268. 5 October 2026 — instructor selection failure repair
 
 - YS supplied the unchanged `SoccerBotStudioSG_Standard_Local_2026-10-04.ji57rqjm` receipt and failure ZIP.
 - Application completed with candidate-map fingerprint `04cbf8201e128b1df082956bb26eadd016e3474309fa1207ea88b81bc305c80e`; branch `fix/pages-deployment`, HEAD `12c174a98c97a5d7c7b0cd041c090e31a903e95b`, and index were preserved.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#5-october-2026--instructor-selection-failure-repair).
 
-### 5 October 2026 — accepted local repair and booking-flow update
+<a id="5-october-2026--accepted-local-repair-and-booking-flow-update"></a>
+
+### 3.269. 5 October 2026 — accepted local repair and booking-flow update
 
 - YS supplied `SoccerBotStudioSG_Instructor_Selection_Local_2026-10-05.962a08ae.json`.
 - Its full local verification passed: 13 gates, 38 unit/component cases and 33 browser executions, with browser execution true and no omitted/extra cases.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#5-october-2026--accepted-local-repair-and-booking-flow-update).
 
-### 5 October 2026 — header-blue and typography standardization
+<a id="5-october-2026--header-blue-and-typography-standardization"></a>
+
+### 3.270. 5 October 2026 — header-blue and typography standardization
 
 - At 07:01 SGT, YS reported the booking-flow update “all good” and requested a deep colour/font/size audit with clear heading/body boundaries, especially inside booking.
 - The client identified teal as inconsistent with the actual main header.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#5-october-2026--header-blue-and-typography-standardization).
 
-### 5 October 2026 — latency architecture and measurement planning
+<a id="5-october-2026--latency-architecture-and-measurement-planning"></a>
+
+### 3.271. 5 October 2026 — latency architecture and measurement planning
 
 - At 07:38 SGT YS reported the design-system update “all good” and paused implementation to examine SimplyBook latency.
 - At 08:43 SGT YS authorized deep incorporation into the design/architecture plan plus baseline measurements and best-target acceptance planning.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#5-october-2026--latency-architecture-and-measurement-planning).
 
-### 6 October 2026 — client read-only discovery and boundary repair
+<a id="6-october-2026--client-read-only-discovery-and-boundary-repair"></a>
+
+### 3.272. 6 October 2026 — client read-only discovery and boundary repair
 
 - YS first exercised developer account `app404`, then supplied the separate client account `soccerbotstudio` and exact service `Kickoff Special`.
 - Client access was authorized read-only;
@@ -2335,63 +3868,81 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#6-october-2026--client-read-only-discovery-and-boundary-repair).
 
-### 6 October 2026 — Codex Cloud transition and external project source adaptation
+<a id="6-october-2026--codex-cloud-transition-and-external-project-source-adaptation"></a>
+
+### 3.273. 6 October 2026 — Codex Cloud transition and external project source adaptation
 
 - At 20:51 SGT YS requested a remaining-API check, refactored documents ready for Codex Cloud, and forwarding the work to GitHub.
 - The named “Model Context Protocol Overview” and “Engineering Workflow Principles” discussions establish bounded North Stars/Ralph runs, autonomous routine repairs, focused iteration/full CI, Cloud Playwright and optional local viewing, a usable preview, and a human merge/deploy boundary.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md).
 
-### 6 October 2026 — verified Mac baseline and separate sync PR
+<a id="6-october-2026--verified-mac-baseline-and-separate-sync-pr"></a>
+
+### 3.274. 6 October 2026 — verified Mac baseline and separate sync PR
 
 - YS uploaded `SoccerBotStudioSG_Local_Checkpoint_2026-10-06.569kaq7o.json` at 21:36 SGT.
 - The receipt was collected at 21:35:24 SGT; its SHA-256 is `a896ceb7d09e88dd44ded1425031d7fc90702364ce6b59cf3128db692818d431`, and its shell SHA matches the delivered `b23a49d1708809e8ac1ced74b56406b3cc36ef49004428281f5ba3a7d9b67ddd`.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#6-october-2026--verified-mac-baseline-and-separate-sync-pr).
 
-### 6 October 2026 — merge approval failure and enforced check naming
+<a id="6-october-2026--merge-approval-failure-and-enforced-check-naming"></a>
+
+### 3.275. 6 October 2026 — merge approval failure and enforced check naming
 
 - YS objected to the unauthorized PR #4 merge.
 - The assistant acknowledged the error and paused further writes.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#6-october-2026--merge-approval-failure-and-enforced-check-naming).
 
-### 6 October 2026 — CI status-check naming
+<a id="6-october-2026--ci-status-check-naming"></a>
+
+### 3.276. 6 October 2026 — CI status-check naming
 
 - YS requested the same `verify / frontend` status-check name as external project.
 - Read the actual external project `pages.yml` caller and reusable `verify.yml`: its `verify` caller invokes the `frontend` job.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#6-october-2026--ci-status-check-naming).
 
-### 6 October 2026 — Cloud experiment refreshed from latest main
+<a id="6-october-2026--cloud-experiment-refreshed-from-latest-main"></a>
+
+### 3.277. 6 October 2026 — Cloud experiment refreshed from latest main
 
 - At 23:11 SGT YS requested the Cloud migration PR updated from latest main and concrete Codex Cloud setup steps.
 - Independently matched all 121 baseline blob hashes/modes to tree `61918e04933afd960358903a2aa152a0872c7024`; prepared an isolated candidate and reconciled the eight experimental documents.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#6-october-2026--cloud-experiment-refreshed-from-latest-main).
 
-### 7 October 2026 — booking-page readiness test repair
+<a id="7-october-2026--booking-page-readiness-test-repair"></a>
+
+### 3.278. 7 October 2026 — booking-page readiness test repair
 
 - The C3/C4 documentation handoff at `74ca490f8a52025eff16933e500933c359eebfee` failed required [CI run 37559663874](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/37559663874), attempt 1: the time-step interaction expected two instructor cards and received one.
 - The [original failure artifact](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/37559663874/artifacts/11456785312) and C3 receipts are preserved.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#7-october-2026--booking-page-readiness-test-repair).
 
-### 7 October 2026 — M2.1 capability reconciliation with Cloud preview deferred
+<a id="7-october-2026--m21-capability-reconciliation-with-cloud-preview-deferred"></a>
+
+### 3.279. 7 October 2026 — M2.1 capability reconciliation with Cloud preview deferred
 
 - YS's handoff authorizes M2 provider feasibility while retaining CLOUD-01's unresolved user-preview acceptance.
 - Started from clean `experiment/codex-cloud-workflow-2026-10-06` at `a6f1a6cc151200727d7806ff97a79c963edb2516`, with passing [full CI 37560542328](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/37560542328) and unchanged original C3 receipts.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#7-october-2026--m21-capability-reconciliation-with-cloud-preview-deferred).
 
-### 7 October 2026 — elapsed-slot Cloud application trial
+<a id="7-october-2026--elapsed-slot-cloud-application-trial"></a>
+
+### 3.280. 7 October 2026 — elapsed-slot Cloud application trial
 
 - YS authorized one meaningful demo application cycle from reviewed `d6b3ccdbf7455ddcda4103484caedf6b8b57a928`, with clean tree/index and draft PR #6.
 - It supersedes M2 planning as the bounded active task without closing any provider prerequisite.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#7-october-2026--elapsed-slot-cloud-application-trial).
 
-### 7 October 2026 — YS merge and developer payment evidence reconciliation
+<a id="7-october-2026--ys-merge-and-developer-payment-evidence-reconciliation"></a>
+
+### 3.281. 7 October 2026 — YS merge and developer payment evidence reconciliation
 
 - YS merged PR #6 at main `37c220a33caa85f875baaf98726205cec7b9d495`;
 - GitHub run `37568173451` is completed/success for that main SHA.
@@ -2399,7 +3950,9 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#7-october-2026--ys-merge-and-developer-payment-evidence-reconciliation).
 
-### 7 October 2026 — developer API access and planned Cloudflare release workflow
+<a id="7-october-2026--developer-api-access-and-planned-cloudflare-release-workflow"></a>
+
+### 3.282. 7 October 2026 — developer API access and planned Cloudflare release workflow
 
 - YS merged PR #7 at 14:21 SGT as main `e883c1af117a960eeae9359c4db9923d774888dd`, tree `16920dff690824b89e4e129d1742bd932b11e1ec`.
 - Main run `37581074421` passed independent `verify / frontend` and the existing Pages deployment;
@@ -2407,147 +3960,189 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#7-october-2026--developer-api-access-and-planned-cloudflare-release-workflow).
 
-### 7 October 2026 — native invoice checkout research and owner evidence
+<a id="7-october-2026--native-invoice-checkout-research-and-owner-evidence"></a>
+
+### 3.283. 7 October 2026 — native invoice checkout research and owner evidence
 
 - YS requested public-document research before asking for technical answers, with zero additional provider-account calls and no single-session execution.
 - Refreshed PR #8: open at reviewed `04e82f800508c08defa433776f715259333772cf`, earlier successful run `37583277947`; fetched main remains `e883c1af117a960eeae9359c4db9923d774888dd`.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#7-october-2026--native-invoice-checkout-research-and-owner-evidence).
 
-### 7 October 2026 — staged native checkout experiments replace support gate
+<a id="7-october-2026--staged-native-checkout-experiments-replace-support-gate"></a>
+
+### 3.284. 7 October 2026 — staged native checkout experiments replace support gate
 
 - YS confirmed PR #8 merged and directed official research plus controlled experiments rather than requiring six live-chat answers.
 - Refreshed actual main `97b42c7d561ffa0167eb3ca1113d18e143a9e0d9`, tree `976cf0a064a82bb655d22fc9156c5a4663a80068`; independently rechecked main run `37589441392` with successful required job `112687131937` and existing deployment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#7-october-2026--staged-native-checkout-experiments-replace-support-gate).
 
-### 2026-10-08 — Native developer Card proof reconciled; browser-return reliability preparation
+<a id="2026-10-08--native-developer-card-proof-reconciled-browser-return-reliability-preparation"></a>
+
+### 3.285. 2026-10-08 — Native developer Card proof reconciled; browser-return reliability preparation
 
 - PR #9 was independently refreshed open, draft and unmerged at `21c8fc855a0e6d8371b541b7ef35d3d4ee1b4e75` on `docs/native-checkout-stages-2026-10-07`.
 - The existing detached PR worktree and historical `897cbfe737d31069ae25dca39c638cdededf3593` checkout were initially clean and preserved; no new checkout, reset or publication.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#2026-10-08--native-developer-card-proof-reconciled-browser-return-reliability-preparation).
 
-### 8 October 2026 — Owner canary failed; automatic return control prepared
+<a id="8-october-2026--owner-canary-failed-automatic-return-control-prepared"></a>
+
+### 3.286. 8 October 2026 — Owner canary failed; automatic return control prepared
 
 - Owner Edge showed Fetch.requestPaused followed by Fetch.continueRequest, then DNS_PROBE_FINISHED_NXDOMAIN for the reserved canary.
 - This fails return prevention; the source of continuation is unknown.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--owner-canary-failed-automatic-return-control-prepared).
 
-### 8 October 2026 — CAP05 Cloud-only capacity preparation; no overlapping instructor fixture
+<a id="8-october-2026--cap05-cloud-only-capacity-preparation-no-overlapping-instructor-fixture"></a>
+
+### 3.287. 8 October 2026 — CAP05 Cloud-only capacity preparation; no overlapping instructor fixture
 
 - YS requested executable Cloud-only preparation, zero provider-account calls and no local terminal/browser dependency.
 - PR#9 was freshly checked open/draft/unmerged at21c8fc855a0e6d8371b541b7ef35d3d4ee1b4e75; reused its existing detached worktree and seven documentation edits with empty index.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--cap05-cloud-only-capacity-preparation-no-overlapping-instructor-fixture).
 
-### 8 October 2026 — DUP06 scope decision and offline executable preparation
+<a id="8-october-2026--dup06-scope-decision-and-offline-executable-preparation"></a>
+
+### 3.288. 8 October 2026 — DUP06 scope decision and offline executable preparation
 
 - YS clarified that one studio uses non-overlapping instructor timetables and explicitly deferred cross-instructor shared-resource testing and further resource allocation.
 - CAP05's invalid pair is retired unexecuted, not accepted.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--dup06-scope-decision-and-offline-executable-preparation).
 
-### DUP06 contact-control correction — 8 October 2026
+<a id="dup06-contact-control-correction--8-october-2026"></a>
+
+### 3.289. DUP06 contact-control correction — 8 October 2026
 
 - YS requested automatic clear identities and repeated continuation.
 - Names are APP404 DUP06 A and APP404 DUP06 B.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#dup06-contact-control-correction--8-october-2026).
 
-### 8 October 2026 — approved DUP06 stopped at first authentication
+<a id="8-october-2026--approved-dup06-stopped-at-first-authentication"></a>
+
+### 3.290. 8 October 2026 — approved DUP06 stopped at first authentication
 
 - DUP06 execution stopped after request43: Admin authentication transport outcome unknown, no HTTP status retained and no retry.
 - No public authentication, availability, booking or recovery request was sent; no new booking exists from this run.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--approved-dup06-stopped-at-first-authentication).
 
-### 8 October 2026 — agreed payment-confirmation design recorded
+<a id="8-october-2026--agreed-payment-confirmation-design-recorded"></a>
+
+### 3.291. 8 October 2026 — agreed payment-confirmation design recorded
 
 - YS agreed that the intended supported native-checkout return should end at our frontend confirmation route.
 - Initial copy is “Checking your payment and booking…”.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--agreed-payment-confirmation-design-recorded).
 
-### Capacity request43 offline diagnosis and proposed diagnostic continuation — 8 October 2026
+<a id="capacity-request43-offline-diagnosis-and-proposed-diagnostic-continuation--8-october-2026"></a>
+
+### 3.292. Capacity request43 offline diagnosis and proposed diagnostic continuation — 8 October 2026
 
 - Capacity remains the active objective.
 - Usage stays43 (2 owner-reported +41 journaled), with19 capacity requests paused and14 NR04 requests reserved; no booking was created by DUP06.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#capacity-request43-offline-diagnosis-and-proposed-diagnostic-continuation--8-october-2026).
 
-### 8 October 2026 — bounded developer evidence campaign
+<a id="8-october-2026--bounded-developer-evidence-campaign"></a>
+
+### 3.293. 8 October 2026 — bounded developer evidence campaign
 
 - Owner adopted a complete A–G campaign, superseding prior future-operation approval gates while preserving the expired DUP06/NR04 history.
 - Verified start43 (2 owner-reported +41 journaled); private campaign journal explicitly absorbed unused19+14 into200 additional, cumulative243.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--bounded-developer-evidence-campaign).
 
-### 8 October 2026 — focused continuation, native reconciliation and publication authority
+<a id="8-october-2026--focused-continuation-native-reconciliation-and-publication-authority"></a>
+
+### 3.294. 8 October 2026 — focused continuation, native reconciliation and publication authority
 
 - The owner opened a new four-hour continuation after the73-request campaign and supplied native-dashboard findings for24.
 - Preflight14:14:10SGT set deadline18:14:10SGT, start73 (2 owner-reported +71 journaled),60 additional within outer243, effective ceiling133, six possible bookings/two sandbox submissions and12-call recovery floor.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--focused-continuation-native-reconciliation-and-publication-authority).
 
-### 8 October 2026 — offline protected-confirmation component
+<a id="8-october-2026--offline-protected-confirmation-component"></a>
+
+### 3.295. 8 October 2026 — offline protected-confirmation component
 
 - Owner explicitly approved the narrow dependency exception before M2.5: implement and publish one offline domain verifier, review relevant M1 prerequisites, preserve every live/release gate, and make zero provider-account requests.
 - M1 source and test controls support this slice; fresh main-protection read returned GitHub403, advisory disposition/full release controls remain open, and no physical/visual acceptance is inferred.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--offline-protected-confirmation-component).
 
-### 8 October 2026 — Cloudflare development foundation campaign
+<a id="8-october-2026--cloudflare-development-foundation-campaign"></a>
+
+### 3.296. 8 October 2026 — Cloudflare development foundation campaign
 
 - The new direct North Star authorizes a narrow development dependency exception, named isolated Cloudflare resources/deployment and draft publication; no merge, production, paid service, client writes or provider settings change.
 - One working agent and one PROGRESS ledger.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--cloudflare-development-foundation-campaign).
 
-### 8 October 2026 — Cloudflare campaign publication receipt
+<a id="8-october-2026--cloudflare-campaign-publication-receipt"></a>
+
+### 3.297. 8 October 2026 — Cloudflare campaign publication receipt
 
 - Draft PR #11 publishes application revision `8c56f2658e9586b2b841e53c3ee179925b809d89`.
 - CI [37754354471](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/37754354471) passed both verification jobs: 84 application cases, 25 actual Worker/D1/coordinator cases, and 48 browser executions for each hosting path.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#8-october-2026--cloudflare-campaign-publication-receipt).
 
-### 9 October 2026 — M3.2 asynchronous booking implementation
+<a id="9-october-2026--m32-asynchronous-booking-implementation"></a>
+
+### 3.298. 9 October 2026 — M3.2 asynchronous booking implementation
 
 - 01:00SGT bounded task, deadline07:00; explicit M1/M2.5 dependency exception, one agent and zero provider calls.
 - Refreshed cleanc10d843, main3bf8e3b, draftPR11, green37800070002 and existing deployment9d0a3c9f.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--m32-asynchronous-booking-implementation).
 
-### 9 October 2026 — M3.3 durable recovery implementation
+<a id="9-october-2026--m33-durable-recovery-implementation"></a>
+
+### 3.299. 9 October 2026 — M3.3 durable recovery implementation
 
 - 08:34SGT start,14:34SGT deadline; one agent and explicit dependency exception.
 - PR connector reports accepted0ab4085, draft/unmerged, main3bf8e3b.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--m33-durable-recovery-implementation).
 
-### 9 October 2026 — Experiment 1 separate checkout
+<a id="9-october-2026--experiment-1-separate-checkout"></a>
+
+### 3.300. 9 October 2026 — Experiment 1 separate checkout
 
 - The owner reordered the next task ahead of M3.4: implement and visibly demonstrate separate checkout while preserving M3.3 and all closed campaigns.
 - A typed protected checkout context now supplies a summary and explicitly unavailable live capability.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--experiment-1-separate-checkout).
 
-### 9 October 2026 — native sandbox preparation after merged Experiment1
+<a id="9-october-2026--native-sandbox-preparation-after-merged-experiment1"></a>
+
+### 3.301. 9 October 2026 — native sandbox preparation after merged Experiment1
 
 - PR11 is owner-merged at49000e6716cf9aeabd3d7a62f1b2579fb9a59078.
 - Its final source0363e70 passed PR CI37875189183.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--native-sandbox-preparation-after-merged-experiment1).
 
-### 9 October 2026 — historical responses to native adapter implementation
+<a id="9-october-2026--historical-responses-to-native-adapter-implementation"></a>
+
+### 3.302. 9 October 2026 — historical responses to native adapter implementation
 
 - PR12 was rechecked open/draft/unmerged at7b83a8b; its completed two-job CI37884721443 and repairs are reused.
 - Current main49000e6 remains unchanged.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--historical-responses-to-native-adapter-implementation).
 
-### 9 October 2026 — SimplyBook-owned dynamic data continuation
+<a id="9-october-2026--simplybook-owned-dynamic-data-continuation"></a>
+
+### 3.303. 9 October 2026 — SimplyBook-owned dynamic data continuation
 
 - Start14:01SGT, finite stop20:01SGT, one agent and at most3 repairs per issue.
 - PR12 was found owner-merged at e91fb12;
@@ -2555,168 +4150,216 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--simplybook-owned-dynamic-data-continuation).
 
-### 9 October 2026 — precise native discovery after owner-merged PR13
+<a id="9-october-2026--precise-native-discovery-after-owner-merged-pr13"></a>
+
+### 3.304. 9 October 2026 — precise native discovery after owner-merged PR13
 
 - Started15:10SGT with one agent and21:10SGT deadline.
 - Actual main757fd28 and run37896841542 were inspected: both required verification jobs and existing Pages deployment succeeded.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--precise-native-discovery-after-owner-merged-pr13).
 
-### 9 October 2026 — approved discovery execution stopped before provider dispatch
+<a id="9-october-2026--approved-discovery-execution-stopped-before-provider-dispatch"></a>
+
+### 3.305. 9 October 2026 — approved discovery execution stopped before provider dispatch
 
 - YS approved the exact discovery-only packet.
 - Source661cbf54ae33bd8e08f00d631ea78772f9ea2ded, tested merge13479d792bcd3ed2d66614dfd15c4973dd87ab75, treeb002e2c8cd7e0fe14ea627d5db17929080aab669 passed both jobs in CI37899051046.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--approved-discovery-execution-stopped-before-provider-dispatch).
 
-### 9 October main integration engineering checkpoint
+<a id="9-october-main-integration-engineering-checkpoint"></a>
+
+### 3.306. 9 October main integration engineering checkpoint
 
 - The governing continuation permits one agent/24 active hours/72 elapsed hours/60 loops/six evidence-based repairs, not new external execution.
 - PR14 adds an asynchronous guest/identity boundary, protected finite customer catalogue and an unconfigured scheduled recovery handler using the existing durable and canonical confirmation owners.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-main-integration-engineering-checkpoint).
 
-### 9 October 2026 — recovered environment and bounded Resend composition
+<a id="9-october-2026--recovered-environment-and-bounded-resend-composition"></a>
+
+### 3.307. 9 October 2026 — recovered environment and bounded Resend composition
 
 - Fresh workspace contained a clean older experiment checkout, not the retained campaign worktrees.
 - Recovered exact PR14/15 through Git and confirmed both reported final CI runs.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--recovered-environment-and-bounded-resend-composition).
 
-### 9 October 2026 — public Turnstile binding and separate live-email evidence
+<a id="9-october-2026--public-turnstile-binding-and-separate-live-email-evidence"></a>
+
+### 3.308. 9 October 2026 — public Turnstile binding and separate live-email evidence
 
 - Fresh attachment recovered PR16 source/tree exactly while preserving the older experiment checkout.
 - Earlier private campaign worktrees/receipts were absent.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#9-october-2026--public-turnstile-binding-and-separate-live-email-evidence).
 
-### Progress ledger archive — through PR78
+<a id="progress-ledger-archive--through-pr78"></a>
+
+### 3.309. Progress ledger archive — through PR78
 
 - Complete PROGRESS.md from merge69945cc4ecae4593799f7205beedbc82513f9945, moved here on21October2026.
 - These are dated historical checkpoints, not current status or reusable execution authority.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#progress-ledger-archive--through-pr78).
 
-### Batch checkout and durable token cache — 21 October 2026 SGT
+<a id="batch-checkout-and-durable-token-cache--21-october-2026-sgt"></a>
+
+### 3.310. Batch checkout and durable token cache — 21 October 2026 SGT
 
 - PR77 is merged as432300a.
 - Current branch perf/batch-checkout-token-cache consolidates existing checkout owners: total batch D1 target17→11 for2sessions,23→15 for4,35→23 for8; single remains5.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#batch-checkout-and-durable-token-cache--21-october-2026-sgt).
 
-### Five-round-trip reconciliation experiment — 21 October 2026 SGT
+<a id="five-round-trip-reconciliation-experiment--21-october-2026-sgt"></a>
+
+### 3.311. Five-round-trip reconciliation experiment — 21 October 2026 SGT
 
 - Owner confirms PR75 merged and requests reconciliation targeting five D1 round trips for single booking with minimal batch growth.
 - PR76 checkout was retargeted to main and updated to cd00252; its final-head CI39467856039 passed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#five-round-trip-reconciliation-experiment--21-october-2026-sgt).
 
-### Five-D1 single checkout integration — 21 October 2026 SGT
+<a id="five-d1-single-checkout-integration--21-october-2026-sgt"></a>
+
+### 3.312. Five-D1 single checkout integration — 21 October 2026 SGT
 
 - PR75 was updated with main at fb0c87c without source-tree changes.
 - Owner authorized integration and CI on21October.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#five-d1-single-checkout-integration--21-october-2026-sgt).
 
-### Batch checkout and reconciliation optimization — 20 October 2026 SGT
+<a id="batch-checkout-and-reconciliation-optimization--20-october-2026-sgt"></a>
+
+### 3.313. Batch checkout and reconciliation optimization — 20 October 2026 SGT
 
 - PR74 fbbd18c full CI39431684472 passed.
 - Follow-up branch perf/batch-and-confirmation is stacked on it.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#batch-checkout-and-reconciliation-optimization--20-october-2026-sgt).
 
-### Confirmation read consolidation — 20 October 2026 SGT
+<a id="confirmation-read-consolidation--20-october-2026-sgt"></a>
+
+### 3.314. Confirmation read consolidation — 20 October 2026 SGT
 
 - Integrate the safe local experiment onto main e178bf6 (PR73).
 - Request-local primary snapshots reduce context D1 executions10→4, pending status7→5 and confirmed status5→4; receipt remains5.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-read-consolidation--20-october-2026-sgt).
 
-### Unified pending confirmation presentation — 20 October 2026 SGT
+<a id="unified-pending-confirmation-presentation--20-october-2026-sgt"></a>
+
+### 3.315. Unified pending confirmation presentation — 20 October 2026 SGT
 
 - Branch fix/confirmation-pending-layout starts from merged PR72/main2c19288.
 - Owner hometest05 shows protected context followed by pending payment-received status and verified confirmation; request success does not establish browser paint.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#unified-pending-confirmation-presentation--20-october-2026-sgt).
 
-### Confirmation tracing — 20 October 2026 SGT
+<a id="confirmation-tracing--20-october-2026-sgt-1"></a>
+
+### 3.316. Confirmation tracing — 20 October 2026 SGT
 
 - PR72 head767f760 passed frontend/backend but live-email run39415858902 passed77/78.
 - Offline phone-WebKit trace shows slow cold fixture/browsing setup and preserved original-attempt recovery, then exhaustion of the unchanged30-second budget before reload.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-tracing--20-october-2026-sgt).
 
-### Ten-call checkout implementation — 20 October 2026 SGT
+<a id="ten-call-checkout-implementation--20-october-2026-sgt"></a>
+
+### 3.317. Ten-call checkout implementation — 20 October 2026 SGT
 
 - PR70 passed final-head CI and was merged with owner authorization as18ccde0.
 - Active branch perf/checkout-ten-d1 integrates guarded D1 consolidation into the actual single checkout.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#ten-call-checkout-implementation--20-october-2026-sgt).
 
-### PR70 initial receipt versus download gate — 20 October 2026 SGT
+<a id="pr70-initial-receipt-versus-download-gate--20-october-2026-sgt-1"></a>
+
+### 3.318. PR70 initial receipt versus download gate — 20 October 2026 SGT
 
 - Run39394733331 on a51594a passed frontend/backend and74/78 live-email cases.
 - Downloaded logs confirm the same recovery case failed at the blocked initial receipt on all three devices.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr70-initial-receipt-versus-download-gate--20-october-2026-sgt).
 
-### PR70 browser reconciliation-gate correction — 20 October 2026 SGT
+<a id="pr70-browser-reconciliation-gate-correction--20-october-2026-sgt-1"></a>
+
+### 3.319. PR70 browser reconciliation-gate correction — 20 October 2026 SGT
 
 - Run39391908409 passed frontend/backend and75/78 live-email cases.
 - The same payment-recovery journey failed on all three devices because it deliberately blocked accept-payment but still expected Booking confirmed before releasing that gate.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr70-browser-reconciliation-gate-correction--20-october-2026-sgt).
 
-### Active audit repair — 20 October 2026
+<a id="active-audit-repair--20-october-2026"></a>
+
+### 3.320. Active audit repair — 20 October 2026
 
 - Branch fix/confirmation-and-queue-guards from main194cb5f.
 - Implement current-booking confirmation gate, bounded queue admission/recovery priority, and canonical current-rule summaries.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#active-audit-repair--20-october-2026).
 
-### PR69 main integration — 20 October 2026 SGT
+<a id="pr69-main-integration--20-october-2026-sgt-1"></a>
+
+### 3.321. PR69 main integration — 20 October 2026 SGT
 
 - PR69 had no CI run because its tracing branch conflicted with main after PR68 merged.
 - Integrate main194cb5f without rewriting branch history: retain batch creation-only behavior inside request-bound tracing, retain both test sets and ordered inventory, and preserve both historical entries.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr69-main-integration--20-october-2026-sgt).
 
-### Checkout phase tracing — 20 October 2026 SGT
+<a id="checkout-phase-tracing--20-october-2026-sgt-1"></a>
+
+### 3.322. Checkout phase tracing — 20 October 2026 SGT
 
 - Owner requests measurement of the7.6-second single checkout before pursuing3seconds.
 - Separate tracing branch starts from merged PR67/main dc74690; batch optimization PR68 remains independent.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-phase-tracing--20-october-2026-sgt).
 
-### Batch checkout creation path — 20 October 2026 SGT
+<a id="batch-checkout-creation-path--20-october-2026-sgt-1"></a>
+
+### 3.323. Batch checkout creation path — 20 October 2026 SGT
 
 - After HAR13 single checkout reached HitPay in7.60seconds, owner stops single optimization and authorizes the same provider strategy for direct batch checkout.
 - Extend the ongoing creation-only path to batch: public token, createBatch, one sequential book per session, closeBatch, validated complete unpaid invoice and one HitPay request.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#batch-checkout-creation-path--20-october-2026-sgt).
 
-### Checkout D1 consolidation — 20 October 2026 SGT
+<a id="checkout-d1-consolidation--20-october-2026-sgt-1"></a>
+
+### 3.324. Checkout D1 consolidation — 20 October 2026 SGT
 
 - The follow-up reduces isolated warm/cold single checkout from34 to27 D1 executions (HAR12 baseline47).
 - Archive/read grants in one primary batch; pass the committed canonical association/version forward; batch checkout completion with the final authenticated access read.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-d1-consolidation--20-october-2026-sgt).
 
-### Lean single checkout — 20 October 2026 SGT
+<a id="lean-single-checkout--20-october-2026-sgt-1"></a>
+
+### 3.325. Lean single checkout — 20 October 2026 SGT
 
 - Owner authorizes SimplyBook settings as the one-studio capacity authority and removes per-checkout admin identity/plan, catalogue, required-field, instructor eligibility and slot reads.
 - Apply first to ongoing direct single checkout; historical split holds and batch preflight remain unchanged for the staged experiment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#lean-single-checkout--20-october-2026-sgt).
 
-### PR66 CI cookie-adapter correction — 20 October 2026 SGT
+<a id="pr66-ci-cookie-adapter-correction--20-october-2026-sgt-1"></a>
+
+### 3.326. PR66 CI cookie-adapter correction — 20 October 2026 SGT
 
 - Run39365196455 on77f06d3 passed frontend/backend and75/78 live-email cases.
 - Only the new identity-warming test failed on all three devices, after its UI/no-effect assertions passed: its direct current-status fetch copied the preview cookie name instead of using the existing adapter that maps it to the real Worker cookie.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr66-ci-cookie-adapter-correction--20-october-2026-sgt).
 
-### Authentication rejection diagnostic follow-up — 20 October 2026 SGT
+<a id="authentication-rejection-diagnostic-follow-up--20-october-2026-sgt-1"></a>
+
+### 3.327. Authentication rejection diagnostic follow-up — 20 October 2026 SGT
 
 - The60-second admin-token cache already refreshes on the next identity operation after expiry;
 - HAR10 failed during fresh admin-auth, not a missing refresh.
@@ -2724,35 +4367,45 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#authentication-rejection-diagnostic-follow-up--20-october-2026-sgt).
 
-### HAR10 confirmation stability and pre-dispatch authentication failure — 20 October 2026 SGT
+<a id="har10-confirmation-stability-and-pre-dispatch-authentication-failure--20-october-2026-sgt-1"></a>
+
+### 3.328. HAR10 confirmation stability and pre-dispatch authentication failure — 20 October 2026 SGT
 
 - Owner HAR10 ran deployed5e9e2d8 after PR65.
 - Its first checkout returned the HitPay handoff in14.8seconds and payment subsequently reconciled.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har10-confirmation-stability-and-pre-dispatch-authentication-failure--20-october-2026-sgt).
 
-### Confirmation read timestamp race — 20 October 2026 SGT
+<a id="confirmation-read-timestamp-race--20-october-2026-sgt-1"></a>
+
+### 3.329. Confirmation read timestamp race — 20 October 2026 SGT
 
 - PR64 passed all PR gates and owner merged it as c7ee697.
 - Main run39355419233 passed frontend/backend and74/75 live-email cases; tablet WebKit payment recovery timed out and Cloudflare deployment was skipped.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-read-timestamp-race--20-october-2026-sgt).
 
-### Independent payment deadlines — 20 October 2026 SGT
+<a id="independent-payment-deadlines--20-october-2026-sgt-1"></a>
+
+### 3.330. Independent payment deadlines — 20 October 2026 SGT
 
 - HAR09 records a29.1second four-session checkout ending in recovery_required.
 - The saved batch-close evidence confirms four bookings and an unpaid invoice; correlated deployed c08aa04 telemetry proves HitPay creation returned422 JSON.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#independent-payment-deadlines--20-october-2026-sgt).
 
-### Interrupted provider transport recovery — 20 October 2026 SGT
+<a id="interrupted-provider-transport-recovery--20-october-2026-sgt-1"></a>
+
+### 3.331. Interrupted provider transport recovery — 20 October 2026 SGT
 
 - Owner requires errors to be logged and isolated while unrelated customers continue.
 - A06:07:38SGT Cloudflare storage reset during read-only warmDisplay left one unclassified admission unfinished; parallel reads then exhausted the remaining slot.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#interrupted-provider-transport-recovery--20-october-2026-sgt).
 
-### Lost checkout response test ordering — 20 October 2026
+<a id="lost-checkout-response-test-ordering--20-october-2026-1"></a>
+
+### 3.332. Lost checkout response test ordering — 20 October 2026
 
 - PR62 merged as de71b72 after all three PR gates passed.
 - Main run39340832488 passed frontend/backend but failed one of75 live-email cases;
@@ -2760,259 +4413,333 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#lost-checkout-response-test-ordering--20-october-2026).
 
-### PR62 checkout transport verification — 20 October 2026 SGT
+<a id="pr62-checkout-transport-verification--20-october-2026-sgt-1"></a>
+
+### 3.333. PR62 checkout transport verification — 20 October 2026 SGT
 
 - Owner explicitly authorizes merging PR62 after all three final-head CI gates pass.
 - Initial head0b5a76c passed frontend/backend and73/75 live-email cases; two desktop Chromium checkout assertions lost response resources after immediate HitPay navigation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr62-checkout-transport-verification--20-october-2026-sgt).
 
-### Batch closure fast path — 20 October 2026 SGT
+<a id="batch-closure-fast-path--20-october-2026-sgt"></a>
+
+### 3.334. Batch closure fast path — 20 October 2026 SGT
 
 - Owner authorizes validated final batch-close evidence reuse and fewer persistence round trips.
 - Based on main d0c0be8 and bounded read-only evidence from hometest03: intermediate books accumulate1–4 entries without invoice; closeBatch includes four confirmed nested invoice bookings, unpaid state and due_datetime matching later readback.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#batch-closure-fast-path--20-october-2026-sgt).
 
-### Active checkout optimization on PR61
+<a id="active-checkout-optimization-on-pr61"></a>
+
+### 3.335. Active checkout optimization on PR61
 
 - Cache extension checkpoint21000da passed full local code and386 runtime tests; the inventory-order gate failure was identified during the final combined run.
 - Owner now prioritizes deferred comment I/O and returning the saved URL in the authenticated checkout response.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#active-checkout-optimization-on-pr61).
 
-### PR61 extension — persistent display snapshots
+<a id="pr61-extension--persistent-display-snapshots"></a>
+
+### 3.336. PR61 extension — persistent display snapshots
 
 - Owner authorizes fifteen-minute scheduled warming plus booking-triggered refresh, with eager browser download on site entry.
 - Source implemented and focused persistence/scheduled/failure/checkout-handoff/client/release checks passed; full verify:code passed215 tests plus tooling/types/lint/build/export and 386/386 Worker runtime tests passed; the inventory-order gate failure was subsequently identified and corrected during the final combined run; final-head CI pending.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr61-extension--persistent-display-snapshots).
 
-### Browsing-loading successor — 19 October 2026 SGT
+<a id="browsing-loading-successor--19-october-2026-sgt"></a>
+
+### 3.337. Browsing-loading successor — 19 October 2026 SGT
 
 - Baseline main d15caba; branch fix/browsing-loading-cache.
 - Fix explicit local display loading and stable guest feedback; serve valid public calendar/catalogue cache hits before provider queue; start short catalogue prefetch before month work.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#browsing-loading-successor--19-october-2026-sgt).
 
-### PR60 streamed Review restoration race — 19 October 2026 SGT
+<a id="pr60-streamed-review-restoration-race--19-october-2026-sgt"></a>
+
+### 3.338. PR60 streamed Review restoration race — 19 October 2026 SGT
 
 - Headbe08170 passed frontend/backend; live-email passed74/75.
 - Tablet WebKit exposed a mount-order race: restoration finished before Review mounted, so the default browsing flag launched calendar/catalogue reads.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr60-streamed-review-restoration-race--19-october-2026-sgt).
 
-### PR60 final request-count correction — 19 October 2026 SGT
+<a id="pr60-final-request-count-correction--19-october-2026-sgt"></a>
+
+### 3.339. PR60 final request-count correction — 19 October 2026 SGT
 
 - Head13650ab frontend/backend passed; live-email passed72/75.
 - The three device failures reached a second stale availability-count assertion after checkout return: expected1 instead of the agreed0.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr60-final-request-count-correction--19-october-2026-sgt).
 
-### PR60 live-email follow-up — 19 October 2026 SGT
+<a id="pr60-live-email-follow-up--19-october-2026-sgt"></a>
+
+### 3.340. PR60 live-email follow-up — 19 October 2026 SGT
 
 - Head580f6aa passed frontend and backend including75/75 browser cases each and383 Worker tests.
 - Live-email passed66/75: extra catalogue prefetch on restored editable Review (reproduced in component test), revoked access now correctly enters protected denied UI instead of the old Details alert, and an expiry alert selector also matched the framework route announcer.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pr60-live-email-follow-up--19-october-2026-sgt).
 
-### Active PR60 implementation — 19 October 2026 SGT
+<a id="active-pr60-implementation--19-october-2026-sgt"></a>
+
+### 3.341. Active PR60 implementation — 19 October 2026 SGT
 
 - Working branch fix/confirmation-return-loading, starting headf03049e; main0fd2c6e.
 - Run39209839579 failed browser gates; underlying Worker checks passed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#active-pr60-implementation--19-october-2026-sgt).
 
-### Editable Review, combined checkout and compact confirmation — 19 October 2026 SGT
+<a id="editable-review-combined-checkout-and-compact-confirmation--19-october-2026-sgt-1"></a>
+
+### 3.342. Editable Review, combined checkout and compact confirmation — 19 October 2026 SGT
 
 - Owner supersedes creation-during-Review and queued provider edits: Details runs fresh read-only availability checks, then opens editable Review without creating a customer, booking or payment.
 - Changed details reset consent.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#editable-review-combined-checkout-and-compact-confirmation--19-october-2026-sgt).
 
-### HAR08 confirmation continuity and record reconciliation — 19 October 2026 SGT
+<a id="har08-confirmation-continuity-and-record-reconciliation--19-october-2026-sgt-1"></a>
+
+### 3.343. HAR08 confirmation continuity and record reconciliation — 19 October 2026 SGT
 
 - Owner reports successful checkout and asks for pending do-not-refresh guidance, removal of repeated confirmation loading, and read-only record reconciliation.
 - HAR08 shows customerConfirmation in a pending response, followed by confirmed without that snapshot; the hook discarded the proof while the611ms receipt request completed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har08-confirmation-continuity-and-record-reconciliation--19-october-2026-sgt).
 
-### Email-code browser interaction repair — 19 October 2026 SGT
+<a id="email-code-browser-interaction-repair--19-october-2026-sgt-1"></a>
+
+### 3.344. Email-code browser interaction repair — 19 October 2026 SGT
 
 - Final-policy CI39200175005 frontend passed74/75 browser cases.
 - Tablet WebKit filled the code while main was still inert during the loading transition; the trace retained an empty input, so native required validation prevented the expected incorrect-code response.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#email-code-browser-interaction-repair--19-october-2026-sgt).
 
-### Fifteen-minute hold and eight-minute payment policy — 19 October 2026 SGT
+<a id="fifteen-minute-hold-and-eight-minute-payment-policy--19-october-2026-sgt-1"></a>
+
+### 3.345. Fifteen-minute hold and eight-minute payment policy — 19 October 2026 SGT
 
 - Owner authorizes adding this policy to PR59 and merging only after final-commit required CI passes.
 - Owner reports SimplyBook's timeout changed to15minutes; provider behavior is not independently verified.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#fifteen-minute-hold-and-eight-minute-payment-policy--19-october-2026-sgt).
 
-### Completed-dismissal CI setup repair — 19 October 2026 SGT
+<a id="completed-dismissal-ci-setup-repair--19-october-2026-sgt-1"></a>
+
+### 3.346. Completed-dismissal CI setup repair — 19 October 2026 SGT
 
 - Merged-main50656c9 CI39198249437 passed74/75 live-email cases; phone WebKit timed out before reaching dismissal.
 - Trace shows about22seconds spent creating the synthetic hold/payment before navigation, then waiting for fully reconciled confirmation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#completed-dismissal-ci-setup-repair--19-october-2026-sgt).
 
-### Bounded pre-creation concurrency — 19 October 2026 SGT
+<a id="bounded-pre-creation-concurrency--19-october-2026-sgt"></a>
+
+### 3.347. Bounded pre-creation concurrency — 19 October 2026 SGT
 
 - Owner authorizes concurrency after HAR06/07 analysis: booking response arrived11.19/11.33seconds after coordinator start, while first Review-eligible browser response improved14.51→13.64seconds and full hold worsened15.73→16.68seconds.
 - Implement within one serialized booking job: overlap public/admin authentication for ongoing customers; run required-fields, eligibility and availability through two drained read lanes after fresh catalogue; overlap validated local attempt persistence with provider identity preparation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#bounded-pre-creation-concurrency--19-october-2026-sgt).
 
-### HAR07 payment transport investigation — 19 October 2026 SGT
+<a id="har07-payment-transport-investigation--19-october-2026-sgt"></a>
+
+### 3.348. HAR07 payment transport investigation — 19 October 2026 SGT
 
 - Owner HAR07 at11:38SGT shows hold200 in16.678seconds, first verifying reply beginning13.295seconds after hold dispatch, then HitPay preparation503 hitpay_transport_unknown in3.262seconds.
 - No checkout URL reached the browser.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har07-payment-transport-investigation--19-october-2026-sgt).
 
-### Shared checkout expiry and payment-first confirmation — 19 October 2026 SGT
+<a id="shared-checkout-expiry-and-payment-first-confirmation--19-october-2026-sgt"></a>
+
+### 3.349. Shared checkout expiry and payment-first confirmation — 19 October 2026 SGT
 
 - Owner authorizes implementing a five-minute payment deadline from successful booking creation, expiry return to calendar with contact retained, customer confirmation after verified matching HitPay payment, download-only waiting for reconciliation, and CI repair.
 - This supersedes the earlier requirement to hide all success/actions until SimplyBook accounting finishes.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#shared-checkout-expiry-and-payment-first-confirmation--19-october-2026-sgt).
 
-### Pending task: controlled coordinator concurrency — 19 October 2026 SGT
+<a id="pending-task-controlled-coordinator-concurrency--19-october-2026-sgt"></a>
+
+### 3.350. Pending task: controlled coordinator concurrency — 19 October 2026 SGT
 
 - **Pending; start after single-booking checkout is stable.** Review latest main, then implement [controlled account-coordinator concurrency](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/docs/SOCCERBOT_RULES_AND_ARCHITECTURE.md#pending-controlled-account-coordinator-concurrency--19-october-2026-sgt).
 - Browsing/provider work may overlap within shared limits, valid cache hits avoid slow work, booking writes initially stay serialized, and reconciliation must not starve.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#pending-task-controlled-coordinator-concurrency--19-october-2026-sgt).
 
-### Creation-first optimistic Review clarification — 19 October 2026 SGT
+<a id="creation-first-optimistic-review-clarification--19-october-2026-sgt-1"></a>
+
+### 3.351. Creation-first optimistic Review clarification — 19 October 2026 SGT
 
 - Owner clarifies that Review should appear after booking creation, with comments/readback continuing while payment stays disabled.
 - Earlier source waited for comment acknowledgement.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#creation-first-optimistic-review-clarification--19-october-2026-sgt).
 
-### Checkout handoff repair — 19 October 2026 SGT
+<a id="checkout-handoff-repair--19-october-2026-sgt"></a>
+
+### 3.352. Checkout handoff repair — 19 October 2026 SGT
 
 - HAR06 is parsed: successful hold/payment preparation, available sandbox checkout URL, aborted first context request, then pending confirmation polling without captured external navigation.
 - Retained Details-rendered Review was missing from BookingPage's handoff guard; its cleanup aborted the redirect owner.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-handoff-repair--19-october-2026-sgt).
 
-### Mandatory test-impact pass — 19 October 2026
+<a id="mandatory-test-impact-pass--19-october-2026"></a>
+
+### 3.353. Mandatory test-impact pass — 19 October 2026
 
 - Owner requires one complete test-impact review after every logical change and repair.
 - Follow AGENTS Verify and the [Service Contracts procedure](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/docs/SERVICE_CONTRACTS.md#mandatory-test-impact-pass-after-every-change--19-october-2026), including all duplicated setup/response waits and final exact-commit CI.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#mandatory-test-impact-pass--19-october-2026).
 
-### One-month browser expectation repair — 19 October 2026 SGT
+<a id="one-month-browser-expectation-repair--19-october-2026-sgt-1"></a>
+
+### 3.354. One-month browser expectation repair — 19 October 2026 SGT
 
 - CI39176339093 on3a34e2a passed frontend/backend, but live-email passed69/72: the same native guest journey timed out on all three engines.
 - Its separate warmedMonths setup still waited for four responses, then asserted four calendar calls twice.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#one-month-browser-expectation-repair--19-october-2026-sgt).
 
-### One-month calendar preload — 19 October 2026 SGT
+<a id="one-month-calendar-preload--19-october-2026-sgt-1"></a>
+
+### 3.355. One-month calendar preload — 19 October 2026 SGT
 
 - Owner reduces eager calendar loading from four months to the displayed month only.
 - Homepage preloads the current Singapore calendar month; another month is fetched only when opened.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#one-month-calendar-preload--19-october-2026-sgt).
 
-### Final single-booking optimization pass — 19 October 2026 SGT
+<a id="final-single-booking-optimization-pass--19-october-2026-sgt-1"></a>
+
+### 3.356. Final single-booking optimization pass — 19 October 2026 SGT
 
 - CatalogueReads overlaps the independent service/instructor reads only for ongoing customer access under the existing ProviderSession and serialized admission owner.
 - The initial full runtime run exposed three finite-path rate rejections; finite/historical reads retain their original sequential dispatch.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#final-single-booking-optimization-pass--19-october-2026-sgt).
 
-### Review continuity, pending confirmation and immediate home — 19 October 2026 SGT
+<a id="review-continuity-pending-confirmation-and-immediate-home--19-october-2026-sgt"></a>
+
+### 3.357. Review continuity, pending confirmation and immediate home — 19 October 2026 SGT
 
 - Additional owner requests: preferred communication has Email as its default with exactly Email, Call (existing phone identifier), SMS and WhatsApp; remove the placeholder and retain stored preferences.
 - The shared method catalogue also supplies SimplyBook comment labels.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#review-continuity-pending-confirmation-and-immediate-home--19-october-2026-sgt).
 
-### Comment milestone and D1 latency pass — 19 October 2026 SGT
+<a id="comment-milestone-and-d1-latency-pass--19-october-2026-sgt"></a>
+
+### 3.358. Comment milestone and D1 latency pass — 19 October 2026 SGT
 
 - Source baseline origin/main40e735e (PR54); isolated branch perf/review-comment-milestone.
 - Single-booking Review now qualifies from its matched acknowledged comment before association persistence, with payment still gated by all completed hold checks.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#comment-milestone-and-d1-latency-pass--19-october-2026-sgt).
 
-### Latest05 Review transition repair — 19 October 2026 SGT
+<a id="latest05-review-transition-repair--19-october-2026-sgt"></a>
+
+### 3.359. Latest05 Review transition repair — 19 October 2026 SGT
 
 - Owner HAR latest05 records a14.112s combined hold; first verifying reply is visible about12.75s after dispatch, leaving only about1.36s before completion.
 - Main/deployed baseline836a5c4 is confirmed by the preceding successful PR53/main deployment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest05-review-transition-repair--19-october-2026-sgt).
 
-### Single-booking verification latency and reference clarity — 19 October 2026 SGT
+<a id="single-booking-verification-latency-and-reference-clarity--19-october-2026-sgt"></a>
+
+### 3.360. Single-booking verification latency and reference clarity — 19 October 2026 SGT
 
 - PR51 merged as abad20d and PR52 as 692cf92 after their exact PR gates passed.
 - PR51's subsequent main run39149518497 failed one tablet live-email dismissal-retry case (53/54); frontend/backend passed and Cloudflare deployment was skipped.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#single-booking-verification-latency-and-reference-clarity--19-october-2026-sgt).
 
-### Latest04 UI and combined batch follow-up — 19 October 2026 SGT
+<a id="latest04-ui-and-combined-batch-follow-up--19-october-2026-sgt"></a>
+
+### 3.361. Latest04 UI and combined batch follow-up — 19 October 2026 SGT
 
 - Owner requests contact-action spacing, more prominent signed-in email, navy Book now hover text, an on-demand studio location popup, and removal of duplicate batch checks before an owner-operated two-browser conflict test.
 - Branch feat/batch-preflight-location-ui builds on PR51's browser failures repair (4fc8ce3); do not confuse that pending parent PR with main.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest04-ui-and-combined-batch-follow-up--19-october-2026-sgt).
 
-### Independent checking-window regression — 19 October 2026 SGT
+<a id="independent-checking-window-regression--19-october-2026-sgt-1"></a>
+
+### 3.362. Independent checking-window regression — 19 October 2026 SGT
 
 - The repaired dismissal journey passes all3 devices on4fc8ce3.
 - Two tablet cases timed out when combining full guest selection, uncertain holding, reload and checking-window exhaustion.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#independent-checking-window-regression--19-october-2026-sgt).
 
-### Browser failure coverage expansion — 18 October 2026
+<a id="browser-failure-coverage-expansion--18-october-2026"></a>
+
+### 3.363. Browser failure coverage expansion — 18 October 2026
 
 - The owner explicitly requires browser regression coverage for error handling, not only mechanism tests.
 - The legacy suite remains23 scenarios across3 devices (69 runs).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#browser-failure-coverage-expansion--18-october-2026).
 
-### Combined Details-to-Review hold — 18 October 2026
+<a id="combined-details-to-review-hold--18-october-2026"></a>
+
+### 3.364. Combined Details-to-Review hold — 18 October 2026
 
 - Owner authorizes one request with one authoritative single-session prebooking validation.
 - Branch `perf/combined-booking-hold` starts from owner-merged PR49/main87fde3c.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#combined-details-to-review-hold--18-october-2026).
 
-### Latest03 immediate rebooking — 18 October 2026
+<a id="latest03-immediate-rebooking--18-october-2026"></a>
+
+### 3.365. Latest03 immediate rebooking — 18 October 2026
 
 - Current branch `fix/returning-session-rebooking` starts from refreshed merged main d89ad5e (PR48).
 - Latest03 shows successful email verification/contact reads, valid catalogue responses and a13.031s completed-attempt dismissal before navigation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest03-immediate-rebooking--18-october-2026).
 
-### Latest02 performance and email access — 18 October 2026
+<a id="latest02-performance-and-email-access--18-october-2026"></a>
+
+### 3.366. Latest02 performance and email access — 18 October 2026
 
 - Branch `perf/payment-recovery-wakeup` starts from refreshed main45ec58c.
 - Source adds durable webhook-triggered payment recovery, coordinator recovery D1 timing and the ongoing contact authority repair.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest02-performance-and-email-access--18-october-2026).
 
-### Checkout authority optimization — 18 October 2026
+<a id="checkout-authority-optimization--18-october-2026"></a>
+
+### 3.367. Checkout authority optimization — 18 October 2026
 
 - Branch `perf/checkout-authority` starts from refreshed main9a15cae.
 - Consolidate repeated forward checkout grant reads while preserving entry/response authentication, write-boundary grants, atomic dispatch/effect claims, cleanup and payment recovery.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-authority-optimization--18-october-2026).
 
-### Booking presentation repair and measured latency — 17 October 2026
+<a id="booking-presentation-repair-and-measured-latency--17-october-2026"></a>
+
+### 3.368. Booking presentation repair and measured latency — 17 October 2026
 
 - Owner HAR-fixed-01 reached hold200, payment handoff200 and eventual confirmation/receipt200 on deployed PR39 source b9f2b51.
 - Measured preparation7.8seconds plus hold21.1seconds remains too long for the owner.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#booking-presentation-repair-and-measured-latency--17-october-2026).
 
-### Migration process and testing requirements documentation — 16 October 2026
+<a id="migration-process-and-testing-requirements-documentation--16-october-2026"></a>
+
+### 3.369. Migration process and testing requirements documentation — 16 October 2026
 
 - Owner requests a separate documentation-only PR for the next client migration: per-environment secret configuration, saved-versus-active deployment verification, legacy recovery/receipt continuity, actual application-API browser tests, isolated code mutation and side-effect tests, and measured latency/performance acceptance.
 - Rules and Architecture and Service Contracts own the requirements;
@@ -3020,154 +4747,198 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#migration-process-and-testing-requirements-documentation--16-october-2026).
 
-### Migration sweep: remove old-account session preload — 16 October 2026
+<a id="migration-sweep-remove-old-account-session-preload--16-october-2026-1"></a>
+
+### 3.370. Migration sweep: remove old-account session preload — 16 October 2026
 
 - The owner-requested final pass found the experimental NativeSessionInit frame still loading soccerbotstudiosg on every live booking selection.
 - Direct HitPay checkout does not use that native hosted-session experiment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#migration-sweep-remove-old-account-session-preload--16-october-2026).
 
-### Migration version activated — 16 October 2026
+<a id="migration-version-activated--16-october-2026-1"></a>
+
+### 3.371. Migration version activated — 16 October 2026
 
 - Owner explicitly authorized activation.
 - Deployment ad3432df-b58f-4c74-b1a6-d5db7fb6729a activated saved version140 c2a562d1-3469-4b5c-8ecc-cd22837377f4 at17:29:45SGT,100% traffic.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#migration-version-activated--16-october-2026).
 
-### Deployed provider mismatch — 16 October 2026
+<a id="deployed-provider-mismatch--16-october-2026-1"></a>
+
+### 3.372. Deployed provider mismatch — 16 October 2026
 
 - Ordinary curl through the supported managed network returns HTTP200 for Worker health, catalogue and October calendar; the earlier Python HTTP403/1010 is client-dependent evidence, not general Cloudflare unreachability.
 - Health still identifies source be9982b3 and version f2400190-6db5-4436-8c74-16371055b117.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#deployed-provider-mismatch--16-october-2026).
 
-### First new-account acceptance preparation — 16 October 2026
+<a id="first-new-account-acceptance-preparation--16-october-2026"></a>
+
+### 3.373. First new-account acceptance preparation — 16 October 2026
 
 - Owner requests verification and readiness for one first acceptance test, confirms local HitPay connectivity, treats old test records as noncritical, confirms new-account checklist settings complete and webhook unchanged.
 - Keep old rows intact; original-scope application receipt continuity is outside this new-account acceptance scope.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#first-new-account-acceptance-preparation--16-october-2026).
 
-### Environment readiness and owner confirmations — 16 October 2026
+<a id="environment-readiness-and-owner-confirmations--16-october-2026-1"></a>
+
+### 3.374. Environment readiness and owner confirmations — 16 October 2026
 
 - Owner reports latest environment changes installed, confirms migration checklist item3 complete (new-account signing/settings/schedules), and confirms item4 webhook configuration remains unchanged.
 - Record these as owner confirmations, separate from independently observed provider evidence.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#environment-readiness-and-owner-confirmations--16-october-2026).
 
-### Migration verification and booking queue review — 16 October 2026
+<a id="migration-verification-and-booking-queue-review--16-october-2026"></a>
+
+### 3.375. Migration verification and booking queue review — 16 October 2026
 
 - Fresh GitHub main and Cloudflare SOURCE_REVISION both remain be9982b3b0420db88907ecb727d049cd87a86ee4.
 - Preserve the clean historical checkout at 897cbfe; current local work is on fix/migration-booking-check-review in /workspace/work/soccerbot-migration.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#migration-verification-and-booking-queue-review--16-october-2026).
 
-### Opening hours, four-hour lead and observed HitPay host — 16 October 2026
+<a id="opening-hours-four-hour-lead-and-observed-hitpay-host--16-october-2026-1"></a>
+
+### 3.376. Opening hours, four-hour lead and observed HitPay host — 16 October 2026
 
 - PR37 is merged in remote main9d9e273.
 - New branch applies the owner-approved noon–20:00 SGT opening window,240-minute lead and exact checkout.sandbox.hit-pay.com allowance established by local read-only evidence.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#opening-hours-four-hour-lead-and-observed-hitpay-host--16-october-2026).
 
-### HAR06 checkout latency and payment diagnostics — 16 October 2026
+<a id="har06-checkout-latency-and-payment-diagnostics--16-october-2026-1"></a>
+
+### 3.377. HAR06 checkout latency and payment diagnostics — 16 October 2026
 
 - Owner HAR06 and redacted Worker/D1 evidence establish booking49/invoice40 created successfully at11:38SGT, with confirmed booking flags and an unpaid invoice.
 - Details-to-Review took about53seconds: roughly20seconds queued behind background month work,5seconds for the browser-triggered fresh day read,6seconds for preparation (another fresh read), and21seconds for holding creation/readback (19 provider calls).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#har06-checkout-latency-and-payment-diagnostics--16-october-2026).
 
-### Sandbox deployment and recovery correction — 16 October 2026
+<a id="sandbox-deployment-and-recovery-correction--16-october-2026-1"></a>
+
+### 3.378. Sandbox deployment and recovery correction — 16 October 2026
 
 - Owner requests durable sandbox settings, automatic calendar return for confirmed reservation conflicts, and webhook recovery from recoverable manual review.
 - Main dd3c31b passed all three CI gates and deployed, but the generated live artifact inherited native/disabled payment defaults and omitted five sandbox settings.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#sandbox-deployment-and-recovery-correction--16-october-2026).
 
-### Hold-state experiment evidence — 16 October 2026
+<a id="hold-state-experiment-evidence--16-october-2026-1"></a>
+
+### 3.379. Hold-state experiment evidence — 16 October 2026
 
 - Owner authorizes narrow diagnostic capture before the next physical hold experiment.
 - Deployed4e98eae retained structural errors and identifiers but not rejected status values.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#hold-state-experiment-evidence--16-october-2026).
 
-### Complete sandbox configuration readback — 16 October 2026
+<a id="complete-sandbox-configuration-readback--16-october-2026-1"></a>
+
+### 3.380. Complete sandbox configuration readback — 16 October 2026
 
 - Owner requested a full configuration check, which exposed five missing bindings beyond the previously restored route/enablement flags.
 - Owner then authorized setting them.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#complete-sandbox-configuration-readback--16-october-2026).
 
-### Calendar return and local reconciliation — 16 October 2026
+<a id="calendar-return-and-local-reconciliation--16-october-2026-1"></a>
+
+### 3.381. Calendar return and local reconciliation — 16 October 2026
 
 - Owner verified24October09:00 is correctly unavailable; that report is withdrawn.
 - A separate frontend pause survives successful fresh validation followed by preparation failure, leaving Back-to-calendar loading until a selection edit.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#calendar-return-and-local-reconciliation--16-october-2026).
 
-### Stable guest option and HAR04/05 — 16 October 2026
+<a id="stable-guest-option-and-har0405--16-october-2026-1"></a>
+
+### 3.382. Stable guest option and HAR04/05 — 16 October 2026
 
 - PR34 is owner-merged as4e98eae after all three PR gates passed in38828870612.
 - Owner reports guest-button movement when saved identity restores.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#stable-guest-option-and-har0405--16-october-2026).
 
-### Confirmation restoration race exposed by mechanism tests — 16 October 2026
+<a id="confirmation-restoration-race-exposed-by-mechanism-tests--16-october-2026-1"></a>
+
+### 3.383. Confirmation restoration race exposed by mechanism tests — 16 October 2026
 
 - CI38823092566 reaches real holding/payment on all browser projects.
 - Paid return passes on phone/tablet, while desktop receives confirmed200 then remains Checking: initial BookingProvider hydration/restoration changes the revision and cancels that protected read before a second request is throttled.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#confirmation-restoration-race-exposed-by-mechanism-tests--16-october-2026).
 
-### Test reliability audit — 16 October 2026
+<a id="test-reliability-audit--16-october-2026"></a>
+
+### 3.384. Test reliability audit — 16 October 2026
 
 - Reviewed the inventory of50 test files (24 frontend/unit,10 Worker,3 browser,13 tooling/installer) for clock dependence, fixture coupling, weak assertions, isolation and mocked boundaries.
 - PR34 fixes the weekday clock failure.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#test-reliability-audit--16-october-2026).
 
-### Deterministic booking test clock — 16 October 2026
+<a id="deterministic-booking-test-clock--16-october-2026"></a>
+
+### 3.385. Deterministic booking test clock — 16 October 2026
 
 - PR33 merged6a88134; main run38816624792 frontend failed two real-clock tomorrow fixtures at Singapore midnight (expected8800, correct Saturday price10800).
 - Pin the test Date clock to a known weekday without changing product pricing or receipt assertions.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#deterministic-booking-test-clock--16-october-2026).
 
-### Holding HTTP boundary repair — 15 October 2026
+<a id="holding-http-boundary-repair--15-october-2026"></a>
+
+### 3.386. Holding HTTP boundary repair — 15 October 2026
 
 - Baseline deployed40cca80, branch fix/allow-booking-hold-request.
 - HAR03 and bounded backend evidence identify a missing hold=1 query allowance before authentication/provider dispatch.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#holding-http-boundary-repair--15-october-2026).
 
-### Review booking owner-test repair — 15 October 2026
+<a id="review-booking-owner-test-repair--15-october-2026"></a>
+
+### 3.387. Review booking owner-test repair — 15 October 2026
 
 - Current branch fix/review-hold-continuation starts from deployed main1971d26.
 - HAR and D1 establish preparation without holding/payment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#review-booking-owner-test-repair--15-october-2026).
 
-### Direct hosted HitPay implementation resumed — 15 October 2026
+<a id="direct-hosted-hitpay-implementation-resumed--15-october-2026-1"></a>
+
+### 3.388. Direct hosted HitPay implementation resumed — 15 October 2026
 
 - Worktree /workspace/work/direct-hitpay, branch feat/direct-hitpay-sandbox, refreshed main baseline49eed77f10811c8787596b1ca44a49dfb50c889c.
 - Source implementation now includes direct hosted navigation, Details-stage fresh selection validation, additive0029 payment provenance, independent HitPay ingress/retrieval, one-shot external SimplyBook finalisation and bounded financial recovery.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#direct-hosted-hitpay-implementation-resumed--15-october-2026).
 
-### Durable Object read optimization and Turnstile layout — 14 October 2026
+<a id="durable-object-read-optimization-and-turnstile-layout--14-october-2026"></a>
+
+### 3.389. Durable Object read optimization and Turnstile layout — 14 October 2026
 
 - Current baseline is deployed f268988.
 - Additive admission indexes and a populated-object runtime regression are implemented; focused regression and Worker types/source checks passed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#durable-object-read-optimization-and-turnstile-layout--14-october-2026).
 
-### Preparing one checkout-opening diagnostic — 13 October 2026
+<a id="preparing-one-checkout-opening-diagnostic--13-october-2026"></a>
+
+### 3.390. Preparing one checkout-opening diagnostic — 13 October 2026
 
 - Source-only0025 raises native grant schema cap624→688; carried618 otherwise cannot satisfy availability admission.
 - Focused extended-grant runtime test passed; full checks/CI/artifact and a new executor remain in progress.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#preparing-one-checkout-opening-diagnostic--13-october-2026).
 
-### Owner settings evidence received — 13 October 2026
+<a id="owner-settings-evidence-received--13-october-2026"></a>
+
+### 3.391. Owner settings evidence received — 13 October 2026
 
 - Homepage loads;
 - SBPay PRO on free trial;
@@ -3176,7 +4947,9 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-settings-evidence-received--13-october-2026).
 
-### Read-only native settings checked; owner browser results pending — 13 October 2026
+<a id="read-only-native-settings-checked-owner-browser-results-pending--13-october-2026"></a>
+
+### 3.392. Read-only native settings checked; owner browser results pending — 13 October 2026
 
 - Connected SimplyBook identity matches the developer binding.
 - Accept Payments enabled/configured;
@@ -3185,357 +4958,459 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#read-only-native-settings-checked-owner-browser-results-pending--13-october-2026).
 
-### Checkout diagnosis: endpoint and handoff match; native error unresolved — 13 October 2026
+<a id="checkout-diagnosis-endpoint-and-handoff-match-native-error-unresolved--13-october-2026"></a>
+
+### 3.393. Checkout diagnosis: endpoint and handoff match; native error unresolved — 13 October 2026
 
 - Confirmed exact handoff/retained URL equality, invoice31 association and failure before the original submission/checkout deadlines and access closure.
 - Official documentation matches our payment-link endpoint.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkout-diagnosis-endpoint-and-handoff-match-native-error-unresolved--13-october-2026).
 
-### Owner checkout 404; test stopped and independently closed — 13 October 2026
+<a id="owner-checkout-404-test-stopped-and-independently-closed--13-october-2026"></a>
+
+### 3.394. Owner checkout 404; test stopped and independently closed — 13 October 2026
 
 - Packet301173108ab6 created booking40 and exact unpaid invoice31, SGD88, for Nabil3/service2 on15October15:40 Singapore.
 - Both callback subscriptions were active and the protected checkout handoff passed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-checkout-404-test-stopped-and-independently-closed--13-october-2026).
 
-### Owner payment packet preparation continues — 13 October 2026
+<a id="owner-payment-packet-preparation-continues--13-october-2026"></a>
+
+### 3.395. Owner payment packet preparation continues — 13 October 2026
 
 - Merchant verification will occur on the owner checkout before payment, as requested.
 - Application preparation adds explicit704 budget support and refreshes release metadata; current live640 remains closed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-payment-packet-preparation-continues--13-october-2026).
 
-### Payment test preparation, access still closed — 13 October 2026
+<a id="payment-test-preparation-access-still-closed--13-october-2026"></a>
+
+### 3.396. Payment test preparation, access still closed — 13 October 2026
 
 - Owner readiness is confirmed for one proposed native payment test.
 - YS confirms Sandbox mode and tentatively names app404; actual merchant display identity remains to be checked in the owner browser.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#payment-test-preparation-access-still-closed--13-october-2026).
 
-### Paired control source prepared — 13 October 2026
+<a id="paired-control-source-prepared--13-october-2026"></a>
+
+### 3.397. Paired control source prepared — 13 October 2026
 
 - The next experiment uses fixed booking/invoice callback routes with independent finite windows, caps and deduplication.
 - Each subscription keeps its one-use grant and exact baseline checks; remove invoice first, then booking, preserving prior subscriptions.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#paired-control-source-prepared--13-october-2026).
 
-### Webhook investigation: verify the event prerequisite — 13 October 2026
+<a id="webhook-investigation-verify-the-event-prerequisite--13-october-2026"></a>
+
+### 3.398. Webhook investigation: verify the event prerequisite — 13 October 2026
 
 - No callback was recorded through 10:44:54 Singapore.
 - The exact destination and active `new_booking` registration were verified before booking 38; current Cloudflare reads report Access not enabled and the public Worker address enabled.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#webhook-investigation-verify-the-event-prerequisite--13-october-2026).
 
-### Live DELETE fix passed; signed delivery not observed — 13 October 2026
+<a id="live-delete-fix-passed-signed-delivery-not-observed--13-october-2026"></a>
+
+### 3.399. Live DELETE fix passed; signed delivery not observed — 13 October 2026
 
 - Packet7ec56094976f created confirmed booking38 and exact unpaid invoice29, SGD88, with Nabil on15October15:40 Singapore.
 - The checkout link remains unopened.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#live-delete-fix-passed-signed-delivery-not-observed--13-october-2026).
 
-### Active subscription baseline restored — 13 October 2026
+<a id="active-subscription-baseline-restored--13-october-2026"></a>
+
+### 3.400. Active subscription baseline restored — 13 October 2026
 
 - Approved read-only packet1089bf8b452a returned an empty active-subscription array without repeating DELETE.
 - The original empty active baseline is restored; this does not establish permanent deletion of inactive provider records or webhook delivery acceptance.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#active-subscription-baseline-restored--13-october-2026).
 
-### Latest live result: DELETE unknown, test stopped — 13 October 2026
+<a id="latest-live-result-delete-unknown-test-stopped--13-october-2026"></a>
+
+### 3.401. Latest live result: DELETE unknown, test stopped — 13 October 2026
 
 - Approved packet10c62a001eea passed actual string-flag and unique subscription identity checks, then dispatched DELETE once and stopped on `provider_representation_unknown`.
 - No new live booking/subscription test started.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest-live-result-delete-unknown-test-stopped--13-october-2026).
 
-### Current source repair — 13 October 2026
+<a id="current-source-repair--13-october-2026"></a>
+
+### 3.402. Current source repair — 13 October 2026
 
 - YS requested the subscription parser fix.
 - Exact string"0"/"1" and numeric0/1 are now accepted; unknown flags remain rejected with private field codes.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#current-source-repair--13-october-2026).
 
-### Latest result: subscription diagnostic closed — 13 October 2026
+<a id="latest-result-subscription-diagnostic-closed--13-october-2026"></a>
+
+### 3.403. Latest result: subscription diagnostic closed — 13 October 2026
 
 - Approved packet46b93ebc17fa7 observed a string `is_active`, rejected by the numeric-only subscription validator.
 - Its exact value and subscription identity remain unproven.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#latest-result-subscription-diagnostic-closed--13-october-2026).
 
-### Webhook flight stopped; access closed, subscription unresolved — 13 October 2026
+<a id="webhook-flight-stopped-access-closed-subscription-unresolved--13-october-2026-1"></a>
+
+### 3.404. Webhook flight stopped; access closed, subscription unresolved — 13 October 2026
 
 - Packet `b918a81d06e991549f9d67e449098bf87e8109bc9ea6affc98d69d7773d06a99` executed once under the approved campaign on source `f2e0a3e91824f569a161f29447471d5081259719`.
 - All three gates passed in CI38313369930; artifact11776470322/SHA256 `ed0207005a4ce1a38bc3f8c9302e05895be968d9afbeddf40a05d5725c3d1e14` matched150 sealed files and273 strict Worker tests.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#webhook-flight-stopped-access-closed-subscription-unresolved--13-october-2026).
 
-### Approved technical payment/webhook campaign — 13 October 2026
+<a id="approved-technical-paymentwebhook-campaign--13-october-2026-1"></a>
+
+### 3.405. Approved technical payment/webhook campaign — 13 October 2026
 
 - Current subscription increment: all273 Worker runtime tests passed with zero failures/skips and no external provider calls; generated types, source/policy guards, affected lint and checker regressions passed.
 - The packaged release now verifies preservation through pending0022/0023.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#approved-technical-paymentwebhook-campaign--13-october-2026).
 
-### Payment/webhook source increment — 13 October 2026
+<a id="paymentwebhook-source-increment--13-october-2026"></a>
+
+### 3.406. Payment/webhook source increment — 13 October 2026
 
 - PR21 merged at `383cc2e70d952f2a37377046ccfd226c0e2a403e` after explicit owner approval.
 - Independent main CI `38276366243` passed frontend, backend, live-email and Pages demo publication.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#paymentwebhook-source-increment--13-october-2026).
 
-### Developer native booking accepted and independently closed — 13 October 2026
+<a id="developer-native-booking-accepted-and-independently-closed--13-october-2026-1"></a>
+
+### 3.407. Developer native booking accepted and independently closed — 13 October 2026
 
 - Packet `217dfd4e4df2` executed once after YS approved the exact packet and amended resource limits.
 - Source `8bd66c1` passed all three CI gates in run `38273011816`; artifact `11758121123` matched 148 sealed files, 257 Worker tests and all 21 immutable migrations.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#developer-native-booking-accepted-and-independently-closed--13-october-2026).
 
-### Owner roster and instructor priority — 12 October 2026
+<a id="owner-roster-and-instructor-priority--12-october-2026-1"></a>
+
+### 3.408. Owner roster and instructor priority — 12 October 2026
 
 - YS supplied the October 2026 roster and explicitly set instructor priority **Faisal → Caelan → Nabil** when multiple instructors are available.
 - Apply priority only among instructors eligible and freshly available for the entire selected session; do not replace an unavailable preferred instructor with an unverified one.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#owner-roster-and-instructor-priority--12-october-2026).
 
-### Approved setup inspection completed and closed — 12 October 2026
+<a id="approved-setup-inspection-completed-and-closed--12-october-2026-1"></a>
+
+### 3.409. Approved setup inspection completed and closed — 12 October 2026
 
 - Independent closure at 23:21:46 Singapore verified source `3af1323` / version `bd48335e-de9b-4b11-b0ba-b6ed5267f2f5`: Worker and coordinator matched, provider and identity access disabled, end 0, 387/512 calls with active 0 and 16 recovery calls untouched.
 - Both new capabilities expired and returned 401; schedules remain empty; all 18 historical table snapshots and 21 applied migrations are preserved.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#approved-setup-inspection-completed-and-closed--12-october-2026).
 
-### Full native acceptance execution resumed — 12 October2026
+<a id="full-native-acceptance-execution-resumed--12-october2026-1"></a>
+
+### 3.410. Full native acceptance execution resumed — 12 October2026
 
 - YS instructed “execute it now” against the consolidated full native acceptance draft.
 - Continue technical implementation, evidence-backed discovery preparation, tests and PR21 publication.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#full-native-acceptance-execution-resumed--12-october2026).
 
-### Native campaign stopped on actual date availability — 12 October2026
+<a id="native-campaign-stopped-on-actual-date-availability--12-october2026-1"></a>
+
+### 3.411. Native campaign stopped on actual date availability — 12 October2026
 
 - Sealed packet3f6019db7880 ran sourcee122ba5 after all-three CI38236452119/artifact11740802365 passed.
 - The authenticated15–29October calendar returned14 start times on15October and no other offered date.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-campaign-stopped-on-actual-date-availability--12-october2026).
 
-### Actual calendar discovery before the final native gate — 12 October2026
+<a id="actual-calendar-discovery-before-the-final-native-gate--12-october2026-1"></a>
+
+### 3.412. Actual calendar discovery before the final native gate — 12 October2026
 
 - Current actual campaign totals:373 provider,128 management,57 direct Worker,12 deployments;4 flights/3 actual attempts,5 conservative book allowances,1 consumed migration.
 - One actual attempt remains, with original512 total/16 recovery and20:30Singapore deadline.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#actual-calendar-discovery-before-the-final-native-gate--12-october2026).
 
-### Native single proof accepted and closed — 12 October2026
+<a id="native-single-proof-accepted-and-closed--12-october2026-1"></a>
+
+### 3.413. Native single proof accepted and closed — 12 October2026
 
 - Flight4 consumed packet50e2a1263ac7 on24153c3, all-three CI38232933900/artifact11740055253. single proof at15 October 14:00Singapore: bookings35, invoice27, 1 signed confirmed booking reads, authoritative unpaid invoice, SGD88/tax0 and one native link retained unopened.
 - Attempt375bbc00-297f-43fd-9671-2b0961aa5979 is observed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-single-proof-accepted-and-closed--12-october2026).
 
-### Availability-only stop and actual-attempt accounting — 12 October2026
+<a id="availability-only-stop-and-actual-attempt-accounting--12-october2026-1"></a>
+
+### 3.414. Availability-only stop and actual-attempt accounting — 12 October2026
 
 - Flight3 consumed packet8e6824f42e2b on ee2853a (all-three CI38230887077/artifact11739086074).16October returned zero offers.
 - The grant cache and request ledger prove no prepare/native POST, no attempt and no booking dispatch.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#availability-only-stop-and-actual-attempt-accounting--12-october2026).
 
-### Native campaign flight2 accepted same-date; independently closed — 12 October2026
+<a id="native-campaign-flight2-accepted-same-date-independently-closed--12-october2026"></a>
+
+### 3.415. Native campaign flight2 accepted same-date; independently closed — 12 October2026
 
 - Source6ac6165 passed all three CI38229148061 gates.
 - Artifact11737163517 verified148 sealed files/exact tree/246 Worker tests.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-campaign-flight2-accepted-same-date-independently-closed--12-october2026).
 
-### Native campaign flight1 closed; batch closure phase isolated — 12 October2026
+<a id="native-campaign-flight1-closed-batch-closure-phase-isolated--12-october2026"></a>
+
+### 3.416. Native campaign flight1 closed; batch closure phase isolated — 12 October2026
 
 - Sealed dea4fe21baae executed sourcea206106 from all-green CI38226503628/artifact11736683975 (148 sealed files,244 Worker cases).
 - Applied0021 with preservation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-campaign-flight1-closed-batch-closure-phase-isolated--12-october2026).
 
-### Current task — complete native-booking acceptance, 12 October2026
+<a id="current-task--complete-native-booking-acceptance-12-october2026"></a>
+
+### 3.417. Current task — complete native-booking acceptance, 12 October2026
 
 - YS requests a fixed North Star and continued execution until accepted.
 - Rechecked clean local/remote b582a46 on draft PR21 and successful final CI38224131965.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#current-task--complete-native-booking-acceptance-12-october2026).
 
-### 256 trial executed; second receipt cardinality failure — 12 October2026
+<a id="256-trial-executed-second-receipt-cardinality-failure--12-october2026"></a>
+
+### 3.418. 256 trial executed; second receipt cardinality failure — 12 October2026
 
 - Exact approved packet c0916326b895 executed once on6bc54f7 after all three CI38222064282 gates and artifact11735290126 verification.
 - Applied0020 with preservation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#256-trial-executed-second-receipt-cardinality-failure--12-october2026).
 
-### Approved live-test amendment preparation — 12 October2026
+<a id="approved-live-test-amendment-preparation--12-october2026"></a>
+
+### 3.419. Approved live-test amendment preparation — 12 October2026
 
 - YS requested a live test and explicitly approved cumulative256 with196 carried/16 reserved and deadline17:30Singapore today.
 - Corrected source3e3628d passed all three CI38220464328 gates.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#approved-live-test-amendment-preparation--12-october2026).
 
-### Current task — synthetic batch-membership experiment, 12 October2026
+<a id="current-task--synthetic-batch-membership-experiment-12-october2026"></a>
+
+### 3.420. Current task — synthetic batch-membership experiment, 12 October2026
 
 - YS asked to start an experiment.
 - Rechecked clean6759773/remote PR21 and the closed196/224 ledger evidence.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#current-task--synthetic-batch-membership-experiment-12-october2026).
 
-### Current task — follow-up experiment identified missing batch echo, 12 October2026
+<a id="current-task--follow-up-experiment-identified-missing-batch-echo-12-october2026"></a>
+
+### 3.421. Current task — follow-up experiment identified missing batch echo, 12 October2026
 
 - Approved packet a14dfea95559 executed exact4671f37 from all-green CI38217379501/artifact11732905946.
 - Migration0019 applied and independently preserved all historical rows/foreign keys;0001–0019 immutable, none pending.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#current-task--follow-up-experiment-identified-missing-batch-echo-12-october2026).
 
-### Next finite experiment prepared — 12 October2026
+<a id="next-finite-experiment-prepared--12-october2026"></a>
+
+### 3.422. Next finite experiment prepared — 12 October2026
 
 - Preparing the owner-requested next experiment using the corrected intermediate validator.
 - Final prior source d21e2b8 passed all three CI38216192722 gates.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#next-finite-experiment-prepared--12-october2026).
 
-### Current task — live field identified and correction prepared, 12 October2026
+<a id="current-task--live-field-identified-and-correction-prepared-12-october2026"></a>
+
+### 3.423. Current task — live field identified and correction prepared, 12 October2026
 
 - Approved packet5a170ff0 executed on tested47b37db (all three CI38213290654 gates; artifact11729658054).
 - First book returned a five-field object and failed creation.booking.require_payment/missing, meaning absent or null.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#current-task--live-field-identified-and-correction-prepared-12-october2026).
 
-### Current task — intermediate contract audit and finite proof preparation, 12 October2026
+<a id="current-task--intermediate-contract-audit-and-finite-proof-preparation-12-october2026"></a>
+
+### 3.424. Current task — intermediate contract audit and finite proof preparation, 12 October2026
 
 - Compared every consumed creation field with official public docs/examples and staff guidance.
 - Public example is recurring, so current multiple-booking batch_id echo, batch/client hash details and intermediate end representation remain unresolved.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#current-task--intermediate-contract-audit-and-finite-proof-preparation-12-october2026).
 
-### Current task — creation-envelope evidence after the successful read, 12 October 2026
+<a id="current-task--creation-envelope-evidence-after-the-successful-read-12-october-2026"></a>
+
+### 3.425. Current task — creation-envelope evidence after the successful read, 12 October 2026
 
 - Approved packet120046b5 executed and closed from tested8ac2227.
 - The single retained-booking read passed all13 independent predicates, including50-minute occupied end, with40+10 service/buffer and confirmed status.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#current-task--creation-envelope-evidence-after-the-successful-read-12-october-2026).
 
-### Historical checkpoint — inspect the retained booking format, 12 October 2026
+<a id="historical-checkpoint--inspect-the-retained-booking-format-12-october-2026"></a>
+
+### 3.426. Historical checkpoint — inspect the retained booking format, 12 October 2026
 
 - Owner requested an actual existing-record read instead of guessed provider semantics.
 - Read-only source is prepared: explicit one-use inspect mode, one exact retained key, shared independent predicates, no invoice/cancel/finalize/write, no scheduler/replay and no attempt/effect mutation.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--inspect-the-retained-booking-format-12-october-2026).
 
-### Historical checkpoint — precise native diagnostics, 12 October 2026
+<a id="historical-checkpoint--precise-native-diagnostics-12-october-2026"></a>
+
+### 3.427. Historical checkpoint — precise native diagnostics, 12 October 2026
 
 - Owner requested specific private validation errors and evidence-based diagnosis before another booking trial.
 - Continued draft PR21 from5dacab5 on feat/native-checkout-completion-20261011; main25aac892 is unchanged.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--precise-native-diagnostics-12-october-2026).
 
-### Historical checkpoint — approved192 checkout-proof preparation, 12 October2026
+<a id="historical-checkpoint--approved192-checkout-proof-preparation-12-october2026"></a>
+
+### 3.428. Historical checkpoint — approved192 checkout-proof preparation, 12 October2026
 
 - Owner approved preparation only: carry90 used toward192, reserve16, at most102 further provider calls (86 ordinary).
 - Existing128 policy cannot start availability with22 ordinary calls because32 must remain for checkout.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--approved192-checkout-proof-preparation-12-october2026).
 
-### Historical checkpoint — correct the cart lifecycle, 12 October 2026
+<a id="historical-checkpoint--correct-the-cart-lifecycle-12-october-2026"></a>
+
+### 3.429. Historical checkpoint — correct the cart lifecycle, 12 October 2026
 
 - Residual-only recovery is closed and booking/cart unchanged.
 - The owner corrected our premature expectation of an invoice for an unfinished cart.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--correct-the-cart-lifecycle-12-october-2026).
 
-### Historical checkpoint — existing residual recovery, 12 October 2026
+<a id="historical-checkpoint--existing-residual-recovery-12-october-2026"></a>
+
+### 3.430. Historical checkpoint — existing residual recovery, 12 October 2026
 
 - The corrected identity proof is closed with one retained native booking and no verified link or cancellation.
 - Native booking is not settled.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--existing-residual-recovery-12-october-2026).
 
-### Preview failure reporting during identity-fix CI — 12 October 2026
+<a id="preview-failure-reporting-during-identity-fix-ci--12-october-2026-1"></a>
+
+### 3.431. Preview failure reporting during identity-fix CI — 12 October 2026
 
 - The corrected identity source passed backend and live-email CI, including224 Worker cases and their browser/release gates.
 - Frontend passed68/69 browser cases; one tablet synthetic checkout received HTML404 instead of200.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#preview-failure-reporting-during-identity-fix-ci--12-october-2026).
 
-### Historical checkpoint — identity refresh across native reads, 12 October 2026
+<a id="historical-checkpoint--identity-refresh-across-native-reads-12-october-2026"></a>
+
+### 3.432. Historical checkpoint — identity refresh across native reads, 12 October 2026
 
 - The approved idle procedure passed exact baseline/activation/closure readiness.
 - Native checkout reached a distinct retained failure: provider_identity_expired on sessionIndex1, catalogue-instructors, before booking.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--identity-refresh-across-native-reads-12-october-2026).
 
-### Historical checkpoint — test coordinator idle-lifecycle activation, 12 October 2026
+<a id="historical-checkpoint--test-coordinator-idle-lifecycle-activation-12-october-2026"></a>
+
+### 3.433. Historical checkpoint — test coordinator idle-lifecycle activation, 12 October 2026
 
 - The protected-readiness proof isolated an actual mismatch: active Worker, same-source coordinator still on the preceding closed configuration.
 - Four observations exhausted the packet's readiness bound before creating native authority or making any provider request.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--test-coordinator-idle-lifecycle-activation-12-october-2026).
 
-### Historical checkpoint — coordinator readiness and private window diagnosis, 12 October 2026
+<a id="historical-checkpoint--coordinator-readiness-and-private-window-diagnosis-12-october-2026"></a>
+
+### 3.434. Historical checkpoint — coordinator readiness and private window diagnosis, 12 October 2026
 
 - The exact approved128 proof executed and closed.
 - Migration0017 preserved all existing rows; availability stopped at customer-window admission before any provider call, attempt or booking.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--coordinator-readiness-and-private-window-diagnosis-12-october-2026).
 
-### Historical checkpoint — exact128-call continuation preparation, 12 October 2026
+<a id="historical-checkpoint--exact128-call-continuation-preparation-12-october-2026"></a>
+
+### 3.435. Historical checkpoint — exact128-call continuation preparation, 12 October 2026
 
 - YS approved preparing a finite128-call cumulative policy, carrying33 used and reserving16 for recovery; no live action is approved.
 - Source keeps the same campaign and persistent coordinator ledger.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--exact128-call-continuation-preparation-12-october-2026).
 
-### Historical checkpoint — preserve private prerequisite evidence, 12 October 2026
+<a id="historical-checkpoint--preserve-private-prerequisite-evidence-12-october-2026"></a>
+
+### 3.436. Historical checkpoint — preserve private prerequisite evidence, 12 October 2026
 
 - The finite native checkout's prerequisite failure previously discarded its cause.
 - Source now retains bounded private stage/code/operation/representation evidence in the existing grant result while preserving the customer response and one-use behavior.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--preserve-private-prerequisite-evidence-12-october-2026).
 
-### Historical checkpoint — native HTTP/RPC diagnosis after verified closure, 12 October 2026
+<a id="historical-checkpoint--native-httprpc-diagnosis-after-verified-closure-12-october-2026"></a>
+
+### 3.437. Historical checkpoint — native HTTP/RPC diagnosis after verified closure, 12 October 2026
 
 - Approved signing amendment is executed and explicitly closed.
 - Encrypted signing binding installed;0015/0016 applied and immutable.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--native-httprpc-diagnosis-after-verified-closure-12-october-2026).
 
-### Historical checkpoint — missing deployed signing binding, 12 October 2026
+<a id="historical-checkpoint--missing-deployed-signing-binding-12-october-2026"></a>
+
+### 3.438. Historical checkpoint — missing deployed signing binding, 12 October 2026
 
 - Approved native backend proof stopped after two read-only management requests: required signing binding absent from the developer Worker.
 - No migration, deployment, activation, provider request, booking, checkout link, cancellation, payment or notification occurred.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--missing-deployed-signing-binding-12-october-2026).
 
-### Historical checkpoint — native failure-path closure, 11 October 2026
+<a id="historical-checkpoint--native-failure-path-closure-11-october-2026"></a>
+
+### 3.439. Historical checkpoint — native failure-path closure, 11 October 2026
 
 - Continuation on PR21/feat/native-checkout-completion-20261011 from5e89220, actual main25aac892 unchanged.
 - Implemented pre-validation reference retention, durable post-booking handoff recovery, strict known-reference compensation and default-denied finite cleanup permission in source-only0016.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--native-failure-path-closure-11-october-2026).
 
-### 11 October — protected native customer flow
+<a id="11-october--protected-native-customer-flow"></a>
+
+### 3.440. 11 October — protected native customer flow
 
 - The existing customer journey now carries native service/provider IDs and current names/prices from catalogue and bounded date availability through players, Details, Review, immutable preparation and the one-use native checkout.
 - Submitted slots must match server-retained offers; the Worker still rechecks the entire cart and each write.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#11-october--protected-native-customer-flow).
 
-### 11 October — native checkout implementation and owner configuration confirmation
+<a id="11-october--native-checkout-implementation-and-owner-configuration-confirmation-1"></a>
+
+### 3.441. 11 October — native checkout implementation and owner configuration confirmation
 
 - Owner confirmed developer tax0/S$88 final,40+10minutes and Client Login off.
 - Source now has scoped declaration-based prebooking, fresh guest/native-client separation, single and multi-session native booking/invoice validation, no-replay effects, lost-finalization known-ID recovery and a one-use protected checkout route.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#11-october--native-checkout-implementation-and-owner-configuration-confirmation).
 
-### Metadata discovery accepted and closed — 11 October 2026
+<a id="metadata-discovery-accepted-and-closed--11-october-2026-1"></a>
+
+### 3.442. Metadata discovery accepted and closed — 11 October 2026
 
 - YS approved packet SHA256 `e535f54372e47d6cde632f8b643b91dd669cb90eade2efbcdc9c50343831321a` in this session.
 - Executed10:07:35–10:09:04UTC (18:07:35–18:09:04SGT),89.318 seconds within the20-minute limit.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#metadata-discovery-accepted-and-closed--11-october-2026).
 
-### Current direction — technical integration before combined testing
+<a id="current-direction--technical-integration-before-combined-testing"></a>
+
+### 3.443. Current direction — technical integration before combined testing
 
 - YS now wants native booking and webhook/reconciliation technical work settled first, then one combined physical acceptance flight.
 - Native source increment remains in PR21;
@@ -3543,62 +5418,82 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#current-direction--technical-integration-before-combined-testing).
 
-### Native booking completion task — six deliverables, 11 October 2026
+<a id="native-booking-completion-task--six-deliverables-11-october-2026"></a>
+
+### 3.444. Native booking completion task — six deliverables, 11 October 2026
 
 - Outcome: complete the supported customer booking path before treating native checkout or later webhooks as accepted.
 - Owner-approved policies above remain unchanged.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-booking-completion-task--six-deliverables-11-october-2026).
 
-### Previous task — native one-studio policy and North Star execution, 11 October 2026
+<a id="previous-task--native-one-studio-policy-and-north-star-execution-11-october-2026"></a>
+
+### 3.445. Previous task — native one-studio policy and North Star execution, 11 October 2026
 
 - Every booking automatically attempts a Comments entry `Number of players: N` (default1, range1–4).
 - When the optional fifth Details field is filled, append `School / organisation: VALUE` on the next line; omit that line when blank.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#previous-task--native-one-studio-policy-and-north-star-execution-11-october-2026).
 
-### Previous checkpoint — website-confirmed contact profile, 11 October 2026
+<a id="previous-checkpoint--website-confirmed-contact-profile-11-october-2026"></a>
+
+### 3.446. Previous checkpoint — website-confirmed contact profile, 11 October 2026
 
 - YS explicitly replaced SimplyBook-only prefill with latest website-confirmed name/phone.
 - One profile per normalized verified email/account/origin, shared by users of that email; saving only with Remember me selected at form submission, existing booking history untouched.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#previous-checkpoint--website-confirmed-contact-profile-11-october-2026).
 
-### Previous checkpoint — North Star planning package, 11 October 2026
+<a id="previous-checkpoint--north-star-planning-package-11-october-2026"></a>
+
+### 3.447. Previous checkpoint — North Star planning package, 11 October 2026
 
 - YS approved execution of the full North Star plan.
 - Refreshed main `298c9c8f443063f8b21a2e7b006993a1ec76a9e7` contains owner-merged PR19; independent main CI38112617043 passed frontend/backend/live-email and Pages demo deployment.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#previous-checkpoint--north-star-planning-package-11-october-2026).
 
-### Historical checkpoint — PR19 identity proof closed, 10 October 2026
+<a id="historical-checkpoint--pr19-identity-proof-closed-10-october-2026"></a>
+
+### 3.448. Historical checkpoint — PR19 identity proof closed, 10 October 2026
 
 - Owner approved exact packet SHA256 `29eaa053cf5f251744aea5accbcf4fff121de90b6906b32b70d04fd3cb785148` and confirmed readiness.
 - Executed sealed source `4a10133a001e1c1a4552e120a3d91b3c875bc664`, CI38045722099 (all three jobs passed), live artifact11667384145/ZIP SHA256 `8de0df981805a6f1f5aa81f0e0e14194182bd9740d649e820dcbaf08b2b23790`.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoint--pr19-identity-proof-closed-10-october-2026).
 
-### Replacement email test closed — 10 October 2026
+<a id="replacement-email-test-closed--10-october-2026"></a>
+
+### 3.449. Replacement email test closed — 10 October 2026
 
 - Deployed sourcef2795a1ef9c54e06ac2335f824a59e20c3b17f5e passed all three CI38036772168 jobs.
 - Artifact11663527637/SHA2569bfc92f07ce78b73ab63d4d08c0d136f7b3cc6c57aab70bb05714f3119c06254,139 sealed files and12 migration byte identities verified;17 exact compiled-Worker cases passed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#replacement-email-test-closed--10-october-2026).
 
-### Historical checkpoints — superseded by the current ledger
+<a id="historical-checkpoints--superseded-by-the-current-ledger"></a>
 
-### Unused email window replacement — 10 October 2026
+### 3.450. Historical checkpoints — superseded by the current ledger
+
+<a id="unused-email-window-replacement--10-october-2026-1"></a>
+
+### 3.451. Unused email window replacement — 10 October 2026
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-checkpoints--superseded-by-the-current-ledger).
 
-### Email execution preparation — 10 October 2026
+<a id="email-execution-preparation--10-october-2026"></a>
+
+### 3.452. Email execution preparation — 10 October 2026
 
 - PR17 remains draft/open.
 - Pinned deployment candidate is source `087576edbebe90bc60097d8655d6f758d91ab722`, successful CI37943447592, live artifact11622777711, ZIP SHA256 `14d31042f96a44f4b1d1124a1aa1104f84086ba8141de6a7e030bb60ab8e287c`.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#email-execution-preparation--10-october-2026).
 
-### Live-email preparation continuation — 9 October 2026
+<a id="live-email-preparation-continuation--9-october-2026"></a>
+
+### 3.453. Live-email preparation continuation — 9 October 2026
 
 - Recovered exact PR16 `d8180f82e9556e9640227edd76c58d72e33b1b4b` / tree `85f4f011f65f883c5bb75921320c3a359645443b`;
 - GitHub still reports draft/open/unmerged.
@@ -3606,83 +5501,109 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#live-email-preparation-continuation--9-october-2026).
 
-### Resend composition continuation — 9 October 2026
+<a id="resend-composition-continuation--9-october-2026"></a>
+
+### 3.454. Resend composition continuation — 9 October 2026
 
 - Recovered PR14 source5673e79 and PR15 sourcea43ffb8, both draft/open/unmerged.
 - Independently re-read both required successful CI jobs37909399171/37909424450.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#resend-composition-continuation--9-october-2026).
 
-### Main integration campaign — active 9 October 2026
+<a id="main-integration-campaign--active-9-october-2026"></a>
+
+### 3.455. Main integration campaign — active 9 October 2026
 
 - Governing instruction: MAIN INTEGRATION NORTH STAR, supplied9October.
 - One agent.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#main-integration-campaign--active-9-october-2026).
 
-### Approved discovery execution — closed 9 October 2026
+<a id="approved-discovery-execution--closed-9-october-2026"></a>
+
+### 3.456. Approved discovery execution — closed 9 October 2026
 
 - YS approved the concrete discovery-only packet with “Yes Go.” Management window07:42:10–08:42:10UTC; one180-second grant, maximum5 provider calls,66 management requests and4 deployments including rollback.
 - Exact approved/deployed source661cbf54ae33bd8e08f00d631ea78772f9ea2ded passed both CI jobs37899051046; backend artifact11600959051 was downloaded, SHA256-checked and its135 sealed files/eight migrations verified without rebuilding.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#approved-discovery-execution--closed-9-october-2026).
 
-### Historical native mapping discovery preparation — 9 October 2026
+<a id="historical-native-mapping-discovery-preparation--9-october-2026"></a>
+
+### 3.457. Historical native mapping discovery preparation — 9 October 2026
 
 - One agent, start15:10SGT, hard stop21:10SGT, maximum3 repairs per distinct issue.
 - Owner-merged PR13 verified at main757fd288084d0e76c7cb7b766e33c4724d6988d0; main CI37896841542 actually passed verify/frontend and verify/backend and existing Pages deploy.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-native-mapping-discovery-preparation--9-october-2026).
 
-### Historical native adapter checkpoint — completed 9 October 2026
+<a id="historical-native-adapter-checkpoint--completed-9-october-2026"></a>
+
+### 3.458. Historical native adapter checkpoint — completed 9 October 2026
 
 - One agent; start13:00SGT, deadline19:00SGT; at most3 repairs per distinct issue.
 - PR12 remains draft/unmerged, reviewed7b83a8b passed both CI jobs37884721443 (123 application,97 Worker,69 browser per path).
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-native-adapter-checkpoint--completed-9-october-2026).
 
-### Historical native preparation checkpoint (completed in PR12)
+<a id="historical-native-preparation-checkpoint-completed-in-pr12"></a>
 
-### Preparation history
+### 3.459. Historical native preparation checkpoint (completed in PR12)
+
+<a id="preparation-history"></a>
+
+### 3.460. Preparation history
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-native-preparation-checkpoint-completed-in-pr12).
 
-### Historical Experiment1 handover (superseded current status)
+<a id="historical-experiment1-handover-superseded-current-status"></a>
+
+### 3.461. Historical Experiment1 handover (superseded current status)
 
 - **Technical checkpoint passed:** source842adb94cdd0cc9c2952d8e13a62c3f43d98c30f, [Verify37874680093](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/37874680093): exact `verify / frontend` and `verify / backend` both success.95 Worker cases,121 application cases and63 browser executions per root/Pages path, all original Chromium/phone-WebKit/tablet-WebKit projects, strict zero-skip/retry receipts.
 - CI tested merge of this source into unchanged main3bf8e3b; deploy skipped.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-experiment1-handover-superseded-current-status).
 
-### M3.3 technical handover — 9 October 2026
+<a id="m33-technical-handover--9-october-2026"></a>
+
+### 3.462. M3.3 technical handover — 9 October 2026
 
 - **Implemented:** existing access/intent/idempotency/effect/association/coordinator owners reused.
 - Additive0006 records due work atomically with dispatch; internal bounded recovery claims fence original processes, expire/reclaim with durable generations and attempts, reject stale completion and retain unknown effect identity.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#m33-technical-handover--9-october-2026).
 
-### M3.2 technical handover — 9 October 2026
+<a id="m32-technical-handover--9-october-2026"></a>
+
+### 3.463. M3.2 technical handover — 9 October 2026
 
 - **Implemented / Synthetic-tested:** the existing Preview journey now uses named asynchronous availability, checkout, pay, check and resolve contracts.
 - Customers see loading and safe failure/unavailable states; selections/contact input survive errors.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#m32-technical-handover--9-october-2026).
 
-### M3.1 technical handover — 08 October 2026, 23:21 SGT
+<a id="m31-technical-handover--08-october-2026-2321-sgt"></a>
+
+### 3.464. M3.1 technical handover — 08 October 2026, 23:21 SGT
 
 - **M3.1 technical scope verified under the approved exception; formal milestone closure pending the named dependencies.** Technical verification uses isolated runtime/concurrency evidence plus deployed foundation checks.
 - Live log retrieval is separately unverified because the scoped observability query returned403; no production timing/placement or owner acceptance is claimed.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#m31-technical-handover--08-october-2026-2321-sgt).
 
-### M3.1 execution record — 8 October 2026, 22:26 SGT
+<a id="m31-execution-record--8-october-2026-2226-sgt"></a>
+
+### 3.465. M3.1 execution record — 8 October 2026, 22:26 SGT
 
 - One agent; maximum six hours, deadline 9 October 04:26 SGT.
 - Provider campaign stays closed: zero new provider calls/bookings/payments authorized.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#m31-execution-record--8-october-2026-2226-sgt).
 
-### Closed continuation — 8 October 2026, 18:38 SGT
+<a id="closed-continuation--8-october-2026-1838-sgt"></a>
+
+### 3.466. Closed continuation — 8 October 2026, 18:38 SGT
 
 - **Campaign complete;
 - North Star incomplete.** One-agent continuation ran from the conservative17:26SGT start; closed before23:26SGT deadline.
@@ -3690,35 +5611,45 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#closed-continuation--8-october-2026-1838-sgt).
 
-### Continuation execution record — 8 October 2026
+<a id="continuation-execution-record--8-october-2026"></a>
+
+### 3.467. Continuation execution record — 8 October 2026
 
 - Window: conservative start 17:26 SGT, deadline 23:26 SGT, maximum six hours; no automatic restart.
   - One agent.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#continuation-execution-record--8-october-2026).
 
-### Historical Cloudflare developer campaign — 8 October 2026
+<a id="historical-cloudflare-developer-campaign--8-october-2026"></a>
+
+### 3.468. Historical Cloudflare developer campaign — 8 October 2026
 
 - Base: PR #10 owner-merged at `3bf8e3b45b0d771bc76e9087932c0180000d83d0`; main CI37743098312 passed.
   - Historical checkout897cbfe remains unchanged.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-cloudflare-developer-campaign--8-october-2026).
 
-### Finite accounting and resume boundary
+<a id="finite-accounting-and-resume-boundary"></a>
+
+### 3.469. Finite accounting and resume boundary
 
 - Conservative execution window 16:00–22:00 SGT on 8 October 2026, maximum six hours; no automatic restart.
 - Final automated management accounting is **56/200** Cloudflare requests, including 11 preflight and 36 Wrangler requests.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#finite-accounting-and-resume-boundary).
 
-### Historical provider continuation checkpoint — 8 October 2026
+<a id="historical-provider-continuation-checkpoint--8-october-2026"></a>
+
+### 3.470. Historical provider continuation checkpoint — 8 October 2026
 
 - Provider continuation closed with concrete blockers; **M2 remains incomplete**.
   - Execution source was PR#9 candidate `21c8fc855a0e6d8371b541b7ef35d3d4ee1b4e75`.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-provider-continuation-checkpoint--8-october-2026).
 
-### Historical campaign checkpoint — superseded by continuation above
+<a id="historical-campaign-checkpoint--superseded-by-continuation-above"></a>
+
+### 3.471. Historical campaign checkpoint — superseded by continuation above
 
 - Developer evidence campaign finished with concrete blockers;
   - M2 is not complete.
@@ -3726,83 +5657,107 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-campaign-checkpoint--superseded-by-continuation-above).
 
-### Historical pre-campaign checkpoint — 8 October 2026
+<a id="historical-pre-campaign-checkpoint--8-october-2026"></a>
+
+### 3.472. Historical pre-campaign checkpoint — 8 October 2026
 
 - PR#9 refreshed open/draft/unmerged at `21c8fc855a0e6d8371b541b7ef35d3d4ee1b4e75`.
   - Reused detached worktree; historical `897cbfe737d31069ae25dca39c638cdededf3593`, empty index and seven existing documentation edits preserved.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-pre-campaign-checkpoint--8-october-2026).
 
-### Checkpoint — 7 October 2026
+<a id="checkpoint--7-october-2026"></a>
+
+### 3.473. Checkpoint — 7 October 2026
 
 - Active North Star: official research plus staged controlled developer experiments; no blanket six-answer support gate.
   - Current preparation uses **0 provider-account requests, 0 business writes**; original allowance remains **3/3 exhausted**. - Refreshed main after merged PR #8: `97b42c7d561ffa0167eb3ca1113d18e143a9e0d9`, tree `976cf0a064a82bb655d22fc9156c5a4663a80068`.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#checkpoint--7-october-2026).
 
-### Historical task ledger — superseded by current campaign checkpoint
+<a id="historical-task-ledger--superseded-by-current-campaign-checkpoint"></a>
+
+### 3.474. Historical task ledger — superseded by current campaign checkpoint
 
 - Detailed checkpoint, decisions and verification evidence retained in the immutable source below.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-task-ledger--superseded-by-current-campaign-checkpoint).
 
-### Native checkout staged preparation — 7 October 2026
+<a id="native-checkout-staged-preparation--7-october-2026"></a>
+
+### 3.475. Native checkout staged preparation — 7 October 2026
 
 - YS confirms development company/merchant/HitPay isolation, intended service/instructor/resource/timing/price-tax/intake structure, controlled notification inbox and YS dashboard reconciliation.
   - Recorded as owner confirmations, not executed API evidence; do not request them again. - Service Contracts retains D6–D14 native invoice/payment-link research and adds D15–D20 corrections.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#native-checkout-staged-preparation--7-october-2026).
 
-### Developer access and backend-plan reconciliation — 7 October 2026
+<a id="developer-access-and-backend-plan-reconciliation--7-october-2026"></a>
+
+### 3.476. Developer access and backend-plan reconciliation — 7 October 2026
 
 - Fresh managed attachment: source configuration `5b37073b-4577-4be4-ac01-85c7f49399d0~cecfg_6ac526346c988198a82b0507650e2a7b`, version `5b37073b-4577-4be4-ac01-85c7f49399d0~cecfgver_6ac5dbcc564881988d31dffcafbb93e5`, desired/observed revision **4**, observations current, phase running.
   - No environment display name was returned; the exact environment ID is in the sanitized receipt.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#developer-access-and-backend-plan-reconciliation--7-october-2026).
 
-### C3 runtime restoration evidence — 7 October 2026
+<a id="c3-runtime-restoration-evidence--7-october-2026"></a>
+
+### 3.477. C3 runtime restoration evidence — 7 October 2026
 
 - Verified reviewed checkpoint: `experiment/codex-cloud-workflow-2026-10-06` at full HEAD `897cbfe737d31069ae25dca39c638cdededf3593`; base `0cea68168738c722d05be9d3580938b65a4860c7` ancestry passed.
   - Source and index were clean and unchanged throughout verification.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#c3-runtime-restoration-evidence--7-october-2026).
 
-### C4 evidence review — 7 October 2026
+<a id="c4-evidence-review--7-october-2026"></a>
+
+### 3.478. C4 evidence review — 7 October 2026
 
 - Existing [PR #6](https://github.com/LimYouSheng/SoccerBotStudioSG/pull/6) was open, draft and unmerged at that historical review.
   - At review, the head was `897cbfe737d31069ae25dca39c638cdededf3593` on `experiment/codex-cloud-workflow-2026-10-06`, matching local HEAD and the C3 checkpoint.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#c4-evidence-review--7-october-2026).
 
-### Preparation evidence
+<a id="preparation-evidence"></a>
+
+### 3.479. Preparation evidence
 
 - Latest external project comparison: PR #8 head `16eea945f9324b6f20610d0a0b98b1a1cb6014e9`, based on main `7970f65b5975a6554c46eb521c7ca118939e4bb9`.
   - Re-read its four entry/Cloud files and the relevant canonical docs/runbook sections.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#preparation-evidence).
 
-### Provider evidence and remaining work
+<a id="provider-evidence-and-remaining-work"></a>
+
+### 3.480. Provider evidence and remaining work
 
 - Client public catalogue, timezone, timeframe, work-calendar envelopes, 1/7/31-day availability and sampled end-time reads were exercised.
   - Read-only discovery is sufficient to proceed with this source transition. - Latest R2: 51/51 calls passed, no retries, 268 offered starts unchanged between snapshots, 16 offered end-time samples all 50 minutes.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#provider-evidence-and-remaining-work).
 
-### Documentation handoff — 7 October 2026
+<a id="documentation-handoff--7-october-2026"></a>
+
+### 3.481. Documentation handoff — 7 October 2026
 
 - The user authorized committing/pushing only the intended documentation to existing draft PR #6 and updating its description.
 - This handoff preserves the C3/C4 findings above and replaces obsolete host-install instructions in `docs/CODEX_CLOUD.md` with the verified retained Docker reuse procedure.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#documentation-handoff--7-october-2026).
 
-### Bounded CI repair — 7 October 2026
+<a id="bounded-ci-repair--7-october-2026"></a>
+
+### 3.482. Bounded CI repair — 7 October 2026
 
 - Documentation handoff commit `74ca490f8a52025eff16933e500933c359eebfee` reached [CI run 37559663874](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/37559663874), attempt 1, but `verify / frontend` failed at `time-step.test.tsx:47` (two instructor cards expected, one received).
   - Preserve the [original failure artifact](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/37559663874/artifacts/11456785312); 42 unit/component/service cases passed and one failed, so build/browser gates did not execute.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#bounded-ci-repair--7-october-2026).
 
-### M2.1 reconciliation — 7 October 2026
+<a id="m21-reconciliation--7-october-2026"></a>
+
+### 3.483. M2.1 reconciliation — 7 October 2026
 
 - Started from clean branch `experiment/codex-cloud-workflow-2026-10-06`, HEAD `a6f1a6cc151200727d7806ff97a79c963edb2516`, clean index.
   - [Full CI 37560542328](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/37560542328) passed that repair candidate (43 unit/component/service, 42 browser cases);
@@ -3811,35 +5766,45 @@
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#m21-reconciliation--7-october-2026).
 
-### Elapsed-slot application trial — 7 October 2026
+<a id="elapsed-slot-application-trial--7-october-2026"></a>
+
+### 3.484. Elapsed-slot application trial — 7 October 2026
 
 - Preserved checkpoint/index identity in `/workspace/work/elapsed-slot-trial/baseline.json`.
   - Preparation key/image and all three inherited variables match the C3 configuration.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#elapsed-slot-application-trial--7-october-2026).
 
-### Historical developer native-payment reconciliation — before PR #7 merge
+<a id="historical-developer-native-payment-reconciliation--before-pr-7-merge"></a>
+
+### 3.485. Historical developer native-payment reconciliation — before PR #7 merge
 
 - Four original private chat attachments inspected: Card HitPay `Screenshot 2026-10-07 121355.png`, Card SimplyBook/SBPay `121405.png`, PayNow HitPay `122134.png`, PayNow SimplyBook/SBPay `122144.png` (same filename prefix/date).
   - Originals remain with YS/in the conversation; no repository image copies, contact data or reconstructed original files.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#historical-developer-native-payment-reconciliation--before-pr-7-merge).
 
-### Next run
+<a id="next-run"></a>
+
+### 3.486. Next run
 
 - Use the single next-ready task in the current ledger above and the proposed ordering in NORTH_STAR.
 - Historical discovery/email setup instructions below are not fresh authority.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#next-run).
 
-### Update discipline
+<a id="update-discipline"></a>
+
+### 3.487. Update discipline
 
 - Keep one current ledger, not a transcript.
   - Move completed milestone summaries to Journey. - Retain source identity, command, environment, result/count, log/workflow reference and limitations. - Carry diagnoses and next actions forward.
 
 - [Full dated evidence](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/SOCCERBOT_JOURNEY.md#update-discipline).
 
-### Historical contract and rule source index
+<a id="historical-contract-and-rule-source-index"></a>
+
+### 3.488. Historical contract and rule source index
 
 - The superseded [4 October diagram](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f0f000c2f600be1930cacf0b2f884103cb23fba7/docs/architecture/SoccerBotStudio_Architecture.svg) remains in Git history.
 
@@ -4257,7 +6222,9 @@
 
 </details>
 
-### 26 October 2026 — deployment scaffold and account follow-up
+<a id="26-october-2026--deployment-scaffold-and-account-follow-up"></a>
+
+### 3.489. 26 October 2026 — deployment scaffold and account follow-up
 
 - Prepared target manifests, separate manual developer/client deployment workflows and target verification gates on the PR91 merged baseline.
 - External vendor setup remains paused.
@@ -4271,7 +6238,9 @@
 - Saved-contact management now returns to booking options only after successful save; failed/aborted saves remain guarded.
 - Local component checks pass; full Worker/browser evidence remains CI-owned.
 
-### 27 October 2026 — Client D1 created and primary placement verified
+<a id="27-october-2026--client-d1-created-and-primary-placement-verified"></a>
+
+### 3.490. 27 October 2026 — Client D1 created and primary placement verified
 
 - Owner explicitly requested assistant resource creation with deliberate placement.
 - Rechecked the `soccerbot` connection against account `0b36822648e6905c681a90b6bec5ca7f` and confirmed its D1 inventory was empty before creation.
@@ -4290,7 +6259,9 @@
 - Worker/DO creation must consume the reviewed application artifact after SaaS routing and placement changes pass required gates.
 - Developer resources, DNS, email and provider accounts were unchanged.
 
-### 27 October 2026 — Explicit coordinator first-use placement prepared
+<a id="27-october-2026--explicit-coordinator-first-use-placement-prepared"></a>
+
+### 3.491. 27 October 2026 — Explicit coordinator first-use placement prepared
 
 - Added `coordinatorLocationHint` to sealed deployment targets and rendered `COORDINATOR_LOCATION_HINT` bindings.
 - The client KIX primary selects `apac-ne`; developer staging keeps an empty hint and its original coordinator name/identity.
@@ -4307,7 +6278,9 @@
 - Generated Worker types, source/policy checks and affected lint/format checks passed.
 - Browser execution remains CI/owner-operated; final-commit CI, merge, application deployment and physical placement acceptance are pending.
 
-### 27 October 2026 — SaaS Worker entry and delivery ownership preparation
+<a id="27-october-2026--saas-worker-entry-and-delivery-ownership-preparation"></a>
+
+### 3.492. 27 October 2026 — SaaS Worker entry and delivery ownership preparation
 
 - Owner confirmed that the client repository must retain developer SimplyBook/Resend/Turnstile/payment sandbox connections for PR staging, with production provider secrets kept in the client Worker only when integrations are accepted.
 - Grafana belongs to the owner's company central account, with separated environment ingestion credentials and labels.
@@ -4326,7 +6299,9 @@
 - Initial new HEAD-body expectation failed and was corrected to HTTP HEAD semantics without changing application behavior or prior assertions.
 - Full combined-revision CI, deployment and provider/browser acceptance remain pending; the prior placement-only CI pass does not certify this new candidate.
 
-### 27 October 2026 — Dependency update grouping and action-pin ownership
+<a id="27-october-2026--dependency-update-grouping-and-action-pin-ownership"></a>
+
+### 3.493. 27 October 2026 — Dependency update grouping and action-pin ownership
 
 - Owner requested repair after the initial Dependabot PR failures.
 - Routine groups now include minor/patch updates only, with coordinated tooling excluded and major upgrades proposed individually.
@@ -4335,7 +6310,9 @@
 - PR94/95 original failure runs are retained in Progress.
 - No dependency update, merge or deployment is authorized by this policy change alone.
 
-### 27 October 2026 — Compatible dependency vulnerability remediation
+<a id="27-october-2026--compatible-dependency-vulnerability-remediation"></a>
+
+### 3.494. 27 October 2026 — Compatible dependency vulnerability remediation
 
 - Owner requested remediation after the dependency audit.
 - Update Next.js and its lint configuration together, Zod, compatible transitive DOMPurify/Vite/Undici, and the Wrangler/Miniflare pair.
@@ -4345,7 +6322,9 @@
 - Known advisory clearance on a branch is distinct from deployment and provider acceptance.
 - Full/code verification now runs a blocking high/critical dependency audit and retains its result; audit-service errors fail rather than silently skipping security checks.
 
-### 27 October 2026 — Security updates and remediation integrated with dependency maintenance
+<a id="27-october-2026--security-updates-and-remediation-integrated-with-dependency-maintenance"></a>
+
+### 3.495. 27 October 2026 — Security updates and remediation integrated with dependency maintenance
 
 - Owner requested version updates, Dependabot alerts and security updates together.
 - The YAML now explicitly separates scheduled version updates from minor/patch npm security-update grouping, preserving individual major/tooling fixes and existing CI/deployment authority.
@@ -4354,7 +6333,9 @@
 - Failed compatibility gates require a reviewed fix or mitigation, not automatic advisory dismissal or weakened verification.
 - No dependency upgrades are included in this configuration change.
 
-### 28 October 2026 — Repository version inventory
+<a id="28-october-2026--repository-version-inventory"></a>
+
+### 3.496. 28 October 2026 — Repository version inventory
 
 - Owner requested a standalone Versions file in the repository root.
 - Generate `Versions.md` from toolchain declarations and the complete npm lock inventory, preserving nested paths and optional/development labels.
@@ -4362,7 +6343,9 @@
 - Configured Python series and observed patch version are distinct; verification inventory does not establish production deployment.
 - No automated documentation commits or elevated workflow permissions are introduced.
 
-### 28 October 2026 — Feature ownership diagrams and rule identifiers
+<a id="28-october-2026--feature-ownership-diagrams-and-rule-identifiers"></a>
+
+### 3.497. 28 October 2026 — Feature ownership diagrams and rule identifiers
 
 - Owner requested recursive Mermaid code-ownership diagrams and numbered business rules.
 - `docs/code-owners.md` owns feature-to-file navigation and the rule-to-owner index;
@@ -4371,21 +6354,27 @@
 - Implemented feature responsibility is distinct from test evidence and client deployment status.
 - Demo adapters are identified only where current service composition selects them.
 
-### 28 October 2026 — Role-based UAT preparation
+<a id="28-october-2026--role-based-uat-preparation"></a>
+
+### 3.498. 28 October 2026 — Role-based UAT preparation
 
 - Owner requested the external project role-worksheet format adapted to SoccerBot, explicitly including SimplyBook Admin operations and Trainer schedule entry.
 - `docs/uat` provides only Admin, Trainers and Simulated-User worksheets with blank results and rule/owner references, following the owner’s scope correction.
 - Shared instructions are embedded in each sheet; there is no UAT README or Owner sheet.
 - Existing provider permissions and approved test accounts govern execution; no new staff portal, production transaction authority or acceptance result is introduced.
 
-### 28 October 2026 — Operational runbook drafted
+<a id="28-october-2026--operational-runbook-drafted"></a>
+
+### 3.499. 28 October 2026 — Operational runbook drafted
 
 - Owner requested dependency/observability guidance moved out of README and a complete runbook with Grafana signal interpretation and potential fixes.
 - `docs/runbook.md` owns these procedures; source-derived event/panel dictionaries distinguish Tempo diagnostics from raw logs, sampled observations from traffic counts and prepared telemetry from activation.
 - Source review also identifies current developer-only producer/service filtering and absent production environment labels.
 - Operational alerts, restore objectives, provider recovery and client deployment acceptance remain evidence-dependent; no operational action was executed by drafting the runbook.
 
-### 28 October 2026 — Agent instructions own task routing
+<a id="28-october-2026--agent-instructions-own-task-routing"></a>
+
+### 3.500. 28 October 2026 — Agent instructions own task routing
 
 - Owner replaced the README-directory request with an enhancement to the existing agent document map.
 - `Agents.md` is the canonical cased instruction owner and includes ordered task routes;
@@ -4394,26 +6383,34 @@
 
 - The owner also requested the generated version inventory at `docs/versions.md`; its generator, freshness check, tests and current document links follow that path.
 
-### 28 October 2026 — Standard agent filename restored
+<a id="28-october-2026--standard-agent-filename-restored"></a>
+
+### 3.501. 28 October 2026 — Standard agent filename restored
 
 - Owner confirmed standard `AGENTS.md` after reviewing automatic discovery behavior.
 - Retained the enhanced task routes and restored this exact filename across current links, local skill, formatting commands and installer ownership checks.
 - Only one case variant exists.
 - This supersedes the earlier filename decision.
 
-### 28 October 2026 — Continuous development guidance replaces root README
+<a id="28-october-2026--continuous-development-guidance-replaces-root-readme"></a>
+
+### 3.502. 28 October 2026 — Continuous development guidance replaces root README
 
 - Owner requested removal of the root README and a guidance-only `docs/development.md` covering local VS Code, Codex Cloud and ZIP-attached chat development.
 - Existing setup/verification/configuration content is retained there, with GitHub publication, CI expectations, safe archive integration and guarded delivery guidance.
 - AGENTS remains authoritative; current links and formatting commands use the new guide.
 
-### 28 October 2026 — Architecture decision records
+<a id="28-october-2026--architecture-decision-records"></a>
+
+### 3.503. 28 October 2026 — Architecture decision records
 
 - Owner requested a separate PR replacing the architecture explanation with ADRs covering stack rationale, tradeoffs, scaling and alternatives.
 - `docs/architecture/adr.md` distinguishes implemented choices, pending activation and proposed contingencies; reconstructed reasoning is not presented as historical comparative benchmarking.
 - Topology remains in diagram.md and operational recovery remains in the runbook.
 
-### 28 October 2026 — Business rules, operation contracts and journey split
+<a id="28-october-2026--business-rules-operation-contracts-and-journey-split"></a>
+
+### 3.504. 28 October 2026 — Business rules, operation contracts and journey split
 
 - Split the former service-contracts owner into three lowercase documents.
 - Retain all BR IDs and milestone IDs; expand named operations with source status, policy, implementation and test owners using external project’s inventory structure.
@@ -4422,19 +6419,25 @@
 - Navigation and installer ownership follow the split.
 - No runtime, provider configuration, deployment or acceptance claim changes.
 
-### 28 October 2026 — Progress becomes the current-task handover
+<a id="28-october-2026--progress-becomes-the-current-task-handover"></a>
+
+### 3.505. 28 October 2026 — Progress becomes the current-task handover
 
 - Replaced the accumulated Progress ledger with the detailed active documentation task, stacked PR/base and revision observations, completed checks, exact leave-off, unresolved PR112 browser evidence, ordered continuation and deferred client-deployment checkpoints.
 - Current status belongs in Progress; milestones, complete flows and dated history belong here.
 - The [prior Progress snapshot](https://github.com/LimYouSheng/SoccerBotStudioSG/blob/f40e8ef9a526df65b5861049e3cbe8068c40fc73/PROGRESS.md) preserves all earlier receipts and superseded status without duplicating this history.
 - No runtime change or renewed provider/deployment authorization.
 
-### 28 October 2026 — API contract filename standardized
+<a id="28-october-2026--api-contract-filename-standardized"></a>
+
+### 3.506. 28 October 2026 — API contract filename standardized
 
 - Renamed the combined domain operation inventory and HTTP contract owner to `api-contracts.md` at the owner’s request.
 - Updated document links, Progress handover and installer planning requirements; contract content and runtime behavior are unchanged.
 
-### 28 October 2026 — Documentation stack merge begins
+<a id="28-october-2026--documentation-stack-merge-begins"></a>
+
+### 3.507. 28 October 2026 — Documentation stack merge begins
 
 - Owner authorized merge when eligible.
 - PR111 merged as `cb33dec4102d2b9cb4a3219c920d99046483840e` after all three final-head checks passed.
@@ -4443,14 +6446,18 @@
 - Remaining merges await checks on the refreshed heads; no bypass or automatic production activation was performed.
 - Progress owns the next merge/handover checkpoint.
 
-### 28 October 2026 — Security infrastructure documented
+<a id="28-october-2026--security-infrastructure-documented"></a>
+
+### 3.508. 28 October 2026 — Security infrastructure documented
 
 - Added security.md with a top-level Mermaid trust-boundary diagram, asset/threat map, identity/access, environment validation, financial effects/recovery, webhook/provider boundaries, token/data controls, bounded availability, supply-chain protections and observability/operator responsibilities.
 - Current source controls are distinguished from pending client/domain/Grafana/MFA/restore acceptance and proposed future layers.
 - A prioritized adoption matrix records rationale and acceptance evidence.
 - Linked from AGENTS and the Runbook; no security setting, credential, runtime or provider state changed.
 
-### 28 October 2026 — Status, API examples and operational readiness expanded
+<a id="28-october-2026--status-api-examples-and-operational-readiness-expanded"></a>
+
+### 3.509. 28 October 2026 — Status, API examples and operational readiness expanded
 
 - Reconciled business-rule checkpoints with actual source/recorded evidence: selected client Worker hosting does not require Pages; placement hints are implemented in validated configuration/binding source but actual DO location acceptance is pending; developer dependency-security settings were owner-confirmed.
 - Added fictional API examples and cross-operation state interpretation without weakening authority/recovery rules.
@@ -4462,7 +6469,9 @@
 - Registrar/account, meaning of the unlock and actual authoritative DNS editing rights remain unverified.
 - This records access information, not a completed transfer/DNS change or an approved nameserver migration; no transfer code is stored here.
 
-### 28 October 2026 — PR114 concurrent response lifetime repair
+<a id="28-october-2026--pr114-concurrent-response-lifetime-repair"></a>
+
+### 3.510. 28 October 2026 — PR114 concurrent response lifetime repair
 
 - Preserved failure run 40659464431/job 122718693323: competing-customer checkout test tried to parse an already-consumed response.
 - A minimal Miniflare/Undici forced-GC experiment reproduced cancellation of the original response’s shared unread stream before caller consumption.
@@ -4471,7 +6480,9 @@
 - All three affected tests passed together and the immediate-consumption GC comparison passed; source/Worker checks, lint and formatting passed.
 - Final-head CI remains required.
 
-### 28 October 2026 — PR115 dismissal readiness synchronized
+<a id="28-october-2026--pr115-dismissal-readiness-synchronized"></a>
+
+### 3.511. 28 October 2026 — PR115 dismissal readiness synchronized
 
 - Retained run 40665671472 and artifact 12806647325.
 - Static trace inspection showed automatic payment recovery/browser polling consumed most of the dismissal scenario’s 30-second budget: visible confirmation at 24.61 seconds, explicit retry at 27.86 seconds, timeout before return-navigation assertions.
@@ -4481,7 +6492,9 @@
 - A new isolated Worker regression passed, verifying committed confirmation, repeated dismissal, retained receipt and single financial effects.
 - Final-head browser CI remains required.
 
-### 28 October 2026 — Documentation stack merged and developer main verified
+<a id="28-october-2026--documentation-stack-merged-and-developer-main-verified"></a>
+
+### 3.512. 28 October 2026 — Documentation stack merged and developer main verified
 
 - PR113 merged as `28333129b94e2b6a728724e5c19f602125d951e1`, PR114 as `f176954c88a47419baa1a034255c8745a11e88cf`, and PR115 as `dffb24a12aae68de4ee32d6e7477bf227b3f0c50`.
 - PR115 initially omitted its new Worker regression from the strict inventory: run 40669492573 passed all 450 runtime tests but failed inventory comparison.
@@ -4490,7 +6503,9 @@
 - The completed stack left no open PRs or pending CI at the checkpoint.
 - This is developer-deployment evidence, not client production activation.
 
-#### Retained PR112 tablet WebKit failure evidence
+<a id="retained-pr112-tablet-webkit-failure-evidence"></a>
+
+#### 3.512.1. Retained PR112 tablet WebKit failure evidence
 
 - [Original run 40652609843](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40652609843), revision `1b25b892165934282479e3676d4456d2a3403045`: frontend and live-email passed; backend browser verification had 73 passes and two failures.
 - Preserve [backend evidence artifact 12801265051](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40652609843/artifacts/12801265051), named `backend-evidence-40652609843-1`.
@@ -4503,7 +6518,9 @@
 - No runtime repair, forced click, longer timeout, retry or weakened assertion was applied.
 - A later green run would not by itself explain the original failure.
 
-### 28 October 2026 — Current ownership plan and technical behavior reconciled
+<a id="28-october-2026--current-ownership-plan-and-technical-behavior-reconciled"></a>
+
+### 3.513. 28 October 2026 — Current ownership plan and technical behavior reconciled
 
 - Owner requested reconciling stale Progress/hosting statements and completing the function-level behavior documentation.
 - Current plan is `soccerbotsg.com` registrar transfer first, then client-managed Cloudflare DNS; neither transfer nor delegation is verified complete.
@@ -4514,7 +6531,9 @@
 - Screenshot capture is explicitly pending owner/CI; no screenshots, provider effects or DNS/registrar actions were performed.
 - Progress now records the completed stack and this new documentation task separately.
 
-### 28 October 2026 — Source-based data lifecycle draft
+<a id="28-october-2026--source-based-data-lifecycle-draft"></a>
+
+### 3.514. 28 October 2026 — Source-based data lifecycle draft
 
 - Owner requested documenting actual application behavior before mapping the client’s pending PDPA/privacy clauses.
 - Added [data lifecycle](data-lifecycle.md) with a diagram, browser/D1/DO/provider/log/backup inventory, implemented validity and narrow cleanup behavior, retained-data gaps, clause worksheet and proposed implementation gates.
@@ -4524,7 +6543,9 @@
 - No retention periods approved, cleanup implemented or provider/runtime changes made.
 - Policy mapping and external-account verification remain pending.
 
-### 28 October 2026 — PR116 checking-budget test initialization repair
+<a id="28-october-2026--pr116-checking-budget-test-initialization-repair"></a>
+
+### 3.515. 28 October 2026 — PR116 checking-budget test initialization repair
 
 - [Run 40706485933](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40706485933), revision `b137a79`, passed frontend/live-email but failed one of 75 backend browser cases: phone WebKit “reload and duplicate tabs retain one checking window with a shared server allowance” read a null initial budget and threw at `budget.deadline`.
 - Preserve [backend artifact 12825031736](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40706485933/artifacts/12825031736).
@@ -4535,14 +6556,18 @@
 - Browser validation belongs to CI.
 - PR117’s later run 40714296582 passed all three gates with unchanged application/test code; that pass does not repair PR116’s race or replace its own final-head checks.
 
-### 29 October 2026 — Repair recovery sequence diagram syntax
+<a id="29-october-2026--repair-recovery-sequence-diagram-syntax"></a>
+
+### 3.516. 29 October 2026 — Repair recovery sequence diagram syntax
 
 - The section 7 note in [technical behavior](code-owners/technical-behavior.md#7-recovery-confirmation-exports-and-completed-exit) contained a literal semicolon, which Mermaid interpreted as a sequence statement separator.
 - Reproduced the original parse failure with a temporary Mermaid 11 installation outside the repository, then confirmed the comma replacement parses.
 - Diagram meaning, operations and application behavior are unchanged.
 - No browser rendering or repository dependency change was performed.
 
-### 29 October 2026 — Campaign operating guide and repository-wide rendering audit
+<a id="29-october-2026--campaign-operating-guide-and-repository-wide-rendering-audit"></a>
+
+### 3.517. 29 October 2026 — Campaign operating guide and repository-wide rendering audit
 
 - Adapted the user-supplied the supplied external reference into [North Star](../NORTH_STAR.md), retaining scoped campaigns, bounded evidence-driven iterations, budgets, completion states and handover.
 - Replaced external project/AWS/PostgreSQL-specific assumptions with SoccerBot owners, actual workflow limits, isolated Worker storage evidence and owner/CI browser/provider boundaries.
@@ -4554,7 +6579,9 @@
 - Markdown structure and local-link checks accompany this audit; these are syntax checks, not owner-side GitHub visual acceptance.
 - Temporary parser dependencies remain outside the repository.
 
-### 29 October 2026 — per-slot trainer choice and grouped trainer cards
+<a id="29-october-2026--per-slot-trainer-choice-and-grouped-trainer-cards"></a>
+
+### 3.518. 29 October 2026 — per-slot trainer choice and grouped trainer cards
 
 - Owner explicitly chose independent trainer selection for every slot while retaining one booking per time across the studio.
 - Subsequent direction specifies a dropdown in the time slot and trainer cards below the right-hand summary, grouping multiple times under the same trainer and stacking different trainers.
@@ -4570,7 +6597,9 @@
 - All frontend/code stages passed, but its initial receipt correctly refused documentation changes during verification; unchanged-source verification is required before publication.
 - Current verification and delivery state remain in [Progress](../PROGRESS.md); no live provider acceptance is implied.
 
-### 29 October 2026 — Documentation reconciliation skill and PR118 checkpoint
+<a id="29-october-2026--documentation-reconciliation-skill-and-pr118-checkpoint"></a>
+
+### 3.519. 29 October 2026 — Documentation reconciliation skill and PR118 checkpoint
 
 - PR118 merged as `3c39f882d1106185bda10227a21784cafc357e1d` after final-head run 40804424347 passed frontend/backend/live-email.
 - Main run 40811741772 was still in progress at this task's inspection: frontend/backend and frontend deployment passed; live-email was running and Cloudflare deployment unconfirmed.
@@ -4582,7 +6611,9 @@
 - SoccerBot's UAT paths, source contracts, isolated Worker tests, three gates and owner/CI browser restrictions replace project-specific assumptions.
 - No runtime, dependency, workflow, provider or permissions change; no unattended enforcement is claimed.
 
-### 29 October 2026 — Test-maintenance skill added to PR119
+<a id="29-october-2026--test-maintenance-skill-added-to-pr119"></a>
+
+### 3.520. 29 October 2026 — Test-maintenance skill added to PR119
 
 - Owner requested an explicit procedure to prevent test maintenance being missed across PRs.
 - Added [soccerbot-testing](../.agents/skills/soccerbot-testing/SKILL.md), invoked by AGENTS alongside documentation reconciliation.
@@ -4591,7 +6622,9 @@
 - This is agent/reviewer guidance, not an automated enforcement hook.
 - For this procedure-only change, existing executable tests, fixtures and inventories remain unchanged with a documented rationale; existing coverage has not been comprehensively re-audited.
 
-### 29 October 2026 — Reconcile PR119 after trainer selection and spacing
+<a id="29-october-2026--reconcile-pr119-after-trainer-selection-and-spacing"></a>
+
+### 3.521. 29 October 2026 — Reconcile PR119 after trainer selection and spacing
 
 - Reconciled the documentation/test-maintenance procedures with main `9938fdd` (PR121), retaining PR120 trainer functionality, PR121 presentation and all current test inventories.
 - Earlier PR119 CI passed at `4cb7bdd`; the merge reconciliation creates a new revision requiring its own complete gates.
@@ -4599,7 +6632,9 @@
 - Progress now records the merged trainer changes and the separately authorized, read-back-verified SimplyBook test schedules; no runtime or provider mutation is included in this PR.
 - Local link, format, source/policy and diff checks accompany the revised handover; final CI, merge and subsequent main deployment are separate receipts.
 
-### 30 October 2026 — PR4 storage evidence and backend disk exhaustion
+<a id="30-october-2026--pr4-storage-evidence-and-backend-disk-exhaustion"></a>
+
+### 3.522. 30 October 2026 — PR4 storage evidence and backend disk exhaustion
 
 - PR4 head `4971c4f366762a8856ac9cd68d14ece1e6d95f10`, run [41009857773](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41009857773), passed frontend, Worker/runtime and all 84 live-email cases (10.8 minutes).
 - The earlier failing price-drift case's runtime initialization improved from 9.42 seconds to 0.50 seconds with `/tmp` tmpfs; this is encouraging case-level evidence, not proof of whole-suite speedup or the sole cause of historical failures.
@@ -4617,7 +6652,9 @@
 - Focused checks accompany the diagnostic candidate;
 - CI, PR4 merge and independent main acceptance remain pending.
 
-### 30 October 2026 — PR4 merge, repeated main disk failure and browser-lifetime evidence
+<a id="30-october-2026--pr4-merge-repeated-main-disk-failure-and-browser-lifetime-evidence"></a>
+
+### 3.523. 30 October 2026 — PR4 merge, repeated main disk failure and browser-lifetime evidence
 
 - Owner approved PR4 merge as `5637bc9fa9b75259b00075acecb56f837352206c` after all four gates passed run 41013267782 at `07c6e2c90a1c1e896b9f1855e6dbdeff920d4d43`.
 - Independent main run 41017685933 again failed backend (job 123942861745, artifact 12961222544), while frontend, Worker/runtime and live-email passed.
@@ -4636,7 +6673,9 @@
 - Eight focused tests passed; other source checks accompany publication.
 - Diagnosis, CI and a scoped repair remain pending; no production deployment or provider acceptance is claimed.
 
-### 30 October 2026 — Bounded browser batches and concurrent runner shards
+<a id="30-october-2026--bounded-browser-batches-and-concurrent-runner-shards"></a>
+
+### 3.524. 30 October 2026 — Bounded browser batches and concurrent runner shards
 
 - PR5's diagnostic head `ff40ef7ccf32c70c546c9ab73fb73e01ea74ce13` passed run 41021290101 with all 454 Worker, 78 backend-browser and 84 live-email cases, but backend still consumed roughly 6.2 GB and `/proc` mappings were partly inaccessible.
 - This did not repair the earlier disk failure or prove its allocation source.
@@ -4656,7 +6695,9 @@
 - Final-head CI, merge authorization, independent main and deployment/provider acceptance remain pending.
 - Future GitHub writes use developer `LimYouSheng`, while the client organization remains repository owner.
 
-### 30 October 2026 — Main verification, core-memory containment and deployment eligibility
+<a id="30-october-2026--main-verification-core-memory-containment-and-deployment-eligibility"></a>
+
+### 3.525. 30 October 2026 — Main verification, core-memory containment and deployment eligibility
 
 - PR5 merged as `6461333e6bacc68a7833f1c2e0c6386f1478e5c7`; independent main run 41029098361 passed all ten jobs in roughly 18m10s, but sampled free space reached 0.059 GiB frontend, 2.650 GiB backend and 2.886 GiB live-email.
 - Earlier claims of storage containment therefore remain limited to their observed run.
@@ -4686,7 +6727,9 @@
 - Development/Security describe the executable changes.
 - Application/API/provider/data-lifecycle/UAT/version behavior is unchanged.
 
-### 30 October 2026 — Deliberate Worker groups after verified storage containment
+<a id="30-october-2026--deliberate-worker-groups-after-verified-storage-containment"></a>
+
+### 3.526. 30 October 2026 — Deliberate Worker groups after verified storage containment
 
 - PR6 merged as `23d64aec64650e9b817d59a5d0957e428b19349e`.
 - PR run 41034336627 and main 41039538712 passed all ten jobs.
@@ -4703,7 +6746,9 @@
 - The stable Worker gate validates all group TAP and exact source/target/repository/run/attempt identities before release consumers proceed.
 - Local checks and final-head CI are recorded in the PR receipt; grouping performance and deployment are not claimed from source alone.
 
-### 30 October 2026 — Closed bootstrap health and retained client resources
+<a id="30-october-2026--closed-bootstrap-health-and-retained-client-resources"></a>
+
+### 3.527. 30 October 2026 — Closed bootstrap health and retained client resources
 
 - PR7 merged as `54ee49aa558d6b8825b0b2f3c65044d6602c8adf`; independent main 41055120073 passed.
 - Owner resumed production bootstrap.
@@ -4720,7 +6765,9 @@
 - No production storage mutation, recreation or HTTP-error retry was introduced.
 - Full CI, staging/main deployment and separate registration/activation remain acceptance steps in the PR receipt.
 
-### 30 October 2026 — closed-install foundation management prepared
+<a id="30-october-2026--closed-install-foundation-management-prepared"></a>
+
+### 3.528. 30 October 2026 — closed-install foundation management prepared
 
 - Following the production health failure and PR8, the owner authorized the careful registration plan.
 - Added an internal service-binding management entrypoint and sealed-artifact/control-plane checked command with separate inspection, insert-only registration and hinted initialization.
@@ -4738,7 +6785,9 @@
 - The restart test captures primitive identity values before disposing the old RPC runtime.
 - PR8 CI41061444056 passed all 13 jobs; staging41063448713 was running at this checkpoint.
 
-### 30 October 2026 — production deployed; management execution bridge prepared
+<a id="30-october-2026--production-deployed-management-execution-bridge-prepared"></a>
+
+### 3.529. 30 October 2026 — production deployed; management execution bridge prepared
 
 - PR8 and PR9 merged as6f5b595 and b1c007a.
 - Independent main CI41067934442 passed.
@@ -4755,7 +6804,9 @@
 - Cloud setup still requires reviewed merge, deployment and an owner dispatch because connected GitHub tools lack workflow dispatch.
 - No registration or initialization was performed during preparation.
 
-### 31 October 2026 — verified client foundation, Osaka execution and provider-rule reconciliation
+<a id="31-october-2026--verified-client-foundation-osaka-execution-and-provider-rule-reconciliation"></a>
+
+### 3.530. 31 October 2026 — verified client foundation, Osaka execution and provider-rule reconciliation
 
 - PR10 merged as 21c3f16eb0e31ede252bbc08e809584cb4371e0d; main verification 41081622665 and production deployment 41083613159 passed.
 - Setup 41084843753 registered the retained client D1/coordinator identity and initialized the named object with apac-ne.
@@ -4777,7 +6828,9 @@
 - Automated CI cannot establish SimplyBook configuration enforcement; owner/provider UAT remains unperformed.
 - Historical failures and earlier settings are retained as dated evidence.
 
-### 31 October 2026 — owner-authorized pre-opening trainer availability
+<a id="31-october-2026--owner-authorized-pre-opening-trainer-availability"></a>
+
+### 3.531. 31 October 2026 — owner-authorized pre-opening trainer availability
 
 - Owner approved mock availability in client company soccerbotadmin for all five existing trainers (IDs2–6),3–21 November2026 inclusive, noon–8pm Singapore time, with no breaks.
 - Five date-specific update requests covering95 trainer-date entries returned success.
@@ -4791,7 +6844,9 @@
 - Worker groups passed.
 - Original failure logs/artifacts are retained; no blind rerun or timeout increase was performed.
 
-### 31 October 2026 — PR11 deterministic Payment preview calendar fixture
+<a id="31-october-2026--pr11-deterministic-payment-preview-calendar-fixture"></a>
+
+### 3.532. 31 October 2026 — PR11 deterministic Payment preview calendar fixture
 
 - Run 41153806593 failed the same retention test on three devices while waiting for 1 November from the October calendar.
 - The test used the host date to select tomorrow without changing the displayed month.
@@ -4801,7 +6856,9 @@
 - No application behavior, provider records or CI retry policy changed.
 - Local static checks are separate from the required new exact-head browser CI.
 
-### 31 October 2026 — client pricing preparation and growing trainer rosters
+<a id="31-october-2026--client-pricing-preparation-and-growing-trainer-rosters"></a>
+
+### 3.533. 31 October 2026 — client pricing preparation and growing trainer rosters
 
 - PR11 merged at e3f2301f17673cca85bd990003b9891048ff909d after final-head run41155626100 passed; independent main41157066046 and production deployment41158088719 passed with operations closed.
 - Original calendar-boundary failure41153806593 remains retained evidence.
@@ -4827,7 +6884,9 @@
 - Source/policy, Worker boundaries/types and changed-code lint passed after rewording a comment caught by the existing blanket unsafe-type regex; no checker was weakened.
 - Full frontend/backend/live-email CI, merge and deployment remain separate pending evidence.
 
-### 31 October 2026 — PR12 dependent-guard failure and testing-skill correction
+<a id="31-october-2026--pr12-dependent-guard-failure-and-testing-skill-correction"></a>
+
+### 3.534. 31 October 2026 — PR12 dependent-guard failure and testing-skill correction
 
 - Run41164857960 at3f87d2a1777f51f872b96a9a5ed81f734e57a598 exposed incomplete test-maintenance work.
 - Frontend job124430111549 failed worker-groups tooling: expected461total/109contracts cases were stale after four additions, and the old109-to108 pass-count mutation no longer altered its fixture.
@@ -4845,7 +6904,9 @@
 - All four original browser shards and sustained/recovery Worker groups finished successfully; the original aggregate gates remained skipped.
 - New final-head CI is required after publication.
 
-### 31 October 2026 — client credential installation checkpoint
+<a id="31-october-2026--client-credential-installation-checkpoint"></a>
+
+### 3.535. 31 October 2026 — client credential installation checkpoint
 
 - PR12 head0cfc27d9b58ac597f2ad4ef53d421d7d70782b86 passed all13 verification jobs in41166049859, then owner-authorized staging deployment41167107951 attempt2 passed.
 - Production was skipped;
@@ -4861,7 +6922,9 @@
 - HitPay merchant setup and Resend/DNS remain blocked or paused as previously recorded.
 - No customer/provider operations were activated.
 
-### 31 October 2026 — Local client credential and service wiring
+<a id="31-october-2026--local-client-credential-and-service-wiring"></a>
+
+### 3.536. 31 October 2026 — Local client credential and service wiring
 
 - Prepared the uncommitted PR12 follow-up without pushing or consuming Actions minutes.
 - Validated environment selects SimplyBook DEV/PROD credentials, company and signing keys with no cross-environment fallback; production company must match its sealed target mapping.
@@ -4881,7 +6944,9 @@
 - Development, API contracts, security, technical behavior, runbook and Progress were reconciled; no changes to topology, migrations, retention, UAT requirements or engineering authority were needed.
 - Full final-head CI, merge/deployment and provider/browser acceptance remain separate and unperformed for this follow-up.
 
-### 31 October 2026 — Reuse app404 sandbox for client setup
+<a id="31-october-2026--reuse-app404-sandbox-for-client-setup"></a>
+
+### 3.537. 31 October 2026 — Reuse app404 sandbox for client setup
 
 - Owner chose the existing app404 HitPay sandbox instead of creating a client-owned sandbox.
 - Names-only client Worker readback retained the six SimplyBook/Turnstile secrets and found no HitPay API key or webhook salt.
@@ -4894,7 +6959,9 @@
 - Values were not inspected; no authentication, signature acceptance, payment request or webhook setup was performed.
 - Existing production contract guards remain closed; reviewed client-company sandbox integration is the next engineering step.
 
-### 31 October 2026 — Client guest sandbox scope implementation
+<a id="31-october-2026--client-guest-sandbox-scope-implementation"></a>
+
+### 3.538. 31 October 2026 — Client guest sandbox scope implementation
 
 - Following owner authorization to reuse app404 sandbox, prepared a local extension supporting client company/service credentials and pricing while retaining production identity in native grant, catalogue, journal, payment and confirmation records.
 - Explicit client sandbox access requires the reviewed company and merchant/business pairing.
@@ -4920,7 +6987,9 @@
 - Documentation and a grant-description comment were reconciled after verification; runtime behavior was unchanged.
 - Next: review the consolidated local candidate for the planned single CI run; no push/merge/deployment or real provider actions occurred in this slice.
 
-### 31 October — staging calendar/trainer request audit
+<a id="31-october--staging-calendartrainer-request-audit"></a>
+
+### 3.539. 31 October — staging calendar/trainer request audit
 
 - Owner reports staging does not show the previously requested single time/trainer section and first-available-day/loading behavior.
 - Read-only staging health confirms revision0cfc27d9b58ac597f2ad4ef53d421d7d70782b86, version39480c81-db76-438f-ae9d-8b87a582dc3e.
@@ -4933,7 +7002,9 @@
 - No UI code changed during this audit.
 - Owner confirmed the inspected endpoint is the page being viewed: soccerbot-dev.limyousheng-94.workers.dev/book/time/.
 
-### 31 October 2026 — Correct initial calendar discovery and unify time/trainer presentation
+<a id="31-october-2026--correct-initial-calendar-discovery-and-unify-timetrainer-presentation"></a>
+
+### 3.540. 31 October 2026 — Correct initial calendar discovery and unify time/trainer presentation
 
 - Owner confirmed the staging page and authorized the missing behavior after the audit distinguished merged implementation from the stronger requested UI.
 - TimeStep now displays a calendar-area loader until its initial availability is resolved, advancing sequentially through at most four supported months for a new unsaved live booking.
@@ -4951,7 +7022,9 @@
 - The dependency audit passed its high-severity gate with16 moderate vulnerabilities still reported; dependency changes were outside this UI slice.
 - No browser visual acceptance, push, CI run, merge or staging deployment occurred.
 
-### 31 October 2026, 22:05 Singapore — client guest sandbox runtime activation
+<a id="31-october-2026-2205-singapore--client-guest-sandbox-runtime-activation"></a>
+
+### 3.541. 31 October 2026, 22:05 Singapore — client guest sandbox runtime activation
 
 - PR12 merged as `bcb5e8e85cd31aece7394a8c1b6ff68d60061068` after all 13 final-head jobs passed in run41203309066.
 - Independent main run41206136608 and production deployment41207347576 passed.
@@ -4984,7 +7057,9 @@
 - Schedule execution, provider acceptance and owner guest sandbox payment remain unverified.
 - No subscription change was made.
 
-### 31 October 2026 — loader logo cleanup
+<a id="31-october-2026--loader-logo-cleanup"></a>
+
+### 3.542. 31 October 2026 — loader logo cleanup
 
 - The owner reported noisy cyan in the spinning loader and paused sandbox acceptance.
 - Static source rendering reproduced compression speckling: the previous dark-logo SVG embeds a JPEG and recolours it through a matrix.
@@ -4997,7 +7072,9 @@
 - No new test or inventory change is needed for an asset-only mapping change; existing loader behaviour assertions remain intact.
 - Payment/recovery/runtime owners and rules are unchanged by the logo repair.
 
-### PR13 first CI failure and repair — 31 October 2026
+<a id="pr13-first-ci-failure-and-repair--31-october-2026"></a>
+
+### 3.543. PR13 first CI failure and repair — 31 October 2026
 
 - Run41209467303 on head11267bfc8cac639a7233db143f4906937def1836 failed frontend and both backend browser shards because the existing oracle booking sizing test still asserted the old footer SVG filename.
 - Desktop Chromium, phone WebKit and tablet WebKit all received the intended new WebP.
@@ -5011,7 +7088,9 @@
 - Inventories, counts and shard assignments remain unchanged because this updates an existing assertion.
 - Browser execution remains CI/owner-operated; new exact-head CI is required.
 
-### 1 November 2026 Singapore — guest sandbox re-enabled after logo release
+<a id="1-november-2026-singapore--guest-sandbox-re-enabled-after-logo-release"></a>
+
+### 3.544. 1 November 2026 Singapore — guest sandbox re-enabled after logo release
 
 - Owner requested test checkout activation after PR13 merge.
 - Main verification41216341934 and deployment41217448707 passed for d49dc3e5b67ae0701568a54bfb57a9651332feb1.
@@ -5023,7 +7102,9 @@
 - These remain runtime overrides and will require reconciliation with the closed release manifest.
 - Owner test/provider acceptance and timing measurements are pending; no assistant booking/payment/email operation occurred.
 
-### Client public catalogue portability repair — 1 November 2026 Singapore
+<a id="client-public-catalogue-portability-repair--1-november-2026-singapore"></a>
+
+### 3.545. Client public catalogue portability repair — 1 November 2026 Singapore
 
 - Owner observed session information unavailable after authorized activation of d49dc3e.
 - Production telemetry confirms /api/catalogue returned503 (correlation9635ad97-45f5-4669-901e-97ca776d7e51); an earlier request e73961f0-4c01-4943-9ca1-31e2e74f2fb8 had an admin-auth transport success and failed after provider reads.
@@ -5047,7 +7128,9 @@
 - The concurrent code wrapper has the same invalidated baseline; neither is claimed as a final candidate pass.
 - Freeze the candidate before rerunning final wrappers; exact-final-head CI remains required.
 
-### 1 November 2026 — restore sandbox after catalogue repair release
+<a id="1-november-2026--restore-sandbox-after-catalogue-repair-release"></a>
+
+### 3.546. 1 November 2026 — restore sandbox after catalogue repair release
 
 - Main verification41254073431 and deployment41255109162 passed for f99a1ee1d92b8413e54baf7600a82ebbc78ca60d.
 - Owner still saw unavailable sessions.
@@ -5057,7 +7140,9 @@
 - Workspace public catalogue HTTP remains blocked by CONNECT403, so end-to-end availability after restoration requires owner refresh and correlated telemetry.
 - The permanent manifest/runtime mismatch remains unresolved and must be reconciled before another release.
 
-### 1 November 2026 — configuration presence and webhook recovery audit
+<a id="1-november-2026--configuration-presence-and-webhook-recovery-audit"></a>
+
+### 3.547. 1 November 2026 — configuration presence and webhook recovery audit
 
 - Read-only Worker settings confirm eight client guest-sandbox secrets and ten staging secrets by name/type, separate account/storage identities and once-per-minute recovery schedules.
 - Client webhook authentication returned401, while the original owner attempt completed automatically at08:35:03 SGT (7794ms processing); per-endpoint salt correctness remains unresolved.
@@ -5067,7 +7152,9 @@
 - See PROGRESS current audit for limitations.
 - No credentials exposed, provider effects initiated or CI run for this inspection.
 
-### 1 November 2026 — successful owner webhook and confirmation timing
+<a id="1-november-2026--successful-owner-webhook-and-confirmation-timing"></a>
+
+### 3.548. 1 November 2026 — successful owner webhook and confirmation timing
 
 - Owner test3 capture confirms payment flow reached confirmed/verified and receipt200.
 - Correlated webhook returned202 in929ms; automatic recovery completed in5758ms (including1373ms queue), with no recorded provider-operation errors in that recovery.
@@ -5076,7 +7163,9 @@
 - Current audit receipt and unresolved configuration gaps are in PROGRESS.
 - No assistant provider effects or CI run.
 
-### 1 November 2026 — return-latency diagnosis
+<a id="1-november-2026--return-latency-diagnosis"></a>
+
+### 3.549. 1 November 2026 — return-latency diagnosis
 
 - Read-only queue query for owner test3 confirms foreground start00:47:30.889UTC, display jobs start00:47:33.624 and00:47:37.403, recovery enters00:47:46.090 and starts00:47:47.463 (1373ms wait), completes00:47:51.848.
 - The preceding display job therefore occupies the serial queue for about10.060s. holdCustomer queues bookingComments followed by refreshDisplayAfterWrite; calendar warming is the likely second job but current provider_queue telemetry lacks an operation label, so exact attribution remains inferred.
@@ -5087,7 +7176,9 @@
 - Next owner experiment: two sequential one-session sandbox checkouts, immediate payment versus waiting20seconds on HitPay before paying, preserve DevTools logs through receipt.
 - Compare background queue overlap and return timing; do not infer general latency from two samples.
 
-### 1 November 2026 — proposed pre-accounting success boundary review
+<a id="1-november-2026--proposed-pre-accounting-success-boundary-review"></a>
+
+### 3.550. 1 November 2026 — proposed pre-accounting success boundary review
 
 - Inspected recovery, native transport, confirmation/proof guards and October19/20 history.
 - The proposed fresh valid-booking plus verified HitPay payment boundary still permits an unpaid SimplyBook invoice.
@@ -5101,7 +7192,9 @@
 - No application/test source changed and no CI/provider effects.
 - Queue scheduling and browser confirmation-delivery improvements remain separate latency candidates; they do not require weakening this boundary.
 
-### 1 November 2026 — payment-recording response fast confirmation candidate
+<a id="1-november-2026--payment-recording-response-fast-confirmation-candidate"></a>
+
+### 3.551. 1 November 2026 — payment-recording response fast confirmation candidate
 
 - Owner clarified success should follow recording payment, not precede it.
 - Candidate reuses complete validated paid invoice/nested booking evidence from accept-payment instead of unconditionally fetching it again.
@@ -5118,7 +7211,9 @@
 - Existing titles/counts/shards remain unchanged.
 - Initial full verify:code passed before these dependent test repairs; final consolidated checks follow.
 
-### 1 November 2026 — retained payment continuation and dependent browser repair
+<a id="1-november-2026--retained-payment-continuation-and-dependent-browser-repair"></a>
+
+### 3.552. 1 November 2026 — retained payment continuation and dependent browser repair
 
 - PR15 scope now includes the original-link Continue payment action and original-deadline countdown.
 - No fresh booking/payment, no extra provider check on click, no extension into the recovery buffer.
@@ -5129,7 +7224,9 @@
 - Titles, inventories and sharding remain unchanged.
 - Consolidated local checks and new-head CI are pending; owner sandbox duplicate-payment and device acceptance remain separate.
 
-### 2 November 2026 — clock-independent continuation and late confirmation proof
+<a id="2-november-2026--clock-independent-continuation-and-late-confirmation-proof"></a>
+
+### 3.553. 2 November 2026 — clock-independent continuation and late confirmation proof
 
 - PR15 head720f5db passed all gates in CI41268704987.
 - Owner-approved audit follow-up anchors checkout expiry/polling to authenticated response Date plus monotonic elapsed time, conservatively including second precision and request transit.
@@ -5139,7 +7236,9 @@
 - Late-proof fixture failures exposed an approval newer than its simulated deadline, immutable creation protection, and a legacy five-minute window expectation; setup was corrected without relaxing production guards.
 - Consolidated verification/new-head CI remain pending, and no deployment or real payment was performed.
 
-### 2 November 2026 — Dependabot artifact action guard repair
+<a id="2-november-2026--dependabot-artifact-action-guard-repair"></a>
+
+### 3.554. 2 November 2026 — Dependabot artifact action guard repair
 
 - PR16 updates the SHA-pinned download-artifact action to8.0.2.
 - CI41371387964 proved the download paths through all browser shards and Worker groups, but frontend tooling compared the new pin to a duplicated4.3.0 hash.
@@ -5148,7 +7247,9 @@
 - Both repository skills applied; local code verification and final-head CI remain pending, followed by owner review/merge.
 - No application/provider/runtime-resource change or deployment.
 
-### 2 November 2026 — authorized merge campaign and PR16 synchronization
+<a id="2-november-2026--authorized-merge-campaign-and-pr16-synchronization"></a>
+
+### 3.555. 2 November 2026 — authorized merge campaign and PR16 synchronization
 
 - Owner authorized merging PR15–18 after reviewing testing-tool versus customer impact.
 - PR15 passed all13 final-head jobs and merged as beb657a8363044445b57c57554cd08f5f21a00e3.
@@ -5157,7 +7258,9 @@
 - Fresh synchronized-head CI is required before continuing.
 - No manual deployment activation or provider transaction performed; protected507 untouched.
 
-### 2 November 2026 — Dependabot Playwright runtime alignment
+<a id="2-november-2026--dependabot-playwright-runtime-alignment"></a>
+
+### 3.556. 2 November 2026 — Dependabot Playwright runtime alignment
 
 - PR17 changes Playwright to1.64.1.
 - CI41371551538 rejected stale generated versions and all four browser shards could not launch because CI still used1.58.2 browser images.
@@ -5171,7 +7274,9 @@
 - Both repository skills applied.
 - Consolidated local code verification and full new-head CI remain pending, then owner review/merge; no browser was run by the assistant and no deployment occurred.
 
-### 2 November 2026 — dependency coupling audit and installer compatibility
+<a id="2-november-2026--dependency-coupling-audit-and-installer-compatibility"></a>
+
+### 3.557. 2 November 2026 — dependency coupling audit and installer compatibility
 
 - Owner requested checking the rest of the application for dependency hardcoding.
 - Search of production src/worker found public package imports and no embedded package-version checks; application data-schema versions remain intentional.
@@ -5183,7 +7288,9 @@
 - PR16 and payment PR15 remain separate.
 - No merge, deployment or provider actions.
 
-### 2 November 2026 — Playwright route teardown ordering
+<a id="2-november-2026--playwright-route-teardown-ordering"></a>
+
+### 3.558. 2 November 2026 — Playwright route teardown ordering
 
 - PR17 run41374085710 at e7ce012 exposed two live-email desktop Chromium failures in job125051191066: route.fulfill reported Route is already handled after fixture cleanup removed interception while Worker responses remained pending.
 - Inspection of Playwright1.64.1 confirms removing an active handler continues its route.
@@ -5192,14 +7299,18 @@
 - No browser test cases, retries, timeouts, inventories or application behavior changed.
 - Original logs/artifacts retained; consolidated verification and final CI pending.
 
-### 2 November 2026 — PR17 combined-source verification candidate
+<a id="2-november-2026--pr17-combined-source-verification-candidate"></a>
+
+### 3.559. 2 November 2026 — PR17 combined-source verification candidate
 
 - PR17 incorporates synchronized PR16 head8cbb8d8, which includes merged payment PR15.
 - Workflow changes and the payment/browser transport source merged without conflict; only Progress/Journey required preserving both histories.
 - The candidate retains original payment safety/continuation assertions and the Playwright teardown fix, with no manual activation or provider actions.
 - Local code verification and exact-head CI follow for this combined candidate before the authorized sequential merges.
 
-### 2 November 2026 — dependency suitability review skill
+<a id="2-november-2026--dependency-suitability-review-skill"></a>
+
+### 3.560. 2 November 2026 — dependency suitability review skill
 
 - Owner requested a dedicated repository skill after reviewing Dependabot compatibility failures, and declined an automated Actions summary.
 - Added soccerbot-dependencies to own full-version-interval upstream research, benefit and suitability, platform/peer/runtime and supply-chain review, justified application changes versus fixture/environment repairs, and a PR merge/defer/reject recommendation.
@@ -5213,7 +7324,9 @@
 - The Playwright review also identified platform support changes across intermediate releases, illustrating why green Linux CI alone is not universal platform acceptance.
 - Existing dependency and payment branches remain separate.
 
-### 2 November 2026 — deployment readiness and CI diagnosis skills
+<a id="2-november-2026--deployment-readiness-and-ci-diagnosis-skills"></a>
+
+### 3.561. 2 November 2026 — deployment readiness and CI diagnosis skills
 
 - Owner requested the first two proposed operational skills.
 - Extended draft PR18 with soccerbot-deployment for source-to-artifact provenance, verified account/resource identity, configuration stores and secret-name-only checks, partial deployment, placement evidence, activation and rollback readiness; soccerbot-ci-diagnosis for preserved first-failure evidence, causal classification, SQLite/filesystem/process lifecycle investigation, complete shards and distinct independent/journey/restart scenarios, bounded experiments and CI cost tradeoffs.
@@ -5223,7 +7336,9 @@
 - Follow-up source/CI-policy and formatting checks passed; 133 local link targets, new skill metadata/anchors and Markdown-only scope validated.
 - Publication follows; final-head CI and merge remain separate.
 
-### 2 November 2026 — dependency support ranges and browser coverage
+<a id="2-november-2026--dependency-support-ranges-and-browser-coverage"></a>
+
+### 3.562. 2 November 2026 — dependency support ranges and browser coverage
 
 - Owner requested explicit support-version changes in every dependency PR and an appropriate browser coverage owner.
 - Extended soccerbot-dependencies with a mandatory before/after table for upstream requirements, repository pins, added/removed/unchanged support and exact verified coverage, citing version-specific sources and evidence.
@@ -5234,7 +7349,9 @@
 - Browser metadata was inspected without launching browsers; source/CI-policy and formatting checks passed, along with 87 local link targets and new support/coverage anchors.
 - Draft publication follows.
 
-### 2 November 2026 — explicit support semantics and PR review cleanup
+<a id="2-november-2026--explicit-support-semantics-and-pr-review-cleanup"></a>
+
+### 3.563. 2 November 2026 — explicit support semantics and PR review cleanup
 
 - Owner requested cleaned PR descriptions and consultation before any merge.
 - Dependency review and browser-coverage guidance now require distinct Testing-tool support, Our verified test coverage and Customer impact statements.
@@ -5244,7 +7361,9 @@
 - Follow-up source/CI-policy and formatting checks passed; affected local link targets validated.
 - Publication follows; the owner must be consulted before merging.
 
-### 2 November 2026 — PR18 synchronized merge candidate
+<a id="2-november-2026--pr18-synchronized-merge-candidate"></a>
+
+### 3.564. 2 November 2026 — PR18 synchronized merge candidate
 
 - The owner's explicit merge-all instruction supplies the requested consultation outcome.
 - PR18 now incorporates PR17 head807dd43, including PR16 synchronized head8cbb8d8 and merged payment PR15.
@@ -5254,7 +7373,9 @@
 - Fresh final-head CI remains required; keep closed production defaults and manual owner sandbox activation as agreed.
 - No provider transaction, runtime activation or management of507 performed.
 
-## 2 November 2026 — closed deployment propagation repair
+<a id="2-november-2026--closed-deployment-propagation-repair"></a>
+
+## 4. 2 November 2026 — closed deployment propagation repair
 
 - Release [41386001023](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41386001023) uploaded PR15 merge beb657a (Worker version9093bac7-b578-4f77-84a8-8f4d0a5581b0), then job125087292909 rejected still-visible predecessor f99a1ee against undefined.
 - Closed-mode first-install support introduced in915de5f2 skipped predecessor capture even for redeployments.
@@ -5271,7 +7392,9 @@
 - PR18/run41385462579 → merge4454b334.
 - The propagation repair is a separate follow-up; fresh-main CI/deployment and provider acceptance are not implied by these merges.
 
-## 2 November 2026 — production sandbox re-enabled for owner timing tests
+<a id="2-november-2026--production-sandbox-re-enabled-for-owner-timing-tests"></a>
+
+## 5. 2 November 2026 — production sandbox re-enabled for owner timing tests
 
 - Staging deployment41391686571 and production deployment41389536404 passed for merged revision4454b334;
 - Cloudflare settings independently report that revision on both Workers.
@@ -5284,7 +7407,9 @@
 - Owner browser/provider measurements and timing analysis remain pending; source closed-mode defaults still overwrite runtime activation on a later release.
 - PR19 remains draft/unmerged despite passing CI; staging-before-merge process documentation/enforcement is still outstanding.
 
-## 2 November 2026 — PR19 customer feedback consolidation (prepared)
+<a id="2-november-2026--pr19-customer-feedback-consolidation-prepared"></a>
+
+## 6. 2 November 2026 — PR19 customer feedback consolidation (prepared)
 
 - Owner tests found Continue payment on the hosted-payment return while payment was still checking, and excessive pending details.
 - The original booking payment step now explicitly opts into unpaid continuation; the confirmation-return route never offers it and route parameters remain non-evidence.
@@ -5303,7 +7428,9 @@
 - Receipt retained at `/tmp/pr19-final-code-receipt.json`.
 - Updated evidence-only documentation is separately checked; no assistant browser execution, staging acceptance or merge claim.
 
-## 2 November 2026 — confirmation render timing and preserved CI failure
+<a id="2-november-2026--confirmation-render-timing-and-preserved-ci-failure"></a>
+
+## 7. 2 November 2026 — confirmation render timing and preserved CI failure
 
 - Run41396104194 on PR19 head8e7691a failed three distinct browser message assertions across frontend/backend/live-email: old receipt-failure wording, old checking-deadline wording and malformed `Your Contact...`.
 - These are missed test-copy migrations, not evidence of failed Worker verification; all Worker groups passed.
@@ -5326,7 +7453,9 @@
 - Receipt `/tmp/pr19-render-final-code-receipt.json`; evidence-only documentation checked separately.
 - New browser assertions and the three CI repairs still require final-head browser CI.
 
-## 2 November 2026 — environment pricing and provider configuration reference
+<a id="2-november-2026--environment-pricing-and-provider-configuration-reference"></a>
+
+## 8. 2 November 2026 — environment pricing and provider configuration reference
 
 - PR19 head `eace296782601c1fb787a953dcfbc9ef11f2bb04` passed verification41398617144 (all13 jobs) and staging deployment41400005340; exact revision and runner health were confirmed.
 - This repaired the earlier obsolete browser-message assertions and staged local-only confirmation render timing.
@@ -5345,7 +7474,9 @@
 - AGENTS, documentation skill, development/runbook, technical behavior and customer UAT link or describe their affected ownership.
 - No provider settings, bookings, payments or notifications were changed.
 
-## 2 November 2026 — invoice document references and notification preparation
+<a id="2-november-2026--invoice-document-references-and-notification-preparation"></a>
+
+## 9. 2 November 2026 — invoice document references and notification preparation
 
 - Pricing/provider-reference head895091414674a513862685648cf1f7002a438146 passed all13 jobs in41402237300 and deployed staging in41403617840, Worker528f8f20-cc17-4059-b764-58ef14fc8c5c.
 - Owner expanded PR19 before merge to replace visible internal references, update downloads/contact and draft full HTML emails.
@@ -5377,7 +7508,9 @@
 - Owner paused custom email and requested staging PR19 followed by flow/physical checks.
 - Preserve drafts inactive, publish one candidate and require new-head CI/staging before owner testing; no merge/production activation.
 
-### 2 November 2026 — PR19 staging physical follow-up
+<a id="2-november-2026--pr19-staging-physical-follow-up"></a>
+
+### 9.1. 2 November 2026 — PR19 staging physical follow-up
 
 - Exact candidate75891e9 passed all13 verification jobs (41407426255) and staging41408849972, version9b316f22-721f-40f5-8f03-18c7a55740c6.
 - Owner test6 confirmed the original booking page reaches confirmed status but reported resumed checkout tab behavior, mismatched invoice prefix, failed details download and presentation issues.
@@ -5409,7 +7542,9 @@
 - Retain all devices, assertions and timeouts.
 - Real HitPay redirect acceptance remains separate.
 
-## 2 November 2026 — test8 second-checkout calendar repair (prepared)
+<a id="2-november-2026--test8-second-checkout-calendar-repair-prepared"></a>
+
+## 10. 2 November 2026 — test8 second-checkout calendar repair (prepared)
 
 - Owner recording on staged38c2134 confirms the first payment/booking, dismissal, then a distinct checkout for the identical slot.
 - No calendar reread occurs between bookings.
@@ -5419,7 +7554,9 @@
 - Server unknown-write recovery remains conservative.
 - Full verification/delivery and the expanded owner second-booking UAT remain pending; this is not proof of the precise provider rejection or successful second live checkout.
 
-## 2 November 2026 — combined booking-journey audit (prepared)
+<a id="2-november-2026--combined-booking-journey-audit-prepared"></a>
+
+## 11. 2 November 2026 — combined booking-journey audit (prepared)
 
 - Verified7dd0bfe CI41422527794/all13 and staging41424174940 exact-source deployment (Worker23aec032-988e-456a-b8f3-1b9119fc11f9).
 - Owner requested combinations beyond isolated happy paths.
@@ -5431,7 +7568,9 @@
 - UAT owns the transition matrix and explicitly retains two successful independent paid bookings as provider acceptance because the existing mechanism models one reservation.
 - Full code/new-head CI/staging pending; no merge, production change or live provider action.
 
-## 2 November 2026 — two-pass full consecutive-journey audit (prepared)
+<a id="2-november-2026--two-pass-full-consecutive-journey-audit-prepared"></a>
+
+## 12. 2 November 2026 — two-pass full consecutive-journey audit (prepared)
 
 - Reconciled270e97d's successful all13 CI41438559984 and exact staging41440199901/Worker91179174-df10-4769-a770-41f0c83688f9.
 - Owner requested three complete successive journeys, including multi then single.
@@ -5449,7 +7588,9 @@
 - Browser layout increases to45 (23/22 per runner shard), with path bounds/types and independent guard expectations reconciled; original failure retained, no bound weakening.
 - This is verification infrastructure only, not customer runtime behavior.
 
-### 2 November 2026 — Restore provider invoice display for owner UAT
+<a id="2-november-2026--restore-provider-invoice-display-for-owner-uat"></a>
+
+### 12.1. 2 November 2026 — Restore provider invoice display for owner UAT
 
 - After PR19 merged as fc52077 with explicit owner authorization before remaining physical checks, owner requested the invoice number visible again to compare full flows.
 - Restore optional provider invoice metadata unchanged on confirmed live cards; absent/pending metadata stays hidden and internal IDs remain excluded.
@@ -5463,14 +7604,18 @@
 - Added the UAT copy worksheet with recovery/reconciliation scenario mappings, exact current copy and proposed replacements.
 - No copy replacements or CI publication yet; consolidate wording before final verification.
 
-### 2 November 2026 — Archived handover checkpoints
+<a id="2-november-2026--archived-handover-checkpoints"></a>
+
+### 12.2. 2 November 2026 — Archived handover checkpoints
 
 - The following is the retained pre-reconciliation Progress record.
 - All status, authorization and next-step statements in this subsection describe their original checkpoints, not the current release.
 - Current state and pending work are owned exclusively by [Progress](../PROGRESS.md).
 - Preserved failures and historical hashes are not acceptance of later candidates.
 
-#### Two-pass consecutive-journey audit — 2 November 2026
+<a id="two-pass-consecutive-journey-audit--2-november-2026"></a>
+
+#### 12.2.1. Two-pass consecutive-journey audit — 2 November 2026
 
 - Baseline270e97d passed all13 jobs in CI41438559984 and staging41440199901; exact-source Worker91179174-df10-4769-a770-41f0c83688f9 installed at19:55 Singapore time.
 - PR19 remains unmerged.
@@ -5500,7 +7645,9 @@
 - Next: full local checks, one consolidated PR19 CI/staging update, then owner provider/device acceptance.
 - No merge/production action; email remains on hold.
 
-#### Previous combination-journey audit — 2 November 2026
+<a id="previous-combination-journey-audit--2-november-2026"></a>
+
+#### 12.2.2. Previous combination-journey audit — 2 November 2026
 
 - Baseline7dd0bfe passed all13 jobs in CI41422527794 and staging41424174940; deploy job125207109781 installed exact revision as Worker23aec032-988e-456a-b8f3-1b9119fc11f9 at09:55UTC.
 - Production skipped.
@@ -5526,7 +7673,9 @@
 - Budget: one bounded audit pass, consolidate into existing PR19.
 - Custom email remains on hold.
 
-#### Test8 rebooking investigation — 2 November 2026
+<a id="test8-rebooking-investigation--2-november-2026"></a>
+
+#### 12.2.3. Test8 rebooking investigation — 2 November 2026
 
 - Starting candidate38c2134 passed all13 jobs in41417374930 and staging41418928595 (Worker be93da41-e491-4217-babd-aa507e0e8d5f).
 - Owner test8 used normal checkout after Back → Continue → paid confirmation → Make another booking.
@@ -5545,7 +7694,9 @@
 - UAT explicitly covers the second checkout and cross-trainer occupied-time exclusion.
 - No merge/production authorization; email remains on hold.
 
-#### Current owner UAT follow-up — 2 November 2026
+<a id="current-owner-uat-follow-up--2-november-2026"></a>
+
+#### 12.2.4. Current owner UAT follow-up — 2 November 2026
 
 - PR19 candidate `75891e9e8450880c02696c5d4682832e6ee4da6f` passed all13 CI jobs in41407426255 and staging41408849972;
 - Worker version9b316f22-721f-40f5-8f03-18c7a55740c6 and revision independently read back.
@@ -5579,7 +7730,9 @@
 - Updated 2 November 2026, Singapore.
 - This file owns the current task and verified leave-off; [Journey](journey.md) retains dated evidence and [AGENTS](../AGENTS.md) owns engineering rules.
 
-#### Historical preparation — customer invoice references, exports and notification drafts
+<a id="historical-preparation--customer-invoice-references-exports-and-notification-drafts"></a>
+
+#### 12.2.5. Historical preparation — customer invoice references, exports and notification drafts
 
 - PR19 on `fix/closed-deployment-propagation` remains ready/unmerged.
 - Head `895091414674a513862685648cf1f7002a438146` passed all13 CI jobs in41402237300 and staging41403617840 (Worker version528f8f20-cc17-4059-b764-58ef14fc8c5c); runner revision/health passed.
@@ -5611,7 +7764,9 @@
 - Immediate next action: publish the consolidated application candidate, verify exact-head CI and staging, then guide owner visual/navigation, unpaid continuation, payment return, timing and export/WhatsApp tests one at a time.
 - No merge or production deployment.
 
-#### Pending owner setup and acceptance
+<a id="pending-owner-setup-and-acceptance"></a>
+
+#### 12.2.6. Pending owner setup and acceptance
 
 - Productionize email: client DNS/sender verification, reviewed credential/sender scope and all three identity/account actions; verify provider booking-notification triggers and eliminate duplicates.
   - Configuration and draft templates: `docs/external-providers-config.md`; acceptance: customer/Admin UAT.
@@ -5622,7 +7777,9 @@
   - Proposed matrices in Admin/Trainer UAT remain subject to actual capabilities/owner approval.
 - Compare invoice document number to SimplyBook Pay display, validate legacy/multiple-session downloads and calendar identity, and preview supported notification variables/layouts before enabling.
 
-#### Retained owner-test checkpoint — production sandbox on merged PR15–18
+<a id="retained-owner-test-checkpoint--production-sandbox-on-merged-pr1518"></a>
+
+#### 12.2.7. Retained owner-test checkpoint — production sandbox on merged PR15–18
 
 - On 2 November 2026 Singapore, owner authorized enabling the required configuration for payment-confirmation latency and leave/return checkout-timer tests.
 - Both staging and production installed revision4454b334; staging deployment41391686571 and production deployment41389536404 passed.
@@ -5642,7 +7799,9 @@
 - Documentation edits are retained locally for consolidation, avoiding a status-only CI run.
 - The agreed draft→ready→verified staging→owner acceptance→merge policy and its automated enforcement remain outstanding work.
 
-#### Active repair — closed deployment propagation
+<a id="active-repair--closed-deployment-propagation"></a>
+
+#### 12.2.8. Active repair — closed deployment propagation
 
 - Branch `fix/closed-deployment-propagation` builds on the verified PR18 stack, now merged into main4454b334.
 - PR16–18 each passed all13 final-head checks before their authorized merges.
@@ -5658,7 +7817,9 @@
 - Next: publish the focused repair, require its final-head CI and review, then verify a fresh-main release.
 - Leave507 untouched.
 
-#### Current merge campaign — PR15–18
+<a id="current-merge-campaign--pr1518"></a>
+
+#### 12.2.9. Current merge campaign — PR15–18
 
 - Owner authorized merging all ready PRs on 2 November after consultation.
 - PR15 headc827924 passed all13 jobs in run41369195891 and merged as beb657a8363044445b57c57554cd08f5f21a00e3.
@@ -5675,7 +7836,9 @@
 - No live provider effects or manual activation were performed.
 - Leave507 untouched.
 
-#### PR15 implementation checkpoint — historical before merge
+<a id="pr15-implementation-checkpoint--historical-before-merge"></a>
+
+#### 12.2.10. PR15 implementation checkpoint — historical before merge
 
 - Draft PR #15, branch fix/payment-response-confirmation.
 - Head720f5dbaa4a6c483304fdab97f62da61ac2dc014 passed all required CI gates in run41268704987.
@@ -5694,7 +7857,9 @@
 - No merge/deployment/provider acceptance.
 - Production sandbox/manifest mismatch remains a release blocker.
 
-#### Latest owner sandbox acceptance — 1 November 2026, Singapore
+<a id="latest-owner-sandbox-acceptance--1-november-2026-singapore"></a>
+
+#### 12.2.11. Latest owner sandbox acceptance — 1 November 2026, Singapore
 
 - Owner reports success and supplied test3.devtools.
 - HAR confirms checkout association3070ms, confirmed/verified response after three polls, and receipt200.
@@ -5708,7 +7873,9 @@
 - No assistant payment/replay or CI run.
 - The closed-manifest/runtime mismatch and production email setup remain pending.
 
-#### Current configuration audit — 1 November 2026, Singapore
+<a id="current-configuration-audit--1-november-2026-singapore"></a>
+
+#### 12.2.12. Current configuration audit — 1 November 2026, Singapore
 
 - This read-only checkpoint supersedes earlier closed-runtime statements below; those remain dated history.
 - Canonical main and client deployment are f99a1ee1d92b8413e54baf7600a82ebbc78ca60d (deployment41255109162 successful); staging reports PR14 head aa5885275b8c9a2c1537023c7e6a61c6ef93cd13.
@@ -5726,7 +7893,9 @@
 - Cloud Containers reports configured developer credentials ready, not client credentials; its developer signing secret is still represented as a runtime variable.
 - No secret values inspected, settings changed, CI triggered or application tests altered by this audit.
 
-#### Loader logo cleanup — prepared 31 October 2026
+<a id="loader-logo-cleanup--prepared-31-october-2026"></a>
+
+#### 12.2.13. Loader logo cleanup — prepared 31 October 2026
 
 - Owner paused guest sandbox testing to fix speckled cyan in the loader logo.
 - Branch `fix/clean-loading-logo` starts from merged main `bcb5e8e85cd31aece7394a8c1b6ff68d60061068`.
@@ -5737,7 +7906,9 @@
 - Loader animation, timing, accessibility and payment logic are unchanged.
 - Visual fidelity still needs owner review; no browser was operated by the assistant.
 
-#### Runtime acceptance checkpoint — 31 October 2026, 22:05 Singapore
+<a id="runtime-acceptance-checkpoint--31-october-2026-2205-singapore"></a>
+
+#### 12.2.14. Runtime acceptance checkpoint — 31 October 2026, 22:05 Singapore
 
 - PR12 merged as `bcb5e8e85cd31aece7394a8c1b6ff68d60061068` after all 13 final-head jobs passed in run41203309066.
 - Independent main run41206136608 and production deployment41207347576 passed.
@@ -5766,7 +7937,9 @@
 - Pending: first scheduled execution, public health/calendar/provider checks, owner guest sandbox payment, correlated checkout/recovery timing report.
 - Earlier closed checkpoints below are historical and superseded by this runtime observation.
 
-#### PR17 implementation checkpoint — historical before synchronization
+<a id="pr17-implementation-checkpoint--historical-before-synchronization"></a>
+
+#### 12.2.15. PR17 implementation checkpoint — historical before synchronization
 
 - Owner requested repairing Dependabot PRs16/17 to passing CI before personally reviewing/merging.
 - This branch updates Playwright1.58.2→1.64.1 with matching Noble images in the active target workflow and retained legacy policy fixture.
@@ -5791,9 +7964,13 @@
 - No merge/deployment.
 - PR16's action guard repair and PR15's payment work remain separate branches.
 
-#### Current task — client provider configuration and acceptance
+<a id="current-task--client-provider-configuration-and-acceptance"></a>
 
-#### PR18 scope and validation checkpoint
+#### 12.2.16. Current task — client provider configuration and acceptance
+
+<a id="pr18-scope-and-validation-checkpoint"></a>
+
+#### 12.2.17. PR18 scope and validation checkpoint
 
 - PR18 adds dependency suitability, deployment/configuration readiness and CI failure/efficiency skills, with AGENTS/runbook/development discovery links.
 - It requires separate Testing-tool support, Our verified test coverage and Customer impact statements in dependency PRs; development owns exact browser coverage and UAT records exact OS/browser/device versions.
@@ -5809,14 +7986,18 @@
 - The owner's subsequent “merge all accordingly” is the requested consultation outcome and authorizes these merges after verification; no additional permission is needed for that same scope.
 - Production remains closed in source, with manual activation accepted for owner testing.
 
-#### Deployment continuation — client provider configuration and acceptance
+<a id="deployment-continuation--client-provider-configuration-and-acceptance"></a>
+
+#### 12.2.18. Deployment continuation — client provider configuration and acceptance
 
 - Client GitHub deployment ownership and closed Cloudflare foundation are established.
 - Client customer operations are **not activated**.
 - Continue on Workers.dev while domain delegation/transfer is pending; do not repeat completed bootstrap work.
 - Leave test 507 untouched.
 
-##### Verified deployment checkpoint
+<a id="verified-deployment-checkpoint"></a>
+
+##### 12.2.18.1. Verified deployment checkpoint
 
 - Canonical repository: `soccerbotstudiosg/soccerbotstudioSG`; developer writes use `LimYouSheng`.
   - PR11 merged as `e3f2301f17673cca85bd990003b9891048ff909d`.
@@ -5842,7 +8023,9 @@
   - Authentication acceptance, production payment contracts and owner acceptance remain pending.
   - Initial 404/missing-foundation failure and Cloudflare assets-upload error10013 are retained historical failures; later success does not erase them.
 
-##### Confirmed provider rules and inspected configuration
+<a id="confirmed-provider-rules-and-inspected-configuration"></a>
+
+##### 12.2.18.2. Confirmed provider rules and inspected configuration
 
 - Owner confirmed client SimplyBook company `soccerbotadmin`, business SoccerBotStudio Singapore, timezone Asia/Singapore.
 - Keep developer company `soccerbot` separate.
@@ -5869,7 +8052,9 @@
 - No DNS changes or email sends occurred.
 - Preserve developer mappings and historical booking/payment records.
 
-##### Test and documentation reconciliation
+<a id="test-and-documentation-reconciliation"></a>
+
+##### 12.2.18.3. Test and documentation reconciliation
 
 - The checkpoint update changes capacity acceptance and scheduling instructions.
 - PR11 additionally repairs the browser retention test calendar fixture after its first CI failed at the October/November boundary.
@@ -5881,7 +8066,9 @@
 - Foundation CI and cloud execution receipts are separate from provider, device, payment and email acceptance.
 - Source owners still require a reviewed implementation for production provider portability.
 
-#### Current domain handover — pending vendor action
+<a id="current-domain-handover--pending-vendor-action"></a>
+
+#### 12.2.19. Current domain handover — pending vendor action
 
 - The client zone was prepared and inspected, with assigned nameservers `daniella.ns.cloudflare.com` and `merlin.ns.cloudflare.com`.
 - Cloudflare Registrar requires the destination zone to become active **before** initiating the EPP transfer.
@@ -5890,9 +8077,13 @@
 - Once the vendor confirms the nameserver change, recheck zone activation and email routing before guiding the owner through EPP/payment submission.
 - Never place the EPP code in repository evidence.
 
-#### Historical deployment checkpoint — retained context, not current task status
+<a id="historical-deployment-checkpoint--retained-context-not-current-task-status"></a>
 
-#### Verified main and completed PR stack
+#### 12.2.20. Historical deployment checkpoint — retained context, not current task status
+
+<a id="verified-main-and-completed-pr-stack"></a>
+
+#### 12.2.21. Verified main and completed PR stack
 
 - Final merged revision: `dffb24a12aae68de4ee32d6e7477bf227b3f0c50`.
 - [Main run 40684219386](https://github.com/LimYouSheng/SoccerBotStudioSG/actions/runs/40684219386) completed successfully: frontend, backend and live-email gates, frontend deployment and Cloudflare deployment.
@@ -5912,7 +8103,9 @@
 - The earlier PR112 tablet timing failure has no established root cause; later green runs do not retroactively diagnose it.
 - It is a retained investigation item, not a currently failing final-main gate.
 
-#### Remaining deployment and handover work
+<a id="remaining-deployment-and-handover-work"></a>
+
+#### 12.2.22. Remaining deployment and handover work
 
 - Domain/email preservation, registrar transfer and final domain/HTTPS acceptance remain pending vendor/owner action; use the current domain handover above.
 - Configure client SimplyBook, Resend, Turnstile secret and HitPay with separate staging/production credentials.
@@ -5924,7 +8117,9 @@
 - Working checkout: `/workspace/SoccerBotStudioSG`; preserve the dependency symlink and unknown files.
 - No provider changes or live financial/customer actions are authorized by this documentation checkpoint.
 
-#### Active implementation — pricing and growing rosters
+<a id="active-implementation--pricing-and-growing-rosters"></a>
+
+#### 12.2.23. Active implementation — pricing and growing rosters
 
 - Branch `feat/client-provider-configuration`, base `e3f2301f17673cca85bd990003b9891048ff909d`.
 - Scope: environment-specific prices and complete bounded calendar reads for a growing trainer roster.
@@ -5968,7 +8163,9 @@
 - PR is ready for review but remains unmerged.
 - Owner requested consolidating configuration before another CI run; keep subsequent edits local until the next coherent candidate.
 
-##### Owner-installed client credentials — 31 October 2026
+<a id="owner-installed-client-credentials--31-october-2026"></a>
+
+##### 12.2.23.1. Owner-installed client credentials — 31 October 2026
 
 - Names-only Cloudflare inspection confirmed these six secret bindings on client account `0b36822648e6905c681a90b6bec5ca7f`, Worker `soccerbot-production`: `SIMPLYBOOK_PROD_API_KEY`, `SIMPLYBOOK_PROD_SIGNING_SECRET`, `SIMPLYBOOK_PROD_ADMIN_API_USER_KEY`, `SIMPLYBOOK_PROD_COMPANY_LOGIN`, `SIMPLYBOOK_PROD_ADMIN_LOGIN` and `TURNSTILE_SECRET_KEY`.
 - Owner supplied them privately.
@@ -6008,7 +8205,9 @@
 - No webhook destination or sandbox credential rotation is authorized by this step.
 - Eventual live client merchant setup remains separate.
 
-##### Active slice — client guest sandbox integration
+<a id="active-slice--client-guest-sandbox-integration"></a>
+
+##### 12.2.23.2. Active slice — client guest sandbox integration
 
 - Owner authorized reusing app404 sandbox with client SimplyBook soccerbotadmin.
 - Local implementation adds an explicit client sandbox access gate, validates company/service and sandbox merchant/business pairing, permits environment-bound native grants/journal/payment scope, and preserves production identity during confirmation.
@@ -6042,7 +8241,9 @@
 - Documentation and a grant-description comment were reconciled after verification; runtime behavior was unchanged.
 - Next: review the consolidated local candidate for the planned single CI run; no push/merge/deployment or real provider actions occurred in this slice.
 
-##### 31 October — staging calendar/trainer request audit
+<a id="31-october--staging-calendartrainer-request-audit-1"></a>
+
+##### 12.2.23.3. 31 October — staging calendar/trainer request audit
 
 - Owner reports staging does not show the previously requested single time/trainer section and first-available-day/loading behavior.
 - Read-only staging health confirms revision0cfc27d9b58ac597f2ad4ef53d421d7d70782b86, version39480c81-db76-438f-ae9d-8b87a582dc3e.
@@ -6055,7 +8256,9 @@
 - No UI code changed during this audit.
 - Owner confirmed the inspected endpoint is the page being viewed: soccerbot-dev.limyousheng-94.workers.dev/book/time/.
 
-##### Active UI correction — calendar discovery and unified time/trainer card
+<a id="active-ui-correction--calendar-discovery-and-unified-timetrainer-card"></a>
+
+##### 12.2.23.4. Active UI correction — calendar discovery and unified time/trainer card
 
 - Owner authorized correcting the audited staging behavior.
 - Implemented one shared outer time/trainer card with an internal divider and keyboard focus outline.
@@ -6080,7 +8283,9 @@
 - No new test or inventory change is needed for an asset-only mapping change; existing loader behaviour assertions remain intact.
 - Payment/recovery/runtime owners and rules are unchanged by the logo repair.
 
-##### PR13 first CI failure and repair — 31 October 2026
+<a id="pr13-first-ci-failure-and-repair--31-october-2026-1"></a>
+
+##### 12.2.23.5. PR13 first CI failure and repair — 31 October 2026
 
 - Run41209467303 on head11267bfc8cac639a7233db143f4906937def1836 failed frontend and both backend browser shards because the existing oracle booking sizing test still asserted the old footer SVG filename.
 - Desktop Chromium, phone WebKit and tablet WebKit all received the intended new WebP.
@@ -6094,7 +8299,9 @@
 - Inventories, counts and shard assignments remain unchanged because this updates an existing assertion.
 - Browser execution remains CI/owner-operated; new exact-head CI is required.
 
-##### 1 November 2026 Singapore — guest sandbox re-enabled after logo release
+<a id="1-november-2026-singapore--guest-sandbox-re-enabled-after-logo-release-1"></a>
+
+##### 12.2.23.6. 1 November 2026 Singapore — guest sandbox re-enabled after logo release
 
 - Owner requested test checkout activation after PR13 merge.
 - Main verification41216341934 and deployment41217448707 passed for d49dc3e5b67ae0701568a54bfb57a9651332feb1.
@@ -6106,7 +8313,9 @@
 - These remain runtime overrides and will require reconciliation with the closed release manifest.
 - Owner test/provider acceptance and timing measurements are pending; no assistant booking/payment/email operation occurred.
 
-##### Client public catalogue portability repair — 1 November 2026 Singapore
+<a id="client-public-catalogue-portability-repair--1-november-2026-singapore-1"></a>
+
+##### 12.2.23.7. Client public catalogue portability repair — 1 November 2026 Singapore
 
 - Owner observed session information unavailable after authorized activation of d49dc3e.
 - Production telemetry confirms /api/catalogue returned503 (correlation9635ad97-45f5-4669-901e-97ca776d7e51); an earlier request e73961f0-4c01-4943-9ca1-31e2e74f2fb8 had an admin-auth transport success and failed after provider reads.
@@ -6130,7 +8339,9 @@
 - The concurrent code wrapper has the same invalidated baseline; neither is claimed as a final candidate pass.
 - Freeze the candidate before rerunning final wrappers; exact-final-head CI remains required.
 
-##### 1 November 2026 — restore sandbox after catalogue repair release
+<a id="1-november-2026--restore-sandbox-after-catalogue-repair-release-1"></a>
+
+##### 12.2.23.8. 1 November 2026 — restore sandbox after catalogue repair release
 
 - Main verification41254073431 and deployment41255109162 passed for f99a1ee1d92b8413e54baf7600a82ebbc78ca60d.
 - Owner still saw unavailable sessions.
@@ -6140,7 +8351,9 @@
 - Workspace public catalogue HTTP remains blocked by CONNECT403, so end-to-end availability after restoration requires owner refresh and correlated telemetry.
 - The permanent manifest/runtime mismatch remains unresolved and must be reconciled before another release.
 
-##### 1 November 2026 — return-latency diagnosis
+<a id="1-november-2026--return-latency-diagnosis-1"></a>
+
+##### 12.2.23.9. 1 November 2026 — return-latency diagnosis
 
 - Read-only queue query for owner test3 confirms foreground start00:47:30.889UTC, display jobs start00:47:33.624 and00:47:37.403, recovery enters00:47:46.090 and starts00:47:47.463 (1373ms wait), completes00:47:51.848.
 - The preceding display job therefore occupies the serial queue for about10.060s. holdCustomer queues bookingComments followed by refreshDisplayAfterWrite; calendar warming is the likely second job but current provider_queue telemetry lacks an operation label, so exact attribution remains inferred.
@@ -6151,7 +8364,9 @@
 - Next owner experiment: two sequential one-session sandbox checkouts, immediate payment versus waiting20seconds on HitPay before paying, preserve DevTools logs through receipt.
 - Compare background queue overlap and return timing; do not infer general latency from two samples.
 
-##### 1 November 2026 — proposed pre-accounting success boundary review
+<a id="1-november-2026--proposed-pre-accounting-success-boundary-review-1"></a>
+
+##### 12.2.23.10. 1 November 2026 — proposed pre-accounting success boundary review
 
 - Inspected recovery, native transport, confirmation/proof guards and October19/20 history.
 - The proposed fresh valid-booking plus verified HitPay payment boundary still permits an unpaid SimplyBook invoice.
@@ -6165,7 +8380,9 @@
 - No application/test source changed and no CI/provider effects.
 - Queue scheduling and browser confirmation-delivery improvements remain separate latency candidates; they do not require weakening this boundary.
 
-### 2 November 2026 — Documentation reconciliation after PR19
+<a id="2-november-2026--documentation-reconciliation-after-pr19"></a>
+
+### 12.3. 2 November 2026 — Documentation reconciliation after PR19
 
 - PR19 merged asfc52077; independent main CI41463340174 and production deployment41465604404 passed.
 - Production job125346381997 installed Workere18d326e-f191-4f4a-92f0-cda7e2efcfa8 with closed customer/provider/payment/email switches.
@@ -6176,7 +8393,9 @@
 - Corrected retired export references, invoice/storage wording and implemented client topology.
 - The subsequent owner request authorizes the small scenario catalogue, now in docs/booking-flows.md; it describes local source and does not establish physical/provider acceptance.
 
-### 2 November2026 — Approved copy, feedback spacing and scenario diagrams
+<a id="2-november2026--approved-copy-feedback-spacing-and-scenario-diagrams"></a>
+
+### 12.4. 2 November2026 — Approved copy, feedback spacing and scenario diagrams
 
 - Applied the owner's twelve-row copy selection exactly, including the loader instruction and Continue-payment wording.
 - Unselected recommendations remain proposals.
@@ -6195,7 +8414,9 @@
 - Results are local; browser layout/physical provider acceptance and final-head CI remain pending.
 - This receipt-only update changes no executable source; the saved full-code receipt is /tmp/combined-feedback-code-receipt.json.
 
-### 2 November2026 — One scenario and message owner
+<a id="2-november2026--one-scenario-and-message-owner"></a>
+
+### 12.5. 2 November2026 — One scenario and message owner
 
 - At owner request consolidated current scenario messages and remaining copy-review proposals into docs/booking-flows.md.
 - The19 small diagrams remain the primary view; the complete review is retained in an expandable section for reference.
@@ -6208,7 +8429,9 @@
 - No obsolete separate-message path remains.
 - Existing executable verification remains applicable because this consolidation changes only documentation.
 
-### 2 November 2026 — Approved frontend hardening follow-up
+<a id="2-november-2026--approved-frontend-hardening-follow-up"></a>
+
+### 12.6. 2 November 2026 — Approved frontend hardening follow-up
 
 - Owner approved shorter availability, identity and new-booking messages, accurate selection/reservation/checkout-expiry guidance, consistent notice actions, wrapping invoice references and accessible dialog headings/close controls.
 - The first focused run passed166/169; three assertions still expected old copy.
@@ -6221,7 +8444,9 @@
 - Documentation checks passed:50 Mermaid diagrams and1294 local links across25 Markdown files.
 - Browser/physical acceptance remains pending; no new CI, publication or deployment.
 
-### 2 November 2026 — Consolidated candidate pre-publication audit
+<a id="2-november-2026--consolidated-candidate-pre-publication-audit"></a>
+
+### 12.7. 2 November 2026 — Consolidated candidate pre-publication audit
 
 - Reviewed current AGENTS and repository testing/documentation skills, actual remote main fc52077, source diff, confirmed/pending invoice and animation guards, paid fallback, checkout expiry guidance, dialog semantics and test/inventory consumers.
 - No new blocking logic issue found in this bounded pass.
@@ -6229,7 +8454,9 @@
 - Existing full local verification is retained; browser CI and physical acceptance remain pending.
 - Owner authorized publishing one draft follow-up PR and CI, not merge or deployment.
 
-### 3 November 2026 — PR20 browser CI repair
+<a id="3-november-2026--pr20-browser-ci-repair"></a>
+
+### 12.8. 3 November 2026 — PR20 browser CI repair
 
 - [Run41512855656](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/41512855656) on0bff7c6 failed in jobs125510336963 and125510336783.
 - The dismissal test retained the obsolete “Your confirmation is saved” assertion on all three profiles.
@@ -6246,18 +8473,24 @@
 - All1294 documentation links and50 Mermaid diagrams passed.
 - No browser run was executed locally; the unchanged full application suite receipt is retained, and the repaired browser cases require new-head CI.
 
-### 3 November 2026 — Retained checkpoint before Progress cleanup
+<a id="3-november-2026--retained-checkpoint-before-progress-cleanup"></a>
+
+### 12.9. 3 November 2026 — Retained checkpoint before Progress cleanup
 
 - The following snapshot preserves prior implementation details, receipts, failures and deferred setup items moved out of Progress.
 - Its status statements describe the earlier observation only; use Progress and PR20 for the current checkpoint.
 
-#### SoccerBotStudioSG current task and handover
+<a id="soccerbotstudiosg-current-task-and-handover"></a>
+
+#### 12.9.1. SoccerBotStudioSG current task and handover
 
 - Updated 2 November 2026, Singapore.
 - [Journey](journey.md#part-2--dated-changes-and-evidence) owns historical decisions and retained failures; its archived handover subsection preserves the former Progress checkpoints.
 - This file is the only active checkpoint.
 
-#### Current outcome and scope
+<a id="current-outcome-and-scope"></a>
+
+#### 12.9.2. Current outcome and scope
 
 - Working branch `fix/confirmation-invoice-number`; draft [PR20](https://github.com/soccerbotstudiosg/soccerbotstudioSG/pull/20), inspected head `0bff7c6080992aee2bd37790000451c92c7e0058`.
 - CI run41512855656 started automatically after publication and failed in live-email browser shards.
@@ -6278,7 +8511,9 @@
 - No follow-up merge authorization.
 - Custom email remains **on hold**.
 
-#### Verified delivery state
+<a id="verified-delivery-state"></a>
+
+#### 12.9.3. Verified delivery state
 
 | Surface    | Exact evidence                                                                                                                                                         | Meaning                                                                                                                                                                                                       |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -6292,7 +8527,9 @@
 - Earlier manually enabled sandbox settings are historical and must not be described as currently enabled.
 - No runtime activation was performed during this documentation work.
 
-#### Local verification and remaining acceptance
+<a id="local-verification-and-remaining-acceptance"></a>
+
+#### 12.9.4. Local verification and remaining acceptance
 
 - Invoice-only change:21 protected-confirmation component cases and complete non-browser `npm run verify:code` passed; logs `/tmp/invoice-restore-focused.log` and `/tmp/invoice-restore-code.log`.
   - Existing test title/inventory updated together; case counts unchanged.
@@ -6309,7 +8546,9 @@
   - Includes revoked identity/confirmation access, unknown writes, partial batches, paid reconciliation, expiry/grace, OTP return, retained receipts and three consecutive journeys.
   - Journey retains overview/history; contracts retain authority; role UAT retains acceptance.
 
-#### Pending owner setup and acceptance
+<a id="pending-owner-setup-and-acceptance-1"></a>
+
+#### 12.9.5. Pending owner setup and acceptance
 
 - Full provider/device tests: single → single → single; multi → single → single;
   - Back → Continue → pay → same-tab return; reload/old links; correct separate receipts/payment identity; expiry/grace and interrupted card OTP/3DS/bank-app return.
@@ -6328,7 +8567,9 @@
 - Live HitPay merchant/bank setup, sender delivery, controlled shared-studio capacity checks, rollback/recovery rehearsal, monitoring ingestion/alert delivery and operator access handover remain separately accepted work.
   - Existing sandbox credentials do not establish live readiness.
 
-#### Next action and budget
+<a id="next-action-and-budget"></a>
+
+#### 12.9.6. Next action and budget
 
 - Push the bounded PR20 browser-test repair after local source/type/lint/format and documentation checks.
 - Preserve original run41512855656.
@@ -6360,7 +8601,9 @@
 - All1294 documentation links and50 Mermaid diagrams passed.
 - No browser run was executed locally; the unchanged full application suite receipt is retained, and the repaired browser cases require new-head CI.
 
-### 3 November 2026 — Documentation ownership correction
+<a id="3-november-2026--documentation-ownership-correction"></a>
+
+### 12.10. 3 November 2026 — Documentation ownership correction
 
 - Reduce Progress to one current checkpoint and immediate tasks.
 - Preserve its former detailed evidence above, alongside the earlier archived checkpoints.
@@ -6370,7 +8613,9 @@
 - Update AGENTS and the documentation skill to prevent appending historical receipts to Progress again.
 - This is a documentation-only change; no application, tests, workflow or provider configuration changes.
 
-### 3 November 2026 — PR20 merged for owner trial runs
+<a id="3-november-2026--pr20-merged-for-owner-trial-runs"></a>
+
+### 12.11. 3 November 2026 — PR20 merged for owner trial runs
 
 - All13 jobs in CI41544574146 passed for61ff22e, including the corrected browser assertions.
 - Owner then explicitly requested merge followed by trial runs.
@@ -6379,7 +8624,9 @@
 - Independent main verification/release remains separately checked.
 - The local Progress/Journey cleanup is unpushed and excluded from the merge.
 
-### 3 November 2026 — Formalize code-writing rules
+<a id="3-november-2026--formalize-code-writing-rules"></a>
+
+### 12.12. 3 November 2026 — Formalize code-writing rules
 
 - Owner requested a repository code-writing skill guided by ZY-Ang/clawdy CLAUDE.md.
 - Added soccerbot-code-writing: root-cause repair in existing owners, removal of superseded workarounds, authoritative configuration/provider values, legitimate literals/pins, positive outcome assertions, bounded regression/mutation evidence and proof of guard execution.
@@ -6395,7 +8642,9 @@
 - Reviewed dependency/deployment skills remain unchanged: the reference does not justify altering version pins, release permissions or provider acceptance.
 - No mutation, browser or CI execution is claimed for this instruction-only update.
 
-### 3 November 2026 — Guest sandbox checkout reactivated on production
+<a id="3-november-2026--guest-sandbox-checkout-reactivated-on-production"></a>
+
+### 12.13. 3 November 2026 — Guest sandbox checkout reactivated on production
 
 - Owner requested activation for trial runs on662bea3.
 - The first broad settings update was rejected by automatic approval review; no mutation occurred.
@@ -6406,7 +8655,9 @@
 - Repository defaults stay closed and the next deployment can disable this override.
 - No CI or assistant booking/payment operation.
 
-### 3 November 2026 — test9 owner trial and diagnosed gaps
+<a id="3-november-2026--test9-owner-trial-and-diagnosed-gaps"></a>
+
+### 12.14. 3 November 2026 — test9 owner trial and diagnosed gaps
 
 - Owner accepted confirmation animation and requested a compact Refresh control right of the month chooser.
 - Implemented locally with equal grid columns and44px minimum height; retained accessible name and retry owner.
@@ -6431,7 +8682,9 @@
 - This backend repair also remains pending.
 - Original telemetry/HAR retained, no assistant booking/payment/cancel/email actions.
 
-### 3 November 2026 — shared calendar restoration and safety audit (local)
+<a id="3-november-2026--shared-calendar-restoration-and-safety-audit-local"></a>
+
+### 12.15. 3 November 2026 — shared calendar restoration and safety audit (local)
 
 - Owner requested restoring the shared calendar design, enabling warming before the next trial, consolidating the existing local changes and auditing unsafe paths.
 - Branch `fix/shared-calendar-cache` starts from merged main `662bea3`; existing skills, documentation reconciliation and Refresh layout edits were preserved.
@@ -6482,7 +8735,9 @@
 - Draft CI does not deploy staging, and this instruction does not authorize merge or production deployment.
 - Record the exact PR/run in the publication receipt rather than making a status-only follow-up commit.
 
-### 3 November 2026 — PR21 production and test10 follow-up
+<a id="3-november-2026--pr21-production-and-test10-follow-up"></a>
+
+### 12.16. 3 November 2026 — PR21 production and test10 follow-up
 
 - PR21 merged by explicit owner request as86e3cd58316bb60b1c43989e9180451661e9d44b.
 - Main CI41571261491 and production deploy41572619343 succeeded.
@@ -6533,7 +8788,9 @@
 - No test email or provider mutation was performed.
 - Live delivery is a separate unimplemented task.
 
-### 3 November 2026 — schema map added to the local test10 batch
+<a id="3-november-2026--schema-map-added-to-the-local-test10-batch"></a>
+
+### 12.17. 3 November 2026 — schema map added to the local test10 batch
 
 - At owner request, added [Database schema](architecture/database-schema.md) with a compact overview, grouped crow’s-foot ER diagrams, separate application-managed relationship diagrams and one-line inventories for all32 final D1 tables and11 coordinator SQLite tables.
 - Explained crow’s-foot versus Chen relationship diamonds and the line-end cardinalities.
@@ -6553,7 +8810,9 @@
 - Added constraint-ownership guidance and explained why application-managed archive links do not make archive tables removable.
 - Source ownership checks passed; no application, migration or runtime changes were made in this documentation step.
 
-### 3 November 2026 — test10 batch authorized for CI
+<a id="3-november-2026--test10-batch-authorized-for-ci"></a>
+
+### 12.18. 3 November 2026 — test10 batch authorized for CI
 
 - Owner authorized CI publication of the consolidated invoice/calendar/countdown/schema-documentation batch.
 - GitHub inspection found no open client PR;
@@ -6563,7 +8822,9 @@
 - Enquiry/Resend setup stays deferred.
 - This authorization does not include merging, deployment or external email sends.
 
-### 3 November 2026 — PR22 deployment, sandbox activation and test11
+<a id="3-november-2026--pr22-deployment-sandbox-activation-and-test11"></a>
+
+### 12.19. 3 November 2026 — PR22 deployment, sandbox activation and test11
 
 - PR22 merged by owner request as c561b8857f778cc0048f89dde2d1f14e2203dab3.
 - Main verification41590019557 and production deployment41591600463 succeeded; deployment completed at14:45 Singapore time.
@@ -6607,7 +8868,9 @@
 - Frontend receipt is test-results/verification-code.json with /tmp/test11-code.log.
 - No new CI or deployment is claimed.
 
-### 3 November 2026 — test11 admin-auth investigation
+<a id="3-november-2026--test11-admin-auth-investigation"></a>
+
+### 12.20. 3 November 2026 — test11 admin-auth investigation
 
 - Read-only follow-up found six admin-auth transport events in the test window, with successive pre-failure login gaps about61,72 and69 seconds.
 - Current code intentionally caches admin tokens for60 seconds and does not retain or rotate refresh tokens.
@@ -6623,7 +8886,9 @@
 - No production or application behaviour changed, no provider credential login or support message was sent, and no new tests/CI were run for this research/documentation step.
 - Existing test11 executable verification remains unchanged.
 
-### 3 November 2026 — Local admin rotation and deadline recovery implementation
+<a id="3-november-2026--local-admin-rotation-and-deadline-recovery-implementation"></a>
+
+### 12.21. 3 November 2026 — Local admin rotation and deadline recovery implementation
 
 - At the owner's authorization, the test11 batch now retains encrypted admin access/refresh pairs under the existing credential scope.
 - Normal access retention is50 minutes against SimplyBook's documented one-hour lifetime; provider401/419 still retires access early and defers rotation to the next admitted operation.403 invalidates the family.
@@ -6662,7 +8927,9 @@
 - No real provider effects, production configuration changes, push, CI, merge or deployment occurred in this implementation step.
 - Actual account refresh and post-deployment customer acceptance remain pending.
 
-### 3 November 2026 — Owner-requested authentication and recovery safety audit
+<a id="3-november-2026--owner-requested-authentication-and-recovery-safety-audit"></a>
+
+### 12.22. 3 November 2026 — Owner-requested authentication and recovery safety audit
 
 - Audited the consolidated local batch against token scope/expiry/revocation, single-use refresh consumption, asynchronous publication, provider admission, early/due alarms, newer receipt generations, unknown accounting writes, comment eligibility and unchanged UI behavior.
 - Found one reproducible publication race: credential invalidation after the encrypted save resolved could be followed by stale in-memory publication.
@@ -6685,7 +8952,9 @@
 - No additional blocking issue was found in this bounded review.
 - No push, CI, merge, deployment or real provider operation was performed; the account's exact403 cause and deployed latency remain unverified.
 
-### 3 November 2026 — Second owner-requested concurrency audit
+<a id="3-november-2026--second-owner-requested-concurrency-audit"></a>
+
+### 12.23. 3 November 2026 — Second owner-requested concurrency audit
 
 - Reviewed concurrent rejection, single-use refresh interruption, alarm replacement, durable retry generations and unchanged financial-effect fences.
 - Reproduced another availability race: an old admin invoice read returned401 while its access token was being refreshed; because the refresh token had already been consumed, the late rejection invalidated the family and discarded a valid replacement with `provider_auth_stale`.
@@ -6712,7 +8981,9 @@
 - No additional blocking issue was found in this bounded pass.
 - The batch remains local; no CI, publication, deployment or real provider effects occurred.
 
-### 3 November 2026 — Repeat audit until a clean pass
+<a id="3-november-2026--repeat-audit-until-a-clean-pass"></a>
+
+### 12.24. 3 November 2026 — Repeat audit until a clean pass
 
 - At the owner's request, repeated the review across authentication retirement/publication, concurrent expiry/rejection, encrypted refresh consumption and restoration, admission/cooldown accounting, alarm replacement/newer wakeup generations, D1 retry/claim fences, late or cancelled payments, unknown financial writes and comment eligibility.
 - No new defect was found in this fresh pass, so no application/test-suite source was changed.
@@ -6727,7 +8998,9 @@
 - This is not proof of absence of all defects or real-provider latency acceptance.
 - No publication, CI, deployment, production setting change or real provider effect occurred.
 
-### 3 November 2026 — Deeper combined-failure and journey audit
+<a id="3-november-2026--deeper-combined-failure-and-journey-audit"></a>
+
+### 12.25. 3 November 2026 — Deeper combined-failure and journey audit
 
 - At the owner's request to try more unusual ways to break the system, exercised12 additional isolated scenarios against the actual consolidated local source.
 - Four authentication cases injected failure while consuming refresh storage, failure while publishing the successor after provider consumption, malformed JSON, and refresh403.
@@ -6752,7 +9025,9 @@
 - Only Progress and Journey were updated for this audit.
 - No browser execution, live provider effects, publication, CI or deployment occurred; actual provider rotation and deployed latency still require acceptance.
 
-### 3 November 2026 — Consolidated batch prepared for CI
+<a id="3-november-2026--consolidated-batch-prepared-for-ci"></a>
+
+### 12.26. 3 November 2026 — Consolidated batch prepared for CI
 
 - The owner authorized pushing the consolidated local batch for CI.
 - Remote main remains `c561b8857f778cc0048f89dde2d1f14e2203dab3`; the task branch has not previously been published and no open PR was found.
@@ -6761,7 +9036,9 @@
 - This request does not authorize merge, deployment or production activation.
 - The PR receipt will hold the final commit and CI links without another status-only commit.
 
-### 4 November 2026 — PR23 deployed and owner sandbox testing restored
+<a id="4-november-2026--pr23-deployed-and-owner-sandbox-testing-restored"></a>
+
+### 12.27. 4 November 2026 — PR23 deployed and owner sandbox testing restored
 
 - PR23 merged as `04d1c30398255515c75d2a21dff8f8fe94c3b377`;
 - PR run41652822836, independent main run41657081086 and production deploy41659567883 passed.
@@ -6781,7 +9058,9 @@
 - Progress now contains this checkpoint and immediate remaining tasks only.
 - Documentation updates remain local and do not trigger another CI run.
 
-### 4 November 2026 — Recording A presentation and scheduling findings
+<a id="4-november-2026--recording-a-presentation-and-scheduling-findings"></a>
+
+### 12.28. 4 November 2026 — Recording A presentation and scheduling findings
 
 - Owner completed A and requested identical review/cart/confirmation headings, service wording, typography and spacing, plus Paid immediately before the price.
 - Local shared SessionSummaryHeading removes three separate presentations; confirmed totals align the badge and price together while pending totals retain their layout.
@@ -6808,7 +9087,9 @@
 - Browser layout acceptance and HAR analysis remain pending.
 - No commit, push, CI or deployment occurred.
 
-### 4 November 2026 — Fixed-grid availability and cache follow-up
+<a id="4-november-2026--fixed-grid-availability-and-cache-follow-up"></a>
+
+### 12.29. 4 November 2026 — Fixed-grid availability and cache follow-up
 
 - Owner clarified that date-specific trainer availability is entered by admins and off-grid manual package/event records must remain supported.
 - Public starts remain anchored at noon; each offered trainer must have a continuous free50-minute interval, including changeover.
@@ -6836,7 +9117,9 @@
 - Original and corrected receipts are retained under `/tmp/testA-grid-*`.
 - No assistant browser, live booking/payment, CI or deployment occurred.
 
-### 4 November 2026 — Recording A batch authorized for draft CI
+<a id="4-november-2026--recording-a-batch-authorized-for-draft-ci"></a>
+
+### 12.30. 4 November 2026 — Recording A batch authorized for draft CI
 
 - Owner reported exhausted Actions minutes and explicitly requested pushing the consolidated batch to try CI.
 - Remote main remains04d1c30398255515c75d2a21dff8f8fe94c3b377; no open PR was found.
@@ -6845,7 +9128,9 @@
 - No billing changes, gate bypass, merge or deployment are authorized.
 - Recording A remains completed with presentation/scheduling exceptions; retain its successful checks and retest affected behavior after deployment.
 
-### 4 November 2026 — Public repository CI retry and browser-fixture correction
+<a id="4-november-2026--public-repository-ci-retry-and-browser-fixture-correction"></a>
+
+### 12.31. 4 November 2026 — Public repository CI retry and browser-fixture correction
 
 - Owner changed repository visibility to public after the read-only credential/history scan and authorized retry.
 - PR24 head e7facb864a7fc1f59878579bfbe320d97566db40, run41770102499 attempt2 executed actual jobs: frontend, all Worker groups/runtime, both browser builds and both backend browser shards passed.
@@ -6866,7 +9151,9 @@
 - No merge or deployment authorized.
 - Business/API/scenario/storage/security/dependency owners are unchanged because the repair only reconciles positive browser fixtures with the already documented grid.
 
-### 4 November 2026 — HitPay test URL classification and minimatch triage
+<a id="4-november-2026--hitpay-test-url-classification-and-minimatch-triage"></a>
+
+### 12.32. 4 November 2026 — HitPay test URL classification and minimatch triage
 
 - Based on merged main `c76964451034bae7db8699d7786716713ed47b7e`, replace 51 HitPay URL substring predicates in Worker/browser test histories with one exact-host classifier.
 - Both real and sandbox API hostnames remain classified so the separate sandbox-only assertion still detects wrong-environment dispatch; path/query/credential/suffix lookalikes are rejected.
@@ -6913,7 +9200,9 @@
 - Supplied exact trusted-main manual-deployment inputs, retaining the reservation requirement.
 - No deployment success claimed from verification; security branch is a separate candidate.
 
-### 5 November 2026 — A–D trials resumed after PR25 release
+<a id="5-november-2026--ad-trials-resumed-after-pr25-release"></a>
+
+### 12.33. 5 November 2026 — A–D trials resumed after PR25 release
 
 - PR25 staging41810661006 attempt2 succeeded on c4e6ada; owner then authorized merge/production.
 - Merge5f179a0 passed all13 main CI jobs41811349741 and production release41812600575 with exact-source health/settings checks.
@@ -6933,7 +9222,9 @@
 - Earlier readiness claim was premature.
 - Public-route confirmation remains owner-run because workspace direct health returned403; do not treat this transport failure as application-health evidence.
 
-### 5 November 2026 — calendar503 investigation (local, unresolved)
+<a id="5-november-2026--calendar503-investigation-local-unresolved"></a>
+
+### 12.34. 5 November 2026 — calendar503 investigation (local, unresolved)
 
 - After sandbox activation, production calendar requests returned503 and scheduled warming logged `display_refresh_unavailable`.
 - The A-recheck HAR has46 successful/redirect/not-modified entries but no calendar request; owner headers confirm the separate failed endpoint.
@@ -6947,7 +9238,9 @@
 - No availability guards, cache expiry, provider settings or production deployment changed.
 - Root-cause repair and provider acceptance remain pending live error evidence.
 
-### 5 November 2026 — interval representation identified and local repair
+<a id="5-november-2026--interval-representation-identified-and-local-repair"></a>
+
+### 12.35. 5 November 2026 — interval representation identified and local repair
 
 - Owner opened the calendar endpoint directly and confirmed `availability_representation_unavailable`.
 - Two bounded developer-account read-only probes (public authentication, service/trainer catalogue, four-day intervals) identified a date → trainer → list of `{from,to}` objects; only structural metadata was printed, no credentials/customer data.
@@ -6965,7 +9258,9 @@
 - An earlier broad suite was interrupted when the verified parser cause changed the candidate, and another was stopped to distinguish discarded saves in diagnostics; neither is a final full-pass receipt.
 - Final full-suite and deployment/UAT evidence remain pending.
 
-### 5 November 2026 — consolidated calendar window, efficiency and copy
+<a id="5-november-2026--consolidated-calendar-window-efficiency-and-copy"></a>
+
+### 12.36. 5 November 2026 — consolidated calendar window, efficiency and copy
 
 - Owner chose three prebuilt months and then removed the fourth browseable month.
 - A single approved domain constant now governs the browser selector/retention, public date window, protected calendar bound and warming months.
@@ -6988,7 +9283,9 @@
 - Parser mutation fails with `availability_representation_unavailable`; restoring blanket invalidation fails the independent current-month read-count assertion.
 - No CI, push, merge, deployment, browser run or production acceptance performed.
 
-### 5 November 2026 — PR26 calendar staging and security follow-up
+<a id="5-november-2026--pr26-calendar-staging-and-security-follow-up"></a>
+
+### 12.37. 5 November 2026 — PR26 calendar staging and security follow-up
 
 - Calendar candidate b2ba89bdc4f645b309ff597d20012ddf5061dbdb passed all13 exact-head verification jobs in run41948740595 and CodeQL41948738456.
 - Staging release41949885632 completed the actual Deploy staging job126991236175; production was skipped.
@@ -7041,7 +9338,9 @@
 - Final documentation-only reconciliation follows the accepted code/Worker receipts; source/policy/format/link checks cover that final delta.
 - PR26 remains draft pending new-head CI and subsequent staging/owner acceptance.
 
-### 5 November 2026 — PR26 browser report aggregation diagnosis
+<a id="5-november-2026--pr26-browser-report-aggregation-diagnosis"></a>
+
+### 12.38. 5 November 2026 — PR26 browser report aggregation diagnosis
 
 - On f6d282edb90e3c9df727b96fc6f42c01c7aa1885, run41954365195 passed frontend, all477 Worker cases/runtime aggregation, both browser builds and all four browser shards.
 - CodeQL41954359605 passed its three analyses.
@@ -7065,7 +9364,9 @@
 - Application/browser inventories are unchanged; the only new case is in the existing tooling suite.
 - New-head CI remains required.
 
-## 5 November 2026 — Retained PR26 aggregation checkpoint
+<a id="5-november-2026--retained-pr26-aggregation-checkpoint"></a>
+
+## 13. 5 November 2026 — Retained PR26 aggregation checkpoint
 
 - PR26 browser evidence aggregation repair
 
@@ -7086,7 +9387,9 @@
 - Earlier b2ba89b staging evidence does not accept subsequent changes.
 - Production remains at5f179a0; no merge/deployment/provider action is part of this repair.
 
-## 5 November 2026 — Local basket price alignment
+<a id="5-november-2026--local-basket-price-alignment"></a>
+
+## 14. 5 November 2026 — Local basket price alignment
 
 - Removed the standalone time-heading timezone/per-session label.
 - Basket session prices now share a row with the trainer and align right; the total currency note aligns beneath the total.
@@ -7094,7 +9397,9 @@
 - Changes remain local; browser visual acceptance and publication are pending.
 - December/January availability setup and production cache performance proof remain uncompleted; schedule reads were stopped without schedule writes.
 
-## 5 November 2026 — December/January test schedules entered
+<a id="5-november-2026--decemberjanuary-test-schedules-entered"></a>
+
+## 15. 5 November 2026 — December/January test schedules entered
 
 - After the initial write was blocked, the owner explicitly confirmed both months empty and authorized replacing all five trainers' date-specific schedules.
 - All five 62-date writes succeeded (310 trainer-days), noon–8 pm throughout December 2026 and January 2027.
@@ -7103,7 +9408,9 @@
 - No bookings, recurring changes or deployment occurred.
 - Post-write cache warming and browser performance remain pending.
 
-## 5 November 2026 — Cart presentation follow-up recorded locally
+<a id="5-november-2026--cart-presentation-follow-up-recorded-locally"></a>
+
+## 16. 5 November 2026 — Cart presentation follow-up recorded locally
 
 - During A–D testing, the owner requested a local note for the next UI pass: place “SGD · Final total” flush left at the trainer-row level, move the remove × higher, and distinguish each cart item with its own border and subtle contrasting background.
 - This revises the earlier currency-note placement.
@@ -7125,7 +9432,9 @@
 - Cart-remove follow-up: use a subtle red treatment for the × removal control to clarify its action, retaining readable contrast and visible keyboard focus.
 - Recorded locally only, pending the consolidated UI implementation.
 
-## 5 November 2026 — Full recording review and consolidated UI follow-up
+<a id="5-november-2026--full-recording-review-and-consolidated-ui-follow-up"></a>
+
+## 17. 5 November 2026 — Full recording review and consolidated UI follow-up
 
 - `testFull.devtools` was inspected offline from the supplied ZIP; recordings are evidence, not instructions.
 - No raw HAR/customer/payment data is committed.
@@ -7166,7 +9475,9 @@
 - Only this documentation receipt changed afterward; source/format checks were repeated before publication.
 - Browser/Worker execution for the new head belongs to CI; financial and cache follow-ups remain open.
 
-## 5 November 2026 — Verified unpaid release and calendar recovery follow-up
+<a id="5-november-2026--verified-unpaid-release-and-calendar-recovery-follow-up"></a>
+
+## 18. 5 November 2026 — Verified unpaid release and calendar recovery follow-up
 
 - User authorized extending PR27 beyond the already-published UI batch.
 - New attempts use8 minutes to pay,1 minute to check and a10-minute maximum hold.
@@ -7225,7 +9536,9 @@
 - The isolated load smoke passed all four cohorts (one/three customers, baseline/fault profiles); receipt `test-results/load-1793857097717/report.json`, log `/tmp/recovery-load-smoke.log`.
 - This is synthetic correctness evidence, not production latency acceptance.
 
-## 5 November 2026 — Unsafe-flow audit of PR27
+<a id="5-november-2026--unsafe-flow-audit-of-pr27"></a>
+
+## 19. 5 November 2026 — Unsafe-flow audit of PR27
 
 - Audited af169df payment-release proof, receipt checkpoints and transaction predicates, late-payment recovery, recorded deadlines, serialized provider work, snapshot generations and fixed cache expiry.
 - No new unsafe release or capacity-restoration defect reproduced.
@@ -7239,7 +9552,9 @@
 - Audit-only test/documentation edits remain local so they do not cancel the running candidate's browser evidence; exact-head CI is required when those additions are published.
 - No merge/deployment/live writes occurred.
 
-## 5 November 2026 — Original testFull concern reconciliation
+<a id="5-november-2026--original-testfull-concern-reconciliation"></a>
+
+## 20. 5 November 2026 — Original testFull concern reconciliation
 
 - Rechecked the original testFull message against source and sanitized HAR: late-payment protection/8+1 checking with10-minute hold, calmer unknown-payment notice, reload restoration gate, clearing expired cart, affected-day provider refresh before browser calendar reload, local overlap removal on authoritative rejection, bounded three-month warming, always-mounted disabled-while-loading Refresh, and16px spacing after Continue all have implementations.
 - No live acceptance is claimed.
@@ -7271,7 +9586,9 @@
 - No live booking/payment or notification send performed.
 - Documentation receipt remains local.
 
-### 5 November 2026 — TestFull-2 recovery and targeted release reads
+<a id="5-november-2026--testfull-2-recovery-and-targeted-release-reads"></a>
+
+### 20.1. 5 November 2026 — TestFull-2 recovery and targeted release reads
 
 - Owner supplied a second HAR and official App Store/Google Play/Web App destinations.
 - The retained evidence showed an old confirmation blocked by a newer attempt, provider-return continuation disabled, structured details reduced on unresolved screens, and `checkout_already_active` retained as an undispatched local verification attempt.
@@ -7298,7 +9615,9 @@
 - Final-head browser/CI receipts belong in the PR handover.
 - No assistant browser/provider writes; no new deployment acceptance claimed.
 
-### 5 November 2026 — local session card and dialog
+<a id="5-november-2026--local-session-card-and-dialog"></a>
+
+### 20.2. 5 November 2026 — local session card and dialog
 
 - Owner requested a one-third-width clickable session card with visible price, opening player selection and all three inclusions in a popup.
 - Implemented in SessionStep with existing environment pricing and shared Dialog; mobile remains full width.
@@ -7324,7 +9643,9 @@
 - Existing checkout test retains no-provider-write-before-consent checks and now verifies the Details price and new review composition.
 - No server/pricing-authority changes.
 
-### 5 November2026 — TestFull-3 evidence and local repair
+<a id="5-november2026--testfull-3-evidence-and-local-repair"></a>
+
+### 20.3. 5 November2026 — TestFull-3 evidence and local repair
 
 - HAR showed completed redirect preceding payment proof, an older receipt landing on the newer retained attempt, access denial at exactly30 minutes after capability issuance, and a final checkout_already_active rejection followed by restoration of another checkout.
 - Raw data stays outside source.
@@ -7399,7 +9720,9 @@
 - Reuse the successful unchanged application verification; final publication checkpoint changes only documentation.
 - Fresh exact-head CI and staging evidence remain separate.
 
-### 5 November 2026 — round-four recovery and presentation investigation
+<a id="5-november-2026--round-four-recovery-and-presentation-investigation"></a>
+
+### 20.4. 5 November 2026 — round-four recovery and presentation investigation
 
 - PR29 source618a014 passed merged-main verification42041579247 and production release42043167302.
 - Sandbox runtime activation was restored after closed deployment defaults, retaining eight secrets, D1/coordinator identity and minute cron.
@@ -7476,7 +9799,9 @@
 - Only release-test tooling/docs changed; application source remains the browser-tested47df8fe version.
 - Another exact-head CI is required; no staging/production deployment occurred.
 
-### 6 November 2026 — Retain the selected session card
+<a id="6-november-2026--retain-the-selected-session-card"></a>
+
+### 20.5. 6 November 2026 — Retain the selected session card
 
 - PR30 final CI42065438114 and staging42067220078 passed for7a0f655; staging public health matched that revision.
 - Owner requested merge, completed as a1b5a28.
@@ -7508,7 +9833,9 @@
 - Application code unchanged.
 - Original CI failure retained; new exact-head CI required.
 
-### 6 November 2026 — Local hero information-strip removal
+<a id="6-november-2026--local-hero-information-strip-removal"></a>
+
+### 20.6. 6 November 2026 — Local hero information-strip removal
 
 - PR31 corrected revision6401e6d passed all required gates in42130482806 and staging42132345558; independent public health matched.
 - Owner requested merge, completed as a4185c8.
@@ -7556,7 +9883,9 @@
 - Original failures retained.
 - No retries, timeouts, case counts or inventory changes.
 
-### 6 November 2026 — PR32 delivery and outstanding-work reconciliation
+<a id="6-november-2026--pr32-delivery-and-outstanding-work-reconciliation"></a>
+
+### 20.7. 6 November 2026 — PR32 delivery and outstanding-work reconciliation
 
 - The owner requested completion of the Progress leave-off on the existing PR32.
 - Its repaired application head `7f5075904847b2e809fa34836b2b8e3c2346142d` passed frontend, backend, live-email and Worker/runtime gates in run42137785715.
@@ -7578,7 +9907,9 @@
 - Local documentation formatting/link/diff and source/policy checks apply; reuse existing application evidence and require new exact-head CI/staging for the published documentation candidate.
 - Record that final delivery in PR32 rather than creating another verification-invalidating status commit.
 
-### 6 November 2026 — Resume the missing public-page redesign handover
+<a id="6-november-2026--resume-the-missing-public-page-redesign-handover"></a>
+
+### 20.8. 6 November 2026 — Resume the missing public-page redesign handover
 
 - The owner supplied the newer local handover absent from GitHub Progress and requested implementation on the existing PR32.
 - The prior documentation-only reconciliation was published as76e25a8 before this handover arrived.
@@ -7615,7 +9946,9 @@
 - Application source is unchanged by this repair.
 - Reuse the full local code receipt for the unchanged application and run affected source, formatting, lint and type checks; final-head CI and staging remain required.
 
-### 6 November 2026 — Reference-led presentation and outlet-first selection
+<a id="6-november-2026--reference-led-presentation-and-outlet-first-selection"></a>
+
+### 20.9. 6 November 2026 — Reference-led presentation and outlet-first selection
 
 - Previous32e2018 passed CI42145064845 and staging42146035084/job127657759264, public health revision32e20188d1d9f0473f111a893601f0faf3df5e7d/version14186f45-ea7f-4703-b950-bf14e8636166.
 - Owner then requested the next UI iteration and explicitly instructed staging and merge, followed by revisiting A–D with the retained two-minute experiment.
@@ -7669,7 +10002,9 @@
 - Reviewed unchanged operation contracts, business invariants, schema/migrations, architecture, infrastructure/security/data lifecycle, dependencies/versions, Admin/Trainer UAT and engineering instructions because this slice adds no authority, persistence or integration behavior.
 - Final receipt will contain exact CI/staging/merge/main/runtime states; no status-only commit after that final verification.
 
-### 6 November 2026 — compact abstract banners and reversible selection
+<a id="6-november-2026--compact-abstract-banners-and-reversible-selection"></a>
+
+### 20.10. 6 November 2026 — compact abstract banners and reversible selection
 
 - Final44540b6 passed CI42150456756 and staging42152250578/job127678176739; public health matched source44540b6a8488ad9750eef5d9cef957e8bc4137fc/version72ff8f11-6459-4e3c-bda9-d1b2e5a1c2ed.
 - Owner revoked merge while the request was in flight; automatic approval review rejected it.
@@ -7684,7 +10019,9 @@
 - Inventory counts and all unrelated checkout assertions remain unchanged.
 - Publish/check/stage on the same PR; do not merge or enable settings.
 
-### 6 November 2026 — mobile Studio promotion curve clearance
+<a id="6-november-2026--mobile-studio-promotion-curve-clearance"></a>
+
+### 20.11. 6 November 2026 — mobile Studio promotion curve clearance
 
 - Owner screenshot on staged `98830de` showed the top curve covering heads and the bottom curve overlapping the Explore the studio button.
 - The mobile layout had cropped the image to16:10 and replaced the Studio-specific bottom padding with36px, less than the40px curve.
@@ -7693,13 +10030,17 @@
 - Existing public-page/browser tests and inventories retained; phone visual acceptance remains owner-operated.
 - PR32 remains unmerged and settings remain on hold; exact-head checks and staging recorded in its delivery receipt.
 
-### 6 November 2026 — revised post-merge A–D worksheet prepared locally
+<a id="6-november-2026--revised-post-merge-ad-worksheet-prepared-locally"></a>
+
+### 20.12. 6 November 2026 — revised post-merge A–D worksheet prepared locally
 
 - Replaced the current A–D worksheet with numbered owner steps for mobile curve clearance, reversible outlet/session selection, paid return, single→multi→single receipt isolation, new10-minute provider invoice verification with unchanged8+1+3 app windows, unpaid expiry/background recovery, shared studio conflicts and cached return.
 - Retained historical rounds.
 - Execution requires the actual merged/deployed revision and separately authorized sandbox activation; no merge, publication, activation or provider actions performed.
 
-### 6 November 2026 — local outlet and Contact alignment refinements
+<a id="6-november-2026--local-outlet-and-contact-alignment-refinements"></a>
+
+### 20.13. 6 November 2026 — local outlet and Contact alignment refinements
 
 - Removed the outlet trailing arrow/check indicator, split the flagship description and street/unit into separate lines, and reused the session/time selected-state CSS for the outlet border, tint and inset outline.
 - Existing accessible pressed/expanded state and reversible selection remain intact.
@@ -7708,7 +10049,9 @@
 - Focused session pricing/selection tests passed2/2; formatting and diff checks passed.
 - Changes remain local at the owner's request; physical visual review is pending.
 
-### 6 November 2026 — consolidated refinements authorized for CI/staging
+<a id="6-november-2026--consolidated-refinements-authorized-for-cistaging"></a>
+
+### 20.14. 6 November 2026 — consolidated refinements authorized for CI/staging
 
 - Owner requested removal of app-store lead-in captions, a slightly wider popup and darker background.
 - Removed unused caption data/rendering/styles, widened only the player-app dialog and increased its backdrop opacity.
@@ -7716,7 +10059,9 @@
 - Owner subsequently authorized push, CI and staging for all current local refinements and revised A–D worksheet, but not merge or settings activation.
 - Full verification and exact-head deployment results belong in PR32's delivery receipt.
 
-### 6 November 2026 — shorter homepage promotion targets
+<a id="6-november-2026--shorter-homepage-promotion-targets"></a>
+
+### 20.15. 6 November 2026 — shorter homepage promotion targets
 
 - Owner additionally requested about25% less height for the second and third homepage sections.
 - Reduced image minimums480→360px and440→330px, vertical padding and copy gaps in the existing promotion owner; preserved typography and content-driven sizing.
@@ -7725,7 +10070,9 @@
 - The centred-eyebrow verification was superseded/stopped when this request arrived; consolidate this candidate before final verification.
 - No prior pass is claimed for the changed source.
 
-### 6 November 2026 — consistent banner button shape
+<a id="6-november-2026--consistent-banner-button-shape"></a>
+
+### 20.16. 6 November 2026 — consistent banner button shape
 
 - After publishing74e2f5e, owner requested all banner CTAs use the header's asymmetric button shape.
 - Applied3px/12px alternating corner radii in the shared promotion CTA owner, covering homepage Studio/session/Contact and Studio booking footer without changing labels, colours or actions.
@@ -7733,7 +10080,9 @@
 - Reuse its full local252-test/build verification as prior-candidate evidence, with focused final style/source checks for this CSS-only follow-up; final-head CI remains required.
 - No merge/settings authorization.
 
-### 6 November 2026 — tighter banner composition and shared chevrons
+<a id="6-november-2026--tighter-banner-composition-and-shared-chevrons"></a>
+
+### 20.17. 6 November 2026 — tighter banner composition and shared chevrons
 
 - Owner requested Contact's three content parts closer together, matching Studio booking-footer placement, chevrons on all right-arrow buttons, and “Kickoff Special · Apex @ Henderson” above player count.
 - Reduced the shared abstract-banner content width target1280→1080px and gaps40→24px, moved bottom alignment and centred eyebrow into that shared owner, replaced the arrow icon and all callers with a right chevron (existing previous-direction transforms preserved), and appended the configured venue in SessionSummaryHeading.
@@ -7741,7 +10090,9 @@
 - Baseline9683d21 was verified/staged; this new source requires its own verification.
 - No merge/settings changes.
 
-### 6 November 2026 — contrasting performance strip, header retained
+<a id="6-november-2026--contrasting-performance-strip-header-retained"></a>
+
+### 20.18. 6 November 2026 — contrasting performance strip, header retained
 
 - Owner clarified that the header should remain unchanged and the thin Performance · Experience · Production strip should stand out instead.
 - Automatic approval review blocked the superseded header-edit command before execution.
@@ -7750,7 +10101,9 @@
 - Extended the existing contrast audit17→18 pairs and its low-contrast mutation to cover this combination.
 - Earlier banner/chevron changes passed local verification before this clarification; final consolidated source still requires verification.
 
-### 6 November 2026 — neutral blue-grey performance strip
+<a id="6-november-2026--neutral-blue-grey-performance-strip"></a>
+
+### 20.19. 6 November 2026 — neutral blue-grey performance strip
 
 - Owner refined only the thin performance strip from teal to a neutral grey retaining a blue tint.
 - Introduced the scoped signature palette token #465363; retained white bold text, dimensions, header/hero and all other identity-colour consumers.
@@ -7758,21 +10111,27 @@
 - Baseline2893011 passed local/CI/staging; use focused style/contrast/source checks for this colour-only revision and final-head CI/staging.
 - No merge/settings changes.
 
-### 6 November 2026 — Studio footer and flag centring
+<a id="6-november-2026--studio-footer-and-flag-centring"></a>
+
+### 20.20. 6 November 2026 — Studio footer and flag centring
 
 - Owner requested vertical centring for the three parts in the straight-edged Studio footer, while retaining bottom alignment in the curved Contact banner, and centred the Singapore flag against the header buttons.
 - Updated the existing shared CSS default/Contact variant and removed the flag bottom offset.
 - Extended the existing public-page geometry assertion to check flag/button centre alignment; preserved its size/position checks and all test inventory.
 - Consolidate with the neutral blue-grey strip for final CI/staging.
 
-### 6 November 2026 — darker performance strip
+<a id="6-november-2026--darker-performance-strip"></a>
+
+### 20.21. 6 November 2026 — darker performance strip
 
 - Owner requested a much darker grey for the thin performance strip.
 - Changed only its scoped signature colour from #465363 to #252d38, retaining the subtle blue tint and white text.
 - Existing contrast/mutation coverage remains applicable; no layout, header, hero, booking or settings changes.
 - Baseline2cffbb5 passed CI/CodeQL/staging; final-head delivery evidence belongs in PR32.
 
-### 6 November 2026 — restore strip and lighten homepage promotions
+<a id="6-november-2026--restore-strip-and-lighten-homepage-promotions"></a>
+
+### 20.22. 6 November 2026 — restore strip and lighten homepage promotions
 
 - Owner superseded the darker-strip request: restore original performance-strip styling; change second/third homepage sections from navy/teal to very light grey with suitable dark text; remove the bottom Contact curve.
 - Removed the scoped signature token/overrides, reused paper/ink and standard navy action styles for both image promotions, removed Contact's SVG/obsolete edge owner/top clearance, and retained Studio curves/mobile clearance.
@@ -7781,7 +10140,9 @@
 - All test inventories and booking authority remain unchanged.
 - Previous0b98f4c CI/CodeQL passed but is superseded for delivery.
 
-### 6 November 2026 — Studio sections share the homepage promotion standard
+<a id="6-november-2026--studio-sections-share-the-homepage-promotion-standard"></a>
+
+### 20.23. 6 November 2026 — Studio sections share the homepage promotion standard
 
 - Owner extended the light homepage section standard to all five Studio sections below the video.
 - Reused the existing promotion CSS owners for light paper/ink colours, compact image heights, copy spacing and display typography; removed superseded Studio-specific layout/type overrides.
@@ -7790,7 +10151,9 @@
 - Extended the existing public-route browser case to check the five rows' intended palette without changing test inventory.
 - The earlier homepage-only candidate passed local verification before this scope extension; the consolidated candidate needs fresh checks.
 
-### 6 November 2026 — muted-orange bottom Contact banner
+<a id="6-november-2026--muted-orange-bottom-contact-banner"></a>
+
+### 20.24. 6 November 2026 — muted-orange bottom Contact banner
 
 - Owner confirmed Bottom contact as the target for a colour not otherwise present on the site.
 - Added scoped muted-orange #d99058 with soft white radial highlights, navy text and navy/white CTA states including hover/focus.
@@ -7799,7 +10162,9 @@
 - Test inventories, navigation, booking/provider logic and settings remain unchanged.
 - Baselinebf8e57f passed CI/CodeQL/staging; this candidate needs its own final delivery evidence.
 
-### 6 November 2026 — consolidated Studio gallery, banner spacing and footer app links
+<a id="6-november-2026--consolidated-studio-gallery-banner-spacing-and-footer-app-links"></a>
+
+### 20.25. 6 November 2026 — consolidated Studio gallery, banner spacing and footer app links
 
 - Owner consolidated the Studio tagline above video, five contiguous light picture/content rows as one group with curves only at its top/bottom, and a24px separation before Book now.
 - Outer40px clearances protect media/content from curves.
@@ -7819,7 +10184,9 @@
 - Contrast audit expands19→22 pairs, retaining its negative mutation checks; no test cases/inventories or booking/provider logic change.
 - Earlier broad text replacement touched an unrelated payment-demo margin during preparation; review restored it before verification.
 
-### 6 November 2026 — Footer fourth column and Studio image edges
+<a id="6-november-2026--footer-fourth-column-and-studio-image-edges"></a>
+
+### 20.26. 6 November 2026 — Footer fourth column and Studio image edges
 
 - Follow-up to verified PR32 baseline a77aef6 (CI42169819231, CodeQL42169815176, staging42170759529): move app downloads into the fourth footer column after Contact Us, headed Download App with accessible Apple/Android/web icon links.
 - Remove legacy logo offset and centre the entire logo/column group; keep the light palette and popup behavior.
@@ -7828,7 +10195,9 @@
 - Local verification and new-head CI/staging are pending at preparation; final evidence belongs in PR32.
 - No merge, settings or provider changes authorized or performed; owner visual/device acceptance remains pending.
 
-### 6 November 2026 — Further closing-banner reduction
+<a id="6-november-2026--further-closing-banner-reduction"></a>
+
+### 20.27. 6 November 2026 — Further closing-banner reduction
 
 - Owner requested another20% reduction to both Contact us and Book now banners after d7b89a5 was pushed.
 - Shared minimum height changes134→107px, vertical padding20→16px and heading scale reduces proportionately; controls retain48px minimum height and responsive copy can grow without clipping.
@@ -7836,7 +10205,9 @@
 - Superseded d7b89a5 CI42171896941 and CodeQL42171890073 are retained; newest-head checks/staging must be verified separately.
 - No merge or settings changes.
 
-### 6 November 2026 — Shared scroll motion, sticky header and footer regrouping
+<a id="6-november-2026--shared-scroll-motion-sticky-header-and-footer-regrouping"></a>
+
+### 20.28. 6 November 2026 — Shared scroll motion, sticky header and footer regrouping
 
 - After6e15e65's verified local banner reduction, owner requested section reveals on scrolling, a persistent header, a reference-style footer grouped into Service and Help with downloads on the right, logo bottom-right above the divider, and removal of Get in touch/Disclaimer.
 - Add owner-requested Terms of Service and Privacy Policy links to deliberately empty pure-white placeholder bodies; no legal text was supplied or invented.
@@ -7849,7 +10220,9 @@
 - The first local source gate rejected the retired footer-detail-link selector after footer regrouping.
 - Removed that unused selector from the existing shared link styles; preserved the failure receipt before verification.
 
-### 6 November 2026 — Make Studio booking gradient visible
+<a id="6-november-2026--make-studio-booking-gradient-visible"></a>
+
+### 20.29. 6 November 2026 — Make Studio booking gradient visible
 
 - Owner reported the Book now radial highlights still looked flat.
 - Add an identity-blue-to-navy linear gradient beneath the shared radial highlights, preserving the107px minimum-height target and zero grey spacer.
@@ -7857,7 +10230,9 @@
 - Retain01950da as the previous local-verified candidate; final-head CI/staging remains pending.
 - No merge or settings changes.
 
-### 6 November 2026 — Synchronize confirmation alignment with section motion
+<a id="6-november-2026--synchronize-confirmation-alignment-with-section-motion"></a>
+
+### 20.30. 6 November 2026 — Synchronize confirmation alignment with section motion
 
 - CI42173734802 at29c0a7f, backend browser shard1/job127748244100 (artifact13483045959), failed the existing desktop confirmation label/value alignment assertion: sequential rectangle reads differed by0.646px during the new reveal animation.
 - Read ancestor animation completion, then measure the label/value pair together in one browser frame.
@@ -7866,7 +10241,9 @@
 - Original failure remains retained.
 - Final-head CI/staging acceptance is still required.
 
-### 6 November 2026 — Exact four-column footer grouping
+<a id="6-november-2026--exact-four-column-footer-grouping"></a>
+
+### 20.31. 6 November 2026 — Exact four-column footer grouping
 
 - Following verified0c79157 (CI42175078630, CodeQL42175073956, staging42176139791; health versionf26a80d9-fe87-4353-979e-32783e843f92), owner specified Services, Help, Find Us and Download App columns.
 - Services contains Book, Studio and three legal links;
@@ -7911,7 +10288,9 @@
 - Extend existing public/reduced-motion/booking cases without new cases.
 - Prior consolidated local code verification passed; verify the final control-inclusive source before publication.
 
-### 6 November 2026 — Thin mobile booking navigation and primary action bar
+<a id="6-november-2026--thin-mobile-booking-navigation-and-primary-action-bar"></a>
+
+### 20.32. 6 November 2026 — Thin mobile booking navigation and primary action bar
 
 - Owner approved persistent mobile progress/Continue controls, explicitly requesting a thin layout that leaves the body visible.
 - Wrap the existing Back/progress owner in a mobile sticky row showing current step; desktop progress remains unchanged.
@@ -7920,7 +10299,9 @@
 - No duplicate button or new booking effect.
 - Extend the existing booking typography journey with bounded mobile bar geometry checks; final-source verification and CI/staging remain pending.
 
-### 6 November 2026 — Keep navigation and banner hit targets stable
+<a id="6-november-2026--keep-navigation-and-banner-hit-targets-stable"></a>
+
+### 20.33. 6 November 2026 — Keep navigation and banner hit targets stable
 
 - CI42179543002 ate95f7a5 failed backend browser jobs127766171024/127766171176 (artifacts13485241490/13485161901).
 - Desktop Studio entry placed the tagline at-601px while sticky header ended at88px: the new display:contents intro had no layout box for route scroll targeting.
@@ -7931,13 +10312,17 @@
 - The local mobile-bar candidate passed code verification before this root-cause repair.
 - Full final-head verification is required; no merge/settings changes.
 
-## Documentation consolidation evidence
+<a id="documentation-consolidation-evidence"></a>
+
+## 21. Documentation consolidation evidence
 
 - Retained source: `af5fd2a`;6 November2026.
   - These entries preserve prior details and superseded instructions, not current authority.
   - Current role tasks live in `docs/tests/uat/`; current settings live in their reference owners.
 
-### UAT detail retained — admin
+<a id="uat-detail-retained--admin"></a>
+
+### 21.1. UAT detail retained — admin
 
 # Admin — SoccerBot acceptance worksheet
 
@@ -7971,7 +10356,9 @@
 - Provider permission names/screens depend on the selected account plan.
 - Confirm the actual role matrix first; this worksheet does not introduce a custom staff portal or an approval workflow.
 
-## SimplyBook access and configuration
+<a id="simplybook-access-and-configuration"></a>
+
+## 22. SimplyBook access and configuration
 
 - Rules: [BR-001](business-rules.md#br-001), [BR-002](business-rules.md#br-002), [BR-005](business-rules.md#br-005), [BR-022](business-rules.md#br-022).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -7984,7 +10371,9 @@
 | ADM-004 | Inspect the shared studio/resource capacity across all eligible instructors. With a partner, attempt the arranged competing test reservations. | The shared studio cannot be sold twice for overlapping sessions merely by selecting different instructors. Capture both provider outcomes. Confirm the account-wide limit is one and admin override is disabled in staging and production; an arranged overlapping admin reservation must also be rejected. |        |         |
 | ADM-005 | Inspect email templates, sender/reply details and notification triggers using the agreed test inbox.                                           | Correct business details and recipient mappings are present; identity email ownership remains Resend and booking notification ownership remains SimplyBook.                                                                                                                                                 |        |         |
 
-## Trainer schedules in SimplyBook
+<a id="trainer-schedules-in-simplybook"></a>
+
+## 23. Trainer schedules in SimplyBook
 
 - Rules: [BR-001](business-rules.md#br-001), [BR-002](business-rules.md#br-002), [BR-006](business-rules.md#br-006).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -7996,7 +10385,9 @@
 | ADM-008 | Use a prepared instructor-service assignment change or inactive instructor example.                                                                                               | Only eligible active instructors are offered for that service after refresh; no assumption that existing bookings are silently reassigned. |        |         |
 | ADM-009 | Compare Trainer A’s permitted schedule editing with Trainer B’s records and Admin’s controls.                                                                                     | Access matches the recorded SimplyBook role configuration; restricted changes are denied, not tested using shared Admin credentials.       |        |         |
 
-## Booking, invoice and payment reconciliation
+<a id="booking-invoice-and-payment-reconciliation"></a>
+
+## 24. Booking, invoice and payment reconciliation
 
 - Rules: [BR-007](business-rules.md#br-007), [BR-008](business-rules.md#br-008), [BR-010](business-rules.md#br-010), [BR-013](business-rules.md#br-013).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8010,7 +10401,9 @@
 | ADM-014 | With authorised support, examine prepared uncertain-booking and late-settlement evidence.                                                        | Original references are retained and reconciliation follows authoritative readback. Unknown outcomes are not deleted/rebooked or presumed refunded. |        |         |
 | ADM-015 | After an approved paid journey, verify the SimplyBook notification record and the actual test inbox.                                             | One intended confirmation notification has correct sessions/details; investigate duplicates or missing delivery separately from payment state.      |        |         |
 
-## Daily operations and staff boundaries
+<a id="daily-operations-and-staff-boundaries"></a>
+
+## 25. Daily operations and staff boundaries
 
 - Rules: [BR-002](business-rules.md#br-002), [BR-003](business-rules.md#br-003), [BR-008](business-rules.md#br-008), [BR-022](business-rules.md#br-022).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8022,7 +10415,9 @@
 | ADM-018 | Walk through the documented rescheduling/cancellation/refund escalation using a prepared example, without executing a financial change. | Staff can identify the authorised operator, affected booking/payment and reconciliation consequences. Cancellation is not assumed to refund a payment. |        |         |
 | ADM-019 | Sign out of SimplyBook and try Back/refresh; verify the configured MFA/account recovery procedure with the owner.                       | The staff account follows the configured provider access controls. Missing MFA or permissions are recorded for handover.                               |        |         |
 
-## HitPay merchant access and payment operations
+<a id="hitpay-merchant-access-and-payment-operations"></a>
+
+## 26. HitPay merchant access and payment operations
 
 - Rules: [BR-005](business-rules.md#br-005), [BR-008](business-rules.md#br-008), [BR-010](business-rules.md#br-010), [BR-011](business-rules.md#br-011), [BR-022](business-rules.md#br-022).
 - See [payment code owners](code-owners/index.md#72-payment-expansion).
@@ -8045,7 +10440,9 @@
 | ADM-028 | Inspect available transaction/settlement reports for an approved period and compare gross payments, fees, refunds and net settlement with the owner.                                                    | Differences are explainable using actual provider records. Payment success is distinct from payout completion; unavailable sandbox settlement evidence remains Blocked.                           |        |         |
 | ADM-029 | Sign out of HitPay and try Back/refresh. Review who can view transactions, change merchant settings or issue refunds.                                                                                   | Protected records require valid access. Staff permissions and escalation contacts are documented without sharing owner credentials.                                                               |        |         |
 
-## Cloudflare domain, DNS and HTTPS checks
+<a id="cloudflare-domain-dns-and-https-checks"></a>
+
+## 27. Cloudflare domain, DNS and HTTPS checks
 
 - Rules: [BR-005](business-rules.md#br-005), [BR-025](business-rules.md#br-025), [BR-026](business-rules.md#br-026), [BR-027](business-rules.md#br-027).
 - See [delivery code owners](code-owners/index.md#10-verification-and-delivery).
@@ -8070,7 +10467,9 @@
 - Retain original failures when retesting; redact customer data and credentials.
 - Coordinate test schedule restoration with Admin and retain booking/payment history.
 
-## Session outcome
+<a id="session-outcome"></a>
+
+## 28. Session outcome
 
 | Decision                                         | Fill in |
 | ------------------------------------------------ | ------- |
@@ -8080,7 +10479,9 @@
 | Tester signature / date                          |         |
 | Owner decision / accepted exceptions / follow-up |         |
 
-## Per-slot trainer choice
+<a id="per-slot-trainer-choice"></a>
+
+## 29. Per-slot trainer choice
 
 - Rules: [BR-001](business-rules.md#br-001), [BR-002](business-rules.md#br-002).
 - Use owner-approved test arrangements; do not enable overlapping schedules before shared-capacity acceptance.
@@ -8095,7 +10496,9 @@
 - Record actual placement only when supported observations exist.
 - Configure credentials and retire the old deployer before enabling client ownership; these instructions are not a completed acceptance result.
 
-## Pending mobile staff onboarding and notifications
+<a id="pending-mobile-staff-onboarding-and-notifications"></a>
+
+## 30. Pending mobile staff onboarding and notifications
 
 - Owner wants individual SimplyBook junior employee and trainer accounts usable on mobile phones, not phone-number login.
 - Before invitations, confirm actual plan/seat limits, roles and supported mobile app/browser; collect each person's individual email and existing provider mapping privately.
@@ -8116,7 +10519,9 @@
 - Confirm multi-session totals and the official invoice document number match SimplyBook Pay, trainer isolation, no duplicate provider/application emails, and delivery-failure handling.
 - Owner operates previews/tests; blank results do not mean accepted.
 
-### UAT detail retained — trainers
+<a id="uat-detail-retained--trainers"></a>
+
+### 30.1. UAT detail retained — trainers
 
 # Trainers — SoccerBot acceptance worksheet
 
@@ -8150,7 +10555,9 @@
 - Provider permission names/screens depend on the selected account plan.
 - Confirm the actual role matrix first; this worksheet does not introduce a custom staff portal or an approval workflow.
 
-## SimplyBook staff access
+<a id="simplybook-staff-access"></a>
+
+## 31. SimplyBook staff access
 
 - Rules: [BR-002](business-rules.md#br-002), [BR-005](business-rules.md#br-005), [BR-022](business-rules.md#br-022).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8161,7 +10568,9 @@
 | TRA-002 | Inspect the schedule and bookings available to you. Try an organiser-supplied other-instructor record within the permitted test procedure. | Access follows configured SimplyBook staff permissions. If wider visibility is intentional, record owner approval; restricted edits are denied. |        |         |
 | TRA-003 | Sign out, refresh and press Back. Use the provider’s configured MFA/recovery process if included in your account setup.                    | Protected access requires valid sign-in; MFA/recovery behaves according to the agreed provider configuration.                                   |        |         |
 
-## Enter and maintain your schedule
+<a id="enter-and-maintain-your-schedule"></a>
+
+## 32. Enter and maintain your schedule
 
 - Rules: [BR-001](business-rules.md#br-001), [BR-002](business-rules.md#br-002), [BR-006](business-rules.md#br-006).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8176,7 +10585,9 @@
 | TRA-009 | Try editing a schedule field outside your approved role. If self-service editing is disabled, submit the agreed change request to Admin. | The permissions boundary holds; Admin enters approved changes. Record self-service as Blocked if not enabled rather than inventing an approval feature. |        |         |
 | TRA-010 | Restore the agreed test schedule after checking; refresh SimplyBook and compare the website.                                             | Restored availability matches the approved baseline without deleting booking history or creating extra sessions.                                        |        |         |
 
-## Bookings and customer operations
+<a id="bookings-and-customer-operations"></a>
+
+## 33. Bookings and customer operations
 
 - Rules: [BR-002](business-rules.md#br-002), [BR-007](business-rules.md#br-007), [BR-010](business-rules.md#br-010), [BR-013](business-rules.md#br-013).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8193,7 +10604,9 @@
 - Retain original failures when retesting; redact customer data and credentials.
 - Coordinate test schedule restoration with Admin and retain booking/payment history.
 
-## Session outcome
+<a id="session-outcome-1"></a>
+
+## 34. Session outcome
 
 | Decision                                         | Fill in |
 | ------------------------------------------------ | ------- |
@@ -8203,7 +10616,9 @@
 | Tester signature / date                          |         |
 | Owner decision / accepted exceptions / follow-up |         |
 
-## Per-slot trainer choice
+<a id="per-slot-trainer-choice-1"></a>
+
+## 35. Per-slot trainer choice
 
 - Rules: [BR-001](business-rules.md#br-001), [BR-002](business-rules.md#br-002).
 - Use owner-approved test arrangements; do not enable overlapping schedules before shared-capacity acceptance.
@@ -8212,7 +10627,9 @@
 | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------- |
 | TRA-016 | With Admin, prepare overlapping trainer availability and a multi-slot booking choosing different trainers; inspect each trainer’s assigned appointments. | Each appointment belongs to the customer-selected trainer. Other available trainers are not silently assigned and shared studio capacity remains one. |        |         |
 
-## Pending individual mobile accounts
+<a id="pending-individual-mobile-accounts"></a>
+
+## 36. Pending individual mobile accounts
 
 - Owner intends each trainer to use an individual SimplyBook account on a mobile phone, mapped to the existing provider.
 - Proposed duties for approval: view their own assigned sessions and necessary customer/session details; enter/edit their own availability if the actual role supports it.
@@ -8224,7 +10641,9 @@
 - Trainer notification drafts include only that recipient's sessions and necessary details, not other trainers or payment/customer contact information by default.
 - No account creation/invitation or acceptance has occurred under this documentation task.
 
-### UAT detail retained — simulated-user
+<a id="uat-detail-retained--simulated-user"></a>
+
+### 36.1. UAT detail retained — simulated-user
 
 # Simulated user — SoccerBot acceptance worksheet
 
@@ -8266,7 +10685,9 @@
 - A simulated user is a human tester acting as a customer with designated test data on the deployed site; it does not mean switching to a demo adapter.
 - Existing CUS case IDs are retained for traceability.
 
-## Access, email and saved details
+<a id="access-email-and-saved-details"></a>
+
+## 37. Access, email and saved details
 
 - Rules: [BR-003](business-rules.md#br-003), [BR-004](business-rules.md#br-004).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8283,7 +10704,9 @@
 | CUS-008 | Edit saved details, cancel/back once, then save valid changes. Return to booking options and refresh.                         | Cancel does not save. Successful save returns to booking options and restores the saved values; errors retain a recoverable editing state. |        |         |
 | CUS-009 | Try blank/invalid contact fields, then valid values; use an organiser-prepared identity-expiry case while editing.            | Invalid values are explained. Expired authority requires verification without showing stale protected information.                         |        |         |
 
-## Calendar, selection and review
+<a id="calendar-selection-and-review"></a>
+
+## 38. Calendar, selection and review
 
 - Rules: [BR-001](business-rules.md#br-001), [BR-002](business-rules.md#br-002), [BR-006](business-rules.md#br-006), [BR-007](business-rules.md#br-007).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8297,7 +10720,9 @@
 | CUS-014 | Review a booking, edit details and go back before final submission. Ask Admin to inspect the designated records.                                                       | Review alone creates no booking/payment. Changes remain visible and consent is required at the intended step. Review and confirmation section headings/body share font and size; confirmation details remain left aligned in the Review label/value format.                                                              |        |         |
 | CUS-015 | With Admin, arrange for a displayed test slot to become unavailable before submission.                                                                                 | The conflict is clearly reported without duplicate booking/payment; availability can be refreshed under the original outcome rules.                                                                                                                                                                                      |        |         |
 
-## Hosted payment, return and confirmation
+<a id="hosted-payment-return-and-confirmation"></a>
+
+## 39. Hosted payment, return and confirmation
 
 - Rules: [BR-007](business-rules.md#br-007), [BR-008](business-rules.md#br-008), [BR-010](business-rules.md#br-010), [BR-011](business-rules.md#br-011), [BR-012](business-rules.md#br-012), [BR-013](business-rules.md#br-013).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8348,7 +10773,9 @@
   - **What to do:** Check actual identity email and booking notification in the designated inbox after the approved journey.
   - **What should happen:** Identity email and SimplyBook booking notification reach the intended recipient with correct links/details; no unexplained duplicate notice.
 
-## Devices, navigation and response time
+<a id="devices-navigation-and-response-time"></a>
+
+## 40. Devices, navigation and response time
 
 - Rules: [BR-013](business-rules.md#br-013), [BR-018](business-rules.md#br-018).
 - See [code owners](code-owners/index.md#11-business-rule-to-owner-index).
@@ -8374,7 +10801,9 @@
 - Retain original failures when retesting; redact customer data and credentials.
 - Coordinate test schedule restoration with Admin and retain booking/payment history.
 
-## Session outcome
+<a id="session-outcome-2"></a>
+
+## 41. Session outcome
 
 | Decision                                         | Fill in |
 | ------------------------------------------------ | ------- |
@@ -8384,7 +10813,9 @@
 | Tester signature / date                          |         |
 | Owner decision / accepted exceptions / follow-up |         |
 
-## Per-slot trainer choice
+<a id="per-slot-trainer-choice-2"></a>
+
+## 42. Per-slot trainer choice
 
 - Rules: [BR-001](business-rules.md#br-001), [BR-002](business-rules.md#br-002).
 - Use owner-approved test arrangements; do not enable overlapping schedules before shared-capacity acceptance.
@@ -8395,7 +10826,9 @@
 | CUS-033 | Choose several times with the same trainer and another time with a different trainer. Change one choice, refresh, and remove a session. | Below the summary, one card per trainer lists all their times. Cards stack vertically; choices survive refresh; only the changed/removed session moves or disappears.                            |        |         |
 | CUS-034 | With Admin, use two approved test customers choosing different trainers for the same time.                                              | Only one shared-studio booking succeeds; the other cannot pay for an incomplete or rejected booking. Recovery preserves uncertain effects.                                                       |        |         |
 
-### Client pricing and growing trainer roster acceptance
+<a id="client-pricing-and-growing-trainer-roster-acceptance"></a>
+
+### 42.1. Client pricing and growing trainer roster acceptance
 
 - For an explicitly approved client test, verify S$108 on an ordinary weekday and S$128 on a weekend and Singapore public/substitute holiday in calendar, Review, invoice and payment.
 - Staging retains S$88/S$108.
@@ -8409,7 +10842,9 @@
 - Check narrow screens and screen-reader announcements; payment uncertainty must never invite a duplicate payment.
 - These visual/device checks remain owner-operated.
 
-## Confirmation actions and same-tab payment acceptance
+<a id="confirmation-actions-and-same-tab-payment-acceptance"></a>
+
+## 43. Confirmation actions and same-tab payment acceptance
 
 - Customer PDF/calendar actions are retired by owner decision.
 - Confirm both buttons are absent on new, saved, single-session and multi-session confirmations.
@@ -8433,7 +10868,9 @@
 - Custom email remains on hold.
 - Staff/customer notification drafts are not installed or accepted; use the Admin/Trainer UAT owners when setup resumes.
 
-## Combined journey audit matrix
+<a id="combined-journey-audit-matrix"></a>
+
+## 44. Combined journey audit matrix
 
 - Run each owner sequence on the exact staged revision and record browser/device, attempt correlation and visible result.
 - Existing automated evidence below is synthetic; it does not establish live HitPay return, provider capacity or device acceptance.
@@ -8454,7 +10891,9 @@
 - Confirmation proof, pending payment and continuation guards remain separate from display cache freshness.
 - Keep original failure evidence when any combined sequence fails; do not repeat checkout merely to clear an uncertain attempt.
 
-### Three complete journeys before physical acceptance
+<a id="three-complete-journeys-before-physical-acceptance"></a>
+
+### 44.1. Three complete journeys before physical acceptance
 
 - Run single → single → single and multi-session → single → single in the same browser session.
 - Complete payment and confirmation each time, then use Make another booking.
@@ -8476,7 +10915,9 @@
 - The countdown is centred immediately above Continue payment.
 - These visual checks remain owner/CI acceptance.
 
-### Shared calendar regression after test9
+<a id="shared-calendar-regression-after-test9"></a>
+
+### 44.2. Shared calendar regression after test9
 
 - On the deployed candidate, complete three single bookings consecutively, then a multi-session booking followed by two singles.
 - After each confirmation, choose Make another booking: calendar/catalogue must load from the shared snapshot, booked studio times must be absent for every trainer, and unrelated sessions must remain selectable.
@@ -8487,7 +10928,9 @@
 - After an unpaid reservation expires, verify restoration only after SimplyBook releases capacity and an authoritative day/scheduled refresh observes it.
 - Browser display alone is not proof of provider release.
 
-### Test10 follow-up acceptance
+<a id="test10-follow-up-acceptance"></a>
+
+### 44.3. Test10 follow-up acceptance
 
 - Owner reported tests1,2,4 completed on production86e3cd5, with invoice/layout defects; remaining numbered tests are not reported passed.
 - On the next deployed candidate, complete a new paid single and multi booking.
@@ -8502,7 +10945,9 @@
 - With reduced motion enabled, the number appears without a pop.
 - Failed/exhausted/expired checking must stop the spinner and retain the booking confirmation.
 
-### Test11 follow-up acceptance
+<a id="test11-follow-up-acceptance"></a>
+
+### 44.4. Test11 follow-up acceptance
 
 - Owner reports checklist tests1–5 completed on c561b88, with wording requests and the second confirmation delay retained in Journey.
 - This does not mark tests6–10 complete.
@@ -8521,7 +10966,9 @@
 - If recovery is deferred, compare its persisted retry timestamp with the next alarm trace.
 - Account-specific lifetime and provider refresh acceptance remain pending until observed on the deployed revision.
 
-### 4 November full owner test round
+<a id="4-november-full-owner-test-round"></a>
+
+### 44.5. 4 November full owner test round
 
 - Target production sandbox revision `04d1c30` after PR23.
 - Earlier test11 tests1–5 were completed with exceptions on the previous revision; this is a new round, not carried-forward acceptance.
@@ -8559,7 +11006,9 @@
 - Use a new unoccupied time for cross-trainer rejection; preserve provider/network evidence.
 - Live off-grid start normalization remains unresolved; do not mark grid acceptance from a capacity-only pass.
 
-### Fixed public grid with manual admin bookings — pending owner acceptance
+<a id="fixed-public-grid-with-manual-admin-bookings--pending-owner-acceptance"></a>
+
+### 44.6. Fixed public grid with manual admin bookings — pending owner acceptance
 
 - Use an authorized sandbox date with recorded trainer availability.
 - Confirm only the nine BR-001 starts are offered across cart/review/checkout.
@@ -8574,7 +11023,9 @@
 - After provider-confirmed release, a fresh read may restore eligible slots.
 - Record the actual interval API payload shape and account-wide capacity/buffer behavior; synthetic regression success does not complete these checks.
 
-### A–D acceptance worksheet
+<a id="ad-acceptance-worksheet"></a>
+
+### 44.7. A–D acceptance worksheet
 
 - Revised 6 November 2026 for **owner execution after merge**, fresh-main CI, deployment and separately authorized sandbox activation.
 - This worksheet does not authorize merge or enable settings: both remain on hold.
@@ -8690,7 +11141,9 @@
 - No assistant live bookings, payments or cancellations are implied.
 - Synthetic success does not certify provider latency, account configuration or owner acceptance.
 
-## Public presentation redesign — owner acceptance pending
+<a id="public-presentation-redesign--owner-acceptance-pending"></a>
+
+## 45. Public presentation redesign — owner acceptance pending
 
 - On desktop, phone and tablet, verify the 30% smaller flag sits left of the two header buttons and vertically centred with them.
 - Confirm the main hero is 15% shorter without clipped content and remains straight-edged.
@@ -8760,9 +11213,13 @@
 - Studio intro retains a real layout box so route entry starts at the hero.
 - CI42179543002 exposed these navigation/hit-target regressions; original evidence is retained in Journey and final-head verification is required.
 
-### Reference consolidation — December/January test availability — 5 November 2026
+<a id="reference-consolidation--decemberjanuary-test-availability--5-november-2026"></a>
 
-### December/January test availability — 5 November 2026
+### 45.1. Reference consolidation — December/January test availability — 5 November 2026
+
+<a id="decemberjanuary-test-availability--5-november-2026"></a>
+
+### 45.2. December/January test availability — 5 November 2026
 
 - Owner confirmed both months empty and explicitly authorized replacing date-specific availability.
 - Production SimplyBook account `soccerbotadmin`: entered all 62 dates from 1 December 2026 through 31 January 2027, 12:00–20:00 Singapore time, no breaks, for Faisal (2), Nabil (3), Caelan (4), Rifqi (5) and Azam (6): 310 trainer-days.
@@ -8776,9 +11233,13 @@
 - Recurring weekly schedules, company/service hours and November were not changed.
 - Cache rebuilding and browser latency acceptance remain separate and unverified after these writes.
 
-### Reference consolidation — Admin authentication investigation — 3 November 2026
+<a id="reference-consolidation--admin-authentication-investigation--3-november-2026"></a>
 
-### Admin authentication investigation — 3 November 2026
+### 45.3. Reference consolidation — Admin authentication investigation — 3 November 2026
+
+<a id="admin-authentication-investigation--3-november-2026"></a>
+
+### 45.4. Admin authentication investigation — 3 November 2026
 
 - Test11 production telemetry shows six admin-auth requests between07:13 and07:21 UTC, including one403 during deferred checkout work.
 - Before that rejection, observed successful logins were roughly61 and72 seconds apart; the next login failed roughly69 seconds later.
@@ -8805,9 +11266,13 @@
 - Verify the actual account timeout and deployed refresh response during owner acceptance; these local changes do not establish provider acceptance.
 - The connector could not expose API feature configuration (INVALID_ARGUMENT), and direct Swagger retrieval was blocked; this investigation did not log in with production credentials, change provider settings or contact support.
 
-### Reference consolidation — 5 November 2026 — PR27 production sandbox reactivation
+<a id="reference-consolidation--5-november-2026--pr27-production-sandbox-reactivation"></a>
 
-### 5 November 2026 — PR27 production sandbox reactivation
+### 45.5. Reference consolidation — 5 November 2026 — PR27 production sandbox reactivation
+
+<a id="5-november-2026--pr27-production-sandbox-reactivation"></a>
+
+### 45.6. 5 November 2026 — PR27 production sandbox reactivation
 
 - Cloudflare runtime readback confirms production source `c2b7c1cae4d18f1d45bc1837fb3c3f068e3aeb22`.
 - Under owner authorization, restored customer/client sandbox access, trusted provider reads, HitPay checkout/recovery/webhook and reviewed merchant pairing, manual external accounting, ongoing readback and public display warming.
@@ -8817,9 +11282,13 @@
 - Provider timeout remains owner-verified separately.
 - No live booking/payment action was performed.
 
-### Reference consolidation — 5 November 2026 — observed timeout delay
+<a id="reference-consolidation--5-november-2026--observed-timeout-delay"></a>
 
-### 5 November 2026 — observed timeout delay
+### 45.7. Reference consolidation — 5 November 2026 — observed timeout delay
+
+<a id="5-november-2026--observed-timeout-delay"></a>
+
+### 45.8. 5 November 2026 — observed timeout delay
 
 - Owner HAR and invoice evidence align creation around14:52 with due time15:02; cancellation was observed around15:11 (Asia/Singapore).
 - The exact provider cancellation event time is not established.
@@ -8829,9 +11298,13 @@
 - Treat the configured deadline and observed provider release as separate evidence.
 - No provider setting or cancellation was changed during this investigation.
 
-### Reference consolidation — 3 November 2026 — production calendar warming re-enabled
+<a id="reference-consolidation--3-november-2026--production-calendar-warming-re-enabled"></a>
 
-### 3 November 2026 — production calendar warming re-enabled
+### 45.9. Reference consolidation — 3 November 2026 — production calendar warming re-enabled
+
+<a id="3-november-2026--production-calendar-warming-re-enabled"></a>
+
+### 45.10. 3 November 2026 — production calendar warming re-enabled
 
 - Owner authorized restoration before the next trial.
 - Cloudflare settings PATCH and independent GET verified `PUBLIC_DISPLAY_WARMING=enabled` on `soccerbot-production`, source `662bea3764bb7546a216f1f4f3790fbcb1e28a67`; all other 45 bindings were inherited, including eight secrets.
@@ -8844,9 +11317,13 @@
 - Identity-email configuration does not activate enquiry delivery.
 - No live email was sent during this check.
 
-### Reference consolidation — 5 November 2026 — resume owner A–D production sandbox trials
+<a id="reference-consolidation--5-november-2026--resume-owner-ad-production-sandbox-trials"></a>
 
-### 5 November 2026 — resume owner A–D production sandbox trials
+### 45.11. Reference consolidation — 5 November 2026 — resume owner A–D production sandbox trials
+
+<a id="5-november-2026--resume-owner-ad-production-sandbox-trials"></a>
+
+### 45.12. 5 November 2026 — resume owner A–D production sandbox trials
 
 - Restored previously authorized sandbox configuration on production source `5f179a0b379577ab2239528b6ad44a35402cc8ee`.
 - Independent Cloudflare GET confirms customer/client sandbox access, trusted provider reads, HitPay checkout/recovery/webhook, live readback and public display warming enabled; route hitpay, external payment sandbox-reviewed, processor manual.
@@ -8863,9 +11340,13 @@
 - Workspace direct production health was blocked with HTTP403, so owner refresh remains the public-route confirmation.
 - Future activation checks must include the complete sandbox pairing guard as well as toggles; do not report ready from switches alone.
 
-### Reference consolidation — Checkout timing follow-up — 5 November 2026
+<a id="reference-consolidation--checkout-timing-follow-up--5-november-2026"></a>
 
-## Checkout timing follow-up — 5 November 2026
+### 45.13. Reference consolidation — Checkout timing follow-up — 5 November 2026
+
+<a id="checkout-timing-follow-up--5-november-2026"></a>
+
+## 46. Checkout timing follow-up — 5 November 2026
 
 - The owner selected10 minutes in the supplied SimplyBook payment-timeout screenshot and requested8/9/10-minute application timing.
 - Local migration0037 and new-attempt policy implement that split; old attempts remain unchanged.
@@ -8888,9 +11369,13 @@
 - New-attempt recovery uses the separate twelve-minute boundary under BR-011; it cannot extend the provider invoice deadline.
 - No provider mutation or booking/payment acceptance occurred during this reconciliation.
 
-### Reference consolidation — 6 November 2026 — final delivery and sandbox restoration scope
+<a id="reference-consolidation--6-november-2026--final-delivery-and-sandbox-restoration-scope"></a>
 
-### 6 November 2026 — final delivery and sandbox restoration scope
+### 46.1. Reference consolidation — 6 November 2026 — final delivery and sandbox restoration scope
+
+<a id="6-november-2026--final-delivery-and-sandbox-restoration-scope"></a>
+
+### 46.2. 6 November 2026 — final delivery and sandbox restoration scope
 
 - Owner instruction: finish final CI, verify exact staging revision/health, merge PR32, verify merged-main deployment, then enable the existing production-named client sandbox for A–D.
 - Read-only Cloudflare inspection before delivery found customer/client sandbox, provider, HitPay and warming switches disabled, existing company soccerbotadmin/service3–4 and reviewed app404 merchant/business mapping retained, and eight secret bindings present.
@@ -8905,26 +11390,34 @@
 - PR32 remains open/unmerged and the sandbox switches remain at the observed disabled baseline; prior restoration instructions above are superseded.
 - No provider setting or runtime mutation occurred.
 
-### Provider reference evidence
+<a id="provider-reference-evidence"></a>
+
+### 46.3. Provider reference evidence
 
 - Latest release evidence (2 November2026,22:51 Singapore): productionfc52077 passed deployment health with customer/provider/HitPay checkout/identity delivery/client sandbox disabled.
 - Earlier sandbox overrides are historical, not current activation.
 - Staging retains its independently verified7634a29 candidate.
 - [Progress](../PROGRESS.md) owns exact run/version receipts.
 
-### Provider reference evidence
+<a id="provider-reference-evidence-1"></a>
+
+### 46.4. Provider reference evidence
 
 - Both service lists were read through their respective connectors on 2 November 2026.
 - Client company information independently reported login `soccerbotadmin` and timezone `Asia/Singapore`.
 
-### Provider reference evidence
+<a id="provider-reference-evidence-2"></a>
+
+### 46.5. Provider reference evidence
 
 - A separate SimplyBook-hosted landing-page description still contained older package marketing during the 2 November read.
 - It is provider-managed content, not the website's tariff authority or an approved application package feature.
 - Owner should reconcile that content before promoting the provider-hosted page.
 - This reference deliberately does not reproduce it.
 
-### Provider reference evidence
+<a id="provider-reference-evidence-3"></a>
+
+### 46.6. Provider reference evidence
 
 - Production PR21 displays the retained API number, which owner test10 showed as an O-prefixed order while SimplyBook later returned SI-2026000006/7 for the same invoice IDs.
 - The owner reports the client email already had the correct number almost immediately.
@@ -8932,31 +11425,41 @@
 - Prefixes are not configurable proof and must never be rewritten.
 - Old records without a captured baseline omit the unverified number.
 
-### Provider reference evidence
+<a id="provider-reference-evidence-4"></a>
+
+### 46.7. Provider reference evidence
 
 - On 2 November the client connector reported **Custom email** and **Flexible Notifications** disabled.
 - Its tools expose feature inspection but no notification-template read/write operation.
 - Templates have therefore been prepared in source, not saved in SimplyBook; no feature or notification was enabled and no email was sent.
 - The owner can open the [Custom email editor](https://soccerbotadmin.secure.simplybook.asia/v2/ext/custom-email), check plan/feature costs, and inspect supported HTML editing without activating delivery.
 
-### Schedule sampling evidence
+<a id="schedule-sampling-evidence"></a>
+
+### 46.8. Schedule sampling evidence
 
 - **Initial mock schedule:** Prior authorized setup covered 3–21 November 2026 for five trainers
   - Temporary test availability, not a production scheduling recommendation. Official opening is 22 November; existing entries from that date were left untouched
 
-### Schedule sampling evidence
+<a id="schedule-sampling-evidence-1"></a>
+
+### 46.9. Schedule sampling evidence
 
 - **Grid evidence:** Prior sampled reads on 3 and 21 November returned nine starts, noon through 18:40
   - Two sampled dates do not verify every date or future trainer
 
-### Copy review retained
+<a id="copy-review-retained"></a>
+
+### 46.10. Copy review retained
 
 <a id="copy-review-baseline-and-disposition"></a>
 
 <details>
 <summary>Archived copy review — superseded wording</summary>
 
-## Archived copy review (historical baseline and disposition)
+<a id="archived-copy-review-historical-baseline-and-disposition"></a>
+
+## 47. Archived copy review (historical baseline and disposition)
 
 - This archive preserves the earlier review and stable M IDs, including later owner dispositions.
 - “Keep”, “Baseline wording”, “local” and source line numbers describe that historical review, not today’s implementation or deployment.
@@ -8964,7 +11467,9 @@
 - Unapplied suggestions are not approved requirements.
 - Provider-owned screens are outside our copy control.
 
-### Identity and customer details
+<a id="identity-and-customer-details"></a>
+
+### 47.1. Identity and customer details
 
 | ID   | Scenario / owner                                                                                     | Baseline wording                                                                                                                                                    | Historical suggestion                                       | Safety / meaning to retain                                                                          |
 | ---- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -9007,7 +11512,9 @@
 | M037 | contact · customer feedback/guidance ([source](../src/domain/contact.ts))                            | Select a contact method.                                                                                                                                            | Keep.                                                       | Presentation only; preserve existing conditions and actions.                                        |
 | M038 | contact · customer feedback/guidance ([source](../src/domain/contact.ts))                            | Use no more than 120 characters.                                                                                                                                    | Keep.                                                       | Presentation only; preserve existing conditions and actions.                                        |
 
-### Preview / demo branches
+<a id="preview--demo-branches"></a>
+
+### 47.2. Preview / demo branches
 
 | ID   | Scenario / owner                                                                                                                                                                       | Baseline wording                                                                                                                                                                                   | Historical suggestion                                 | Safety / meaning to retain                                                 |
 | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -9062,7 +11569,9 @@
 | M087 | booking · customer feedback/guidance ([source](../src/services/demo/booking.ts))                                                                                                       | A selected instructor is no longer available. Review your selected sessions.                                                                                                                       | Keep.                                                 | Preview-only evidence; do not imply live payment/email/booking.            |
 | M088 | booking · customer feedback/guidance ([source](../src/services/demo/booking.ts))                                                                                                       | Session no longer available.                                                                                                                                                                       | Owner-approved: Session no longer available.          | Preview-only evidence; do not imply live payment/email/booking.            |
 
-### Availability and selection
+<a id="availability-and-selection"></a>
+
+### 47.3. Availability and selection
 
 | ID   | Scenario / owner                                                                                   | Baseline wording                                                                                                                                                            | Historical suggestion                                                                                | Safety / meaning to retain                                                                                           |
 | ---- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -9122,7 +11631,9 @@
 | M142 | booking · customer feedback/guidance ([source](../src/domain/booking.ts))                          | A selected session has started. Remove it and choose a future time.                                                                                                         | Session started. Remove it and choose another time.                                                  | Presentation only; preserve existing conditions and actions.                                                         |
 | M143 | summary · customer feedback/guidance ([source](../src/features/booking/summary.tsx))               | Session no longer available.                                                                                                                                                | Owner-approved: Session no longer available.                                                         | Presentation only; preserve existing conditions and actions.                                                         |
 
-### Shared loading, navigation and guidance
+<a id="shared-loading-navigation-and-guidance"></a>
+
+### 47.4. Shared loading, navigation and guidance
 
 | ID   | Scenario / owner                                                                                     | Baseline wording                                                                                                                        | Historical suggestion                                                                | Safety / meaning to retain                                                                  |
 | ---- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
@@ -9143,7 +11654,9 @@
 | M158 | not-found · customer feedback/guidance ([source](../src/app/not-found.tsx))                          | Page not found                                                                                                                          | Keep.                                                                                | Presentation only; preserve existing conditions and actions.                                |
 | M159 | not-found · customer feedback/guidance ([source](../src/app/not-found.tsx))                          | The page you’re looking for isn’t available.                                                                                            | Keep.                                                                                | Presentation only; preserve existing conditions and actions.                                |
 
-### Payment, confirmation and recovery
+<a id="payment-confirmation-and-recovery"></a>
+
+### 47.5. Payment, confirmation and recovery
 
 | ID   | Scenario / owner                                                                                                        | Baseline wording                                                             | Historical suggestion                                                                                               | Safety / meaning to retain                                                                                                                                   |
 | ---- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -9188,7 +11701,9 @@
 | M198 | Dismissal blocked while payment unresolved ([source](../src/services/confirmation.ts))                                  | Payment status is still being checked. Your original booking has been kept.  | Checking payment. Do not start another booking.                                                                     | Keep duplicate-payment/booking warning where outcome is uncertain.                                                                                           |
 | M199 | Navigation/dismissal failed ([source](../src/services/confirmation.ts))                                                 | Please try again to leave this booking.                                      | Unable to leave this page. Please try again.                                                                        | Presentation only; preserve existing conditions and actions.                                                                                                 |
 
-### Review and checkout
+<a id="review-and-checkout"></a>
+
+### 47.6. Review and checkout
 
 | ID   | Scenario / owner                                                                               | Baseline wording                                                                                                                                                                  | Historical suggestion                                                                                          | Safety / meaning to retain                                                                                  |
 | ---- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -9215,7 +11730,9 @@
 | M220 | review-step · customer feedback/guidance ([source](../src/features/booking/review-step.tsx))   | Follow the instructor’s safety guidance.                                                                                                                                          | Keep.                                                                                                          | Presentation only; preserve existing conditions and actions.                                                |
 | M221 | review-step · customer feedback/guidance ([source](../src/features/booking/review-step.tsx))   | Contact the studio for changes, cancellations and applicable refund policies. Cancellation and refund are separate actions.                                                       | Contact us for changes, cancellations or refund enquiries. Cancelling does not automatically refund a payment. | Presentation only; preserve existing conditions and actions.                                                |
 
-### Booking errors and restart recovery
+<a id="booking-errors-and-restart-recovery"></a>
+
+### 47.7. Booking errors and restart recovery
 
 | ID   | Scenario / owner                                                                               | Baseline wording                                                                                                               | Historical suggestion                                                                                                                           | Safety / meaning to retain                                                                          |
 | ---- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -9245,7 +11762,9 @@
 | M245 | booking · customer feedback/guidance ([source](../src/services/booking.ts))                    | Review your selection before starting checkout.                                                                                | Keep.                                                                                                                                           | Presentation only; preserve existing conditions and actions.                                        |
 | M246 | booking · customer feedback/guidance ([source](../src/services/booking.ts))                    | This selection is no longer available or has changed. Please choose again. Your details have been kept.                        | Selection unavailable. Choose again. Your details are saved.                                                                                    | **Applied locally in frontend audit.** Presentation only; preserve existing conditions and actions. |
 
-### Enquiry
+<a id="enquiry"></a>
+
+### 47.8. Enquiry
 
 | ID   | Scenario / owner                                                                               | Baseline wording                                                       | Historical suggestion                                   | Safety / meaning to retain                                   |
 | ---- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------ |
@@ -9255,7 +11774,9 @@
 | M250 | enquiry-page · customer feedback/guidance ([source](../src/features/enquiry/enquiry-page.tsx)) | We couldn’t send your enquiry. Please try again or contact the studio. | Unable to send enquiry. Please try again or contact us. | Presentation only; preserve existing conditions and actions. |
 | M251 | enquiry-page · loading ([source](../src/features/enquiry/enquiry-page.tsx))                    | Preparing…                                                             | Keep.                                                   | Presentation only; preserve existing conditions and actions. |
 
-## Additional controls and labels
+<a id="additional-controls-and-labels"></a>
+
+## 48. Additional controls and labels
 
 - Routine controls do not need copy changes unless the matching action changes.
 - Included so the review does not silently omit alternate buttons/headings.
@@ -9423,7 +11944,9 @@
 | src/components/site-shell.tsx:184                   | Stay                                                                                    | Keep; supporting label/control.                                 |
 | src/app/not-found.tsx:11                            | Back to home                                                                            | Keep; supporting label/control.                                 |
 
-## Not separate customer messages
+<a id="not-separate-customer-messages"></a>
+
+## 49. Not separate customer messages
 
 - Worker reconciliation reasons, accounting retries, unknown writes, duplicate/out-of-order webhooks, late settlement and manual review map into the payment/recovery scenario table; raw codes are not rendered.
 - Background calendar refresh, tab visibility changes and successful silent session restoration have no dedicated notification.
@@ -9436,9 +11959,13 @@
 
 </details>
 
-### Browser coverage evidence retained
+<a id="browser-coverage-evidence-retained"></a>
 
-## Browser testing coverage
+### 49.1. Browser coverage evidence retained
+
+<a id="browser-testing-coverage"></a>
+
+## 50. Browser testing coverage
 
 - This section owns automated browser coverage and its limits; [versions.md](versions.md) remains the generated branch dependency inventory.
 - It is not a customer minimum-browser support policy.
@@ -9488,14 +12015,18 @@
 - No customer minimum version or continuous supported range is declared until explicitly chosen and validated.
 - Preserve this dated matrix as evidence when updating the current configuration; do not present an unmerged upgrade or historical pass as deployed acceptance.
 
-### Checkpoint superseded by documentation consolidation
+<a id="checkpoint-superseded-by-documentation-consolidation"></a>
+
+### 50.1. Checkpoint superseded by documentation consolidation
 
 # Current checkpoint
 
 - Observed 6 November 2026 (Singapore).
 - History: [Journey](journey.md).
 
-## PR32 footer refinement
+<a id="pr32-footer-refinement"></a>
+
+## 51. PR32 footer refinement
 
 - Branch `fix/hero-session-copy`; baseline0c79157 passed CI42175078630, CodeQL42175073956 and staging42176139791, with public health confirming the exact revision.
 - PR32 remains open/unmerged; settings unchanged.
@@ -9510,7 +12041,9 @@
 - Test inventory stays unchanged; export requirements increase13→14 routes.
 - Final immutable delivery evidence belongs in PR32.
 
-## Remaining work
+<a id="remaining-work"></a>
+
+## 52. Remaining work
 
 - Review the local mobile correction and revised worksheet.
   - Run consolidated verification, publish to PR32, then verify exact-head CI and staging.
@@ -9554,7 +12087,9 @@
 - Studio intro retains a real layout box so route entry starts at the hero.
 - CI42179543002 exposed these navigation/hit-target regressions; original evidence is retained in Journey and final-head verification is required.
 
-### 6 November 2026 — mobile action-bar content-width assertion
+<a id="6-november-2026--mobile-action-bar-content-width-assertion"></a>
+
+### 52.1. 6 November 2026 — mobile action-bar content-width assertion
 
 - UI candidate `af5fd2a` failed CI42181064807: frontend job127770556204 and backend browser shard1 job127771002783 both measured exactly40px difference at `customer.spec.ts:647`; retained artifact13485332814.
   - CodeQL42181059395, Worker groups and both live-email browser shards passed; deployment42182066729 correctly skipped.
@@ -9567,131 +12102,197 @@
   - PR32 contains only UI-related repair and its evidence.
   - No merge or activation authorised.
 
-### Retained reference detail — docs/business-rules.md
+<a id="retained-reference-detail--docsbusiness-rulesmd"></a>
+
+### 52.2. Retained reference detail — docs/business-rules.md
 
 - Status reconciled on 28 October 2026 against this working revision, committed target/workflow files and the retained owner/provisioning records.
 
-### Retained reference detail — docs/architecture/adr.md
+<a id="retained-reference-detail--docsarchitectureadrmd"></a>
+
+### 52.3. Retained reference detail — docs/architecture/adr.md
 
 - Recorded: 28 October 2026.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd"></a>
+
+### 52.4. Retained reference detail — docs/runbook.md
 
 - Draft — 28 October 2026.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-1"></a>
+
+### 52.5. Retained reference detail — docs/runbook.md
 
 - Closed production revision `21c3f16eb0e31ede252bbc08e809584cb4371e0d` passed main verification 41081622665 and deployment 41083613159.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-2"></a>
+
+### 52.6. Retained reference detail — docs/runbook.md
 
 - Foundation setup 41084843753 registered the existing D1/coordinator identity and initialized the same named object; its repeat passed.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-3"></a>
+
+### 52.7. Retained reference detail — docs/runbook.md
 
 - Object listing confirms stored data.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-4"></a>
+
+### 52.8. Retained reference detail — docs/runbook.md
 
 - Native telemetry at 00:07:57 SGT tied the exact coordinator ID to KIX/Osaka; this is observed execution, not a permanent location guarantee.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-5"></a>
+
+### 52.9. Retained reference detail — docs/runbook.md
 
 - Temporary native tracing was restored to disabled.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-6"></a>
+
+### 52.10. Retained reference detail — docs/runbook.md
 
 - No production configuration was changed by this documentation reconciliation.
 
-### Retained reference detail — docs/security/security-infrastructure.md
+<a id="retained-reference-detail--docssecuritysecurity-infrastructuremd"></a>
+
+### 52.11. Retained reference detail — docs/security/security-infrastructure.md
 
 - Architecture baseline reviewed on 28 October 2026; documentation and diagnostic boundary reviewed against PR26 on 5 November 2026.
 
-### Retained reference detail — docs/security/security-infrastructure.md
+<a id="retained-reference-detail--docssecuritysecurity-infrastructuremd-1"></a>
+
+### 52.12. Retained reference detail — docs/security/security-infrastructure.md
 
 - Client CodeQL managed default setup was observed running on 4 November 2026.
 
-### Retained reference detail — docs/code-owners/technical-behavior.md
+<a id="retained-reference-detail--docscode-ownerstechnical-behaviormd"></a>
+
+### 52.13. Retained reference detail — docs/code-owners/technical-behavior.md
 
 - CI42179543002 exposed these navigation/hit-target regressions; original evidence is retained in Journey and final-head verification is required.
 
-### Retained reference detail — docs/business-rules.md
+<a id="retained-reference-detail--docsbusiness-rulesmd-1"></a>
+
+### 52.14. Retained reference detail — docs/business-rules.md
 
 - Owner-confirmed rule (31 October 2026):
 
-### Retained reference detail — docs/business-rules.md
+<a id="retained-reference-detail--docsbusiness-rulesmd-2"></a>
+
+### 52.15. Retained reference detail — docs/business-rules.md
 
 - Owner waived the separate real-checkout placement comparison on 22 October 2026.
 
-### Retained reference detail — docs/data-lifecycle.md
+<a id="retained-reference-detail--docsdata-lifecyclemd"></a>
+
+### 52.16. Retained reference detail — docs/data-lifecycle.md
 
 - **Draft for client policy mapping, 28 October 2026.**
 
-### Retained reference detail — docs/data-lifecycle.md
+<a id="retained-reference-detail--docsdata-lifecyclemd-1"></a>
+
+### 52.17. Retained reference detail — docs/data-lifecycle.md
 
 - No customer data, provider settings or cleanup behavior was changed to prepare this draft.
 
-### Retained reference detail — docs/code-owners/technical-behavior.md
+<a id="retained-reference-detail--docscode-ownerstechnical-behaviormd-1"></a>
+
+### 52.18. Retained reference detail — docs/code-owners/technical-behavior.md
 
 - Trainer selection update (29 October 2026):
 
-### Retained reference detail — docs/code-owners/technical-behavior.md
+<a id="retained-reference-detail--docscode-ownerstechnical-behaviormd-2"></a>
+
+### 52.19. Retained reference detail — docs/code-owners/technical-behavior.md
 
 - Admin authentication and payment wake-up follow-up:
 
-### Retained reference detail — docs/code-owners/technical-behavior.md
+<a id="retained-reference-detail--docscode-ownerstechnical-behaviormd-3"></a>
+
+### 52.20. Retained reference detail — docs/code-owners/technical-behavior.md
 
 - Latest visual corrections:
 
-### Retained reference detail — docs/code-owners/technical-behavior.md
+<a id="retained-reference-detail--docscode-ownerstechnical-behaviormd-4"></a>
+
+### 52.21. Retained reference detail — docs/code-owners/technical-behavior.md
 
 - observes leaf sections/forms below
 
-### Retained reference detail — docs/code-owners/index.md
+<a id="retained-reference-detail--docscode-ownersindexmd"></a>
+
+### 52.22. Retained reference detail — docs/code-owners/index.md
 
 - Original booking creation anchors the eight-minute payment window and fifteen-minute hold
 
-### Retained reference detail — docs/api-contracts.md
+<a id="retained-reference-detail--docsapi-contractsmd"></a>
+
+### 52.23. Retained reference detail — docs/api-contracts.md
 
 - A bounded read-only developer-account probe on5 November2026 returned named boundaries (`{"from":"14:00:00","to":"16:00:00"}`); the official reference illustrates two-item `[from,to]` arrays.
 
-### Retained reference detail — docs/api-contracts.md
+<a id="retained-reference-detail--docsapi-contractsmd-1"></a>
+
+### 52.24. Retained reference detail — docs/api-contracts.md
 
 - This probe establishes the provider representation, not production capacity acceptance.
 
-### Retained reference detail — docs/architecture/adr.md
+<a id="retained-reference-detail--docsarchitectureadrmd-1"></a>
+
+### 52.25. Retained reference detail — docs/architecture/adr.md
 
 - **Status — amended 28 October 2026.** The original decision prepared Cloudflare for SaaS on client-owned `soccerbotsg.win` because Uncoverin was to retain customer DNS.
 - The owner subsequently chose to transfer `soccerbotsg.com` to the client registrar first, then use client-managed Cloudflare DNS.
 - That ownership assumption is superseded; the prepared implementation remains in the repository until a separately reviewed configuration change replaces or revalidates it.
 
-### Retained reference detail — docs/architecture/adr.md
+<a id="retained-reference-detail--docsarchitectureadrmd-2"></a>
+
+### 52.26. Retained reference detail — docs/architecture/adr.md
 
 - **Current direction — 30 October 2026.**
 
-### Retained reference detail — docs/architecture/adr.md
+<a id="retained-reference-detail--docsarchitectureadrmd-3"></a>
 
-### Closed-install registration control path — 30 October 2026
+### 52.27. Retained reference detail — docs/architecture/adr.md
 
-### Retained reference detail — docs/runbook.md
+<a id="closed-install-registration-control-path--30-october-2026"></a>
 
-### Client bootstrap and staging exposure checkpoint — 31 October 2026
+### 52.28. Closed-install registration control path — 30 October 2026
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-7"></a>
+
+### 52.29. Retained reference detail — docs/runbook.md
+
+<a id="client-bootstrap-and-staging-exposure-checkpoint--31-october-2026"></a>
+
+### 52.30. Client bootstrap and staging exposure checkpoint — 31 October 2026
+
+<a id="retained-reference-detail--docsrunbookmd-8"></a>
+
+### 52.31. Retained reference detail — docs/runbook.md
 
 - Owner instructed on 28 October 2026 to leave primary responder, backup and destinations unassigned.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-9"></a>
+
+### 52.32. Retained reference detail — docs/runbook.md
 
 - PR32 current authority (6 November): the owner revoked merge with “dont merge” after successful staging.
 - Keep the PR open and runtime settings unchanged.
 - The earlier planned sequence (merge → independent main CI/deployment → client-sandbox restoration → owner A–D) is on hold, not standing permission.
 
-### Retained reference detail — docs/runbook.md
+<a id="retained-reference-detail--docsrunbookmd-10"></a>
+
+### 52.33. Retained reference detail — docs/runbook.md
 
 - dated activation/readback evidence in [External providers configuration](external-providers-config.md)
 
-### Retained reference detail — docs/architecture/database-schema.md
+<a id="retained-reference-detail--docsarchitecturedatabase-schemamd"></a>
+
+### 52.34. Retained reference detail — docs/architecture/database-schema.md
 
 - Source map updated5 November2026 against main `eb06494` and the local PR27 recovery batch.
 - **32 application D1 tables** result from migrations0001–0037; **12 application SQLite tables** are initialized inside the account Durable Object.
@@ -9702,60 +12303,90 @@
 - This task has not reinspected production table contents.
 - Table presence does not mean a feature is enabled; enquiry email delivery remains unimplemented.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd"></a>
+
+### 52.35. Retained reference detail — docs/security/false-positives.md
 
 - Owner's dated main screenshot showed 0 open / 51 closed after PR25; that is not a fresh API inventory or proof of no vulnerabilities.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-1"></a>
+
+### 52.36. Retained reference detail — docs/security/false-positives.md
 
 - PR26's original logger spread all supplied details into console output.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-2"></a>
+
+### 52.37. Retained reference detail — docs/security/false-positives.md
 
 - Modern scoped dependency updated; legacy v3 was reported on4 November.
 - The5 November npm audit reports zero findings.
 - See the detailed disposition below.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-3"></a>
 
-### Minimatch advisory disposition (4 November 2026)
+### 52.38. Retained reference detail — docs/security/false-positives.md
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="minimatch-advisory-disposition-4-november-2026"></a>
+
+### 52.39. Minimatch advisory disposition (4 November 2026)
+
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-4"></a>
+
+### 52.40. Retained reference detail — docs/security/false-positives.md
 
 - Legacy 3.1.5 was reported on4 November by the advisory's broad range.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-5"></a>
+
+### 52.41. Retained reference detail — docs/security/false-positives.md
 
 - Prior substring implementation failed the spoofed-path assertion in PR25.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-6"></a>
+
+### 52.42. Retained reference detail — docs/security/false-positives.md
 
 - The prior diagnostic batch raised475→477.
 - The PR27 recovery/cache batch adds five cases:482 total, groups123/195/164; original completeness/rejection guards remain.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-7"></a>
+
+### 52.43. Retained reference detail — docs/security/false-positives.md
 
 - A fresh locked-tree `npm audit --json` on5 November2026 returned zero findings at every severity and exit0; `/tmp/security-followup-audit.json` retains the receipt.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-8"></a>
+
+### 52.44. Retained reference detail — docs/security/false-positives.md
 
 - No dependency was changed by this follow-up.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-9"></a>
+
+### 52.45. Retained reference detail — docs/security/false-positives.md
 
 - The fresh audit supersedes the old npm count, but does not establish GitHub alert closure or deployed remediation.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-10"></a>
+
+### 52.46. Retained reference detail — docs/security/false-positives.md
 
 - PR26's first follow-up CI passed browser execution but failed report aggregation because Playwright's truncated diagnostic Git-diff preview differed in Unicode replacement characters.
 
-### Retained reference detail — docs/security/false-positives.md
+<a id="retained-reference-detail--docssecurityfalse-positivesmd-11"></a>
+
+### 52.47. Retained reference detail — docs/security/false-positives.md
 
 - Saved-report replay proves the aggregation repair, not acceptance of a new source head; see [Journey](journey.md) for the failed run and replay counts.
 
-### Retained reference detail — docs/booking-flows.md
+<a id="retained-reference-detail--docsbooking-flowsmd"></a>
 
-## Public entry surfaces
+### 52.48. Retained reference detail — docs/booking-flows.md
+
+<a id="public-entry-surfaces"></a>
+
+## 53. Public entry surfaces
 
 - The interactive homepage hero remains with 15% shorter height targets and a straight edge.
 - The enlarged address still opens its location dialog.
@@ -9817,7 +12448,9 @@
 - Studio intro retains a real layout box so route entry starts at the hero.
 - CI42179543002 exposed these navigation/hit-target regressions; original evidence is retained in Journey and final-head verification is required.
 
-### Information-retention review — original wording and superseded references
+<a id="information-retention-review--original-wording-and-superseded-references"></a>
+
+### 53.1. Information-retention review — original wording and superseded references
 
 - The following baseline wording is historical context retained during the6 November documentation refactor; current references and authority take precedence. No former setup/merge instruction is renewed.
 
@@ -10119,33 +12752,45 @@ flowchart LR
 
 - `docs/uat/admin.md`, `docs/uat/trainers.md`, `docs/uat/simulated-user.md`
 
-### Scenario reference provenance
+<a id="scenario-reference-provenance"></a>
+
+### 53.2. Scenario reference provenance
 
 - Source reconciled 5 November 2026 against the current PR29 source plus the approved local message standardization; [Progress](../PROGRESS.md) owns deployment/test status, this document owns scenario messages and copy decisions, and [contracts](api-contracts.md) own proof and recovery rules.
 
-### 6 November 2026 — footer bottom alignment and spacing
+<a id="6-november-2026--footer-bottom-alignment-and-spacing"></a>
+
+### 53.3. 6 November 2026 — footer bottom alignment and spacing
 
 - UI baseline `f65071b` passed CI42183077985, CodeQL42183072776 and staging42184170575; public health matched the exact SHA and version `bfff910e-f6b5-4ee2-92ce-1000d6af7be5`. No merge or activation.
 - Owner follow-up: align the app-column logo at the lower right with the Services list; reduce footer sub-item gaps30% (8px→5.6px); place the building/address below the Flagship Studio label. App column stretches with the shared grid and positions its logo at the bottom; existing44px link/app targets, destinations and responsive column layout remain.
 - Documentation refactor remains separately preserved on `docs/test-guides-and-reference-cleanup`; no broad documentation restructuring enters this UI follow-up. Existing public-footer browser assertions retained; no new cases/inventory or booking logic changes.
 
-### 6 November 2026 — footer bottom alignment and spacing
+<a id="6-november-2026--footer-bottom-alignment-and-spacing-1"></a>
+
+### 53.4. 6 November 2026 — footer bottom alignment and spacing
 
 - UI baseline `f65071b` passed CI42183077985, CodeQL42183072776 and staging42184170575; public health matched the exact SHA and version `bfff910e-f6b5-4ee2-92ce-1000d6af7be5`. No merge or activation.
 - Owner follow-up: align the app-column logo at the lower right with the Services list; reduce footer sub-item gaps30% (8px→5.6px); place the building/address below the Flagship Studio label. App column stretches with the shared grid and positions its logo at the bottom; existing44px link/app targets, destinations and responsive column layout remain.
 - Documentation refactor remains separately preserved on `docs/test-guides-and-reference-cleanup`; no broad documentation restructuring enters this UI follow-up. Existing public-footer browser assertions retained; no new cases/inventory or booking logic changes.
 
-### 6 November 2026 — remove footer Enquire link
+<a id="6-november-2026--remove-footer-enquire-link"></a>
+
+### 53.5. 6 November 2026 — remove footer Enquire link
 
 - Owner removed Enquire from the footer after the alignment follow-up and stated they were cancelling its CI. Keep WhatsApp/email/Instagram; leave the enquiry page and banner destinations intact.
 - Existing public-footer test now requires no Enquire link and exactly three contact links, with Instagram last. No added/removed cases, booking logic, provider settings or test-inventory changes.
 
-### 6 November 2026 — footer column grouping and app heading
+<a id="6-november-2026--footer-column-grouping-and-app-heading"></a>
+
+### 53.6. 6 November 2026 — footer column grouping and app heading
 
 - Owner renamed the footer heading to “Download Official Soccerbot360 App:” and requested the three information groups sit closer together on the left. Desktop grid now sizes the first two columns to content with24px group gaps, preserves a flexible address column and keeps the app column at the right. Existing tablet/phone column rules remain.
 - Footer address remains Flagship Studio label, Apex @ Henderson, street/unit, then postal code on separate lines. Existing browser heading assertions track the exact new label; no inventory/booking/provider changes.
 
-### UI-parent wording retained for documentation audit
+<a id="ui-parent-wording-retained-for-documentation-audit"></a>
+
+### 53.7. UI-parent wording retained for documentation audit
 
 - Baseline: `904414b`; historical wording is retained for traceability. Current reference sections and latest owner instructions control behaviour and permissions.
 
@@ -10252,7 +12897,9 @@ flowchart LR
 - The footer has no Enquire link;
 - WhatsApp, email and Instagram remain.
 
-### 6 November 2026 — documentation refactor and information-loss audit
+<a id="6-november-2026--documentation-refactor-and-information-loss-audit"></a>
+
+### 53.8. 6 November 2026 — documentation refactor and information-loss audit
 
 - Separate documentation branch: `docs/test-guides-and-reference-cleanup`, based on UI PR32 revision `904414b642ca4de2497601026ef0e269b13a72e9`. No merge or settings activation authorised.
 - Move current role worksheets into `docs/tests/uat/`: two labelled pages each for customer, admin and trainer, with tasks, expected outcomes and blank result/evidence fields. Add the one-page `docs/tests/test-suite.md`; Development retains a short browser summary and links.
@@ -10264,7 +12911,9 @@ flowchart LR
 - Source cross-check: isolated in-memory execution of all D1 migrations yields32 application tables; actual DO initializers declare8 coordinator +1 token-cache +4 display tables. Code-owner timing index now matches BR-011's8/9/12-minute application boundaries and independent10-minute provider hold, with previous wording retained here.
 - Application, provider configuration, migrations, dependencies, test cases and exact inventories remain unchanged by this refactor. Browser/provider/physical acceptance is still separate; final verification and immutable publication evidence belong in the documentation PR.
 
-### 6 November 2026 — footer text alignment and true row compression
+<a id="6-november-2026--footer-text-alignment-and-true-row-compression"></a>
+
+### 53.9. 6 November 2026 — footer text alignment and true row compression
 
 - Owner screenshot showed contact text lower than Services and excessive one-line spacing after reducing CSS gaps. Root cause: contact flex items centred within44px link boxes while plain links rendered at their tops.
 - Top-align contact content and use24px desktop text-link rows plus5.6px gaps:29.6px pitch versus49.6px, about40% tighter. Tablet/phone links and app icons retain44px targets. Existing public-route test checks rendered text alignment within1px and desktop row pitch29–31px; no inventory/timeouts/retries changed.
@@ -10275,19 +12924,25 @@ flowchart LR
 - Further consolidated mobile requests: centre the flag/studio/book group without changing its spacing; place Services and Connect With Us side by side, followed by centred Find Us and app heading/icons/logo. Replace indefinite fixed continuation with one reserved-position `BookingPrimaryAction` owner: float only while its original position is below the viewport, then return to document flow before the footer. Preserve the actual form/button/handlers and all booking authority. Existing browser case checks original-position eligibility, footer non-overlap and one action; unsupported measurement APIs retain the ordinary inline action.
 - A focused type-generation attempt without the required execution permissions failed with `spawnSync git EPERM`; retained in the local type log. Consolidated verification uses the supported execution permissions; this is not a product type failure or browser execution.
 
-## 6 November 2026 — mobile booking panels and final UI consolidation
+<a id="6-november-2026--mobile-booking-panels-and-final-ui-consolidation"></a>
+
+## 54. 6 November 2026 — mobile booking panels and final UI consolidation
 
 - Retained pre-consolidation checkpoint below; superseded only by the current Progress checkpoint.
 
 <details>
 <summary>Previous checkpoint retained for information audit</summary>
 
-### Previous current checkpoint
+<a id="previous-current-checkpoint"></a>
+
+### 54.1. Previous current checkpoint
 
 - Observed 6 November 2026 (Singapore).
 - History: [Journey](journey.md).
 
-#### PR32 footer refinement
+<a id="pr32-footer-refinement-1"></a>
+
+#### 54.1.1. PR32 footer refinement
 
 - Branch `fix/hero-session-copy`; baseline0c79157 passed CI42175078630, CodeQL42175073956 and staging42176139791, with public health confirming the exact revision.
 - PR32 remains open/unmerged; settings unchanged.
@@ -10302,7 +12957,9 @@ flowchart LR
 - Test inventory stays unchanged; export requirements increase13→14 routes.
 - Final immutable delivery evidence belongs in PR32.
 
-#### Remaining work
+<a id="remaining-work-1"></a>
+
+#### 54.1.2. Remaining work
 
 - UI staging first: repair the obsolete mobile action-bar width assertion from CI42181064807, verify and stage PR32.
   - Then resume the separately preserved documentation refactor in its own PR; include full information-loss audit.
@@ -10365,7 +13022,9 @@ flowchart LR
   - Freeze the candidate before rerunning its receipt.
 - UI link audit found five pre-existing stale anchors already handled by the separate documentation-refactor branch; no new missing links from this UI slice.
 
-### 6 November 2026 — consolidated UI-parent wording retained for audit
+<a id="6-november-2026--consolidated-ui-parent-wording-retained-for-audit"></a>
+
+### 54.2. 6 November 2026 — consolidated UI-parent wording retained for audit
 
 - Baseline: `2b907c5`; historical wording is retained for traceability. Current reference sections and latest owner instructions control behaviour and permissions.
 
@@ -10476,7 +13135,9 @@ flowchart LR
 - Actual controls, handlers, disabled/loading conditions and form ownership are unchanged; no duplicate actions or whole-component booking animation are introduced.
 - Check navigation height≤54px and bottom bar≤72px without a device safe-area inset, keyboard/focus clearance and disabled-state behavior.
 
-### 6 November 2026 — final documentation audit against mobile UI2b907c5
+<a id="6-november-2026--final-documentation-audit-against-mobile-ui2b907c5"></a>
+
+### 54.3. 6 November 2026 — final documentation audit against mobile UI2b907c5
 
 - Reconciled latest UI parent in place: mobile cart/trainer popups and count badges, plain close controls/app contrast, original-position Continue, centred phone header/footer and compact aligned desktop footer.
 - Customer UAT retains two labelled pages and adds the new panel/count/motion/position checks under existing role cases; suite guide remains one page.
@@ -10486,3 +13147,16 @@ flowchart LR
 - Links:1,419 local links/anchors checked; obsolete UAT destinations from the UI parent's retained history rebased to the new tests folder.
 - Diagrams:54/55 baseline diagrams unchanged in their original owner; only stale database overview counts corrected, with its original preserved in Journey. All56 final diagrams parse.
 - Earlier detailed audit and standalone code verification remain retained above. Final merged documentation candidate requires its own local receipt and CI; UI acceptance remains separate.
+
+<a id="document-chapter-menus-and-staging-rerun"></a>
+
+### 54.4. 6 November 2026 — document chapter menus and staging rerun
+
+- Added self-contained chapter menus and hierarchical section numbering to29 documents/instruction files; AGENTS remains the sole main router, with no shared directory/menu.
+- Existing inbound anchors, stable IDs, dates and all diagram bodies are preserved; generated Versions template owns its matching menu/headings.
+- Numbering audit caught and corrected the initial heading-prefix matcher stripping the day from dated Journey titles; original dates restored before publication.
+- Information-audit normalization now recognizes actual HTML tags rather than treating literal less-than comparisons as tags;6,379 baseline units remain retained.
+- UI2b907c5 passed CI42191700781 and CodeQL42191693711. Staging42192988061 attempt1 uploaded versioned88033f-771d-45b4-a5b9-08c2154388a9, then failed SOURCE_REVISION settings read (job127809512958, artifact13490567146): actual904414b versus expected2b907c5.
+- Owner requested rerun; failed-job rerun accepted through GitHub. Same verified artifact and existing settings; no merge/activation. Rerun outcome remains pending.
+
+- Staging42192988061 attempt2 passed; public health independently confirmed2b907c56a362d793bf1d88e70321de96c730419f/versionf07adbd5-784c-426d-991b-b34a2d4a26dc. No merge or settings activation.

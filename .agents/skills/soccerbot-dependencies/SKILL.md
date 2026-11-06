@@ -5,7 +5,24 @@ description: Research and assess SoccerBot dependency additions, upgrades, repla
 
 # Dependency suitability and upgrade review
 
-## Authority and ownership
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Authority and ownership](#authority-and-ownership)
+- [2. Establish the candidate and reason](#1-establish-the-candidate-and-reason)
+- [3. Research before changing code](#2-research-before-changing-code)
+- [4. Map the complete compatibility surface](#3-map-the-complete-compatibility-surface)
+  - [4.1. Required support-range comparison in every dependency PR](#required-support-range-comparison-in-every-dependency-pr)
+- [5. Decide which code, if any, should change](#4-decide-which-code-if-any-should-change)
+- [6. Verify and recommend](#5-verify-and-recommend)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="authority-and-ownership"></a>
+
+## 1. Authority and ownership
 
 - Read root [AGENTS.md](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md) and the [dependency runbook](../../../docs/runbook.md#3-dependency-maintenance-and-dependabot).
 - Explicit user instructions take precedence.
@@ -21,7 +38,9 @@ description: Research and assess SoccerBot dependency additions, upgrades, repla
 - It grants no additional browser, provider, merge, deployment, secret or account authority.
 - A recommendation to merge is not permission to merge.
 
-## 1. Establish the candidate and reason
+<a id="1-establish-the-candidate-and-reason"></a>
+
+## 2. Establish the candidate and reason
 
 - Inspect the actual base/head, complete manifest and lockfile diff, current CI, installed tooling and deployed evidence where available.
   - Distinguish proposed, locally installed, merged and deployed versions.
@@ -34,7 +53,9 @@ description: Research and assess SoccerBot dependency additions, upgrades, repla
   - Assess added code, maintenance burden, bundle/runtime cost, license and operational fit.
   - Do not add a dependency or migrate the product simply because upstream provides a feature.
 
-## 2. Research before changing code
+<a id="2-research-before-changing-code"></a>
+
+## 3. Research before changing code
 
 - Use official release notes, migration guides, support matrices, advisories and relevant upstream issues/source.
 - Review the full version interval, including intermediate breaking changes, not only the target patch's notes.
@@ -62,7 +83,9 @@ description: Research and assess SoccerBot dependency additions, upgrades, repla
 - Prefer a compatible supported release; defer optional upgrades with unresolved regressions.
 - For urgent security fixes, identify the safest supported remediation or an explicit temporary mitigation with an owner and revisit condition rather than merging known failures.
 
-## 3. Map the complete compatibility surface
+<a id="3-map-the-complete-compatibility-surface"></a>
+
+## 4. Map the complete compatibility surface
 
 - Search application callers and public imports, private/internal package paths, version literals, runtime checks, scripts, fixtures, negative tests, generated inventories, CI images, cache keys, local installers and externally published Cloud Containers/bootstrap settings.
 - Review indirect consumers and all changed transitive packages.
@@ -78,7 +101,9 @@ description: Research and assess SoccerBot dependency additions, upgrades, repla
 - Retain intentional data-schema versions and business constants.
 - If private dependency internals are unavoidable, isolate the adapter, document why, and exercise it against the actual installed package; mocks alone cannot establish compatibility.
 
-### Required support-range comparison in every dependency PR
+<a id="required-support-range-comparison-in-every-dependency-pr"></a>
+
+### 4.1. Required support-range comparison in every dependency PR
 
 - Include a before/after compatibility table in each dependency update PR, even if all relevant requirements are unchanged.
 - Cover the updated dependency and any changed transitive requirement; group identical rows with an explicit rationale.
@@ -120,7 +145,9 @@ description: Research and assess SoccerBot dependency additions, upgrades, repla
 - A customer minimum-browser policy needs a separate explicit decision and evidence.
 - Reflect the final support comparison in the merge/defer/reject recommendation; green CI does not waive unsupported required targets.
 
-## 4. Decide which code, if any, should change
+<a id="4-decide-which-code-if-any-should-change"></a>
+
+## 5. Decide which code, if any, should change
 
 | Finding                                                                            | Required response                                                                                                                                                                           |
 | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -137,7 +164,9 @@ description: Research and assess SoccerBot dependency additions, upgrades, repla
 - Avoid unrelated refactoring during dependency maintenance.
 - For broad migrations, define separately reviewable stages and retain a working baseline.
 
-## 5. Verify and recommend
+<a id="5-verify-and-recommend"></a>
+
+## 6. Verify and recommend
 
 - Apply both companion skills to the whole change.
 - Review guards and installation/runtime compatibility before publishing; consolidate known repairs, run meaningful local checks, then the required exact-final-head CI gates.

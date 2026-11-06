@@ -1,6 +1,18 @@
 # Admin UAT — two-page checklist
 
-## Page 1 of 2 — account, schedule and booking controls
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Page 1 of 2 — account, schedule and booking controls](#page-1-of-2--account-schedule-and-booking-controls)
+- [2. Page 2 of 2 — payments, infrastructure and staff readiness](#page-2-of-2--payments-infrastructure-and-staff-readiness)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="page-1-of-2--account-schedule-and-booking-controls"></a>
+
+## 1. Page 1 of 2 — account, schedule and booking controls
 
 - **Record:** tester/date;
   - URL/environment; deployed SHA/run; browser/device;
@@ -33,7 +45,9 @@
 
 <a id="cloudflare-domain-dns-and-https-checks"></a>
 
-## Page 2 of 2 — payments, infrastructure and staff readiness
+<a id="page-2-of-2--payments-infrastructure-and-staff-readiness"></a>
+
+## 2. Page 2 of 2 — payments, infrastructure and staff readiness
 
 - [ ] **HitPay access/configuration — ADM-020–021,029.** Confirm merchant, sandbox/live mode, roles/MFA, payment methods, SGD and owner-verified settlement destination; sign out/Back/refresh.
   - **Expect:** correct merchant and permitted access;

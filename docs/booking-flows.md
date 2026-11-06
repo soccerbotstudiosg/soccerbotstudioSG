@@ -1,5 +1,34 @@
 # Booking scenarios and messages
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Guest entry](#1-guest-entry)
+- [2. Email entry and verification](#2-email-entry-and-verification)
+- [3. Expired or revoked access](#3-expired-or-revoked-access)
+- [4. Session choice and calendar](#4-session-choice-and-calendar)
+- [5. Details and review](#5-details-and-review)
+- [6. Checkout creation and rejected or uncertain writes](#6-checkout-creation-and-rejected-or-uncertain-writes)
+- [7. Multi-session partial failure](#7-multi-session-partial-failure)
+- [8. Back and Continue payment](#8-back-and-continue-payment)
+- [9. Card authentication and provider return](#9-card-authentication-and-provider-return)
+- [10. Payment and booking confirmation](#10-payment-and-booking-confirmation)
+- [11. Temporary status failure](#11-temporary-status-failure)
+- [12. Unresolved payment or reconciliation](#12-unresolved-payment-or-reconciliation)
+- [13. Expiry, grace and late payment](#13-expiry-grace-and-late-payment)
+- [14. Confirmed details temporarily unavailable](#14-confirmed-details-temporarily-unavailable)
+- [15. Saved confirmation and old links](#15-saved-confirmation-and-old-links)
+- [16. Make another booking and Back to home](#16-make-another-booking-and-back-to-home)
+- [17. Three complete journeys](#17-three-complete-journeys)
+- [18. WhatsApp and staff action](#18-whatsapp-and-staff-action)
+- [19. Preview-only payment states](#19-preview-only-payment-states)
+- [20. Current changed copy and presentation](#current-changed-copy-and-presentation)
+- [21. Public entry surfaces](#public-entry-surfaces)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - [Progress](../PROGRESS.md) owns current delivery status; this document owns scenario messages; [contracts](api-contracts.md) own proof and recovery rules.
 - Diagrams and the current copy table below describe implemented behavior.
 - The explicitly archived copy review is historical evidence, not the current message inventory.
@@ -334,7 +363,9 @@ flowchart TD
 
 - Historical copy-review decisions: [Journey](journey.md#archived-copy-review-historical-baseline-and-disposition).
 
-## Current changed copy and presentation
+<a id="current-changed-copy-and-presentation"></a>
+
+## 20. Current changed copy and presentation
 
 - These rows supersede historical baseline wording for the named paths.
 - Deployment/test evidence belongs only in [Progress](../PROGRESS.md) and dated [Journey](journey.md).
@@ -366,7 +397,9 @@ flowchart TD
 - A failed read is never rendered as an empty date or proven conflict.
 - Global lack of an eligible session type is distinct from an empty selected date and retains “No sessions are currently available.”
 
-## Public entry surfaces
+<a id="public-entry-surfaces"></a>
+
+## 21. Public entry surfaces
 
 - [Technical behaviour](code-owners/technical-behavior.md#public-homepage-and-studio-presentation) owns header/footer, media, curves, gradients, sizing, public motion and mobile booking-bar details.
 - [Customer UAT](tests/uat/customer.md) owns task/expected-result checks;

@@ -1,5 +1,29 @@
 # Security infrastructure
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Scope and status](#scope-and-status)
+- [2. What is being protected](#1-what-is-being-protected)
+- [3. DNS, TLS and hosting boundary](#2-dns-tls-and-hosting-boundary)
+- [4. Customer identity, sessions and abuse controls](#3-customer-identity-sessions-and-abuse-controls)
+- [5. Authorization, validation and environment isolation](#4-authorization-validation-and-environment-isolation)
+- [6. Financial integrity and durable recovery](#5-financial-integrity-and-durable-recovery)
+  - [6.1. Receipt refresh boundary](#receipt-refresh-boundary)
+- [7. Webhook and outbound-provider boundaries](#6-webhook-and-outbound-provider-boundaries)
+- [8. Data, token encryption and retention](#7-data-token-encryption-and-retention)
+- [9. Availability and denial-of-service resistance](#8-availability-and-denial-of-service-resistance)
+- [10. Source, dependencies and deployment supply chain](#9-source-dependencies-and-deployment-supply-chain)
+- [11. Observability, operator access and response](#10-observability-operator-access-and-response)
+- [12. Additional layers to adopt](#11-additional-layers-to-adopt)
+- [13. Verification and maintenance map](#12-verification-and-maintenance-map)
+  - [13.1. Customer-facing error boundary](#customer-facing-error-boundary)
+  - [13.2. Cache diagnostic boundary](#cache-diagnostic-boundary)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - SoccerBot layers Cloudflare’s secure hosting, Turnstile’s bot checks and Resend-delivered email verification with server-enforced access controls.
 - SimplyBook owns booking records and HitPay hosts payment;
 - SoccerBot validates both before confirmation and retains recovery evidence to prevent duplicate transactions.
@@ -61,7 +85,9 @@ flowchart TB
   STAFF --> DNS
 ```
 
-## Scope and status
+<a id="scope-and-status"></a>
+
+## 1. Scope and status
 
 - This document explains the security architecture, its trust boundaries, implemented controls, remaining acceptance work and proposed future layers.
 - The diagram shows responsibility and data flow, not permission for every caller or a claim that every deployment is active.
@@ -75,7 +101,9 @@ flowchart TB
 - [Business rules](../business-rules.md) owns the numbered requirements; [API contracts](../api-contracts.md) owns request/response details; [Runbook](../runbook.md) owns operational procedures; [Progress](../../PROGRESS.md) owns current failures and leave-off; [Journey](../journey.md) owns milestone acceptance and history.
 - This document does not duplicate credentials, customer records or recovery codes.
 
-## 1. What is being protected
+<a id="1-what-is-being-protected"></a>
+
+## 2. What is being protected
 
 | Asset / boundary                    | Main threats                                                                | Current protection and limits                                                                                                                                            |
 | ----------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -91,7 +119,9 @@ flowchart TB
 - Trainer/Admin rights in SimplyBook, HitPay and Cloudflare are provider-console permissions;
 - SoccerBot does not implement a custom staff administration API or its own staff role hierarchy.
 
-## 2. DNS, TLS and hosting boundary
+<a id="2-dns-tls-and-hosting-boundary"></a>
+
+## 3. DNS, TLS and hosting boundary
 
 - **Implemented application controls:** [Worker entry](../../worker/index.ts) requires API HTTPS and the configured origin, rejects a conflicting supplied Origin, restricts query forms and dispatches only named routes.
 - Browser mutations require same-origin Origin; signed webhooks use their separate authentication path.
@@ -114,7 +144,9 @@ flowchart TB
 - A comprehensive static-site CSP, anti-framing policy, Permissions-Policy and HSTS deployment was not established by this source inspection; the CSP in the experiment harness is **test-only**.
 - Inspect actual headers on every intended hostname before adding or claiming browser-hardening controls.
 
-## 3. Customer identity, sessions and abuse controls
+<a id="3-customer-identity-sessions-and-abuse-controls"></a>
+
+## 4. Customer identity, sessions and abuse controls
 
 - [Access](../../worker/access.ts) issues the server-owned `__Host-soccerbot-access` capability.
 - It uses Secure, HttpOnly, SameSite=Strict and Path=/; storage binds capability to an owner and enforces expiry/revocation.
@@ -140,7 +172,9 @@ flowchart TB
 - SameSite/Origin defenses address cross-site request abuse, not same-origin script compromise.
 - See [BR-003–005](../business-rules.md#identity-privacy-and-environment-isolation).
 
-## 4. Authorization, validation and environment isolation
+<a id="4-authorization-validation-and-environment-isolation"></a>
+
+## 5. Authorization, validation and environment isolation
 
 - [Bindings](../../worker/bindings.ts) checks configured account, environment, database and coordinator against the immutable foundation.
 - Protected operations fail closed on missing/mismatched resources; an unknown database is not automatically claimed.
@@ -167,7 +201,9 @@ flowchart TB
 - Some existing identity/sandbox/provider constants still require client portability work; do not remove those guards merely to make client activation pass.
 - [API contracts](../api-contracts.md#2-common-http-boundary) documents the exact boundary and explicit unavailable routes.
 
-## 5. Financial integrity and durable recovery
+<a id="5-financial-integrity-and-durable-recovery"></a>
+
+## 6. Financial integrity and durable recovery
 
 - Security includes preventing unauthorized or duplicate financial effects.
 - [Customer authority](../../worker/customer-authority.ts), [journal](../../worker/journal.ts), [native dispatch](../../worker/native-dispatch.ts) and [native checkout](../../worker/native-checkout.ts) reserve owned intent/grants/effects before provider writes.
@@ -187,7 +223,9 @@ flowchart TB
 - [Receipt authorization](../../worker/receipt.ts) and [confirmation](../../worker/confirmation.ts) protect final success/export from cached browser claims.
 - See [BR-007–013](../business-rules.md#checkout-durable-effects-and-customer-errors).
 
-### Receipt refresh boundary
+<a id="receipt-refresh-boundary"></a>
+
+### 6.1. Receipt refresh boundary
 
 - Explicit export requests may refresh stale booking/invoice evidence through the existing coordinator queue.
 - The server enforces owned access, the original checking window, shared check quota, provider account scope, and post-read state/authorization checks.
@@ -196,7 +234,9 @@ flowchart TB
 - Saved confirmation remains display evidence, not download authority.
 - See the [receipt contract](../api-contracts.md#6-protected-confirmation-receipt-and-recovery).
 
-## 6. Webhook and outbound-provider boundaries
+<a id="6-webhook-and-outbound-provider-boundaries"></a>
+
+## 7. Webhook and outbound-provider boundaries
 
 - [HitPay webhook](../../worker/hitpay-webhook.ts) verifies HMAC-SHA256 over bounded raw request bytes using its configured salt and `Hitpay-Signature`, then binds the event to retained payment scope.
 - [SimplyBook webhook](../../worker/webhook.ts) has its own `x-signature` and payload/subscription contract.
@@ -212,7 +252,9 @@ flowchart TB
 - Authentication protects origin of a request; validation and financial reconciliation still protect its meaning.
 - A compromised provider account or stolen signing secret is a residual risk requiring revocation and incident response.
 
-## 7. Data, token encryption and retention
+<a id="7-data-token-encryption-and-retention"></a>
+
+## 8. Data, token encryption and retention
 
 - D1 retains access, identity/contact, attempts, grants and effect/payment/webhook/recovery evidence; public display snapshots are held in Durable Object storage.
 - The [migrations](../../migrations) and application ownership checks preserve evidence needed for reconciliation.
@@ -232,7 +274,9 @@ flowchart TB
 - Financial uncertainty and audit evidence must not be erased by a cleanup job.
 - See the [data lifecycle draft](../data-lifecycle.md) for current storage/expiry behavior and pending clause mapping, and the [data recovery runbook](../runbook.md#7-data-protection-and-restore) for restoration.
 
-## 8. Availability and denial-of-service resistance
+<a id="8-availability-and-denial-of-service-resistance"></a>
+
+## 9. Availability and denial-of-service resistance
 
 - [Provider queue](../../worker/provider-queue.ts) bounds active/waiting workflows, waiting lifetime and priority fairness; physical transports are separately bounded.
 - [Checking lifecycle](../../src/features/booking/confirmation-checking.ts) and server confirmation enforce original deadlines and shared allowances.
@@ -244,7 +288,9 @@ flowchart TB
 - Synthetic overload/resilience results prove tested invariants under that workload, not live provider rate limits or sustained production capacity.
 - Use [BR-015](../business-rules.md#br-015), [BR-023](../business-rules.md#br-023) and the runbook when selecting capacity controls.
 
-## 9. Source, dependencies and deployment supply chain
+<a id="9-source-dependencies-and-deployment-supply-chain"></a>
+
+## 10. Source, dependencies and deployment supply chain
 
 - [Dependabot](../../.github/dependabot.yml) proposes weekly version updates and eligible security fixes; [verification](../../scripts/verify.mjs) blocks high/critical npm advisories and audit-service errors.
 - Exact lockfiles, pinned Action commits, source/policy checks and tests constrain changes.
@@ -278,7 +324,9 @@ flowchart TB
 - Finding assessments and unresolved advisories are owned by [False positives](false-positives.md).
 - A repaired finding, a source-specific assessment and a closed GitHub alert are distinct states.
 
-## 10. Observability, operator access and response
+<a id="10-observability-operator-access-and-response"></a>
+
+## 11. Observability, operator access and response
 
 - [Diagnostics](../../worker/diagnostics.ts) expose sanitized correlation/timing/error classifications rather than credentials, customer fields, raw URLs, SQL or arbitrary exceptions.
 - [Telemetry](../../worker/telemetry.ts) prepares bounded, sampled OTLP export outside the customer request path.
@@ -294,7 +342,9 @@ flowchart TB
 - Complete actual access/billing/MFA arrangements before handover; never place secret values or recovery codes in this repository.
 - For suspected compromise, preserve evidence, identify affected account/environment/revision, contain with authorized credential/access controls, reconcile financial effects and restore a verified state; do not blindly replay payments or delete D1/DO evidence.
 
-## 11. Additional layers to adopt
+<a id="11-additional-layers-to-adopt"></a>
+
+## 12. Additional layers to adopt
 
 - These are proposals or incomplete acceptance items, **not enabled features**.
 - Review plan support, cost, operational ownership, provider compatibility and rollback before implementation.
@@ -314,7 +364,9 @@ flowchart TB
 | Later: independent assurance                      | Find gaps not represented by current tests                      | Threat-model review and scoped penetration testing of identity, authorization, checkout/webhooks and admin access                                                                  | Written findings, fixes and retest tied to deployed revision; no uncontrolled real financial tests                              |
 | Later: stronger customer authentication if needed | Reduce reliance on mailbox security for higher-risk features    | Consider step-up/passkeys only if future stored payment/admin or sensitive account features justify the UX/recovery burden                                                         | Agreed threat model, recovery design, accessibility and phishing-resistance evidence                                            |
 
-## 12. Verification and maintenance map
+<a id="12-verification-and-maintenance-map"></a>
+
+## 13. Verification and maintenance map
 
 | Control family                         | Evidence owners                                                                                                                                                                                          | What must still be proved outside those tests                                                          |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -343,7 +395,9 @@ flowchart TB
 - Ordinary deployment events do not register or initialize the foundation.
 - The workspace developer token must not be substituted for the client identity.
 
-### Customer-facing error boundary
+<a id="customer-facing-error-boundary"></a>
+
+### 13.1. Customer-facing error boundary
 
 - Account and enquiry UI render only locally authored `CustomerMessageError` guidance or an operation-specific fallback.
 - Unexpected network, JSON/schema and server diagnostic strings are not customer messages.
@@ -366,7 +420,9 @@ flowchart TB
 - Delayed metadata can appear after confirmation without establishing or delaying financial proof.
 - No prefix substitution or financial-proof change is authorized by the presentation change.
 
-### Cache diagnostic boundary
+<a id="cache-diagnostic-boundary"></a>
+
+### 13.2. Cache diagnostic boundary
 
 - `calendar_cache_trace` records only approved lifecycle phases, customer/warming triggers, a correlation UUID, a calendar month, finite nonnegative timings/counts, persistence state and reviewed error classifications.
 - Unknown error text maps to `temporarily_unavailable`; extra fields are discarded before console serialization.

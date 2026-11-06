@@ -1,10 +1,24 @@
 # Versions
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Toolchain](#toolchain)
+- [2. Direct dependencies](#direct-dependencies)
+- [3. Full locked dependency inventory](#full-locked-dependency-inventory)
+- [4. Refresh and inspect](#refresh-and-inspect)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - Versions configured on this branch, generated from the manifests and lockfile.
 - This is not a deployed-version receipt.
 - Python is a verification tool, not the Cloudflare application runtime; its exact patch version is recorded in each Actions run.
 
-## Toolchain
+<a id="toolchain"></a>
+
+## 1. Toolchain
 
 | Item               | Version    |
 | ------------------ | ---------- |
@@ -12,7 +26,9 @@
 | npm                | npm@11.9.0 |
 | Python (CI series) | 3.12       |
 
-## Direct dependencies
+<a id="direct-dependencies"></a>
+
+## 2. Direct dependencies
 
 | Item                        | Version           |
 | --------------------------- | ----------------- |
@@ -42,7 +58,9 @@
 | yaml                        | 2.9.1             |
 | zod                         | 4.6.7             |
 
-## Full locked dependency inventory
+<a id="full-locked-dependency-inventory"></a>
+
+## 3. Full locked dependency inventory
 
 - Includes transitive dependencies and optional platform packages.
 - A locked package is not necessarily installed on every platform or included in the deployed application.
@@ -701,7 +719,9 @@
 
 </details>
 
-## Refresh and inspect
+<a id="refresh-and-inspect"></a>
+
+## 4. Refresh and inspect
 
 - Run `node scripts/versions.mjs write` after dependency or toolchain changes and commit this file with the update.
 - CI checks it against the source manifests; it never commits back to main.

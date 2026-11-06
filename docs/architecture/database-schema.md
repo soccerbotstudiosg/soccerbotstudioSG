@@ -1,5 +1,24 @@
 # Database schema
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Overview](#overview)
+- [2. Reading the diagrams](#reading-the-diagrams)
+- [3. D1: Booking attempts and grant history](#d1-booking-attempts-and-grant-history)
+- [4. D1: Payments, confirmation and invoices](#d1-payments-confirmation-and-invoices)
+- [5. D1: Access, identity and contact details](#d1-access-identity-and-contact-details)
+- [6. D1: SimplyBook webhook evidence](#d1-simplybook-webhook-evidence)
+- [7. D1: Deployment and operator authority](#d1-deployment-and-operator-authority)
+- [8. Durable Object SQLite: coordination and tokens](#durable-object-sqlite-coordination-and-tokens)
+- [9. Durable Object SQLite: public display cache](#durable-object-sqlite-public-display-cache)
+- [10. Constraint ownership](#constraint-ownership)
+- [11. Schema boundaries and maintenance](#schema-boundaries-and-maintenance)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - **Source inventory:**32 application D1 tables;13 application SQLite tables in the account Durable Object.
   - D1 migrations0001–0038 define the current source; platform bookkeeping/test-only tables are excluded.
 - **Deployment limit:** this is source structure, not a live database inspection or feature-activation claim.
@@ -9,7 +28,9 @@
 - Retention, expiry and deletion policy belongs to [Data lifecycle](../data-lifecycle.md); authorization and payment invariants belong to [Business rules](../business-rules.md).
 - This document owns table structure and relationships only.
 
-## Overview
+<a id="overview"></a>
+
+## 1. Overview
 
 - D1 retains booking/payment evidence; the Durable Object coordinates provider work and caches reads.
 
@@ -28,7 +49,9 @@ flowchart LR
   DO --> Display["Display snapshots and refresh state · 4"]
 ```
 
-## Reading the diagrams
+<a id="reading-the-diagrams"></a>
+
+## 2. Reading the diagrams
 
 - These use **crow’s-foot ER notation**, a common format for relational database schemas.
 - Chen notation uses relationship diamonds and is useful for conceptual modelling; it is not used here.
@@ -45,7 +68,9 @@ flowchart LR
 - Provider booking IDs, invoice IDs and scoped associations inside JSON are not local foreign keys to SimplyBook/HitPay.
   - D1 and Durable Object storage have no cross-database foreign keys.
 
-## D1: Booking attempts and grant history
+<a id="d1-booking-attempts-and-grant-history"></a>
+
+## 3. D1: Booking attempts and grant history
 
 ```mermaid
 erDiagram
@@ -99,7 +124,9 @@ flowchart LR
 | `completed_native_checkout_grants` | No PK; unique index: `attempt_id` | Preserved grant history after leaving a completed booking.                               |
 | `expired_native_checkout_grants`   | No PK; unique index: `attempt_id` | Preserved grant history after an eligible reservation expires.                           |
 
-## D1: Payments, confirmation and invoices
+<a id="d1-payments-confirmation-and-invoices"></a>
+
+## 4. D1: Payments, confirmation and invoices
 
 ```mermaid
 erDiagram
@@ -160,7 +187,9 @@ erDiagram
 | `checkout_progress`       | PK: `attempt_id` | Booking creation time, original windows, immutable recovery buffer and saved confirmation. |
 | `invoice_documents`       | PK: `attempt_id` | Original unpaid number and later paid document number; optional display metadata (0036).   |
 
-## D1: Access, identity and contact details
+<a id="d1-access-identity-and-contact-details"></a>
+
+## 5. D1: Access, identity and contact details
 
 ```mermaid
 flowchart TB
@@ -195,7 +224,9 @@ flowchart TB
 | `identity_delivery_window`     | PK: `singleton`                 | Finite operator-authorized identity email delivery window.                  |
 | `identity_delivery_dispatches` | PK: `id`                        | Identity-email dispatch history, including uncertain delivery.              |
 
-## D1: SimplyBook webhook evidence
+<a id="d1-simplybook-webhook-evidence"></a>
+
+## 6. D1: SimplyBook webhook evidence
 
 ```mermaid
 erDiagram
@@ -238,7 +269,9 @@ erDiagram
 | `webhook_pending_hints`       | PK: `window_id, body_digest` | Booking-ID hints awaiting matching against the bound attempt.              |
 | `webhook_event_scopes`        | PK: `window_id`              | Immutable booking/invoice event selection for a capture window.            |
 
-## D1: Deployment and operator authority
+<a id="d1-deployment-and-operator-authority"></a>
+
+## 7. D1: Deployment and operator authority
 
 - Neither table has a declared foreign key.
 - Foundation identity is checked against runtime bindings; operator capability authority is validated by the relevant operation owner.
@@ -248,7 +281,9 @@ erDiagram
 | `foundation_identity`  | PK: `singleton`       | Singleton binding to the expected account, environment, D1 database and coordinator. |
 | `developer_operations` | PK: `capability_hash` | Capability-bound operator actions, expiry and retained outcome.                      |
 
-## Durable Object SQLite: coordination and tokens
+<a id="durable-object-sqlite-coordination-and-tokens"></a>
+
+## 8. Durable Object SQLite: coordination and tokens
 
 - All nine tables below live in the same account coordinator's SQLite storage.
 - **None declares a SQL foreign key.** Dashed links show IDs used by coordinator code; release records can outlive the active transport claim.
@@ -288,7 +323,9 @@ flowchart LR
 - Legacy access-only rows remain readable at their original expiry.
 - Older binaries cannot restore the new encrypted payload and will fall back to authentication; do not restore a pre-consumption token-cache backup.
 
-## Durable Object SQLite: public display cache
+<a id="durable-object-sqlite-public-display-cache"></a>
+
+## 9. Durable Object SQLite: public display cache
 
 - These are cached calendar/catalogue reads, not booking or payment authority.
 
@@ -324,7 +361,9 @@ erDiagram
 - Public display expiry does not release a provider reservation.
 - Cache behavior belongs to [Technical behavior](../code-owners/technical-behavior.md); disposal/retention belongs to [Data lifecycle](../data-lifecycle.md).
 
-## Constraint ownership
+<a id="constraint-ownership"></a>
+
+## 10. Constraint ownership
 
 - A mix of database and application checks is intentional.
 - Prefer database enforcement for structural invariants that must survive every writer: primary/foreign keys, uniqueness, valid scalar values and protected immutable fields.
@@ -344,7 +383,9 @@ erDiagram
 - Consolidating them or adding constraints requires a separate migration design, existing-data validation and regression coverage.
 - Retention/deletion decisions remain with [Data lifecycle](../data-lifecycle.md).
 
-## Schema boundaries and maintenance
+<a id="schema-boundaries-and-maintenance"></a>
+
+## 11. Schema boundaries and maintenance
 
 - Immutable triggers protect original intent, association, saved confirmation and selected financial/history fields.
   - ER arrows cannot express those guards; consult the migration and [code owners](../code-owners/index.md) before changing a record.

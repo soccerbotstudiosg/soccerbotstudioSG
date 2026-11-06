@@ -1,5 +1,14 @@
 # Current system diagram
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Client delivery topology](#client-delivery-topology)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - Application topology shared by developer staging and the separately installed client Worker.
 - Client CI/deployment is operational; customer launch, domain routing and live provider acceptance remain pending.
 - Dashed telemetry links are prepared but disabled/unattached.
@@ -58,7 +67,9 @@ flowchart TB
 
 <a id="planned-client-delivery-topology"></a>
 
-## Client delivery topology
+<a id="client-delivery-topology"></a>
+
+## 1. Client delivery topology
 
 - The client repository owns staging and production deployment; both paths have successful execution evidence in Progress.
 - The initial client Worker uses its temporary Workers.dev hostname and the latest production release restores customer/provider access disabled.

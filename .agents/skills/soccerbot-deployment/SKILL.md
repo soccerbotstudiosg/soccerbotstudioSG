@@ -5,7 +5,25 @@ description: Establish SoccerBot deployment and configuration readiness from act
 
 # Deployment and configuration readiness
 
-## Authority and owners
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Authority and owners](#authority-and-owners)
+- [2. Identify the intended operation](#1-identify-the-intended-operation)
+- [3. Trace source to the release artifact](#2-trace-source-to-the-release-artifact)
+- [4. Reconcile configuration at each store](#3-reconcile-configuration-at-each-store)
+- [5. Inspect resources and operational behavior](#4-inspect-resources-and-operational-behavior)
+- [6. Diagnose deployment and verify acceptance](#5-diagnose-deployment-and-verify-acceptance)
+- [7. Readiness receipt](#6-readiness-receipt)
+- [8. Draft, staging and merge evidence](#draft-staging-and-merge-evidence)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="authority-and-owners"></a>
+
+## 1. Authority and owners
 
 - Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), the [deployment runbook](../../../docs/runbook.md#6-deployments-and-rollback), [configuration guide](../../../docs/development.md#configuration) and [deployment rules](../../../docs/business-rules.md#deployment-migration-and-acceptance).
 - Inspect the current workflow, target manifests and release scripts; historical checkpoints do not establish current readiness.
@@ -25,7 +43,9 @@ description: Establish SoccerBot deployment and configuration readiness from act
 - Never print secret values, tokens, EPP codes or customer records.
 - This skill is not an automatic deploy hook or standing monitor.
 
-## 1. Identify the intended operation
+<a id="1-identify-the-intended-operation"></a>
+
+## 2. Identify the intended operation
 
 - State the exact target and intended outcome: read-only inspection, installation with effects disabled, separate foundation setup, normal release, configuration repair, activation or rollback.
 - Distinguish sandbox credentials on a production-named Worker from real production payment readiness.
@@ -37,7 +57,9 @@ description: Establish SoccerBot deployment and configuration readiness from act
 - Verify numeric account IDs and resource IDs against the reviewed target; compare staging and production explicitly.
 - Never copy credentials or replace resource identity merely to make a deployment pass.
 
-## 2. Trace source to the release artifact
+<a id="2-trace-source-to-the-release-artifact"></a>
+
+## 3. Trace source to the release artifact
 
 - Match the exact source revision, repository, target/configuration, successful verification run and attempt, expected job set, artifact identity/digest and release receipt.
   - Read the actual eligibility logic; do not assume a skipped deployment failed or that a green PR deployed anything.
@@ -52,7 +74,9 @@ description: Establish SoccerBot deployment and configuration readiness from act
   - Source rollback does not undo data changes, provider effects or secrets.
   - Do not modify accepted migrations or reset storage to recover a failed release.
 
-## 3. Reconcile configuration at each store
+<a id="3-reconcile-configuration-at-each-store"></a>
+
+## 4. Reconcile configuration at each store
 
 - Build a compact expected/observed/gap comparison in the existing PR or operational owner, not a duplicate secret inventory.
 - For sensitive values record names, scope and verification state only; presence does not prove correctness, validity or provider ownership.
@@ -72,7 +96,9 @@ description: Establish SoccerBot deployment and configuration readiness from act
 - Do not interpret a placeholder, absent metadata or masked value as working credentials.
 - Keep DNS activation, registrar transfer, email authentication and certificate issuance/renewal evidence separate; preserve existing mail records.
 
-## 4. Inspect resources and operational behavior
+<a id="4-inspect-resources-and-operational-behavior"></a>
+
+## 5. Inspect resources and operational behavior
 
 - Confirm existing subscriptions, resource ownership, migrations and bindings before any authorized provisioning.
 - Preserve D1 data, DO namespace/class/name/ID and foundation registration; repeated deployment must not create a second coordinator or reset state.
@@ -87,7 +113,9 @@ description: Establish SoccerBot deployment and configuration readiness from act
 - A configured cron is not evidence of successful execution; an installed secret is not proof of provider authentication; a telemetry flag is not proof of receiver ingestion.
 - Staging can remain reachable after production launches: assess its exposure and test-data boundary explicitly without assuming it inherits production access controls.
 
-## 5. Diagnose deployment and verify acceptance
+<a id="5-diagnose-deployment-and-verify-acceptance"></a>
+
+## 6. Diagnose deployment and verify acceptance
 
 - Read the failing step and receipt before changing configuration or rerunning.
 - Distinguish eligibility rejection, build/artifact failure, account/API permission failure, partial upload, runtime configuration error, foundation state, route propagation and provider failure.
@@ -103,14 +131,18 @@ description: Establish SoccerBot deployment and configuration readiness from act
 - Use the existing Admin/Trainer/Simulated-user UAT owners for real provider/device acceptance.
 - Do not mark payment, email, webhook, recovery, rollback or monitoring delivery accepted from configuration or synthetic CI alone.
 
-## 6. Readiness receipt
+<a id="6-readiness-receipt"></a>
+
+## 7. Readiness receipt
 
 - Report the target/operation and authorization; exact repository/source/run/artifact; verified account/resource identities; configuration gaps without secret values; observed health/runtime/provider evidence; rollback constraints; and a **go** or **hold** recommendation with the exact remaining step.
 - Distinguish prepared, verified, deployed, activated and owner-accepted states.
 - Update existing Progress/Journey and affected operational owners under the documentation skill.
 - No unconditional readiness claim while required evidence is missing, and no extra status-only commits merely to restate green CI.
 
-## Draft, staging and merge evidence
+<a id="draft-staging-and-merge-evidence"></a>
+
+## 8. Draft, staging and merge evidence
 
 - Apply the mandatory draft→ready→verified staging→owner acceptance→merge sequence in root AGENTS.md and the runbook deployment procedure.
 - Continue related changes on the existing draft and disclose inherited changes for dependent PRs.

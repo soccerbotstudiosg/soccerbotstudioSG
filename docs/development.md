@@ -1,5 +1,33 @@
 # Continuous development guide
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Choose a development workflow](#choose-a-development-workflow)
+- [2. What to read before changing code](#what-to-read-before-changing-code)
+- [3. Local development with VS Code](#1-local-development-with-vs-code)
+  - [3.1. Clone or refresh safely](#clone-or-refresh-safely)
+  - [3.2. Install and run](#install-and-run)
+  - [3.3. Iterate and verify](#iterate-and-verify)
+- [4. Development with Cloud Containers](#2-development-with-cloud-containers)
+- [5. Development through a ZIP attached to chat](#3-development-through-a-zip-attached-to-chat)
+  - [5.1. Prepare an identifiable source snapshot](#prepare-an-identifiable-source-snapshot)
+  - [5.2. Review the returned changes](#review-the-returned-changes)
+  - [5.3. If a local installer is requested](#if-a-local-installer-is-requested)
+- [6. GitHub publishing and what CI does](#github-publishing-and-what-ci-does)
+  - [6.1. Review, commit and push](#review-commit-and-push)
+  - [6.2. Expected Actions behavior](#expected-actions-behavior)
+- [7. Current engineering expectations](#current-engineering-expectations)
+- [8. Development setup](#development-setup)
+- [9. Verification commands](#verification-commands)
+- [10. Browser testing coverage](#browser-testing-coverage)
+- [11. Configuration](#configuration)
+- [12. Portable deployment scaffold](#portable-deployment-scaffold)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - See [External providers configuration](external-providers-config.md) for SimplyBook, Resend, HitPay and Cloudflare settings, environment differences and verification limits.
 
 - > **Guidance only, not a strict requirement.** These workflows are practical examples; adapt them to the task and available tools.
@@ -10,7 +38,9 @@
 - GitHub is canonical; a local checkout, Codex workspace or attached ZIP is a revision snapshot.
 - Always establish which revision you are editing before combining work.
 
-## Choose a development workflow
+<a id="choose-a-development-workflow"></a>
+
+## 1. Choose a development workflow
 
 | Way                                                                      | Best suited to                                                          | Where work happens                                      | How changes return                                                                               |
 | ------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -21,7 +51,9 @@
 - All three routes converge on the same reviewed source and verification process.
 - A ZIP or chat response is not a separate deployment pipeline.
 
-## What to read before changing code
+<a id="what-to-read-before-changing-code"></a>
+
+## 2. What to read before changing code
 
 - Start with [AGENTS](../AGENTS.md), [North Star](../NORTH_STAR.md) and [Progress](../PROGRESS.md).
 - Then follow the task-specific reading order in AGENTS:
@@ -33,9 +65,13 @@
 - [Runbook](runbook.md) covers incidents, dependencies, monitoring, deployment and recovery.
 - [Admin](tests/uat/admin.md), [Trainers](tests/uat/trainers.md) and [Simulated-user](tests/uat/customer.md) worksheets guide owner-operated acceptance.
 
-## 1. Local development with VS Code
+<a id="1-local-development-with-vs-code"></a>
 
-### Clone or refresh safely
+## 3. Local development with VS Code
+
+<a id="clone-or-refresh-safely"></a>
+
+### 3.1. Clone or refresh safely
 
 - Use your own GitHub account with repository access.
 - Authenticate through approved Git/VS Code/GitHub tooling; do not put access tokens into remote URLs or source files.
@@ -68,7 +104,9 @@ git switch -c fix/short-task-name
 - If main cannot fast-forward, inspect the divergence before changing history.
 - A separate worktree is useful when another task has uncommitted work; verify its dependency setup rather than replacing an existing `node_modules` symlink.
 
-### Install and run
+<a id="install-and-run"></a>
+
+### 3.2. Install and run
 
 - Use the current `.nvmrc` and `package.json` versions, not a version copied from an old chat.
 - With an existing nvm installation:
@@ -99,7 +137,9 @@ npm run dev
 - Record steps, expected/actual behavior and useful redacted evidence.
 - Do not perform real provider mutations while debugging unless they are part of an explicitly arranged owner test.
 
-### Iterate and verify
+<a id="iterate-and-verify"></a>
+
+### 3.3. Iterate and verify
 
 - Edit the existing owning module and affected tests, then run checks appropriate to the change.
 - Examples include the relevant `node --test` tooling test, application test, source/policy checks or isolated Worker verification.
@@ -110,7 +150,9 @@ npm run dev
 - Do not upgrade Playwright solely to obtain a browser executable.
 - The complete final-revision CI gates still apply before readiness.
 
-## 2. Development with Cloud Containers
+<a id="2-development-with-cloud-containers"></a>
+
+## 4. Development with Cloud Containers
 
 - Connect the intended repository/account and select a workspace for the task.
 - Check branch, HEAD, working tree and remote main; a previous workspace can contain an unfinished task.
@@ -146,9 +188,13 @@ Testing constraints: follow AGENTS.md; browsers are owner/CI-operated
 - At a pause, record branch/HEAD, PR/run links, checks performed, unresolved issues and next action in the appropriate progress evidence.
 - Do not assume an agent continues monitoring after the chat turn ends.
 
-## 3. Development through a ZIP attached to chat
+<a id="3-development-through-a-zip-attached-to-chat"></a>
 
-### Prepare an identifiable source snapshot
+## 5. Development through a ZIP attached to chat
+
+<a id="prepare-an-identifiable-source-snapshot"></a>
+
+### 5.1. Prepare an identifiable source snapshot
 
 - Prefer a clean, committed task revision.
 - Review the tracked file list for accidental secrets/customer data before packaging.
@@ -177,7 +223,9 @@ git archive --format=zip --output=../soccerbot-source.zip HEAD
 - Attach only necessary redacted failure evidence separately.
 - Explain whether the chat has repository/tool access; archive-only work cannot honestly claim a GitHub push or verified remote state.
 
-### Review the returned changes
+<a id="review-the-returned-changes"></a>
+
+### 5.2. Review the returned changes
 
 - Ask for a changed-file summary, patch or complete changed files, relevant test results, unresolved limitations and the exact baseline used.
 - The assistant should inspect archive paths before extraction and reject path traversal, unsafe symlinks or unexpected case collisions; extraction should use an isolated directory, never overwrite the active checkout blindly.
@@ -191,7 +239,9 @@ git archive --format=zip --output=../soccerbot-source.zip HEAD
 - Run the meaningful affected checks on the integrated bytes, review the diff and follow the same commit/push/PR path below.
 - Chat-reported tests on an extracted snapshot do not replace final-commit CI or provider acceptance.
 
-### If a local installer is requested
+<a id="if-a-local-installer-is-requested"></a>
+
+### 5.3. If a local installer is requested
 
 - A source ZIP is not an executable installer.
 - Routine cloud work needs no Mac installer.
@@ -203,9 +253,13 @@ git archive --format=zip --output=../soccerbot-source.zip HEAD
 - Application installers can execute browsers and therefore remain owner-operated.
 - A checksum verifies the delivered bytes, not their correctness or trustworthiness by itself.
 
-## GitHub publishing and what CI does
+<a id="github-publishing-and-what-ci-does"></a>
 
-### Review, commit and push
+## 6. GitHub publishing and what CI does
+
+<a id="review-commit-and-push"></a>
+
+### 6.1. Review, commit and push
 
 - Before publication, inspect the working tree and diff; stage only the intended files.
 - Example commands, replacing the paths and branch with the actual task:
@@ -229,7 +283,9 @@ git push -u origin fix/short-task-name
 - If required, merge current main into the task branch, resolve conflicts in their owning files and rerun affected checks; final-head CI must cover the resolved revision.
 - Preserve unrelated work and existing failure evidence.
 
-### Expected Actions behavior
+<a id="expected-actions-behavior"></a>
+
+### 6.2. Expected Actions behavior
 
 | Action                              | Expected behavior                                                                                                                   | What it does not establish                                                          |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -253,7 +309,9 @@ git push -u origin fix/short-task-name
 - Merge/deploy only with applicable explicit authorization.
 - After an authorised deployment, verify receipt/health revision and arrange any necessary owner/provider acceptance.
 
-## Current engineering expectations
+<a id="current-engineering-expectations"></a>
+
+## 7. Current engineering expectations
 
 - This is an explanatory summary of [AGENTS](../AGENTS.md), not a second rules authority:
 
@@ -270,7 +328,9 @@ git push -u origin fix/short-task-name
 - For dependency changes, follow the [runbook procedure](runbook.md#3-dependency-maintenance-and-dependabot) and run `node scripts/versions.mjs write` so [versions.md](versions.md) stays current.
 - Do not bypass a freshness failure or use `npm audit fix --force` as routine setup.
 
-## Development setup
+<a id="development-setup"></a>
+
+## 8. Development setup
 
 - Use Node/npm pinned by `.nvmrc` and `package.json`, Python 3.11+ and Git.
 - On initial setup, install the reviewed lockfile with `npm ci`; routine work reuses matching dependencies and browser caches.
@@ -298,7 +358,9 @@ git push -u origin fix/short-task-name
 - The local installer’s isolated `browser_inventory` adapter also inspects the installed Playwright registry through its exported bundle to resolve Chromium Headless Shell and WebKit executables.
 - This remains a version-sensitive tooling boundary because Playwright has no public headless-shell path API; an installer regression calls the real adapter without launching or downloading browsers, while fixture tests retain missing-binary and headless-only checks.
 
-## Verification commands
+<a id="verification-commands"></a>
+
+## 9. Verification commands
 
 - For CI failure investigation, resource pressure or changes to sharding/lifecycle, apply the [CI-diagnosis skill](../.agents/skills/soccerbot-ci-diagnosis/SKILL.md) alongside the test-maintenance skill.
 - It owns causal investigation and resource experiments; the commands and execution boundaries below remain authoritative.
@@ -316,7 +378,9 @@ git push -u origin fix/short-task-name
 | `npm run verify:browser`                    | Browser suite operated by owner/CI under AGENTS.                |
 | `npm run verify`                            | Combined application/browser verification operated by owner/CI. |
 
-## Browser testing coverage
+<a id="browser-testing-coverage"></a>
+
+## 10. Browser testing coverage
 
 - [Test suite and safeguards](tests/test-suite.md): current layers, browser profiles, regression protection and evidence limits.
 - Automated browsers: desktop Chromium, phone WebKit and tablet WebKit; owner/CI executes browsers.
@@ -325,7 +389,9 @@ git push -u origin fix/short-task-name
 - [Versions](versions.md) owns pins; [Journey](journey.md#browser-testing-coverage) retains prior engine matrices and upgrade evidence.
   - Dependency PRs still require the [support-range comparison](../.agents/skills/soccerbot-dependencies/SKILL.md#required-support-range-comparison-in-every-dependency-pr).
 
-## Configuration
+<a id="configuration"></a>
+
+## 11. Configuration
 
 - For a local live frontend build, supply the public `NEXT_PUBLIC_TURNSTILE_SITE_KEY` through your shell or an ignored `.env.local` file.
 - The `live-email` target CI job supplies this build-time value from `deployment/production.json` or `deployment/staging.json`; client setup must supply the client's public widget key.
@@ -334,7 +400,9 @@ git push -u origin fix/short-task-name
 
 - [Historical verification receipts](https://github.com/LimYouSheng/SoccerBotStudioSG/tree/d7a8d2b209b535d23a62702e4d59538e00a47012/docs) remain in Git history, not current source inventories.
 
-## Portable deployment scaffold
+<a id="portable-deployment-scaffold"></a>
+
+## 12. Portable deployment scaffold
 
 - `deployment/staging.json` owns the existing developer resource identity and sandbox mapping.
 - `deployment/production.json` records the verified client account, existing D1 and closed temporary origin `https://soccerbot-production.lucky-poetry-b25e.workers.dev`.

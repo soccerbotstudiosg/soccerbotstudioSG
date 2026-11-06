@@ -1,5 +1,25 @@
 # Architecture decision records
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Context and decision drivers](#context-and-decision-drivers)
+- [2. Decision summary](#decision-summary)
+- [3. ADR-001 — React/TypeScript and Next.js static export](#adr-001--reacttypescript-and-nextjs-static-export)
+- [4. ADR-002 — Cloudflare Worker with Static Assets](#adr-002--cloudflare-worker-with-static-assets)
+- [5. ADR-003 — Account coordinator, D1 journal and DO SQLite](#adr-003--account-coordinator-d1-journal-and-do-sqlite)
+- [6. ADR-004 — SimplyBook and HitPay hosted payment](#adr-004--simplybook-and-hitpay-hosted-payment)
+- [7. ADR-005 — Email proof, Turnstile and server-side access state](#adr-005--email-proof-turnstile-and-server-side-access-state)
+- [8. ADR-006 — Sanitized diagnostics and central Grafana Tempo](#adr-006--sanitized-diagnostics-and-central-grafana-tempo)
+- [9. ADR-007 — Verified revisions and immutable release artifacts](#adr-007--verified-revisions-and-immutable-release-artifacts)
+- [10. ADR-008 — Managed custom hostnames with vendor-controlled DNS](#adr-008--managed-custom-hostnames-with-vendor-controlled-dns)
+- [11. Scaling review and fallback readiness](#scaling-review-and-fallback-readiness)
+  - [11.1. Closed-install registration control path](#closed-install-registration-control-path)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - These records explain the current stack and its tradeoffs.
 - **Status distinguishes implemented choices from prepared or proposed choices.** Rationale is reconstructed from the current code, constraints and [recorded contracts](../business-rules.md); it is not a claim that every alternative was previously benchmarked or formally rejected.
 - Alternatives below are contingency options for review, not authorised migrations or ready standby systems.
@@ -9,7 +29,9 @@
 - Version pins belong to [versions.md](../versions.md), not this document.
 - Amend a decision explicitly or add a superseding ADR when its assumptions change; preserve the rationale and evidence for the prior choice.
 
-## Context and decision drivers
+<a id="context-and-decision-drivers"></a>
+
+## 1. Context and decision drivers
 
 - The product serves a Singapore studio with shared capacity across instructors.
 - It needs fast calendar browsing, protected email identity, reliable single/multiple-session booking and a hosted payment journey.
@@ -23,7 +45,9 @@
 - This is not a claim of unlimited throughput, lowest possible cost or a guaranteed checkout latency.
 - Current provider and platform entitlements, limits and prices must be rechecked before a capacity or migration decision.
 
-## Decision summary
+<a id="decision-summary"></a>
+
+## 2. Decision summary
 
 | ID      | Choice                                                          | Status                                                                        | Main benefit                                                         | Main tradeoff                                                      |
 | ------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
@@ -36,7 +60,9 @@
 | ADR-007 | GitHub PR verification and exact-artifact deployment            | Implemented developer path; portable cutover pending                          | Traceable revisions, strict checks and reproducible release evidence | CI cost/time, dependency coordination and manual operational steps |
 | ADR-008 | Cloudflare for SaaS for vendor-managed customer DNS             | Prepared earlier; ownership assumption superseded; reassessment pending       | Separate DNS ownership from client hosting with managed TLS          | Prerequisite, apex and renewal proof required before rollout       |
 
-## ADR-001 — React/TypeScript and Next.js static export
+<a id="adr-001--reacttypescript-and-nextjs-static-export"></a>
+
+## 3. ADR-001 — React/TypeScript and Next.js static export
 
 - **Decision.** Build the customer interface in React/TypeScript with Next.js static export.
 - Use shared domain definitions and validated service adapters; serve the exported assets rather than running a Next.js application server.
@@ -64,7 +90,9 @@
 
 - **Owners/evidence.** [App routes](../../src/app), [service composition](../../src/services/index.ts), [Next config](../../next.config.ts), [export checks](../../scripts/check-export.mjs), [BR-003](../business-rules.md#br-003), [BR-007](../business-rules.md#br-007).
 
-## ADR-002 — Cloudflare Worker with Static Assets
+<a id="adr-002--cloudflare-worker-with-static-assets"></a>
+
+## 4. ADR-002 — Cloudflare Worker with Static Assets
 
 - **Decision.** Use a Cloudflare Worker for protected HTTP APIs and Worker Static Assets for the customer frontend, keeping API and site on the intended origin.
 - Validate environment/foundation and request authority at the backend.
@@ -95,7 +123,9 @@
 
 - **Owners/evidence.** [Worker entry](../../worker/index.ts), [bindings](../../worker/bindings.ts), [Worker config](../../wrangler.jsonc), [Pages adapter](../../worker/pages.ts), [BR-004](../business-rules.md#br-004), [BR-029](../business-rules.md#br-029).
 
-## ADR-003 — Account coordinator, D1 journal and DO SQLite
+<a id="adr-003--account-coordinator-d1-journal-and-do-sqlite"></a>
+
+## 5. ADR-003 — Account coordinator, D1 journal and DO SQLite
 
 - **Decision.** Serialize account-level provider workflows in a Durable Object.
 - Store durable access/attempt/grant/effect/payment/recovery evidence and display snapshots in D1; use the DO’s own SQLite for coordination and encrypted provider-token state.
@@ -129,7 +159,9 @@
 
 - **Owners/evidence.** [Coordinator](../../worker/coordinator.ts), [queue](../../worker/provider-queue.ts), [journal](../../worker/journal.ts), [payment journal](../../worker/hitpay-journal.ts), [token cache](../../worker/provider-token-cache.ts), [migrations](../../migrations), [BR-014–017](../business-rules.md#br-014).
 
-## ADR-004 — SimplyBook and HitPay hosted payment
+<a id="adr-004--simplybook-and-hitpay-hosted-payment"></a>
+
+## 6. ADR-004 — SimplyBook and HitPay hosted payment
 
 - **Decision.** SimplyBook owns schedules, eligible instructors, shared resources, bookings and invoices.
 - Multiple eligible trainers can share a start; the customer chooses a trainer independently for each slot.
@@ -163,7 +195,9 @@
 - **Owners/evidence.** [Native checkout](../../worker/native-checkout.ts), [provider transport](../../worker/provider-transport.ts), [provider normalization](../../worker/provider-normalization.ts), [HitPay recovery](../../worker/hitpay-recovery.ts), [BR-002](../business-rules.md#br-002), [BR-007–013](../business-rules.md#br-007).
 - Client live merchant/mappings and owner acceptance remain separate from sandbox/CI evidence.
 
-## ADR-005 — Email proof, Turnstile and server-side access state
+<a id="adr-005--email-proof-turnstile-and-server-side-access-state"></a>
+
+## 7. ADR-005 — Email proof, Turnstile and server-side access state
 
 - **Decision.** Use an email challenge delivered through Resend, bot proof through Turnstile, and server-issued access/remembered-identity state.
 - Require current email proof before protected saved-contact lookup.
@@ -190,7 +224,9 @@
 
 - **Owners/evidence.** [Identity](../../worker/identity.ts), [delivery](../../worker/identity-delivery.ts), [remembered identity](../../worker/remembered-identity.ts), [access](../../worker/access.ts), [BR-003](../business-rules.md#br-003).
 
-## ADR-006 — Sanitized diagnostics and central Grafana Tempo
+<a id="adr-006--sanitized-diagnostics-and-central-grafana-tempo"></a>
+
+## 8. ADR-006 — Sanitized diagnostics and central Grafana Tempo
 
 - **Decision.** Emit bounded diagnostic summaries in the Worker and prepare a separate Tail Worker to export allowlisted OTLP traces to the owner company’s Grafana.
 - Keep export outside the customer request path and omit credentials, customer details and raw provider payloads.
@@ -220,7 +256,9 @@
 
 - **Owners/evidence.** [Diagnostics](../../worker/diagnostics.ts), [exporter](../../worker/telemetry.ts), [dashboard](../../observability/grafana-dashboard.json), [runbook signal dictionary](../runbook.md#4-monitoring-and-observability), [BR-018–020](../business-rules.md#br-018).
 
-## ADR-007 — Verified revisions and immutable release artifacts
+<a id="adr-007--verified-revisions-and-immutable-release-artifacts"></a>
+
+## 9. ADR-007 — Verified revisions and immutable release artifacts
 
 - **Decision.** Use GitHub task branches/PRs, final-head frontend/backend/live-email gates and fresh main verification.
 - Deploy the tested artifact instead of rebuilding after approval.
@@ -258,7 +296,9 @@
 
 - **Owners/evidence.** [Workflows](../../.github/workflows), [release packaging](../../scripts/prepare-developer-release.mjs), [target provenance](../../scripts/verified-target-run.mjs), [deployment](../../scripts/deploy-cloudflare.mjs), [BR-021](../business-rules.md#br-021), [development guide](../development.md).
 
-## ADR-008 — Managed custom hostnames with vendor-controlled DNS
+<a id="adr-008--managed-custom-hostnames-with-vendor-controlled-dns"></a>
+
+## 10. ADR-008 — Managed custom hostnames with vendor-controlled DNS
 
 - **Chosen direction:** client-managed Cloudflare DNS for `soccerbotsg.com`; registrar transfer and DNS delegation require separate verification.
 - **Retained implementation:** SaaS configuration remains until reviewed replacement/revalidation; prior ownership decisions belong in Journey.
@@ -288,7 +328,9 @@
 
 - **Owners/evidence.** [Production target](../../deployment/production.json), [deployment preflight](../../scripts/deploy-cloudflare.mjs), [hosting rules](../business-rules.md#client-hosting-and-domain-acceptance), [DNS runbook](../runbook.md#8-domain-dns-and-https).
 
-## Scaling review and fallback readiness
+<a id="scaling-review-and-fallback-readiness"></a>
+
+## 11. Scaling review and fallback readiness
 
 | Pressure or failure         | First evidence to collect                                             | Candidate response                                                                   | Preserve before changing architecture                                      |
 | --------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
@@ -305,7 +347,9 @@
 - Before treating one as a backup, define ownership, current pricing/limits, RPO/RTO, data/export format, restore method, secrets/DNS transition, old/new writer fencing, in-flight payment reconciliation and a rehearsed acceptance/rollback plan.
 - A source ZIP, static mirror or provider export alone is not a complete recoverable system.
 
-### Closed-install registration control path
+<a id="closed-install-registration-control-path"></a>
+
+### 11.1. Closed-install registration control path
 
 - Use a named internal `FoundationManagement` Worker entrypoint for operator-only identity inspection, insert-only registration and separate coordinator initialization.
 - The operator client accesses it through an authenticated remote service binding and validates the deployed resource mapping against the sealed production artifact.

@@ -1,5 +1,24 @@
 # External providers configuration
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Environment boundaries](#environment-boundaries)
+- [2. SimplyBook — schedules, bookings and invoices](#simplybook--schedules-bookings-and-invoices)
+  - [2.1. Service mapping](#service-mapping)
+  - [2.2. Capacity and scheduling](#capacity-and-scheduling)
+  - [2.3. Notifications, access and maintenance](#notifications-access-and-maintenance)
+- [3. Resend — application email delivery](#resend--application-email-delivery)
+- [4. HitPay — hosted payment and webhook recovery](#hitpay--hosted-payment-and-webhook-recovery)
+- [5. Cloudflare — hosting, durable state and bot verification](#cloudflare--hosting-durable-state-and-bot-verification)
+- [6. Secret locations and configuration changes](#secret-locations-and-configuration-changes)
+- [7. Booking support and notification drafts](#booking-support-and-notification-drafts)
+  - [7.1. Complete HTML drafts and editor setup](#complete-html-drafts-and-editor-setup)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - Current configuration reference for the intended settings and verification limits for SimplyBook, Resend, HitPay and Cloudflare.
 - It contains no credential values, customer records or raw diagnostic logs.
 - It is not an instruction to activate services or copy staging credentials into production.
@@ -9,7 +28,9 @@
 - Update this reference when provider settings change, recording whether evidence is API-observed, owner-confirmed or still pending.
 - A historical check is not a live monitor.
 
-## Environment boundaries
+<a id="environment-boundaries"></a>
+
+## 1. Environment boundaries
 
 | Area                                      | Developer staging                                         | Client deployment                                                        |
 | ----------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -26,13 +47,17 @@
 - Staging tests exercise the shared UI and recovery logic, but do not establish client account settings, exact client amounts, live payments, email delivery or production latency.
 - The two deployments may temporarily run different revisions; check release receipts before comparing behavior.
 
-## SimplyBook — schedules, bookings and invoices
+<a id="simplybook--schedules-bookings-and-invoices"></a>
+
+## 2. SimplyBook — schedules, bookings and invoices
 
 - SimplyBook owns availability, booking records and invoices.
 - HitPay collects payment; the application verifies it and records external payment against the original SimplyBook invoice.
 - Provider timeouts and uncertain writes must not cause duplicate bookings or accounting operations.
 
-### Service mapping
+<a id="service-mapping"></a>
+
+### 2.1. Service mapping
 
 | Setting                                    | Staging                 | Client                  | Reason                                                                                            |
 | ------------------------------------------ | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------- |
@@ -49,7 +74,9 @@
 - Changing a tariff requires reconciling SimplyBook services, that profile, display/quote tests and owner acceptance together.
 - A provider price that disagrees with the configured profile is rejected, not silently accepted.
 
-### Capacity and scheduling
+<a id="capacity-and-scheduling"></a>
+
+### 2.2. Capacity and scheduling
 
 | Setting                            | Latest evidence                                                                    | Meaning / remaining check                                                                                                                          |
 | ---------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -81,7 +108,9 @@
 
 - Provider-hosted landing-page marketing requires owner reconciliation with approved tariffs before promotion.
 
-### Notifications, access and maintenance
+<a id="notifications-access-and-maintenance"></a>
+
+### 2.3. Notifications, access and maintenance
 
 - The owner reported trainer notifications switched off during the recent setup conversation.
 - This is owner-confirmed, not a fresh API inspection or proof that every customer/admin reminder channel is off.
@@ -92,7 +121,9 @@
 - Role capabilities, seats and costs need owner verification; do not assume a named junior role exists or that trainers can edit only their own schedules.
 - Follow [Admin UAT](tests/uat/admin.md) and [Trainer UAT](tests/uat/trainers.md).
 
-## Resend — application email delivery
+<a id="resend--application-email-delivery"></a>
+
+## 3. Resend — application email delivery
 
 - Resend supports the application's email identity/account flows.
 - It does not replace SimplyBook's booking/trainer notification configuration, and a verified sender does not itself enable application email delivery.
@@ -113,7 +144,9 @@
 - Enquiry form uses the preview adapter; published `contact@soccerbotsg.com` is not a verified form-delivery destination.
   - Identity-email setup does not activate enquiry delivery.
 
-## HitPay — hosted payment and webhook recovery
+<a id="hitpay--hosted-payment-and-webhook-recovery"></a>
+
+## 4. HitPay — hosted payment and webhook recovery
 
 - Both environment mappings use the owner-approved app404 **sandbox**; the client release is currently closed.
 - This is a temporary testing arrangement, not client live merchant ownership or proof of production readiness.
@@ -135,7 +168,9 @@
 - Preserve retained account/company/merchant/business/credential scope and original financial references.
 - When the client domain changes, review webhook/return origins and runtime guards together; do not simply edit a dashboard URL and assume compatibility.
 
-## Cloudflare — hosting, durable state and bot verification
+<a id="cloudflare--hosting-durable-state-and-bot-verification"></a>
+
+## 5. Cloudflare — hosting, durable state and bot verification
 
 | Area              | Staging                                    | Client                                                                             |
 | ----------------- | ------------------------------------------ | ---------------------------------------------------------------------------------- |
@@ -173,7 +208,9 @@
   - Runtime state must be read back for the exact deployment; source defaults do not prove activation.
   - Validate complete merchant/business/contract pairing as well as feature switches before any separately authorised activation.
 
-## Secret locations and configuration changes
+<a id="secret-locations-and-configuration-changes"></a>
+
+## 6. Secret locations and configuration changes
 
 - Only names and storage locations are recorded here.
 - Never include values, API response headers, EPP codes, passwords, bank details or customer records in this file.
@@ -195,7 +232,9 @@
 - Use Progress for outstanding actions, not a second backlog here.
 - Code/provider changes do not authorize bookings, payments, emails or destructive cleanup.
 
-## Booking support and notification drafts
+<a id="booking-support-and-notification-drafts"></a>
+
+## 7. Booking support and notification drafts
 
 - Change/cancellation contact: **Glenna, +65 9014 3819**, [WhatsApp](https://wa.me/6590143819).
 - A message is a request; the booking stays unchanged until the studio confirms it.
@@ -205,7 +244,9 @@
 - Notifications: drafts remain uninstalled and on hold.
   - Check actual feature/plan entitlements in the provider editor; preview substitutions, recipients and triggers before separately authorised delivery.
 
-### Complete HTML drafts and editor setup
+<a id="complete-html-drafts-and-editor-setup"></a>
+
+### 7.1. Complete HTML drafts and editor setup
 
 - **On hold:** retain drafts for later owner setup and acceptance.
 - No notification feature is to be enabled or email sent without separate owner authorisation.

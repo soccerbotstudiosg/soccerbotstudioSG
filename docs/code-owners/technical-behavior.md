@@ -1,5 +1,34 @@
 # Technical behavior and recovery map
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Overview and reading route](#overview-and-reading-route)
+- [2. UI state, navigation and loading](#1-ui-state-navigation-and-loading)
+  - [2.1. Step presentation functions](#11-step-presentation-functions)
+- [3. Browser services, persistence and exports](#2-browser-services-persistence-and-exports)
+- [4. HTTP entry, access and immutable foundation](#3-http-entry-access-and-immutable-foundation)
+- [5. Email identity, Remember me and saved contact](#4-email-identity-remember-me-and-saved-contact)
+- [6. Catalogue, selection and capacity](#5-catalogue-selection-and-capacity)
+- [7. Checkout, durable effects and hosted payment](#6-checkout-durable-effects-and-hosted-payment)
+- [8. Recovery, confirmation, exports and completed exit](#7-recovery-confirmation-exports-and-completed-exit)
+- [9. Provider coordination, token persistence and storage](#8-provider-coordination-token-persistence-and-storage)
+- [10. Diagnostics, Grafana and data boundaries](#9-diagnostics-grafana-and-data-boundaries)
+- [11. Verification, deployment and configuration recovery](#10-verification-deployment-and-configuration-recovery)
+- [12. Screenshot and evidence index](#11-screenshot-and-evidence-index)
+  - [12.1. Consecutive-journey verification boundary](#consecutive-journey-verification-boundary)
+- [13. Shared-studio conflict regression contract](#shared-studio-conflict-regression-contract)
+- [14. Public homepage and Studio presentation](#public-homepage-and-studio-presentation)
+  - [14.1. Header, footer and app links](#header-footer-and-app-links)
+  - [14.2. Homepage, Studio media and banners](#homepage-studio-media-and-banners)
+  - [14.3. Public motion and booking isolation](#public-motion-and-booking-isolation)
+  - [14.4. Mobile booking panels](#mobile-booking-panels)
+  - [14.5. Outlet and session disclosure](#outlet-and-session-disclosure)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - Price presentation: `session-price.tsx` resolves homepage rates from the validated public catalogue environment and the shared `session-pricing.ts` profile; `SessionStep` passes the same catalogue environment into its price label.
 - Unknown/failed homepage catalogue reads show no numeric fallback.
 - Preview alone uses developer rates.
@@ -15,7 +44,9 @@
 - SimplyBook staff scheduling and HitPay/Cloudflare administration are provider-console operations, not custom SoccerBot admin features.
 - Enquiry uses a demo adapter; the persistent mock assistant is retired.
 
-## Overview and reading route
+<a id="overview-and-reading-route"></a>
+
+## 1. Overview and reading route
 
 ```mermaid
 flowchart TB
@@ -39,7 +70,9 @@ flowchart TB
 - For a visible failure, start with its UI row, follow the named service to its Worker owner, then inspect the linked evidence.
 - A diagram arrow denotes responsibility or a call path; it does not guarantee parallel execution, authorization or provider success.
 
-## 1. UI state, navigation and loading
+<a id="1-ui-state-navigation-and-loading"></a>
+
+## 2. UI state, navigation and loading
 
 - Shared dialogs use unique heading references and nonshrinking close controls.
 - Long invoice references wrap within the confirmation card.
@@ -101,7 +134,9 @@ flowchart TB
 - Evidence: [experiment browser cases](../../tests/experiment.spec.ts), [live identity/booking browser cases](../../tests/live-email.spec.ts), [booking domain tests](../../src/features/booking/async-booking.test.tsx).
 - Screens to inspect: account choices, editable Review, loading overlay, saved-confirmation retry and back/forward return.
 
-### 1.1 Step presentation functions
+<a id="11-step-presentation-functions"></a>
+
+### 2.1. Step presentation functions
 
 - Session summary presentation: `SessionSummaryHeading` in `summary.tsx` owns the shared Your sessions heading, provider service label and player-per-session guidance for cart, review and confirmation.
 - Shared styles keep its typography and internal spacing consistent;
@@ -148,7 +183,9 @@ flowchart TB
 | `ConfirmationStep` / `PendingConfirmation` / `BookingConfirmation`                                   | Select and render the supported pending or confirmed presentation.          | Live success/details/export depend on the protected confirmation and receipt owners, not just a component name.        |
 | `guardedStep` / `selectionErrors` / `paymentLocked` in [domain booking](../../src/domain/booking.ts) | Derive eligible navigation, selection errors and payment edit restrictions. | Redirect to a supported step; do not remove the guard to permit stale back/forward state.                              |
 
-## 2. Browser services, persistence and exports
+<a id="2-browser-services-persistence-and-exports"></a>
+
+## 3. Browser services, persistence and exports
 
 - Owners: [booking.ts](../../src/services/booking.ts), [identity.ts](../../src/services/identity.ts), [storage.ts](../../src/services/storage.ts), [composition](../../src/services/index.ts).
 
@@ -168,7 +205,9 @@ flowchart TB
 - Evidence: [service tests](../../src/services/booking.test.ts), [live-email browser tests](../../tests/live-email.spec.ts), [protected export owner](../../src/features/booking/protected-confirmation.tsx).
 - For staff schedule entry, use [Trainer UAT](../tests/uat/trainers.md); it is performed in SimplyBook.
 
-## 3. HTTP entry, access and immutable foundation
+<a id="3-http-entry-access-and-immutable-foundation"></a>
+
+## 4. HTTP entry, access and immutable foundation
 
 - Owners: [Worker entry](../../worker/index.ts), [access](../../worker/access.ts), [bindings](../../worker/bindings.ts), [policy](../../worker/policy.ts).
 - Rules: BR-003, BR-004, BR-014, BR-021, BR-027.
@@ -198,7 +237,9 @@ flowchart LR
 - Evidence: [foundation fixture and checks](../../worker/tests/foundation-fixture.mjs), [Worker tests](../../worker/tests), [deployment tests](../../scripts/deploy-cloudflare.test.mjs).
 - Request errors are not evidence that no earlier request committed a write.
 
-## 4. Email identity, Remember me and saved contact
+<a id="4-email-identity-remember-me-and-saved-contact"></a>
+
+## 5. Email identity, Remember me and saved contact
 
 - Owners: [identity](../../worker/identity.ts), [delivery](../../worker/identity-delivery.ts), [remembered identity](../../worker/remembered-identity.ts), [contact profile](../../worker/contact-profile.ts).
 - Rules: BR-003–005.
@@ -233,7 +274,9 @@ sequenceDiagram
 - Evidence: [identity/remembered Worker tests](../../worker/tests), [email account and Remember me browser cases](../../tests/live-email.spec.ts), [account UI](../../src/features/booking/account-step.tsx), [Turnstile lifecycle](../../src/features/booking/email-bot-proof.tsx).
 - Screen evidence should distinguish challenge request, verified session, Remember me restoration and all-device sign-out.
 
-## 5. Catalogue, selection and capacity
+<a id="5-catalogue-selection-and-capacity"></a>
+
+## 6. Catalogue, selection and capacity
 
 - `studioStartsFromIntervals` in [native-grid.ts](../../worker/native-grid.ts) normalizes observed `{from,to}` intervals and documented two-item arrays under the same strict boundary checks, then fits the shared noon-anchored grid inside provider free intervals, including the changeover buffer.
 - Ongoing calendar and prebooking reads request intervals instead of provider-generated starts; legacy finite reads retain their contract.
@@ -299,7 +342,9 @@ sequenceDiagram
 - Evidence: [combined hold concurrency cases](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [Trainer schedule worksheet](../tests/uat/trainers.md).
 - Capacity is shared; an instructor label does not create another independent studio slot.
 
-## 6. Checkout, durable effects and hosted payment
+<a id="6-checkout-durable-effects-and-hosted-payment"></a>
+
+## 7. Checkout, durable effects and hosted payment
 
 - Owners: [customer authority](../../worker/customer-authority.ts), [native checkout](../../worker/native-checkout.ts), [dispatch claims](../../worker/native-dispatch.ts), [normalization](../../worker/provider-normalization.ts), [HitPay journal](../../worker/hitpay-journal.ts), [payment handoff](../../worker/hitpay-hold.ts).
 - Rules: BR-007–011, BR-014–017.
@@ -334,7 +379,9 @@ flowchart TB
 - Evidence: [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [live checkout browser tests](../../tests/live-email.spec.ts).
 - Capture Review and hosted-return states with synthetic data; a screenshot of the payment page cannot prove settlement.
 
-## 7. Recovery, confirmation, exports and completed exit
+<a id="7-recovery-confirmation-exports-and-completed-exit"></a>
+
+## 8. Recovery, confirmation, exports and completed exit
 
 - Owners: [recovery](../../worker/hitpay-recovery.ts), [confirmation](../../worker/confirmation.ts), [receipt](../../worker/receipt.ts), [progress](../../worker/checkout-progress.ts), [browser confirmation service](../../src/services/confirmation.ts), [ProtectedConfirmation](../../src/features/booking/protected-confirmation.tsx), [checking hook](../../src/features/booking/confirmation-checking.ts).
 - Rules: BR-008, BR-010–013.
@@ -385,7 +432,9 @@ sequenceDiagram
 - Evidence: [live-email dismissal and automatic recovery journeys](../../tests/live-email.spec.ts), [automatic completion/repeat acknowledgement regression](../../worker/tests/combined-hold.test.mjs), [provider recovery/receipt cases](../../worker/tests/provider.test.mjs).
 - The completed-dismissal test awaits the actual recovery event before navigation; the separate pending-return scenario still exercises recovery in flight.
 
-## 8. Provider coordination, token persistence and storage
+<a id="8-provider-coordination-token-persistence-and-storage"></a>
+
+## 9. Provider coordination, token persistence and storage
 
 - Owners: [queue](../../worker/provider-queue.ts), [session](../../worker/provider-session.ts), [token cache](../../worker/provider-token-cache.ts), [transport](../../worker/provider-transport.ts), [journal](../../worker/journal.ts).
 - Rules: BR-014–017.
@@ -410,7 +459,9 @@ sequenceDiagram
 - `recoverHitpay` obtains a retained deadline in the existing claim batch and schedules only committed retries; no extra D1 roundtrip is added.
 - `annotatePendingBooking` requires complete/observed payment and supports active/completed grants under the existing guest, expiry and effect fences.
 
-## 9. Diagnostics, Grafana and data boundaries
+<a id="9-diagnostics-grafana-and-data-boundaries"></a>
+
+## 10. Diagnostics, Grafana and data boundaries
 
 - Owners: [diagnostics](../../worker/diagnostics.ts), [confirmation tracing](../../worker/confirmation-tracing.ts), [telemetry](../../worker/telemetry.ts).
 - Rules: BR-018–020.
@@ -427,7 +478,9 @@ sequenceDiagram
 - Primary/backup responders and alert destinations remain **unassigned at the owner’s request**.
 - A code-owner diagram does not assign these roles.
 
-## 10. Verification, deployment and configuration recovery
+<a id="10-verification-deployment-and-configuration-recovery"></a>
+
+## 11. Verification, deployment and configuration recovery
 
 - Owners: [verified target run](../../scripts/verified-target-run.mjs), [deployment](../../scripts/deploy-cloudflare.mjs), [target configuration](../../scripts/deployment-target.mjs), [Worker verifier](../../scripts/verify-worker.mjs).
 - Rules: BR-021–023, BR-025–032.
@@ -454,7 +507,9 @@ flowchart LR
 - Evidence: [deployment tests](../../scripts/deploy-cloudflare.test.mjs), [verified-run tests](../../scripts/deployment-target.test.mjs), [CI workflows](../../.github/workflows).
 - Current main deployment success is developer-environment evidence, not proof that the client repository, registrar or production integrations are installed.
 
-## 11. Screenshot and evidence index
+<a id="11-screenshot-and-evidence-index"></a>
+
+## 12. Screenshot and evidence index
 
 - No new screenshots were captured for this document.
 - Owner/CI operates browsers.
@@ -529,7 +584,9 @@ flowchart LR
 - `BOOKING_SUPPORT` owns Glenna's WhatsApp destination.
 - Notification drafts remain inactive.
 
-### Consecutive-journey verification boundary
+<a id="consecutive-journey-verification-boundary"></a>
+
+### 12.1. Consecutive-journey verification boundary
 
 - `worker/tests/booking-sequence-fixture.mjs` composes the existing real Worker/D1/coordinator harness with independent synthetic provider reservations.
 - Three single bookings and multi-session followed by two singles retain prior records/capacity through checkout, signed payment, recovery, dismissal and restoration; no database or browser reset occurs between journeys.
@@ -563,7 +620,9 @@ flowchart LR
 - Review owns the sole session list inside Order summary, while PriceSummary renders only total/currency.
 - Price derivation, editing locks and checkout authority are unchanged.
 
-## Shared-studio conflict regression contract
+<a id="shared-studio-conflict-regression-contract"></a>
+
+## 13. Shared-studio conflict regression contract
 
 - [BR-001](../business-rules.md#br-001) owns policy; the [decision table](../api-contracts.md#conflict-recovery-decision-contract) owns response semantics.
 - Changes to checkout, trainer selection, recovery or cache behavior must preserve the following existing regression obligations.
@@ -588,9 +647,13 @@ flowchart LR
 - Component and browser assertions use independent literal expectations.
 - [Booking flows](../booking-flows.md#current-changed-copy-and-presentation) owns exact visible wording.
 
-## Public homepage and Studio presentation
+<a id="public-homepage-and-studio-presentation"></a>
 
-### Header, footer and app links
+## 14. Public homepage and Studio presentation
+
+<a id="header-footer-and-app-links"></a>
+
+### 14.1. Header, footer and app links
 
 - **Owners:** `site-shell.tsx`, `player-app-links.tsx`, `player-app-prompt.tsx`, `globals.css`.
 - **Header:** sticky; ResizeObserver supplies responsive scroll clearance and restores previous values on cleanup; print uses static positioning.
@@ -607,7 +670,9 @@ flowchart LR
   - Shared close controls: plain ×, no circle/border;44px targets, visible keyboard focus and native dismissal/focus restoration.
 - **Guards:** footer links do not dismiss the prompt; its callback persists. BookingLink navigation/leave-booking confirmation remain. Legal routes intentionally have empty white bodies pending approved text.
 
-### Homepage, Studio media and banners
+<a id="homepage-studio-media-and-banners"></a>
+
+### 14.2. Homepage, Studio media and banners
 
 - **Home hero:** straight edge;15% lower height target; existing location dialog and18px/14px address retained.
 - **Image promotions:** paper/ink palette, navy actions; Studio/Kickoff height, vertical spacing and heading targets scale by0.90/0.78 with content-driven growth.
@@ -624,7 +689,9 @@ flowchart LR
   - Both meet the footer without a gap; no curve-only clearance above Contact.
 - **Controls:** promotional CTAs use bold italic heading face and shared corner shape/chevrons; idle cursor grey; interactive/text/disabled distinctions retained. `SessionPrice` remains authoritative.
 
-### Public motion and booking isolation
+<a id="public-motion-and-booking-isolation"></a>
+
+### 14.3. Public motion and booking isolation
 
 - `section-reveals.tsx` targets below-fold noninteractive blocks in leaf sections, including later-rendered content;1% intersection triggers a once-only650ms/32px rise.
 - Stage offscreen content transparently before entry; never move clickable controls/forms/banner CTAs; exclude live-status regions.
@@ -637,7 +704,9 @@ flowchart LR
   - Reserve focus/safe-area clearance; navigation≤54px and bottom bar≤72px before safe-area inset.
 - Browser/physical playback, cropping, motion, keyboard and visual acceptance remain owner/CI-operated; no payment/navigation authority changes.
 
-### Mobile booking panels
+<a id="mobile-booking-panels"></a>
+
+### 14.4. Mobile booking panels
 
 - Phone Time, Details and Review headings use `booking-heading.tsx`: cart and selected-trainer icons open shared native dialogs; desktop retains inline summaries/profiles.
 - Time title breaks after “Select dates”; “and times” occupies the second line.
@@ -647,7 +716,9 @@ flowchart LR
 - `BasketContinue` retains all selection-time/fresh-offer/instructor/rotation guards outside the phone cart; exactly one continuation remains on the main page. Review contact, consent, reserve/checkout actions and held/verifying guards are unchanged.
 - App prompt uses explicit white utility text so shared dialog utilities cannot darken store labels/icons; footer links retain their existing theme.
 
-### Outlet and session disclosure
+<a id="outlet-and-session-disclosure"></a>
+
+### 14.5. Outlet and session disclosure
 
 - `SessionStep` first shows Apex @ Henderson/flagship description; outlet reveals live catalogue or demo choices; session reveals players/inclusions/available-times action.
 - This is scaffolding for the sole configured venue; no new provider outlet mapping or capacity pool. Selected offer supplies the existing `serviceId` and server validation.

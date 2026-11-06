@@ -1,6 +1,18 @@
 # Customer UAT — two-page checklist
 
-## Page 1 of 2 — setup, access and first booking
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Page 1 of 2 — setup, access and first booking](#page-1-of-2--setup-access-and-first-booking)
+- [2. Page 2 of 2 — A–D payment and recovery](#page-2-of-2--ad-payment-and-recovery)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="page-1-of-2--setup-access-and-first-booking"></a>
+
+## 1. Page 1 of 2 — setup, access and first booking
 
 - **Record:** tester/date;
   - URL/environment; deployed SHA/run; device model/exact OS/browser; approved company/merchant; test inbox; service/trainer/date; private attempt/invoice evidence.
@@ -27,7 +39,9 @@
 
 <a id="ad-acceptance-worksheet"></a>
 
-## Page 2 of 2 — A–D payment and recovery
+<a id="page-2-of-2--ad-payment-and-recovery"></a>
+
+## 2. Page 2 of 2 — A–D payment and recovery
 
 - **Prerequisite:** separately authorised merge, fresh-main CI, deployment and sandbox activation.
   - PR32 merge/settings are currently on hold.

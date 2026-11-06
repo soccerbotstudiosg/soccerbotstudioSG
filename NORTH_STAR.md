@@ -1,5 +1,19 @@
 # Campaign operating guide
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Activate and establish the checkpoint](#1-activate-and-establish-the-checkpoint)
+- [2. Define one campaign](#2-define-one-campaign)
+- [3. Ralph loop specification](#3-ralph-loop-specification)
+- [4. Budget and resource controls](#4-budget-and-resource-controls)
+- [5. Evidence and completion](#5-evidence-and-completion)
+- [6. Stop, recover and hand over](#6-stop-recover-and-hand-over)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - Use this file as a reusable, skill-like procedure for sustained engineering work.
 - It defines how to scope a campaign, run a bounded Ralph loop, manage budgets and hand over evidence.
 - It is a Markdown instruction source, not an installed skill, background agent, scheduler or executable loop.

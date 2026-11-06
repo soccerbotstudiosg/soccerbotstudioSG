@@ -1,11 +1,28 @@
 # SoccerBotStudioSG engineering
 
-## Authority and document ownership
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Authority and document ownership](#authority-and-document-ownership)
+- [2. Route the request](#route-the-request)
+- [3. Implement](#implement)
+- [4. Verify and publish](#verify-and-publish)
+- [5. Execution environment and local delivery](#execution-environment-and-local-delivery)
+- [6. Documentation form](#documentation-form)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="authority-and-document-ownership"></a>
+
+## 1. Authority and document ownership
 
 - This file is the authority for repository engineering instructions; linked procedures operate under it.
 - User instructions take precedence; current repository instructions supersede stale external skill snapshots.
 - The cloud skill’s older uppercase Journey, Rules & Architecture and CODEX_CLOUD paths are superseded.
-- Use the current document map below.
+- Use the current document map below; AGENTS.md is the sole main document router.
+- Every document owns its own linked chapter menu and numbered sections/subsections; preserve existing anchors and stable rule/test IDs.
 
 | File                                                                  | Unique purpose                                                                                         |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -43,7 +60,9 @@
 - Historical entries remain dated evidence, not current instructions or renewed authorization.
 - Preserve milestone IDs and record history once in Complete journey’s dated history.
 
-## Route the request
+<a id="route-the-request"></a>
+
+## 2. Route the request
 
 - For every task, read these instructions, then North Star and Progress.
 - Use the existing document map above and follow the relevant route below; inspect actual source and evidence before changing anything.
@@ -61,7 +80,9 @@
 | Prepare / review UAT                  | Relevant [Admin](docs/tests/uat/admin.md), [Trainers](docs/tests/uat/trainers.md) or [Simulated-user](docs/tests/uat/customer.md) worksheet → linked business rules                                                                  | Owner-run evidence tied to revision/environment; retain failures and blockers                                        |
 | Understand topology / hand over       | [System diagram](docs/architecture/diagram.md) → [Architecture](docs/architecture/adr.md) → [Code owners](docs/code-owners/index.md) → [Handover](docs/runbook.md#9-operational-records-and-handover)                                | [Milestones](docs/journey.md#milestones-and-retained-acceptance-criteria), access inventory and recorded acceptance  |
 
-## Implement
+<a id="implement"></a>
+
+## 3. Implement
 
 - Apply the [code-writing skill](.agents/skills/soccerbot-code-writing/SKILL.md) before writing or reviewing application, service, Worker, styling, configuration or tooling code.
 - It defines root-cause repair, authoritative value sources, permitted constants/pins and proof that guards execute; use it with the testing and documentation skills.
@@ -76,7 +97,9 @@
 - Keep detailed safety rationale beside the relevant logic.
 - Exclude generated code, test callbacks and trivial accessors from blanket documentation.
 
-## Verify and publish
+<a id="verify-and-publish"></a>
+
+## 4. Verify and publish
 
 - Apply the [documentation reconciliation skill](.agents/skills/soccerbot-documentation/SKILL.md) for every PR (including documentation, dependency and automated updates) and delivery-state change.
 - Review all document owners for impact, edit affected owners, and include its concise documentation-state receipt in the PR.
@@ -125,7 +148,9 @@
 - New provisioning, secrets installation and production activation are separate actions.
 - No background agents or standing service.
 
-## Execution environment and local delivery
+<a id="execution-environment-and-local-delivery"></a>
+
+## 5. Execution environment and local delivery
 
 - Follow the development guide for tool versions and configuration.
 - Preserve inherited network proxy/CA settings; use supported permissions, never disable TLS or bypass the proxy.
@@ -140,7 +165,9 @@
 - Never execute historical bundled shells against current checkouts.
 - Verify final bytes, hash, filename and links before delivery.
 
-## Documentation form
+<a id="documentation-form"></a>
+
+## 6. Documentation form
 
 - Keep journal entries, dated implementation/verification receipts and superseded decisions only in `docs/journey.md`.
 - Reconcile every other document in place: replace superseded wording in its owning section, remove duplicates and link to the canonical owner. No patch-style appendices, follow-up narratives or competing summaries. Keep only current reference, requirements, procedures and pending checks.

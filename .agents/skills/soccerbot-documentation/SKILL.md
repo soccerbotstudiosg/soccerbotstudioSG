@@ -5,7 +5,25 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 
 # Documentation state reconciliation
 
-## Purpose and authority
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Purpose and authority](#purpose-and-authority)
+- [2. Establish the change and checkpoint](#1-establish-the-change-and-checkpoint)
+- [3. Review every owner; edit the affected ones](#2-review-every-owner-edit-the-affected-ones)
+- [4. Validate the documentation delta](#3-validate-the-documentation-delta)
+- [5. Keep delivery state current without an endless commit loop](#4-keep-delivery-state-current-without-an-endless-commit-loop)
+- [6. PR documentation-state receipt](#5-pr-documentation-state-receipt)
+- [7. Exit criteria](#6-exit-criteria)
+- [8. In-place reconciliation — no patch-style documentation](#in-place-reconciliation--no-patch-style-documentation)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="purpose-and-authority"></a>
+
+## 1. Purpose and authority
 
 - Keep every documentation owner's relevant state consistent with the actual change and available evidence.
 - Apply this skill to **every PR, including documentation-only, dependency, workflow and automated update PRs**, and again when its delivery state changes.
@@ -32,7 +50,9 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 - For dependency additions, updates or replacements, also apply the [dependency review skill](../soccerbot-dependencies/SKILL.md) before implementation or recommending merge.
 - It owns suitability research and the application-change decision; retain this skill's existing evidence responsibilities.
 
-## 1. Establish the change and checkpoint
+<a id="1-establish-the-change-and-checkpoint"></a>
+
+## 2. Establish the change and checkpoint
 
 1. Identify the current user request, repository, branch, base/head, working tree, preserved work and open PR.
    - Preserve unknown edits and stashes.
@@ -45,7 +65,9 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 5. Identify state transitions explicitly: planned → implemented → tested → CI-verified → merged → deployed → accepted.
    - Transitions may have different scopes; a synthetic-provider pass does not accept a real provider.
 
-## 2. Review every owner; edit the affected ones
+<a id="2-review-every-owner-edit-the-affected-ones"></a>
+
+## 3. Review every owner; edit the affected ones
 
 - For every PR, review all rows for impact.
 - Update every affected owner; leave unaffected content unchanged and explain that conclusion in the PR's concise documentation-state receipt.
@@ -135,7 +157,9 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 - For customer-state or message changes, reconcile `docs/booking-flows.md` (small scenario diagrams with current messages and an embedded review of baseline copy, approved local replacements and remaining proposals).
 - Keep implemented, published and accepted states distinct; do not copy payment authority or test results into every diagram.
 
-## 3. Validate the documentation delta
+<a id="3-validate-the-documentation-delta"></a>
+
+## 4. Validate the documentation delta
 
 - Inspect the final diff for contradictions, duplicate instructions, stale filenames, accidental history/rule loss and misleading acceptance claims.
 - Validate local links and anchors, including root docs and this skill.
@@ -156,7 +180,9 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 - If a check cannot run, say which one and why; do not call the review complete without the required evidence.
 - An external link's existence or a local renderer pass does not prove GitHub's current UI or an external service's acceptance.
 
-## 4. Keep delivery state current without an endless commit loop
+<a id="4-keep-delivery-state-current-without-an-endless-commit-loop"></a>
+
+## 5. Keep delivery state current without an endless commit loop
 
 | Event                                  | Required action                                                                                                                                                                                                                                                                                                                         |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -171,7 +197,9 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 - “All states current” means each claim is accurate for its clearly stated observation point, and later evidence is discoverable from the delivery receipt until the next repository checkpoint.
 - It does not mean every historical paragraph must be rewritten after every workflow event.
 
-## 5. PR documentation-state receipt
+<a id="5-pr-documentation-state-receipt"></a>
+
+## 6. PR documentation-state receipt
 
 - Add a short paragraph or compact table to the existing PR description; follow its established structure instead of creating a second report.
 - Include:
@@ -185,19 +213,26 @@ description: Reconcile SoccerBot documentation with source and verified evidence
 - For automated dependency PRs, perform this review before an eligible merge; the bot's release notes do not replace the version/security/runbook impact assessment.
 - Do not mark the skill satisfied solely because Progress and Journey were touched while affected contracts, diagrams or version inventories remain stale.
 
-## 6. Exit criteria
+<a id="6-exit-criteria"></a>
+
+## 7. Exit criteria
 
 - The PR is documentation-ready when all affected owners agree with the final source, permanent rules and acceptance evidence; unaffected owners have a reasoned no-change classification; validations passed; prior decisions/failures remain retained; and the current handover is usable.
 - Overall merge readiness still requires AGENTS' complete final-head gates and GitHub requirements.
 - Report incomplete or externally blocked work explicitly; do not invent acceptance to close a checklist.
 
-## In-place reconciliation — no patch-style documentation
+<a id="in-place-reconciliation--no-patch-style-documentation"></a>
+
+## 8. In-place reconciliation — no patch-style documentation
 
 - **No patch-style documentation:** edit the existing owning section in place. Replace superseded wording and remove duplicate explanations; do not append corrections, follow-up notes, competing summaries or another owner to compensate for stale text.
 - **No journalling outside Journey:** dated changes, investigations, run results, failures and superseded decisions belong only in `docs/journey.md`.
 - Journey is the only journal.
   - Current owners retain requirements, reference values, procedures and pending acceptance;
   - Progress holds only the current checkpoint and next action.
+- Give every document its own linked chapter menu immediately below its title; number sections/subsections consistently and keep the menu synchronized.
+  - AGENTS.md is the sole main document router; do not add shared menus/directories to other documents.
+  - Preserve existing inbound anchors, stable rule/test IDs, dates and diagram content when numbering headings.
 - Use short point-form statements; at most one opening paragraph per document.
   - Split chunky prose/table cells without deleting conditions or exceptions.
 - Reconcile all other documents in place: current requirements, reference values, procedures and pending acceptance only. Link to the canonical owner and Journey evidence rather than copying a chronological narrative.

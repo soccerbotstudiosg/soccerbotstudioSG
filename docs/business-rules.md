@@ -1,11 +1,35 @@
 # Business rules
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Status and evidence boundaries](#status-and-evidence-boundaries)
+- [2. Current system rules](#current-system-rules)
+  - [2.1. Product and booking policy](#product-and-booking-policy)
+  - [2.2. Identity, privacy and environment isolation](#identity-privacy-and-environment-isolation)
+  - [2.3. Availability and selection](#availability-and-selection)
+  - [2.4. Checkout, durable effects and customer errors](#checkout-durable-effects-and-customer-errors)
+  - [2.5. Payment, reconciliation and expiry](#payment-reconciliation-and-expiry)
+  - [2.6. Confirmation and presentation](#confirmation-and-presentation)
+  - [2.7. Storage, queue and tokens](#storage-queue-and-tokens)
+  - [2.8. Observability and Grafana](#observability-and-grafana)
+  - [2.9. Deployment, migration and acceptance](#deployment-migration-and-acceptance)
+  - [2.10. Client hosting and domain acceptance](#client-hosting-and-domain-acceptance)
+  - [2.11. Client initial placement strategy (planned)](#client-initial-placement-strategy-planned)
+  - [2.12. Checkout placement experiment — waived](#checkout-placement-experiment--waived)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - This document owns the current numbered system invariants.
 - [Domain operations and API contracts](api-contracts.md) explains their implementation boundaries; [Complete journey](journey.md) owns the end-to-end flow, milestone criteria and dated evidence.
 - [AGENTS.md](../AGENTS.md) owns engineering instructions.
 - Current rules override dated history; historical approvals never authorize new operations.
 
-## Status and evidence boundaries
+<a id="status-and-evidence-boundaries"></a>
+
+## 1. Status and evidence boundaries
 
 - This is not a fresh live-account audit.
 - Requirements below remain authoritative regardless of a deployment checkpoint; [Progress](../PROGRESS.md) owns the latest PR/CI/handover status.
@@ -18,14 +42,18 @@
 | Monitoring          | Sanitized diagnostics and exporter/dashboard source exist; committed exporter configuration is disabled                                                                                                                       | Actual stack/service mapping, exporter activation, alert receivers and ingestion/alert delivery                                         |
 | Client integrations | Guarded developer integration exists; production configuration remains closed/incomplete in committed targets                                                                                                                 | Client sender/Turnstile/merchant/provider mappings, billing/MFA, DNS apex/renewal proof and UAT                                         |
 
-## Current system rules
+<a id="current-system-rules"></a>
+
+## 2. Current system rules
 
 - Stable rule-group IDs identify the existing paragraphs below; they do not change their requirements.
 - Keep IDs when editing or moving a rule, never reuse retired IDs, and allocate the next unused ID for new rules.
 - Milestone IDs and dated history are retained in [Complete journey](journey.md).
 - [Code ownership mapping](code-owners/index.md#11-business-rule-to-owner-index) links each rule group to its implementation or operational owner.
 
-### Product and booking policy
+<a id="product-and-booking-policy"></a>
+
+### 2.1. Product and booking policy
 
 <a id="br-001"></a>
 
@@ -108,7 +136,9 @@
 - The latest requested policy is a10-minute unpaid provider hold with an eight-minute customer payment window and one-minute checking buffer.
 - The owner screenshot shows the provider supports10 minutes; the saved live setting still needs owner verification.
 
-### Identity, privacy and environment isolation
+<a id="identity-privacy-and-environment-isolation"></a>
+
+### 2.2. Identity, privacy and environment isolation
 
 <a id="br-003"></a>
 
@@ -144,7 +174,9 @@
 - Moving repositories alone does not establish production portability.
 - Client portability must replace those pins with validated configuration, not remove account/host guards.
 
-### Availability and selection
+<a id="availability-and-selection"></a>
+
+### 2.3. Availability and selection
 
 <a id="br-006"></a>
 
@@ -165,7 +197,9 @@
 - Do not silently scan other months or alter the basket.
 - Review remains editable and creates no booking.
 
-### Checkout, durable effects and customer errors
+<a id="checkout-durable-effects-and-customer-errors"></a>
+
+### 2.4. Checkout, durable effects and customer errors
 
 <a id="br-007"></a>
 
@@ -190,7 +224,9 @@
 - Confirmed unavailable selection shows “This time slot is no longer available. Please choose another.” Inconclusive preparation failure shows “We couldn’t start checkout. Please try again later.” Keep explicit rejection on Review; do not show payment verification for a checkout that never started.
 - Failed readback after an uncertain write preserves recovery.
 
-### Payment, reconciliation and expiry
+<a id="payment-reconciliation-and-expiry"></a>
+
+### 2.5. Payment, reconciliation and expiry
 
 <a id="br-010"></a>
 
@@ -231,7 +267,9 @@
 - Only authenticated server outcome permits release.
 - Completed dismissal is repeatable; lost acknowledgement must not create a second attempt or erase uncertain evidence.
 
-### Confirmation and presentation
+<a id="confirmation-and-presentation"></a>
+
+### 2.6. Confirmation and presentation
 
 <a id="br-013"></a>
 
@@ -258,7 +296,9 @@
 - Optional retained metadata cannot weaken or delay confirmation.
 - Changes/cancellations are requested from Glenna on WhatsApp (+65 9014 3819); the booking stays unchanged until the studio confirms the request.
 
-### Storage, queue and tokens
+<a id="storage-queue-and-tokens"></a>
+
+### 2.7. Storage, queue and tokens
 
 <a id="br-014"></a>
 
@@ -305,7 +345,9 @@
 - These are measured/source successful-path counts, not absolute minima or caps on failure/recovery.
 - Overlapping provider/storage timings must not be summed as exclusive wall time.
 
-### Observability and Grafana
+<a id="observability-and-grafana"></a>
+
+### 2.8. Observability and Grafana
 
 <a id="br-018"></a>
 
@@ -332,7 +374,9 @@
 - Activate only with secure endpoint/auth configuration and validate receiver ingestion, dashboard queries, correlation, redaction and overhead.
 - Export HTTP success alone is not ingestion proof.
 
-### Deployment, migration and acceptance
+<a id="deployment-migration-and-acceptance"></a>
+
+### 2.9. Deployment, migration and acceptance
 
 <a id="br-021"></a>
 
@@ -372,7 +416,9 @@
 - That historical acceptance does not accept the new8/9/10 timing or verified unpaid-release behavior.
 - Remaining: client rollout/UAT, Grafana validation, and regression checks after UI/UX/email refinements; further warm/batch performance and sustained-capacity work are optional follow-ups, not blanket milestone closure.
 
-### Client hosting and domain acceptance
+<a id="client-hosting-and-domain-acceptance"></a>
+
+### 2.10. Client hosting and domain acceptance
 
 <a id="br-025"></a>
 
@@ -416,7 +462,9 @@
 - Optional licensed scanning capabilities require separate inspection.
 - Do not treat an old clean advisory report as current security clearance.
 
-### Client initial placement strategy (planned)
+<a id="client-initial-placement-strategy-planned"></a>
+
+### 2.11. Client initial placement strategy (planned)
 
 <a id="br-029"></a>
 
@@ -445,7 +493,9 @@
 - Preserve existing developer coordinator identity and placement.
 - Evidence and limits belong to [Journey history](journey.md#part-2--dated-changes-and-evidence).
 
-### Checkout placement experiment — waived
+<a id="checkout-placement-experiment--waived"></a>
+
+### 2.12. Checkout placement experiment — waived
 
 <a id="br-031"></a>
 

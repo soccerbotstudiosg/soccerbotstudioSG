@@ -5,7 +5,24 @@ description: Diagnose SoccerBot CI failures and resource inefficiency from prese
 
 # CI failure diagnosis and efficiency
 
-## Authority and owners
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Authority and owners](#authority-and-owners)
+- [2. Establish which run and what actually failed](#1-establish-which-run-and-what-actually-failed)
+- [3. Classify before choosing a repair](#2-classify-before-choosing-a-repair)
+- [4. Investigate resource and lifecycle failures](#3-investigate-resource-and-lifecycle-failures)
+- [5. Preserve test meaning while optimizing](#4-preserve-test-meaning-while-optimizing)
+- [6. Use bounded experiments and consolidate repairs](#5-use-bounded-experiments-and-consolidate-repairs)
+- [7. Diagnosis and handover receipt](#6-diagnosis-and-handover-receipt)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="authority-and-owners"></a>
+
+## 1. Authority and owners
 
 - Read [AGENTS](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md), [Progress](../../../PROGRESS.md), the [verification guide](../../../docs/development.md#verification-commands), actual workflows and relevant runners.
 - Apply the [testing skill](../soccerbot-testing/SKILL.md) for acceptance, dependent guards, fixtures and inventories, and the [documentation skill](../soccerbot-documentation/SKILL.md) for evidence and handover.
@@ -16,7 +33,9 @@ description: Diagnose SoccerBot CI failures and resource inefficiency from prese
 - Owner/CI operates browsers; no assistant browser execution or real provider effects.
 - This is an instruction source, not a standing monitor or automatic Actions summary.
 
-## 1. Establish which run and what actually failed
+<a id="1-establish-which-run-and-what-actually-failed"></a>
+
+## 2. Establish which run and what actually failed
 
 - Capture repository, workflow/event, PR/branch, exact source SHA, target/profile, run ID, attempt, job/matrix shard, timestamps and conclusion.
 - Match the head to the current PR before calling it final.
@@ -38,7 +57,9 @@ description: Diagnose SoccerBot CI failures and resource inefficiency from prese
 - A successful wrapper with an unexecuted child is a guard defect; do not repair it by accepting an empty report.
 - Apply the [code-writing skill](../soccerbot-code-writing/SKILL.md) to fix the owning cause rather than masking it with retries or fallback success.
 
-## 2. Classify before choosing a repair
+<a id="2-classify-before-choosing-a-repair"></a>
+
+## 3. Classify before choosing a repair
 
 | Class                           | Evidence and owning repair                                                                                                                                                                   |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -50,7 +71,9 @@ description: Diagnose SoccerBot CI failures and resource inefficiency from prese
 | Infrastructure or account issue | Logs show service outage, download/rate-limit failure, runner availability, permission or billing rejection. Keep platform remediation separate from source changes.                         |
 | Unresolved                      | Record competing explanations and the smallest experiment that discriminates them. Do not force a convenient classification.                                                                 |
 
-## 3. Investigate resource and lifecycle failures
+<a id="3-investigate-resource-and-lifecycle-failures"></a>
+
+## 4. Investigate resource and lifecycle failures
 
 - For SQLite-full or similar failures, locate the affected database/file and mount.
 - Inspect available bytes/inodes, tmpfs capacity, memory limits, database/journal/WAL growth, temporary files, process counts and open/deleted file descriptors where authorized and available.
@@ -68,7 +91,9 @@ description: Diagnose SoccerBot CI failures and resource inefficiency from prese
 - Reproduce lifecycle bugs with a controlled non-browser regression where possible, then let CI exercise the real browser/runtime.
 - Fix the cause before proposing a larger runner; paid GitHub plans, spending budgets, concurrency allowances and larger-runner hardware are separate decisions with separate costs.
 
-## 4. Preserve test meaning while optimizing
+<a id="4-preserve-test-meaning-while-optimizing"></a>
+
+## 5. Preserve test meaning while optimizing
 
 - Keep these execution models distinct:
 
@@ -88,7 +113,9 @@ description: Diagnose SoccerBot CI failures and resource inefficiency from prese
 - Check build-once artifact consumers, per-shard receipts, grouping policy and final aggregation.
 - Do not edit thresholds, inventory or assertions merely to make the badge green.
 
-## 5. Use bounded experiments and consolidate repairs
+<a id="5-use-bounded-experiments-and-consolidate-repairs"></a>
+
+## 6. Use bounded experiments and consolidate repairs
 
 1. State the hypothesis, original failure, discriminating observation, affected scope and resource budget under North Star.
    - Inspect all available failed jobs before assuming one repair covers everything.
@@ -107,7 +134,9 @@ description: Diagnose SoccerBot CI failures and resource inefficiency from prese
    - Distinguish PR verification, main verification, staged release and production deployment.
    - Report remaining failures or blockers without weakening the release rules.
 
-## 6. Diagnosis and handover receipt
+<a id="6-diagnosis-and-handover-receipt"></a>
+
+## 7. Diagnosis and handover receipt
 
 - Record the original run/job/case and artifact links; expected versus observed behavior; confirmed cause and unresolved hypotheses; changed owner and why it is correct; regression/guard evidence; resource and timing measurements where relevant; final source/run/attempt and gate results; and the next action.
 - Use the existing PR description and Progress/Journey owners, not a separate permanent incident ledger.

@@ -1,5 +1,41 @@
 # SoccerBot operations runbook
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Ownership and access](#1-ownership-and-access)
+- [2. Routine checks](#2-routine-checks)
+- [3. Dependency maintenance and Dependabot](#3-dependency-maintenance-and-dependabot)
+  - [3.1. What to expect on Mondays](#what-to-expect-on-mondays)
+  - [3.2. Update and remediation procedure](#update-and-remediation-procedure)
+- [4. Monitoring and observability](#4-monitoring-and-observability)
+  - [4.1. Current implementation and activation status](#current-implementation-and-activation-status)
+  - [4.2. What is exported and what it means](#what-is-exported-and-what-it-means)
+  - [4.3. Token event dictionary](#token-event-dictionary)
+  - [4.4. Dashboard panels and investigation](#dashboard-panels-and-investigation)
+  - [4.5. Sampling, gaps and export diagnostics](#sampling-gaps-and-export-diagnostics)
+  - [4.6. Alerts to configure before handover](#alerts-to-configure-before-handover)
+  - [4.7. Alert routing and acceptance record](#alert-routing-and-acceptance-record)
+- [5. Incident response and recovery](#5-incident-response-and-recovery)
+  - [5.1. Protected receipt diagnostics and retired downloads](#protected-receipt-diagnostics-and-retired-downloads)
+- [6. Deployments and rollback](#6-deployments-and-rollback)
+  - [6.1. Closed production foundation registration](#closed-production-foundation-registration)
+  - [6.2. Trainer-choice rollout and recovery](#trainer-choice-rollout-and-recovery)
+- [7. Data protection and restore](#7-data-protection-and-restore)
+  - [7.1. Recovery targets and actual capability](#recovery-targets-and-actual-capability)
+  - [7.2. Restore procedure to rehearse — not yet executed](#restore-procedure-to-rehearse--not-yet-executed)
+  - [7.3. Restore evidence worksheet](#restore-evidence-worksheet)
+- [8. Domain, DNS and HTTPS](#8-domain-dns-and-https)
+- [9. Operational records and handover](#9-operational-records-and-handover)
+  - [9.1. Client bootstrap and staging exposure](#client-bootstrap-and-staging-exposure)
+  - [9.2. Calendar cache population failures](#calendar-cache-population-failures)
+  - [9.3. Growing trainer rosters — calendar readiness](#growing-trainer-rosters--calendar-readiness)
+  - [9.4. Browser confirmation timing capture](#browser-confirmation-timing-capture)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - See [External providers configuration](external-providers-config.md) for SimplyBook, Resend, HitPay and Cloudflare settings, environment differences and verification limits.
 
 - For authorised operators of the existing developer deployment and the forthcoming client deployment.
@@ -96,7 +132,9 @@
 - Audit severity is not proof of exploitability or compromise, and a clean report covers only known advisories.
 - Repository security settings, audit findings, remediation evidence and deployment status are recorded in Progress.
 
-### What to expect on Mondays
+<a id="what-to-expect-on-mondays"></a>
+
+### 3.1. What to expect on Mondays
 
 - GitHub schedules npm and GitHub Actions checks for Monday 09:00 Asia/Singapore; actual start may be delayed.
 - “Dependabot Updates” jobs labelled `main` inspect the default branch and propose updates: they do not merge or deploy it.
@@ -106,7 +144,9 @@
 - Security alerts/updates can arrive on any day.
 - GitHub notification preferences control email/in-app notifications; this chat is not a standing monitor.
 
-### Update and remediation procedure
+<a id="update-and-remediation-procedure"></a>
+
+### 3.2. Update and remediation procedure
 
 - Every dependency update PR must include the [before/after support-range comparison](../.agents/skills/soccerbot-dependencies/SKILL.md#required-support-range-comparison-in-every-dependency-pr), including unchanged requirements, removed support, exact tested configurations and unverified targets.
 - Update the [browser coverage matrix](development.md#browser-testing-coverage) when affected.
@@ -145,7 +185,9 @@
 
 ## 4. Monitoring and observability
 
-### Current implementation and activation status
+<a id="current-implementation-and-activation-status"></a>
+
+### 4.1. Current implementation and activation status
 
 - The [Tail Worker](../worker/telemetry.ts) reconstructs allowlisted diagnostic summaries as OTLP **traces in Grafana Tempo**, outside the customer request path.
 - It does not forward raw Tail logs, create a Loki log archive or emit a complete native distributed trace tree.
@@ -172,7 +214,9 @@
    - The dashboard JSON contains panels, **not provisioned alert rules**.
    - Record the accepted setup and owner.
 
-### What is exported and what it means
+<a id="what-is-exported-and-what-it-means"></a>
+
+### 4.2. What is exported and what it means
 
 - All exported attributes below use the `soccerbot.` prefix; in TraceQL they appear as `span.soccerbot.<field>`.
 - Each admitted diagnostic requires a valid correlation UUID.
@@ -196,7 +240,9 @@
 - The Worker version UUID is not the Git commit; use deployment evidence to map it.
 - Correlation attributes join related HTTP/RPC/alarms; each invocation has its own trace and no invented parent chain.
 
-### Token event dictionary
+<a id="token-event-dictionary"></a>
+
+### 4.3. Token event dictionary
 
 | Result                      | Meaning                                                       | What to check / possible correction                                                                                              |
 | --------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -222,7 +268,9 @@
 - `payment_recovery_retry` records the sanitized reason, generation and committed `readyAtMs`.
 - Payment alarms use that existing D1 deadline, preserve newer receipt generations, and retain cron as fallback; retry limits and payment leases are unchanged.
 
-### Dashboard panels and investigation
+<a id="dashboard-panels-and-investigation"></a>
+
+### 4.4. Dashboard panels and investigation
 
 | Existing panel                                      | What to notice                                                  | Investigate / potential fix                                                                                                                                                                                                                                                |
 | --------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -249,7 +297,9 @@
 { resource.service.name = "soccerbot-dev" && span.soccerbot.recovery_key = "<hashed recovery key>" }
 ```
 
-### Sampling, gaps and export diagnostics
+<a id="sampling-gaps-and-export-diagnostics"></a>
+
+### 4.5. Sampling, gaps and export diagnostics
 
 - Successful correlations are deterministically sampled at 10% by default.
 - Recognized failed invocations/errors, manual-review results, invalid cache records and authentication rejections bypass success sampling, within export bounds.
@@ -275,7 +325,9 @@
 - No exporter log can also mean export disabled, no matching producer, no accepted diagnostics or success sampling excluded that invocation.
 - Check those before diagnosing a receiver outage.
 
-### Alerts to configure before handover
+<a id="alerts-to-configure-before-handover"></a>
+
+### 4.6. Alerts to configure before handover
 
 - **Configuration status:** the repository contains dashboard panels, not provisioned alert rules.
 - Actual deployed thresholds, Grafana contact points and delivery are **not verified/configured by this document**.
@@ -297,7 +349,9 @@
 - All other thresholds require tuning against observed production traffic and false positives without removing financial/identity safeguards.
 - Transport duration includes provider processing, so a high duration alone does not identify network fault.
 
-### Alert routing and acceptance record
+<a id="alert-routing-and-acceptance-record"></a>
+
+### 4.7. Alert routing and acceptance record
 
 | Field                                          | Current value                                                                                                                      |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -346,7 +400,9 @@
 | D1/DO errors after release          | Migration ledger, foundation/account IDs, bindings and coordinator identity                              | Stop wrong-account deployment; diagnose last successful phase. Never reset foundation/data to satisfy preflight.                             |
 | Grafana empty                       | Export status/attachment, exact producer, sample/time range, datasource and exporter logs                | Follow section 4; do not conclude application health from no traces                                                                          |
 
-### Protected receipt diagnostics and retired downloads
+<a id="protected-receipt-diagnostics-and-retired-downloads"></a>
+
+### 5.1. Protected receipt diagnostics and retired downloads
 
 - Customer PDF/calendar controls and local formatters are retired.
 - The retained protected receipt API supports `X-Booking-Refresh: 1` for bounded refresh; it is no longer triggered by a customer download button.
@@ -432,7 +488,9 @@
 - The health route must never register storage to make a deployment green.
 - Open staging requires registered foundation and provider credential presence.
 
-### Closed production foundation registration
+<a id="closed-production-foundation-registration"></a>
+
+### 6.1. Closed production foundation registration
 
 - When the client credential is available only in GitHub Actions, use **Deploy verified release → Run workflow**, branch `main`, operation `setup-foundation`, target `production`, the exact current-main revision and successful production verification run ID, and the existing reviewed namespace ID.
 - First require that same revision to be deployed: the management client rejects any mismatch.
@@ -489,7 +547,9 @@
 - Emergency restoration of a retained prior Cloudflare version/artifact requires a separately approved operator procedure and resource/schema review; do not bypass workflow gates or claim that this path is already rehearsed.
 - Code rollback does not reverse D1 migrations, bookings, payments, notifications or provider-side effects.
 
-### Trainer-choice rollout and recovery
+<a id="trainer-choice-rollout-and-recovery"></a>
+
+### 6.2. Trainer-choice rollout and recovery
 
 - Before enabling overlapping trainer schedules, Admin must confirm that all relevant SimplyBook services/trainers consume the same one-capacity studio resource, including the ten-minute changeover, and record [the cross-trainer UAT](tests/uat/admin.md).
 - The calendar includes the complete linked roster within the request, offer and payload budgets in [calendar contracts](api-contracts.md#4-catalogue-and-selection-contracts); over-budget or incomplete responses fail closed.
@@ -512,7 +572,9 @@
 - The [data lifecycle draft](data-lifecycle.md) owns the source-based storage inventory, expiry versus deletion distinctions and pending client privacy-clause mapping.
 - Its validity periods are not approved disposal periods; cleanup remains a separate reviewed implementation.
 
-### Recovery targets and actual capability
+<a id="recovery-targets-and-actual-capability"></a>
+
+### 7.1. Recovery targets and actual capability
 
 - RPO is the maximum acceptable data-loss window;
 - RTO is the time from incident declaration to safe service restoration.
@@ -533,7 +595,9 @@
 - These draft values neither change existing commercial commitments nor establish a zero-loss guarantee.
 - Primary/backup recovery operators and support destinations remain unassigned until nominated.
 
-### Restore procedure to rehearse — not yet executed
+<a id="restore-procedure-to-rehearse--not-yet-executed"></a>
+
+### 7.2. Restore procedure to rehearse — not yet executed
 
 1. **Declare and scope.** Record incident, environment/account, affected stores, current deployment revision, first observed fault and the intended recovery cutoff.
    - Separate bad code from bad data; prefer a verified release rollback when storage is sound.
@@ -565,7 +629,9 @@
 - Stop conditions include wrong account/foundation, unsupported/incomplete backup, missing effect references, ambiguous provider settlement, unable-to-disable writes, newly exposed sensitive data or failed revocation protection.
 - Escalate with evidence; do not “repair” by deleting rows, resetting migration history, or creating a replacement coordinator.
 
-### Restore evidence worksheet
+<a id="restore-evidence-worksheet"></a>
+
+### 7.3. Restore evidence worksheet
 
 - Keep this as the blank master; store completed results in restricted owner-controlled evidence.
 - No successful restore or measured RPO/RTO is claimed until this is completed.
@@ -627,7 +693,9 @@
 - Name primary/backup responders, verify billing/MFA, prove monitoring receiver delivery, rehearse recovery/rollback and obtain owner sign-off before handover.
 - SMS, packages and MCP admin integration remain separately quoted scope.
 
-### Client bootstrap and staging exposure
+<a id="client-bootstrap-and-staging-exposure"></a>
+
+### 9.1. Client bootstrap and staging exposure
 
 - [Progress](../PROGRESS.md) owns the current resource IDs and provider setup queue; [Journey](journey.md) retains the initial failure and follow-up evidence.
 
@@ -646,7 +714,9 @@
 - Owner confirmed its old Verify workflow disabled; later retire obsolete credentials after confirming client-owned deployment; existing history/test 507 must remain untouched.
 - Owner UI confirmation is required where the available connector cannot manage settings.
 
-### Calendar cache population failures
+<a id="calendar-cache-population-failures"></a>
+
+### 9.2. Calendar cache population failures
 
 - Warming prebuilds exactly the current Singapore month and the next two; the UI and server reject the fourth.
 - Each provider request covers up to15 consecutive approved dates per trainer/service.
@@ -684,7 +754,9 @@
 - Grafana export/dashboard changes for these new events are deferred by owner direction.
 - The current Tail exporter does not export `calendar_cache_trace`; source presence is not evidence of production deployment, Grafana ingestion or configured alerts.
 
-### Growing trainer rosters — calendar readiness
+<a id="growing-trainer-rosters--calendar-readiness"></a>
+
+### 9.3. Growing trainer rosters — calendar readiness
 
 - After adding providers, confirm service relationships and approved date-specific schedules.
 - The reader includes all active linked providers; it does not select the first three or truncate a large roster.
@@ -703,7 +775,9 @@
 - Synthetic or guest sandbox tests do not establish live merchant, email, Turnstile/device or provider acceptance.
 - Resend domain/DNS readiness remains separately evidenced; do not infer it from booking access.
 
-### Browser confirmation timing capture
+<a id="browser-confirmation-timing-capture"></a>
+
+### 9.4. Browser confirmation timing capture
 
 - The protected live confirmation UI emits local `confirmation_ui` console records and Performance marks named `soccerbot:confirmation:<stage>` for `summary`, `payment_received`, `confirmed` and `receipt_ready`.
 - Keep the browser console open with Preserve log during owner UAT.

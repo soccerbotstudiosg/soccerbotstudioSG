@@ -5,7 +5,27 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 
 # Test maintenance and evidence
 
-## Authority and scope
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Authority and scope](#authority-and-scope)
+- [2. Map the whole change to existing tests](#1-map-the-whole-change-to-existing-tests)
+- [3. Establish meaningful acceptance before changing expectations](#2-establish-meaningful-acceptance-before-changing-expectations)
+  - [3.1. Prove the test can detect the defect](#prove-the-test-can-detect-the-defect)
+- [4. Synchronize fixtures and strict inventories](#3-synchronize-fixtures-and-strict-inventories)
+  - [4.1. Required dependent-guard review](#required-dependent-guard-review)
+- [5. Execute, diagnose and keep evidence bounded](#4-execute-diagnose-and-keep-evidence-bounded)
+- [6. PR test-impact receipt and handover](#5-pr-test-impact-receipt-and-handover)
+- [7. Exit criteria](#exit-criteria)
+- [8. Draft, staging and merge evidence](#draft-staging-and-merge-evidence)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="authority-and-scope"></a>
+
+## 1. Authority and scope
 
 - Apply this procedure to every PR, including documentation-only, dependency, workflow and automated updates, and repeat the impact review when its scope changes.
 - Read root AGENTS.md, NORTH_STAR.md and PROGRESS.md first; paths below are repository-root relative unless explicitly linked.
@@ -29,7 +49,9 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 - For dependency additions, updates or replacements, also apply the [dependency review skill](../soccerbot-dependencies/SKILL.md) before implementation or recommending merge.
 - It owns suitability research and the application-change decision; retain this skill's existing evidence responsibilities.
 
-## 1. Map the whole change to existing tests
+<a id="1-map-the-whole-change-to-existing-tests"></a>
+
+## 2. Map the whole change to existing tests
 
 1. Inspect the full PR diff against its actual base, exact source head, working tree and relevant CI receipts.
    - For stacked PRs, identify inherited behavior separately from the current slice.
@@ -55,7 +77,9 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 | Dependency/runtime updates                                               | Affected consumers and compatibility suites plus normal required CI. An unchanged application diff does not imply no behavior risk; separate vulnerability remediation from optional upgrades.                                                                                               |
 | Documentation-only or harmless presentation/prose correction             | Validate affected links, examples, diagrams or structure as appropriate. State why executable tests/inventories remain valid. Do not invent tests or edit unrelated expectations merely to satisfy this skill.                                                                               |
 
-## 2. Establish meaningful acceptance before changing expectations
+<a id="2-establish-meaningful-acceptance-before-changing-expectations"></a>
+
+## 3. Establish meaningful acceptance before changing expectations
 
 - For a defect, preserve its original run/job/artifact or reproduce it in an authorized isolated check.
 - State the independently expected behavior and the failure mechanism.
@@ -79,7 +103,9 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 - When requirements do not change, do not rewrite expectations to make defective code pass.
 - Removing or renaming tests must preserve their behavioral coverage or explain the authorized retirement; old failures remain evidence in Journey.
 
-### Prove the test can detect the defect
+<a id="prove-the-test-can-detect-the-defect"></a>
+
+### 3.1. Prove the test can detect the defect
 
 - For a substantive bug fix, prefer a bounded pre-fix or narrow mutation demonstration: restore only the defect in an isolated worktree/fixture, run the named regression and require failure at the intended assertion, then require the corrected case to pass.
 - Assert that the mutation actually changed its input.
@@ -96,7 +122,9 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 - For motion/layout changes, distinguish interim animated geometry from final dimensions: synchronize the actual lifecycle where final size is required, without arbitrary sleeps or relaxing dimensions.
 - Keep immediate confirmation/timing assertions before any purely visual completion wait.
 
-## 3. Synchronize fixtures and strict inventories
+<a id="3-synchronize-fixtures-and-strict-inventories"></a>
+
+## 4. Synchronize fixtures and strict inventories
 
 - Review fixtures for valid and intentionally invalid cases, correct account/environment scope, deterministic clocks and the same constraints as the real boundary.
 - Keep provider calls intercepted; fixture defaults must not silently grant permission the production path would reject.
@@ -107,7 +135,9 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 - Do not regenerate a reduced inventory to conceal missing execution, skips or failures.
 - Tooling/Python tests have their own runners; do not pretend these two inventories cover every repository test.
 
-### Required dependent-guard review
+<a id="required-dependent-guard-review"></a>
+
+### 4.1. Required dependent-guard review
 
 - Prove guard execution, not merely guard presence: inspect the actual workflow/runner invocation and its result receipt.
 - A missing or skipped required guard, empty test collection or absent report must not count as success.
@@ -141,7 +171,9 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 - Preserve normal timeouts and assertions.
 - Never fix failures with sleeps, retries, forced clicks, skipped/exclusive cases, loose assertions, inflated timeouts or reduced device/inventory scope.
 
-## 4. Execute, diagnose and keep evidence bounded
+<a id="4-execute-diagnose-and-keep-evidence-bounded"></a>
+
+## 5. Execute, diagnose and keep evidence bounded
 
 - Use docs/development.md's verification commands and inspect the executable runner before selecting a focused command.
 - Run the smallest meaningful permitted checks, then required complete gates at a coherent candidate boundary.
@@ -158,7 +190,9 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 - Main verifies the merge independently; deployment and provider/device acceptance are separate.
 - If browser execution is needed, push the candidate for CI under AGENTS and report it pending rather than claiming local browser acceptance.
 
-## 5. PR test-impact receipt and handover
+<a id="5-pr-test-impact-receipt-and-handover"></a>
+
+## 6. PR test-impact receipt and handover
 
 - Add a concise table or paragraph to the existing PR body alongside its documentation-state receipt:
 
@@ -175,13 +209,17 @@ description: Review and maintain SoccerBot tests, fixtures and strict inventorie
 - Once the tested head is green, update the PR/user receipt rather than repeatedly committing status and invalidating that head.
 - For Dependabot PRs, perform this impact review before merge; release notes and a green badge alone are not the test assessment.
 
-## Exit criteria
+<a id="exit-criteria"></a>
+
+## 7. Exit criteria
 
 - Every changed behavior has a justified test disposition; affected assertions, fixtures and inventories agree with the intended contract; relevant negative/recovery cases are covered or explicitly blocked; permitted checks have recorded outcomes; no coverage was weakened to obtain green.
 - Publication may precede browser CI completion, but merge readiness cannot.
 - This skill improves the review discipline; it does not certify complete coverage or make future failures impossible.
 
-## Draft, staging and merge evidence
+<a id="draft-staging-and-merge-evidence"></a>
+
+## 8. Draft, staging and merge evidence
 
 - Apply the mandatory draft→ready→verified staging→owner acceptance→merge sequence in root AGENTS.md and the runbook deployment procedure.
 - Continue related changes on the existing draft and disclose inherited changes for dependent PRs.

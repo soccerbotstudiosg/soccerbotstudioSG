@@ -1,5 +1,25 @@
 # Data lifecycle — source-based draft
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Lifecycle and evidence boundaries](#1-lifecycle-and-evidence-boundaries)
+- [2. Current storage inventory](#2-current-storage-inventory)
+  - [2.1. Browser and downloaded data](#browser-and-downloaded-data)
+  - [2.2. D1 application state](#d1-application-state)
+  - [2.3. Durable Object, caches and external copies](#durable-object-caches-and-external-copies)
+- [3. Implemented validity periods are not disposal periods](#3-implemented-validity-periods-are-not-disposal-periods)
+- [4. Existing cleanup and important gaps](#4-existing-cleanup-and-important-gaps)
+- [5. External systems must be mapped separately](#5-external-systems-must-be-mapped-separately)
+- [6. Clause-to-implementation worksheet — complete before cleanup work](#6-clause-to-implementation-worksheet--complete-before-cleanup-work)
+- [7. Proposed implementation sequence — not implemented or authorised by this draft](#7-proposed-implementation-sequence--not-implemented-or-authorised-by-this-draft)
+- [8. Review checklist and handover](#8-review-checklist-and-handover)
+  - [8.1. Verified unpaid release and warming claims](#verified-unpaid-release-and-warming-claims)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - [Database schema](architecture/database-schema.md) owns the D1 and Durable Object table diagrams and keys; this document owns lifecycle and retention.
 
 - **Draft for client policy mapping.** This document describes what the application currently stores, how access expires and where physical cleanup exists.
@@ -53,7 +73,9 @@ flowchart TB
 - All rows below need an approved disposal rule even where expiry is already enforced.
 - “No general purge found” does not prove a provider will retain data forever; it means this application does not establish its deletion deadline.
 
-### Browser and downloaded data
+<a id="browser-and-downloaded-data"></a>
+
+### 2.1. Browser and downloaded data
 
 | ID    | Data / location and purpose                                                                                | Current behavior                                                                                                                                                                                                                                                   | Remaining decision                                                                                                                  |
 | ----- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -63,7 +85,9 @@ flowchart TB
 | DL-04 | `soccerbot-player-app-prompt` localStorage preference; demo draft, identity, profiles and receipt fixtures | [Prompt](../src/components/player-app-prompt.tsx), [storage](../src/services/storage.ts) and [demo adapters](../src/services/demo) use different keys/stores. Demo sign-out removes its identity keys, not a system-wide customer erasure.                         | Preference lifetime and test-data hygiene; do not enter real customer data into demo fixtures.                                      |
 | DL-05 | Secure HttpOnly access/remembered cookies; downloaded PDF/calendar files                                   | Cookie expiry/revocation is enforced by [access](../worker/access.ts) and [remembered identity](../worker/remembered-identity.ts). Customer PDF/calendar generation is retired; previously downloaded files remain customer-held.                                  | Explain cookies and downloads appropriately. Server deletion does not recall downloaded files or recipient inbox copies.            |
 
-### D1 application state
+<a id="d1-application-state"></a>
+
+### 2.2. D1 application state
 
 | ID    | Tables and identifying content / purpose                                                                                                                                                                                                                                       | Current expiry, revocation or movement                                                                                                                                                                                                      | Physical cleanup / gap                                                                                                                                                        |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -81,7 +105,9 @@ flowchart TB
 - Later migrations extend the original developer-only schema for ongoing customer operation.
 - In particular, `intent_json`, `contract_json`, `result_json`, `observation_json` and `confirmation_json` require field-level review; a policy cannot safely classify them as “technical metadata” by name alone.
 
-### Durable Object, caches and external copies
+<a id="durable-object-caches-and-external-copies"></a>
+
+### 2.3. Durable Object, caches and external copies
 
 - **DL-15**
   - **Store and purpose:** DO SQLite `provider_token_cache`: encrypted provider tokens and scope/expiry metadata
@@ -229,7 +255,9 @@ flowchart TB
 - Customer PDF/calendar generation remains retired; historical files may retain earlier data outside server revocation.
 - Email drafts create no delivery store.
 
-### Verified unpaid release and warming claims
+<a id="verified-unpaid-release-and-warming-claims"></a>
+
+### 8.1. Verified unpaid release and warming claims
 
 - Migration0037 adds immutable per-attempt checking-buffer timing.
 - Verified unpaid release moves the active grant to its existing archive; it deletes neither the payment request journal nor webhook/booking evidence.

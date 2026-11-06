@@ -1,8 +1,21 @@
 # Test suite — what it protects
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Layers and safeguards](#layers-and-safeguards)
+- [2. Configured browser coverage](#configured-browser-coverage)
+- [3. Evidence limits and execution](#evidence-limits-and-execution)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - The suite checks application behaviour, server authority and release integrity using synthetic data; owner UAT separately proves physical-device behaviour and real provider configuration.
 
-## Layers and safeguards
+<a id="layers-and-safeguards"></a>
+
+## 1. Layers and safeguards
 
 - **Source and tooling:** types, lint, imports, configuration policy, design checks, build/export, dependency audit and guarded installers.
   - Defends against invalid wiring, retired routes, unsafe configuration, substituted artifacts, destructive updates and known high/critical dependency advisories.
@@ -17,7 +30,9 @@
 - **Release guards:** exact file/title inventories, zero browser retries, complete same-run/attempt receipts and source/artifact bindings.
   - Rejects skipped/missing/duplicate/failed/foreign evidence, wrong-account deployment and stale candidates; deployment consumes the verified build.
 
-## Configured browser coverage
+<a id="configured-browser-coverage"></a>
+
+## 2. Configured browser coverage
 
 - **Desktop:** Chromium / Desktop Chrome;1280×720; no mobile/touch emulation.
 - **Phone:** WebKit / iPhone13;390×664; mobile/touch emulation.
@@ -26,7 +41,9 @@
 - **Version limit:** package metadata identifies bundled engines; it is not a captured runtime patch-version receipt.
   - Descriptor screen dimensions also affect emulation.
 
-## Evidence limits and execution
+<a id="evidence-limits-and-execution"></a>
+
+## 3. Evidence limits and execution
 
 - **Required CI gates:** `verify / frontend`, `verify / backend`, `verify / live-email` on the exact candidate;
   - CodeQL is separate security analysis.

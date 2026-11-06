@@ -1,5 +1,37 @@
 # Domain operation inventory and API contracts
 
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Domain operation inventory](#1-domain-operation-inventory)
+  - [1.1. Named service operation matrix](#named-service-operation-matrix)
+  - [1.2. Server and operational responsibilities](#server-and-operational-responsibilities)
+- [2. Common HTTP boundary](#2-common-http-boundary)
+- [3. Identity and profile contracts](#3-identity-and-profile-contracts)
+- [4. Catalogue and selection contracts](#4-catalogue-and-selection-contracts)
+- [5. Attempt preparation and booking/payment writes](#5-attempt-preparation-and-bookingpayment-writes)
+- [6. Protected confirmation, receipt and recovery](#6-protected-confirmation-receipt-and-recovery)
+- [7. Webhooks, operator routes and scheduled work](#7-webhooks-operator-routes-and-scheduled-work)
+- [8. Errors, concurrency and compatibility](#8-errors-concurrency-and-compatibility)
+- [9. Verification ownership](#9-verification-ownership)
+- [10. Worked requests, responses and recovery decisions](#10-worked-requests-responses-and-recovery-decisions)
+  - [10.1. A. Create guest access, then request email verification](#a-create-guest-access-then-request-email-verification)
+  - [10.2. B. Prepare a reviewed booking intent](#b-prepare-a-reviewed-booking-intent)
+  - [10.3. C. Definitive request rejection versus uncertain checkout](#c-definitive-request-rejection-versus-uncertain-checkout)
+    - [10.3.1. Conflict recovery decision contract](#conflict-recovery-decision-contract)
+  - [10.4. D. Checkout context without payment authority](#d-checkout-context-without-payment-authority)
+  - [10.5. E. Paid, but booking confirmation still pending](#e-paid-but-booking-confirmation-still-pending)
+  - [10.6. F. Shared checking limit and expired access](#f-shared-checking-limit-and-expired-access)
+  - [10.7. G. Signed webhook acknowledgement and repeatable dismissal](#g-signed-webhook-acknowledgement-and-repeatable-dismissal)
+  - [10.8. State transition interpretation](#state-transition-interpretation)
+  - [10.9. Closed-install management service contract](#closed-install-management-service-contract)
+  - [10.10. Paid response confirmation evidence](#paid-response-confirmation-evidence)
+  - [10.11. Optional invoice document display metadata](#optional-invoice-document-display-metadata)
+
+</details>
+<!-- /document-chapter-menu -->
+
 - This is the implementation contract for the current repository revision, not a public third-party API or proof that a route is enabled in client production.
 - [Business rules](business-rules.md) owns invariants; [Complete journey](journey.md) owns sequencing and history.
 - [Code owners](code-owners/index.md) expands the modules.
@@ -8,7 +40,9 @@
 
 ## 1. Domain operation inventory
 
-### Named service operation matrix
+<a id="named-service-operation-matrix"></a>
+
+### 1.1. Named service operation matrix
 
 - Each operation records its name, source status, permission policy and evidence owners.
 - The rows below describe the current source, **not a new all-tests-passed or production-acceptance count**.
@@ -57,7 +91,9 @@
 | `services.identity.profile`                         | Legacy local demo adapter           | Not the live customerIdentity authority                              | [demo identity](../src/services/demo/identity.ts)                                                        | [service tests](../src/services/booking.test.ts)                                                                                                                                                                        |
 | `services.identity.saveProfile`                     | Legacy local demo adapter           | Not the live customerIdentity authority                              | [demo identity](../src/services/demo/identity.ts)                                                        | [service tests](../src/services/booking.test.ts)                                                                                                                                                                        |
 
-### Server and operational responsibilities
+<a id="server-and-operational-responsibilities"></a>
+
+### 1.2. Server and operational responsibilities
 
 | ID    | Operation and trigger                  | Owner / boundary                                                                                                                     | Durable or external effects                                                      | Guards and recovery                                                                                | Rules            |
 | ----- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------- |
@@ -428,7 +464,9 @@
 - All timestamps are epoch milliseconds unless a header says otherwise.
 - Non-GET browser requests require the configured same-origin Origin, and JSON requests require `Content-Type: application/json`.
 
-### A. Create guest access, then request email verification
+<a id="a-create-guest-access-then-request-email-verification"></a>
+
+### 10.1. A. Create guest access, then request email verification
 
 - An authenticated `POST /api/access` renews only an unexpired, unrevoked guest capability for the configured access lifetime, retaining the same owner/token/grants and refreshing its secure cookie.
 - Initial checkout POST also renews valid access before coordination so browsing does not consume the payment window.
@@ -461,7 +499,9 @@
 - Wrong/expired verification does not fall back to unverified profile lookup.
 - See [identity owner](../worker/identity.ts).
 
-### B. Prepare a reviewed booking intent
+<a id="b-prepare-a-reviewed-booking-intent"></a>
+
+### 10.2. B. Prepare a reviewed booking intent
 
 - Illustrative JSON for `POST /api/booking/prepare`:
 
@@ -502,7 +542,9 @@
 - Prepared authority is not a booking, a held studio slot, payment or confirmation.
 - For the combined checkout route, add `holding:true`, use the same key as the UUID path and require `accepted:true`; that path can create external effects and is not equivalent to a preview/read.
 
-### C. Definitive request rejection versus uncertain checkout
+<a id="c-definitive-request-rejection-versus-uncertain-checkout"></a>
+
+### 10.3. C. Definitive request rejection versus uncertain checkout
 
 - `POST /api/booking/hitpay/:attemptId` with `{ "accepted": false }` fails before payment dispatch at that route, HTTP 400:
 
@@ -529,7 +571,9 @@
 - An HTTP 503 `temporarily_unavailable`, response loss or browser abort is also not proof of no provider effect.
 - See [rejected readback](../worker/customer-authority.ts) and [combined composition](../worker/coordinator.ts).
 
-#### Conflict recovery decision contract
+<a id="conflict-recovery-decision-contract"></a>
+
+#### 10.3.1. Conflict recovery decision contract
 
 - Apply [BR-001](business-rules.md#br-001) independently of HTTP status; a 409/503 alone does not identify the safe recovery action.
 
@@ -547,7 +591,9 @@
 - Pending/in-flight data must remain scoped and must not overwrite newer invalidation evidence.
 - Provider rejection during creation remains a separate guarded execution outcome, with no payment handoff for an unverified booking.
 
-### D. Checkout context without payment authority
+<a id="d-checkout-context-without-payment-authority"></a>
+
+### 10.4. D. Checkout context without payment authority
 
 - `GET /api/attempts/22222222-2222-4222-8222-222222222222/checkout`, HTTP 200:
 
@@ -580,7 +626,9 @@
 - Explicit checkout-window rejection keeps the requested draft on Review and offers an owned existing-checkout link.
 - Same studio start across different trainers receives fresh availability classification rather than being treated as an unrelated checkout.
 
-### E. Paid, but booking confirmation still pending
+<a id="e-paid-but-booking-confirmation-still-pending"></a>
+
+### 10.5. E. Paid, but booking confirmation still pending
 
 - `GET /api/attempts/:attemptId/confirmation` can return HTTP 200:
 
@@ -604,7 +652,9 @@
 - Customer PDF/calendar actions are retired.
 - HTTP 409 `{ "error": "receipt_not_verified" }` means the required receipt evidence is not presently established; a prior UI success snapshot cannot bypass it.
 
-### F. Shared checking limit and expired access
+<a id="f-shared-checking-limit-and-expired-access"></a>
+
+### 10.6. F. Shared checking limit and expired access
 
 - If the caller checks too early, HTTP 429 may include:
 
@@ -631,7 +681,9 @@ X-Checks-Remaining: 99
 - Do not substitute another cookie, saved customer identity or local receipt.
 - [Confirmation adapter](../src/services/confirmation.ts) maps HTTP denial/throttling separately from successful JSON decisions.
 
-### G. Signed webhook acknowledgement and repeatable dismissal
+<a id="g-signed-webhook-acknowledgement-and-repeatable-dismissal"></a>
+
+### 10.7. G. Signed webhook acknowledgement and repeatable dismissal
 
 - An authenticated, scoped provider event can receive HTTP 202:
 
@@ -652,7 +704,9 @@ X-Checks-Remaining: 99
 - A lost acknowledgement can be reconciled/repeated under the same authority.
 - Dismissal is not deletion of financial evidence and does not itself start a new booking.
 
-### State transition interpretation
+<a id="state-transition-interpretation"></a>
+
+### 10.8. State transition interpretation
 
 ```mermaid
 flowchart TD
@@ -675,7 +729,9 @@ flowchart TD
 - Every edge requires the owning server operation and its guards.
 - HTTP success, an adapter state such as `associated`, and a confirmed booking are different facts.
 
-### Closed-install management service contract
+<a id="closed-install-management-service-contract"></a>
+
+### 10.9. Closed-install management service contract
 
 - `FoundationManagement` (`worker/foundation-management.ts`) is an internal named Worker entrypoint reachable only through explicitly granted service bindings; the public HTTP router exposes none of these methods.
 - All methods require production, all eight external-effect switches disabled, and exact expected account/database/coordinator name/location hint/source revision.
@@ -685,7 +741,9 @@ flowchart TD
 - The diagnostic checks its own identity and returns ID, alarm, pending-wakeup count and unknown location; it performs no provider operations.
 - Registration is management-owned and is never inferred from a public health request.
 
-### Paid response confirmation evidence
+<a id="paid-response-confirmation-evidence"></a>
+
+### 10.10. Paid response confirmation evidence
 
 - After verified HitPay payment and current booking/invoice checks, recovery may use the authenticated SimplyBook accept-payment response as final evidence only when the existing invoice validator accepts the exact invoice, customer, currency, totals, processor, complete booking set, trainer/time/duration and confirmed nested bookings.
 - The result is committed under the existing claim generation/version predicates before customer success.
@@ -694,7 +752,9 @@ flowchart TD
 - Export authorization and fresh-read requirements remain unchanged.
 - Production response-shape and latency acceptance require an owner checkout; synthetic fixtures alone do not establish the fast path is used by the provider.
 
-### Optional invoice document display metadata
+<a id="optional-invoice-document-display-metadata"></a>
+
+### 10.11. Optional invoice document display metadata
 
 - Normalized observations retain optional bounded `documentNumber` from SimplyBook `number`.
 - For HitPay recovery, the authenticated unpaid read records its original number in `invoice_documents` before accounting.

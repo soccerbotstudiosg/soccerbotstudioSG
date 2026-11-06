@@ -1,6 +1,18 @@
 # Trainer UAT — two-page checklist
 
-## Page 1 of 2 — individual access and availability
+<!-- document-chapter-menu -->
+<details>
+<summary>Chapter menu</summary>
+
+- [1. Page 1 of 2 — individual access and availability](#page-1-of-2--individual-access-and-availability)
+- [2. Page 2 of 2 — bookings, shared studio and mobile use](#page-2-of-2--bookings-shared-studio-and-mobile-use)
+
+</details>
+<!-- /document-chapter-menu -->
+
+<a id="page-1-of-2--individual-access-and-availability"></a>
+
+## 1. Page 1 of 2 — individual access and availability
 
 - **Record:** tester/date; intended SimplyBook company; individual role/provider mapping; deployed website SHA/run; phone/model/exact OS/browser/app; designated test dates/services/customer;
   - Admin partner; private evidence location.
@@ -29,7 +41,9 @@
 
 <div style="break-before: page;"></div>
 
-## Page 2 of 2 — bookings, shared studio and mobile use
+<a id="page-2-of-2--bookings-shared-studio-and-mobile-use"></a>
+
+## 2. Page 2 of 2 — bookings, shared studio and mobile use
 
 - [ ] **Single and multi bookings — TRA-011.** Open designated customer UAT bookings and compare assigned date/time/duration/service/player details and permitted customer information.
   - **Expect:** correct assignments; no missing/duplicated sessions; only necessary customer/session details are exposed under the approved role.
