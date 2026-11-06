@@ -181,7 +181,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Flagship Studio: {LOCATION.building}
+                    Flagship Studio:
+                    <br />
+                    {LOCATION.building}
                     <br />
                     {LOCATION.street}, {LOCATION.unit}
                     <br />

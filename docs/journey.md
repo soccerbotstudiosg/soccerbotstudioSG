@@ -4967,3 +4967,9 @@ CI42179543002 ate95f7a5 failed backend browser jobs127766171024/127766171176 (ar
 - Cause: the previous full-width assertion compared the button with its container's border box, ignoring the approved mobile fixed bar's20px left/right padding. The button fills its content area; this was an obsolete test contract, not missing application width.
 - Repair: compare content widths with the original1px tolerance; independently assert a viewport-wide fixed bar, one action,20px left/right gutters and minimum44px action height on mobile booking steps. Existing bottom alignment/72px height bounds, desktop sizing, guards, case inventory, retries and timeouts remain unchanged.
 - User requested staging UI before a separate documentation PR. Documentation edits are preserved outside the checkout; PR32 contains only UI-related repair and its evidence. No merge or activation authorised.
+
+### 6 November 2026 — footer bottom alignment and spacing
+
+- UI baseline `f65071b` passed CI42183077985, CodeQL42183072776 and staging42184170575; public health matched the exact SHA and version `bfff910e-f6b5-4ee2-92ce-1000d6af7be5`. No merge or activation.
+- Owner follow-up: align the app-column logo at the lower right with the Services list; reduce footer sub-item gaps30% (8px→5.6px); place the building/address below the Flagship Studio label. App column stretches with the shared grid and positions its logo at the bottom; existing44px link/app targets, destinations and responsive column layout remain.
+- Documentation refactor remains separately preserved on `docs/test-guides-and-reference-cleanup`; no broad documentation restructuring enters this UI follow-up. Existing public-footer browser assertions retained; no new cases/inventory or booking logic changes.

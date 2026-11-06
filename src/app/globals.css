@@ -1772,7 +1772,8 @@
   .footer-brand {
     display: flex;
     align-items: center;
-    justify-self: start;
+    align-self: end;
+    justify-self: end;
     width: 148px;
     min-width: 0;
     margin: 24px 0 0;
@@ -1806,6 +1807,13 @@
   }
   .footer-apps {
     justify-self: end;
+    align-self: stretch;
+    align-items: stretch;
+  }
+  .footer-apps .footer-contact-copy {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    align-items: start;
   }
   .footer-contact-copy {
     display: block;
@@ -1834,7 +1842,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 5.6px;
   }
   .footer-direct-links a {
     display: block;
@@ -1875,7 +1883,7 @@
   .footer-app-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 5.6px;
     margin-top: 12px;
   }
   .footer-app-link {
