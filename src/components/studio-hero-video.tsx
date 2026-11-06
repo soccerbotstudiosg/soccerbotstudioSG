@@ -1,32 +1,93 @@
 "use client";
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { studioHero } from "@/content/media";
 
 const mobileQuery = "(max-width: 700px)";
-/** Keep the selected official video in sync with the responsive layout. */
+const motionQuery = "(prefers-reduced-motion: reduce)";
+/** Subscribe to responsive video and motion-preference changes. */
 function subscribe(notify: () => void) {
-  const media = window.matchMedia(mobileQuery);
-  media.addEventListener("change", notify);
-  return () => media.removeEventListener("change", notify);
+  const queries = [mobileQuery, motionQuery].map((query) =>
+    window.matchMedia(query),
+  );
+  queries.forEach((query) => query.addEventListener("change", notify));
+  return () =>
+    queries.forEach((query) => query.removeEventListener("change", notify));
 }
 const mobileSnapshot = () => window.matchMedia(mobileQuery).matches;
-const serverSnapshot = () => false;
+const motionSnapshot = () => window.matchMedia(motionQuery).matches;
 /** Use the official close-up montage for the portrait mobile hero. */
 export function StudioHeroVideo() {
-  const mobile = useSyncExternalStore(
+  const mobile = useSyncExternalStore(subscribe, mobileSnapshot, () => false);
+  const reducedMotion = useSyncExternalStore(
     subscribe,
-    mobileSnapshot,
-    serverSnapshot,
+    motionSnapshot,
+    () => true,
   );
   const video = mobile ? studioHero.mobile : studioHero;
   return (
-    <video
+    <StudioPlayback
+      key={video.src}
       src={video.src}
       poster={video.poster}
-      controls
-      playsInline
-      preload="none"
-      aria-label="SOCCERBOT360 studio demonstration"
+      reducedMotion={reducedMotion}
     />
+  );
+}
+/** Play silently once with one accessible playback control and no native chrome. */
+function StudioPlayback({
+  src,
+  poster,
+  reducedMotion,
+}: {
+  src: string;
+  poster: string;
+  reducedMotion: boolean;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [status, setStatus] = useState<"play" | "playing" | "replay">("play");
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    if (reducedMotion) video.pause();
+    else void video.play().catch(() => setStatus("play"));
+    return () => video.pause();
+  }, [reducedMotion]);
+  function activate() {
+    const video = ref.current;
+    if (!video) return;
+    if (!video.paused) video.pause();
+    else {
+      if (video.ended) video.currentTime = 0;
+      void video.play().catch(() => setStatus("play"));
+    }
+  }
+  return (
+    <>
+      <video
+        ref={ref}
+        src={src}
+        poster={poster}
+        muted
+        autoPlay={!reducedMotion}
+        playsInline
+        preload="metadata"
+        aria-label="SOCCERBOT360 studio demonstration"
+        onPlay={() => setStatus("playing")}
+        onPause={() => setStatus(ref.current?.ended ? "replay" : "play")}
+        onEnded={() => setStatus("replay")}
+      />
+      <button
+        type="button"
+        className="studio-playback"
+        onClick={activate}
+        aria-label={`${status === "replay" ? "Replay" : status === "playing" ? "Pause" : "Play"} studio video`}
+      >
+        {status === "replay"
+          ? "Replay"
+          : status === "playing"
+            ? "Pause"
+            : "Play"}
+      </button>
+    </>
   );
 }

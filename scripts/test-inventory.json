@@ -1274,5 +1274,13 @@
   {
     "file": "src/features/booking/time-step.test.tsx",
     "title": "calendar back preserves outlet and session choices while explicit deselection still clears them"
+  },
+  {
+    "file": "src/components/studio-hero-video.test.tsx",
+    "title": "studio video autoplays silently once and exposes one replay control"
+  },
+  {
+    "file": "src/components/studio-hero-video.test.tsx",
+    "title": "studio video respects reduced motion and blocked autoplay retains manual play"
   }
 ]

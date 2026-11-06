@@ -30,7 +30,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`fixed ${variant === "booking-panel" ? "overflow-hidden" : "overflow-auto"} rounded-2xl border border-line shadow-2xl ${variant === "booking-panel" ? "" : "m-auto max-h-[85dvh] w-[calc(100%-32px)] p-6"} ${variant === "player-app" ? "player-app-dialog max-w-2xl text-white backdrop:bg-navy/90" : variant === "booking-panel" ? "booking-panel-dialog text-ink backdrop:bg-navy/40" : "max-w-xl text-ink backdrop:bg-navy/65"}`}
+      className={`fixed ${variant === "booking-panel" ? "overflow-hidden" : "overflow-auto"} rounded-2xl border border-line shadow-2xl ${variant === "booking-panel" ? "" : "m-auto max-h-[85dvh] w-[calc(100%-32px)] p-6"} ${variant === "player-app" ? "player-app-dialog max-w-2xl text-white" : variant === "booking-panel" ? "booking-panel-dialog text-ink backdrop:bg-navy/40" : "max-w-xl text-ink backdrop:bg-navy/65"}`}
       aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(event) => {

@@ -21,7 +21,7 @@ export function PlayerAppPrompt() {
   if (!unseen || dismissed) return null;
   return (
     <Dialog
-      title="Download the official soccerbot360 app now."
+      title="Download the official Soccerbot360 App now."
       onClose={close}
       variant="player-app"
     >

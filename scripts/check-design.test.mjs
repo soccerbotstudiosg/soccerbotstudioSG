@@ -9,7 +9,7 @@ const css = readFileSync(
 test("the interface uses the header blue, readable role hierarchy and contrasting semantic states", () => {
   const audit = designAudit(css);
   assert.deepEqual(audit.errors, []);
-  assert.equal(audit.contrast.length, 22);
+  assert.equal(audit.contrast.length, 24);
 });
 test("design policy rejects a teal action token even if it remains a valid CSS colour", () => {
   assert.ok(

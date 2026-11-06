@@ -5076,3 +5076,10 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 
 - Follow-up: retain outlet/session presentation across calendar Back, preserving explicit deselection; shorten the opening-hours note without changing policy. Mobile calendar controls align in two rows; legend uses Available/Unavailable only and a viewed-date outline.
 - Verification caught parameterized expiry tests missing from the explicit case inventory; expanded them into named cases and updated the reviewed inventory. Paid fixture restoration was corrected to respect the existing live-restoration contract; no product guard was weakened. Source/code checks and CI remain required for the final candidate.
+
+## 6 November 2026 — compact calendar and silent Studio playback
+
+- Owner requested all mobile calendar controls in one row, a single circled information mark beside the shared slot hint, a neutral charcoal app prompt/backdrop, no square around its close control, and heading “Download the official Soccerbot360 App now.” The close control retains a visible keyboard-focus underline.
+- Owner chose GIF-style playback using existing video files: silent inline autoplay once, no native player chrome/loop, one Pause/Replay control. Reduced motion prevents autoplay; rejected autoplay retains manual Play. Desktop/mobile official sources and portrait crop remain.
+- Added component playback regressions and updated existing calendar/prompt browser assertions; no assistant browser execution. Booking mutations, expiry reconciliation, provider contracts and payment guards unchanged.
+- Prior db5e724 passed CI42207739556, CodeQL42207734490 and staging42209030129; health version072c52a3-3644-4f43-b56e-4b2865e40b78. New candidate requires final checks. Documentation refactor remains paused; no merge or activation.

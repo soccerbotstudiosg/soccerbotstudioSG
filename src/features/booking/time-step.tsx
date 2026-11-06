@@ -211,7 +211,7 @@ export function TimeStep() {
               {Array.from({ length: maxMonthOffset + 1 }, (_, i) => (
                 <option key={i} value={i}>
                   {dateLabel(monthAt(today, i), {
-                    month: "long",
+                    month: "short",
                     year: "numeric",
                   })}
                 </option>
@@ -337,7 +337,10 @@ export function TimeStep() {
           ) : slots.length ? (
             <div className="times" role="group" aria-label="Session times">
               <p className="mobile-time-hint">
-                Select to view trainers available
+                <span className="time-info" aria-hidden="true">
+                  i
+                </span>
+                <span>Select to view trainers available</span>
               </p>
               {groups.map((offers) => {
                 const first =
@@ -402,9 +405,6 @@ export function TimeStep() {
                                   .map(sessionInstructorName)
                                   .join(" / ")}`
                               : "No instructor available"}
-                        </span>
-                        <span className="time-info" aria-hidden="true">
-                          i
                         </span>
                         {slot.available && slot.rotationAt && (
                           <span className="rotation-notice">

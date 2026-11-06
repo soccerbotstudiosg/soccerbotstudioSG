@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 async function openSite(page: Page, route: string) {
   await page.goto(sitePath(route));
   const prompt = page.getByRole("dialog", {
-    name: "Download the official soccerbot360 app now.",
+    name: "Download the official Soccerbot360 App now.",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -437,8 +437,11 @@ test("public routes remove staff access and fit the viewport", async ({
       ? "https://assets.soccerbot360.com/assets/videos/hero-loop.mp4"
       : "https://assets.soccerbot360.com/assets/videos/stream.mp4",
   );
-  await expect(studioHero.locator("video")).toHaveAttribute("controls", "");
-  await expect(studioHero.locator("video")).not.toHaveAttribute("autoplay");
+  await expect(studioHero.locator("video")).not.toHaveAttribute("controls");
+  await expect(studioHero.locator("video")).toHaveAttribute("autoplay", "");
+  await expect(studioHero.locator("video")).not.toHaveAttribute("loop");
+  await expect(studioHero.locator("video")).toHaveJSProperty("muted", true);
+  await expect(studioHero.locator(".studio-playback")).toHaveCount(1);
   await expect(studioHero.locator("figcaption")).toHaveCount(0);
   const heroBox = await studioHero.boundingBox();
   const contentBox = await page.locator(".studio-showcase").boundingBox();
@@ -1117,7 +1120,7 @@ test("first visit offers the Player App with only store links and dismissal pers
 }) => {
   await page.goto(sitePath("/"));
   const prompt = page.getByRole("dialog", {
-    name: "Download the official soccerbot360 app now.",
+    name: "Download the official Soccerbot360 App now.",
   });
   await expect(prompt).toBeVisible();
   await expect(prompt.locator("p")).toHaveCount(0);
@@ -1149,6 +1152,9 @@ test("first visit offers the Player App with only store links and dismissal pers
     name: "Close dialog",
     exact: true,
   });
+  await expect(prompt).toHaveCSS("background-color", "rgb(36, 36, 36)");
+  await close.focus();
+  await expect(close).toHaveCSS("outline-style", "none");
   await expect(close).toHaveCSS("border-top-width", "0px");
   await expect(close).toHaveCSS("border-radius", "0px");
   await expect(close).toHaveCSS("color", "rgb(255, 255, 255)");
@@ -1408,7 +1414,9 @@ test("header blue and the typography hierarchy stay consistent across every book
       page.getByText("Select to view trainers available", { exact: true }),
     ).toBeVisible();
     await expect(crossing.locator(".time-instructor")).toBeHidden();
-    await expect(crossing.locator(".time-info")).toBeVisible();
+    await expect(crossing.locator(".time-info")).toHaveCount(0);
+    await expect(page.locator(".mobile-time-hint .time-info")).toBeVisible();
+    await expect(page.locator(".times .time-info")).toHaveCount(1);
   } else {
     await expect(page.locator(".mobile-time-hint")).toBeHidden();
     await expect(crossing.locator(".time-instructor")).toBeVisible();

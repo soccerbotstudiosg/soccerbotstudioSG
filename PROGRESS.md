@@ -5,8 +5,8 @@ Observed 6 November 2026. Historical decisions and evidence: [Journey](docs/jour
 ## UI — publish and stage first
 
 - Branch: `fix/hero-session-copy`; existing PR32. Do not merge or enable settings.
-- Last verified staging revision: `6d346e549c8c18cfee761eea67a190362c9097e4`; newer local changes require final CI/staging.
-- Current local follow-up: consistent time-card placement, mobile-only information hint, concise time-page guidance, retained outlet/session choices on Back, aligned mobile calendar controls and availability-only legend, and fresh cart reconciliation after confirmed unpaid expiry. Paid/uncertain payment remains protected. Popup mutation/checkout audit covered existing shared provider guards.
+- Last verified staging revision: `db5e724ea9ad9979e5303f019f33da599b151862`; newer local changes require final CI/staging.
+- Current local follow-up: single-row mobile calendar controls; one information icon above slots; charcoal app popup, exact heading and plain close control; silent one-pass Studio autoplay with Replay and reduced-motion/blocked-autoplay fallback. Prior verified changes: consistent time-card placement, mobile-only information hint, concise time-page guidance, retained outlet/session choices on Back, aligned mobile calendar controls and availability-only legend, and fresh cart reconciliation after confirmed unpaid expiry. Paid/uncertain payment remains protected. Popup mutation/checkout audit covered existing shared provider guards.
 - Consolidated changes:
   - Desktop footer rows align with40% tighter pitch; logo aligns at the footer’s right edge; desktop group gaps36px. Phones pair Services/Connect With Us and centre Find Us/app links/logo; text rows32px+4px and email stays on one line.
   - Phone header navigation centred; booking Back row has6px divider clearance.
