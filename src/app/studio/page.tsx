@@ -1,22 +1,20 @@
 import { BookingLink } from "@/components/booking-navigation";
-import { studioHero, studioMedia } from "@/content/media";
+import { studioMedia } from "@/content/media";
 import { Icon } from "@/components/icon";
+import { StudioHeroVideo } from "@/components/studio-hero-video";
 export const metadata = { title: "The studio" };
 /** Present the studio facilities using the approved media catalogue. */
 export default function Studio() {
   return (
     <>
-      <p className="studio-signature">Performance · Experience · Production</p>
-      <figure className="studio-hero">
-        <video
-          src={studioHero.src}
-          poster={studioHero.poster}
-          controls
-          playsInline
-          preload="none"
-          aria-label="SOCCERBOT360 studio demonstration"
-        />
-      </figure>
+      <div className="studio-intro">
+        <p className="studio-signature">
+          Performance · Experience · Production
+        </p>
+        <figure className="studio-hero">
+          <StudioHeroVideo />
+        </figure>
+      </div>
       <section className="studio-showcase" aria-labelledby="studio-title">
         <h1 className="sr-only" id="studio-title">
           SOCCERBOTSTUDIO Singapore

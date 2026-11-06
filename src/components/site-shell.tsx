@@ -2,14 +2,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { ADDRESS, CONTACT, LOCATION } from "@/domain/catalog";
+import { ADDRESS, BOOKING_SUPPORT, CONTACT, LOCATION } from "@/domain/catalog";
 import { darkLogo, logo, singaporeFlag } from "@/content/media";
 import { useBooking } from "@/features/booking/provider";
 import { Dialog } from "./dialog";
 import { BookingLink } from "./booking-navigation";
 import { PlayerAppLinks } from "./player-app-links";
 import { PlayerAppPrompt } from "./player-app-prompt";
-import { SectionReveals } from "./section-reveals";
+import { BackToTop, SectionReveals } from "./section-reveals";
+import { Icon } from "./icon";
 /** Render shared navigation, footer and customer support controls. */
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname(),
@@ -21,8 +22,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
     if (!header) return;
     const root = document.documentElement;
     const previous = root.style.scrollPaddingTop;
+    const previousHeight = root.style.getPropertyValue("--site-header-height");
     function measureHeader() {
-      root.style.scrollPaddingTop = `${header!.getBoundingClientRect().height + 16}px`;
+      const height = header!.getBoundingClientRect().height;
+      root.style.scrollPaddingTop = `${height + 16}px`;
+      root.style.setProperty("--site-header-height", `${height}px`);
     }
     measureHeader();
     const observer =
@@ -33,6 +37,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
     return () => {
       observer?.disconnect();
       root.style.scrollPaddingTop = previous;
+      if (previousHeight)
+        root.style.setProperty("--site-header-height", previousHeight);
+      else root.style.removeProperty("--site-header-height");
     };
   }, []);
   function home(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -105,22 +112,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   className="footer-contact-heading"
                   id="footer-service-title"
                 >
-                  <strong>Service</strong>
+                  <strong>Services</strong>
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
-                  <BookingLink href="/studio/">The studio</BookingLink>
-                  <BookingLink href="/book/account/">Book now</BookingLink>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {LOCATION.street}
-                    <br />
-                    {LOCATION.unit} {LOCATION.building} · {LOCATION.postal}
-                  </a>
+                  <BookingLink href="/book/account/">Book</BookingLink>
+                  <BookingLink href="/studio/">Studio</BookingLink>
                   <Link href="/terms-of-service/">Terms of Service</Link>
                   <Link href="/privacy-policy/">Privacy Policy</Link>
+                  <Link href="/refund-policy/">Refund Policy</Link>
                 </div>
               </div>
             </section>
@@ -130,13 +129,63 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               <div className="footer-contact-copy">
                 <h2 className="footer-contact-heading" id="footer-help-title">
-                  <strong>Help</strong>
+                  <strong>Connect With Us</strong>
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
-                  <a href={`tel:${CONTACT.phone}`}>{CONTACT.phoneDisplay}</a>
-                  <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
-                  <a href={CONTACT.instagram} target="_blank" rel="noreferrer">
-                    @soccerbotstudiosg
+                  <a
+                    className="footer-contact-link"
+                    href={BOOKING_SUPPORT.whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`WhatsApp: ${CONTACT.phoneDisplay}`}
+                  >
+                    <Icon name="whatsapp" />
+                    <span>{CONTACT.phoneDisplay}</span>
+                  </a>
+                  <a
+                    className="footer-contact-link"
+                    href={`mailto:${CONTACT.email}`}
+                    aria-label={`Email: ${CONTACT.email}`}
+                  >
+                    <Icon name="mail" />
+                    <span>{CONTACT.email}</span>
+                  </a>
+                  <a
+                    className="footer-contact-link"
+                    href={CONTACT.instagram}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Instagram: @soccerbotstudiosg"
+                  >
+                    <Icon name="instagram" />
+                    <span>@soccerbotstudiosg</span>
+                  </a>
+                  <Link href="/enquiry/">Enquire</Link>
+                </div>
+              </div>
+            </section>
+            <section
+              className="footer-contact-row"
+              aria-labelledby="footer-location-title"
+            >
+              <div className="footer-contact-copy">
+                <h2
+                  className="footer-contact-heading"
+                  id="footer-location-title"
+                >
+                  <strong>Find Us</strong>
+                </h2>
+                <div className="footer-contact-detail footer-direct-links">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Flagship Studio: {LOCATION.building}
+                    <br />
+                    {LOCATION.street}, {LOCATION.unit}
+                    <br />
+                    {LOCATION.postal}
                   </a>
                 </div>
               </div>
@@ -150,18 +199,18 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   <strong>Download App</strong>
                 </h2>
                 <PlayerAppLinks compact />
+                <div className="footer-brand">
+                  <img
+                    src={darkLogo}
+                    alt="SOCCERBOTSTUDIO Singapore"
+                    width={565}
+                    height={190}
+                    className="footer-logo"
+                    loading="lazy"
+                  />
+                </div>
               </div>
             </section>
-          </div>
-          <div className="footer-brand">
-            <img
-              src={darkLogo}
-              alt="SOCCERBOTSTUDIO Singapore"
-              width={565}
-              height={190}
-              className="footer-logo"
-              loading="lazy"
-            />
           </div>
         </div>
         <div className="footer-inner">
@@ -169,6 +218,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
       <SectionReveals />
+      <BackToTop />
       <PlayerAppPrompt />
       {dialog && (
         <Dialog title="Leave this booking?" onClose={() => setDialog(null)}>

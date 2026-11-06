@@ -90,4 +90,9 @@ export const studioHero = {
   src: "https://assets.soccerbot360.com/assets/videos/stream.mp4",
   poster: "https://soccerbot360.com/videos/stream-poster.jpg",
   source: "https://soccerbot360.com/en/studio",
+  mobile: {
+    src: "https://assets.soccerbot360.com/assets/videos/hero-loop.mp4",
+    poster: "https://soccerbot360.com/videos/performance-teaser-poster.jpg",
+    source: "https://soccerbot360.com/en",
+  },
 };

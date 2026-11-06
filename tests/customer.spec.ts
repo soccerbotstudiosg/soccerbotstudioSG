@@ -114,6 +114,11 @@ test("public routes remove staff access and fit the viewport", async ({
       exact: true,
     });
   const studioButtonBox = await studioButton.boundingBox();
+  if (page.viewportSize()!.width <= 700)
+    await expect(page.locator(".nav-links")).toHaveCSS(
+      "justify-content",
+      "flex-end",
+    );
   expect(flagBox).not.toBeNull();
   expect(studioButtonBox).not.toBeNull();
   expect(flagBox!.width).toBeCloseTo(25.2, 0);
@@ -162,8 +167,37 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(page.locator(".footer-apps .footer-app-link")).toHaveCount(3);
   await expect(
     page.locator(".footer-contact-grid > .footer-contact-row"),
-  ).toHaveCount(3);
+  ).toHaveCount(4);
   await expect(page.locator("#footer-apps-title")).toHaveText("Download App");
+  await expect(page.locator(".footer-contact-heading")).toHaveText([
+    "Services",
+    "Connect With Us",
+    "Find Us",
+    "Download App",
+  ]);
+  await expect(
+    page
+      .locator(".footer-direct-contact")
+      .getByRole("link", { name: /^WhatsApp:/ }),
+  ).toHaveAttribute("href", "https://wa.me/6590143819");
+  await expect(
+    page
+      .locator(".footer-direct-contact")
+      .getByRole("link", { name: "Enquire", exact: true }),
+  ).toHaveAttribute("href", sitePath("/enquiry/"));
+  await expect(page.locator(".footer-apps .footer-logo")).toHaveCount(1);
+  await expect(
+    page.locator(".footer-direct-contact .footer-contact-link .icon"),
+  ).toHaveCount(3);
+  await expect(page.locator(".footer-direct-contact a").last()).toHaveText(
+    "Enquire",
+  );
+  await expect(
+    page.locator(".footer-direct-contact").getByRole("link", {
+      name: "Instagram: @soccerbotstudiosg",
+      exact: true,
+    }),
+  ).toHaveAttribute("href", "https://www.instagram.com/soccerbotstudiosg/");
   const footerBandBox = await page
     .locator(".footer-contact-band")
     .boundingBox();
@@ -191,7 +225,9 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(studioHero.locator("video")).toBeVisible();
   await expect(studioHero.locator("video")).toHaveAttribute(
     "src",
-    "https://assets.soccerbot360.com/assets/videos/stream.mp4",
+    page.viewportSize()!.width <= 700
+      ? "https://assets.soccerbot360.com/assets/videos/hero-loop.mp4"
+      : "https://assets.soccerbot360.com/assets/videos/stream.mp4",
   );
   await expect(studioHero.locator("video")).toHaveAttribute("controls", "");
   await expect(studioHero.locator("video")).not.toHaveAttribute("autoplay");
@@ -211,6 +247,13 @@ test("public routes remove staff access and fit the viewport", async ({
     0,
   );
   expect(heroBox!.y).toBeCloseTo(signatureBox!.y + signatureBox!.height, 0);
+  if (page.viewportSize()!.width <= 700) {
+    expect(heroBox!.y + heroBox!.height).toBeCloseTo(
+      page.viewportSize()!.height,
+      0,
+    );
+    await expect(studioHero.locator("video")).toHaveCSS("object-fit", "cover");
+  }
   await expect(page.locator(".studio-showcase > .promotion-edge")).toHaveCount(
     2,
   );
@@ -260,6 +303,8 @@ test("public routes remove staff access and fit the viewport", async ({
     ),
   ).toBeLessThanOrEqual(1);
   const lastStudioRow = page.locator(".studio-row").last();
+  await expect(lastStudioRow).toHaveClass(/section-reveal-pending/);
+  await expect(lastStudioRow).toHaveCSS("opacity", "0");
   await lastStudioRow.scrollIntoViewIfNeeded();
   await expect(lastStudioRow).toHaveClass(/section-reveal/);
   await lastStudioRow.evaluate(async (element) => {
@@ -268,11 +313,25 @@ test("public routes remove staff access and fit the viewport", async ({
     );
   });
   await expect(lastStudioRow).toHaveCSS("opacity", "1");
+  const backToTop = page.getByRole("button", {
+    name: "Back to top",
+    exact: true,
+  });
+  await expect(backToTop).toBeVisible();
+  const backToTopBox = await backToTop.boundingBox();
+  expect(backToTopBox!.x + backToTopBox!.width / 2).toBeCloseTo(
+    page.viewportSize()!.width / 2,
+    0,
+  );
+  await backToTop.click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(backToTop).toHaveCount(0);
   const stickyHeaderBox = await page.locator(".site-header").boundingBox();
   expect(stickyHeaderBox!.y).toBeCloseTo(0, 0);
   for (const [label, route] of [
     ["Terms of Service", "/terms-of-service/"],
     ["Privacy Policy", "/privacy-policy/"],
+    ["Refund Policy", "/refund-policy/"],
   ]) {
     await page
       .locator(".site-footer")
@@ -513,7 +572,11 @@ test("hero completes naturally and reduced motion bypasses both transition surfa
   const lastSection = page.locator(".studio-row").last();
   await lastSection.scrollIntoViewIfNeeded();
   await expect(lastSection).toBeVisible();
-  await expect(page.locator(".section-reveal")).toHaveCount(0);
+  await page.getByRole("button", { name: "Back to top", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(
+    page.locator(".section-reveal, .section-reveal-pending"),
+  ).toHaveCount(0);
   expect(
     await lastSection.evaluate((element) => element.getAnimations().length),
   ).toBe(0);
@@ -908,6 +971,12 @@ test("header blue and the typography hierarchy stay consistent across every book
     ).toBeLessThanOrEqual(1);
   }
   async function sectionType(selector: string) {
+    await expect(
+      page.getByRole("button", { name: "Back to top", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.locator(".section-reveal, .section-reveal-pending"),
+    ).toHaveCount(0);
     const headings = page.locator(selector);
     expect(await headings.count()).toBeGreaterThan(0);
     const styles = await headings.evaluateAll((nodes) =>

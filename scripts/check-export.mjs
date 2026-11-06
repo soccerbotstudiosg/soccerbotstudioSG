@@ -45,6 +45,7 @@ export function checkExport(directory, basePath) {
     "enquiry/index.html",
     "terms-of-service/index.html",
     "privacy-policy/index.html",
+    "refund-policy/index.html",
     ...[
       "account",
       "session",

@@ -2,15 +2,13 @@
 
 Observed 6 November 2026 (Singapore). History: [Journey](docs/journey.md).
 
-## PR32 consolidated gallery, closing banners and footer app links
+## PR32 footer refinement
 
-Branch `fix/hero-session-copy`; baseline `a77aef6` passed CI42169819231, CodeQL42169815176 and staging42170759529 with matching public health. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
+Branch `fix/hero-session-copy`; baseline0c79157 passed CI42175078630, CodeQL42175073956 and staging42176139791, with public health confirming the exact revision. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
 
-Current owner direction: Studio tagline directly below header/above video; all five light picture/content rows form one continuous group with top/bottom outer curves, no internal gaps, and no gap before the separate Book now banner. Both closing banners centre content, target a further20% lower minimum height (134→107px) with proportionate type/spacing, share soft radial gradient styling and meet the unchanged footer without a gap. Contact CTA uses a tonal peach fill with dark text/border. Promotional CTAs use larger bold italic theme-heading type; closing-banner controls remain proportionate to their reduced height.
+Latest requested footer order: Services (Book, Studio, Terms of Service, Privacy Policy, Refund Policy), Connect With Us (WhatsApp, Email, Instagram, Enquire), Find Us (flagship studio/address), Download App (three icons in one horizontal row, logo underneath). Retain the pure-white footer and empty white legal placeholder bodies. New Refund Policy route joins the two existing legal placeholders; approved legal text remains pending.
 
-Homepage second/third promotion height/spacing/heading targets scale by0.90/0.78; natural mobile Studio photo and curve clearance remain protected, and content may grow rather than clip. Idle custom cursor becomes gentle grey; interactive/text/disabled cursor behavior stays unchanged. Footer uses Service and Help information columns with Download App on the right (Apple, Android and web icons in one row); the logo sits bottom-right above the divider. Get in touch and the footer Disclaimer control are removed. Service adds Terms of Service and Privacy Policy routes with intentionally empty white bodies, pending owner-approved legal text. Studio outer curves overlay the pictures rather than grey padding; footer blue-background proposal was cancelled and no such restyling is included.
-
-Extend existing public-route/popup geometry and destination checks, plus contrast mutation coverage, without changing test inventory. Verify the consolidated candidate, publish to PR32 and check exact-head CI/staging. Browser/device and post-merge A–D acceptance remain owner-operated. Final delivery receipt belongs in PR32.
+Preserve the verified sticky header, accessible scroll reveals, corrected gallery curves without grey spacers,107px closing-banner minimum-height target and visible Studio blue-to-navy gradient. Current footer changes require local code verification and exact-head CI/staging. Test inventory stays unchanged; export requirements increase13→14 routes. Final immutable delivery evidence belongs in PR32.
 
 ## Remaining work
 
@@ -20,10 +18,13 @@ Extend existing public-route/popup geometry and destination checks, plus contras
 - Wider external work remains in [Runbook](docs/runbook.md), [Admin UAT](docs/uat/admin.md) and [Trainer UAT](docs/uat/trainers.md).
 
 
-## Current follow-up before publication
 
-Sticky header with measured scroll clearance; shared once-per-section scroll reveals across routes, skipping initially visible content and respecting reduced motion/focus/live announcements. Footer and legal placeholder bodies remain pure white. Local code verification and new-head CI/staging pending for this follow-up; prior6e15e65 local verification does not accept these changes. Keep PR32 open/unmerged and settings unchanged.
+Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. Enquire is the final text link.
 
-Studio Book now now includes a visible identity-blue-to-navy linear gradient beneath the shared radial highlights; Contact keeps its orange gradient. White text contrast is checked against both gradient endpoint colours; owner visual acceptance remains pending.
+Latest visual corrections: stage offscreen sections transparently before a clear650ms/32px entrance, with immediate reveal for focus/reduced motion and cleanup. Closing-banner heading, supporting copy and CTA share centred alignment and balanced columns, stacking centrally on phones. Phone header flag and two navigation buttons align together at the right.
 
-CI42173734802 at29c0a7f exposed sequential confirmation geometry reads during section motion (backend shard1). The prepared repair waits for ancestor animations and reads both rectangles in one frame, preserving alignment tolerance. Final-head verification/staging remains pending.
+Booking routes, confirmation and experiment checkout are excluded from scroll reveals; their components remain static, retaining existing confirmation/invoice popup behavior. On phones the Studio tagline/video intro fills the first viewport below the measured sticky header, with cover video and controls; gallery begins below the fold.
+
+Mobile Studio video uses the official homepage hero-loop.mp4 montage with a centred portrait cover crop; desktop retains stream.mp4. Both retain native controls, playsInline, no autoplay and no preload. The responsive source owner is studio-hero-video.tsx with canonical media provenance in media.ts. Footer headings are16px, details14px, contact icons20px and app icons26px within44px controls; four desktop columns become two on tablets and one on phones.
+
+Public pages show a centred floating up-chevron after200px scrolling. Its icon gently floats; clicking restores header focus and scrolls to the top. Reduced motion disables floating/smooth scrolling. The control is absent throughout booking, confirmation and experiment checkout. Check it on phone/desktop alongside existing public-section motion; no payment/navigation authority changes.
