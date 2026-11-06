@@ -594,9 +594,14 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     const width = await page
       .locator(selector)
       .evaluate((element) => element.getBoundingClientRect().width);
-    const container = await page
-      .locator(parent)
-      .evaluate((element) => element.getBoundingClientRect().width);
+    const container = await page.locator(parent).evaluate((element) => {
+      const style = getComputedStyle(element);
+      return (
+        element.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight)
+      );
+    });
     expect(Math.abs(width - container)).toBeLessThanOrEqual(1);
   }
   await openSite(page, "/book/account/");
@@ -994,6 +999,17 @@ test("header blue and the typography hierarchy stay consistent across every book
           0,
         );
         expect(barBox!.height).toBeLessThanOrEqual(72);
+        expect(barBox!.x).toBeCloseTo(0, 0);
+        expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
+        const action = primaryBar.locator(":scope > .button");
+        await expect(action).toHaveCount(1);
+        const actionBox = await action.boundingBox();
+        expect(actionBox!.x).toBeCloseTo(20, 0);
+        expect(actionBox!.x + actionBox!.width).toBeCloseTo(
+          page.viewportSize()!.width - 20,
+          0,
+        );
+        expect(actionBox!.height).toBeGreaterThanOrEqual(44);
       }
     }
     await expect(
