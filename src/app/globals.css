@@ -353,8 +353,10 @@
   .nav-flag {
     display: block;
     flex: 0 0 auto;
-    width: 36px;
-    height: 24px;
+    width: 25.2px;
+    height: 16.8px;
+    align-self: flex-end;
+    margin: 0 8px 4px 0;
     object-fit: contain;
   }
   .nav-links > a {
@@ -580,10 +582,6 @@
     text-align: center;
     justify-content: center;
   }
-  .app-prompt-copy {
-    color: var(--color-muted);
-    margin-bottom: 24px;
-  }
 }
 @layer components {
   .site-header {
@@ -752,9 +750,9 @@
     --light-y: 44%;
     position: relative;
     display: grid;
-    grid-template-rows: auto minmax(320px, 1fr) auto;
-    min-height: 610px;
-    padding: 30px max(40px, calc((100vw - 1160px) / 2)) 32px;
+    grid-template-rows: auto minmax(272px, 1fr) auto;
+    min-height: 518.5px;
+    padding: 25.5px max(40px, calc((100vw - 1160px) / 2)) 27.2px;
     overflow: hidden;
     isolation: isolate;
     cursor: pointer;
@@ -957,7 +955,7 @@
     place-items: center;
     position: relative;
     pointer-events: none;
-    padding: 32px 0 42px;
+    padding: 27.2px 0 35.7px;
   }
   .arena-words {
     display: grid;
@@ -1096,7 +1094,7 @@
   @media (min-width: 1025px) and (hover: hover) and (pointer: fine) and (any-pointer: fine) {
     .arena-center {
       place-items: end center;
-      padding: 32px 0 24px;
+      padding: 27.2px 0 20.4px;
     }
     .arena-words {
       font-size: clamp(4.5rem, 7.3vw, 6rem);
@@ -1363,17 +1361,13 @@
     margin: 0 0 12px;
     background: var(--color-navy);
   }
-  .studio-hero > img {
+  .studio-hero > video {
     display: block;
     width: 100%;
-    height: clamp(260px, 48vw, 650px);
-    object-fit: cover;
+    aspect-ratio: 16 / 9;
+    max-height: 650px;
+    object-fit: contain;
     object-position: center;
-  }
-  .studio-hero > figcaption {
-    padding: 12px 24px;
-    font-size: var(--text-caption);
-    color: var(--color-on-brand-muted);
   }
   .studio-showcase {
     width: 100%;
@@ -1543,16 +1537,6 @@
   .studio-bottom .button:is(:hover, :focus-visible) .studio-book-arrow svg {
     transform: rotate(0);
   }
-  .studio-credit {
-    font-size: 0.6875rem;
-    color: var(--color-on-brand-muted);
-    text-align: center;
-    margin: 0;
-  }
-  .studio-credit a {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
   @media (max-width: 1000px) {
     .studio-row,
     .studio-photo {
@@ -1635,12 +1619,39 @@
     }
   }
   .home-promotion {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
     width: 100%;
     margin-block: 12px;
     background: var(--color-brand);
     color: var(--color-on-brand);
+  }
+  .home-promotion--studio .promotion-copy {
+    padding-block: calc(clamp(32px, 5vw, 76px) + 40px);
+  }
+  .promotion-edge {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    fill: var(--color-surface);
+    pointer-events: none;
+  }
+  .promotion-edge--top {
+    top: 0;
+  }
+  .promotion-edge--bottom {
+    bottom: 0;
+    transform: rotate(180deg);
+  }
+  .home-promotion--contact .promotion-copy {
+    padding-top: calc(clamp(32px, 5vw, 76px) + 57px);
+  }
+  .promotion-edge--contact-top {
+    top: 0;
+    height: 57px;
   }
   .home-promotion--booking {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
@@ -1726,15 +1737,6 @@
     outline-color: var(--color-on-brand);
     outline-offset: 5px;
   }
-  .promotion-credit {
-    margin-top: 24px;
-    font-size: var(--text-caption);
-    line-height: 1.6;
-  }
-  .promotion-credit a {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
   @media (max-width: 900px) {
     .promotion-image {
       min-height: 440px;
@@ -1765,72 +1767,6 @@
     .home-promotion .promotion-cta {
       width: 100%;
     }
-  }
-  .contact-banner {
-    background: var(--color-action);
-    border: 0;
-    border-top: 1px solid var(--color-action-border);
-    color: var(--color-surface);
-    transition: background 0.18s;
-    display: grid;
-    grid-template-columns: 50px minmax(0, 1fr) 50px;
-    align-items: center;
-    gap: 26px;
-    width: 100%;
-    min-height: 150px;
-    margin: 0;
-    padding: 40px max(40px, calc((100vw - 1160px) / 2));
-    border-radius: 0;
-    text-align: center;
-    cursor: pointer;
-  }
-  .contact-banner:hover {
-    background: var(--color-action-hover);
-  }
-  .contact-banner:focus-visible {
-    outline: 3px solid var(--color-focus);
-    outline-offset: -5px;
-  }
-  .contact-banner:active {
-    background: var(--color-action-hover);
-  }
-  .contact-banner-copy {
-    display: block;
-    grid-column: 2;
-    grid-row: 1;
-    min-width: 0;
-    text-align: center;
-  }
-  .contact-banner-title {
-    display: block;
-    font-size: 1.7rem;
-    line-height: 1.1;
-    font-style: italic;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: -0.025em;
-  }
-  .contact-banner-description {
-    display: block;
-    max-width: 760px;
-    margin: 10px auto 0;
-    font-size: 0.9375rem;
-    color: var(--color-on-brand-muted);
-    line-height: 1.65;
-  }
-  .contact-banner-arrow {
-    display: grid;
-    grid-column: 3;
-    grid-row: 1;
-    place-items: center;
-    width: 50px;
-    height: 50px;
-    border: 1px solid #ffffff6b;
-    border-radius: 50%;
-  }
-  .contact-banner-arrow svg {
-    width: 24px;
-    height: 24px;
   }
   .footer-contact-band {
     --footer-logo-offset: calc(50% - min(580px, calc(50vw - 40px)) + 44px);
@@ -2009,11 +1945,11 @@
       max-width: calc(100% - 56px);
     }
     .arena-booking {
-      min-height: 555px;
-      padding: 27px 28px 29px;
+      min-height: 471.75px;
+      padding: 22.95px 28px 24.65px;
     }
     .arena-center {
-      padding: 34px 0 42px;
+      padding: 28.9px 0 35.7px;
     }
     .nav {
       padding: 0 25px;
@@ -2062,9 +1998,9 @@
       max-width: calc(100% - 44px);
     }
     .arena-booking {
-      min-height: 530px;
-      padding: 23px 22px 26px;
-      grid-template-rows: auto minmax(330px, 1fr) auto;
+      min-height: 450.5px;
+      padding: 19.55px 22px 22.1px;
+      grid-template-rows: auto minmax(260px, 1fr) auto;
     }
     .arena-topline {
       font-size: 0.6rem;
@@ -2075,7 +2011,7 @@
       line-height: 0.9;
     }
     .arena-center {
-      padding: 24px 0 35px;
+      padding: 20.4px 0 29.75px;
     }
     .arena-cue strong {
       font-size: 0.875rem;
@@ -2121,28 +2057,6 @@
     .nav-links .nav-book::after {
       width: 6px;
       height: 6px;
-    }
-    .contact-banner {
-      grid-template-columns: 42px minmax(0, 1fr) 42px;
-      padding: 30px 20px;
-      gap: 12px;
-      min-height: 132px;
-    }
-    .contact-banner-title {
-      font-size: 1.35rem;
-    }
-    .contact-banner-description {
-      font-size: 0.8125rem;
-      line-height: 1.6;
-      margin-top: 8px;
-    }
-    .contact-banner-arrow {
-      width: 42px;
-      height: 42px;
-    }
-    .contact-banner-arrow svg {
-      width: 21px;
-      height: 21px;
     }
     .footer-inner {
       display: block;
@@ -2222,7 +2136,8 @@
     .arena-booking {
       padding-left: 18px;
       padding-right: 18px;
-      min-height: 510px;
+      min-height: 433.5px;
+      grid-template-rows: auto minmax(240px, 1fr) auto;
     }
     .arena-topline {
       font-size: 0.55rem;
@@ -2714,6 +2629,30 @@
     background: var(--color-brand-soft);
     color: var(--color-muted);
   }
+  .outlet-option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin: 20px 0 28px;
+    text-align: left;
+  }
+  .outlet-option > span {
+    display: grid;
+    flex: 1;
+    gap: 6px;
+  }
+  .outlet-option strong {
+    font-size: var(--text-card);
+  }
+  .outlet-option > span > span {
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+  }
+  .outlet-option[aria-expanded="true"] {
+    border-color: var(--color-identity);
+    background: var(--color-brand-soft);
+  }
   .session-products {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2989,17 +2928,6 @@
     height: 28px;
     stroke-width: 2.5;
   }
-  .player-app-dialog .app-prompt-eyebrow {
-    color: var(--color-arena-accent);
-    font-size: var(--text-caption);
-    font-weight: var(--weight-heading);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin: 20px 0;
-  }
-  .app-prompt-copy {
-    margin-bottom: 24px;
-  }
   .app-store-links {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -3010,7 +2938,7 @@
     align-items: center;
     gap: 12px;
     padding: 16px;
-    border: 1px solid var(--color-arena-accent);
+    border: 1px solid var(--color-action-hover);
     border-radius: 20px;
     color: white;
   }

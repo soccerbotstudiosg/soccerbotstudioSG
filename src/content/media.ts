@@ -85,5 +85,9 @@ export const homeMedia = {
   },
 };
 
-// Official /en/studio image, rechecked 6 November 2026; reuse the local asset.
-export const studioHero = homeMedia.studio;
+// Official Studio stream demonstration, matching the owner’s reference.
+export const studioHero = {
+  src: "https://assets.soccerbot360.com/assets/videos/stream.mp4",
+  poster: "https://soccerbot360.com/videos/stream-poster.jpg",
+  source: "https://soccerbot360.com/en/studio",
+};

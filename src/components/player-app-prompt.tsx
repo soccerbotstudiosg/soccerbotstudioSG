@@ -21,16 +21,10 @@ export function PlayerAppPrompt() {
   if (!unseen || dismissed) return null;
   return (
     <Dialog
-      title="Get the SoccerBot Player App"
+      title="Download the official soccerbot360 app now."
       onClose={close}
       variant="player-app"
     >
-      <p className="app-prompt-eyebrow">
-        Your data. Your highlights. Your progress.
-      </p>
-      <p className="app-prompt-copy">
-        The ultimate performance app for players, parents and coaches.
-      </p>
       <div className="app-store-links">
         {PLAYER_APP_STORES.map((store, index) => (
           <a

@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 async function openSite(page: Page, route: string) {
   await page.goto(sitePath(route));
   const prompt = page.getByRole("dialog", {
-    name: "Get the SoccerBot Player App",
+    name: "Download the official soccerbot360 app now.",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -20,6 +20,12 @@ async function openSite(page: Page, route: string) {
 async function chooseSlots(page: Page, multiple = false) {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
   await page
     .getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
@@ -108,10 +114,12 @@ test("public routes remove staff access and fit the viewport", async ({
   const studioButtonBox = await studioButton.boundingBox();
   expect(flagBox).not.toBeNull();
   expect(studioButtonBox).not.toBeNull();
+  expect(flagBox!.width).toBeCloseTo(25.2, 0);
+  expect(flagBox!.height).toBeCloseTo(16.8, 0);
   expect(flagBox!.width / flagBox!.height).toBeCloseTo(1.5, 1);
   expect(flagBox!.x + flagBox!.width).toBeLessThan(studioButtonBox!.x);
   const promotions = page.locator(".home-promotion");
-  await expect(promotions).toHaveCount(2);
+  await expect(promotions).toHaveCount(3);
   const backgrounds: string[] = [];
   for (const promotion of await promotions.all()) {
     const box = await promotion.boundingBox();
@@ -136,7 +144,14 @@ test("public routes remove staff access and fit the viewport", async ({
     page.getByRole("heading", { name: "Inside the arena." }),
   ).toBeVisible();
   const studioHero = page.locator(".studio-hero");
-  await expect(studioHero.locator("img")).toBeVisible();
+  await expect(studioHero.locator("video")).toBeVisible();
+  await expect(studioHero.locator("video")).toHaveAttribute(
+    "src",
+    "https://assets.soccerbot360.com/assets/videos/stream.mp4",
+  );
+  await expect(studioHero.locator("video")).toHaveAttribute("controls", "");
+  await expect(studioHero.locator("video")).not.toHaveAttribute("autoplay");
+  await expect(studioHero.locator("figcaption")).toHaveCount(0);
   const heroBox = await studioHero.boundingBox();
   const contentBox = await page.locator(".studio-showcase").boundingBox();
   expect(heroBox).not.toBeNull();
@@ -404,6 +419,16 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".session-products")).toHaveCount(0);
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Add one player" }),
+  ).toHaveCount(0);
   const cardWidths = await page
     .locator(".session-products")
     .evaluate((grid) => ({
@@ -629,14 +654,16 @@ test("leave booking uses equal-width sentence-case actions with home left and st
     .click();
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
 });
-test("first visit offers the Player App and dismissal persists while the navbar download remains", async ({
+test("first visit offers the Player App with only store links and dismissal persists", async ({
   page,
 }) => {
   await page.goto(sitePath("/"));
   const prompt = page.getByRole("dialog", {
-    name: "Get the SoccerBot Player App",
+    name: "Download the official soccerbot360 app now.",
   });
   await expect(prompt).toBeVisible();
+  await expect(prompt.locator("p")).toHaveCount(0);
+  await expect(prompt.getByRole("link")).toHaveCount(3);
   for (const [name, href] of [
     [
       "App Store",
@@ -666,11 +693,7 @@ test("first visit offers the Player App and dismissal persists while the navbar 
     page.getByRole("heading", { name: "Your next session starts here." }),
   ).toBeVisible();
   await expect(prompt).toHaveCount(0);
-  await expect(page.locator(".nav-download")).toBeVisible();
-  await expect(page.locator(".nav-download")).toHaveAttribute(
-    "href",
-    "https://soccerbot360.com/en/player-app",
-  );
+  await expect(page.locator(".nav-download")).toHaveCount(0);
   await page.getByRole("link", { name: "The studio", exact: true }).click();
   await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
@@ -754,6 +777,12 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(guest).toHaveCSS("font-size", "16px");
   await guest.click();
   await pageHeading("Your session");
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
   await page
     .getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
@@ -1166,6 +1195,12 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
 }) => {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
   await page
     .getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",

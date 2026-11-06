@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { ADDRESS, CONTACT, LOCATION, PLAYER_APP_URL } from "@/domain/catalog";
+import { ADDRESS, CONTACT, LOCATION } from "@/domain/catalog";
 import { darkLogo, logo, singaporeFlag } from "@/content/media";
 import { useBooking } from "@/features/booking/provider";
 import { Dialog } from "./dialog";
@@ -54,8 +54,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
               className="nav-flag"
               src={singaporeFlag}
               alt="Singapore"
-              width={36}
-              height={24}
+              width={25.2}
+              height={16.8}
             />
             <BookingLink
               href="/studio/"
@@ -64,14 +64,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               The studio
             </BookingLink>
-            <a
-              href={PLAYER_APP_URL}
-              className="nav-download"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Download app
-            </a>
             <BookingLink href="/book/account/" className="nav-book">
               Book now
             </BookingLink>

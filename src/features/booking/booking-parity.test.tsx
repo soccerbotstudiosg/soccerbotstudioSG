@@ -275,6 +275,9 @@ test("live session preserves demo product player and inclusion presentation usin
       <SessionStep />
     </BookingProvider>,
   );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
   const card = await screen.findByRole("button", {
     name: "Choose Real session",
   });

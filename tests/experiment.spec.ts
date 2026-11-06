@@ -3,7 +3,7 @@ import { sitePath } from "../src/content/site-path";
 async function start(page: Page) {
   await page.goto(sitePath("/experiment/"));
   const prompt = page.getByRole("dialog", {
-    name: "Get the SoccerBot Player App",
+    name: "Download the official soccerbot360 app now.",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -240,10 +240,18 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page.clock.install({ time: new Date("2026-10-05T08:00:00+08:00") });
   await page.goto(sitePath("/book/account/"));
   await page
-    .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+    .getByRole("dialog", {
+      name: "Download the official soccerbot360 app now.",
+    })
     .getByRole("button", { name: "Close dialog", exact: true })
     .click();
   await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
   await page
     .getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",

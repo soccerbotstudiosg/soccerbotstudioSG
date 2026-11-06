@@ -877,7 +877,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "first visit offers the Player App and dismissal persists while the navbar download remains"
+    "title": "first visit offers the Player App with only store links and dismissal persists"
   },
   {
     "file": "tests/customer.spec.ts",

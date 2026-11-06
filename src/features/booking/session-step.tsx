@@ -2,7 +2,7 @@
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { CustomerCatalogue } from "@/domain/catalog";
+import { LOCATION, type CustomerCatalogue } from "@/domain/catalog";
 import { Icon } from "@/components/icon";
 import { MAX_PLAYERS } from "@/domain/booking-policy";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
@@ -12,10 +12,36 @@ import { useBooking } from "./provider";
 /** Select the live or demo session presentation. */
 export function SessionStep() {
   const { bookingService } = useBooking();
-  return bookingService.mode === "live" ? (
-    <LiveCatalogue render={(data) => <LiveSession data={data} />} />
-  ) : (
-    <SessionPresentation />
+  const [outletSelected, setOutletSelected] = useState(false);
+  return (
+    <>
+      <h1 className="page-title">Your session</h1>
+      <h2 className="section-title">Choose your outlet</h2>
+      <button
+        className="surface outlet-option"
+        aria-label={`Select ${LOCATION.building} outlet`}
+        aria-expanded={outletSelected}
+        aria-controls="outlet-sessions"
+        onClick={() => setOutletSelected(true)}
+      >
+        <Icon name="location" />
+        <span>
+          <strong>{LOCATION.building}</strong>
+          <span>
+            Our flagship studio · {LOCATION.street}, {LOCATION.unit}
+          </span>
+        </span>
+        <Icon name={outletSelected ? "check" : "arrow"} />
+      </button>
+      <div id="outlet-sessions" hidden={!outletSelected}>
+        {outletSelected &&
+          (bookingService.mode === "live" ? (
+            <LiveCatalogue render={(data) => <LiveSession data={data} />} />
+          ) : (
+            <SessionPresentation />
+          ))}
+      </div>
+    </>
   );
 }
 /** Resolve live catalogue data for the session selection step. */
@@ -44,7 +70,6 @@ function LiveSession({ data }: { data: CustomerCatalogue }) {
   if (!selected)
     return (
       <>
-        <h1 className="page-title">Your session</h1>
         <section className="surface">
           <p>
             {eligible.length
@@ -115,8 +140,7 @@ function SessionPresentation({
   );
   return (
     <>
-      <h1 className="page-title">Your session</h1>
-      <p className="lead">Select your session.</p>
+      <h2 className="section-title">Select your session</h2>
       <div className="session-products">
         <button
           className="surface session-product"

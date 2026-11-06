@@ -13,6 +13,15 @@ export default function Home() {
         className="home-promotion home-promotion--studio"
         aria-labelledby="home-studio-title"
       >
+        <svg
+          className="promotion-edge promotion-edge--top"
+          viewBox="0 0 1440 40"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M0 0H1440V23Q720 57 0 23Z" />
+        </svg>
         <figure className="promotion-image">
           <img
             src={homeMedia.studio.src}
@@ -34,14 +43,16 @@ export default function Home() {
           <BookingLink className="button promotion-cta" href="/studio/">
             Explore the studio <Icon name="arrow" />
           </BookingLink>
-          <small className="promotion-credit">
-            Imagery:{" "}
-            <a href={homeMedia.studio.source} target="_blank" rel="noreferrer">
-              SOCCERBOT360 global studios
-            </a>
-            .
-          </small>
         </div>
+        <svg
+          className="promotion-edge promotion-edge--bottom"
+          viewBox="0 0 1440 40"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M0 0H1440V23Q720 57 0 23Z" />
+        </svg>
       </section>
       <section
         className="home-promotion home-promotion--booking"
@@ -77,18 +88,41 @@ export default function Home() {
           </BookingLink>
         </div>
       </section>
-      <Link href="/enquiry/" className="contact-banner">
-        <span className="contact-banner-copy">
-          <span className="contact-banner-title">Contact us</span>
-          <span className="contact-banner-description">
+      <section
+        className="home-promotion home-promotion--contact"
+        aria-labelledby="home-contact-title"
+      >
+        <svg
+          className="promotion-edge promotion-edge--contact-top"
+          viewBox="0 0 1440 57"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M0 0H1440V57Q720 -1 0 57Z" />
+        </svg>
+        <figure className="promotion-image">
+          <img
+            src={homeMedia.studio.src}
+            alt={homeMedia.studio.alt}
+            width={homeMedia.studio.width}
+            height={homeMedia.studio.height}
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+        <div className="promotion-copy">
+          <span className="promotion-eyebrow">Bring your group</span>
+          <h2 id="home-contact-title">Contact us</h2>
+          <p>
             For Multi-Session Bundles, Membership, Academy, Corporate and
             Sponsorship Rates
-          </span>
-        </span>
-        <span className="contact-banner-arrow">
-          <Icon name="arrow" />
-        </span>
-      </Link>
+          </p>
+          <Link href="/enquiry/" className="button promotion-cta">
+            Contact us <Icon name="arrow" />
+          </Link>
+        </div>
+      </section>
     </>
   );
 }

@@ -7,15 +7,14 @@ export default function Studio() {
   return (
     <>
       <figure className="studio-hero">
-        <img
+        <video
           src={studioHero.src}
-          alt={studioHero.alt}
-          width={studioHero.width}
-          height={studioHero.height}
-          fetchPriority="high"
-          decoding="async"
+          poster={studioHero.poster}
+          controls
+          playsInline
+          preload="none"
+          aria-label="SOCCERBOT360 studio demonstration"
         />
-        <figcaption>Inside SOCCERBOT360 · Global studio imagery</figcaption>
       </figure>
       <section className="studio-showcase" aria-labelledby="studio-title">
         <h1 className="sr-only" id="studio-title">
@@ -58,17 +57,6 @@ export default function Studio() {
               </span>
             </span>
           </BookingLink>
-          <p className="studio-credit">
-            Global studio imagery and technology:{" "}
-            <a
-              href="https://soccerbot360.com/en/produkt"
-              target="_blank"
-              rel="noreferrer"
-            >
-              official product information
-            </a>
-            .
-          </p>
         </div>
       </section>
     </>
