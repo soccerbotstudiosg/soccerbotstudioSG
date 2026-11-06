@@ -197,7 +197,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               <div className="footer-contact-copy">
                 <h2 className="footer-contact-heading" id="footer-apps-title">
-                  <strong>Download Official Soccerbot360 App:</strong>
+                  <strong>Soccerbot360 App:</strong>
                 </h2>
                 <PlayerAppLinks compact />
                 <div className="footer-brand">

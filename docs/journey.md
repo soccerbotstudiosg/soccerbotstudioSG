@@ -5083,3 +5083,7 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 - Owner chose GIF-style playback using existing video files: silent inline autoplay once, no native player chrome/loop, one Pause/Replay control. Reduced motion prevents autoplay; rejected autoplay retains manual Play. Desktop/mobile official sources and portrait crop remain.
 - Added component playback regressions and updated existing calendar/prompt browser assertions; no assistant browser execution. Booking mutations, expiry reconciliation, provider contracts and payment guards unchanged.
 - Prior db5e724 passed CI42207739556, CodeQL42207734490 and staging42209030129; health version072c52a3-3644-4f43-b56e-4b2865e40b78. New candidate requires final checks. Documentation refactor remains paused; no merge or activation.
+
+- CI42225962661 phone-WebKit live-email shard2 failed the unchanged0.5px alignment assertion: month wrapper y317.34375 versus Refresh y318.34375 (job127920044868, artifact13505582824). Inline select baseline space enlarged the wrapper; make the owned select block-level so all row controls align. Retain original assertion/tolerance and failure evidence; rerun final candidate gates.
+
+- Owner shortened the footer app-group heading to “Soccerbot360 App:”; keep destinations/icons/alignment unchanged.

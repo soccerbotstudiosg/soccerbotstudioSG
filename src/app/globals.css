@@ -3093,6 +3093,7 @@
     max-width: 245px;
   }
   .month-picker select {
+    display: block;
     width: 100%;
     background: var(--color-surface);
     color: var(--color-ink);
