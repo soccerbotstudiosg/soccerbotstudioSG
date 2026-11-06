@@ -1,4 +1,7 @@
 "use client";
+import { totalCents } from "@/domain/booking";
+import { money } from "@/domain/dates";
+import { useBooking } from "./provider";
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 
 /** Float one existing action only until its reserved document position is reached. */
@@ -67,4 +70,12 @@ export function BookingPrimaryAction({
       </div>
     </div>
   );
+}
+
+/** Show the total from the existing selected-session price owner beside a next action. */
+export function BookingActionTotal() {
+  const { draft } = useBooking();
+  return draft.slots.length > 0 ? (
+    <span className="booking-action-total">{money(totalCents(draft))}</span>
+  ) : null;
 }

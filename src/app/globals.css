@@ -1803,6 +1803,9 @@
     align-self: stretch;
     align-items: stretch;
   }
+  .footer-apps .footer-contact-heading {
+    text-align: right;
+  }
   .footer-apps .footer-contact-copy {
     display: grid;
     grid-template-rows: auto auto 1fr;
@@ -2086,6 +2089,9 @@
     }
     .footer-direct-links .footer-contact-link {
       gap: 6px;
+    }
+    .footer-apps .footer-contact-heading {
+      text-align: center;
     }
     .footer-apps .footer-contact-copy {
       justify-items: center;
@@ -2917,9 +2923,29 @@
     margin: 0;
     width: min(72vw, 360px);
     max-height: min(65dvh, calc(100dvh - var(--panel-top) - 16px));
-    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
     background: var(--color-surface);
     overscroll-behavior: contain;
+  }
+  .booking-panel-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex-shrink: 0;
+    padding: 16px;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .booking-panel-body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px;
+  }
+  .booking-action-total {
+    white-space: nowrap;
   }
   .booking-panel-dialog .dialog-title {
     font-size: var(--text-section);

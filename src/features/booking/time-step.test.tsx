@@ -58,7 +58,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(crossing).toHaveTextContent("Faisal Shahril");
   expect(crossing).toHaveTextContent("Crosses the 15:00 instructor rotation");
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
   await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
   expect(loadBooking().draft.slots).toHaveLength(1);
@@ -106,7 +108,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(
     screen.queryByRole("region", { name: "Your instructors" }),
   ).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeDisabled();
   expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
   vi.stubGlobal("matchMedia", () => ({
     matches: true,
@@ -172,7 +176,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   const cartPanel = screen.getByRole("dialog", { name: "Your cart" });
   expect(within(cartPanel).getAllByRole("listitem")).toHaveLength(3);
   expect(
-    within(cartPanel).queryByRole("link", { name: "Continue" }),
+    within(cartPanel).queryByRole("link", {
+      name: /^Continue(?: \$[\d,.]+)?$/,
+    }),
   ).not.toBeInTheDocument();
   await user.click(
     within(cartPanel).getByRole("button", {
@@ -192,7 +198,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
       .getByRole("button", { name: "View selected trainers, 1 trainer" })
       .querySelector(".booking-cart-count"),
   ).toHaveTextContent("1");
-  expect(screen.getAllByRole("link", { name: "Continue" })).toHaveLength(1);
+  expect(
+    screen.getAllByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toHaveLength(1);
 });
 test("crossing notices persist in the basket and review before payment", async () => {
   const basket = render(
@@ -204,10 +212,9 @@ test("crossing notices persist in the basket and review before payment", async (
   expect(
     within(screen.getByRole("complementary")).getByText(/Crosses the 15:00/),
   ).toHaveTextContent("stays for the full session");
-  expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
-    "href",
-    "/book/details",
-  );
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toHaveAttribute("href", "/book/details");
   basket.unmount();
   render(
     <BookingProvider>
@@ -218,7 +225,7 @@ test("crossing notices persist in the basket and review before payment", async (
     "stays for the full session",
   );
   expect(
-    screen.getByRole("button", { name: "Continue to payment" }),
+    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
   ).toBeDisabled();
 });
 
@@ -298,11 +305,15 @@ test("an open booking page expires a selected slot at its start and keeps it rem
   fireEvent.change(screen.getByLabelText("Trainer for 2026-10-06 at 12:00"), {
     target: { value: "2026-10-06|12:00|demo|faisal" },
   });
-  expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeInTheDocument();
   await act(async () => {
     vi.advanceTimersByTime(1);
   });
-  expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeDisabled();
   await act(async () => {});
   expect(
     within(screen.getByRole("complementary")).getByText(/Session has started/),
@@ -333,7 +344,9 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   await act(async () => {});
   const basket = within(screen.getByRole("complementary"));
   expect(basket.getByText(/Session has started/)).toBeVisible();
-  expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeDisabled();
   expect(loadBooking().draft.slots).toEqual([stale, future]);
   fireEvent.click(
     screen.getByRole("button", { name: "Remove 2026-12-31 at 18:40" }),
@@ -341,7 +354,9 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   await act(async () => {});
   expect(loadBooking().draft.slots).toEqual([future]);
   expect(basket.queryByText(/Session has started/)).not.toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeInTheDocument();
 });
 test("selection rechecks time before dispatch and refreshes after a suspended tab resumes", async () => {
   vi.setSystemTime(new Date("2026-10-06T08:59:59+08:00"));
@@ -392,7 +407,9 @@ test("an open calendar follows Singapore year rollover without deleting its draf
     screen.getByRole("button", { name: dateLabel("2027-01-01") }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(loadBooking().draft.slots).toEqual([slot]);
-  expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeInTheDocument();
   view.unmount();
 });
 

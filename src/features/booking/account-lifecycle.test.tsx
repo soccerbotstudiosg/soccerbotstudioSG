@@ -141,7 +141,7 @@ test("signed-in customer manages saved contact on Account without entering unava
     "readonly",
   );
   expect(
-    screen.queryByRole("button", { name: "Review booking" }),
+    screen.queryByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
   ).not.toBeInTheDocument();
   expect(screen.queryByLabelText(/Preferred contact/)).not.toBeInTheDocument();
   expect(saveProfile).not.toHaveBeenCalled();

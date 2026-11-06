@@ -5057,3 +5057,11 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 - Contact us now uses the same blue-to-navy gradient, radial highlights, text and CTA as Book now. Retire unused orange palette/contrast pairs; replace with white/navy endpoint, CTA hover and badge contrast guards. Updated rejection fixtures retain negative contrast proof.
 - Focused time-step/direct-checkout tests29/29 passed; existing browser checks updated for persistent icon geometry, naked button width/spacing, email fit, footer alignment and identical banner gradients. Full local and final-head CI/staging pending.
 - Separate documentation PR33/abbf9f2 completed baseline audit and numbered per-document menus; manual CI dispatch returned Forbidden. Reconcile this UI follow-up into that dependent branch in place after UI publication.
+
+## 6 November 2026 — popup headers, action totals and complete mobile Review
+
+- UI794f26c passed CI42195853754, CodeQL42195844818 and staging42197062379; health confirmed version311f9579-969a-4a69-9353-60f28d004e56. No merge/activation.
+- Desktop download heading now right-aligns with app assets; mobile remains centred. Cart/trainer dialog body scrolls independently of its header and close control.
+- Next-action totals reuse domain pricing; Review restores complete main-body details on phones and keeps the same cart summary as Details. Original validation, held/verifying Edit locks and checkout handlers remain unchanged.
+- Component checks caught amount-bearing accessible names and contact-only fixtures without slots; locators updated for their actual states, retaining duplicate-write, cancellation and loading assertions. Browser assertions cover totals, restored Review and persistent popup header; owner/CI execution pending.
+- Documentation refactor and its CI remain explicitly paused.

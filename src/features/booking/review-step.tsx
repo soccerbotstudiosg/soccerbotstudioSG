@@ -1,6 +1,8 @@
 "use client";
-import { useMobileBooking } from "./booking-tools";
-import { BookingPrimaryAction } from "./booking-primary-action";
+import {
+  BookingPrimaryAction,
+  BookingActionTotal,
+} from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -65,7 +67,6 @@ export function ReviewStep({
   const { draft, attempt, update, checkout, now, action, cancel } =
       useBooking(),
     router = useRouter();
-  const mobile = useMobileBooking();
   const [policy, setPolicy] = useState(false);
   const mounted = useRef(false);
   useEffect(() => {
@@ -84,7 +85,7 @@ export function ReviewStep({
       <h1 className="page-title">Review booking</h1>
       <p className="lead">Check your details before payment.</p>
       <section className="surface booking-document">
-        {!mobile && <ReviewSessions part="heading" verifying={verifying} />}
+        <ReviewSessions part="heading" verifying={verifying} />
         <div className="review-block">
           <div className="review-head">
             <h2>Booking contact</h2>
@@ -96,7 +97,7 @@ export function ReviewStep({
           </div>
           <ClientDetails contact={draft.contact} />
         </div>
-        {!mobile && <ReviewSessions part="order" verifying={verifying} />}
+        <ReviewSessions part="order" verifying={verifying} />
         <Arrival />
       </section>
       <label className="check-label review-terms">
@@ -151,7 +152,8 @@ export function ReviewStep({
             <BrandLoading compact label="Opening checkout…" />
           ) : (
             "Continue to payment"
-          )}
+          )}{" "}
+          <BookingActionTotal />
           {!busy && <Icon name="chevron" />}
         </button>
       </BookingPrimaryAction>

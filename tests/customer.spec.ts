@@ -30,8 +30,28 @@ async function openBookingPanel(page: Page, panel: "cart" | "trainers") {
     exact: true,
   });
   await expect(dialog).toBeVisible();
+  const panelHeader = dialog.locator(".booking-panel-header");
+  const panelBody = dialog.locator(".booking-panel-body");
+  await expect(panelHeader).toHaveCSS("position", "sticky");
+  await expect(panelBody).toHaveCSS("overflow-y", "auto");
+  const headerBefore = await panelHeader.boundingBox();
+  await panelBody.evaluate((node) => {
+    node.scrollTop = node.scrollHeight;
+  });
+  const headerAfter = await panelHeader.boundingBox();
+  expect(headerAfter!.y).toBeCloseTo(headerBefore!.y, 0);
   await expect(
-    dialog.getByRole("link", { name: "Continue", exact: true }),
+    dialog.getByRole("button", { name: "Close dialog" }),
+  ).toBeInViewport();
+  await panelBody.evaluate((node) => {
+    node.scrollTop = 0;
+  });
+
+  await expect(
+    dialog.getByRole("link", {
+      name: /^Continue(?: \$[\d,.]+)?$/,
+      exact: true,
+    }),
   ).toHaveCount(0);
   const box = await dialog.boundingBox();
   expect(box!.width).toBeGreaterThan(page.viewportSize()!.width * 0.65);
@@ -117,7 +137,15 @@ async function chooseSlots(page: Page, multiple = false) {
       page.getByRole("complementary", { name: "Your booking summary" }),
     ).toHaveCount(0);
   }
-  await page.getByRole("link", { name: "Continue", exact: true }).click();
+  await expect(
+    page.locator(".booking-primary-action .booking-action-total"),
+  ).toHaveText(multiple ? "$176.00" : "$88.00");
+  await page
+    .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+    .click();
+  await expect(
+    page.locator(".booking-primary-action .booking-action-total"),
+  ).toHaveText(multiple ? "$176.00" : "$88.00");
   await openBookingPanel(page, "cart");
   await expect(
     page
@@ -134,7 +162,29 @@ async function details(page: Page) {
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
-  await page.getByRole("button", { name: "Review booking" }).click();
+  await page
+    .getByRole("button", { name: /^Review booking \$[\d,.]+$/ })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Order summary", exact: true }),
+  ).toBeVisible();
+  const totalText = await page
+    .locator(".booking-document .line-item.total strong")
+    .innerText();
+  await expect(
+    page.locator(".booking-primary-action .booking-action-total"),
+  ).toHaveText(totalText.replace(/^SGD\s*/, ""));
+  if (page.viewportSize()!.width <= 700) {
+    await openBookingPanel(page, "cart");
+    const cart = page.getByRole("dialog", { name: "Your cart", exact: true });
+    await expect(
+      cart.getByRole("complementary", { name: "Your booking summary" }),
+    ).toBeVisible();
+    await expect(
+      cart.getByRole("heading", { name: "Order summary" }),
+    ).toHaveCount(0);
+    await closeBookingPanel(page);
+  }
   await page.getByRole("checkbox", { name: /I’ve reviewed/ }).check();
 }
 async function payAttempt(page: Page, outcome = "success") {
@@ -158,7 +208,9 @@ async function payAttempt(page: Page, outcome = "success") {
   await page.clock.runFor(5000);
 }
 async function payment(page: Page, outcome = "success") {
-  await page.getByRole("button", { name: "Continue to payment" }).click();
+  await page
+    .getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ })
+    .click();
   await payAttempt(page, outcome);
 }
 test("public routes remove staff access and fit the viewport", async ({
@@ -336,6 +388,9 @@ test("public routes remove staff access and fit the viewport", async ({
       "column-gap",
       "36px",
     );
+    await expect(
+      page.locator(".footer-apps .footer-contact-heading"),
+    ).toHaveCSS("text-align", "right");
   }
   if (page.viewportSize()!.width <= 700) {
     const email = page.locator(".footer-contact-link[href^='mailto:']");
@@ -585,7 +640,9 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   page,
 }) => {
   await chooseSlots(page);
-  await page.getByRole("button", { name: "Review booking" }).click();
+  await page
+    .getByRole("button", { name: /^Review booking \$[\d,.]+$/ })
+    .click();
   await expect(page.locator("#name")).toBeFocused();
   await expect(page.locator("#details-form input")).toHaveCount(4);
   await expect(page.locator("#details-form select")).toHaveCount(1);
@@ -601,7 +658,9 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
       JSON.stringify([`Studio 1|${slot.date}|${slot.start}`]),
     );
   });
-  await page.getByRole("button", { name: "Continue to payment" }).click();
+  await page
+    .getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ })
+    .click();
   await expect(page.locator("main").getByRole("alert")).toContainText(
     "no longer available",
   );
@@ -611,7 +670,10 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
     0,
   );
   await expect(
-    page.getByRole("button", { name: "Continue", exact: true }),
+    page.getByRole("button", {
+      name: /^Continue(?: \$[\d,.]+)?$/,
+      exact: true,
+    }),
   ).toBeDisabled();
   await expect(page.getByText("Preview controls", { exact: true })).toHaveCount(
     0,
@@ -921,7 +983,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   ).toBeVisible();
   await closeBookingPanel(page);
   await expect(
-    page.getByRole("link", { name: "Continue", exact: true }),
+    page.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true }),
   ).toBeVisible();
   if (page.viewportSize()!.width > 700) {
     const positions = await page.locator(".aside-wrap").evaluate((element) => ({
@@ -941,16 +1003,16 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     "stays for the full session",
   );
   await closeBookingPanel(page);
-  await page.getByRole("link", { name: "Continue", exact: true }).click();
+  await page
+    .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+    .click();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
   await details(page);
   await fullWidth(".actions .button", ".actions");
-  await openBookingPanel(page, "cart");
   await expect(page.locator(".series-list .rotation-notice")).toContainText(
     "Crosses the 15:00 instructor rotation",
   );
-  await closeBookingPanel(page);
   await payment(page);
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
@@ -1343,7 +1405,9 @@ test("header blue and the typography hierarchy stay consistent across every book
     "18px",
   );
   await closeBookingPanel(page);
-  await page.getByRole("link", { name: "Continue", exact: true }).click();
+  await page
+    .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+    .click();
   await pageHeading("Your details");
   await sectionType("#details-form h2");
   await expect(page.locator("label[for='name']")).toHaveCSS(
@@ -1395,7 +1459,6 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(value).toHaveCSS("font-weight", "700");
   }
 
-  await openBookingPanel(page, "cart");
   const reviewTotal = page.locator(".line-item.total strong");
   await expect(reviewTotal).toHaveCSS("font-size", "24px");
   await expect(reviewTotal).toHaveCSS("font-family", /Roboto/);
@@ -1416,8 +1479,9 @@ test("header blue and the typography hierarchy stay consistent across every book
     "color",
     "rgb(118, 83, 13)",
   );
-  await closeBookingPanel(page);
-  await page.getByRole("button", { name: "Continue to payment" }).click();
+  await page
+    .getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ })
+    .click();
   await pageHeading("Payment");
   await sectionType(".payment-layout .section-title");
   await expect(page.locator(".method.selected")).toHaveCSS(
@@ -1503,7 +1567,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await details(page);
   await page.clock.pauseAt(new Date("2026-10-06T11:59:59.999+08:00"));
   await expect(
-    page.getByRole("button", { name: "Continue to payment" }),
+    page.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
   ).toBeEnabled();
   await page.clock.runFor(1);
   await expect(
@@ -1518,7 +1582,10 @@ test("elapsed selections block checkout on an open page and remain removable bef
   ).toBeVisible();
   await closeBookingPanel(page);
   await expect(
-    page.getByRole("button", { name: "Continue", exact: true }),
+    page.getByRole("button", {
+      name: /^Continue(?: \$[\d,.]+)?$/,
+      exact: true,
+    }),
   ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: /12:00–12:40/ }),
@@ -1561,7 +1628,9 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await page
     .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
     .selectOption({ index: 1 });
-  await page.getByRole("link", { name: "Continue", exact: true }).click();
+  await page
+    .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+    .click();
   await details(page);
   await payment(page);
   await expect(
@@ -1754,7 +1823,10 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     .click();
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await expect(
-    page.getByRole("button", { name: "Continue", exact: true }),
+    page.getByRole("button", {
+      name: /^Continue(?: \$[\d,.]+)?$/,
+      exact: true,
+    }),
   ).toBeDisabled();
   const noon = page.getByRole("combobox", {
     name: `Trainer for ${date} at 12:00`,

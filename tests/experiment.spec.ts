@@ -269,7 +269,9 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page
     .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
     .selectOption({ index: 1 });
-  await page.getByRole("link", { name: "Continue", exact: true }).click();
+  await page
+    .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+    .click();
   await page
     .getByLabel("Full name", { exact: false })
     .fill("Synthetic Customer");
@@ -279,9 +281,13 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
-  await page.getByRole("button", { name: "Review booking" }).click();
+  await page
+    .getByRole("button", { name: /^Review booking \$[\d,.]+$/ })
+    .click();
   await page.getByRole("checkbox", { name: /I’ve reviewed/ }).check();
-  await page.getByRole("button", { name: "Continue to payment" }).click();
+  await page
+    .getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ })
+    .click();
   const before = await page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!),
   );

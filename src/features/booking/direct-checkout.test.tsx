@@ -181,12 +181,14 @@ async function directCase(scenario: string) {
   fireEvent.click(screen.getByText("Seed"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: "Continue to payment" }),
+      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
     ),
   );
   expect(screen.getByTestId("retained")).toHaveTextContent(id);
   expect(pay).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole("button", { name: "Opening checkout…" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Opening checkout… \$[\d,.]+$/ }),
+  );
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(assign).not.toHaveBeenCalled();
   if (scenario === "cancel" || scenario === "cancel_handoff")
@@ -215,7 +217,7 @@ async function directCase(scenario: string) {
     expect(pay).toHaveBeenCalledTimes(1);
     expect(assign).toHaveBeenCalledTimes(1);
     expect(
-      screen.getByRole("button", { name: "Opening checkout…" }),
+      screen.getByRole("button", { name: /^Opening checkout… \$[\d,.]+$/ }),
     ).toBeDisabled();
     act(() => window.dispatchEvent(new PageTransitionEvent("pageshow")));
     expect(screen.getByTestId("action")).toHaveTextContent("loading");
@@ -329,7 +331,7 @@ it("explicit reservation reuses its hold for payment without preparing or checki
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: "Continue to payment" }),
+      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
     ),
   );
   expect(checkout).toHaveBeenCalledTimes(1);
@@ -461,7 +463,7 @@ it("HitPay HTTP conflict preserves the hold and shows payment failure without se
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: "Continue to payment" }),
+      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
     ),
   );
   expect(screen.getByRole("alert")).toHaveTextContent(
@@ -554,7 +556,9 @@ it("Review performs no provider reads and checkout verifies one booking before H
     detailsSummary.querySelector(".session-trainer-row .session-item-price"),
   ).toHaveTextContent("$88.00");
   await act(async () =>
-    fireEvent.click(screen.getByRole("button", { name: "Review booking" })),
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+    ),
   );
   expect(screen.getByRole("heading", { name: "Review booking" })).toBeVisible();
   expect(
@@ -581,7 +585,7 @@ it("Review performs no provider reads and checkout verifies one booking before H
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: "Continue to payment" }),
+      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
     ),
   );
   expect(checkout).toHaveBeenCalledTimes(1);
@@ -589,7 +593,7 @@ it("Review performs no provider reads and checkout verifies one booking before H
   expect(pay.mock.calls[0][0].holding).toBe(true);
   expect(assign).not.toHaveBeenCalled();
   expect(
-    screen.getByRole("button", { name: "Opening checkout…" }),
+    screen.getByRole("button", { name: /^Opening checkout… \$[\d,.]+$/ }),
   ).toBeDisabled();
   fireEvent.click(screen.getByText("Repeat checkout"));
   expect(pay).toHaveBeenCalledTimes(1);
@@ -783,7 +787,7 @@ it("expired Review releases only an authoritatively unpaid attempt and preserves
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: "Continue to payment" }),
+      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
     ),
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent(id);
@@ -793,7 +797,7 @@ it("expired Review releases only an authoritatively unpaid attempt and preserves
   uncertain = false;
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: "Continue to payment" }),
+      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
     ),
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent(

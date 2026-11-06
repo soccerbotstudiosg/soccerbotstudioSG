@@ -1,5 +1,8 @@
 "use client";
-import { BookingPrimaryAction } from "./booking-primary-action";
+import {
+  BookingPrimaryAction,
+  BookingActionTotal,
+} from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -334,7 +337,8 @@ export function DetailsStep({
                 />
               ) : (
                 "Review booking"
-              )}
+              )}{" "}
+              <BookingActionTotal />
               {!saving && !checking && <Icon name="chevron" />}
             </button>
           </BookingPrimaryAction>

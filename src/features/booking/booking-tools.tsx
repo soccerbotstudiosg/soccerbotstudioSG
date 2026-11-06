@@ -1,5 +1,5 @@
 "use client";
-import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Dialog } from "@/components/dialog";
 import { Icon } from "@/components/icon";
 import { useBooking } from "./provider";
@@ -22,13 +22,7 @@ export function useMobileBooking() {
 }
 
 /** Open phone cart and trainer panels from the persistent booking navigation. */
-export function BookingTools({
-  basket = false,
-  cart,
-}: {
-  basket?: boolean;
-  cart?: ReactNode;
-}) {
+export function BookingTools({ basket = false }: { basket?: boolean }) {
   const { draft } = useBooking();
   const mobile = useMobileBooking();
   const [panel, setPanel] = useState<"cart" | "trainers" | null>(null);
@@ -77,13 +71,11 @@ export function BookingTools({
           onClose={() => setPanel(null)}
         >
           {panel === "cart" ? (
-            (cart ?? (
-              <Summary
-                basket={basket}
-                includeAction={false}
-                showTrainers={false}
-              />
-            ))
+            <Summary
+              basket={basket}
+              includeAction={false}
+              showTrainers={false}
+            />
           ) : (
             <SelectedTrainers />
           )}

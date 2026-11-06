@@ -1,5 +1,8 @@
 "use client";
-import { BookingPrimaryAction } from "./booking-primary-action";
+import {
+  BookingPrimaryAction,
+  BookingActionTotal,
+} from "./booking-primary-action";
 import {
   SESSION_UNAVAILABLE,
   AVAILABILITY_LOAD_FAILED,
@@ -253,11 +256,11 @@ export function BasketContinue() {
       <BookingPrimaryAction>
         {draft.slots.length > 0 && valid ? (
           <Link className="button wide basket-continue" href="/book/details/">
-            Continue <Icon name="chevron" />
+            Continue <BookingActionTotal /> <Icon name="chevron" />
           </Link>
         ) : (
           <button className="button wide basket-continue" disabled>
-            Continue <Icon name="chevron" />
+            Continue <BookingActionTotal /> <Icon name="chevron" />
           </button>
         )}
       </BookingPrimaryAction>
