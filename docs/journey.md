@@ -5131,3 +5131,9 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 - The confirmation action expansion was not requested; restored original controls following owner correction before the next CI candidate. Original failure receipts remain preserved.
 
 - Final owner clarification: capitalize “Booking Confirmed”; preserve the original teal heading and all other top presentation. Only the lower details use shared Review blocks/dividers/heading spacing and mobile20px inset. Existing confirmation/component checks44/44 pass; heading locators updated without changing coverage. New exact-head CI remains required.
+
+## 7 November2026 — Release migration rehearsal completion
+
+- CI42246344863 on65e5f28 passed frontend, all492 Worker cases, corrected load smoke and all four browser shards. Backend/live-email aggregation failed because `check-developer-release.mjs` explicitly rehearsed only migrations0001–0038; its completeness assertion correctly rejected packaged0039. Original logs retained as `ci-65e5-127994101412.log` and `ci-65e5-127994101587.log`.
+- Rehearsal now applies0039 and verifies historical checkouts create no inferred abuse-source or expiry rows. Existing migration completeness, data preservation, foreign-key and closed-authority assertions remain.
+- Retrieved unchanged backend evidence artifact13518067899 through GitHub connector; repaired checker passes isolated workerd/D1 execution with zero remote/provider calls. Local CLI artifact download was forbidden; used the available connector without bypass. Source/format/syntax checks pass. Latest confirmation candidatecdc2ace remains superseded by this tooling fix; exact-head CI/staging/merge pending.
