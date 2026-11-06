@@ -36,7 +36,6 @@
   --color-brand-tint: #dce1f1;
   --color-focus: #5666a8;
   --color-identity: #176078;
-  --color-signature: #252d38;
   --color-on-brand: #ffffff;
   --color-on-brand-muted: #dce1f1;
   --color-ink: #101636;
@@ -697,13 +696,6 @@
     background: #050a2f;
     border-top: 1px solid #26374f;
     border-bottom: 1px solid #26374f;
-  }
-  .arena-signature {
-    color: var(--color-on-brand);
-    background: var(--color-signature);
-    border-color: var(--color-signature);
-    font-size: 0.8125rem;
-    font-weight: 700;
   }
   .arena-body {
     position: relative;
@@ -1380,134 +1372,27 @@
   .studio-showcase {
     width: 100%;
     margin: 0;
-    background: var(--color-navy);
-    color: var(--color-surface);
+    background: var(--color-surface);
+    color: var(--color-ink);
   }
 
-  .studio-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
-    min-height: 470px;
-    gap: 0;
-  }
-  .studio-row + .studio-row {
-    border-top: 1px solid #b1c9ef19;
-  }
   .studio-photo {
-    grid-column: 1;
-    grid-row: 1;
     position: relative;
-    overflow: hidden;
-    margin: 0;
-    min-height: 470px;
-    background: #080f30;
   }
   .studio-photo img {
     position: absolute;
     inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
     transform: scale(var(--photo-zoom, 1));
   }
-  .studio-copy {
-    grid-column: 2;
-    grid-row: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 64px clamp(36px, 5.5vw, 100px);
-    min-width: 0;
-  }
-  .studio-copy h2 {
-    font-size: clamp(2rem, 3.15vw, 3.3rem);
-    font-weight: 900;
-    font-style: italic;
-    line-height: 1.06;
-    letter-spacing: -0.035em;
-    margin: 0 0 25px;
-    text-transform: uppercase;
-    max-width: 12ch;
-    color: var(--color-surface);
-  }
-  .studio-description {
-    font-size: 1.0625rem;
-    line-height: 1.9;
-    color: var(--color-on-brand-muted);
-    margin: 0;
-    max-width: 42ch;
-  }
-  .studio-row.reverse .studio-photo {
-    grid-column: 2;
-  }
-  .studio-row.reverse .studio-copy {
-    grid-column: 1;
-  }
-  @media (max-width: 1000px) {
-    .studio-row,
-    .studio-photo {
-      min-height: 400px;
-    }
-    .studio-copy {
-      padding: 45px 32px;
-    }
-    .studio-copy h2 {
-      font-size: 2.1rem;
-    }
-    .studio-description {
-      font-size: 0.9375rem;
-      line-height: 1.85;
-    }
-  }
-  @media (max-width: 700px) {
-    .studio-row,
-    .studio-row.reverse {
-      grid-template-columns: 1fr;
-      min-height: 0;
-      gap: 19px;
-      padding: 23px 0 32px;
-    }
-    .studio-copy,
-    .studio-row.reverse .studio-copy {
-      display: contents;
-    }
-    .studio-copy h2 {
-      grid-column: 1;
-      grid-row: 1;
-      font-size: 1.7rem;
-      line-height: 1.12;
-      max-width: none;
-      margin: 0;
-      padding: 0 20px;
-    }
-    .studio-row .studio-photo,
-    .studio-row.reverse .studio-photo {
-      grid-column: 1;
-      grid-row: 2;
-      min-height: 0;
-      aspect-ratio: 4/3;
-    }
-    .studio-row .studio-description,
-    .studio-row.reverse .studio-description {
-      grid-column: 1;
-      grid-row: 3;
-      font-size: 0.9375rem;
-      line-height: 1.85;
-      max-width: none;
-      padding: 0 20px;
-      margin: 0;
-    }
-  }
-  .home-promotion {
+  .home-promotion,
+  .studio-row {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
     width: 100%;
     margin-block: 12px;
-    background: var(--color-brand);
-    color: var(--color-on-brand);
+    background: var(--color-paper);
+    color: var(--color-ink);
   }
   .home-promotion--studio .promotion-copy {
     padding-block: calc(clamp(24px, 3.75vw, 57px) + 30px);
@@ -1528,15 +1413,12 @@
     bottom: 0;
     transform: rotate(180deg);
   }
-  .promotion-edge--contact-top {
-    top: 0;
-    height: 57px;
-  }
-  .home-promotion--booking {
+  .home-promotion--booking,
+  .studio-row.reverse {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-    background: var(--color-identity);
   }
-  .promotion-image {
+  .promotion-image,
+  .studio-photo {
     grid-column: 1;
     grid-row: 1;
     min-width: 0;
@@ -1544,14 +1426,16 @@
     margin: 0;
     overflow: hidden;
   }
-  .promotion-image img {
+  .promotion-image img,
+  .studio-photo img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: 50% 45%;
   }
-  .promotion-copy {
+  .promotion-copy,
+  .studio-copy {
     grid-column: 2;
     grid-row: 1;
     display: flex;
@@ -1561,10 +1445,12 @@
     min-width: 0;
     padding: clamp(24px, 3.75vw, 57px);
   }
-  .home-promotion--booking .promotion-image {
+  .home-promotion--booking .promotion-image,
+  .studio-row.reverse .studio-photo {
     grid-column: 2;
   }
-  .home-promotion--booking .promotion-copy {
+  .home-promotion--booking .promotion-copy,
+  .studio-row.reverse .studio-copy {
     grid-column: 1;
   }
   .promotion-eyebrow {
@@ -1575,6 +1461,7 @@
     text-transform: uppercase;
   }
   .promotion-copy h2,
+  .studio-copy h2,
   .abstract-promotion h2 {
     max-width: 12ch;
     font-size: clamp(2.25rem, 4vw, 4.5rem);
@@ -1585,15 +1472,18 @@
     text-transform: uppercase;
   }
   .promotion-copy p,
+  .studio-description,
   .abstract-promotion > p {
     max-width: 44ch;
     font-size: var(--text-body);
     line-height: 1.75;
   }
-  .promotion-copy h2 {
+  .promotion-copy h2,
+  .studio-copy h2 {
     margin: 0 0 18px;
   }
-  .promotion-copy p {
+  .promotion-copy p,
+  .studio-description {
     margin: 0 0 21px;
   }
   .abstract-promotion h2,
@@ -1615,41 +1505,49 @@
   .home-promotion .promotion-cta,
   .abstract-promotion .promotion-cta {
     border-radius: 3px 12px 3px 12px;
+  }
+  .abstract-promotion .promotion-cta {
     background: var(--color-on-brand);
     border-color: var(--color-on-brand);
     color: var(--color-brand);
   }
-  .home-promotion .promotion-cta:hover,
   .abstract-promotion .promotion-cta:hover {
     background: var(--color-brand-tint);
     border-color: var(--color-brand-tint);
     color: var(--color-brand);
   }
-  .home-promotion .promotion-cta:focus-visible,
   .abstract-promotion .promotion-cta:focus-visible {
     outline-color: var(--color-on-brand);
     outline-offset: 5px;
   }
   @media (max-width: 900px) {
-    .promotion-image {
+    .promotion-image,
+    .studio-photo {
       min-height: 330px;
     }
-    .promotion-copy {
+    .promotion-copy,
+    .studio-copy {
       padding: 27px 28px;
     }
   }
   @media (max-width: 700px) {
     .home-promotion,
-    .home-promotion--booking {
+    .home-promotion--booking,
+    .studio-row,
+    .studio-row.reverse {
       grid-template-columns: minmax(0, 1fr);
     }
-    .home-promotion .promotion-image {
+    .home-promotion .promotion-image,
+    .studio-row .studio-photo,
+    .studio-row.reverse .studio-photo {
       grid-column: 1;
       grid-row: 1;
       min-height: 0;
       aspect-ratio: 16 / 10;
     }
-    .home-promotion .promotion-copy {
+    .home-promotion .promotion-copy,
+    .studio-row .studio-copy,
+    .studio-row.reverse .studio-copy {
       grid-column: 1;
       grid-row: 2;
       padding: 24px 24px 27px;
@@ -1667,6 +1565,7 @@
       padding-bottom: 67px;
     }
     .promotion-copy h2,
+    .studio-copy h2,
     .abstract-promotion h2 {
       max-width: none;
     }
@@ -1698,7 +1597,6 @@
   }
   .home-promotion--contact {
     margin-block: 12px;
-    padding-top: 70px;
     align-items: end;
   }
   .abstract-promotion-heading {
@@ -1941,9 +1839,6 @@
       padding: 14px 16px;
       font-size: 0.5625rem;
       letter-spacing: 0.16em;
-    }
-    .arena-signature {
-      font-size: 0.625rem;
     }
     .official-logo {
       width: 145px;

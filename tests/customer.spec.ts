@@ -124,23 +124,23 @@ test("public routes remove staff access and fit the viewport", async ({
   );
   const promotions = page.locator(".home-promotion");
   await expect(promotions).toHaveCount(2);
-  const backgrounds: string[] = [];
   for (const promotion of await promotions.all()) {
     const box = await promotion.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.x).toBeCloseTo(0, 0);
     expect(box!.width).toBeCloseTo(page.viewportSize()!.width, 0);
     await expect(promotion.locator("img")).toHaveAttribute("alt", /.+/);
-    backgrounds.push(
-      await promotion.evaluate(
-        (element) => getComputedStyle(element).backgroundColor,
-      ),
+    await expect(promotion).toHaveCSS("background-color", "rgb(245, 246, 250)");
+    await expect(promotion).toHaveCSS("color", "rgb(16, 22, 54)");
+    await expect(promotion.locator(".promotion-cta")).toHaveCSS(
+      "background-color",
+      "rgb(5, 10, 47)",
     );
   }
-  expect(backgrounds[0]).not.toBe(backgrounds[1]);
   const contactBanner = page.locator(".abstract-promotion");
   await expect(contactBanner).toHaveCount(1);
   await expect(contactBanner.locator("img")).toHaveCount(0);
+  await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
   const contactBox = await contactBanner.boundingBox();
   expect(contactBox).not.toBeNull();
   expect(contactBox!.x).toBeCloseTo(0, 0);
@@ -173,6 +173,10 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
   expect(contentBox!.y - (heroBox!.y + heroBox!.height)).toBe(12);
   await expect(page.locator(".studio-row")).toHaveCount(5);
+  for (const row of await page.locator(".studio-row").all()) {
+    await expect(row).toHaveCSS("background-color", "rgb(245, 246, 250)");
+    await expect(row).toHaveCSS("color", "rgb(16, 22, 54)");
+  }
   const studioBanner = page.locator(".studio-bottom.abstract-promotion");
   await expect(studioBanner).toBeAttached();
   await expect(studioBanner.locator("img")).toHaveCount(0);

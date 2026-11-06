@@ -4892,3 +4892,11 @@ Owner requested vertical centring for the three parts in the straight-edged Stud
 ### 6 November 2026 — darker performance strip
 
 Owner requested a much darker grey for the thin performance strip. Changed only its scoped signature colour from #465363 to #252d38, retaining the subtle blue tint and white text. Existing contrast/mutation coverage remains applicable; no layout, header, hero, booking or settings changes. Baseline2cffbb5 passed CI/CodeQL/staging; final-head delivery evidence belongs in PR32.
+
+### 6 November 2026 — restore strip and lighten homepage promotions
+
+Owner superseded the darker-strip request: restore original performance-strip styling; change second/third homepage sections from navy/teal to very light grey with suitable dark text; remove the bottom Contact curve. Removed the scoped signature token/overrides, reused paper/ink and standard navy action styles for both image promotions, removed Contact's SVG/obsolete edge owner/top clearance, and retained Studio curves/mobile clearance. Existing browser palette assertion now checks both intended light backgrounds and dark foreground/actions rather than requiring different colours; added absent Contact-curve assertion in the same case. Contrast audit now covers ink on paper; removed obsolete signature mutation only. All test inventories and booking authority remain unchanged. Previous0b98f4c CI/CodeQL passed but is superseded for delivery.
+
+### 6 November 2026 — Studio sections share the homepage promotion standard
+
+Owner extended the light homepage section standard to all five Studio sections below the video. Reused the existing promotion CSS owners for light paper/ink colours, compact image heights, copy spacing and display typography; removed superseded Studio-specific layout/type overrides. Retained alternating desktop image order, media/zoom settings and all copy; mobile consistently stacks image then heading/body. The abstract booking footer remains its own existing owner. Extended the existing public-route browser case to check the five rows' intended palette without changing test inventory. The earlier homepage-only candidate passed local verification before this scope extension; the consolidated candidate needs fresh checks.

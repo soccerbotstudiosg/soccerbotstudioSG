@@ -92,15 +92,6 @@ export default function Home() {
         className="home-promotion--contact abstract-promotion"
         aria-labelledby="home-contact-title"
       >
-        <svg
-          className="promotion-edge promotion-edge--contact-top"
-          viewBox="0 0 1440 57"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M0 0H1440V57Q720 -1 0 57Z" />
-        </svg>
         <div className="abstract-promotion-heading">
           <span className="promotion-eyebrow">Bring your group</span>
           <h2 id="home-contact-title">Contact us</h2>

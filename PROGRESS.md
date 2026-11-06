@@ -2,15 +2,15 @@
 
 Observed 6 November 2026 (Singapore). History: [Journey](docs/journey.md).
 
-## PR32 tighter shared banner layout and summary labels
+## PR32 light-grey promotions and original performance strip
 
-Branch `fix/hero-session-copy`; baseline `2cffbb5` passed CI42160801361, CodeQL42160796846 and staging42161812100 with matching public health. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
+Branch `fix/hero-session-copy`; previous0b98f4c passed CI42162442603/CodeQL42162438146 and its staging workflow42163414870 had started when superseded. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
 
-Thin-strip refinement: retain the existing header; make only Performance · Experience · Production stand out with the much darker neutral blue-grey background (#252d38) and bold white text. The existing white-on-signature contrast audit covers this token.
+Studio extension: the five sections after the video reuse the homepage image/copy layout, spacing, type and light palette owners, retaining alternating desktop placement and media. Mobile uses image then heading/copy consistently.
 
-Current refinement: Contact and Studio booking footer share a tighter1080px content target,24px gaps and centred eyebrow over each heading; Contact stays bottom-aligned and the straight Studio footer centres content vertically. The flag is vertically centred with the header buttons. All former right-arrow action icons use the shared chevron, with existing direction transforms retained. The shared booking summary displays provider-derived service name · Apex @ Henderson in bold with player count below; venue remains existing single-outlet configuration, not new routing authority.
+Current owner direction: restore the thin performance strip to its original navy/muted-text styling; second/third homepage image promotions use very light grey, dark ink text and standard navy/white actions; bottom Contact banner has no curve or curve-only top clearance. Studio promotion curves, compact heights, mobile photo/button clearance, shared CTA corners/chevrons, tighter abstract composition, centred Studio footer and flag, and service/outlet summary remain.
 
-Verify the complete candidate, update the existing PR, and confirm its exact-head CI/staging. Existing presentation, navigation and summary tests remain applicable; inventories and booking/payment guards unchanged. Final delivery receipt goes in PR32. Physical visual and post-merge A–D acceptance remain owner-operated.
+Update existing public-page assertions for the intentional shared light palette and absent Contact curve; preserve all navigation and inventory checks. Reuse existing palette tokens; retarget the scoped contrast pair to ink on paper. Verify the consolidated candidate, publish to PR32 and confirm exact-head CI/staging. Physical visual and post-merge A–D acceptance remain owner-operated. Final delivery evidence belongs in PR32.
 
 ## Remaining work
 

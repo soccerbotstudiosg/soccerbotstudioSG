@@ -36,7 +36,7 @@ test("design policy rejects low-contrast supporting text", () => {
         "\n.player-app-dialog .button { background: var(--color-arena-accent); }",
     ).errors.some((e) => e.includes("Decorative accent")),
   );
-  for (const token of ["confirmation", "confirmation-heading", "signature"]) {
+  for (const token of ["confirmation", "confirmation-heading"]) {
     assert.ok(
       designAudit(
         css.replace(
