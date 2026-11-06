@@ -48,16 +48,22 @@ export default function Studio() {
             </figure>
           </section>
         ))}
-        <div className="studio-bottom">
-          <BookingLink className="button" href="/book/account/">
-            <span className="studio-book-content">
-              <span>Book now</span>
-              <span className="studio-book-arrow" aria-hidden="true">
-                <Icon name="arrow" />
-              </span>
-            </span>
+        <section
+          className="studio-bottom abstract-promotion"
+          aria-labelledby="studio-book-title"
+        >
+          <div className="abstract-promotion-heading">
+            <span className="promotion-eyebrow">Step into the arena</span>
+            <h2 id="studio-book-title">Your move.</h2>
+          </div>
+          <p>
+            Single, Team and Battle play, with full instructor guidance for your
+            group.
+          </p>
+          <BookingLink className="button promotion-cta" href="/book/account/">
+            Book now <Icon name="arrow" />
           </BookingLink>
-        </div>
+        </section>
       </section>
     </>
   );

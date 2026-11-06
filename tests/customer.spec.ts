@@ -119,7 +119,7 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(flagBox!.width / flagBox!.height).toBeCloseTo(1.5, 1);
   expect(flagBox!.x + flagBox!.width).toBeLessThan(studioButtonBox!.x);
   const promotions = page.locator(".home-promotion");
-  await expect(promotions).toHaveCount(3);
+  await expect(promotions).toHaveCount(2);
   const backgrounds: string[] = [];
   for (const promotion of await promotions.all()) {
     const box = await promotion.boundingBox();
@@ -134,6 +134,16 @@ test("public routes remove staff access and fit the viewport", async ({
     );
   }
   expect(backgrounds[0]).not.toBe(backgrounds[1]);
+  const contactBanner = page.locator(".abstract-promotion");
+  await expect(contactBanner).toHaveCount(1);
+  await expect(contactBanner.locator("img")).toHaveCount(0);
+  const contactBox = await contactBanner.boundingBox();
+  expect(contactBox).not.toBeNull();
+  expect(contactBox!.x).toBeCloseTo(0, 0);
+  expect(contactBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
+  await expect(
+    contactBanner.getByRole("link", { name: "Contact us", exact: true }),
+  ).toHaveAttribute("href", sitePath("/enquiry/"));
   await expect(
     page.getByRole("button", { name: /studio assistant/i }),
   ).toHaveCount(0);
@@ -159,6 +169,12 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
   expect(contentBox!.y - (heroBox!.y + heroBox!.height)).toBe(12);
   await expect(page.locator(".studio-row")).toHaveCount(5);
+  const studioBanner = page.locator(".studio-bottom.abstract-promotion");
+  await expect(studioBanner).toBeAttached();
+  await expect(studioBanner.locator("img")).toHaveCount(0);
+  await expect(
+    studioBanner.getByRole("link", { name: "Book now", exact: true }),
+  ).toHaveAttribute("href", sitePath("/book/account/"));
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth - innerWidth,
@@ -441,6 +457,10 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     ? cardWidths.grid
     : (cardWidths.grid - 2 * cardWidths.gap) / 3;
   expect(Math.abs(cardWidths.card - expectedCardWidth)).toBeLessThanOrEqual(1);
+  const outletWidth = await page
+    .locator(".outlet-option")
+    .evaluate((element) => element.getBoundingClientRect().width);
+  expect(Math.abs(outletWidth - cardWidths.card)).toBeLessThanOrEqual(1);
   await page
     .getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
@@ -477,6 +497,33 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     .evaluate((element) => element.getBoundingClientRect().width);
   expect(Math.abs(playerWidth - counterWidth)).toBeLessThanOrEqual(1);
   await page.getByRole("button", { name: "Add one player" }).click();
+  await expect(page.locator(".counter output")).toHaveText("2 players");
+  const sessionCard = page.getByRole("button", {
+    name: "Choose Kickoff Special (Trial Price)",
+    exact: true,
+  });
+  await sessionCard.click();
+  await expect(sessionCard).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".player-selection")).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "See available times" }),
+  ).toHaveCount(0);
+  await sessionCard.click();
+  await expect(page.locator(".counter output")).toHaveText("2 players");
+  const outletCard = page.getByRole("button", {
+    name: "Select Apex @ Henderson outlet",
+    exact: true,
+  });
+  await outletCard.click();
+  await expect(outletCard).toHaveAttribute("aria-pressed", "false");
+  await expect(sessionCard).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "See available times" }),
+  ).toHaveCount(0);
+  await outletCard.click();
+  await expect(sessionCard).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".player-selection")).toHaveCount(0);
+  await sessionCard.click();
   await expect(page.locator(".counter output")).toHaveText("2 players");
   const productFontSize = await page
     .locator(".session-product-name")

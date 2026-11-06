@@ -17,22 +17,25 @@ export function SessionStep() {
     <>
       <h1 className="page-title">Your session</h1>
       <h2 className="section-title">Choose your outlet</h2>
-      <button
-        className="surface outlet-option"
-        aria-label={`Select ${LOCATION.building} outlet`}
-        aria-expanded={outletSelected}
-        aria-controls="outlet-sessions"
-        onClick={() => setOutletSelected(true)}
-      >
-        <Icon name="location" />
-        <span>
-          <strong>{LOCATION.building}</strong>
+      <div className="outlet-options">
+        <button
+          className="surface outlet-option"
+          aria-label={`Select ${LOCATION.building} outlet`}
+          aria-pressed={outletSelected}
+          aria-expanded={outletSelected}
+          aria-controls="outlet-sessions"
+          onClick={() => setOutletSelected((selected) => !selected)}
+        >
+          <Icon name="location" />
           <span>
-            Our flagship studio · {LOCATION.street}, {LOCATION.unit}
+            <strong>{LOCATION.building}</strong>
+            <span>
+              Our flagship studio · {LOCATION.street}, {LOCATION.unit}
+            </span>
           </span>
-        </span>
-        <Icon name={outletSelected ? "check" : "arrow"} />
-      </button>
+          <Icon name={outletSelected ? "check" : "arrow"} />
+        </button>
+      </div>
       <div id="outlet-sessions" hidden={!outletSelected}>
         {outletSelected &&
           (bookingService.mode === "live" ? (
@@ -147,7 +150,7 @@ function SessionPresentation({
           aria-label={`Choose ${serviceName}`}
           aria-pressed={expanded}
           aria-expanded={expanded}
-          onClick={() => setExpanded(true)}
+          onClick={() => setExpanded((selected) => !selected)}
         >
           <span className="session-product-icon">
             <Icon name="ball" />

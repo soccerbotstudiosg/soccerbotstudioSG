@@ -105,6 +105,36 @@ test("live session selection uses client prices while demo retains its own rates
   expect(
     screen.getByRole("link", { name: "See available times" }),
   ).toBeVisible();
+  const session = screen.getByRole("button", {
+    name: "Choose Kickoff Special",
+  });
+  fireEvent.click(session);
+  expect(session).toHaveAttribute("aria-pressed", "false");
+  expect(
+    screen.queryByRole("button", { name: "Add one player" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: "See available times" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(session);
+  const outlet = screen.getByRole("button", {
+    name: "Select Apex @ Henderson outlet",
+  });
+  fireEvent.click(outlet);
+  expect(outlet).toHaveAttribute("aria-pressed", "false");
+  expect(
+    screen.queryByRole("button", { name: "Choose Kickoff Special" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: "See available times" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(outlet);
+  expect(
+    await screen.findByRole("button", { name: "Choose Kickoff Special" }),
+  ).toHaveAttribute("aria-pressed", "false");
+  expect(
+    screen.queryByRole("button", { name: "Add one player" }),
+  ).not.toBeInTheDocument();
   context.bookingService.mode = "demo";
   view.rerender(<SessionStep />);
   expect(

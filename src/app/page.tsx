@@ -89,7 +89,7 @@ export default function Home() {
         </div>
       </section>
       <section
-        className="home-promotion home-promotion--contact"
+        className="home-promotion--contact abstract-promotion"
         aria-labelledby="home-contact-title"
       >
         <svg
@@ -101,27 +101,17 @@ export default function Home() {
         >
           <path d="M0 0H1440V57Q720 -1 0 57Z" />
         </svg>
-        <figure className="promotion-image">
-          <img
-            src={homeMedia.studio.src}
-            alt={homeMedia.studio.alt}
-            width={homeMedia.studio.width}
-            height={homeMedia.studio.height}
-            loading="lazy"
-            decoding="async"
-          />
-        </figure>
-        <div className="promotion-copy">
+        <div className="abstract-promotion-heading">
           <span className="promotion-eyebrow">Bring your group</span>
           <h2 id="home-contact-title">Contact us</h2>
-          <p>
-            For Multi-Session Bundles, Membership, Academy, Corporate and
-            Sponsorship Rates
-          </p>
-          <Link href="/enquiry/" className="button promotion-cta">
-            Contact us <Icon name="arrow" />
-          </Link>
         </div>
+        <p>
+          For Multi-Session Bundles, Membership, Academy, Corporate and
+          Sponsorship Rates
+        </p>
+        <Link href="/enquiry/" className="button promotion-cta">
+          Contact us <Icon name="arrow" />
+        </Link>
       </section>
     </>
   );

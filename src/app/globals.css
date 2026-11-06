@@ -1437,106 +1437,6 @@
   .studio-row.reverse .studio-copy {
     grid-column: 1;
   }
-  .studio-bottom {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-    padding: 51px 40px 42px;
-  }
-  .studio-bottom .button {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    width: 100%;
-    min-width: 0;
-    min-height: 138px;
-    padding: 29px 32px;
-    border-radius: 12px;
-    background-image: linear-gradient(
-      110deg,
-      color-mix(in srgb, var(--color-on-brand) 4%, transparent),
-      transparent 44%,
-      color-mix(in srgb, var(--color-on-brand) 8%, transparent)
-    );
-    font-size: 2.2rem;
-    font-weight: 900;
-    font-style: italic;
-    letter-spacing: -0.03em;
-    text-transform: uppercase;
-    box-shadow: inset 0 1px 0
-      color-mix(in srgb, var(--color-on-brand) 4%, transparent);
-  }
-  .studio-bottom .button::before,
-  .studio-bottom .button::after {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    top: 50%;
-    width: 310px;
-    height: 310px;
-    border: 1px solid color-mix(in srgb, var(--color-on-brand) 28%, transparent);
-    border-radius: 50%;
-    box-shadow:
-      0 0 0 28px color-mix(in srgb, var(--color-on-brand) 1%, transparent),
-      0 0 0 29px color-mix(in srgb, var(--color-on-brand) 14%, transparent),
-      0 0 0 66px color-mix(in srgb, var(--color-on-brand) 1%, transparent),
-      0 0 0 67px color-mix(in srgb, var(--color-on-brand) 9%, transparent);
-    transform: translateY(-50%) scaleY(0.68);
-    pointer-events: none;
-    transition:
-      opacity 0.5s,
-      transform 0.7s;
-    opacity: 0.7;
-  }
-  .studio-bottom .button::before {
-    left: -140px;
-  }
-  .studio-bottom .button::after {
-    right: -140px;
-  }
-  .studio-book-content {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    position: relative;
-    z-index: 1;
-  }
-  .studio-book-arrow {
-    display: grid;
-    place-items: center;
-    width: 58px;
-    height: 58px;
-    flex-shrink: 0;
-    border: 1px solid color-mix(in srgb, var(--color-on-brand) 45%, transparent);
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--color-on-brand) 2%, transparent);
-    transition:
-      background 0.35s,
-      border-color 0.35s;
-  }
-  .studio-book-arrow svg {
-    width: 26px;
-    height: 26px;
-    transform: rotate(-35deg);
-    transition:
-      transform 0.45s,
-      color 0.35s;
-  }
-  .studio-bottom .button:is(:hover, :focus-visible)::before,
-  .studio-bottom .button:is(:hover, :focus-visible)::after {
-    opacity: 1;
-    transform: translateY(-50%) scaleY(0.76);
-  }
-  .studio-bottom .button:is(:hover, :focus-visible) .studio-book-arrow {
-    background: var(--color-on-brand);
-    border-color: var(--color-on-brand);
-    color: var(--color-brand);
-  }
-  .studio-bottom .button:is(:hover, :focus-visible) .studio-book-arrow svg {
-    transform: rotate(0);
-  }
   @media (max-width: 1000px) {
     .studio-row,
     .studio-photo {
@@ -1591,32 +1491,6 @@
       padding: 0 20px;
       margin: 0;
     }
-    .studio-bottom {
-      padding: 18px 20px 35px;
-      gap: 22px;
-    }
-    .studio-bottom .button {
-      min-height: 108px;
-      padding: 24px 20px;
-      font-size: 1.75rem;
-    }
-    .studio-book-content {
-      gap: 18px;
-    }
-    .studio-book-arrow {
-      width: 46px;
-      height: 46px;
-    }
-    .studio-book-arrow svg {
-      width: 22px;
-      height: 22px;
-    }
-    .studio-bottom .button::before {
-      left: -235px;
-    }
-    .studio-bottom .button::after {
-      right: -235px;
-    }
   }
   .home-promotion {
     position: relative;
@@ -1645,9 +1519,6 @@
   .promotion-edge--bottom {
     bottom: 0;
     transform: rotate(180deg);
-  }
-  .home-promotion--contact .promotion-copy {
-    padding-top: calc(clamp(32px, 5vw, 76px) + 57px);
   }
   .promotion-edge--contact-top {
     top: 0;
@@ -1695,9 +1566,9 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
-  .promotion-copy h2 {
+  .promotion-copy h2,
+  .abstract-promotion h2 {
     max-width: 12ch;
-    margin-bottom: 24px;
     font-size: clamp(2.25rem, 4vw, 4.5rem);
     font-weight: var(--weight-display);
     font-style: italic;
@@ -1705,11 +1576,21 @@
     letter-spacing: -0.035em;
     text-transform: uppercase;
   }
-  .promotion-copy p {
+  .promotion-copy p,
+  .abstract-promotion > p {
     max-width: 44ch;
-    margin-bottom: 28px;
     font-size: var(--text-body);
     line-height: 1.75;
+  }
+  .promotion-copy h2 {
+    margin: 0 0 24px;
+  }
+  .promotion-copy p {
+    margin: 0 0 28px;
+  }
+  .abstract-promotion h2,
+  .abstract-promotion > p {
+    margin: 0;
   }
   .promotion-details {
     display: flex;
@@ -1723,17 +1604,20 @@
     font-size: var(--text-card);
     font-weight: var(--weight-heading);
   }
-  .home-promotion .promotion-cta {
+  .home-promotion .promotion-cta,
+  .abstract-promotion .promotion-cta {
     background: var(--color-on-brand);
     border-color: var(--color-on-brand);
     color: var(--color-brand);
   }
-  .home-promotion .promotion-cta:hover {
+  .home-promotion .promotion-cta:hover,
+  .abstract-promotion .promotion-cta:hover {
     background: var(--color-brand-tint);
     border-color: var(--color-brand-tint);
     color: var(--color-brand);
   }
-  .home-promotion .promotion-cta:focus-visible {
+  .home-promotion .promotion-cta:focus-visible,
+  .abstract-promotion .promotion-cta:focus-visible {
     outline-color: var(--color-on-brand);
     outline-offset: 5px;
   }
@@ -1761,11 +1645,79 @@
       grid-row: 2;
       padding: 32px 24px 36px;
     }
-    .promotion-copy h2 {
+    .promotion-copy h2,
+    .abstract-promotion h2 {
       max-width: none;
     }
     .home-promotion .promotion-cta {
       width: 100%;
+    }
+  }
+  .abstract-promotion {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 24px 40px;
+    min-height: 192px;
+    padding: 28px max(40px, calc((100vw - 1280px) / 2));
+    background-color: var(--color-brand);
+    background-image:
+      radial-gradient(
+        ellipse at 4% 140%,
+        color-mix(in srgb, var(--color-identity) 65%, transparent),
+        transparent 62%
+      ),
+      radial-gradient(
+        ellipse at 98% 0%,
+        color-mix(in srgb, var(--color-identity) 35%, transparent),
+        transparent 65%
+      );
+    color: var(--color-on-brand);
+  }
+  .home-promotion--contact {
+    margin-block: 12px;
+    padding-top: 70px;
+  }
+  .abstract-promotion-heading {
+    min-width: 0;
+  }
+  .abstract-promotion .promotion-eyebrow {
+    display: block;
+    margin-bottom: 8px;
+  }
+  .abstract-promotion .promotion-cta {
+    justify-self: end;
+    width: auto;
+    white-space: nowrap;
+  }
+  @media (max-width: 900px) {
+    .abstract-promotion {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 20px 32px;
+      padding-inline: 28px;
+    }
+    .abstract-promotion-heading {
+      grid-column: 1;
+    }
+    .abstract-promotion > p {
+      grid-column: 1;
+    }
+    .abstract-promotion .promotion-cta {
+      grid-column: 2;
+      grid-row: 1 / 3;
+    }
+  }
+  @media (max-width: 600px) {
+    .abstract-promotion {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 20px;
+      padding-inline: 24px;
+    }
+    .abstract-promotion .promotion-cta {
+      grid-column: 1;
+      grid-row: auto;
+      justify-self: start;
     }
   }
   .footer-contact-band {
@@ -2179,11 +2131,7 @@
     .arena-booking[data-entering="true"] .arena-scene {
       transition: none !important;
     }
-    .arena-facility,
-    .studio-bottom .button::before,
-    .studio-bottom .button::after,
-    .studio-book-arrow,
-    .studio-book-arrow svg {
+    .arena-facility {
       transition: none !important;
     }
     .arena-ball-orbit {
@@ -2629,12 +2577,15 @@
     background: var(--color-brand-soft);
     color: var(--color-muted);
   }
+  .outlet-options {
+    margin: 20px 0 28px;
+  }
   .outlet-option {
     display: flex;
     align-items: center;
     gap: 16px;
     width: 100%;
-    margin: 20px 0 28px;
+    min-width: 0;
     text-align: left;
   }
   .outlet-option > span {
@@ -2653,6 +2604,7 @@
     border-color: var(--color-identity);
     background: var(--color-brand-soft);
   }
+  .outlet-options,
   .session-products {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3887,6 +3839,7 @@
       min-width: 0;
       flex-shrink: 1;
     }
+    .outlet-options,
     .session-products {
       grid-template-columns: 1fr;
     }
