@@ -482,10 +482,16 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     .locator(".session-product-name")
     .evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
   expect(productFontSize).toBeCloseTo(20, 5);
-  await expect(page.locator(".section-title")).toHaveCSS(
-    "font-style",
-    "normal",
-  );
+  for (const name of [
+    "Choose your outlet",
+    "Select your session",
+    "Included with your session",
+  ]) {
+    await expect(page.getByRole("heading", { name, exact: true })).toHaveCSS(
+      "font-style",
+      "normal",
+    );
+  }
   await page.getByRole("link", { name: "See available times" }).click();
   await page
     .getByRole("button", {
