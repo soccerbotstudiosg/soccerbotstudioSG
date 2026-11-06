@@ -5087,3 +5087,5 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 - CI42225962661 phone-WebKit live-email shard2 failed the unchanged0.5px alignment assertion: month wrapper y317.34375 versus Refresh y318.34375 (job127920044868, artifact13505582824). Inline select baseline space enlarged the wrapper; make the owned select block-level so all row controls align. Retain original assertion/tolerance and failure evidence; rerun final candidate gates.
 
 - Owner shortened the footer app-group heading to “Soccerbot360 App:”; keep destinations/icons/alignment unchanged.
+
+- Owner superseded the short footer label with one-line “Soccerbot360 Player App:” and popup title “Download the official Soccerbot360 Player App now.” Keep existing store destinations and dismissal. Supersedes wording candidate667a87e before staging acceptance.

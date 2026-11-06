@@ -1821,6 +1821,7 @@
     align-items: stretch;
   }
   .footer-apps .footer-contact-heading {
+    white-space: nowrap;
     text-align: right;
   }
   .footer-apps .footer-contact-copy {

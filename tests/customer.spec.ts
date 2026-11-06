@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 async function openSite(page: Page, route: string) {
   await page.goto(sitePath(route));
   const prompt = page.getByRole("dialog", {
-    name: "Download the official Soccerbot360 App now.",
+    name: "Download the official Soccerbot360 Player App now.",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -290,13 +290,13 @@ test("public routes remove staff access and fit the viewport", async ({
     page.locator(".footer-contact-grid > .footer-contact-row"),
   ).toHaveCount(4);
   await expect(page.locator("#footer-apps-title")).toHaveText(
-    "Soccerbot360 App:",
+    "Soccerbot360 Player App:",
   );
   await expect(page.locator(".footer-contact-heading")).toHaveText([
     "Services",
     "Connect With Us",
     "Find Us",
-    "Soccerbot360 App:",
+    "Soccerbot360 Player App:",
   ]);
   await expect(
     page
@@ -1120,7 +1120,7 @@ test("first visit offers the Player App with only store links and dismissal pers
 }) => {
   await page.goto(sitePath("/"));
   const prompt = page.getByRole("dialog", {
-    name: "Download the official Soccerbot360 App now.",
+    name: "Download the official Soccerbot360 Player App now.",
   });
   await expect(prompt).toBeVisible();
   await expect(prompt.locator("p")).toHaveCount(0);

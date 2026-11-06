@@ -162,7 +162,7 @@ async function fixture(
   });
   await page.goto("/book/account/");
   const prompt = page.getByRole("dialog", {
-    name: "Download the official Soccerbot360 App now.",
+    name: "Download the official Soccerbot360 Player App now.",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -587,7 +587,7 @@ test("native guest journey preserves players contact and one checkout across ref
     await page.goto("/");
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -1037,7 +1037,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -1432,7 +1432,7 @@ async function guestDetails(
     await page.goto("/book/account/");
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -1885,7 +1885,7 @@ test("real API lost successful hold response restores the existing reservation w
     await page.goto("/book/review/");
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -2066,7 +2066,7 @@ test("real API failed completed dismissal opens the first step and explicit retr
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -2148,7 +2148,7 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
     await page.goto("/book/account/");
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -2379,7 +2379,7 @@ test("real API exhausted browser checking window retains the original deadline a
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -2698,7 +2698,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -2818,7 +2818,7 @@ test("real API expired unpaid Review retains its hold through the grace window w
     await page.goto("/book/review/");
     await page
       .getByRole("dialog", {
-        name: "Download the official Soccerbot360 App now.",
+        name: "Download the official Soccerbot360 Player App now.",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
