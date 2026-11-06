@@ -1606,6 +1606,7 @@
   }
   .home-promotion .promotion-cta,
   .abstract-promotion .promotion-cta {
+    border-radius: 3px 12px 3px 12px;
     background: var(--color-on-brand);
     border-color: var(--color-on-brand);
     color: var(--color-brand);

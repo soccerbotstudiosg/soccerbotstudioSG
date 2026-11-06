@@ -2,7 +2,9 @@
 
 Observed 6 November 2026 (Singapore). History: [Journey](docs/journey.md).
 
-## PR32 consolidated public-page refinements
+## PR32 consolidated public-page refinements and button shape
+
+Published74e2f5e passed full local252-test/build/export verification; the follow-up standardizes all promotional CTA corners to match the header (3px/12px alternating), superseding that candidate for CI/staging.
 
 Branch `fix/hero-session-copy`; baseline `98830de` passed CI42153487726 and staging42154510350 with matching health. PR32 remains open/unmerged. **Do not merge or enable settings.**
 

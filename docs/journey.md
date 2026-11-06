@@ -4868,3 +4868,7 @@ Owner requested removal of app-store lead-in captions, a slightly wider popup an
 ### 6 November 2026 — shorter homepage promotion targets
 
 Owner additionally requested about25% less height for the second and third homepage sections. Reduced image minimums480→360px and440→330px, vertical padding and copy gaps in the existing promotion owner; preserved typography and content-driven sizing. Mobile Studio keeps its full natural-ratio photo and40px top curve clearance; bottom padding is now67px, leaving27px above the40px bottom curve. Actual height remains responsive to copy wrapping. The centred-eyebrow verification was superseded/stopped when this request arrived; consolidate this candidate before final verification. No prior pass is claimed for the changed source.
+
+### 6 November 2026 — consistent banner button shape
+
+After publishing74e2f5e, owner requested all banner CTAs use the header's asymmetric button shape. Applied3px/12px alternating corner radii in the shared promotion CTA owner, covering homepage Studio/session/Contact and Studio booking footer without changing labels, colours or actions. This supersedes74e2f5e for final CI/staging. Reuse its full local252-test/build verification as prior-candidate evidence, with focused final style/source checks for this CSS-only follow-up; final-head CI remains required. No merge/settings authorization.
