@@ -4978,3 +4978,8 @@ CI42179543002 ate95f7a5 failed backend browser jobs127766171024/127766171176 (ar
 
 - Owner removed Enquire from the footer after the alignment follow-up and stated they were cancelling its CI. Keep WhatsApp/email/Instagram; leave the enquiry page and banner destinations intact.
 - Existing public-footer test now requires no Enquire link and exactly three contact links, with Instagram last. No added/removed cases, booking logic, provider settings or test-inventory changes.
+
+### 6 November 2026 — footer column grouping and app heading
+
+- Owner renamed the footer heading to “Download Official Soccerbot360 App:” and requested the three information groups sit closer together on the left. Desktop grid now sizes the first two columns to content with24px group gaps, preserves a flexible address column and keeps the app column at the right. Existing tablet/phone column rules remain.
+- Footer address remains Flagship Studio label, Apex @ Henderson, street/unit, then postal code on separate lines. Existing browser heading assertions track the exact new label; no inventory/booking/provider changes.

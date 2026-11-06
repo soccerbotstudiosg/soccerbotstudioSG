@@ -168,12 +168,14 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(
     page.locator(".footer-contact-grid > .footer-contact-row"),
   ).toHaveCount(4);
-  await expect(page.locator("#footer-apps-title")).toHaveText("Download App");
+  await expect(page.locator("#footer-apps-title")).toHaveText(
+    "Download Official Soccerbot360 App:",
+  );
   await expect(page.locator(".footer-contact-heading")).toHaveText([
     "Services",
     "Connect With Us",
     "Find Us",
-    "Download App",
+    "Download Official Soccerbot360 App:",
   ]);
   await expect(
     page
