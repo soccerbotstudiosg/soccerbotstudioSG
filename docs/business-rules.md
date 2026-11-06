@@ -158,7 +158,7 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 <a id="br-017"></a>
 
-**BR-017** — Successful single checkout uses four coordinator D1 calls plus one HTTP foundation/authentication call (five total); reconciliation uses five D1 calls. Batch checkout uses 2×sessions+6 coordinator calls plus one HTTP call (11/15/23 total for 2/4/8), excluding coordinator SQLite. These are measured/source successful-path counts, not absolute minima or caps on failure/recovery. Overlapping provider/storage timings must not be summed as exclusive wall time.
+**BR-017** — Successful single checkout uses six coordinator D1 calls plus one HTTP foundation/authentication call (seven total); reconciliation uses five D1 calls. Batch checkout uses 2×sessions+8 coordinator calls plus one HTTP call (13/17/19 total for 2/4/5 sessions), excluding coordinator SQLite. These are measured/source successful-path counts, not absolute minima or caps on failure/recovery. Overlapping provider/storage timings must not be summed as exclusive wall time.
 
 ### Observability and Grafana
 

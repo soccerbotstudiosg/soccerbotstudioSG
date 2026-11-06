@@ -116,7 +116,7 @@ export async function runCohort(config) {
       )
         d.setUTCDate(d.getUTCDate() + 1);
       const startMs = d.getTime(),
-        size = [1, 4, 8][i % 3],
+        size = [1, 4, 5][i % 3],
         id = crypto.randomUUID();
       customers.push({
         id,

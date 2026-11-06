@@ -5119,3 +5119,13 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 
 - Full local Worker source/type checks passed; runtime489/492 passed. Three remaining failures were two provider fixtures without synthetic `IDENTITY_PEPPER` and a pre-0006 migration test invoking current dispatch against the intentionally old schema. Added synthetic binding and explicitly seeded historical dispatch state with independently asserted writes; all3 affected regressions pass. Original output retained in `consolidated-worker-final.log`; no application guard was weakened.
 - Full local code gate previously passed267 cases/56 browser definitions/14 exported routes. Later spinner/confirmation polish passed focused28/44 checks; final local code gate and exact-head CI remain pending at this checkpoint. Backend full-suite execution will be repeated by required CI; unchanged passing local coverage is retained.
+
+## 6 November2026 — b640633 CI fixture and confirmation geometry reconciliation
+
+- Published PR32 candidate`b640633`; CI42244147487 passed frontend, contracts, recovery and both backend browser shards. The sustained203 runtime cases passed; its load-smoke follow-up failed because the fixture still submitted8 sessions, correctly rejected by the new5-session cap.
+- Preserved worker job127981830317 and live-email jobs127982538747/127982538912 logs under `/workspace/work/sbs-ui-redesign/ci-b640-*.log`. Live-email failures expected Home to occupy a full row after the assistant expanded the action layout by making Make another booking the full-width primary action.
+- Load mix now covers1/4/5 sessions with unchanged customer cohorts, deadlines, call budgets, fault cases and duplicate-effect assertions. Local smoke reproduced the original400 `session_limit_exceeded`; corrected smoke passes all4 cohorts.
+- Owner clarified that confirmation standardization applies only to the details section below the action controls. Reverted the expanded rebooking/Home layout, action spacing, icons and pending-shell changes; preserved the original browser geometry assertions and tolerances. Retained the requested logo-blue heading and mobile20px details-card inset. No assistant browser execution.
+- Reconciled measured admission-related D1 costs in BR-017, code map and runbook: single6 coordinator+1 HTTP; batch2×sessions+8 coordinator+1 HTTP; recovery5 unchanged. New CI/staging/merge still pending.
+
+- The confirmation action expansion was not requested; restored original controls following owner correction before the next CI candidate. Original failure receipts remain preserved.

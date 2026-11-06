@@ -1,5 +1,4 @@
 "use client";
-import { Icon } from "@/components/icon";
 import { isHitpayCheckoutUrl } from "@/domain/native-checkout";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -61,7 +60,7 @@ function PaymentContinuation({
           }
         }}
       >
-        Continue payment <Icon name="chevron" />
+        Continue payment
       </a>
     </div>
   );
@@ -492,7 +491,7 @@ export function ProtectedConfirmation({
     );
   }
   return (
-    <div className="status-shell confirmation-shell">
+    <div className="status-shell">
       <section className="surface confirmation-card" aria-live="polite">
         {checkoutMode === "synthetic" && (
           <p className="payment-foot">
