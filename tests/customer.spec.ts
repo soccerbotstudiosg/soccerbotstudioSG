@@ -184,13 +184,15 @@ test("public routes remove staff access and fit the viewport", async ({
     page
       .locator(".footer-direct-contact")
       .getByRole("link", { name: "Enquire", exact: true }),
-  ).toHaveAttribute("href", sitePath("/enquiry/"));
+  ).toHaveCount(0);
   await expect(page.locator(".footer-apps .footer-logo")).toHaveCount(1);
   await expect(
     page.locator(".footer-direct-contact .footer-contact-link .icon"),
   ).toHaveCount(3);
-  await expect(page.locator(".footer-direct-contact a").last()).toHaveText(
-    "Enquire",
+  await expect(page.locator(".footer-direct-contact a")).toHaveCount(3);
+  await expect(page.locator(".footer-direct-contact a").last()).toHaveAttribute(
+    "href",
+    "https://www.instagram.com/soccerbotstudiosg/",
   );
   await expect(
     page.locator(".footer-direct-contact").getByRole("link", {

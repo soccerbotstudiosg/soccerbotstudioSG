@@ -791,7 +791,7 @@ Session entry now reveals **Choose your outlet** → **Apex @ Henderson** (flags
 
 Public shell follow-up: the header remains visible while scrolling, with measured clearance for anchor/focus navigation. Sections below the initial viewport reveal once as they enter view; reduced-motion users see immediate content. Booking data, validation, live status and leave-booking confirmation retain their existing behavior.
 
-Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. Enquire is the final text link.
+Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. The footer has no Enquire link; WhatsApp, email and Instagram remain.
 
 Latest visual corrections: stage offscreen sections transparently before a clear650ms/32px entrance, with immediate reveal for focus/reduced motion and cleanup. Closing-banner heading, supporting copy and CTA share centred alignment and balanced columns, stacking centrally on phones. Phone header flag and two navigation buttons align together at the right.
 

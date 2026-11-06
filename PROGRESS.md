@@ -6,7 +6,7 @@ Observed 6 November 2026 (Singapore). History: [Journey](docs/journey.md).
 
 Branch `fix/hero-session-copy`; baseline0c79157 passed CI42175078630, CodeQL42175073956 and staging42176139791, with public health confirming the exact revision. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
 
-Latest requested footer order: Services (Book, Studio, Terms of Service, Privacy Policy, Refund Policy), Connect With Us (WhatsApp, Email, Instagram, Enquire), Find Us (flagship studio/address), Download App (three icons in one horizontal row, logo underneath). Retain the pure-white footer and empty white legal placeholder bodies. New Refund Policy route joins the two existing legal placeholders; approved legal text remains pending.
+Latest requested footer order: Services (Book, Studio, Terms of Service, Privacy Policy, Refund Policy), Connect With Us (WhatsApp, Email, Instagram), Find Us (flagship studio/address), Download App (three icons in one horizontal row, logo underneath). Retain the pure-white footer and empty white legal placeholder bodies. New Refund Policy route joins the two existing legal placeholders; approved legal text remains pending.
 
 Preserve the verified sticky header, accessible scroll reveals, corrected gallery curves without grey spacers,107px closing-banner minimum-height target and visible Studio blue-to-navy gradient. Current footer changes require local code verification and exact-head CI/staging. Test inventory stays unchanged; export requirements increase13→14 routes. Final immutable delivery evidence belongs in PR32.
 
@@ -19,7 +19,7 @@ Preserve the verified sticky header, accessible scroll reveals, corrected galler
 - Domain connection/WAF/rate-limit work is deferred until owner tests are finalized. Read-only inspection found soccerbotsg.com active in Cloudflare but no production Worker custom domain; managed rulesets listed, no custom edge-rate-limit ruleset established. This is not evidence of protection for the workers.dev route.
 - Wider external work remains in [Runbook](docs/runbook.md), [Admin UAT](docs/uat/admin.md) and [Trainer UAT](docs/uat/trainers.md).
 
-Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. Enquire is the final text link.
+Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. The footer has no Enquire link; WhatsApp, email and Instagram remain.
 
 Latest visual corrections: stage offscreen sections transparently before a clear650ms/32px entrance, with immediate reveal for focus/reduced motion and cleanup. Closing-banner heading, supporting copy and CTA share centred alignment and balanced columns, stacking centrally on phones. Phone header flag and two navigation buttons align together at the right.
 

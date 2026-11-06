@@ -160,7 +160,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
                     <Icon name="instagram" />
                     <span>@soccerbotstudiosg</span>
                   </a>
-                  <Link href="/enquiry/">Enquire</Link>
                 </div>
               </div>
             </section>
