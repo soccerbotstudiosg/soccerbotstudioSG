@@ -75,7 +75,9 @@ const table = (rows) =>
 const document = await format(
   `# Versions
 
-Versions configured on this branch, generated from the manifests and lockfile. This is not a deployed-version receipt. Python is a verification tool, not the Cloudflare application runtime; its exact patch version is recorded in each Actions run.
+- Versions configured on this branch, generated from the manifests and lockfile.
+- This is not a deployed-version receipt.
+- Python is a verification tool, not the Cloudflare application runtime; its exact patch version is recorded in each Actions run.
 
 ## Toolchain
 
@@ -91,7 +93,9 @@ ${table(
 
 ## Full locked dependency inventory
 
-Includes transitive dependencies and optional platform packages. A locked package is not necessarily installed on every platform or included in the deployed application. Paths distinguish multiple versions of the same package.
+- Includes transitive dependencies and optional platform packages.
+- A locked package is not necessarily installed on every platform or included in the deployed application.
+- Paths distinguish multiple versions of the same package.
 
 <details>
 <summary>All ${packages.length} locked package entries</summary>
@@ -104,9 +108,14 @@ ${packages.map((p) => `| ${cell(p.location)} | ${cell(p.version)} | ${p.developm
 
 ## Refresh and inspect
 
-Run \`node scripts/versions.mjs write\` after dependency or toolchain changes and commit this file with the update. CI checks it against the source manifests; it never commits back to main. Dependabot PRs that change these versions need this generated file refreshed before merging.
+- Run \`node scripts/versions.mjs write\` after dependency or toolchain changes and commit this file with the update.
+- CI checks it against the source manifests; it never commits back to main.
+- Dependabot PRs that change these versions need this generated file refreshed before merging.
 
-Actions verification summaries show observed Node, npm and Python versions, checked-out commit, job and target. Download that job's evidence artifact for \`versions.json\` (full lock inventory) and \`versions.md\`. Reports describe the verification environment; use the deployment receipt to establish which revision was deployed. Cloudflare manages its production runtime independently of the local workerd test package.
+- Actions verification summaries show observed Node, npm and Python versions, checked-out commit, job and target.
+- Download that job's evidence artifact for \`versions.json\` (full lock inventory) and \`versions.md\`.
+- Reports describe the verification environment; use the deployment receipt to establish which revision was deployed.
+- Cloudflare manages its production runtime independently of the local workerd test package.
 `,
   { parser: "markdown" },
 );

@@ -2,7 +2,10 @@
 
 ## Authority and document ownership
 
-This file is the authority for repository engineering instructions; linked procedures operate under it. User instructions take precedence; current repository instructions supersede stale external skill snapshots. The cloud skill’s older uppercase Journey, Rules & Architecture and CODEX_CLOUD paths are superseded. Use the current document map below.
+- This file is the authority for repository engineering instructions; linked procedures operate under it.
+- User instructions take precedence; current repository instructions supersede stale external skill snapshots.
+- The cloud skill’s older uppercase Journey, Rules & Architecture and CODEX_CLOUD paths are superseded.
+- Use the current document map below.
 
 | File                                                                  | Unique purpose                                                                                         |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -22,58 +25,127 @@ This file is the authority for repository engineering instructions; linked proce
 | [Domain operations and API contracts](docs/api-contracts.md)          | Named operations, source status, permissions, evidence and transport contracts.                        |
 | [Complete journey](docs/journey.md)                                   | Retained milestones, dated decisions and change evidence; flows belong in booking scenarios.           |
 
-[Booking scenarios and messages](docs/booking-flows.md) owns the small customer action/message diagrams and the embedded copy review/approval disposition; role UAT owns actual acceptance. Update the scenario map and approved-message rows when an affected UI state or message changes. This document does not duplicate payment authority or replace tests.
+- [Booking scenarios and messages](docs/booking-flows.md) owns the small customer action/message diagrams and the embedded copy review/approval disposition; role UAT owns actual acceptance.
+- Update the scenario map and approved-message rows when an affected UI state or message changes.
+- This document does not duplicate payment authority or replace tests.
 
-Function-level behavior, guards, failure recovery and evidence are in [Technical behavior](docs/code-owners/technical-behavior.md); start with the [feature map](docs/code-owners/index.md) for navigation.
+- Function-level behavior, guards, failure recovery and evidence are in [Technical behavior](docs/code-owners/technical-behavior.md); start with the [feature map](docs/code-owners/index.md) for navigation.
 
-Use North Star for sustained multi-step campaigns; scale it down for small corrections. Progress owns the active outcome and priority. Read North Star, Progress, Architecture and the relevant Business rules and API contracts before work. Refresh branch/HEAD/index and the remote revision; GitHub is canonical, but the local checkout may differ. Preserve unknown edits, worktrees, dependency symlinks and original evidence. Replace Progress when the checkpoint changes; never append checkpoint history or completed verification journals there. Journey owns dated history; booking scenarios, role UAT and the runbook own flow explanations. Update the owning document and link to it elsewhere; do not maintain parallel rules, setup guides or status ledgers. Historical entries remain dated evidence, not current instructions or renewed authorization. Preserve milestone IDs and record history once in Complete journey’s dated history.
+- Use North Star for sustained multi-step campaigns; scale it down for small corrections.
+- Progress owns the active outcome and priority.
+- Read North Star, Progress, Architecture and the relevant Business rules and API contracts before work.
+- Refresh branch/HEAD/index and the remote revision;
+- GitHub is canonical, but the local checkout may differ.
+- Preserve unknown edits, worktrees, dependency symlinks and original evidence.
+- Replace Progress when the checkpoint changes; never append checkpoint history or completed verification journals there.
+- Journey owns dated history; booking scenarios, role UAT and the runbook own flow explanations.
+- Update the owning document and link to it elsewhere; do not maintain parallel rules, setup guides or status ledgers.
+- Historical entries remain dated evidence, not current instructions or renewed authorization.
+- Preserve milestone IDs and record history once in Complete journey’s dated history.
 
 ## Route the request
 
-For every task, read these instructions, then North Star and Progress. Use the existing document map above and follow the relevant route below; inspect actual source and evidence before changing anything. Historical completion does not replace current revision checks.
+- For every task, read these instructions, then North Star and Progress.
+- Use the existing document map above and follow the relevant route below; inspect actual source and evidence before changing anything.
+- Historical completion does not replace current revision checks.
 
-| Request                               | Read next, in order                                                                                                                                                                                                                  | Work / evidence destination                                                                                         |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| Debug a feature or failing test       | [Relevant business rule](docs/business-rules.md#current-system-rules) → [Operation contracts](docs/api-contracts.md) → [Code owners](docs/code-owners/index.md) → [Verification commands](docs/development.md#verification-commands) | Owning feature, services or Worker module and its tests; record findings in Progress                                |
-| Develop a feature                     | [Business rules](docs/business-rules.md#current-system-rules) → [Architecture](docs/architecture/adr.md) → [Code owners](docs/code-owners/index.md) → [Setup](docs/development.md#development-setup)                                 | Existing source owner and affected tests; update its owning documentation                                           |
-| Fix CI / update dependencies          | [Runbook dependency procedure](docs/runbook.md#3-dependency-maintenance-and-dependabot) → [Versions](docs/versions.md) → [Verification commands](docs/development.md#verification-commands)                                          | [Workflows](.github/workflows), [scripts](scripts), package manifests and final-revision CI evidence                |
-| Deploy / recover / roll back          | [Runbook deployment procedure](docs/runbook.md#6-deployments-and-rollback) → [Configuration](docs/development.md#portable-deployment-scaffold) → [Deployment rules](docs/business-rules.md#deployment-migration-and-acceptance)      | [Target manifests](deployment), verified artifacts and deployment receipts                                          |
-| Diagnose an incident / Grafana signal | [Incident response](docs/runbook.md#5-incident-response-and-recovery) → [Signal dictionary](docs/runbook.md#4-monitoring-and-observability) → [Code owners](docs/code-owners/index.md)                                               | Correlated diagnostic/provider evidence and affected source owner                                                   |
-| Review security / harden a boundary   | [Security infrastructure](docs/security/security-infrastructure.md) → [Business rules](docs/business-rules.md) → [API contracts](docs/api-contracts.md) → [Runbook](docs/runbook.md)                                                 | Existing security owner and regression evidence; record findings and acceptance in Progress                         |
-| Inspect DNS / HTTPS                   | [Runbook DNS procedure](docs/runbook.md#8-domain-dns-and-https) → [Hosting requirements](docs/business-rules.md#client-hosting-setup-prepared-not-deployed)                                                                          | [Admin domain checks](docs/uat/admin.md#cloudflare-domain-dns-and-https-checks); owner/vendor executes changes      |
-| Prepare / review UAT                  | Relevant [Admin](docs/uat/admin.md), [Trainers](docs/uat/trainers.md) or [Simulated-user](docs/uat/simulated-user.md) worksheet → linked business rules                                                                              | Owner-run evidence tied to revision/environment; retain failures and blockers                                       |
-| Understand topology / hand over       | [System diagram](docs/architecture/diagram.md) → [Architecture](docs/architecture/adr.md) → [Code owners](docs/code-owners/index.md) → [Handover](docs/runbook.md#9-operational-records-and-handover)                                | [Milestones](docs/journey.md#milestones-and-retained-acceptance-criteria), access inventory and recorded acceptance |
+| Request                               | Read next, in order                                                                                                                                                                                                                  | Work / evidence destination                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Debug a feature or failing test       | [Relevant business rule](docs/business-rules.md#current-system-rules) → [Operation contracts](docs/api-contracts.md) → [Code owners](docs/code-owners/index.md) → [Verification commands](docs/development.md#verification-commands) | Owning feature, services or Worker module and its tests; record findings in Progress                                 |
+| Develop a feature                     | [Business rules](docs/business-rules.md#current-system-rules) → [Architecture](docs/architecture/adr.md) → [Code owners](docs/code-owners/index.md) → [Setup](docs/development.md#development-setup)                                 | Existing source owner and affected tests; update its owning documentation                                            |
+| Fix CI / update dependencies          | [Runbook dependency procedure](docs/runbook.md#3-dependency-maintenance-and-dependabot) → [Versions](docs/versions.md) → [Verification commands](docs/development.md#verification-commands)                                          | [Workflows](.github/workflows), [scripts](scripts), package manifests and final-revision CI evidence                 |
+| Deploy / recover / roll back          | [Runbook deployment procedure](docs/runbook.md#6-deployments-and-rollback) → [Configuration](docs/development.md#portable-deployment-scaffold) → [Deployment rules](docs/business-rules.md#deployment-migration-and-acceptance)      | [Target manifests](deployment), verified artifacts and deployment receipts                                           |
+| Diagnose an incident / Grafana signal | [Incident response](docs/runbook.md#5-incident-response-and-recovery) → [Signal dictionary](docs/runbook.md#4-monitoring-and-observability) → [Code owners](docs/code-owners/index.md)                                               | Correlated diagnostic/provider evidence and affected source owner                                                    |
+| Review security / harden a boundary   | [Security infrastructure](docs/security/security-infrastructure.md) → [Business rules](docs/business-rules.md) → [API contracts](docs/api-contracts.md) → [Runbook](docs/runbook.md)                                                 | Existing security owner and regression evidence; record findings and acceptance in Progress                          |
+| Inspect DNS / HTTPS                   | [Runbook DNS procedure](docs/runbook.md#8-domain-dns-and-https) → [Hosting requirements](docs/business-rules.md#client-hosting-and-domain-acceptance)                                                                                | [Admin domain checks](docs/tests/uat/admin.md#cloudflare-domain-dns-and-https-checks); owner/vendor executes changes |
+| Prepare / review UAT                  | Relevant [Admin](docs/tests/uat/admin.md), [Trainers](docs/tests/uat/trainers.md) or [Simulated-user](docs/tests/uat/customer.md) worksheet → linked business rules                                                                  | Owner-run evidence tied to revision/environment; retain failures and blockers                                        |
+| Understand topology / hand over       | [System diagram](docs/architecture/diagram.md) → [Architecture](docs/architecture/adr.md) → [Code owners](docs/code-owners/index.md) → [Handover](docs/runbook.md#9-operational-records-and-handover)                                | [Milestones](docs/journey.md#milestones-and-retained-acceptance-criteria), access inventory and recorded acceptance  |
 
 ## Implement
 
-Apply the [code-writing skill](.agents/skills/soccerbot-code-writing/SKILL.md) before writing or reviewing application, service, Worker, styling, configuration or tooling code. It defines root-cause repair, authoritative value sources, permitted constants/pins and proof that guards execute; use it with the testing and documentation skills.
+- Apply the [code-writing skill](.agents/skills/soccerbot-code-writing/SKILL.md) before writing or reviewing application, service, Worker, styling, configuration or tooling code.
+- It defines root-cause repair, authoritative value sources, permitted constants/pins and proof that guards execute; use it with the testing and documentation skills.
 
-Use one feature branch and edit existing component/domain/service/style owners. Remove superseded logic; no duplicate patched owners, CSS override tails or speculative abstractions. Preserve approved presentation, unrelated behavior and strict source/import/type/lint boundaries. Apply system invariants from Business rules at every affected execution path; never modify accepted migrations or expose secrets/customer data.
+- Use one feature branch and edit existing component/domain/service/style owners.
+- Remove superseded logic; no duplicate patched owners, CSS override tails or speculative abstractions.
+- Preserve approved presentation, unrelated behavior and strict source/import/type/lint boundaries.
+- Apply system invariants from Business rules at every affected execution path; never modify accepted migrations or expose secrets/customer data.
 
-Use one-line JSDoc/TSDoc summaries (`/** ... */`) for major TypeScript/JavaScript functions and one-line PEP 257 docstrings (`"""..."""`) for Python functions. Describe purpose or an important constraint with an imperative sentence; omit redundant type/parameter prose. Keep detailed safety rationale beside the relevant logic. Exclude generated code, test callbacks and trivial accessors from blanket documentation.
+- Use one-line JSDoc/TSDoc summaries (`/** ... */`) for major TypeScript/JavaScript functions and one-line PEP 257 docstrings (`"""..."""`) for Python functions.
+- Describe purpose or an important constraint with an imperative sentence; omit redundant type/parameter prose.
+- Keep detailed safety rationale beside the relevant logic.
+- Exclude generated code, test callbacks and trivial accessors from blanket documentation.
 
 ## Verify and publish
 
-Apply the [documentation reconciliation skill](.agents/skills/soccerbot-documentation/SKILL.md) for every PR (including documentation, dependency and automated updates) and delivery-state change. Review all document owners for impact, edit affected owners, and include its concise documentation-state receipt in the PR. This is an instruction procedure, not a CI hook or background automation; it grants no additional action authority.
+- Apply the [documentation reconciliation skill](.agents/skills/soccerbot-documentation/SKILL.md) for every PR (including documentation, dependency and automated updates) and delivery-state change.
+- Review all document owners for impact, edit affected owners, and include its concise documentation-state receipt in the PR.
+- This is an instruction procedure, not a CI hook or background automation; it grants no additional action authority.
 
-Apply the [dependency review skill](.agents/skills/soccerbot-dependencies/SKILL.md) before dependency additions, upgrades, replacements or merge recommendations, including Dependabot, runtime/images and pinned Actions. Research suitability and compatibility before editing; justify any application changes and record a merge/defer/reject assessment in the PR. Apply the two companion skills for testing and documentation; this adds no automatic Actions summary or merge/deployment authority.
+- Apply the [dependency review skill](.agents/skills/soccerbot-dependencies/SKILL.md) before dependency additions, upgrades, replacements or merge recommendations, including Dependabot, runtime/images and pinned Actions.
+- Research suitability and compatibility before editing; justify any application changes and record a merge/defer/reject assessment in the PR.
+- Apply the two companion skills for testing and documentation; this adds no automatic Actions summary or merge/deployment authority.
 
-Apply the [test-maintenance skill](.agents/skills/soccerbot-testing/SKILL.md) during every PR and scope change, including automated updates. Record test dispositions, fixture/inventory impact, actual checks and remaining gaps in the PR; a justified no-test-change decision is valid for unaffected behavior. This instruction skill adds no automatic CI enforcement.
+- Apply the [test-maintenance skill](.agents/skills/soccerbot-testing/SKILL.md) during every PR and scope change, including automated updates.
+- Record test dispositions, fixture/inventory impact, actual checks and remaining gaps in the PR; a justified no-test-change decision is valid for unaffected behavior.
+- This instruction skill adds no automatic CI enforcement.
 
-Apply the [deployment-readiness skill](.agents/skills/soccerbot-deployment/SKILL.md) for staging/production setup, release/configuration checks, activation and rollback investigation. Apply the [CI-diagnosis skill](.agents/skills/soccerbot-ci-diagnosis/SKILL.md) for failed/skipped/queued jobs, resource pressure and sharding or lifecycle optimization. They guide investigation and evidence; existing operational owners, testing/documentation responsibilities and action permissions remain authoritative.
+- Apply the [deployment-readiness skill](.agents/skills/soccerbot-deployment/SKILL.md) for staging/production setup, release/configuration checks, activation and rollback investigation.
+- Apply the [CI-diagnosis skill](.agents/skills/soccerbot-ci-diagnosis/SKILL.md) for failed/skipped/queued jobs, resource pressure and sharding or lifecycle optimization.
+- They guide investigation and evidence; existing operational owners, testing/documentation responsibilities and action permissions remain authoritative.
 
-After every logical change or repair, search affected components, services, Worker/browser tests, fixtures and inventories. Update obsolete assumptions without weakening their purpose, then run meaningful affected checks using the [command reference](docs/development.md#verification-commands). Never add retries, sleeps, forced clicks, skipped cases, looser timeouts or reduced inventories to conceal failures. Preserve the first failed receipt and diagnose it.
+- After every logical change or repair, search affected components, services, Worker/browser tests, fixtures and inventories.
+- Update obsolete assumptions without weakening their purpose, then run meaningful affected checks using the [command reference](docs/development.md#verification-commands).
+- Never add retries, sleeps, forced clicks, skipped cases, looser timeouts or reduced inventories to conceal failures.
+- Preserve the first failed receipt and diagnose it.
 
-Owner/CI operates browsers and physical devices: no assistant Playwright, screenshots, `npm run verify`, `verify:browser` or browser-running installers. Simulations do not establish provider or production acceptance. Report source changes, local verification, CI, merge, deployment and owner/provider acceptance separately.
+- Owner/CI operates browsers and physical devices: no assistant Playwright, screenshots, `npm run verify`, `verify:browser` or browser-running installers.
+- Simulations do not establish provider or production acceptance.
+- Report source changes, local verification, CI, merge, deployment and owner/provider acceptance separately.
 
-Inspect → change → test-impact review → affected checks → update owning documents → review diff → commit/push task branch and draft PR. Readiness requires all three final-commit gates: `verify / frontend`, `verify / backend`, `verify / live-email`. Reuse unchanged valid local evidence when publishing; do not rerun suites solely to publish. Main verifies the merged revision independently; deployment consumes its tested artifact without rebuilding.
+- Inspect → change → test-impact review → affected checks → update owning documents → review diff → commit/push task branch and draft PR.
+- Readiness requires all three final-commit gates: `verify / frontend`, `verify / backend`, `verify / live-email`.
+- Reuse unchanged valid local evidence when publishing; do not rerun suites solely to publish.
+- Main verifies the merged revision independently; deployment consumes its tested artifact without rebuilding.
 
-Keep related repairs on the existing draft PR; do not open a replacement merely because an earlier CI run passed. A separate dependent PR must identify its parent and inherited changes. Draft CI does not deploy staging. Before recommending or performing a merge, mark the final candidate ready, verify all exact-head gates, verify that exact candidate actually deployed to staging and passed health checks, and obtain the owner's staging acceptance and merge authorization. Marking ready or a green eligibility-only workflow is not staging evidence. Changed source invalidates the previous candidate's acceptance. Bot/fork exclusions require a reviewed trusted manual staging path, never a staging waiver by implication. An explicit owner exception applies only to its named scope. Follow [the release procedure](docs/runbook.md#6-deployments-and-rollback); these operating requirements are not yet an enforced automated staging-acceptance gate. Consolidate changes before CI, reuse valid evidence, and identify superseded runs before spending more minutes.
+- Keep related repairs on the existing draft PR; do not open a replacement merely because an earlier CI run passed.
+- A separate dependent PR must identify its parent and inherited changes.
+- Draft CI does not deploy staging.
+- Before recommending or performing a merge, mark the final candidate ready, verify all exact-head gates, verify that exact candidate actually deployed to staging and passed health checks, and obtain the owner's staging acceptance and merge authorization.
+- Marking ready or a green eligibility-only workflow is not staging evidence.
+- Changed source invalidates the previous candidate's acceptance.
+- Bot/fork exclusions require a reviewed trusted manual staging path, never a staging waiver by implication.
+- An explicit owner exception applies only to its named scope.
+- Follow [the release procedure](docs/runbook.md#6-deployments-and-rollback); these operating requirements are not yet an enforced automated staging-acceptance gate.
+- Consolidate changes before CI, reuse valid evidence, and identify superseded runs before spending more minutes.
 
-Never merge, auto-merge, push main, deploy or change protection without applicable explicit authorization. No assistant bookings, payments, cancellations, refunds, notification sends or historical cleanup. No destructive reset, force push or unapproved provider/account changes. New provisioning, secrets installation and production activation are separate actions. No background agents or standing service.
+- Never merge, auto-merge, push main, deploy or change protection without applicable explicit authorization.
+- No assistant bookings, payments, cancellations, refunds, notification sends or historical cleanup.
+- No destructive reset, force push or unapproved provider/account changes.
+- New provisioning, secrets installation and production activation are separate actions.
+- No background agents or standing service.
 
 ## Execution environment and local delivery
 
-Follow the development guide for tool versions and configuration. Preserve inherited network proxy/CA settings; use supported permissions, never disable TLS or bypass the proxy. Check credential presence without printing values. Worker tests use isolated workerd/D1/DO with intercepted synthetic providers; test authorization does not permit live outbound calls. Local port 4173 is not a public preview; do not claim a preview URL without evidence.
+- Follow the development guide for tool versions and configuration.
+- Preserve inherited network proxy/CA settings; use supported permissions, never disable TLS or bypass the proxy.
+- Check credential presence without printing values.
+- Worker tests use isolated workerd/D1/DO with intercepted synthetic providers; test authorization does not permit live outbound calls.
+- Local port 4173 is not a public preview; do not claim a preview URL without evidence.
 
-Routine cloud source work needs no Mac installer. If delivering one, use `scripts/build-local-installer.py`, `local-installer.py` and `guarded-update.py`. Under one repository lock, validate baseline/candidate bytes, inventory, paths/case and receipt hashes; preserve external backups and failure receipts. Planning scope accepts only documentation/approved delivery tooling and never runs Node or browsers; application delivery retains all applicable gates. Never execute historical bundled shells against current checkouts. Verify final bytes, hash, filename and links before delivery.
+- Routine cloud source work needs no Mac installer.
+- If delivering one, use `scripts/build-local-installer.py`, `local-installer.py` and `guarded-update.py`.
+- Under one repository lock, validate baseline/candidate bytes, inventory, paths/case and receipt hashes; preserve external backups and failure receipts.
+- Planning scope accepts only documentation/approved delivery tooling and never runs Node or browsers; application delivery retains all applicable gates.
+- Never execute historical bundled shells against current checkouts.
+- Verify final bytes, hash, filename and links before delivery.
+
+## Documentation form
+
+- Keep journal entries, dated implementation/verification receipts and superseded decisions only in `docs/journey.md`.
+- Reconcile every other document in place: replace superseded wording in its owning section, remove duplicates and link to the canonical owner. No patch-style appendices, follow-up narratives or competing summaries. Keep only current reference, requirements, procedures and pending checks.
+- Use short bullets with one idea each; allow at most one opening paragraph.
+  - Keep structured tables/code/diagrams where they improve precision; split dense table cells into labelled points.
+- Preserve details, stable rule/case IDs, original failures and evidence limits.
+  - For structural refactors, audit baseline-to-result information retention and moved links/anchors before publication.
+- `docs/tests/test-suite.md` owns the one-page suite explanation; `docs/tests/uat/` owns two-page customer/admin/trainer task-and-result checklists.

@@ -1,10 +1,19 @@
 # Technical behavior and recovery map
 
-Price presentation: `session-price.tsx` resolves homepage rates from the validated public catalogue environment and the shared `session-pricing.ts` profile; `SessionStep` passes the same catalogue environment into its price label. Unknown/failed homepage catalogue reads show no numeric fallback. Preview alone uses developer rates. Display labels grant no booking/payment authority; native quotes and Worker price/amount checks remain unchanged.
+- Price presentation: `session-price.tsx` resolves homepage rates from the validated public catalogue environment and the shared `session-pricing.ts` profile; `SessionStep` passes the same catalogue environment into its price label.
+- Unknown/failed homepage catalogue reads show no numeric fallback.
+- Preview alone uses developer rates.
+- Display labels grant no booking/payment authority; native quotes and Worker price/amount checks remain unchanged.
 
-Reviewed against merged baseline `662bea3` and the local shared-calendar repair (3 November 2026); local changes are not deployment evidence. This is the function-level companion to the [feature ownership map](index.md): what each named operation does, what the customer or operator sees, what prevents unsafe actions, and where failure recovery belongs. It covers the principal feature entry points and state-changing functions; it is not an exhaustive catalogue of private parsing helpers, JSX callbacks or generated bindings. “Owner” means code responsibility, not an assigned responder.
+- Reviewed against merged baseline `662bea3` and the local shared-calendar repair (3 November 2026); local changes are not deployment evidence.
+- This is the function-level companion to the [feature ownership map](index.md): what each named operation does, what the customer or operator sees, what prevents unsafe actions, and where failure recovery belongs.
+- It covers the principal feature entry points and state-changing functions; it is not an exhaustive catalogue of private parsing helpers, JSX callbacks or generated bindings.
+- “Owner” means code responsibility, not an assigned responder.
 
-[Business rules](../business-rules.md) remain the authority for invariants, [API contracts](../api-contracts.md) own request/response shapes, and the [runbook](../runbook.md) owns operator procedures. Tables describe implemented behavior, not proof that client production is configured. SimplyBook staff scheduling and HitPay/Cloudflare administration are provider-console operations, not custom SoccerBot admin features. Enquiry uses a demo adapter; the persistent mock assistant is retired.
+- [Business rules](../business-rules.md) remain the authority for invariants, [API contracts](../api-contracts.md) own request/response shapes, and the [runbook](../runbook.md) owns operator procedures.
+- Tables describe implemented behavior, not proof that client production is configured.
+- SimplyBook staff scheduling and HitPay/Cloudflare administration are provider-console operations, not custom SoccerBot admin features.
+- Enquiry uses a demo adapter; the persistent mock assistant is retired.
 
 ## Overview and reading route
 
@@ -27,19 +36,39 @@ flowchart TB
   Release["10 · Verified artifacts and deployment"] --> Entry
 ```
 
-For a visible failure, start with its UI row, follow the named service to its Worker owner, then inspect the linked evidence. A diagram arrow denotes responsibility or a call path; it does not guarantee parallel execution, authorization or provider success.
+- For a visible failure, start with its UI row, follow the named service to its Worker owner, then inspect the linked evidence.
+- A diagram arrow denotes responsibility or a call path; it does not guarantee parallel execution, authorization or provider success.
 
 ## 1. UI state, navigation and loading
 
-Shared dialogs use unique heading references and nonshrinking close controls. Long invoice references wrap within the confirmation card. Availability retry is a compact Refresh control to the right of the month chooser, with matching width and minimum height; its accessible name remains Refresh availability. Selection guidance distinguishes choosing a time from the temporary checkout reservation; leaving checkout warns that payment must complete before expiry. These presentation changes do not alter reservation or payment guards.
+- Shared dialogs use unique heading references and nonshrinking close controls.
+- Long invoice references wrap within the confirmation card.
+- Availability retry is a compact Refresh control to the right of the month chooser, with matching width and minimum height; its accessible name remains Refresh availability.
+- Selection guidance distinguishes choosing a time from the temporary checkout reservation; leaving checkout warns that payment must complete before expiry.
+- These presentation changes do not alter reservation or payment guards.
 
-Round-four presentation: compact session cards open the original full-width configuration view, not a dialog. Time cards place price at top right, trainer names below, and retain the trainer dropdown. Trainer profiles show biographies or explicitly labelled preview copy, not session dates. Totals share enlarged labels and amounts with muted SGD on the left; H1 uses the identity colour and body uses ink. Selection updates clear the ended-reservation notice.
+- Round-four presentation: compact session cards open the original full-width configuration view, not a dialog.
+- Time cards place price at top right, trainer names below, and retain the trainer dropdown.
+- Trainer profiles show biographies or explicitly labelled preview copy, not session dates.
+- Totals share enlarged labels and amounts with muted SGD on the left;
+- H1 uses the identity colour and body uses ink.
+- Selection updates clear the ended-reservation notice.
 
-Full-recording UI follow-up (5 November): BookingProvider exposes readiness only after protected restoration settles, preventing a temporary editable calendar before a retained attempt is restored. Refresh stays visible and disabled while the calendar is busy. Cart items have separate bordered backgrounds, top-aligned red removal controls and trainer/price rows; Continue notices have spacing. Review edit links share “Edit” within their respective sections, omit duplicated unit pricing and use the larger total typography. Single-session confirmed Paid/amount shares the trainer row; multi-session totals remain separate. External-window guidance requires an eligible non-HitPay checkout link. Payment-release authority and cache retention rules are unchanged.
+- Full-recording UI follow-up (5 November): BookingProvider exposes readiness only after protected restoration settles, preventing a temporary editable calendar before a retained attempt is restored.
+- Refresh stays visible and disabled while the calendar is busy.
+- Cart items have separate bordered backgrounds, top-aligned red removal controls and trainer/price rows;
+- Continue notices have spacing.
+- Review edit links share “Edit” within their respective sections, omit duplicated unit pricing and use the larger total typography.
+- Single-session confirmed Paid/amount shares the trainer row; multi-session totals remain separate.
+- External-window guidance requires an eligible non-HitPay checkout link.
+- Payment-release authority and cache retention rules are unchanged.
 
-`ProtectedConfirmation` binds expiry-release failures to the originating attempt and session revision, like its receipt/context errors. Switching attempts or identity revisions cannot carry that error into the new view; expiry still requires the original authenticated server release. Combined navigation coverage and remaining provider acceptance are tracked in [customer UAT](../uat/simulated-user.md#combined-journey-audit-matrix).
+- `ProtectedConfirmation` binds expiry-release failures to the originating attempt and session revision, like its receipt/context errors.
+- Switching attempts or identity revisions cannot carry that error into the new view; expiry still requires the original authenticated server release.
+- Combined navigation coverage and remaining provider acceptance are tracked in [customer UAT](../tests/uat/customer.md).
 
-Rules: [BR-003–005](../business-rules.md#identity-privacy-and-environment-isolation), [BR-007–013](../business-rules.md#checkout-durable-effects-and-customer-errors). Owners: [provider.tsx](../../src/features/booking/provider.tsx), [booking-page.tsx](../../src/features/booking/booking-page.tsx), [booking-loading.tsx](../../src/features/booking/booking-loading.tsx).
+- Rules: [BR-003–005](../business-rules.md#identity-privacy-and-environment-isolation), [BR-007–013](../business-rules.md#checkout-durable-effects-and-customer-errors).
+- Owners: [provider.tsx](../../src/features/booking/provider.tsx), [booking-page.tsx](../../src/features/booking/booking-page.tsx), [booking-loading.tsx](../../src/features/booking/booking-loading.tsx).
 
 ```mermaid
 flowchart TB
@@ -69,13 +98,24 @@ flowchart TB
 | `restartAfterConfirmation` / `reset`        | Start a new draft only through their permitted state transitions; confirmation restart discards browser calendar/day availability and resumes reads before browsing again. | Completed exit is acknowledged in live mode; reset refuses active, held or checking/pending/late attempts.                            | Keep unresolved work attached to the original attempt.                                                                                                   |
 | `BookingLoadingProvider` / `BookingLoading` | Register concurrent loading work, display one overlay and make underlying content inert while keeping it mounted.                                                          | A registration returns its own cleanup; the overlay lasts while any registration remains.                                             | A stuck overlay requires inspecting unresolved operations and cleanup. Do not force clicks through it or remove the guard to pass a test.                |
 
-Evidence: [experiment browser cases](../../tests/experiment.spec.ts), [live identity/booking browser cases](../../tests/live-email.spec.ts), [booking domain tests](../../src/features/booking/async-booking.test.tsx). Screens to inspect: account choices, editable Review, loading overlay, saved-confirmation retry and back/forward return.
+- Evidence: [experiment browser cases](../../tests/experiment.spec.ts), [live identity/booking browser cases](../../tests/live-email.spec.ts), [booking domain tests](../../src/features/booking/async-booking.test.tsx).
+- Screens to inspect: account choices, editable Review, loading overlay, saved-confirmation retry and back/forward return.
 
 ### 1.1 Step presentation functions
 
-Session summary presentation: `SessionSummaryHeading` in `summary.tsx` owns the shared Your sessions heading, provider service label and player-per-session guidance for cart, review and confirmation. Shared styles keep its typography and internal spacing consistent; Review supplies its existing edit action. Confirmed Paid badges sit immediately before the right-aligned price; pending Total retains its existing layout.
+- Session summary presentation: `SessionSummaryHeading` in `summary.tsx` owns the shared Your sessions heading, provider service label and player-per-session guidance for cart, review and confirmation.
+- Shared styles keep its typography and internal spacing consistent;
+- Review supplies its existing edit action.
+- Confirmed Paid badges sit immediately before the right-aligned price; pending Total retains its existing layout.
 
-Trainer selection update (29 October 2026): `TimeStep` groups simultaneous offers into one time card and exposes its trainer dropdown after the time is opened. A pending dropdown does not add a session. Choosing or changing a trainer validates exact offer identity and current time; a refresh/failure never silently replaces a saved trainer. The selected time button or basket removal removes the session. `Summary` groups completed selections by stable instructor ID; `InstructorProfile` lists that trainer’s ordered dates/times below the summary. Profiles stack vertically, including when names match. Each time and its trainer selector share one outer bordered card, with an internal divider, bold label and outlined control; the right-hand session list has top padding separating dates from the trainer header. Held/payment-locked drafts keep existing edit guards.
+- Trainer selection: `TimeStep` groups simultaneous offers into one time card and exposes its trainer dropdown after the time is opened.
+- A pending dropdown does not add a session.
+- Choosing or changing a trainer validates exact offer identity and current time; a refresh/failure never silently replaces a saved trainer.
+- The selected time button or basket removal removes the session.
+- `Summary` groups completed selections by stable instructor ID; `InstructorProfile` lists that trainer’s ordered dates/times below the summary.
+- Profiles stack vertically, including when names match.
+- Each time and its trainer selector share one outer bordered card, with an internal divider, bold label and outlined control; the right-hand session list has top padding separating dates from the trainer header.
+- Held/payment-locked drafts keep existing edit guards.
 
 ```mermaid
 flowchart TB
@@ -88,11 +128,14 @@ flowchart TB
   Server --> Capacity["SimplyBook: one shared studio across trainers"]
 ```
 
-Evidence: [time selection regressions](../../src/features/booking/time-step.test.tsx), [service identity/capacity cases](../../src/services/async-booking.test.ts), [prebooking/calendar cases](../../worker/tests/catalogue.test.mjs), [cross-trainer conflict and batch restoration](../../worker/tests/combined-hold.test.mjs). Screenshots and actual shared-resource acceptance remain owner/CI work.
+- Evidence: [time selection regressions](../../src/features/booking/time-step.test.tsx), [service identity/capacity cases](../../src/services/async-booking.test.ts), [prebooking/calendar cases](../../worker/tests/catalogue.test.mjs), [cross-trainer conflict and batch restoration](../../worker/tests/combined-hold.test.mjs).
+- Screenshots and actual shared-resource acceptance remain owner/CI work.
 
-`TimeStep` offers See next month when an empty loaded month has no next available date. Navigation stays within the public three-month horizon and selects an eligible date after the explicitly requested month loads; it never scans months in the background or changes the basket.
+- `TimeStep` offers See next month when an empty loaded month has no next available date.
+- Navigation stays within the public three-month horizon and selects an eligible date after the explicitly requested month loads; it never scans months in the background or changes the basket.
 
-These functions are under [the booking feature](../../src/features/booking). They consume provider/service state; they do not independently authorize provider writes.
+- These functions are under [the booking feature](../../src/features/booking).
+- They consume provider/service state; they do not independently authorize provider writes.
 
 | Function / file                                                                                      | Behavior and guards                                                         | Failure / recovery                                                                                                     |
 | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -107,7 +150,7 @@ These functions are under [the booking feature](../../src/features/booking). The
 
 ## 2. Browser services, persistence and exports
 
-Owners: [booking.ts](../../src/services/booking.ts), [identity.ts](../../src/services/identity.ts), [storage.ts](../../src/services/storage.ts), [composition](../../src/services/index.ts).
+- Owners: [booking.ts](../../src/services/booking.ts), [identity.ts](../../src/services/identity.ts), [storage.ts](../../src/services/storage.ts), [composition](../../src/services/index.ts).
 
 | Function / operation                                                             | Behavior                                                                                                         | Guards                                                                             | Failure and recovery                                                                                                |
 | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -122,11 +165,13 @@ Owners: [booking.ts](../../src/services/booking.ts), [identity.ts](../../src/ser
 | `safeRead`, `safeWrite`, `safeRemove`                                            | Tolerate denied browser storage or invalid JSON.                                                                 | Reads return null on failure; writes do not become authority.                      | In-memory interaction can continue, but persistence may be unavailable; do not infer that server state was cleared. |
 | `loadBooking`, `saveBooking`, `loadLiveDraft`, `saveLiveDraft`, `upgradeBooking` | Validate/migrate local draft representation; keep live persistence limited to the intended draft representation. | Schema/version checks and live/demo separation.                                    | Discard unusable local representation without deleting server booking evidence.                                     |
 
-Evidence: [service tests](../../src/services/booking.test.ts), [live-email browser tests](../../tests/live-email.spec.ts), [protected export owner](../../src/features/booking/protected-confirmation.tsx). For staff schedule entry, use [Trainer UAT](../uat/trainers.md); it is performed in SimplyBook.
+- Evidence: [service tests](../../src/services/booking.test.ts), [live-email browser tests](../../tests/live-email.spec.ts), [protected export owner](../../src/features/booking/protected-confirmation.tsx).
+- For staff schedule entry, use [Trainer UAT](../tests/uat/trainers.md); it is performed in SimplyBook.
 
 ## 3. HTTP entry, access and immutable foundation
 
-Owners: [Worker entry](../../worker/index.ts), [access](../../worker/access.ts), [bindings](../../worker/bindings.ts), [policy](../../worker/policy.ts). Rules: BR-003, BR-004, BR-014, BR-021, BR-027.
+- Owners: [Worker entry](../../worker/index.ts), [access](../../worker/access.ts), [bindings](../../worker/bindings.ts), [policy](../../worker/policy.ts).
+- Rules: BR-003, BR-004, BR-014, BR-021, BR-027.
 
 ```mermaid
 flowchart LR
@@ -146,13 +191,17 @@ flowchart LR
 | `coordinatorName` / `coordinatorStub`                                             | Acquire the configured account coordinator with its placement hint.           | Validated configured identity; immutable first-use placement considerations.  | Do not rename the coordinator or create a replacement to bypass a mismatch.                                                       |
 | `assertBindingShape`, `foundationStatement`, `assertFoundation`, `verifyBindings` | Validate binding/resource identity against the registered foundation.         | Exact expected account/environment/resource identity and stored registration. | Fail closed on mismatch; inspect target and registration. No automatic self-registration or destructive reset.                    |
 
-`healthFoundation` is the read-only closed-install exception: an existing empty registration can be reported as pending only for explicitly disabled production. All protected routes still call `verifyBindings`; neither path auto-registers a database. Health reports the configured environment.
+- `healthFoundation` is the read-only closed-install exception: an existing empty registration can be reported as pending only for explicitly disabled production.
+- All protected routes still call `verifyBindings`; neither path auto-registers a database.
+- Health reports the configured environment.
 
-Evidence: [foundation fixture and checks](../../worker/tests/foundation-fixture.mjs), [Worker tests](../../worker/tests), [deployment tests](../../scripts/deploy-cloudflare.test.mjs). Request errors are not evidence that no earlier request committed a write.
+- Evidence: [foundation fixture and checks](../../worker/tests/foundation-fixture.mjs), [Worker tests](../../worker/tests), [deployment tests](../../scripts/deploy-cloudflare.test.mjs).
+- Request errors are not evidence that no earlier request committed a write.
 
 ## 4. Email identity, Remember me and saved contact
 
-Owners: [identity](../../worker/identity.ts), [delivery](../../worker/identity-delivery.ts), [remembered identity](../../worker/remembered-identity.ts), [contact profile](../../worker/contact-profile.ts). Rules: BR-003–005.
+- Owners: [identity](../../worker/identity.ts), [delivery](../../worker/identity-delivery.ts), [remembered identity](../../worker/remembered-identity.ts), [contact profile](../../worker/contact-profile.ts).
+- Rules: BR-003–005.
 
 ```mermaid
 sequenceDiagram
@@ -181,21 +230,62 @@ sequenceDiagram
 | `revokeAllIdentities`                                                               | Revoke verified-email sessions/remembered access across devices.                                     | Current server-verified email session, including valid remembered restoration; guest authority is insufficient. | Require verification when identity is unavailable; preserve server revocation evidence.                                    |
 | `readContactProfile` / `saveContactProfile`                                         | Read and persist permitted contact details for the verified owner.                                   | Identity, consent, field schema and ownership; guest input does not become another email’s profile.             | Keep failed saves visible and allow an authorized reread; do not prefill another account or claim a failed save succeeded. |
 
-Evidence: [identity/remembered Worker tests](../../worker/tests), [email account and Remember me browser cases](../../tests/live-email.spec.ts), [account UI](../../src/features/booking/account-step.tsx), [Turnstile lifecycle](../../src/features/booking/email-bot-proof.tsx). Screen evidence should distinguish challenge request, verified session, Remember me restoration and all-device sign-out.
+- Evidence: [identity/remembered Worker tests](../../worker/tests), [email account and Remember me browser cases](../../tests/live-email.spec.ts), [account UI](../../src/features/booking/account-step.tsx), [Turnstile lifecycle](../../src/features/booking/email-bot-proof.tsx).
+- Screen evidence should distinguish challenge request, verified session, Remember me restoration and all-device sign-out.
 
 ## 5. Catalogue, selection and capacity
 
-`studioStartsFromIntervals` in [native-grid.ts](../../worker/native-grid.ts) normalizes observed `{from,to}` intervals and documented two-item arrays under the same strict boundary checks, then fits the shared noon-anchored grid inside provider free intervals, including the changeover buffer. Ongoing calendar and prebooking reads request intervals instead of provider-generated starts; legacy finite reads retain their contract. `isStudioSessionStart` also guards customer selection and new writes. `studioDisplayCalendar` removes legacy off-grid offers at backend snapshot read/write and browser ingress without renewing freshness. `excludeSessions` removes overlapping50-minute studio times across trainers for known dispatches and authoritative selection rejection; the coordinator invalidates the affected short read cache. Fresh authoritative reads restore released times; arbitrary admin bookings are neither rounded nor rewritten. Provider handling of manual conflicts and shared capacity remains an explicit live acceptance gap in the API contract.
+- `studioStartsFromIntervals` in [native-grid.ts](../../worker/native-grid.ts) normalizes observed `{from,to}` intervals and documented two-item arrays under the same strict boundary checks, then fits the shared noon-anchored grid inside provider free intervals, including the changeover buffer.
+- Ongoing calendar and prebooking reads request intervals instead of provider-generated starts; legacy finite reads retain their contract.
+- `isStudioSessionStart` also guards customer selection and new writes.
+- `studioDisplayCalendar` removes legacy off-grid offers at backend snapshot read/write and browser ingress without renewing freshness.
+- `excludeSessions` removes overlapping50-minute studio times across trainers for known dispatches and authoritative selection rejection; the coordinator invalidates the affected short read cache.
+- Fresh authoritative reads restore released times; arbitrary admin bookings are neither rounded nor rewritten.
+- Provider handling of manual conflicts and shared capacity remains an explicit live acceptance gap in the API contract.
 
-`DisplaySnapshots.excludeSessions` removes overlapping shared-studio offers from retained month data after journalled booking dispatch, preserving unrelated offers and the original display expiry. Its generation fence rejects older in-flight saves. `updateDay` replaces only a provider-confirmed day, including availability restored after provider release. `calendarReadOptions.onFreshDay` feeds explicit fresh selection/rejection readbacks into this owner. `expireCheckout` also reads affected days after authoritative release, but only for retained months; absent months are left to normal browsing/warming. Browser retry evicts only selected/affected months, not all three. A local hold timer never restores capacity. Live public calendar/catalogue reads retain snapshots independently of the optional warming switch; enabled warming claims one due month per minute, reusing successful snapshots for15 minutes and rotating failed/missing months through persisted `display_warm_month` claims. Checkout no longer starts a whole-month rebuild. Scheduled warming checks for queued checkout/recovery work between provider operations, drains already-started reads, and defers the incomplete refresh to the next scheduler turn. Partial months are never published and original snapshot deadlines remain fixed. A single active provider request is not preempted. `dismissCompletedCheckout` uses its guarded D1 archival transaction without waiting for provider work; concurrent authenticated acknowledgements return the same archived result.
+- `DisplaySnapshots.excludeSessions` removes overlapping shared-studio offers from retained month data after journalled booking dispatch, preserving unrelated offers and the original display expiry.
+- Its generation fence rejects older in-flight saves.
+- `updateDay` replaces only a provider-confirmed day, including availability restored after provider release.
+- `calendarReadOptions.onFreshDay` feeds explicit fresh selection/rejection readbacks into this owner.
+- `expireCheckout` also reads affected days after authoritative release, but only for retained months; absent months are left to normal browsing/warming.
+- Browser retry evicts only selected/affected months, not all three.
+- A local hold timer never restores capacity.
+- Live public calendar/catalogue reads retain snapshots independently of the optional warming switch; enabled warming claims one due month per minute, reusing successful snapshots for15 minutes and rotating failed/missing months through persisted `display_warm_month` claims.
+- Checkout no longer starts a whole-month rebuild.
+- Scheduled warming checks for queued checkout/recovery work between provider operations, drains already-started reads, and defers the incomplete refresh to the next scheduler turn.
+- Partial months are never published and original snapshot deadlines remain fixed.
+- A single active provider request is not preempted.
+- `dismissCompletedCheckout` uses its guarded D1 archival transaction without waiting for provider work; concurrent authenticated acknowledgements return the same archived result.
 
-`DisplaySnapshots.scheduleRelease`, `nextRelease` and `finishRelease` retain one bounded date-read schedule per attempt/date. The coordinator registers it after journalled hold creation and on verified expiry, shares alarm/cron work, and reads only the affected date through normal provider admission. It updates snapshots only with validated current availability, stops for known payment or returned original grid offers, and never cancels bookings or adds the old selection back. Completed rows prevent replay from restarting the budget; a subsequent queue inspection purges rows older than one day. Payment recovery retains priority and its original independent journal/limits.
+- `DisplaySnapshots.scheduleRelease`, `nextRelease` and `finishRelease` retain one bounded date-read schedule per attempt/date.
+- The coordinator registers it after journalled hold creation and on verified expiry, shares alarm/cron work, and reads only the affected date through normal provider admission.
+- It updates snapshots only with validated current availability, stops for known payment or returned original grid offers, and never cancels bookings or adds the old selection back.
+- Completed rows prevent replay from restarting the budget; a subsequent queue inspection purges rows older than one day.
+- Payment recovery retains priority and its original independent journal/limits.
 
-The confirmation route exposes the same server-authorized unpaid continuation as the payment route except that a completed return hint suppresses continuation without granting paid status. Old-receipt exit preserves a newer unpaid/uncertain attempt; a newer completed attempt requires protected proof and successful dismissal before clearing. Explicit checkout-window rejection clears only the undispatched local attempt, retains the requested draft and offers an owned existing checkout through an explicit link; it never automatically adopts that attempt. Calendar loading is released. Unresolved rendering retains structured session details. Check status reports completion, failure or rate-limit feedback without restarting polling. Protected HTTP reads have a ten-second network deadline; optional receipt refresh checks authority before entering the provider queue. Browser/provider acceptance remains separate from synthetic checks.
+- The confirmation route exposes the same server-authorized unpaid continuation as the payment route except that a completed return hint suppresses continuation without granting paid status.
+- Old-receipt exit preserves a newer unpaid/uncertain attempt; a newer completed attempt requires protected proof and successful dismissal before clearing.
+- Explicit checkout-window rejection clears only the undispatched local attempt, retains the requested draft and offers an owned existing checkout through an explicit link; it never automatically adopts that attempt.
+- Calendar loading is released.
+- Unresolved rendering retains structured session details.
+- Check status reports completion, failure or rate-limit feedback without restarting polling.
+- Protected HTTP reads have a ten-second network deadline; optional receipt refresh checks authority before entering the provider queue.
+- Browser/provider acceptance remains separate from synthetic checks.
 
-`NativeCalendarReads` includes the complete active linked roster, plans at most 96 range calls and uses the existing two-lane `parallelReads` helper for ongoing customer traffic. `calendarWindow` serializes admission so parallel reads retain the 300ms spacing check and account controls. Missing trainer/date results reject the refresh; only complete results are cached. Shared DTO limits bound daily/monthly offer counts and UTF-8 payload bytes before snapshot persistence. See [calendar contracts](../api-contracts.md#4-catalogue-and-selection-contracts) for exact limits. `sessionPrices` and `sessionRate` distinguish developer S$88/S$108 from client S$108/S$128; production service IDs come from the reviewed target mapping while developer primary service remains 2. Native checkout grants retain developer or production scope, with environment-specific price checks and no legacy trial exceptions for the client. `clientSandboxAccess` requires an explicit switch and the matching reviewed company/service and sandbox merchant/business pairing; finite developer tooling remains restricted. `providerCredentialName` selects DEV/PROD secret names without fallback; `providerSecrets` additionally checks the expected production company. `turnstileSecretName` retains staging’s `TURNSTILE_SECRET` and selects the installed client `TURNSTILE_SECRET_KEY`. These configuration selectors do not open customer/provider access.
+- `NativeCalendarReads` includes the complete active linked roster, plans at most 96 range calls and uses the existing two-lane `parallelReads` helper for ongoing customer traffic.
+- `calendarWindow` serializes admission so parallel reads retain the 300ms spacing check and account controls.
+- Missing trainer/date results reject the refresh; only complete results are cached.
+- Shared DTO limits bound daily/monthly offer counts and UTF-8 payload bytes before snapshot persistence.
+- See [calendar contracts](../api-contracts.md#4-catalogue-and-selection-contracts) for exact limits.
+- `sessionPrices` and `sessionRate` distinguish developer S$88/S$108 from client S$108/S$128; production service IDs come from the reviewed target mapping while developer primary service remains 2.
+- Native checkout grants retain developer or production scope, with environment-specific price checks and no legacy trial exceptions for the client.
+- `clientSandboxAccess` requires an explicit switch and the matching reviewed company/service and sandbox merchant/business pairing; finite developer tooling remains restricted.
+- `providerCredentialName` selects DEV/PROD secret names without fallback; `providerSecrets` additionally checks the expected production company.
+- `turnstileSecretName` retains staging’s `TURNSTILE_SECRET` and selects the installed client `TURNSTILE_SECRET_KEY`.
+- These configuration selectors do not open customer/provider access.
 
-Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calendar](../../worker/public-calendar.ts), [native read operations](../../worker/native-checkout.ts), [provider session](../../worker/provider-session.ts), [browser availability](../../src/features/booking/availability.ts). Rules: BR-001, BR-002, BR-006, BR-014–017.
+- Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calendar](../../worker/public-calendar.ts), [native read operations](../../worker/native-checkout.ts), [provider session](../../worker/provider-session.ts), [browser availability](../../src/features/booking/availability.ts).
+- Rules: BR-001, BR-002, BR-006, BR-014–017.
 
 | Function / operation                              | Behavior                                                                                          | Guards                                                                                                                             | Failure and recovery                                                                                                                                     |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -206,11 +296,13 @@ Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calend
 | `ProviderSession.prebooking` / `discoverFields`   | Read pricing/availability and supported booking input metadata.                                   | Supported tariff and field semantics, bounded cache/read scope.                                                                    | Reject unsupported/incomplete metadata rather than omit required provider fields.                                                                        |
 | `withinOpeningHours` and shared selection rules   | Validate local session times, player/selection limits and pricing representation.                 | [Booking policy](../../src/domain/booking-policy.ts), [session pricing](../../src/domain/session-pricing.ts), server revalidation. | Browser feedback does not replace server authority. Reconfirm actual client schedules/prices before activation; constants are not vendor setup evidence. |
 
-Evidence: [combined hold concurrency cases](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [Trainer schedule worksheet](../uat/trainers.md). Capacity is shared; an instructor label does not create another independent studio slot.
+- Evidence: [combined hold concurrency cases](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [Trainer schedule worksheet](../tests/uat/trainers.md).
+- Capacity is shared; an instructor label does not create another independent studio slot.
 
 ## 6. Checkout, durable effects and hosted payment
 
-Owners: [customer authority](../../worker/customer-authority.ts), [native checkout](../../worker/native-checkout.ts), [dispatch claims](../../worker/native-dispatch.ts), [normalization](../../worker/provider-normalization.ts), [HitPay journal](../../worker/hitpay-journal.ts), [payment handoff](../../worker/hitpay-hold.ts). Rules: BR-007–011, BR-014–017.
+- Owners: [customer authority](../../worker/customer-authority.ts), [native checkout](../../worker/native-checkout.ts), [dispatch claims](../../worker/native-dispatch.ts), [normalization](../../worker/provider-normalization.ts), [HitPay journal](../../worker/hitpay-journal.ts), [payment handoff](../../worker/hitpay-hold.ts).
+- Rules: BR-007–011, BR-014–017.
 
 ```mermaid
 flowchart TB
@@ -239,11 +331,13 @@ flowchart TB
 | `payHitpayHold`                                                                                          | Create or recover the allowed hosted-payment handoff for a verified hold.                                                                                       | Consent, complete booking proof, scoped credentials and configured HitPay contract.                        | Preserve the reservation on payment creation failure; do not return it to fresh slot selection as if no effect occurred. |
 | `recordedHitpayPayment`, `storedHitpayCheckout`, `findHitpayRequest`                                     | Validate retained payment/handoff or locate the existing request by its association.                                                                            | Exact reference, money, merchant, status and supported checkout URL.                                       | Ambiguous/mismatched evidence remains blocked for recovery; never select an arbitrary matching payment.                  |
 
-Evidence: [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [live checkout browser tests](../../tests/live-email.spec.ts). Capture Review and hosted-return states with synthetic data; a screenshot of the payment page cannot prove settlement.
+- Evidence: [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [live checkout browser tests](../../tests/live-email.spec.ts).
+- Capture Review and hosted-return states with synthetic data; a screenshot of the payment page cannot prove settlement.
 
 ## 7. Recovery, confirmation, exports and completed exit
 
-Owners: [recovery](../../worker/hitpay-recovery.ts), [confirmation](../../worker/confirmation.ts), [receipt](../../worker/receipt.ts), [progress](../../worker/checkout-progress.ts), [browser confirmation service](../../src/services/confirmation.ts), [ProtectedConfirmation](../../src/features/booking/protected-confirmation.tsx), [checking hook](../../src/features/booking/confirmation-checking.ts). Rules: BR-008, BR-010–013.
+- Owners: [recovery](../../worker/hitpay-recovery.ts), [confirmation](../../worker/confirmation.ts), [receipt](../../worker/receipt.ts), [progress](../../worker/checkout-progress.ts), [browser confirmation service](../../src/services/confirmation.ts), [ProtectedConfirmation](../../src/features/booking/protected-confirmation.tsx), [checking hook](../../src/features/booking/confirmation-checking.ts).
+- Rules: BR-008, BR-010–013.
 
 ```mermaid
 sequenceDiagram
@@ -279,15 +373,22 @@ sequenceDiagram
 | `dismissCompletedBooking` and coordinator `dismissCompleted`          | Acknowledge completed exit while preserving the authorized receipt.                             | Original owned completed attempt; repeat acknowledgement is supported.                              | Lost response is retried with the same ID; do not create another booking/payment.                                        |
 | `completedExitIntent`, `rememberCompletedExit`, `forgetCompletedExit` | Retain the browser’s outstanding completed-exit intent.                                         | Same-attempt handling; acknowledgement governs clearing.                                            | Failed dismissal shows saved-confirmation warning until explicit retry succeeds.                                         |
 
-`normalizeNativePaymentResponse` validates complete paid invoice and nested booking evidence from the accounting response, using the existing invoice validator and the prior confirmed booking set. Recovery publishes it atomically; missing/inconsistent replies fall back to readback and lost replies retain unknown-write recovery. Confirmed status includes retained customer proof so `ProtectedConfirmation` can render before the separate receipt fetch completes.
+- `normalizeNativePaymentResponse` validates complete paid invoice and nested booking evidence from the accounting response, using the existing invoice validator and the prior confirmed booking set.
+- Recovery publishes it atomically; missing/inconsistent replies fall back to readback and lost replies retain unknown-write recovery.
+- Confirmed status includes retained customer proof so `ProtectedConfirmation` can render before the separate receipt fetch completes.
 
-Protected receipts retain existing authorization, freshness, quota and original-window checks. Customer PDF/calendar controls and local formatters are retired; the confirmation UI no longer starts export refreshes or waits for export readiness. The regular protected receipt read still supports confirmation presentation. WhatsApp Enquiry opens Glenna's configured contact without mutating bookings.
+- Protected receipts retain existing authorization, freshness, quota and original-window checks.
+- Customer PDF/calendar controls and local formatters are retired; the confirmation UI no longer starts export refreshes or waits for export readiness.
+- The regular protected receipt read still supports confirmation presentation.
+- WhatsApp Enquiry opens Glenna's configured contact without mutating bookings.
 
-Evidence: [live-email dismissal and automatic recovery journeys](../../tests/live-email.spec.ts), [automatic completion/repeat acknowledgement regression](../../worker/tests/combined-hold.test.mjs), [provider recovery/receipt cases](../../worker/tests/provider.test.mjs). The completed-dismissal test awaits the actual recovery event before navigation; the separate pending-return scenario still exercises recovery in flight.
+- Evidence: [live-email dismissal and automatic recovery journeys](../../tests/live-email.spec.ts), [automatic completion/repeat acknowledgement regression](../../worker/tests/combined-hold.test.mjs), [provider recovery/receipt cases](../../worker/tests/provider.test.mjs).
+- The completed-dismissal test awaits the actual recovery event before navigation; the separate pending-return scenario still exercises recovery in flight.
 
 ## 8. Provider coordination, token persistence and storage
 
-Owners: [queue](../../worker/provider-queue.ts), [session](../../worker/provider-session.ts), [token cache](../../worker/provider-token-cache.ts), [transport](../../worker/provider-transport.ts), [journal](../../worker/journal.ts). Rules: BR-014–017.
+- Owners: [queue](../../worker/provider-queue.ts), [session](../../worker/provider-session.ts), [token cache](../../worker/provider-token-cache.ts), [transport](../../worker/provider-transport.ts), [journal](../../worker/journal.ts).
+- Rules: BR-014–017.
 
 | Function / operation                                      | Behavior                                                                                                                       | Guards                                                                                                                | Failure and recovery                                                                                                         |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -298,13 +399,22 @@ Owners: [queue](../../worker/provider-queue.ts), [session](../../worker/provider
 | `providerRequest`, `identityRequest`, `hitpayRequest`     | Send bounded allowlisted provider requests and validate their contract.                                                        | Configured host/path/method, credentials, body/response bounds and transport deadlines.                               | Distinguish transport uncertainty from definitive rejection; neither timeout nor abort proves a write did not commit.        |
 | Journal and migration owners                              | Preserve attempts, effects, associations and recovery state across requests.                                                   | Conditional transitions, immutable identity and additive migrations.                                                  | Do not delete state or rewrite accepted migrations as a recovery shortcut; use isolated restore/reconciliation procedures.   |
 
-Evidence: [provider queue tests](../../worker/tests/provider-queue.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [migrations](../../migrations). D1 business state and coordinator SQLite token/coordination state have separate recovery implications.
+- Evidence: [provider queue tests](../../worker/tests/provider-queue.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [migrations](../../migrations).
+- D1 business state and coordinator SQLite token/coordination state have separate recovery implications.
 
-Admin authentication and payment wake-up follow-up: `ProviderSession.token` rotates encrypted admin credentials instead of minute-by-minute login. It marks old access retired before renewal; late401/419 from that retired access still fails the old request but cannot cancel the replacement.403 and refresh-request rejection retain full invalidation. Publication is fenced after encryption and rechecks invalidation after the awaited save, before restoring the in-memory token; expired access may retain refresh material, but rejected operations are never automatically replayed. Synchronous refresh consumption precedes fetch, and [Cloudflare output gates](https://developers.cloudflare.com/durable-objects/best-practices/rules-of-durable-objects/) hold outbound network requests until pending SQLite writes persist. `SoccerBotAccountCoordinator.schedulePaymentAlarm` serializes earliest-deadline alarm writes and protects newer receipt generations. `recoverHitpay` obtains a retained deadline in the existing claim batch and schedules only committed retries; no extra D1 roundtrip is added. `annotatePendingBooking` requires complete/observed payment and supports active/completed grants under the existing guest, expiry and effect fences.
+- Admin authentication and payment wake-up: `ProviderSession.token` rotates encrypted admin credentials instead of minute-by-minute login.
+- It marks old access retired before renewal; late401/419 from that retired access still fails the old request but cannot cancel the replacement.403 and refresh-request rejection retain full invalidation.
+- Publication is fenced after encryption and rechecks invalidation after the awaited save, before restoring the in-memory token; expired access may retain refresh material, but rejected operations are never automatically replayed.
+- Synchronous refresh consumption precedes fetch, and [Cloudflare output gates](https://developers.cloudflare.com/durable-objects/best-practices/rules-of-durable-objects/) hold outbound network requests until pending SQLite writes persist.
+- `SoccerBotAccountCoordinator.schedulePaymentAlarm` serializes earliest-deadline alarm writes and protects newer receipt generations.
+- `recoverHitpay` obtains a retained deadline in the existing claim batch and schedules only committed retries; no extra D1 roundtrip is added.
+- `annotatePendingBooking` requires complete/observed payment and supports active/completed grants under the existing guest, expiry and effect fences.
 
 ## 9. Diagnostics, Grafana and data boundaries
 
-Owners: [diagnostics](../../worker/diagnostics.ts), [confirmation tracing](../../worker/confirmation-tracing.ts), [telemetry](../../worker/telemetry.ts). Rules: BR-018–020. Operational signal meanings and proposed alerts belong to the [runbook](../runbook.md#4-monitoring-and-observability).
+- Owners: [diagnostics](../../worker/diagnostics.ts), [confirmation tracing](../../worker/confirmation-tracing.ts), [telemetry](../../worker/telemetry.ts).
+- Rules: BR-018–020.
+- Operational signal meanings and proposed alerts belong to the [runbook](../runbook.md#4-monitoring-and-observability).
 
 | Function / operation                                                | Behavior                                                                                   | Guards                                                                                       | Failure and recovery                                                                                                                               |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -313,11 +423,14 @@ Owners: [diagnostics](../../worker/diagnostics.ts), [confirmation tracing](../..
 | `sanitizeDiagnostic`                                                | Accept only allowed diagnostic fields and event shapes.                                    | Explicit allowlists and size/value bounds.                                                   | Unknown fields are not forwarded merely to improve debugging; never export raw secrets, customer fields or arbitrary payloads.                     |
 | `telemetryPayload` / Tail Worker `tail`                             | Build bounded OTLP summaries with configured success sampling and failure retention rules. | Sampling/batch/time bounds, service/environment labels and exporter configuration.           | Export failure must not change booking authority. Verify ingestion/heartbeat separately; absent Grafana traces cannot prove an error-free service. |
 
-Grafana receiver activation, alert delivery and production acceptance remain pending. Primary/backup responders and alert destinations remain **unassigned at the owner’s request**. A code-owner diagram does not assign these roles.
+- Grafana receiver activation, alert delivery and production acceptance remain pending.
+- Primary/backup responders and alert destinations remain **unassigned at the owner’s request**.
+- A code-owner diagram does not assign these roles.
 
 ## 10. Verification, deployment and configuration recovery
 
-Owners: [verified target run](../../scripts/verified-target-run.mjs), [deployment](../../scripts/deploy-cloudflare.mjs), [target configuration](../../scripts/deployment-target.mjs), [Worker verifier](../../scripts/verify-worker.mjs). Rules: BR-021–023, BR-025–032.
+- Owners: [verified target run](../../scripts/verified-target-run.mjs), [deployment](../../scripts/deploy-cloudflare.mjs), [target configuration](../../scripts/deployment-target.mjs), [Worker verifier](../../scripts/verify-worker.mjs).
+- Rules: BR-021–023, BR-025–032.
 
 ```mermaid
 flowchart LR
@@ -338,59 +451,122 @@ flowchart LR
 | `awaitDeploymentHealth`                      | Confirm the expected revision and closed/enabled access mode after upload.                      | Only the expected previous revision is tolerated during bounded propagation; unknown revision or wrong mode fails. | Retain deployment checkpoints and investigate. Use the runbook’s authorized rollback; do not declare success on a generic HTTP 200.                                            |
 | Worker verifier runtime inventory comparison | Require the exact expected ordered test titles and zero failed/skipped/cancelled/todo outcomes. | [Inventory](../../scripts/worker-test-inventory.json) matches actual execution.                                    | A new regression requires its inventory entry; preserve the failed receipt and add the missing test rather than loosen the comparison.                                         |
 
-Evidence: [deployment tests](../../scripts/deploy-cloudflare.test.mjs), [verified-run tests](../../scripts/deployment-target.test.mjs), [CI workflows](../../.github/workflows). Current main deployment success is developer-environment evidence, not proof that the client repository, registrar or production integrations are installed.
+- Evidence: [deployment tests](../../scripts/deploy-cloudflare.test.mjs), [verified-run tests](../../scripts/deployment-target.test.mjs), [CI workflows](../../.github/workflows).
+- Current main deployment success is developer-environment evidence, not proof that the client repository, registrar or production integrations are installed.
 
 ## 11. Screenshot and evidence index
 
-No new screenshots were captured for this document. Owner/CI operates browsers. The following is a capture checklist, not completed acceptance; use synthetic/redacted records and attach actual images only with revision, environment, device and scenario. Never include transfer codes, API keys, verification codes or real customer/payment data. Diagrams explain source behavior; screenshots establish only what was visible at capture time.
+- No new screenshots were captured for this document.
+- Owner/CI operates browsers.
+- The following is a capture checklist, not completed acceptance; use synthetic/redacted records and attach actual images only with revision, environment, device and scenario.
+- Never include transfer codes, API keys, verification codes or real customer/payment data.
+- Diagrams explain source behavior; screenshots establish only what was visible at capture time.
 
 | Evidence ID | View and states to capture                                                              | Responsible functions                                    | Existing test / worksheet                                                                              |
 | ----------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| TB-UI-01    | Guest/email choices; challenge rejected and verified; Remember me restored and revoked  | Identity service, identity delivery, remembered identity | [Live email tests](../../tests/live-email.spec.ts), [user UAT](../uat/simulated-user.md)               |
-| TB-UI-02    | Calendar availability; slot changed/unavailable; retained contact after eligible expiry | Catalogue/availability, provider update/restart          | [Combined hold tests](../../worker/tests/combined-hold.test.mjs), [user UAT](../uat/simulated-user.md) |
+| TB-UI-01    | Guest/email choices; challenge rejected and verified; Remember me restored and revoked  | Identity service, identity delivery, remembered identity | [Live email tests](../../tests/live-email.spec.ts), [user UAT](../tests/uat/customer.md)               |
+| TB-UI-02    | Calendar availability; slot changed/unavailable; retained contact after eligible expiry | Catalogue/availability, provider update/restart          | [Combined hold tests](../../worker/tests/combined-hold.test.mjs), [user UAT](../tests/uat/customer.md) |
 | TB-UI-03    | Editable Review and consent; active loading overlay; blocked duplicate action           | BookingProvider.run/update, BookingLoadingProvider       | [Experiment tests](../../tests/experiment.spec.ts)                                                     |
 | TB-UI-04    | Payment pending, payment received/booking pending, confirmed and access denied          | ProtectedConfirmation, checking, server confirmation     | [Live email tests](../../tests/live-email.spec.ts)                                                     |
-| TB-UI-05    | Saved details and receipt; failed export; completed-exit warning and successful retry   | Receipt, exports, finishExit and dismissal               | [Live email tests](../../tests/live-email.spec.ts), [user UAT](../uat/simulated-user.md)               |
-| TB-OPS-01   | SimplyBook trainer schedule, invoice and HitPay reconciliation views                    | Provider-console permissions, not SoccerBot staff UI     | [Trainer UAT](../uat/trainers.md), [Admin UAT](../uat/admin.md)                                        |
-| TB-OPS-02   | Registrar/delegation, HTTPS and Grafana signal views after configured acceptance        | Operator procedures and telemetry; credentials redacted  | [Admin UAT](../uat/admin.md), [runbook](../runbook.md)                                                 |
+| TB-UI-05    | Saved details and receipt; failed export; completed-exit warning and successful retry   | Receipt, exports, finishExit and dismissal               | [Live email tests](../../tests/live-email.spec.ts), [user UAT](../tests/uat/customer.md)               |
+| TB-OPS-01   | SimplyBook trainer schedule, invoice and HitPay reconciliation views                    | Provider-console permissions, not SoccerBot staff UI     | [Trainer UAT](../tests/uat/trainers.md), [Admin UAT](../tests/uat/admin.md)                            |
+| TB-OPS-02   | Registrar/delegation, HTTPS and Grafana signal views after configured acceptance        | Operator procedures and telemetry; credentials redacted  | [Admin UAT](../tests/uat/admin.md), [runbook](../runbook.md)                                           |
 
-For each attachment record: evidence ID, source/production revision, environment, time, browser/device, expected versus observed behavior, redacted artifact location and outcome. Link durable evidence; temporary session paths and expiring CI artifact links are not permanent screenshots embedded in this documentation.
+- For each attachment record: evidence ID, source/production revision, environment, time, browser/device, expected versus observed behavior, redacted artifact location and outcome.
+- Link durable evidence; temporary session paths and expiring CI artifact links are not permanent screenshots embedded in this documentation.
 
-Client deployment provenance: `validateTargetRun` checks all three gates against the same source/run attempt. Automatic staging additionally checks the live PR head/state, same-repository base/head, human authors and current write permission; automatic production requires current main. `isWorkersDevTarget` recognizes only the configured Worker name on a Workers.dev host; closed production may use that explicit entry before domain hookup. `targetConfig` preserves existing D1/coordinator identity and the first-use location hint. Workflow controllers check out main, and source verification jobs never receive deployment secrets. External settings and successful client deployments remain separate evidence.
+- Client deployment provenance: `validateTargetRun` checks all three gates against the same source/run attempt.
+- Automatic staging additionally checks the live PR head/state, same-repository base/head, human authors and current write permission; automatic production requires current main.
+- `isWorkersDevTarget` recognizes only the configured Worker name on a Workers.dev host; closed production may use that explicit entry before domain hookup.
+- `targetConfig` preserves existing D1/coordinator identity and the first-use location hint.
+- Workflow controllers check out main, and source verification jobs never receive deployment secrets.
+- External settings and successful client deployments remain separate evidence.
 
-Closed foundation management: `worker/foundation-management.ts` owns the internal `FoundationManagement` inspect/register/initialize contract; `worker/bindings.ts` owns closed-effect guards and hinted coordinator acquisition. `SoccerBotAccountCoordinator.inspectFoundation` checks registered self-identity and reads alarm/wakeup metadata without external transport. `scripts/foundation-setup.mjs` checks sealed artifacts, deployed bindings/migrations and matching phase receipts, then uses a temporary authenticated remote service-binding proxy. Runtime coverage lives in the sustained foundation suite, including a real runtime restart with durable storage preserved; CLI receipt/target/lost-acknowledgement checks live in `scripts/foundation-setup.test.mjs`.
+- Closed foundation management: `worker/foundation-management.ts` owns the internal `FoundationManagement` inspect/register/initialize contract; `worker/bindings.ts` owns closed-effect guards and hinted coordinator acquisition.
+- `SoccerBotAccountCoordinator.inspectFoundation` checks registered self-identity and reads alarm/wakeup metadata without external transport.
+- `scripts/foundation-setup.mjs` checks sealed artifacts, deployed bindings/migrations and matching phase receipts, then uses a temporary authenticated remote service-binding proxy.
+- Runtime coverage lives in the sustained foundation suite, including a real runtime restart with durable storage preserved;
+- CLI receipt/target/lost-acknowledgement checks live in `scripts/foundation-setup.test.mjs`.
 
-`scripts/foundation-workflow.mjs` owns manual Actions setup orchestration: trusted-main context checks, ordered phase execution, stop-on-failure and final registered/closed health. `.github/workflows/deploy-release.yml` owns credential scope, manual operation selection, shared production locking and receipt retention. `scripts/foundation-workflow.test.mjs` checks these boundaries; Worker lifecycle inventory is unchanged.
+- `scripts/foundation-workflow.mjs` owns manual Actions setup orchestration: trusted-main context checks, ordered phase execution, stop-on-failure and final registered/closed health.
+- `.github/workflows/deploy-release.yml` owns credential scope, manual operation selection, shared production locking and receipt retention.
+- `scripts/foundation-workflow.test.mjs` checks these boundaries;
+- Worker lifecycle inventory is unchanged.
 
-Calendar initial discovery: `TimeStep` replaces unresolved calendar dates with an in-panel branded spinner and hides the provisional day/time section. For an initial live entry without saved sessions, it checks the current month and at most two following months sequentially, stopping at the first eligible day, a failed response, the horizon or manual navigation. Failure offers explicit refresh; it never silently retries. The month header remains operable. Once initial discovery resolves or the visitor navigates, subsequent refreshes retain a valid chosen day and do not restart cross-month searching. Saved session dates retain their initial selected month. The existing calendar hook still fetches only its requested month and aborts obsolete requests; cache expiry and booking authority are unchanged.
+- Calendar initial discovery: `TimeStep` replaces unresolved calendar dates with an in-panel branded spinner and hides the provisional day/time section.
+- For an initial live entry without saved sessions, it checks the current month and at most two following months sequentially, stopping at the first eligible day, a failed response, the horizon or manual navigation.
+- Failure offers explicit refresh; it never silently retries.
+- The month header remains operable.
+- Once initial discovery resolves or the visitor navigates, subsequent refreshes retain a valid chosen day and do not restart cross-month searching.
+- Saved session dates retain their initial selected month.
+- The existing calendar hook still fetches only its requested month and aborts obsolete requests; cache expiry and booking authority are unchanged.
 
-`PaymentStep` explicitly opts into `PaymentContinuation` for an eligible retained HitPay handoff while checking and before payment is observed. `ProtectedConfirmation` defaults to no continuation, and the provider `/confirmation/` return route explicitly keeps it disabled: pending payment evidence must not offer another checkout there. Pending presentation contains the compact loader/status message, booking summary, then (only on the eligible original payment page) the original-deadline timer and continuation button as the last element. Full details, disclaimers and provider references appear only after confirmation; the continuation button has no following content. It displays the original server expiry using a monotonic clock anchored to the protected HTTP Date, checks that deadline again on click, and refreshes on focus. Context validation and polling share that clock; an absent/invalid Date suppresses the HitPay continuation action. Polling retains payment detection within the attempt so a later pending response cannot restore the link. Receipt loading stays independent of confirmed proof rendering, including fresh confirmed decisions returned after the original checking deadline.
+- `PaymentStep` explicitly opts into `PaymentContinuation` for an eligible retained HitPay handoff while checking and before payment is observed.
+- `ProtectedConfirmation` defaults to no continuation, and the provider `/confirmation/` return route explicitly keeps it disabled: pending payment evidence must not offer another checkout there.
+- Pending presentation contains the compact loader/status message, booking summary, then (only on the eligible original payment page) the original-deadline timer and continuation button as the last element.
+- Full details, disclaimers and provider references appear only after confirmation; the continuation button has no following content.
+- It displays the original server expiry using a monotonic clock anchored to the protected HTTP Date, checks that deadline again on click, and refreshes on focus.
+- Context validation and polling share that clock; an absent/invalid Date suppresses the HitPay continuation action.
+- Polling retains payment detection within the attempt so a later pending response cannot restore the link.
+- Receipt loading stays independent of confirmed proof rendering, including fresh confirmed decisions returned after the original checking deadline.
 
-Customer error copy is authored locally: `CustomerMessageError` and `customerMessage` in `src/services/contracts.ts` distinguish approved guidance from unexpected transport/schema/JSON errors. Account and enquiry screens display a generic operation-specific fallback for unmarked errors; never construct marked errors from a response body. `globals.css` owns shared `alert`/`notice` typography, spacing and colours; field validation and branded loaders retain their purpose-specific layouts.
+- Customer error copy is authored locally: `CustomerMessageError` and `customerMessage` in `src/services/contracts.ts` distinguish approved guidance from unexpected transport/schema/JSON errors.
+- Account and enquiry screens display a generic operation-specific fallback for unmarked errors; never construct marked errors from a response body.
+- `globals.css` owns shared `alert`/`notice` typography, spacing and colours; field validation and branded loaders retain their purpose-specific layouts.
 
-`src/features/booking/confirmation-render-trace.ts` observes the existing protected render decisions without authorizing them. The confirmation service retains validated response availability times in a WeakMap; the UI records bounded local Performance/console events keyed by the same hashed recovery identity as server traces. The build embeds its checked-out Git revision. See the runbook browser timing procedure for measurement limitations and owner capture.
+- `src/features/booking/confirmation-render-trace.ts` observes the existing protected render decisions without authorizing them.
+- The confirmation service retains validated response availability times in a WeakMap; the UI records bounded local Performance/console events keyed by the same hashed recovery identity as server traces.
+- The build embeds its checked-out Git revision.
+- See the runbook browser timing procedure for measurement limitations and owner capture.
 
-Invoice metadata owners: `provider-normalization.ts` accepts bounded optional invoice `number`; `hitpay-recovery.ts` records the original unpaid number under the active claim before accounting. `invoice-document.ts` distinguishes a changed paid document and retrieves separately retained metadata. `receipt-data.ts` projects only matching invoice/association data. `receipt.ts` uses bounded read-only refresh and scope/ownership checks, retaining display metadata without changing immutable payment proof. `ProtectedConfirmation` enriches normal/saved views within the original checking window, prefers a matching newer receipt and cancels late work on unmount. Missing baseline/metadata omits the label. Migration0036 owns display storage; provider acceptance remains owner UAT. `BOOKING_SUPPORT` owns Glenna's WhatsApp destination. Notification drafts remain inactive.
+- Invoice metadata owners: `provider-normalization.ts` accepts bounded optional invoice `number`; `hitpay-recovery.ts` records the original unpaid number under the active claim before accounting.
+- `invoice-document.ts` distinguishes a changed paid document and retrieves separately retained metadata.
+- `receipt-data.ts` projects only matching invoice/association data.
+- `receipt.ts` uses bounded read-only refresh and scope/ownership checks, retaining display metadata without changing immutable payment proof.
+- `ProtectedConfirmation` enriches normal/saved views within the original checking window, prefers a matching newer receipt and cancels late work on unmount.
+- Missing baseline/metadata omits the label.
+- Migration0036 owns display storage; provider acceptance remains owner UAT.
+- `BOOKING_SUPPORT` owns Glenna's WhatsApp destination.
+- Notification drafts remain inactive.
 
 ### Consecutive-journey verification boundary
 
-`worker/tests/booking-sequence-fixture.mjs` composes the existing real Worker/D1/coordinator harness with independent synthetic provider reservations. Three single bookings and multi-session followed by two singles retain prior records/capacity through checkout, signed payment, recovery, dismissal and restoration; no database or browser reset occurs between journeys. Worker cases own exact per-attempt proofs/effects; `tests/live-email.spec.ts` owns customer-form/navigation composition across three CI device profiles. Synthetic success remains separate from actual provider/device acceptance.
+- `worker/tests/booking-sequence-fixture.mjs` composes the existing real Worker/D1/coordinator harness with independent synthetic provider reservations.
+- Three single bookings and multi-session followed by two singles retain prior records/capacity through checkout, signed payment, recovery, dismissal and restoration; no database or browser reset occurs between journeys.
+- Worker cases own exact per-attempt proofs/effects; `tests/live-email.spec.ts` owns customer-form/navigation composition across three CI device profiles.
+- Synthetic success remains separate from actual provider/device acceptance.
 
-Customer-feedback presentation: `BookingConfirmation` exposes the optional invoice number only on confirmed live cards and runs a380ms checkmark pop under `prefers-reduced-motion: no-preference`. `ProtectedConfirmation` uses shared alert/notice containers for fallback headings/body; paid-evidence recovery never calls payment unconfirmed. `globals.css` owns12px heading/body spacing,8px paragraph spacing inside feedback containers and12px pending-heading paragraph spacing. Confirmation/payment authority stays unchanged; bounded invoice enrichment and receipt priority are described above. [Booking scenarios and messages](../booking-flows.md) maps visible branches and retains the copy-review disposition in the same document.
+- Customer-feedback presentation: `BookingConfirmation` exposes the optional invoice number only on confirmed live cards and runs a380ms checkmark pop under `prefers-reduced-motion: no-preference`.
+- `ProtectedConfirmation` uses shared alert/notice containers for fallback headings/body; paid-evidence recovery never calls payment unconfirmed.
+- `globals.css` owns12px heading/body spacing,8px paragraph spacing inside feedback containers and12px pending-heading paragraph spacing.
+- Confirmation/payment authority stays unchanged; bounded invoice enrichment and receipt priority are described above.
+- [Booking scenarios and messages](../booking-flows.md) maps visible branches and retains the copy-review disposition in the same document.
 
-Invoice presentation: while bounded enrichment is active, the confirmed card shows a16px general spinner in the invoice value position. A final number uses the same380ms pop as the confirmation checkmark, under the existing reduced-motion preference. The checkmark does not remount. Exhaustion, checking expiry or unmount stops the loader; no provisional number is displayed.
+- Invoice presentation: while bounded enrichment is active, the confirmed card shows a16px general spinner in the invoice value position.
+- A final number uses the same380ms pop as the confirmation checkmark, under the existing reduced-motion preference.
+- The checkmark does not remount.
+- Exhaustion, checking expiry or unmount stops the loader; no provisional number is displayed.
 
-Invoice display queries share the existing confirmation/recovery snapshot joins. Original unpaid-document capture is batched with the existing accounting reservation; measured successful-path D1 round trips remain unchanged. This preserves BR-017 and the exact-count regression assertions while retaining the separate optional metadata store.
+- Invoice display queries share the existing confirmation/recovery snapshot joins.
+- Original unpaid-document capture is batched with the existing accounting reservation; measured successful-path D1 round trips remain unchanged.
+- This preserves BR-017 and the exact-count regression assertions while retaining the separate optional metadata store.
 
-Shared SessionSummaryHeading retains provider-derived service naming and appends the configured outlet with a middle dot; the next line retains the draft player count. Action arrows use the shared chevron icon without changing handlers or destinations. The homepage arena signature retains its original navy/muted-text styling; header and Studio signature styling remain unchanged.
+- Shared SessionSummaryHeading retains provider-derived service naming and appends the configured outlet with a middle dot; the next line retains the draft player count.
+- Action arrows use the shared chevron icon without changing handlers or destinations.
+- The homepage arena signature retains its original navy/muted-text styling; header and Studio signature styling remain unchanged.
 
-Session selection: a one-third-width desktop card (full width on mobile) displays the service name and existing environment-specific weekday/premium prices. Selecting it reveals inline player controls, the three included features and See available times. Selecting it again hides those controls and preserves the chosen player count; it does not reserve a session or alter payment authority.
+- Session selection: a one-third-width desktop card (full width on mobile) displays the service name and existing environment-specific weekday/premium prices.
+- Selecting it reveals inline player controls, the three included features and See available times.
+- Selecting it again hides those controls and preserves the chosen player count; it does not reserve a session or alter payment authority.
 
-`SessionList.showPrices` renders each existing slot price on the trainer row for read-only Details and Review summaries; confirmation keeps its existing paid-action presentation. Review owns the sole session list inside Order summary, while PriceSummary renders only total/currency. Price derivation, editing locks and checkout authority are unchanged.
+- `SessionList.showPrices` renders each existing slot price on the trainer row for read-only Details and Review summaries; confirmation keeps its existing paid-action presentation.
+- Review owns the sole session list inside Order summary, while PriceSummary renders only total/currency.
+- Price derivation, editing locks and checkout authority are unchanged.
 
 ## Shared-studio conflict regression contract
 
-[BR-001](../business-rules.md#br-001) owns policy; the [decision table](../api-contracts.md#conflict-recovery-decision-contract) owns response semantics. Changes to checkout, trainer selection, recovery or cache behavior must preserve the following existing regression obligations.
+- [BR-001](../business-rules.md#br-001) owns policy; the [decision table](../api-contracts.md#conflict-recovery-decision-contract) owns response semantics.
+- Changes to checkout, trainer selection, recovery or cache behavior must preserve the following existing regression obligations.
 
 | Boundary and implementation owner                                                                    | Required proof and existing tests                                                                                                                                                                                                                                                                                                                                                                      |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -401,32 +577,67 @@ Session selection: a one-third-width desktop card (full width on mobile) display
 | Cached selection recovery: `provider.tsx`, `calendar-availability.ts`, `worker/display-snapshots.ts` | Remove studio overlaps across trainers; preserve other offers and original cache lifetime. Frontend `booking-parity.test.tsx` conflict case requires visible calendar, empty rejected selection, preserved contact, one original calendar request and zero extra availability requests. Worker `catalogue.test.mjs` covers all-trainer exclusion, retained other times and legacy off-grid changeover. |
 | Return/receipt ownership: `protected-confirmation.tsx`, `provider.tsx`                               | Completed URL hint never creates paid evidence; newer unpaid/uncertain checkout survives old-receipt navigation. Only protected completion and successful dismissal permit clearing a newer completed attempt; revision checks guard awaits. Protected-confirmation and async-booking regression cases.                                                                                                |
 
-For a substantive change to these boundaries, retain positive outcomes and negative effect counts together. Exercise same/different trainers, same/different customers, duplicate requests, provider conflict, unknown response and cached calendar return as applicable. Show that a bounded restoration of the reported defect fails at the intended assertion when feasible; do not weaken assertions, add waits/retries or drop cases to make a check pass. Follow the repository test-maintenance skill for inventories and required CI. Runtime, CI, deployed-provider and owner-browser acceptance remain distinct.
+- For a substantive change to these boundaries, retain positive outcomes and negative effect counts together.
+- Exercise same/different trainers, same/different customers, duplicate requests, provider conflict, unknown response and cached calendar return as applicable.
+- Show that a bounded restoration of the reported defect fails at the intended assertion when feasible; do not weaken assertions, add waits/retries or drop cases to make a check pass.
+- Follow the repository test-maintenance skill for inventories and required CI.
+- Runtime, CI, deployed-provider and owner-browser acceptance remain distinct.
 
-Booking availability copy is owned by [booking-messages.ts](../../src/domain/booking-messages.ts). Its conflict, failed-load and empty-date messages are presentation-only; error codes, rejected indices, retries, cache reconciliation and financial authority are unchanged. Component and browser assertions use independent literal expectations. [Booking flows](../booking-flows.md#current-changed-copy-and-presentation) owns exact visible wording.
+- Booking availability copy is owned by [booking-messages.ts](../../src/domain/booking-messages.ts).
+- Its conflict, failed-load and empty-date messages are presentation-only; error codes, rejected indices, retries, cache reconciliation and financial authority are unchanged.
+- Component and browser assertions use independent literal expectations.
+- [Booking flows](../booking-flows.md#current-changed-copy-and-presentation) owns exact visible wording.
 
 ## Public homepage and Studio presentation
 
-`site-shell.tsx` places a 25.2 × 16.8px Singapore flag left of and vertically centred with the two public navigation links, The studio and Book now. Booking routes retain hidden public navigation. `player-app-links.tsx` owns the three official app destinations/icons shared by the unchanged-style footer and first-visit prompt. The white footer groups studio/booking/legal links under Services, WhatsApp/email/Instagram under Connect With Us, address under Find Us, and three accessible Apple/Android/web icon links in a horizontal app row under Download Official Soccerbot360 App: on the right. The desktop Services and Connect With Us columns size to content with24px group gaps, bringing the three information groups together on the left while the app column stays right. The app column stretches to the Services list height and places its logo at the lower right above the copyright divider. Footer sub-item gaps are5.6px (30% below8px);44px link/app targets remain. The building/address starts on a new line below Flagship Studio. Footer Get in touch and Disclaimer are removed; the leave-booking confirmation remains. Terms of Service, Privacy Policy and Refund Policy routes intentionally have empty white content areas pending approved text. Gallery curves overlay the first/last desktop photo edges, with clearance confined to copy rather than grey bands. Footer links do not invoke prompt dismissal; the prompt retains its callback. The first-visit `player-app-prompt.tsx` dialog contains only “Download the official soccerbot360 app now.”, three existing store links/icons and its accessible close control; dismissal behavior is unchanged. The homepage Arena retains its location dialog and 18px/14px address, with height targets reduced 15%. Two image promotions use paper/ink palette tokens with standard navy actions and lead to Studio and booking. The five Studio rows share these layout/spacing/type/palette owners, preserving alternating desktop media placement and stacking image before heading/body on mobile. The Studio promotion has curved top and bottom edges. Contact us and the Studio booking footer share a compact photo-free abstract banner owner, preserving typography with different copy; scoped palette properties give Contact a muted-orange background, navy text and a tonal peach/dark-text CTA while Studio remains navy. Both closing banners share centred composition, soft radial highlights and a107px minimum height target (a further20% reduction from134px) with proportional typography; each joins the existing footer without a gap. Contact us has straight edges with no curve-only top clearance. `SessionPrice` remains authoritative. Studio displays the official stream demonstration video with native controls, no autoplay, no preload and no surrounding caption, with the tagline directly above it, followed immediately by one continuous group of five content rows. The group has only two outer curves and no row gaps; the Book now banner follows directly without a grey spacer. Media provenance remains in `media.ts`; video/poster use the official external origins. `globals.css` owns responsive styles, including mobile curve clearance around the natural-ratio Studio photo and CTA, a shared tighter Contact/Studio booking composition with centred eyebrows, vertically centred closing-banner content, and a shared outlet/session selected tint. The player-app dialog alone uses a wider maximum width and darker backdrop; its links contain icons and store names without lead-in captions. Browser/physical acceptance remains owner/CI-operated.
+### Header, footer and app links
 
-`SessionStep` first presents the existing Apex @ Henderson outlet and its flagship description. Selecting it reveals the existing live catalogue or demo session choices; selecting the session reveals players, inclusions and available-times navigation. This is preparatory UI scaffolding for the sole configured venue, not a new provider outlet mapping or capacity pool. The selected session offer still supplies serviceId to the existing API and server validation. Outlet and session cards share responsive widths and toggle off on a second click. Outlet deselection unmounts/resets session disclosure; session deselection hides players/inclusions/continue. Disclosure also resets on step remount; existing draft player/service/contact selections remain authoritative and are not erased by presentation toggles. Live catalogue failures/retry remain visible after outlet selection; no demo substitution is introduced.
+- **Owners:** `site-shell.tsx`, `player-app-links.tsx`, `player-app-prompt.tsx`, `globals.css`.
+- **Header:** sticky; ResizeObserver supplies responsive scroll clearance and restores previous values on cleanup; print uses static positioning.
+- **Flag:**25.2×16.8px, left of and vertically centred with The studio/Book now; all three align right on phones. Public navigation stays hidden on booking routes.
+- **Footer:** pure white; Services, Connect With Us, Find Us, Download Official Soccerbot360 App:.
+  - Services: Book, Studio, Terms of Service, Privacy Policy, Refund Policy.
+  - Contact: WhatsApp/email/Instagram icons, readable values and accessible platform names; no Enquire, Get in touch or Disclaimer.
+  - Address: Flagship Studio label; Apex @ Henderson; street/unit; postal code on separate lines.
+  - App links: Apple/Android/web icons horizontally; logo lower-right, aligned with the Services list bottom.
+  - Desktop first two columns size to content with24px group gaps; information groups sit left, app column right; four/two/one columns on desktop/tablet/phone.
+  - Sub-item gaps5.6px; headings16px, details14px, contact icons20px, app icons26px;44px link/app targets retained.
+- **App prompt:** only “Download the official soccerbot360 app now.”, three official icon/store-name links and accessible close control; wider dialog/darker backdrop; no lead-in captions or header download link.
+- **Guards:** footer links do not dismiss the prompt; its callback persists. BookingLink navigation/leave-booking confirmation remain. Legal routes intentionally have empty white bodies pending approved text.
 
-Public presentation refinements: homepage Studio/Kickoff height, vertical spacing and display-heading targets scale by0.90/0.78 respectively, with content-driven growth and protected mobile photo/curve clearance. Promotional CTA type uses the bold italic heading face; closing-banner controls fit their reduced height. The idle CSS cursor uses grey; interactive/text/disabled cursor behavior is unchanged.
+### Homepage, Studio media and banners
 
-The shared header is sticky at the viewport top. A ResizeObserver measures its responsive height for document scroll padding; cleanup restores the previous value, and print restores static positioning. `section-reveals.tsx` observes leaf sections/forms below the initial viewport on public pages, including later rendered sections, and applies a once-only650ms fade/rise from32px below. Only initially offscreen sections are made transparent before entry to avoid a visible-to-faded flash; controls are not disabled, live-status regions are excluded, focus removes the animation, and reduced-motion preference cancels/skips it. Route/unmount cleanup disconnects observers/listeners and removes animation classes. Footer navigation retains BookingLink's existing transition/guard behavior. Owner/CI validates actual scrolling and physical appearance.
+- **Home hero:** straight edge;15% lower height target; existing location dialog and18px/14px address retained.
+- **Image promotions:** paper/ink palette, navy actions; Studio/Kickoff height, vertical spacing and heading targets scale by0.90/0.78 with content-driven growth.
+- **Curves:** Studio promotion top/bottom; mobile natural-ratio photo preserves heads and CTA clearance.
+- **Studio video:** `studio-hero-video.tsx` selects desktop `stream.mp4` or mobile official homepage `hero-loop.mp4`; canonical origins/posters/provenance in `media.ts`.
+  - Tagline directly above; no surrounding caption; native controls, playsInline, no autoplay/preload.
+  - Phone intro fills the viewport below the measured header with centred portrait cover crop; gallery starts below the fold.
+  - Intro retains a real layout box so route entry starts at the hero.
+- **Studio gallery:** one continuous five-row group; alternating desktop media, image-before-copy mobile; no internal gaps; only outer curves cut into first/last desktop photos.
+  - Curve clearance belongs to copy, not grey spacer bands; Book now follows directly.
+- **Closing banners:** shared compact photo-free abstract owner with distinct copy;107px minimum-height target, proportionate type, balanced centred heading/copy/CTA and centred phone stacking.
+  - Contact: straight edges, orange gradient, navy copy, tonal peach/dark-text CTA.
+  - Studio: visible identity-blue-to-navy linear gradient beneath shared radial highlights; white text contrast checked at both endpoints.
+  - Both meet the footer without a gap; no curve-only clearance above Contact.
+- **Controls:** promotional CTAs use bold italic heading face and shared corner shape/chevrons; idle cursor grey; interactive/text/disabled distinctions retained. `SessionPrice` remains authoritative.
 
-Studio Book now now includes a visible identity-blue-to-navy linear gradient beneath the shared radial highlights; Contact keeps its orange gradient. White text contrast is checked against both gradient endpoint colours; owner visual acceptance remains pending.
+### Public motion and booking isolation
 
-Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. The footer has no Enquire link; WhatsApp, email and Instagram remain.
+- `section-reveals.tsx` targets below-fold noninteractive blocks in leaf sections, including later-rendered content;1% intersection triggers a once-only650ms/32px rise.
+- Stage offscreen content transparently before entry; never move clickable controls/forms/banner CTAs; exclude live-status regions.
+- Focus/reduced motion reveals immediately; preference changes cancel motion; route/unmount clears observers/listeners/classes.
+- Public back-to-top: centred up-chevron after200px; icon floats; click restores header focus and scrolls top; reduced motion disables floating/smooth scroll.
+- Booking, confirmation and experiment checkout have neither public reveals nor back-to-top; existing confirmation/invoice cues remain.
+- Mobile booking: sticky Back/current-step below header; existing single next-action in session/calendar/details/review/email/code forms uses a slim fixed bottom bar.
+  - Preserve account-choice and payment/recovery placement, actual handlers/form ownership, loading/disabled/validation guards; no duplicates.
+  - Reserve body/footer/focus/safe-area clearance; navigation≤48px and bottom bar≤72px before safe-area inset.
+- Browser/physical playback, cropping, motion, keyboard and visual acceptance remain owner/CI-operated; no payment/navigation authority changes.
 
-Latest visual corrections: stage offscreen sections transparently before a clear650ms/32px entrance, with immediate reveal for focus/reduced motion and cleanup. Closing-banner heading, supporting copy and CTA share centred alignment and balanced columns, stacking centrally on phones. Phone header flag and two navigation buttons align together at the right.
+### Outlet and session disclosure
 
-Booking routes, confirmation and experiment checkout are excluded from scroll reveals; their components remain static, retaining existing confirmation/invoice popup behavior. On phones the Studio tagline/video intro fills the first viewport below the measured sticky header, with cover video and controls; gallery begins below the fold.
-
-Mobile Studio video uses the official homepage hero-loop.mp4 montage with a centred portrait cover crop; desktop retains stream.mp4. Both retain native controls, playsInline, no autoplay and no preload. The responsive source owner is studio-hero-video.tsx with canonical media provenance in media.ts. Footer headings are16px, details14px, contact icons20px and app icons26px within44px controls; four desktop columns become two on tablets and one on phones.
-
-Public pages show a centred floating up-chevron after200px scrolling. Its icon gently floats; clicking restores header focus and scrolls to the top. Reduced motion disables floating/smooth scrolling. The control is absent throughout booking, confirmation and experiment checkout. Check it on phone/desktop alongside existing public-section motion; no payment/navigation authority changes.
-
-Mobile booking navigation uses a compact sticky Back/current-step row below the measured site header. Existing single next-action controls in session, calendar basket, details/review and email/verification forms occupy a slim fixed bottom bar, with body/focus/safe-area clearance. Account choice cards and payment/recovery actions retain their existing placement. Actual controls, handlers, disabled/loading conditions and form ownership are unchanged; no duplicate actions or booking animation are introduced. Check navigation height≤48px and bottom bar≤72px without a device safe-area inset, keyboard/focus clearance and disabled-state behavior.
-
-Public entrance motion targets noninteractive visual blocks only: clickable controls and forms remain stationary, including banner CTAs. Studio intro retains a real layout box so route entry starts at the hero. CI42179543002 exposed these navigation/hit-target regressions; original evidence is retained in Journey and final-head verification is required.
+- `SessionStep` first shows Apex @ Henderson/flagship description; outlet reveals live catalogue or demo choices; session reveals players/inclusions/available-times action.
+- This is scaffolding for the sole configured venue; no new provider outlet mapping or capacity pool. Selected offer supplies the existing `serviceId` and server validation.
+- Outlet/session cards share widths and selected tint; second click toggles off.
+- Outlet deselection unmounts/resets session disclosure; session deselection hides dependent controls; remount resets disclosure.
+- Draft player/service/contact selections remain authoritative and retained; catalogue failure/retry stays visible after outlet selection, without demo substitution.
