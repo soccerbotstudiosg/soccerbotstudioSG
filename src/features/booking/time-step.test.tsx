@@ -323,6 +323,16 @@ test("each time requires an independent trainer choice and changing it preserves
   );
   await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
   expect(loadBooking().draft.slots).toHaveLength(1);
+  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  expect(
+    screen.queryByLabelText(`Trainer for ${restoredDate} at 12:00`),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  expect(loadBooking().draft.slots).toHaveLength(1);
+  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
   const picker = screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`);
   await user.selectOptions(picker, `${restoredDate}|12:00|demo|daniel`);
   expect(

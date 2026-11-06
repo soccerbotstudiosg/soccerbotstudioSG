@@ -44,7 +44,7 @@ flowchart TD
 
 ## 4. Session choice and calendar
 
-Choose the priced session card (one-third desktop width, full mobile width) to open player count and the three included features. Clicking replaces the compact card with the original full-width session information, player control and three inclusions; it does not open a dialog. See available times continues from this view. Trainer choices share one studio and never add capacity.
+Choose the priced session card (one-third desktop width, full mobile width) to open player count and the three included features. The compact card stays in place with a blue selected highlight. Clicking reveals the full-width player control and three inclusions beneath the card grid; it does not replace the card or open a dialog. See available times continues from this view. Trainer choices share one studio and never add capacity.
 
 ```mermaid
 flowchart TD

@@ -282,7 +282,13 @@ test("live session preserves demo product player and inclusion presentation usin
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   fireEvent.click(card);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Real session" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Choose Real session" })).toBe(
+    card,
+  );
+  expect(card).toBeVisible();
+  expect(card).toHaveAttribute("aria-pressed", "true");
+  expect(card).toHaveTextContent("Weekdays $88");
+  expect(card).toHaveTextContent("Weekends/Public Holiday $108");
   expect(
     screen.getByRole("heading", { name: "Included with your session" }),
   ).toBeInTheDocument();

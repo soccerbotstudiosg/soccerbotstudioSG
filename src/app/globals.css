@@ -2930,8 +2930,14 @@
     color: var(--color-brand);
     margin-left: 6px;
   }
-  .session-expanded {
-    cursor: default;
+  .session-product[aria-pressed="true"] {
+    border-color: var(--color-identity);
+    background: color-mix(
+      in srgb,
+      var(--color-identity) 12%,
+      var(--color-surface)
+    );
+    box-shadow: inset 0 0 0 1px var(--color-identity);
   }
   .session-product-icon {
     display: grid;
@@ -3049,6 +3055,9 @@
     margin: 0;
     overflow-wrap: anywhere;
     white-space: pre-line;
+  }
+  .client-details dd {
+    text-align: right;
   }
   .actions {
     display: flex;

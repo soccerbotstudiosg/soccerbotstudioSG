@@ -7,7 +7,6 @@ import { Icon } from "@/components/icon";
 import { MAX_PLAYERS } from "@/domain/booking-policy";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import { sessionPrices } from "@/domain/session-pricing";
-import { sessionPriceLabel } from "./session-price";
 import { LiveCatalogue } from "./live-catalogue";
 import { useBooking } from "./provider";
 /** Select the live or demo session presentation. */
@@ -114,103 +113,82 @@ function SessionPresentation({
       </div>
     </section>
   );
-  if (!expanded)
-    return (
-      <>
-        <h1 className="page-title">Your session</h1>
-        <p className="lead">Select your session.</p>
-        <div className="session-products">
-          <button
-            className="surface session-product"
-            aria-label={`Choose ${serviceName}`}
-            onClick={() => setExpanded(true)}
-          >
-            <span className="session-product-icon">
-              <Icon name="ball" />
-            </span>
-            <span className="session-product-details">
-              <span className="session-product-name">{serviceName}</span>
-              <span className="session-product-meta">
-                40 minutes · 1–{MAX_PLAYERS} players
-              </span>
-            </span>
-            <span className="session-product-prices">
-              <span>
-                Weekdays <strong>${prices.ordinary / 100}</strong>
-              </span>
-              <span>
-                Weekends/Public Holiday <strong>${prices.premium / 100}</strong>
-              </span>
-            </span>
-          </button>
-        </div>
-      </>
-    );
   return (
     <>
       <h1 className="page-title">Your session</h1>
-      <p className="lead">Set the number of players for your booking.</p>
-      <section className="surface session-product session-expanded">
-        <span className="session-product-icon">
-          <Icon name="ball" />
-        </span>
-        <div>
-          <h2 className="session-product-name">{serviceName}</h2>
-          <p>
-            Interactive football in a 360° arena, for individual players and
-            groups.
-          </p>
-          <div className="fixed-session-length">
-            <Icon name="clock" />
-            <strong>40 minutes per session</strong>
-          </div>
-        </div>
-      </section>
-      <p className="hint">
-        {sessionPriceLabel(environment)}. Per session for 1–{MAX_PLAYERS}{" "}
-        players.
-      </p>
-      {playerSelection}
-      <section className="session-inclusions">
-        <h2 className="section-title">Included with your session</h2>
-        <ul className="inclusion-list">
-          {[
-            [
-              "Arena access",
-              "Access to the arena’s 360° projection wall and interactive training system.",
-            ],
-            [
-              "Full instructor guidance",
-              "Your instructor introduces the activities and guides your group throughout the session.",
-            ],
-            [
-              "Single, Team and Battle play",
-              "Explore all three play modes during your studio session.",
-            ],
-          ].map(([title, text]) => (
-            <li key={title}>
-              <span className="inclusion-check">
-                <Icon name="check" />
-              </span>
-              <div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <div className="actions">
-        {pending ? (
-          <button className="button" disabled>
-            <BrandLoading overlay={false} compact label="Loading times…" />
-          </button>
-        ) : (
-          <Link href="/book/time/" className="button">
-            See available times <Icon name="arrow" />
-          </Link>
-        )}
+      <p className="lead">Select your session.</p>
+      <div className="session-products">
+        <button
+          className="surface session-product"
+          aria-label={`Choose ${serviceName}`}
+          aria-pressed={expanded}
+          aria-expanded={expanded}
+          onClick={() => setExpanded(true)}
+        >
+          <span className="session-product-icon">
+            <Icon name="ball" />
+          </span>
+          <span className="session-product-details">
+            <span className="session-product-name">{serviceName}</span>
+            <span className="session-product-meta">
+              40 minutes · 1–{MAX_PLAYERS} players
+            </span>
+          </span>
+          <span className="session-product-prices">
+            <span>
+              Weekdays <strong>${prices.ordinary / 100}</strong>
+            </span>
+            <span>
+              Weekends/Public Holiday <strong>${prices.premium / 100}</strong>
+            </span>
+          </span>
+        </button>
       </div>
+      {expanded && (
+        <>
+          {playerSelection}
+          <section className="session-inclusions">
+            <h2 className="section-title">Included with your session</h2>
+            <ul className="inclusion-list">
+              {[
+                [
+                  "Arena access",
+                  "Access to the arena’s 360° projection wall and interactive training system.",
+                ],
+                [
+                  "Full instructor guidance",
+                  "Your instructor introduces the activities and guides your group throughout the session.",
+                ],
+                [
+                  "Single, Team and Battle play",
+                  "Explore all three play modes during your studio session.",
+                ],
+              ].map(([title, text]) => (
+                <li key={title}>
+                  <span className="inclusion-check">
+                    <Icon name="check" />
+                  </span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <div className="actions">
+            {pending ? (
+              <button className="button" disabled>
+                <BrandLoading overlay={false} compact label="Loading times…" />
+              </button>
+            ) : (
+              <Link href="/book/time/" className="button">
+                See available times <Icon name="arrow" />
+              </Link>
+            )}
+          </div>
+        </>
+      )}
     </>
   );
 }
