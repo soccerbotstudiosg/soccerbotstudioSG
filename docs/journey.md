@@ -4888,3 +4888,7 @@ Owner refined only the thin performance strip from teal to a neutral grey retain
 ### 6 November 2026 — Studio footer and flag centring
 
 Owner requested vertical centring for the three parts in the straight-edged Studio footer, while retaining bottom alignment in the curved Contact banner, and centred the Singapore flag against the header buttons. Updated the existing shared CSS default/Contact variant and removed the flag bottom offset. Extended the existing public-page geometry assertion to check flag/button centre alignment; preserved its size/position checks and all test inventory. Consolidate with the neutral blue-grey strip for final CI/staging.
+
+### 6 November 2026 — darker performance strip
+
+Owner requested a much darker grey for the thin performance strip. Changed only its scoped signature colour from #465363 to #252d38, retaining the subtle blue tint and white text. Existing contrast/mutation coverage remains applicable; no layout, header, hero, booking or settings changes. Baseline2cffbb5 passed CI/CodeQL/staging; final-head delivery evidence belongs in PR32.
