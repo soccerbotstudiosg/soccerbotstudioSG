@@ -17,6 +17,42 @@ async function openSite(page: Page, route: string) {
     .click();
   await expect(prompt).toHaveCount(0);
 }
+/** Open the same information through the phone panel or retain the desktop presentation. */
+async function openBookingPanel(page: Page, panel: "cart" | "trainers") {
+  if (page.viewportSize()!.width > 700) return;
+  await page
+    .getByRole("button", {
+      name: panel === "cart" ? /^Open cart,/ : /^View selected trainers,/,
+    })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: panel === "cart" ? "Your cart" : "Selected trainers",
+    exact: true,
+  });
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("link", { name: "Continue", exact: true }),
+  ).toHaveCount(0);
+  const box = await dialog.boundingBox();
+  expect(box!.width).toBeGreaterThan(page.viewportSize()!.width * 0.65);
+  expect(box!.width).toBeLessThanOrEqual(page.viewportSize()!.width * 0.75);
+  expect(box!.height).toBeLessThanOrEqual(
+    page.viewportSize()!.height * 0.65 + 1,
+  );
+  await expect(dialog.getByRole("button", { name: "Close dialog" })).toHaveCSS(
+    "border-top-width",
+    "0px",
+  );
+}
+/** Dismiss phone panels before interacting with the underlying booking page. */
+async function closeBookingPanel(page: Page) {
+  if (page.viewportSize()!.width > 700) return;
+  await page
+    .locator(".booking-panel-dialog")
+    .getByRole("button", { name: "Close dialog" })
+    .click();
+  await expect(page.locator(".booking-panel-dialog")).toHaveCount(0);
+}
 async function chooseSlots(page: Page, multiple = false) {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as guest" }).click();
@@ -43,6 +79,21 @@ async function chooseSlots(page: Page, multiple = false) {
   await page
     .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
     .selectOption({ index: 1 });
+  if (page.viewportSize()!.width <= 700) {
+    await expect(
+      page
+        .getByRole("button", { name: "Open cart, 1 session", exact: true })
+        .locator(".booking-cart-count"),
+    ).toHaveText("1");
+    await expect(
+      page
+        .getByRole("button", {
+          name: "View selected trainers, 1 trainer",
+          exact: true,
+        })
+        .locator(".booking-cart-count"),
+    ).toHaveText("1");
+  }
   if (multiple) {
     await page
       .getByRole("button", {
@@ -55,7 +106,25 @@ async function chooseSlots(page: Page, multiple = false) {
       .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
       .selectOption({ index: 1 });
   }
+  if (page.viewportSize()!.width <= 700) {
+    await expect(
+      page.getByRole("button", {
+        name: `Open cart, ${multiple ? "2 sessions" : "1 session"}`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("complementary", { name: "Your booking summary" }),
+    ).toHaveCount(0);
+  }
   await page.getByRole("link", { name: "Continue", exact: true }).click();
+  await openBookingPanel(page, "cart");
+  await expect(
+    page
+      .getByRole("complementary", { name: "Your booking summary" })
+      .getByRole("listitem"),
+  ).toHaveCount(multiple ? 2 : 1);
+  await closeBookingPanel(page);
 }
 async function details(page: Page) {
   await page.getByLabel("Full name", { exact: false }).fill("Demo Customer");
@@ -117,7 +186,7 @@ test("public routes remove staff access and fit the viewport", async ({
   if (page.viewportSize()!.width <= 700)
     await expect(page.locator(".nav-links")).toHaveCSS(
       "justify-content",
-      "flex-end",
+      "center",
     );
   expect(flagBox).not.toBeNull();
   expect(studioButtonBox).not.toBeNull();
@@ -202,6 +271,53 @@ test("public routes remove staff access and fit the viewport", async ({
       exact: true,
     }),
   ).toHaveAttribute("href", "https://www.instagram.com/soccerbotstudiosg/");
+  if (page.viewportSize()!.width > 1100) {
+    const footerRows = await page
+      .locator(".footer-contact-grid")
+      .evaluate((grid) => {
+        const services = grid.querySelectorAll(".footer-direct-links a");
+        const contact = grid.querySelector(".footer-contact-link span")!;
+        const serviceText = document.createRange();
+        serviceText.selectNodeContents(services[0]);
+        const contactText = document.createRange();
+        contactText.selectNodeContents(contact);
+        return {
+          serviceTop: serviceText.getBoundingClientRect().top,
+          contactTop: contactText.getBoundingClientRect().top,
+          rowSpacing:
+            services[1].getBoundingClientRect().top -
+            services[0].getBoundingClientRect().top,
+        };
+      });
+    expect(
+      Math.abs(footerRows.serviceTop - footerRows.contactTop),
+    ).toBeLessThanOrEqual(1);
+    expect(footerRows.rowSpacing).toBeGreaterThanOrEqual(29);
+    expect(footerRows.rowSpacing).toBeLessThanOrEqual(31);
+    const informationRows = await page
+      .locator(".footer-contact-grid")
+      .evaluate((grid) => {
+        const groups = [
+          grid.querySelectorAll("section:first-child .footer-direct-links a"),
+          grid.querySelectorAll(".footer-contact-link span"),
+          grid.querySelectorAll(".footer-address span"),
+        ];
+        return groups.map((nodes) =>
+          Array.from(nodes, (node) => {
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            return range.getBoundingClientRect().top;
+          }),
+        );
+      });
+    for (const group of informationRows.slice(1)) {
+      for (const [index, top] of group.entries()) {
+        expect(Math.abs(top - informationRows[0][index])).toBeLessThanOrEqual(
+          1,
+        );
+      }
+    }
+  }
   const footerBandBox = await page
     .locator(".footer-contact-band")
     .boundingBox();
@@ -761,6 +877,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await page
     .getByRole("combobox", { name: /Trainer for .* at 15:20/ })
     .selectOption({ index: 1 });
+  await openBookingPanel(page, "trainers");
   const instructors = page.getByRole("region", { name: "Your instructors" });
   await expect(instructors.getByRole("article")).toHaveCount(2);
   await expect(
@@ -769,31 +886,38 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     instructors.getByRole("article", { name: "Daniel Tan", exact: true }),
   ).toBeVisible();
+  await closeBookingPanel(page);
   await expect(
     page.getByRole("link", { name: "Continue", exact: true }),
   ).toBeVisible();
-  const positions = await page.locator(".aside-wrap").evaluate((element) => ({
-    continueBottom: element
-      .querySelector(".basket-continue")!
-      .getBoundingClientRect().bottom,
-    instructorsTop: element
-      .querySelector(".booking-instructors")!
-      .getBoundingClientRect().top,
-  }));
-  expect(positions.instructorsTop).toBeGreaterThanOrEqual(
-    positions.continueBottom,
-  );
+  if (page.viewportSize()!.width > 700) {
+    const positions = await page.locator(".aside-wrap").evaluate((element) => ({
+      continueBottom: element
+        .querySelector(".basket-continue")!
+        .getBoundingClientRect().bottom,
+      instructorsTop: element
+        .querySelector(".booking-instructors")!
+        .getBoundingClientRect().top,
+    }));
+    expect(positions.instructorsTop).toBeGreaterThanOrEqual(
+      positions.continueBottom,
+    );
+  }
+  await openBookingPanel(page, "cart");
   await expect(page.locator(".summary .rotation-notice")).toContainText(
     "stays for the full session",
   );
+  await closeBookingPanel(page);
   await page.getByRole("link", { name: "Continue", exact: true }).click();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
   await details(page);
   await fullWidth(".actions .button", ".actions");
+  await openBookingPanel(page, "cart");
   await expect(page.locator(".series-list .rotation-notice")).toContainText(
     "Crosses the 15:00 instructor rotation",
   );
+  await closeBookingPanel(page);
   await payment(page);
   await expect(
     page.getByRole("heading", { name: "Booking confirmed", exact: true }),
@@ -914,6 +1038,10 @@ test("first visit offers the Player App with only store links and dismissal pers
     ],
     ["Web App", "https://app.soccerbot360.com/login"],
   ];
+  for (const link of await prompt.getByRole("link").all()) {
+    await expect(link).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(link.locator("svg")).toHaveCSS("color", "rgb(255, 255, 255)");
+  }
   for (const [name, href] of storeDestinations) {
     await expect(
       prompt.getByRole("link", { name, exact: true }),
@@ -927,6 +1055,7 @@ test("first visit offers the Player App with only store links and dismissal pers
     exact: true,
   });
   await expect(close).toHaveCSS("border-top-width", "0px");
+  await expect(close).toHaveCSS("border-radius", "0px");
   await expect(close).toHaveCSS("color", "rgb(255, 255, 255)");
   await close.click();
   for (const [name, href] of storeDestinations) {
@@ -993,27 +1122,57 @@ test("header blue and the typography hierarchy stay consistent across every book
       const navigationBox = await page
         .locator(".booking-navigation")
         .boundingBox();
-      expect(navigationBox!.height).toBeLessThanOrEqual(48);
+      expect(navigationBox!.height).toBeLessThanOrEqual(54);
+      const backBox = await page.locator(".booking-top .back").boundingBox();
+      expect(
+        navigationBox!.y + navigationBox!.height - backBox!.y - backBox!.height,
+      ).toBeGreaterThanOrEqual(6);
       const primaryBar = page.locator(".booking-primary-action");
       if (await primaryBar.count()) {
-        await expect(primaryBar).toHaveCSS("position", "fixed");
-        const barBox = await primaryBar.boundingBox();
-        expect(barBox!.y + barBox!.height).toBeCloseTo(
-          page.viewportSize()!.height,
-          0,
+        const anchorBox = await page
+          .locator(".booking-action-anchor")
+          .boundingBox();
+        const floating =
+          anchorBox!.y + anchorBox!.height > page.viewportSize()!.height;
+        await expect(primaryBar).toHaveAttribute(
+          "data-floating",
+          String(floating),
         );
+        await expect(primaryBar).toHaveCSS(
+          "position",
+          floating ? "fixed" : "relative",
+        );
+        const barBox = await primaryBar.boundingBox();
+        if (floating) {
+          expect(barBox!.y + barBox!.height).toBeCloseTo(
+            page.viewportSize()!.height,
+            0,
+          );
+        }
         expect(barBox!.height).toBeLessThanOrEqual(72);
-        expect(barBox!.x).toBeCloseTo(0, 0);
-        expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
+        if (floating) {
+          expect(barBox!.x).toBeCloseTo(0, 0);
+          expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
+        }
         const action = primaryBar.locator(":scope > .button");
         await expect(action).toHaveCount(1);
         const actionBox = await action.boundingBox();
-        expect(actionBox!.x).toBeCloseTo(20, 0);
+        expect(actionBox!.x).toBeCloseTo(barBox!.x + 20, 0);
         expect(actionBox!.x + actionBox!.width).toBeCloseTo(
-          page.viewportSize()!.width - 20,
+          barBox!.x + barBox!.width - 20,
           0,
         );
         expect(actionBox!.height).toBeGreaterThanOrEqual(44);
+        const previousScroll = await page.evaluate(() => scrollY);
+        await page.locator(".site-footer").scrollIntoViewIfNeeded();
+        await expect(primaryBar).toHaveAttribute("data-floating", "false");
+        await expect(primaryBar).toHaveCSS("position", "relative");
+        const settledBar = await primaryBar.boundingBox();
+        const footer = await page.locator(".site-footer").boundingBox();
+        expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
+          footer!.y,
+        );
+        await page.evaluate((y) => scrollTo(0, y), previousScroll);
       }
     }
     await expect(
@@ -1113,6 +1272,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     "font-size",
     "14px",
   );
+  await openBookingPanel(page, "trainers");
   await expect(page.locator(".trainer-heading")).toHaveCSS(
     "background-color",
     brand,
@@ -1122,6 +1282,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     "font-size",
     "18px",
   );
+  await closeBookingPanel(page);
   await page.getByRole("link", { name: "Continue", exact: true }).click();
   await pageHeading("Your details");
   await sectionType("#details-form h2");
@@ -1161,9 +1322,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await details(page);
   await pageHeading("Review booking");
   await bookingDocumentBody();
-  const reviewTotal = page.locator(".booking-document .line-item.total strong");
-  await expect(reviewTotal).toHaveCSS("font-size", "24px");
-  await expect(reviewTotal).toHaveCSS("font-family", /Roboto/);
+
   await sectionType(".review-head h2, .review-block > h2");
   await expect(page.locator(".booking-facts")).toHaveCSS("font-size", "16px");
   for (const label of await page.locator(".client-details dt").all()) {
@@ -1176,6 +1335,10 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(value).toHaveCSS("font-weight", "700");
   }
 
+  await openBookingPanel(page, "cart");
+  const reviewTotal = page.locator(".line-item.total strong");
+  await expect(reviewTotal).toHaveCSS("font-size", "24px");
+  await expect(reviewTotal).toHaveCSS("font-family", /Roboto/);
   for (const date of await page
     .locator(".review-block .series-date > strong")
     .all()) {
@@ -1193,6 +1356,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     "color",
     "rgb(118, 83, 13)",
   );
+  await closeBookingPanel(page);
   await page.getByRole("button", { name: "Continue to payment" }).click();
   await pageHeading("Payment");
   await sectionType(".payment-layout .section-title");
@@ -1285,12 +1449,14 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await expect(
     page.getByRole("heading", { name: "Select dates and times" }),
   ).toBeVisible();
+  await openBookingPanel(page, "cart");
   const basket = page.getByRole("complementary", {
     name: "Your booking summary",
   });
   await expect(
     basket.getByText("Session has started — remove to continue."),
   ).toBeVisible();
+  await closeBookingPanel(page);
   await expect(
     page.getByRole("button", { name: "Continue", exact: true }),
   ).toBeDisabled();
@@ -1304,9 +1470,18 @@ test("elapsed selections block checkout on an open page and remain removable bef
           .slots.length,
     ),
   ).toBe(1);
+  await openBookingPanel(page, "cart");
   await page
     .getByRole("button", { name: "Remove 2026-10-06 at 12:00" })
     .click();
+  await closeBookingPanel(page);
+  if (page.viewportSize()!.width <= 700) {
+    await expect(
+      page
+        .getByRole("button", { name: "Open cart, 0 sessions", exact: true })
+        .locator(".booking-cart-count"),
+    ).toHaveCount(0);
+  }
   await expect(
     page.getByRole("button", { name: /12:00–12:40/ }),
   ).toBeDisabled();
@@ -1542,13 +1717,34 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await page
     .getByRole("combobox", { name: `Trainer for ${date} at 15:20` })
     .selectOption(`${date}|15:20|demo|daniel`);
+  await openBookingPanel(page, "trainers");
   const cards = page.getByRole("region", { name: "Your instructors" });
   await expect(cards.getByRole("article")).toHaveCount(1);
   await expect(
     cards.getByRole("article", { name: "Daniel Tan", exact: true }),
   ).toContainText("Demonstration profile. Guides players through ball control");
   await expect(cards.getByRole("listitem")).toHaveCount(0);
+  await closeBookingPanel(page);
+  if (page.viewportSize()!.width <= 700) {
+    const trainerBadge = page
+      .getByRole("button", {
+        name: "View selected trainers, 1 trainer",
+        exact: true,
+      })
+      .locator(".booking-cart-count");
+    await expect(trainerBadge).toHaveText("1");
+    await expect(
+      page
+        .getByRole("button", { name: "Open cart, 2 sessions", exact: true })
+        .locator(".booking-cart-count"),
+    ).toHaveText("2");
+    await expect(trainerBadge).toHaveCSS("animation-name", "confirmation-pop");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(trainerBadge).toHaveCSS("animation-name", "none");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  }
   await noon.selectOption(`${date}|12:00|demo|faisal`);
+  await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
   await expect(
     cards.getByRole("article", { name: "Faisal Shahril", exact: true }),
@@ -1561,8 +1757,11 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(
     page.getByRole("combobox", { name: `Trainer for ${date} at 15:20` }),
   ).toHaveValue(`${date}|15:20|demo|daniel`);
+  await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
+  await closeBookingPanel(page);
   await page.getByRole("button", { name: /15:20–16:00/ }).click();
+  await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(1);
   await expect(
     cards.getByRole("article", { name: "Faisal Shahril", exact: true }),

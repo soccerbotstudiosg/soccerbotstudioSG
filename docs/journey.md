@@ -4983,3 +4983,67 @@ CI42179543002 ate95f7a5 failed backend browser jobs127766171024/127766171176 (ar
 
 - Owner renamed the footer heading to “Download Official Soccerbot360 App:” and requested the three information groups sit closer together on the left. Desktop grid now sizes the first two columns to content with24px group gaps, preserves a flexible address column and keeps the app column at the right. Existing tablet/phone column rules remain.
 - Footer address remains Flagship Studio label, Apex @ Henderson, street/unit, then postal code on separate lines. Existing browser heading assertions track the exact new label; no inventory/booking/provider changes.
+
+### 6 November 2026 — footer text alignment and true row compression
+
+- Owner screenshot showed contact text lower than Services and excessive one-line spacing after reducing CSS gaps. Root cause: contact flex items centred within44px link boxes while plain links rendered at their tops.
+- Top-align contact content and use24px desktop text-link rows plus5.6px gaps:29.6px pitch versus49.6px, about40% tighter. Tablet/phone links and app icons retain44px targets. Existing public-route test checks rendered text alignment within1px and desktop row pitch29–31px; no inventory/timeouts/retries changed.
+- UI baseline904414b passed CI42186064138, CodeQL42186058570 and staging42187263148; public health confirmed revision904414b/version73d3afb0-7c7e-4869-bece-66b64934a5fb. This visual correction needs its own exact-head verification.
+
+- Consolidated owner corrections: align every Services/contact/address row on the left with the same desktop pitch; address lines use one linked grid. Shift the logo to the app column’s left edge while retaining bottom alignment. Add6px below the mobile Back row before its divider; existing mobile geometry now requires≤54px overall height and≥6px button clearance. Interrupted the previous local verification when this scope changed; retained its log. No payment/action handlers changed.
+
+- Further consolidated mobile requests: centre the flag/studio/book group without changing its spacing; place Services and Connect With Us side by side, followed by centred Find Us and app heading/icons/logo. Replace indefinite fixed continuation with one reserved-position `BookingPrimaryAction` owner: float only while its original position is below the viewport, then return to document flow before the footer. Preserve the actual form/button/handlers and all booking authority. Existing browser case checks original-position eligibility, footer non-overlap and one action; unsupported measurement APIs retain the ordinary inline action.
+- A focused type-generation attempt without the required execution permissions failed with `spawnSync git EPERM`; retained in the local type log. Consolidated verification uses the supported execution permissions; this is not a product type failure or browser execution.
+
+## 6 November 2026 — mobile booking panels and final UI consolidation
+
+- Retained pre-consolidation checkpoint below; superseded only by the current Progress checkpoint.
+
+<details>
+<summary>Previous checkpoint retained for information audit</summary>
+
+### Previous current checkpoint
+
+Observed 6 November 2026 (Singapore). History: [Journey](journey.md).
+
+#### PR32 footer refinement
+
+Branch `fix/hero-session-copy`; baseline0c79157 passed CI42175078630, CodeQL42175073956 and staging42176139791, with public health confirming the exact revision. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
+
+Latest requested footer order: Services (Book, Studio, Terms of Service, Privacy Policy, Refund Policy), Connect With Us (WhatsApp, Email, Instagram), Find Us (flagship studio/address), Download App (three icons in one horizontal row, logo underneath). Retain the pure-white footer and empty white legal placeholder bodies. New Refund Policy route joins the two existing legal placeholders; approved legal text remains pending.
+
+Preserve the verified sticky header, accessible scroll reveals, corrected gallery curves without grey spacers,107px closing-banner minimum-height target and visible Studio blue-to-navy gradient. Current footer changes require local code verification and exact-head CI/staging. Test inventory stays unchanged; export requirements increase13→14 routes. Final immutable delivery evidence belongs in PR32.
+
+#### Remaining work
+
+- UI staging first: repair the obsolete mobile action-bar width assertion from CI42181064807, verify and stage PR32. Then resume the separately preserved documentation refactor in its own PR; include full information-loss audit. No merge or activation.
+
+- Review the local mobile correction and revised worksheet. Run consolidated verification, publish to PR32, then verify exact-head CI and staging. **Do not merge or enable settings.** Owner visual acceptance remains pending.
+- Provider decision remains ten-minute timeout; screenshot shows10 selected, but saving/effective new invoice deadline still needs owner verification. App timing remains8-minute payment,1-minute checking,3-minute recovery. [A–D worksheet](uat/simulated-user.md#ad-acceptance-worksheet) remains owner-operated and pending.
+- Domain connection/WAF/rate-limit work is deferred until owner tests are finalized. Read-only inspection found soccerbotsg.com active in Cloudflare but no production Worker custom domain; managed rulesets listed, no custom edge-rate-limit ruleset established. This is not evidence of protection for the workers.dev route.
+- Wider external work remains in [Runbook](runbook.md), [Admin UAT](uat/admin.md) and [Trainer UAT](uat/trainers.md).
+
+Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. The footer has no Enquire link; WhatsApp, email and Instagram remain.
+
+Latest visual corrections: stage offscreen sections transparently before a clear650ms/32px entrance, with immediate reveal for focus/reduced motion and cleanup. Closing-banner heading, supporting copy and CTA share centred alignment and balanced columns, stacking centrally on phones. Phone header flag and two navigation buttons align together at the right.
+
+Booking routes, confirmation and experiment checkout are excluded from scroll reveals; their components remain static, retaining existing confirmation/invoice popup behavior. On phones the Studio tagline/video intro fills the first viewport below the measured sticky header, with cover video and controls; gallery begins below the fold.
+
+Mobile Studio video uses the official homepage hero-loop.mp4 montage with a centred portrait cover crop; desktop retains stream.mp4. Both retain native controls, playsInline, no autoplay and no preload. The responsive source owner is studio-hero-video.tsx with canonical media provenance in media.ts. Footer headings are16px, details14px, contact icons20px and app icons26px within44px controls; four desktop columns become two on tablets and one on phones.
+
+Public pages show a centred floating up-chevron after200px scrolling. Its icon gently floats; clicking restores header focus and scrolls to the top. Reduced motion disables floating/smooth scrolling. The control is absent throughout booking, confirmation and experiment checkout. Check it on phone/desktop alongside existing public-section motion; no payment/navigation authority changes.
+
+Mobile booking navigation uses a compact sticky Back/current-step row below the measured site header. Existing single next-action controls in session, calendar basket, details/review and email/verification forms occupy a slim fixed bottom bar, with body/focus/safe-area clearance. Account choice cards and payment/recovery actions retain their existing placement. Actual controls, handlers, disabled/loading conditions and form ownership are unchanged; no duplicate actions or booking animation are introduced. Check navigation height≤48px and bottom bar≤72px without a device safe-area inset, keyboard/focus clearance and disabled-state behavior.
+
+Public entrance motion targets noninteractive visual blocks only: clickable controls and forms remain stationary, including banner CTAs. Studio intro retains a real layout box so route entry starts at the hero. CI42179543002 exposed these navigation/hit-target regressions; original evidence is retained in Journey and final-head verification is required.
+
+</details>
+
+- Added phone cart/trainer panels and session/unique-trainer badges, reusing confirmation-pop only for badges; all booking guards retained.
+- Fixed app dialog utility text contrast and removed close-button circles/borders.
+- Expanded the existing time-step component test:9/9 passed, covering cart removal/counts, unique trainer counts, profiles and one continuation.
+- Initial local code gate correctly rejected local literal font sizes in the new heading/badge; removed the redundant heading override and used the existing caption token. Original receipt: `/workspace/work/sbs-ui-redesign/mobile-panels-verify.log`.
+- Updated existing customer/live-email browser assertions for mobile popup access; owner/CI execution remains pending.
+
+- Full non-browser checks and14-route export completed, but the immutable receipt was refused because supporting documentation was edited during verification. Preserved log: `/workspace/work/sbs-ui-redesign/mobile-panels-final-verify.log`. Freeze the candidate before rerunning its receipt.
+- UI link audit found five pre-existing stale anchors already handled by the separate documentation-refactor branch; no new missing links from this UI slice.

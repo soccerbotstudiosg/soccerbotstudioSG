@@ -1,4 +1,5 @@
 "use client";
+import { BookingPrimaryAction } from "./booking-primary-action";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
@@ -370,12 +371,12 @@ export function AccountStep() {
         {identityService.mode === "live" && (
           <EmailBotProof key={botGeneration} onToken={setBotToken} />
         )}
-        <div className="actions booking-primary-action">
+        <BookingPrimaryAction className="actions">
           <button type="submit" className="button" disabled={busy}>
             {view === "email" ? "Continue with email" : "Verify and continue"}
             <Icon name="chevron" />
           </button>
-        </div>
+        </BookingPrimaryAction>
         <div className="auth-code-actions">
           {view === "code" && (
             <>
