@@ -33,21 +33,32 @@ export function SectionReveals() {
       },
       { threshold: 0.01 },
     );
+    /** Animate visual blocks without ever moving a clickable control or form. */
+    function observeVisual(target: Element) {
+      const controls =
+        "a, button, input, select, textarea, [tabindex], [role='button']";
+      if (
+        target.matches(controls) ||
+        target instanceof SVGElement ||
+        target.closest("form, [aria-live], [role='alert'], [role='status']")
+      )
+        return;
+      if (target.querySelector(controls)) {
+        for (const child of target.children) observeVisual(child);
+        return;
+      }
+      if (seen.has(target)) return;
+      seen.add(target);
+      const box = target.getBoundingClientRect();
+      if (motion.matches || box.top < window.innerHeight || box.height === 0)
+        return;
+      target.classList.add("section-reveal-pending");
+      pending.add(target);
+      observer.observe(target);
+    }
     function register() {
-      for (const target of main!.querySelectorAll("section, form")) {
-        if (seen.has(target) || target.querySelector("section, form")) continue;
-        seen.add(target);
-        const box = target.getBoundingClientRect();
-        // Already-visible content and live payment/status announcements remain immediate.
-        if (
-          motion.matches ||
-          box.top < window.innerHeight ||
-          target.closest('[aria-live], [role="alert"], [role="status"]')
-        )
-          continue;
-        target.classList.add("section-reveal-pending");
-        pending.add(target);
-        observer.observe(target);
+      for (const section of main!.querySelectorAll("section")) {
+        if (!section.querySelector("section")) observeVisual(section);
       }
     }
     function clearMotion() {

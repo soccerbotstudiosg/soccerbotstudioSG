@@ -203,7 +203,7 @@ function SessionPresentation({
               ))}
             </ul>
           </section>
-          <div className="actions">
+          <div className="actions booking-primary-action">
             {pending ? (
               <button className="button" disabled>
                 <BrandLoading overlay={false} compact label="Loading times…" />

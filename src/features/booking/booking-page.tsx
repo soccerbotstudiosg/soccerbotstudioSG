@@ -100,7 +100,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
       className={`booking-shell ${["account", "session", "review"].includes(displayStep) ? "session-shell" : ""}`}
     >
       {current >= 0 && (
-        <>
+        <div className="booking-navigation">
           <div className="booking-top">
             {pendingReview ? (
               <span className="back" aria-disabled="true">
@@ -117,6 +117,9 @@ export function BookingPage({ step }: { step: BookingStep }) {
               </Link>
             )}
             <span className="eyebrow text-muted">Booking</span>
+            <span className="booking-current-step">
+              {progress[current][1]} · {current + 1} of {progress.length}
+            </span>
           </div>
           <ol className="progress" aria-label="Booking progress">
             {progress.map(([id, label], index) => (
@@ -144,7 +147,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
               </li>
             ))}
           </ol>
-        </>
+        </div>
       )}
       <div
         className={

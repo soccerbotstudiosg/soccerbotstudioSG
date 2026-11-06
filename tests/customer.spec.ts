@@ -221,6 +221,7 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(
     page.getByRole("heading", { name: "Inside the arena." }),
   ).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   const studioHero = page.locator(".studio-hero");
   await expect(studioHero.locator("video")).toBeVisible();
   await expect(studioHero.locator("video")).toHaveAttribute(
@@ -971,6 +972,30 @@ test("header blue and the typography hierarchy stay consistent across every book
     ).toBeLessThanOrEqual(1);
   }
   async function sectionType(selector: string) {
+    if (
+      page.viewportSize()!.width <= 700 &&
+      (await page.locator(".booking-navigation").count())
+    ) {
+      await expect(page.locator(".booking-navigation")).toHaveCSS(
+        "position",
+        "sticky",
+      );
+      await expect(page.locator(".booking-current-step")).toBeVisible();
+      const navigationBox = await page
+        .locator(".booking-navigation")
+        .boundingBox();
+      expect(navigationBox!.height).toBeLessThanOrEqual(48);
+      const primaryBar = page.locator(".booking-primary-action");
+      if (await primaryBar.count()) {
+        await expect(primaryBar).toHaveCSS("position", "fixed");
+        const barBox = await primaryBar.boundingBox();
+        expect(barBox!.y + barBox!.height).toBeCloseTo(
+          page.viewportSize()!.height,
+          0,
+        );
+        expect(barBox!.height).toBeLessThanOrEqual(72);
+      }
+    }
     await expect(
       page.getByRole("button", { name: "Back to top", exact: true }),
     ).toHaveCount(0);

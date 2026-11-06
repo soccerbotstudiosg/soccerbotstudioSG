@@ -233,19 +233,22 @@ export function Summary({ basket = false }: { basket?: boolean }) {
             </strong>
           </div>
 
-          {basket &&
-            (draft.slots.length > 0 && valid ? (
-              <Link
-                className="button wide basket-continue"
-                href="/book/details/"
-              >
-                Continue <Icon name="chevron" />
-              </Link>
-            ) : (
-              <button className="button wide basket-continue" disabled>
-                Continue <Icon name="chevron" />
-              </button>
-            ))}
+          {basket && (
+            <div className="booking-primary-action">
+              {draft.slots.length > 0 && valid ? (
+                <Link
+                  className="button wide basket-continue"
+                  href="/book/details/"
+                >
+                  Continue <Icon name="chevron" />
+                </Link>
+              ) : (
+                <button className="button wide basket-continue" disabled>
+                  Continue <Icon name="chevron" />
+                </button>
+              )}
+            </div>
+          )}
           {basket && draft.slots.length > 0 && !valid && (
             <p className="notice" role="status">
               {selectionErrors(draft.slots, now).length > 0 ||

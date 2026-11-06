@@ -318,7 +318,7 @@ export function DetailsStep({
           </p>
         )}
         {!profileOnly && (
-          <div className="actions">
+          <div className="actions booking-primary-action">
             <button
               className="button"
               type="submit"

@@ -150,7 +150,7 @@ export function ReviewStep({
           )}
         </div>
       )}
-      <div className="actions">
+      <div className="actions booking-primary-action">
         <button
           className="button"
           disabled={
