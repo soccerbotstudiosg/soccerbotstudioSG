@@ -4880,3 +4880,11 @@ Owner requested Contact's three content parts closer together, matching Studio b
 ### 6 November 2026 — contrasting performance strip, header retained
 
 Owner clarified that the header should remain unchanged and the thin Performance · Experience · Production strip should stand out instead. Automatic approval review blocked the superseded header-edit command before execution. Applied existing teal identity/white tokens and bolder, slightly larger text only to the homepage arena signature; Studio signature and header remain unchanged. Extended the existing contrast audit17→18 pairs and its low-contrast mutation to cover this combination. Earlier banner/chevron changes passed local verification before this clarification; final consolidated source still requires verification.
+
+### 6 November 2026 — neutral blue-grey performance strip
+
+Owner refined only the thin performance strip from teal to a neutral grey retaining a blue tint. Introduced the scoped signature palette token #465363; retained white bold text, dimensions, header/hero and all other identity-colour consumers. The existing contrast pair and negative mutation now target this token, with unchanged18-pair audit and test inventory. Baseline2893011 passed local/CI/staging; use focused style/contrast/source checks for this colour-only revision and final-head CI/staging. No merge/settings changes.
+
+### 6 November 2026 — Studio footer and flag centring
+
+Owner requested vertical centring for the three parts in the straight-edged Studio footer, while retaining bottom alignment in the curved Contact banner, and centred the Singapore flag against the header buttons. Updated the existing shared CSS default/Contact variant and removed the flag bottom offset. Extended the existing public-page geometry assertion to check flag/button centre alignment; preserved its size/position checks and all test inventory. Consolidate with the neutral blue-grey strip for final CI/staging.

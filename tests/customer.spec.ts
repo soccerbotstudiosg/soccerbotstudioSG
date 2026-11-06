@@ -118,6 +118,10 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(flagBox!.height).toBeCloseTo(16.8, 0);
   expect(flagBox!.width / flagBox!.height).toBeCloseTo(1.5, 1);
   expect(flagBox!.x + flagBox!.width).toBeLessThan(studioButtonBox!.x);
+  expect(flagBox!.y + flagBox!.height / 2).toBeCloseTo(
+    studioButtonBox!.y + studioButtonBox!.height / 2,
+    0,
+  );
   const promotions = page.locator(".home-promotion");
   await expect(promotions).toHaveCount(2);
   const backgrounds: string[] = [];

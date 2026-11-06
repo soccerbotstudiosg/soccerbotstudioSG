@@ -4,11 +4,11 @@ Observed 6 November 2026 (Singapore). History: [Journey](docs/journey.md).
 
 ## PR32 tighter shared banner layout and summary labels
 
-Branch `fix/hero-session-copy`; baseline `9683d21` passed CI42156462614, CodeQL42156457725 and staging42157690103 with matching public health. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
+Branch `fix/hero-session-copy`; baseline `2893011` passed CI42158952607, CodeQL42158946615 and staging42159922891 with matching public health. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
 
-Thin-strip refinement: retain the existing header; make only Performance · Experience · Production stand out with the existing teal identity background and bold white text. Add the white-on-identity contrast pair to the existing audit.
+Thin-strip refinement: retain the existing header; make only Performance · Experience · Production stand out with the dedicated neutral blue-grey background and bold white text. Retarget the existing contrast pair to white-on-signature to the existing audit.
 
-Current refinement: Contact and Studio booking footer share a tighter1080px content target,24px gaps, bottom alignment and centred eyebrow over each heading. All former right-arrow action icons use the shared chevron, with existing direction transforms retained. The shared booking summary displays provider-derived service name · Apex @ Henderson in bold with player count below; venue remains existing single-outlet configuration, not new routing authority.
+Current refinement: Contact and Studio booking footer share a tighter1080px content target,24px gaps and centred eyebrow over each heading; Contact stays bottom-aligned and the straight Studio footer centres content vertically. The flag is vertically centred with the header buttons. All former right-arrow action icons use the shared chevron, with existing direction transforms retained. The shared booking summary displays provider-derived service name · Apex @ Henderson in bold with player count below; venue remains existing single-outlet configuration, not new routing authority.
 
 Verify the complete candidate, update the existing PR, and confirm its exact-head CI/staging. Existing presentation, navigation and summary tests remain applicable; inventories and booking/payment guards unchanged. Final delivery receipt goes in PR32. Physical visual and post-merge A–D acceptance remain owner-operated.
 

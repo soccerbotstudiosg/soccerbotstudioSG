@@ -36,6 +36,7 @@
   --color-brand-tint: #dce1f1;
   --color-focus: #5666a8;
   --color-identity: #176078;
+  --color-signature: #465363;
   --color-on-brand: #ffffff;
   --color-on-brand-muted: #dce1f1;
   --color-ink: #101636;
@@ -355,8 +356,8 @@
     flex: 0 0 auto;
     width: 25.2px;
     height: 16.8px;
-    align-self: flex-end;
-    margin: 0 8px 4px 0;
+    align-self: center;
+    margin: 0 8px 0 0;
     object-fit: contain;
   }
   .nav-links > a {
@@ -699,8 +700,8 @@
   }
   .arena-signature {
     color: var(--color-on-brand);
-    background: var(--color-identity);
-    border-color: var(--color-identity);
+    background: var(--color-signature);
+    border-color: var(--color-signature);
     font-size: 0.8125rem;
     font-weight: 700;
   }
@@ -1677,7 +1678,7 @@
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-    align-items: end;
+    align-items: center;
     gap: 24px;
     min-height: 192px;
     padding: 28px max(40px, calc((100vw - 1080px) / 2));
@@ -1698,6 +1699,7 @@
   .home-promotion--contact {
     margin-block: 12px;
     padding-top: 70px;
+    align-items: end;
   }
   .abstract-promotion-heading {
     min-width: 0;
