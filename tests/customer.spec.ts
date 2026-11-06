@@ -580,7 +580,7 @@ test("guest multi-date booking survives reload without retired export actions", 
   ).toBeVisible();
   await payment(page);
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
   await page.getByText("View full details", { exact: true }).click();
   await expect(page.getByText("Studio 1", { exact: true })).toBeVisible();
@@ -596,7 +596,7 @@ test("guest multi-date booking survives reload without retired export actions", 
   ).toHaveCount(0);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
 });
 test("declined and pending payments remain controlled through retry and refresh", async ({
@@ -622,7 +622,7 @@ test("declined and pending payments remain controlled through retry and refresh"
   ).toBeVisible();
   await page.clock.runFor(5000);
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
 });
 test("late payment has a contact path without another payment", async ({
@@ -1018,7 +1018,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   );
   await payment(page);
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".confirmation-full-details")).not.toHaveAttribute(
     "open",
@@ -1536,8 +1536,8 @@ test("header blue and the typography hierarchy stay consistent across every book
     brand,
   );
   await payAttempt(page);
-  // Booking H1s share the approved logo BOT blue; the header retains navy.
-  await pageHeading("Booking confirmed", "rgb(70, 172, 220)");
+  // Confirmation retains its original accent; booking-step headings use logo BOT blue.
+  await pageHeading("Booking Confirmed", "rgb(23, 96, 120)");
   await expect(page.locator(".site-header")).toHaveCSS(
     "background-color",
     brand,
@@ -1681,7 +1681,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await details(page);
   await payment(page);
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
   await page.getByText("View full details", { exact: true }).click();
   await expect(
@@ -1696,7 +1696,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await page.clock.setSystemTime(new Date("2027-01-01T00:00:00+08:00"));
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(() => {
@@ -1739,11 +1739,11 @@ test("protected confirmation waits for server evidence and rejects a tampered re
     page.getByRole("status", { name: "Checking payment…" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   release();
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
     "Booking confirmed. Try loading your details again.",
@@ -1764,7 +1764,7 @@ test("protected confirmation waits for server evidence and rejects a tampered re
     page.getByRole("heading", { name: "Confirmation unavailable" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
 });
 

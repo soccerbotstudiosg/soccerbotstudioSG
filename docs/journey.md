@@ -5129,3 +5129,5 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 - Reconciled measured admission-related D1 costs in BR-017, code map and runbook: single6 coordinator+1 HTTP; batch2×sessions+8 coordinator+1 HTTP; recovery5 unchanged. New CI/staging/merge still pending.
 
 - The confirmation action expansion was not requested; restored original controls following owner correction before the next CI candidate. Original failure receipts remain preserved.
+
+- Final owner clarification: capitalize “Booking Confirmed”; preserve the original teal heading and all other top presentation. Only the lower details use shared Review blocks/dividers/heading spacing and mobile20px inset. Existing confirmation/component checks44/44 pass; heading locators updated without changing coverage. New exact-head CI remains required.

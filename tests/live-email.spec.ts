@@ -824,7 +824,7 @@ test("native guest journey preserves players contact and one checkout across ref
       calls.filter((c) => c.path.startsWith("/api/booking/availability/")),
     ).toHaveLength(0);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     expect(
       calls.filter(
@@ -1047,7 +1047,7 @@ test("real payment recovery confirms the browser return from verified provider s
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".confirmation-actions")).toHaveCount(0);
     expect(
@@ -1118,14 +1118,14 @@ test("real payment recovery confirms the browser return from verified provider s
       }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Continue payment", exact: true }),
     ).toHaveCount(0);
     releaseReceipt();
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
     // Measure the final icon size after its intentional confirmation pop.
     // Reduced motion creates no animation, so this resolves immediately.
@@ -1179,7 +1179,7 @@ test("real payment recovery confirms the browser return from verified provider s
     }, attemptId);
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
     await page.getByText("View full details", { exact: true }).click();
     await expect(
@@ -1559,7 +1559,7 @@ async function assertNoPaymentOrConfirmation(
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
 ) {
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Open checkout", exact: true }),
@@ -1740,7 +1740,7 @@ async function uncertainHolding(
     await page.reload();
     await restored;
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     expect(
       await mechanism.db
@@ -1926,7 +1926,7 @@ test("real API lost successful hold response restores the existing reservation w
     });
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     expect(
       mechanism.calls.filter((call) => call.body?.method === "book"),
@@ -1987,7 +1987,7 @@ test("real API payment creation failure preserves the hold and never returns to 
         .first<{ n: number }>())!.n,
     ).toBe(1);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
   } finally {
     await stopMechanism(page, mechanism, transport);
@@ -2070,7 +2070,7 @@ test("real API failed completed dismissal opens the first step and explicit retr
       .click();
     await savedConfirmation;
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
     await page.getByText("View full details", { exact: true }).click();
     await expect(
@@ -2264,7 +2264,7 @@ test("real API batch checkout uses creation evidence and restores one complete u
       ),
     ).toHaveLength(1);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
   } finally {
     await stopMechanism(page, mechanism, transport);
@@ -2504,7 +2504,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         page.getByRole("heading", { name: "Client Details", exact: true }),
       ).toHaveCount(0);
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toHaveCount(0);
       expect(
         transport.calls.filter((call) => call.path.endsWith("/confirmation")),
@@ -2601,7 +2601,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
       );
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Continue payment", exact: true }),
@@ -2636,7 +2636,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       ).toBeVisible();
       await page.goto(`/confirmation/?attempt=${attemptId}`);
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Continue payment", exact: true }),
@@ -2752,7 +2752,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Download/ })).toHaveCount(0);
     await expect(page.getByLabel("Booking actions")).toHaveCount(0);
@@ -3136,14 +3136,14 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
         // Reopen A while B is unpaid, then restore B without borrowing A's proof.
         await page.goto(`/confirmation/?attempt=${ids[0]}`);
         await expect(
-          page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+          page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
         ).toBeVisible();
         await expect(
           page.getByRole("link", { name: "Continue payment", exact: true }),
         ).toHaveCount(0);
         await page.goto("/book/payment/");
         await expect(
-          page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+          page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
         ).toHaveCount(0);
         await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
         await continuation.click();
@@ -3163,7 +3163,7 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
         new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
       );
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Continue payment", exact: true }),
@@ -3195,7 +3195,7 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
     for (const [index, id] of ids.entries()) {
       await page.goto(`/confirmation/?attempt=${id}`);
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
       await page.getByText("View full details", { exact: true }).click();
       await expect(

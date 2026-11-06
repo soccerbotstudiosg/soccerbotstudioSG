@@ -122,14 +122,14 @@ test("synthetic checkout opens separately and only canonical evidence confirms t
     window.postMessage({ status: "confirmed", paid: true }, "*");
   });
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Open checkout again" }),
   ).toHaveAttribute("href", url!);
   await outcome(page, "Simulate successful payment");
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: info.outputPath("03-confirmed.png"),
@@ -147,7 +147,7 @@ test("synthetic paid but invalid booking needs recovery instead of claiming succ
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByText(

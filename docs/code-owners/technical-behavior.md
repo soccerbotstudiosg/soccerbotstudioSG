@@ -108,7 +108,7 @@ These functions are under [the booking feature](../../src/features/booking). The
 - Mobile booking navigation centres every step label, with6px above/below Back in static and sticky states; the shell adds no extra top gap.
 - Action anchors share15.6px top and10.4px bottom spacing, plus24.7px shell clearance and safe-area inset; the naked button settles at its original position before the footer.
 - Shared `Dialog` keeps header/close outside the scroll body. Cart and trainer panels expose a persistent visual track/thumb for overflow, synchronized through native scroll and ResizeObserver; it does not capture pointer/focus interaction.
-- Confirmation shares the logo-blue heading and uses a mobile20px inset for its details card. Original Make another booking, WhatsApp and full-width Back to home controls remain unchanged; verified totals, expandable full details, payment guards and confirmation/invoice pops are retained.
+- Confirmation reads “Booking Confirmed” with its original teal heading and top layout. The details below the controls share Review blocks, dividers and heading spacing, with a mobile20px card inset. Original Make another booking, WhatsApp and full-width Back to home controls remain unchanged; verified totals, expandable full details, payment guards and confirmation/invoice pops are retained.
 - Trainer options show names without repeated prices. Price remains on the session card and totals.
 - Mobile Studio playback shows a double-chevron scroll link after ending; Replay restarts playback and hides the cue. Reduced motion keeps the cue static.
 

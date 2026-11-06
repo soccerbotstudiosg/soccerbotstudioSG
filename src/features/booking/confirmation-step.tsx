@@ -47,7 +47,10 @@ export function PendingConfirmation({
         aria-busy="true"
       >
         {children ?? (
-          <div className="confirmation-summary" aria-label="Booking summary">
+          <div
+            className="confirmation-summary review-block"
+            aria-label="Booking summary"
+          >
             <strong className="section-title">Your booking</strong>
             <p>Loading summary…</p>
           </div>
@@ -129,7 +132,7 @@ export function BookingConfirmation({
             <span className="status-icon">
               <Icon name="check" />
             </span>
-            <h1>Booking confirmed</h1>
+            <h1>Booking Confirmed</h1>
           </>
         )}
         {!pending && verifiedAtMs !== undefined && (
@@ -204,7 +207,10 @@ export function BookingConfirmation({
         </div>
       )}
       <section className="surface confirmation-card booking-document">
-        <div className="confirmation-summary" aria-label="Booking summary">
+        <div
+          className="confirmation-summary review-block"
+          aria-label="Booking summary"
+        >
           <SessionSummaryHeading
             draft={{ ...booking.draft, slots: booking.slots }}
           />
@@ -254,7 +260,7 @@ export function BookingConfirmation({
             <summary>View full details</summary>
             <div className="confirmation-details-grid">
               <section
-                className="confirmation-section"
+                className="confirmation-section review-block"
                 aria-labelledby="confirmation-client"
               >
                 <h2 className="section-title" id="confirmation-client">
@@ -263,7 +269,7 @@ export function BookingConfirmation({
                 <ClientDetails contact={booking.draft.contact} />
               </section>
               <section
-                className="confirmation-section"
+                className="confirmation-section review-block"
                 aria-labelledby="confirmation-location"
               >
                 <h2 className="section-title" id="confirmation-location">
@@ -280,7 +286,7 @@ export function BookingConfirmation({
                 </p>
               </section>
               <section
-                className="confirmation-section confirmation-disclaimers"
+                className="confirmation-section confirmation-disclaimers review-block"
                 aria-labelledby="confirmation-disclaimers"
               >
                 <h2 className="section-title" id="confirmation-disclaimers">

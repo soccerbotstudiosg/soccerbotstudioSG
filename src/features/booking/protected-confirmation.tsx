@@ -538,7 +538,7 @@ export function ProtectedConfirmation({
                   />
                 )
               ) : view === "confirmed" ? (
-                "Booking confirmed"
+                "Booking Confirmed"
               ) : view === "unresolved" ? (
                 "Please check your payment"
               ) : (
