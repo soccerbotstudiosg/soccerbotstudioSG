@@ -157,7 +157,19 @@ test("public routes remove staff access and fit the viewport", async ({
   const homeFooterBox = await page.locator(".site-footer").boundingBox();
   expect(homeFooterBox).not.toBeNull();
   expect(homeFooterBox!.y).toBeCloseTo(contactBox!.y + contactBox!.height, 0);
-  await expect(page.locator(".footer-apps .app-store-link")).toHaveCount(3);
+  await expect(page.locator(".footer-apps .footer-app-link")).toHaveCount(3);
+  await expect(
+    page.locator(".footer-contact-grid > .footer-contact-row"),
+  ).toHaveCount(4);
+  await expect(page.locator("#footer-apps-title")).toHaveText("Download App");
+  const footerBandBox = await page
+    .locator(".footer-contact-band")
+    .boundingBox();
+  expect(footerBandBox).not.toBeNull();
+  expect(footerBandBox!.x + footerBandBox!.width / 2).toBeCloseTo(
+    (await page.locator("body").boundingBox())!.width / 2,
+    0,
+  );
   await expect(
     contactBanner.getByRole("link", { name: "Contact us", exact: true }),
   ).toHaveAttribute("href", sitePath("/enquiry/"));
@@ -198,6 +210,12 @@ test("public routes remove staff access and fit the viewport", async ({
     2,
   );
   await expect(page.locator(".studio-row")).toHaveCount(5);
+  const firstPhotoBox = await page
+    .locator(".studio-photo")
+    .first()
+    .boundingBox();
+  expect(firstPhotoBox).not.toBeNull();
+  expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y, 0);
   let precedingRowBottom: number | undefined;
   for (const row of await page.locator(".studio-row").all()) {
     await expect(row).toHaveCSS("background-color", "rgb(245, 246, 250)");
@@ -217,7 +235,7 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(studioBannerBox).not.toBeNull();
   expect(studioFooterBox).not.toBeNull();
   expect(studioBannerBox!.y - (contentBox!.y + contentBox!.height)).toBeCloseTo(
-    24,
+    0,
     0,
   );
   expect(studioFooterBox!.y).toBeCloseTo(

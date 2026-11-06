@@ -144,12 +144,22 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 </span>
               </span>
             </div>
+            <section
+              className="footer-contact-row footer-apps"
+              aria-labelledby="footer-apps-title"
+            >
+              <span className="footer-contact-icon">
+                <Icon name="download" />
+              </span>
+              <div className="footer-contact-copy">
+                <span className="footer-contact-heading">
+                  <strong id="footer-apps-title">Download App</strong>
+                </span>
+                <PlayerAppLinks compact />
+              </div>
+            </section>
           </div>
         </div>
-        <section className="footer-apps" aria-labelledby="footer-apps-title">
-          <h2 id="footer-apps-title">SOCCERBOT360 Player App</h2>
-          <PlayerAppLinks />
-        </section>
         <div className="footer-inner">
           <span>© 2026 SOCCERBOTSTUDIO Singapore. All rights reserved.</span>
           <div className="footer-links">
