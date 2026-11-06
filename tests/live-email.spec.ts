@@ -2422,12 +2422,19 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         .locator("..")
         .getByRole("link", { name: "Edit", exact: true }),
     ).toBeVisible();
+    if (page.viewportSize()!.width <= 700)
+      await page.getByRole("button", { name: /^Open cart,/ }).click();
     await expect(
       page
         .getByRole("heading", { name: "Order summary", exact: true })
         .locator("..")
         .getByRole("link", { name: "Edit", exact: true }),
     ).toBeVisible();
+    if (page.viewportSize()!.width <= 700)
+      await page
+        .getByRole("dialog", { name: "Your cart", exact: true })
+        .getByRole("button", { name: "Close dialog" })
+        .click();
     expect(
       mechanism.calls.filter((call) => call.body?.method === "book"),
     ).toHaveLength(0);

@@ -9,7 +9,7 @@
 - **252 unit/component/service cases:** domain policy, React state and browser adapters.
   - Defends against invalid prices/players/times, stale async updates, lost drafts, wrong receipt ownership, access reuse after sign-out and duplicate checkout effects.
 - **56 browser case definitions:** customer/experiment and live-email profiles across three browser projects.
-  - Checks navigation, responsive layout, accessibility/focus, reduced motion, static booking screens, mobile sticky controls, reload/Back, consecutive bookings, duplicate tabs and payment recovery.
+  - Checks navigation, responsive layout, accessibility/focus, reduced motion, static booking screens with count/confirmation cues, mobile cart/trainer panels and original-position sticky controls, reload/Back, consecutive bookings, duplicate tabs and payment recovery.
   - Defends against unusable controls, stale payment invitations, accidental rebooking, false confirmation and old receipts replacing a newer checkout.
 - **484 Worker cases:** isolated workerd, D1 and Durable Objects with intercepted providers; contract, recovery and sustained-runtime groups.
   - Checks identity/revocation, origin/owner isolation, catalogue completeness, shared capacity, immutable deadlines, lost/unknown writes, partial batches, signatures and late/duplicate callbacks.

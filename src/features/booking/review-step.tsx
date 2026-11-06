@@ -1,4 +1,6 @@
 "use client";
+import { BookingHeading, useMobileBooking } from "./booking-heading";
+import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -63,6 +65,7 @@ export function ReviewStep({
   const { draft, attempt, update, checkout, now, action, cancel } =
       useBooking(),
     router = useRouter();
+  const mobile = useMobileBooking();
   const [policy, setPolicy] = useState(false);
   const mounted = useRef(false);
   useEffect(() => {
@@ -76,23 +79,49 @@ export function ReviewStep({
   const [navigating, startNavigation] = useTransition();
   const busy = action.status === "loading" || navigating;
   const locked = verifying || attempt?.held;
+  const cartHeading = (
+    <div className="review-block">
+      <SessionSummaryHeading
+        draft={draft}
+        action={
+          !locked && (
+            <Link className="text-link" href="/book/session/">
+              Edit
+            </Link>
+          )
+        }
+      />
+    </div>
+  );
+  const cartOrder = (
+    <div className="review-block">
+      <div className="review-head">
+        <h2>Order summary</h2>
+        {!locked && (
+          <Link className="text-link" href="/book/time/">
+            Edit
+          </Link>
+        )}
+      </div>
+      <SessionList slots={draft.slots} now={now} showPrices />
+      <PriceSummary draft={draft} />
+    </div>
+  );
   return (
     <>
-      <h1 className="page-title">Review booking</h1>
+      <BookingHeading
+        cart={
+          <div className="booking-document">
+            {cartHeading}
+            {cartOrder}
+          </div>
+        }
+      >
+        Review booking
+      </BookingHeading>
       <p className="lead">Check your details before payment.</p>
       <section className="surface booking-document">
-        <div className="review-block">
-          <SessionSummaryHeading
-            draft={draft}
-            action={
-              !locked && (
-                <Link className="text-link" href="/book/session/">
-                  Edit
-                </Link>
-              )
-            }
-          />
-        </div>
+        {!mobile && cartHeading}
         <div className="review-block">
           <div className="review-head">
             <h2>Booking contact</h2>
@@ -104,18 +133,7 @@ export function ReviewStep({
           </div>
           <ClientDetails contact={draft.contact} />
         </div>
-        <div className="review-block">
-          <div className="review-head">
-            <h2>Order summary</h2>
-            {!locked && (
-              <Link className="text-link" href="/book/time/">
-                Edit
-              </Link>
-            )}
-          </div>
-          <SessionList slots={draft.slots} now={now} showPrices />
-          <PriceSummary draft={draft} />
-        </div>
+        {!mobile && cartOrder}
         <Arrival />
       </section>
       <label className="check-label review-terms">
@@ -150,7 +168,7 @@ export function ReviewStep({
           )}
         </div>
       )}
-      <div className="actions booking-primary-action">
+      <BookingPrimaryAction className="actions">
         <button
           className="button"
           disabled={
@@ -173,7 +191,7 @@ export function ReviewStep({
           )}
           {!busy && <Icon name="chevron" />}
         </button>
-      </div>
+      </BookingPrimaryAction>
       {verifying && (
         <p className="notice" role="status">
           Reservation checking. Please do not close or refresh.

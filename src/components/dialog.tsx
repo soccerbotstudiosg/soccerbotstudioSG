@@ -11,7 +11,7 @@ export function Dialog({
   title: string;
   onClose: () => void;
   children: ReactNode;
-  variant?: "player-app";
+  variant?: "player-app" | "booking-panel";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -30,7 +30,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`fixed m-auto max-h-[85dvh] w-[calc(100%-32px)] overflow-auto rounded-2xl border border-line p-6 text-ink shadow-2xl ${variant === "player-app" ? "player-app-dialog max-w-2xl backdrop:bg-navy/90" : "max-w-xl backdrop:bg-navy/65"}`}
+      className={`fixed overflow-auto rounded-2xl border border-line shadow-2xl ${variant === "booking-panel" ? "" : "m-auto max-h-[85dvh] w-[calc(100%-32px)] p-6"} ${variant === "player-app" ? "player-app-dialog max-w-2xl text-white backdrop:bg-navy/90" : variant === "booking-panel" ? "booking-panel-dialog text-ink backdrop:bg-navy/40" : "max-w-xl text-ink backdrop:bg-navy/65"}`}
       aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(event) => {
@@ -51,7 +51,8 @@ export function Dialog({
           {title}
         </h2>
         <button
-          className={`grid h-11 w-11 shrink-0 place-items-center ${variant === "player-app" ? "player-app-close rounded-full" : "rounded-lg border border-line"}`}
+          type="button"
+          className={`dialog-close grid h-11 w-11 shrink-0 place-items-center ${variant === "player-app" ? "player-app-close" : ""}`}
           onClick={onClose}
           aria-label="Close dialog"
         >

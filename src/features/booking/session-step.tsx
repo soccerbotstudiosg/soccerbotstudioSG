@@ -1,4 +1,5 @@
 "use client";
+import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -203,7 +204,7 @@ function SessionPresentation({
               ))}
             </ul>
           </section>
-          <div className="actions booking-primary-action">
+          <BookingPrimaryAction className="actions">
             {pending ? (
               <button className="button" disabled>
                 <BrandLoading overlay={false} compact label="Loading times…" />
@@ -213,7 +214,7 @@ function SessionPresentation({
                 See available times <Icon name="chevron" />
               </Link>
             )}
-          </div>
+          </BookingPrimaryAction>
         </>
       )}
     </>

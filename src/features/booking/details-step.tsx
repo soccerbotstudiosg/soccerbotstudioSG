@@ -1,4 +1,6 @@
 "use client";
+import { BookingHeading } from "./booking-heading";
+import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -185,9 +187,11 @@ export function DetailsStep({
     return <ReviewStep verifying={attempt.verifying === true} />;
   return (
     <>
-      <h1 className="page-title">
-        {profileOnly ? "Saved contact details" : "Your details"}
-      </h1>
+      {profileOnly ? (
+        <h1 className="page-title">Saved contact details</h1>
+      ) : (
+        <BookingHeading>Your details</BookingHeading>
+      )}
       <form
         id="details-form"
         noValidate
@@ -318,7 +322,7 @@ export function DetailsStep({
           </p>
         )}
         {!profileOnly && (
-          <div className="actions booking-primary-action">
+          <BookingPrimaryAction className="actions">
             <button
               className="button"
               type="submit"
@@ -334,7 +338,7 @@ export function DetailsStep({
               )}
               {!saving && !checking && <Icon name="chevron" />}
             </button>
-          </div>
+          </BookingPrimaryAction>
         )}
       </form>
     </>

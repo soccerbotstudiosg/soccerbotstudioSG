@@ -11,15 +11,17 @@
 - [ ] **Access and saved contact — CUS-001–009.** Browse before verification; test valid/wrong/expired/used code; remember on/off; close/reopen; sign out both devices; verify again with both choices; change email; edit/cancel/save invalid and valid contact; exercise expired editing authority.
   - **Expect:** private data requires current proof; no cross-account disclosure; revoked access stays revoked; cancel does not save; save returns to booking options; recoverable errors preserve appropriate input.
 - [ ] **Presentation — CUS-025–027.** Check desktop/phone/tablet, keyboard, rotation, zoom and reduced motion; open home, Studio, app popup, enquiry and legal pages.
-  - **Expect:** readable unclipped content, stable focus, sticky header and working links; phone header controls align right; desktop stream/mobile cropped hero video has controls and no autoplay; five Studio rows join with only outer photo curves; compact centred gradient banners meet white footer.
-  - **Expect:** footer Services / Connect With Us / Find Us / Download Official Soccerbot360 App:; horizontal icons, logo bottom-right aligned with the Services list; tighter link gaps; address below Flagship Studio label;
-    - no footer Enquire link; empty white legal bodies; public reveals do not flicker/move controls; public up-chevron returns focus/top; booking stays static except confirmation/invoice cues.
+  - **Expect:** readable unclipped content, stable focus, sticky header and working links; phone header controls form a centred group; desktop stream/mobile cropped hero video has controls and no autoplay; five Studio rows join with only outer photo curves; compact centred gradient banners meet white footer.
+  - **Expect:** footer Services / Connect With Us / Find Us / Download Official Soccerbot360 App:; horizontal icons, desktop logo aligned with Services bottom at the app-column left edge; aligned rows with40% tighter pitch; address below Flagship Studio label; phones pair Services/Connect With Us and centre remaining groups/logo;
+    - no footer Enquire link; empty white legal bodies; public reveals do not flicker/move controls; public up-chevron returns focus/top; booking stays static except confirmation/invoice and count-badge pops.
 - [ ] **Selection and pricing — CUS-010–014,032–033.** Select/deselect outlet and session; retain2 players after session reselection; test1–4 limits; choose/change/remove per-slot trainers; reload; browse empty months and three-month limit; review without submitting.
   - **Expect:** matching outlet/session cards; address below flagship label; no trailing outlet arrow; dependent controls hide/reset correctly; eligible trainers only; one grouped summary per trainer; valid drafts survive;
     - Review alone creates nothing; consent required.
   - **Expect:** staging S$88/108, client S$108/128 weekday/premium including Singapore holidays; provider quote agrees; no demo price on live-catalogue failure.
     - Summary: service · outlet, then player count.
-    - Mobile Back/step≤48px; fixed single Continue bar≤72px before safe-area; keyboard/content clear; disabled states hold.
+    - Mobile Back/step≤54px with6px divider gap; single Continue bar≤72px before safe-area, floating only until its original position and stopping above footer; keyboard/content clear; disabled states hold.
+    - Time/Details/Review cart/trainer icons open right-hand scrollable panels; plain × closes/restores focus. Cart counts sessions; trainer counts unique trainers; zero badges hidden; changed counts pop unless reduced motion. Time title breaks before “and times”; cart removal updates both counts.
+    - App popup icons/labels stay white and readable; close controls have no circle/border.
 
 <div style="break-before: page;"></div>
 

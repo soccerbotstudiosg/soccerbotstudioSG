@@ -1,4 +1,5 @@
 "use client";
+import { BookingHeading } from "./booking-heading";
 import {
   AVAILABILITY_LOAD_FAILED,
   NO_SESSIONS_ON_DATE,
@@ -184,7 +185,9 @@ export function TimeStep() {
   }
   return (
     <>
-      <h1 className="page-title">Select dates and times</h1>
+      <BookingHeading basket>
+        Select dates<span className="booking-time-title-break"> and times</span>
+      </BookingHeading>
       {selectionNotice && (
         <p className="alert" role="alert">
           {selectionNotice}

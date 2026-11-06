@@ -594,15 +594,17 @@ flowchart LR
 
 - **Owners:** `site-shell.tsx`, `player-app-links.tsx`, `player-app-prompt.tsx`, `globals.css`.
 - **Header:** sticky; ResizeObserver supplies responsive scroll clearance and restores previous values on cleanup; print uses static positioning.
-- **Flag:**25.2×16.8px, left of and vertically centred with The studio/Book now; all three align right on phones. Public navigation stays hidden on booking routes.
+- **Flag:**25.2×16.8px, left of and vertically centred with The studio/Book now; all three form a centred group on phones. Public navigation stays hidden on booking routes.
 - **Footer:** pure white; Services, Connect With Us, Find Us, Download Official Soccerbot360 App:.
   - Services: Book, Studio, Terms of Service, Privacy Policy, Refund Policy.
   - Contact: WhatsApp/email/Instagram icons, readable values and accessible platform names; no Enquire, Get in touch or Disclaimer.
   - Address: Flagship Studio label; Apex @ Henderson; street/unit; postal code on separate lines.
-  - App links: Apple/Android/web icons horizontally; logo lower-right, aligned with the Services list bottom.
-  - Desktop first two columns size to content with24px group gaps; information groups sit left, app column right; four/two/one columns on desktop/tablet/phone.
-  - Sub-item gaps5.6px; headings16px, details14px, contact icons20px, app icons26px;44px link/app targets retained.
-- **App prompt:** only “Download the official soccerbot360 app now.”, three official icon/store-name links and accessible close control; wider dialog/darker backdrop; no lead-in captions or header download link.
+  - App links: Apple/Android/web icons horizontally; logo at the app-column left edge, aligned with the Services list bottom; centred on phones.
+  - Desktop first two columns size to content with24px group gaps; information groups sit left, app column right; four/two columns on desktop/tablet; phone Services/Connect With Us share a row, then Find Us and App span full width with centred content.
+  - Desktop sub-item pitch29.6px (24px minimum line height +5.6px gap), about40% tighter; contact text and address rows align with Services.
+  - Headings16px, details14px, contact icons20px, app icons26px; phone/tablet links and app controls retain44px targets.
+- **App prompt:** only “Download the official soccerbot360 app now.”, three official icon/store-name links and accessible close control; wider dialog/darker backdrop; explicit white utility text fixes link/icon contrast; no lead-in captions or header download link.
+  - Shared close controls: plain ×, no circle/border;44px targets, visible keyboard focus and native dismissal/focus restoration.
 - **Guards:** footer links do not dismiss the prompt; its callback persists. BookingLink navigation/leave-booking confirmation remain. Legal routes intentionally have empty white bodies pending approved text.
 
 ### Homepage, Studio media and banners
@@ -628,11 +630,22 @@ flowchart LR
 - Stage offscreen content transparently before entry; never move clickable controls/forms/banner CTAs; exclude live-status regions.
 - Focus/reduced motion reveals immediately; preference changes cancel motion; route/unmount clears observers/listeners/classes.
 - Public back-to-top: centred up-chevron after200px; icon floats; click restores header focus and scrolls top; reduced motion disables floating/smooth scroll.
-- Booking, confirmation and experiment checkout have neither public reveals nor back-to-top; existing confirmation/invoice cues remain.
-- Mobile booking: sticky Back/current-step below header; existing single next-action in session/calendar/details/review/email/code forms uses a slim fixed bottom bar.
+- Booking, confirmation and experiment checkout have neither public reveals nor back-to-top; only confirmation/invoice cues and the explicitly requested count-badge pops animate.
+- Mobile booking: sticky Back/current-step below header with6px divider clearance; `BookingPrimaryAction` keeps one original next-action in session/calendar/details/review/email/code forms.
+  - Float only while its reserved document position is below the viewport; resume normal flow before footer. Resize/scroll measurements preserve height; missing measurement APIs leave it in flow.
   - Preserve account-choice and payment/recovery placement, actual handlers/form ownership, loading/disabled/validation guards; no duplicates.
-  - Reserve body/footer/focus/safe-area clearance; navigation≤48px and bottom bar≤72px before safe-area inset.
+  - Reserve focus/safe-area clearance; navigation≤54px and bottom bar≤72px before safe-area inset.
 - Browser/physical playback, cropping, motion, keyboard and visual acceptance remain owner/CI-operated; no payment/navigation authority changes.
+
+### Mobile booking panels
+
+- Phone Time, Details and Review headings use `booking-heading.tsx`: cart and selected-trainer icons open shared native dialogs; desktop retains inline summaries/profiles.
+- Time title breaks after “Select dates”; “and times” occupies the second line.
+- Cart badge derives from `draft.slots.length`; trainer badge counts distinct instructor IDs. Zero badges are omitted; each changed positive count reuses the380ms confirmation pop, disabled by reduced-motion preference.
+- Phone panels use72vw width (maximum360px), right alignment and a65dvh maximum height; long content scrolls internally. Shared close controls are plain × with44px targets, native dismissal/focus restoration and visible keyboard focus.
+- Cart reuses existing session rows, prices, removal/Clear all on Time and locked Edit rules on Review. Details/Review do not gain destructive cart editing. Trainer profiles retain their existing provider/demo identity mapping.
+- `BasketContinue` retains all selection-time/fresh-offer/instructor/rotation guards outside the phone cart; exactly one continuation remains on the main page. Review contact, consent, reserve/checkout actions and held/verifying guards are unchanged.
+- App prompt uses explicit white utility text so shared dialog utilities cannot darken store labels/icons; footer links retain their existing theme.
 
 ### Outlet and session disclosure
 

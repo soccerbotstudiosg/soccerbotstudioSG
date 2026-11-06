@@ -14,7 +14,8 @@ import { DetailsStep } from "./details-step";
 import { ReviewStep } from "./review-step";
 import { PaymentStep } from "./payment-step";
 import { ConfirmationStep } from "./confirmation-step";
-import { Summary } from "./summary";
+import { Summary, BasketContinue } from "./summary";
+import { useMobileBooking } from "./booking-heading";
 const progress: Array<[BookingStep, string]> = [
   ["account", "Booking"],
   ["session", "Session"],
@@ -33,6 +34,7 @@ const screens = {
 };
 /** Render the guarded booking step and its navigation controls. */
 export function BookingPage({ step }: { step: BookingStep }) {
+  const mobile = useMobileBooking();
   const {
       ready,
       draft,
@@ -159,9 +161,10 @@ export function BookingPage({ step }: { step: BookingStep }) {
         <section className="booking-main min-w-0">
           <Screen />
         </section>
-        {["time", "details"].includes(displayStep) && (
+        {!mobile && ["time", "details"].includes(displayStep) && (
           <Summary basket={step === "time"} />
         )}
+        {mobile && displayStep === "time" && <BasketContinue />}
       </div>
     </div>
   );

@@ -176,17 +176,17 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
                   <a
+                    className="footer-address"
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Flagship Studio:
-                    <br />
-                    {LOCATION.building}
-                    <br />
-                    {LOCATION.street}, {LOCATION.unit}
-                    <br />
-                    {LOCATION.postal}
+                    <span>Flagship Studio:</span>
+                    <span>{LOCATION.building}</span>
+                    <span>
+                      {LOCATION.street}, {LOCATION.unit}
+                    </span>
+                    <span>{LOCATION.postal}</span>
                   </a>
                 </div>
               </div>

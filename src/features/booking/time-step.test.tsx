@@ -35,10 +35,11 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", async () => {
   const user = userEvent.setup();
-  render(
+  const view = render(
     <BookingProvider>
       <BookingPage step="time" />
     </BookingProvider>,
@@ -107,6 +108,91 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   ).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
   expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
+  vi.stubGlobal("matchMedia", () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  view.rerender(
+    <BookingProvider>
+      <BookingPage step="time" />
+    </BookingProvider>,
+  );
+  expect(
+    screen.queryByRole("complementary", { name: "Your booking summary" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen
+      .getByRole("button", { name: "Open cart, 0 sessions" })
+      .querySelector(".booking-cart-count"),
+  ).toBeNull();
+  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
+    `${restoredDate}|12:00|demo|faisal`,
+  );
+  await user.click(screen.getByRole("button", { name: /14:30–15:10/ }));
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 14:30`),
+    `${restoredDate}|14:30|demo|faisal`,
+  );
+  expect(
+    screen
+      .getByRole("button", { name: "Open cart, 2 sessions" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("2");
+  expect(
+    screen
+      .getByRole("button", { name: "View selected trainers, 1 trainer" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("1");
+  await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
+    `${restoredDate}|15:20|demo|daniel`,
+  );
+  expect(
+    screen
+      .getByRole("button", { name: "View selected trainers, 2 trainers" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("2");
+  await user.click(
+    screen.getByRole("button", { name: "View selected trainers, 2 trainers" }),
+  );
+  const trainerPanel = screen.getByRole("dialog", {
+    name: "Selected trainers",
+  });
+  expect(within(trainerPanel).getAllByRole("article")).toHaveLength(2);
+  await user.click(
+    within(trainerPanel).getByRole("button", { name: "Close dialog" }),
+  );
+  await user.click(
+    screen.getByRole("button", { name: "Open cart, 3 sessions" }),
+  );
+  const cartPanel = screen.getByRole("dialog", { name: "Your cart" });
+  expect(within(cartPanel).getAllByRole("listitem")).toHaveLength(3);
+  expect(
+    within(cartPanel).queryByRole("link", { name: "Continue" }),
+  ).not.toBeInTheDocument();
+  await user.click(
+    within(cartPanel).getByRole("button", {
+      name: `Remove ${restoredDate} at 15:20`,
+    }),
+  );
+  await user.click(
+    within(cartPanel).getByRole("button", { name: "Close dialog" }),
+  );
+  expect(
+    screen
+      .getByRole("button", { name: "Open cart, 2 sessions" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("2");
+  expect(
+    screen
+      .getByRole("button", { name: "View selected trainers, 1 trainer" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("1");
+  expect(screen.getAllByRole("link", { name: "Continue" })).toHaveLength(1);
 });
 test("crossing notices persist in the basket and review before payment", async () => {
   const basket = render(

@@ -1773,7 +1773,7 @@
     display: flex;
     align-items: center;
     align-self: end;
-    justify-self: end;
+    justify-self: start;
     width: 148px;
     min-width: 0;
     margin: 24px 0 0;
@@ -1849,16 +1849,21 @@
     display: block;
     width: fit-content;
     max-width: 100%;
-    min-height: 44px;
+    min-height: 24px;
     color: var(--color-muted);
     text-decoration: underline;
     text-decoration-color: var(--color-line);
     text-underline-offset: 3px;
     overflow-wrap: anywhere;
   }
+  .footer-direct-links .footer-address {
+    display: grid;
+    gap: 5.6px;
+    grid-auto-rows: minmax(24px, auto);
+  }
   .footer-direct-links .footer-contact-link {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
   }
   .footer-contact-link .icon {
@@ -1924,6 +1929,9 @@
     }
   }
   @media (max-width: 1100px) {
+    .footer-direct-links a {
+      min-height: 44px;
+    }
     .footer-apps {
       justify-self: start;
     }
@@ -2043,7 +2051,7 @@
       gap: 7px;
       flex-shrink: 0;
       width: 100%;
-      justify-content: flex-end;
+      justify-content: center;
     }
     .nav-links > a {
       padding: 10px 8px;
@@ -2067,11 +2075,28 @@
       padding: 28px 0;
     }
     .footer-contact-grid {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 24px;
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      gap: 24px 12px;
     }
     .footer-contact-row {
       padding: 0;
+    }
+    .footer-contact-row:nth-child(-n + 2) .footer-contact-heading {
+      min-height: 42px;
+    }
+    .footer-contact-row:nth-child(n + 3) {
+      grid-column: 1 / -1;
+      justify-self: stretch;
+      text-align: center;
+    }
+    .footer-contact-row:nth-child(3) .footer-direct-links {
+      align-items: center;
+    }
+    .footer-app-links {
+      justify-content: center;
+    }
+    .footer-brand {
+      justify-self: center;
     }
   }
   @media (max-width: 370px) {
@@ -2321,6 +2346,9 @@
     margin-left: 4px;
   }
 
+  .booking-action-anchor {
+    display: contents;
+  }
   .booking-shell {
     max-width: 1160px;
     margin: 0 auto;
@@ -2862,6 +2890,40 @@
     font-weight: var(--weight-body);
     color: var(--color-muted);
     white-space: nowrap;
+  }
+  .dialog-close {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .booking-panel-buttons {
+    display: none;
+  }
+  .booking-panel-dialog {
+    --panel-top: min(25dvh, calc(var(--site-header-height, 76px) + 90px));
+    top: var(--panel-top);
+    right: 16px;
+    bottom: auto;
+    left: auto;
+    margin: 0;
+    width: min(72vw, 360px);
+    max-height: min(65dvh, calc(100dvh - var(--panel-top) - 16px));
+    padding: 16px;
+    background: var(--color-surface);
+    overscroll-behavior: contain;
+  }
+  .booking-panel-dialog .dialog-title {
+    font-size: var(--text-section);
+  }
+  .booking-panel-dialog .summary {
+    border: 0;
+    box-shadow: none;
+  }
+  .booking-panel-dialog .summary-body {
+    padding: 0;
+  }
+  .booking-panel-dialog .booking-instructors {
+    margin-top: 0;
   }
   .player-app-dialog {
     background: var(--color-brand);
@@ -3622,7 +3684,8 @@
   }
   @media (prefers-reduced-motion: no-preference) {
     .confirmation-shell .status-icon,
-    .confirmation-invoice-value {
+    .confirmation-invoice-value,
+    .booking-cart-count {
       animation: confirmation-pop 380ms ease-out;
     }
   }
@@ -3855,6 +3918,7 @@
       top: var(--site-header-height, 76px);
       z-index: 35;
       margin-bottom: 20px;
+      padding-bottom: 6px;
       border-bottom: 1px solid var(--color-line);
       background: var(--color-paper);
     }
@@ -3876,30 +3940,30 @@
       font-weight: var(--weight-heading);
       white-space: nowrap;
     }
-    .booking-shell:has(.booking-primary-action) {
-      padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    .booking-action-anchor {
+      display: block;
     }
     html:has(.booking-shell .booking-primary-action) {
       scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom));
     }
-    body:has(.booking-shell .booking-primary-action) .site-footer {
-      padding-bottom: calc(80px + env(safe-area-inset-bottom));
-    }
     .booking-shell :is(input, textarea, select, button, a, [tabindex]) {
-      scroll-margin-top: 48px;
+      scroll-margin-top: 54px;
     }
     .booking-shell .booking-primary-action {
-      position: fixed;
+      position: relative;
       z-index: 35;
-      left: 0;
-      right: 0;
-      bottom: 0;
       display: flex;
       margin: 0;
       padding: 8px 20px calc(8px + env(safe-area-inset-bottom));
       border-top: 1px solid var(--color-line);
       background: var(--color-surface);
       box-shadow: var(--shadow-panel);
+    }
+    .booking-shell .booking-primary-action[data-floating="true"] {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
     }
     .booking-shell .booking-primary-action > .button {
       width: 100%;
@@ -3913,6 +3977,51 @@
       display: flex;
       flex-direction: column;
       gap: 24px;
+    }
+    .booking-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .booking-heading .page-title {
+      min-width: 0;
+    }
+    .booking-time-title-break {
+      display: block;
+    }
+    .booking-panel-buttons {
+      display: flex;
+      flex-shrink: 0;
+      gap: 4px;
+    }
+    .booking-panel-button {
+      display: grid;
+      place-items: center;
+      position: relative;
+      width: 44px;
+      height: 44px;
+      color: var(--color-brand);
+    }
+    .booking-panel-button .icon {
+      width: 26px;
+      height: 26px;
+    }
+    .booking-cart-count {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 4px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--color-danger);
+      color: white;
+      font-size: var(--text-caption);
+      font-weight: var(--weight-heading);
+      line-height: 1;
     }
     .booking-main {
       width: 100%;
