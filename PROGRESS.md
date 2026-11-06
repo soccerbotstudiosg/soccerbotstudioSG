@@ -2,15 +2,13 @@
 
 Observed 6 November 2026 (Singapore). History: [Journey](docs/journey.md).
 
-## PR32 light-grey promotions and original performance strip
+## PR32 muted-orange Contact banner
 
-Branch `fix/hero-session-copy`; previous0b98f4c passed CI42162442603/CodeQL42162438146 and its staging workflow42163414870 had started when superseded. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
+Branch `fix/hero-session-copy`; baseline `bf8e57f` passed CI42164028674, CodeQL42164022847 and staging42164958647 with matching public health. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
 
-Studio extension: the five sections after the video reuse the homepage image/copy layout, spacing, type and light palette owners, retaining alternating desktop placement and media. Mobile uses image then heading/copy consistently.
+Owner confirmed the bottom Contact banner for a new muted burnt-orange treatment. Apply scoped #d99058 with soft abstract highlights, navy text and navy/white action states; preserve its straight edges, compact geometry and alignment. The Studio footer retains its navy treatment. Light homepage/Studio image sections, restored original performance strip, header, booking states and all other behavior remain unchanged.
 
-Current owner direction: restore the thin performance strip to its original navy/muted-text styling; second/third homepage image promotions use very light grey, dark ink text and standard navy/white actions; bottom Contact banner has no curve or curve-only top clearance. Studio promotion curves, compact heights, mobile photo/button clearance, shared CTA corners/chevrons, tighter abstract composition, centred Studio footer and flag, and service/outlet summary remain.
-
-Update existing public-page assertions for the intentional shared light palette and absent Contact curve; preserve all navigation and inventory checks. Reuse existing palette tokens; retarget the scoped contrast pair to ink on paper. Verify the consolidated candidate, publish to PR32 and confirm exact-head CI/staging. Physical visual and post-merge A–D acceptance remain owner-operated. Final delivery evidence belongs in PR32.
+Extend existing contrast/mutation and public-route palette assertions without adding test cases or changing inventories. Reconcile current presentation owners, verify the consolidated source, publish to PR32 and verify exact-head CI/staging. Physical visual and post-merge A–D acceptance remain owner-operated; final delivery receipt belongs in PR32.
 
 ## Remaining work
 

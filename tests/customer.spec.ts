@@ -139,6 +139,15 @@ test("public routes remove staff access and fit the viewport", async ({
   }
   const contactBanner = page.locator(".abstract-promotion");
   await expect(contactBanner).toHaveCount(1);
+  await expect(contactBanner).toHaveCSS(
+    "background-color",
+    "rgb(217, 144, 88)",
+  );
+  await expect(contactBanner).toHaveCSS("color", "rgb(5, 10, 47)");
+  await expect(contactBanner.locator(".promotion-cta")).toHaveCSS(
+    "background-color",
+    "rgb(5, 10, 47)",
+  );
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
   const contactBox = await contactBanner.boundingBox();
@@ -179,6 +188,7 @@ test("public routes remove staff access and fit the viewport", async ({
   }
   const studioBanner = page.locator(".studio-bottom.abstract-promotion");
   await expect(studioBanner).toBeAttached();
+  await expect(studioBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(studioBanner.locator("img")).toHaveCount(0);
   await expect(
     studioBanner.getByRole("link", { name: "Book now", exact: true }),

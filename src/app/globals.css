@@ -36,6 +36,7 @@
   --color-brand-tint: #dce1f1;
   --color-focus: #5666a8;
   --color-identity: #176078;
+  --color-contact-promotion: #d99058;
   --color-on-brand: #ffffff;
   --color-on-brand-muted: #dce1f1;
   --color-ink: #101636;
@@ -1507,17 +1508,17 @@
     border-radius: 3px 12px 3px 12px;
   }
   .abstract-promotion .promotion-cta {
-    background: var(--color-on-brand);
-    border-color: var(--color-on-brand);
-    color: var(--color-brand);
+    background: var(--promotion-button-background, var(--color-on-brand));
+    border-color: var(--promotion-button-background, var(--color-on-brand));
+    color: var(--promotion-button-color, var(--color-brand));
   }
   .abstract-promotion .promotion-cta:hover {
-    background: var(--color-brand-tint);
-    border-color: var(--color-brand-tint);
-    color: var(--color-brand);
+    background: var(--promotion-button-hover, var(--color-brand-tint));
+    border-color: var(--promotion-button-hover, var(--color-brand-tint));
+    color: var(--promotion-button-color, var(--color-brand));
   }
   .abstract-promotion .promotion-cta:focus-visible {
-    outline-color: var(--color-on-brand);
+    outline-color: var(--promotion-focus, var(--color-on-brand));
     outline-offset: 5px;
   }
   @media (max-width: 900px) {
@@ -1585,19 +1586,34 @@
     background-image:
       radial-gradient(
         ellipse at 4% 140%,
-        color-mix(in srgb, var(--color-identity) 65%, transparent),
+        color-mix(
+          in srgb,
+          var(--promotion-accent, var(--color-identity)) 65%,
+          transparent
+        ),
         transparent 62%
       ),
       radial-gradient(
         ellipse at 98% 0%,
-        color-mix(in srgb, var(--color-identity) 35%, transparent),
+        color-mix(
+          in srgb,
+          var(--promotion-accent, var(--color-identity)) 35%,
+          transparent
+        ),
         transparent 65%
       );
     color: var(--color-on-brand);
   }
   .home-promotion--contact {
+    --promotion-accent: var(--color-on-brand);
+    --promotion-button-background: var(--color-brand);
+    --promotion-button-color: var(--color-on-brand);
+    --promotion-button-hover: var(--color-action-hover);
+    --promotion-focus: var(--color-brand);
     margin-block: 12px;
     align-items: end;
+    background-color: var(--color-contact-promotion);
+    color: var(--color-brand);
   }
   .abstract-promotion-heading {
     min-width: 0;
