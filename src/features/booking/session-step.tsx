@@ -210,7 +210,7 @@ function SessionPresentation({
               </button>
             ) : (
               <Link href="/book/time/" className="button">
-                See available times <Icon name="arrow" />
+                See available times <Icon name="chevron" />
               </Link>
             )}
           </div>

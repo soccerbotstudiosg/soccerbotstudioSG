@@ -697,6 +697,13 @@
     border-top: 1px solid #26374f;
     border-bottom: 1px solid #26374f;
   }
+  .arena-signature {
+    color: var(--color-on-brand);
+    background: var(--color-identity);
+    border-color: var(--color-identity);
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
   .arena-body {
     position: relative;
   }
@@ -1669,11 +1676,11 @@
   .abstract-promotion {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 24px 40px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 24px;
     min-height: 192px;
-    padding: 28px max(40px, calc((100vw - 1280px) / 2));
+    padding: 28px max(40px, calc((100vw - 1080px) / 2));
     background-color: var(--color-brand);
     background-image:
       radial-gradient(
@@ -1691,18 +1698,13 @@
   .home-promotion--contact {
     margin-block: 12px;
     padding-top: 70px;
-    align-items: end;
   }
   .abstract-promotion-heading {
     min-width: 0;
-  }
-  .home-promotion--contact .abstract-promotion-heading {
     width: fit-content;
   }
-  .home-promotion--contact .promotion-eyebrow {
-    text-align: center;
-  }
   .abstract-promotion .promotion-eyebrow {
+    text-align: center;
     display: block;
     margin-bottom: 8px;
   }
@@ -1937,6 +1939,9 @@
       padding: 14px 16px;
       font-size: 0.5625rem;
       letter-spacing: 0.16em;
+    }
+    .arena-signature {
+      font-size: 0.625rem;
     }
     .official-logo {
       width: 145px;

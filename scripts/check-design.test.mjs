@@ -9,7 +9,7 @@ const css = readFileSync(
 test("the interface uses the header blue, readable role hierarchy and contrasting semantic states", () => {
   const audit = designAudit(css);
   assert.deepEqual(audit.errors, []);
-  assert.equal(audit.contrast.length, 17);
+  assert.equal(audit.contrast.length, 18);
 });
 test("design policy rejects a teal action token even if it remains a valid CSS colour", () => {
   assert.ok(
@@ -36,7 +36,7 @@ test("design policy rejects low-contrast supporting text", () => {
         "\n.player-app-dialog .button { background: var(--color-arena-accent); }",
     ).errors.some((e) => e.includes("Decorative accent")),
   );
-  for (const token of ["confirmation", "confirmation-heading"]) {
+  for (const token of ["confirmation", "confirmation-heading", "identity"]) {
     assert.ok(
       designAudit(
         css.replace(

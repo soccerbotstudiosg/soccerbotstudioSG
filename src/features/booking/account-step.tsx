@@ -168,7 +168,7 @@ export function AccountStep() {
               onClick={() => void perform((signal) => proceed(signal))}
             >
               {busy ? "Preparing booking…" : "Continue as guest"}{" "}
-              <Icon name="arrow" />
+              <Icon name="chevron" />
             </button>
           </section>
           <section className="surface access-option">
@@ -204,7 +204,7 @@ export function AccountStep() {
               }
             >
               {identity ? "Continue signed in" : "Continue with email"}
-              <Icon name="arrow" />
+              <Icon name="chevron" />
             </button>
             {identity && (
               <div className="account-actions">
@@ -373,7 +373,7 @@ export function AccountStep() {
         <div className="actions">
           <button type="submit" className="button" disabled={busy}>
             {view === "email" ? "Continue with email" : "Verify and continue"}
-            <Icon name="arrow" />
+            <Icon name="chevron" />
           </button>
         </div>
         <div className="auth-code-actions">

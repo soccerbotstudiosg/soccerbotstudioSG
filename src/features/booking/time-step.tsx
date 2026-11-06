@@ -236,7 +236,7 @@ export function TimeStep() {
               disabled={offset === 0}
               onClick={() => chooseMonth(monthAt(today, offset - 1))}
             >
-              <Icon name="arrow" className="rotate-180" />
+              <Icon name="chevron" className="rotate-180" />
             </button>
             <button
               className="icon-button"
@@ -244,7 +244,7 @@ export function TimeStep() {
               disabled={offset === maxMonthOffset}
               onClick={() => chooseMonth(monthAt(today, offset + 1))}
             >
-              <Icon name="arrow" />
+              <Icon name="chevron" />
             </button>
           </div>
         </div>
@@ -485,7 +485,7 @@ export function TimeStep() {
                     ? "See next available day"
                     : "See next month"
                   : "See next day"}{" "}
-                <Icon name="arrow" />
+                <Icon name="chevron" />
               </button>
             </div>
           )}

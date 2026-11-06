@@ -4872,3 +4872,11 @@ Owner additionally requested about25% less height for the second and third homep
 ### 6 November 2026 — consistent banner button shape
 
 After publishing74e2f5e, owner requested all banner CTAs use the header's asymmetric button shape. Applied3px/12px alternating corner radii in the shared promotion CTA owner, covering homepage Studio/session/Contact and Studio booking footer without changing labels, colours or actions. This supersedes74e2f5e for final CI/staging. Reuse its full local252-test/build verification as prior-candidate evidence, with focused final style/source checks for this CSS-only follow-up; final-head CI remains required. No merge/settings authorization.
+
+### 6 November 2026 — tighter banner composition and shared chevrons
+
+Owner requested Contact's three content parts closer together, matching Studio booking-footer placement, chevrons on all right-arrow buttons, and “Kickoff Special · Apex @ Henderson” above player count. Reduced the shared abstract-banner content width target1280→1080px and gaps40→24px, moved bottom alignment and centred eyebrow into that shared owner, replaced the arrow icon and all callers with a right chevron (existing previous-direction transforms preserved), and appended the configured venue in SessionSummaryHeading. Provider-derived service name, plural player count, links, state and booking authority are unchanged. Baseline9683d21 was verified/staged; this new source requires its own verification. No merge/settings changes.
+
+### 6 November 2026 — contrasting performance strip, header retained
+
+Owner clarified that the header should remain unchanged and the thin Performance · Experience · Production strip should stand out instead. Automatic approval review blocked the superseded header-edit command before execution. Applied existing teal identity/white tokens and bolder, slightly larger text only to the homepage arena signature; Studio signature and header remain unchanged. Extended the existing contrast audit17→18 pairs and its low-contrast mutation to cover this combination. Earlier banner/chevron changes passed local verification before this clarification; final consolidated source still requires verification.

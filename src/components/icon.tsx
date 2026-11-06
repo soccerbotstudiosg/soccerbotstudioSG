@@ -1,10 +1,6 @@
 import type { ReactNode } from "react";
 const paths: Record<string, ReactNode> = {
-  arrow: (
-    <>
-      <path d="M5 12h14m-6-6 6 6-6 6" />
-    </>
-  ),
+  chevron: <path d="m9 6 6 6-6 6" />,
   spinner: <path d="M21 12a9 9 0 1 1-9-9" />,
   card: (
     <>

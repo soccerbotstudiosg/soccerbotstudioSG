@@ -7,6 +7,7 @@ import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
+import { LOCATION } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import {
   orderedSlots,
@@ -45,7 +46,9 @@ export function SessionSummaryHeading({
       <p>
         {serviceName && (
           <>
-            <strong>{serviceName}</strong>
+            <strong>
+              {serviceName} · {LOCATION.building}
+            </strong>
             <br />
           </>
         )}
@@ -236,11 +239,11 @@ export function Summary({ basket = false }: { basket?: boolean }) {
                 className="button wide basket-continue"
                 href="/book/details/"
               >
-                Continue <Icon name="arrow" />
+                Continue <Icon name="chevron" />
               </Link>
             ) : (
               <button className="button wide basket-continue" disabled>
-                Continue <Icon name="arrow" />
+                Continue <Icon name="chevron" />
               </button>
             ))}
           {basket && draft.slots.length > 0 && !valid && (

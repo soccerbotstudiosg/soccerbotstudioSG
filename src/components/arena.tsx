@@ -140,7 +140,7 @@ export function Arena() {
               <strong id="arena-booking-cue">Book your next session</strong>
             </div>
             <span className="arena-entry-arrow" aria-hidden="true">
-              <Icon name="arrow" />
+              <Icon name="chevron" />
             </span>
           </div>
         </Link>

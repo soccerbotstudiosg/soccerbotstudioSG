@@ -61,7 +61,7 @@ export default function Studio() {
             group.
           </p>
           <BookingLink className="button promotion-cta" href="/book/account/">
-            Book now <Icon name="arrow" />
+            Book now <Icon name="chevron" />
           </BookingLink>
         </section>
       </section>

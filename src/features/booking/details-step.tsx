@@ -332,7 +332,7 @@ export function DetailsStep({
               ) : (
                 "Review booking"
               )}
-              {!saving && !checking && <Icon name="arrow" />}
+              {!saving && !checking && <Icon name="chevron" />}
             </button>
           </div>
         )}

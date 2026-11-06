@@ -2,21 +2,15 @@
 
 Observed 6 November 2026 (Singapore). History: [Journey](docs/journey.md).
 
-## PR32 consolidated public-page refinements and button shape
+## PR32 tighter shared banner layout and summary labels
 
-Published74e2f5e passed full local252-test/build/export verification; the follow-up standardizes all promotional CTA corners to match the header (3px/12px alternating), superseding that candidate for CI/staging.
+Branch `fix/hero-session-copy`; baseline `9683d21` passed CI42156462614, CodeQL42156457725 and staging42157690103 with matching public health. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
 
-Branch `fix/hero-session-copy`; baseline `98830de` passed CI42153487726 and staging42154510350 with matching health. PR32 remains open/unmerged. **Do not merge or enable settings.**
+Thin-strip refinement: retain the existing header; make only Performance · Experience · Production stand out with the existing teal identity background and bold white text. Add the white-on-identity contrast pair to the existing audit.
 
-Owner's phone screenshot shows the Studio promotion's top curve covering the players' heads and its bottom curve overlapping the CTA. The mobile CSS now reserves the top curve's 40px outside the photo, renders this photo at its natural proportions, and preserves 40px extra bottom clearance after the CTA. The second/third sections now target25% lower image minimums and vertical spacing; actual height remains content-driven, and mobile Studio keeps its full photo. Typography and all booking logic remain unchanged.
+Current refinement: Contact and Studio booking footer share a tighter1080px content target,24px gaps, bottom alignment and centred eyebrow over each heading. All former right-arrow action icons use the shared chevron, with existing direction transforms retained. The shared booking summary displays provider-derived service name · Apex @ Henderson in bold with player count below; venue remains existing single-outlet configuration, not new routing authority.
 
-Popup now shows icons and app names only, widens from max-w-xl to max-w-2xl and darkens only its backdrop from65% to90%; destinations and dismissal behavior remain unchanged.
-
-Additional refinements: outlet trailing indicator removed, flagship/address separated, selected tint/outline shared with session cards; Contact description and CTA bottom-aligned with the heading; Bring your group centred above it. Focused selection tests passed2/2.
-
-Validation: focused source/style checks, existing CI browser coverage and owner phone visual acceptance. No new executable cases or inventory changes for this CSS-only correction. Final exact-head CI/staging receipt belongs in PR32. One bounded repair iteration; no provider or settings changes.
-
-The revised [A–D worksheet](docs/uat/simulated-user.md#ad-acceptance-worksheet) is prepared locally for owner testing after a future authorized merge/deployment/activation. Owner now authorizes pushing the consolidated refinements to PR32 for CI and staging; merge/settings remain on hold.
+Verify the complete candidate, update the existing PR, and confirm its exact-head CI/staging. Existing presentation, navigation and summary tests remain applicable; inventories and booking/payment guards unchanged. Final delivery receipt goes in PR32. Physical visual and post-merge A–D acceptance remain owner-operated.
 
 ## Remaining work
 

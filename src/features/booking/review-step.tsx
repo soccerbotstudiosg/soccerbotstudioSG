@@ -171,7 +171,7 @@ export function ReviewStep({
           ) : (
             "Continue to payment"
           )}
-          {!busy && <Icon name="arrow" />}
+          {!busy && <Icon name="chevron" />}
         </button>
       </div>
       {verifying && (

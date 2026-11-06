@@ -41,7 +41,7 @@ export default function Home() {
             instructor guidance for your group.
           </p>
           <BookingLink className="button promotion-cta" href="/studio/">
-            Explore the studio <Icon name="arrow" />
+            Explore the studio <Icon name="chevron" />
           </BookingLink>
         </div>
         <svg
@@ -84,7 +84,7 @@ export default function Home() {
             </strong>
           </div>
           <BookingLink className="button promotion-cta" href="/book/account/">
-            Book now <Icon name="arrow" />
+            Book now <Icon name="chevron" />
           </BookingLink>
         </div>
       </section>
@@ -110,7 +110,7 @@ export default function Home() {
           Sponsorship Rates
         </p>
         <Link href="/enquiry/" className="button promotion-cta">
-          Contact us <Icon name="arrow" />
+          Contact us <Icon name="chevron" />
         </Link>
       </section>
     </>
