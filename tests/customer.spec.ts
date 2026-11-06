@@ -828,11 +828,17 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(date).toHaveCSS("font-weight", "500");
   }
   for (const detail of await page
-    .locator(".review-block .series-date span")
+    .locator(
+      ".review-block .series-date > span:first-of-type, .review-block .session-instructor",
+    )
     .all()) {
     await expect(detail).toHaveCSS("color", "rgb(88, 97, 116)");
     await expect(detail).toHaveCSS("font-weight", "400");
   }
+  await expect(page.locator(".review-block .rotation-notice")).toHaveCSS(
+    "color",
+    "rgb(118, 83, 13)",
+  );
   await page.getByRole("button", { name: "Continue to payment" }).click();
   await pageHeading("Payment");
   await sectionType(".payment-layout .section-title");
