@@ -1083,7 +1083,7 @@ it("editing a new selection clears the previous unpaid reservation notice", asyn
   await act(async () => {});
   fireEvent.click(screen.getByText("Released"));
   expect(screen.getByRole("status")).toHaveTextContent(
-    "Your unpaid reservation has ended.",
+    "Your unpaid reservation has ended. This session may not be available to book again immediately. Please try again later. Your details are saved.",
   );
   fireEvent.click(screen.getByText("New selection"));
   expect(

@@ -798,7 +798,7 @@ export function BookingProvider({
           });
           pauseCalendar(false);
           setSelectionNotice(
-            "Your unpaid reservation has ended. You can book again. Your details are saved.",
+            "Your unpaid reservation has ended. This session may not be available to book again immediately. Please try again later. Your details are saved.",
           );
           setAction({ status: "idle", returnToCalendar: true });
         },
