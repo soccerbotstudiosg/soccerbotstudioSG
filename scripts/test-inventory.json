@@ -809,7 +809,7 @@
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "failed public calendar releases full-page loading and leaves refresh available"
+    "title": "failed public calendar releases full-page loading and leaves retry available"
   },
   {
     "file": "src/domain/confirmation.test.ts",

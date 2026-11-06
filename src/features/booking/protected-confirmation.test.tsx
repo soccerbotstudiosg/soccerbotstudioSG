@@ -430,6 +430,7 @@ it("expired checking shows authenticated recorded payment without confirming or 
     }),
   ).toBeInTheDocument();
   expect(screen.getByText(/Do not pay again/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
   expect(screen.getByText("Trainer: Native Trainer")).toBeVisible();
   expect(screen.getByLabelText("Current booking summary")).toBeVisible();
   expect(
@@ -944,6 +945,7 @@ it("authoritative unpaid expiry releases the original attempt before returning t
     ),
   );
   expect(onExpired).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
   await act(async () => release(Response.json({ expired: true })));
   expect(onExpired).toHaveBeenCalledExactlyOnceWith(first);
   expect(navigation.replace).toHaveBeenCalledWith("/book/time/");

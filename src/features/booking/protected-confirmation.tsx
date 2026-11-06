@@ -639,19 +639,20 @@ export function ProtectedConfirmation({
             {feedback}
           </p>
         )}
-        {!["confirmed", "denied"].includes(view) && (
-          <button
-            className="button secondary wide payment-status-action"
-            disabled={busy}
-            onClick={check}
-          >
-            {busy ? (
-              <BrandLoading compact label="Checking status…" />
-            ) : (
-              "Check status"
-            )}
-          </button>
-        )}
+        {!wantsExpiry &&
+          !["confirmed", "denied", "unresolved"].includes(view) && (
+            <button
+              className="button secondary wide payment-status-action"
+              disabled={busy}
+              onClick={check}
+            >
+              {busy ? (
+                <BrandLoading compact label="Checking status…" />
+              ) : (
+                "Check status"
+              )}
+            </button>
+          )}
       </section>
     </div>
   );

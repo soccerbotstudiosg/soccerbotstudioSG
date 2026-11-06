@@ -198,7 +198,7 @@ export function TimeStep() {
         aria-label="Booking calendar"
         aria-busy={calendarBusy}
       >
-        <div className={`calendar-head${live ? " with-refresh" : ""}`}>
+        <div className="calendar-head">
           <div className="month-picker">
             <label className="sr-only" htmlFor="calendar-month">
               Calendar month
@@ -218,16 +218,6 @@ export function TimeStep() {
               ))}
             </select>
           </div>
-          {live && (
-            <button
-              className="calendar-refresh"
-              aria-label="Refresh availability"
-              disabled={calendarBusy}
-              onClick={() => calendar.retry()}
-            >
-              Refresh
-            </button>
-          )}
           <div className="calendar-nav">
             <button
               className="icon-button"
@@ -321,7 +311,12 @@ export function TimeStep() {
           </div>
           {!result ? (
             calendarFailed ? (
-              <p>{AVAILABILITY_LOAD_FAILED}</p>
+              <div className="alert" role="alert">
+                <p>{AVAILABILITY_LOAD_FAILED}</p>
+                <button className="text-link" onClick={() => calendar.retry()}>
+                  Try again
+                </button>
+              </div>
             ) : (
               <BrandLoading overlay={false} compact label="Checking times…" />
             )

@@ -638,14 +638,12 @@ test("native guest journey preserves players contact and one checkout across ref
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(page.locator("main")).not.toHaveAttribute("inert");
     if (page.viewportSize()!.width <= 700) {
-      const header = page.locator(".calendar-head.with-refresh");
+      const header = page.locator(".calendar-head");
       await expect(header).toHaveCSS("display", "grid");
       const month = await header.locator(".month-picker").boundingBox();
-      const refresh = await header.locator(".calendar-refresh").boundingBox();
       const arrows = await header.locator(".calendar-nav").boundingBox();
-      expect(refresh!.y).toBeCloseTo(month!.y, 0);
-      expect(arrows!.y).toBeCloseTo(refresh!.y, 0);
-      expect(refresh!.x).toBeGreaterThanOrEqual(month!.x + month!.width);
+      expect(arrows!.y).toBeCloseTo(month!.y, 0);
+      expect(arrows!.x).toBeGreaterThanOrEqual(month!.x + month!.width);
       const headerBox = await header.boundingBox();
       expect(arrows!.x + arrows!.width).toBeCloseTo(
         headerBox!.x + headerBox!.width,

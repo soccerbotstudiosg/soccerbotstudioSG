@@ -1034,14 +1034,15 @@ test("cached calendar offers obey opening hours and the four-hour cutoff without
   expect(publicCalendar).toHaveBeenCalledTimes(1);
 });
 
-test("failed public calendar releases full-page loading and leaves refresh available", async () => {
+test("failed public calendar releases full-page loading and leaves retry available", async () => {
+  const publicCalendar = vi.fn(async () => {
+    throw new Error("unavailable");
+  });
   const service: BookingService = {
     ...demoBookingService,
     mode: "live",
     operations: { ...demoBookingService.operations, availability: "live" },
-    publicCalendar: async () => {
-      throw new Error("unavailable");
-    },
+    publicCalendar,
   };
   render(
     <BookingProvider bookingService={service}>
@@ -1062,8 +1063,15 @@ test("failed public calendar releases full-page loading and leaves refresh avail
   expect(
     screen.getAllByText("Unable to load available sessions. Please try again."),
   ).toHaveLength(1);
+  expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
   expect(
-    screen.getByRole("button", { name: "Refresh availability" }),
+    screen.queryByRole("button", { name: "Refresh availability" }),
+  ).toBeNull();
+  const reads = publicCalendar.mock.calls.length;
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(reads + 1));
+  expect(
+    await screen.findByRole("button", { name: "Try again" }),
   ).toBeEnabled();
 });
 
@@ -1106,11 +1114,14 @@ test("cold calendar entry and refresh select an available day while retaining a 
     publicCalendar,
   };
   function ChooseService() {
-    const { update } = useBooking();
+    const { update, calendar } = useBooking();
     return (
-      <button onClick={() => update({ mode: "guest", nativeServiceId: "2" })}>
-        Choose calendar service
-      </button>
+      <>
+        <button onClick={() => update({ mode: "guest", nativeServiceId: "2" })}>
+          Choose calendar service
+        </button>
+        <button onClick={() => calendar.retry()}>Refresh test calendar</button>
+      </>
     );
   }
   const view = () => (
@@ -1136,16 +1147,22 @@ test("cold calendar entry and refresh select an available day while retaining a 
     expect(day("2026-10-22")).toHaveAttribute("aria-pressed", "true"),
   );
   fireEvent.click(day("2026-10-23"));
-  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh test calendar" }),
+  );
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(2));
   expect(day("2026-10-23")).toHaveAttribute("aria-pressed", "true");
   dates = ["2026-10-24"];
-  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh test calendar" }),
+  );
   await waitFor(() =>
     expect(day("2026-10-24")).toHaveAttribute("aria-pressed", "true"),
   );
   dates = [];
-  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh test calendar" }),
+  );
   await screen.findByText("No sessions available on this date.");
   expect(day("2026-10-24")).toHaveAttribute("aria-pressed", "true");
   // An empty October must still allow an explicit move to November.
@@ -1166,7 +1183,9 @@ test("cold calendar entry and refresh select an available day while retaining a 
   fireEvent.click(day("2026-11-04"));
   expect(day("2026-11-04")).toHaveAttribute("aria-pressed", "true");
   dates = [];
-  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh test calendar" }),
+  );
   await screen.findByText("No sessions available on this date.");
   fireEvent.click(screen.getByRole("button", { name: "See next month" }));
   await waitFor(() =>
@@ -1279,9 +1298,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
         );
         expect(publicCalendar).toHaveBeenCalledTimes(1);
         expect(region).toHaveAttribute("aria-busy", "false");
-        expect(
-          screen.getByRole("button", { name: "Refresh availability" }),
-        ).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
       } else {
         await waitFor(() => expect(gates.has("2026-11")).toBe(true));
         expect(region).toHaveAttribute("aria-busy", "true");

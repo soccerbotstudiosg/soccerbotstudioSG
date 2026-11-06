@@ -3064,25 +3064,6 @@
     gap: 12px;
     margin-bottom: 19px;
   }
-  .calendar-head.with-refresh {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 8px;
-  }
-  .calendar-head.with-refresh .calendar-nav {
-    margin-left: auto;
-  }
-  .calendar-refresh {
-    flex: 0 0 auto;
-    min-height: 44px;
-    padding: 10px 11px;
-    border: 1px solid var(--color-line);
-    border-radius: 7px;
-    background: var(--color-surface);
-    color: var(--color-ink);
-    font: inherit;
-    cursor: pointer;
-  }
   .payment-continuation [role="timer"] {
     margin: 12px 0 8px;
     text-align: center;
@@ -4159,31 +4140,17 @@
       padding: 15px 10px;
     }
     .calendar-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
       margin: 0 3px 16px;
     }
-    .calendar-head.with-refresh {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
-      gap: 4px;
-      font-size: var(--text-caption);
-    }
-    .calendar-head.with-refresh .month-picker {
+    .month-picker {
       max-width: none;
-    }
-    .calendar-head.with-refresh .month-picker select {
-      max-width: none;
-      height: var(--icon-control-size);
-      padding-top: 8px;
-      padding-bottom: 8px;
-      padding-right: 20px;
-    }
-    .calendar-head.with-refresh .calendar-refresh {
-      height: var(--icon-control-size);
-      padding: 8px 6px;
     }
     .month-picker select {
-      padding-left: 8px;
-      max-width: 205px;
+      height: var(--icon-control-size);
+      padding: 8px 20px 8px 8px;
     }
     .calendar-nav {
       gap: 4px;
@@ -4316,9 +4283,6 @@
     .calendar-panel {
       padding-left: 8px;
       padding-right: 8px;
-    }
-    .month-picker select {
-      max-width: 175px;
     }
     .calendar-nav .icon-button {
       min-width: var(--icon-control-size);
