@@ -16,7 +16,7 @@ Observed 6 November 2026. Historical decisions and evidence: [Journey](docs/jour
   - App links visibly white; all shared popup close controls plain × with44px targets.
   - Contact us and Book now share identical blue-to-navy gradient and button colours.
 - Next actions show the existing selected-session total before the chevron. Desktop app heading right-aligns; mobile remains centred.
-- Final consolidated non-browser verification and exact-head frontend/backend/live-email/CodeQL/staging pending. Added explicit expiry and Back-navigation regression cases; reviewed inventory updated.
+- Current repair: CI42228005184 on a578224 failed phone-WebKit calendar alignment (Refresh1px below month); CodeQL passed. Block display alone did not correct native select sizing. Mobile month/Refresh now share the existing44px navigation-control height with reduced vertical padding. Retain geometry assertions and all265 component/56 browser definitions; final local verification, exact-head CI and staging pending.
 - Browser/physical acceptance belongs to owner/CI. No assistant browser execution.
 
 ## Separate documentation PR

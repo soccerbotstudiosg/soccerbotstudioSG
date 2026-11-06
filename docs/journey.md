@@ -5089,3 +5089,9 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 - Owner shortened the footer app-group heading to “Soccerbot360 App:”; keep destinations/icons/alignment unchanged.
 
 - Owner superseded the short footer label with one-line “Soccerbot360 Player App:” and popup title “Download the official Soccerbot360 Player App now.” Keep existing store destinations and dismissal. Supersedes wording candidate667a87e before staging acceptance.
+
+## 6 November 2026 — native mobile calendar control sizing
+
+- CI42228005184 on a578224 repeated the phone-WebKit alignment failure in job127927981362: month y317.34375, Refresh y318.34375. CodeQL42227998110 passed; staging skipped. The earlier baseline-space explanation was incomplete: block display did not remove the mismatch. Preserve both failed runs.
+- Size mobile month and Refresh controls to the same existing44px control token as the navigation buttons; reduce vertical padding so native select sizing cannot enlarge the centred row. Keep the original alignment tolerance and booking journey assertions unchanged. Browser confirmation remains CI-owned.
+- Scope: CSS presentation only; booking/provider contracts, fixtures, case inventory and payment authority unchanged. Documentation refactor remains paused. Final local verification and new-head CI/staging pending.

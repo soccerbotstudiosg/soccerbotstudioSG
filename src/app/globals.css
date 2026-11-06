@@ -4172,10 +4172,14 @@
     }
     .calendar-head.with-refresh .month-picker select {
       max-width: none;
+      height: var(--icon-control-size);
+      padding-top: 8px;
+      padding-bottom: 8px;
       padding-right: 20px;
     }
     .calendar-head.with-refresh .calendar-refresh {
-      padding: 10px 6px;
+      height: var(--icon-control-size);
+      padding: 8px 6px;
     }
     .month-picker select {
       padding-left: 8px;
