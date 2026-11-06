@@ -1230,5 +1230,49 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "editing a new selection clears the previous unpaid reservation notice"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=false)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=true)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (failure)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (changed)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (price)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (rotation)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (edited)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (identity)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expiry callback cannot clear a paid or different current attempt (paid)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expiry callback cannot clear a paid or different current attempt (different)"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "calendar back preserves outlet and session choices while explicit deselection still clears them"
   }
 ]

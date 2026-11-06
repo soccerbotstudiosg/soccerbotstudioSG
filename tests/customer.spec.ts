@@ -1381,6 +1381,39 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
+  await expect(page.locator(".calendar-legend")).toHaveText(
+    /Available\s*Unavailable/,
+  );
+  await expect(crossing.locator(".time-range")).toHaveCSS(
+    "white-space",
+    "nowrap",
+  );
+  const slotPlacement = await crossing.evaluate((node) => {
+    const range = node.querySelector(".time-range")!.getBoundingClientRect();
+    const price = node.querySelector(".time-rate")!.getBoundingClientRect();
+    const add = node.querySelector(":scope > svg")!.getBoundingClientRect();
+    return {
+      rangeBottom: range.bottom,
+      priceTop: price.top,
+      addTop: add.top,
+      rangeTop: range.top,
+    };
+  });
+  expect(slotPlacement.priceTop).toBeGreaterThan(slotPlacement.rangeBottom);
+  expect(Math.abs(slotPlacement.addTop - slotPlacement.rangeTop)).toBeLessThan(
+    4,
+  );
+  if (page.viewportSize()!.width <= 700) {
+    await expect(
+      page.getByText("Select to view trainers available", { exact: true }),
+    ).toBeVisible();
+    await expect(crossing.locator(".time-instructor")).toBeHidden();
+    await expect(crossing.locator(".time-info")).toBeVisible();
+  } else {
+    await expect(page.locator(".mobile-time-hint")).toBeHidden();
+    await expect(crossing.locator(".time-instructor")).toBeVisible();
+  }
+
   await crossing.click();
   await page
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })

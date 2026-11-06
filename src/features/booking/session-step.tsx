@@ -2,7 +2,7 @@
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { LOCATION, type CustomerCatalogue } from "@/domain/catalog";
 import { Icon } from "@/components/icon";
 import { MAX_PLAYERS } from "@/domain/booking-policy";
@@ -12,8 +12,13 @@ import { LiveCatalogue } from "./live-catalogue";
 import { useBooking } from "./provider";
 /** Select the live or demo session presentation. */
 export function SessionStep() {
-  const { bookingService } = useBooking();
-  const [outletSelected, setOutletSelected] = useState(false);
+  const { bookingService, sessionChoices, setSessionChoices } = useBooking();
+  const outletSelected = sessionChoices.outlet;
+  const presentation = {
+    expanded: sessionChoices.session,
+    toggle: () =>
+      setSessionChoices({ outlet: true, session: !sessionChoices.session }),
+  };
   return (
     <>
       <h1 className="page-title">Your session</h1>
@@ -25,7 +30,9 @@ export function SessionStep() {
           aria-pressed={outletSelected}
           aria-expanded={outletSelected}
           aria-controls="outlet-sessions"
-          onClick={() => setOutletSelected((selected) => !selected)}
+          onClick={() =>
+            setSessionChoices({ outlet: !outletSelected, session: false })
+          }
         >
           <Icon name="location" />
           <span>
@@ -40,16 +47,25 @@ export function SessionStep() {
       <div id="outlet-sessions" hidden={!outletSelected}>
         {outletSelected &&
           (bookingService.mode === "live" ? (
-            <LiveCatalogue render={(data) => <LiveSession data={data} />} />
+            <LiveCatalogue
+              render={(data) => <LiveSession data={data} {...presentation} />}
+            />
           ) : (
-            <SessionPresentation />
+            <SessionPresentation {...presentation} />
           ))}
       </div>
     </>
   );
 }
 /** Resolve live catalogue data for the session selection step. */
-function LiveSession({ data }: { data: CustomerCatalogue }) {
+function LiveSession({
+  data,
+  ...presentation
+}: {
+  data: CustomerCatalogue;
+  expanded: boolean;
+  toggle: () => void;
+}) {
   const { draft, update } = useBooking();
   const eligible = data.services.filter(
     (service) =>
@@ -94,6 +110,7 @@ function LiveSession({ data }: { data: CustomerCatalogue }) {
     );
   return (
     <SessionPresentation
+      {...presentation}
       serviceName={selected.name}
       environment={data.environment}
       pending={draft.nativeServiceId !== selected.id}
@@ -105,13 +122,16 @@ function SessionPresentation({
   serviceName = SERVICE_NAME,
   environment = "developer",
   pending = false,
+  expanded,
+  toggle,
 }: {
+  expanded: boolean;
+  toggle: () => void;
   serviceName?: string;
   environment?: "developer" | "production";
   pending?: boolean;
 }) {
   const { draft, update } = useBooking();
-  const [expanded, setExpanded] = useState(false);
   const prices = sessionPrices(environment);
   const playerSelection = (
     <section
@@ -151,7 +171,7 @@ function SessionPresentation({
           aria-label={`Choose ${serviceName}`}
           aria-pressed={expanded}
           aria-expanded={expanded}
-          onClick={() => setExpanded((selected) => !selected)}
+          onClick={toggle}
         >
           <span className="session-product-icon">
             <Icon name="ball" />

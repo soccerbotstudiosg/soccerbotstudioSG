@@ -192,10 +192,7 @@ export function TimeStep() {
           {selectionNotice}
         </p>
       )}
-      <p className="lead">
-        Add 40-minute sessions on the same or different dates. Start times are
-        50 minutes apart, with 10 minutes for exit and entry.
-      </p>
+      <p className="lead">40-minute sessions · 10-minute changeover.</p>
       <section
         className="calendar-panel"
         aria-label="Booking calendar"
@@ -267,12 +264,11 @@ export function TimeStep() {
                 <span className="date-placeholder" key={`blank-${i}`} />
               ))}
               {Array.from({ length: days.getUTCDate() }, (_, i) => {
-                const value = addDays(month, i),
-                  hasSlots = draft.slots.some((slot) => slot.date === value);
+                const value = addDays(month, i);
                 return (
                   <button
                     key={value}
-                    className={`date${value === date ? " selected" : ""}${value === today ? " today" : ""}${hasSlots ? " in-series" : ""}`}
+                    className={`date${value === date ? " selected" : ""}`}
                     aria-label={dateLabel(value)}
                     aria-pressed={date === value}
                     disabled={
@@ -309,11 +305,11 @@ export function TimeStep() {
           <div className="calendar-legend">
             <span>
               <i className="legend-mark" />
-              Selected day
+              Available
             </span>
             <span>
-              <i className="legend-mark series" />
-              In your booking
+              <i className="legend-mark unavailable" />
+              Unavailable
             </span>
           </div>
         )}
@@ -340,6 +336,9 @@ export function TimeStep() {
             </div>
           ) : slots.length ? (
             <div className="times" role="group" aria-label="Session times">
+              <p className="mobile-time-hint">
+                Select to view trainers available
+              </p>
               {groups.map((offers) => {
                 const first =
                   offers.find((offer) => offer.available) ?? offers[0];
@@ -380,7 +379,7 @@ export function TimeStep() {
                       }}
                     >
                       <span className="time-details">
-                        <span>
+                        <span className="time-range">
                           {slot.start}–{endTime(slot.start)}
                         </span>
                         <span className="time-rate">
@@ -403,6 +402,9 @@ export function TimeStep() {
                                   .map(sessionInstructorName)
                                   .join(" / ")}`
                               : "No instructor available"}
+                        </span>
+                        <span className="time-info" aria-hidden="true">
+                          i
                         </span>
                         {slot.available && slot.rotationAt && (
                           <span className="rotation-notice">
@@ -497,7 +499,7 @@ export function TimeStep() {
         <Icon name="clock" />
         <span>
           {live
-            ? "Open noon–8pm. Book at least 4 hours ahead. Choose a trainer for every session. All trainers share one studio; choosing another trainer does not create extra availability."
+            ? "Open noon–8pm. Book at least 4 hours ahead. Choose a trainer for each session."
             : "Open noon–8pm. Choose a trainer separately for every session. Demo trainer choices rotate every three hours; your chosen trainer stays for the full session."}
         </span>
       </p>

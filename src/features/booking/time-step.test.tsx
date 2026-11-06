@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { blankDraft } from "@/domain/booking";
 import { dateLabel, todaySG } from "@/domain/dates";
+import { SessionStep } from "./session-step";
 import { BookingPage } from "./booking-page";
 import { Summary } from "./summary";
 import { ReviewStep } from "./review-step";
@@ -476,4 +477,63 @@ test("a trainer choice opened before expiry cannot add the session after its sta
     target: { value: `${restoredDate}|12:00|demo|daniel` },
   });
   expect(loadBooking().draft.slots).toHaveLength(1);
+});
+
+test("calendar back preserves outlet and session choices while explicit deselection still clears them", async () => {
+  const user = userEvent.setup();
+  const view = render(
+    <BookingProvider>
+      <SessionStep />
+    </BookingProvider>,
+  );
+  await user.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
+  await user.click(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  );
+  await user.click(screen.getByRole("button", { name: "Add one player" }));
+  view.rerender(
+    <BookingProvider>
+      <BookingPage step="time" />
+    </BookingProvider>,
+  );
+  view.rerender(
+    <BookingProvider>
+      <SessionStep />
+    </BookingProvider>,
+  );
+  expect(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByRole("link", { name: "See available times" }),
+  ).toBeVisible();
+  expect(screen.getByText("2 players", { exact: true })).toBeVisible();
+  await user.click(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  );
+  expect(
+    screen.queryByRole("link", { name: "See available times" }),
+  ).not.toBeInTheDocument();
+  await user.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
+  await user.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
+  expect(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  ).toHaveAttribute("aria-pressed", "false");
 });

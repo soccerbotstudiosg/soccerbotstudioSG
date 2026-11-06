@@ -5065,3 +5065,14 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 - Next-action totals reuse domain pricing; Review restores complete main-body details on phones and keeps the same cart summary as Details. Original validation, held/verifying Edit locks and checkout handlers remain unchanged.
 - Component checks caught amount-bearing accessible names and contact-only fixtures without slots; locators updated for their actual states, retaining duplicate-write, cancellation and loading assertions. Browser assertions cover totals, restored Review and persistent popup header; owner/CI execution pending.
 - Documentation refactor and its CI remain explicitly paused.
+
+## 6 November 2026 — unpaid-expiry cart reconciliation and mobile audit
+
+- Owner clarified expiry means the unpaid payment-reservation timer, not a session start or paid booking. After authenticated release succeeds, both return paths clear old cart rows and refresh each selected date; only matching available service/time/trainer/price/rotation survives. Messages identify removed dates/times, distinguish failed reads and preserve contact. Consent resets.
+- Added regression coverage for single/multiple selections, failed reads, changed trainer/price, edits and changed identity during refresh, duplicate callbacks, paid and different current attempts. Existing protected-expiry tests retain unresolved-payment/no-release proof.
+- Mobile audit: shared draft drives badges/cart/profiles; panels contain no checkout action; Time removal uses provider update and held/payment locks; Details/Review and trainer profiles are read-only. Native modal focus/dismissal and reduced-motion handling retained. No server contracts, payment deadlines or provider settings changed.
+- Time cards now share time/add above and details/price below on desktop/mobile. Mobile substitutes a circled information mark and one hint above the grid; desktop retains trainer names. Shortened guidance to “40-minute sessions · 10-minute changeover.”
+- UI6d346e5 passed CI42199152912, CodeQL42199146832 and staging42200383047; health confirmed version03a8ed86-e34e-44c8-bdf4-f195f96c6659. New local changes require their own verification; documentation refactor remains paused.
+
+- Follow-up: retain outlet/session presentation across calendar Back, preserving explicit deselection; shorten the opening-hours note without changing policy. Mobile calendar controls align in two rows; legend uses Available/Unavailable only and a viewed-date outline.
+- Verification caught parameterized expiry tests missing from the explicit case inventory; expanded them into named cases and updated the reviewed inventory. Paid fixture restoration was corrected to respect the existing live-restoration contract; no product guard was weakened. Source/code checks and CI remain required for the final candidate.

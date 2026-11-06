@@ -9,7 +9,18 @@ const context = vi.hoisted(() => ({
   draft: { nativeServiceId: "3", players: 1 },
   update: vi.fn(),
 }));
-vi.mock("./provider", () => ({ useBooking: () => context }));
+vi.mock("./provider", async () => {
+  const { useState } = await import("react");
+  return {
+    useBooking: () => {
+      const [sessionChoices, setSessionChoices] = useState({
+        outlet: false,
+        session: false,
+      });
+      return { ...context, sessionChoices, setSessionChoices };
+    },
+  };
+});
 /** Supply a complete synthetic catalogue for the requested price profile. */
 function catalogue(environment: "developer" | "production"): CustomerCatalogue {
   return {

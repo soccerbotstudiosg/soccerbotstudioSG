@@ -13,7 +13,8 @@ import { BookingPage } from "./booking-page";
 import { ReviewStep } from "./review-step";
 import type { BookingService } from "@/services/contracts";
 import { liveBookingService } from "@/services/booking";
-import { saveLiveDraft } from "@/services/storage";
+import { saveLiveDraft, saveBooking } from "@/services/storage";
+import { demoBookingService } from "@/services/demo/booking";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { blankDraft, type Attempt } from "@/domain/booking";
 
@@ -1087,10 +1088,258 @@ it("editing a new selection clears the previous unpaid reservation notice", asyn
   await act(async () => {});
   fireEvent.click(screen.getByText("Released"));
   expect(screen.getByRole("status")).toHaveTextContent(
-    "Your unpaid reservation has ended. This session may not be available to book again immediately. Please try again later. Your details are saved.",
+    "Your unpaid reservation has ended. Your details are saved. Please choose your sessions again.",
   );
   fireEvent.click(screen.getByText("New selection"));
   expect(
     screen.queryByText(/Your unpaid reservation has ended/),
   ).not.toBeInTheDocument();
+});
+
+/** Exercise the shared expiry guard with an explicit reviewed case. */
+async function verifyExpiryRetention(multi: boolean) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const other = { ...draft.slots[0], start: "12:50" };
+  const availability = vi.fn<BookingService["availability"]>(async () => [
+    { ...draft.slots[0], available: false },
+    { ...other, available: true },
+  ]);
+  saveLiveDraft({
+    ...draft,
+    slots: multi ? [draft.slots[0], other] : draft.slots,
+  });
+  function Probe() {
+    const {
+      draft: current,
+      restartAfterExpiry,
+      selectionNotice,
+    } = useBooking();
+    return (
+      <>
+        <button onClick={() => restartAfterExpiry(id)}>Released</button>
+        <output data-testid="cart">{JSON.stringify(current)}</output>
+        <p role="status" aria-label="Expiry notice">
+          {selectionNotice}
+        </p>
+      </>
+    );
+  }
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        publicCalendar: undefined,
+        availability,
+      }}
+    >
+      <Probe />
+    </BookingProvider>,
+  );
+  fireEvent.click(screen.getByText("Released"));
+  fireEvent.click(screen.getByText("Released"));
+  expect(JSON.parse(screen.getByTestId("cart").textContent!).slots).toEqual([]);
+  await waitFor(() =>
+    expect(
+      screen.getByRole("status", { name: "Expiry notice" }),
+    ).toHaveTextContent(
+      "Removed unavailable sessions: Tue, 20 Oct 2026, 12:00–12:40",
+    ),
+  );
+  const current = JSON.parse(screen.getByTestId("cart").textContent!);
+  expect(current.slots).toEqual(multi ? [other] : []);
+  expect(current.contact).toEqual(draft.contact);
+  expect(current.accepted).toBe(false);
+  expect(availability).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({
+      date: "2026-10-20",
+      fresh: true,
+      serviceId: "2",
+    }),
+  );
+}
+it("unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=false)", async () => {
+  await verifyExpiryRetention(false);
+});
+it("unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=true)", async () => {
+  await verifyExpiryRetention(true);
+});
+
+/** Exercise the shared expiry guard with an explicit reviewed case. */
+async function verifyExpiryStaleRead(outcome: string) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  let finish!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  let fail!: (error: Error) => void;
+  const availability = vi.fn<BookingService["availability"]>(
+    () =>
+      new Promise((resolve, reject) => {
+        finish = resolve;
+        fail = reject;
+      }),
+  );
+  saveLiveDraft(draft);
+  let signedIn = false;
+  const identityService = {
+    ...demoCustomerIdentity,
+    current: () =>
+      signedIn
+        ? {
+            email: "other@example.com",
+            expiresAt: Date.now() + 60000,
+            remember: false,
+          }
+        : null,
+  };
+  function Probe() {
+    const {
+      draft: current,
+      restartAfterExpiry,
+      update,
+      selectionNotice,
+    } = useBooking();
+    return (
+      <>
+        <button onClick={() => restartAfterExpiry(id)}>Released</button>
+        <button onClick={() => update({ players: 2 })}>Edit</button>
+        <output data-testid="cart">{JSON.stringify(current)}</output>
+        <p role="status" aria-label="Expiry notice">
+          {selectionNotice}
+        </p>
+      </>
+    );
+  }
+  render(
+    <BookingProvider
+      identityService={identityService}
+      bookingService={{
+        ...liveBookingService,
+        publicCalendar: undefined,
+        availability,
+      }}
+    >
+      <Probe />
+    </BookingProvider>,
+  );
+  fireEvent.click(screen.getByText("Released"));
+  if (outcome === "edited") fireEvent.click(screen.getByText("Edit"));
+  if (outcome === "identity") signedIn = true;
+  await act(async () => {
+    if (outcome === "failure") fail(new Error("offline"));
+    else
+      finish([
+        {
+          ...draft.slots[0],
+          available: true,
+          ...(outcome === "changed" ? { instructor: "5" } : {}),
+          ...(outcome === "rotation" ? { rotationAt: "12:20" } : {}),
+          ...(outcome === "price"
+            ? { native: { ...draft.slots[0].native, priceMinor: 9900 } }
+            : {}),
+        },
+      ]);
+  });
+  const current = JSON.parse(screen.getByTestId("cart").textContent!);
+  expect(current.slots).toEqual([]);
+  expect(current.contact).toEqual(draft.contact);
+  if (outcome === "failure") {
+    expect(
+      screen.getByRole("status", { name: "Expiry notice" }),
+    ).toHaveTextContent(
+      "Unable to confirm availability for: Tue, 20 Oct 2026, 12:00–12:40",
+    );
+    expect(
+      screen.getByRole("status", { name: "Expiry notice" }),
+    ).not.toHaveTextContent("Removed unavailable sessions");
+  } else if (outcome === "edited") {
+    expect(current.players).toBe(2);
+    expect(
+      screen.getByRole("status", { name: "Expiry notice" }),
+    ).toBeEmptyDOMElement();
+    expect(availability.mock.calls[0][0].signal?.aborted).toBe(true);
+  } else if (outcome !== "identity")
+    expect(
+      screen.getByRole("status", { name: "Expiry notice" }),
+    ).toHaveTextContent("Removed unavailable sessions");
+}
+it("unpaid expiry never restores an unconfirmed or obsolete selection (failure)", async () => {
+  await verifyExpiryStaleRead("failure");
+});
+it("unpaid expiry never restores an unconfirmed or obsolete selection (changed)", async () => {
+  await verifyExpiryStaleRead("changed");
+});
+it("unpaid expiry never restores an unconfirmed or obsolete selection (price)", async () => {
+  await verifyExpiryStaleRead("price");
+});
+it("unpaid expiry never restores an unconfirmed or obsolete selection (rotation)", async () => {
+  await verifyExpiryStaleRead("rotation");
+});
+it("unpaid expiry never restores an unconfirmed or obsolete selection (edited)", async () => {
+  await verifyExpiryStaleRead("edited");
+});
+it("unpaid expiry never restores an unconfirmed or obsolete selection (identity)", async () => {
+  await verifyExpiryStaleRead("identity");
+});
+
+/** Exercise the shared expiry guard with an explicit reviewed case. */
+async function verifyExpiryAttemptGuard(kind: string) {
+  const attempt: Attempt = {
+    id: kind === "different" ? "00000000-0000-4000-8000-000000000002" : id,
+    status: kind === "paid" ? "paid" : "ready",
+    draft,
+    outcome: "success",
+    checkUntil: Date.now() + 60000,
+    booking: null,
+  };
+  const availability = vi.fn<BookingService["availability"]>(async () => []);
+  saveLiveDraft(draft);
+  if (kind === "paid") saveBooking({ version: 2, draft, attempt });
+  function Probe() {
+    const {
+      attempt: current,
+      draft: currentDraft,
+      restartAfterExpiry,
+    } = useBooking();
+    return (
+      <>
+        <button onClick={() => restartAfterExpiry(id)}>Released</button>
+        <output data-testid="attempt">{current?.id}</output>
+        <output data-testid="cart">{JSON.stringify(currentDraft.slots)}</output>
+      </>
+    );
+  }
+  render(
+    <BookingProvider
+      bookingService={
+        kind === "paid"
+          ? { ...demoBookingService, availability }
+          : {
+              ...liveBookingService,
+              publicCalendar: undefined,
+              availability,
+              restore: async () => attempt,
+            }
+      }
+      identityService={{ ...demoCustomerIdentity, mode: "live" }}
+    >
+      <Probe />
+    </BookingProvider>,
+  );
+  await waitFor(() =>
+    expect(screen.getByTestId("attempt")).toHaveTextContent(attempt.id),
+  );
+  fireEvent.click(screen.getByText("Released"));
+  expect(screen.getByTestId("attempt")).toHaveTextContent(attempt.id);
+  expect(JSON.parse(screen.getByTestId("cart").textContent!)).toEqual(
+    draft.slots,
+  );
+  expect(availability).not.toHaveBeenCalled();
+}
+it("expiry callback cannot clear a paid or different current attempt (paid)", async () => {
+  await verifyExpiryAttemptGuard("paid");
+});
+it("expiry callback cannot clear a paid or different current attempt (different)", async () => {
+  await verifyExpiryAttemptGuard("different");
 });

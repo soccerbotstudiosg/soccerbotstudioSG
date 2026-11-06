@@ -637,6 +637,18 @@ test("native guest journey preserves players contact and one checkout across ref
       .click();
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(page.locator("main")).not.toHaveAttribute("inert");
+    if (page.viewportSize()!.width <= 700) {
+      const header = page.locator(".calendar-head.with-refresh");
+      await expect(header).toHaveCSS("display", "grid");
+      const month = await header.locator(".month-picker").boundingBox();
+      const refresh = await header.locator(".calendar-refresh").boundingBox();
+      const arrows = await header.locator(".calendar-nav").boundingBox();
+      expect(refresh!.y).toBeGreaterThanOrEqual(month!.y + month!.height);
+      expect(arrows!.y).toBeCloseTo(refresh!.y, 0);
+      expect(refresh!.x).toBeCloseTo(month!.x, 0);
+      expect(arrows!.x + arrows!.width).toBeCloseTo(month!.x + month!.width, 0);
+    }
+
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Singapore",
       year: "numeric",
