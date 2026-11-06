@@ -217,6 +217,11 @@ before(async () => {
       .replace(/\n/g, " "),
   );
   await db.exec(
+    readFileSync("migrations/0026_ongoing_customer_checkout.sql", "utf8")
+      .replace(/^--.*$/gm, "")
+      .replace(/\n/g, " "),
+  );
+  await db.exec(
     readFileSync("migrations/0032_completed_checkout_history.sql", "utf8")
       .replace(/^--.*$/gm, "")
       .replace(/\n/g, " "),
@@ -243,6 +248,11 @@ before(async () => {
   );
   await db.exec(
     readFileSync("migrations/0038_checkout_recovery_buffer.sql", "utf8")
+      .replace(/^--.*$/gm, "")
+      .replace(/\n/g, " "),
+  );
+  await db.exec(
+    readFileSync("migrations/0039_reservation_abuse.sql", "utf8")
       .replace(/^--.*$/gm, "")
       .replace(/\n/g, " "),
   );

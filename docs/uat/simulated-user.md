@@ -22,6 +22,11 @@ Automated engine versions and emulation limits are recorded in [Browser testing 
 
 A simulated user is a human tester acting as a customer with designated test data on the deployed site; it does not mean switching to a demo adapter. Existing CUS case IDs are retained for traceability.
 
+- Reservation-abuse acceptance: a sixth session cannot be added/submitted; first proven unpaid expiry permits a retry, second/later expiry blocks new reservations for1 hour. Browsing remains available. Verified payment resets customer strikes; shared-IP strikes remain within24 hours. Use isolated synthetic evidence for automated expiry/race coverage; owner provider trials require separate authorization.
+- Mobile acceptance: every step label centred; Back has equal persistent top/bottom spacing; action buttons have consistent reduced clearance and no white wrapper. Cart/trainer headers stay visible and overflow indicators move with scrolling; trainer options contain names without repeated prices.
+- Calendar acceptance: normal edits do not reload the month; at display expiry the loaded date grid remains present while one replacement is requested. Expired offers cannot be selected; refresh uses the shared spinner for0.5 seconds, with no calendar fade, failures offer Try again.
+- Studio acceptance: mobile ended-video cue points down to the next section; Replay clears it. Verify these visuals on a physical phone after exact-candidate staging.
+
 ## Access, email and saved details
 
 Rules: [BR-003](../business-rules.md#br-003), [BR-004](../business-rules.md#br-004). See [code owners](../code-owners/index.md#11-business-rule-to-owner-index).

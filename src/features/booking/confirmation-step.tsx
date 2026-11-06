@@ -176,12 +176,12 @@ export function BookingConfirmation({
       {!pending && (
         <div className="confirmation-actions" aria-label="Booking actions">
           <button
-            className="button secondary"
+            className="button confirmation-again"
             disabled={leaving}
             onClick={() => void leave(onAgain)}
           >
-            <Icon name="plus" />
             <span>Make another booking</span>
+            <Icon name="chevron" />
           </button>
           <a className="button secondary" href={BOOKING_SUPPORT.whatsappUrl}>
             <Icon name="phone" />

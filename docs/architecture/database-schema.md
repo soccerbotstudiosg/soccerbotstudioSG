@@ -1,8 +1,9 @@
 # Database schema
 
-Source map updated5 November2026 against main `eb06494` and the local PR27 recovery batch. **32 application D1 tables** result from migrations0001–0037; **12 application SQLite tables** are initialized inside the account Durable Object. Platform-internal tables, migration bookkeeping and test-only tables are excluded.
+Source inventory:34 application D1 tables from migrations0001–0039 and12 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
-**Deployment distinction:** main includes migration0036. Migration0037 and `display_warm_month` are local candidate changes, not yet deployed. This task has not reinspected production table contents. Table presence does not mean a feature is enabled; enquiry email delivery remains unimplemented.
+- Migration0039 adds reservation source/expiry records; apply it before the candidate Worker.
+- Deployment and table-content verification remain separate from this source inventory; no production activation is claimed.
 
 The schema source is [D1 migrations](../../migrations), [coordinator initialization](../../worker/coordinator.ts), [token-cache initialization](../../worker/provider-token-cache.ts) and [display-cache initialization](../../worker/display-snapshots.ts). Retention, expiry and deletion policy belongs to [Data lifecycle](../data-lifecycle.md); authorization and payment invariants belong to [Business rules](../business-rules.md). This document owns table structure and relationships only.
 
@@ -12,8 +13,8 @@ D1 retains booking/payment evidence; the Durable Object coordinates provider wor
 
 ```mermaid
 flowchart LR
-  Worker["Booking Worker"] --> D1["D1 · 32 tables in local schema"]
-  Worker --> DO["Account Durable Object · 11 SQLite tables"]
+  Worker["Booking Worker"] --> D1["D1 · 34 tables in local schema"]
+  Worker --> DO["Account Durable Object · 12 SQLite tables"]
   D1 --> Identity["Access, identity, contacts · 10"]
   D1 --> Booking["Attempts and grant history · 8"]
   D1 --> Payment["Payments, confirmation, invoices · 6"]
@@ -38,6 +39,10 @@ These use **crow’s-foot ER notation**, a common format for relational database
 
 ```mermaid
 erDiagram
+  attempts ||--o| reservation_sources : attempt_id
+  reservation_sources ||--o| reservation_expiries : attempt_id
+  reservation_sources { TEXT attempt_id PK, FK }
+  reservation_expiries { TEXT attempt_id PK, FK }
   attempts ||--o{ dispatches : attempt_id
   attempts ||--o{ session_effects : attempt_id
   attempts ||--o| recovery_work : attempt_id
@@ -85,6 +90,10 @@ The three archive tables use `CREATE TABLE AS SELECT`: they **do not inherit pri
 | `rejected_native_checkout_grants`  | No PK; unique index: `attempt_id` | Preserved grant history after preflight rejection.                                       |
 | `completed_native_checkout_grants` | No PK; unique index: `attempt_id` | Preserved grant history after leaving a completed booking.                               |
 | `expired_native_checkout_grants`   | No PK; unique index: `attempt_id` | Preserved grant history after an eligible reservation expires.                           |
+
+- `reservation_sources`: PK/FK `attempt_id → attempts.id`; required64-character customer/IP hashes and nonnegative creation time. Indexes `(customer_hash,attempt_id)` and `(ip_hash,attempt_id)`; updates rejected by trigger.
+- `reservation_expiries`: PK/FK `attempt_id → reservation_sources.attempt_id`; nonnegative `expired_ms`, indexed expiry time; updates rejected by trigger. No purge/delete trigger is introduced.
+- Migration0038 adds immutable `recovery_buffer_ms`; existing rows retain their migration default, while new attempts explicitly record the policy value. Migration0039 does not modify financial records.
 
 ## D1: Payments, confirmation and invoices
 

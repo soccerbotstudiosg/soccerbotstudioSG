@@ -115,7 +115,9 @@ export function BookingPage({ step }: { step: BookingStep }) {
                 href={current > 0 ? `/book/${progress[current - 1][0]}/` : "/"}
               >
                 <Icon name="back" />
-                {current ? "Back" : "Back to home"}
+                <span className="back-label">
+                  {current ? "Back" : "Back to home"}
+                </span>
               </Link>
             )}
             <span className="eyebrow text-muted">Booking</span>

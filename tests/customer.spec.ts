@@ -1189,7 +1189,7 @@ test("header blue and the typography hierarchy stay consistent across every book
 }) => {
   const brand = "rgb(5, 10, 47)";
   const pageSize = page.viewportSize()!.width <= 700 ? 32 : 40;
-  async function pageHeading(name: string, color = "rgb(23, 96, 120)") {
+  async function pageHeading(name: string, color = "rgb(70, 172, 220)") {
     const heading = page
       .getByRole("main")
       .getByRole("heading", { level: 1, name, exact: true });
@@ -1223,8 +1223,14 @@ test("header blue and the typography hierarchy stay consistent across every book
       const navigationBox = await page
         .locator(".booking-navigation")
         .boundingBox();
-      expect(navigationBox!.height).toBeLessThanOrEqual(54);
+      expect(navigationBox!.height).toBeLessThanOrEqual(60);
+      const stepBox = await page.locator(".booking-current-step").boundingBox();
+      expect(stepBox!.x + stepBox!.width / 2).toBeCloseTo(
+        navigationBox!.x + navigationBox!.width / 2,
+        0,
+      );
       const backBox = await page.locator(".booking-top .back").boundingBox();
+      expect(backBox!.y - navigationBox!.y).toBeGreaterThanOrEqual(6);
       expect(
         navigationBox!.y + navigationBox!.height - backBox!.y - backBox!.height,
       ).toBeGreaterThanOrEqual(6);
@@ -1246,7 +1252,7 @@ test("header blue and the typography hierarchy stay consistent across every book
         const barBox = await primaryBar.boundingBox();
         if (floating) {
           expect(barBox!.y + barBox!.height).toBeCloseTo(
-            page.viewportSize()!.height - 16,
+            page.viewportSize()!.height - 10.4,
             0,
           );
         }
@@ -1278,7 +1284,7 @@ test("header blue and the typography hierarchy stay consistent across every book
         const settledAnchor = await page
           .locator(".booking-action-anchor")
           .boundingBox();
-        expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(24, 0);
+        expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(15.6, 0);
         const shellWidth = await page
           .locator(".booking-shell")
           .evaluate(
@@ -1530,8 +1536,8 @@ test("header blue and the typography hierarchy stay consistent across every book
     brand,
   );
   await payAttempt(page);
-  // H1s share the approved teal accent; the site header retains navy.
-  await pageHeading("Booking confirmed", "rgb(23, 96, 120)");
+  // Booking H1s share the approved logo BOT blue; the header retains navy.
+  await pageHeading("Booking confirmed", "rgb(70, 172, 220)");
   await expect(page.locator(".site-header")).toHaveCSS(
     "background-color",
     brand,

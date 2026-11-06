@@ -1348,13 +1348,13 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   }
   /** Serialize customer checkout preparation and return a safe RPC outcome. */
   async prepareCustomer(
-    scope: { cookie: string; value: unknown },
+    scope: { cookie: string; value: unknown; sourceIp: string },
     correlationId: string,
   ) {
     const pending = this.providerQueue.run("foreground", () =>
       traced(correlationId, "coordinator", async () => {
         const request = new Request(this.env.APP_ORIGIN, {
-          headers: { cookie: scope.cookie },
+          headers: { cookie: scope.cookie, "CF-Connecting-IP": scope.sourceIp },
         });
         if (liveCustomerAccess(this.env))
           await authorizeCustomerCheckout(
@@ -1374,6 +1374,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       cookie: string;
       value: unknown;
       checkout?: boolean;
+      sourceIp: string;
       checkoutAccess?: import("./access").Access;
     },
     correlationId: string,
@@ -1386,7 +1387,10 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       runCheckoutTrace(checkoutTrace, () =>
         traced(correlationId, "coordinator", async () => {
           const request = new Request(this.env.APP_ORIGIN, {
-            headers: { cookie: scope.cookie },
+            headers: {
+              cookie: scope.cookie,
+              "CF-Connecting-IP": scope.sourceIp,
+            },
           });
           const input = nativePrepareSchema.parse(scope.value);
           if (
@@ -1511,13 +1515,18 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   }
   /** Serialize native checkout under the original attempt identity. */
   async nativeCheckout(
-    scope: { attemptId: string; cookie: string; holding?: boolean },
+    scope: {
+      attemptId: string;
+      cookie: string;
+      holding?: boolean;
+      sourceIp: string;
+    },
     correlationId: string,
   ) {
     const pending = this.providerQueue.run("foreground", () =>
       traced(correlationId, "coordinator", async () => {
         const request = new Request(this.env.APP_ORIGIN, {
-          headers: { cookie: scope.cookie },
+          headers: { cookie: scope.cookie, "CF-Connecting-IP": scope.sourceIp },
         });
         const access = await authenticate(request, this.env, Date.now());
         return executeNativeCheckout({

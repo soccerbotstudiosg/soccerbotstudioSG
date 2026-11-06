@@ -761,7 +761,8 @@ export function BookingProvider({
         }
         if (
           error instanceof BookingServiceError &&
-          error.code === "checkout_not_started"
+          (error.code === "checkout_not_started" ||
+            error.code === "reservation_blocked")
         ) {
           commit({ ...latest.current, attempt: null });
           setAction({ status: "failure", operation, error: error.message });

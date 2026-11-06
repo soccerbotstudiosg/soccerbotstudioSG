@@ -40,6 +40,7 @@
   --color-brand-tint: #dce1f1;
   --color-focus: #5666a8;
   --color-identity: #176078;
+  --color-logo-blue: #46acdc;
   --color-on-brand: #ffffff;
   --color-on-brand-muted: #dce1f1;
   --color-ink: #101636;
@@ -212,7 +213,7 @@
     line-height: var(--leading-heading);
     letter-spacing: -0.025em;
     text-transform: uppercase;
-    color: var(--color-identity);
+    color: var(--color-logo-blue);
   }
   .booking-document .arrival-information h3,
   .session-product-name,
@@ -1416,6 +1417,23 @@
     font-size: var(--text-label);
     font-weight: var(--weight-heading);
   }
+  .studio-scroll-cue {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    translate: -50% 0;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    color: var(--color-on-brand);
+    background: var(--color-player-app);
+    border-radius: 8px;
+  }
+  .studio-scroll-cue svg {
+    width: 28px;
+    height: 28px;
+  }
   .studio-hero > video {
     display: block;
     width: 100%;
@@ -2328,7 +2346,7 @@
   .basket-continue {
     margin-top: 20px;
   }
-  .booking-primary-action + .notice {
+  .booking-action-anchor + .notice {
     margin-top: 16px;
   }
   .price-breakdown .line-item {
@@ -2968,7 +2986,33 @@
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-line);
   }
+  .booking-panel-viewport {
+    display: grid;
+    min-height: 0;
+  }
+  .booking-panel-scrollbar {
+    grid-area: 1 / 1;
+    justify-self: end;
+    z-index: 1;
+    width: 4px;
+    margin: 8px 4px;
+    border-radius: 4px;
+    background: var(--color-line);
+    pointer-events: none;
+  }
+  .booking-panel-scrollbar[hidden] {
+    display: none;
+  }
+  .booking-panel-scrollbar > span {
+    display: block;
+    height: var(--scroll-thumb-height, 0px);
+    transform: translateY(var(--scroll-thumb-top, 0px));
+    border-radius: inherit;
+    background: var(--color-muted);
+  }
   .booking-panel-body {
+    grid-area: 1 / 1;
+    scrollbar-width: none;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -3051,10 +3095,19 @@
     padding-top: 0;
   }
   .calendar-panel {
+    position: relative;
     padding: 22px;
     border: 1px solid var(--color-line);
     border-radius: 12px;
     background: var(--color-surface);
+  }
+  .calendar-refresh {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
   }
   .calendar-head {
     font-size: var(--text-label);
@@ -3768,9 +3821,6 @@
     height: 48px;
     stroke-width: 3;
   }
-  .confirmation-shell .status-heading h1 {
-    color: var(--color-confirmation-heading);
-  }
   .confirmation-shell .confirmation-card {
     padding: 24px;
   }
@@ -3813,7 +3863,7 @@
     gap: 10px;
     padding: 10px 12px;
   }
-  .confirmation-actions .confirmation-home {
+  .confirmation-actions .confirmation-again {
     grid-column: 1 / -1;
     margin-top: 0;
   }
@@ -3962,13 +4012,17 @@
       height: 20px;
     }
     .booking-shell {
-      padding: 12px 20px 38px;
+      padding: 0 20px 38px;
+    }
+    .booking-shell:has(.booking-primary-action) {
+      padding-bottom: calc(38px * 0.65);
     }
     .booking-navigation {
       position: sticky;
       top: var(--site-header-height, 76px);
       z-index: 35;
       margin-bottom: 20px;
+      padding-top: 6px;
       padding-bottom: 6px;
       border-bottom: 1px solid var(--color-line);
       background: var(--color-paper);
@@ -3976,23 +4030,25 @@
     .booking-top {
       min-height: 44px;
       margin: 0;
-      gap: 12px;
-    }
-    .booking-top .back {
-      padding: 8px;
-    }
-    .booking-top:has(.booking-panel-buttons) {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       gap: 4px;
     }
-    .booking-top:has(.booking-panel-buttons) .back {
+    .booking-top .back {
       justify-self: start;
+      padding: 8px;
+      max-width: 100%;
+      min-width: 0;
+    }
+    .booking-top .back-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .booking-top .booking-panel-buttons {
       justify-self: end;
     }
-    .booking-top:has(.booking-panel-buttons) .booking-current-step {
+    .booking-top .booking-current-step {
       text-align: center;
     }
     .booking-top .eyebrow,
@@ -4008,13 +4064,14 @@
     .booking-action-anchor {
       display: block;
       width: 100%;
-      padding: 24px 0 calc(16px + env(safe-area-inset-bottom));
+      padding: calc(24px * 0.65) 0
+        calc(16px * 0.65 + env(safe-area-inset-bottom));
     }
     html:has(.booking-shell .booking-primary-action) {
       scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom));
     }
     .booking-shell :is(input, textarea, select, button, a, [tabindex]) {
-      scroll-margin-top: 54px;
+      scroll-margin-top: 60px;
     }
     .booking-shell .booking-primary-action {
       position: relative;
@@ -4031,7 +4088,7 @@
       position: fixed;
       left: 20px;
       right: 20px;
-      bottom: calc(16px + env(safe-area-inset-bottom));
+      bottom: calc(16px * 0.65 + env(safe-area-inset-bottom));
       width: auto;
     }
     .booking-shell .booking-primary-action > .button {
@@ -4046,7 +4103,7 @@
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 24px;
+      gap: 0;
     }
     .booking-time-title-break {
       display: block;
@@ -4255,12 +4312,21 @@
       padding: 36px 20px;
     }
     .confirmation-shell {
-      padding-top: 16px;
-      padding-bottom: 20px;
+      padding-top: calc(24px * 0.65);
+      padding-bottom: calc(38px * 0.65);
+    }
+    .confirmation-shell .confirmation-card {
+      padding: 20px;
     }
     .confirmation-actions {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
+      margin-top: calc(24px * 0.65);
+      margin-bottom: calc(16px * 0.65);
+    }
+    .confirmation-shell .payment-continuation {
+      padding-top: calc(24px * 0.65);
+      padding-bottom: calc(16px * 0.65);
     }
     .confirmation-actions .button {
       padding: 10px 8px;
@@ -4297,6 +4363,15 @@
     translate: 0 -3px;
   }
 }
+@keyframes studio-scroll-cue {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
 @keyframes section-arrival {
   from {
     opacity: 0;
@@ -4308,6 +4383,9 @@
   }
 }
 @media screen and (prefers-reduced-motion: no-preference) {
+  .studio-scroll-cue svg {
+    animation: studio-scroll-cue 1.6s ease-in-out infinite;
+  }
   .back-to-top .icon {
     animation: back-to-top-float 1.2s ease-in-out infinite alternate;
   }

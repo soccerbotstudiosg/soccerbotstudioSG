@@ -15,6 +15,8 @@ export function Dialog({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const dialog = ref.current;
     const opener = document.activeElement;
@@ -27,6 +29,40 @@ export function Dialog({
         opener.focus({ preventScroll: true });
     };
   }, []);
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+    const rail = railRef.current;
+    if (!body || !rail) return;
+    /** Keep a persistent visual scroll indicator in sync with native scrolling. */
+    function measure() {
+      if (!body || !rail) return;
+      const overflow = body.scrollHeight - body.clientHeight;
+      rail.hidden = overflow <= 0;
+      const height = rail.clientHeight;
+      const thumb = Math.min(
+        height,
+        Math.max(24, (height * body.clientHeight) / body.scrollHeight),
+      );
+      rail.style.setProperty("--scroll-thumb-height", `${thumb || 0}px`);
+      rail.style.setProperty(
+        "--scroll-thumb-top",
+        `${overflow > 0 ? (height - thumb) * Math.max(0, Math.min(1, body.scrollTop / overflow)) : 0}px`,
+      );
+    }
+    measure();
+    body.addEventListener("scroll", measure, { passive: true });
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(measure);
+    observer?.observe(body);
+    observer?.observe(rail);
+    for (const child of body.children) observer?.observe(child);
+    return () => {
+      body.removeEventListener("scroll", measure);
+      observer?.disconnect();
+    };
+  }, [variant, children]);
   return (
     <dialog
       ref={ref}
@@ -62,7 +98,18 @@ export function Dialog({
         </button>
       </div>
       {variant === "booking-panel" ? (
-        <div className="booking-panel-body">{children}</div>
+        <div className="booking-panel-viewport">
+          <div ref={bodyRef} className="booking-panel-body">
+            {children}
+          </div>
+          <div
+            ref={railRef}
+            className="booking-panel-scrollbar"
+            aria-hidden="true"
+          >
+            <span />
+          </div>
+        </div>
       ) : (
         children
       )}

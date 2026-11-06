@@ -1,3 +1,4 @@
+import { nativePrepareSchema } from "../src/domain/native-checkout";
 export { FoundationManagement } from "./foundation-management";
 import {
   createConfirmationTrace,
@@ -233,7 +234,7 @@ export default {
         if (holdMatch) {
           if (request.method !== "POST")
             throw new ApiError(405, "operation_unavailable");
-          const value = await inputBody(request);
+          const value = bookingSelection(await inputBody(request));
           const checkoutAccess =
             holdMatch[1] === "checkout"
               ? await authenticateCheckout(request, {
@@ -259,6 +260,7 @@ export default {
           const outcome = await coordinatorStub(env).holdCustomer(
             {
               attemptId: holdMatch[2],
+              sourceIp: request.headers.get("CF-Connecting-IP") || "",
               checkoutAccess,
               checkout: holdMatch[1] === "checkout",
               cookie: request.headers.get("cookie") || "",
@@ -281,7 +283,8 @@ export default {
               await coordinatorStub(env).prepareCustomer(
                 {
                   cookie: request.headers.get("cookie") || "",
-                  value: await inputBody(request),
+                  sourceIp: request.headers.get("CF-Connecting-IP") || "",
+                  value: bookingSelection(await inputBody(request)),
                 },
                 correlationId,
               ),
@@ -500,6 +503,7 @@ export default {
               await coordinatorStub(env).nativeCheckout(
                 {
                   attemptId,
+                  sourceIp: request.headers.get("CF-Connecting-IP") || "",
                   holding: url.searchParams.get("hold") === "1",
                   cookie: request.headers.get("cookie") || "",
                 },
@@ -683,3 +687,18 @@ export default {
     });
   },
 } satisfies ExportedHandler<Env>;
+
+/** Reject invalid checkout selections before crossing the coordinator RPC boundary. */
+function bookingSelection(value: unknown) {
+  const parsed = nativePrepareSchema.safeParse(value);
+  if (!parsed.success)
+    throw new ApiError(
+      400,
+      parsed.error.issues.some(
+        (issue) => issue.code === "too_big" && issue.path[0] === "sessions",
+      )
+        ? "session_limit_exceeded"
+        : "invalid_booking_selection",
+    );
+  return parsed.data;
+}

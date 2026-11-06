@@ -313,7 +313,7 @@
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
-    "title": "direct batch checkout uses creation responses for two four and eight sessions with one payment and minimal D1 work"
+    "title": "direct batch checkout uses creation responses for two four and five sessions with one payment and bounded admission work"
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
@@ -406,6 +406,38 @@
   {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "paid multi-session then two single bookings preserve totals capacity and old receipt isolation"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "reservation admission caps new checkouts at five sessions before provider writes"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "reservation strikes count each proven unpaid checkout once and protect paid unknown and unprocessed receipts"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "reservation shared IP survives fresh guest access and uses a rolling day without resetting on payment"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "reservation customer strikes reset on verified payment while shared IP remains blocked"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "reservation one hour blocks expire without clearing strikes and later expiries block again"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "reservation cooldown arising during preflight prevents the atomic first write and leaves safe retry state"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "reservation verified customer identity persists across guest capabilities and new network addresses"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "reservation IP authority ignores forwarded headers and canonicalizes IPv6"
   },
   {
     "file": "worker/tests/foundation.test.mjs",

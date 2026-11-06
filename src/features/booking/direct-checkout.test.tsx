@@ -888,6 +888,17 @@ it("proven unstarted checkout stays editable without entering payment recovery",
   expect(screen.getByTestId("action")).toHaveTextContent("failure");
   expect(navigation.push).not.toHaveBeenCalled();
   expect(fetch).toHaveBeenCalledTimes(1);
+  fetch.mockImplementation(async () =>
+    Response.json({ error: "reservation_blocked" }, { status: 429 }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
+  await screen.findByText(/New reservations are paused/);
+  expect(screen.getByTestId("retained")).toBeEmptyDOMElement();
+  expect(screen.getByTestId("action")).toHaveTextContent("failure");
+  expect(screen.getByText("test@example.com")).toBeInTheDocument();
+  expect(screen.getByText("12:00–12:40 SGT")).toBeInTheDocument();
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(fetch).toHaveBeenCalledTimes(2);
 });
 
 it("queue rejection keeps the original attempt on Review for an explicit retry", async () => {

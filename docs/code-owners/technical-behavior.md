@@ -33,9 +33,9 @@ For a visible failure, start with its UI row, follow the named service to its Wo
 
 Shared dialogs use unique heading references and nonshrinking close controls. Long invoice references wrap within the confirmation card. The calendar toolbar contains only month selection and navigation, on one row on mobile. Failed month/day reads retain an inline Try again action. Unresolved confirmation and expiry recovery omit Check status; transient status failures retain it, while automatic bounded recovery and server-authorized release remain unchanged. Selection guidance distinguishes choosing a time from the temporary checkout reservation; leaving checkout warns that payment must complete before expiry. These presentation changes do not alter reservation or payment guards.
 
-Round-four presentation: compact session cards open the original full-width configuration view, not a dialog. Time cards place price at top right, trainer names below, and retain the trainer dropdown. Trainer profiles show biographies or explicitly labelled preview copy, not session dates. Totals share enlarged labels and amounts with muted SGD on the left; H1 uses the identity colour and body uses ink. Selection updates clear the ended-reservation notice.
+Round-four presentation: compact session cards open the original full-width configuration view, not a dialog. Time cards place price at top right, trainer names below, and retain the trainer dropdown. Trainer profiles show biographies or explicitly labelled preview copy, not session dates. Totals share enlarged labels and amounts with muted SGD on the left; H1 uses the logo BOT blue and body uses ink. Selection updates clear the ended-reservation notice.
 
-Full-recording UI follow-up (5 November): BookingProvider exposes readiness only after protected restoration settles, preventing a temporary editable calendar before a retained attempt is restored. Refresh stays visible and disabled while the calendar is busy. Cart items have separate bordered backgrounds, top-aligned red removal controls and trainer/price rows; Continue notices have spacing. Review edit links share “Edit” within their respective sections, omit duplicated unit pricing and use the larger total typography. Single-session confirmed Paid/amount shares the trainer row; multi-session totals remain separate. External-window guidance requires an eligible non-HitPay checkout link. Payment-release authority and cache retention rules are unchanged.
+Full-recording UI follow-up (5 November): BookingProvider exposes readiness only after protected restoration settles, preventing a temporary editable calendar before a retained attempt is restored. Permanent Refresh is removed; failed reads retain Try again. Cart items have separate bordered backgrounds, top-aligned red removal controls and trainer/price rows; Continue notices have spacing. Review edit links share “Edit” within their respective sections, omit duplicated unit pricing and use the larger total typography. Single-session confirmed Paid/amount shares the trainer row; multi-session totals remain separate. External-window guidance requires an eligible non-HitPay checkout link. Payment-release authority and cache retention rules are unchanged.
 
 `ProtectedConfirmation` binds expiry-release failures to the originating attempt and session revision, like its receipt/context errors. Switching attempts or identity revisions cannot carry that error into the new view; expiry still requires the original authenticated server release. Combined navigation coverage and remaining provider acceptance are tracked in [customer UAT](../uat/simulated-user.md#combined-journey-audit-matrix).
 
@@ -104,6 +104,13 @@ These functions are under [the booking feature](../../src/features/booking). The
 | `PaymentStep`                                                                                        | Present payment state/handoff through the booking provider.                 | Do not label an uncertain return paid or invent another payment request.                                               |
 | `ConfirmationStep` / `PendingConfirmation` / `BookingConfirmation`                                   | Select and render the supported pending or confirmed presentation.          | Live success/details/export depend on the protected confirmation and receipt owners, not just a component name.        |
 | `guardedStep` / `selectionErrors` / `paymentLocked` in [domain booking](../../src/domain/booking.ts) | Derive eligible navigation, selection errors and payment edit restrictions. | Redirect to a supported step; do not remove the guard to permit stale back/forward state.                              |
+
+- Mobile booking navigation centres every step label, with6px above/below Back in static and sticky states; the shell adds no extra top gap.
+- Action anchors share15.6px top and10.4px bottom spacing, plus24.7px shell clearance and safe-area inset; the naked button settles at its original position before the footer.
+- Shared `Dialog` keeps header/close outside the scroll body. Cart and trainer panels expose a persistent visual track/thumb for overflow, synchronized through native scroll and ResizeObserver; it does not capture pointer/focus interaction.
+- Confirmation uses the same logo-blue heading, mobile20px card inset and reduced action/shell clearance; Make another booking is the full-width primary action, with support/home below. Pending/recovery shells share the same spacing; verified totals, expandable full details, payment guards and confirmation/invoice pops are retained.
+- Trainer options show names without repeated prices. Price remains on the session card and totals.
+- Mobile Studio playback shows a double-chevron scroll link after ending; Replay restarts playback and hides the cue. Reduced motion keeps the cue static.
 
 ## 2. Browser services, persistence and exports
 
@@ -208,6 +215,9 @@ Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calend
 
 Evidence: [combined hold concurrency cases](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [Trainer schedule worksheet](../uat/trainers.md). Capacity is shared; an instructor label does not create another independent studio slot.
 
+- `useCalendarAvailability` retains expired month layout, excludes expired offers, and starts one replacement read at the active month's deadline. Failed/stale responses expose retry; no expiry loop or silent stale renewal. Paused checkout steps do not fetch. New replies remain bound to service/scope and abort state.
+- `TimeStep` keeps previously loaded date grids visible during replacement; refresh shows the shared spinner for0.5 seconds without fading or delaying date replacement.
+
 ## 6. Checkout, durable effects and hosted payment
 
 Owners: [customer authority](../../worker/customer-authority.ts), [native checkout](../../worker/native-checkout.ts), [dispatch claims](../../worker/native-dispatch.ts), [normalization](../../worker/provider-normalization.ts), [HitPay journal](../../worker/hitpay-journal.ts), [payment handoff](../../worker/hitpay-hold.ts). Rules: BR-007–011, BR-014–017.
@@ -240,6 +250,12 @@ flowchart TB
 | `recordedHitpayPayment`, `storedHitpayCheckout`, `findHitpayRequest`                                     | Validate retained payment/handoff or locate the existing request by its association.                                                                            | Exact reference, money, merchant, status and supported checkout URL.                                       | Ambiguous/mismatched evidence remains blocked for recovery; never select an arbitrary matching payment.                  |
 
 Evidence: [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [provider tests](../../worker/tests/provider.test.mjs), [live checkout browser tests](../../tests/live-email.spec.ts). Capture Review and hosted-return states with synthetic data; a screenshot of the payment page cannot prove settlement.
+
+- [reservation-abuse.ts](../../worker/reservation-abuse.ts) owns scoped customer/IP HMAC identity, immutable source recording, proven-expiry materialization and admission deadlines. It reuses [checkout-expiry-policy.ts](../../worker/checkout-expiry-policy.ts), also consumed by normal release.
+- `native-dispatch.ts` and `journal.ts` refresh strike evidence and gate the first claim in the same D1 batch. Deferred preparation records its source in that batch; preflight admission alone is insufficient.
+- Safe cooldown rejection marks only an effect-free prepared grant retryable; any retained dispatch/session/payment requires recovery. Already started attempts do not acquire new admission restrictions.
+- Existing `IDENTITY_PEPPER` scopes hashes to account/environment/origin. Trusted edge IP is canonicalized; raw IP and submitted unverified contact email are not retained as admission identity.
+- Synthetic tests cover five/six-session boundaries, one strike per checkout, customer paid reset, rolling shared IP, repeated-expiry cooldown, paid/unknown/receipt protection, verified identity across capabilities, IPv6/forwarded headers and a cooldown appearing during preflight on both dispatch paths.
 
 ## 7. Recovery, confirmation, exports and completed exit
 

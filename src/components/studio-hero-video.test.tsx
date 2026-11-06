@@ -6,9 +6,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 /** Supply responsive preferences without loading a browser or remote media. */
-function media(reduced: boolean) {
+function media(reduced: boolean, mobile = false) {
   vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: query.includes("reduced-motion") && reduced,
+    matches: query.includes("reduced-motion") ? reduced : mobile,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   }));
@@ -63,4 +63,23 @@ test("studio video respects reduced motion and blocked autoplay retains manual p
   expect(
     screen.getByRole("button", { name: "Play studio video" }),
   ).toBeVisible();
+});
+
+test("mobile studio video shows a scroll cue only after playback ends", async () => {
+  media(false, true);
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  render(<StudioHeroVideo />);
+  await act(async () => {});
+  const video = screen.getByLabelText("SOCCERBOT360 studio demonstration");
+  expect(
+    screen.queryByRole("link", { name: "Explore the studio below" }),
+  ).toBeNull();
+  fireEvent.ended(video);
+  expect(
+    screen.getByRole("link", { name: "Explore the studio below" }),
+  ).toHaveAttribute("href", "#studio-title");
+  fireEvent.play(video);
+  expect(
+    screen.queryByRole("link", { name: "Explore the studio below" }),
+  ).toBeNull();
 });

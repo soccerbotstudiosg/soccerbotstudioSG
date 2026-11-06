@@ -62,7 +62,10 @@ function CalendarProbe({
     false,
   );
   return (
-    <output>
+    <output
+      data-retained={calendar.hasLoaded("2027-01")}
+      data-refreshing={calendar.refreshing("2027-01")}
+    >
       {calendar
         .entry("2027-01", now)
         ?.dates.map((d) => d.date)
@@ -370,12 +373,8 @@ test("fresh calendar receipts render before the minute clock ticks and expire at
   vi.setSystemTime(initial);
   let finish!: (value: CalendarAvailability) => void;
   const calendar = vi.fn(
-    async ({ month }: { month: string }) =>
-      ({ month, observedAtMs: Date.now(), dates: [] }) as CalendarAvailability,
-  );
-  calendar.mockImplementationOnce(
     () =>
-      new Promise((resolve) => {
+      new Promise<CalendarAvailability>((resolve) => {
         finish = resolve;
       }),
   );
@@ -395,7 +394,26 @@ test("fresh calendar receipts render before the minute clock ticks and expire at
   );
   expect(screen.getByRole("status")).toHaveTextContent("2027-01-04");
   await act(async () => vi.advanceTimersByTime(60000));
+  expect(calendar).toHaveBeenCalledTimes(2);
   expect(screen.getByRole("status")).toHaveTextContent("loading");
+  expect(screen.getByRole("status")).toHaveAttribute("data-retained", "true");
+  expect(screen.getByRole("status")).toHaveAttribute("data-refreshing", "true");
+  await act(async () => vi.advanceTimersByTime(499));
+  expect(screen.getByRole("status")).toHaveAttribute("data-refreshing", "true");
+  await act(async () => vi.advanceTimersByTime(1));
+  expect(screen.getByRole("status")).toHaveAttribute(
+    "data-refreshing",
+    "false",
+  );
+  await act(async () =>
+    finish({
+      month: "2027-01",
+      observedAtMs: Date.now(),
+      dates: [{ date: "2027-01-06", available: true }],
+    }),
+  );
+  expect(screen.getByRole("status")).toHaveTextContent("2027-01-06");
+  expect(screen.getByRole("status")).not.toHaveTextContent("2027-01-04");
 });
 
 test("preloaded browser slots survive edits and checkout rejects changed availability", async () => {
@@ -607,7 +625,7 @@ test("prewarmed calendar remains visible until its original display deadline wit
   expect(screen.getByRole("status")).toHaveTextContent("2027-01-05");
   await act(async () => vi.advanceTimersByTime(840000));
   expect(screen.getByRole("status")).toHaveTextContent("loading");
-  expect(publicCalendar).toHaveBeenCalledTimes(1);
+  expect(publicCalendar).toHaveBeenCalledTimes(2);
 });
 
 test("Details opens local Review without waiting for unavailable providers", async () => {

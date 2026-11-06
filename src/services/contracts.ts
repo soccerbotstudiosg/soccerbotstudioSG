@@ -68,6 +68,7 @@ export type BookingErrorCode =
   | "reservation_expired"
   | "checkout_window_blocked"
   | "checkout_not_started"
+  | "reservation_blocked"
   | "queue_busy"
   | "payment_unavailable"
   | "conflict"

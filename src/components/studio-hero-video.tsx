@@ -30,6 +30,7 @@ export function StudioHeroVideo() {
       src={video.src}
       poster={video.poster}
       reducedMotion={reducedMotion}
+      mobile={mobile}
     />
   );
 }
@@ -38,10 +39,12 @@ function StudioPlayback({
   src,
   poster,
   reducedMotion,
+  mobile,
 }: {
   src: string;
   poster: string;
   reducedMotion: boolean;
+  mobile: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState<"play" | "playing" | "replay">("play");
@@ -76,6 +79,23 @@ function StudioPlayback({
         onPause={() => setStatus(ref.current?.ended ? "replay" : "play")}
         onEnded={() => setStatus("replay")}
       />
+      {mobile && status === "replay" && (
+        <a
+          className="studio-scroll-cue"
+          href="#studio-title"
+          aria-label="Explore the studio below"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path d="m6 6 6 6 6-6M6 12l6 6 6-6" />
+          </svg>
+        </a>
+      )}
       <button
         type="button"
         className="studio-playback"

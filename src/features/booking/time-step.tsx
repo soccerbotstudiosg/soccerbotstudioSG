@@ -5,7 +5,10 @@ import {
 } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useMemo, useState } from "react";
-import { BOOKING_MONTH_COUNT } from "@/domain/booking-policy";
+import {
+  BOOKING_MONTH_COUNT,
+  MAX_BOOKING_SESSIONS,
+} from "@/domain/booking-policy";
 import { Icon } from "@/components/icon";
 
 import {
@@ -158,6 +161,8 @@ export function TimeStep() {
   /** Commit only an explicitly chosen, currently offered trainer for this time. */
   function select(offered: AvailableSlot) {
     if (
+      (draft.slots.length >= MAX_BOOKING_SESSIONS &&
+        !draft.slots.some((slot) => slotKey(slot) === slotKey(offered))) ||
       isElapsed(offered) ||
       !slots.some(
         (candidate) =>
@@ -193,11 +198,22 @@ export function TimeStep() {
         </p>
       )}
       <p className="lead">40-minute sessions · 10-minute changeover.</p>
+      {draft.slots.length >= MAX_BOOKING_SESSIONS && (
+        <p role="status" className="notice">
+          Maximum {MAX_BOOKING_SESSIONS} sessions per booking. Remove a session
+          to choose another.
+        </p>
+      )}
       <section
         className="calendar-panel"
         aria-label="Booking calendar"
-        aria-busy={calendarBusy}
+        aria-busy={calendarBusy || calendar.refreshing(month.slice(0, 7))}
       >
+        {calendar.refreshing(month.slice(0, 7)) && (
+          <div className="calendar-refresh">
+            <BrandLoading overlay={false} compact label="Updating dates…" />
+          </div>
+        )}
         <div className="calendar-head">
           <div className="month-picker">
             <label className="sr-only" htmlFor="calendar-month">
@@ -237,7 +253,7 @@ export function TimeStep() {
             </button>
           </div>
         </div>
-        {calendarBusy ? (
+        {calendarBusy && !calendar.hasLoaded(month.slice(0, 7)) ? (
           <div className="calendar-loading">
             <BrandLoading overlay={false} compact label="Checking dates…" />
             <p>Finding available sessions…</p>
@@ -362,7 +378,12 @@ export function TimeStep() {
                       className={`time${selected ? " selected" : ""}`}
                       aria-pressed={!!selected}
                       aria-expanded={!!selected || choosing === key}
-                      disabled={(!available || elapsed) && !selected}
+                      disabled={
+                        (!available ||
+                          elapsed ||
+                          draft.slots.length >= MAX_BOOKING_SESSIONS) &&
+                        !selected
+                      }
                       onClick={() => {
                         if (selected) {
                           update({
@@ -447,8 +468,7 @@ export function TimeStep() {
                               value={sessionOfferKey(offer)}
                               disabled={!offer.available}
                             >
-                              {sessionInstructorName(offer)} ·{" "}
-                              {money(sessionPrice(offer))}
+                              {sessionInstructorName(offer)}
                               {!offer.available ? " — unavailable" : ""}
                             </option>
                           ))}

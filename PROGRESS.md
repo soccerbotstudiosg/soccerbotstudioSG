@@ -1,34 +1,26 @@
 # Current checkpoint
 
-Observed 6 November 2026. Historical decisions and evidence: [Journey](docs/journey.md).
+UI and reservation-defense consolidation is active; documentation PR33 remains paused. Dated evidence belongs to [Journey](docs/journey.md).
 
-## UI — publish and stage first
+## Publish UI and reservation defenses first
 
-- Branch: `fix/hero-session-copy`; existing PR32. Do not merge or enable settings.
-- Last verified staging revision: `db5e724ea9ad9979e5303f019f33da599b151862`; newer local changes require final CI/staging.
-- Current local follow-up: single-row mobile calendar controls; one information icon above slots; charcoal app popup, exact heading and plain close control; silent one-pass Studio autoplay with Replay and reduced-motion/blocked-autoplay fallback. Prior verified changes: consistent time-card placement, mobile-only information hint, concise time-page guidance, retained outlet/session choices on Back, aligned mobile calendar controls and availability-only legend, and fresh cart reconciliation after confirmed unpaid expiry. Paid/uncertain payment remains protected. Popup mutation/checkout audit covered existing shared provider guards.
-- Consolidated changes:
-  - Desktop footer rows align with40% tighter pitch; logo aligns at the footer’s right edge; desktop group gaps36px. Phones pair Services/Connect With Us and centre Find Us/app links/logo; text rows32px+4px and email stays on one line.
-  - Phone header navigation centred; booking Back row has6px divider clearance.
-  - Continue is a full-width naked button with24px upper clearance and no white wrapper; floats only until its reserved original position, remaining above the footer.
-  - Phone Time/Details/Review keep cart/trainer icons in the sticky top row, with centred step count; use cart/trainer popups with live session/distinct-trainer counts and confirmation-style badge pops; reduced motion disables pops.
-  - Time heading: “Select dates” / “and times”. Panels approximately72vw wide, maximum65dvh tall; header/close remain visible while the body scrolls. Review retains full details in its main body; its cart matches Details.
-  - App links visibly white; all shared popup close controls plain × with44px targets.
-  - Contact us and Book now share identical blue-to-navy gradient and button colours.
-- Next actions show the existing selected-session total before the chevron. Desktop app heading right-aligns; mobile remains centred.
-- Current follow-up: owner removed permanent calendar Refresh on all viewports; month/arrows remain one row on mobile. Failed reads retain Try again. Omit Check status after unresolved checking/during expiry recovery, preserving automatic checks, payment guards and server-authorized release. Updated existing assertions and retained calendar reconciliation coverage through a test-only refresh probe. Local verification and final CI/staging pending.
-- Browser/physical acceptance belongs to owner/CI. No assistant browser execution.
+- Repository: SoccerBotStudioSG; branch `fix/hero-session-copy` based on`8385c4f`; consolidated into existing PR32. Owner now authorizes merge after exact-head CI and staging/health pass; no direct main push or provider/settings activation.
+- Candidate: five-session new-checkout cap; one strike per proven unpaid checkout; customer strike2+ blocks1 hour/reset on verified payment; shared-IP strike2+ within24 hours blocks1 hour/no paid reset. Atomic first-write checks cover both dispatch paths.
+- UI: confirmation shares logo-blue headings, compact shell/card/action spacing and a full-width primary rebooking button; centred mobile step labels; equal6px Back clearance; standardized action spacing reduced35%; persistent popup scroll indicators; name-only trainer options; logo-blue booking headings; ended-video downward cue.
+- Calendar: backend already keeps valid snapshots during warming and swaps complete generation-matched results. Browser now requests a replacement at active-month expiry, retains the date grid, excludes expired offers and shows the standard spinner inside the calendar for0.5 seconds. No indefinite stale-cache authority.
+- Local evidence: full code gate267 cases passed before the latest spinner/confirmation polish; subsequent calendar/popup28, confirmation44 and client-cooldown30 checks passed. Final code gate pending at this checkpoint. Worker source/types passed.
+- Backend evidence: first sustained run184/203; corrected new-cap and missing-migration fixtures. Subsequent full run489/492 passed; the remaining three fixture failures now pass focused verification after adding synthetic pepper and explicit pre-0006 historical state. Full final-head CI remains required.
+- Next: final source/type/test and documentation checks; review diff; commit/push PR32; verify exact-head frontend/backend/live-email CI and actual staging revision/health; merge and verify independent main CI/deployment. Browser and physical acceptance belong to owner/CI.
+- Last previously verified staging source in retained checkpoint:`db5e724`; base8385c4f CI passed, but current candidate is not yet staged or accepted.
 
-## Separate documentation PR
+## Documentation branch
 
-- Separate draft PR33: `docs/test-guides-and-reference-cleanup`, commit`abbf9f2b146e2b6ca31f6373ad9d53e070e95b13` based on UI2b907c5.
-- Completed baseline audit:6,379 retained units,123 stable IDs,84 mapped role cases,2,588 valid local links,56 parsed diagrams; no information loss detected.
-- Owner-paused; do not resume documentation work/CI until instructed. When resumed: merge latest UI branch into docs branch, reconcile changes in place, rerun audit, update dependent draft PR33. Manual docs CI dispatch returned Forbidden; owner can run Verify deployment target on its branch with target staging.
-- Refactor rules: point form; only Journey journals; no patch-style corrections; retain diagrams unless stale. New one-page suite guide and two-page UAT per stakeholder.
+- PR33 `docs/test-guides-and-reference-cleanup`, head`abbf9f2b146e2b6ca31f6373ad9d53e070e95b13`, remains paused; no broad refactor/CI.
+- Authorized queued business rule for that branch only: SimplyBook client AND provider email reminders3 days and24 hours before. Timing selection is not enabled/saved/delivery proof; no provider configuration changes authorized here.
+- Retain per-document numbered menus, bullets except opening explanation, no journals outside Journey, in-place reconciliation and diagrams unless stale. Preserve prior information-loss audit evidence.
 
-## Provider and external acceptance
+## Acceptance boundaries
 
-- SimplyBook10-minute timeout selected in owner screenshot; saved/effective new invoice deadline still needs owner verification.
-- App8-minute payment +1-minute checking +3-minute recovery unchanged. Owner A–D tests remain pending; activation held.
-- Domain/WAF/rate-limit work deferred until owner tests finish. Prior Cloudflare zone/ruleset reads do not prove workers.dev protection.
-- Other external tasks: [Runbook](docs/runbook.md), [Admin UAT](docs/uat/admin.md), [Trainer UAT](docs/uat/trainers.md).
+- Current changes require exact-candidate CI and staging before owner testing; prior green runs do not certify this candidate.
+- No assistant browser, bookings, payments, cancellation, notification sends or provider settings changes.
+- Domain/WAF and production activation remain deferred; application IP admission is not WAF coverage.

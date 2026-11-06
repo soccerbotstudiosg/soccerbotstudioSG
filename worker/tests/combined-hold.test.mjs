@@ -1,3 +1,4 @@
+import { admission, expiredReservation } from "./reservation-abuse-fixture.mjs";
 import { isHitPayApiCall } from "./provider-url-fixture.mjs";
 import { setTimeout as waitForClockBoundary } from "node:timers/promises";
 import { test } from "node:test";
@@ -2244,8 +2245,9 @@ test("direct single checkout uses only public authentication and creation before
       );
       assert.ok(http, "outer binding read is measured");
       assert.equal(http.spans.d1.count, 1);
-      assert.equal(checkout.spans.d1.count, 4);
-      assert.equal(checkout.spans.d1.count + http.spans.d1.count, 5);
+      // Two extra executions resolve trusted identity and evaluate expiry admission.
+      assert.equal(checkout.spans.d1.count, 6);
+      assert.equal(checkout.spans.d1.count + http.spans.d1.count, 7);
       console.log(`single checkout D1 executions: ${checkout.spans.d1.count}`);
       const payment = await m.db
         .prepare(
@@ -2372,14 +2374,14 @@ test("checkout failure timing survives token booking and payment failures withou
   }
 });
 
-test("direct batch checkout uses creation responses for two four and eight sessions with one payment and minimal D1 work", async () => {
+test("direct batch checkout uses creation responses for two four and five sessions with one payment and bounded admission work", async () => {
   for (const [count, warm] of [
     [2, false],
     [2, true],
     [4, false],
     [4, true],
-    [8, false],
-    [8, true],
+    [5, false],
+    [5, true],
   ]) {
     const logs = [];
     let before = 0;
@@ -2465,7 +2467,7 @@ test("direct batch checkout uses creation responses for two four and eight sessi
         `batch ${count}: D1=${trace.spans.d1.count}; provider=${trace.spans.provider?.count}`,
       );
       assert.ok(
-        trace.spans.d1.count === 10 + (count - 2) * 2,
+        trace.spans.d1.count === 12 + (count - 2) * 2,
         `D1: ${trace.spans.d1.count}`,
       );
       const methods = creationCalls
@@ -2973,7 +2975,7 @@ test("batch transport claims recheck revocation at each creation boundary withou
 });
 
 test("single and batch recovery retain verified evidence with bounded read overlap and measured D1 work", async () => {
-  for (const count of [1, 2, 4, 8]) {
+  for (const count of [1, 2, 4, 5]) {
     const logs = [];
     let measuring = false,
       active = 0,
@@ -4205,4 +4207,271 @@ test("three consecutive paid single bookings retain independent receipts payment
 });
 test("paid multi-session then two single bookings preserve totals capacity and old receipt isolation", async () => {
   await consecutiveJourneys([2, 1, 1]);
+});
+
+test("reservation admission caps new checkouts at five sessions before provider writes", async () => {
+  const m = await createBookingMechanism({ batch: true, batchSize: 5 });
+  try {
+    const c = await customer(m);
+    c.input.sessions = Array.from({ length: 6 }, (_, index) => ({
+      ...c.input.sessions[0],
+      startMs: m.startMs + index * 3000000,
+    }));
+    await checkoutResult(c.send(), 400);
+    assert.equal(
+      m.calls.filter((call) =>
+        ["book", "createBatch"].includes(call.body?.method),
+      ).length,
+      0,
+    );
+    c.input.sessions.pop();
+    const result = await checkoutResult(c.send(), 200);
+    assert.equal(result.state, "associated");
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      5,
+    );
+  } finally {
+    await m.close();
+  }
+});
+
+test("reservation strikes count each proven unpaid checkout once and protect paid unknown and unprocessed receipts", async () => {
+  const m = await createBookingMechanism();
+  try {
+    const c = await customer(m);
+    const source = await admission(m, c);
+    const now = Date.now();
+    await expiredReservation(m, source, now - 5000, "paid");
+    await expiredReservation(m, source, now - 4000, "unknown");
+    await expiredReservation(m, source, now - 3000, "receipt");
+    await expiredReservation(m, source, now - 2000, "verified");
+    await admission(m, c);
+    await admission(m, c);
+    assert.equal(
+      (
+        await m.db
+          .prepare("SELECT COUNT(*) AS n FROM reservation_expiries")
+          .first()
+      ).n,
+      1,
+    );
+    await expiredReservation(m, source, now - 1000);
+    assert.equal((await admission(m, c, 429)).error, "reservation_blocked");
+    const before = await m.db
+      .prepare("SELECT * FROM reservation_expiries ORDER BY attempt_id")
+      .all();
+    await admission(m, c, 429);
+    assert.deepEqual(
+      (
+        await m.db
+          .prepare("SELECT * FROM reservation_expiries ORDER BY attempt_id")
+          .all()
+      ).results,
+      before.results,
+    );
+    await checkoutResult(c.send(), 429);
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      0,
+    );
+  } finally {
+    await m.close();
+  }
+});
+
+test("reservation shared IP survives fresh guest access and uses a rolling day without resetting on payment", async () => {
+  const m = await createBookingMechanism();
+  try {
+    const c = await customer(m);
+    c.headers["CF-Connecting-IP"] = "192.0.2.21";
+    const source = await admission(m, c);
+    const now = Date.now();
+    await expiredReservation(m, source, now - 25 * 3600000);
+    await expiredReservation(m, source, now - 5000);
+    const other = await customer(m);
+    other.headers["CF-Connecting-IP"] = "192.0.2.21";
+    const otherSource = await admission(m, other);
+    assert.notEqual(source.customerHash, otherSource.customerHash);
+    assert.equal(source.ipHash, otherSource.ipHash);
+    await expiredReservation(m, otherSource, now - 1000);
+    await admission(m, other, 429);
+    other.headers["CF-Connecting-IP"] = "192.0.2.22";
+    await admission(m, other);
+    // No raw addresses or unverified contact emails are used as customer authority.
+    assert.match(source.ipHash, /^[a-f0-9]{64}$/);
+    assert.match(source.customerHash, /^[a-f0-9]{64}$/);
+  } finally {
+    await m.close();
+  }
+});
+
+test("reservation customer strikes reset on verified payment while shared IP remains blocked", async () => {
+  const m = await createBookingMechanism();
+  try {
+    const c = await customer(m);
+    c.headers["CF-Connecting-IP"] = "192.0.2.31";
+    const source = await admission(m, c);
+    const now = Date.now();
+    await expiredReservation(m, source, now - 5000);
+    await expiredReservation(m, source, now - 4000);
+    await admission(m, c, 429);
+    const paid = await expiredReservation(m, source, now + 2000, "paid");
+    // Successful accounting evidence resets customer strikes, never the IP counter.
+    await m.db
+      .prepare(
+        "UPDATE hitpay_payments SET state='complete',reason='hitpay_paid' WHERE attempt_id=?",
+      )
+      .bind(paid)
+      .run();
+    await admission(m, c, 429);
+    c.headers["CF-Connecting-IP"] = "192.0.2.32";
+    await admission(m, c);
+  } finally {
+    await m.close();
+  }
+});
+
+test("reservation one hour blocks expire without clearing strikes and later expiries block again", async () => {
+  const m = await createBookingMechanism();
+  try {
+    const c = await customer(m);
+    const source = await admission(m, c);
+    const now = Date.now();
+    await expiredReservation(m, source, now - 3 * 3600000);
+    await expiredReservation(m, source, now - 2 * 3600000);
+    await admission(m, c);
+    await expiredReservation(m, source, now - 1000);
+    await admission(m, c, 429);
+    assert.equal(
+      (
+        await m.db
+          .prepare("SELECT COUNT(*) AS n FROM reservation_expiries")
+          .first()
+      ).n,
+      3,
+    );
+  } finally {
+    await m.close();
+  }
+});
+
+test("reservation cooldown arising during preflight prevents the atomic first write and leaves safe retry state", async () => {
+  for (const route of ["hold", "checkout"]) {
+    let source,
+      mechanism,
+      injected = false;
+    const m = await createBookingMechanism({
+      respond: async (call) => {
+        if (
+          source &&
+          !injected &&
+          call.body?.method ===
+            (route === "checkout" ? "getToken" : "getAvailableTimeIntervals")
+        ) {
+          injected = true;
+          await expiredReservation(mechanism, source, Date.now() - 1000);
+        }
+      },
+    });
+    mechanism = m;
+    try {
+      const c = await customer(m);
+      source = await admission(m, c);
+      await expiredReservation(m, source, Date.now() - 2000);
+      const response = await m.mf.dispatchFetch(
+        m.origin + `/api/booking/${route}/${c.input.key}`,
+        {
+          method: "POST",
+          headers: c.headers,
+          body: JSON.stringify({ ...c.input, accepted: route === "checkout" }),
+        },
+      );
+      const result = await checkoutResult(Promise.resolve(response));
+      assert.equal(
+        injected,
+        true,
+        JSON.stringify(m.calls.map((call) => call.body?.method || call.url)),
+      );
+      assert.equal(response.status, 429, JSON.stringify(result));
+      assert.equal(result.error, "reservation_blocked");
+      assert.equal(injected, true);
+      assert.equal(
+        m.calls.filter((call) => call.body?.method === "book").length,
+        0,
+      );
+      assert.equal(
+        (
+          await m.db
+            .prepare("SELECT COUNT(*) AS n FROM dispatches WHERE attempt_id=?")
+            .bind(c.input.key)
+            .first()
+        ).n,
+        0,
+      );
+      const grant = await m.db
+        .prepare("SELECT state FROM native_checkout_grants WHERE attempt_id=?")
+        .bind(c.input.key)
+        .first();
+      if (grant) assert.equal(grant.state, "blocked");
+    } finally {
+      await m.close();
+    }
+  }
+});
+
+test("reservation verified customer identity persists across guest capabilities and new network addresses", async () => {
+  const m = await createBookingMechanism();
+  try {
+    const first = await customer(m);
+    first.headers["CF-Connecting-IP"] = "192.0.2.51";
+    const second = await customer(m);
+    second.headers["CF-Connecting-IP"] = "192.0.2.52";
+    const now = Date.now();
+    const access = await m.db
+      .prepare("SELECT * FROM guest_access ORDER BY issued_ms")
+      .all();
+    for (const row of access.results)
+      await m.db
+        .prepare(
+          "INSERT INTO verified_identity(access_hash,owner_id,email,verified_ms,expires_ms) VALUES(?,?,'verified@example.test',?,?)",
+        )
+        .bind(row.capability_hash, row.owner_id, now - 1000, now + 3600000)
+        .run();
+    const a = await admission(m, first),
+      b = await admission(m, second);
+    assert.equal(a.customerHash, b.customerHash);
+    assert.notEqual(a.ipHash, b.ipHash);
+    await expiredReservation(m, a, now - 2000);
+    await expiredReservation(m, a, now - 1000);
+    await admission(m, second, 429);
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      0,
+    );
+  } finally {
+    await m.close();
+  }
+});
+
+test("reservation IP authority ignores forwarded headers and canonicalizes IPv6", async () => {
+  const m = await createBookingMechanism();
+  try {
+    const c = await customer(m);
+    c.headers["CF-Connecting-IP"] = "2001:db8::1";
+    const first = await admission(m, c);
+    c.headers["CF-Connecting-IP"] = "2001:0db8:0:0:0:0:0:1";
+    c.headers["X-Forwarded-For"] = "192.0.2.99";
+    assert.equal((await admission(m, c)).ipHash, first.ipHash);
+    await expiredReservation(m, first, Date.now() - 2000);
+    await expiredReservation(m, first, Date.now() - 1000);
+    await admission(m, c, 429);
+    c.headers["CF-Connecting-IP"] = "invalid";
+    assert.equal(
+      (await admission(m, c, 503)).error,
+      "reservation_identity_unavailable",
+    );
+  } finally {
+    await m.close();
+  }
 });

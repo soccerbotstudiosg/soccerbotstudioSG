@@ -157,6 +157,10 @@ Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calend
 
 ## 7. Booking and payment
 
+- [Reservation admission](../../worker/reservation-abuse.ts): customer/IP expiry strikes and atomic new-reservation eligibility.
+- [Unpaid expiry policy](../../worker/checkout-expiry-policy.ts): shared financial predicate for release and strike materialization.
+
+
 ```mermaid
 flowchart TB
   Checkout["Checkout feature"]

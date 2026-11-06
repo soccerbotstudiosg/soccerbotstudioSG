@@ -144,6 +144,8 @@ Owner HAR and invoice evidence align creation around14:52 with due time15:02; ca
 
 ## Secret locations and configuration changes
 
+- Existing Worker `IDENTITY_PEPPER` also derives scoped reservation customer/IP hashes; new reservation admission fails closed if it is missing or invalid. No new secret installation or provider-setting change is included.
+
 Only names and storage locations are recorded here. Never include values, API response headers, EPP codes, passwords, bank details or customer records in this file.
 
 | Store                         | Names / responsibility                                                                                                                                       |

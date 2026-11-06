@@ -168,6 +168,23 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     name: "Selected trainers",
   });
   expect(within(trainerPanel).getAllByRole("article")).toHaveLength(2);
+  const trainerBody = trainerPanel.querySelector(".booking-panel-body")!;
+  const trainerRail = trainerPanel.querySelector<HTMLElement>(
+    ".booking-panel-scrollbar",
+  )!;
+  Object.defineProperties(trainerBody, {
+    clientHeight: { value: 200 },
+    scrollHeight: { value: 600 },
+    scrollTop: { value: 200, writable: true },
+  });
+  Object.defineProperty(trainerRail, "clientHeight", { value: 180 });
+  fireEvent.scroll(trainerBody);
+  expect(trainerRail.hidden).toBe(false);
+  expect(trainerRail.style.getPropertyValue("--scroll-thumb-height")).toBe(
+    "60px",
+  );
+  expect(trainerRail.style.getPropertyValue("--scroll-thumb-top")).toBe("60px");
+  expect(trainerBody.querySelector(".booking-panel-header")).toBeNull();
   await user.click(
     within(trainerPanel).getByRole("button", { name: "Close dialog" }),
   );
@@ -176,6 +193,19 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   );
   const cartPanel = screen.getByRole("dialog", { name: "Your cart" });
   expect(within(cartPanel).getAllByRole("listitem")).toHaveLength(3);
+  const cartBody = cartPanel.querySelector(".booking-panel-body")!;
+  const cartRail = cartPanel.querySelector<HTMLElement>(
+    ".booking-panel-scrollbar",
+  )!;
+  Object.defineProperties(cartBody, {
+    clientHeight: { value: 200 },
+    scrollHeight: { value: 400 },
+    scrollTop: { value: 200, writable: true },
+  });
+  Object.defineProperty(cartRail, "clientHeight", { value: 180 });
+  fireEvent.scroll(cartBody);
+  expect(cartRail.hidden).toBe(false);
+  expect(cartRail.style.getPropertyValue("--scroll-thumb-top")).toBe("90px");
   expect(
     within(cartPanel).queryByRole("link", {
       name: /^Continue(?: \$[\d,.]+)?$/,

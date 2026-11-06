@@ -375,6 +375,17 @@ async function nativeRequest(
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   if (!response.ok) {
+    if (response.status === 429) {
+      const error = await response
+        .clone()
+        .json()
+        .catch(() => null);
+      if (error?.error === "reservation_blocked")
+        throw new BookingServiceError(
+          "reservation_blocked",
+          "New reservations are paused after repeated unpaid reservations. Please try again in up to 1 hour.",
+        );
+    }
     if (response.status === 503) {
       const error = await response
         .clone()

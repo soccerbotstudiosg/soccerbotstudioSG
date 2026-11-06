@@ -569,23 +569,7 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "accepts different session instructors and rejects stale assignments or missing rotation disclosures"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "allows contact-only booking without removed participant fields"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "blocks duplicate payment and checkout while pending"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "confirms and reserves once even when the old check is repeated"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "discloses crossing rotations while retaining the starting instructor for the whole session"
+    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -593,67 +577,7 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "does not reserve a displayed or reviewed slot"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "formats Singapore booking dates independently of locale date order"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "freezes the reviewed snapshot separately from later draft mutation"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "keeps payment checking for exactly five seconds and preserves the deadline through storage"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "makes decline retryable and status polling resumable"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "marks a slot unavailable exactly at its Singapore start and afterwards"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "never auto-confirms late payment or allows another pay attempt"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "offers only complete sessions within noon to 8pm and rotates instructors every three hours"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "prefills only approved name and phone after verification"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rechecks final-slot conflicts before offering payment"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "records multiple dates and preserves each booked session"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects a new payment after start but preserves pending recovery and paid receipts"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects checkout at or after start without discarding the selected draft"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects missing policy acceptance and invalid player counts"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects verified-email mismatch"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects wrong, expired and replayed codes"
+    "title": "allows five sessions and rejects a sixth"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -661,7 +585,75 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "upgrades pending and paid legacy attempts without changing their identity or charging twice"
+    "title": "rejects missing policy acceptance and invalid player counts"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "validates all required contact fields and their length limits"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "allows contact-only booking without removed participant fields"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "rejects verified-email mismatch"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "does not reserve a displayed or reviewed slot"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "freezes the reviewed snapshot separately from later draft mutation"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "rechecks final-slot conflicts before offering payment"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "confirms and reserves once even when the old check is repeated"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "blocks duplicate payment and checkout while pending"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "makes decline retryable and status polling resumable"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "never auto-confirms late payment or allows another pay attempt"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "records multiple dates and preserves each booked session"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "rejects wrong, expired and replayed codes"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "prefills only approved name and phone after verification"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "offers only complete sessions within noon to 8pm and rotates instructors every three hours"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "discloses crossing rotations while retaining the starting instructor for the whole session"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "accepts different session instructors and rejects stale assignments or missing rotation disclosures"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "keeps payment checking for exactly five seconds and preserves the deadline through storage"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -669,15 +661,31 @@
   },
   {
     "file": "src/services/booking.test.ts",
+    "title": "upgrades pending and paid legacy attempts without changing their identity or charging twice"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "marks a slot unavailable exactly at its Singapore start and afterwards"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "rejects checkout at or after start without discarding the selected draft"
+  },
+  {
+    "file": "src/services/booking.test.ts",
     "title": "uses Singapore instants across month and year boundaries regardless of UTC date"
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
+    "title": "rejects a new payment after start but preserves pending recovery and paid receipts"
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "validates all required contact fields and their length limits"
+    "title": "formats Singapore booking dates independently of locale date order"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "live draft reload preserves edits but never restores consent or payment authority"
   },
   {
     "file": "src/services/catalogue.test.ts",
@@ -1088,10 +1096,6 @@
     "title": "Review performs no provider reads and checkout verifies one booking before HitPay"
   },
   {
-    "file": "src/services/booking.test.ts",
-    "title": "live draft reload preserves edits but never restores consent or payment authority"
-  },
-  {
     "file": "tests/live-email.spec.ts",
     "title": "real API expired unpaid Review retains its hold through the grace window without recreating or losing contact"
   },
@@ -1282,5 +1286,9 @@
   {
     "file": "src/components/studio-hero-video.test.tsx",
     "title": "studio video respects reduced motion and blocked autoplay retains manual play"
+  },
+  {
+    "file": "src/components/studio-hero-video.test.tsx",
+    "title": "mobile studio video shows a scroll cue only after playback ends"
   }
 ]

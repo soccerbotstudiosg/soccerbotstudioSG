@@ -1,4 +1,9 @@
 import {
+  reservationExpiryStatement,
+  reservationBlockedUntilSql,
+  rejectReservationPreparation,
+} from "./reservation-abuse";
+import {
   START_INTERVAL_MINUTES,
   MAX_PLAYERS,
   PAYMENT_WINDOW_MS,
@@ -126,10 +131,11 @@ export async function claimDispatch(
   now: number,
 ) {
   const dispatchId = crypto.randomUUID();
-  const result = await db.batch([
+  const all = await db.batch([
+    reservationExpiryStatement(db, id, id, now, true),
     db
       .prepare(
-        "UPDATE attempts SET state='dispatching',version=version+1 WHERE id=? AND version=? AND state='prepared' AND deadline_ms>?",
+        `UPDATE attempts SET state='dispatching',version=version+1 WHERE id=? AND version=? AND state='prepared' AND deadline_ms>? AND (NOT EXISTS(SELECT 1 FROM native_checkout_grants g WHERE g.attempt_id=attempts.id AND g.ongoing=1) OR EXISTS(SELECT 1 FROM reservation_sources admission WHERE admission.attempt_id=attempts.id AND ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now))}<=${now}))`,
       )
       .bind(id, version, now),
     db
@@ -138,8 +144,20 @@ export async function claimDispatch(
       )
       .bind(dispatchId, now, id),
   ]);
-  if (result[0].meta.changes !== 1)
+  const result = all.slice(1);
+  if (result[0].meta.changes !== 1) {
+    const blocked = await db
+      .prepare(
+        `SELECT ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now))} AS until_ms FROM reservation_sources admission WHERE attempt_id=?`,
+      )
+      .bind(id)
+      .first<{ until_ms: number }>();
+    if (blocked && blocked.until_ms > now) {
+      await rejectReservationPreparation(db, id);
+      throw new ApiError(429, "reservation_blocked");
+    }
     throw new ApiError(409, "dispatch_not_claimed");
+  }
   return { dispatchId, fence: version + 1 };
 }
 /** Retain provider observations against the original attempt identity. */
