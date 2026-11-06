@@ -23,3 +23,5 @@ Extend existing public-route/popup geometry and destination checks, plus contras
 ## Current follow-up before publication
 
 Sticky header with measured scroll clearance; shared once-per-section scroll reveals across routes, skipping initially visible content and respecting reduced motion/focus/live announcements. Footer and legal placeholder bodies remain pure white. Local code verification and new-head CI/staging pending for this follow-up; prior6e15e65 local verification does not accept these changes. Keep PR32 open/unmerged and settings unchanged.
+
+Studio Book now now includes a visible identity-blue-to-navy linear gradient beneath the shared radial highlights; Contact keeps its orange gradient. White text contrast is checked against both gradient endpoint colours; owner visual acceptance remains pending.

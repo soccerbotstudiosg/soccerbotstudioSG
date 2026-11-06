@@ -235,6 +235,10 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(studioBanner).toBeAttached();
   await expect(studioBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(studioBanner.locator("img")).toHaveCount(0);
+  await expect(studioBanner).toHaveCSS(
+    "background-image",
+    /linear-gradient.*rgb\(23, 96, 120\)/,
+  );
   const studioBannerBox = await studioBanner.boundingBox();
   const studioFooterBox = await page.locator(".site-footer").boundingBox();
   expect(studioBannerBox).not.toBeNull();

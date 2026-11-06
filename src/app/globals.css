@@ -1646,6 +1646,11 @@
           transparent
         ),
         transparent 65%
+      ),
+      linear-gradient(
+        110deg,
+        var(--promotion-gradient-start, transparent),
+        var(--promotion-gradient-end, transparent) 75%
       );
     color: var(--color-on-brand);
   }
@@ -1661,6 +1666,8 @@
     color: var(--color-brand);
   }
   .studio-bottom {
+    --promotion-gradient-start: var(--color-identity);
+    --promotion-gradient-end: var(--color-brand);
     --promotion-accent: var(--color-on-brand);
     --promotion-highlight-strong: 18%;
     --promotion-highlight-soft: 10%;

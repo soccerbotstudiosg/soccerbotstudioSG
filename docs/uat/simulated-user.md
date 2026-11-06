@@ -242,3 +242,5 @@ Consolidated footer/cursor check: verify the footer retains its light styling an
 
 
 Scroll/footer follow-up: scroll each public and booking route; the header stays visible, anchors/focused controls remain clear, and arriving sections fade/rise once without delaying input. Enable reduced motion and confirm no reveal animation. Verify Service links (studio, booking, address, Terms of Service, Privacy Policy), Help links (phone, email, Instagram), and the horizontal app icons. Both legal destinations intentionally show empty pure-white bodies; approved legal content remains pending. Confirm the footer has no Get in touch or Disclaimer control and leave-booking confirmation still works.
+
+Studio Book now now includes a visible identity-blue-to-navy linear gradient beneath the shared radial highlights; Contact keeps its orange gradient. White text contrast is checked against both gradient endpoint colours; owner visual acceptance remains pending.

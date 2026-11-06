@@ -415,3 +415,5 @@ Public presentation refinements: homepage Studio/Kickoff height, vertical spacin
 
 
 The shared header is sticky at the viewport top. A ResizeObserver measures its responsive height for document scroll padding; cleanup restores the previous value, and print restores static positioning. `section-reveals.tsx` observes leaf sections/forms below the initial viewport, including later rendered sections, and applies a once-only480ms fade/rise. Content is never hidden while waiting, controls are not disabled, live-status regions are excluded, focus removes the animation, and reduced-motion preference cancels/skips it. Route/unmount cleanup disconnects observers/listeners and removes animation classes. Footer navigation retains BookingLink's existing transition/guard behavior. Owner/CI validates actual scrolling and physical appearance.
+
+Studio Book now now includes a visible identity-blue-to-navy linear gradient beneath the shared radial highlights; Contact keeps its orange gradient. White text contrast is checked against both gradient endpoint colours; owner visual acceptance remains pending.
