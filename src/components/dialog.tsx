@@ -30,7 +30,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`fixed m-auto max-h-[85dvh] w-[calc(100%-32px)] max-w-xl overflow-auto rounded-2xl border border-line p-6 text-ink shadow-2xl backdrop:bg-navy/65${variant === "player-app" ? " player-app-dialog" : ""}`}
+      className={`fixed m-auto max-h-[85dvh] w-[calc(100%-32px)] overflow-auto rounded-2xl border border-line p-6 text-ink shadow-2xl ${variant === "player-app" ? "player-app-dialog max-w-2xl backdrop:bg-navy/90" : "max-w-xl backdrop:bg-navy/65"}`}
       aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(event) => {

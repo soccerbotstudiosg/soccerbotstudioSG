@@ -29,11 +29,11 @@ export function SessionStep() {
           <Icon name="location" />
           <span>
             <strong>{LOCATION.building}</strong>
+            <span>Our flagship studio</span>
             <span>
-              Our flagship studio · {LOCATION.street}, {LOCATION.unit}
+              {LOCATION.street}, {LOCATION.unit}
             </span>
           </span>
-          <Icon name={outletSelected ? "check" : "arrow"} />
         </button>
       </div>
       <div id="outlet-sessions" hidden={!outletSelected}>

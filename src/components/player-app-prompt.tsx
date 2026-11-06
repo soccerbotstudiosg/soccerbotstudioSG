@@ -68,10 +68,7 @@ export function PlayerAppPrompt() {
                 </>
               )}
             </svg>
-            <span>
-              <small>{store.caption}</small>
-              <strong>{store.label}</strong>
-            </span>
+            <strong>{store.label}</strong>
           </a>
         ))}
       </div>
