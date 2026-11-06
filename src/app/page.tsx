@@ -9,18 +9,6 @@ export default function Home() {
   return (
     <>
       <Arena />
-      <div className="experience-strip">
-        <div className="strip-inner">
-          <span>
-            <Icon name="clock" />
-            40-minute sessions
-          </span>
-          <span>
-            <Icon name="users" />
-            Up to 4 players
-          </span>
-        </div>
-      </div>
       <section className="home-studio" aria-labelledby="home-studio-title">
         <div className="home-studio-inner">
           <figure className="home-studio-photo">

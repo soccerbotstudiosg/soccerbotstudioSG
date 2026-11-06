@@ -236,7 +236,7 @@ export function TimeStep() {
               disabled={offset === 0}
               onClick={() => chooseMonth(monthAt(today, offset - 1))}
             >
-              <Icon name="back" />
+              <Icon name="arrow" className="rotate-180" />
             </button>
             <button
               className="icon-button"

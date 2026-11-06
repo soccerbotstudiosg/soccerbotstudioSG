@@ -4784,3 +4784,21 @@ The owner also requested click-again deselection for time cards. Existing applic
 Follow-up presentation clarification: the selected session card changes only its blue highlight; its content, geometry and introductory copy remain stable. Existing player controls/inclusions/actions appear below. Booking-contact display values now align right through the shared ClientDetails style; labels and editable form controls retain their layout. This is a CSS-only alignment change, with no new test case or business behavior.
 
 PR31 first CI42129858849 on2ad2649 failed frontend job127603425428: the live-session parity case still expected the removed expanded heading. This was a missed dependent assertion. Updated the same case to require the identical original button, selected state and both retained prices; controls/inclusions assertions and inventory remain intact. All254 component/service cases passed locally after repair. Application code unchanged. Original CI failure retained; new exact-head CI required.
+
+### 6 November 2026 — Local hero information-strip removal
+
+PR31 corrected revision6401e6d passed all required gates in42130482806 and staging42132345558; independent public health matched. Owner requested merge, completed as a4185c8. Follow-up local-only request removes “40-minute sessions” and “Up to 4 players” from the homepage hero area. Removed the now-empty strip and its exclusive responsive CSS; session product details and booking behavior are unchanged. No new test cases for this low-impact display removal; local source/lint/format checks apply. No push or deployment authorized for this follow-up.
+
+Owner also requested the session-type highlight on time slots. Shared the same selected background/border/inset outline for expanded time cards, covering trainer-choice opening and basket selection. Removed obsolete inverse text colours from the former dark fill. Updated the existing browser colour assertion to compare the two highlights; no test title/count change. Local-only presentation change; slot selection and provider authority unchanged.
+
+Phone alignment follow-up: set ClientDetails values left-aligned within the existing700px mobile breakpoint, retaining desktop right alignment. Remove only the mobile session-list right inset so per-session prices share the total’s right edge; preserve the numbered list’s left inset. CSS-only, no business behavior or test inventory changes. Visual acceptance remains owner/CI-operated.
+
+Review typography follow-up: standardize review body/contact/session text to16px Roboto, muted grey contact labels and regular dark-navy contact/date/time/trainer values. Preserve heading, price and total emphasis and mobile/desktop alignment. Extended the existing browser typography case with label/value colour, weight and size checks; unchanged case inventory. Source/lint/format checked locally; browser acceptance remains pending.
+
+Owner refined review typography to bold all values, matching amounts. Contact values, dates, times, trainer values and session/player summary now use the shared heading weight; labels remain regular muted grey. Updated the existing browser value-weight assertion from400 to700; no inventory change. Local-only.
+
+Calendar navigation follow-up: replaced only the previous-month chevron with the existing next-month arrow rotated180degrees. Both controls now share the same icon geometry; labels, disabled state and navigation logic are unchanged. Local-only styling/copy scope; source/lint/format checks, no new tests required.
+
+Owner clarified that review session rows and Your sessions must retain the preceding page’s shared design. Removed the new review-specific session typography overrides; date weight500 and regular muted time/trainer text return to the original shared styles. Bold-value standardization now applies only to contact details. Updated existing browser assertions accordingly; no inventory change.
+
+Session-summary spacing follow-up: increase top padding in summary cards across breakpoints, separate heading from session/player copy, add breathing room before the session list and increase row vertical padding. Preserve session typography and price alignment. Owner authorizes publishing the accumulated UI changes, CI, staging and merge after successful verification and staging health.

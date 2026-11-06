@@ -1615,34 +1615,6 @@
       right: -235px;
     }
   }
-  .experience-strip {
-    background: var(--color-brand);
-    color: var(--color-on-brand-muted);
-    border-top: 1px solid var(--color-focus);
-  }
-  .strip-inner {
-    max-width: 1160px;
-    margin: auto;
-    padding: 23px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    font-size: 0.875rem;
-  }
-  .strip-inner span {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .strip-inner > span:last-child {
-    justify-content: flex-end;
-    text-align: right;
-  }
-  .strip-inner svg {
-    color: var(--color-on-brand-muted);
-    width: 20px;
-  }
   .home-studio {
     background: var(--color-surface);
   }
@@ -2044,9 +2016,6 @@
   }
 
   @media (max-width: 1200px) {
-    .strip-inner {
-      padding: 22px 40px;
-    }
     .nav-links {
       gap: 10px;
     }
@@ -2106,10 +2075,6 @@
     }
     .nav-links {
       gap: 10px;
-    }
-    .strip-inner {
-      padding: 20px 28px;
-      gap: 20px;
     }
     .home-section {
       padding: 45px 28px;
@@ -2251,16 +2216,6 @@
       width: 6px;
       height: 6px;
     }
-    .strip-inner {
-      padding: 20px 22px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px 12px;
-      font-size: 0.75rem;
-    }
-    .strip-inner svg {
-      width: 17px;
-    }
     .home-section {
       padding: 35px 20px 37px;
     }
@@ -2378,11 +2333,6 @@
     }
   }
   @media (max-width: 370px) {
-    .strip-inner {
-      padding: 18px;
-      font-size: 0.6875rem;
-      gap: 10px;
-    }
     .official-logo {
       width: 127px;
     }
@@ -2611,18 +2561,11 @@
     font-weight: var(--weight-body);
     color: var(--color-muted);
   }
-  .time.selected .time-instructor {
-    color: var(--color-on-brand-muted);
-  }
   .time-rate strong {
     font-size: var(--text-card);
     color: var(--color-brand);
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
-  }
-  .time.selected .time-rate,
-  .time.selected .time-rate strong {
-    color: var(--color-surface);
   }
   .time:disabled .time-rate,
   .time:disabled .time-rate strong {
@@ -2930,7 +2873,8 @@
     color: var(--color-brand);
     margin-left: 6px;
   }
-  .session-product[aria-pressed="true"] {
+  .session-product[aria-pressed="true"],
+  .time[aria-expanded="true"] {
     border-color: var(--color-identity);
     background: color-mix(
       in srgb,
@@ -3107,7 +3051,13 @@
     );
   }
   .summary-body {
-    padding: 23px;
+    padding: 28px 23px;
+  }
+  .session-summary-heading {
+    padding-bottom: 20px;
+  }
+  .session-summary-heading .review-head {
+    margin-bottom: 16px;
   }
   .session-summary-heading h2 {
     margin: 0;
@@ -3378,7 +3328,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 13px 0;
+    padding: 18px 0;
     border-top: 1px solid var(--color-line);
   }
   .series-index {
@@ -3490,11 +3440,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 7px;
-  }
-  .time.selected {
-    color: var(--color-surface);
-    background: var(--color-action);
-    border-color: var(--color-action);
   }
   .time > svg {
     position: absolute;
@@ -3631,6 +3576,20 @@
   .review-block {
     padding: 23px 0;
     border-bottom: 1px solid var(--color-line);
+  }
+  .review-block .booking-facts {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    color: var(--color-ink);
+  }
+  .review-block .booking-facts dt {
+    color: var(--color-muted);
+    font-weight: var(--weight-body);
+  }
+  .review-block .booking-facts dd {
+    color: var(--color-ink);
+    font-weight: var(--weight-heading);
   }
   .review-block:first-child {
     padding-top: 0;
@@ -4014,9 +3973,6 @@
     margin-top: 5px;
     color: var(--color-warning);
   }
-  .time.selected .rotation-notice {
-    color: var(--color-warning-inverse);
-  }
   @keyframes spin {
     to {
       transform: rotate(360deg);
@@ -4065,7 +4021,7 @@
       padding: 20px 25px 50px;
     }
     .summary-body {
-      padding: 20px;
+      padding: 26px 20px;
     }
     .surface {
       padding: 20px;
@@ -4171,7 +4127,7 @@
       display: none;
     }
     .summary-body {
-      padding: 19px 20px;
+      padding: 26px 20px;
     }
     .summary-total {
       margin-top: 14px;
@@ -4193,6 +4149,9 @@
     }
     .booking-facts dd + dt {
       margin-top: 12px;
+    }
+    .client-details dd {
+      text-align: left;
     }
     .actions {
       margin-top: 26px;
@@ -4244,7 +4203,7 @@
       padding: 13px 4px 0;
     }
     .series-list {
-      padding: 0 14px 4px;
+      padding: 0 0 4px 14px;
     }
     .time-heading {
       margin-top: 26px;

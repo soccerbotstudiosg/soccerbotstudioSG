@@ -726,6 +726,9 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   await sectionType(".session-product-name, .session-inclusions h2");
+  const selectedCardBackground = await page
+    .locator('.session-product[aria-pressed="true"]')
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(
     page.getByRole("dialog", { name: "Kickoff Special (Trial Price)" }),
   ).toHaveCount(0);
@@ -747,7 +750,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await page
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
     .selectOption({ index: 1 });
-  await expect(crossing).toHaveCSS("background-color", brand);
+  await expect(crossing).toHaveCSS("background-color", selectedCardBackground);
   await expect(crossing.locator(".time-instructor")).toHaveCSS(
     "font-size",
     "14px",
@@ -809,6 +812,27 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(reviewTotal).toHaveCSS("font-family", /Roboto/);
   await sectionType(".review-head h2, .review-block > h2");
   await expect(page.locator(".booking-facts")).toHaveCSS("font-size", "16px");
+  for (const label of await page.locator(".client-details dt").all()) {
+    await expect(label).toHaveCSS("color", "rgb(88, 97, 116)");
+    await expect(label).toHaveCSS("font-weight", "400");
+  }
+  for (const value of await page.locator(".client-details dd").all()) {
+    await expect(value).toHaveCSS("color", "rgb(16, 22, 54)");
+    await expect(value).toHaveCSS("font-size", "16px");
+    await expect(value).toHaveCSS("font-weight", "700");
+  }
+
+  for (const date of await page
+    .locator(".review-block .series-date > strong")
+    .all()) {
+    await expect(date).toHaveCSS("font-weight", "500");
+  }
+  for (const detail of await page
+    .locator(".review-block .series-date span")
+    .all()) {
+    await expect(detail).toHaveCSS("color", "rgb(88, 97, 116)");
+    await expect(detail).toHaveCSS("font-weight", "400");
+  }
   await page.getByRole("button", { name: "Continue to payment" }).click();
   await pageHeading("Payment");
   await sectionType(".payment-layout .section-title");
