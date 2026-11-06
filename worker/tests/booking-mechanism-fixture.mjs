@@ -135,9 +135,23 @@ export async function createBookingMechanism(options = {}) {
     await (compiledWorker ??= build({
       stdin: {
         contents: `import worker from "./worker/index.ts";
+          import { authenticate } from "./worker/access.ts";
+          import { reservationSource, assertReservationAdmission } from "./worker/reservation-abuse.ts";
+          import { ApiError } from "./worker/policy.ts";
           export * from "./worker/index.ts";
           export default { ...worker, async fetch(request, env, ctx) {
             const url = new URL(request.url);
+            if (url.pathname === "/__fixture/reservation-admission") {
+              try {
+                const access = await authenticate(request, env, Date.now());
+                const source = await reservationSource(request, env, access);
+                await assertReservationAdmission(env, source);
+                return Response.json(source);
+              } catch(error) {
+                if(error instanceof ApiError) return Response.json({error:error.code}, {status:error.status});
+                throw error;
+              }
+            }
             if (url.pathname === "/__fixture/drain-annotations") {
               const coordinator = env.COORDINATOR.get(env.COORDINATOR.idFromName(env.COORDINATOR_NAME));
               await coordinator.bookingComments(url.searchParams.get("attempt"));
@@ -171,6 +185,7 @@ export async function createBookingMechanism(options = {}) {
           options.observationMaxAgeMs ?? config.vars.OBSERVATION_MAX_AGE_MS,
         ),
         APP_ORIGIN: origin,
+        IDENTITY_PEPPER: "synthetic-reservation-pepper-for-tests-only",
         SOURCE_REVISION: "d".repeat(40),
         LIVE_CUSTOMER_ACCESS: "enabled",
         PUBLIC_DISPLAY_WARMING: options.displayWarming ? "enabled" : "disabled",

@@ -1,6 +1,7 @@
 import { sitePath } from "./site-path";
 export const bookingCover = sitePath("/assets/68b1a1790591.jpg");
 export const darkLogo = sitePath("/assets/7a29f38b3c34.webp");
+export const singaporeFlag = sitePath("/assets/singapore-flag.svg");
 export const logo = sitePath("/assets/c275ccd87afb.svg");
 export const studioMedia = [
   {
@@ -81,5 +82,17 @@ export const homeMedia = {
     source: "https://soccerbot360.com/en/anwendungen",
     sourceAsset: "https://soccerbot360.com/videos/kognitiv-poster.jpg",
     zoom: 1.13,
+  },
+};
+
+// Official Studio stream demonstration, matching the owner’s reference.
+export const studioHero = {
+  src: "https://assets.soccerbot360.com/assets/videos/stream.mp4",
+  poster: "https://soccerbot360.com/videos/stream-poster.jpg",
+  source: "https://soccerbot360.com/en/studio",
+  mobile: {
+    src: "https://assets.soccerbot360.com/assets/videos/hero-loop.mp4",
+    poster: "https://soccerbot360.com/videos/performance-teaser-poster.jpg",
+    source: "https://soccerbot360.com/en",
   },
 };

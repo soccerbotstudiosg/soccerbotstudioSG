@@ -24,21 +24,17 @@ export const CONTACT_METHODS = {
   sms: "SMS",
   whatsapp: "WhatsApp",
 };
-export const PLAYER_APP_URL = "https://soccerbot360.com/en/player-app";
 export const PLAYER_APP_STORES = [
   {
     label: "App Store",
-    caption: "Download on the",
     url: "https://apps.apple.com/us/app/soccerbot-player-app/id6751052041",
   },
   {
     label: "Google Play",
-    caption: "Get it on",
     url: "https://play.google.com/store/apps/details?id=com.umbrella.soccerbot.playerapp&hl=en&pli=1",
   },
   {
     label: "Web App",
-    caption: "Open in",
     url: "https://app.soccerbot360.com/login",
   },
 ] as const;

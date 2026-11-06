@@ -9,117 +9,101 @@ export default function Home() {
   return (
     <>
       <Arena />
-      <div className="experience-strip">
-        <div className="strip-inner">
-          <span>
-            <Icon name="clock" />
-            40-minute sessions
-          </span>
-          <span>
-            <Icon name="users" />
-            Up to 4 players
-          </span>
+      <section
+        className="home-promotion home-promotion--studio"
+        aria-labelledby="home-studio-title"
+      >
+        <svg
+          className="promotion-edge promotion-edge--top"
+          viewBox="0 0 1440 40"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M0 0H1440V23Q720 57 0 23Z" />
+        </svg>
+        <figure className="promotion-image">
+          <img
+            src={homeMedia.studio.src}
+            alt={homeMedia.studio.alt}
+            width={homeMedia.studio.width}
+            height={homeMedia.studio.height}
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+        <div className="promotion-copy">
+          <span className="promotion-eyebrow">The experience</span>
+          <h2 id="home-studio-title">Inside the studio</h2>
+          <p>
+            Interactive projections surround the turf, bringing targets and
+            football scenarios into the arena. Every session includes full
+            instructor guidance for your group.
+          </p>
+          <BookingLink className="button promotion-cta" href="/studio/">
+            Explore the studio <Icon name="chevron" />
+          </BookingLink>
         </div>
-      </div>
-      <section className="home-studio" aria-labelledby="home-studio-title">
-        <div className="home-studio-inner">
-          <figure className="home-studio-photo">
-            <img
-              src={homeMedia.studio.src}
-              alt={homeMedia.studio.alt}
-              width={homeMedia.studio.width}
-              height={homeMedia.studio.height}
-              loading="lazy"
-              decoding="async"
-            />
-          </figure>
-          <div className="home-studio-copy">
-            <h2 id="home-studio-title">Inside the studio</h2>
-            <p>
-              Interactive projections surround the turf, bringing targets and
-              football scenarios into the arena. Every session includes full
-              instructor guidance for your group.
-            </p>
-            <BookingLink className="button" href="/studio/">
-              Explore the studio <Icon name="arrow" />
-            </BookingLink>
-            <small className="home-image-credit">
-              Imagery:{" "}
-              <a
-                href="https://soccerbot360.com/en"
-                target="_blank"
-                rel="noreferrer"
-              >
-                SOCCERBOT360 global studios
-              </a>
-              .
-            </small>
-          </div>
-        </div>
+        <svg
+          className="promotion-edge promotion-edge--bottom"
+          viewBox="0 0 1440 40"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M0 0H1440V23Q720 57 0 23Z" />
+        </svg>
       </section>
-      <section className="home-section" id="sessions">
-        <div className="section-head">
-          <div>
-            <h2>Book a session</h2>
-            <p>Full instructor guidance included.</p>
+      <section
+        className="home-promotion home-promotion--booking"
+        id="sessions"
+        aria-labelledby="home-session-title"
+      >
+        <figure className="promotion-image">
+          <img
+            src={homeMedia.kickoff.src}
+            alt={homeMedia.kickoff.alt}
+            width={homeMedia.kickoff.width}
+            height={homeMedia.kickoff.height}
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+        <div className="promotion-copy">
+          <span className="promotion-eyebrow">Your next session</span>
+          <h2 id="home-session-title">Kickoff Special</h2>
+          <p>
+            A 40-minute studio session for up to four players. Explore Single,
+            Team and Battle play in the immersive arena, with an instructor
+            guiding your group throughout.
+          </p>
+          <div className="promotion-details">
+            <span>40 minutes · 1–4 players</span>
+            <strong>
+              <SessionPrice />
+            </strong>
           </div>
-        </div>
-        <div className="home-offers">
-          <BookingLink
-            href="/book/account/"
-            className="offer-home"
-            aria-labelledby="offer-title"
-            aria-describedby="offer-description"
-          >
-            <span
-              className="offer-art"
-              style={
-                {
-                  "--offer-zoom": homeMedia.kickoff.zoom,
-                } as React.CSSProperties
-              }
-              aria-hidden="true"
-            >
-              <img
-                src={homeMedia.kickoff.src}
-                alt=""
-                width={homeMedia.kickoff.width}
-                height={homeMedia.kickoff.height}
-                loading="lazy"
-                decoding="async"
-              />
-            </span>
-            <span className="offer-home-copy">
-              <span className="offer-title" id="offer-title">
-                Kickoff Special
-              </span>
-              <span className="offer-description" id="offer-description">
-                A 40-minute studio session for up to four players. Explore
-                Single, Team and Battle play in the immersive arena, with an
-                instructor guiding your group throughout.
-              </span>
-              <span className="offer-meta">
-                <span>40 minutes · 1–4 players</span>
-                <strong>
-                  <SessionPrice />
-                </strong>
-              </span>
-            </span>
+          <BookingLink className="button promotion-cta" href="/book/account/">
+            Book now <Icon name="chevron" />
           </BookingLink>
         </div>
       </section>
-      <Link href="/enquiry/" className="contact-banner">
-        <span className="contact-banner-copy">
-          <span className="contact-banner-title">Contact us</span>
-          <span className="contact-banner-description">
-            For Multi-Session Bundles, Membership, Academy, Corporate and
-            Sponsorship Rates
-          </span>
-        </span>
-        <span className="contact-banner-arrow">
-          <Icon name="arrow" />
-        </span>
-      </Link>
+      <section
+        className="home-promotion--contact abstract-promotion"
+        aria-labelledby="home-contact-title"
+      >
+        <div className="abstract-promotion-heading">
+          <span className="promotion-eyebrow">Bring your group</span>
+          <h2 id="home-contact-title">Contact us</h2>
+        </div>
+        <p>
+          For Multi-Session Bundles, Membership, Academy, Corporate and
+          Sponsorship Rates
+        </p>
+        <Link href="/enquiry/" className="button promotion-cta">
+          Contact us <Icon name="chevron" />
+        </Link>
+      </section>
     </>
   );
 }

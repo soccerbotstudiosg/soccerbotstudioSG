@@ -1,4 +1,8 @@
 "use client";
+import {
+  BookingPrimaryAction,
+  BookingActionTotal,
+} from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -81,18 +85,7 @@ export function ReviewStep({
       <h1 className="page-title">Review booking</h1>
       <p className="lead">Check your details before payment.</p>
       <section className="surface booking-document">
-        <div className="review-block">
-          <SessionSummaryHeading
-            draft={draft}
-            action={
-              !locked && (
-                <Link className="text-link" href="/book/session/">
-                  Edit
-                </Link>
-              )
-            }
-          />
-        </div>
+        <ReviewSessions part="heading" verifying={verifying} />
         <div className="review-block">
           <div className="review-head">
             <h2>Booking contact</h2>
@@ -104,18 +97,7 @@ export function ReviewStep({
           </div>
           <ClientDetails contact={draft.contact} />
         </div>
-        <div className="review-block">
-          <div className="review-head">
-            <h2>Order summary</h2>
-            {!locked && (
-              <Link className="text-link" href="/book/time/">
-                Edit
-              </Link>
-            )}
-          </div>
-          <SessionList slots={draft.slots} now={now} showPrices />
-          <PriceSummary draft={draft} />
-        </div>
+        <ReviewSessions part="order" verifying={verifying} />
         <Arrival />
       </section>
       <label className="check-label review-terms">
@@ -150,7 +132,7 @@ export function ReviewStep({
           )}
         </div>
       )}
-      <div className="actions">
+      <BookingPrimaryAction className="actions">
         <button
           className="button"
           disabled={
@@ -170,10 +152,11 @@ export function ReviewStep({
             <BrandLoading compact label="Opening checkout…" />
           ) : (
             "Continue to payment"
-          )}
-          {!busy && <Icon name="arrow" />}
+          )}{" "}
+          <BookingActionTotal />
+          {!busy && <Icon name="chevron" />}
         </button>
-      </div>
+      </BookingPrimaryAction>
       {verifying && (
         <p className="notice" role="status">
           Reservation checking. Please do not close or refresh.
@@ -199,5 +182,53 @@ export function ReviewStep({
         </Dialog>
       )}
     </>
+  );
+}
+
+/** Reuse review selections and their existing edit locks in inline and phone-panel layouts. */
+export function ReviewSessions({
+  part,
+  verifying = false,
+}: {
+  part?: "heading" | "order";
+  verifying?: boolean;
+}) {
+  const { draft, attempt, now } = useBooking();
+  const locked = verifying || attempt?.held;
+  const cartHeading = (
+    <div className="review-block">
+      <SessionSummaryHeading
+        draft={draft}
+        action={
+          !locked && (
+            <Link className="text-link" href="/book/session/">
+              Edit
+            </Link>
+          )
+        }
+      />
+    </div>
+  );
+  const cartOrder = (
+    <div className="review-block">
+      <div className="review-head">
+        <h2>Order summary</h2>
+        {!locked && (
+          <Link className="text-link" href="/book/time/">
+            Edit
+          </Link>
+        )}
+      </div>
+      <SessionList slots={draft.slots} now={now} showPrices />
+      <PriceSummary draft={draft} />
+    </div>
+  );
+  if (part === "heading") return cartHeading;
+  if (part === "order") return cartOrder;
+  return (
+    <div className="booking-document">
+      {cartHeading}
+      {cartOrder}
+    </div>
   );
 }

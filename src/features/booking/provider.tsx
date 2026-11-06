@@ -11,8 +11,13 @@ import {
 } from "@/services/confirmation";
 import { isHitpayCheckoutUrl } from "@/domain/native-checkout";
 import { START_INTERVAL_MINUTES } from "@/domain/booking-policy";
-import { todaySG } from "@/domain/dates";
-import { slotKey, selectionErrors } from "@/domain/booking";
+import { todaySG, dateLabel, endTime } from "@/domain/dates";
+import {
+  slotKey,
+  sessionOfferKey,
+  sessionPrice,
+  selectionErrors,
+} from "@/domain/booking";
 import { useCalendarAvailability } from "./calendar-availability";
 import {
   createContext,
@@ -57,7 +62,10 @@ type ActionState = {
   returnToCalendar?: boolean;
   resumeAttemptId?: string;
 };
+type SessionChoices = { outlet: boolean; session: boolean };
 interface BookingContextValue extends StoredBooking {
+  sessionChoices: SessionChoices;
+  setSessionChoices: (choices: SessionChoices) => void;
   availability: ReturnType<typeof useBookingAvailability>;
   showDate: (date: string | null) => void;
   calendar: ReturnType<typeof useCalendarAvailability>;
@@ -96,6 +104,10 @@ export function BookingProvider({
   bookingService?: BookingService;
   identityService?: CustomerIdentityService;
 }) {
+  const [sessionChoices, setSessionChoices] = useState<SessionChoices>({
+    outlet: false,
+    session: false,
+  });
   const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
   const service = useMemo(
     () => defineBookingService(bookingService),
@@ -136,6 +148,8 @@ export function BookingProvider({
     controller: AbortController;
     operation: Action;
   } | null>(null);
+  const expiryRefresh = useRef<AbortController | null>(null);
+  const releasedReservation = useRef<string | null>(null);
   const queueRetry = useRef<{ id: string; revision: number } | null>(null);
   const mounted = useRef(false);
   const exitWork = useRef<{
@@ -298,6 +312,8 @@ export function BookingProvider({
     [service],
   );
   const cancel = useCallback(() => {
+    expiryRefresh.current?.abort();
+    expiryRefresh.current = null;
     if (mounted.current && !latest.current.attempt) pauseCalendar(false);
     const request = active.current;
     if (!request) return;
@@ -377,6 +393,132 @@ export function BookingProvider({
     window.addEventListener("pageshow", resume);
     return () => window.removeEventListener("pageshow", resume);
   }, [cancel]);
+  /** Rebuild only the editable cart after server-confirmed unpaid release. */
+  const restartReleasedReservation = useCallback(
+    (id: string) => {
+      if (releasedReservation.current === id) return;
+      releasedReservation.current = id;
+      cancel();
+      const previous = latest.current.draft;
+      const dates = [...new Set(previous.slots.map((slot) => slot.date))];
+      calendar.retry([
+        calendarMonth,
+        ...new Set(dates.map((date) => date.slice(0, 7))),
+      ]);
+      setRestoredOwner({ service, identityService });
+      // Expired selections must not remain actionable while fresh reads resolve.
+      commit({
+        ...latest.current,
+        attempt: null,
+        draft: { ...previous, accepted: false, slots: [] },
+      });
+      setAction({ status: "idle", returnToCalendar: true });
+      if (!dates.length) {
+        pauseCalendar(false);
+        setSelectionNotice(
+          "Your unpaid reservation has ended. Your details are saved. Please choose your sessions again.",
+        );
+        return;
+      }
+      pauseCalendar(true);
+      setSelectionNotice(
+        "Your unpaid reservation has ended. Checking which sessions are still available…",
+      );
+      const controller = new AbortController();
+      expiryRefresh.current = controller;
+      const revision = latest.current.revision;
+      const identity = JSON.stringify(identityService.current());
+      void Promise.allSettled(
+        dates.map((date) =>
+          service.availability({
+            date,
+            players: previous.players,
+            serviceId: previous.nativeServiceId,
+            fresh: true,
+            signal: controller.signal,
+          }),
+        ),
+      ).then((results) => {
+        if (
+          controller.signal.aborted ||
+          expiryRefresh.current !== controller ||
+          !mounted.current
+        )
+          return;
+        if (
+          latest.current.revision !== revision ||
+          latest.current.attempt ||
+          JSON.stringify(identityService.current()) !== identity
+        ) {
+          expiryRefresh.current = null;
+          pauseCalendar(false);
+          if (latest.current.revision === revision && !latest.current.attempt)
+            setSelectionNotice(
+              "Your session has changed. Please check availability again.",
+            );
+          return;
+        }
+        const unavailable: typeof previous.slots = [];
+        const unconfirmed: typeof previous.slots = [];
+        const retained = previous.slots.flatMap((slot) => {
+          const result = results[dates.indexOf(slot.date)];
+          if (result.status !== "fulfilled") {
+            unconfirmed.push(slot);
+            return [];
+          }
+          const offer = result.value.find(
+            (candidate) =>
+              candidate.available &&
+              sessionOfferKey(candidate) === sessionOfferKey(slot) &&
+              sessionPrice(candidate) === sessionPrice(slot) &&
+              candidate.rotationAt === slot.rotationAt &&
+              selectionErrors([candidate], Date.now()).length === 0,
+          );
+          if (!offer) unavailable.push(slot);
+          return offer ? [slot] : [];
+        });
+        const describe = (slots: typeof previous.slots) =>
+          slots
+            .map(
+              (slot) =>
+                `${dateLabel(slot.date)}, ${slot.start}–${endTime(slot.start)}`,
+            )
+            .join("; ");
+        commit({
+          ...latest.current,
+          draft: { ...previous, accepted: false, slots: retained },
+        });
+        expiryRefresh.current = null;
+        pauseCalendar(false);
+        setSelectionNotice(
+          [
+            "Your unpaid reservation has ended.",
+            unavailable.length
+              ? `Removed unavailable sessions: ${describe(unavailable)}. These sessions may not be available to book again immediately. Please try again later.`
+              : "",
+            unconfirmed.length
+              ? `Unable to confirm availability for: ${describe(unconfirmed)}. These sessions were removed from your cart. Please refresh availability and select them again.`
+              : "",
+            retained.length
+              ? "Your remaining available sessions are still in your cart."
+              : "",
+            "Your details are saved.",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        );
+      });
+    },
+    [
+      cancel,
+      calendar,
+      calendarMonth,
+      commit,
+      identityService,
+      service,
+      setAction,
+    ],
+  );
   const run = useCallback(
     async (operation: Action, outcome: Outcome = "success") => {
       if (active.current || !mounted.current || !latest.current.ready)
@@ -619,7 +761,8 @@ export function BookingProvider({
         }
         if (
           error instanceof BookingServiceError &&
-          error.code === "checkout_not_started"
+          (error.code === "checkout_not_started" ||
+            error.code === "reservation_blocked")
         ) {
           commit({ ...latest.current, attempt: null });
           setAction({ status: "failure", operation, error: error.message });
@@ -645,27 +788,10 @@ export function BookingProvider({
               );
         if (known.code === "reservation_expired" && latest.current.attempt) {
           try {
-            await expireBooking(latest.current.attempt.id);
+            const expiredId = latest.current.attempt.id;
+            await expireBooking(expiredId);
             if (!isCurrent()) return false;
-            calendar.retry([
-              calendarMonth,
-              ...new Set(
-                latest.current.draft.slots.map((slot) => slot.date.slice(0, 7)),
-              ),
-            ]);
-            commit({
-              ...latest.current,
-              attempt: null,
-              draft: { ...latest.current.draft, accepted: false, slots: [] },
-            });
-            pauseCalendar(false);
-            setSelectionNotice(known.message);
-            setAction({
-              status: "failure",
-              operation,
-              error: known.message,
-              returnToCalendar: true,
-            });
+            restartReleasedReservation(expiredId);
           } catch {
             if (isCurrent())
               setAction({
@@ -733,7 +859,12 @@ export function BookingProvider({
       } finally {
         if (active.current === request && !checkoutNavigationStarted)
           active.current = null;
-        if (mounted.current && !latest.current.attempt) pauseCalendar(false);
+        if (
+          mounted.current &&
+          !latest.current.attempt &&
+          !expiryRefresh.current
+        )
+          pauseCalendar(false);
       }
     },
     [
@@ -742,8 +873,8 @@ export function BookingProvider({
       setAction,
       identityService,
       calendar,
-      calendarMonth,
       finishExit,
+      restartReleasedReservation,
     ],
   );
   useEffect(() => {
@@ -760,6 +891,8 @@ export function BookingProvider({
     <Context.Provider
       value={{
         ...value,
+        sessionChoices,
+        setSessionChoices,
         ready: value.ready && !restorationPending,
         now,
         bookingService: service,
@@ -780,27 +913,11 @@ export function BookingProvider({
         restartAfterExpiry(id) {
           if (
             active.current ||
+            latest.current.attempt?.status === "paid" ||
             (latest.current.attempt && latest.current.attempt.id !== id)
           )
             return;
-          cancel();
-          calendar.retry([
-            calendarMonth,
-            ...new Set(
-              latest.current.draft.slots.map((slot) => slot.date.slice(0, 7)),
-            ),
-          ]);
-          setRestoredOwner({ service, identityService });
-          commit({
-            ...latest.current,
-            attempt: null,
-            draft: { ...latest.current.draft, accepted: false, slots: [] },
-          });
-          pauseCalendar(false);
-          setSelectionNotice(
-            "Your unpaid reservation has ended. You can book again. Your details are saved.",
-          );
-          setAction({ status: "idle", returnToCalendar: true });
+          restartReleasedReservation(id);
         },
         async restartAfterConfirmation(id) {
           if (active.current) throw new Error("booking_exit_changed");
@@ -832,6 +949,7 @@ export function BookingProvider({
           pauseCalendar(false);
           setSelectionNotice(null);
           setRestoredOwner({ service, identityService });
+          setSessionChoices({ outlet: false, session: false });
           commit({ version: 2, draft: blankDraft(), attempt: null });
         },
         /** Apply draft changes while preserving the booking state constraints. */
@@ -895,6 +1013,7 @@ export function BookingProvider({
             return;
           cancel();
           setSelectionNotice(null);
+          setSessionChoices({ outlet: false, session: false });
           commit({ version: 2, draft: blankDraft(), attempt: null });
         },
       }}

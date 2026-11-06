@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isStudioSessionStart } from "./booking-policy";
+import { isStudioSessionStart, MAX_BOOKING_SESSIONS } from "./booking-policy";
 import { validDisplayDeadline } from "./catalog";
 import { providerReferencesSchema } from "./provider-references";
 // Initial sandbox checkout URL only; the server binds merchant and request ID.
@@ -131,7 +131,7 @@ export const nativePrepareSchema = z
         }),
       )
       .min(1)
-      .max(12),
+      .max(MAX_BOOKING_SESSIONS),
   })
   .refine((value) => value.accepted || value.holding === true);
 

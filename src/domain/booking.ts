@@ -10,6 +10,7 @@ import {
   BOOKING_LEAD_MS,
   isStudioSessionStart,
   MAX_PLAYERS,
+  MAX_BOOKING_SESSIONS,
   SESSION_MINUTES,
   CHANGEOVER_MINUTES,
 } from "./booking-policy";
@@ -126,6 +127,8 @@ export function isElapsed(slot: Slot, now = Date.now()): boolean {
 export function selectionErrors(slots: Slot[], now = Date.now()): string[] {
   const today = todaySG(new Date(now));
   if (!slots.length) return ["Choose at least one session."];
+  if (slots.length > MAX_BOOKING_SESSIONS)
+    return [`Choose up to ${MAX_BOOKING_SESSIONS} sessions per booking.`];
   const max = new Date(`${today}T12:00:00Z`);
   max.setUTCMonth(max.getUTCMonth() + 12, 0);
   if (

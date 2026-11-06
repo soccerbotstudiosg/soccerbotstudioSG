@@ -69,11 +69,11 @@ it("shows checking before the protected server result and confirms only verified
   finish(Response.json({ status: "confirmed", reason: "verified" }));
   await screen.findByRole("status", { name: "Preparing confirmation…" });
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).not.toBeInTheDocument();
   finishReceipt(Response.json(receiptFixture()));
   expect(
-    await screen.findByRole("heading", { name: "Booking confirmed" }),
+    await screen.findByRole("heading", { name: "Booking Confirmed" }),
   ).toBeInTheDocument();
   expect(fetch).toHaveBeenCalledWith(
     `/api/attempts/${first}/confirmation`,
@@ -102,7 +102,7 @@ it("denied and malformed responses cannot show confirmation or protected details
     await screen.findByRole("heading", { name: "Confirmation unavailable" }),
   ).toBeInTheDocument();
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).not.toBeInTheDocument();
 });
 it("a late reply from a previous attempt cannot confirm the current attempt", async () => {
@@ -129,7 +129,7 @@ it("a late reply from a previous attempt cannot confirm the current attempt", as
   finishFirst(Response.json({ status: "confirmed", reason: "verified" }));
   await waitFor(() =>
     expect(
-      screen.queryByRole("heading", { name: "Booking confirmed" }),
+      screen.queryByRole("heading", { name: "Booking Confirmed" }),
     ).not.toBeInTheDocument(),
   );
   expect(fetch.mock.calls[0][1].signal.aborted).toBe(true);
@@ -324,7 +324,7 @@ it("booking restoration does not restart a protected confirmation read", async (
   );
   expect(restore).toHaveBeenCalledTimes(1);
   expect(
-    await screen.findByRole("heading", { name: "Booking confirmed" }),
+    await screen.findByRole("heading", { name: "Booking Confirmed" }),
   ).toBeInTheDocument();
   expect(
     fetch.mock.calls.filter(([url]) => url.endsWith("/confirmation")),
@@ -340,7 +340,7 @@ it("booking restoration does not restart a protected confirmation read", async (
     }),
   );
   expect(
-    await screen.findByRole("heading", { name: "Booking confirmed" }),
+    await screen.findByRole("heading", { name: "Booking Confirmed" }),
   ).toBeInTheDocument();
   expect(
     fetch.mock.calls.filter(([url]) => url.endsWith("/confirmation")),
@@ -371,7 +371,7 @@ it("failed booking restoration does not block independent protected confirmation
     </BookingProvider>,
   );
   expect(
-    await screen.findByRole("heading", { name: "Booking confirmed" }),
+    await screen.findByRole("heading", { name: "Booking Confirmed" }),
   ).toBeInTheDocument();
   expect(
     fetch.mock.calls.filter(([url]) => url.endsWith("/confirmation")),
@@ -430,10 +430,11 @@ it("expired checking shows authenticated recorded payment without confirming or 
     }),
   ).toBeInTheDocument();
   expect(screen.getByText(/Do not pay again/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
   expect(screen.getByText("Trainer: Native Trainer")).toBeVisible();
   expect(screen.getByLabelText("Current booking summary")).toBeVisible();
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("link", { name: /Open checkout/ }),
@@ -606,7 +607,7 @@ it("pending checkout context uses the compact confirmation shell without checkou
     screen.queryByRole("link", { name: /Open checkout/ }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).not.toBeInTheDocument();
   expect(fetch).toHaveBeenCalledTimes(1);
   finish(
@@ -701,12 +702,12 @@ it("pending confirmation retains the booking summary while hiding full details s
   expect(screen.queryByLabelText("Booking actions")).toBeNull();
   expect(screen.queryByRole("link", { name: "Back to home" })).toBeNull();
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).toBeNull();
   await act(async () =>
     complete(Response.json({ status: "confirmed", reason: "verified" })),
   );
-  await screen.findByRole("heading", { name: "Booking confirmed" });
+  await screen.findByRole("heading", { name: "Booking Confirmed" });
   expect(document.querySelector(".confirmation-card")).toBe(card);
   expect(screen.getByLabelText("Booking actions")).toBeVisible();
   expect(screen.getByRole("link", { name: "Back to home" })).toBeVisible();
@@ -747,7 +748,7 @@ it("Back to home starts the shared background exit and navigates without awaitin
       onRestart={restart}
     />,
   );
-  await screen.findByRole("heading", { name: "Booking confirmed" });
+  await screen.findByRole("heading", { name: "Booking Confirmed" });
   fireEvent.click(screen.getByRole("link", { name: "Back to home" }));
   expect(restart).toHaveBeenCalledWith(first);
   await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/"));
@@ -789,7 +790,7 @@ it("verified payment shows confirmation before reconciliation without export act
   );
   vi.stubGlobal("fetch", fetch);
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
-  await screen.findByRole("heading", { name: "Booking confirmed" });
+  await screen.findByRole("heading", { name: "Booking Confirmed" });
   expect(screen.getByText("Paid", { exact: true })).toBeVisible();
   expect(
     screen.queryByRole("button", {
@@ -797,7 +798,7 @@ it("verified payment shows confirmation before reconciliation without export act
     }),
   ).toBeNull();
   expect(
-    screen.getByRole("heading", { name: "Booking confirmed" }),
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
   ).toBeVisible();
   expect(
     document.querySelector(".booking-flow-overlay, .page-loading"),
@@ -815,7 +816,7 @@ it("verified payment shows confirmation before reconciliation without export act
   );
   expect(screen.queryByRole("alert")).toBeNull();
   expect(
-    screen.getByRole("heading", { name: "Booking confirmed" }),
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
   ).toBeVisible();
   expect(
     fetch.mock.calls.filter(([url]) => url.endsWith("/receipt")),
@@ -858,7 +859,7 @@ it("manual review supersedes an earlier customer confirmation without exposing d
   );
   vi.stubGlobal("fetch", fetch);
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
-  await screen.findByRole("heading", { name: "Booking confirmed" });
+  await screen.findByRole("heading", { name: "Booking Confirmed" });
   await act(async () =>
     finish(
       Response.json({
@@ -875,7 +876,7 @@ it("manual review supersedes an earlier customer confirmation without exposing d
   );
   expect(screen.queryByText(/We’re still checking your payment/)).toBeNull();
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).toBeNull();
   expect(
     screen.queryByRole("button", { name: "Download booking details" }),
@@ -944,6 +945,7 @@ it("authoritative unpaid expiry releases the original attempt before returning t
     ),
   );
   expect(onExpired).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
   await act(async () => release(Response.json({ expired: true })));
   expect(onExpired).toHaveBeenCalledExactlyOnceWith(first);
   expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
@@ -969,7 +971,7 @@ it("authoritative unpaid expiry releases the original attempt before returning t
   );
   await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).toBeNull();
   expect(onExpired).toHaveBeenCalledTimes(1);
 });
@@ -1004,7 +1006,7 @@ it("poll-confirmed payment retains its displayed proof while the final receipt i
     vi.stubGlobal("fetch", fetch);
     render(<ProtectedConfirmation attemptId={first} />);
     await act(async () => {});
-    const heading = screen.getByRole("heading", { name: "Booking confirmed" });
+    const heading = screen.getByRole("heading", { name: "Booking Confirmed" });
     const verified = screen.getByText(/Saved confirmation/).textContent;
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
@@ -1012,7 +1014,7 @@ it("poll-confirmed payment retains its displayed proof while the final receipt i
     expect(
       fetch.mock.calls.filter(([url]) => url.endsWith("/receipt")),
     ).toHaveLength(1);
-    expect(screen.getByRole("heading", { name: "Booking confirmed" })).toBe(
+    expect(screen.getByRole("heading", { name: "Booking Confirmed" })).toBe(
       heading,
     );
     expect(
@@ -1023,7 +1025,7 @@ it("poll-confirmed payment retains its displayed proof while the final receipt i
     await act(async () => {
       finishReceipt(Response.json(proof));
     });
-    expect(screen.getByRole("heading", { name: "Booking confirmed" })).toBe(
+    expect(screen.getByRole("heading", { name: "Booking Confirmed" })).toBe(
       heading,
     );
     expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
@@ -1053,14 +1055,14 @@ it("retains verified customer confirmation across pending responses that omit pr
   render(<ProtectedConfirmation attemptId={first} />);
   await act(async () => {});
   expect(
-    screen.getByRole("heading", { name: "Booking confirmed" }),
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
   ).toBeVisible();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(15000);
   });
   expect(reads).toBeGreaterThan(1);
   expect(
-    screen.getByRole("heading", { name: "Booking confirmed" }),
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
   ).toBeVisible();
   expect(
     screen.queryByRole("status", { name: "Checking payment…" }),
@@ -1178,7 +1180,7 @@ it("shows payment received feedback with details while current booking evidence 
   await act(async () => {});
   expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).toBeNull();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(5000);
@@ -1189,7 +1191,7 @@ it("shows payment received feedback with details while current booking evidence 
     }),
   ).toBeVisible();
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).toBeNull();
   expect(screen.queryByRole("button", { name: /download|home/i })).toBeNull();
   expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
@@ -1304,7 +1306,7 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
     screen.queryByRole("status", { name: "Checking invoice number" }),
   ).toBeNull();
   expect(
-    screen.getByRole("heading", { name: "Booking confirmed" }),
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
   ).toBeInTheDocument();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(60000);
@@ -1351,7 +1353,7 @@ it("incomplete provider booking shows reservation recovery without a payment spi
     screen.queryByRole("link", { name: /payment|checkout/i }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("heading", { name: "Booking confirmed" }),
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).not.toBeInTheDocument();
   expect(screen.getByLabelText("Current booking summary")).toHaveTextContent(
     "SGD $108.00",

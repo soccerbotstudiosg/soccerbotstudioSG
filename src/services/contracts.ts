@@ -5,13 +5,7 @@ import type {
   receiptSchema,
   bookingDetailsSchema,
 } from "@/domain/native-checkout";
-import type {
-  Attempt,
-  Booking,
-  BookingDraft,
-  Outcome,
-  Session,
-} from "@/domain/booking";
+import type { Attempt, BookingDraft, Outcome, Session } from "@/domain/booking";
 export type AvailableSlot = Session & { available: boolean };
 export type BookingMode = "demo" | "live";
 export type BookingOperation =
@@ -74,6 +68,7 @@ export type BookingErrorCode =
   | "reservation_expired"
   | "checkout_window_blocked"
   | "checkout_not_started"
+  | "reservation_blocked"
   | "queue_busy"
   | "payment_unavailable"
   | "conflict"
@@ -133,10 +128,6 @@ export interface IdentityService {
   profile(email: string): BookingDraft["contact"] | null;
   saveProfile(draft: BookingDraft): void;
 }
-export interface AssistantService {
-  reply(text: string, booking: Booking | null): string;
-}
-
 export type CheckoutContext = {
   bookingIssue?: "incomplete";
   /** Client-only server time anchor; never serialized as booking authority. */

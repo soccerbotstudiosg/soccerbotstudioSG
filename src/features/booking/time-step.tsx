@@ -5,7 +5,10 @@ import {
 } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useMemo, useState } from "react";
-import { BOOKING_MONTH_COUNT } from "@/domain/booking-policy";
+import {
+  BOOKING_MONTH_COUNT,
+  MAX_BOOKING_SESSIONS,
+} from "@/domain/booking-policy";
 import { Icon } from "@/components/icon";
 
 import {
@@ -158,6 +161,8 @@ export function TimeStep() {
   /** Commit only an explicitly chosen, currently offered trainer for this time. */
   function select(offered: AvailableSlot) {
     if (
+      (draft.slots.length >= MAX_BOOKING_SESSIONS &&
+        !draft.slots.some((slot) => slotKey(slot) === slotKey(offered))) ||
       isElapsed(offered) ||
       !slots.some(
         (candidate) =>
@@ -184,22 +189,32 @@ export function TimeStep() {
   }
   return (
     <>
-      <h1 className="page-title">Select dates and times</h1>
+      <h1 className="page-title">
+        Select dates<span className="booking-time-title-break"> and times</span>
+      </h1>
       {selectionNotice && (
         <p className="alert" role="alert">
           {selectionNotice}
         </p>
       )}
-      <p className="lead">
-        Add 40-minute sessions on the same or different dates. Start times are
-        50 minutes apart, with 10 minutes for exit and entry.
-      </p>
+      <p className="lead">40-minute sessions · 10-minute changeover.</p>
+      {draft.slots.length >= MAX_BOOKING_SESSIONS && (
+        <p role="status" className="notice">
+          Maximum {MAX_BOOKING_SESSIONS} sessions per booking. Remove a session
+          to choose another.
+        </p>
+      )}
       <section
         className="calendar-panel"
         aria-label="Booking calendar"
-        aria-busy={calendarBusy}
+        aria-busy={calendarBusy || calendar.refreshing(month.slice(0, 7))}
       >
-        <div className={`calendar-head${live ? " with-refresh" : ""}`}>
+        {calendar.refreshing(month.slice(0, 7)) && (
+          <div className="calendar-refresh">
+            <BrandLoading overlay={false} compact label="Updating dates…" />
+          </div>
+        )}
+        <div className="calendar-head">
           <div className="month-picker">
             <label className="sr-only" htmlFor="calendar-month">
               Calendar month
@@ -212,23 +227,13 @@ export function TimeStep() {
               {Array.from({ length: maxMonthOffset + 1 }, (_, i) => (
                 <option key={i} value={i}>
                   {dateLabel(monthAt(today, i), {
-                    month: "long",
+                    month: "short",
                     year: "numeric",
                   })}
                 </option>
               ))}
             </select>
           </div>
-          {live && (
-            <button
-              className="calendar-refresh"
-              aria-label="Refresh availability"
-              disabled={calendarBusy}
-              onClick={() => calendar.retry()}
-            >
-              Refresh
-            </button>
-          )}
           <div className="calendar-nav">
             <button
               className="icon-button"
@@ -236,7 +241,7 @@ export function TimeStep() {
               disabled={offset === 0}
               onClick={() => chooseMonth(monthAt(today, offset - 1))}
             >
-              <Icon name="back" />
+              <Icon name="chevron" className="rotate-180" />
             </button>
             <button
               className="icon-button"
@@ -244,11 +249,11 @@ export function TimeStep() {
               disabled={offset === maxMonthOffset}
               onClick={() => chooseMonth(monthAt(today, offset + 1))}
             >
-              <Icon name="arrow" />
+              <Icon name="chevron" />
             </button>
           </div>
         </div>
-        {calendarBusy ? (
+        {calendarBusy && !calendar.hasLoaded(month.slice(0, 7)) ? (
           <div className="calendar-loading">
             <BrandLoading overlay={false} compact label="Checking dates…" />
             <p>Finding available sessions…</p>
@@ -265,12 +270,11 @@ export function TimeStep() {
                 <span className="date-placeholder" key={`blank-${i}`} />
               ))}
               {Array.from({ length: days.getUTCDate() }, (_, i) => {
-                const value = addDays(month, i),
-                  hasSlots = draft.slots.some((slot) => slot.date === value);
+                const value = addDays(month, i);
                 return (
                   <button
                     key={value}
-                    className={`date${value === date ? " selected" : ""}${value === today ? " today" : ""}${hasSlots ? " in-series" : ""}`}
+                    className={`date${value === date ? " selected" : ""}`}
                     aria-label={dateLabel(value)}
                     aria-pressed={date === value}
                     disabled={
@@ -307,11 +311,11 @@ export function TimeStep() {
           <div className="calendar-legend">
             <span>
               <i className="legend-mark" />
-              Selected day
+              Available
             </span>
             <span>
-              <i className="legend-mark series" />
-              In your booking
+              <i className="legend-mark unavailable" />
+              Unavailable
             </span>
           </div>
         )}
@@ -323,7 +327,12 @@ export function TimeStep() {
           </div>
           {!result ? (
             calendarFailed ? (
-              <p>{AVAILABILITY_LOAD_FAILED}</p>
+              <div className="alert" role="alert">
+                <p>{AVAILABILITY_LOAD_FAILED}</p>
+                <button className="text-link" onClick={() => calendar.retry()}>
+                  Try again
+                </button>
+              </div>
             ) : (
               <BrandLoading overlay={false} compact label="Checking times…" />
             )
@@ -338,6 +347,12 @@ export function TimeStep() {
             </div>
           ) : slots.length ? (
             <div className="times" role="group" aria-label="Session times">
+              <p className="mobile-time-hint">
+                <span className="time-info" aria-hidden="true">
+                  i
+                </span>
+                <span>Select to view trainers available</span>
+              </p>
               {groups.map((offers) => {
                 const first =
                   offers.find((offer) => offer.available) ?? offers[0];
@@ -363,7 +378,12 @@ export function TimeStep() {
                       className={`time${selected ? " selected" : ""}`}
                       aria-pressed={!!selected}
                       aria-expanded={!!selected || choosing === key}
-                      disabled={(!available || elapsed) && !selected}
+                      disabled={
+                        (!available ||
+                          elapsed ||
+                          draft.slots.length >= MAX_BOOKING_SESSIONS) &&
+                        !selected
+                      }
                       onClick={() => {
                         if (selected) {
                           update({
@@ -378,7 +398,7 @@ export function TimeStep() {
                       }}
                     >
                       <span className="time-details">
-                        <span>
+                        <span className="time-range">
                           {slot.start}–{endTime(slot.start)}
                         </span>
                         <span className="time-rate">
@@ -448,8 +468,7 @@ export function TimeStep() {
                               value={sessionOfferKey(offer)}
                               disabled={!offer.available}
                             >
-                              {sessionInstructorName(offer)} ·{" "}
-                              {money(sessionPrice(offer))}
+                              {sessionInstructorName(offer)}
                               {!offer.available ? " — unavailable" : ""}
                             </option>
                           ))}
@@ -485,7 +504,7 @@ export function TimeStep() {
                     ? "See next available day"
                     : "See next month"
                   : "See next day"}{" "}
-                <Icon name="arrow" />
+                <Icon name="chevron" />
               </button>
             </div>
           )}
@@ -495,7 +514,7 @@ export function TimeStep() {
         <Icon name="clock" />
         <span>
           {live
-            ? "Open noon–8pm. Book at least 4 hours ahead. Choose a trainer for every session. All trainers share one studio; choosing another trainer does not create extra availability."
+            ? "Open noon–8pm. Book at least 4 hours ahead. Choose a trainer for each session."
             : "Open noon–8pm. Choose a trainer separately for every session. Demo trainer choices rotate every three hours; your chosen trainer stays for the full session."}
         </span>
       </p>

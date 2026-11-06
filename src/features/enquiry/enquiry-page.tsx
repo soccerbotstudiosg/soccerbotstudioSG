@@ -175,7 +175,7 @@ export function EnquiryPage() {
             )}
             <button className="button" disabled={!ready || busy}>
               {busy ? "Preparing…" : "Send enquiry"}
-              <Icon name="arrow" />
+              <Icon name="chevron" />
             </button>
           </form>
         </>

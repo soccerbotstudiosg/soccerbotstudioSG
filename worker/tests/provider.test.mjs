@@ -57,6 +57,7 @@ async function fixture({
       bindings: {
         ...config.vars,
         APP_ORIGIN: origin,
+        IDENTITY_PEPPER: "synthetic-reservation-identity-pepper-32-characters",
         PROVIDER_ACCESS: mode,
         CAMPAIGN_END_MS: String(end),
         SIMPLYBOOK_DEV_COMPANY_LOGIN: "synthetic-developer",

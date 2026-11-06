@@ -44,7 +44,7 @@ flowchart TB
   Public --> Visual["components/arena*.tsx + content/media.ts<br/>Arena presentation and imagery"]
 ```
 
-Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/book/[step]/page.tsx), [BookingPage](../../src/features/booking/booking-page.tsx), [booking provider](../../src/features/booking/provider.tsx). Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css). [Enquiry](../../src/features/enquiry/enquiry-page.tsx) and [assistant](../../src/features/assistant/assistant.tsx) are separate feature surfaces.
+Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/book/[step]/page.tsx), [BookingPage](../../src/features/booking/booking-page.tsx), [booking provider](../../src/features/booking/provider.tsx). Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css). [Enquiry](../../src/features/enquiry/enquiry-page.tsx) remains a separate preview-only feature; the persistent mock assistant is retired.
 
 ### 2.1 Booking UI expansion
 
@@ -73,7 +73,7 @@ flowchart TB
   Services["services/index.ts · build-time adapter selection"]
   Services --> Booking["services/booking.ts<br/>Booking command and response validation"]
   Services --> Identity["services/identity.ts<br/>Server-backed customer identity"]
-  Services --> Demo["services/demo/*<br/>Demo booking, identity, enquiry and assistant"]
+  Services --> Demo["services/demo/*<br/>Demo booking, identity and enquiry"]
   Browser["Booking feature consumers"] --> Services
   Browser --> Catalogue["services/customer-catalogue.ts · catalogue API"]
   Browser --> Confirm["services/confirmation.ts · protected checkout API"]
@@ -83,7 +83,7 @@ flowchart TB
   Rules -.-> Browser
 ```
 
-[Service composition](../../src/services/index.ts) selects live or demo booking/customer identity at build time. Enquiry and assistant are currently composed with demo adapters; do not infer a live messaging or AI integration. [contracts.ts](../../src/services/contracts.ts) defines the boundary. [booking.ts](../../src/services/booking.ts) owns `defineBookingService` and `liveBookingService`; [identity.ts](../../src/services/identity.ts) owns `createLiveIdentityService`. Customer PDF/calendar generation is retired.
+[Service composition](../../src/services/index.ts) selects live or demo booking/customer identity at build time. Enquiry is composed with a demo adapter; do not infer live message delivery. There is no chat-assistant adapter or floating chat surface. [contracts.ts](../../src/services/contracts.ts) defines the boundary. [booking.ts](../../src/services/booking.ts) owns `defineBookingService` and `liveBookingService`; [identity.ts](../../src/services/identity.ts) owns `createLiveIdentityService`. Customer PDF/calendar generation is retired.
 
 ### 3.1 Domain expansion
 
@@ -156,6 +156,10 @@ flowchart TB
 Owners: [customer catalogue](../../worker/customer-catalogue.ts), [public calendar](../../worker/public-calendar.ts), [display snapshots](../../worker/display-snapshots.ts), [native calendar](../../worker/native-calendar.ts), [fixed-grid interval normalization](../../worker/native-grid.ts), [prebooking](../../worker/prebooking.ts), [catalogue](../../worker/catalogue.ts), [parallel reads](../../worker/parallel-reads.ts). Display snapshots help browsing; they do not reserve capacity or authorize checkout. `prepareCustomerNative` and customer calendar/availability operations are in [native-checkout.ts](../../worker/native-checkout.ts).
 
 ## 7. Booking and payment
+
+- [Reservation admission](../../worker/reservation-abuse.ts): customer/IP expiry strikes and atomic new-reservation eligibility.
+- [Unpaid expiry policy](../../worker/checkout-expiry-policy.ts): shared financial predicate for release and strike materialization.
+
 
 ```mermaid
 flowchart TB
@@ -301,7 +305,7 @@ The linked **BR** IDs belong to Business rules; this index provides navigation, 
 | [BR-014](../business-rules.md#br-014) | D1 holds minimal access/attempt/grant/effect/payment/webhook/recovery evidence and display snapshots; it…   | 4 Coordination / 9 Storage                             | [coordinator.ts](../../worker/coordinator.ts), [provider-queue.ts](../../worker/provider-queue.ts), [provider-token-cache.ts](../../worker/provider-token-cache.ts), [provider-session.ts](../../worker/provider-session.ts), [migrations](../../migrations)                                          |
 | [BR-015](../business-rules.md#br-015) | One active workflow; at most 24 waiting jobs with the last four reserved for recovery                       | 4 Coordination / 9 Storage                             | [coordinator.ts](../../worker/coordinator.ts), [provider-queue.ts](../../worker/provider-queue.ts), [provider-token-cache.ts](../../worker/provider-token-cache.ts), [provider-session.ts](../../worker/provider-session.ts), [migrations](../../migrations)                                          |
 | [BR-016](../business-rules.md#br-016) | Two AES-GCM-encrypted account/environment/credential-scoped tokens persist in Durable Object SQLite, not D1 | 4 Coordination / 9 Storage                             | [coordinator.ts](../../worker/coordinator.ts), [provider-queue.ts](../../worker/provider-queue.ts), [provider-token-cache.ts](../../worker/provider-token-cache.ts), [provider-session.ts](../../worker/provider-session.ts), [migrations](../../migrations)                                          |
-| [BR-017](../business-rules.md#br-017) | Single checkout uses four coordinator D1 calls plus one HTTP call; reconciliation uses five.                | 4 Coordination / 9 Storage                             | [coordinator.ts](../../worker/coordinator.ts), [provider-queue.ts](../../worker/provider-queue.ts), [provider-token-cache.ts](../../worker/provider-token-cache.ts), [provider-session.ts](../../worker/provider-session.ts), [migrations](../../migrations)                                          |
+| [BR-017](../business-rules.md#br-017) | Single checkout uses six coordinator D1 calls plus one HTTP call; reconciliation uses five.                | 4 Coordination / 9 Storage                             | [coordinator.ts](../../worker/coordinator.ts), [provider-queue.ts](../../worker/provider-queue.ts), [provider-token-cache.ts](../../worker/provider-token-cache.ts), [provider-session.ts](../../worker/provider-session.ts), [migrations](../../migrations)                                          |
 | [BR-018](../business-rules.md#br-018) | Existing sanitized Worker diagnostics and Server-Timing cover checkout, confirmation, provider…             | 9 Observability                                        | [diagnostics.ts](../../worker/diagnostics.ts), [telemetry.ts](../../worker/telemetry.ts), [grafana-dashboard.json](../../observability/grafana-dashboard.json)                                                                                                                                        |
 | [BR-019](../business-rules.md#br-019) | Prepared Tail Worker `worker/telemetry.ts` converts allowlisted diagnostic summaries to OTLP/HTTP JSON for… | 9 Observability                                        | [diagnostics.ts](../../worker/diagnostics.ts), [telemetry.ts](../../worker/telemetry.ts), [grafana-dashboard.json](../../observability/grafana-dashboard.json)                                                                                                                                        |
 | [BR-020](../business-rules.md#br-020) | Defaults: 10% deterministic successful-correlation sampling; recognized failures bypass sampling within…    | 9 Observability                                        | [diagnostics.ts](../../worker/diagnostics.ts), [telemetry.ts](../../worker/telemetry.ts), [grafana-dashboard.json](../../observability/grafana-dashboard.json)                                                                                                                                        |

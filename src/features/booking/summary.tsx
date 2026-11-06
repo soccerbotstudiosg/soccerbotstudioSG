@@ -1,5 +1,9 @@
 "use client";
 import {
+  BookingPrimaryAction,
+  BookingActionTotal,
+} from "./booking-primary-action";
+import {
   SESSION_UNAVAILABLE,
   AVAILABILITY_LOAD_FAILED,
 } from "@/domain/booking-messages";
@@ -7,6 +11,7 @@ import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
+import { LOCATION } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import {
   orderedSlots,
@@ -45,7 +50,9 @@ export function SessionSummaryHeading({
       <p>
         {serviceName && (
           <>
-            <strong>{serviceName}</strong>
+            <strong>
+              {serviceName} · {LOCATION.building}
+            </strong>
             <br />
           </>
         )}
@@ -150,26 +157,16 @@ export function PriceSummary({ draft }: { draft: BookingDraft }) {
   );
 }
 /** Render the booking summary and permitted editing actions. */
-export function Summary({ basket = false }: { basket?: boolean }) {
-  const { draft, update, now, availability } = useBooking();
-  const result = availability.result;
-  const valid =
-    selectionErrors(draft.slots, now).length === 0 &&
-    result?.status === "success" &&
-    draft.slots.every((slot) =>
-      result.slots.some(
-        (available) =>
-          sessionOfferKey(available) === sessionOfferKey(slot) &&
-          available.available &&
-          available.instructor === slot.instructor &&
-          available.rotationAt === slot.rotationAt,
-      ),
-    );
-  const instructors = [
-    ...new Map(
-      orderedSlots(draft.slots).map((slot) => [slot.instructor, slot]),
-    ).values(),
-  ];
+export function Summary({
+  basket = false,
+  includeAction = true,
+  showTrainers = true,
+}: {
+  basket?: boolean;
+  includeAction?: boolean;
+  showTrainers?: boolean;
+}) {
+  const { draft, update, now } = useBooking();
   return (
     <div className="aside-wrap">
       <aside className="summary" aria-label="Your booking summary">
@@ -230,37 +227,69 @@ export function Summary({ basket = false }: { basket?: boolean }) {
             </strong>
           </div>
 
-          {basket &&
-            (draft.slots.length > 0 && valid ? (
-              <Link
-                className="button wide basket-continue"
-                href="/book/details/"
-              >
-                Continue <Icon name="arrow" />
-              </Link>
-            ) : (
-              <button className="button wide basket-continue" disabled>
-                Continue <Icon name="arrow" />
-              </button>
-            ))}
-          {basket && draft.slots.length > 0 && !valid && (
-            <p className="notice" role="status">
-              {selectionErrors(draft.slots, now).length > 0 ||
-              result?.status === "success" ? (
-                SESSION_UNAVAILABLE
-              ) : !result ? (
-                <BrandLoading
-                  overlay={false}
-                  compact
-                  label="Checking sessions…"
-                />
-              ) : (
-                AVAILABILITY_LOAD_FAILED
-              )}
-            </p>
-          )}
+          {basket && includeAction && <BasketContinue />}
         </div>
       </aside>
+      {showTrainers && draft.slots.length > 0 && <SelectedTrainers />}
+    </div>
+  );
+}
+
+/** Retain calendar continuation and fresh-availability guards outside mobile popups. */
+export function BasketContinue() {
+  const { draft, now, availability } = useBooking();
+  const result = availability.result;
+  const valid =
+    selectionErrors(draft.slots, now).length === 0 &&
+    result?.status === "success" &&
+    draft.slots.every((slot) =>
+      result.slots.some(
+        (available) =>
+          sessionOfferKey(available) === sessionOfferKey(slot) &&
+          available.available &&
+          available.instructor === slot.instructor &&
+          available.rotationAt === slot.rotationAt,
+      ),
+    );
+  return (
+    <>
+      <BookingPrimaryAction>
+        {draft.slots.length > 0 && valid ? (
+          <Link className="button wide basket-continue" href="/book/details/">
+            Continue <BookingActionTotal /> <Icon name="chevron" />
+          </Link>
+        ) : (
+          <button className="button wide basket-continue" disabled>
+            Continue <BookingActionTotal /> <Icon name="chevron" />
+          </button>
+        )}
+      </BookingPrimaryAction>
+      {draft.slots.length > 0 && !valid && (
+        <p className="notice" role="status">
+          {selectionErrors(draft.slots, now).length > 0 ||
+          result?.status === "success" ? (
+            SESSION_UNAVAILABLE
+          ) : !result ? (
+            <BrandLoading overlay={false} compact label="Checking sessions…" />
+          ) : (
+            AVAILABILITY_LOAD_FAILED
+          )}
+        </p>
+      )}
+    </>
+  );
+}
+
+/** Present each selected instructor once, including provider profile names. */
+export function SelectedTrainers() {
+  const { draft } = useBooking();
+  const instructors = [
+    ...new Map(
+      orderedSlots(draft.slots).map((slot) => [slot.instructor, slot]),
+    ).values(),
+  ];
+  return (
+    <>
       {instructors.length > 0 && (
         <section
           className="booking-instructors"
@@ -290,6 +319,9 @@ export function Summary({ basket = false }: { basket?: boolean }) {
           ))}
         </section>
       )}
-    </div>
+      {!instructors.length && (
+        <p>No trainers selected. Choose a session time and trainer first.</p>
+      )}
+    </>
   );
 }

@@ -1,5 +1,13 @@
 import {
+  reservationSource,
+  assertReservationAdmission,
+  retainReservationSource,
+  reservationSourceStatement,
+  rejectReservationPreparation,
+} from "./reservation-abuse";
+import {
   BOOKING_MONTH_COUNT,
+  MAX_BOOKING_SESSIONS,
   PAYMENT_WINDOW_MS,
   CHECKING_BUFFER_MS,
   RECOVERY_BUFFER_MS,
@@ -179,6 +187,17 @@ export async function executeNativeCheckout(options: {
     (snapshots![1].results[0] as AttemptSnapshot | undefined);
   if (!row || row.state !== "prepared")
     throw new ApiError(409, "native_attempt_unavailable");
+  if (ongoing && !options.prepared) {
+    const source = await reservationSource(request, env, access);
+    try {
+      await assertReservationAdmission(env, source);
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "reservation_blocked")
+        await rejectReservationPreparation(env.STATE, attemptId);
+      throw error;
+    }
+    await retainReservationSource(env, attemptId, source);
+  }
   const intent = intentSchema.parse(JSON.parse(row.intent_json));
   const contract = nativeAccountContractSchema.parse(
     JSON.parse(grant.contract_json),
@@ -190,7 +209,7 @@ export async function executeNativeCheckout(options: {
     intent.customerMode !== "booking-contact" ||
     intent.customerId !== access.owner_id ||
     !intent.contact ||
-    intent.sessions.length > (ongoing ? 12 : 2) ||
+    intent.sessions.length > (ongoing ? MAX_BOOKING_SESSIONS : 2) ||
     intent.accountId !== p.DEPLOYMENT_ACCOUNT_ID ||
     intent.environmentId !== p.ENVIRONMENT ||
     contract.accountId !== p.DEPLOYMENT_ACCOUNT_ID ||
@@ -998,6 +1017,10 @@ export async function executeNativeCheckout(options: {
             };
     }
   } catch (error) {
+    if (error instanceof ApiError && error.code === "reservation_blocked") {
+      await rejectReservationPreparation(env.STATE, attemptId);
+      throw error;
+    }
     if (rawEvidence.statement) {
       const retained = await rawEvidence.statement.run();
       if (retained.meta.changes !== 1)
@@ -1013,8 +1036,21 @@ export async function executeNativeCheckout(options: {
   }
   // A speculative snapshot is not ownership of an existing colliding ID.
   // Without our own committed claim, do not mutate its recovery/grant state.
-  if (options.prepared?.preparation && !claimedDispatch)
+  if (options.prepared?.preparation && !claimedDispatch) {
+    if (ongoing) {
+      try {
+        await assertReservationAdmission(
+          env,
+          await reservationSource(request, env, access),
+        );
+      } catch (error) {
+        if (error instanceof ApiError && error.code === "reservation_blocked")
+          await rejectReservationPreparation(env.STATE, attemptId);
+        throw error;
+      }
+    }
     throw new ApiError(409, "native_attempt_unavailable");
+  }
   if (
     result.state === "recovery_required" &&
     paymentRoute !== "hitpay" &&
@@ -1176,7 +1212,9 @@ export async function prepareCustomerNative(
     throw new ApiError(503, "native_availability_unavailable");
   if (
     input.sessions.length >
-      (grant.ongoing === 1 && liveCustomerAccess(env) ? 12 : 2) ||
+      (grant.ongoing === 1 && liveCustomerAccess(env)
+        ? MAX_BOOKING_SESSIONS
+        : 2) ||
     (contract.trialLeadTimeException &&
       (input.sessions.length !== 2 ||
         input.sessions.some((session) => session.instructorId !== "3") ||
@@ -1249,6 +1287,11 @@ export async function prepareCustomerNative(
       throw new ApiError(409, "native_attempt_already_bound");
     return { attemptId: grant.attempt_id, state: "prepared" as const };
   }
+  const source =
+    grant.ongoing === 1 && liveCustomerAccess(env)
+      ? await reservationSource(request, env, access)
+      : undefined;
+  if (source) await assertReservationAdmission(env, source);
   if (retainedGrant?.preparation && attemptId) {
     // Stage only a new attempt. No provider write is authorized until
     // these statements and the fresh dispatch predicates commit together.
@@ -1302,6 +1345,10 @@ export async function prepareCustomerNative(
         attemptId,
       ),
     ];
+    if (source)
+      preparation.push(
+        reservationSourceStatement(env.STATE, attemptId, source),
+      );
     return {
       attemptId,
       state: "prepared" as const,
@@ -1377,6 +1424,7 @@ export async function prepareCustomerNative(
       if (bound.meta.changes !== 1)
         throw new ApiError(409, "native_attempt_already_bound");
     }
+    if (source) await retainReservationSource(env, attempt.id, source);
     if (!verifiedAccess) await authenticate(request, env, Date.now());
     return {
       attemptId: attempt.id,

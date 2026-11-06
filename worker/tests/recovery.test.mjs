@@ -651,7 +651,28 @@ test("populated migration preserves immutable intent unknown effects completed p
   for (const name of migrations.filter((n) => Number(n.slice(0, 4)) < 5))
     await migrate(name);
   await seedFoundation(mf, db);
-  const a = await dispatched();
+  /** Seed a pre-0006 dispatch without invoking code that requires later migrations. */
+  async function historicalDispatch() {
+    const attempt = await prepared();
+    const writes = await db.batch([
+      db
+        .prepare(
+          "UPDATE attempts SET state='dispatching',version=1 WHERE id=? AND version=0 AND state='prepared'",
+        )
+        .bind(attempt.id),
+      db
+        .prepare(
+          "INSERT INTO dispatches(id,attempt_id,operation,fence,started_ms,outcome) VALUES(?,?,'booking.create',1,?,'unknown')",
+        )
+        .bind(crypto.randomUUID(), attempt.id, now),
+    ]);
+    assert.deepEqual(
+      writes.map((write) => write.meta.changes),
+      [1, 1],
+    );
+    return attempt;
+  }
+  const a = await historicalDispatch();
   await db
     .prepare("INSERT INTO session_effects VALUES(?,'session:0','unknown',NULL)")
     .bind(a.id)
@@ -671,7 +692,7 @@ test("populated migration preserves immutable intent unknown effects completed p
     "INSERT INTO budget(campaign,used) VALUES(?,8)",
     config.vars.CAMPAIGN_ID,
   );
-  const completed = await dispatched();
+  const completed = await historicalDispatch();
   await associate(completed);
   await result("observe", {
     id: completed.id,

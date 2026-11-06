@@ -434,6 +434,13 @@ try {
   await migrate("0036_invoice_documents.sql");
   await migrate("0037_checkout_checking_buffer.sql");
   await migrate("0038_checkout_recovery_buffer.sql");
+  await migrate("0039_reservation_abuse.sql");
+  for (const table of ["reservation_sources", "reservation_expiries"])
+    assert.equal(
+      (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,
+      0,
+      "Historical checkouts must not acquire inferred abuse strikes",
+    );
   assert.deepEqual(
     [...migrated].sort(),
     names,

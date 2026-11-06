@@ -22,7 +22,7 @@ Stable rule-group IDs identify the existing paragraphs below; they do not change
 
 <a id="br-001"></a>
 
-**BR-001** — Customer booking website for one Singapore venue and one shared studio across instructors. Sessions are 40 minutes on 50-minute starts, 1–4 players, with multiple selected sessions permitted. After choosing a time, the customer explicitly chooses an eligible trainer from that slot’s dropdown; each session has its own independent choice. Changing trainer replaces that slot’s selection, never adds another simultaneous session. Below the booking summary, stack one trainer card per stable instructor ID and list all dates/times chosen for that trainer. Singapore time and SGD apply. Booking closes four hours before start: exactly 240 minutes is eligible; less is rejected in calendar filtering and server preparation/pre-write validation. Staff portals, memberships/packages, recurring charges, payroll and historical data migration are outside the commissioned website scope unless separately agreed.
+**BR-001** — Customer booking website for one Singapore venue and one shared studio across instructors. Sessions are 40 minutes on 50-minute starts, 1–4 players, with up to five selected sessions per new checkout. Historical booking/receipt reads retain their existing capacity. After choosing a time, the customer explicitly chooses an eligible trainer from that slot’s dropdown; each session has its own independent choice. Changing trainer replaces that slot’s selection, never adds another simultaneous session. Below the booking summary, stack one trainer card per stable instructor ID and list all dates/times chosen for that trainer. Singapore time and SGD apply. Booking closes four hours before start: exactly 240 minutes is eligible; less is rejected in calendar filtering and server preparation/pre-write validation. Staff portals, memberships/packages, recurring charges, payroll and historical data migration are outside the commissioned website scope unless separately agreed.
 
 The following capacity and recovery invariants are mandatory under BR-001:
 
@@ -78,7 +78,27 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 <a id="br-006"></a>
 
-**BR-006** — Public display snapshots support fast browsing; they do not authorize bookings. Scheduled warming maintains the current Singapore month and the next two months (the complete public browsing horizon). Each minute admits one due month, prioritizing missing snapshots then the least recently attempted month; fresh months are reused until15 minutes old. A failed or interrupted month waits at least one minute and cannot starve its siblings. Warming yields between provider operations for waiting customer/recovery work; snapshots have a fixed maximum 30-minute display lifetime, never renewed by serving them. Booking dispatch or an authoritative selection-unavailable result removes overlapping50-minute studio intervals across trainers from the shared snapshot and invalidates the affected short-lived calendar read; it does not expire all months or trigger a full rebuild. Provider-confirmed day reads or scheduled refresh restore released availability; a local expiry timer is not release proof. Unknown dispatches remain unavailable until authoritative availability resolves them. Off-grid retained offers are removed without extending snapshot expiry. External manual edits become visible through fresh provider reads or warming; no immediate admin-event cache invalidation is currently implemented. Checkout remains provider-authoritative even while another browser retains an older snapshot. Protected selection rechecks current rules. On entry/refresh retain an available chosen day, otherwise choose the next available day in the loaded month (or its first available future day); failed/empty months keep an honest state. An empty month offers an explicit See next month action within the public three-month horizon; loading that month selects its first available eligible day. Do not silently scan other months or alter the basket. Review remains editable and creates no booking.
+**BR-006** — Availability and display cache
+
+- Public display snapshots support fast browsing; they do not authorize bookings.
+- Scheduled warming maintains the current Singapore month and the next two months (the complete public browsing horizon).
+- Each minute admits one due month, prioritizing missing snapshots then the least recently attempted month; fresh months are reused until15 minutes old.
+- A failed or interrupted month waits at least one minute and cannot starve its siblings.
+- Warming yields between provider operations for waiting customer/recovery work; snapshots have a fixed maximum 30-minute display lifetime, never renewed by serving them.
+- Booking dispatch or an authoritative selection-unavailable result removes overlapping50-minute studio intervals across trainers from the shared snapshot and invalidates the affected short-lived calendar read; it does not expire all months or trigger a full rebuild.
+- Provider-confirmed day reads or scheduled refresh restore released availability; a local expiry timer is not release proof.
+- Unknown dispatches remain unavailable until authoritative availability resolves them.
+- Off-grid retained offers are removed without extending snapshot expiry.
+- External manual edits become visible through fresh provider reads or warming; no immediate admin-event cache invalidation is currently implemented.
+- Checkout remains provider-authoritative even while another browser retains an older snapshot.
+- Protected selection rechecks current rules.
+- On entry/refresh retain an available chosen day, otherwise choose the next available day in the loaded month (or its first available future day); failed/empty months keep an honest state.
+- An empty month offers an explicit See next month action within the public three-month horizon; loading that month selects its first available eligible day.
+- Do not silently scan other months or alter the basket.
+- Review remains editable and creates no booking.
+- Background warming retains the current valid month until a complete, generation-matched replacement is ready; partial or failed builds never replace it.
+- Browser display expiry requests the active month once while retaining the date grid. Expired offers remain unselectable; a failed replacement exposes Try again rather than looping or extending freshness.
+- Expiry refresh shows the shared spinning loader inside the calendar for0.5 seconds; dates do not fade. Month navigation, explicit expiry/conflict reconciliation and scope changes remain valid read triggers; cart edits do not force a month rebuild.
 
 ### Checkout, durable effects and customer errors
 
@@ -103,6 +123,14 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 <a id="br-011"></a>
 
 **BR-011** — Original booking creation anchors new attempts' eight-minute payment window, nine-minute checking deadline, twelve-minute recovery/release boundary and ten-minute configured provider hold deadline. SimplyBook cancellation may lag this deadline; elapsed time alone never restores capacity. Migration0037 preserves older attempts' recorded windows and five-minute buffer; new attempts record a one-minute checking buffer. Migration0038 adds a separate immutable three-minute recovery buffer to new attempts; historical rows retain zero. An earlier provider deadline remains authoritative. These are different clocks. Browser expiry, deleted/expired payment links or exhausted polling do not prove settlement impossible. Protect unknown in-flight outcomes. After the original recovery and provider hold deadlines, authenticated matching expired/canceled HitPay evidence with an explicit empty payment list or only matching, zero-refund `requires_payment_method` entries may release the active customer grant. Known money, unknown accounting and unprocessed webhook receipts prevent release. Payment journals and archived grants remain immutable; a later paid receipt reconciles the original attempt and cannot recreate an expired booking. After verified payment, reconcile SimplyBook accounting and require current valid-booking/paid-invoice evidence before final confirmation. A complete validated payment-recording response may supply that evidence after the original booking check; an incomplete or inconsistent response requires authoritative readback. HTTP success alone is insufficient. Preserve the first valid confirmation timestamp on later visits. Refunds are owner/provider operations; cancellation is not a refund.
+
+- New ongoing customer checkouts allow at most5 sessions; a single unpaid checkout expiry counts once regardless of session count.
+- Customer strikes: first expiry permits another reservation; second and every later expiry blocks new reservations for1 hour. A verified successful payment resets customer strikes.
+- Shared-IP backstop: count expiries within a rolling24-hour window; second and later expiries block new reservations for1 hour. Payment does not reset the IP counter.
+- Count only server-proven unpaid expiry under the financial release predicate. Paid, unknown and unprocessed-receipt states do not count; a browser timer cannot create a strike.
+- Each attempt counts once at its original expiry boundary. Repeated reads do not renew blocks; closing the browser does not evade lazy server reconciliation.
+- Blocks affect new reservations only. Browsing remains available, and existing financial recovery retains its original authority.
+- Customer identity uses verified email where available, otherwise server-issued guest ownership. Guests remain unverified; fresh guest identity plus another IP can evade this backstop. Shared networks can affect unrelated customers.
 
 <a id="br-012"></a>
 
@@ -130,7 +158,7 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 <a id="br-017"></a>
 
-**BR-017** — Successful single checkout uses four coordinator D1 calls plus one HTTP foundation/authentication call (five total); reconciliation uses five D1 calls. Batch checkout uses 2×sessions+6 coordinator calls plus one HTTP call (11/15/23 total for 2/4/8), excluding coordinator SQLite. These are measured/source successful-path counts, not absolute minima or caps on failure/recovery. Overlapping provider/storage timings must not be summed as exclusive wall time.
+**BR-017** — Successful single checkout uses six coordinator D1 calls plus one HTTP foundation/authentication call (seven total); reconciliation uses five D1 calls. Batch checkout uses 2×sessions+8 coordinator calls plus one HTTP call (13/17/19 total for 2/4/5 sessions), excluding coordinator SQLite. These are measured/source successful-path counts, not absolute minima or caps on failure/recovery. Overlapping provider/storage timings must not be summed as exclusive wall time.
 
 ### Observability and Grafana
 

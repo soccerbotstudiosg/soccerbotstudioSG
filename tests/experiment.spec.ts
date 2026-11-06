@@ -3,7 +3,7 @@ import { sitePath } from "../src/content/site-path";
 async function start(page: Page) {
   await page.goto(sitePath("/experiment/"));
   const prompt = page.getByRole("dialog", {
-    name: "Get the SoccerBot Player App",
+    name: "Download the official Soccerbot360 Player App now.",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -122,14 +122,14 @@ test("synthetic checkout opens separately and only canonical evidence confirms t
     window.postMessage({ status: "confirmed", paid: true }, "*");
   });
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Open checkout again" }),
   ).toHaveAttribute("href", url!);
   await outcome(page, "Simulate successful payment");
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: info.outputPath("03-confirmed.png"),
@@ -147,7 +147,7 @@ test("synthetic paid but invalid booking needs recovery instead of claiming succ
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByText(
@@ -240,10 +240,18 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page.clock.install({ time: new Date("2026-10-05T08:00:00+08:00") });
   await page.goto(sitePath("/book/account/"));
   await page
-    .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+    .getByRole("dialog", {
+      name: "Download the official Soccerbot360 Player App now.",
+    })
     .getByRole("button", { name: "Close dialog", exact: true })
     .click();
   await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
   await page
     .getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
@@ -261,7 +269,9 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page
     .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
     .selectOption({ index: 1 });
-  await page.getByRole("link", { name: "Continue", exact: true }).click();
+  await page
+    .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+    .click();
   await page
     .getByLabel("Full name", { exact: false })
     .fill("Synthetic Customer");
@@ -271,9 +281,13 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
-  await page.getByRole("button", { name: "Review booking" }).click();
+  await page
+    .getByRole("button", { name: /^Review booking \$[\d,.]+$/ })
+    .click();
   await page.getByRole("checkbox", { name: /I’ve reviewed/ }).check();
-  await page.getByRole("button", { name: "Continue to payment" }).click();
+  await page
+    .getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ })
+    .click();
   const before = await page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!),
   );

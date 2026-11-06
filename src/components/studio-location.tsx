@@ -49,7 +49,7 @@ export function StudioLocation() {
             target="_blank"
             rel="noreferrer"
           >
-            Open Google Maps <Icon name="arrow" />
+            Open Google Maps <Icon name="chevron" />
           </a>
         </Dialog>
       )}

@@ -9,7 +9,7 @@ const css = readFileSync(
 test("the interface uses the header blue, readable role hierarchy and contrasting semantic states", () => {
   const audit = designAudit(css);
   assert.deepEqual(audit.errors, []);
-  assert.equal(audit.contrast.length, 17);
+  assert.equal(audit.contrast.length, 24);
 });
 test("design policy rejects a teal action token even if it remains a valid CSS colour", () => {
   assert.ok(
@@ -22,6 +22,24 @@ test("design policy rejects a teal action token even if it remains a valid CSS c
   );
 });
 test("design policy rejects low-contrast supporting text", () => {
+  for (const [token, colour] of [
+    ["on-brand", "ffffff"],
+    ["brand-tint", "dce1f1"],
+  ]) {
+    assert.ok(
+      designAudit(
+        css.replace(
+          `--color-${token}: #${colour}`,
+          `--color-${token}: #050a2f`,
+        ),
+      ).errors.some((e) => e.includes("Insufficient contrast")),
+    );
+  }
+  assert.ok(
+    designAudit(
+      css.replace("--color-identity: #176078", "--color-identity: #ffffff"),
+    ).errors.some((e) => e.includes("Insufficient contrast")),
+  );
   assert.ok(
     designAudit(
       css.replace(
@@ -73,7 +91,7 @@ test("design policy rejects local booking colour and type overrides", () => {
   assert.ok(
     designAudit(
       css +
-        "\n.offer-home:focus-visible { outline: 3px solid var(--color-arena-accent); }",
+        "\n.promotion-cta:focus-visible { outline: 3px solid var(--color-arena-accent); }",
     ).errors.some((e) => e.includes("Decorative accent")),
   );
 });

@@ -162,7 +162,7 @@ async function fixture(
   });
   await page.goto("/book/account/");
   const prompt = page.getByRole("dialog", {
-    name: "Get the SoccerBot Player App",
+    name: "Download the official Soccerbot360 Player App now.",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -247,6 +247,12 @@ test("synthetic live verification reads server identity and keeps native booking
     .getByRole("button", { name: "Verify and continue", exact: true })
     .click();
   await expect(page).toHaveURL(/\/book\/session\/$/);
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Unable to load available sessions. Please try again.",
   );
@@ -399,6 +405,12 @@ test("remembered live account edits and rereads contact while native booking sta
     .click();
   await page
     .getByRole("button", { name: "Continue signed in", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Unable to load available sessions. Please try again.",
@@ -574,7 +586,9 @@ test("native guest journey preserves players contact and one checkout across ref
     });
     await page.goto("/");
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await calendarReady;
@@ -583,7 +597,10 @@ test("native guest journey preserves players contact and one checkout across ref
     ).toHaveLength(1);
     expect(calls.filter((c) => c.path === "/api/catalogue")).toHaveLength(1);
     expect(calls.filter((c) => c.path === "/api/access")).toHaveLength(0);
-    await page.getByRole("link", { name: "Book now", exact: true }).click();
+    await page
+      .getByRole("navigation", { name: "Main navigation" })
+      .getByRole("link", { name: "Book now", exact: true })
+      .click();
     const guest = page.getByRole("button", {
       name: "Continue as guest",
       exact: true,
@@ -605,6 +622,12 @@ test("native guest journey preserves players contact and one checkout across ref
     else expect(Math.abs(guestBox.x - emailBox.x)).toBeLessThanOrEqual(1);
     await guest.click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
+    await page
+      .getByRole("button", {
+        name: "Select Apex @ Henderson outlet",
+        exact: true,
+      })
+      .click();
     await page.getByRole("button", { name: /^Choose / }).click();
     await page
       .getByRole("button", { name: "Add one player", exact: true })
@@ -614,6 +637,20 @@ test("native guest journey preserves players contact and one checkout across ref
       .click();
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(page.locator("main")).not.toHaveAttribute("inert");
+    if (page.viewportSize()!.width <= 700) {
+      const header = page.locator(".calendar-head");
+      await expect(header).toHaveCSS("display", "grid");
+      const month = await header.locator(".month-picker").boundingBox();
+      const arrows = await header.locator(".calendar-nav").boundingBox();
+      expect(arrows!.y).toBeCloseTo(month!.y, 0);
+      expect(arrows!.x).toBeGreaterThanOrEqual(month!.x + month!.width);
+      const headerBox = await header.boundingBox();
+      expect(arrows!.x + arrows!.width).toBeCloseTo(
+        headerBox!.x + headerBox!.width,
+        0,
+      );
+    }
+
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Singapore",
       year: "numeric",
@@ -649,7 +686,9 @@ test("native guest journey preserves players contact and one checkout across ref
     expect(
       calls.filter((c) => c.path.startsWith("/api/booking/availability/")),
     ).toHaveLength(0);
-    await page.getByRole("link", { name: "Continue", exact: true }).click();
+    await page
+      .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Your details", exact: true }),
     ).toBeVisible();
@@ -680,7 +719,7 @@ test("native guest journey preserves players contact and one checkout across ref
       );
     });
     await page
-      .getByRole("button", { name: "Review booking", exact: true })
+      .getByRole("button", { name: /^Review booking \$[\d,.]+$/, exact: true })
       .click();
 
     await expect(
@@ -717,7 +756,10 @@ test("native guest journey preserves players contact and one checkout across ref
       .getByRole("checkbox", { name: /I’ve reviewed all selected/ })
       .check();
     await page
-      .getByRole("button", { name: "Continue to payment", exact: true })
+      .getByRole("button", {
+        name: /^Continue to payment \$[\d,.]+$/,
+        exact: true,
+      })
       .click();
     const checkoutResponse = await holdResponse;
     expect(checkoutResponse.status()).toBe(200);
@@ -782,7 +824,7 @@ test("native guest journey preserves players contact and one checkout across ref
       calls.filter((c) => c.path.startsWith("/api/booking/availability/")),
     ).toHaveLength(0);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     expect(
       calls.filter(
@@ -992,7 +1034,9 @@ test("real payment recovery confirms the browser return from verified provider s
     });
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await accounting;
@@ -1003,7 +1047,7 @@ test("real payment recovery confirms the browser return from verified provider s
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".confirmation-actions")).toHaveCount(0);
     expect(
@@ -1074,14 +1118,14 @@ test("real payment recovery confirms the browser return from verified provider s
       }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Continue payment", exact: true }),
     ).toHaveCount(0);
     releaseReceipt();
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
     // Measure the final icon size after its intentional confirmation pop.
     // Reduced motion creates no animation, so this resolves immediately.
@@ -1135,7 +1179,7 @@ test("real payment recovery confirms the browser return from verified provider s
     }, attemptId);
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
     await page.getByText("View full details", { exact: true }).click();
     await expect(
@@ -1385,12 +1429,20 @@ async function guestDetails(
   if (journey?.enter !== false) {
     await page.goto("/book/account/");
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
   }
   await page
     .getByRole("button", { name: "Continue as guest", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
     .click();
   await page.getByRole("button", { name: /^Choose / }).click();
   await page
@@ -1431,7 +1483,9 @@ async function guestDetails(
       .getByRole("combobox", { name: new RegExp(`Trainer for .* at ${start}`) })
       .selectOption({ index: 1 });
   }
-  await page.getByRole("link", { name: "Continue", exact: true }).click();
+  await page
+    .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Your details", exact: true }),
   ).toBeVisible();
@@ -1469,7 +1523,7 @@ async function stopMechanism(
 }
 async function reviewResponse(page: Page) {
   await page
-    .getByRole("button", { name: "Review booking", exact: true })
+    .getByRole("button", { name: /^Review booking \$[\d,.]+$/, exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Review booking", exact: true }),
@@ -1492,7 +1546,10 @@ async function checkoutHoldResponse(
       response.request().method() === "POST",
   );
   await page
-    .getByRole("button", { name: "Continue to payment", exact: true })
+    .getByRole("button", {
+      name: /^Continue to payment \$[\d,.]+$/,
+      exact: true,
+    })
     .click();
   return response;
 }
@@ -1502,7 +1559,7 @@ async function assertNoPaymentOrConfirmation(
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
 ) {
   await expect(
-    page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+    page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Open checkout", exact: true }),
@@ -1683,7 +1740,7 @@ async function uncertainHolding(
     await page.reload();
     await restored;
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     expect(
       await mechanism.db
@@ -1825,7 +1882,9 @@ test("real API lost successful hold response restores the existing reservation w
     }, mechanism.date);
     await page.goto("/book/review/");
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
@@ -1843,7 +1902,10 @@ test("real API lost successful hold response restores the existing reservation w
     );
     await page.getByRole("checkbox").check();
     await page
-      .getByRole("button", { name: "Continue to payment", exact: true })
+      .getByRole("button", {
+        name: /^Continue to payment \$[\d,.]+$/,
+        exact: true,
+      })
       .click();
     await lost;
     await expect(page).toHaveURL(/\/book\/payment\/$/);
@@ -1864,7 +1926,7 @@ test("real API lost successful hold response restores the existing reservation w
     });
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     expect(
       mechanism.calls.filter((call) => call.body?.method === "book"),
@@ -1925,7 +1987,7 @@ test("real API payment creation failure preserves the hold and never returns to 
         .first<{ n: number }>())!.n,
     ).toBe(1);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
   } finally {
     await stopMechanism(page, mechanism, transport);
@@ -2001,12 +2063,14 @@ test("real API failed completed dismissal opens the first step and explicit retr
     });
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await savedConfirmation;
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
     await page.getByText("View full details", { exact: true }).click();
     await expect(
@@ -2081,13 +2145,21 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
   try {
     await page.goto("/book/account/");
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await page
       .getByRole("button", { name: "Continue as guest", exact: true })
       .click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
+    await page
+      .getByRole("button", {
+        name: "Select Apex @ Henderson outlet",
+        exact: true,
+      })
+      .click();
     await expect(
       page.getByText("Unable to load available sessions. Please try again.", {
         exact: true,
@@ -2192,7 +2264,7 @@ test("real API batch checkout uses creation evidence and restores one complete u
       ),
     ).toHaveLength(1);
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
   } finally {
     await stopMechanism(page, mechanism, transport);
@@ -2304,7 +2376,9 @@ test("real API exhausted browser checking window retains the original deadline a
     }, attemptId);
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
@@ -2394,7 +2468,10 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         response.status() === 200,
     );
     await page
-      .getByRole("button", { name: "Continue to payment", exact: true })
+      .getByRole("button", {
+        name: /^Continue to payment \$[\d,.]+$/,
+        exact: true,
+      })
       .click();
     await bookStarted.promise;
     await expect(
@@ -2427,7 +2504,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         page.getByRole("heading", { name: "Client Details", exact: true }),
       ).toHaveCount(0);
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toHaveCount(0);
       expect(
         transport.calls.filter((call) => call.path.endsWith("/confirmation")),
@@ -2524,7 +2601,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
       );
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Continue payment", exact: true }),
@@ -2559,7 +2636,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       ).toBeVisible();
       await page.goto(`/confirmation/?attempt=${attemptId}`);
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Continue payment", exact: true }),
@@ -2618,7 +2695,9 @@ test("real API unpaid return shows the pending confirmation layout without claim
     );
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
@@ -2673,7 +2752,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Download/ })).toHaveCount(0);
     await expect(page.getByLabel("Booking actions")).toHaveCount(0);
@@ -2736,7 +2815,9 @@ test("real API expired unpaid Review retains its hold through the grace window w
     });
     await page.goto("/book/review/");
     await page
-      .getByRole("dialog", { name: "Get the SoccerBot Player App" })
+      .getByRole("dialog", {
+        name: "Download the official Soccerbot360 Player App now.",
+      })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await expect(
@@ -2748,7 +2829,10 @@ test("real API expired unpaid Review retains its hold through the grace window w
       .first<{ intent_json: string }>();
     await page.getByRole("checkbox").check();
     await page
-      .getByRole("button", { name: "Continue to payment", exact: true })
+      .getByRole("button", {
+        name: /^Continue to payment \$[\d,.]+$/,
+        exact: true,
+      })
       .click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
       "Still checking your payment",
@@ -2838,7 +2922,10 @@ test("real API failed identity warming stays on Review without booking or paymen
     ).toBeVisible();
     await expect(page.getByText(/Nothing was booked or charged/)).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Continue to payment", exact: true }),
+      page.getByRole("button", {
+        name: /^Continue to payment \$[\d,.]+$/,
+        exact: true,
+      }),
     ).toBeEnabled();
     await assertNoPaymentOrConfirmation(page, mechanism);
     expect(
@@ -3049,14 +3136,14 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
         // Reopen A while B is unpaid, then restore B without borrowing A's proof.
         await page.goto(`/confirmation/?attempt=${ids[0]}`);
         await expect(
-          page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+          page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
         ).toBeVisible();
         await expect(
           page.getByRole("link", { name: "Continue payment", exact: true }),
         ).toHaveCount(0);
         await page.goto("/book/payment/");
         await expect(
-          page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+          page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
         ).toHaveCount(0);
         await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
         await continuation.click();
@@ -3076,7 +3163,7 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
         new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
       );
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Continue payment", exact: true }),
@@ -3108,7 +3195,7 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
     for (const [index, id] of ids.entries()) {
       await page.goto(`/confirmation/?attempt=${id}`);
       await expect(
-        page.getByRole("heading", { name: "Booking confirmed", exact: true }),
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
       await page.getByText("View full details", { exact: true }).click();
       await expect(

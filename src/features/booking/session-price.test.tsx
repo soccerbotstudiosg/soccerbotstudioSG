@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import type { CustomerCatalogue } from "@/domain/catalog";
 import { customerCatalogueService } from "@/services/customer-catalogue";
@@ -9,7 +9,18 @@ const context = vi.hoisted(() => ({
   draft: { nativeServiceId: "3", players: 1 },
   update: vi.fn(),
 }));
-vi.mock("./provider", () => ({ useBooking: () => context }));
+vi.mock("./provider", async () => {
+  const { useState } = await import("react");
+  return {
+    useBooking: () => {
+      const [sessionChoices, setSessionChoices] = useState({
+        outlet: false,
+        session: false,
+      });
+      return { ...context, sessionChoices, setSessionChoices };
+    },
+  };
+});
 /** Supply a complete synthetic catalogue for the requested price profile. */
 function catalogue(environment: "developer" | "production"): CustomerCatalogue {
   return {
@@ -83,9 +94,58 @@ test("live session selection uses client prices while demo retains its own rates
     .mockResolvedValue(catalogue("production"));
   const view = render(<SessionStep />);
   expect(
+    screen.queryByRole("button", { name: /Choose Kickoff Special/ }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: "See available times" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
+  expect(
     await screen.findByRole("button", { name: "Choose Kickoff Special" }),
   ).toHaveTextContent("Weekdays $108Weekends/Public Holiday $128");
   expect(screen.queryByText(/S\$88 weekdays/)).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Add one player" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Choose Kickoff Special" }),
+  );
+  expect(screen.getByRole("button", { name: "Add one player" })).toBeVisible();
+  expect(
+    screen.getByRole("link", { name: "See available times" }),
+  ).toBeVisible();
+  const session = screen.getByRole("button", {
+    name: "Choose Kickoff Special",
+  });
+  fireEvent.click(session);
+  expect(session).toHaveAttribute("aria-pressed", "false");
+  expect(
+    screen.queryByRole("button", { name: "Add one player" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: "See available times" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(session);
+  const outlet = screen.getByRole("button", {
+    name: "Select Apex @ Henderson outlet",
+  });
+  fireEvent.click(outlet);
+  expect(outlet).toHaveAttribute("aria-pressed", "false");
+  expect(
+    screen.queryByRole("button", { name: "Choose Kickoff Special" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: "See available times" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(outlet);
+  expect(
+    await screen.findByRole("button", { name: "Choose Kickoff Special" }),
+  ).toHaveAttribute("aria-pressed", "false");
+  expect(
+    screen.queryByRole("button", { name: "Add one player" }),
+  ).not.toBeInTheDocument();
   context.bookingService.mode = "demo";
   view.rerender(<SessionStep />);
   expect(

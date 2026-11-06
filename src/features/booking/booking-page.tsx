@@ -14,7 +14,8 @@ import { DetailsStep } from "./details-step";
 import { ReviewStep } from "./review-step";
 import { PaymentStep } from "./payment-step";
 import { ConfirmationStep } from "./confirmation-step";
-import { Summary } from "./summary";
+import { Summary, BasketContinue } from "./summary";
+import { BookingTools, useMobileBooking } from "./booking-tools";
 const progress: Array<[BookingStep, string]> = [
   ["account", "Booking"],
   ["session", "Session"],
@@ -33,6 +34,7 @@ const screens = {
 };
 /** Render the guarded booking step and its navigation controls. */
 export function BookingPage({ step }: { step: BookingStep }) {
+  const mobile = useMobileBooking();
   const {
       ready,
       draft,
@@ -100,7 +102,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
       className={`booking-shell ${["account", "session", "review"].includes(displayStep) ? "session-shell" : ""}`}
     >
       {current >= 0 && (
-        <>
+        <div className="booking-navigation">
           <div className="booking-top">
             {pendingReview ? (
               <span className="back" aria-disabled="true">
@@ -113,10 +115,18 @@ export function BookingPage({ step }: { step: BookingStep }) {
                 href={current > 0 ? `/book/${progress[current - 1][0]}/` : "/"}
               >
                 <Icon name="back" />
-                {current ? "Back" : "Back to home"}
+                <span className="back-label">
+                  {current ? "Back" : "Back to home"}
+                </span>
               </Link>
             )}
             <span className="eyebrow text-muted">Booking</span>
+            <span className="booking-current-step">
+              {progress[current][1]} · {current + 1} of {progress.length}
+            </span>
+            {mobile && ["time", "details", "review"].includes(displayStep) && (
+              <BookingTools basket={displayStep === "time"} />
+            )}
           </div>
           <ol className="progress" aria-label="Booking progress">
             {progress.map(([id, label], index) => (
@@ -144,7 +154,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
               </li>
             ))}
           </ol>
-        </>
+        </div>
       )}
       <div
         className={
@@ -156,9 +166,10 @@ export function BookingPage({ step }: { step: BookingStep }) {
         <section className="booking-main min-w-0">
           <Screen />
         </section>
-        {["time", "details"].includes(displayStep) && (
+        {!mobile && ["time", "details"].includes(displayStep) && (
           <Summary basket={step === "time"} />
         )}
+        {mobile && displayStep === "time" && <BasketContinue />}
       </div>
     </div>
   );

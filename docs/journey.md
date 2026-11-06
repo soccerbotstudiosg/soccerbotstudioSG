@@ -4784,3 +4784,356 @@ The owner also requested click-again deselection for time cards. Existing applic
 Follow-up presentation clarification: the selected session card changes only its blue highlight; its content, geometry and introductory copy remain stable. Existing player controls/inclusions/actions appear below. Booking-contact display values now align right through the shared ClientDetails style; labels and editable form controls retain their layout. This is a CSS-only alignment change, with no new test case or business behavior.
 
 PR31 first CI42129858849 on2ad2649 failed frontend job127603425428: the live-session parity case still expected the removed expanded heading. This was a missed dependent assertion. Updated the same case to require the identical original button, selected state and both retained prices; controls/inclusions assertions and inventory remain intact. All254 component/service cases passed locally after repair. Application code unchanged. Original CI failure retained; new exact-head CI required.
+
+### 6 November 2026 — Local hero information-strip removal
+
+PR31 corrected revision6401e6d passed all required gates in42130482806 and staging42132345558; independent public health matched. Owner requested merge, completed as a4185c8. Follow-up local-only request removes “40-minute sessions” and “Up to 4 players” from the homepage hero area. Removed the now-empty strip and its exclusive responsive CSS; session product details and booking behavior are unchanged. No new test cases for this low-impact display removal; local source/lint/format checks apply. No push or deployment authorized for this follow-up.
+
+Owner also requested the session-type highlight on time slots. Shared the same selected background/border/inset outline for expanded time cards, covering trainer-choice opening and basket selection. Removed obsolete inverse text colours from the former dark fill. Updated the existing browser colour assertion to compare the two highlights; no test title/count change. Local-only presentation change; slot selection and provider authority unchanged.
+
+Phone alignment follow-up: set ClientDetails values left-aligned within the existing700px mobile breakpoint, retaining desktop right alignment. Remove only the mobile session-list right inset so per-session prices share the total’s right edge; preserve the numbered list’s left inset. CSS-only, no business behavior or test inventory changes. Visual acceptance remains owner/CI-operated.
+
+Review typography follow-up: standardize review body/contact/session text to16px Roboto, muted grey contact labels and regular dark-navy contact/date/time/trainer values. Preserve heading, price and total emphasis and mobile/desktop alignment. Extended the existing browser typography case with label/value colour, weight and size checks; unchanged case inventory. Source/lint/format checked locally; browser acceptance remains pending.
+
+Owner refined review typography to bold all values, matching amounts. Contact values, dates, times, trainer values and session/player summary now use the shared heading weight; labels remain regular muted grey. Updated the existing browser value-weight assertion from400 to700; no inventory change. Local-only.
+
+Calendar navigation follow-up: replaced only the previous-month chevron with the existing next-month arrow rotated180degrees. Both controls now share the same icon geometry; labels, disabled state and navigation logic are unchanged. Local-only styling/copy scope; source/lint/format checks, no new tests required.
+
+Owner clarified that review session rows and Your sessions must retain the preceding page’s shared design. Removed the new review-specific session typography overrides; date weight500 and regular muted time/trainer text return to the original shared styles. Bold-value standardization now applies only to contact details. Updated existing browser assertions accordingly; no inventory change.
+
+Session-summary spacing follow-up: increase top padding in summary cards across breakpoints, separate heading from session/player copy, add breathing room before the session list and increase row vertical padding. Preserve session typography and price alignment. Owner authorizes publishing the accumulated UI changes, CI, staging and merge after successful verification and staging health.
+
+PR32 first CI42136929421 on7ece46c failed backend browser jobs127627863659/127627863771 across desktop/phone/tablet: the new grey session-text assertion also matched the rotation warning, whose retained colour is rgb(118,83,13). Corrected the test’s semantic scope to time and trainer values and added an explicit assertion for the warning colour; application source unchanged. Original failures retained. No retries, timeouts, case counts or inventory changes.
+
+### 6 November 2026 — PR32 delivery and outstanding-work reconciliation
+
+The owner requested completion of the Progress leave-off on the existing PR32. Its repaired application head `7f5075904847b2e809fa34836b2b8e3c2346142d` passed frontend, backend, live-email and Worker/runtime gates in run42137785715. Staging run42139117805/job127634852402 deployed that exact source; fresh public health returned the same revision and version `256dff7b-55c7-4b72-aea6-3118ad9b8ce0`. The previous failed typography run42136929421 remains retained above. The latest owner instruction recorded in PR32 explicitly holds merge until asked again; it supersedes the earlier conditional authorization.
+
+PR31 merged-main source `a4185c867464e41e22e66e5a136ece7d2c000faf` independently passed every verification gate in run42135338584. Production run42136530587/job127626153087 succeeded; its deployment log reports that source after waiting for the previous revision to clear. A direct production health request from this workspace was denied by the CONNECT proxy with403, so fresh independent production health and runtime activation are not claimed. A later staging workflow uses the main workflow definition but deploys PR32 source7f50759; workflow head alone is not deployed-source evidence.
+
+Replaced the stale Progress leave-off and corrected the provider-configuration table's historical15-minute claim using the retained two-minute invoice evidence. During this continuation the owner explicitly chose to retain the two-minute experiment and hold activation. Saved-setting verification, a separately approved compatible activation policy and owner device/provider acceptance remain open. No provider timeout or application timing was changed. Application, tests, fixtures, strict inventories, migrations, dependencies and deployment configuration are unchanged by this follow-up. Contracts, architecture/schema, security/data lifecycle, code owners, booking flows, role UAT, runbook, development/version inventory and engineering procedures were reviewed for impact and remain unchanged because this correction adds no behavior, rule or operation. Local documentation formatting/link/diff and source/policy checks apply; reuse existing application evidence and require new exact-head CI/staging for the published documentation candidate. Record that final delivery in PR32 rather than creating another verification-invalidating status commit.
+
+### 6 November 2026 — Resume the missing public-page redesign handover
+
+The owner supplied the newer local handover absent from GitHub Progress and requested implementation on the existing PR32. The prior documentation-only reconciliation was published as76e25a8 before this handover arrived. The consolidated follow-up implements all five public UI tasks: rectangular Singapore flag left of the public header links; complete retirement of the persistent mock assistant while preserving enquiry; full-width contrasting promotional image banners and existing guarded CTAs; official Studio image hero above the retained five sections; enlarged address text with the unchanged on-demand map dialog.
+
+Rechecked official https://soccerbot360.com/en and /en/studio through the allowed proxy. Both pages were reachable; the earlier handover's network blocker is superseded. Reused the local official photographs and provenance in media.ts. Studio uses the explicitly permitted image-hero option; no remote video, autoplay, fabricated venue media or extra tracking. The owner authorized a design subagent, which implemented only homepage markup/styles; the main task owns integration, retirement, tests and documentation. Main Arena, exact logos/header blue, pricing authority, enquiry and booking behavior are preserved.
+
+Test impact: retire the two assistant-only Escape/focus tests with the removed feature; remove their exact inventory entries. Retain enquiry's hydration/error/retry component case and rename/update the existing enquiry browser case to assert successful preview submission and absence of chat. Extend existing public-route, navigation and location browser assertions for rectangular flag/order, two full-width contrasting banners, official Studio hero and five retained sections, enlarged address and original dialog/focus behavior. No new browser titles, retries, skips, timeouts or runtime inventory reductions; Worker cases remain unchanged. All browser execution remains owner/CI-operated.
+
+Documentation impact: replace Progress, retain Journey history, remove the retired assistant API operation and ownership references, mark its historical copy IDs retired with revision-pinned source links, describe public navigation/media behavior, and extend the existing customer UAT owner. Reviewed unchanged: business invariants, API operations other than the retired local reply, persistence/schema, infrastructure/security/data lifecycle, runtime/dependency pins, deployment workflow, provider settings beyond the recorded two-minute experiment/activation hold, and Admin/Trainer UAT. No live provider/account action, email send or production activation. Final validation and exact-head delivery receipts belong in PR32; owner physical review and explicit merge instruction remain pending.
+
+Initial local validation caught the now-unused Booking type import after retiring AssistantService; removed that import. The formatting command also included an SVG without a configured Prettier parser; validated that asset as XML instead and kept repository formatting scope unchanged. The existing decorative-accent rejection fixture now targets the replacement promotion CTA rather than the retired offer class. These were local tooling/cleanup findings, not reasons to relax lint or test guards.
+
+CI42143835126 on db944c7 passed frontend, both backend browser shards and Worker/runtime, but live-email jobs127651104711/127651104841 failed the native guest journey on all three devices: its global Book now locator now matches both navigation and the new promotion. Scope that entry action to Main navigation; preserve every subsequent refresh/contact/checkout assertion, all titles, inventories, timeouts and zero retries. Original run/artifacts remain retained. The skipped aggregate gates are downstream consequences, not additional test failures. Application source is unchanged by this repair. Reuse the full local code receipt for the unchanged application and run affected source, formatting, lint and type checks; final-head CI and staging remain required.
+
+### 6 November 2026 — Reference-led presentation and outlet-first selection
+
+Previous32e2018 passed CI42145064845 and staging42146035084/job127657759264, public health revision32e20188d1d9f0473f111a893601f0faf3df5e7d/version14186f45-ea7f-4703-b950-bf14e8636166. Owner then requested the next UI iteration and explicitly instructed staging and merge, followed by revisiting A–D with the retained two-minute experiment. This renews merge authority for the verified candidate; it does not authorize activation or assistant provider transactions.
+
+Final curve clarification: hero straight and15% shorter; second homepage section curved at both edges; final Contact us image promotion curved at top only. Header flag dimensions reduced30% and aligned lower/left; Download app removed. Initial popup retains only the requested heading, three original store destinations/icons and close. Studio uses the exact reference's official stream video from /en/studio, controls with no autoplay/preload, and no imagery captions. Source provenance retained; official MP4 returned HTTP200. SessionStep progressively reveals the sole existing Apex @ Henderson outlet, then session type, then players/inclusions/times. No new provider outlet mapping, capacity, pricing, persistence or payment authority.
+
+Extended the existing pricing test for hidden session/player controls until choices and retained live/demo price assertions; updated the real-session parity case and all affected browser entry helpers, error/retry paths, modal titles, media/header/promotion assertions and exact renamed title inventory. No case-count reduction, skips, retries or timeout changes. Focused20 cases passed. Initial source check found leftover caption CSS and a duplicate object-fit declaration; removed superseded owners without relaxing guards. Final local and CI receipts follow in PR32. Documentation owners updated for presentation and progressive disclosure; API contracts, schemas/migrations, infrastructure/security, dependencies and deployment/provider configuration remain unchanged.
+
+CI42148079609 on72d1366 exposed one stale test assumption in the sizing/rotation journey: the global .section-title locator now matches the new outlet and session headings as well as inclusions. Both backend shards retain the original strict-mode failures. Replace that single-target assertion with explicit checks of all three named headings, preserving normal-font coverage and every downstream checkout assertion. No application source, inventories, retries or timeouts change. Reuse the full local application receipt; run affected source/format/lint/types and require fresh exact-head CI/staging.
+
+During CI for25d6086, the owner superseded the two-minute experiment decision: restore SimplyBook payment timeout to ten minutes, with an admin screenshot showing10 selected. Connector metadata exposes no timeout read/write; saved/effective deadline is not claimed. No provider mutation occurred. The next owner A–D test must verify a new invoice deadline; old invoices remain authoritative. The owner also requested that the red post-expiry calendar notice warn of delayed rebooking availability. Updated only that notice and its existing exact-message/clearing test, retaining saved-details reassurance and all expiry/recovery decisions. Reconciled provider settings, Progress, booking copy and Customer UAT.25d6086 CI is superseded by this substantive copy/decision update; do not stage or merge it as the final candidate.
+
+Owner-requested full booking-path/guard audit compared the complete PR against main a4185c8 and the latest UI iteration against32e2018. Worker, deployment/workflows, booking policy, route guards, booking service and payment/recovery implementations are unchanged; service diff only retires the mock assistant. Inspected BookingPage/guardedStep prerequisites and payment locks; current-offer/trainer selection and time/grid/lead checks; synchronous duplicate-action guard and stale revision/identity cancellation; verified expiry release before restart; saved-contact retention and notice clearing; provider-capped payment deadline and shared-capacity/uncertain-write tests. Outlet disclosure adds no provider ID or capacity authority, and remount behavior is documented. No missing/removed guard was found in this change. Existing negative/concurrency/recovery coverage and strict inventories remain intact; no skips, retries or timeouts added. Final local code verification passed252 cases and the complete tooling/audit/build/export gates after the expiry-copy change. Final-head CI/Worker/browser gates remain required; source audit is not provider/device acceptance.
+
+Owner clarified that outlet selection is preparatory future scaffolding and confirmed the delivery order: staging, merge, then enable settings. Applied that authorization narrowly to restoration of the established production-named client sandbox for owner A–D, not live merchant or identity email activation. Read-only Cloudflare baseline confirms disabled switches, retained client company/service and reviewed merchant pairing, and eight secret bindings. No mutation before verified deployment. Owner requested final documentation reconciliation before tests: reconciled active Progress, provider config, runbook, UAT, technical behavior and retired popup-copy rows; preserved historical evidence. Reviewed unchanged operation contracts, business invariants, schema/migrations, architecture, infrastructure/security/data lifecycle, dependencies/versions, Admin/Trainer UAT and engineering instructions because this slice adds no authority, persistence or integration behavior. Final receipt will contain exact CI/staging/merge/main/runtime states; no status-only commit after that final verification.
+
+### 6 November 2026 — compact abstract banners and reversible selection
+
+Final44540b6 passed CI42150456756 and staging42152250578/job127678176739; public health matched source44540b6a8488ad9750eef5d9cef957e8bc4137fc/version72ff8f11-6459-4e3c-bda9-d1b2e5a1c2ed. Owner revoked merge while the request was in flight; automatic approval review rejected it. Verified PR32 remains open/unmerged; no runtime settings changed. Updated current operational documentation to supersede prior planned merge/restoration authority while retaining dated evidence.
+
+Owner requested60% shorter Contact us with no image, natural abstract styling and retained typography, reused for Studio's booking footer with different words; outlet/session cards must match widths and deselect on second click. Shared compact banner styling replaces both obsolete footer/banner owners. Shared responsive grid governs card widths. Presentation toggles hide dependent controls and reset nested disclosure without erasing existing draft details or changing API service IDs, provider mapping, availability, payment, capacity or recovery guards. Extend existing selection/browser assertions for reversible disclosure, retained player count, matching widths and photo-free shared banners. Inventory counts and all unrelated checkout assertions remain unchanged. Publish/check/stage on the same PR; do not merge or enable settings.
+
+### 6 November 2026 — mobile Studio promotion curve clearance
+
+Owner screenshot on staged `98830de` showed the top curve covering heads and the bottom curve overlapping the Explore the studio button. The mobile layout had cropped the image to16:10 and replaced the Studio-specific bottom padding with36px, less than the40px curve. Updated the existing mobile CSS owner to reserve40px above the natural-ratio photo and76px below the copy, retaining36px clear space above the bottom curve. Desktop/other promotions and booking guards are unchanged. Existing public-page/browser tests and inventories retained; phone visual acceptance remains owner-operated. PR32 remains unmerged and settings remain on hold; exact-head checks and staging recorded in its delivery receipt.
+
+### 6 November 2026 — revised post-merge A–D worksheet prepared locally
+
+Replaced the current A–D worksheet with numbered owner steps for mobile curve clearance, reversible outlet/session selection, paid return, single→multi→single receipt isolation, new10-minute provider invoice verification with unchanged8+1+3 app windows, unpaid expiry/background recovery, shared studio conflicts and cached return. Retained historical rounds. Execution requires the actual merged/deployed revision and separately authorized sandbox activation; no merge, publication, activation or provider actions performed.
+
+### 6 November 2026 — local outlet and Contact alignment refinements
+
+Removed the outlet trailing arrow/check indicator, split the flagship description and street/unit into separate lines, and reused the session/time selected-state CSS for the outlet border, tint and inset outline. Existing accessible pressed/expanded state and reversible selection remain intact. Contact description and CTA now align to the bottom of its heading row; Bring your group is centred over the width of the Contact us heading. Focused session pricing/selection tests passed2/2; formatting and diff checks passed. Changes remain local at the owner's request; physical visual review is pending.
+
+### 6 November 2026 — consolidated refinements authorized for CI/staging
+
+Owner requested removal of app-store lead-in captions, a slightly wider popup and darker background. Removed unused caption data/rendering/styles, widened only the player-app dialog and increased its backdrop opacity. Existing icons, destinations, accessible names, dismissal and other dialogs remain unchanged. Owner subsequently authorized push, CI and staging for all current local refinements and revised A–D worksheet, but not merge or settings activation. Full verification and exact-head deployment results belong in PR32's delivery receipt.
+
+### 6 November 2026 — shorter homepage promotion targets
+
+Owner additionally requested about25% less height for the second and third homepage sections. Reduced image minimums480→360px and440→330px, vertical padding and copy gaps in the existing promotion owner; preserved typography and content-driven sizing. Mobile Studio keeps its full natural-ratio photo and40px top curve clearance; bottom padding is now67px, leaving27px above the40px bottom curve. Actual height remains responsive to copy wrapping. The centred-eyebrow verification was superseded/stopped when this request arrived; consolidate this candidate before final verification. No prior pass is claimed for the changed source.
+
+### 6 November 2026 — consistent banner button shape
+
+After publishing74e2f5e, owner requested all banner CTAs use the header's asymmetric button shape. Applied3px/12px alternating corner radii in the shared promotion CTA owner, covering homepage Studio/session/Contact and Studio booking footer without changing labels, colours or actions. This supersedes74e2f5e for final CI/staging. Reuse its full local252-test/build verification as prior-candidate evidence, with focused final style/source checks for this CSS-only follow-up; final-head CI remains required. No merge/settings authorization.
+
+### 6 November 2026 — tighter banner composition and shared chevrons
+
+Owner requested Contact's three content parts closer together, matching Studio booking-footer placement, chevrons on all right-arrow buttons, and “Kickoff Special · Apex @ Henderson” above player count. Reduced the shared abstract-banner content width target1280→1080px and gaps40→24px, moved bottom alignment and centred eyebrow into that shared owner, replaced the arrow icon and all callers with a right chevron (existing previous-direction transforms preserved), and appended the configured venue in SessionSummaryHeading. Provider-derived service name, plural player count, links, state and booking authority are unchanged. Baseline9683d21 was verified/staged; this new source requires its own verification. No merge/settings changes.
+
+### 6 November 2026 — contrasting performance strip, header retained
+
+Owner clarified that the header should remain unchanged and the thin Performance · Experience · Production strip should stand out instead. Automatic approval review blocked the superseded header-edit command before execution. Applied existing teal identity/white tokens and bolder, slightly larger text only to the homepage arena signature; Studio signature and header remain unchanged. Extended the existing contrast audit17→18 pairs and its low-contrast mutation to cover this combination. Earlier banner/chevron changes passed local verification before this clarification; final consolidated source still requires verification.
+
+### 6 November 2026 — neutral blue-grey performance strip
+
+Owner refined only the thin performance strip from teal to a neutral grey retaining a blue tint. Introduced the scoped signature palette token #465363; retained white bold text, dimensions, header/hero and all other identity-colour consumers. The existing contrast pair and negative mutation now target this token, with unchanged18-pair audit and test inventory. Baseline2893011 passed local/CI/staging; use focused style/contrast/source checks for this colour-only revision and final-head CI/staging. No merge/settings changes.
+
+### 6 November 2026 — Studio footer and flag centring
+
+Owner requested vertical centring for the three parts in the straight-edged Studio footer, while retaining bottom alignment in the curved Contact banner, and centred the Singapore flag against the header buttons. Updated the existing shared CSS default/Contact variant and removed the flag bottom offset. Extended the existing public-page geometry assertion to check flag/button centre alignment; preserved its size/position checks and all test inventory. Consolidate with the neutral blue-grey strip for final CI/staging.
+
+### 6 November 2026 — darker performance strip
+
+Owner requested a much darker grey for the thin performance strip. Changed only its scoped signature colour from #465363 to #252d38, retaining the subtle blue tint and white text. Existing contrast/mutation coverage remains applicable; no layout, header, hero, booking or settings changes. Baseline2cffbb5 passed CI/CodeQL/staging; final-head delivery evidence belongs in PR32.
+
+### 6 November 2026 — restore strip and lighten homepage promotions
+
+Owner superseded the darker-strip request: restore original performance-strip styling; change second/third homepage sections from navy/teal to very light grey with suitable dark text; remove the bottom Contact curve. Removed the scoped signature token/overrides, reused paper/ink and standard navy action styles for both image promotions, removed Contact's SVG/obsolete edge owner/top clearance, and retained Studio curves/mobile clearance. Existing browser palette assertion now checks both intended light backgrounds and dark foreground/actions rather than requiring different colours; added absent Contact-curve assertion in the same case. Contrast audit now covers ink on paper; removed obsolete signature mutation only. All test inventories and booking authority remain unchanged. Previous0b98f4c CI/CodeQL passed but is superseded for delivery.
+
+### 6 November 2026 — Studio sections share the homepage promotion standard
+
+Owner extended the light homepage section standard to all five Studio sections below the video. Reused the existing promotion CSS owners for light paper/ink colours, compact image heights, copy spacing and display typography; removed superseded Studio-specific layout/type overrides. Retained alternating desktop image order, media/zoom settings and all copy; mobile consistently stacks image then heading/body. The abstract booking footer remains its own existing owner. Extended the existing public-route browser case to check the five rows' intended palette without changing test inventory. The earlier homepage-only candidate passed local verification before this scope extension; the consolidated candidate needs fresh checks.
+
+### 6 November 2026 — muted-orange bottom Contact banner
+
+Owner confirmed Bottom contact as the target for a colour not otherwise present on the site. Added scoped muted-orange #d99058 with soft white radial highlights, navy text and navy/white CTA states including hover/focus. Shared abstract geometry remains; scoped CSS properties keep the Studio footer navy. Existing public-route case checks Contact orange/navy and retained Studio navy; contrast audit grows18→19 pairs with a negative Contact-palette mutation in the existing test. Test inventories, navigation, booking/provider logic and settings remain unchanged. Baselinebf8e57f passed CI/CodeQL/staging; this candidate needs its own final delivery evidence.
+
+### 6 November 2026 — consolidated Studio gallery, banner spacing and footer app links
+
+Owner consolidated the Studio tagline above video, five contiguous light picture/content rows as one group with curves only at its top/bottom, and a24px separation before Book now. Outer40px clearances protect media/content from curves. Removed the video/row gaps; both closing banners now join the footer directly. Contact and Studio closing banners share centred composition, a134px minimum target (about30% below192px), smaller display/body type and proportionate controls; actual responsive height may grow to fit content. Both use the shared radial-gradient structure, with restrained white highlights over navy on Studio. Contact action changes from solid navy to tonal peach with dark text/border and tested hover/focus colours.
+
+Homepage Studio/Kickoff image minimums, vertical spacing and heading targets scale0.90/0.78; absolute desktop image positioning lets the row's content/minimum determine height, while mobile Studio retains its uncropped natural-ratio photo and curve clearance. All promotional CTAs use the theme's bold italic heading font; closing-banner controls are scaled to the shorter banners. Idle cursor fill becomes gentle grey; interactive cyan/text/disabled behavior is retained.
+
+Footer restyling to blue/white was explicitly cancelled. The existing light footer adds only an official Player App section, reusing extracted PlayerAppLinks for the same three URLs/icons as the initial popup. Popup dismissal callback/semantics remain unchanged. Existing browser cases cover tagline order, gap-free rows, two outer curves,24px final separation, both flush footer joins, tonal CTA and footer destinations after modal dismissal. Contrast audit expands19→22 pairs, retaining its negative mutation checks; no test cases/inventories or booking/provider logic change. Earlier broad text replacement touched an unrelated payment-demo margin during preparation; review restored it before verification.
+
+### 6 November 2026 — Footer fourth column and Studio image edges
+
+Follow-up to verified PR32 baseline a77aef6 (CI42169819231, CodeQL42169815176, staging42170759529): move app downloads into the fourth footer column after Contact Us, headed Download App with accessible Apple/Android/web icon links. Remove legacy logo offset and centre the entire logo/column group; keep the light palette and popup behavior. Studio gallery outer masks now overlay the image edges, with text-only clearance, and the grey gap before Book now is removed. Existing route geometry/destination coverage is revised without adding or removing cases. Local verification and new-head CI/staging are pending at preparation; final evidence belongs in PR32. No merge, settings or provider changes authorized or performed; owner visual/device acceptance remains pending.
+
+### 6 November 2026 — Further closing-banner reduction
+
+Owner requested another20% reduction to both Contact us and Book now banners after d7b89a5 was pushed. Shared minimum height changes134→107px, vertical padding20→16px and heading scale reduces proportionately; controls retain48px minimum height and responsive copy can grow without clipping. Preserve the fourth footer icon column, gallery photo curves and zero grey spacer. Superseded d7b89a5 CI42171896941 and CodeQL42171890073 are retained; newest-head checks/staging must be verified separately. No merge or settings changes.
+
+### 6 November 2026 — Shared scroll motion, sticky header and footer regrouping
+
+After6e15e65's verified local banner reduction, owner requested section reveals on scrolling, a persistent header, a reference-style footer grouped into Service and Help with downloads on the right, logo bottom-right above the divider, and removal of Get in touch/Disclaimer. Add owner-requested Terms of Service and Privacy Policy links to deliberately empty pure-white placeholder bodies; no legal text was supplied or invented. Footer remains white. Reveal behavior respects reduced motion, focus and live announcements; header height drives scroll clearance. Existing route/reduced-motion cases extend coverage, export guard/fixture route requirements increase11→13, test inventory remains unchanged. Booking/provider/runtime logic is unchanged. Current candidate CI/staging and owner physical acceptance remain pending; no merge or settings changes.
+
+The first local source gate rejected the retired footer-detail-link selector after footer regrouping. Removed that unused selector from the existing shared link styles; preserved the failure receipt before verification.
+
+### 6 November 2026 — Make Studio booking gradient visible
+
+Owner reported the Book now radial highlights still looked flat. Add an identity-blue-to-navy linear gradient beneath the shared radial highlights, preserving the107px minimum-height target and zero grey spacer. Extend the existing browser background assertion and contrast policy (22→23 endpoint pairs); no test cases removed or added. Retain01950da as the previous local-verified candidate; final-head CI/staging remains pending. No merge or settings changes.
+
+### 6 November 2026 — Synchronize confirmation alignment with section motion
+
+CI42173734802 at29c0a7f, backend browser shard1/job127748244100 (artifact13483045959), failed the existing desktop confirmation label/value alignment assertion: sequential rectangle reads differed by0.646px during the new reveal animation. Read ancestor animation completion, then measure the label/value pair together in one browser frame. Preserve the original0.5px tolerance, positive confirmation assertions and all cases; no retries, sleeps or timeout changes. Worker contract/recovery/sustained/runtime checks and backend browser shard2 passed on that run; remaining gates were pending when preparing this repair. Original failure remains retained. Final-head CI/staging acceptance is still required.
+
+### 6 November 2026 — Exact four-column footer grouping
+
+Following verified0c79157 (CI42175078630, CodeQL42175073956, staging42176139791; health versionf26a80d9-fe87-4353-979e-32783e843f92), owner specified Services, Help, Find Us and Download App columns. Services contains Book, Studio and three legal links; Help contains canonical WhatsApp, email and Enquire; Find Us owns the flagship address/map link. Keep the three app icons horizontal and move the logo directly beneath them. Refund Policy is another intentionally empty white placeholder, matching the existing legal pages. Export guard/fixtures increase13→14 routes; existing browser coverage checks grouping, destinations and the new placeholder without inventory changes. Local verification/new-head CI/staging pending at preparation; no merge, settings or provider changes.
+
+Before publication, owner clarified that Instagram must remain and renamed Help to Connect With Us. Retain the canonical Instagram destination after Enquire in that column; WhatsApp reuses BOOKING_SUPPORT.whatsappUrl and the address uses LOCATION fields.
+
+Final ordering correction: WhatsApp, Email, Instagram, then Enquire. The first three use shared icons instead of visible platform labels, with visible contact values and accessible names. A local type gate caught the initial WhatsApp field lookup on CONTACT; corrected it to the existing BOOKING_SUPPORT owner before verification and preserved the failure receipt.
+
+Owner reported flickering reveals and unbalanced closing-banner content, and requested phone navigation aligned right. Fix the flash by staging only offscreen sections transparent before entry, then use a650ms/32px entrance; preserve focus/reduced-motion restoration and observer cleanup. Centre all three closing-banner blocks in balanced columns with centred mobile stacking, and right-align phone flag/navigation together. Extend existing reveal/reduced-motion/navigation checks; no inventory changes. The interrupted mid-edit formatting receipt is retained; a frozen final-source verification follows.
+
+Owner explicitly excluded the entire booking flow from scroll motion. Gate the reveal owner off for book, confirmation and experiment routes; retain existing popup behavior. Mobile Studio intro fills the remaining first viewport below the measured header, with cover video/controls. Source review caught and restored an over-broad local CSS section replacement before verification; only the closing-banner owner is rebalanced, with homepage photo/CTA rules preserved.
+
+Official media inspection found all five Studio-page clips were16:9. Owner explicitly selected the official homepage hero for a mobile portrait crop. Probed hero-loop.mp4 at1280×720/13s with no audio and inspected frames at3s/8s; its centred close-up montage is used on mobile, while desktop keeps the1280×720/50s Studio stream. Record source/poster provenance in media.ts; native controls/no-autoplay remain. Footer typography/icons are enlarged and responsive grid layout uses4/2/1 columns. Browser/device crop and playback acceptance remain owner-operated.
+
+Final motion review requires a positive1% intersection before entrance (edge contact alone must not start the mobile below-fold gallery), and print restores pending public content. Full local code verification passed before this bounded correction; final frozen-source verification follows.
+
+Owner requested a centred floating back-to-top chevron on scrolled public pages only. Reuse the public-motion route exclusion for both reveal and back-to-top owners; show after200px, animate only the icon, preserve keyboard focus and honour reduced motion. Extend existing public/reduced-motion/booking cases without new cases. Prior consolidated local code verification passed; verify the final control-inclusive source before publication.
+
+### 6 November 2026 — Thin mobile booking navigation and primary action bar
+
+Owner approved persistent mobile progress/Continue controls, explicitly requesting a thin layout that leaves the body visible. Wrap the existing Back/progress owner in a mobile sticky row showing current step; desktop progress remains unchanged. Add presentation classes/wrappers around existing single next-action elements (session, time basket, details, review, account email/code form), preserving exact handlers, form ownership, validity/loading/disabled guards and all payment/recovery logic. Mobile bars reserve body/footer/focus/safe-area clearance and remain static. No duplicate button or new booking effect. Extend the existing booking typography journey with bounded mobile bar geometry checks; final-source verification and CI/staging remain pending.
+
+### 6 November 2026 — Keep navigation and banner hit targets stable
+
+CI42179543002 ate95f7a5 failed backend browser jobs127766171024/127766171176 (artifacts13485241490/13485161901). Desktop Studio entry placed the tagline at-601px while sticky header ended at88px: the new display:contents intro had no layout box for route scroll targeting. Restore a real block container. Phone/tablet WebKit banner clicks completed without navigation; retained trace showed scroll-to-target followed by entrance displacement before the pointer action, and error context remained on Studio. Restrict entrance motion to noninteractive visual blocks; never move clickable controls or forms. Keep the original loader/navigation assertions and add explicit top-of-page arrival evidence; no sleeps, retries, forced clicks or relaxed geometry. The local mobile-bar candidate passed code verification before this root-cause repair. Full final-head verification is required; no merge/settings changes.
+
+### 6 November 2026 — mobile action-bar content-width assertion
+
+- UI candidate `af5fd2a` failed CI42181064807: frontend job127770556204 and backend browser shard1 job127771002783 both measured exactly40px difference at `customer.spec.ts:647`; retained artifact13485332814. CodeQL42181059395, Worker groups and both live-email browser shards passed; deployment42182066729 correctly skipped.
+- Cause: the previous full-width assertion compared the button with its container's border box, ignoring the approved mobile fixed bar's20px left/right padding. The button fills its content area; this was an obsolete test contract, not missing application width.
+- Repair: compare content widths with the original1px tolerance; independently assert a viewport-wide fixed bar, one action,20px left/right gutters and minimum44px action height on mobile booking steps. Existing bottom alignment/72px height bounds, desktop sizing, guards, case inventory, retries and timeouts remain unchanged.
+- User requested staging UI before a separate documentation PR. Documentation edits are preserved outside the checkout; PR32 contains only UI-related repair and its evidence. No merge or activation authorised.
+
+### 6 November 2026 — footer bottom alignment and spacing
+
+- UI baseline `f65071b` passed CI42183077985, CodeQL42183072776 and staging42184170575; public health matched the exact SHA and version `bfff910e-f6b5-4ee2-92ce-1000d6af7be5`. No merge or activation.
+- Owner follow-up: align the app-column logo at the lower right with the Services list; reduce footer sub-item gaps30% (8px→5.6px); place the building/address below the Flagship Studio label. App column stretches with the shared grid and positions its logo at the bottom; existing44px link/app targets, destinations and responsive column layout remain.
+- Documentation refactor remains separately preserved on `docs/test-guides-and-reference-cleanup`; no broad documentation restructuring enters this UI follow-up. Existing public-footer browser assertions retained; no new cases/inventory or booking logic changes.
+
+### 6 November 2026 — remove footer Enquire link
+
+- Owner removed Enquire from the footer after the alignment follow-up and stated they were cancelling its CI. Keep WhatsApp/email/Instagram; leave the enquiry page and banner destinations intact.
+- Existing public-footer test now requires no Enquire link and exactly three contact links, with Instagram last. No added/removed cases, booking logic, provider settings or test-inventory changes.
+
+### 6 November 2026 — footer column grouping and app heading
+
+- Owner renamed the footer heading to “Download Official Soccerbot360 App:” and requested the three information groups sit closer together on the left. Desktop grid now sizes the first two columns to content with24px group gaps, preserves a flexible address column and keeps the app column at the right. Existing tablet/phone column rules remain.
+- Footer address remains Flagship Studio label, Apex @ Henderson, street/unit, then postal code on separate lines. Existing browser heading assertions track the exact new label; no inventory/booking/provider changes.
+
+### 6 November 2026 — footer text alignment and true row compression
+
+- Owner screenshot showed contact text lower than Services and excessive one-line spacing after reducing CSS gaps. Root cause: contact flex items centred within44px link boxes while plain links rendered at their tops.
+- Top-align contact content and use24px desktop text-link rows plus5.6px gaps:29.6px pitch versus49.6px, about40% tighter. Tablet/phone links and app icons retain44px targets. Existing public-route test checks rendered text alignment within1px and desktop row pitch29–31px; no inventory/timeouts/retries changed.
+- UI baseline904414b passed CI42186064138, CodeQL42186058570 and staging42187263148; public health confirmed revision904414b/version73d3afb0-7c7e-4869-bece-66b64934a5fb. This visual correction needs its own exact-head verification.
+
+- Consolidated owner corrections: align every Services/contact/address row on the left with the same desktop pitch; address lines use one linked grid. Shift the logo to the app column’s left edge while retaining bottom alignment. Add6px below the mobile Back row before its divider; existing mobile geometry now requires≤54px overall height and≥6px button clearance. Interrupted the previous local verification when this scope changed; retained its log. No payment/action handlers changed.
+
+- Further consolidated mobile requests: centre the flag/studio/book group without changing its spacing; place Services and Connect With Us side by side, followed by centred Find Us and app heading/icons/logo. Replace indefinite fixed continuation with one reserved-position `BookingPrimaryAction` owner: float only while its original position is below the viewport, then return to document flow before the footer. Preserve the actual form/button/handlers and all booking authority. Existing browser case checks original-position eligibility, footer non-overlap and one action; unsupported measurement APIs retain the ordinary inline action.
+- A focused type-generation attempt without the required execution permissions failed with `spawnSync git EPERM`; retained in the local type log. Consolidated verification uses the supported execution permissions; this is not a product type failure or browser execution.
+
+## 6 November 2026 — mobile booking panels and final UI consolidation
+
+- Retained pre-consolidation checkpoint below; superseded only by the current Progress checkpoint.
+
+<details>
+<summary>Previous checkpoint retained for information audit</summary>
+
+### Previous current checkpoint
+
+Observed 6 November 2026 (Singapore). History: [Journey](journey.md).
+
+#### PR32 footer refinement
+
+Branch `fix/hero-session-copy`; baseline0c79157 passed CI42175078630, CodeQL42175073956 and staging42176139791, with public health confirming the exact revision. PR32 remains open/unmerged; settings unchanged. **Do not merge or enable settings.**
+
+Latest requested footer order: Services (Book, Studio, Terms of Service, Privacy Policy, Refund Policy), Connect With Us (WhatsApp, Email, Instagram), Find Us (flagship studio/address), Download App (three icons in one horizontal row, logo underneath). Retain the pure-white footer and empty white legal placeholder bodies. New Refund Policy route joins the two existing legal placeholders; approved legal text remains pending.
+
+Preserve the verified sticky header, accessible scroll reveals, corrected gallery curves without grey spacers,107px closing-banner minimum-height target and visible Studio blue-to-navy gradient. Current footer changes require local code verification and exact-head CI/staging. Test inventory stays unchanged; export requirements increase13→14 routes. Final immutable delivery evidence belongs in PR32.
+
+#### Remaining work
+
+- UI staging first: repair the obsolete mobile action-bar width assertion from CI42181064807, verify and stage PR32. Then resume the separately preserved documentation refactor in its own PR; include full information-loss audit. No merge or activation.
+
+- Review the local mobile correction and revised worksheet. Run consolidated verification, publish to PR32, then verify exact-head CI and staging. **Do not merge or enable settings.** Owner visual acceptance remains pending.
+- Provider decision remains ten-minute timeout; screenshot shows10 selected, but saving/effective new invoice deadline still needs owner verification. App timing remains8-minute payment,1-minute checking,3-minute recovery. [A–D worksheet](uat/simulated-user.md#ad-acceptance-worksheet) remains owner-operated and pending.
+- Domain connection/WAF/rate-limit work is deferred until owner tests are finalized. Read-only inspection found soccerbotsg.com active in Cloudflare but no production Worker custom domain; managed rulesets listed, no custom edge-rate-limit ruleset established. This is not evidence of protection for the workers.dev route.
+- Wider external work remains in [Runbook](runbook.md), [Admin UAT](uat/admin.md) and [Trainer UAT](uat/trainers.md).
+
+Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. The footer has no Enquire link; WhatsApp, email and Instagram remain.
+
+Latest visual corrections: stage offscreen sections transparently before a clear650ms/32px entrance, with immediate reveal for focus/reduced motion and cleanup. Closing-banner heading, supporting copy and CTA share centred alignment and balanced columns, stacking centrally on phones. Phone header flag and two navigation buttons align together at the right.
+
+Booking routes, confirmation and experiment checkout are excluded from scroll reveals; their components remain static, retaining existing confirmation/invoice popup behavior. On phones the Studio tagline/video intro fills the first viewport below the measured sticky header, with cover video and controls; gallery begins below the fold.
+
+Mobile Studio video uses the official homepage hero-loop.mp4 montage with a centred portrait cover crop; desktop retains stream.mp4. Both retain native controls, playsInline, no autoplay and no preload. The responsive source owner is studio-hero-video.tsx with canonical media provenance in media.ts. Footer headings are16px, details14px, contact icons20px and app icons26px within44px controls; four desktop columns become two on tablets and one on phones.
+
+Public pages show a centred floating up-chevron after200px scrolling. Its icon gently floats; clicking restores header focus and scrolls to the top. Reduced motion disables floating/smooth scrolling. The control is absent throughout booking, confirmation and experiment checkout. Check it on phone/desktop alongside existing public-section motion; no payment/navigation authority changes.
+
+Mobile booking navigation uses a compact sticky Back/current-step row below the measured site header. Existing single next-action controls in session, calendar basket, details/review and email/verification forms occupy a slim fixed bottom bar, with body/focus/safe-area clearance. Account choice cards and payment/recovery actions retain their existing placement. Actual controls, handlers, disabled/loading conditions and form ownership are unchanged; no duplicate actions or booking animation are introduced. Check navigation height≤48px and bottom bar≤72px without a device safe-area inset, keyboard/focus clearance and disabled-state behavior.
+
+Public entrance motion targets noninteractive visual blocks only: clickable controls and forms remain stationary, including banner CTAs. Studio intro retains a real layout box so route entry starts at the hero. CI42179543002 exposed these navigation/hit-target regressions; original evidence is retained in Journey and final-head verification is required.
+
+</details>
+
+- Added phone cart/trainer panels and session/unique-trainer badges, reusing confirmation-pop only for badges; all booking guards retained.
+- Fixed app dialog utility text contrast and removed close-button circles/borders.
+- Expanded the existing time-step component test:9/9 passed, covering cart removal/counts, unique trainer counts, profiles and one continuation.
+- Initial local code gate correctly rejected local literal font sizes in the new heading/badge; removed the redundant heading override and used the existing caption token. Original receipt: `/workspace/work/sbs-ui-redesign/mobile-panels-verify.log`.
+- Updated existing customer/live-email browser assertions for mobile popup access; owner/CI execution remains pending.
+
+- Full non-browser checks and14-route export completed, but the immutable receipt was refused because supporting documentation was edited during verification. Preserved log: `/workspace/work/sbs-ui-redesign/mobile-panels-final-verify.log`. Freeze the candidate before rerunning its receipt.
+- UI link audit found five pre-existing stale anchors already handled by the separate documentation-refactor branch; no new missing links from this UI slice.
+
+## 6 November 2026 — persistent booking tools and naked actions
+
+- UI2b907c5 passed CI42191700781 and CodeQL42191693711; staging42192988061 attempt1 uploaded but failed stale SOURCE_REVISION settings read (job127809512958/artifact13490567146). Owner-authorized attempt2 passed; public health confirmed2b907c5/versionf07adbd5-784c-426d-991b-b34a2d4a26dc. No merge/activation.
+- Owner screenshots exposed Time Continue shrinking to content under inherited flex start alignment and the shared action wrapper drawing a white rectangle. Mobile layout now stretches; one naked full-width48px-minimum button reserves24px above and16px/safe-area below; floating control retains20px side insets. Original-position stop and guards retained.
+- Cart/trainer controls move into the persistent top row; step count centres. ReviewSessions reuses unchanged Edit-lock logic for phone cart and desktop blocks; no provider/state mutation changes.
+- Footer desktop groups spread to36px, app/logo right-align with the footer edge; phone text rows32px+4px and contact column fits email without wrapping.
+- Contact us now uses the same blue-to-navy gradient, radial highlights, text and CTA as Book now. Retire unused orange palette/contrast pairs; replace with white/navy endpoint, CTA hover and badge contrast guards. Updated rejection fixtures retain negative contrast proof.
+- Focused time-step/direct-checkout tests29/29 passed; existing browser checks updated for persistent icon geometry, naked button width/spacing, email fit, footer alignment and identical banner gradients. Full local and final-head CI/staging pending.
+- Separate documentation PR33/abbf9f2 completed baseline audit and numbered per-document menus; manual CI dispatch returned Forbidden. Reconcile this UI follow-up into that dependent branch in place after UI publication.
+
+## 6 November 2026 — popup headers, action totals and complete mobile Review
+
+- UI794f26c passed CI42195853754, CodeQL42195844818 and staging42197062379; health confirmed version311f9579-969a-4a69-9353-60f28d004e56. No merge/activation.
+- Desktop download heading now right-aligns with app assets; mobile remains centred. Cart/trainer dialog body scrolls independently of its header and close control.
+- Next-action totals reuse domain pricing; Review restores complete main-body details on phones and keeps the same cart summary as Details. Original validation, held/verifying Edit locks and checkout handlers remain unchanged.
+- Component checks caught amount-bearing accessible names and contact-only fixtures without slots; locators updated for their actual states, retaining duplicate-write, cancellation and loading assertions. Browser assertions cover totals, restored Review and persistent popup header; owner/CI execution pending.
+- Documentation refactor and its CI remain explicitly paused.
+
+## 6 November 2026 — unpaid-expiry cart reconciliation and mobile audit
+
+- Owner clarified expiry means the unpaid payment-reservation timer, not a session start or paid booking. After authenticated release succeeds, both return paths clear old cart rows and refresh each selected date; only matching available service/time/trainer/price/rotation survives. Messages identify removed dates/times, distinguish failed reads and preserve contact. Consent resets.
+- Added regression coverage for single/multiple selections, failed reads, changed trainer/price, edits and changed identity during refresh, duplicate callbacks, paid and different current attempts. Existing protected-expiry tests retain unresolved-payment/no-release proof.
+- Mobile audit: shared draft drives badges/cart/profiles; panels contain no checkout action; Time removal uses provider update and held/payment locks; Details/Review and trainer profiles are read-only. Native modal focus/dismissal and reduced-motion handling retained. No server contracts, payment deadlines or provider settings changed.
+- Time cards now share time/add above and details/price below on desktop/mobile. Mobile substitutes a circled information mark and one hint above the grid; desktop retains trainer names. Shortened guidance to “40-minute sessions · 10-minute changeover.”
+- UI6d346e5 passed CI42199152912, CodeQL42199146832 and staging42200383047; health confirmed version03a8ed86-e34e-44c8-bdf4-f195f96c6659. New local changes require their own verification; documentation refactor remains paused.
+
+- Follow-up: retain outlet/session presentation across calendar Back, preserving explicit deselection; shorten the opening-hours note without changing policy. Mobile calendar controls align in two rows; legend uses Available/Unavailable only and a viewed-date outline.
+- Verification caught parameterized expiry tests missing from the explicit case inventory; expanded them into named cases and updated the reviewed inventory. Paid fixture restoration was corrected to respect the existing live-restoration contract; no product guard was weakened. Source/code checks and CI remain required for the final candidate.
+
+## 6 November 2026 — compact calendar and silent Studio playback
+
+- Owner requested all mobile calendar controls in one row, a single circled information mark beside the shared slot hint, a neutral charcoal app prompt/backdrop, no square around its close control, and heading “Download the official Soccerbot360 App now.” The close control retains a visible keyboard-focus underline.
+- Owner chose GIF-style playback using existing video files: silent inline autoplay once, no native player chrome/loop, one Pause/Replay control. Reduced motion prevents autoplay; rejected autoplay retains manual Play. Desktop/mobile official sources and portrait crop remain.
+- Added component playback regressions and updated existing calendar/prompt browser assertions; no assistant browser execution. Booking mutations, expiry reconciliation, provider contracts and payment guards unchanged.
+- Prior db5e724 passed CI42207739556, CodeQL42207734490 and staging42209030129; health version072c52a3-3644-4f43-b56e-4b2865e40b78. New candidate requires final checks. Documentation refactor remains paused; no merge or activation.
+
+- CI42225962661 phone-WebKit live-email shard2 failed the unchanged0.5px alignment assertion: month wrapper y317.34375 versus Refresh y318.34375 (job127920044868, artifact13505582824). Inline select baseline space enlarged the wrapper; make the owned select block-level so all row controls align. Retain original assertion/tolerance and failure evidence; rerun final candidate gates.
+
+- Owner shortened the footer app-group heading to “Soccerbot360 App:”; keep destinations/icons/alignment unchanged.
+
+- Owner superseded the short footer label with one-line “Soccerbot360 Player App:” and popup title “Download the official Soccerbot360 Player App now.” Keep existing store destinations and dismissal. Supersedes wording candidate667a87e before staging acceptance.
+
+## 6 November 2026 — native mobile calendar control sizing
+
+- CI42228005184 on a578224 repeated the phone-WebKit alignment failure in job127927981362: month y317.34375, Refresh y318.34375. CodeQL42227998110 passed; staging skipped. The earlier baseline-space explanation was incomplete: block display did not remove the mismatch. Preserve both failed runs.
+- Size mobile month and Refresh controls to the same existing44px control token as the navigation buttons; reduce vertical padding so native select sizing cannot enlarge the centred row. Keep the original alignment tolerance and booking journey assertions unchanged. Browser confirmation remains CI-owned.
+- Scope: CSS presentation only; booking/provider contracts, fixtures, case inventory and payment authority unchanged. Documentation refactor remains paused. Final local verification and new-head CI/staging pending.
+
+## 6 November 2026 — simplify calendar and recovery controls
+
+- Owner removed the permanent calendar Refresh button across desktop/mobile and Check status after expiry recovery. Calendar now contains month plus arrows; failed availability reads retain Try again. Unresolved confirmation/expiry recovery hide the manual status action; transient status failures retain it. Automatic bounded checks, original attempt identity, paid safeguards and authenticated release remain unchanged.
+- Existing calendar tests retain fresh-read/day-selection assertions through a test-only provider probe; failure tests assert actionable retry. Browser geometry now compares month/arrows because Refresh is intentionally removed. Retain original failed CI evidence; this is an explicit product change, not relaxed alignment.
+- Prior63b0a06 passed local verify:code (fingerprint776198211182eccb5e63f7dec119d3ca3b046dea738a037b2c7470f83d12b3cb) and was pushed before this clarification; its CI is superseded. First local verification without network permission stopped at dependency audit; the permitted network run passed with zero vulnerabilities. Final new-candidate checks pending. Documentation refactor remains paused.
+
+## 6 November2026 — UI and reservation-admission consolidation
+
+- Owner authorized: max5 sessions per new checkout; one strike per proven unpaid expiry; customer strike2+ cooldown1 hour with verified-payment reset; shared-IP rolling24-hour strike2+ cooldown1 hour without payment reset. Guests remain unverified; blocks apply to new reservations, not site access.
+- Added migration0039 source/expiry ledgers, scoped HMAC identity, shared unpaid-release predicate and atomic first-dispatch checks. Preserved paid/unknown/receipt protection, historical read capacity and original financial recovery.
+- UI: centred every mobile step label; static/sticky Back gaps6px; action clearance reduced35%; visible cart/trainer scroll indicators with separate fixed headers; trainer option names only; heading blue sampled from logo asset; ended mobile Studio double-chevron cue.
+- Calendar investigation: server warming retains valid complete snapshots and swaps only a complete generation-matched result. Browser previously removed an expired month without scheduling a replacement. Repaired one-read expiry replacement with retained grid, expired offers excluded, retry on failure and0.5-second in-calendar spinner.
+- Preserved failures under `/workspace/work/sbs-ui-redesign/`: initial sustained suite184/203 exposed historical runtime fixture omissions and eight-session creation under the new cap. Added migrations0026/0039 to runtime fixture; recovery setup now exercises1/2/4/5 sessions. Runtime50 passed. Earlier preflight-race test exposed a missing non-consolidated atomic admission check; repaired `journal.ts` and proved both paths reject without provider effects.
+- Component follow-up initially exposed a misplaced nested layout effect and two obsolete expiry expectations; moved the effect to component scope and strengthened expiry replacement/scroll-position assertions. Calendar/popup28 checks pass. Existing price/write/recovery guards remain.
+- Prior focused checks: new admission scenarios, cap boundary, verified identity/IP normalization, customer/IP resets and first-write races; direct single/batch read budgets updated for measured admission work. Full final-source checks/CI/staging remain pending at this entry.
+- Separate docs reminder decision retained for PR33 after UI publication: clients/providers3 days and24 hours before; no enabled/saved/delivery or provider-setting-change claim.
+
+- Owner replaced the proposed calendar fade with the standard in-calendar spinner, shown for exactly0.5 seconds while preserving the grid. Regression asserts visibility at499ms and removal at500ms; response arrival does not acquire an artificial delay.
+- Confirmation standardization: shared logo-blue main heading, mobile card/shell/action spacing, full-width primary rebooking action and existing support/home controls. Retained confirmed/pending/paid/unknown authority, full-details disclosure and tick/invoice pops. Focused confirmation checks44/44 passed; client cooldown checks30/30 passed after correcting a test locator to include the displayed SGT suffix.
+- Owner subsequently authorized: resolve CI failures, stage the exact passing UI/defense revision, then merge. Replaces the previous no-merge hold for PR32 only; no provider-setting or live-operation activation.
+
+- Full local Worker source/type checks passed; runtime489/492 passed. Three remaining failures were two provider fixtures without synthetic `IDENTITY_PEPPER` and a pre-0006 migration test invoking current dispatch against the intentionally old schema. Added synthetic binding and explicitly seeded historical dispatch state with independently asserted writes; all3 affected regressions pass. Original output retained in `consolidated-worker-final.log`; no application guard was weakened.
+- Full local code gate previously passed267 cases/56 browser definitions/14 exported routes. Later spinner/confirmation polish passed focused28/44 checks; final local code gate and exact-head CI remain pending at this checkpoint. Backend full-suite execution will be repeated by required CI; unchanged passing local coverage is retained.
+
+## 6 November2026 — b640633 CI fixture and confirmation geometry reconciliation
+
+- Published PR32 candidate`b640633`; CI42244147487 passed frontend, contracts, recovery and both backend browser shards. The sustained203 runtime cases passed; its load-smoke follow-up failed because the fixture still submitted8 sessions, correctly rejected by the new5-session cap.
+- Preserved worker job127981830317 and live-email jobs127982538747/127982538912 logs under `/workspace/work/sbs-ui-redesign/ci-b640-*.log`. Live-email failures expected Home to occupy a full row after the assistant expanded the action layout by making Make another booking the full-width primary action.
+- Load mix now covers1/4/5 sessions with unchanged customer cohorts, deadlines, call budgets, fault cases and duplicate-effect assertions. Local smoke reproduced the original400 `session_limit_exceeded`; corrected smoke passes all4 cohorts.
+- Owner clarified that confirmation standardization applies only to the details section below the action controls. Reverted the expanded rebooking/Home layout, action spacing, icons and pending-shell changes; preserved the original browser geometry assertions and tolerances. Retained the requested logo-blue heading and mobile20px details-card inset. No assistant browser execution.
+- Reconciled measured admission-related D1 costs in BR-017, code map and runbook: single6 coordinator+1 HTTP; batch2×sessions+8 coordinator+1 HTTP; recovery5 unchanged. New CI/staging/merge still pending.
+
+- The confirmation action expansion was not requested; restored original controls following owner correction before the next CI candidate. Original failure receipts remain preserved.
+
+- Final owner clarification: capitalize “Booking Confirmed”; preserve the original teal heading and all other top presentation. Only the lower details use shared Review blocks/dividers/heading spacing and mobile20px inset. Existing confirmation/component checks44/44 pass; heading locators updated without changing coverage. New exact-head CI remains required.
+
+## 7 November2026 — Release migration rehearsal completion
+
+- CI42246344863 on65e5f28 passed frontend, all492 Worker cases, corrected load smoke and all four browser shards. Backend/live-email aggregation failed because `check-developer-release.mjs` explicitly rehearsed only migrations0001–0038; its completeness assertion correctly rejected packaged0039. Original logs retained as `ci-65e5-127994101412.log` and `ci-65e5-127994101587.log`.
+- Rehearsal now applies0039 and verifies historical checkouts create no inferred abuse-source or expiry rows. Existing migration completeness, data preservation, foreign-key and closed-authority assertions remain.
+- Retrieved unchanged backend evidence artifact13518067899 through GitHub connector; repaired checker passes isolated workerd/D1 execution with zero remote/provider calls. Local CLI artifact download was forbidden; used the available connector without bypass. Source/format/syntax checks pass. Latest confirmation candidatecdc2ace remains superseded by this tooling fix; exact-head CI/staging/merge pending.

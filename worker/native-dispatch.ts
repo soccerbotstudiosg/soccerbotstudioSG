@@ -1,3 +1,8 @@
+import {
+  reservationBlockedUntilSql,
+  reservationExpiryStatement,
+  rejectReservationPreparation,
+} from "./reservation-abuse";
 import type { Access } from "./access";
 import type { Grant } from "./customer-authority";
 import { ApiError } from "./policy";
@@ -18,6 +23,7 @@ export async function claimNativeDispatch(
   const now = Date.now();
   const all = await db.batch([
     ...preparation,
+    reservationExpiryStatement(db, id, id, now, true),
     db
       .prepare(
         "INSERT INTO checkout_payment_routes(attempt_id,route) SELECT a.id,'hitpay' FROM attempts a JOIN native_checkout_grants g ON g.attempt_id=a.id WHERE a.id=? AND a.owner_id=? AND a.intent_hash=? AND a.state='prepared' AND a.version=? AND g.capability_hash=? AND g.state='granted' AND g.contract_json=? AND g.intent_hash=a.intent_hash ON CONFLICT(attempt_id) DO NOTHING",
@@ -35,7 +41,7 @@ export async function claimNativeDispatch(
       .bind(id),
     db
       .prepare(
-        "UPDATE native_checkout_grants SET state='running',availability_json=? WHERE attempt_id=? AND capability_hash=? AND state='granted' AND source_revision=? AND intent_hash=? AND contract_json=? AND expires_ms>? AND EXISTS(SELECT 1 FROM attempts a JOIN guest_access c ON c.owner_id=a.owner_id WHERE a.id=? AND a.version=? AND a.state='prepared' AND a.intent_hash=native_checkout_grants.intent_hash AND a.deadline_ms>? AND c.capability_hash=? AND c.revoked_ms IS NULL AND c.issued_ms<=? AND c.expires_ms>?) AND EXISTS(SELECT 1 FROM checkout_payment_routes WHERE attempt_id=? AND route='hitpay')",
+        `UPDATE native_checkout_grants SET state='running',availability_json=? WHERE attempt_id=? AND capability_hash=? AND state='granted' AND source_revision=? AND intent_hash=? AND contract_json=? AND expires_ms>? AND EXISTS(SELECT 1 FROM attempts a JOIN guest_access c ON c.owner_id=a.owner_id WHERE a.id=? AND a.version=? AND a.state='prepared' AND a.intent_hash=native_checkout_grants.intent_hash AND a.deadline_ms>? AND c.capability_hash=? AND c.revoked_ms IS NULL AND c.issued_ms<=? AND c.expires_ms>?) AND EXISTS(SELECT 1 FROM checkout_payment_routes WHERE attempt_id=? AND route='hitpay') AND (ongoing=0 OR EXISTS(SELECT 1 FROM reservation_sources admission WHERE admission.attempt_id=native_checkout_grants.attempt_id AND ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now))}<=${now}))`,
       )
       .bind(
         availability,
@@ -69,7 +75,19 @@ export async function claimNativeDispatch(
       )
       .bind(firstStep, id, version + 1),
   ]);
-  const results = all.slice(preparation.length);
+  const results = all.slice(preparation.length + 1);
+  if (results[2].meta.changes !== 1 && grant.ongoing === 1) {
+    const blocked = await db
+      .prepare(
+        `SELECT ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now))} AS until_ms FROM reservation_sources admission WHERE attempt_id=?`,
+      )
+      .bind(id)
+      .first<{ until_ms: number }>();
+    if (blocked && blocked.until_ms > now) {
+      await rejectReservationPreparation(db, id);
+      throw new ApiError(429, "reservation_blocked");
+    }
+  }
   if (
     (results[1].results[0] as { route?: string } | undefined)?.route !==
     "hitpay"

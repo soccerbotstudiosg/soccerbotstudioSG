@@ -180,14 +180,6 @@
     "title": "bounds calendar day month and UTF-8 payload sizes without truncating offers"
   },
   {
-    "file": "src/features/assistant/assistant.test.tsx",
-    "title": "Escape closes the assistant after a touch reply leaves focus outside the panel"
-  },
-  {
-    "file": "src/features/assistant/assistant.test.tsx",
-    "title": "the assistant stops handling Escape when closed or unmounted"
-  },
-  {
     "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "account leaving email challenge ignores delayed completion and live mode never displays demo code"
   },
@@ -577,23 +569,7 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "accepts different session instructors and rejects stale assignments or missing rotation disclosures"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "allows contact-only booking without removed participant fields"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "blocks duplicate payment and checkout while pending"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "confirms and reserves once even when the old check is repeated"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "discloses crossing rotations while retaining the starting instructor for the whole session"
+    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -601,67 +577,7 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "does not reserve a displayed or reviewed slot"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "formats Singapore booking dates independently of locale date order"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "freezes the reviewed snapshot separately from later draft mutation"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "keeps payment checking for exactly five seconds and preserves the deadline through storage"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "makes decline retryable and status polling resumable"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "marks a slot unavailable exactly at its Singapore start and afterwards"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "never auto-confirms late payment or allows another pay attempt"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "offers only complete sessions within noon to 8pm and rotates instructors every three hours"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "prefills only approved name and phone after verification"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rechecks final-slot conflicts before offering payment"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "records multiple dates and preserves each booked session"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects a new payment after start but preserves pending recovery and paid receipts"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects checkout at or after start without discarding the selected draft"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects missing policy acceptance and invalid player counts"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects verified-email mismatch"
-  },
-  {
-    "file": "src/services/booking.test.ts",
-    "title": "rejects wrong, expired and replayed codes"
+    "title": "allows five sessions and rejects a sixth"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -669,7 +585,75 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "upgrades pending and paid legacy attempts without changing their identity or charging twice"
+    "title": "rejects missing policy acceptance and invalid player counts"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "validates all required contact fields and their length limits"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "allows contact-only booking without removed participant fields"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "rejects verified-email mismatch"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "does not reserve a displayed or reviewed slot"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "freezes the reviewed snapshot separately from later draft mutation"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "rechecks final-slot conflicts before offering payment"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "confirms and reserves once even when the old check is repeated"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "blocks duplicate payment and checkout while pending"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "makes decline retryable and status polling resumable"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "never auto-confirms late payment or allows another pay attempt"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "records multiple dates and preserves each booked session"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "rejects wrong, expired and replayed codes"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "prefills only approved name and phone after verification"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "offers only complete sessions within noon to 8pm and rotates instructors every three hours"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "discloses crossing rotations while retaining the starting instructor for the whole session"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "accepts different session instructors and rejects stale assignments or missing rotation disclosures"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "keeps payment checking for exactly five seconds and preserves the deadline through storage"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -677,15 +661,31 @@
   },
   {
     "file": "src/services/booking.test.ts",
+    "title": "upgrades pending and paid legacy attempts without changing their identity or charging twice"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "marks a slot unavailable exactly at its Singapore start and afterwards"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "rejects checkout at or after start without discarding the selected draft"
+  },
+  {
+    "file": "src/services/booking.test.ts",
     "title": "uses Singapore instants across month and year boundaries regardless of UTC date"
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
+    "title": "rejects a new payment after start but preserves pending recovery and paid receipts"
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "validates all required contact fields and their length limits"
+    "title": "formats Singapore booking dates independently of locale date order"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "live draft reload preserves edits but never restores consent or payment authority"
   },
   {
     "file": "src/services/catalogue.test.ts",
@@ -817,7 +817,7 @@
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "failed public calendar releases full-page loading and leaves refresh available"
+    "title": "failed public calendar releases full-page loading and leaves retry available"
   },
   {
     "file": "src/domain/confirmation.test.ts",
@@ -861,7 +861,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "enquiry and assistant work without external submission"
+    "title": "enquiry remains available without external submission or a mock assistant"
   },
   {
     "file": "tests/customer.spec.ts",
@@ -885,7 +885,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "first visit offers the Player App and dismissal persists while the navbar download remains"
+    "title": "first visit offers the Player App with only store links and dismissal persists"
   },
   {
     "file": "tests/customer.spec.ts",
@@ -1096,10 +1096,6 @@
     "title": "Review performs no provider reads and checkout verifies one booking before HitPay"
   },
   {
-    "file": "src/services/booking.test.ts",
-    "title": "live draft reload preserves edits but never restores consent or payment authority"
-  },
-  {
     "file": "tests/live-email.spec.ts",
     "title": "real API expired unpaid Review retains its hold through the grace window without recreating or losing contact"
   },
@@ -1238,5 +1234,61 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "editing a new selection clears the previous unpaid reservation notice"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=false)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=true)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (failure)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (changed)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (price)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (rotation)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (edited)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unpaid expiry never restores an unconfirmed or obsolete selection (identity)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expiry callback cannot clear a paid or different current attempt (paid)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expiry callback cannot clear a paid or different current attempt (different)"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "calendar back preserves outlet and session choices while explicit deselection still clears them"
+  },
+  {
+    "file": "src/components/studio-hero-video.test.tsx",
+    "title": "studio video autoplays silently once and exposes one replay control"
+  },
+  {
+    "file": "src/components/studio-hero-video.test.tsx",
+    "title": "studio video respects reduced motion and blocked autoplay retains manual play"
+  },
+  {
+    "file": "src/components/studio-hero-video.test.tsx",
+    "title": "mobile studio video shows a scroll cue only after playback ends"
   }
 ]

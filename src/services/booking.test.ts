@@ -87,6 +87,15 @@ describe("booking contract", () => {
     expect(selectionErrors([{ ...slot, start: "12:40" }])).not.toEqual([]);
     expect(selectionErrors([{ ...slot, date: "2020-01-01" }])).not.toEqual([]);
   });
+  it("allows five sessions and rejects a sixth", () => {
+    const slots = ["12:00", "12:50", "13:40", "14:30", "15:20", "16:10"].map(
+      (start) => ({ date: tomorrow(), start }),
+    );
+    expect(selectionErrors(slots.slice(0, 5))).toEqual([]);
+    expect(selectionErrors(slots)).toEqual([
+      "Choose up to 5 sessions per booking.",
+    ]);
+  });
   it("requires a per-session assignment before details", () => {
     const draft = validDraft();
     draft.slots = [

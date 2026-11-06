@@ -65,6 +65,11 @@ All rows below need an approved disposal rule even where expiry is already enfor
 
 The D1 table list is based on the final schema after all [migrations](../migrations), not comments from an early migration. Later migrations extend the original developer-only schema for ongoing customer operation. In particular, `intent_json`, `contract_json`, `result_json`, `observation_json` and `confirmation_json` require field-level review; a policy cannot safely classify them as “technical metadata” by name alone.
 
+- `reservation_sources`: attempt link, customer/IP HMAC hashes and creation timestamp; immutable updates, indexed by customer/IP. No raw IP is stored here.
+- `reservation_expiries`: one immutable attempt/expiry timestamp per proven unpaid checkout. No automatic purge is implemented.
+- The24-hour IP window controls participation, not deletion. Successful payment changes the customer counting boundary without deleting history; one-hour cooldown expiry does not erase strikes.
+- Hashes remain linked to booking attempts and are pseudonymous, not anonymous. Existing pepper rotation changes identity matching; no migration/rekey/cleanup is authorized by this change.
+
 ### Durable Object, caches and external copies
 
 | ID    | Store and purpose                                                                                                                                                          | Current behavior                                                                                                                                                                                                                                                                                                                                                                                                                              | Gap / verification required                                                                                                                                                                                                                                                                                                                                                                           |

@@ -3,6 +3,11 @@ const functional =
   /\.(?:booking|page-title|section-title|lead|surface|field|hint|small|button|text-link|back|pill|alert|dialog|access|auth|session|player|counter|inclusion|summary|aside|basket|calendar|date|dates|month|legend|series|time|times|rotation|note|empty|check-label|review|line-item|payment|merchant|method|status|reference|confirmation|trainer|fixed-session|arrival|progress|checking)(?:\b|-)/;
 const artwork = /\.(?:arena|pitch|studio-bottom|studio-book-arrow)\b/;
 const palettePairs = [
+  ["--color-on-brand", "--color-identity", 4.5],
+  ["--color-on-brand", "--color-brand", 4.5],
+  ["--color-brand", "--color-brand-tint", 4.5],
+  ["--color-on-brand", "--color-danger", 4.5],
+  ["--color-ink", "--color-paper", 4.5],
   ["--color-arena-accent", "--color-brand", 4.5],
   ["--color-on-brand", "--color-confirmation", 4.5],
   ["--color-confirmation-heading", "--color-paper", 4.5],
@@ -10,6 +15,8 @@ const palettePairs = [
   ["--color-muted", "--color-surface", 4.5],
   ["--color-muted", "--color-paper", 4.5],
   ["--color-muted", "--color-brand-soft", 4.5],
+  ["--color-on-brand", "--color-player-app", 4.5],
+  ["--color-on-brand", "--color-player-app-hover", 4.5],
   ["--color-on-brand", "--color-action", 4.5],
   ["--color-on-brand", "--color-action-hover", 4.5],
   ["--color-on-brand-muted", "--color-brand", 4.5],

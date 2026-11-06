@@ -5,7 +5,6 @@ import { demoCustomerIdentity } from "./demo/identity";
 import { demoBookingService } from "./demo/booking";
 import { demoIdentityService } from "./demo/identity";
 import { demoEnquiryService } from "./demo/enquiry";
-import { demoAssistantService } from "./demo/assistant";
 const mode = process.env.NEXT_PUBLIC_BOOKING_MODE ?? "demo";
 if (mode !== "demo" && mode !== "live")
   throw new Error("Unsupported booking mode");
@@ -15,7 +14,6 @@ export const services = {
   customerIdentity:
     mode === "live" ? liveCustomerIdentity : demoCustomerIdentity,
   enquiry: demoEnquiryService,
-  assistant: demoAssistantService,
 };
 
 // Available for an explicitly composed future live journey; never selected by a URL or failed request.

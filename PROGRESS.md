@@ -1,11 +1,27 @@
 # Current checkpoint
 
-Observed 6 November 2026 (Singapore time). History belongs to [Journey](docs/journey.md).
+UI and reservation-defense consolidation is active; documentation PR33 remains paused. Dated evidence belongs to [Journey](docs/journey.md).
 
-## Persistent selected session card
+## Publish UI and reservation defenses first
 
-Local branch `fix/session-card-selection`, based on merged main `a1b5a28`. Keep the compact priced card in its grid after selection, highlight it blue, and reveal the existing full-width player controls/inclusions below. Booking-contact display values are right-aligned like prices. No provider, payment, capacity or pricing logic changes.
+- Repository: SoccerBotStudioSG; branch `fix/hero-session-copy` latest published candidate`cdc2ace`; consolidated into existing PR32. Owner now authorizes merge after exact-head CI and staging/health pass; no direct main push or provider/settings activation.
+- Candidate: five-session new-checkout cap; one strike per proven unpaid checkout; customer strike2+ blocks1 hour/reset on verified payment; shared-IP strike2+ within24 hours blocks1 hour/no paid reset. Atomic first-write checks cover both dispatch paths.
+- UI: confirmation reads “Booking Confirmed” with its original top styling and action controls; only lower details use Review blocks and a mobile20px card inset; centred mobile step labels; equal6px Back clearance; standardized action spacing reduced35%; persistent popup scroll indicators; name-only trainer options; logo-blue booking headings; ended-video downward cue.
+- Calendar: backend already keeps valid snapshots during warming and swaps complete generation-matched results. Browser now requests a replacement at active-month expiry, retains the date grid, excludes expired offers and shows the standard spinner inside the calendar for0.5 seconds. No indefinite stale-cache authority.
+- Local evidence: full code gate267 cases passed before the latest spinner/confirmation polish; subsequent calendar/popup28, confirmation44 and client-cooldown30 checks passed. Final code gate267/56/14 passed on publishedb640633. Worker source/types passed.
+- Backend evidence: first sustained run184/203; corrected new-cap and missing-migration fixtures. Subsequent full run489/492 passed; the remaining three fixture failures now pass focused verification after adding synthetic pepper and explicit pre-0006 historical state. Full final-head CI remains required.
+- CI42246344863 on65e5f28 passed frontend, all492 Worker cases, load smoke and all browser shards. Backend/live-email aggregation caught the release rehearsal omitting migration0039. Added the migration and empty-ledger assertions; repaired checker passes locally against the unchanged CI artifact with no remote/provider operations. Original failed logs remain in Journey.
+- Next: publish the release migration-rehearsal correction; verify exact-head frontend/backend/live-email CI and actual staging revision/health; merge and verify independent main CI/deployment. Browser and physical acceptance belong to owner/CI.
+- Last previously verified staging source in retained checkpoint:`db5e724`; base8385c4f CI passed, but current candidate is not yet staged or accepted.
 
-Updated the existing browser case to retain selected-card width, prices and accessible selected state; case inventory unchanged. Browser execution remains owner/CI-operated. Local source, lint and type checks passed. The existing time-step regression now explicitly checks click-again collapse/reopen without adding a session; all 9 time-step tests passed. Time-card toggling was already implemented and its application logic remains unchanged. PR31 is published and ready for authorized staging. First CI42129858849 failed a stale expanded-heading expectation; repaired the existing parity case, and all254 component/service tests passed. Fresh final-head CI and staging remain pending.
+## Documentation branch
 
-PR30 passed CI and staging and was merged as `a1b5a28`. Main deployment status has not been rechecked for this UI request. The two-minute SimplyBook invoice versus eight-minute payment-window decision remains unresolved; do not infer provider acceptance or booking activation.
+- PR33 `docs/test-guides-and-reference-cleanup`, head`abbf9f2b146e2b6ca31f6373ad9d53e070e95b13`, remains paused; no broad refactor/CI.
+- Authorized queued business rule for that branch only: SimplyBook client AND provider email reminders3 days and24 hours before. Timing selection is not enabled/saved/delivery proof; no provider configuration changes authorized here.
+- Retain per-document numbered menus, bullets except opening explanation, no journals outside Journey, in-place reconciliation and diagrams unless stale. Preserve prior information-loss audit evidence.
+
+## Acceptance boundaries
+
+- Current changes require exact-candidate CI and staging before owner testing; prior green runs do not certify this candidate.
+- No assistant browser, bookings, payments, cancellation, notification sends or provider settings changes.
+- Domain/WAF and production activation remain deferred; application IP admission is not WAF coverage.

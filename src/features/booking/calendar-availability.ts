@@ -24,7 +24,7 @@ const retention = (entry: CalendarAvailability) =>
       ? BROWSER_CALENDAR_MAX_AGE_MS
       : CATALOGUE_MAX_AGE_MS;
 // Load only the requested month. TimeStep may advance initial discovery once
-// through the supported months; this hook never prefetches or polls empty data.
+// through supported months; only display expiry replaces an already loaded month.
 /** Load calendar availability and reconcile the selected day. */
 export function useCalendarAvailability(
   service: BookingService,
@@ -34,6 +34,8 @@ export function useCalendarAvailability(
   paused: boolean,
 ) {
   const [reload, setReload] = useState(0);
+  const [refreshIndicator, setRefreshIndicator] = useState<string | null>(null);
+  const [checkedAt, setCheckedAt] = useState(() => Date.now());
   const protectedServiceId = service.publicCalendar ? undefined : serviceId;
   const key = JSON.stringify([
     service.publicCalendar ? "public" : serviceId,
@@ -74,6 +76,7 @@ export function useCalendarAvailability(
           ? previous.entries[next]
           : undefined;
       if (saved && Date.now() - saved.observedAtMs < retention(saved)) return;
+      if (saved) setRefreshIndicator(JSON.stringify([key, next]));
       try {
         const result = service.publicCalendar
           ? await service.publicCalendar({
@@ -93,6 +96,8 @@ export function useCalendarAvailability(
           throw new Error("calendar_service_changed");
         if (controller.signal.aborted) return;
         const receivedAtMs = Date.now();
+        if (result.observedAtMs + retention(result) <= receivedAtMs)
+          throw new Error("calendar_receipt_expired");
         setState((previous) => {
           const entries =
             previous?.owner === service && previous.key === key
@@ -111,7 +116,6 @@ export function useCalendarAvailability(
               previous?.owner === service && previous.key === key
                 ? { ...previous.entries }
                 : {};
-            delete entries[next];
             return { owner: service, key, entries, failed: [next] };
           });
         return;
@@ -119,32 +123,35 @@ export function useCalendarAvailability(
     })();
     return () => controller.abort();
   }, [service, protectedServiceId, month, scope, paused, key, reload]);
-  // Expire display entries at their actual receipt deadline, independently of
-  // the booking page's minute clock. No provider polling or silent retries.
+  // Replace the visible month at its fixed deadline. Retain its layout while
+  // fetching, but never reuse expired offers as selectable availability.
   useEffect(() => {
-    if (!state) return;
-    const deadlines = Object.values(state.entries).map(
-      (value) => value.observedAtMs + retention(value),
-    );
+    if (paused || state?.owner !== service || state.key !== key) return;
+    const deadlines = Object.values(state.entries)
+      .map((entry) => entry.observedAtMs + retention(entry))
+      .filter((deadline) => deadline > checkedAt);
     if (!deadlines.length) return;
     const timer = setTimeout(
-      () =>
-        setState((previous) => {
-          if (previous !== state) return previous;
-          const now = Date.now();
-          return {
-            ...previous,
-            entries: Object.fromEntries(
-              Object.entries(previous.entries).filter(
-                ([, value]) => value.observedAtMs + retention(value) > now,
-              ),
-            ),
-          };
-        }),
+      () => {
+        const now = Date.now();
+        setCheckedAt(now);
+        const entry = state.entries[month];
+        if (
+          entry &&
+          entry.observedAtMs + retention(entry) <= now &&
+          !state.failed.includes(month)
+        )
+          setReload((value) => value + 1);
+      },
       Math.max(0, Math.min(...deadlines) - Date.now()),
     );
     return () => clearTimeout(timer);
-  }, [state]);
+  }, [state, service, key, month, paused, checkedAt]);
+  useEffect(() => {
+    if (!refreshIndicator) return;
+    const timer = setTimeout(() => setRefreshIndicator(null), 500);
+    return () => clearTimeout(timer);
+  }, [refreshIndicator]);
   const current = state?.owner === service && state.key === key ? state : null;
   const reconcile = useCallback(
     (date: string, available: boolean | undefined, slots?: AvailableSlot[]) => {
@@ -188,27 +195,36 @@ export function useCalendarAvailability(
   const cachedDates = useMemo(
     () =>
       Object.fromEntries(
-        Object.values(current?.entries ?? {}).flatMap((entry) =>
-          entry.dates.flatMap((day) =>
-            day.offers &&
-            day.offers.every(
-              (offer) =>
-                (offer.productServiceId ?? offer.serviceId) === serviceId,
-            )
-              ? [[day.date, nativeDisplaySlots(day.date, day.offers)]]
-              : [],
+        Object.values(current?.entries ?? {})
+          .filter(
+            (entry) =>
+              entry.observedAtMs + retention(entry) >
+              Math.max(checkedAt, entry.receivedAtMs),
+          )
+          .flatMap((entry) =>
+            entry.dates.flatMap((day) =>
+              day.offers &&
+              day.offers.every(
+                (offer) =>
+                  (offer.productServiceId ?? offer.serviceId) === serviceId,
+              )
+                ? [[day.date, nativeDisplaySlots(day.date, day.offers)]]
+                : [],
+            ),
           ),
-        ),
       ),
-    [current, serviceId],
+    [current, serviceId, checkedAt],
   );
   return {
     cachedDates,
     reconcile,
+    hasLoaded: (selected: string) => !!current?.entries[selected],
+    refreshing: (selected: string) =>
+      refreshIndicator === JSON.stringify([key, selected]),
     /** Resolve a cached calendar entry and filter offers against the current cutoff. */
     entry(selected: string, now: number) {
       const value = current?.entries[selected];
-      const observedNow = Math.max(now, value?.receivedAtMs ?? now);
+      const observedNow = Math.max(now, checkedAt, value?.receivedAtMs ?? now);
       return value &&
         value.observedAtMs <= observedNow &&
         observedNow - value.observedAtMs < retention(value)

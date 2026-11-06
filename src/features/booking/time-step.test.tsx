@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { blankDraft } from "@/domain/booking";
 import { dateLabel, todaySG } from "@/domain/dates";
+import { SessionStep } from "./session-step";
 import { BookingPage } from "./booking-page";
 import { Summary } from "./summary";
 import { ReviewStep } from "./review-step";
@@ -35,10 +36,11 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", async () => {
   const user = userEvent.setup();
-  render(
+  const view = render(
     <BookingProvider>
       <BookingPage step="time" />
     </BookingProvider>,
@@ -57,7 +59,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(crossing).toHaveTextContent("Faisal Shahril");
   expect(crossing).toHaveTextContent("Crosses the 15:00 instructor rotation");
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
   await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
   expect(loadBooking().draft.slots).toHaveLength(1);
@@ -105,8 +109,129 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(
     screen.queryByRole("region", { name: "Your instructors" }),
   ).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeDisabled();
   expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
+  vi.stubGlobal("matchMedia", () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  view.rerender(
+    <BookingProvider>
+      <BookingPage step="time" />
+    </BookingProvider>,
+  );
+  expect(
+    screen.queryByRole("complementary", { name: "Your booking summary" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen
+      .getByRole("button", { name: "Open cart, 0 sessions" })
+      .querySelector(".booking-cart-count"),
+  ).toBeNull();
+  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
+    `${restoredDate}|12:00|demo|faisal`,
+  );
+  await user.click(screen.getByRole("button", { name: /14:30–15:10/ }));
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 14:30`),
+    `${restoredDate}|14:30|demo|faisal`,
+  );
+  expect(
+    screen
+      .getByRole("button", { name: "Open cart, 2 sessions" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("2");
+  expect(
+    screen
+      .getByRole("button", { name: "View selected trainers, 1 trainer" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("1");
+  await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
+    `${restoredDate}|15:20|demo|daniel`,
+  );
+  expect(
+    screen
+      .getByRole("button", { name: "View selected trainers, 2 trainers" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("2");
+  await user.click(
+    screen.getByRole("button", { name: "View selected trainers, 2 trainers" }),
+  );
+  const trainerPanel = screen.getByRole("dialog", {
+    name: "Selected trainers",
+  });
+  expect(within(trainerPanel).getAllByRole("article")).toHaveLength(2);
+  const trainerBody = trainerPanel.querySelector(".booking-panel-body")!;
+  const trainerRail = trainerPanel.querySelector<HTMLElement>(
+    ".booking-panel-scrollbar",
+  )!;
+  Object.defineProperties(trainerBody, {
+    clientHeight: { value: 200 },
+    scrollHeight: { value: 600 },
+    scrollTop: { value: 200, writable: true },
+  });
+  Object.defineProperty(trainerRail, "clientHeight", { value: 180 });
+  fireEvent.scroll(trainerBody);
+  expect(trainerRail.hidden).toBe(false);
+  expect(trainerRail.style.getPropertyValue("--scroll-thumb-height")).toBe(
+    "60px",
+  );
+  expect(trainerRail.style.getPropertyValue("--scroll-thumb-top")).toBe("60px");
+  expect(trainerBody.querySelector(".booking-panel-header")).toBeNull();
+  await user.click(
+    within(trainerPanel).getByRole("button", { name: "Close dialog" }),
+  );
+  await user.click(
+    screen.getByRole("button", { name: "Open cart, 3 sessions" }),
+  );
+  const cartPanel = screen.getByRole("dialog", { name: "Your cart" });
+  expect(within(cartPanel).getAllByRole("listitem")).toHaveLength(3);
+  const cartBody = cartPanel.querySelector(".booking-panel-body")!;
+  const cartRail = cartPanel.querySelector<HTMLElement>(
+    ".booking-panel-scrollbar",
+  )!;
+  Object.defineProperties(cartBody, {
+    clientHeight: { value: 200 },
+    scrollHeight: { value: 400 },
+    scrollTop: { value: 200, writable: true },
+  });
+  Object.defineProperty(cartRail, "clientHeight", { value: 180 });
+  fireEvent.scroll(cartBody);
+  expect(cartRail.hidden).toBe(false);
+  expect(cartRail.style.getPropertyValue("--scroll-thumb-top")).toBe("90px");
+  expect(
+    within(cartPanel).queryByRole("link", {
+      name: /^Continue(?: \$[\d,.]+)?$/,
+    }),
+  ).not.toBeInTheDocument();
+  await user.click(
+    within(cartPanel).getByRole("button", {
+      name: `Remove ${restoredDate} at 15:20`,
+    }),
+  );
+  await user.click(
+    within(cartPanel).getByRole("button", { name: "Close dialog" }),
+  );
+  expect(
+    screen
+      .getByRole("button", { name: "Open cart, 2 sessions" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("2");
+  expect(
+    screen
+      .getByRole("button", { name: "View selected trainers, 1 trainer" })
+      .querySelector(".booking-cart-count"),
+  ).toHaveTextContent("1");
+  expect(
+    screen.getAllByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toHaveLength(1);
 });
 test("crossing notices persist in the basket and review before payment", async () => {
   const basket = render(
@@ -118,10 +243,9 @@ test("crossing notices persist in the basket and review before payment", async (
   expect(
     within(screen.getByRole("complementary")).getByText(/Crosses the 15:00/),
   ).toHaveTextContent("stays for the full session");
-  expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
-    "href",
-    "/book/details",
-  );
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toHaveAttribute("href", "/book/details");
   basket.unmount();
   render(
     <BookingProvider>
@@ -132,7 +256,7 @@ test("crossing notices persist in the basket and review before payment", async (
     "stays for the full session",
   );
   expect(
-    screen.getByRole("button", { name: "Continue to payment" }),
+    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
   ).toBeDisabled();
 });
 
@@ -212,11 +336,15 @@ test("an open booking page expires a selected slot at its start and keeps it rem
   fireEvent.change(screen.getByLabelText("Trainer for 2026-10-06 at 12:00"), {
     target: { value: "2026-10-06|12:00|demo|faisal" },
   });
-  expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeInTheDocument();
   await act(async () => {
     vi.advanceTimersByTime(1);
   });
-  expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeDisabled();
   await act(async () => {});
   expect(
     within(screen.getByRole("complementary")).getByText(/Session has started/),
@@ -247,7 +375,9 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   await act(async () => {});
   const basket = within(screen.getByRole("complementary"));
   expect(basket.getByText(/Session has started/)).toBeVisible();
-  expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeDisabled();
   expect(loadBooking().draft.slots).toEqual([stale, future]);
   fireEvent.click(
     screen.getByRole("button", { name: "Remove 2026-12-31 at 18:40" }),
@@ -255,7 +385,9 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   await act(async () => {});
   expect(loadBooking().draft.slots).toEqual([future]);
   expect(basket.queryByText(/Session has started/)).not.toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeInTheDocument();
 });
 test("selection rechecks time before dispatch and refreshes after a suspended tab resumes", async () => {
   vi.setSystemTime(new Date("2026-10-06T08:59:59+08:00"));
@@ -306,7 +438,9 @@ test("an open calendar follows Singapore year rollover without deleting its draf
     screen.getByRole("button", { name: dateLabel("2027-01-01") }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(loadBooking().draft.slots).toEqual([slot]);
-  expect(screen.getByRole("link", { name: "Continue" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toBeInTheDocument();
   view.unmount();
 });
 
@@ -373,4 +507,63 @@ test("a trainer choice opened before expiry cannot add the session after its sta
     target: { value: `${restoredDate}|12:00|demo|daniel` },
   });
   expect(loadBooking().draft.slots).toHaveLength(1);
+});
+
+test("calendar back preserves outlet and session choices while explicit deselection still clears them", async () => {
+  const user = userEvent.setup();
+  const view = render(
+    <BookingProvider>
+      <SessionStep />
+    </BookingProvider>,
+  );
+  await user.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
+  await user.click(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  );
+  await user.click(screen.getByRole("button", { name: "Add one player" }));
+  view.rerender(
+    <BookingProvider>
+      <BookingPage step="time" />
+    </BookingProvider>,
+  );
+  view.rerender(
+    <BookingProvider>
+      <SessionStep />
+    </BookingProvider>,
+  );
+  expect(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByRole("link", { name: "See available times" }),
+  ).toBeVisible();
+  expect(screen.getByText("2 players", { exact: true })).toBeVisible();
+  await user.click(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  );
+  expect(
+    screen.queryByRole("link", { name: "See available times" }),
+  ).not.toBeInTheDocument();
+  await user.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
+  await user.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
+  expect(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  ).toHaveAttribute("aria-pressed", "false");
 });

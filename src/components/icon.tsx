@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
 const paths: Record<string, ReactNode> = {
-  arrow: (
+  cart: (
     <>
-      <path d="M5 12h14m-6-6 6 6-6 6" />
+      <path d="M2 3h3l3 12h11l3-8H6" />
+      <circle cx="9" cy="20" r="1" />
+      <circle cx="19" cy="20" r="1" />
     </>
   ),
+  chevron: <path d="m9 6 6 6-6 6" />,
   spinner: <path d="M21 12a9 9 0 1 1-9-9" />,
   card: (
     <>
@@ -57,6 +60,12 @@ const paths: Record<string, ReactNode> = {
     </>
   ),
   download: <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />,
+  whatsapp: (
+    <>
+      <path d="M20.5 11.5a8.5 8.5 0 0 1-12.7 7.4L3 20l1.2-4.6A8.5 8.5 0 1 1 20.5 11.5Z" />
+      <path d="m8.2 7.1 1.5 2.4-1 1.2a8 8 0 0 0 3.7 3.7l1.2-1 2.4 1.5c-.3 1.2-1 1.8-2.1 1.7-3.7-.4-6.8-3.5-7.2-7.2-.1-1.1.5-1.8 1.5-2.3Z" />
+    </>
+  ),
   instagram: (
     <>
       <rect x="3" y="3" width="18" height="18" rx="5" />
@@ -69,9 +78,6 @@ const paths: Record<string, ReactNode> = {
       <rect x="6" y="2" width="12" height="20" rx="2" />
       <path d="M10 18h4" />
     </>
-  ),
-  chat: (
-    <path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-7l-5 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
   ),
   lock: (
     <>

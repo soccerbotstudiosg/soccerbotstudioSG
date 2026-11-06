@@ -62,7 +62,10 @@ function CalendarProbe({
     false,
   );
   return (
-    <output>
+    <output
+      data-retained={calendar.hasLoaded("2027-01")}
+      data-refreshing={calendar.refreshing("2027-01")}
+    >
       {calendar
         .entry("2027-01", now)
         ?.dates.map((d) => d.date)
@@ -210,14 +213,15 @@ test("live calendar removes selections rejected at checkout and retains contact 
   expect(
     within(region).getByRole("button", { name: dateLabel("2027-01-07") }),
   ).toBeDisabled();
-  expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
-    "href",
-    "/book/details",
-  );
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toHaveAttribute("href", "/book/details");
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
     false,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Review booking" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+  );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   fireEvent.click(screen.getByText("Dispatch checkout"));
   const notices = await screen.findAllByRole("alert");
@@ -274,6 +278,9 @@ test("live session preserves demo product player and inclusion presentation usin
     <BookingProvider bookingService={{ ...demoBookingService, mode: "live" }}>
       <SessionStep />
     </BookingProvider>,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
   );
   const card = await screen.findByRole("button", {
     name: "Choose Real session",
@@ -366,12 +373,8 @@ test("fresh calendar receipts render before the minute clock ticks and expire at
   vi.setSystemTime(initial);
   let finish!: (value: CalendarAvailability) => void;
   const calendar = vi.fn(
-    async ({ month }: { month: string }) =>
-      ({ month, observedAtMs: Date.now(), dates: [] }) as CalendarAvailability,
-  );
-  calendar.mockImplementationOnce(
     () =>
-      new Promise((resolve) => {
+      new Promise<CalendarAvailability>((resolve) => {
         finish = resolve;
       }),
   );
@@ -391,7 +394,26 @@ test("fresh calendar receipts render before the minute clock ticks and expire at
   );
   expect(screen.getByRole("status")).toHaveTextContent("2027-01-04");
   await act(async () => vi.advanceTimersByTime(60000));
+  expect(calendar).toHaveBeenCalledTimes(2);
   expect(screen.getByRole("status")).toHaveTextContent("loading");
+  expect(screen.getByRole("status")).toHaveAttribute("data-retained", "true");
+  expect(screen.getByRole("status")).toHaveAttribute("data-refreshing", "true");
+  await act(async () => vi.advanceTimersByTime(499));
+  expect(screen.getByRole("status")).toHaveAttribute("data-refreshing", "true");
+  await act(async () => vi.advanceTimersByTime(1));
+  expect(screen.getByRole("status")).toHaveAttribute(
+    "data-refreshing",
+    "false",
+  );
+  await act(async () =>
+    finish({
+      month: "2027-01",
+      observedAtMs: Date.now(),
+      dates: [{ date: "2027-01-06", available: true }],
+    }),
+  );
+  expect(screen.getByRole("status")).toHaveTextContent("2027-01-06");
+  expect(screen.getByRole("status")).not.toHaveTextContent("2027-01-04");
 });
 
 test("preloaded browser slots survive edits and checkout rejects changed availability", async () => {
@@ -488,14 +510,15 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
   await act(async () => {});
   expect(availability).not.toHaveBeenCalled();
   expect(publicCalendar).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
-    "href",
-    "/book/details",
-  );
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toHaveAttribute("href", "/book/details");
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
     false,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Review booking" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+  );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   fireEvent.click(screen.getByText("Dispatch checkout"));
   const notices = await screen.findAllByRole("alert");
@@ -602,7 +625,7 @@ test("prewarmed calendar remains visible until its original display deadline wit
   expect(screen.getByRole("status")).toHaveTextContent("2027-01-05");
   await act(async () => vi.advanceTimersByTime(840000));
   expect(screen.getByRole("status")).toHaveTextContent("loading");
-  expect(publicCalendar).toHaveBeenCalledTimes(1);
+  expect(publicCalendar).toHaveBeenCalledTimes(2);
 });
 
 test("Details opens local Review without waiting for unavailable providers", async () => {
@@ -659,16 +682,17 @@ test("Details opens local Review without waiting for unavailable providers", asy
   const view = render(tree("time"));
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole("button", { name: "Choose test session" }));
-  expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute(
-    "href",
-    "/book/details",
-  );
+  expect(
+    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+  ).toHaveAttribute("href", "/book/details");
   expect(availability).not.toHaveBeenCalled();
   view.rerender(tree("details"));
   expect(
     screen.getByRole("heading", { name: "Your details" }),
   ).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Review booking" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+  );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   expect(availability).not.toHaveBeenCalled();
   expect(service.checkout).not.toHaveBeenCalled();
@@ -752,7 +776,9 @@ test("failed checkout preparation retains cached calendar and contact without re
   fireEvent.click(screen.getByText("Choose test session"));
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   view.rerender(tree("details"));
-  fireEvent.click(screen.getByRole("button", { name: "Review booking" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+  );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   expect(availability).not.toHaveBeenCalled();
   fireEvent.click(screen.getByText("Dispatch checkout"));
@@ -866,11 +892,15 @@ test("reservation conflict removes its session locally and returns to calendar w
   fireEvent.click(screen.getByText("Choose test session"));
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   view.rerender(tree("details"));
-  fireEvent.click(screen.getByRole("button", { name: "Review booking" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+  );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   view.rerender(tree("review"));
   fireEvent.click(screen.getByRole("checkbox"));
-  fireEvent.click(screen.getByRole("button", { name: "Continue to payment" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+  );
   await waitFor(() => expect(pay).toHaveBeenCalledTimes(1));
   await act(async () => {});
   fireEvent.click(screen.getByText("Return to calendar"));
@@ -1022,14 +1052,15 @@ test("cached calendar offers obey opening hours and the four-hour cutoff without
   expect(publicCalendar).toHaveBeenCalledTimes(1);
 });
 
-test("failed public calendar releases full-page loading and leaves refresh available", async () => {
+test("failed public calendar releases full-page loading and leaves retry available", async () => {
+  const publicCalendar = vi.fn(async () => {
+    throw new Error("unavailable");
+  });
   const service: BookingService = {
     ...demoBookingService,
     mode: "live",
     operations: { ...demoBookingService.operations, availability: "live" },
-    publicCalendar: async () => {
-      throw new Error("unavailable");
-    },
+    publicCalendar,
   };
   render(
     <BookingProvider bookingService={service}>
@@ -1050,8 +1081,15 @@ test("failed public calendar releases full-page loading and leaves refresh avail
   expect(
     screen.getAllByText("Unable to load available sessions. Please try again."),
   ).toHaveLength(1);
+  expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
   expect(
-    screen.getByRole("button", { name: "Refresh availability" }),
+    screen.queryByRole("button", { name: "Refresh availability" }),
+  ).toBeNull();
+  const reads = publicCalendar.mock.calls.length;
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(reads + 1));
+  expect(
+    await screen.findByRole("button", { name: "Try again" }),
   ).toBeEnabled();
 });
 
@@ -1094,11 +1132,14 @@ test("cold calendar entry and refresh select an available day while retaining a 
     publicCalendar,
   };
   function ChooseService() {
-    const { update } = useBooking();
+    const { update, calendar } = useBooking();
     return (
-      <button onClick={() => update({ mode: "guest", nativeServiceId: "2" })}>
-        Choose calendar service
-      </button>
+      <>
+        <button onClick={() => update({ mode: "guest", nativeServiceId: "2" })}>
+          Choose calendar service
+        </button>
+        <button onClick={() => calendar.retry()}>Refresh test calendar</button>
+      </>
     );
   }
   const view = () => (
@@ -1124,16 +1165,22 @@ test("cold calendar entry and refresh select an available day while retaining a 
     expect(day("2026-10-22")).toHaveAttribute("aria-pressed", "true"),
   );
   fireEvent.click(day("2026-10-23"));
-  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh test calendar" }),
+  );
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(2));
   expect(day("2026-10-23")).toHaveAttribute("aria-pressed", "true");
   dates = ["2026-10-24"];
-  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh test calendar" }),
+  );
   await waitFor(() =>
     expect(day("2026-10-24")).toHaveAttribute("aria-pressed", "true"),
   );
   dates = [];
-  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh test calendar" }),
+  );
   await screen.findByText("No sessions available on this date.");
   expect(day("2026-10-24")).toHaveAttribute("aria-pressed", "true");
   // An empty October must still allow an explicit move to November.
@@ -1154,7 +1201,9 @@ test("cold calendar entry and refresh select an available day while retaining a 
   fireEvent.click(day("2026-11-04"));
   expect(day("2026-11-04")).toHaveAttribute("aria-pressed", "true");
   dates = [];
-  fireEvent.click(screen.getByRole("button", { name: "Refresh availability" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh test calendar" }),
+  );
   await screen.findByText("No sessions available on this date.");
   fireEvent.click(screen.getByRole("button", { name: "See next month" }));
   await waitFor(() =>
@@ -1267,9 +1316,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
         );
         expect(publicCalendar).toHaveBeenCalledTimes(1);
         expect(region).toHaveAttribute("aria-busy", "false");
-        expect(
-          screen.getByRole("button", { name: "Refresh availability" }),
-        ).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
       } else {
         await waitFor(() => expect(gates.has("2026-11")).toBe(true));
         expect(region).toHaveAttribute("aria-busy", "true");
