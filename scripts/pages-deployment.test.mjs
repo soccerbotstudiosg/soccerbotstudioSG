@@ -122,6 +122,8 @@ function fixture(t, basePath) {
     "404.html",
     "studio/index.html",
     "enquiry/index.html",
+    "terms-of-service/index.html",
+    "privacy-policy/index.html",
     ...[
       "account",
       "session",
@@ -151,7 +153,7 @@ function fixture(t, basePath) {
 for (const basePath of ["", "/SoccerBotStudioSG"]) {
   test(`export integrity and HTTP mount at ${basePath || "root"}`, async (t) => {
     const { root } = fixture(t, basePath);
-    assert.equal(checkExport(root, basePath).routes, 11);
+    assert.equal(checkExport(root, basePath).routes, 13);
     const server = exportServer(root, basePath);
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     t.after(

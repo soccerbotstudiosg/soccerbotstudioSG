@@ -4920,3 +4920,9 @@ Follow-up to verified PR32 baseline a77aef6 (CI42169819231, CodeQL42169815176, s
 ### 6 November 2026 — Further closing-banner reduction
 
 Owner requested another20% reduction to both Contact us and Book now banners after d7b89a5 was pushed. Shared minimum height changes134→107px, vertical padding20→16px and heading scale reduces proportionately; controls retain48px minimum height and responsive copy can grow without clipping. Preserve the fourth footer icon column, gallery photo curves and zero grey spacer. Superseded d7b89a5 CI42171896941 and CodeQL42171890073 are retained; newest-head checks/staging must be verified separately. No merge or settings changes.
+
+### 6 November 2026 — Shared scroll motion, sticky header and footer regrouping
+
+After6e15e65's verified local banner reduction, owner requested section reveals on scrolling, a persistent header, a reference-style footer grouped into Service and Help with downloads on the right, logo bottom-right above the divider, and removal of Get in touch/Disclaimer. Add owner-requested Terms of Service and Privacy Policy links to deliberately empty pure-white placeholder bodies; no legal text was supplied or invented. Footer remains white. Reveal behavior respects reduced motion, focus and live announcements; header height drives scroll clearance. Existing route/reduced-motion cases extend coverage, export guard/fixture route requirements increase11→13, test inventory remains unchanged. Booking/provider/runtime logic is unchanged. Current candidate CI/staging and owner physical acceptance remain pending; no merge or settings changes.
+
+The first local source gate rejected the retired footer-detail-link selector after footer regrouping. Removed that unused selector from the existing shared link styles; preserved the failure receipt before verification.

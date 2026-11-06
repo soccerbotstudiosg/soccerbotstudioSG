@@ -107,10 +107,12 @@ test("public routes remove staff access and fit the viewport", async ({
   const flag = page.getByRole("img", { name: "Singapore", exact: true });
   await expect(flag).toBeVisible();
   const flagBox = await flag.boundingBox();
-  const studioButton = page.getByRole("link", {
-    name: "The studio",
-    exact: true,
-  });
+  const studioButton = page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", {
+      name: "The studio",
+      exact: true,
+    });
   const studioButtonBox = await studioButton.boundingBox();
   expect(flagBox).not.toBeNull();
   expect(studioButtonBox).not.toBeNull();
@@ -160,7 +162,7 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(page.locator(".footer-apps .footer-app-link")).toHaveCount(3);
   await expect(
     page.locator(".footer-contact-grid > .footer-contact-row"),
-  ).toHaveCount(4);
+  ).toHaveCount(3);
   await expect(page.locator("#footer-apps-title")).toHaveText("Download App");
   const footerBandBox = await page
     .locator(".footer-contact-band")
@@ -176,7 +178,10 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(
     page.getByRole("button", { name: /studio assistant/i }),
   ).toHaveCount(0);
-  await page.getByRole("link", { name: "The studio", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "The studio", exact: true })
+    .click();
   await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(
@@ -250,6 +255,32 @@ test("public routes remove staff access and fit the viewport", async ({
       () => document.documentElement.scrollWidth - innerWidth,
     ),
   ).toBeLessThanOrEqual(1);
+  const lastStudioRow = page.locator(".studio-row").last();
+  await lastStudioRow.scrollIntoViewIfNeeded();
+  await expect(lastStudioRow).toHaveClass(/section-reveal/);
+  await lastStudioRow.evaluate(async (element) => {
+    await Promise.all(
+      element.getAnimations().map((animation) => animation.finished),
+    );
+  });
+  await expect(lastStudioRow).toHaveCSS("opacity", "1");
+  const stickyHeaderBox = await page.locator(".site-header").boundingBox();
+  expect(stickyHeaderBox!.y).toBeCloseTo(0, 0);
+  for (const [label, route] of [
+    ["Terms of Service", "/terms-of-service/"],
+    ["Privacy Policy", "/privacy-policy/"],
+  ]) {
+    await page
+      .locator(".site-footer")
+      .getByRole("link", { name: label, exact: true })
+      .click();
+    await expect(page).toHaveURL(new RegExp(route + "$"));
+    await expect(page.locator(".legal-placeholder")).toBeEmpty();
+    await expect(page.locator(".legal-placeholder")).toHaveCSS(
+      "background-color",
+      "rgb(255, 255, 255)",
+    );
+  }
   await page.goto(sitePath("/"));
   await page
     .getByRole("link", { name: "Explore the studio", exact: true })
@@ -474,6 +505,14 @@ test("hero completes naturally and reduced motion bypasses both transition surfa
     page.getByRole("button", { name: "Skip arena transition" }),
   ).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(sitePath("/studio/"));
+  const lastSection = page.locator(".studio-row").last();
+  await lastSection.scrollIntoViewIfNeeded();
+  await expect(lastSection).toBeVisible();
+  await expect(page.locator(".section-reveal")).toHaveCount(0);
+  expect(
+    await lastSection.evaluate((element) => element.getAnimations().length),
+  ).toBe(0);
   await page.goto(sitePath("/"));
   await page.getByRole("link", { name: /^Book now —/ }).click();
   await expect(page).toHaveURL(/\/book\/account\/$/);
@@ -824,7 +863,10 @@ test("first visit offers the Player App with only store links and dismissal pers
   ).toBeVisible();
   await expect(prompt).toHaveCount(0);
   await expect(page.locator(".nav-download")).toHaveCount(0);
-  await page.getByRole("link", { name: "The studio", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "The studio", exact: true })
+    .click();
   await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(prompt).toHaveCount(0);

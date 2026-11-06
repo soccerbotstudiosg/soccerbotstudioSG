@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ADDRESS, CONTACT, LOCATION } from "@/domain/catalog";
 import { darkLogo, logo, singaporeFlag } from "@/content/media";
 import { useBooking } from "@/features/booking/provider";
@@ -9,13 +9,32 @@ import { Dialog } from "./dialog";
 import { BookingLink } from "./booking-navigation";
 import { PlayerAppLinks } from "./player-app-links";
 import { PlayerAppPrompt } from "./player-app-prompt";
-import { Icon } from "./icon";
+import { SectionReveals } from "./section-reveals";
 /** Render shared navigation, footer and customer support controls. */
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname(),
     router = useRouter(),
     booking = useBooking();
-  const [dialog, setDialog] = useState<"leave" | "disclaimer" | null>(null);
+  const [dialog, setDialog] = useState<"leave" | null>(null);
+  useEffect(() => {
+    const header = document.querySelector(".site-header");
+    if (!header) return;
+    const root = document.documentElement;
+    const previous = root.style.scrollPaddingTop;
+    function measureHeader() {
+      root.style.scrollPaddingTop = `${header!.getBoundingClientRect().height + 16}px`;
+    }
+    measureHeader();
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(measureHeader);
+    observer?.observe(header);
+    return () => {
+      observer?.disconnect();
+      root.style.scrollPaddingTop = previous;
+    };
+  }, []);
   function home(event: React.MouseEvent<HTMLAnchorElement>) {
     if (
       pathname.startsWith("/book/") &&
@@ -76,6 +95,64 @@ export function SiteShell({ children }: { children: ReactNode }) {
       </main>
       <footer className="site-footer">
         <div className="footer-contact-band">
+          <div className="footer-contact-grid">
+            <section
+              className="footer-contact-row"
+              aria-labelledby="footer-service-title"
+            >
+              <div className="footer-contact-copy">
+                <h2
+                  className="footer-contact-heading"
+                  id="footer-service-title"
+                >
+                  <strong>Service</strong>
+                </h2>
+                <div className="footer-contact-detail footer-direct-links">
+                  <BookingLink href="/studio/">The studio</BookingLink>
+                  <BookingLink href="/book/account/">Book now</BookingLink>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {LOCATION.street}
+                    <br />
+                    {LOCATION.unit} {LOCATION.building} · {LOCATION.postal}
+                  </a>
+                  <Link href="/terms-of-service/">Terms of Service</Link>
+                  <Link href="/privacy-policy/">Privacy Policy</Link>
+                </div>
+              </div>
+            </section>
+            <section
+              className="footer-contact-row footer-direct-contact"
+              aria-labelledby="footer-help-title"
+            >
+              <div className="footer-contact-copy">
+                <h2 className="footer-contact-heading" id="footer-help-title">
+                  <strong>Help</strong>
+                </h2>
+                <div className="footer-contact-detail footer-direct-links">
+                  <a href={`tel:${CONTACT.phone}`}>{CONTACT.phoneDisplay}</a>
+                  <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+                  <a href={CONTACT.instagram} target="_blank" rel="noreferrer">
+                    @soccerbotstudiosg
+                  </a>
+                </div>
+              </div>
+            </section>
+            <section
+              className="footer-contact-row footer-apps"
+              aria-labelledby="footer-apps-title"
+            >
+              <div className="footer-contact-copy">
+                <h2 className="footer-contact-heading" id="footer-apps-title">
+                  <strong>Download App</strong>
+                </h2>
+                <PlayerAppLinks compact />
+              </div>
+            </section>
+          </div>
           <div className="footer-brand">
             <img
               src={darkLogo}
@@ -86,130 +163,33 @@ export function SiteShell({ children }: { children: ReactNode }) {
               loading="lazy"
             />
           </div>
-          <div className="footer-contact-grid">
-            <div className="footer-contact-row">
-              <span className="footer-contact-icon">
-                <Icon name="location" />
-              </span>
-              <span className="footer-contact-copy">
-                <span className="footer-contact-heading">
-                  <strong>Find Us</strong>
-                </span>
-                <a
-                  className="footer-contact-detail footer-detail-link"
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {LOCATION.street}
-                  <br />
-                  {LOCATION.unit}
-                  <span className="footer-address-building">
-                    {" "}
-                    {LOCATION.building}
-                  </span>{" "}
-                  · {LOCATION.postal}
-                </a>
-              </span>
-            </div>
-            <div className="footer-contact-row">
-              <span className="footer-contact-icon">
-                <Icon name="instagram" />
-              </span>
-              <span className="footer-contact-copy">
-                <span className="footer-contact-heading">
-                  <strong>Connect With Us</strong>
-                </span>
-                <a
-                  className="footer-contact-detail footer-detail-link"
-                  href={CONTACT.instagram}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  @soccerbotstudiosg
-                </a>
-              </span>
-            </div>
-            <div className="footer-contact-row footer-direct-contact">
-              <span className="footer-contact-icon">
-                <Icon name="mail" />
-              </span>
-              <span className="footer-contact-copy">
-                <span className="footer-contact-heading">
-                  <strong>Contact Us</strong>
-                </span>
-                <span className="footer-contact-detail footer-direct-links">
-                  <a href={`tel:${CONTACT.phone}`}>{CONTACT.phoneDisplay}</a>
-                  <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
-                </span>
-              </span>
-            </div>
-            <section
-              className="footer-contact-row footer-apps"
-              aria-labelledby="footer-apps-title"
-            >
-              <span className="footer-contact-icon">
-                <Icon name="download" />
-              </span>
-              <div className="footer-contact-copy">
-                <span className="footer-contact-heading">
-                  <strong id="footer-apps-title">Download App</strong>
-                </span>
-                <PlayerAppLinks compact />
-              </div>
-            </section>
-          </div>
         </div>
         <div className="footer-inner">
           <span>© 2026 SOCCERBOTSTUDIO Singapore. All rights reserved.</span>
-          <div className="footer-links">
-            <Link href="/enquiry/">Get in touch</Link>
-            <button onClick={() => setDialog("disclaimer")}>Disclaimer</button>
-          </div>
         </div>
       </footer>
+      <SectionReveals />
       <PlayerAppPrompt />
       {dialog && (
-        <Dialog
-          title={
-            dialog === "leave" ? "Leave this booking?" : "General disclaimer"
-          }
-          onClose={() => setDialog(null)}
-        >
-          {dialog === "leave" ? (
-            <>
-              <p className="mb-5 text-muted">
-                Your selections are saved in this browser. Complete payment
-                before checkout expires.
-              </p>
-              <div className="dialog-actions">
-                <button
-                  className="button secondary"
-                  onClick={() => {
-                    setDialog(null);
-                    router.push("/");
-                  }}
-                >
-                  Back to home
-                </button>
-                <button className="button" onClick={() => setDialog(null)}>
-                  Stay
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="mb-4">
-                Football and physical activity involve risks. Follow your
-                instructor’s directions and discuss any support requirements
-                with the studio.
-              </p>
-              <p>
-                This website is a booking preview. No payment is collected,
-                booking submitted or enquiry sent.
-              </p>
-            </>
-          )}
+        <Dialog title="Leave this booking?" onClose={() => setDialog(null)}>
+          <p className="mb-5 text-muted">
+            Your selections are saved in this browser. Complete payment before
+            checkout expires.
+          </p>
+          <div className="dialog-actions">
+            <button
+              className="button secondary"
+              onClick={() => {
+                setDialog(null);
+                router.push("/");
+              }}
+            >
+              Back to home
+            </button>
+            <button className="button" onClick={() => setDialog(null)}>
+              Stay
+            </button>
+          </div>
         </Dialog>
       )}
     </>

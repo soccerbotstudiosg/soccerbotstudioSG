@@ -43,6 +43,8 @@ export function checkExport(directory, basePath) {
     "404.html",
     "studio/index.html",
     "enquiry/index.html",
+    "terms-of-service/index.html",
+    "privacy-policy/index.html",
     ...[
       "account",
       "session",
