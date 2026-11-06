@@ -583,7 +583,10 @@ test("native guest journey preserves players contact and one checkout across ref
     ).toHaveLength(1);
     expect(calls.filter((c) => c.path === "/api/catalogue")).toHaveLength(1);
     expect(calls.filter((c) => c.path === "/api/access")).toHaveLength(0);
-    await page.getByRole("link", { name: "Book now", exact: true }).click();
+    await page
+      .getByRole("navigation", { name: "Main navigation" })
+      .getByRole("link", { name: "Book now", exact: true })
+      .click();
     const guest = page.getByRole("button", {
       name: "Continue as guest",
       exact: true,
