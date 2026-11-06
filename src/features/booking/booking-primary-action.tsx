@@ -30,7 +30,10 @@ export function BookingPrimaryAction({
         control.dataset.floating = "false";
         return;
       }
-      position.style.minHeight = `${control.getBoundingClientRect().height}px`;
+      const style = getComputedStyle(position);
+      const spacing =
+        parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      position.style.minHeight = `${control.getBoundingClientRect().height + spacing}px`;
       control.dataset.floating = String(
         position.getBoundingClientRect().bottom > window.innerHeight,
       );

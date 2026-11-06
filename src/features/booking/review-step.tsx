@@ -1,5 +1,5 @@
 "use client";
-import { BookingHeading, useMobileBooking } from "./booking-heading";
+import { useMobileBooking } from "./booking-tools";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
@@ -79,49 +79,12 @@ export function ReviewStep({
   const [navigating, startNavigation] = useTransition();
   const busy = action.status === "loading" || navigating;
   const locked = verifying || attempt?.held;
-  const cartHeading = (
-    <div className="review-block">
-      <SessionSummaryHeading
-        draft={draft}
-        action={
-          !locked && (
-            <Link className="text-link" href="/book/session/">
-              Edit
-            </Link>
-          )
-        }
-      />
-    </div>
-  );
-  const cartOrder = (
-    <div className="review-block">
-      <div className="review-head">
-        <h2>Order summary</h2>
-        {!locked && (
-          <Link className="text-link" href="/book/time/">
-            Edit
-          </Link>
-        )}
-      </div>
-      <SessionList slots={draft.slots} now={now} showPrices />
-      <PriceSummary draft={draft} />
-    </div>
-  );
   return (
     <>
-      <BookingHeading
-        cart={
-          <div className="booking-document">
-            {cartHeading}
-            {cartOrder}
-          </div>
-        }
-      >
-        Review booking
-      </BookingHeading>
+      <h1 className="page-title">Review booking</h1>
       <p className="lead">Check your details before payment.</p>
       <section className="surface booking-document">
-        {!mobile && cartHeading}
+        {!mobile && <ReviewSessions part="heading" verifying={verifying} />}
         <div className="review-block">
           <div className="review-head">
             <h2>Booking contact</h2>
@@ -133,7 +96,7 @@ export function ReviewStep({
           </div>
           <ClientDetails contact={draft.contact} />
         </div>
-        {!mobile && cartOrder}
+        {!mobile && <ReviewSessions part="order" verifying={verifying} />}
         <Arrival />
       </section>
       <label className="check-label review-terms">
@@ -217,5 +180,53 @@ export function ReviewStep({
         </Dialog>
       )}
     </>
+  );
+}
+
+/** Reuse review selections and their existing edit locks in inline and phone-panel layouts. */
+export function ReviewSessions({
+  part,
+  verifying = false,
+}: {
+  part?: "heading" | "order";
+  verifying?: boolean;
+}) {
+  const { draft, attempt, now } = useBooking();
+  const locked = verifying || attempt?.held;
+  const cartHeading = (
+    <div className="review-block">
+      <SessionSummaryHeading
+        draft={draft}
+        action={
+          !locked && (
+            <Link className="text-link" href="/book/session/">
+              Edit
+            </Link>
+          )
+        }
+      />
+    </div>
+  );
+  const cartOrder = (
+    <div className="review-block">
+      <div className="review-head">
+        <h2>Order summary</h2>
+        {!locked && (
+          <Link className="text-link" href="/book/time/">
+            Edit
+          </Link>
+        )}
+      </div>
+      <SessionList slots={draft.slots} now={now} showPrices />
+      <PriceSummary draft={draft} />
+    </div>
+  );
+  if (part === "heading") return cartHeading;
+  if (part === "order") return cartOrder;
+  return (
+    <div className="booking-document">
+      {cartHeading}
+      {cartOrder}
+    </div>
   );
 }

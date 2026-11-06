@@ -62,9 +62,9 @@ Calendar Refresh remains available. A verified conflict removes overlapping stud
 
 ## 5. Details and review
 
-- On phones, Time, Details and Review expose cart/trainer icons beside the heading; select either to open a right-aligned scrollable popup.
+- On phones, Time, Details and Review expose cart/trainer icons on the right of the persistent top row, with the step count centred; select either to open a right-aligned scrollable popup.
 - The cart badge counts selected sessions; the trainer badge counts distinct selected trainers. Both pop when their count changes, except under reduced motion. Zero counts have no badge.
-- Existing session/instructor details move into those popups; Continue, contact fields and consent stay on the main page. Desktop keeps inline sections.
+- Existing session/instructor details move into those popups; Continue, contact fields and consent stay on the main page. Continue is a full-width naked button without a white wrapper, separated from preceding content and stopping at its original position before the footer. Desktop keeps inline sections.
 - Time popup retains Remove/Clear all; Review popup retains the original held/verifying restrictions on Edit. Closing a popup restores focus and does not change selections.
 
 Your details shows each session's small price right-aligned on its Trainer row. Review has Your sessions, Booking contact, and Order summary; the numbered date/time/trainer rows and per-session prices belong inside Order summary. There is no separate Dates & times section or aggregate “N × 40 min session” row. Edit links all read “Edit”. Final totals use a larger Total label and amount, with a muted SGD immediately to the left of the amount. There is no currency caption underneath.

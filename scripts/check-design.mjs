@@ -4,10 +4,9 @@ const functional =
 const artwork = /\.(?:arena|pitch|studio-bottom|studio-book-arrow)\b/;
 const palettePairs = [
   ["--color-on-brand", "--color-identity", 4.5],
-  ["--color-brand", "--color-contact-button", 4.5],
-  ["--color-brand", "--color-contact-button-hover", 4.5],
-  ["--color-contact-button-border", "--color-contact-promotion", 3],
-  ["--color-brand", "--color-contact-promotion", 4.5],
+  ["--color-on-brand", "--color-brand", 4.5],
+  ["--color-brand", "--color-brand-tint", 4.5],
+  ["--color-on-brand", "--color-danger", 4.5],
   ["--color-ink", "--color-paper", 4.5],
   ["--color-arena-accent", "--color-brand", 4.5],
   ["--color-on-brand", "--color-confirmation", 4.5],

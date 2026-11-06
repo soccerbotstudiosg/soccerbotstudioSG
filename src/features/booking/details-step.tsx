@@ -1,5 +1,4 @@
 "use client";
-import { BookingHeading } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -190,7 +189,7 @@ export function DetailsStep({
       {profileOnly ? (
         <h1 className="page-title">Saved contact details</h1>
       ) : (
-        <BookingHeading>Your details</BookingHeading>
+        <h1 className="page-title">Your details</h1>
       )}
       <form
         id="details-form"

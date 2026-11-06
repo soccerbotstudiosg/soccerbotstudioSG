@@ -9,7 +9,7 @@ const css = readFileSync(
 test("the interface uses the header blue, readable role hierarchy and contrasting semantic states", () => {
   const audit = designAudit(css);
   assert.deepEqual(audit.errors, []);
-  assert.equal(audit.contrast.length, 23);
+  assert.equal(audit.contrast.length, 22);
 });
 test("design policy rejects a teal action token even if it remains a valid CSS colour", () => {
   assert.ok(
@@ -23,8 +23,8 @@ test("design policy rejects a teal action token even if it remains a valid CSS c
 });
 test("design policy rejects low-contrast supporting text", () => {
   for (const [token, colour] of [
-    ["contact-button", "f3c7a5"],
-    ["contact-button-hover", "f8d9bf"],
+    ["on-brand", "ffffff"],
+    ["brand-tint", "dce1f1"],
   ]) {
     assert.ok(
       designAudit(
@@ -37,10 +37,7 @@ test("design policy rejects low-contrast supporting text", () => {
   }
   assert.ok(
     designAudit(
-      css.replace(
-        "--color-contact-promotion: #d99058",
-        "--color-contact-promotion: #050a2f",
-      ),
+      css.replace("--color-identity: #176078", "--color-identity: #ffffff"),
     ).errors.some((e) => e.includes("Insufficient contrast")),
   );
   assert.ok(

@@ -5047,3 +5047,13 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 
 - Full non-browser checks and14-route export completed, but the immutable receipt was refused because supporting documentation was edited during verification. Preserved log: `/workspace/work/sbs-ui-redesign/mobile-panels-final-verify.log`. Freeze the candidate before rerunning its receipt.
 - UI link audit found five pre-existing stale anchors already handled by the separate documentation-refactor branch; no new missing links from this UI slice.
+
+## 6 November 2026 — persistent booking tools and naked actions
+
+- UI2b907c5 passed CI42191700781 and CodeQL42191693711; staging42192988061 attempt1 uploaded but failed stale SOURCE_REVISION settings read (job127809512958/artifact13490567146). Owner-authorized attempt2 passed; public health confirmed2b907c5/versionf07adbd5-784c-426d-991b-b34a2d4a26dc. No merge/activation.
+- Owner screenshots exposed Time Continue shrinking to content under inherited flex start alignment and the shared action wrapper drawing a white rectangle. Mobile layout now stretches; one naked full-width48px-minimum button reserves24px above and16px/safe-area below; floating control retains20px side insets. Original-position stop and guards retained.
+- Cart/trainer controls move into the persistent top row; step count centres. ReviewSessions reuses unchanged Edit-lock logic for phone cart and desktop blocks; no provider/state mutation changes.
+- Footer desktop groups spread to36px, app/logo right-align with the footer edge; phone text rows32px+4px and contact column fits email without wrapping.
+- Contact us now uses the same blue-to-navy gradient, radial highlights, text and CTA as Book now. Retire unused orange palette/contrast pairs; replace with white/navy endpoint, CTA hover and badge contrast guards. Updated rejection fixtures retain negative contrast proof.
+- Focused time-step/direct-checkout tests29/29 passed; existing browser checks updated for persistent icon geometry, naked button width/spacing, email fit, footer alignment and identical banner gradients. Full local and final-head CI/staging pending.
+- Separate documentation PR33/abbf9f2 completed baseline audit and numbered per-document menus; manual CI dispatch returned Forbidden. Reconcile this UI follow-up into that dependent branch in place after UI publication.

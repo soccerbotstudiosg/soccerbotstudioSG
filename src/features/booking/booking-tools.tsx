@@ -21,13 +21,11 @@ export function useMobileBooking() {
   return useSyncExternalStore(subscribe, snapshot, serverSnapshot);
 }
 
-/** Open phone-only cart and trainer panels beside the current step heading. */
-export function BookingHeading({
-  children,
+/** Open phone cart and trainer panels from the persistent booking navigation. */
+export function BookingTools({
   basket = false,
   cart,
 }: {
-  children: ReactNode;
   basket?: boolean;
   cart?: ReactNode;
 }) {
@@ -38,46 +36,39 @@ export function BookingHeading({
   const trainerCount = new Set(draft.slots.map((slot) => slot.instructor)).size;
   return (
     <>
-      <div className="booking-heading">
-        <h1 className="page-title">{children}</h1>
-        <div className="booking-panel-buttons">
-          <button
-            type="button"
-            className="booking-panel-button"
-            aria-label={`Open cart, ${count} ${count === 1 ? "session" : "sessions"}`}
-            aria-haspopup="dialog"
-            onClick={() => setPanel("cart")}
-          >
-            <Icon name="cart" />
-            {count > 0 && (
-              <span
-                className="booking-cart-count"
-                key={count}
-                aria-hidden="true"
-              >
-                {count}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            className="booking-panel-button"
-            aria-label={`View selected trainers, ${trainerCount} ${trainerCount === 1 ? "trainer" : "trainers"}`}
-            aria-haspopup="dialog"
-            onClick={() => setPanel("trainers")}
-          >
-            <Icon name="users" />
-            {trainerCount > 0 && (
-              <span
-                className="booking-cart-count"
-                key={trainerCount}
-                aria-hidden="true"
-              >
-                {trainerCount}
-              </span>
-            )}
-          </button>
-        </div>
+      <div className="booking-panel-buttons">
+        <button
+          type="button"
+          className="booking-panel-button"
+          aria-label={`Open cart, ${count} ${count === 1 ? "session" : "sessions"}`}
+          aria-haspopup="dialog"
+          onClick={() => setPanel("cart")}
+        >
+          <Icon name="cart" />
+          {count > 0 && (
+            <span className="booking-cart-count" key={count} aria-hidden="true">
+              {count}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          className="booking-panel-button"
+          aria-label={`View selected trainers, ${trainerCount} ${trainerCount === 1 ? "trainer" : "trainers"}`}
+          aria-haspopup="dialog"
+          onClick={() => setPanel("trainers")}
+        >
+          <Icon name="users" />
+          {trainerCount > 0 && (
+            <span
+              className="booking-cart-count"
+              key={trainerCount}
+              aria-hidden="true"
+            >
+              {trainerCount}
+            </span>
+          )}
+        </button>
       </div>
       {mobile && panel && (
         <Dialog

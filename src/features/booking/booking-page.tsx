@@ -11,11 +11,11 @@ import { AccountStep } from "./account-step";
 import { SessionStep } from "./session-step";
 import { TimeStep } from "./time-step";
 import { DetailsStep } from "./details-step";
-import { ReviewStep } from "./review-step";
+import { ReviewStep, ReviewSessions } from "./review-step";
 import { PaymentStep } from "./payment-step";
 import { ConfirmationStep } from "./confirmation-step";
 import { Summary, BasketContinue } from "./summary";
-import { useMobileBooking } from "./booking-heading";
+import { BookingTools, useMobileBooking } from "./booking-tools";
 const progress: Array<[BookingStep, string]> = [
   ["account", "Booking"],
   ["session", "Session"],
@@ -122,6 +122,16 @@ export function BookingPage({ step }: { step: BookingStep }) {
             <span className="booking-current-step">
               {progress[current][1]} · {current + 1} of {progress.length}
             </span>
+            {mobile && ["time", "details", "review"].includes(displayStep) && (
+              <BookingTools
+                basket={displayStep === "time"}
+                cart={
+                  displayStep === "review" ? (
+                    <ReviewSessions verifying={pendingReview} />
+                  ) : undefined
+                }
+              />
+            )}
           </div>
           <ol className="progress" aria-label="Booking progress">
             {progress.map(([id, label], index) => (

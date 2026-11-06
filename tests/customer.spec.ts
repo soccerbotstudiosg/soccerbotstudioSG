@@ -215,14 +215,14 @@ test("public routes remove staff access and fit the viewport", async ({
   }
   const contactBanner = page.locator(".abstract-promotion");
   await expect(contactBanner).toHaveCount(1);
-  await expect(contactBanner).toHaveCSS(
-    "background-color",
-    "rgb(217, 144, 88)",
+  await expect(contactBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
+  await expect(contactBanner).toHaveCSS("color", "rgb(255, 255, 255)");
+  const contactGradient = await contactBanner.evaluate(
+    (node) => getComputedStyle(node).backgroundImage,
   );
-  await expect(contactBanner).toHaveCSS("color", "rgb(5, 10, 47)");
   await expect(contactBanner.locator(".promotion-cta")).toHaveCSS(
     "background-color",
-    "rgb(243, 199, 165)",
+    "rgb(255, 255, 255)",
   );
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
@@ -326,6 +326,38 @@ test("public routes remove staff access and fit the viewport", async ({
     (await page.locator("body").boundingBox())!.width / 2,
     0,
   );
+  if (page.viewportSize()!.width > 1100) {
+    const appsBox = await page.locator(".footer-apps").boundingBox();
+    const logoBox = await page.locator(".footer-brand").boundingBox();
+    const edge = footerBandBox!.x + footerBandBox!.width;
+    expect(appsBox!.x + appsBox!.width).toBeCloseTo(edge, 0);
+    expect(logoBox!.x + logoBox!.width).toBeCloseTo(edge, 0);
+    await expect(page.locator(".footer-contact-grid")).toHaveCSS(
+      "column-gap",
+      "36px",
+    );
+  }
+  if (page.viewportSize()!.width <= 700) {
+    const email = page.locator(".footer-contact-link[href^='mailto:']");
+    await expect(email).toHaveCSS("white-space", "nowrap");
+    const emailBox = await email.boundingBox();
+    expect(emailBox!.x + emailBox!.width).toBeLessThanOrEqual(
+      page.viewportSize()!.width,
+    );
+    const rowPitch = await page
+      .locator(".footer-direct-contact a")
+      .evaluateAll(
+        (nodes) =>
+          nodes[1].getBoundingClientRect().top -
+          nodes[0].getBoundingClientRect().top,
+      );
+    expect(rowPitch).toBeCloseTo(36, 0);
+    await expect(page.locator(".footer-apps .footer-contact-copy")).toHaveCSS(
+      "justify-items",
+      "center",
+    );
+  }
+
   await expect(
     contactBanner.getByRole("link", { name: "Contact us", exact: true }),
   ).toHaveAttribute("href", sitePath("/enquiry/"));
@@ -398,6 +430,7 @@ test("public routes remove staff access and fit the viewport", async ({
   const studioBanner = page.locator(".studio-bottom.abstract-promotion");
   await expect(studioBanner).toBeAttached();
   await expect(studioBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
+  await expect(studioBanner).toHaveCSS("background-image", contactGradient);
   await expect(studioBanner.locator("img")).toHaveCount(0);
   await expect(studioBanner).toHaveCSS(
     "background-image",
@@ -1145,29 +1178,56 @@ test("header blue and the typography hierarchy stay consistent across every book
         const barBox = await primaryBar.boundingBox();
         if (floating) {
           expect(barBox!.y + barBox!.height).toBeCloseTo(
-            page.viewportSize()!.height,
+            page.viewportSize()!.height - 16,
             0,
           );
         }
         expect(barBox!.height).toBeLessThanOrEqual(72);
         if (floating) {
-          expect(barBox!.x).toBeCloseTo(0, 0);
-          expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
+          expect(barBox!.x).toBeCloseTo(20, 0);
+          expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width - 40, 0);
         }
         const action = primaryBar.locator(":scope > .button");
         await expect(action).toHaveCount(1);
         const actionBox = await action.boundingBox();
-        expect(actionBox!.x).toBeCloseTo(barBox!.x + 20, 0);
+        await expect(primaryBar).toHaveCSS(
+          "background-color",
+          "rgba(0, 0, 0, 0)",
+        );
+        await expect(primaryBar).toHaveCSS("box-shadow", "none");
+        await expect(primaryBar).toHaveCSS("border-top-width", "0px");
+        expect(actionBox!.x).toBeCloseTo(barBox!.x, 0);
         expect(actionBox!.x + actionBox!.width).toBeCloseTo(
-          barBox!.x + barBox!.width - 20,
+          barBox!.x + barBox!.width,
           0,
         );
-        expect(actionBox!.height).toBeGreaterThanOrEqual(44);
+        expect(actionBox!.height).toBeGreaterThanOrEqual(48);
         const previousScroll = await page.evaluate(() => scrollY);
         await page.locator(".site-footer").scrollIntoViewIfNeeded();
         await expect(primaryBar).toHaveAttribute("data-floating", "false");
         await expect(primaryBar).toHaveCSS("position", "relative");
         const settledBar = await primaryBar.boundingBox();
+        const settledAnchor = await page
+          .locator(".booking-action-anchor")
+          .boundingBox();
+        expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(24, 0);
+        const shellWidth = await page
+          .locator(".booking-shell")
+          .evaluate(
+            (node) =>
+              node.clientWidth -
+              parseFloat(getComputedStyle(node).paddingLeft) -
+              parseFloat(getComputedStyle(node).paddingRight),
+          );
+        if (
+          await page
+            .getByRole("heading", {
+              name: "Select dates and times",
+              exact: true,
+            })
+            .count()
+        )
+          expect(settledBar!.width).toBeCloseTo(shellWidth, 0);
         const footer = await page.locator(".site-footer").boundingBox();
         expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
           footer!.y,
@@ -1733,6 +1793,23 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       })
       .locator(".booking-cart-count");
     await expect(trainerBadge).toHaveText("1");
+    const tools = page.locator(".booking-navigation .booking-panel-buttons");
+    await expect(tools).toBeVisible();
+    await page
+      .getByRole("group", { name: "Session times" })
+      .scrollIntoViewIfNeeded();
+    const toolsBox = await tools.boundingBox();
+    const navBox = await page.locator(".booking-navigation").boundingBox();
+    expect(toolsBox!.y).toBeGreaterThanOrEqual(navBox!.y);
+    expect(toolsBox!.y + toolsBox!.height).toBeLessThanOrEqual(
+      navBox!.y + navBox!.height,
+    );
+    const stepBox = await page.locator(".booking-current-step").boundingBox();
+    expect(stepBox!.x + stepBox!.width / 2).toBeCloseTo(
+      page.viewportSize()!.width / 2,
+      0,
+    );
+
     await expect(
       page
         .getByRole("button", { name: "Open cart, 2 sessions", exact: true })
