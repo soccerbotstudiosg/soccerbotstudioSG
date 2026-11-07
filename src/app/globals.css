@@ -3255,6 +3255,10 @@
     color: var(--color-muted);
     background: var(--color-disabled);
   }
+  .date.selected {
+    border-color: var(--color-focus);
+    background: var(--color-brand-soft);
+  }
   .date.in-booking strong {
     background: var(--color-navy);
     color: var(--color-on-brand);
@@ -3304,7 +3308,8 @@
     display: block;
     color: var(--color-muted);
   }
-  .summary .series-list {
+  .summary .series-list,
+  .confirmation-card .series-list {
     padding: 0;
   }
   .summary .series-date {
@@ -3767,25 +3772,11 @@
     padding: 18px;
     color: var(--color-muted);
   }
-  .session-trainer-row:has(.session-paid) {
-    flex-wrap: nowrap;
-    align-items: last baseline;
-    gap: 8px;
-  }
-  .session-trainer-row:has(.session-paid) .session-instructor {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  .session-paid {
+  .confirmation-paid-amount {
     display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    flex-shrink: 0;
-    margin-left: auto;
+    align-items: center;
+    gap: 8px;
     white-space: nowrap;
-  }
-  .session-paid .pill.success {
-    color: var(--color-success);
   }
   .payment-check-feedback {
     display: flex;

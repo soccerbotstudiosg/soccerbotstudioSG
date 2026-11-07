@@ -1967,7 +1967,7 @@ test("real API payment creation failure preserves the hold and never returns to 
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("status", {
-        name: "Checking payment…",
+        name: "Preparing payment…",
         exact: true,
       }),
     ).toBeVisible();

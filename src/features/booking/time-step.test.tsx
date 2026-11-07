@@ -321,15 +321,23 @@ test("confirmation places three retained actions above a compact summary and dis
   ).toEqual([
     "Your Sessions",
     "Booking Contact",
-    "Order Summary",
     "Location",
     "Before Your Session",
+    "Order Summary",
   ]);
   expect(disclosure).toHaveAttribute("open");
   expect(
     Array.from(disclosure!.querySelectorAll("h2"), (node) => node.textContent),
-  ).toEqual(["Your Sessions", "Booking Contact", "Order Summary", "Location"]);
-  expect(disclosure!.querySelector(".confirmation-disclaimers")).toBeNull();
+  ).toEqual([
+    "Your Sessions",
+    "Booking Contact",
+    "Location",
+    "Before Your Session",
+  ]);
+  expect(disclosure!.querySelector(".confirmation-disclaimers")).not.toBeNull();
+  expect(
+    screen.getByRole("region", { name: "Order Summary" }).closest("details"),
+  ).toBeNull();
   expect(disclosure!.querySelector("button, a")).toBeNull();
   expect(screen.getAllByText("Demo Customer", { exact: true })).toHaveLength(1);
   expect(screen.getAllByText("Studio 1", { exact: true })).toHaveLength(1);

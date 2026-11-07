@@ -241,7 +241,35 @@ it("verified live receipt shows provider invoice number without internal IDs or 
     ),
   );
   render(<ProtectedConfirmation attemptId={first} />);
+  await screen.findByText("View Full Details");
+  const orderSummary = await screen.findByRole("region", {
+    name: "Order Summary",
+  });
+  expect(orderSummary).toBeVisible();
+  expect(orderSummary.closest("details")).toBeNull();
+  expect(
+    screen
+      .getByRole("heading", { name: "Before Your Session" })
+      .closest("details"),
+  ).not.toHaveAttribute("open");
+  expect(orderSummary.querySelector(".series-list")).not.toHaveTextContent(
+    "Paid",
+  );
+  expect(
+    orderSummary.querySelector(".confirmation-paid-amount"),
+  ).toHaveTextContent("PaidSGD $88.00");
   fireEvent.click(await screen.findByText("View Full Details"));
+  expect(
+    Array.from(document.querySelectorAll(".confirmation-card h2")).map(
+      (node) => node.textContent,
+    ),
+  ).toEqual([
+    "Your Sessions",
+    "Booking Contact",
+    "Location",
+    "Before Your Session",
+    "Order Summary",
+  ]);
   expect(
     await screen.findByRole("heading", { name: "Booking Contact" }),
   ).toBeInTheDocument();
@@ -1360,6 +1388,7 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   vi.useFakeTimers();
   let incomplete = true;
   let denied = false;
+  let paymentIssue: "link_recovering" | "link_unavailable" | undefined;
   const fetcher = vi.fn(async (url: string) =>
     denied
       ? new Response(null, { status: 403 })
@@ -1369,6 +1398,7 @@ it("incomplete provider booking shows reservation recovery without a payment spi
                 attemptId: first,
                 mode: "live",
                 ...(incomplete ? { bookingIssue: "incomplete" } : {}),
+                ...(paymentIssue ? { paymentIssue } : {}),
                 checkout: { state: "unavailable" },
                 summary: {
                   players: 1,
@@ -1462,4 +1492,34 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   });
   expect(fetcher).toHaveBeenCalledTimes(deniedReads);
   revoked.unmount();
+  denied = false;
+  incomplete = false;
+  paymentIssue = "link_recovering";
+  const paymentRecovery = render(
+    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+  );
+  await act(async () => {});
+  expect(
+    screen.getByRole("status", { name: "Preparing payment…" }),
+  ).toBeVisible();
+  paymentIssue = "link_unavailable";
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(
+    screen.getByRole("heading", { name: "Payment Unavailable" }),
+  ).toBeVisible();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Our payment provider may be temporarily unavailable. Please try again later.",
+  );
+  expect(
+    screen.queryByRole("status", { name: "Preparing payment…" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: /payment|checkout/i }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByLabelText("Current booking summary"),
+  ).not.toBeInTheDocument();
+  paymentRecovery.unmount();
 });

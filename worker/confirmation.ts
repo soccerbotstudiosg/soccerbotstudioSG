@@ -317,6 +317,20 @@ export async function checkoutContext(
     !snapshot.payment.payment
       ? { bookingIssue: "incomplete" as const }
       : {}),
+    ...(snapshot.payment.payment &&
+    !snapshot.payment.payment.request_id &&
+    !snapshot.payment.payment.checkout_url &&
+    snapshot.payment.payment.paid_ms === null &&
+    snapshot.payment.payment.payment_id === null &&
+    (["due", "claimed"].includes(snapshot.payment.payment.state) ||
+      snapshot.payment.payment.reason === "payment_link_unavailable")
+      ? {
+          paymentIssue:
+            snapshot.payment.payment.state === "manual_review"
+              ? ("link_unavailable" as const)
+              : ("link_recovering" as const),
+        }
+      : {}),
     customerConfirmation:
       hitpayCheckout === null
         ? undefined

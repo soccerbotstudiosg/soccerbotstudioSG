@@ -1099,6 +1099,13 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     "open",
     "",
   );
+  await expect(
+    page.getByRole("heading", { name: "Order Summary", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(/^Total Paid(?: · Preview)?$/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Before Your Session", exact: true }),
+  ).toBeHidden();
   const confirmationLayout = await page
     .locator(".confirmation-shell")
     .evaluate((shell) => ({
@@ -1620,6 +1627,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".calendar-legend")).toHaveCount(0);
   await expect(page.locator(".date .dot")).toHaveCount(0);
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
+  await expect(page.locator(".date.selected")).toHaveCSS(
+    "border-color",
+    "rgb(86, 102, 168)",
+  );
   await expect(page.locator(".date.selected strong")).toHaveCSS(
     "background-color",
     "rgba(0, 0, 0, 0)",
@@ -1804,8 +1815,19 @@ test("header blue and the typography hierarchy stay consistent across every book
     "left",
   );
   await expect(
-    page.locator(".confirmation-details-grid .series-list li").first(),
+    page.locator(".confirmation-card .series-list li").first(),
   ).toHaveCSS("flex-direction", "row");
+  const orderAlignment = await page
+    .getByRole("region", { name: "Order Summary" })
+    .evaluate((section) => ({
+      heading: section.querySelector("h2")!.getBoundingClientRect().left,
+      circles: Array.from(
+        section.querySelectorAll(".series-index"),
+        (circle) => circle.getBoundingClientRect().left,
+      ),
+    }));
+  for (const left of orderAlignment.circles)
+    expect(left).toBeCloseTo(orderAlignment.heading, 0);
   const facts = page.locator(".confirmation-details-grid .booking-facts");
   const { labelBox, valueBox } = await facts.evaluate(async (element) => {
     const animations: Animation[] = [];

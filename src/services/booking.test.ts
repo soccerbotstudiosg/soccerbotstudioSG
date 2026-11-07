@@ -29,6 +29,7 @@ import {
   saveBooking,
   safeWrite,
   loadLiveDraft,
+  mayRestoreLiveCheckout,
   saveLiveDraft,
 } from "@/services/storage";
 class StorageMock {
@@ -609,4 +610,12 @@ it("live draft reload preserves edits but never restores consent or payment auth
   expect(loadLiveDraft()).not.toHaveProperty("attempt");
   saveLiveDraft(blankDraft());
   expect(loadLiveDraft()).toEqual(blankDraft());
+  saveLiveDraft(draft, false);
+  expect(mayRestoreLiveCheckout()).toBe(false);
+  saveLiveDraft(blankDraft());
+  expect(mayRestoreLiveCheckout()).toBe(false);
+  saveLiveDraft(draft, true);
+  expect(mayRestoreLiveCheckout()).toBe(true);
+  expect(loadLiveDraft()).not.toHaveProperty("resumeCheckout");
+  expect(loadLiveDraft().accepted).toBe(false);
 });

@@ -195,6 +195,8 @@ Native execution results are state-dependent saved results, not a guarantee that
 }
 ```
 
+Checkout context may include `paymentIssue: "link_recovering" | "link_unavailable"`. It is derived from the retained HitPay journal only when no request/link or paid evidence exists. The first state polls protected context without creating another request; after five total link attempts (one POST and four read-only original-reference recovery attempts), the second shows a dedicated payment-provider-unavailable screen. Refresh cannot reset the durable count. This limit does not replace payment settlement/reconciliation limits; a novel authenticated receipt may reopen bounded recovery. Scope/money/security mismatches still stop immediately. No retry of an ambiguous POST is authorized: the reviewed [HitPay create contract](https://docs.hitpayapp.com/apis/payment-request/create-request) does not establish idempotent replay for this integration.
+
 `pollAfterMs` is 1000–30000 in the response schema; this validation range does not override the tighter server checking policy. Summary has 1–12 sessions and 1–4 players. Client verifies the requested attempt/mode and accepted destination, not just JSON shape. `payment.status:"recorded"` alone does not imply a valid confirmed booking.
 
 Verified terminal nonpayment may be recorded at the checking deadline so the hold-expiry status read can observe it; release still waits for the original hold deadline. Explicit Check status shares the existing30-second foreground recheck admission and never renews the polling budget.

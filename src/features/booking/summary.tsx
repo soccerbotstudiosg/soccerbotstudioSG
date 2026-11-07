@@ -68,14 +68,12 @@ export function SessionList({
   remove,
   showRotation = true,
   showPrices = false,
-  showPaid = false,
   now,
 }: {
   slots: Session[];
   now?: number;
   showRotation?: boolean;
   showPrices?: boolean;
-  showPaid?: boolean;
   remove?: (slot: Session) => void;
 }) {
   const list = (
@@ -98,20 +96,10 @@ export function SessionList({
                   <span className="session-instructor">
                     Trainer: {sessionInstructorName(slot)}
                   </span>
-                  {showPaid ? (
-                    <div className="session-paid">
-                      <span className="pill success">Paid</span>
-                      <span className="total-currency">SGD</span>
-                      <strong className="session-item-price">
-                        {money(sessionPrice(slot))}
-                      </strong>
-                    </div>
-                  ) : (
-                    showPrices && (
-                      <strong className="session-item-price">
-                        {money(sessionPrice(slot))}
-                      </strong>
-                    )
+                  {showPrices && (
+                    <strong className="session-item-price">
+                      {money(sessionPrice(slot))}
+                    </strong>
                   )}
                 </div>
               )}

@@ -2,6 +2,7 @@
 import { Icon } from "@/components/icon";
 import {
   PAYMENT_RELEASE_PENDING,
+  PAYMENT_PROVIDER_UNAVAILABLE,
   BOOKING_RECOVERY_MESSAGE,
 } from "@/domain/booking-messages";
 import { isHitpayCheckoutUrl } from "@/domain/native-checkout";
@@ -119,6 +120,11 @@ export function ProtectedConfirmation({
     context.value.bookingIssue === "incomplete" &&
     !context.value.payment &&
     !saved;
+  const linkRecovering =
+    contextMatches &&
+    context.value.paymentIssue === "link_recovering" &&
+    !context.value.payment &&
+    !saved;
   const {
     view,
     busy,
@@ -132,7 +138,10 @@ export function ProtectedConfirmation({
   } = useConfirmationChecking(
     attemptId,
     sessionRevision,
-    (!checkoutMode || contextSettled) && !saved && !incomplete,
+    (!checkoutMode || contextSettled) &&
+      !saved &&
+      !incomplete &&
+      !linkRecovering,
     contextMatches ? context.value.checking.deadlineMs : undefined,
     contextMatches
       ? (context.value.checking.recoveryEndsAtMs ??
@@ -324,7 +333,7 @@ export function ProtectedConfirmation({
   }, [link, current?.clock]);
   const recordedPayment = current?.payment;
   useEffect(() => {
-    if (!incomplete || !checkoutMode) return;
+    if ((!incomplete && !linkRecovering) || !checkoutMode) return;
     let timer: ReturnType<typeof setTimeout>;
     let reading = false;
     const controller = new AbortController();
@@ -379,7 +388,7 @@ export function ProtectedConfirmation({
       window.removeEventListener("focus", resume);
       document.removeEventListener("visibilitychange", resume);
     };
-  }, [incomplete, checkoutMode, attemptId, sessionRevision]);
+  }, [incomplete, linkRecovering, checkoutMode, attemptId, sessionRevision]);
   const historicalPayment =
     !!recordedPayment && ["unresolved", "unavailable"].includes(view);
   const showLink =
@@ -550,6 +559,35 @@ export function ProtectedConfirmation({
       />
     );
   }
+  if (
+    linkRecovering &&
+    !paymentReceived &&
+    !recordedPayment &&
+    view !== "denied"
+  )
+    return <BrandLoading compact label="Preparing payment…" />;
+  if (
+    current?.paymentIssue === "link_unavailable" &&
+    !paymentReceived &&
+    !recordedPayment &&
+    view !== "confirmed" &&
+    view !== "denied"
+  )
+    return (
+      <section
+        className="status-shell"
+        aria-label="Payment provider unavailable"
+      >
+        <h1 className="section-title">Payment Unavailable</h1>
+        <p className="alert" role="alert">
+          {PAYMENT_PROVIDER_UNAVAILABLE}
+        </p>
+        <p>
+          Your reservation still needs to be resolved. Please don’t start
+          another payment.
+        </p>
+      </section>
+    );
   if (
     current?.bookingIssue === "incomplete" &&
     !paymentReceived &&

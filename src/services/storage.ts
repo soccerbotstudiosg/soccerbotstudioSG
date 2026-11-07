@@ -138,7 +138,18 @@ export function loadLiveDraft() {
   const parsed = draftSchema.safeParse(safeRead("soccerbot-live-draft"));
   return parsed.success ? { ...parsed.data, accepted: false } : blankDraft();
 }
-/** Persist the live booking draft for browser continuity. */
-export function saveLiveDraft(draft: StoredBooking["draft"]) {
-  safeWrite("soccerbot-live-draft", { ...draft, accepted: false });
+/** Check this tab's navigation preference, never checkout authority. */
+export function mayRestoreLiveCheckout() {
+  return record(safeRead("soccerbot-live-draft"))?.resumeCheckout !== false;
+}
+/** Persist the live draft and its tab-local checkout navigation preference. */
+export function saveLiveDraft(
+  draft: StoredBooking["draft"],
+  resumeCheckout = mayRestoreLiveCheckout(),
+) {
+  safeWrite("soccerbot-live-draft", {
+    ...draft,
+    accepted: false,
+    resumeCheckout,
+  });
 }

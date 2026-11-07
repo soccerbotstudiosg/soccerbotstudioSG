@@ -7,6 +7,8 @@ import {
 } from "./policy";
 import { isHitpayCheckoutUrl } from "../src/domain/native-checkout";
 
+// One creation attempt plus four read-only recovery attempts.
+export const HITPAY_LINK_ATTEMPTS = 5;
 export const hitpayId = z.string().uuid();
 /** Read a named HitPay configuration value. */
 export function hitpaySetting(env: Env, name: string) {

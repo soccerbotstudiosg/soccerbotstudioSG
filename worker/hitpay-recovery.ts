@@ -1,3 +1,4 @@
+import { traceId } from "./diagnostics";
 import { invoiceNumberSchema } from "../src/domain/provider-references";
 import {
   normalizeNativePaymentResponse,
@@ -7,6 +8,7 @@ import { confirmationStage, confirmationResult } from "./confirmation-tracing";
 import { receiptData } from "./receipt-data";
 import { providerCredentialName, ApiError, digest, policy } from "./policy";
 import {
+  HITPAY_LINK_ATTEMPTS,
   hitpayRecoveryEnabled,
   hitpayFailureReason,
   hitpaySetting,
@@ -26,6 +28,21 @@ import {
   nativeSignaturesFromSnapshot,
 } from "./native-adapter";
 import { ProviderSession, type ProviderControl } from "./provider-session";
+
+/** Emit the committed payment-link incident without customer or checkout data. */
+async function reportPaymentLinkFailure(id: string) {
+  console.log(
+    JSON.stringify({
+      event: "payment_link_unavailable",
+      correlationId: traceId(),
+      recoveryKey: await digest(id),
+      provider: "hitpay",
+      attempts: HITPAY_LINK_ATTEMPTS,
+      outcome: "error",
+      action: "check_hitpay_manually",
+    }),
+  );
+}
 
 /** Reconcile payment and booking accounting without replaying uncertain effects. */
 export async function recoverHitpay(
@@ -54,6 +71,12 @@ export async function recoverHitpay(
     ).bind(id),
   ]);
   const row = initial[2].results[0] as HitpayRow | undefined;
+  if (
+    (initial[0].results as { reason: string }[]).some(
+      (entry) => entry.reason === "payment_link_unavailable",
+    )
+  )
+    await reportPaymentLinkFailure(id);
   if (!row) {
     const retained = initial[5].results[0] as
       { state: string; ready_ms: number } | undefined;
@@ -94,6 +117,7 @@ export async function recoverHitpay(
   let releaseDeadline = checkingDeadline;
   let result = "due",
     reason = "verification_pending";
+  let linkRecovered = !!row.checkout_url;
   let terminalCommitted = false;
   let accountingTransportEnded = false;
   try {
@@ -164,6 +188,7 @@ export async function recoverHitpay(
       .run();
     if (evidence.meta.changes !== 1)
       throw new ApiError(409, "hitpay_claim_stale");
+    linkRecovered = true;
     if (!verified.paymentId) {
       if (row.paid_ms !== null)
         throw new ApiError(409, "hitpay_paid_state_changed");
@@ -457,6 +482,16 @@ export async function recoverHitpay(
       result = "manual_review";
       reason = "recovery_exhausted";
     }
+    if (
+      result === "due" &&
+      !linkRecovered &&
+      row.request_id === null &&
+      row.paid_ms === null &&
+      row.tries >= HITPAY_LINK_ATTEMPTS - 1
+    ) {
+      result = "manual_review";
+      reason = "payment_link_unavailable";
+    }
     // Commit the terminal decision and the pending-receipt wake-up together.
     // If storage fails, the retained claim lease remains reclaimable by cron.
     if (!terminalCommitted) {
@@ -479,6 +514,11 @@ export async function recoverHitpay(
       ]);
       const retained = committed[0].results[0] as
         { state: string; ready_ms: number } | undefined;
+      if (
+        retained?.state === "manual_review" &&
+        reason === "payment_link_unavailable"
+      )
+        await reportPaymentLinkFailure(id);
       if (retained?.state === "due") {
         console.log(
           JSON.stringify({

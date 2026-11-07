@@ -8,3 +8,6 @@ export const BOOKING_RECOVERY_MESSAGE =
 
 export const PAYMENT_RELEASE_PENDING =
   "These sessions may not be available to book again immediately. Please try again later. Your details are saved.";
+
+export const PAYMENT_PROVIDER_UNAVAILABLE =
+  "Our payment provider may be temporarily unavailable. Please try again later.";

@@ -2,6 +2,7 @@ import type { Access } from "./access";
 import { z } from "zod";
 import { ApiError, digest } from "./policy";
 import {
+  HITPAY_LINK_ATTEMPTS,
   assertHitpayCreation,
   hitpayFailureReason,
   assertPaymentScope,
@@ -279,8 +280,8 @@ export function hitpayClaimStatements(env: Env, id: string, now: number) {
   // Exhaustion and its permitted wake-up must commit before selecting new work.
   return [
     env.STATE.prepare(
-      "UPDATE hitpay_payments SET state='manual_review',reason='recovery_exhausted' WHERE attempt_id=? AND state IN ('due','claimed') AND ready_ms<=? AND (tries>=retry_limit OR recovery_end_ms<=?)",
-    ).bind(id, now, now),
+      "UPDATE hitpay_payments SET state='manual_review',reason=CASE WHEN request_id IS NULL AND checkout_url IS NULL AND paid_ms IS NULL AND tries>=? THEN 'payment_link_unavailable' ELSE 'recovery_exhausted' END WHERE attempt_id=? AND state IN ('due','claimed') AND ready_ms<=? AND (tries>=retry_limit OR recovery_end_ms<=? OR (request_id IS NULL AND checkout_url IS NULL AND paid_ms IS NULL AND tries>=? AND reason!='webhook_recheck_pending')) RETURNING reason",
+    ).bind(HITPAY_LINK_ATTEMPTS - 1, id, now, now, HITPAY_LINK_ATTEMPTS - 1),
     reopenHitpayReview(env.STATE, id, now),
     env.STATE.prepare(
       "UPDATE hitpay_payments SET state='claimed',tries=tries+1,generation=generation+1,receipt_checkpoint=COALESCE((SELECT MAX(rowid) FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id),0),ready_ms=? WHERE attempt_id=? AND state IN ('due','claimed') AND ready_ms<=? AND tries<retry_limit AND recovery_end_ms>? RETURNING *",
@@ -389,7 +390,7 @@ export async function hitpayConfirmationGuard(
 export function reopenHitpayReview(db: D1Database, id: string, now: number) {
   return db
     .prepare(
-      "UPDATE hitpay_payments SET state='due',reason='webhook_recheck_pending',ready_ms=?,retry_limit=MIN(16,MAX(retry_limit,tries+1)),receipt_checkpoint=(SELECT MAX(rowid) FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id) WHERE attempt_id=? AND state IN ('manual_review','due') AND reason IN ('hitpay_payment_failed','hitpay_payment_expired','hitpay_payment_canceled','hitpay_unpaid_verified','recovery_exhausted') AND tries<16 AND recovery_end_ms>? AND EXISTS(SELECT 1 FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id AND rowid>hitpay_payments.receipt_checkpoint)",
+      "UPDATE hitpay_payments SET state='due',reason='webhook_recheck_pending',ready_ms=?,retry_limit=MIN(16,MAX(retry_limit,tries+1)),receipt_checkpoint=(SELECT MAX(rowid) FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id) WHERE attempt_id=? AND state IN ('manual_review','due') AND reason IN ('hitpay_payment_failed','hitpay_payment_expired','hitpay_payment_canceled','hitpay_unpaid_verified','recovery_exhausted','payment_link_unavailable') AND tries<16 AND recovery_end_ms>? AND EXISTS(SELECT 1 FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id AND rowid>hitpay_payments.receipt_checkpoint)",
     )
     .bind(now, id, now);
 }

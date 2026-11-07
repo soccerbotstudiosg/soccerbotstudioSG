@@ -95,6 +95,31 @@ test("telemetry samples successful correlations consistently and retains detecte
     assert.equal(exported.spans.length, 1);
     assert.equal(exported.spans[0].status.code, 2);
   }
+  const incident = {
+    event: "payment_link_unavailable",
+    correlationId,
+    provider: "hitpay",
+    action: "check_hitpay_manually",
+    attempts: 5,
+    recoveryKey: "a".repeat(64),
+    email: "PRIVATE",
+    checkoutUrl: "PRIVATE",
+  };
+  const linkFailure = await telemetryPayload([envelope([incident])], 0);
+  assert.equal(linkFailure.spans.length, 1);
+  assert.equal(linkFailure.spans[0].status.code, 2);
+  const safeIncident = sanitizeDiagnostic(incident);
+  assert.equal(safeIncident.recovery_key, "a".repeat(64));
+  assert.equal(safeIncident.attempts, 5);
+  assert.doesNotMatch(
+    JSON.stringify(safeIncident),
+    /PRIVATE|checkoutUrl|email/,
+  );
+  assert.equal(sanitizeDiagnostic({ ...incident, attempts: 4 }), undefined);
+  assert.equal(
+    sanitizeDiagnostic({ ...incident, provider: "PRIVATE" }),
+    undefined,
+  );
   const unknown = sanitizeDiagnostic({
     event: "provider_failure",
     correlationId,

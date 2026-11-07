@@ -48,6 +48,7 @@ import {
 import {
   loadBooking,
   loadLiveDraft,
+  mayRestoreLiveCheckout,
   saveLiveDraft,
   saveBooking,
   type StoredBooking,
@@ -326,7 +327,7 @@ export function BookingProvider({
       };
       latest.current = state;
       if (service.mode === "demo") saveBooking(next);
-      else saveLiveDraft(next.draft);
+      else saveLiveDraft(next.draft, next.attempt ? true : undefined);
       dispatch(state);
     },
     [service],
@@ -408,7 +409,10 @@ export function BookingProvider({
                       sessionPrice(slot) === sessionPrice(other),
                   ),
                 );
-              if (draft.slots.length && !sameSelections) {
+              if (
+                !mayRestoreLiveCheckout() ||
+                (draft.slots.length > 0 && !sameSelections)
+              ) {
                 setSelectionNotice(
                   "Another checkout is in progress. These selections were not booked. You can view the existing checkout or keep browsing the calendar.",
                 );
@@ -767,6 +771,8 @@ export function BookingProvider({
             .catch(() => null);
           if (!isCurrent()) return false;
           commit({ ...latest.current, attempt: null });
+          if (service.mode === "live")
+            saveLiveDraft(latest.current.draft, false);
           pauseCalendar(false);
           setAction({
             status: "failure",
@@ -936,6 +942,10 @@ export function BookingProvider({
               ),
             },
           });
+          // This tab rejected a selection. A shared cookie may still point to
+          // another tab's valid checkout, even when this cart is now empty.
+          if (service.mode === "live")
+            saveLiveDraft(latest.current.draft, false);
           pauseCalendar(false);
           setSelectionNotice(
             rejectedSlots.length
