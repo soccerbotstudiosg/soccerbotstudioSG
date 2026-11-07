@@ -205,17 +205,25 @@ export function TimeStep() {
       <h1 className="page-title">
         Select dates<span className="booking-time-title-break"> and times</span>
       </h1>
-      {live ? (
+      {live && bookingService.operations.availability === "live" ? (
         <LiveCatalogue
+          renderStatus={(state) => (
+            <p className="calendar-selection-context">
+              <strong>
+                {LOCATION.building} ·{" "}
+                {state === "loading"
+                  ? "Loading session details…"
+                  : "Session details unavailable"}
+              </strong>
+            </p>
+          )}
           render={(data) => (
             <p className="calendar-selection-context">
               <strong>
                 {LOCATION.building} ·{" "}
-                {
-                  data.services.find(
-                    (service) => service.id === draft.nativeServiceId,
-                  )?.name
-                }
+                {data.services.find(
+                  (service) => service.id === draft.nativeServiceId,
+                )?.name ?? "Session details unavailable"}
               </strong>
             </p>
           )}
@@ -223,7 +231,8 @@ export function TimeStep() {
       ) : (
         <p className="calendar-selection-context">
           <strong>
-            {LOCATION.building} · {SERVICE_NAME}
+            {LOCATION.building} ·{" "}
+            {live ? "Session details unavailable" : SERVICE_NAME}
           </strong>
         </p>
       )}
