@@ -28,7 +28,7 @@ import {
 } from "@/domain/booking";
 import { dateLabel, endTime, money } from "@/domain/dates";
 import { bookingCover } from "@/content/media";
-import { LiveCatalogue } from "./live-catalogue";
+import { customerCatalogueService } from "@/services/customer-catalogue";
 import { InstructorProfile } from "./instructor";
 import { useBooking } from "./provider";
 /** Present the same session heading and service description across booking summaries. */
@@ -37,23 +37,23 @@ export function SessionSummaryHeading({
   action,
   selectedService = false,
 }: {
-  draft: Pick<BookingDraft, "slots" | "players" | "nativeServiceId">;
+  draft: Pick<
+    BookingDraft,
+    "slots" | "players" | "nativeServiceId" | "nativeServiceName"
+  >;
   action?: ReactNode;
   selectedService?: boolean;
 }) {
   const serviceName =
-    selectedService && draft.nativeServiceId ? (
-      <LiveCatalogue
-        renderStatus={() => "Session details unavailable"}
-        render={(data) =>
-          data.services.find((service) => service.id === draft.nativeServiceId)
-            ?.name ?? "Session details unavailable"
-        }
-      />
-    ) : (
-      (draft.slots[0]?.native?.serviceName ??
-      (draft.nativeServiceId ? undefined : SERVICE_NAME))
-    );
+    selectedService && draft.nativeServiceId
+      ? (draft.nativeServiceName ??
+        customerCatalogueService
+          .peek()
+          ?.services.find((service) => service.id === draft.nativeServiceId)
+          ?.name ??
+        "Session details unavailable")
+      : (draft.slots[0]?.native?.serviceName ??
+        (draft.nativeServiceId ? undefined : SERVICE_NAME));
   return (
     <div className="session-summary-heading">
       <div className="review-head">

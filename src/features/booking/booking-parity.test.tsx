@@ -17,6 +17,7 @@ import type {
 import { BookingProvider, useBooking } from "./provider";
 import { DetailsStep } from "./details-step";
 import { TimeStep } from "./time-step";
+import { loadLiveDraft } from "@/services/storage";
 import { Summary, SessionSummaryHeading } from "./summary";
 import { BookingPage } from "./booking-page";
 import { SessionStep } from "./session-step";
@@ -320,12 +321,14 @@ test("live session preserves demo product player and inclusion presentation usin
   expect(
     screen.queryByRole("button", { name: "Select session" }),
   ).not.toBeInTheDocument();
+  expect(loadLiveDraft().nativeServiceName).toBe("Real session");
   render(
     <SessionSummaryHeading
       selectedService
       draft={{
         players: 2,
         nativeServiceId: "12",
+        nativeServiceName: "Real session",
         slots: [
           {
             ...slot,

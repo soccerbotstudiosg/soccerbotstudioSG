@@ -287,6 +287,9 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(homeFooterBox!.y).toBeCloseTo(contactBox!.y + contactBox!.height, 0);
   await expect(page.locator(".footer-apps .footer-app-link")).toHaveCount(3);
   await expect(
+    page.locator(".footer-contact-row").first().getByRole("link"),
+  ).toHaveText(["Terms of Service", "Privacy Policy", "Refund Policy"]);
+  await expect(
     page.locator(".footer-contact-grid > .footer-contact-row"),
   ).toHaveCount(4);
   await expect(page.locator("#footer-apps-title")).toHaveText(
@@ -1229,13 +1232,13 @@ test("leave booking uses equal-width sentence-case actions with home left and st
   await expect(page).toHaveURL(/\/book\/account\/$/);
   await page
     .locator(".site-footer")
-    .getByRole("link", { name: "Studio", exact: true })
+    .getByRole("link", { name: "Privacy Policy", exact: true })
     .click();
   await expect(dialog).toBeVisible();
   await dialog
     .getByRole("button", { name: "Leave booking", exact: true })
     .click();
-  await expect(page).toHaveURL(/\/studio\/$/);
+  await expect(page).toHaveURL(/\/privacy-policy\/$/);
   await page.goto(sitePath("/book/account/"));
   // Capture the new-tab handoff without contacting the external service.
   await page.evaluate(() => {
@@ -2262,7 +2265,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await closeBookingPanel(page);
   if (page.viewportSize()!.width > 700) {
     await page.setViewportSize({ width: 1366, height: 768 });
-    for (const start of ["12:50", "13:40", "15:20", "16:10"]) {
+    for (const start of ["12:50", "13:40", "15:20", "17:00"]) {
       await page
         .getByRole("button", { name: new RegExp(`^${start}–`) })
         .click();

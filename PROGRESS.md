@@ -11,3 +11,7 @@ Branch `fix/calendar-cart-layout`, based on released PR40 main `f4aab38`. User a
 ## Remaining scope
 
 Unknown SimplyBook no-creation reconciliation, production Grafana activation/contact point and analytics/Search Console/OpenGraph remain separate. Docs PR33 stays paused. PR40 passed candidate/main CI, staged and deployed production; its18 booking/HitPay sandbox settings were restored and independently read back.
+
+CI42412507412 exposed7 direct-checkout regressions: the new Review catalogue component performed an unwanted request. Replaced it with a display-only name captured during session selection and retained in the draft, plus a read-only cache fallback for older drafts. Exact request-count assertions remain unchanged. All268 component/service tests and the strict unit receipt passed after the repair; types, scoped lint/source checks passed. Footer Book/Studio links removed with the legal-link departure guard retained. Final repaired CI pending.
+
+Initial backend browser sizing probe selected a deliberately occupied demo time; corrected its fifth slot from16:10 to17:00. No product availability guard or sizing assertion changed.

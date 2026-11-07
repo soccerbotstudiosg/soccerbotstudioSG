@@ -56,6 +56,8 @@ export const draftSchema = z.object({
   mode: z.enum(["guest", "member"]).nullable(),
   accountEmail: z.string(),
   nativeServiceId: providerIdentifier.optional(),
+  // Display-only catalogue label retained with the chosen service across reloads.
+  nativeServiceName: z.string().min(1).max(256).optional(),
   players: z.number().int().min(1).max(MAX_PLAYERS),
   slots: z.array(sessionSchema).max(100),
   contact: contactSchema,
