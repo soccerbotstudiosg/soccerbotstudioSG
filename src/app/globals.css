@@ -29,8 +29,6 @@
 @theme {
   --color-player-app: #242424;
   --color-player-app-backdrop: rgb(0 0 0 / 65%);
-  --color-player-app-border: #686868;
-  --color-player-app-hover: #383838;
   --color-brand: #050a2f;
   --color-navy: var(--color-brand);
   --color-action: var(--color-brand);
@@ -2735,14 +2733,6 @@
         var(--color-surface)
       );
     }
-    .access-option:has(button:not(:disabled)):hover {
-      border-color: var(--color-identity);
-      background: color-mix(
-        in srgb,
-        var(--color-identity) 8%,
-        var(--color-surface)
-      );
-    }
   }
   .session-product-details {
     display: grid;
@@ -3073,33 +3063,34 @@
     margin-top: 0;
   }
   .player-app-dialog {
-    background: var(--color-player-app);
-    color: white;
+    background: var(--color-surface);
+    color: var(--color-ink);
   }
   .player-app-dialog::backdrop {
     background: var(--color-player-app-backdrop);
   }
   .player-app-close:focus-visible {
     outline: none;
-    box-shadow: 0 3px 0 var(--color-on-brand);
-  }
-  .player-app-dialog .app-store-link {
-    border-color: var(--color-player-app-border);
-  }
-  .player-app-dialog .app-store-link:hover {
-    background: var(--color-player-app-hover);
+    box-shadow: none;
+    color: var(--color-identity);
   }
   .player-app-dialog .dialog-title {
-    color: var(--color-on-brand);
+    padding-right: var(--icon-control-size);
+    font-weight: var(--weight-body);
   }
   .player-app-close {
-    color: var(--color-on-brand);
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: var(--color-brand);
     border: 0;
+    box-shadow: none;
+    text-decoration: none;
   }
   .player-app-close svg {
-    width: 28px;
-    height: 28px;
-    stroke-width: 2.5;
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
   }
   .app-store-links {
     display: grid;
@@ -3112,20 +3103,21 @@
     justify-content: center;
     gap: 12px;
     padding: 16px;
-    border: 1px solid var(--color-action-hover);
-    border-radius: 20px;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
     color: inherit;
+    font-size: var(--text-body);
+    font-weight: var(--weight-body);
+    line-height: var(--leading-control);
   }
   .app-store-link svg {
     width: 24px;
     height: 24px;
     flex-shrink: 0;
   }
-  .app-store-link strong {
-    font-size: var(--text-body);
-  }
   .app-store-link:hover {
-    background: var(--color-action-hover);
+    background: var(--color-brand-soft);
+    border-color: var(--color-control-border);
   }
   .summary .hint {
     margin-top: 12px;
@@ -3190,6 +3182,13 @@
   }
   .calendar-nav button:disabled {
     color: var(--color-disabled-ink);
+  }
+  @media (hover: hover) {
+    .month-picker select:not(:disabled):hover,
+    .calendar-nav .icon-button:not(:disabled):hover {
+      background: var(--color-brand-soft);
+      border-color: var(--color-focus);
+    }
   }
   .calendar-weekdays,
   .dates {

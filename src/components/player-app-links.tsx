@@ -73,7 +73,7 @@ export function PlayerAppLinks({
               </>
             )}
           </svg>
-          {!compact && <strong>{store.label}</strong>}
+          {!compact && <span>{store.label}</span>}
         </a>
       ))}
     </div>

@@ -1,28 +1,22 @@
 # Current checkpoint
 
-UI follow-up is prepared locally after owner production-sandbox testing. Broad documentation PR33 remains paused; dated evidence belongs in [Journey](docs/journey.md).
+PR34 merged as `ca02f7e` after all exact-head CI gates and staging deployment passed. Broad documentation PR33 remains paused; dated evidence belongs in [Journey](docs/journey.md).
 
 ## Current change
 
-- Branch: `fix/leave-booking-and-card-hover`, based on merged main `e23d203`.
-- App popup: title case, centred icon/label pairs and close control aligned with heading top.
-- Leave booking: header and first-step home links confirm discard; Stay preserves state. Leave clears editable draft/selection state and invalidates late UI replies, retaining existing attempt recovery snapshots and server expiry records.
-- Footer: medium widths use a compact two-column grid; app content/logo aligns with Connect With Us, with32px text rows and24px group spacing.
-- Session cards: two columns at medium widths, aligned label/amount price rows and outlet unit number on its own line.
-- Hover: enabled unselected outlet/session/time cards and account options highlight; selected/disabled states remain distinct.
-- Confirmation: centred Verified timestamp; View Full Details contains Your Sessions, Booking Contact, Order Summary and Location using Review styling, verified Total Paid and no Edit controls. Top actions and the disclaimer below remain unchanged.
-- Verification: consolidated non-browser gate passed267 tests/56 browser definitions/14 exported routes in `expiry-conflict-final-code.log`, including expiry, consent and conflict fixes. Targeted mutation checks detected both original conflict defects. Browser/device verification remains CI/owner-run.
-- Expiry: after the original checking window, return to calendar with empty cart and an affected-session red notice; keep payment/rebooking locked until server release. No extra home link or automatic cart restoration. Late payment returns to protected payment status.
-- Conflict: unindexed conflicts recheck dates, preserve unaffected selections and name only removed sessions. Reload offers another tab’s differing checkout explicitly instead of replacing the draft.
-- Review consent resets on leave/re-entry/reload while dispatched payment snapshots remain unchanged.
-- PR34 is open and ready. Initial CI42339133920 caught browser expectations that still assumed retained Review consent and implicit disclosure alignment; repairs are consolidated for the next push, including the Leave booking step-guard navigation race and confirmation selectors. Worker contracts/recovery/sustained passed. Staging remains pending; production is unchanged.
+- Branch: `fix/booking-home-label`, based on main `ca02f7e`.
+- App popup uses standard white/navy styling and regular-weight Roboto at the existing dialog/body sizes; close icon is top-right without underline. Account cards no longer hover; their buttons do. Calendar selector/arrows hover and use full month names on one row.
+- First booking step navigation label shortened from Back to home to Home to avoid mobile truncation. Later-step Back controls and confirmation actions retain their labels and behavior.
+- All site-link departures from unpaid booking routes now share the leave warning, including every footer link; confirmation preserves the clicked destination and Stay preserves selections. Payment/recovery continuations remain in-flow. Existing browser regression covers every footer link, internal destinations and a captured external new-tab handoff; no inventory change. Browser execution remains CI/owner-operated.
+- Owner considers tests A, B and C fully passed. Their detailed checklist/results were not supplied in this turn; do not infer additional provider/device acceptance. Two-tab conflict and booking-defence checks remain to be confirmed.
+- Consolidated verify:code passed267 tests, design/tooling checks and14 exported routes (`pr35-consolidated-code.log`); browser inventory remains56 definitions.
+- PR35 now includes the Home label, complete site-link departure guard, popup theme and calendar/hover corrections. Owner authorized CI, staging and merge. Initial CI42349811390 caught only an incorrect tablet native-select top-edge assertion; repaired to verify centre alignment and non-overlap. New-head CI and deployment remain pending. PR34 main verification/production deployment passed; the approved sandbox runtime settings were restored after deployment on 7 November, version `9c892f46-8ded-4dd2-9cd1-e37d82cb5efe`. Nine secrets, D1/DO and minute cron retained; public health is blocked by the workspace proxy.
 
 ## Deployed baseline
 
-- PR32 merged as `e23d203`; independent main CI42251148911 and deployment42252782624 passed. Staging source `9ea535f` has the same application tree.
-- Production runtime restored to approved HitPay sandbox testing on7 November. Missing IDENTITY_PEPPER installed after explicit owner approval; eight existing secrets/resources retained. Version `5619f5ac-f746-4aec-86aa-fde64f927c3a`.
-- Customer access, sandbox checkout/recovery/webhook and warming enabled; identity email and token refresh-ahead disabled. Workspace public health returns403; owner browser/provider acceptance pending.
-- No assistant booking/payment/cancellation/notification operations. Normal production redeployment restores closed defaults; activation is separately scoped.
+- PR34 merged as `ca02f7e`; independent main CI42341443187 and production deployment42342120335 passed. Staging had passed head8d2efcd before merge.
+- Production sandbox settings restored after the deployment reset them; version `9c892f46-8ded-4dd2-9cd1-e37d82cb5efe`. Customer access, sandbox checkout/recovery/webhook, trusted reads and warming enabled; identity email and token refresh-ahead disabled. Nine secrets/resources and minute cron retained.
+- Workspace public health is blocked by the proxy. No assistant booking/payment/cancellation/notification operations. Normal production deployment still restores closed defaults.
 
 ## Documentation branch
 

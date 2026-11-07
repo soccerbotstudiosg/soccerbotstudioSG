@@ -54,6 +54,7 @@ function PaymentContinuation({
       <a
         className="button wide"
         href={url}
+        data-booking-continuation
         referrerPolicy="no-referrer"
         onClick={(event) => {
           if (checkoutNow(clock, true) >= expiresAtMs) {
@@ -686,6 +687,7 @@ export function ProtectedConfirmation({
                 <a
                   className="button wide"
                   href={current.checkout.url}
+                  data-booking-continuation
                   target="_blank"
                   rel="noopener noreferrer"
                   referrerPolicy="no-referrer"
