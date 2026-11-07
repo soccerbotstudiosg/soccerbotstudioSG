@@ -90,6 +90,10 @@ Saved contact details are not booking confirmation. Basket items have distinct b
 
 ## 6. Checkout creation and rejected or uncertain writes
 
+When SimplyBook creation is uncertain and no reliable booking reference exists, the original attempt stays protected; an error or matching contact details cannot prove that no booking was created. Automatic return-to-calendar / fresh booking after leaving Home remains pending a provider-backed no-creation result. Do not treat that requested behavior as implemented for unknown writes.
+
+For HitPay link recovery, show Preparing payment while recovering the same request. After one creation attempt plus four failed read-only recovery attempts, show Payment Unavailable: “Our payment provider may be temporarily unavailable. Please try again later.” Retain the unresolved reservation; do not expose another payment or assume it is cancelled. Emit the prepared manual-check telemetry event. An authenticated later payment remains eligible for reconciliation.
+
 After a verified selection rejection or blocked checkout window, this tab retains its editable calendar draft across reload, including an empty cart. A tab-local navigation preference prevents automatic adoption of the protected browser session's other checkout; an explicit existing-checkout link remains available when authorized. Matching contact details or selections do not override that preference. Starting a new retained attempt restores normal reload recovery. This preference is not authorization and never cancels or releases another tab's reservation.
 
 Classify from protected evidence, not HTTP status alone. Same studio time is shared regardless of trainer or service. See the [recovery decision contract](api-contracts.md#conflict-recovery-decision-contract).

@@ -130,6 +130,7 @@ export interface IdentityService {
 }
 export type CheckoutContext = {
   bookingIssue?: "incomplete";
+  paymentIssue?: "link_recovering" | "link_unavailable";
   /** Client-only server time anchor; never serialized as booking authority. */
   clock?: { epochMs: number; monotonicMs: number; uncertaintyMs: number };
   customerConfirmation?: z.infer<typeof receiptSchema>;

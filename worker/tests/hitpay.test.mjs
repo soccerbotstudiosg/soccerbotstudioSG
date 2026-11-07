@@ -901,6 +901,81 @@ test("HitPay creation persists intent before dispatch and never repeats an uncer
   assert.equal(posts, 1);
   assert.equal((await row()).request_id, null);
   assert.equal((await row()).reason, "hitpay_http_503_other");
+  let searches = 0;
+  handler = async (request) => {
+    assert.equal(request.method, "GET");
+    assert.ok(new URL(request.url).searchParams.has("search"));
+    searches++;
+    return Response.json({ data: [] });
+  };
+  for (let count = 1; count <= 4; count++) {
+    await recover();
+    assert.equal((await row()).tries, count);
+    assert.equal((await row()).state, count === 4 ? "manual_review" : "due");
+  }
+  assert.equal((await row()).reason, "payment_link_unavailable");
+  assert.equal(searches, 4);
+  await recover();
+  assert.equal(searches, 4);
+  assert.equal(posts, 1);
+  const incidents = logs
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter((line) => line?.event === "payment_link_unavailable");
+  assert.equal(incidents.length, 1);
+  assert.equal(incidents[0].attempts, 5);
+  assert.equal(incidents[0].action, "check_hitpay_manually");
+  assert.match(incidents[0].recoveryKey, /^[a-f0-9]{64}$/);
+  assert.ok(!JSON.stringify(incidents).includes(attemptId));
+  const token = "a".repeat(64);
+  await db
+    .prepare(
+      "INSERT INTO guest_access(capability_hash,owner_id,issued_ms,expires_ms) VALUES(?,?,?,?)",
+    )
+    .bind(
+      createHash("sha256").update(token).digest("hex"),
+      "synthetic-owner",
+      Date.now() - 1000,
+      Date.now() + 3600000,
+    )
+    .run();
+  const context = await mf.dispatchFetch(
+    origin + `/api/attempts/${attemptId}/checkout`,
+    {
+      headers: { cookie: `__Host-soccerbot-access=${token}` },
+    },
+  );
+  assert.equal(context.status, 200);
+  const result = await context.json();
+  assert.equal(result.paymentIssue, "link_unavailable");
+  assert.deepEqual(result.checkout, { state: "unavailable" });
+  assert.equal(
+    searches,
+    4,
+    "customer context reads never restart provider recovery",
+  );
+  // A new authenticated payment receipt must still permit financial reconciliation.
+  assert.equal(
+    (
+      await send(
+        JSON.stringify({
+          id: requestId,
+          reference_number: `soccerbot-dev-${attemptId}`,
+          status: "completed",
+        }),
+      )
+    ).status,
+    202,
+  );
+  assert.equal((await row()).state, "due");
+  const claim = await (await mf.dispatchFetch(origin + "/test/claim")).json();
+  assert.equal(claim.state, "claimed");
+  assert.equal(claim.tries, 5);
 });
 test("HitPay creation recovery searches exact reference without another POST", async () => {
   let posts = 0,

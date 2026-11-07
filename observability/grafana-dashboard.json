@@ -386,6 +386,35 @@
           "placement": "bottom"
         }
       }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "HitPay payment-link failures \u2014 manual check required",
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "${DS_TEMPO}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ resource.service.name = \"soccerbot-dev\" && span.soccerbot.event = \"payment_link_unavailable\" } | count_over_time()",
+          "metricsQueryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
     }
   ]
 }

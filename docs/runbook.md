@@ -94,6 +94,16 @@ Activation checklist for the authorised operator:
 4. Use an arranged diagnostic observation to verify actual Tempo ingestion, correct service, dashboard queries, redaction and overhead. Export HTTP success alone is insufficient.
 5. Configure and exercise alert receivers, retention and an independent availability/TLS check. The dashboard JSON contains panels, **not provisioned alert rules**. Record the accepted setup and owner.
 
+### Prepared HitPay link-failure alert
+
+`payment_link_unavailable` is emitted after the initial create attempt plus four read-only recovery attempts fail to recover a valid request. The event follows the durable manual-review decision; ordinary reloads do not restart attempts or emit it again. Authenticated novel webhook evidence can still resume financial reconciliation. This is a suspected provider/link incident, not proof of an outage or of no payment.
+
+Input: structured Worker JSON with `event`, UUID `correlationId`, `provider: "hitpay"`, `action: "check_hitpay_manually"`, `attempts: 5`, `outcome: "error"` and SHA-256 `recoveryKey`. No contact, raw provider payload, API key, booking ID or checkout URL is included.
+
+Output: the Tail Worker reconstructs an OTLP error span with `soccerbot.event=payment_link_unavailable`, `soccerbot.provider=hitpay`, `soccerbot.action=check_hitpay_manually`, `soccerbot.attempts=5`, `soccerbot.recovery_key` and `soccerbot.correlation_id`. The event bypasses success sampling, subject to existing export bounds. This remains Tempo trace output, not a Loki log stream. The prepared dashboard includes its count query.
+
+Future alert rule: evaluate `{ resource.service.name = "soccerbot-dev" && span.soccerbot.event = "payment_link_unavailable" } | count_over_time()` over five minutes, once per minute, alert when count is greater than zero. Route to the owner's **future Grafana contact point**, which is not configured. Use the accepted production service mapping when production export is prepared; the existing exporter still only accepts the developer producer. Alert text: “HitPay payment link unavailable after five attempts. Check HitPay manually; reconcile the original attempt before releasing or retrying.” Deduplicate notifications by service and alert rule; use the correlation/recovery key to inspect individual incidents. No-data is unknown telemetry health, not provider recovery. No receiver, rule, Tail attachment or production activation is claimed by these source changes.
+
 ### What is exported and what it means
 
 All exported attributes below use the `soccerbot.` prefix; in TraceQL they appear as `span.soccerbot.<field>`. Each admitted diagnostic requires a valid correlation UUID. Only allowlisted, bounded numeric/string fields are exported; additional source log fields may be intentionally omitted.

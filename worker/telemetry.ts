@@ -81,11 +81,28 @@ export function sanitizeDiagnostic(value: unknown): Fields | undefined {
     "provider_token_cache",
     "hitpay_transport_failure",
     "provider_failure",
+    "payment_link_unavailable",
   ]);
   if (!result.event) return;
   metrics(result, "", source, ["durationMs"]);
   choice(result, "outcome", source.outcome, ["ok", "error"]);
-  if (source.event === "provider_transport_timing") {
+  if (source.event === "payment_link_unavailable") {
+    if (
+      source.provider !== "hitpay" ||
+      source.action !== "check_hitpay_manually" ||
+      source.attempts !== 5
+    )
+      return;
+    result.outcome = "error";
+    result.provider = "hitpay";
+    result.action = "check_hitpay_manually";
+    result.attempts = 5;
+    if (
+      typeof source.recoveryKey === "string" &&
+      /^[a-f0-9]{64}$/.test(source.recoveryKey)
+    )
+      result.recovery_key = source.recoveryKey;
+  } else if (source.event === "provider_transport_timing") {
     choice(result, "operation", source.operation, [
       "public_auth",
       "admin_auth",

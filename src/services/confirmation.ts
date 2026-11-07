@@ -49,6 +49,7 @@ const contextSchema = z.strictObject({
     .strictObject({ status: z.literal("recorded"), paidAtMs: instant })
     .optional(),
   bookingIssue: z.literal("incomplete").optional(),
+  paymentIssue: z.enum(["link_recovering", "link_unavailable"]).optional(),
   attemptId: idSchema,
   mode: z.enum(["synthetic", "live"]),
   checkout: z.discriminatedUnion("state", [

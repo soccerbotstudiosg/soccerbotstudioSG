@@ -1388,6 +1388,7 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   vi.useFakeTimers();
   let incomplete = true;
   let denied = false;
+  let paymentIssue: "link_recovering" | "link_unavailable" | undefined;
   const fetcher = vi.fn(async (url: string) =>
     denied
       ? new Response(null, { status: 403 })
@@ -1397,6 +1398,7 @@ it("incomplete provider booking shows reservation recovery without a payment spi
                 attemptId: first,
                 mode: "live",
                 ...(incomplete ? { bookingIssue: "incomplete" } : {}),
+                ...(paymentIssue ? { paymentIssue } : {}),
                 checkout: { state: "unavailable" },
                 summary: {
                   players: 1,
@@ -1490,4 +1492,34 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   });
   expect(fetcher).toHaveBeenCalledTimes(deniedReads);
   revoked.unmount();
+  denied = false;
+  incomplete = false;
+  paymentIssue = "link_recovering";
+  const paymentRecovery = render(
+    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+  );
+  await act(async () => {});
+  expect(
+    screen.getByRole("status", { name: "Preparing payment…" }),
+  ).toBeVisible();
+  paymentIssue = "link_unavailable";
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(
+    screen.getByRole("heading", { name: "Payment Unavailable" }),
+  ).toBeVisible();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Our payment provider may be temporarily unavailable. Please try again later.",
+  );
+  expect(
+    screen.queryByRole("status", { name: "Preparing payment…" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: /payment|checkout/i }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByLabelText("Current booking summary"),
+  ).not.toBeInTheDocument();
+  paymentRecovery.unmount();
 });

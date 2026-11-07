@@ -8,6 +8,10 @@ Branch `fix/confirmation-section-order`, based on main `fef8751` (released PR39)
 
 PR40 contains the confirmation/calendar presentation changes. Added a conflict-reload fix: this tab retains its rejected calendar draft rather than automatically adopting another tab’s current checkout. All82 focused checkout/storage/confirmation tests pass. Existing browser assertions cover disclosure visibility, session alignment and active-date highlighting; browser execution remains CI/owner-run. No test titles or inventories changed. Scoped lint, source integrity, TypeScript and formatting passed; no staging or production change for this candidate. Final CI is pending.
 
+## Payment-link recovery follow-up
+
+Prepared one creation plus four read-only recovery attempts, a dedicated unavailable screen, redacted OTEL incident input/output and dashboard query. Future Grafana contact point is explicitly not set; no monitoring activation. User authorized CI, staging then merge after consolidation. 58 HitPay/telemetry runtime tests and26 confirmation tests passed, plus the extended context/webhook case and types/lint/source checks. Unknown SimplyBook creation release remains unsupported without provider-backed no-creation proof.
+
 ## Remaining scope
 
 Calendar date-switch scroll/flicker diagnosis and full selected-slot highlighting remain pending. Unknown provider creation reconciliation, production Grafana activation and analytics/Search Console/OpenGraph remain separate scope. Docs PR33 remains paused.
