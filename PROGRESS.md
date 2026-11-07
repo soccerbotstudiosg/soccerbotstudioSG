@@ -16,4 +16,6 @@ CI42412507412 exposed7 direct-checkout regressions: the new Review catalogue com
 
 Initial backend browser sizing probe selected a deliberately occupied demo time; corrected its fifth slot from16:10 to17:00. No product availability guard or sizing assertion changed.
 
-CI42413247476 passed the five-session viewport checks in Chromium/WebKit. Its footer alignment assertion still indexed the removed fourth/fifth Services links; updated to assert3/3/4 row counts and every row on the unchanged30px pitch. Repair is test-only; all remaining alignment/content checks retained.
+CI42413247476 passed the five-session viewport checks in Chromium/WebKit. Its footer alignment assertion still indexed the removed fourth/fifth Services links; updated to assert3/3/4 row counts and every row on the existing measured row spacing (independently bounded29–31px). Repair is test-only; all remaining alignment/content checks retained.
+
+CI42413890706 exposed that the footer’s actual pitch is29.6px (24px row plus5.6px gap), not exactly30px. The cross-column assertion now uses the observed reference pitch, retaining the29–31px spacing bounds, exact counts and1px alignment tolerance. No CSS change.

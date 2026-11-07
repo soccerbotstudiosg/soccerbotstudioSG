@@ -369,7 +369,9 @@ test("public routes remove staff access and fit the viewport", async ({
     for (const group of informationRows) {
       for (const [index, top] of group.entries()) {
         expect(
-          Math.abs(top - (informationRows[0][0] + index * 30)),
+          Math.abs(
+            top - (informationRows[0][0] + index * footerRows.rowSpacing),
+          ),
         ).toBeLessThanOrEqual(1);
       }
     }
