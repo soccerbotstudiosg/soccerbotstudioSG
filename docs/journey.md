@@ -5234,3 +5234,9 @@ The failed production checkout reached SimplyBook creation but not HitPay. Its g
 Automatic approval review rejected a proposed automatic-release policy because the RPC-code whitelist did not establish absence of booking side effects. Revert that proposal and retain the original attempt/effect journal. No production repair or provider write was performed. Operator-verified recovery remains an unresolved operational decision; polling alone does not repair the reference-less attempt.
 
 Validation of this follow-up: all64 combined-checkout Worker tests passed without skips, including the five RPC-diagnostic scenarios. Worker/app TypeScript, scoped ESLint, source/Worker boundaries, exact Worker inventory and formatting passed. Retain `/tmp/rpc-diagnostics-worker-supported.log`; browser assertions await exact-head CI.
+
+### 7Nov2026 — retain provider failures in telemetry
+
+User identified that unknown provider errors must remain diagnosable and potentially feed Grafana. Inspection found `provider_failure` was not in the Tail Worker allowlist, so even existing Cloudflare error events were dropped from export. Add that event with fixed operation/reason/classification labels, HTTP status, and any signed safe-integer RPC code. Unknown text categories become `unknown` without dropping the failure. Mark the event as an error so it survives zero success sampling; existing bounded export limits remain. Raw provider message/body storage is still absent and is not claimed as implemented. Production Grafana remains unconfigured under the existing runbook boundary.
+
+Extend the existing telemetry regression with known/unknown negative and positive RPC codes, unknown categories, sensitive-data exclusion and zero-success-sampling export. All11 telemetry tests passed; no test titles/inventory or fixtures changed. Worker type/lint/source checks are recorded with the publication receipt. No booking recovery or release policy changes.

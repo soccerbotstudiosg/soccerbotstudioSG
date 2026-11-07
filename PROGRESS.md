@@ -2,7 +2,9 @@
 
 ## Current change
 
-PR37, branch `fix/calendar-context-type-size`, base/main `58c40e1`. Published `59a8f8f` consolidates18px bold calendar context, sticky desktop cart, compact rolling Week/Month calendar, cart-day colours and message-only incomplete-checkout polling. Its full non-browser verification passed268 tests. CI42361412018 passed frontend and Worker jobs, but live-email browser cases still expected the superseded error message. The follow-up updates those expectations while preserving no-replay, no-payment and original-deadline assertions, and adds numeric provider RPC diagnostics.
+PR37, branch `fix/calendar-context-type-size`, base/main `58c40e1`. Published `8fa5974` consolidates18px bold calendar context, sticky desktop cart, compact rolling Week/Month calendar, cart-day colours and message-only incomplete-checkout polling. Its full non-browser verification passed268 tests. CI42361412018 passed frontend and Worker jobs, but live-email browser cases still expected the superseded error message. The follow-up updates those expectations while preserving no-replay, no-payment and original-deadline assertions, and adds numeric provider RPC diagnostics.
+
+The next follow-up fixes the Grafana allowlist dropping `provider_failure`: retain signed numeric RPC codes and classify unknown text categories without dropping events. All11 telemetry tests passed, including sensitive-field exclusion and failure retention at zero success sampling. Raw provider response storage and production Grafana activation are not included.
 
 ## Failure audit
 

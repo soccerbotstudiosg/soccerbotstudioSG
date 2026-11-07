@@ -73,6 +73,43 @@ test("telemetry allowlist excludes secrets and rejects arbitrary labels identiti
 });
 
 test("telemetry samples successful correlations consistently and retains detected failures at zero success sampling", async () => {
+  for (const rpcCode of [-32054, -999999, 123456]) {
+    const provider = {
+      event: "provider_failure",
+      correlationId,
+      operation: "book",
+      failureClass: "rpc_error",
+      reason: "provider_rpc_failed",
+      httpStatus: 200,
+      rpcCode,
+      message: "PRIVATE CUSTOMER SECRET",
+      response: { token: "PRIVATE CUSTOMER SECRET" },
+    };
+    const safe = sanitizeDiagnostic(provider);
+    assert.equal(safe.rpc_code, rpcCode);
+    assert.equal(safe.http_status, 200);
+    assert.equal(safe.operation, "book");
+    assert.equal(safe.outcome, "error");
+    assert.doesNotMatch(JSON.stringify(safe), /PRIVATE|message|response|token/);
+    const exported = await telemetryPayload([envelope([provider])], 0);
+    assert.equal(exported.spans.length, 1);
+    assert.equal(exported.spans[0].status.code, 2);
+  }
+  const unknown = sanitizeDiagnostic({
+    event: "provider_failure",
+    correlationId,
+    reason: "PRIVATE NEW ERROR",
+    operation: "PRIVATE PATH",
+    failureClass: "PRIVATE CLASS",
+    rpcCode: "SECRET",
+  });
+  assert.equal(unknown.reason, "unknown");
+  assert.equal(unknown.operation, "unknown");
+  assert.equal(unknown.failureClass, "unknown");
+  assert.equal(unknown.outcome, "error");
+  assert.equal(unknown.rpc_code, undefined);
+  assert.doesNotMatch(JSON.stringify(unknown), /PRIVATE|SECRET/);
+
   assert.equal(
     (await telemetryPayload([envelope([record])], 0)).spans.length,
     0,
