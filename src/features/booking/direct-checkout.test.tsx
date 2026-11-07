@@ -1182,6 +1182,52 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
   expect(screen.getByTestId("conflict-notice")).toHaveTextContent(
     "Removed unavailable sessions: Tue, 20 Oct 2026, 12:00–12:40.",
   );
+  cleanup();
+  // The other tab retains an authorized checkout with identical contact data.
+  // Reloading this rejected tab must preserve both empty and edited carts.
+  const restore = vi.fn(async (): Promise<Attempt> => ({
+    id,
+    draft,
+    status: "checking",
+    outcome: "pending",
+    checkUntil: Date.now() + 600000,
+    booking: null,
+  }));
+  function ReloadProbe() {
+    const state = useBooking();
+    return (
+      <>
+        <output data-testid="reload-attempt">
+          {state.attempt?.id ?? "none"}
+        </output>
+        <output data-testid="reload-cart">
+          {JSON.stringify(state.draft.slots)}
+        </output>
+      </>
+    );
+  }
+  for (const slots of [[], [other], draft.slots]) {
+    saveLiveDraft({ ...draft, slots });
+    render(
+      <BookingProvider
+        bookingService={{
+          ...liveBookingService,
+          restore,
+          calendar: undefined,
+          publicCalendar: undefined,
+        }}
+        identityService={{ ...demoCustomerIdentity, mode: "live" }}
+      >
+        <ReloadProbe />
+      </BookingProvider>,
+    );
+    await act(async () => {});
+    expect(screen.getByTestId("reload-attempt")).toHaveTextContent("none");
+    expect(JSON.parse(screen.getByTestId("reload-cart").textContent!)).toEqual(
+      slots,
+    );
+    cleanup();
+  }
 });
 
 it("keeps booking UI unready until protected restoration finishes", async () => {

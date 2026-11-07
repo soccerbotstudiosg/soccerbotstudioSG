@@ -90,6 +90,8 @@ Saved contact details are not booking confirmation. Basket items have distinct b
 
 ## 6. Checkout creation and rejected or uncertain writes
 
+After a verified selection rejection or blocked checkout window, this tab retains its editable calendar draft across reload, including an empty cart. A tab-local navigation preference prevents automatic adoption of the protected browser session's other checkout; an explicit existing-checkout link remains available when authorized. Matching contact details or selections do not override that preference. Starting a new retained attempt restores normal reload recovery. This preference is not authorization and never cancels or releases another tab's reservation.
+
 Classify from protected evidence, not HTTP status alone. Same studio time is shared regardless of trainer or service. See the [recovery decision contract](api-contracts.md#conflict-recovery-decision-contract).
 
 ```mermaid
