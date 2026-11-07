@@ -5224,3 +5224,13 @@ Read-only production investigation correlated the owner's approximately16:40SGT 
 The audit found the scheduler eligibility gap documented in Technical behavior: unknown creation with no references/payment row is not automatically reconciled, and protected context polling does not change that. Further work needs an authoritative absence/discovery contract and a fenced resolution path; do not reset this attempt based on elapsed time or an empty search alone. Existing provider-failure logging cannot recover the missing raw error retrospectively. HitPay flags were enabled; the failed attempt did not reach HitPay.
 
 PR36 delivery receipt reconciled: final head `620c0a6` passed CI42354309504 and staging42355133030, then merged `58c40e1`; main CI42355282429 and production deployment42355942406 passed. Approved sandbox settings were restored with runtime version `8ce35b36-ed42-412a-b897-553f5dc1c9e6`. The expanded PR37 candidate is not deployed. Analytics/Search Console/OpenGraph scope remains undecided and unchanged.
+
+### 7Nov2026 — PR37 provider diagnostics and CI follow-up
+
+The new calendar/recovery candidate `59a8f8f` passed frontend and Worker jobs in CI42361412018. Live-email browser failures all expected the superseded incomplete-booking sentence. Update those exact-copy assertions and assert the reservation spinner after the old checking budget expires; preserve existing effect, deadline, no-payment and no-replay checks. Browser revalidation remains CI-owned.
+
+The failed production checkout reached SimplyBook creation but not HitPay. Its generic RPC failure did not retain the exact provider reason. Add correlated safe-integer RPC codes to private diagnostics and classify malformed/foreign/ambiguous envelopes separately without retaining upstream messages or customer data. Five synthetic cases cover rejection, internal error, foreign request ID, malformed code and ambiguous result/error; all remain protected and cannot expire/replay solely from this diagnostic.
+
+Automatic approval review rejected a proposed automatic-release policy because the RPC-code whitelist did not establish absence of booking side effects. Revert that proposal and retain the original attempt/effect journal. No production repair or provider write was performed. Operator-verified recovery remains an unresolved operational decision; polling alone does not repair the reference-less attempt.
+
+Validation of this follow-up: all64 combined-checkout Worker tests passed without skips, including the five RPC-diagnostic scenarios. Worker/app TypeScript, scoped ESLint, source/Worker boundaries, exact Worker inventory and formatting passed. Retain `/tmp/rpc-diagnostics-worker-supported.log`; browser assertions await exact-head CI.

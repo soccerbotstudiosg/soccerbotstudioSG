@@ -259,6 +259,8 @@ Evidence: [combined-hold tests](../../worker/tests/combined-hold.test.mjs), [pro
 
 ## 7. Recovery, confirmation, exports and completed exit
 
+Correlated SimplyBook JSON-RPC errors retain a safe integer `rpcCode` in private checkout diagnostics and provider logs. Foreign IDs, malformed codes and simultaneous non-null result/error envelopes retain only the generic failure. Raw provider messages/data are discarded; no numeric code alone releases or replays a booking.
+
 Incomplete creation is distinct from payment recovery. `checkoutContext` returns `bookingIssue: incomplete` for a recovery-required attempt without an association or payment record. `ProtectedConfirmation` repeatedly reads that protected context without a one-minute cutoff, aborts stale/unmounted work, respects returned polling intervals and throttling, backs off transient failures, and removes retained context on access denial. These GETs observe D1 state; they do not trigger provider creation or provider reconciliation.
 
 The current scheduler cannot automatically settle a creation failure with no retained booking keys and no HitPay row: `ongoingReadbackDue` requires an association and excludes the HitPay route, while `runScheduledRecovery` selects HitPay work from `hitpay_payments`. `recoverNativeAssociation` requires one retained provider key for every intended session. An empty administrative booking search is investigative evidence, not an implemented authoritative “no booking created” transition. Such attempts remain unresolved pending scoped operator/provider reconciliation; browser timeouts, retries and calendar availability must not clear them or authorize another write.

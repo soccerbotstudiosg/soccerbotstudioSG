@@ -1720,7 +1720,7 @@ async function uncertainHolding(
       fault === "readback"
         ? page.getByRole("status", { name: "Checking payment…", exact: true })
         : page.getByText(
-            "Unable to complete this booking. Contact the studio for help with this reservation.",
+            "We couldn’t complete your booking. Please try again shortly.",
             { exact: true },
           ),
     ).toBeVisible();
@@ -2319,7 +2319,7 @@ async function failedBatch(page: Page, unknown: boolean) {
     await page.reload();
     await expect(
       page.getByText(
-        "Unable to complete this booking. Contact the studio for help with this reservation.",
+        "We couldn’t complete your booking. Please try again shortly.",
         { exact: true },
       ),
     ).toBeVisible();
@@ -2384,9 +2384,15 @@ test("real API exhausted browser checking window retains the original deadline a
       .click();
     await expect(
       page.getByText(
-        "Unable to complete this booking. Contact the studio for help with this reservation.",
+        "We couldn’t complete your booking. Please try again shortly.",
         { exact: true },
       ),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("status", {
+        name: "Checking your reservation…",
+        exact: true,
+      }),
     ).toBeVisible();
     await assertNoPaymentOrConfirmation(page, mechanism);
     expect(

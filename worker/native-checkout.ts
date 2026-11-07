@@ -70,7 +70,11 @@ import {
   compensateNativeAttempt,
 } from "./native-adapter";
 import { ProviderSession, type ProviderControl } from "./provider-session";
-import { providerSecrets, type NativeExchange } from "./provider-transport";
+import {
+  ProviderRpcError,
+  providerSecrets,
+  type NativeExchange,
+} from "./provider-transport";
 
 // Both operator experiments and ongoing customer checkout use one-use grants.
 // Customer grants are issued after authenticated consent and fresh slot reads.
@@ -421,6 +425,7 @@ export async function executeNativeCheckout(options: {
           "identity" | "allowance" | "prebooking" | "execution" | "cleanup";
         sessionIndex?: number;
         code: string;
+        rpcCode?: number;
         validation?: ReturnType<typeof nativeValidationReason>;
         operation?: typeof lastOperation;
         representation?: typeof representation;
@@ -439,6 +444,7 @@ export async function executeNativeCheckout(options: {
       stage,
       sessionIndex,
       code: safeNativeFailure(error),
+      ...(error instanceof ProviderRpcError ? { rpcCode: error.rpcCode } : {}),
       validation: nativeValidationReason(error),
       operation: lastOperation,
       representation,
