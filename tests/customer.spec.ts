@@ -1990,7 +1990,15 @@ test("hero location opens its map only on demand without entering booking and he
     exact: true,
   });
   await expect(location.locator("strong")).toHaveCSS("font-size", "18px");
-  await expect(location.locator("small")).toHaveCSS("font-size", "14px");
+  const mobileAddress = (page.viewportSize()?.width ?? 1280) <= 700;
+  await expect(location.locator("small")).toHaveCSS(
+    "font-size",
+    mobileAddress ? "13px" : "14px",
+  );
+  await expect(location.locator("small")).toHaveCSS(
+    "color",
+    mobileAddress ? "rgb(255, 255, 255)" : "rgb(155, 180, 201)",
+  );
   const target = await location.boundingBox();
   expect(target?.height).toBeGreaterThanOrEqual(68);
   // The padded corner must open the map rather than the underlying hero.
