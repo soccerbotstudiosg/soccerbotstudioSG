@@ -1163,6 +1163,24 @@ test("leave booking uses equal-width sentence-case actions with home left and st
   expect(actions.map((action) => action.casing)).toEqual(["none", "none"]);
   await dialog.getByRole("button", { name: "Stay", exact: true }).click();
   await expect(page).toHaveURL(/\/book\/details\/$/);
+  const beforeFooter = await page.evaluate(
+    () => JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!).draft,
+  );
+  const footerLinks = page.locator(".site-footer a[href]");
+  const footerCount = await footerLinks.count();
+  expect(footerCount).toBeGreaterThan(0);
+  for (let index = 0; index < footerCount; index++) {
+    await footerLinks.nth(index).click();
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Stay", exact: true }).click();
+    await expect(page).toHaveURL(/\/book\/details\/$/);
+    expect(page.context().pages()).toHaveLength(1);
+  }
+  expect(
+    await page.evaluate(
+      () => JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!).draft,
+    ),
+  ).toEqual(beforeFooter);
   await page
     .getByRole("link", { name: "SOCCERBOTSTUDIO Singapore home" })
     .click();
@@ -1182,6 +1200,44 @@ test("leave booking uses equal-width sentence-case actions with home left and st
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Stay", exact: true }).click();
   await expect(page).toHaveURL(/\/book\/account\/$/);
+  await page
+    .locator(".site-footer")
+    .getByRole("link", { name: "Studio", exact: true })
+    .click();
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Leave booking", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/studio\/$/);
+  await page.goto(sitePath("/book/account/"));
+  // Capture the new-tab handoff without contacting the external service.
+  await page.evaluate(() => {
+    window.open = (url, target, features) => {
+      sessionStorage.setItem(
+        "leave-link-handoff",
+        JSON.stringify({ url, target, features }),
+      );
+      return null;
+    };
+  });
+  await page
+    .locator(".site-footer")
+    .getByRole("link", { name: /WhatsApp:/ })
+    .click();
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Leave booking", exact: true })
+    .click();
+  await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("leave-link-handoff")!),
+    ),
+  ).toEqual({
+    url: "https://wa.me/6590143819",
+    target: "_blank",
+    features: "noopener,noreferrer",
+  });
 });
 test("first visit offers the Player App with only store links and dismissal persists", async ({
   page,
@@ -1207,8 +1263,8 @@ test("first visit offers the Player App with only store links and dismissal pers
   for (const link of await prompt.getByRole("link").all()) {
     await expect(link).toHaveCSS("justify-content", "center");
     await expect(link).toHaveCSS("align-items", "center");
-    await expect(link).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(link.locator("svg")).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(link).toHaveCSS("color", "rgb(16, 22, 54)");
+    await expect(link.locator("svg")).toHaveCSS("color", "rgb(16, 22, 54)");
   }
   for (const [name, href] of storeDestinations) {
     await expect(
@@ -1222,12 +1278,31 @@ test("first visit offers the Player App with only store links and dismissal pers
     name: "Close dialog",
     exact: true,
   });
-  await expect(prompt).toHaveCSS("background-color", "rgb(36, 36, 36)");
+  await expect(prompt).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(prompt.locator(".dialog-title")).toHaveCSS(
+    "font-family",
+    /Roboto/,
+  );
+  await expect(prompt.locator(".dialog-title")).toHaveCSS("font-size", "24px");
+  await expect(prompt.locator(".dialog-title")).toHaveCSS("font-weight", "400");
+  for (const label of await prompt.locator(".app-store-link span").all()) {
+    await expect(label).toHaveCSS("font-size", "16px");
+    await expect(label).toHaveCSS("font-weight", "400");
+  }
+  const placement = await close.evaluate((button) => {
+    const dialog = button.closest("dialog")!.getBoundingClientRect();
+    const rect = button.getBoundingClientRect();
+    return { top: rect.top - dialog.top, right: dialog.right - rect.right };
+  });
+  expect(placement.top).toBeCloseTo(13, 0);
+  expect(placement.right).toBeCloseTo(13, 0);
   await close.focus();
   await expect(close).toHaveCSS("outline-style", "none");
   await expect(close).toHaveCSS("border-top-width", "0px");
   await expect(close).toHaveCSS("border-radius", "0px");
-  await expect(close).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(close).toHaveCSS("color", "rgb(23, 96, 120)");
+  await expect(close).toHaveCSS("box-shadow", "none");
+  await expect(close).toHaveCSS("text-decoration-line", "none");
   await close.click();
   for (const [name, href] of storeDestinations) {
     await expect(
@@ -1428,6 +1503,21 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(guest).toHaveCSS("background-color", brand);
   await expect(guest).toHaveCSS("text-transform", "none");
   await expect(guest).toHaveCSS("font-size", "16px");
+  if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
+    const card = page.locator(".access-option").filter({ has: guest });
+    const background = await card.evaluate(
+      (node) => getComputedStyle(node).backgroundColor,
+    );
+    const border = await card.evaluate(
+      (node) => getComputedStyle(node).borderColor,
+    );
+    await card.getByRole("heading").hover();
+    await expect(card).toHaveCSS("background-color", background);
+    await expect(card).toHaveCSS("border-color", border);
+    await guest.hover();
+    await expect(guest).toHaveCSS("background-color", "rgb(32, 41, 87)");
+    await expect(card).toHaveCSS("background-color", background);
+  }
   await guest.click();
   await pageHeading("Your session");
   await page
@@ -1452,6 +1542,24 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".player-selection")).toBeVisible();
   await page.getByRole("link", { name: "See available times" }).click();
   await pageHeading("Select dates and times");
+  const monthPicker = page.getByRole("combobox", { name: "Calendar month" });
+  await expect(monthPicker.locator("option:checked")).toHaveText(
+    dateLabel(DEMO_TODAY, { month: "long", year: "numeric" }),
+  );
+  const monthBox = await monthPicker.boundingBox();
+  const navBox = await page.locator(".calendar-nav").boundingBox();
+  expect(monthBox!.y).toBeCloseTo(navBox!.y, 0);
+  expect(monthBox!.x + monthBox!.width).toBeLessThan(navBox!.x);
+  if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
+    for (const control of [
+      monthPicker,
+      page.getByRole("button", { name: "Next month", exact: true }),
+    ]) {
+      await control.hover();
+      await expect(control).toHaveCSS("background-color", "rgb(238, 240, 247)");
+      await expect(control).toHaveCSS("border-top-color", "rgb(86, 102, 168)");
+    }
+  }
   await expect(page.locator(".calendar-weekdays span").first()).toHaveCSS(
     "font-size",
     "12px",

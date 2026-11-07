@@ -255,7 +255,7 @@ export function TimeStep() {
               {Array.from({ length: maxMonthOffset + 1 }, (_, i) => (
                 <option key={i} value={i}>
                   {dateLabel(monthAt(today, i), {
-                    month: "short",
+                    month: "long",
                     year: "numeric",
                   })}
                 </option>

@@ -16,7 +16,7 @@ const palettePairs = [
   ["--color-muted", "--color-paper", 4.5],
   ["--color-muted", "--color-brand-soft", 4.5],
   ["--color-on-brand", "--color-player-app", 4.5],
-  ["--color-on-brand", "--color-player-app-hover", 4.5],
+  ["--color-ink", "--color-brand-soft", 4.5],
   ["--color-on-brand", "--color-action", 4.5],
   ["--color-on-brand", "--color-action-hover", 4.5],
   ["--color-on-brand-muted", "--color-brand", 4.5],

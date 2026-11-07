@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ADDRESS, BOOKING_SUPPORT, CONTACT, LOCATION } from "@/domain/catalog";
-import { sitePath } from "@/content/site-path";
+import { siteBasePath, sitePath } from "@/content/site-path";
 import { darkLogo, logo, singaporeFlag } from "@/content/media";
 import { useBooking } from "@/features/booking/provider";
 import { Dialog } from "./dialog";
@@ -17,7 +17,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname(),
     router = useRouter(),
     booking = useBooking();
-  const [dialog, setDialog] = useState<"leave" | null>(null);
+  const [dialog, setDialog] = useState<{
+    href: string;
+    local: boolean;
+    newTab: boolean;
+  } | null>(null);
   const [leavingFrom, setLeavingFrom] = useState<string | null>(null);
   if (leavingFrom && pathname !== leavingFrom) setLeavingFrom(null);
   useEffect(() => {
@@ -45,12 +49,57 @@ export function SiteShell({ children }: { children: ReactNode }) {
       else root.style.removeProperty("--site-header-height");
     };
   }, []);
-  function home(event: React.MouseEvent<HTMLElement>) {
-    if (pathname.startsWith("/book/") && booking.attempt?.status !== "paid") {
+  useEffect(() => {
+    if (!pathname.startsWith("/book/") || booking.attempt?.status === "paid")
+      return;
+    /** Confirm site-link departures before Link or booking-entry handlers run. */
+    function leaveLink(event: MouseEvent) {
+      if (event.button > 1 || event.defaultPrevented) return;
+      const link =
+        event.target instanceof Element
+          ? event.target.closest("a[href]")
+          : null;
+      if (!(link instanceof HTMLAnchorElement)) return;
+      const url = new URL(link.href);
+      const local =
+        url.origin === window.location.origin &&
+        url.pathname.startsWith(sitePath("/"));
+      const sameDocument =
+        url.origin === window.location.origin &&
+        url.pathname === window.location.pathname &&
+        url.search === window.location.search &&
+        !!url.hash;
+      // Step navigation and explicit payment/recovery continuations retain
+      // their attempt; footer Book is an intentional fresh-flow departure.
+      if (
+        sameDocument ||
+        link.hasAttribute("data-booking-continuation") ||
+        (!link.closest(".site-footer") &&
+          local &&
+          (url.pathname.startsWith(sitePath("/book/")) ||
+            url.pathname === sitePath("/confirmation/")))
+      )
+        return;
       event.preventDefault();
-      setDialog("leave");
+      event.stopPropagation();
+      setDialog({
+        href: link.href,
+        local,
+        newTab:
+          link.target === "_blank" ||
+          event.button === 1 ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.shiftKey,
+      });
     }
-  }
+    document.addEventListener("click", leaveLink, true);
+    document.addEventListener("auxclick", leaveLink, true);
+    return () => {
+      document.removeEventListener("click", leaveLink, true);
+      document.removeEventListener("auxclick", leaveLink, true);
+    };
+  }, [pathname, booking.attempt?.status]);
   return (
     <>
       <a
@@ -63,7 +112,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <nav className="nav" aria-label="Main navigation">
           <Link
             href="/"
-            onClick={home}
             className="brand"
             aria-label="SOCCERBOTSTUDIO Singapore home"
           >
@@ -96,20 +144,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
         </nav>
       </header>
-      <main
-        id="main"
-        tabIndex={-1}
-        onClickCapture={(event) => {
-          const link =
-            event.target instanceof Element ? event.target.closest("a") : null;
-          if (
-            link &&
-            link.origin === window.location.origin &&
-            link.pathname === sitePath("/")
-          )
-            home(event);
-        }}
-      >
+      <main id="main" tabIndex={-1}>
         {leavingFrom === pathname ? null : children}
       </main>
       <footer className="site-footer">
@@ -249,12 +284,28 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <button
               className="button secondary"
               onClick={() => {
-                // Unmount the step guard before clearing its prerequisites;
-                // it must not replace the intentional Home navigation.
-                setLeavingFrom(pathname);
+                const destination = new URL(dialog.href);
+                const route = dialog.local
+                  ? destination.pathname.slice(siteBasePath.length) +
+                    destination.search +
+                    destination.hash
+                  : null;
+                // Unmount the departing guard before clearing prerequisites.
+                // New-tab/app links leave the original tab safely on Home.
+                setLeavingFrom(
+                  route === pathname && !dialog.newTab ? null : pathname,
+                );
+                if (dialog.newTab)
+                  window.open(dialog.href, "_blank", "noopener,noreferrer");
                 booking.leave();
                 setDialog(null);
-                router.push("/");
+                if (dialog.newTab) router.push("/");
+                else if (route) router.push(route);
+                else {
+                  if (!["http:", "https:"].includes(destination.protocol))
+                    router.push("/");
+                  window.location.assign(dialog.href);
+                }
               }}
             >
               Leave booking

@@ -68,7 +68,7 @@ Calendar month/navigation remain on one row; there is no permanent Refresh butto
 - On phones, Time, Details and Review expose cart/trainer icons on the right of the persistent top row, with the step count centred; select either to open a right-aligned popup with a fixed header/close control and independently scrolling body.
 - The cart badge counts selected sessions; the trainer badge counts distinct selected trainers. Both pop when their count changes, except under reduced motion. Zero counts have no badge.
 - Time/Details session and instructor summaries move into those popups; Review retains all session, contact and order details in the main body. Its cart shows the same summary as Details. Continue, contact fields and consent stay on the main page. Continue is a full-width naked button without a white wrapper, separated from preceding content and stopping at its original position before the footer. Desktop keeps inline sections.
-- Calendar legend shows Available and Unavailable only; the viewed date has an outline. No cart-membership colour. Mobile live controls keep the abbreviated month, Refresh and previous/next arrows in one row.
+- Calendar legend shows Available and Unavailable only; the viewed date has an outline. No cart-membership colour. Mobile live controls keep the full month name and previous/next arrows in one row; there is no Refresh button. The selector and enabled arrows have hover feedback.
 - Time cards: single-line time and add/check above; price below right. Desktop retains all trainer names below left. Mobile has one circled information mark beside the muted hint above all slots; individual cards have no information icon: “Select to view trainers available”.
 - After the original checking window ends without payment evidence, return to the calendar with an empty cart while retaining the unresolved attempt lock. After server-confirmed unpaid reservation expiry, check affected dates but keep the cart empty; customers select again. Name removed dates/time ranges above the calendar. Failed reads say availability could not be confirmed; preserve contact and require renewed consent. Paid/uncertain payment stays protected.
 - Continue, Review booking and Continue to payment show the selected-session total before the chevron, using the existing price owner.
@@ -238,6 +238,8 @@ flowchart TD
 ```
 
 ## 16. Make another booking and Back to home
+
+During an unpaid booking step, header, footer and other site links leaving the flow open “Leave this booking?” with “Your selections and changes will not be saved.” Stay keeps the current step and selections; Leave booking clears editable data and follows the chosen destination. All footer links, including Book, share this rule. A new-tab or external-app destination leaves the original tab on Home. Step navigation and explicit payment/recovery continuation links retain their existing behavior; leaving never cancels an existing reservation or payment. Browser chrome and context-menu navigation are outside this custom-link dialog.
 
 A completed receipt remains immutable. Leaving an older receipt must not silently adopt a newer completed booking, or discard a newer unpaid/uncertain checkout.
 
