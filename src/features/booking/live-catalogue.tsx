@@ -14,10 +14,12 @@ export function LiveCatalogue({
   service = customerCatalogueService,
   onSelect,
   render,
+  renderStatus,
 }: {
   service?: CustomerCatalogueService;
   onSelect?: (serviceId: string) => void;
   render?: (data: CustomerCatalogue) => ReactNode;
+  renderStatus?: (state: "loading" | "unavailable") => ReactNode;
 }) {
   const [revision, retry] = useState(0);
   const [result, setResult] = useState<{
@@ -45,6 +47,8 @@ export function LiveCatalogue({
   }, [service, revision]);
   const current =
     result?.owner === service && result.revision === revision ? result : null;
+  if (renderStatus && (!current || current.failed))
+    return renderStatus(current?.failed ? "unavailable" : "loading");
   if (!current)
     return <BrandLoading overlay={false} compact label="Loading sessions…" />;
   if (current.failed)

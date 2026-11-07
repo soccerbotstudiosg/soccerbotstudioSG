@@ -29,7 +29,7 @@ test("live catalogue displays mutable provider labels and empty failure states w
     .fn()
     .mockRejectedValueOnce(new Error("unavailable"))
     .mockResolvedValueOnce(catalogue());
-  render(<LiveCatalogue service={{ read }} />);
+  const view = render(<LiveCatalogue service={{ read }} />);
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Unable to load available sessions. Please try again.",
   );
@@ -42,6 +42,19 @@ test("live catalogue displays mutable provider labels and empty failure states w
   expect(
     screen.getByText(/Online booking is not available yet/),
   ).toBeInTheDocument();
+  const unavailable = { read: vi.fn().mockRejectedValue(new Error("offline")) };
+  view.rerender(
+    <LiveCatalogue
+      service={unavailable}
+      renderStatus={(state) => <p>Session details: {state}</p>}
+    />,
+  );
+  expect(screen.getByText("Session details: loading")).toBeInTheDocument();
+  await screen.findByText("Session details: unavailable");
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Try again" }),
+  ).not.toBeInTheDocument();
 });
 test("live catalogue discards delayed previous service replies after environment composition changes", async () => {
   let finish!: (value: CustomerCatalogue) => void;
