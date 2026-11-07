@@ -1,6 +1,9 @@
 "use client";
 import { Icon } from "@/components/icon";
-import { PAYMENT_RELEASE_PENDING } from "@/domain/booking-messages";
+import {
+  PAYMENT_RELEASE_PENDING,
+  BOOKING_RECOVERY_MESSAGE,
+} from "@/domain/booking-messages";
 import { isHitpayCheckoutUrl } from "@/domain/native-checkout";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -11,6 +14,7 @@ type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
 import { sitePath } from "@/content/site-path";
 import {
   checkoutNow,
+  ConfirmationError,
   readBookingReceipt,
   dismissCompletedBooking,
   expireBooking,
@@ -110,6 +114,11 @@ export function ProtectedConfirmation({
     contextMatches ||
     (contextFailure?.id === attemptId &&
       contextFailure.revision === sessionRevision);
+  const incomplete =
+    contextMatches &&
+    context.value.bookingIssue === "incomplete" &&
+    !context.value.payment &&
+    !saved;
   const {
     view,
     busy,
@@ -123,7 +132,7 @@ export function ProtectedConfirmation({
   } = useConfirmationChecking(
     attemptId,
     sessionRevision,
-    (!checkoutMode || contextSettled) && !saved,
+    (!checkoutMode || contextSettled) && !saved && !incomplete,
     contextMatches ? context.value.checking.deadlineMs : undefined,
     contextMatches
       ? (context.value.checking.recoveryEndsAtMs ??
@@ -314,6 +323,63 @@ export function ProtectedConfirmation({
     return () => clearTimeout(timer);
   }, [link, current?.clock]);
   const recordedPayment = current?.payment;
+  useEffect(() => {
+    if (!incomplete || !checkoutMode) return;
+    let timer: ReturnType<typeof setTimeout>;
+    let reading = false;
+    const controller = new AbortController();
+    let pollAfterMs = 5000;
+    let nextReadMs = Date.now() + pollAfterMs;
+    const read = async () => {
+      if (reading || controller.signal.aborted || Date.now() < nextReadMs)
+        return;
+      clearTimeout(timer);
+      reading = true;
+      try {
+        const value = await protectedCheckoutService.context({
+          attemptId,
+          mode: checkoutMode,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        pollAfterMs = value.checking.pollAfterMs;
+        setContext({ value, revision: sessionRevision });
+      } catch (error) {
+        // A failed read cannot clear the uncertain attempt or authorize another write.
+        if (controller.signal.aborted) return;
+        if (error instanceof ConfirmationError && error.kind === "denied") {
+          controller.abort();
+          setContext(null);
+          setContextFailure({ id: attemptId, revision: sessionRevision });
+          return;
+        }
+        pollAfterMs = Math.max(
+          Math.min(pollAfterMs * 2, 30000),
+          error instanceof ConfirmationError && error.nextCheckMs
+            ? error.nextCheckMs - Date.now()
+            : 0,
+        );
+      } finally {
+        reading = false;
+      }
+      if (!controller.signal.aborted) {
+        nextReadMs = Date.now() + pollAfterMs;
+        timer = setTimeout(() => void read(), pollAfterMs);
+      }
+    };
+    const resume = () => {
+      if (document.visibilityState === "visible") void read();
+    };
+    timer = setTimeout(() => void read(), pollAfterMs);
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [incomplete, checkoutMode, attemptId, sessionRevision]);
   const historicalPayment =
     !!recordedPayment && ["unresolved", "unavailable"].includes(view);
   const showLink =
@@ -492,15 +558,11 @@ export function ProtectedConfirmation({
     view !== "denied"
   )
     return (
-      <section className="surface booking-document">
-        <p className="notice" role="status">
-          Unable to complete this booking. Contact the studio for help with this
-          reservation.
+      <section className="status-shell" aria-label="Booking recovery">
+        <p className="alert" role="alert">
+          {BOOKING_RECOVERY_MESSAGE}
         </p>
-        <ConfirmationSummary
-          summary={current.summary}
-          details={current.details}
-        />
+        <BrandLoading compact label="Checking your reservation…" />
       </section>
     );
   if (expiryFailure)

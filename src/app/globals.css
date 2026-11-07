@@ -3135,9 +3135,17 @@
   .aside-wrap {
     padding-top: 0;
   }
+  .booking-layout > .aside-wrap {
+    position: sticky;
+    top: calc(var(--site-header-height, 76px) + 16px);
+    max-height: calc(100dvh - var(--site-header-height, 76px) - 32px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    align-self: start;
+  }
   .calendar-panel {
     position: relative;
-    padding: 22px;
+    padding: 11px;
     border: 1px solid var(--color-line);
     border-radius: 12px;
     background: var(--color-surface);
@@ -3156,7 +3164,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 19px;
+    margin-bottom: 8px;
   }
   .payment-continuation [role="timer"] {
     margin: 12px 0 8px;
@@ -3168,7 +3176,8 @@
     min-width: 0;
     max-width: 245px;
   }
-  .month-picker select {
+  .month-picker select,
+  .calendar-nav select {
     display: block;
     width: 100%;
     background: var(--color-surface);
@@ -3181,11 +3190,13 @@
   }
   .calendar-nav {
     display: flex;
-    gap: 7px;
+    gap: 4px;
+    align-items: center;
   }
   .calendar-nav .icon-button {
     height: 44px;
-    min-width: 44px;
+    min-width: 32px;
+    width: 32px;
   }
   .calendar-nav svg {
     width: 18px;
@@ -3195,6 +3206,7 @@
   }
   @media (hover: hover) {
     .month-picker select:not(:disabled):hover,
+    .calendar-nav select:hover,
     .calendar-nav .icon-button:not(:disabled):hover {
       background: var(--color-brand-soft);
       border-color: var(--color-focus);
@@ -3204,10 +3216,10 @@
   .dates {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 7px;
+    gap: 3px;
   }
   .calendar-weekdays {
-    margin-bottom: 10px;
+    margin-bottom: 4px;
   }
   .calendar-weekdays span {
     text-align: center;
@@ -3218,16 +3230,19 @@
   .date {
     position: relative;
     min-width: 0;
-    min-height: 58px;
+    min-height: 29px;
     border: 1px solid transparent;
-    border-radius: 8px;
-    padding: 10px 2px;
+    border-radius: 6px;
+    padding: 2px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 7px;
+    gap: 2px;
     background: var(--color-surface);
+  }
+  .date strong {
+    line-height: 1;
   }
   .date:hover:not(:disabled) {
     border-color: var(--color-focus);
@@ -3252,16 +3267,23 @@
   .date:disabled .dot {
     visibility: hidden;
   }
+  .date.in-booking,
+  .date.in-booking:disabled,
+  .date.in-booking:hover:not(:disabled) {
+    background: var(--color-brand-soft);
+    border-color: var(--color-focus);
+    color: var(--color-ink);
+  }
   .date-placeholder {
-    min-height: 58px;
+    min-height: 29px;
   }
   .calendar-legend {
     display: flex;
     gap: 16px;
     flex-wrap: wrap;
     align-items: center;
-    margin-top: 17px;
-    padding-top: 15px;
+    margin-top: 8px;
+    padding-top: 6px;
     border-top: 1px solid var(--color-line);
     color: var(--color-muted);
   }
@@ -3277,6 +3299,10 @@
     border-radius: 3px;
     background: var(--color-surface);
     border: 1px solid var(--color-control-border);
+  }
+  .legend-mark.in-booking {
+    background: var(--color-brand-soft);
+    border-color: var(--color-focus);
   }
   .legend-mark.unavailable {
     background: var(--color-paper);
@@ -4016,18 +4042,18 @@
       padding: 20px;
     }
     .calendar-panel {
-      padding: 17px;
+      padding: 10px;
     }
     .calendar-weekdays,
     .dates {
-      gap: 5px;
+      gap: 3px;
     }
     .date {
-      padding: 8px 1px;
-      min-height: 52px;
+      padding: 2px 1px;
+      min-height: 29px;
     }
     .date-placeholder {
-      min-height: 52px;
+      min-height: 29px;
     }
     .times {
       grid-template-columns: 1fr;
@@ -4265,13 +4291,14 @@
       padding: 20px;
     }
     .calendar-panel {
-      padding: 15px 10px;
+      padding: 10px 8px;
     }
     .calendar-head {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 8px;
-      margin: 0 3px 16px;
+      gap: 4px;
+      font-size: var(--text-caption);
+      margin: 0 0 8px;
     }
     .month-picker {
       max-width: none;
@@ -4285,23 +4312,26 @@
     }
     .calendar-nav .icon-button {
       height: var(--icon-control-size);
-      min-width: var(--icon-control-size);
+      min-width: 32px;
+    }
+    .calendar-nav select {
+      padding: 8px 18px 8px 5px;
     }
     .calendar-weekdays,
     .dates {
       gap: 3px;
     }
     .date {
-      padding: 8px 1px;
-      gap: 6px;
-      min-height: 47px;
+      padding: 2px 1px;
+      gap: 2px;
+      min-height: 33px;
     }
     .date-placeholder {
-      min-height: 47px;
+      min-height: 33px;
     }
     .calendar-legend {
-      gap: 13px;
-      padding: 13px 4px 0;
+      gap: 10px;
+      padding: 6px 2px 0;
     }
     .series-list {
       padding: 0 0 4px 14px;
@@ -4416,7 +4446,7 @@
       padding-right: 8px;
     }
     .calendar-nav .icon-button {
-      min-width: var(--icon-control-size);
+      min-width: 32px;
     }
   }
 }

@@ -1290,5 +1290,9 @@
   {
     "file": "src/components/studio-hero-video.test.tsx",
     "title": "mobile studio video shows a scroll cue only after playback ends"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "rolling week starts at first availability crosses months and preserves cart day markings"
   }
 ]

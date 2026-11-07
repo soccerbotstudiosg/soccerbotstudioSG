@@ -182,7 +182,7 @@ flowchart LR
 
 ## 12. Unresolved payment or reconciliation
 
-An incomplete booking with no payment dispatch shows “Unable to complete this booking. Contact the studio for help with this reservation.” instead of a payment spinner. Automatic release of an attempt without a completed association is not implemented; changing this message does not resolve that recovery limitation. A known occupied start is classified using fresh provider availability even when its retained attempt lacks a completed association. No replacement write is permitted.
+An incomplete booking with no payment dispatch shows only the red message “We couldn’t complete your booking. Please try again shortly.” and the standard “Checking your reservation…” spinner. Sequential protected context reads continue beyond one minute while the attempt remains incomplete, respect server pacing, and slow after transient read failures. Leaving the page or losing access stops polling; resolved context returns to the existing authoritative confirmation flow. No replacement booking or payment write is permitted. Automatic release without a completed association is not implemented: these reads observe retained state and do not themselves reconcile SimplyBook. See Technical behavior section7 for the missing-reference recovery boundary. A known occupied start is classified using fresh provider availability even when its retained attempt lacks a completed association.
 
 After unresolved checking or during expiry recovery, omit Check status. Structured booking details remain visible; automatic bounded recovery and authenticated expiry release continue unchanged. A transient status-read failure still offers Check status.
 
@@ -824,3 +824,7 @@ Public entrance motion targets noninteractive visual blocks only: clickable cont
 ### Follow-up navigation and conflict behavior
 
 Review consent resets on departure, reload and return; a dispatched checkout retains its immutable accepted snapshot. An indexed conflict removes only that session. An unindexed conflict refreshes affected dates first and preserves unaffected selections. Its red calendar notice is “Removed unavailable sessions: {date/time ranges}.” without expiry waiting copy. Reload preserves a differing tab draft and offers View existing checkout rather than silently adopting the other checkout. Expiry differs from conflict: expiry leaves the whole cart empty, including after safe release.
+
+### Rolling calendar
+
+The calendar defaults to a rolling seven-day view beginning at the first available date for a fresh selection. Restored selections retain their selected date. Week/Month sits beside the navigation arrows; month names remain written in full. A week spanning two months loads both snapshots without discarding the first when the second fails. Switching views or weeks preserves the cart. Days containing cart selections use a separate colour and legend from the active viewed date. Monthly date cells are approximately half their former desktop height and 30% shorter on phones. The desktop cart sticks below the header, scrolling internally when needed. The outlet/session context remains18px bold above the16px duration note.

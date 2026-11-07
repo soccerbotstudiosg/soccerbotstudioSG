@@ -2,12 +2,12 @@
 
 ## Current change
 
-Branch `fix/calendar-context-type-size`, based on PR36 merge `58c40e1`. Owner requested greater prominence: the outlet/session line uses the existing18px card token in bold above the16px duration note on every viewport. Existing typography browser case checks both sizes and bold weight; no inventory changes. Source/design/lint/format checks are the focused verification scope. Owner authorized CI, staging, merge and restoring approved sandbox settings.
+PR37, branch `fix/calendar-context-type-size`, published head `15fa407`, base/main `58c40e1`. Consolidating the18px bold context with sticky desktop cart, compact rolling Week/Month calendar, cart-day colours and message-only incomplete-checkout polling until resolution. The new cross-month regression and existing affected suites passed73 tests; recovery access-denial/unmount checks passed22 tests. Full non-browser verification then passed with268 tests, build/export and all code gates. Documentation-only reconciliation follows that receipt; publication and final CI are pending. Browser execution remains CI/owner-run.
 
-## Deployed baseline
+## Failure audit
 
-PR36 final head620c0a6 passed all gates in42354309504 and staging42355133030; merged as58c40e1. Independent main CI42355282429 is running. Production activation follows deployment. PR35 remains the last verified production baseline until that completes. Exact receipts are retained in the PR and Journey.
+The16:42SGT checkout received HTTP200 with an invalid/error SimplyBook RPC envelope, retained no booking reference and never called HitPay. Read-only SimplyBook search found no matching active/cancelled booking. Exact provider rejection reason is unavailable. Automatic reconciliation cannot settle an unknown creation without retained keys/payment row; context polling observes state only. Preserve the attempt and original effect journal. See the7Nov PR37 audit in Journey and Technical behavior section7. No live repair or provider write has been performed.
 
-## Remaining owner checks
+## Delivery and next steps
 
-Browser/physical-device acceptance of the latest presentation remains pending. Owner considers A/B/C passed; two-tab conflict and defence checks remain to be confirmed. Broad docs PR33 stays paused. No new provider settings or real bookings/payments/notifications are part of this styling work.
+PR36 is deployed at `58c40e1`; production sandbox flags were restored and verified. PR37's expanded working tree is not deployed. Finish focused validation and documentation, push one consolidated candidate and inspect exact-head CI/staging. Do not treat old PR37 checks as acceptance of these changes. Owner staging/physical-device acceptance remains pending; docs PR33 stays paused. Analytics/Search Console/OpenGraph remain outside the implemented scope.

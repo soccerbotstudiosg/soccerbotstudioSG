@@ -69,7 +69,7 @@ interface BookingContextValue extends StoredBooking {
   availability: ReturnType<typeof useBookingAvailability>;
   showDate: (date: string | null) => void;
   calendar: ReturnType<typeof useCalendarAvailability>;
-  showMonth: (month: string) => void;
+  showMonth: (month: string, through?: string) => void;
   setCalendarBrowsing: (active: boolean) => void;
   selectionNotice: string | null;
   ready: boolean;
@@ -207,7 +207,14 @@ export function BookingProvider({
     !!service.restore &&
     (restoredOwner?.service !== service ||
       restoredOwner.identityService !== identityService);
-  const [calendarMonth, showMonth] = useState(() => todaySG().slice(0, 7));
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    todaySG().slice(0, 7),
+  );
+  const [calendarThrough, setCalendarThrough] = useState<string>();
+  const showMonth = useCallback((month: string, through?: string) => {
+    setCalendarMonth(month);
+    setCalendarThrough(through);
+  }, []);
   const [calendarPaused, pauseCalendar] = useState(false);
   const [browsingRequested, setCalendarBrowsing] = useState(true);
   const pathname = usePathname();
@@ -257,6 +264,7 @@ export function BookingProvider({
       !calendarBrowsing ||
       calendarPaused ||
       (!!value.attempt && !action.returnToCalendar),
+    calendarThrough,
   );
   const availability = useBookingAvailability(
     service,

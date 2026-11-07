@@ -1045,6 +1045,14 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     page.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true }),
   ).toBeVisible();
   if (page.viewportSize()!.width > 700) {
+    await expect(page.locator(".booking-layout > .aside-wrap")).toHaveCSS(
+      "position",
+      "sticky",
+    );
+    await expect(page.locator(".booking-layout > .aside-wrap")).toHaveCSS(
+      "overflow-y",
+      "auto",
+    );
     const positions = await page.locator(".aside-wrap").evaluate((element) => ({
       continueBottom: element
         .querySelector(".basket-continue")!
@@ -1552,6 +1560,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".player-selection")).toBeVisible();
   await page.getByRole("link", { name: "See available times" }).click();
   await pageHeading("Select dates and times");
+  await expect(
+    page.getByRole("combobox", { name: "Calendar view" }),
+  ).toHaveValue("week");
+  await expect(page.locator(".dates .date")).toHaveCount(7);
   const monthPicker = page.getByRole("combobox", { name: "Calendar month" });
   await expect(monthPicker.locator("option:checked")).toHaveText(
     dateLabel(DEMO_TODAY, { month: "long", year: "numeric" }),
@@ -1566,7 +1578,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
     for (const control of [
       monthPicker,
-      page.getByRole("button", { name: "Next month", exact: true }),
+      page.getByRole("button", { name: "Next week", exact: true }),
     ]) {
       await control.hover();
       await expect(control).toHaveCSS("background-color", "rgb(238, 240, 247)");

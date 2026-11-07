@@ -975,6 +975,9 @@ test("Details aborts an explicitly opened month and calendar return retains load
   const view = render(tree("time"));
   fireEvent.click(screen.getByText("Choose test session"));
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
+  fireEvent.change(screen.getByRole("combobox", { name: "Calendar view" }), {
+    target: { value: "month" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "Next month" }));
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(2));
   const pending = publicCalendar.mock.calls[1][0];
@@ -993,6 +996,9 @@ test("Details aborts an explicitly opened month and calendar return retains load
   view.rerender(tree("time"));
   await act(async () => {});
   expect(publicCalendar).toHaveBeenCalledTimes(2);
+  fireEvent.change(screen.getByRole("combobox", { name: "Calendar view" }), {
+    target: { value: "month" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "Next month" }));
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(3));
   expect(publicCalendar.mock.calls.map(([input]) => input.month)).toEqual([
@@ -1231,6 +1237,9 @@ test("cold calendar entry and refresh select an available day while retaining a 
   );
   await screen.findByText("No sessions available on this date.");
   expect(screen.getByRole("button", { name: "See next month" })).toBeDisabled();
+  fireEvent.change(screen.getByRole("combobox", { name: "Calendar view" }), {
+    target: { value: "month" },
+  });
   expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   expect(
     within(
@@ -1363,6 +1372,10 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
             "2026-11",
             "2026-12",
           ]);
+          fireEvent.change(
+            screen.getByRole("combobox", { name: "Calendar view" }),
+            { target: { value: "month" } },
+          );
           expect(
             screen.getByRole("button", { name: "Next month" }),
           ).toBeDisabled();
@@ -1417,4 +1430,122 @@ test("calendar refresh replaces only the selected month and retains loaded sibli
     "2027-02",
     "2027-02",
   ]);
+});
+
+test("rolling week starts at first availability crosses months and preserves cart day markings", async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-28T00:00:00Z"));
+  let failNovember = true;
+  let release!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const publicCalendar = vi.fn(async ({ month }: { month: string }) => {
+    await ready;
+    if (month === "2026-11" && failNovember)
+      throw new Error("synthetic offline");
+    return {
+      month,
+      serviceId: "12",
+      observedAtMs: Date.now(),
+      dates: (month === "2026-10"
+        ? ["2026-10-29", "2026-10-31"]
+        : ["2026-11-02", "2026-11-06"]
+      ).map((date) => ({
+        date,
+        available: true,
+        offers: [
+          {
+            serviceId: "12",
+            serviceName: "Session",
+            instructorId: "14",
+            instructorName: "Trainer",
+            startMs: Date.parse(`${date}T12:00:00+08:00`),
+            priceMinor: 8800,
+            currency: "SGD" as const,
+          },
+        ],
+      })),
+    };
+  });
+  const service: BookingService = {
+    ...demoBookingService,
+    mode: "live",
+    operations: { ...demoBookingService.operations, availability: "live" },
+    publicCalendar,
+  };
+  function CartProbe() {
+    const { draft, update } = useBooking();
+    return (
+      <>
+        <button
+          onClick={() => update({ mode: "guest", nativeServiceId: "12" })}
+        >
+          Start test calendar
+        </button>
+        <button
+          onClick={() => update({ slots: [{ ...slot, date: "2026-10-31" }] })}
+        >
+          Select test date
+        </button>
+        <button onClick={() => update({ slots: [] })}>Remove test date</button>
+        <output data-testid="retained-cart">{draft.slots.length}</output>
+      </>
+    );
+  }
+  render(
+    <BookingProvider bookingService={service}>
+      <CartProbe />
+      <TimeStep />
+    </BookingProvider>,
+  );
+  fireEvent.click(screen.getByText("Start test calendar"));
+  await act(async () => {
+    release();
+  });
+  await waitFor(() => expect(publicCalendar).toHaveBeenCalled());
+  const region = screen.getByRole("region", { name: "Booking calendar" });
+  const day = (date: string) =>
+    within(region).getByRole("button", { name: dateLabel(date) });
+  await waitFor(() =>
+    expect(day("2026-10-29")).toHaveAttribute("aria-pressed", "true"),
+  );
+  expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
+    "week",
+  );
+  expect(region.querySelectorAll(".date")).toHaveLength(7);
+  expect(day("2026-11-04")).toBeDisabled();
+  await screen.findByText(/Unable to load some dates/);
+  expect(day("2026-10-31")).toBeEnabled();
+  failNovember = false;
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(day("2026-11-02")).toBeEnabled());
+  expect(publicCalendar.mock.calls.map(([input]) => input.month)).toEqual([
+    "2026-10",
+    "2026-11",
+    "2026-11",
+  ]);
+  fireEvent.click(screen.getByText("Select test date"));
+  expect(day("2026-10-31")).toHaveClass("in-booking");
+  fireEvent.click(day("2026-11-02"));
+  expect(day("2026-10-29")).toBeInTheDocument();
+  expect(day("2026-11-02")).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Next week" }));
+  await waitFor(() =>
+    expect(day("2026-11-06")).toHaveAttribute("aria-pressed", "true"),
+  );
+  expect(day("2026-11-05")).toBeDisabled();
+  expect(screen.getByTestId("retained-cart")).toHaveTextContent("1");
+  fireEvent.click(screen.getByRole("button", { name: "Previous week" }));
+  expect(day("2026-10-31")).toHaveClass("in-booking");
+  fireEvent.change(screen.getByRole("combobox", { name: "Calendar view" }), {
+    target: { value: "month" },
+  });
+  expect(region.querySelectorAll(".date")).toHaveLength(31);
+  expect(day("2026-10-31")).toHaveClass("in-booking");
+  fireEvent.click(screen.getByText("Remove test date"));
+  expect(day("2026-10-31")).not.toHaveClass("in-booking");
+  expect(publicCalendar.mock.calls).toHaveLength(3);
 });
