@@ -6,7 +6,7 @@ Branch `fix/confirmation-section-order`, based on main `fef8751` (released PR39)
 
 ## Verification and delivery
 
-PR40 contains the confirmation/calendar presentation changes. Added a conflict-reload fix: this tab retains its rejected calendar draft rather than automatically adopting another tab’s current checkout. All82 focused checkout/storage/confirmation tests pass. Existing browser assertions cover disclosure visibility, session alignment and active-date highlighting; browser execution remains CI/owner-run. No test titles or inventories changed. Scoped lint, source integrity, TypeScript and formatting passed; no staging or production change for this candidate. Final CI is pending.
+PR40 contains the confirmation/calendar presentation changes. Added a conflict-reload fix: this tab retains its rejected calendar draft rather than automatically adopting another tab’s current checkout. All82 focused checkout/storage/confirmation tests pass. Existing browser assertions cover disclosure visibility, session alignment and active-date highlighting; browser execution remains CI/owner-run. No test titles or inventories changed. Scoped lint, source integrity, TypeScript and formatting passed; no staging or production change for this candidate. CI42383885392 exposed an obsolete confirmation-order assertion; corrected with10 local cases passing. Final-head CI is pending.
 
 ## Payment-link recovery follow-up
 
