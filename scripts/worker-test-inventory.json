@@ -440,6 +440,10 @@
     "title": "reservation IP authority ignores forwarded headers and canonicalizes IPv6"
   },
   {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "provider RPC errors retain numeric diagnostics without treating uncertainty as no booking"
+  },
+  {
     "file": "worker/tests/foundation.test.mjs",
     "title": "foundation valid bindings emit correlated storage evidence without secret markers"
   },
@@ -1966,9 +1970,5 @@
   {
     "file": "worker/tests/webhook.test.mjs",
     "title": "invoice capture retains authentication boundaries and immutable event authority"
-  },
-  {
-    "file": "worker/tests/combined-hold.test.mjs",
-    "title": "provider RPC errors retain numeric diagnostics without treating uncertainty as no booking"
   }
 ]
