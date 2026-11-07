@@ -2,14 +2,12 @@
 
 ## Current change
 
-Branch `fix/calendar-context-mobile-address`, based on merged PR35 main `dd414c2`. Add the selected outlet/session name in a bold compact row below the calendar heading and above its duration note. Improve only the mobile hero address with smaller white text and subtle shadow. Existing catalogue and location owners supply display values.
-
-Presentation-only scope; no financial, API, dependency, schema or infrastructure changes. Existing tests/inventories retained; targeted source/design, lint and type checks passed. The initial PR36 CI caught catalogue status interference; repaired in the existing catalogue owner and verified with42 affected component tests. Fresh CI, staging and merge are authorized and pending. Browser and physical-device acceptance remain pending.
+Branch `fix/calendar-context-type-size`, based on PR36 merge `58c40e1`. Owner requested the bold outlet/session line match the duration note: both use the existing16px body token on every viewport. Existing typography browser case checks both sizes and bold weight; no inventory changes. Source/design/lint/format checks are the focused verification scope. Owner authorized CI, staging, merge and restoring approved sandbox settings.
 
 ## Deployed baseline
 
-PR35 CI, staging, merge, independent main CI and production deployment passed. Production sandbox settings restored and verified; see [Journey](docs/journey.md) for exact receipts. The current presentation follow-up is not deployed.
+PR36 final head620c0a6 passed all gates in42354309504 and staging42355133030; merged as58c40e1. Independent main CI42355282429 is running. Production activation follows deployment. PR35 remains the last verified production baseline until that completes. Exact receipts are retained in the PR and Journey.
 
 ## Remaining owner checks
 
-Owner considers A/B/C passed; two-tab conflict and defence acceptance remain to be confirmed. Broad documentation PR33 remains paused, including queued clients/providers email reminders3 days and24 hours before. No provider configuration changes or real notification sends are authorized by this presentation work.
+Browser/physical-device acceptance of the latest presentation remains pending. Owner considers A/B/C passed; two-tab conflict and defence checks remain to be confirmed. Broad docs PR33 stays paused. No new provider settings or real bookings/payments/notifications are part of this styling work.

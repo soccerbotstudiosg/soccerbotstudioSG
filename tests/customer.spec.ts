@@ -1349,6 +1349,16 @@ test("header blue and the typography hierarchy stay consistent across every book
     ).toBeCloseTo(pageSize, 5);
     await expect(heading).toHaveCSS("color", color);
     await expect(heading).toHaveCSS("font-weight", "900");
+    if (name === "Select dates and times") {
+      await expect(page.locator(".calendar-selection-context")).toHaveCSS(
+        "font-size",
+        "16px",
+      );
+      await expect(page.locator(".lead")).toHaveCSS("font-size", "16px");
+      await expect(
+        page.locator(".calendar-selection-context strong"),
+      ).toHaveCSS("font-weight", "700");
+    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth - innerWidth,
