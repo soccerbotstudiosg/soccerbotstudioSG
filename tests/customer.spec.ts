@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 async function openSite(page: Page, route: string) {
   await page.goto(sitePath(route));
   const prompt = page.getByRole("dialog", {
-    name: "Download the official Soccerbot360 Player App now.",
+    name: "Download The Official Soccerbot360 Player App Now.",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -166,7 +166,7 @@ async function details(page: Page) {
     .getByRole("button", { name: /^Review booking \$[\d,.]+$/ })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Order summary", exact: true }),
+    page.getByRole("heading", { name: "Order Summary", exact: true }),
   ).toBeVisible();
   const totalText = await page
     .locator(".booking-document .line-item.total strong")
@@ -181,7 +181,7 @@ async function details(page: Page) {
       cart.getByRole("complementary", { name: "Your booking summary" }),
     ).toBeVisible();
     await expect(
-      cart.getByRole("heading", { name: "Order summary" }),
+      cart.getByRole("heading", { name: "Order Summary" }),
     ).toHaveCount(0);
     await closeBookingPanel(page);
   }
@@ -392,6 +392,30 @@ test("public routes remove staff access and fit the viewport", async ({
       page.locator(".footer-apps .footer-contact-heading"),
     ).toHaveCSS("text-align", "right");
   }
+  if (page.viewportSize()!.width > 700 && page.viewportSize()!.width <= 1100) {
+    const groups = await page
+      .locator(".footer-contact-grid > section")
+      .evaluateAll((nodes) =>
+        nodes.map((node) => node.getBoundingClientRect().toJSON()),
+      );
+    expect(groups[0].x).toBeCloseTo(groups[2].x, 0);
+    expect(groups[1].x).toBeCloseTo(groups[3].x, 0);
+    expect(groups[0].y).toBeCloseTo(groups[1].y, 0);
+    expect(groups[2].y).toBeCloseTo(groups[3].y, 0);
+    const logo = await page.locator(".footer-brand").boundingBox();
+    expect(logo!.x).toBeCloseTo(groups[3].x, 0);
+    await expect(
+      page.locator(".footer-apps .footer-contact-heading"),
+    ).toHaveCSS("text-align", "left");
+    await expect(page.locator(".footer-contact-grid")).toHaveCSS(
+      "row-gap",
+      "24px",
+    );
+    await expect(page.locator(".footer-direct-contact a").first()).toHaveCSS(
+      "min-height",
+      "32px",
+    );
+  }
   if (page.viewportSize()!.width <= 700) {
     const email = page.locator(".footer-contact-link[href^='mailto:']");
     await expect(email).toHaveCSS("white-space", "nowrap");
@@ -574,15 +598,21 @@ test("guest multi-date booking survives reload without retired export actions", 
 }) => {
   await chooseSlots(page, true);
   await details(page);
+  await page.getByRole("checkbox").check();
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Review booking", exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole("checkbox")).not.toBeChecked();
+  await expect(
+    page.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+  ).toBeDisabled();
+  await page.getByRole("checkbox").check();
   await payment(page);
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
-  await page.getByText("View full details", { exact: true }).click();
+  await page.getByText("View Full Details", { exact: true }).click();
   await expect(page.getByText("Studio 1", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
@@ -852,15 +882,41 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
       card: grid.children[0].getBoundingClientRect().width,
       gap: parseFloat(getComputedStyle(grid).columnGap),
       mobile: matchMedia("(max-width: 700px)").matches,
+      medium: matchMedia("(max-width: 1200px)").matches,
     }));
   const expectedCardWidth = cardWidths.mobile
     ? cardWidths.grid
-    : (cardWidths.grid - 2 * cardWidths.gap) / 3;
+    : cardWidths.medium
+      ? (cardWidths.grid - cardWidths.gap) / 2
+      : (cardWidths.grid - 2 * cardWidths.gap) / 3;
   expect(Math.abs(cardWidths.card - expectedCardWidth)).toBeLessThanOrEqual(1);
   const outletWidth = await page
     .locator(".outlet-option")
     .evaluate((element) => element.getBoundingClientRect().width);
   expect(Math.abs(outletWidth - cardWidths.card)).toBeLessThanOrEqual(1);
+  const addressLines = await page
+    .locator(".outlet-option > span > span")
+    .allTextContents();
+  expect(addressLines).toEqual([
+    "Our flagship studio",
+    "201 Henderson Road",
+    "#05-01",
+  ]);
+  const priceRows = await page
+    .locator(".session-product-prices > span")
+    .evaluateAll((rows) =>
+      rows.map((row) => ({
+        label: row.querySelector("span")!.getBoundingClientRect().toJSON(),
+        amount: row.querySelector("strong")!.getBoundingClientRect().toJSON(),
+        box: row.getBoundingClientRect().toJSON(),
+      })),
+    );
+  expect(priceRows).toHaveLength(2);
+  expect(priceRows[0].label.x).toBeCloseTo(priceRows[1].label.x, 0);
+  expect(priceRows[0].amount.right).toBeCloseTo(priceRows[1].amount.right, 0);
+  for (const row of priceRows)
+    expect(row.amount.right).toBeLessThanOrEqual(row.box.right + 1);
+
   await page
     .getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
@@ -1039,15 +1095,15 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   expect(confirmationLayout.actionsBottom).toBeLessThanOrEqual(
     confirmationLayout.summaryTop,
   );
-  await page.getByText("View full details", { exact: true }).click();
+  await page.getByText("View Full Details", { exact: true }).click();
   await expect(
     page.locator(".confirmation-card .rotation-notice"),
   ).toContainText("stays for the full session");
   await expect(page.locator("main details[open]")).toHaveCount(1);
   await expect(page.locator(".confirmation-section > h2")).toHaveText([
-    "Client Details",
+    "Booking Contact",
     "Location",
-    "Disclaimers",
+    "Before Your Session",
   ]);
   await expect(
     page
@@ -1087,10 +1143,10 @@ test("leave booking uses equal-width sentence-case actions with home left and st
   const dialog = page.getByRole("dialog", { name: "Leave this booking?" });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText(
-    "Your selections are saved in this browser. Complete payment before checkout expires.",
+    "Your selections and changes will not be saved.",
   );
   await expect(dialog.locator(".dialog-actions button")).toHaveText([
-    "Back to home",
+    "Leave booking",
     "Stay",
   ]);
   const actions = await dialog
@@ -1111,16 +1167,28 @@ test("leave booking uses equal-width sentence-case actions with home left and st
     .getByRole("link", { name: "SOCCERBOTSTUDIO Singapore home" })
     .click();
   await dialog
-    .getByRole("button", { name: "Back to home", exact: true })
+    .getByRole("button", { name: "Leave booking", exact: true })
     .click();
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
+  const saved = await page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!),
+  );
+  expect(saved.draft.mode).toBeNull();
+  expect(saved.draft.slots).toEqual([]);
+  expect(saved.draft.contact.name).toBe("");
+  expect(saved.attempt).toBeNull();
+  await page.goto(sitePath("/book/account/"));
+  await page.getByRole("link", { name: "Back to home", exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Stay", exact: true }).click();
+  await expect(page).toHaveURL(/\/book\/account\/$/);
 });
 test("first visit offers the Player App with only store links and dismissal persists", async ({
   page,
 }) => {
   await page.goto(sitePath("/"));
   const prompt = page.getByRole("dialog", {
-    name: "Download the official Soccerbot360 Player App now.",
+    name: "Download The Official Soccerbot360 Player App Now.",
   });
   await expect(prompt).toBeVisible();
   await expect(prompt.locator("p")).toHaveCount(0);
@@ -1137,6 +1205,8 @@ test("first visit offers the Player App with only store links and dismissal pers
     ["Web App", "https://app.soccerbot360.com/login"],
   ];
   for (const link of await prompt.getByRole("link").all()) {
+    await expect(link).toHaveCSS("justify-content", "center");
+    await expect(link).toHaveCSS("align-items", "center");
     await expect(link).toHaveCSS("color", "rgb(255, 255, 255)");
     await expect(link.locator("svg")).toHaveCSS("color", "rgb(255, 255, 255)");
   }
@@ -1466,7 +1536,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   async function bookingDocumentBody() {
     const styles = await page
       .locator(
-        ".booking-document p, .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .paid strong",
+        ".booking-document p, .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
       )
       .evaluateAll((nodes) =>
         nodes.map((node) => {
@@ -1476,6 +1546,7 @@ test("header blue and the typography hierarchy stay consistent across every book
             family: style.fontFamily,
             element: node.outerHTML,
             total: node.matches(".line-item.total"),
+            amount: node.matches(".confirmation-total strong"),
           };
         }),
       );
@@ -1483,11 +1554,12 @@ test("header blue and the typography hierarchy stay consistent across every book
     expect(
       styles.filter(
         (style) =>
-          style.size !== (style.total ? "20px" : "16px") ||
+          style.size !==
+            (style.amount ? "24px" : style.total ? "20px" : "16px") ||
           style.family !== styles[0].family ||
           !style.family.includes("Roboto"),
       ),
-      "Booking body uses 16px Roboto; total labels use the approved 20px role",
+      "Booking body uses 16px Roboto; total labels use 20px and amounts use 24px",
     ).toEqual([]);
   }
   await details(page);
@@ -1553,12 +1625,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(
     page.getByRole("link", { name: "WhatsApp Enquiry", exact: true }),
   ).toHaveAttribute("href", "https://wa.me/6590143819");
-  await page.getByText("View full details", { exact: true }).click();
-  await sectionType(
-    ".confirmation-section > h2, .confirmation-summary > .section-title",
-  );
+  await page.getByText("View Full Details", { exact: true }).click();
+  await sectionType(".confirmation-card h2");
   await bookingDocumentBody();
-  await expect(page.locator(".confirmation-summary")).toHaveCSS(
+  await expect(page.locator(".confirmation-full-details")).toHaveCSS(
     "text-align",
     "left",
   );
@@ -1567,7 +1637,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     "left",
   );
   await expect(
-    page.locator(".confirmation-summary .series-list li").first(),
+    page.locator(".confirmation-details-grid .series-list li").first(),
   ).toHaveCSS("flex-direction", "row");
   const facts = page.locator(".confirmation-details-grid .booking-facts");
   const { labelBox, valueBox } = await facts.evaluate(async (element) => {
@@ -1596,14 +1666,33 @@ test("header blue and the typography hierarchy stay consistent across every book
     expect(valueBox!.x).toBeGreaterThan(labelBox!.x);
     expect(valueBox!.y).toBeCloseTo(labelBox!.y, 0);
   }
-  await expect(page.locator(".confirmation-card .paid strong")).toHaveCSS(
-    "font-size",
-    "16px",
-  );
-  await expect(page.locator(".confirmation-card .paid strong")).toHaveCSS(
-    "color",
-    brand,
-  );
+  await expect(
+    page.locator(".confirmation-card .confirmation-total strong"),
+  ).toHaveCSS("font-size", "24px");
+  await expect(
+    page.locator(".confirmation-card .confirmation-total"),
+  ).toHaveCSS("flex-wrap", "nowrap");
+  await expect(
+    page.locator(".confirmation-card .confirmation-total strong"),
+  ).toHaveCSS("white-space", "nowrap");
+  const paymentRow = await page
+    .locator(".confirmation-card .confirmation-total")
+    .evaluate((element) => {
+      const badge = element
+        .querySelector(":scope > span")!
+        .getBoundingClientRect();
+      const amount = element.querySelector("strong")!.getBoundingClientRect();
+      return {
+        labelTop: badge.y,
+        amountTop: amount.y,
+      };
+    });
+  expect(
+    Math.abs(paymentRow.labelTop - paymentRow.amountTop),
+  ).toBeLessThanOrEqual(1);
+  await expect(
+    page.locator(".confirmation-card .confirmation-total strong"),
+  ).toHaveCSS("color", brand);
   await expect(page.locator("main details[open]")).toHaveCount(1);
 });
 
@@ -1683,7 +1772,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
-  await page.getByText("View full details", { exact: true }).click();
+  await page.getByText("View Full Details", { exact: true }).click();
   await expect(
     page.getByRole("list", { name: "Selected sessions" }).getByRole("listitem"),
   ).toHaveCount(2);

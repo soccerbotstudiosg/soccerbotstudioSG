@@ -24,6 +24,7 @@ export function PaymentStep() {
     reset,
     restartAfterConfirmation,
     restartAfterExpiry,
+    browseAfterChecking,
   } = useBooking();
   const [method, setMethod] = useState("card");
   useEffect(() => () => cancel(), [cancel]);
@@ -39,6 +40,7 @@ export function PaymentStep() {
           allowPaymentContinuation
           sessionRevision={revision}
           onExpired={restartAfterExpiry}
+          onAwaitingExpiry={browseAfterChecking}
           onAgain={reset}
           onRestart={restartAfterConfirmation}
         />
@@ -53,7 +55,7 @@ export function PaymentStep() {
         <div className="payment-layout">
           <section
             className="surface payment-summary"
-            aria-label="Order summary"
+            aria-label="Order Summary"
           >
             <div className="payment-merchant">
               <span className="merchant-icon">

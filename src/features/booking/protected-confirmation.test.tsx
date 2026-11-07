@@ -241,27 +241,27 @@ it("verified live receipt shows provider invoice number without internal IDs or 
     ),
   );
   render(<ProtectedConfirmation attemptId={first} />);
-  fireEvent.click(await screen.findByText("View full details"));
+  fireEvent.click(await screen.findByText("View Full Details"));
   expect(
-    await screen.findByRole("heading", { name: "Client Details" }),
+    await screen.findByRole("heading", { name: "Booking Contact" }),
   ).toBeInTheDocument();
-  for (const name of ["Location", "Disclaimers"])
+  for (const name of ["Location", "Before Your Session"])
     expect(screen.getByRole("heading", { name })).toBeInTheDocument();
-  expect(screen.getByLabelText("Booking summary")).toHaveTextContent(
-    "SGD $88.00",
-  );
+  expect(
+    screen.getByRole("region", { name: "Order Summary" }),
+  ).toHaveTextContent("SGD $88.00");
   expect(
     screen.queryByRole("region", { name: "Amount" }),
   ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("region", { name: "Session Details" }),
   ).not.toBeInTheDocument();
-  expect(screen.getByRole("region", { name: "Disclaimers" })).toHaveClass(
-    "confirmation-disclaimers",
-  );
-  expect(screen.getByRole("region", { name: "Disclaimers" })).toHaveTextContent(
-    "bring a towel",
-  );
+  expect(
+    screen.getByRole("region", { name: "Before Your Session" }),
+  ).toHaveClass("confirmation-disclaimers");
+  expect(
+    screen.getByRole("region", { name: "Before Your Session" }),
+  ).toHaveTextContent("bring a towel");
   expect(screen.getByText("Trainer: Native Trainer")).toBeInTheDocument();
   expect(screen.queryByText("701")).not.toBeInTheDocument();
   expect(screen.queryByText("901")).not.toBeInTheDocument();
@@ -271,6 +271,12 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   expect(
     screen.getByRole("link", { name: "WhatsApp Enquiry" }),
   ).toHaveAttribute("href", "https://wa.me/6590143819");
+  expect(
+    screen.getByRole("link", { name: "WhatsApp Enquiry" }),
+  ).toHaveAttribute("target", "_blank");
+  expect(
+    screen.getByRole("link", { name: "WhatsApp Enquiry" }),
+  ).toHaveAttribute("rel", "noopener noreferrer");
   expect(screen.queryByText("Paid · Preview")).not.toBeInTheDocument();
   expect(
     screen.queryByRole("button", {
@@ -518,14 +524,14 @@ it("reopening an expired paid booking shows the saved full confirmation without 
   const page = render(
     <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
   );
-  fireEvent.click(await screen.findByText("View full details"));
-  await screen.findByRole("heading", { name: "Client Details" });
-  expect(screen.getByText(/Saved confirmation · Verified/)).toBeInTheDocument();
+  fireEvent.click(await screen.findByText("View Full Details"));
+  await screen.findByRole("heading", { name: "Booking Contact" });
+  expect(screen.getByText(/Verified/)).toBeInTheDocument();
   expect(fetch).toHaveBeenCalledTimes(1);
   page.unmount();
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
-  fireEvent.click(await screen.findByText("View full details"));
-  await screen.findByRole("heading", { name: "Client Details" });
+  fireEvent.click(await screen.findByText("View Full Details"));
+  await screen.findByRole("heading", { name: "Booking Contact" });
   expect(fetch).toHaveBeenCalledTimes(2);
   expect(
     screen.queryByRole("button", {
@@ -679,7 +685,7 @@ it("pending confirmation retains the booking summary while hiding full details s
   );
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
   await screen.findByText("Checking payment…");
-  expect(screen.queryByText("View full details")).toBeNull();
+  expect(screen.queryByText("View Full Details")).toBeNull();
   expect(screen.getByLabelText("Booking summary")).toBeVisible();
   expect(screen.getByText("Please do not close or refresh.")).toBeVisible();
   expect(screen.getByText("Checking payment…")).toBeVisible();
@@ -688,7 +694,7 @@ it("pending confirmation retains the booking summary while hiding full details s
   expect(
     document.querySelector(".booking-loading-inline .page-loading-orbit"),
   ).not.toBeNull();
-  for (const name of ["Client Details", "Location", "Disclaimers"])
+  for (const name of ["Booking Contact", "Location", "Before Your Session"])
     expect(screen.queryByRole("heading", { name })).toBeNull();
   expect(screen.queryByText("Synthetic Customer")).toBeNull();
   expect(
@@ -791,7 +797,8 @@ it("verified payment shows confirmation before reconciliation without export act
   vi.stubGlobal("fetch", fetch);
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
   await screen.findByRole("heading", { name: "Booking Confirmed" });
-  expect(screen.getByText("Paid", { exact: true })).toBeVisible();
+  fireEvent.click(screen.getByText("View Full Details"));
+  expect(screen.getByText("Total Paid", { exact: true })).toBeVisible();
   expect(
     screen.queryByRole("button", {
       name: /Add to calendar|Download booking details/,
@@ -894,6 +901,7 @@ it("authoritative unpaid expiry releases the original attempt before returning t
     release = resolve;
   });
   let expired = true;
+  let deadline = Date.now() + 600000;
   const fetch = vi.fn((url: string) =>
     url.endsWith("/expire")
       ? url.includes(second)
@@ -922,7 +930,7 @@ it("authoritative unpaid expiry releases the original attempt before returning t
                     ],
                   },
                   checking: {
-                    deadlineMs: Date.now() + 600000,
+                    deadlineMs: deadline,
                     nextCheckMs: 0,
                     pollAfterMs: 5000,
                   },
@@ -974,6 +982,37 @@ it("authoritative unpaid expiry releases the original attempt before returning t
     screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).toBeNull();
   expect(onExpired).toHaveBeenCalledTimes(1);
+  const onAwaitingExpiry = vi.fn(() => true);
+  deadline = Date.now() - 1;
+  view.rerender(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      sessionRevision={2}
+      onExpired={onExpired}
+      onAwaitingExpiry={onAwaitingExpiry}
+    />,
+  );
+  await waitFor(() =>
+    expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first),
+  );
+  expect(onExpired).toHaveBeenCalledTimes(1);
+  expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
+  view.rerender(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      sessionRevision={2}
+      onExpired={onExpired}
+      calendarRecovery
+    />,
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Affected sessions:",
+  );
+  expect(screen.queryByRole("link", { name: "Back to home" })).toBeNull();
+  expect(screen.getByRole("status").querySelector(".spinner")).not.toBeNull();
+  expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
 });
 
 it("poll-confirmed payment retains its displayed proof while the final receipt is delayed", async () => {
@@ -1007,7 +1046,7 @@ it("poll-confirmed payment retains its displayed proof while the final receipt i
     render(<ProtectedConfirmation attemptId={first} />);
     await act(async () => {});
     const heading = screen.getByRole("heading", { name: "Booking Confirmed" });
-    const verified = screen.getByText(/Saved confirmation/).textContent;
+    const verified = screen.getByText(/^Verified /).textContent;
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
@@ -1021,14 +1060,14 @@ it("poll-confirmed payment retains its displayed proof while the final receipt i
       screen.queryByRole("status", { name: "Preparing confirmation…" }),
     ).toBeNull();
     expect(screen.queryByText("Please do not close or refresh.")).toBeNull();
-    expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
+    expect(screen.getByText(/^Verified /).textContent).toBe(verified);
     await act(async () => {
       finishReceipt(Response.json(proof));
     });
     expect(screen.getByRole("heading", { name: "Booking Confirmed" })).toBe(
       heading,
     );
-    expect(screen.getByText(/Saved confirmation/).textContent).toBe(verified);
+    expect(screen.getByText(/^Verified /).textContent).toBe(verified);
     cleanup();
     localStorage.clear();
   }
@@ -1153,8 +1192,10 @@ it("shows payment received feedback with details while current booking evidence 
   expect(continuation).not.toHaveAttribute("target");
   expect(continuation.nextElementSibling).toBeNull();
   expect(continuation.parentElement?.nextElementSibling).toBeNull();
-  expect(screen.queryByText("View full details")).toBeNull();
-  expect(screen.queryByRole("heading", { name: "Disclaimers" })).toBeNull();
+  expect(screen.queryByText("View Full Details")).toBeNull();
+  expect(
+    screen.queryByRole("heading", { name: "Before Your Session" }),
+  ).toBeNull();
   expect(screen.queryByText(/SimplyBook booking ID/)).toBeNull();
   navigation.status = "completed";
   // A completed redirect can only hide payment. Pending server evidence must
@@ -1254,7 +1295,7 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
     <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
   );
   await act(async () => {});
-  expect(screen.getByText(/Saved confirmation/)).toBeInTheDocument();
+  expect(screen.getByText(/^Verified /)).toBeInTheDocument();
   expect(
     screen.getByRole("status", { name: "Checking invoice number" }),
   ).toBeInTheDocument();

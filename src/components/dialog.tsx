@@ -83,7 +83,7 @@ export function Dialog({
       }}
     >
       <div
-        className={`${variant === "booking-panel" ? "booking-panel-header" : "mb-5"} flex items-center justify-between gap-4`}
+        className={`${variant === "booking-panel" ? "booking-panel-header" : "mb-5"} flex ${variant === "player-app" ? "items-start" : "items-center"} justify-between gap-4`}
       >
         <h2 className="dialog-title" id={titleId}>
           {title}

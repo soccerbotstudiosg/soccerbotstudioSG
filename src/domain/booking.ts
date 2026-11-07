@@ -242,6 +242,7 @@ export function guardedStep(
     ).length
   )
     return "details";
-  if (requested === "payment" && (!attempt || !draft.accepted)) return "review";
+  if (requested === "payment" && (!attempt || !attempt.draft.accepted))
+    return "review";
   return requested;
 }

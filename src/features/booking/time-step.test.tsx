@@ -289,6 +289,14 @@ test("confirmation places three retained actions above a compact summary and dis
   );
   const disclosure = view.container.querySelector("details");
   expect(disclosure).not.toHaveAttribute("open");
+  expect(
+    disclosure?.querySelector(".session-summary-heading h2"),
+  ).toHaveTextContent("Your Sessions");
+  expect(
+    view.container.querySelector(
+      ".confirmation-summary .session-summary-heading",
+    ),
+  ).toBeNull();
   const actions = screen.getByLabelText("Booking actions");
   expect(
     Array.from(
@@ -299,13 +307,24 @@ test("confirmation places three retained actions above a compact summary and dis
   expect(actions.compareDocumentPosition(disclosure!)).toBe(
     Node.DOCUMENT_POSITION_FOLLOWING,
   );
-  fireEvent.click(screen.getByText("View full details"));
+  fireEvent.click(screen.getByText("View Full Details"));
   expect(
     screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent),
-  ).toEqual(["Your sessions", "Client Details", "Location", "Disclaimers"]);
+  ).toEqual([
+    "Your Sessions",
+    "Booking Contact",
+    "Order Summary",
+    "Location",
+    "Before Your Session",
+  ]);
   expect(disclosure).toHaveAttribute("open");
+  expect(
+    Array.from(disclosure!.querySelectorAll("h2"), (node) => node.textContent),
+  ).toEqual(["Your Sessions", "Booking Contact", "Order Summary", "Location"]);
+  expect(disclosure!.querySelector(".confirmation-disclaimers")).toBeNull();
+  expect(disclosure!.querySelector("button, a")).toBeNull();
   expect(screen.getAllByText("Demo Customer", { exact: true })).toHaveLength(1);
   expect(screen.getAllByText("Studio 1", { exact: true })).toHaveLength(1);
   expect(

@@ -62,7 +62,8 @@ export function BookingPage({ step }: { step: BookingStep }) {
       ? "review"
       : step;
   const actual =
-      action.returnToCalendar && ["details", "review", "payment"].includes(step)
+      action.returnToCalendar &&
+      ["time", "details", "review", "payment"].includes(step)
         ? "time"
         : handingOff || reserving
           ? step

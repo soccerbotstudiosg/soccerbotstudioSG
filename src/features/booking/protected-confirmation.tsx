@@ -1,4 +1,6 @@
 "use client";
+import { Icon } from "@/components/icon";
+import { PAYMENT_RELEASE_PENDING } from "@/domain/booking-messages";
 import { isHitpayCheckoutUrl } from "@/domain/native-checkout";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -16,7 +18,7 @@ import {
   protectedCheckoutService,
 } from "@/services/confirmation";
 import type { CheckoutContext } from "@/services/contracts";
-import { money } from "@/domain/dates";
+import { money, dateLabel, endTime } from "@/domain/dates";
 import { useConfirmationRenderTrace } from "./confirmation-render-trace";
 import { useConfirmationChecking } from "./confirmation-checking";
 /** Reopen only the retained handoff within its original payment deadline. */
@@ -74,6 +76,9 @@ export function ProtectedConfirmation({
   onAgain,
   onRestart,
   onExpired,
+  onAwaitingExpiry,
+  calendarRecovery = false,
+  onPaymentDetected,
 }: {
   attemptId: string;
   checkoutMode?: "synthetic" | "live";
@@ -81,6 +86,9 @@ export function ProtectedConfirmation({
   sessionRevision?: number;
   onAgain?: () => void;
   onExpired?: (attemptId: string) => void;
+  onAwaitingExpiry?: (attemptId: string) => boolean;
+  calendarRecovery?: boolean;
+  onPaymentDetected?: (attemptId: string) => void;
   onRestart?: (attemptId: string) => void | Promise<void>;
 }) {
   const router = useRouter();
@@ -327,6 +335,50 @@ export function ProtectedConfirmation({
         : customerProof
           ? bookingFromReceipt(customerProof)
           : null;
+  const calendarReturned = useRef<string | null>(null);
+  useEffect(() => {
+    if (calendarRecovery) {
+      if (
+        paymentReceived ||
+        recordedPayment ||
+        displayedReceipt ||
+        view === "confirmed"
+      ) {
+        onPaymentDetected?.(attemptId);
+        router.replace("/book/payment/");
+      }
+      return;
+    }
+    if (
+      checkoutMode !== "live" ||
+      view !== "unresolved" ||
+      !current ||
+      paymentReceived ||
+      recordedPayment ||
+      displayedReceipt ||
+      wantsExpiry ||
+      checkoutNow(current.clock) < current.checking.deadlineMs ||
+      calendarReturned.current === attemptId
+    )
+      return;
+    if (onAwaitingExpiry?.(attemptId)) {
+      calendarReturned.current = attemptId;
+      router.replace("/book/time/");
+    }
+  }, [
+    calendarRecovery,
+    checkoutMode,
+    view,
+    current,
+    paymentReceived,
+    recordedPayment,
+    displayedReceipt,
+    wantsExpiry,
+    attemptId,
+    onAwaitingExpiry,
+    onPaymentDetected,
+    router,
+  ]);
   const receiptUnavailable =
     receiptFailure?.id === attemptId &&
     receiptFailure.revision === sessionRevision;
@@ -366,6 +418,34 @@ export function ProtectedConfirmation({
       (paymentReceived || view === "confirmed" ? responseEvidence : current),
     receipt: receiptMatches ? receipt.value : undefined,
   });
+  if (calendarRecovery)
+    return (
+      <div className="alert" role="alert">
+        <p>
+          {paymentReceived || recordedPayment || displayedReceipt ? (
+            "Payment received. Opening your booking status. Do not pay again."
+          ) : (
+            <>
+              Your payment window has ended. Affected sessions:{" "}
+              {current?.summary.sessions
+                .map((session) => {
+                  const wall = new Date(
+                    session.startMs + 8 * 3600000,
+                  ).toISOString();
+                  const start = wall.slice(11, 16);
+                  return `${dateLabel(wall.slice(0, 10))}, ${start}–${endTime(start)}`;
+                })
+                .join("; ") ?? "your selected sessions"}
+              . {PAYMENT_RELEASE_PENDING}
+            </>
+          )}
+        </p>
+        <p className="payment-check-feedback" role="status">
+          <Icon name="spinner" className="spinner h-4 w-4" />
+          <span>{feedback ?? "Checking payment status…"}</span>
+        </p>
+      </div>
+    );
   if (displayedReceipt && checkoutMode !== "synthetic") {
     return (
       <BookingConfirmation
@@ -634,9 +714,10 @@ export function ProtectedConfirmation({
               ) : null}
             </>
           )}
-        {feedback && !busy && !["confirmed", "denied"].includes(view) && (
-          <p className="hint" role="status">
-            {feedback}
+        {feedback && !["confirmed", "denied"].includes(view) && (
+          <p className="hint payment-check-feedback" role="status">
+            {busy && <Icon name="spinner" className="spinner h-4 w-4" />}
+            <span>{feedback}</span>
           </p>
         )}
         {!wantsExpiry &&

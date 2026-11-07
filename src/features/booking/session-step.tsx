@@ -38,9 +38,8 @@ export function SessionStep() {
           <span>
             <strong>{LOCATION.building}</strong>
             <span>Our flagship studio</span>
-            <span>
-              {LOCATION.street}, {LOCATION.unit}
-            </span>
+            <span>{LOCATION.street}</span>
+            <span>{LOCATION.unit}</span>
           </span>
         </button>
       </div>
@@ -184,10 +183,11 @@ function SessionPresentation({
           </span>
           <span className="session-product-prices">
             <span>
-              Weekdays <strong>${prices.ordinary / 100}</strong>
+              <span>Weekdays</span> <strong>${prices.ordinary / 100}</strong>
             </span>
             <span>
-              Weekends/Public Holiday <strong>${prices.premium / 100}</strong>
+              <span>Weekends/Public Holiday</span>{" "}
+              <strong>${prices.premium / 100}</strong>
             </span>
           </span>
         </button>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   act,
   fireEvent,
+  cleanup,
   render,
   screen,
   waitFor,
@@ -11,7 +12,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
 import { ReviewStep } from "./review-step";
-import type { BookingService } from "@/services/contracts";
+import { BookingServiceError, type BookingService } from "@/services/contracts";
 import { liveBookingService } from "@/services/booking";
 import { saveLiveDraft, saveBooking } from "@/services/storage";
 import { demoBookingService } from "@/services/demo/booking";
@@ -566,7 +567,7 @@ it("Review performs no provider reads and checkout verifies one booking before H
     screen.queryByRole("heading", { name: "Dates & times" }),
   ).not.toBeInTheDocument();
   expect(screen.queryByText(/× 40 min session/)).not.toBeInTheDocument();
-  const order = screen.getByRole("heading", { name: "Order summary" })
+  const order = screen.getByRole("heading", { name: "Order Summary" })
     .parentElement!.parentElement!;
   expect(
     within(order).getByRole("list", { name: "Selected sessions" }),
@@ -577,7 +578,7 @@ it("Review performs no provider reads and checkout verifies one booking before H
   expect(availability).not.toHaveBeenCalled();
   expect(checkout).not.toHaveBeenCalled();
   expect(pay).not.toHaveBeenCalled();
-  for (const heading of ["Booking contact", "Order summary"]) {
+  for (const heading of ["Booking Contact", "Order Summary"]) {
     const section = screen.getByRole("heading", {
       name: heading,
     }).parentElement!;
@@ -1006,6 +1007,47 @@ it("rejected checkout window clears the undispatched draft attempt without payme
   expect(navigation.replace).not.toHaveBeenCalled();
   expect(restore).toHaveBeenCalledTimes(2);
   expect(fetch).toHaveBeenCalledTimes(2);
+  cleanup();
+  const other = { ...draft.slots[0], start: "12:50" };
+  saveLiveDraft({ ...draft, slots: [draft.slots[0], other] });
+  function RestoredDraft() {
+    const state = useBooking();
+    return (
+      <>
+        <output data-testid="restored-cart">
+          {JSON.stringify(state.draft.slots)}
+        </output>
+        <output data-testid="restored-attempt">
+          {state.attempt?.id ?? "none"}
+        </output>
+        <output data-testid="existing-checkout">
+          {state.action.resumeAttemptId}
+        </output>
+      </>
+    );
+  }
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore,
+        calendar: undefined,
+        publicCalendar: undefined,
+      }}
+      identityService={{ ...demoCustomerIdentity, mode: "live" }}
+    >
+      <RestoredDraft />
+    </BookingProvider>,
+  );
+  await waitFor(() =>
+    expect(screen.getByTestId("existing-checkout")).toHaveTextContent(id),
+  );
+  expect(screen.getByTestId("restored-attempt")).toHaveTextContent("none");
+  expect(JSON.parse(screen.getByTestId("restored-cart").textContent!)).toEqual([
+    draft.slots[0],
+    other,
+  ]);
+  expect(navigation.replace).not.toHaveBeenCalled();
 });
 
 it("checkout readback uses slot-specific messaging only for verified unavailability", async () => {
@@ -1052,6 +1094,94 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
       });
       expect(fetch).toHaveBeenCalledTimes(1);
     }
+  const other = { ...draft.slots[0], start: "12:50" };
+  const availability = vi.fn<BookingService["availability"]>(async () => [
+    { ...draft.slots[0], available: false },
+    { ...other, available: true },
+  ]);
+  const checkout = vi.fn<BookingService["checkout"]>(async () => {
+    throw new BookingServiceError(
+      "selection_unavailable",
+      "Session no longer available.",
+    );
+  });
+  function ConflictProbe() {
+    const state = useBooking();
+    return (
+      <>
+        <button
+          onClick={() =>
+            state.update({ ...draft, slots: [draft.slots[0], other] })
+          }
+        >
+          Seed multi
+        </button>
+        <button onClick={() => void state.checkout()}>Checkout multi</button>
+        <p data-testid="conflict-notice">{state.selectionNotice}</p>
+        <output data-testid="conflict-cart">
+          {JSON.stringify(state.draft.slots)}
+        </output>
+        <output data-testid="conflict-action">
+          {String(state.action.returnToCalendar)}
+        </output>
+        <output data-testid="conflict-calendar">
+          {JSON.stringify(state.calendar.cachedDates[draft.slots[0].date])}
+        </output>
+      </>
+    );
+  }
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        calendar: undefined,
+        publicCalendar: async ({ month }) => ({
+          month,
+          serviceId: "2",
+          observedAtMs: Date.now(),
+          dates: [
+            {
+              date: draft.slots[0].date,
+              available: true,
+              offers: [draft.slots[0], other].map((slot) => ({
+                ...slot.native!,
+                instructorId: slot.instructor,
+                startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
+              })),
+            },
+          ],
+        }),
+        checkout,
+        availability,
+      }}
+    >
+      <ConflictProbe />
+    </BookingProvider>,
+  );
+  fireEvent.click(screen.getByText("Seed multi"));
+  await waitFor(() =>
+    expect(screen.getByTestId("conflict-calendar").textContent).toContain(
+      "12:50",
+    ),
+  );
+  fireEvent.click(screen.getByText("Checkout multi"));
+  await waitFor(() =>
+    expect(screen.getByTestId("conflict-action")).toHaveTextContent("true"),
+  );
+  expect(JSON.parse(screen.getByTestId("conflict-cart").textContent!)).toEqual([
+    other,
+  ]);
+  expect(
+    JSON.parse(screen.getByTestId("conflict-calendar").textContent!),
+  ).toEqual([{ ...other, available: true }]);
+  expect(availability).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ fresh: true, date: draft.slots[0].date }),
+  );
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId("conflict-notice")).toHaveTextContent(
+    "Removed unavailable sessions: Tue, 20 Oct 2026, 12:00–12:40.",
+  );
 });
 
 it("keeps booking UI unready until protected restoration finishes", async () => {
@@ -1158,7 +1288,7 @@ async function verifyExpiryRetention(multi: boolean) {
     ),
   );
   const current = JSON.parse(screen.getByTestId("cart").textContent!);
-  expect(current.slots).toEqual(multi ? [other] : []);
+  expect(current.slots).toEqual([]);
   expect(current.contact).toEqual(draft.contact);
   expect(current.accepted).toBe(false);
   expect(availability).toHaveBeenCalledExactlyOnceWith(
@@ -1169,10 +1299,10 @@ async function verifyExpiryRetention(multi: boolean) {
     }),
   );
 }
-it("unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=false)", async () => {
+it("unpaid expiry keeps the cart empty and checks affected sessions (multi=false)", async () => {
   await verifyExpiryRetention(false);
 });
-it("unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=true)", async () => {
+it("unpaid expiry keeps the cart empty and checks affected sessions (multi=true)", async () => {
   await verifyExpiryRetention(true);
 });
 

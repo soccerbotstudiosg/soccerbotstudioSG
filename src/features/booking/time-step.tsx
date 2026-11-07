@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import { ProtectedConfirmation } from "./protected-confirmation";
 import {
   AVAILABILITY_LOAD_FAILED,
   NO_SESSIONS_ON_DATE,
@@ -30,7 +32,15 @@ import type { AvailableSlot } from "@/services/contracts";
 import { useBooking } from "./provider";
 /** Manage calendar, session-time and instructor selection. */
 export function TimeStep() {
-  const { selectionNotice } = useBooking();
+  const {
+    selectionNotice,
+    attempt,
+    action,
+    confirmationRevision,
+    restartAfterExpiry,
+    resumePaymentStatus,
+  } = useBooking();
+  const waitingForRelease = !!attempt && action.returnToCalendar === true;
   const {
     draft,
     update,
@@ -192,10 +202,28 @@ export function TimeStep() {
       <h1 className="page-title">
         Select dates<span className="booking-time-title-break"> and times</span>
       </h1>
-      {selectionNotice && (
-        <p className="alert" role="alert">
-          {selectionNotice}
-        </p>
+      {waitingForRelease && attempt && (
+        <ProtectedConfirmation
+          attemptId={attempt.id}
+          checkoutMode="live"
+          calendarRecovery
+          sessionRevision={confirmationRevision}
+          onExpired={restartAfterExpiry}
+          onPaymentDetected={resumePaymentStatus}
+        />
+      )}
+      {selectionNotice && !waitingForRelease && (
+        <div className="alert" role="alert">
+          <p>{selectionNotice}</p>
+          {action.resumeAttemptId && (
+            <Link
+              className="text-link"
+              href={`/confirmation/?attempt=${encodeURIComponent(action.resumeAttemptId)}`}
+            >
+              View existing checkout
+            </Link>
+          )}
+        </div>
       )}
       <p className="lead">40-minute sessions · 10-minute changeover.</p>
       {draft.slots.length >= MAX_BOOKING_SESSIONS && (
@@ -379,10 +407,11 @@ export function TimeStep() {
                       aria-pressed={!!selected}
                       aria-expanded={!!selected || choosing === key}
                       disabled={
-                        (!available ||
+                        waitingForRelease ||
+                        ((!available ||
                           elapsed ||
                           draft.slots.length >= MAX_BOOKING_SESSIONS) &&
-                        !selected
+                          !selected)
                       }
                       onClick={() => {
                         if (selected) {
@@ -437,7 +466,7 @@ export function TimeStep() {
                         <select
                           aria-label={`Trainer for ${slot.date} at ${slot.start}`}
                           value={selected ? sessionOfferKey(selected) : ""}
-                          disabled={elapsed || !available}
+                          disabled={waitingForRelease || elapsed || !available}
                           onChange={(event) => {
                             const offer = offers.find(
                               (item) =>
