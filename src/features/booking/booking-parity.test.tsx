@@ -17,7 +17,7 @@ import type {
 import { BookingProvider, useBooking } from "./provider";
 import { DetailsStep } from "./details-step";
 import { TimeStep } from "./time-step";
-import { Summary } from "./summary";
+import { Summary, SessionSummaryHeading } from "./summary";
 import { BookingPage } from "./booking-page";
 import { SessionStep } from "./session-step";
 import { dateLabel } from "@/domain/dates";
@@ -320,6 +320,25 @@ test("live session preserves demo product player and inclusion presentation usin
   expect(
     screen.queryByRole("button", { name: "Select session" }),
   ).not.toBeInTheDocument();
+  render(
+    <SessionSummaryHeading
+      selectedService
+      draft={{
+        players: 2,
+        nativeServiceId: "12",
+        slots: [
+          {
+            ...slot,
+            native: { ...slot.native, serviceName: "Premium weekend variant" },
+          },
+        ],
+      }}
+    />,
+  );
+  expect(
+    await screen.findByText("Real session · Apex @ Henderson"),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/Premium weekend variant/)).not.toBeInTheDocument();
 });
 
 test("homepage prefetch starts without a booking identity and never creates guest access", async () => {
@@ -1512,6 +1531,9 @@ test("rolling week starts at first availability crosses months and preserves car
   await waitFor(() =>
     expect(day("2026-10-29")).toHaveAttribute("aria-pressed", "true"),
   );
+  fireEvent.change(screen.getByRole("combobox", { name: "Calendar view" }), {
+    target: { value: "week" },
+  });
   expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
     "week",
   );

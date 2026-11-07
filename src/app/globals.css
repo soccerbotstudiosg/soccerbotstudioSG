@@ -2407,6 +2407,11 @@
     font-weight: var(--weight-body);
     color: var(--color-muted);
   }
+  .time.selected .time-instructor {
+    display: block;
+    font-size: var(--text-card);
+    color: var(--color-brand);
+  }
   .time-rate strong {
     font-size: var(--text-card);
     color: var(--color-brand);
@@ -2773,7 +2778,7 @@
   }
   .outlet-option[aria-pressed="true"],
   .session-product[aria-pressed="true"],
-  .time[aria-expanded="true"] {
+  .time[aria-pressed="true"] {
     border-color: var(--color-identity);
     background: color-mix(
       in srgb,
@@ -3136,9 +3141,6 @@
   .booking-layout > .aside-wrap {
     position: sticky;
     top: calc(var(--site-header-height, 76px) + 16px);
-    max-height: calc(100dvh - var(--site-header-height, 76px) - 32px);
-    overflow-y: auto;
-    scrollbar-gutter: stable;
     align-self: start;
   }
   .calendar-panel {
@@ -3941,10 +3943,6 @@
     grid-column: 1 / -1;
     color: var(--color-warning);
   }
-  .basket-list {
-    max-height: 340px;
-    overflow-y: auto;
-  }
 
   @media (max-width: 1200px) {
     .outlet-options,
@@ -4377,6 +4375,10 @@
     }
     .time-instructor {
       display: none;
+    }
+    .time.selected .time-instructor {
+      grid-column: 1 / -1;
+      grid-row: 3;
     }
     .time-info {
       display: grid;

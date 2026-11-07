@@ -28,19 +28,32 @@ import {
 } from "@/domain/booking";
 import { dateLabel, endTime, money } from "@/domain/dates";
 import { bookingCover } from "@/content/media";
+import { LiveCatalogue } from "./live-catalogue";
 import { InstructorProfile } from "./instructor";
 import { useBooking } from "./provider";
 /** Present the same session heading and service description across booking summaries. */
 export function SessionSummaryHeading({
   draft,
   action,
+  selectedService = false,
 }: {
   draft: Pick<BookingDraft, "slots" | "players" | "nativeServiceId">;
   action?: ReactNode;
+  selectedService?: boolean;
 }) {
   const serviceName =
-    draft.slots[0]?.native?.serviceName ??
-    (draft.nativeServiceId ? undefined : SERVICE_NAME);
+    selectedService && draft.nativeServiceId ? (
+      <LiveCatalogue
+        renderStatus={() => "Session details unavailable"}
+        render={(data) =>
+          data.services.find((service) => service.id === draft.nativeServiceId)
+            ?.name ?? "Session details unavailable"
+        }
+      />
+    ) : (
+      (draft.slots[0]?.native?.serviceName ??
+      (draft.nativeServiceId ? undefined : SERVICE_NAME))
+    );
   return (
     <div className="session-summary-heading">
       <div className="review-head">
@@ -171,28 +184,25 @@ export function Summary({
           className="summary-cover"
           style={{ backgroundImage: `url("${bookingCover}")` }}
         >
-          <span className="eyebrow">
-            {basket ? "Your booking basket" : "Booking summary"}
-          </span>
+          <span className="eyebrow">Your Cart</span>
         </div>
         <div className="summary-body">
-          <SessionSummaryHeading draft={draft} />
           {draft.slots.length ? (
             <>
-              {basket && (
-                <div className="basket-heading">
-                  <strong>
-                    {draft.slots.length}{" "}
-                    {draft.slots.length === 1 ? "session" : "sessions"}
-                  </strong>
+              <div className="basket-heading">
+                <strong>
+                  {draft.slots.length}{" "}
+                  {draft.slots.length === 1 ? "session" : "sessions"}
+                </strong>
+                {basket && (
                   <button
                     className="text-link"
                     onClick={() => update({ slots: [] })}
                   >
                     Clear all
                   </button>
-                </div>
-              )}
+                )}
+              </div>
               <SessionList
                 slots={draft.slots}
                 showPrices

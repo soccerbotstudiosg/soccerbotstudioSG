@@ -26,7 +26,7 @@ async function openBookingPanel(page: Page, panel: "cart" | "trainers") {
     })
     .click();
   const dialog = page.getByRole("dialog", {
-    name: panel === "cart" ? "Your cart" : "Selected trainers",
+    name: panel === "cart" ? "Your Cart" : "Selected trainers",
     exact: true,
   });
   await expect(dialog).toBeVisible();
@@ -176,7 +176,7 @@ async function details(page: Page) {
   ).toHaveText(totalText.replace(/^SGD\s*/, ""));
   if (page.viewportSize()!.width <= 700) {
     await openBookingPanel(page, "cart");
-    const cart = page.getByRole("dialog", { name: "Your cart", exact: true });
+    const cart = page.getByRole("dialog", { name: "Your Cart", exact: true });
     await expect(
       cart.getByRole("complementary", { name: "Your booking summary" }),
     ).toBeVisible();
@@ -1062,8 +1062,9 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     );
     await expect(page.locator(".booking-layout > .aside-wrap")).toHaveCSS(
       "overflow-y",
-      "auto",
+      "visible",
     );
+    await expect(page.locator(".basket-list")).toHaveCSS("max-height", "none");
     const positions = await page.locator(".aside-wrap").evaluate((element) => ({
       continueBottom: element
         .querySelector(".basket-continue")!
@@ -1590,7 +1591,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   await pageHeading("Select dates and times");
   await expect(
     page.getByRole("combobox", { name: "Calendar view" }),
-  ).toHaveValue("week");
+  ).toHaveValue("month");
+  await page
+    .getByRole("combobox", { name: "Calendar view" })
+    .selectOption("week");
   await expect(page.locator(".dates .date")).toHaveCount(7);
   const monthPicker = page.getByRole("combobox", { name: "Calendar month" });
   await expect(monthPicker.locator("option:checked")).toHaveText(
@@ -1683,8 +1687,9 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(crossing).toHaveCSS("background-color", selectedCardBackground);
   await expect(crossing.locator(".time-instructor")).toHaveCSS(
     "font-size",
-    "14px",
+    "18px",
   );
+  await expect(crossing.locator(".time-instructor")).toBeVisible();
   await expect(crossing.locator(".rotation-notice")).toHaveCSS(
     "font-size",
     "14px",
@@ -2225,6 +2230,8 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(trainerBadge).toHaveCSS("animation-name", "none");
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
+  await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await noon.selectOption(`${date}|12:00|demo|faisal`);
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
@@ -2235,10 +2242,13 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     cards.getByRole("article", { name: "Daniel Tan", exact: true }),
   ).toContainText("Demonstration profile. Guides players through ball control");
   await page.reload();
-  await expect(noon).toHaveValue(`${date}|12:00|demo|faisal`);
-  await expect(
-    page.getByRole("combobox", { name: `Trainer for ${date} at 15:20` }),
-  ).toHaveValue(`${date}|15:20|demo|daniel`);
+  await expect(page.getByRole("button", { name: /12:00–12:40/ })).toContainText(
+    "Trainer: Faisal Shahril",
+  );
+  await expect(noon).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /15:20–16:00/ })).toContainText(
+    "Trainer: Daniel Tan",
+  );
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
   await closeBookingPanel(page);
