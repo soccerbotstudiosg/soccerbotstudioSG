@@ -44,7 +44,7 @@ export function SessionSummaryHeading({
   return (
     <div className="session-summary-heading">
       <div className="review-head">
-        <h2>Your sessions</h2>
+        <h2>Your Sessions</h2>
         {action}
       </div>
       <p>
@@ -67,15 +67,15 @@ export function SessionList({
   slots,
   remove,
   showRotation = true,
-  trainerAction,
   showPrices = false,
+  showPaid = false,
   now,
 }: {
   slots: Session[];
   now?: number;
   showRotation?: boolean;
-  trainerAction?: ReactNode;
   showPrices?: boolean;
+  showPaid?: boolean;
   remove?: (slot: Session) => void;
 }) {
   const list = (
@@ -98,12 +98,21 @@ export function SessionList({
                   <span className="session-instructor">
                     Trainer: {sessionInstructorName(slot)}
                   </span>
-                  {showPrices && (
-                    <strong className="session-item-price">
-                      {money(sessionPrice(slot))}
-                    </strong>
+                  {showPaid ? (
+                    <div className="session-paid">
+                      <span className="pill success">Paid</span>
+                      <span className="total-currency">SGD</span>
+                      <strong className="session-item-price">
+                        {money(sessionPrice(slot))}
+                      </strong>
+                    </div>
+                  ) : (
+                    showPrices && (
+                      <strong className="session-item-price">
+                        {money(sessionPrice(slot))}
+                      </strong>
+                    )
                   )}
-                  {slots.length === 1 && trainerAction}
                 </div>
               )}
               {showRotation && slot.rotationAt && (

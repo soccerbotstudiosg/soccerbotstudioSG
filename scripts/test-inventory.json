@@ -1237,11 +1237,11 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=false)"
+    "title": "unpaid expiry keeps the cart empty and checks affected sessions (multi=false)"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "unpaid expiry removes unavailable sessions and retains only fresh matching offers (multi=true)"
+    "title": "unpaid expiry keeps the cart empty and checks affected sessions (multi=true)"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",

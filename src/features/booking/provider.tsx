@@ -88,10 +88,22 @@ interface BookingContextValue extends StoredBooking {
   check: () => Promise<boolean>;
   resolve: () => Promise<boolean>;
   reset: () => void;
+  leave: () => void;
   restartAfterExpiry: (attemptId: string) => void;
+  browseAfterChecking: (attemptId: string) => boolean;
+  clearReviewConsent: () => void;
+  resumePaymentStatus: (attemptId: string) => void;
   restartAfterConfirmation: (attemptId: string) => Promise<void>;
   rebookingError: string | null;
   retryRebooking: () => void;
+}
+/** Describe affected selections consistently across expiry and conflict notices. */
+function describeSessions(slots: StoredBooking["draft"]["slots"]) {
+  return slots
+    .map(
+      (slot) => `${dateLabel(slot.date)}, ${slot.start}–${endTime(slot.start)}`,
+    )
+    .join("; ");
 }
 const Context = createContext<BookingContextValue | null>(null);
 /** Coordinate draft, identity and checkout state across the booking flow. */
@@ -244,11 +256,11 @@ export function BookingProvider({
       restorationPending ||
       !calendarBrowsing ||
       calendarPaused ||
-      !!value.attempt,
+      (!!value.attempt && !action.returnToCalendar),
   );
   const availability = useBookingAvailability(
     service,
-    value.attempt ||
+    (value.attempt && !action.returnToCalendar) ||
       !calendarBrowsing ||
       calendarPaused ||
       (service.mode === "live" && !date)
@@ -311,6 +323,16 @@ export function BookingProvider({
     },
     [service],
   );
+  /** Clear editable consent without changing a dispatched payment snapshot. */
+  const clearReviewConsent = useCallback(() => {
+    const current = latest.current;
+    if (current.draft.accepted)
+      commit(
+        { ...current, draft: { ...current.draft, accepted: false } },
+        true,
+        true,
+      );
+  }, [commit]);
   const cancel = useCallback(() => {
     expiryRefresh.current?.abort();
     expiryRefresh.current = null;
@@ -365,8 +387,31 @@ export function BookingProvider({
               mounted.current &&
               latest.current.revision === revision &&
               !active.current
-            )
-              commit({ version: 2, draft: attempt.draft, attempt }, true);
+            ) {
+              const draft = latest.current.draft;
+              const sameSelections =
+                draft.players === attempt.draft.players &&
+                draft.nativeServiceId === attempt.draft.nativeServiceId &&
+                draft.slots.length === attempt.draft.slots.length &&
+                draft.slots.every((slot) =>
+                  attempt.draft.slots.some(
+                    (other) =>
+                      sessionOfferKey(slot) === sessionOfferKey(other) &&
+                      sessionPrice(slot) === sessionPrice(other),
+                  ),
+                );
+              if (draft.slots.length && !sameSelections) {
+                setSelectionNotice(
+                  "Another checkout is in progress. These selections were not booked. You can view the existing checkout or keep browsing the calendar.",
+                );
+                setAction({
+                  status: "idle",
+                  returnToCalendar: true,
+                  resumeAttemptId: attempt.id,
+                });
+              } else
+                commit({ version: 2, draft: attempt.draft, attempt }, true);
+            }
           },
           () => {
             /* A failed protected read cannot restore private state. */
@@ -382,7 +427,7 @@ export function BookingProvider({
       mounted.current = false;
       cancel();
     };
-  }, [commit, cancel, service, identityService, finishExit]);
+  }, [commit, cancel, service, identityService, finishExit, setAction]);
   useEffect(() => {
     const resume = (event: PageTransitionEvent) => {
       // Browser Back may restore this document with its handoff loader intact.
@@ -399,7 +444,10 @@ export function BookingProvider({
       if (releasedReservation.current === id) return;
       releasedReservation.current = id;
       cancel();
-      const previous = latest.current.draft;
+      const previous =
+        latest.current.attempt?.id === id
+          ? latest.current.attempt.draft
+          : latest.current.draft;
       const dates = [...new Set(previous.slots.map((slot) => slot.date))];
       calendar.retry([
         calendarMonth,
@@ -477,16 +525,9 @@ export function BookingProvider({
           if (!offer) unavailable.push(slot);
           return offer ? [slot] : [];
         });
-        const describe = (slots: typeof previous.slots) =>
-          slots
-            .map(
-              (slot) =>
-                `${dateLabel(slot.date)}, ${slot.start}–${endTime(slot.start)}`,
-            )
-            .join("; ");
         commit({
           ...latest.current,
-          draft: { ...previous, accepted: false, slots: retained },
+          draft: { ...previous, accepted: false, slots: [] },
         });
         expiryRefresh.current = null;
         pauseCalendar(false);
@@ -494,14 +535,12 @@ export function BookingProvider({
           [
             "Your unpaid reservation has ended.",
             unavailable.length
-              ? `Removed unavailable sessions: ${describe(unavailable)}. These sessions may not be available to book again immediately. Please try again later.`
+              ? `Removed unavailable sessions: ${describeSessions(unavailable)}. These sessions may not be available to book again immediately. Please try again later.`
               : "",
             unconfirmed.length
-              ? `Unable to confirm availability for: ${describe(unconfirmed)}. These sessions were removed from your cart. Please refresh availability and select them again.`
+              ? `Unable to confirm availability for: ${describeSessions(unconfirmed)}. These sessions were removed from your cart. Please refresh availability and select them again.`
               : "",
-            retained.length
-              ? "Your remaining available sessions are still in your cart."
-              : "",
+            retained.length ? "Available sessions can be selected again." : "",
             "Your details are saved.",
           ]
             .filter(Boolean)
@@ -811,10 +850,58 @@ export function BookingProvider({
         if (selectionRejected) {
           const rejected =
             current.draft.slots[known.rejectedSessionIndex ?? -1];
-          const rejectedSlots = rejected ? [rejected] : current.draft.slots;
+          let rejectedSlots = rejected ? [rejected] : [];
+          if (!rejected) {
+            // A conflict without an indexed session is not evidence that every
+            // selected slot is unavailable. Re-read each date before removing it.
+            const dates = [
+              ...new Set(current.draft.slots.map((slot) => slot.date)),
+            ];
+            const results = await Promise.allSettled(
+              dates.map((date) =>
+                service.availability({
+                  date,
+                  players: current.draft.players,
+                  serviceId: current.draft.nativeServiceId,
+                  fresh: true,
+                  signal: request.controller.signal,
+                }),
+              ),
+            );
+            if (!isCurrent()) return false;
+            rejectedSlots = current.draft.slots.filter((slot) => {
+              const result = results[dates.indexOf(slot.date)];
+              return (
+                result.status === "fulfilled" &&
+                !result.value.some(
+                  (offer) =>
+                    offer.available &&
+                    sessionOfferKey(offer) === sessionOfferKey(slot) &&
+                    sessionPrice(offer) === sessionPrice(slot),
+                )
+              );
+            });
+            results.forEach((result, index) => {
+              if (result.status === "fulfilled") {
+                const available = result.value.filter((slot) => slot.available);
+                calendar.reconcile(
+                  dates[index],
+                  available.length > 0,
+                  available,
+                );
+              } else calendar.retry([dates[index].slice(0, 7)]);
+            });
+          }
           const rejectedKeys = new Set(rejectedSlots.map(slotKey));
-          for (const date of new Set(rejectedSlots.map((slot) => slot.date))) {
-            const remaining = (calendar.cachedDates[date] ?? []).filter(
+          for (const date of new Set(
+            (rejected ? rejectedSlots : []).map((slot) => slot.date),
+          )) {
+            const cached = calendar.cachedDates[date];
+            if (!cached) {
+              calendar.retry([date.slice(0, 7)]);
+              continue;
+            }
+            const remaining = cached.filter(
               (slot) =>
                 !rejectedSlots.some(
                   (rejected) =>
@@ -842,7 +929,11 @@ export function BookingProvider({
             },
           });
           pauseCalendar(false);
-          setSelectionNotice(known.message);
+          setSelectionNotice(
+            rejectedSlots.length
+              ? `Removed unavailable sessions: ${describeSessions(rejectedSlots)}.`
+              : "Unable to confirm availability. Please try again. Your selections are saved.",
+          );
         } else if (known.code === "conflict") invalidateAvailability();
         setAction({
           status:
@@ -908,6 +999,32 @@ export function BookingProvider({
         rebookingError,
         retryRebooking() {
           if (exitWork.current) void finishExit(exitWork.current.id);
+        },
+        clearReviewConsent,
+        resumePaymentStatus(id) {
+          if (latest.current.attempt?.id === id) setAction({ status: "idle" });
+        },
+        /** Browse availability while retaining the original unresolved payment lock. */
+        browseAfterChecking(id) {
+          const current = latest.current;
+          if (
+            active.current ||
+            current.attempt?.id !== id ||
+            !paymentLocked(current.attempt) ||
+            current.attempt.status === "paid"
+          )
+            return false;
+          if (!action.returnToCalendar) {
+            commit(
+              {
+                ...current,
+                draft: { ...current.draft, accepted: false, slots: [] },
+              },
+              true,
+            );
+            setAction({ status: "idle", returnToCalendar: true });
+          }
+          return true;
         },
         /** Restart the draft flow after an eligible attempt expiry. */
         restartAfterExpiry(id) {
@@ -1000,6 +1117,25 @@ export function BookingProvider({
         pay: (outcome) => run("pay", outcome),
         check: () => run("check"),
         resolve: () => run("resolve"),
+        leave() {
+          // Discard editable data without erasing a dispatched attempt or its
+          // server-owned payment recovery. Cancellation invalidates late UI replies.
+          cancel();
+          setAction({ status: "idle" });
+          setSelectionNotice(null);
+          setSessionChoices({ outlet: false, session: false });
+          showDate(null);
+          setCalendarBrowsing(false);
+          const attempt = latest.current.attempt;
+          commit({
+            version: 2,
+            draft: attempt?.draft ?? blankDraft(),
+            attempt,
+          });
+          // A held attempt's immutable snapshot remains usable for recovery;
+          // the separately persisted editable live draft is still discarded.
+          if (service.mode === "live") saveLiveDraft(blankDraft());
+        },
         reset() {
           const current = latest.current;
           if (

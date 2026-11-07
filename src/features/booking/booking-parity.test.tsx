@@ -226,10 +226,18 @@ test("live calendar removes selections rejected at checkout and retains contact 
   fireEvent.click(screen.getByText("Dispatch checkout"));
   const notices = await screen.findAllByRole("alert");
   expect(notices).toHaveLength(2); // This fixture mounts calendar and Details together.
-  for (const notice of notices)
-    expect(notice).toHaveTextContent(
-      "The selected sessions were removed because availability changed.",
-    );
+  expect(
+    notices.some((notice) =>
+      notice.textContent?.includes("Removed unavailable sessions:"),
+    ),
+  ).toBe(true);
+  expect(
+    notices.some((notice) =>
+      notice.textContent?.includes(
+        "The selected sessions were removed because availability changed.",
+      ),
+    ),
+  ).toBe(true);
   expect(push).toHaveBeenCalledWith("/book/review/");
   expect(screen.getByLabelText(/Full name/)).toHaveValue("Test Customer");
   expect(
@@ -243,7 +251,7 @@ test("live calendar removes selections rejected at checkout and retains contact 
     ).toBeDisabled(),
   );
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
-    false,
+    true,
   );
   expect(
     screen.queryByText(/rotate every three hours/),
@@ -523,12 +531,20 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
   fireEvent.click(screen.getByText("Dispatch checkout"));
   const notices = await screen.findAllByRole("alert");
   expect(notices).toHaveLength(2); // This fixture mounts calendar and Details together.
-  for (const notice of notices)
-    expect(notice).toHaveTextContent(
-      "The selected sessions were removed because availability changed.",
-    );
+  expect(
+    notices.some((notice) =>
+      notice.textContent?.includes("Removed unavailable sessions:"),
+    ),
+  ).toBe(true);
+  expect(
+    notices.some((notice) =>
+      notice.textContent?.includes(
+        "The selected sessions were removed because availability changed.",
+      ),
+    ),
+  ).toBe(true);
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
-    false,
+    true,
   );
   expect(push).toHaveBeenCalledWith("/book/review/");
   expect(screen.getByLabelText(/Full name/)).toHaveValue("Test Customer");
@@ -543,7 +559,9 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
     ).toBeDisabled(),
   );
   expect(publicCalendar).toHaveBeenCalledTimes(1);
-  expect(availability).not.toHaveBeenCalled();
+  expect(availability).toHaveBeenCalledWith(
+    expect.objectContaining({ fresh: true }),
+  );
 });
 
 test("browser slot cache expires after five minutes", async () => {
@@ -911,7 +929,7 @@ test("reservation conflict removes its session locally and returns to calendar w
   expect(screen.getByTestId("contact-name")).toHaveTextContent("Test Customer");
   expect(replace).toHaveBeenCalledWith("/book/time/");
   expect(screen.getByTestId("notice")).toHaveTextContent(
-    "The selected session is no longer available",
+    "Removed unavailable sessions: Tue, 5 Jan 2027, 12:00–12:40.",
   );
   expect(publicCalendar).toHaveBeenCalledTimes(1);
   expect(availability).not.toHaveBeenCalled();

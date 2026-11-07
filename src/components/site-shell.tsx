@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ADDRESS, BOOKING_SUPPORT, CONTACT, LOCATION } from "@/domain/catalog";
+import { sitePath } from "@/content/site-path";
 import { darkLogo, logo, singaporeFlag } from "@/content/media";
 import { useBooking } from "@/features/booking/provider";
 import { Dialog } from "./dialog";
@@ -42,12 +43,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
       else root.style.removeProperty("--site-header-height");
     };
   }, []);
-  function home(event: React.MouseEvent<HTMLAnchorElement>) {
-    if (
-      pathname.startsWith("/book/") &&
-      booking.draft.mode &&
-      booking.attempt?.status !== "paid"
-    ) {
+  function home(event: React.MouseEvent<HTMLElement>) {
+    if (pathname.startsWith("/book/") && booking.attempt?.status !== "paid") {
       event.preventDefault();
       setDialog("leave");
     }
@@ -97,7 +94,20 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
         </nav>
       </header>
-      <main id="main" tabIndex={-1}>
+      <main
+        id="main"
+        tabIndex={-1}
+        onClickCapture={(event) => {
+          const link =
+            event.target instanceof Element ? event.target.closest("a") : null;
+          if (
+            link &&
+            link.origin === window.location.origin &&
+            link.pathname === sitePath("/")
+          )
+            home(event);
+        }}
+      >
         {children}
       </main>
       <footer className="site-footer">
@@ -224,18 +234,25 @@ export function SiteShell({ children }: { children: ReactNode }) {
       {dialog && (
         <Dialog title="Leave this booking?" onClose={() => setDialog(null)}>
           <p className="mb-5 text-muted">
-            Your selections are saved in this browser. Complete payment before
-            checkout expires.
+            Your selections and changes will not be saved.
           </p>
+          {(booking.attempt || booking.action.status === "loading") && (
+            <p className="mb-5 text-muted">
+              Leaving does not cancel a reservation or payment. Any unpaid
+              reservation remains held until expiry; payment recovery is
+              retained.
+            </p>
+          )}
           <div className="dialog-actions">
             <button
               className="button secondary"
               onClick={() => {
+                booking.leave();
                 setDialog(null);
                 router.push("/");
               }}
             >
-              Back to home
+              Leave booking
             </button>
             <button className="button" onClick={() => setDialog(null)}>
               Stay

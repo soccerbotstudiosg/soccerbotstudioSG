@@ -136,8 +136,8 @@ export function BookingConfirmation({
           </>
         )}
         {!pending && verifiedAtMs !== undefined && (
-          <p>
-            Saved confirmation · Verified{" "}
+          <p className="confirmation-verified">
+            Verified{" "}
             {new Intl.DateTimeFormat("en-SG", {
               timeZone: "Asia/Singapore",
               dateStyle: "medium",
@@ -186,7 +186,12 @@ export function BookingConfirmation({
             <Icon name="plus" />
             <span>Make another booking</span>
           </button>
-          <a className="button secondary" href={BOOKING_SUPPORT.whatsappUrl}>
+          <a
+            className="button secondary"
+            href={BOOKING_SUPPORT.whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <Icon name="phone" />
             <span>WhatsApp Enquiry</span>
           </a>
@@ -207,66 +212,69 @@ export function BookingConfirmation({
         </div>
       )}
       <section className="surface confirmation-card booking-document">
-        <div
-          className="confirmation-summary review-block"
-          aria-label="Booking summary"
-        >
-          <SessionSummaryHeading
-            draft={{ ...booking.draft, slots: booking.slots }}
-          />
-          <SessionList
-            slots={booking.slots}
-            showRotation={false}
-            showPrices={pending}
-            trainerAction={
-              !pending && booking.slots.length === 1 ? (
-                <div className="paid settled">
-                  <span className="pill success">
-                    {preview ? "Paid · Preview" : "Paid"}
-                  </span>
-                  <strong>
-                    <span className="total-currency">SGD</span>{" "}
-                    {money(booking.totalCents)}
-                  </strong>
-                </div>
-              ) : undefined
-            }
-          />
-          {pending ? (
-            <>
-              <div className="summary-total">
-                <span>Total</span>
-                <strong>
-                  <span className="total-currency">SGD</span>{" "}
-                  {money(booking.totalCents)}
-                </strong>
-              </div>
-            </>
-          ) : booking.slots.length !== 1 ? (
-            <div className="paid settled">
-              <span className="pill success">
-                {preview ? "Paid · Preview" : "Paid"}
-              </span>
+        {pending && (
+          <div
+            className="confirmation-summary review-block"
+            aria-label="Booking summary"
+          >
+            <SessionSummaryHeading
+              draft={{ ...booking.draft, slots: booking.slots }}
+            />
+            <SessionList
+              slots={booking.slots}
+              showRotation={false}
+              showPrices
+            />
+            <div className="summary-total">
+              <span>Total</span>
               <strong>
                 <span className="total-currency">SGD</span>{" "}
                 {money(booking.totalCents)}
               </strong>
             </div>
-          ) : null}
-        </div>
+          </div>
+        )}
         {pending && pendingAction}
         {!pending && (
           <details className="confirmation-full-details">
-            <summary>View full details</summary>
+            <summary>View Full Details</summary>
             <div className="confirmation-details-grid">
+              <section className="review-block">
+                <SessionSummaryHeading
+                  draft={{ ...booking.draft, slots: booking.slots }}
+                />
+              </section>
               <section
                 className="confirmation-section review-block"
                 aria-labelledby="confirmation-client"
               >
                 <h2 className="section-title" id="confirmation-client">
-                  Client Details
+                  Booking Contact
                 </h2>
                 <ClientDetails contact={booking.draft.contact} />
+              </section>
+              <section
+                className="confirmation-section review-block"
+                aria-labelledby="confirmation-order"
+              >
+                <div className="review-head">
+                  <h2 id="confirmation-order">Order Summary</h2>
+                </div>
+                <SessionList
+                  slots={booking.slots}
+                  showRotation={false}
+                  showPrices
+                  showPaid={!preview}
+                />
+                <div className="price-breakdown">
+                  <div className="line-item total confirmation-total">
+                    <span>Total Paid{preview ? " · Preview" : ""}</span>
+                    <strong>
+                      <span className="total-currency">SGD</span>{" "}
+                      {money(booking.totalCents)}
+                    </strong>
+                  </div>
+                </div>
               </section>
               <section
                 className="confirmation-section review-block"
@@ -285,34 +293,36 @@ export function BookingConfirmation({
                   {ADDRESS}
                 </p>
               </section>
-              <section
-                className="confirmation-section confirmation-disclaimers review-block"
-                aria-labelledby="confirmation-disclaimers"
-              >
-                <h2 className="section-title" id="confirmation-disclaimers">
-                  Disclaimers
-                </h2>
-                {booking.slots
-                  .filter((slot) => slot.rotationAt)
-                  .map((slot) => (
-                    <p
-                      className="rotation-notice"
-                      key={`${slot.date}|${slot.start}`}
-                    >
-                      {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}
-                      : Crosses the {slot.rotationAt} instructor rotation. Your
-                      assigned instructor stays for the full session.
-                    </p>
-                  ))}
-                <Arrival compact />
-                {preview && (
-                  <p className="payment-foot">
-                    Payment preview · No money was charged.
-                  </p>
-                )}
-              </section>
             </div>
           </details>
+        )}
+        {!pending && (
+          <section
+            className="confirmation-section confirmation-disclaimers review-block"
+            aria-labelledby="confirmation-disclaimers"
+          >
+            <h2 className="section-title" id="confirmation-disclaimers">
+              Before Your Session
+            </h2>
+            {booking.slots
+              .filter((slot) => slot.rotationAt)
+              .map((slot) => (
+                <p
+                  className="rotation-notice"
+                  key={`${slot.date}|${slot.start}`}
+                >
+                  {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}:
+                  Crosses the {slot.rotationAt} instructor rotation. Your
+                  assigned instructor stays for the full session.
+                </p>
+              ))}
+            <Arrival compact />
+            {preview && (
+              <p className="payment-foot">
+                Payment preview · No money was charged.
+              </p>
+            )}
+          </section>
         )}
       </section>
 

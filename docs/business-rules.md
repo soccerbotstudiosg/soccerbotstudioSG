@@ -104,7 +104,7 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 <a id="br-007"></a>
 
-**BR-007** — Flow: calendar → Details → Review/consent → reserve attempt authority → create/validate all sessions → retain complete booking association → reserve payment effect → create/save HitPay request and URL → handoff. Single uses book; batch uses createBatch, sequential book calls and closeBatch. Each provider write requires durable claim/evidence first. Retain raw booking evidence and provider references before strict validation. Validate batch closure, membership, invoice/account, currency and total before any payment. No payment for an incomplete batch.
+**BR-007** — Flow: calendar → Details → Review/consent → reserve attempt authority → create/validate all sessions → retain complete booking association → reserve payment effect → create/save HitPay request and URL → handoff. Single uses book; batch uses createBatch, sequential book calls and closeBatch. Each provider write requires durable claim/evidence first. Retain raw booking evidence and provider references before strict validation. Validate batch closure, membership, invoice/account, currency and total before any payment. No payment for an incomplete batch. Editable Review consent is cleared whenever Review is left or reopened, including reload; an already dispatched attempt retains its immutable accepted snapshot.
 
 <a id="br-008"></a>
 
@@ -134,7 +134,7 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 <a id="br-012"></a>
 
-**BR-012** — Polling: at most one check per two seconds for the first 20 checks, then at least ten seconds, with allowance 120 and the original checking deadline. An unresolved page refreshes on explicit Check status or focus/foreground (coalesced, minimum30 seconds) and once at the original server hold expiry; hidden pages catch up when visible. This does not restart polling or authorize expiry. Confirmed/denied pages stay terminal. Only authenticated server outcome permits release. Completed dismissal is repeatable; lost acknowledgement must not create a second attempt or erase uncertain evidence.
+**BR-012** — Polling: at most one check per two seconds for the first 20 checks, then at least ten seconds, with allowance 120 and the original checking deadline. An unresolved page refreshes on explicit Check status or focus/foreground (coalesced, minimum30 seconds) and once at the original server hold expiry; hidden pages catch up when visible. This does not restart polling or authorize expiry. After the original checking deadline, unresolved unpaid customers may browse the calendar with an empty cart while the original attempt remains protected. Confirmed/denied pages stay terminal. Only authenticated server outcome permits release. Completed dismissal is repeatable; lost acknowledgement must not create a second attempt or erase uncertain evidence.
 
 ### Confirmation and presentation
 

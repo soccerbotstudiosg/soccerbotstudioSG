@@ -64,18 +64,34 @@ export function Arrival({ compact = false }: { compact?: boolean } = {}) {
 export function ReviewStep({
   verifying = false,
 }: { verifying?: boolean } = {}) {
-  const { draft, attempt, update, checkout, now, action, cancel } =
-      useBooking(),
+  const {
+      draft,
+      attempt,
+      update,
+      checkout,
+      now,
+      action,
+      cancel,
+      clearReviewConsent,
+      ready,
+    } = useBooking(),
     router = useRouter();
   const [policy, setPolicy] = useState(false);
   const mounted = useRef(false);
   useEffect(() => {
     mounted.current = true;
+    clearReviewConsent();
+    window.addEventListener("pagehide", clearReviewConsent);
     return () => {
       mounted.current = false;
+      window.removeEventListener("pagehide", clearReviewConsent);
+      clearReviewConsent();
       cancel();
     };
-  }, [cancel]);
+  }, [cancel, clearReviewConsent]);
+  useEffect(() => {
+    if (ready) clearReviewConsent();
+  }, [ready, clearReviewConsent]);
   const error = action.error;
   const [navigating, startNavigation] = useTransition();
   const busy = action.status === "loading" || navigating;
@@ -88,7 +104,7 @@ export function ReviewStep({
         <ReviewSessions part="heading" verifying={verifying} />
         <div className="review-block">
           <div className="review-head">
-            <h2>Booking contact</h2>
+            <h2>Booking Contact</h2>
             {!locked && (
               <Link className="text-link" href="/book/details/">
                 Edit
@@ -171,7 +187,7 @@ export function ReviewStep({
             </p>
             <p>
               {attempt?.held &&
-                "Your sessions are temporarily reserved. Complete payment before the reservation expires. "}
+                "Your Sessions are temporarily reserved. Complete payment before the reservation expires. "}
               Follow the instructor’s safety guidance.
             </p>
             <p>
@@ -212,7 +228,7 @@ export function ReviewSessions({
   const cartOrder = (
     <div className="review-block">
       <div className="review-head">
-        <h2>Order summary</h2>
+        <h2>Order Summary</h2>
         {!locked && (
           <Link className="text-link" href="/book/time/">
             Edit

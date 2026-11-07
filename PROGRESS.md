@@ -1,27 +1,31 @@
 # Current checkpoint
 
-UI and reservation-defense consolidation is active; documentation PR33 remains paused. Dated evidence belongs to [Journey](docs/journey.md).
+UI follow-up is prepared locally after owner production-sandbox testing. Broad documentation PR33 remains paused; dated evidence belongs in [Journey](docs/journey.md).
 
-## Publish UI and reservation defenses first
+## Current change
 
-- Repository: SoccerBotStudioSG; branch `fix/hero-session-copy` latest published candidate`cdc2ace`; consolidated into existing PR32. Owner now authorizes merge after exact-head CI and staging/health pass; no direct main push or provider/settings activation.
-- Candidate: five-session new-checkout cap; one strike per proven unpaid checkout; customer strike2+ blocks1 hour/reset on verified payment; shared-IP strike2+ within24 hours blocks1 hour/no paid reset. Atomic first-write checks cover both dispatch paths.
-- UI: confirmation reads “Booking Confirmed” with its original top styling and action controls; only lower details use Review blocks and a mobile20px card inset; centred mobile step labels; equal6px Back clearance; standardized action spacing reduced35%; persistent popup scroll indicators; name-only trainer options; logo-blue booking headings; ended-video downward cue.
-- Calendar: backend already keeps valid snapshots during warming and swaps complete generation-matched results. Browser now requests a replacement at active-month expiry, retains the date grid, excludes expired offers and shows the standard spinner inside the calendar for0.5 seconds. No indefinite stale-cache authority.
-- Local evidence: full code gate267 cases passed before the latest spinner/confirmation polish; subsequent calendar/popup28, confirmation44 and client-cooldown30 checks passed. Final code gate267/56/14 passed on publishedb640633. Worker source/types passed.
-- Backend evidence: first sustained run184/203; corrected new-cap and missing-migration fixtures. Subsequent full run489/492 passed; the remaining three fixture failures now pass focused verification after adding synthetic pepper and explicit pre-0006 historical state. Full final-head CI remains required.
-- CI42246344863 on65e5f28 passed frontend, all492 Worker cases, load smoke and all browser shards. Backend/live-email aggregation caught the release rehearsal omitting migration0039. Added the migration and empty-ledger assertions; repaired checker passes locally against the unchanged CI artifact with no remote/provider operations. Original failed logs remain in Journey.
-- Next: publish the release migration-rehearsal correction; verify exact-head frontend/backend/live-email CI and actual staging revision/health; merge and verify independent main CI/deployment. Browser and physical acceptance belong to owner/CI.
-- Last previously verified staging source in retained checkpoint:`db5e724`; base8385c4f CI passed, but current candidate is not yet staged or accepted.
+- Branch: `fix/leave-booking-and-card-hover`, based on merged main `e23d203`.
+- App popup: title case, centred icon/label pairs and close control aligned with heading top.
+- Leave booking: header and first-step home links confirm discard; Stay preserves state. Leave clears editable draft/selection state and invalidates late UI replies, retaining existing attempt recovery snapshots and server expiry records.
+- Footer: medium widths use a compact two-column grid; app content/logo aligns with Connect With Us, with32px text rows and24px group spacing.
+- Session cards: two columns at medium widths, aligned label/amount price rows and outlet unit number on its own line.
+- Hover: enabled unselected outlet/session/time cards and account options highlight; selected/disabled states remain distinct.
+- Confirmation: centred Verified timestamp; View Full Details contains Your Sessions, Booking Contact, Order Summary and Location using Review styling, verified Total Paid and no Edit controls. Top actions and the disclaimer below remain unchanged.
+- Verification: consolidated non-browser gate passed267 tests/56 browser definitions/14 exported routes in `expiry-conflict-final-code.log`, including expiry, consent and conflict fixes. Targeted mutation checks detected both original conflict defects. Browser/device verification remains CI/owner-run.
+- Expiry: after the original checking window, return to calendar with empty cart and an affected-session red notice; keep payment/rebooking locked until server release. No extra home link or automatic cart restoration. Late payment returns to protected payment status.
+- Conflict: unindexed conflicts recheck dates, preserve unaffected selections and name only removed sessions. Reload offers another tab’s differing checkout explicitly instead of replacing the draft.
+- Review consent resets on leave/re-entry/reload while dispatched payment snapshots remain unchanged.
+- Next: finish the consolidated gate, publish CI and stage per owner authorization; production remains unchanged.
+
+## Deployed baseline
+
+- PR32 merged as `e23d203`; independent main CI42251148911 and deployment42252782624 passed. Staging source `9ea535f` has the same application tree.
+- Production runtime restored to approved HitPay sandbox testing on7 November. Missing IDENTITY_PEPPER installed after explicit owner approval; eight existing secrets/resources retained. Version `5619f5ac-f746-4aec-86aa-fde64f927c3a`.
+- Customer access, sandbox checkout/recovery/webhook and warming enabled; identity email and token refresh-ahead disabled. Workspace public health returns403; owner browser/provider acceptance pending.
+- No assistant booking/payment/cancellation/notification operations. Normal production redeployment restores closed defaults; activation is separately scoped.
 
 ## Documentation branch
 
-- PR33 `docs/test-guides-and-reference-cleanup`, head`abbf9f2b146e2b6ca31f6373ad9d53e070e95b13`, remains paused; no broad refactor/CI.
-- Authorized queued business rule for that branch only: SimplyBook client AND provider email reminders3 days and24 hours before. Timing selection is not enabled/saved/delivery proof; no provider configuration changes authorized here.
-- Retain per-document numbered menus, bullets except opening explanation, no journals outside Journey, in-place reconciliation and diagrams unless stale. Preserve prior information-loss audit evidence.
-
-## Acceptance boundaries
-
-- Current changes require exact-candidate CI and staging before owner testing; prior green runs do not certify this candidate.
-- No assistant browser, bookings, payments, cancellation, notification sends or provider settings changes.
-- Domain/WAF and production activation remain deferred; application IP admission is not WAF coverage.
+- PR33 `docs/test-guides-and-reference-cleanup` remains paused.
+- Queued reminder rule: clients/providers3 days and24 hours before; no provider configuration mutation or delivery claim.
+- Preserve document-specific numbered menus, bullet formatting, in-place reconciliation, journals only in Journey and diagrams unless stale.

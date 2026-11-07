@@ -258,7 +258,6 @@
   .booking-document .reference,
   .booking-document .rotation-notice,
   .booking-document .payment-foot,
-  .booking-document .paid strong,
   .booking-document .text-link,
   .lead,
   .access-option p,
@@ -379,7 +378,6 @@
   }
   .summary-total strong,
   .line-item.total strong,
-  .confirmation-card .paid strong,
   .counter output {
     font-weight: var(--weight-heading);
     font-style: normal;
@@ -1961,15 +1959,30 @@
     }
   }
   @media (max-width: 1100px) {
+    .footer-direct-links {
+      gap: 4px;
+    }
     .footer-direct-links a {
-      min-height: 44px;
+      min-height: 32px;
     }
     .footer-apps {
       justify-self: start;
+      align-self: start;
+    }
+    .footer-apps .footer-contact-heading {
+      text-align: left;
+    }
+    .footer-apps .footer-contact-copy {
+      grid-template-rows: auto auto auto;
+      justify-items: start;
+    }
+    .footer-brand {
+      justify-self: start;
+      margin-top: 16px;
     }
     .footer-contact-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 32px;
+      gap: 24px 32px;
     }
   }
   @media (max-width: 900px) {
@@ -2709,8 +2722,27 @@
     text-align: left;
     cursor: pointer;
   }
-  .session-product:hover {
-    border-color: var(--color-brand);
+  @media (hover: hover) {
+    :is(.outlet-option, .session-product, .time):not(:disabled):not(
+        [aria-disabled="true"]
+      ):not(.selected):not([aria-pressed="true"]):not(
+        [aria-expanded="true"]
+      ):hover {
+      border-color: var(--color-identity);
+      background: color-mix(
+        in srgb,
+        var(--color-identity) 8%,
+        var(--color-surface)
+      );
+    }
+    .access-option:has(button:not(:disabled)):hover {
+      border-color: var(--color-identity);
+      background: color-mix(
+        in srgb,
+        var(--color-identity) 8%,
+        var(--color-surface)
+      );
+    }
   }
   .session-product-details {
     display: grid;
@@ -2725,15 +2757,21 @@
     grid-column: 1 / -1;
     display: grid;
     gap: 4px;
-    justify-items: end;
     margin-top: 8px;
     font-size: var(--text-meta);
     color: var(--color-ink);
   }
+  .session-product-prices > span {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 8px;
+  }
   .session-product-prices strong {
     font-size: var(--text-section);
     color: var(--color-brand);
-    margin-left: 6px;
+    white-space: nowrap;
+    text-align: right;
   }
   .outlet-option[aria-pressed="true"],
   .session-product[aria-pressed="true"],
@@ -3071,6 +3109,7 @@
   .app-store-link {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     padding: 16px;
     border: 1px solid var(--color-action-hover);
@@ -3752,22 +3791,36 @@
     padding: 18px;
     color: var(--color-muted);
   }
-  .confirmation-card .paid {
+  .session-trainer-row:has(.session-paid) {
+    flex-wrap: nowrap;
+    align-items: last baseline;
+    gap: 8px;
+  }
+  .session-trainer-row:has(.session-paid) .session-instructor {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .session-paid {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .session-paid .pill.success {
+    color: var(--color-success);
+  }
+  .payment-check-feedback {
     display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
     align-items: center;
-    margin-top: 0;
-    padding-top: 0;
+    gap: 6px;
   }
-  .confirmation-card .session-trainer-row .paid {
-    margin: 0 0 0 auto;
-    padding: 0;
-    border: 0;
-  }
-  .confirmation-card .paid.settled {
-    justify-content: flex-end;
+  .confirmation-total strong {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
   }
   .confirmation-shell {
     padding-top: 20px;
@@ -3775,6 +3828,10 @@
   }
   .confirmation-shell .status-heading {
     margin-bottom: 16px;
+  }
+  .confirmation-verified {
+    width: 100%;
+    text-align: center;
   }
   .confirmation-shell .status-icon {
     width: 80px;
@@ -3922,6 +3979,10 @@
   }
 
   @media (max-width: 1200px) {
+    .outlet-options,
+    .session-products {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
     .booking-shell {
       padding: 22px 32px 58px;
     }

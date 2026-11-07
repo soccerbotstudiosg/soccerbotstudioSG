@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
 import { blankDraft, type Attempt, type BookingDraft } from "@/domain/booking";
@@ -84,6 +90,28 @@ function Probe() {
         Double checkout
       </button>
       <button onClick={state.cancel}>Cancel request</button>
+      <button onClick={state.leave}>Leave booking</button>
+      <button
+        onClick={() =>
+          state.attempt && state.restartAfterExpiry(state.attempt.id)
+        }
+      >
+        Release reservation
+      </button>
+      <button
+        onClick={() =>
+          state.attempt && state.browseAfterChecking(state.attempt.id)
+        }
+      >
+        Browse calendar
+      </button>
+      <button
+        onClick={() =>
+          state.attempt && state.resumePaymentStatus(state.attempt.id)
+        }
+      >
+        Resume payment
+      </button>
       <button
         onClick={() =>
           state.update({
@@ -539,6 +567,8 @@ test("review waits before navigation and same-turn duplicate checkout has one lo
       <Probe />
     </BookingProvider>,
   );
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
     screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
   );
@@ -564,6 +594,8 @@ test("editing a draft cancels checkout and a late result cannot overwrite entere
       <Probe />
     </BookingProvider>,
   );
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
     screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
   );
@@ -587,6 +619,8 @@ test("leaving review cancels its pending action without a late navigation or sto
       <Probe />
     </BookingProvider>,
   );
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
     screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
   );
@@ -595,12 +629,57 @@ test("leaving review cancels its pending action without a late navigation or sto
       <Probe />
     </BookingProvider>,
   );
+  expect(loadBooking().draft.accepted).toBe(false);
+  view.rerender(
+    <BookingProvider bookingService={service}>
+      <ReviewStep />
+      <Probe />
+    </BookingProvider>,
+  );
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  view.rerender(
+    <BookingProvider bookingService={service}>
+      <Probe />
+    </BookingProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Leave booking" }));
+  expect(loadBooking().draft).toEqual(blankDraft());
   await act(async () => {
     pending.resolve(demoBookingModel.checkout(draft(), null));
   });
   expect(checkout.mock.calls[0][0].signal?.aborted).toBe(true);
   expect(loadBooking().attempt).toBeNull();
   expect(navigation.push).not.toHaveBeenCalled();
+  expect(loadBooking().draft).toEqual(blankDraft());
+  view.unmount();
+  const retained = {
+    ...demoBookingModel.checkout(draft(), null),
+    status: "checking" as const,
+  };
+  saveBooking({ version: 2, draft: draft(), attempt: retained });
+  render(
+    <BookingProvider bookingService={demoBookingService}>
+      <Probe />
+    </BookingProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Leave booking" }));
+  expect(loadBooking().draft).toEqual(retained.draft);
+  expect(loadBooking().attempt).toEqual(retained);
+  expect(screen.getByTestId("attempt")).toHaveTextContent(retained.id);
+  fireEvent.click(screen.getByRole("button", { name: "Browse calendar" }));
+  expect(loadBooking().draft.slots).toEqual([]);
+  expect(loadBooking().draft.accepted).toBe(false);
+  expect(loadBooking().attempt).toEqual(retained);
+  fireEvent.click(screen.getByRole("button", { name: "Edit name" }));
+  expect(loadBooking().draft.contact).toEqual(retained.draft.contact);
+  expect(loadBooking().attempt).toEqual(retained);
+  fireEvent.click(screen.getByRole("button", { name: "Resume payment" }));
+  expect(loadBooking().attempt).toEqual(retained);
+  fireEvent.click(screen.getByRole("button", { name: "Release reservation" }));
+  await waitFor(() => expect(loadBooking().attempt).toBeNull());
+  expect(loadBooking().draft.slots).toEqual([]);
+  expect(loadBooking().attempt).toBeNull();
+  expect(loadBooking().draft.accepted).toBe(false);
 });
 test("an old attempt completion cannot replace a newer checkout after cancellation", async () => {
   const old = deferred<Attempt>();
@@ -651,6 +730,8 @@ test("identity expiry during checkout rejects completion and preserves the membe
       <Probe />
     </BookingProvider>,
   );
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
     screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
   );
@@ -774,6 +855,8 @@ test("malformed checkout cannot navigate or create an attempt and retry preserve
       <Probe />
     </BookingProvider>,
   );
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
   await act(async () => {
     fireEvent.click(
       screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
@@ -927,6 +1010,8 @@ test("replacing an adapter cancels its pending action and releases the new revie
       <Probe />
     </BookingProvider>,
   );
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
     screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
   );
@@ -941,7 +1026,9 @@ test("replacing an adapter cancels its pending action and releases the new revie
   );
   expect(
     screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
-  ).toBeEnabled();
+  ).toBeDisabled();
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
   expect(checkout.mock.calls[0][0].signal?.aborted).toBe(true);
   await act(async () => {
     pending.resolve(demoBookingModel.checkout(draft(), null));
@@ -964,6 +1051,8 @@ test("a checkout capacity conflict invalidates shared availability before return
       <Probe />
     </BookingProvider>,
   );
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox"));
   await act(async () => {});
   sessionStorage.setItem(
     "soccerbot-next-demo-inventory",
