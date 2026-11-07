@@ -365,11 +365,12 @@ test("public routes remove staff access and fit the viewport", async ({
           }),
         );
       });
-    for (const group of informationRows.slice(1)) {
+    expect(informationRows.map((group) => group.length)).toEqual([3, 3, 4]);
+    for (const group of informationRows) {
       for (const [index, top] of group.entries()) {
-        expect(Math.abs(top - informationRows[0][index])).toBeLessThanOrEqual(
-          1,
-        );
+        expect(
+          Math.abs(top - (informationRows[0][0] + index * 30)),
+        ).toBeLessThanOrEqual(1);
       }
     }
   }

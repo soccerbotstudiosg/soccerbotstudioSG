@@ -15,3 +15,5 @@ Unknown SimplyBook no-creation reconciliation, production Grafana activation/con
 CI42412507412 exposed7 direct-checkout regressions: the new Review catalogue component performed an unwanted request. Replaced it with a display-only name captured during session selection and retained in the draft, plus a read-only cache fallback for older drafts. Exact request-count assertions remain unchanged. All268 component/service tests and the strict unit receipt passed after the repair; types, scoped lint/source checks passed. Footer Book/Studio links removed with the legal-link departure guard retained. Final repaired CI pending.
 
 Initial backend browser sizing probe selected a deliberately occupied demo time; corrected its fifth slot from16:10 to17:00. No product availability guard or sizing assertion changed.
+
+CI42413247476 passed the five-session viewport checks in Chromium/WebKit. Its footer alignment assertion still indexed the removed fourth/fifth Services links; updated to assert3/3/4 row counts and every row on the unchanged30px pitch. Repair is test-only; all remaining alignment/content checks retained.
