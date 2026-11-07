@@ -162,8 +162,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   <strong>Services</strong>
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
-                  <BookingLink href="/book/account/">Book</BookingLink>
-                  <BookingLink href="/studio/">Studio</BookingLink>
                   <Link href="/terms-of-service/">Terms of Service</Link>
                   <Link href="/privacy-policy/">Privacy Policy</Link>
                   <Link href="/refund-policy/">Refund Policy</Link>

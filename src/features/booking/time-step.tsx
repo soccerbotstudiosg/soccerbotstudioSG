@@ -6,7 +6,14 @@ import {
   NO_SESSIONS_ON_DATE,
 } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
-import { useEffect, useId, useMemo, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import {
   BOOKING_MONTH_COUNT,
   MAX_BOOKING_SESSIONS,
@@ -56,7 +63,7 @@ export function TimeStep() {
   } = useBooking();
   const bookingLegendId = useId();
   const [choosing, setChoosing] = useState<string | null>(null);
-  const [calendarView, setCalendarView] = useState<"week" | "month">("week");
+  const [calendarView, setCalendarView] = useState<"week" | "month">("month");
   const [weekStart, setWeekStart] = useState<string | null>(null);
   const today = todaySG(new Date(now));
   const live = bookingService.mode === "live";
@@ -206,6 +213,21 @@ export function TimeStep() {
           : null,
     [availability.result, date, displayUnavailable],
   );
+  const timesRef = useRef<HTMLDivElement>(null);
+  const [timesHeight, setTimesHeight] = useState(0);
+  useLayoutEffect(() => {
+    if (!result || !timesRef.current) return;
+    const element = timesRef.current;
+    const measure = () =>
+      setTimesHeight(element.getBoundingClientRect().height);
+    measure();
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(measure);
+    observer?.observe(element);
+    return () => observer?.disconnect();
+  }, [result]);
   const { reconcile } = calendar;
   useEffect(() => {
     if (!live || !result) return;
@@ -500,191 +522,190 @@ export function TimeStep() {
           <div className="time-heading">
             <h2>{dateLabel(date)}</h2>
           </div>
-          {!result ? (
-            calendarFailed ? (
+          <div
+            ref={timesRef}
+            className="session-times-region"
+            style={!result ? { minHeight: timesHeight } : undefined}
+            aria-busy={!result}
+          >
+            {!result ? (
+              calendarFailed ? (
+                <div className="alert" role="alert">
+                  <p>{AVAILABILITY_LOAD_FAILED}</p>
+                  <button
+                    className="text-link"
+                    onClick={() => calendar.retry()}
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : (
+                <BrandLoading overlay={false} compact label="Checking times…" />
+              )
+            ) : result.status !== "success" ? (
               <div className="alert" role="alert">
-                <p>{AVAILABILITY_LOAD_FAILED}</p>
-                <button className="text-link" onClick={() => calendar.retry()}>
-                  Try again
-                </button>
+                <p>{result.message}</p>
+                {result.status !== "unavailable" && (
+                  <button className="text-link" onClick={retry}>
+                    Try again
+                  </button>
+                )}
               </div>
-            ) : (
-              <BrandLoading overlay={false} compact label="Checking times…" />
-            )
-          ) : result.status !== "success" ? (
-            <div className="alert" role="alert">
-              <p>{result.message}</p>
-              {result.status !== "unavailable" && (
-                <button className="text-link" onClick={retry}>
-                  Try again
-                </button>
-              )}
-            </div>
-          ) : slots.length ? (
-            <div className="times" role="group" aria-label="Session times">
-              <p className="mobile-time-hint">
-                <span className="time-info" aria-hidden="true">
-                  i
-                </span>
-                <span>Select to view trainers available</span>
-              </p>
-              {groups.map((offers) => {
-                const first =
-                  offers.find((offer) => offer.available) ?? offers[0];
-                const selected = draft.slots.find(
-                  (item) => slotKey(item) === slotKey(first),
-                );
-                const slot = selected
-                  ? {
-                      ...selected,
-                      available: offers.some(
-                        (offer) =>
-                          sessionOfferKey(offer) ===
-                            sessionOfferKey(selected) && offer.available,
-                      ),
-                    }
-                  : first;
-                const available = offers.some((offer) => offer.available);
-                const key = slotKey(slot);
-                const elapsed = isElapsed(slot, now);
-                return (
-                  <div className="time-choice" key={key}>
-                    <button
-                      className={`time${selected ? " selected" : ""}`}
-                      aria-pressed={!!selected}
-                      aria-expanded={!!selected || choosing === key}
-                      disabled={
-                        waitingForRelease ||
-                        ((!available ||
-                          elapsed ||
-                          draft.slots.length >= MAX_BOOKING_SESSIONS) &&
-                          !selected)
+            ) : slots.length ? (
+              <div className="times" role="group" aria-label="Session times">
+                <p className="mobile-time-hint">
+                  <span className="time-info" aria-hidden="true">
+                    i
+                  </span>
+                  <span>Select to view trainers available</span>
+                </p>
+                {groups.map((offers) => {
+                  const first =
+                    offers.find((offer) => offer.available) ?? offers[0];
+                  const selected = draft.slots.find(
+                    (item) => slotKey(item) === slotKey(first),
+                  );
+                  const slot = selected
+                    ? {
+                        ...selected,
+                        available: offers.some(
+                          (offer) =>
+                            sessionOfferKey(offer) ===
+                              sessionOfferKey(selected) && offer.available,
+                        ),
                       }
-                      onClick={() => {
-                        if (selected) {
-                          update({
-                            slots: draft.slots.filter(
-                              (item) => slotKey(item) !== key,
-                            ),
-                          });
-                          setChoosing(null);
-                        } else if (!isElapsed(slot) && available) {
-                          setChoosing(choosing === key ? null : key);
+                    : first;
+                  const available = offers.some((offer) => offer.available);
+                  const key = slotKey(slot);
+                  const elapsed = isElapsed(slot, now);
+                  return (
+                    <div className="time-choice" key={key}>
+                      <button
+                        className={`time${selected ? " selected" : ""}`}
+                        aria-pressed={!!selected}
+                        aria-expanded={!selected && choosing === key}
+                        disabled={
+                          waitingForRelease ||
+                          ((!available ||
+                            elapsed ||
+                            draft.slots.length >= MAX_BOOKING_SESSIONS) &&
+                            !selected)
                         }
-                      }}
-                    >
-                      <span className="time-details">
-                        <span className="time-range">
-                          {slot.start}–{endTime(slot.start)}
-                        </span>
-                        <span className="time-rate">
-                          {elapsed ? (
-                            "Session has started"
-                          ) : slot.available ? (
-                            <>
-                              <strong>{money(sessionPrice(slot))}</strong>
-                            </>
-                          ) : (
-                            "Unavailable"
+                        onClick={() => {
+                          if (selected) {
+                            update({
+                              slots: draft.slots.filter(
+                                (item) => slotKey(item) !== key,
+                              ),
+                            });
+                            setChoosing(null);
+                          } else if (!isElapsed(slot) && available) {
+                            setChoosing(choosing === key ? null : key);
+                          }
+                        }}
+                      >
+                        <span className="time-details">
+                          <span className="time-range">
+                            {slot.start}–{endTime(slot.start)}
+                          </span>
+                          <span className="time-rate">
+                            {elapsed ? (
+                              "Session has started"
+                            ) : slot.available ? (
+                              <>
+                                <strong>{money(sessionPrice(slot))}</strong>
+                              </>
+                            ) : (
+                              "Unavailable"
+                            )}
+                          </span>
+                          <span className="time-instructor">
+                            {selected
+                              ? `Trainer: ${sessionInstructorName(selected)}`
+                              : available
+                                ? `${offers
+                                    .filter((offer) => offer.available)
+                                    .map(sessionInstructorName)
+                                    .join(" / ")}`
+                                : "No instructor available"}
+                          </span>
+                          {slot.available && slot.rotationAt && (
+                            <span className="rotation-notice">
+                              Crosses the {slot.rotationAt} instructor rotation.
+                              Your chosen instructor stays for the full session.
+                            </span>
                           )}
                         </span>
-                        <span className="time-instructor">
-                          {selected
-                            ? sessionInstructorName(selected)
-                            : available
-                              ? `${offers
-                                  .filter((offer) => offer.available)
-                                  .map(sessionInstructorName)
-                                  .join(" / ")}`
-                              : "No instructor available"}
-                        </span>
-                        {slot.available && slot.rotationAt && (
-                          <span className="rotation-notice">
-                            Crosses the {slot.rotationAt} instructor rotation.
-                            Your chosen instructor stays for the full session.
-                          </span>
-                        )}
-                      </span>
-                      <Icon name={selected ? "check" : "plus"} />
-                    </button>
-                    {(selected || choosing === key) && (
-                      <label className="trainer-choice">
-                        <span>Trainer</span>
-                        <select
-                          aria-label={`Trainer for ${slot.date} at ${slot.start}`}
-                          value={selected ? sessionOfferKey(selected) : ""}
-                          disabled={waitingForRelease || elapsed || !available}
-                          onChange={(event) => {
-                            const offer = offers.find(
-                              (item) =>
-                                sessionOfferKey(item) === event.target.value,
-                            );
-                            if (offer) select(offer);
-                          }}
-                        >
-                          <option value="" disabled>
-                            Choose a trainer to add this session
-                          </option>
-                          {selected &&
-                            !offers.some(
-                              (offer) =>
-                                sessionOfferKey(offer) ===
-                                sessionOfferKey(selected),
-                            ) && (
-                              <option
-                                value={sessionOfferKey(selected)}
-                                disabled
-                              >
-                                {sessionInstructorName(selected)} — unavailable
-                              </option>
-                            )}
-                          {offers.map((offer) => (
-                            <option
-                              key={sessionOfferKey(offer)}
-                              value={sessionOfferKey(offer)}
-                              disabled={!offer.available}
-                            >
-                              {sessionInstructorName(offer)}
-                              {!offer.available ? " — unavailable" : ""}
+                        <Icon name={selected ? "check" : "plus"} />
+                      </button>
+                      {!selected && choosing === key && (
+                        <label className="trainer-choice">
+                          <span>Trainer</span>
+                          <select
+                            aria-label={`Trainer for ${slot.date} at ${slot.start}`}
+                            value=""
+                            disabled={
+                              waitingForRelease || elapsed || !available
+                            }
+                            onChange={(event) => {
+                              const offer = offers.find(
+                                (item) =>
+                                  sessionOfferKey(item) === event.target.value,
+                              );
+                              if (offer) select(offer);
+                            }}
+                          >
+                            <option value="" disabled>
+                              Choose a trainer to add this session
                             </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <Icon name="calendar" />
-              <h3>{NO_SESSIONS_ON_DATE}</h3>
-              <p>Choose another date. Your selections are saved.</p>
-              <button
-                className="button secondary"
-                disabled={live && !nextAvailable && offset === maxMonthOffset}
-                onClick={() => {
-                  const next = live
-                    ? (nextAvailable ??
-                      (offset < maxMonthOffset
-                        ? monthAt(today, offset + 1)
-                        : undefined))
-                    : addDays(date, 1);
-                  if (!next) return;
-                  setWeekStart(null);
-                  setDate(next);
-                  setMonth(monthAt(next, 0));
-                }}
-              >
-                {live
-                  ? nextAvailable
-                    ? "See next available day"
-                    : "See next month"
-                  : "See next day"}{" "}
-                <Icon name="chevron" />
-              </button>
-            </div>
-          )}
+                            {offers.map((offer) => (
+                              <option
+                                key={sessionOfferKey(offer)}
+                                value={sessionOfferKey(offer)}
+                                disabled={!offer.available}
+                              >
+                                {sessionInstructorName(offer)}
+                                {!offer.available ? " — unavailable" : ""}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <Icon name="calendar" />
+                <h3>{NO_SESSIONS_ON_DATE}</h3>
+                <p>Choose another date. Your selections are saved.</p>
+                <button
+                  className="button secondary"
+                  disabled={live && !nextAvailable && offset === maxMonthOffset}
+                  onClick={() => {
+                    const next = live
+                      ? (nextAvailable ??
+                        (offset < maxMonthOffset
+                          ? monthAt(today, offset + 1)
+                          : undefined))
+                      : addDays(date, 1);
+                    if (!next) return;
+                    setWeekStart(null);
+                    setDate(next);
+                    setMonth(monthAt(next, 0));
+                  }}
+                >
+                  {live
+                    ? nextAvailable
+                      ? "See next available day"
+                      : "See next month"
+                    : "See next day"}{" "}
+                  <Icon name="chevron" />
+                </button>
+              </div>
+            )}
+          </div>
         </>
       )}
     </>

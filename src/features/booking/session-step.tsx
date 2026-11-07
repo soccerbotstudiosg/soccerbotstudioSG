@@ -83,9 +83,17 @@ function LiveSession({
     eligible.find((service) => service.id === draft.nativeServiceId) ??
     (eligible.length === 1 ? eligible[0] : undefined);
   useEffect(() => {
-    if (selected && draft.nativeServiceId !== selected.id)
-      update({ nativeServiceId: selected.id, slots: [] });
-  }, [selected, draft.nativeServiceId, update]);
+    if (
+      selected &&
+      (draft.nativeServiceId !== selected.id ||
+        draft.nativeServiceName !== selected.name)
+    )
+      update({
+        nativeServiceId: selected.id,
+        nativeServiceName: selected.name,
+        ...(draft.nativeServiceId !== selected.id ? { slots: [] } : {}),
+      });
+  }, [selected, draft.nativeServiceId, draft.nativeServiceName, update]);
   if (!selected)
     return (
       <>
@@ -99,7 +107,13 @@ function LiveSession({
             <button
               key={service.id}
               className="button"
-              onClick={() => update({ nativeServiceId: service.id, slots: [] })}
+              onClick={() =>
+                update({
+                  nativeServiceId: service.id,
+                  nativeServiceName: service.name,
+                  slots: [],
+                })
+              }
             >
               {service.name}
             </button>

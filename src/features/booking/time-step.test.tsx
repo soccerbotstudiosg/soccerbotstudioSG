@@ -36,10 +36,26 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", async () => {
   const user = userEvent.setup();
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    function (this: HTMLElement) {
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 400,
+        bottom: 600,
+        width: 400,
+        height: this.classList.contains("session-times-region") ? 600 : 0,
+        toJSON: () => ({}),
+      };
+    },
+  );
   const view = render(
     <BookingProvider>
       <BookingPage step="time" />
@@ -48,7 +64,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   await act(async () => {});
   expect(todaySG()).toBe("2026-10-07");
   expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
-    "week",
+    "month",
   );
   fireEvent.change(screen.getByRole("combobox", { name: "Calendar view" }), {
     target: { value: "month" },
@@ -197,7 +213,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   await user.click(
     screen.getByRole("button", { name: "Open cart, 3 sessions" }),
   );
-  const cartPanel = screen.getByRole("dialog", { name: "Your cart" });
+  const cartPanel = screen.getByRole("dialog", { name: "Your Cart" });
   expect(within(cartPanel).getAllByRole("listitem")).toHaveLength(3);
   const cartBody = cartPanel.querySelector(".booking-panel-body")!;
   const cartRail = cartPanel.querySelector<HTMLElement>(
@@ -238,6 +254,22 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(
     screen.getAllByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
   ).toHaveLength(1);
+  expect(
+    screen.queryByRole("heading", { name: "Your Sessions" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: dateLabel("2026-10-14") }),
+  );
+  expect(view.container.querySelector(".session-times-region")).toHaveStyle({
+    minHeight: "600px",
+  });
+  expect(
+    screen.queryByRole("button", { name: /12:00–12:40/ }),
+  ).not.toBeInTheDocument();
+  await act(async () => {});
+  expect(
+    view.container.querySelector(".session-times-region"),
+  ).not.toHaveAttribute("aria-busy", "true");
 });
 test("crossing notices persist in the basket and review before payment", async () => {
   const basket = render(
@@ -252,6 +284,13 @@ test("crossing notices persist in the basket and review before payment", async (
   expect(
     screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
   ).toHaveAttribute("href", "/book/details");
+  const cart = screen.getByRole("complementary");
+  expect(cart.querySelector(".summary-total")).toBeNull();
+  expect(
+    cart
+      .querySelector(".basket-continue")!
+      .compareDocumentPosition(cart.querySelector(".basket-list")!),
+  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   basket.unmount();
   render(
     <BookingProvider>
@@ -506,7 +545,16 @@ test("each time requires an independent trainer choice and changing it preserves
     loadBooking().draft.slots.find((slot) => slot.start === "12:00")
       ?.instructor,
   ).toBe("daniel");
-  await user.selectOptions(picker, `${restoredDate}|12:00|demo|faisal`);
+  expect(picker).not.toBeInTheDocument();
+  const selected = screen.getByRole("button", { name: /12:00–12:40/ });
+  expect(selected).toHaveTextContent("Trainer: Daniel Tan");
+  expect(selected).toHaveAttribute("aria-expanded", "false");
+  await user.click(selected);
+  await user.click(selected);
+  await user.selectOptions(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
+    `${restoredDate}|12:00|demo|faisal`,
+  );
   expect(loadBooking().draft.slots).toHaveLength(2);
   expect(
     loadBooking().draft.slots.find((slot) => slot.start === "14:30")
@@ -519,9 +567,9 @@ test("each time requires an independent trainer choice and changing it preserves
     </BookingProvider>,
   );
   await act(async () => {});
-  expect(
-    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
-  ).toHaveValue(`${restoredDate}|12:00|demo|faisal`);
+  expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveTextContent(
+    "Trainer: Faisal Shahril",
+  );
   await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
   expect(loadBooking().draft.slots).toHaveLength(1);
 });

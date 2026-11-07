@@ -67,7 +67,7 @@ export function BookingTools({ basket = false }: { basket?: boolean }) {
       {mobile && panel && (
         <Dialog
           variant="booking-panel"
-          title={panel === "cart" ? "Your cart" : "Selected trainers"}
+          title={panel === "cart" ? "Your Cart" : "Selected trainers"}
           onClose={() => setPanel(null)}
         >
           {panel === "cart" ? (

@@ -603,7 +603,11 @@ it("formats Singapore booking dates independently of locale date order", () => {
 });
 
 it("live draft reload preserves edits but never restores consent or payment authority", () => {
-  const draft = validDraft();
+  const draft = {
+    ...validDraft(),
+    nativeServiceId: "12",
+    nativeServiceName: "Original selected session",
+  };
   saveLiveDraft(draft);
   expect(loadLiveDraft()).toEqual({ ...draft, accepted: false });
   safeWrite("soccerbot-live-draft", { ...draft, attempt: { status: "paid" } });

@@ -28,19 +28,32 @@ import {
 } from "@/domain/booking";
 import { dateLabel, endTime, money } from "@/domain/dates";
 import { bookingCover } from "@/content/media";
+import { customerCatalogueService } from "@/services/customer-catalogue";
 import { InstructorProfile } from "./instructor";
 import { useBooking } from "./provider";
 /** Present the same session heading and service description across booking summaries. */
 export function SessionSummaryHeading({
   draft,
   action,
+  selectedService = false,
 }: {
-  draft: Pick<BookingDraft, "slots" | "players" | "nativeServiceId">;
+  draft: Pick<
+    BookingDraft,
+    "slots" | "players" | "nativeServiceId" | "nativeServiceName"
+  >;
   action?: ReactNode;
+  selectedService?: boolean;
 }) {
   const serviceName =
-    draft.slots[0]?.native?.serviceName ??
-    (draft.nativeServiceId ? undefined : SERVICE_NAME);
+    selectedService && draft.nativeServiceId
+      ? (draft.nativeServiceName ??
+        customerCatalogueService
+          .peek()
+          ?.services.find((service) => service.id === draft.nativeServiceId)
+          ?.name ??
+        "Session details unavailable")
+      : (draft.slots[0]?.native?.serviceName ??
+        (draft.nativeServiceId ? undefined : SERVICE_NAME));
   return (
     <div className="session-summary-heading">
       <div className="review-head">
@@ -166,33 +179,34 @@ export function Summary({
   const { draft, update, now } = useBooking();
   return (
     <div className="aside-wrap">
-      <aside className="summary" aria-label="Your booking summary">
+      <aside
+        className={`summary${basket ? " summary-cart" : ""}`}
+        aria-label="Your booking summary"
+      >
         <div
           className="summary-cover"
           style={{ backgroundImage: `url("${bookingCover}")` }}
         >
-          <span className="eyebrow">
-            {basket ? "Your booking basket" : "Booking summary"}
-          </span>
+          <span className="eyebrow">Your Cart</span>
         </div>
         <div className="summary-body">
-          <SessionSummaryHeading draft={draft} />
+          {basket && includeAction && <BasketContinue />}
           {draft.slots.length ? (
             <>
-              {basket && (
-                <div className="basket-heading">
-                  <strong>
-                    {draft.slots.length}{" "}
-                    {draft.slots.length === 1 ? "session" : "sessions"}
-                  </strong>
+              <div className="basket-heading">
+                <strong>
+                  {draft.slots.length}{" "}
+                  {draft.slots.length === 1 ? "session" : "sessions"}
+                </strong>
+                {basket && (
                   <button
                     className="text-link"
                     onClick={() => update({ slots: [] })}
                   >
                     Clear all
                   </button>
-                </div>
-              )}
+                )}
+              </div>
               <SessionList
                 slots={draft.slots}
                 showPrices
@@ -216,15 +230,15 @@ export function Summary({
               <p>Choose a date, then add the times that suit you.</p>
             </div>
           )}
-          <div className="summary-total">
-            <span>Total</span>
-            <strong>
-              <span className="total-currency">SGD</span>{" "}
-              {money(totalCents(draft))}
-            </strong>
-          </div>
-
-          {basket && includeAction && <BasketContinue />}
+          {!(basket && includeAction) && (
+            <div className="summary-total">
+              <span>Total</span>
+              <strong>
+                <span className="total-currency">SGD</span>{" "}
+                {money(totalCents(draft))}
+              </strong>
+            </div>
+          )}
         </div>
       </aside>
       {showTrainers && draft.slots.length > 0 && <SelectedTrainers />}

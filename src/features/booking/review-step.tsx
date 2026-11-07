@@ -214,6 +214,7 @@ export function ReviewSessions({
   const cartHeading = (
     <div className="review-block">
       <SessionSummaryHeading
+        selectedService
         draft={draft}
         action={
           !locked && (
