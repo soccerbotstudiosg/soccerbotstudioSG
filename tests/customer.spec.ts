@@ -1548,7 +1548,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   );
   const monthBox = await monthPicker.boundingBox();
   const navBox = await page.locator(".calendar-nav").boundingBox();
-  expect(monthBox!.y).toBeCloseTo(navBox!.y, 0);
+  expect(monthBox!.y + monthBox!.height / 2).toBeCloseTo(
+    navBox!.y + navBox!.height / 2,
+    0,
+  );
   expect(monthBox!.x + monthBox!.width).toBeLessThan(navBox!.x);
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
     for (const control of [
