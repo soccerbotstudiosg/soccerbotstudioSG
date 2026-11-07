@@ -255,29 +255,6 @@ export function BookingConfirmation({
               </section>
               <section
                 className="confirmation-section review-block"
-                aria-labelledby="confirmation-order"
-              >
-                <div className="review-head">
-                  <h2 id="confirmation-order">Order Summary</h2>
-                </div>
-                <SessionList
-                  slots={booking.slots}
-                  showRotation={false}
-                  showPrices
-                  showPaid={!preview}
-                />
-                <div className="price-breakdown">
-                  <div className="line-item total confirmation-total">
-                    <span>Total Paid{preview ? " · Preview" : ""}</span>
-                    <strong>
-                      <span className="total-currency">SGD</span>{" "}
-                      {money(booking.totalCents)}
-                    </strong>
-                  </div>
-                </div>
-              </section>
-              <section
-                className="confirmation-section review-block"
                 aria-labelledby="confirmation-location"
               >
                 <h2 className="section-title" id="confirmation-location">
@@ -293,35 +270,60 @@ export function BookingConfirmation({
                   {ADDRESS}
                 </p>
               </section>
+              <section
+                className="confirmation-section confirmation-disclaimers review-block"
+                aria-labelledby="confirmation-disclaimers"
+              >
+                <h2 className="section-title" id="confirmation-disclaimers">
+                  Before Your Session
+                </h2>
+                {booking.slots
+                  .filter((slot) => slot.rotationAt)
+                  .map((slot) => (
+                    <p
+                      className="rotation-notice"
+                      key={`${slot.date}|${slot.start}`}
+                    >
+                      {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}
+                      : Crosses the {slot.rotationAt} instructor rotation. Your
+                      assigned instructor stays for the full session.
+                    </p>
+                  ))}
+                <Arrival compact />
+                {preview && (
+                  <p className="payment-foot">
+                    Payment preview · No money was charged.
+                  </p>
+                )}
+              </section>
             </div>
           </details>
         )}
         {!pending && (
           <section
-            className="confirmation-section confirmation-disclaimers review-block"
-            aria-labelledby="confirmation-disclaimers"
+            className="confirmation-section review-block"
+            aria-labelledby="confirmation-order"
           >
-            <h2 className="section-title" id="confirmation-disclaimers">
-              Before Your Session
-            </h2>
-            {booking.slots
-              .filter((slot) => slot.rotationAt)
-              .map((slot) => (
-                <p
-                  className="rotation-notice"
-                  key={`${slot.date}|${slot.start}`}
-                >
-                  {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}:
-                  Crosses the {slot.rotationAt} instructor rotation. Your
-                  assigned instructor stays for the full session.
-                </p>
-              ))}
-            <Arrival compact />
-            {preview && (
-              <p className="payment-foot">
-                Payment preview · No money was charged.
-              </p>
-            )}
+            <div className="review-head">
+              <h2 id="confirmation-order">Order Summary</h2>
+            </div>
+            <SessionList
+              slots={booking.slots}
+              showRotation={false}
+              showPrices
+            />
+            <div className="price-breakdown">
+              <div className="line-item total confirmation-total">
+                <span>Total Paid{preview ? " · Preview" : ""}</span>
+                <span className="confirmation-paid-amount">
+                  {!preview && <span className="pill success">Paid</span>}
+                  <strong>
+                    <span className="total-currency">SGD</span>{" "}
+                    {money(booking.totalCents)}
+                  </strong>
+                </span>
+              </div>
+            </div>
           </section>
         )}
       </section>

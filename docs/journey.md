@@ -5262,3 +5262,13 @@ Owner clarified that merely viewing a date must not create a navy circle: apply 
 Owner extended the mobile density request to the entire session step, targeting roughly40% less height and around one screen plus a little scrolling. Reduce player/inclusion padding and gaps, use16px session headings/14px inclusion descriptions, and retain44px player buttons. All content remains present and scrollable; no exact40% or physical-phone fit claim before browser/owner review. Existing typography assertions now require16px only for the mobile session-step headings, preserving20px elsewhere.
 
 PR39 CI42376495787 failed backend phone-WebKit shard1 (job128417422329) at the existing session-product font assertion: expected20px, received the requested16px. Update that second typography assertion to16px mobile/20px desktop, preserving precision and all interaction assertions. Search adjacent font expectations; the broader hierarchy case already uses the mobile16px contract. This is test-only alignment, not an application or tolerance change. Retain the first failed CI receipt; final-head verification remains required.
+
+### 7Nov2026 — confirmation summary placement and active calendar date
+
+PR39 released at main fef8751 after PR CI42377745599, staging42378726354, main CI42378857346 and production42379651814 passed;18 approved settings were restored/read back.
+
+New confirmation layout keeps Order Summary and Total Paid outside the disclosure. Inside: Your Sessions, Booking Contact, Location, Before Your Session. Move the Paid badge from every session to beside the large verified total on both phone and desktop; preserve preview/pending semantics. Remove the confirmation list's mobile indent so numbered circles align with its heading. Restore a blue outline/soft background for the date currently displayed, keeping filled navy circles exclusive to cart membership.
+
+All22 protected-confirmation component tests pass. The initial test-only failure assumed JSDOM hides closed-details headings; assert disclosure ownership/open state locally and retain real visibility assertions in the browser suite. A broad test edit also touched a pending-state assertion; restored its original absence check before the passing run. Existing browser tests cover visible summary, order and circle alignment plus viewed-date styling; no titles/inventory changes. Browser/physical acceptance remains pending.
+
+Scoped lint, source integrity, TypeScript and formatting passed. Type generation initially hit sandbox spawnSync git EPERM; rerunning with supported execution permissions passed without source changes.

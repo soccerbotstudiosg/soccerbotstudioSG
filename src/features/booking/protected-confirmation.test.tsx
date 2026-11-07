@@ -241,7 +241,35 @@ it("verified live receipt shows provider invoice number without internal IDs or 
     ),
   );
   render(<ProtectedConfirmation attemptId={first} />);
+  await screen.findByText("View Full Details");
+  const orderSummary = await screen.findByRole("region", {
+    name: "Order Summary",
+  });
+  expect(orderSummary).toBeVisible();
+  expect(orderSummary.closest("details")).toBeNull();
+  expect(
+    screen
+      .getByRole("heading", { name: "Before Your Session" })
+      .closest("details"),
+  ).not.toHaveAttribute("open");
+  expect(orderSummary.querySelector(".series-list")).not.toHaveTextContent(
+    "Paid",
+  );
+  expect(
+    orderSummary.querySelector(".confirmation-paid-amount"),
+  ).toHaveTextContent("PaidSGD $88.00");
   fireEvent.click(await screen.findByText("View Full Details"));
+  expect(
+    Array.from(document.querySelectorAll(".confirmation-card h2")).map(
+      (node) => node.textContent,
+    ),
+  ).toEqual([
+    "Your Sessions",
+    "Booking Contact",
+    "Location",
+    "Before Your Session",
+    "Order Summary",
+  ]);
   expect(
     await screen.findByRole("heading", { name: "Booking Contact" }),
   ).toBeInTheDocument();
