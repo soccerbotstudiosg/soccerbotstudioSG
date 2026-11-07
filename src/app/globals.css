@@ -2303,7 +2303,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 18px 0 8px;
+    margin: 12px 0 8px;
   }
   .basket-list li {
     display: grid;
@@ -2358,7 +2358,33 @@
     height: 16px;
   }
   .basket-continue {
-    margin-top: 20px;
+    margin-top: 0;
+  }
+  .summary-cart .summary-cover {
+    height: 40px;
+    padding: 10px 16px;
+  }
+  .summary-cart .summary-body {
+    padding: 12px;
+  }
+  .summary-cart .basket-continue {
+    min-height: 48px;
+    padding: 10px 14px;
+  }
+  .summary-cart .booking-action-total {
+    margin-left: auto;
+    font-size: var(--text-card);
+    font-weight: var(--weight-heading);
+  }
+  @media (min-width: 701px) and (max-height: 850px) {
+    .summary-cart:has(.basket-list > li:nth-child(5)) .basket-list li {
+      gap: 0 8px;
+      padding: 8px;
+      margin-bottom: 6px;
+    }
+    .summary-cart:has(.basket-list > li:nth-child(5)) .basket-list li > div {
+      gap: 0;
+    }
   }
   .booking-action-anchor + .notice {
     margin-top: 16px;

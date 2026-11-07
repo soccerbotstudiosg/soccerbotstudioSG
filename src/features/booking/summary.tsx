@@ -179,7 +179,10 @@ export function Summary({
   const { draft, update, now } = useBooking();
   return (
     <div className="aside-wrap">
-      <aside className="summary" aria-label="Your booking summary">
+      <aside
+        className={`summary${basket ? " summary-cart" : ""}`}
+        aria-label="Your booking summary"
+      >
         <div
           className="summary-cover"
           style={{ backgroundImage: `url("${bookingCover}")` }}
@@ -187,6 +190,7 @@ export function Summary({
           <span className="eyebrow">Your Cart</span>
         </div>
         <div className="summary-body">
+          {basket && includeAction && <BasketContinue />}
           {draft.slots.length ? (
             <>
               <div className="basket-heading">
@@ -226,15 +230,15 @@ export function Summary({
               <p>Choose a date, then add the times that suit you.</p>
             </div>
           )}
-          <div className="summary-total">
-            <span>Total</span>
-            <strong>
-              <span className="total-currency">SGD</span>{" "}
-              {money(totalCents(draft))}
-            </strong>
-          </div>
-
-          {basket && includeAction && <BasketContinue />}
+          {!(basket && includeAction) && (
+            <div className="summary-total">
+              <span>Total</span>
+              <strong>
+                <span className="total-currency">SGD</span>{" "}
+                {money(totalCents(draft))}
+              </strong>
+            </div>
+          )}
         </div>
       </aside>
       {showTrainers && draft.slots.length > 0 && <SelectedTrainers />}

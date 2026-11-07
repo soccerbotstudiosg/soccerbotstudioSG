@@ -284,6 +284,13 @@ test("crossing notices persist in the basket and review before payment", async (
   expect(
     screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
   ).toHaveAttribute("href", "/book/details");
+  const cart = screen.getByRole("complementary");
+  expect(cart.querySelector(".summary-total")).toBeNull();
+  expect(
+    cart
+      .querySelector(".basket-continue")!
+      .compareDocumentPosition(cart.querySelector(".basket-list")!),
+  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   basket.unmount();
   render(
     <BookingProvider>

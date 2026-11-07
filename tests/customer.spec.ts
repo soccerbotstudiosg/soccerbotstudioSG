@@ -2259,4 +2259,48 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     cards.getByRole("article", { name: "Faisal Shahril", exact: true }),
   ).toContainText("A football player, trainer and coach");
   await expect(cards.getByRole("listitem")).toHaveCount(0);
+  await closeBookingPanel(page);
+  if (page.viewportSize()!.width > 700) {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    for (const start of ["12:50", "13:40", "15:20", "16:10"]) {
+      await page
+        .getByRole("button", { name: new RegExp(`^${start}–`) })
+        .click();
+      await page
+        .getByRole("combobox", { name: `Trainer for ${date} at ${start}` })
+        .selectOption({ index: 1 });
+    }
+    const cart = page.locator(".summary-cart");
+    await expect(cart.locator(".basket-list > li")).toHaveCount(5);
+    await expect(cart.locator(".summary-total")).toHaveCount(0);
+    const layout = await cart.evaluate((element) => {
+      const card = element.getBoundingClientRect();
+      const action = element
+        .querySelector(".basket-continue")!
+        .getBoundingClientRect();
+      const list = element
+        .querySelector(".basket-list")!
+        .getBoundingClientRect();
+      const header = document
+        .querySelector(".site-header")!
+        .getBoundingClientRect();
+      return {
+        height: card.height,
+        available: window.innerHeight - header.height - 32,
+        actionBottom: action.bottom,
+        listTop: list.top,
+        overflowing: element.scrollWidth > element.clientWidth,
+      };
+    });
+    expect(layout.height).toBeLessThanOrEqual(layout.available);
+    expect(layout.actionBottom).toBeLessThan(layout.listTop);
+    expect(layout.overflowing).toBe(false);
+    await page.setViewportSize({ width: 1100, height: 600 });
+    await cart.locator(".basket-continue").scrollIntoViewIfNeeded();
+    await expect(cart.locator(".basket-continue")).toBeInViewport();
+    await expect(cart.locator(".basket-list")).toHaveCSS(
+      "overflow-y",
+      "visible",
+    );
+  }
 });
