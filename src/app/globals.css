@@ -2045,6 +2045,11 @@
       left: 22px;
       max-width: calc(100% - 44px);
     }
+    .studio-location-trigger small {
+      color: white;
+      font-size: 0.8125rem;
+      text-shadow: 0 1px 3px rgb(0 0 0 / 75%);
+    }
     .arena-booking {
       min-height: 450.5px;
       padding: 19.55px 22px 22.1px;
@@ -2508,6 +2513,11 @@
   .lead {
     color: var(--color-muted);
     margin-bottom: 29px;
+  }
+  .calendar-selection-context {
+    margin-bottom: 8px;
+    font-size: var(--text-meta);
+    color: var(--color-ink);
   }
   .section-title {
     margin-bottom: 16px;

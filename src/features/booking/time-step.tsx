@@ -12,6 +12,9 @@ import {
   MAX_BOOKING_SESSIONS,
 } from "@/domain/booking-policy";
 import { Icon } from "@/components/icon";
+import { LOCATION } from "@/domain/catalog";
+import { SERVICE_NAME } from "@/domain/demo-catalog";
+import { LiveCatalogue } from "./live-catalogue";
 
 import {
   isElapsed,
@@ -202,6 +205,28 @@ export function TimeStep() {
       <h1 className="page-title">
         Select dates<span className="booking-time-title-break"> and times</span>
       </h1>
+      {live ? (
+        <LiveCatalogue
+          render={(data) => (
+            <p className="calendar-selection-context">
+              <strong>
+                {LOCATION.building} ·{" "}
+                {
+                  data.services.find(
+                    (service) => service.id === draft.nativeServiceId,
+                  )?.name
+                }
+              </strong>
+            </p>
+          )}
+        />
+      ) : (
+        <p className="calendar-selection-context">
+          <strong>
+            {LOCATION.building} · {SERVICE_NAME}
+          </strong>
+        </p>
+      )}
       {waitingForRelease && attempt && (
         <ProtectedConfirmation
           attemptId={attempt.id}

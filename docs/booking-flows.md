@@ -5,6 +5,8 @@ Source reconciled 5 November 2026 against the current PR29 source plus the appro
 - New-reservation cooldown: show “New reservations are paused after repeated unpaid reservations. Please try again in up to1 hour.” Preserve customer selections/contact; no new provider effect starts. Existing uncertain/paid attempts retain recovery rather than returning an editable duplicate checkout.
 - Calendar display expiry retains the date grid during one refresh; refresh shows the shared spinner for0.5 seconds without fading the dates. A failed refresh keeps an explicit retry; expired data never grants reservation authority.
 
+The calendar displays the selected outlet and catalogue session name in a bold compact row below its main heading and above the duration note. The home hero address uses smaller white text with a subtle shadow on mobile; desktop styling is unchanged.
+
 ## 1. Guest entry
 
 Continue as guest, then select sessions without creating an account.

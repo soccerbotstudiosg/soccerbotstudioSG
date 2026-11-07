@@ -5194,3 +5194,11 @@ Owner requested standard site styling and hierarchy for the app prompt: white su
 ### 7 November 2026 — PR35 tablet calendar assertion
 
 Initial PR35 run42349811390 failed only the calendar row geometry assertion in tablet WebKit (frontend and backend profiles): native select top429.984px versus arrow top431.984px. The controls are centred in a flex row but the native select is taller. The assertion now compares vertical centres and retains the separate no-overlap check, rather than incorrectly requiring equal top edges. No CSS change, tolerance increase, retry, skip or inventory change. Both live-email browser shards, backend shard2 and all Worker groups passed; popup and footer regressions passed. Targeted formatting, ESLint and source checks passed after the test repair; new exact-head CI/staging pending.
+
+### 7 November 2026 — calendar context and mobile hero address
+
+PR35 completed: exact-head CI42350544715 and staging42351285679 passed; squash dd414c2 passed main CI42351439425 and production deployment42352167661. Approved sandbox runtime settings were restored and read back as version e71a24c0-0301-448c-a02c-535733a7f39b, preserving secrets, resource bindings and minute cron.
+
+Owner then requested a bold outlet/session row beneath the calendar heading and above the duration note. TimeStep reads the selected live service name through the existing catalogue component and the venue through LOCATION; demo mode retains its own catalogue name. The mobile hero address is now white at13px with a subtle text shadow below700px, leaving desktop unchanged. These are presentation-only changes: no booking/payment contracts, state, dependencies or test inventories change. Browser/physical-device visual acceptance remains owner/CI-run.
+
+Targeted ESLint, source ownership/integrity, design and TypeScript checks passed. Initial design inspection rejected a local clamp font size; the row now uses the existing meta typography token. Initial type generation hit sandbox child-process EPERM; the same command passed with supported execution permissions. No browser execution or new test inventory: this bounded copy/style change retains existing flow coverage.
