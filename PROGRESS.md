@@ -2,16 +2,12 @@
 
 ## Current change
 
-PR37, branch `fix/calendar-context-type-size`, base/main `58c40e1`. Published `f6d1a00` consolidates18px bold calendar context, sticky desktop cart, compact rolling Week/Month calendar, cart-day colours and message-only incomplete-checkout polling. Its full non-browser verification passed268 tests. CI42361412018 passed frontend and Worker jobs, but live-email browser cases still expected the superseded error message. The follow-up updates those expectations while preserving no-replay, no-payment and original-deadline assertions, and adds numeric provider RPC diagnostics.
-
-The next follow-up fixes the Grafana allowlist dropping `provider_failure`: retain signed numeric RPC codes and classify unknown text categories without dropping events. All11 telemetry tests passed, including sensitive-field exclusion and failure retention at zero success sampling. Raw provider response storage and production Grafana activation are not included.
-
-## Failure audit
-
-The16:42SGT checkout received HTTP200 with an invalid/error SimplyBook RPC envelope, retained no booking reference and never called HitPay. Read-only provider search found no matching active/cancelled booking; the exact original rejection reason was not retained. Context polling only observes state, and scheduled recovery cannot settle this reference-less attempt. Automatic approval review rejected the proposed automatic release because the provider code whitelist did not prove no booking was created. That proposal was reverted; no release-policy change or live repair is included. Operator-verified recovery remains pending clarification.
-
-CI42364940540 passed browser shards and204 sustained runtime tests but failed the stale493/204 inventory expectations and cross-suite entry ordering. The guard-only correction passed all four tooling tests and replayed the original CI TAP successfully. No runtime application change.
+Branch `fix/calendar-day-appearance`, based on merged main021e775. Remove calendar legend and availability dots; darker unavailable days; navy circular viewed/cart-selected dates; remove guidance below session slots. Screen-reader cart membership remains. Existing browser assertions updated with no inventory changes. All19 calendar/parity component cases passed; source/lint/types and publication receipt record remaining checks. Browser viewport acceptance remains CI/owner-run.
 
 ## Delivery and next steps
 
-Production remains PR36 at `58c40e1` with approved sandbox flags verified. The64-test checkout Worker suite, Worker/app types, scoped lint, source boundaries, inventory and formatting passed. Publish the inventory repair, verify all exact-head gates, stage and verify health, then merge under the user’s explicit instruction. PR37 is not deployed or accepted on staging. Browser execution and physical-device acceptance remain owner/CI-run. Docs PR33 remains paused; analytics/Search Console/OpenGraph remain outside implemented scope.
+PR37 is merged and deployed: candidate CI42366998310, staging42367766013, main CI42367943252 and production42368627772 passed. Production source021e775;18 approved booking/HitPay sandbox settings restored and read back. Independent post-activation shell health was blocked by CONNECT proxy403. Publish the new calendar presentation candidate as a draft PR; final CI/staging/merge remain pending for this change.
+
+## Remaining scope
+
+Unknown SimplyBook creation with no booking reference/payment row still requires authoritative reconciliation; diagnostics cannot retroactively recover the original provider response. Production Grafana activation, raw response retention and analytics/Search Console/OpenGraph are not implemented. Docs PR33 remains paused.

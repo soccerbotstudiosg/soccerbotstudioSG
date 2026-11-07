@@ -290,7 +290,6 @@
   }
   .small,
   .hint,
-  .note,
   .arrival-information p,
   .basket-empty p,
   .basket-list li span,
@@ -306,7 +305,6 @@
   .auth-code-actions,
   .inclusion-list p,
   .booking-required,
-  .calendar-legend,
   .series-date,
   .series-date span,
   .time-heading span,
@@ -3242,71 +3240,28 @@
     background: var(--color-surface);
   }
   .date strong {
+    display: grid;
+    place-items: center;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
     line-height: 1;
   }
   .date:hover:not(:disabled) {
     border-color: var(--color-focus);
     background: var(--color-brand-soft);
   }
-  .date .dot {
-    height: 4px;
-    width: 4px;
-    border-radius: 50%;
-    background: var(--color-brand);
-  }
-  .date.selected,
-  .date.selected:hover:not(:disabled) {
-    border-color: var(--color-action);
-    box-shadow: inset 0 0 0 1px var(--color-action);
-    color: var(--color-brand);
-  }
   .date:disabled {
-    color: var(--color-disabled-ink);
-    background: var(--color-paper);
+    color: var(--color-muted);
+    background: var(--color-disabled);
   }
-  .date:disabled .dot {
-    visibility: hidden;
-  }
-  .date.in-booking,
-  .date.in-booking:disabled,
-  .date.in-booking:hover:not(:disabled) {
-    background: var(--color-brand-soft);
-    border-color: var(--color-focus);
-    color: var(--color-ink);
+  .date.selected strong,
+  .date.in-booking strong {
+    background: var(--color-navy);
+    color: var(--color-on-brand);
   }
   .date-placeholder {
     min-height: 29px;
-  }
-  .calendar-legend {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-top: 8px;
-    padding-top: 6px;
-    border-top: 1px solid var(--color-line);
-    color: var(--color-muted);
-  }
-  .calendar-legend > span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .legend-mark {
-    display: inline-block;
-    width: 9px;
-    height: 9px;
-    border-radius: 3px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-control-border);
-  }
-  .legend-mark.in-booking {
-    background: var(--color-brand-soft);
-    border-color: var(--color-focus);
-  }
-  .legend-mark.unavailable {
-    background: var(--color-paper);
-    border-color: var(--color-line);
   }
   .series-list {
     list-style: none;
@@ -3451,19 +3406,6 @@
     font-weight: 400;
     white-space: normal;
     text-align: right;
-  }
-  .note {
-    display: flex;
-    gap: 10px;
-    background: var(--color-brand-soft);
-    padding: 14px 16px;
-    border-radius: 8px;
-    color: var(--color-muted);
-    margin-top: 20px;
-  }
-  .note svg {
-    width: 18px;
-    margin-top: 2px;
   }
   .empty-state {
     text-align: center;
@@ -4329,9 +4271,9 @@
     .date-placeholder {
       min-height: 33px;
     }
-    .calendar-legend {
-      gap: 10px;
-      padding: 6px 2px 0;
+    .date strong {
+      width: 27px;
+      height: 27px;
     }
     .series-list {
       padding: 0 0 4px 14px;
@@ -4382,9 +4324,6 @@
     }
     .time small {
       font-size: var(--text-caption);
-    }
-    .note {
-      padding: 12px 14px;
     }
     .field-grid {
       gap: 19px;
