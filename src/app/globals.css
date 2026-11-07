@@ -4071,6 +4071,13 @@
     }
     .session-shell .section-title {
       margin-bottom: 8px;
+      font-size: var(--text-body);
+    }
+    .session-shell :is(.outlet-option strong, .session-product-name) {
+      font-size: var(--text-body);
+    }
+    .session-shell .session-product-prices strong {
+      font-size: var(--text-card);
     }
     .session-product.surface {
       gap: 8px 10px;
@@ -4240,12 +4247,41 @@
     .lead {
       margin-bottom: 24px;
     }
+    .session-shell .player-selection {
+      margin-top: 12px;
+      padding: 12px;
+    }
+    .session-shell .counter {
+      min-height: 48px;
+      padding: 0;
+    }
+    .session-shell .counter button {
+      min-width: 44px;
+      height: 44px;
+    }
     .session-inclusions {
-      padding: 20px;
+      margin-top: 16px;
+      padding: 12px;
     }
     .inclusion-list {
       grid-template-columns: 1fr;
-      gap: 20px;
+      gap: 12px;
+    }
+    .inclusion-list li {
+      grid-template-columns: 20px minmax(0, 1fr);
+      gap: 6px;
+    }
+    .inclusion-check {
+      width: 20px;
+      height: 20px;
+    }
+    .inclusion-list h3 {
+      font-size: var(--text-body);
+      margin-bottom: 2px;
+    }
+    .inclusion-list p {
+      font-size: var(--text-meta);
+      line-height: 1.4;
     }
     .booking-facts {
       grid-template-columns: minmax(0, 1fr);

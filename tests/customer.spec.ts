@@ -1381,7 +1381,7 @@ test("header blue and the typography hierarchy stay consistent across every book
       ),
     ).toBeLessThanOrEqual(1);
   }
-  async function sectionType(selector: string) {
+  async function sectionType(selector: string, expectedSize = 20) {
     if (
       page.viewportSize()!.width <= 700 &&
       (await page.locator(".booking-navigation").count())
@@ -1500,7 +1500,7 @@ test("header blue and the typography hierarchy stay consistent across every book
       }),
     );
     for (const style of styles) {
-      expect(style.size).toBeCloseTo(20, 5);
+      expect(style.size).toBeCloseTo(expectedSize, 5);
       expect(style.weight).toBe("700");
       expect(style.style).toBe("normal");
       expect(style.color).toBe(brand);
@@ -1565,7 +1565,10 @@ test("header blue and the typography hierarchy stay consistent across every book
       exact: true,
     })
     .click();
-  await sectionType(".session-product-name, .session-inclusions h2");
+  await sectionType(
+    ".session-product-name, .session-inclusions h2",
+    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
+  );
   const selectedCardBackground = await page
     .locator('.session-product[aria-pressed="true"]')
     .evaluate((element) => getComputedStyle(element).backgroundColor);
