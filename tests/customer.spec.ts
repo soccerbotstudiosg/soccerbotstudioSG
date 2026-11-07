@@ -1178,7 +1178,7 @@ test("leave booking uses equal-width sentence-case actions with home left and st
   expect(saved.draft.contact.name).toBe("");
   expect(saved.attempt).toBeNull();
   await page.goto(sitePath("/book/account/"));
-  await page.getByRole("link", { name: "Back to home", exact: true }).click();
+  await page.getByRole("link", { name: "Home", exact: true }).click();
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Stay", exact: true }).click();
   await expect(page).toHaveURL(/\/book\/account\/$/);
