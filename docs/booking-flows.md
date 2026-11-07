@@ -202,12 +202,12 @@ A timer ending hides payment continuation; only verified releasable expiry permi
 flowchart TD
   A["Time left to pay ends"] --> B["Hide Continue payment; retain checking"]
   B -->|Verified releasable expiry| C["Your unpaid reservation has ended. Removed unavailable sessions: {date and time ranges}. These sessions may not be available to book again immediately. Please try again later. Your details are saved."]
-  B -->|Release not verified| D["Still checking your payment. Don’t pay again."]
+  B -->|Checking deadline; release not verified| D["Calendar: empty cart, affected-session notice; rebooking remains locked"]
   B -->|Late payment or invalid booking| E["Payment received. Contact us about your booking. Do not pay again."]
   C --> F["Choose a new time"]
 ```
 
-Confirmation summary follows review: provider service name, player count without “per session”; each session uses “Trainer: <name>”. Supporting client/location/disclaimer details remain collapsed under View Full Details. The continuation countdown is centred and bold above its payment button. Missing validated display metadata never substitutes a guessed trainer.
+Confirmation summary follows review: provider service name, player count without “per session”; each session uses “Trainer: <name>”. Your Sessions, Booking Contact, Order Summary and Location are collapsed under View Full Details; the disclaimer remains below it. The continuation countdown is centred and bold above its payment button. Missing validated display metadata never substitutes a guessed trainer.
 
 ## 14. Confirmed details temporarily unavailable
 

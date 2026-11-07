@@ -18,6 +18,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
     router = useRouter(),
     booking = useBooking();
   const [dialog, setDialog] = useState<"leave" | null>(null);
+  const [leavingFrom, setLeavingFrom] = useState<string | null>(null);
+  if (leavingFrom && pathname !== leavingFrom) setLeavingFrom(null);
   useEffect(() => {
     const header = document.querySelector(".site-header");
     if (!header) return;
@@ -108,7 +110,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             home(event);
         }}
       >
-        {children}
+        {leavingFrom === pathname ? null : children}
       </main>
       <footer className="site-footer">
         <div className="footer-contact-band">
@@ -247,6 +249,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <button
               className="button secondary"
               onClick={() => {
+                // Unmount the step guard before clearing its prerequisites;
+                // it must not replace the intentional Home navigation.
+                setLeavingFrom(pathname);
                 booking.leave();
                 setDialog(null);
                 router.push("/");

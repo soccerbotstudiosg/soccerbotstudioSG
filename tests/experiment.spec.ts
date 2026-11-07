@@ -310,11 +310,12 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await expect(
     page.getByRole("region", { name: "Current booking summary" }),
   ).toBeVisible();
-  expect(
-    await page.evaluate(() =>
-      JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!),
-    ),
-  ).toEqual(before);
+  const after = await page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!),
+  );
+  expect(after.draft).toEqual({ ...before.draft, accepted: false });
+  expect(after.attempt).toEqual(before.attempt);
+  expect(after.version).toBe(before.version);
 });
 
 test("checkout stays unavailable while its protected context is pending", async ({

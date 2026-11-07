@@ -15,7 +15,7 @@ UI follow-up is prepared locally after owner production-sandbox testing. Broad d
 - Expiry: after the original checking window, return to calendar with empty cart and an affected-session red notice; keep payment/rebooking locked until server release. No extra home link or automatic cart restoration. Late payment returns to protected payment status.
 - Conflict: unindexed conflicts recheck dates, preserve unaffected selections and name only removed sessions. Reload offers another tab’s differing checkout explicitly instead of replacing the draft.
 - Review consent resets on leave/re-entry/reload while dispatched payment snapshots remain unchanged.
-- Next: finish the consolidated gate, publish CI and stage per owner authorization; production remains unchanged.
+- PR34 is open and ready. Initial CI42339133920 caught browser expectations that still assumed retained Review consent and implicit disclosure alignment; repairs are consolidated for the next push, including the Leave booking step-guard navigation race and confirmation selectors. Worker contracts/recovery/sustained passed. Staging remains pending; production is unchanged.
 
 ## Deployed baseline
 

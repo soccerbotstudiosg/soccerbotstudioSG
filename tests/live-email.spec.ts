@@ -1141,12 +1141,13 @@ test("real payment recovery confirms the browser return from verified provider s
     expect(tickBox).not.toBeNull();
     expect(tickBox!.width).toBeGreaterThanOrEqual(48);
     expect(tickBox!.height).toBeGreaterThanOrEqual(48);
-    await expect(page.getByLabel("Booking summary", { exact: true })).toHaveCSS(
+    await page.getByText("View Full Details", { exact: true }).click();
+    await expect(page.locator(".confirmation-details-grid")).toHaveCSS(
       "text-align",
       "left",
     );
     const summaryBox = await page
-      .getByLabel("Booking summary", { exact: true })
+      .locator(".confirmation-details-grid")
       .boundingBox();
     const cardBox = await page.locator(".confirmation-card").boundingBox();
     expect(summaryBox).not.toBeNull();
@@ -2501,7 +2502,10 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       await checkoutStarted.promise;
       await expect(page.locator(".booking-flow-overlay")).toBeVisible();
       await expect(
-        page.getByRole("heading", { name: "Booking Contact", exact: true }),
+        page.locator(".confirmation-card").getByRole("heading", {
+          name: "Booking Contact",
+          exact: true,
+        }),
       ).toHaveCount(0);
       await expect(
         page.getByRole("heading", { name: "Booking Confirmed", exact: true }),

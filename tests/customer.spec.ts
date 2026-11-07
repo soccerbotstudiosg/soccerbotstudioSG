@@ -604,6 +604,10 @@ test("guest multi-date booking survives reload without retired export actions", 
     page.getByRole("heading", { name: "Review booking", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("checkbox")).not.toBeChecked();
+  await expect(
+    page.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+  ).toBeDisabled();
+  await page.getByRole("checkbox").check();
   await payment(page);
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
