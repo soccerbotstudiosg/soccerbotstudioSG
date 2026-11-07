@@ -468,7 +468,6 @@ export function TimeStep() {
                       }}
                     >
                       <strong>{Number(value.slice(-2))}</strong>
-                      <span className="dot" aria-hidden="true" />
                     </button>
                   );
                 },
@@ -492,22 +491,9 @@ export function TimeStep() {
             <BrandLoading overlay={false} compact label="Checking dates…" />
           </div>
         )}
-        {!calendarBusy && (
-          <div className="calendar-legend">
-            <span>
-              <i className="legend-mark" />
-              Available
-            </span>
-            <span>
-              <i className="legend-mark unavailable" />
-              Unavailable
-            </span>
-            <span id={bookingLegendId}>
-              <i className="legend-mark in-booking" />
-              In your booking
-            </span>
-          </div>
-        )}
+        <span className="sr-only" id={bookingLegendId}>
+          In your booking
+        </span>
       </section>
       {!calendarBusy && (
         <>
@@ -701,14 +687,6 @@ export function TimeStep() {
           )}
         </>
       )}
-      <p className="note">
-        <Icon name="clock" />
-        <span>
-          {live
-            ? "Open noon–8pm. Book at least 4 hours ahead. Choose a trainer for each session."
-            : "Open noon–8pm. Choose a trainer separately for every session. Demo trainer choices rotate every three hours; your chosen trainer stays for the full session."}
-        </span>
-      </p>
     </>
   );
 }

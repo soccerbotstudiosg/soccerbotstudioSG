@@ -1596,9 +1596,17 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
-  await expect(page.locator(".calendar-legend")).toHaveText(
-    /Available\s*Unavailable/,
+  await expect(page.locator(".calendar-legend")).toHaveCount(0);
+  await expect(page.locator(".date .dot")).toHaveCount(0);
+  await expect(page.locator(".date.selected strong")).toHaveCSS(
+    "background-color",
+    "rgb(5, 10, 47)",
   );
+  await expect(page.locator(".date.selected strong")).toHaveCSS(
+    "border-radius",
+    "50%",
+  );
+  await expect(page.getByText(/Open noon–8pm/)).toHaveCount(0);
   await expect(crossing.locator(".time-range")).toHaveCSS(
     "white-space",
     "nowrap",
