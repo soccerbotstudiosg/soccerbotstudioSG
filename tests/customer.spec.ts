@@ -1352,7 +1352,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     if (name === "Select dates and times") {
       await expect(page.locator(".calendar-selection-context")).toHaveCSS(
         "font-size",
-        "16px",
+        "18px",
       );
       await expect(page.locator(".lead")).toHaveCSS("font-size", "16px");
       await expect(

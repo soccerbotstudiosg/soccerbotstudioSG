@@ -2516,7 +2516,7 @@
   }
   .calendar-selection-context {
     margin-bottom: 8px;
-    font-size: var(--text-body);
+    font-size: var(--text-card);
     color: var(--color-ink);
   }
   .section-title {

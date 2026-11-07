@@ -5210,3 +5210,5 @@ The same initial run also exposed the unchanged phone hero font assertion in bac
 ### 7 November 2026 — calendar context typography follow-up
 
 PR36 final620c0a6 passed CI42354309504 and staging42355133030 (version314efcaa-15d6-4eb4-baa2-22a0c279297a), then merged as58c40e1 on owner instruction. Main CI42355282429 remains in progress at this checkpoint. Owner then clarified that the bold context line must match the duration note size. Replaced its14px meta token with the existing16px body token and extended the existing typography browser case to check both text sizes plus700 context weight. No state/contract/inventory change; CI and device acceptance for this follow-up are pending.
+
+Before staging PR37, owner superseded the equal-size request with greater prominence. The final context uses the existing18px card token and700 weight, above the unchanged16px duration note. Existing typography assertions follow those distinct sizes; the superseded16px candidate is not the release target.

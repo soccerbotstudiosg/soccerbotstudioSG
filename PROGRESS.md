@@ -2,7 +2,7 @@
 
 ## Current change
 
-Branch `fix/calendar-context-type-size`, based on PR36 merge `58c40e1`. Owner requested the bold outlet/session line match the duration note: both use the existing16px body token on every viewport. Existing typography browser case checks both sizes and bold weight; no inventory changes. Source/design/lint/format checks are the focused verification scope. Owner authorized CI, staging, merge and restoring approved sandbox settings.
+Branch `fix/calendar-context-type-size`, based on PR36 merge `58c40e1`. Owner requested greater prominence: the outlet/session line uses the existing18px card token in bold above the16px duration note on every viewport. Existing typography browser case checks both sizes and bold weight; no inventory changes. Source/design/lint/format checks are the focused verification scope. Owner authorized CI, staging, merge and restoring approved sandbox settings.
 
 ## Deployed baseline
 
