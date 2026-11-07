@@ -992,7 +992,10 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   const productFontSize = await page
     .locator(".session-product-name")
     .evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
-  expect(productFontSize).toBeCloseTo(20, 5);
+  expect(productFontSize).toBeCloseTo(
+    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
+    5,
+  );
   for (const name of [
     "Choose your outlet",
     "Select your session",

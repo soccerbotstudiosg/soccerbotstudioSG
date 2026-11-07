@@ -11,3 +11,5 @@ PR38 passed CI42373108885 and staging42373863153 attempt2, exact source26dc5c9. 
 ## Remaining scope
 
 Unknown provider creation reconciliation, raw response retention, production Grafana activation and analytics/Search Console/OpenGraph remain separate scope. Docs PR33 remains paused.
+
+CI42376495787 exposed one remaining obsolete20px mobile session-product assertion; update to16px mobile/20px desktop without relaxing precision. Final-head CI and staging remain pending. PR38 production is deployed at5906074 with18 approved settings restored/read back.
