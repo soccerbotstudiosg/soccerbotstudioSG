@@ -875,6 +875,14 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("button", { name: "Add one player" }),
   ).toHaveCount(0);
+  if ((page.viewportSize()?.width ?? 1280) <= 700) {
+    const outlet = await page.locator(".outlet-option").boundingBox();
+    const sessions = await page.locator(".session-products").boundingBox();
+    expect(outlet!.y).toBeGreaterThanOrEqual(0);
+    expect(sessions!.y + sessions!.height).toBeLessThanOrEqual(
+      page.viewportSize()!.height,
+    );
+  }
   const cardWidths = await page
     .locator(".session-products")
     .evaluate((grid) => ({
@@ -1515,6 +1523,13 @@ test("header blue and the typography hierarchy stay consistent across every book
     ),
   ).toBe(true);
   await sectionType(".access-option h2");
+  if ((page.viewportSize()?.width ?? 1280) <= 700) {
+    const choices = await page.locator(".access-options").boundingBox();
+    expect(choices!.y).toBeGreaterThanOrEqual(0);
+    expect(choices!.y + choices!.height).toBeLessThanOrEqual(
+      page.viewportSize()!.height,
+    );
+  }
   const guest = page.getByRole("button", { name: "Continue as guest" });
   // Inspect the resting action, with the pointer away from the button.
   await page.mouse.move(0, 0);
@@ -1598,13 +1613,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
   await expect(page.locator(".calendar-legend")).toHaveCount(0);
   await expect(page.locator(".date .dot")).toHaveCount(0);
+  await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
   await expect(page.locator(".date.selected strong")).toHaveCSS(
     "background-color",
-    "rgb(5, 10, 47)",
-  );
-  await expect(page.locator(".date.selected strong")).toHaveCSS(
-    "border-radius",
-    "50%",
+    "rgba(0, 0, 0, 0)",
   );
   await expect(page.getByText(/Open noon–8pm/)).toHaveCount(0);
   await expect(crossing.locator(".time-range")).toHaveCSS(
@@ -1643,6 +1655,14 @@ test("header blue and the typography hierarchy stay consistent across every book
   await page
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
     .selectOption({ index: 1 });
+  await expect(page.locator(".date.in-booking strong")).toHaveCSS(
+    "background-color",
+    "rgb(5, 10, 47)",
+  );
+  await expect(page.locator(".date.in-booking strong")).toHaveCSS(
+    "border-radius",
+    "50%",
+  );
   await expect(crossing).toHaveCSS("background-color", selectedCardBackground);
   await expect(crossing.locator(".time-instructor")).toHaveCSS(
     "font-size",
@@ -2023,7 +2043,7 @@ test("hero location opens its map only on demand without entering booking and he
   const mobileAddress = (page.viewportSize()?.width ?? 1280) <= 700;
   await expect(location.locator("small")).toHaveCSS(
     "font-size",
-    mobileAddress ? "13px" : "14px",
+    mobileAddress ? "12px" : "14px",
   );
   await expect(location.locator("small")).toHaveCSS(
     "color",

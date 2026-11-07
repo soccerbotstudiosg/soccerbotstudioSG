@@ -2045,7 +2045,7 @@
     }
     .studio-location-trigger small {
       color: white;
-      font-size: 0.8125rem;
+      font-size: var(--text-caption);
       text-shadow: 0 1px 3px rgb(0 0 0 / 75%);
     }
     .arena-booking {
@@ -3255,7 +3255,6 @@
     color: var(--color-muted);
     background: var(--color-disabled);
   }
-  .date.selected strong,
   .date.in-booking strong {
     background: var(--color-navy);
     color: var(--color-on-brand);
@@ -4018,14 +4017,36 @@
       grid-template-columns: 1fr;
       gap: 14px;
     }
+    .booking-main > .access-options {
+      margin-top: 12px;
+    }
     .access-option {
-      padding: 24px;
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      align-items: center;
+      gap: 8px 10px;
+      padding: 14px;
+    }
+    .access-option .auth-mark {
+      width: 32px;
+      height: 32px;
     }
     .access-option h2 {
-      margin-top: 16px;
+      margin: 0;
     }
     .access-option p {
-      margin-bottom: 20px;
+      grid-column: 1 / -1;
+      min-height: 0;
+      margin: 0;
+      font-size: var(--text-meta);
+    }
+    .access-option > .button {
+      grid-column: 1 / -1;
+      min-height: 44px;
+      padding: 10px 12px;
+    }
+    .access-option .account-actions {
+      grid-column: 1 / -1;
     }
     .auth-panel {
       padding: 24px 20px;
@@ -4038,9 +4059,29 @@
     .session-products {
       grid-template-columns: 1fr;
     }
-    .session-product {
-      gap: 13px;
-      padding: 20px;
+    .outlet-options {
+      margin: 8px 0 16px;
+    }
+    .outlet-option.surface {
+      padding: 12px 14px;
+      gap: 10px;
+    }
+    .outlet-option > span {
+      gap: 2px;
+    }
+    .session-shell .section-title {
+      margin-bottom: 8px;
+    }
+    .session-product.surface {
+      gap: 8px 10px;
+      padding: 12px 14px;
+    }
+    .session-product-details {
+      gap: 4px;
+    }
+    .session-product-prices {
+      margin-top: 0;
+      gap: 2px;
     }
     .session-product-icon {
       width: 36px;

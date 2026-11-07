@@ -2,12 +2,12 @@
 
 ## Current change
 
-Branch `fix/calendar-day-appearance`, based on merged main021e775. Remove calendar legend and availability dots; darker unavailable days; navy circular viewed/cart-selected dates; remove guidance below session slots. Screen-reader cart membership remains. Existing browser assertions updated with no inventory changes. All19 calendar/parity component cases passed; source/lint/types and publication receipt record remaining checks. Browser viewport acceptance remains CI/owner-run.
+Branch `fix/mobile-hero-address-size`, based on PR38 merge5906074. Mobile hero address12px; compact guest/email and outlet/session choices; navy calendar circle only when a session for that date is in the cart. Existing browser tests cover viewport bounds and before/after session date styling. No new test titles/inventory changes. Expanded details retain normal scrolling; desktop layout unchanged.
 
 ## Delivery and next steps
 
-PR37 is merged and deployed: candidate CI42366998310, staging42367766013, main CI42367943252 and production42368627772 passed. Production source021e775;18 approved booking/HitPay sandbox settings restored and read back. Independent post-activation shell health was blocked by CONNECT proxy403. Publish the new calendar presentation candidate as a draft PR; final CI/staging/merge remain pending for this change.
+PR38 passed CI42373108885 and staging42373863153 attempt2, exact source26dc5c9. Owner authorized merge5906074; main verification42376087390 and production release must be observed separately. Continue the authorized production settings restoration after deployment. Publish this mobile follow-up separately; its CI/staging/merge are pending.
 
 ## Remaining scope
 
-Unknown SimplyBook creation with no booking reference/payment row still requires authoritative reconciliation; diagnostics cannot retroactively recover the original provider response. Production Grafana activation, raw response retention and analytics/Search Console/OpenGraph are not implemented. Docs PR33 remains paused.
+Unknown provider creation reconciliation, raw response retention, production Grafana activation and analytics/Search Console/OpenGraph remain separate scope. Docs PR33 remains paused.
