@@ -1357,38 +1357,47 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
 });
 
 it("incomplete provider booking shows reservation recovery without a payment spinner or checkout link", async () => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (url: string) =>
-      Response.json(
-        url.endsWith("/checkout")
-          ? {
-              attemptId: first,
-              mode: "live",
-              bookingIssue: "incomplete",
-              checkout: { state: "unavailable" },
-              summary: {
-                players: 1,
-                totalMinor: 10800,
-                currency: "SGD",
-                sessions: [{ startMs: Date.now() + 86400000, players: 1 }],
-              },
-              checking: {
-                deadlineMs: Date.now() + 600000,
-                nextCheckMs: 0,
-                pollAfterMs: 5000,
-              },
-            }
-          : { status: "pending", reason: "payment_verification_pending" },
-      ),
-    ),
+  vi.useFakeTimers();
+  let incomplete = true;
+  let denied = false;
+  const fetcher = vi.fn(async (url: string) =>
+    denied
+      ? new Response(null, { status: 403 })
+      : Response.json(
+          url.endsWith("/checkout")
+            ? {
+                attemptId: first,
+                mode: "live",
+                ...(incomplete ? { bookingIssue: "incomplete" } : {}),
+                checkout: { state: "unavailable" },
+                summary: {
+                  players: 1,
+                  totalMinor: 10800,
+                  currency: "SGD",
+                  sessions: [{ startMs: Date.now() + 86400000, players: 1 }],
+                },
+                checking: {
+                  deadlineMs: Date.now() + 600000,
+                  nextCheckMs: 0,
+                  pollAfterMs: 5000,
+                },
+              }
+            : { status: "pending", reason: "payment_verification_pending" },
+        ),
   );
-  render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
+  vi.stubGlobal("fetch", fetcher);
+  const rendered = render(
+    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+  );
+  await act(async () => {});
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "We couldn’t complete your booking. Please try again shortly.",
+  );
   expect(
-    await screen.findByText(/Unable to complete this booking/),
+    screen.getByRole("status", { name: "Checking your reservation…" }),
   ).toBeVisible();
   expect(
-    screen.queryByRole("status", { name: "Checking payment…" }),
+    screen.queryByLabelText("Current booking summary"),
   ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("link", { name: /payment|checkout/i }),
@@ -1396,7 +1405,61 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   expect(
     screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).not.toBeInTheDocument();
-  expect(screen.getByLabelText("Current booking summary")).toHaveTextContent(
-    "SGD $108.00",
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(60000);
+  });
+  expect(
+    screen.queryByRole("status", { name: "Checking your reservation…" }),
+  ).toBeVisible();
+  expect(screen.getByRole("alert")).toBeVisible();
+  const reads = fetcher.mock.calls.length;
+  expect(reads).toBe(13);
+  expect(fetcher.mock.calls.every(([url]) => url.endsWith("/checkout"))).toBe(
+    true,
   );
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(60000);
+  });
+  expect(fetcher).toHaveBeenCalledTimes(reads + 12);
+  incomplete = false;
+  await act(async () => {
+    window.dispatchEvent(new Event("focus"));
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(
+    fetcher.mock.calls.filter(([url]) => url.endsWith("/checkout")),
+  ).toHaveLength(reads + 13);
+  rendered.unmount();
+  const finalReads = fetcher.mock.calls.length;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(60000);
+  });
+  expect(fetcher).toHaveBeenCalledTimes(finalReads);
+  incomplete = true;
+  const revoked = render(
+    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+  );
+  await act(async () => {});
+  expect(
+    screen.getByRole("status", { name: "Checking your reservation…" }),
+  ).toBeVisible();
+  denied = true;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(
+    screen.queryByRole("status", { name: "Checking your reservation…" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByText(
+      "Contact the studio to view this booking. Don’t pay again.",
+    ),
+  ).toBeVisible();
+  const deniedReads = fetcher.mock.calls.length;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(60000);
+  });
+  expect(fetcher).toHaveBeenCalledTimes(deniedReads);
+  revoked.unmount();
 });

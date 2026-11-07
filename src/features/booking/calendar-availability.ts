@@ -23,7 +23,8 @@ const retention = (entry: CalendarAvailability) =>
     : entry.dates.every((day) => day.offers !== undefined)
       ? BROWSER_CALENDAR_MAX_AGE_MS
       : CATALOGUE_MAX_AGE_MS;
-// Load only the requested month. TimeStep may advance initial discovery once
+// Load only the visible month(s). Rolling weeks may span two months.
+// TimeStep may advance initial discovery once
 // through supported months; only display expiry replaces an already loaded month.
 /** Load calendar availability and reconcile the selected day. */
 export function useCalendarAvailability(
@@ -32,6 +33,7 @@ export function useCalendarAvailability(
   month: string,
   scope: string,
   paused: boolean,
+  throughMonth?: string,
 ) {
   const [reload, setReload] = useState(0);
   const [refreshIndicator, setRefreshIndicator] = useState<string | null>(null);
@@ -59,70 +61,93 @@ export function useCalendarAvailability(
       return;
     const controller = new AbortController();
     const calendar = service.calendar;
-    void (async () => {
-      const next = month;
-      if (
-        next >
-        monthAt(
-          todaySG(new Date(Date.now())).slice(0, 7) + "-01",
-          BOOKING_MONTH_COUNT - 1,
-        ).slice(0, 7)
-      )
-        return;
-      if (controller.signal.aborted) return;
-      const previous = retained.current;
-      const saved =
-        previous?.owner === service && previous.key === key
-          ? previous.entries[next]
-          : undefined;
-      if (saved && Date.now() - saved.observedAtMs < retention(saved)) return;
-      if (saved) setRefreshIndicator(JSON.stringify([key, next]));
-      try {
-        const result = service.publicCalendar
-          ? await service.publicCalendar({
-              month: next,
-              signal: controller.signal,
-            })
-          : await calendar!({
-              month: next,
-              serviceId: protectedServiceId!,
-              signal: controller.signal,
-            });
+    const requested = [
+      ...new Set(
+        [month, throughMonth].filter((value): value is string => !!value),
+      ),
+    ];
+    void Promise.all(
+      requested.map(async (next) => {
         if (
-          protectedServiceId &&
-          "serviceId" in result &&
-          result.serviceId !== protectedServiceId
+          next >
+          monthAt(
+            todaySG(new Date(Date.now())).slice(0, 7) + "-01",
+            BOOKING_MONTH_COUNT - 1,
+          ).slice(0, 7)
         )
-          throw new Error("calendar_service_changed");
+          return;
         if (controller.signal.aborted) return;
-        const receivedAtMs = Date.now();
-        if (result.observedAtMs + retention(result) <= receivedAtMs)
-          throw new Error("calendar_receipt_expired");
-        setState((previous) => {
-          const entries =
-            previous?.owner === service && previous.key === key
-              ? { ...previous.entries }
-              : {};
-          entries[next] = { ...result, receivedAtMs };
-          const retained = Object.fromEntries(
-            Object.entries(entries).slice(-BOOKING_MONTH_COUNT),
-          );
-          return { owner: service, key, entries: retained, failed: [] };
-        });
-      } catch {
-        if (!controller.signal.aborted)
+        const previous = retained.current;
+        const saved =
+          previous?.owner === service && previous.key === key
+            ? previous.entries[next]
+            : undefined;
+        if (saved && Date.now() - saved.observedAtMs < retention(saved)) return;
+        if (saved) setRefreshIndicator(JSON.stringify([key, next]));
+        try {
+          const result = service.publicCalendar
+            ? await service.publicCalendar({
+                month: next,
+                signal: controller.signal,
+              })
+            : await calendar!({
+                month: next,
+                serviceId: protectedServiceId!,
+                signal: controller.signal,
+              });
+          if (
+            protectedServiceId &&
+            "serviceId" in result &&
+            result.serviceId !== protectedServiceId
+          )
+            throw new Error("calendar_service_changed");
+          if (controller.signal.aborted) return;
+          const receivedAtMs = Date.now();
+          if (result.observedAtMs + retention(result) <= receivedAtMs)
+            throw new Error("calendar_receipt_expired");
           setState((previous) => {
             const entries =
               previous?.owner === service && previous.key === key
                 ? { ...previous.entries }
                 : {};
-            return { owner: service, key, entries, failed: [next] };
+            entries[next] = { ...result, receivedAtMs };
+            const retained = Object.fromEntries(
+              Object.entries(entries).slice(-BOOKING_MONTH_COUNT),
+            );
+            const failed =
+              previous?.owner === service && previous.key === key
+                ? previous.failed.filter((value) => value !== next)
+                : [];
+            return { owner: service, key, entries: retained, failed };
           });
-        return;
-      }
-    })();
+        } catch {
+          if (!controller.signal.aborted)
+            setState((previous) => {
+              const entries =
+                previous?.owner === service && previous.key === key
+                  ? { ...previous.entries }
+                  : {};
+              const failed =
+                previous?.owner === service && previous.key === key
+                  ? [...new Set([...previous.failed, next])]
+                  : [next];
+              return { owner: service, key, entries, failed };
+            });
+          return;
+        }
+      }),
+    );
     return () => controller.abort();
-  }, [service, protectedServiceId, month, scope, paused, key, reload]);
+  }, [
+    service,
+    protectedServiceId,
+    month,
+    throughMonth,
+    scope,
+    paused,
+    key,
+    reload,
+  ]);
   // Replace the visible month at its fixed deadline. Retain its layout while
   // fetching, but never reuse expired offers as selectable availability.
   useEffect(() => {
@@ -135,18 +160,22 @@ export function useCalendarAvailability(
       () => {
         const now = Date.now();
         setCheckedAt(now);
-        const entry = state.entries[month];
         if (
-          entry &&
-          entry.observedAtMs + retention(entry) <= now &&
-          !state.failed.includes(month)
+          [month, throughMonth].some((selected) => {
+            const entry = selected ? state.entries[selected] : undefined;
+            return (
+              entry &&
+              entry.observedAtMs + retention(entry) <= now &&
+              !state.failed.includes(selected!)
+            );
+          })
         )
           setReload((value) => value + 1);
       },
       Math.max(0, Math.min(...deadlines) - Date.now()),
     );
     return () => clearTimeout(timer);
-  }, [state, service, key, month, paused, checkedAt]);
+  }, [state, service, key, month, throughMonth, paused, checkedAt]);
   useEffect(() => {
     if (!refreshIndicator) return;
     const timer = setTimeout(() => setRefreshIndicator(null), 500);
@@ -247,7 +276,13 @@ export function useCalendarAvailability(
         : null;
     },
     failed: current?.failed ?? [],
-    retry: (months: string[] = [month]) => {
+    retry: (
+      months: string[] = [
+        ...new Set(
+          [month, throughMonth].filter((value): value is string => !!value),
+        ),
+      ],
+    ) => {
       // Drop only requested months; retained siblings keep their fixed deadline.
       const previous = retained.current;
       if (previous?.owner === service && previous.key === key) {

@@ -4475,3 +4475,87 @@ test("reservation IP authority ignores forwarded headers and canonicalizes IPv6"
     await m.close();
   }
 });
+
+test("provider RPC errors retain numeric diagnostics without treating uncertainty as no booking", async () => {
+  for (const scenario of [
+    "rejection",
+    "internal",
+    "foreign",
+    "malformed",
+    "ambiguous",
+  ]) {
+    const m = await createBookingMechanism({
+      respond: (call) => {
+        if (call.body?.method !== "book") return;
+        return Response.json({
+          jsonrpc: "2.0",
+          id: scenario === "foreign" ? "foreign-request" : call.body.id,
+          ...(scenario === "ambiguous" ? { result: { bookings: [] } } : {}),
+          error: {
+            code:
+              scenario === "malformed"
+                ? "-32054"
+                : scenario === "internal"
+                  ? -32603
+                  : -32054,
+            message: "private-provider-message-must-not-escape",
+            data: {
+              email: "private-customer@example.test",
+              secret: "private-provider-secret",
+            },
+          },
+        });
+      },
+    });
+    try {
+      const c = await customer(m);
+      const result = await checkoutResult(c.send(), 200);
+      assert.equal(result.state, "recovery_required");
+      const retained = await m.db
+        .prepare(
+          "SELECT result_json FROM native_checkout_grants WHERE attempt_id=?",
+        )
+        .bind(c.input.key)
+        .first();
+      const diagnostic = JSON.parse(retained.result_json).diagnostic;
+      assert.equal(diagnostic.code, "provider_rpc_failed");
+      assert.equal(
+        diagnostic.rpcCode,
+        scenario === "rejection"
+          ? -32054
+          : scenario === "internal"
+            ? -32603
+            : undefined,
+      );
+      assert.doesNotMatch(
+        retained.result_json,
+        /private-provider|private-customer/,
+      );
+      const contextResponse = await m.mf.dispatchFetch(
+        m.origin + `/api/attempts/${c.input.key}/checkout`,
+        { headers: c.headers },
+      );
+      const context = await contextResponse.json();
+      assert.equal(context.bookingIssue, "incomplete");
+      assert.equal(context.checkout.state, "unavailable");
+      assert.doesNotMatch(
+        JSON.stringify(context),
+        /rpcCode|private-provider|private-customer/,
+      );
+      const release = await m.mf.dispatchFetch(
+        m.origin + `/api/attempts/${c.input.key}/expire`,
+        { method: "POST", headers: c.headers },
+      );
+      assert.equal(release.status, 409);
+      await release.text();
+      assert.equal(
+        m.calls.filter((call) => call.body?.method === "book").length,
+        1,
+      );
+      assert.equal(m.calls.filter((call) => isHitPayApiCall(call)).length, 0);
+      assert.deepEqual(m.unexpected, []);
+    } finally {
+      await m.close();
+    }
+  }
+});

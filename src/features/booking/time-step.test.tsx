@@ -47,6 +47,12 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   );
   await act(async () => {});
   expect(todaySG()).toBe("2026-10-07");
+  expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
+    "week",
+  );
+  fireEvent.change(screen.getByRole("combobox", { name: "Calendar view" }), {
+    target: { value: "month" },
+  });
   const calendar = screen.getByRole("region", { name: "Booking calendar" });
   expect(
     within(calendar).getByRole("button", { name: dateLabel(restoredDate) }),

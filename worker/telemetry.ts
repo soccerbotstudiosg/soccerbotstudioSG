@@ -80,6 +80,7 @@ export function sanitizeDiagnostic(value: unknown): Fields | undefined {
     "confirmation_trace",
     "provider_token_cache",
     "hitpay_transport_failure",
+    "provider_failure",
   ]);
   if (!result.event) return;
   metrics(result, "", source, ["durationMs"]);
@@ -93,6 +94,61 @@ export function sanitizeDiagnostic(value: unknown): Fields | undefined {
     ]);
     if (!result.operation) return;
     metrics(result, "", source, ["headersMs", "bodyMs"]);
+  } else if (source.event === "provider_failure") {
+    result.outcome = "error";
+    // Unknown categories remain observable; never forward arbitrary text labels.
+    result.operation = "unknown";
+    choice(result, "operation", source.operation, [
+      "public-auth",
+      "admin-auth",
+      "admin-refresh",
+      "identity",
+      "tariff",
+      "historical-booking",
+      "historical-invoice",
+      "book",
+      "batch-create",
+      "batch-close",
+      "booking-read",
+      "invoice-read",
+      "booking-cancel",
+      "webhook-delete",
+    ]);
+    result.failureClass = "unknown";
+    choice(result, "failureClass", source.failureClass, [
+      "authentication_expired_or_invalid",
+      "forbidden_unclassified",
+      "rate_limited",
+      "rpc_error",
+      "invalid_response",
+      "http_error",
+    ]);
+    result.reason = "unknown";
+    choice(result, "reason", source.reason, [
+      "provider_rpc_failed",
+      "provider_http_failed",
+      "provider_auth_failed",
+      "provider_redirect_denied",
+      "provider_representation_unknown",
+      "provider_response_too_large",
+      "native_cleanup_evidence_expired",
+      "timeout",
+      "caller_aborted",
+      "representation",
+      "connection",
+    ]);
+    if (
+      Number.isInteger(source.httpStatus) &&
+      Number(source.httpStatus) >= 100 &&
+      Number(source.httpStatus) <= 599
+    )
+      result.http_status = Number(source.httpStatus);
+    // RPC codes are signed and extensible, unlike nonnegative timing metrics.
+    if (
+      typeof source.rpcCode === "number" &&
+      Number.isSafeInteger(source.rpcCode)
+    )
+      result.rpc_code = source.rpcCode;
   } else if (source.event === "foundation_trace") {
     metrics(result, "d1_execution.", source.d1Execution, [
       "statements",

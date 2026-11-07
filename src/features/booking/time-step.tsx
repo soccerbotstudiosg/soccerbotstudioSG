@@ -6,7 +6,7 @@ import {
   NO_SESSIONS_ON_DATE,
 } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import {
   BOOKING_MONTH_COUNT,
   MAX_BOOKING_SESSIONS,
@@ -54,7 +54,10 @@ export function TimeStep() {
     showMonth,
     bookingService,
   } = useBooking();
+  const bookingLegendId = useId();
   const [choosing, setChoosing] = useState<string | null>(null);
+  const [calendarView, setCalendarView] = useState<"week" | "month">("week");
+  const [weekStart, setWeekStart] = useState<string | null>(null);
   const today = todaySG(new Date(now));
   const live = bookingService.mode === "live";
   const publicCalendarReady =
@@ -91,18 +94,50 @@ export function TimeStep() {
     firstDay = (new Date(`${month}T12:00:00Z`).getUTCDay() + 6) % 7;
   const days = new Date(`${monthAt(today, offset + 1)}T12:00:00Z`);
   days.setUTCDate(0);
+  const rangeStart = calendarView === "week" ? (weekStart ?? date) : month;
+  const rangeEnd =
+    calendarView === "week"
+      ? addDays(rangeStart, 6)
+      : addDays(month, days.getUTCDate() - 1);
+  const lastDate = addDays(monthAt(today, maxMonthOffset + 1), -1);
+  const throughMonth =
+    calendarView === "week" &&
+    !findingInitialDay &&
+    rangeEnd <= lastDate &&
+    rangeEnd.slice(0, 7) !== month.slice(0, 7)
+      ? rangeEnd.slice(0, 7)
+      : undefined;
   const monthResult = calendar.entry(month.slice(0, 7), now);
+  const sibling =
+    throughMonth && throughMonth !== month.slice(0, 7)
+      ? calendar.entry(throughMonth, now)
+      : null;
+  const visibleDays = [
+    ...(monthResult?.dates ?? []),
+    ...(sibling?.dates ?? []),
+  ];
   const dayAvailability = new Map(
-    monthResult?.dates.map((day) => [day.date, day.available]),
+    visibleDays.map((day) => [day.date, day.available]),
   );
-  const availableDays =
-    monthResult?.dates
-      .filter((day) => day.available && day.date >= today)
-      .sort((a, b) => a.date.localeCompare(b.date)) ?? [];
+  const availableDays = visibleDays
+    .filter(
+      (day) =>
+        day.available &&
+        day.date >= today &&
+        (calendarView !== "week" ||
+          !weekStart ||
+          (day.date >= rangeStart && day.date <= rangeEnd)),
+    )
+    .sort((a, b) => a.date.localeCompare(b.date));
   // Initial discovery visits at most the three supported months, one at a time.
   // Once resolved or manually navigated, refresh never resumes this search.
   if (publicCalendarReady && monthResult) {
-    if (dayAvailability.get(date) !== true) {
+    if (
+      dayAvailability.get(date) !== true ||
+      (calendarView === "week" &&
+        weekStart &&
+        (date < rangeStart || date > rangeEnd))
+    ) {
       const next =
         availableDays.find((day) => day.date >= date) ?? availableDays[0];
       if (next && next.date !== date) setDate(next.date);
@@ -117,19 +152,28 @@ export function TimeStep() {
       }
     }
   }
+  const dateInView =
+    calendarView === "month" || (date >= rangeStart && date <= rangeEnd);
   const displayDate =
-    publicCalendarReady && dayAvailability.get(date) !== true ? null : date;
+    !dateInView || (publicCalendarReady && dayAvailability.get(date) !== true)
+      ? null
+      : date;
   useEffect(() => {
-    showMonth(month.slice(0, 7));
+    showMonth(month.slice(0, 7), throughMonth);
     showDate(displayDate);
     return () => showDate(null);
-  }, [displayDate, showDate, month, showMonth]);
+  }, [displayDate, showDate, month, throughMonth, showMonth]);
   const nextAvailable = monthResult?.dates.find(
     (day) => day.date > date && day.available,
   )?.date;
   const { retry } = availability;
   const calendarFailed =
     publicCalendarReady && calendar.failed.includes(month.slice(0, 7));
+  const siblingFailed =
+    !!throughMonth && calendar.failed.includes(throughMonth);
+  const calendarRefreshing =
+    calendar.refreshing(month.slice(0, 7)) ||
+    (!!throughMonth && calendar.refreshing(throughMonth));
   const calendarBusy =
     publicCalendarReady &&
     !calendarFailed &&
@@ -138,7 +182,18 @@ export function TimeStep() {
   /** Stop initial discovery when the visitor chooses a calendar month. */
   function chooseMonth(next: string) {
     setFindingInitialDay(false);
+    setWeekStart(null);
+    setDate(next < today ? today : next);
     setMonth(next);
+  }
+  /** Move the rolling window without changing or dropping cart selections. */
+  function moveWeek(direction: -1 | 1) {
+    const next = addDays(rangeStart, direction * 7);
+    const bounded = next < today ? today : next;
+    setFindingInitialDay(false);
+    setWeekStart(bounded);
+    setMonth(monthAt(bounded, 0));
+    setDate(bounded);
   }
   const displayUnavailable =
     publicCalendarReady && !!monthResult && dayAvailability.get(date) !== true;
@@ -269,9 +324,13 @@ export function TimeStep() {
       <section
         className="calendar-panel"
         aria-label="Booking calendar"
-        aria-busy={calendarBusy || calendar.refreshing(month.slice(0, 7))}
+        aria-busy={
+          calendarBusy ||
+          calendarRefreshing ||
+          (!!throughMonth && !sibling && !siblingFailed)
+        }
       >
-        {calendar.refreshing(month.slice(0, 7)) && (
+        {calendarRefreshing && (
           <div className="calendar-refresh">
             <BrandLoading overlay={false} compact label="Updating dates…" />
           </div>
@@ -299,20 +358,52 @@ export function TimeStep() {
           <div className="calendar-nav">
             <button
               className="icon-button"
-              aria-label="Previous month"
-              disabled={offset === 0}
-              onClick={() => chooseMonth(monthAt(today, offset - 1))}
+              aria-label={
+                calendarView === "week" ? "Previous week" : "Previous month"
+              }
+              disabled={
+                calendarView === "week" ? rangeStart <= today : offset === 0
+              }
+              onClick={() =>
+                calendarView === "week"
+                  ? moveWeek(-1)
+                  : chooseMonth(monthAt(today, offset - 1))
+              }
             >
               <Icon name="chevron" className="rotate-180" />
             </button>
             <button
               className="icon-button"
-              aria-label="Next month"
-              disabled={offset === maxMonthOffset}
-              onClick={() => chooseMonth(monthAt(today, offset + 1))}
+              aria-label={calendarView === "week" ? "Next week" : "Next month"}
+              disabled={
+                calendarView === "week"
+                  ? rangeEnd >= lastDate
+                  : offset === maxMonthOffset
+              }
+              onClick={() =>
+                calendarView === "week"
+                  ? moveWeek(1)
+                  : chooseMonth(monthAt(today, offset + 1))
+              }
             >
               <Icon name="chevron" />
             </button>
+            <label className="sr-only" htmlFor="calendar-view">
+              Calendar view
+            </label>
+            <select
+              id="calendar-view"
+              value={calendarView}
+              onChange={(event) => {
+                setCalendarView(event.target.value as "week" | "month");
+                setWeekStart(null);
+                if (date.slice(0, 7) !== month.slice(0, 7))
+                  setMonth(monthAt(date, 0));
+              }}
+            >
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
           </div>
         </div>
         {calendarBusy && !calendar.hasLoaded(month.slice(0, 7)) ? (
@@ -323,46 +414,78 @@ export function TimeStep() {
         ) : (
           <>
             <div className="calendar-weekdays">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+              {(calendarView === "week"
+                ? Array.from({ length: 7 }, (_, i) =>
+                    dateLabel(addDays(rangeStart, i), { weekday: "short" }),
+                  )
+                : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+              ).map((day) => (
                 <span key={day}>{day}</span>
               ))}
             </div>
             <div className="dates">
-              {Array.from({ length: firstDay }, (_, i) => (
-                <span className="date-placeholder" key={`blank-${i}`} />
-              ))}
-              {Array.from({ length: days.getUTCDate() }, (_, i) => {
-                const value = addDays(month, i);
-                return (
-                  <button
-                    key={value}
-                    className={`date${value === date ? " selected" : ""}`}
-                    aria-label={dateLabel(value)}
-                    aria-pressed={date === value}
-                    disabled={
-                      value < today ||
-                      (live && dayAvailability.get(value) !== true)
-                    }
-                    title={
-                      live
-                        ? dayAvailability.get(value) === true
-                          ? "Available sessions"
-                          : dayAvailability.get(value) === false
-                            ? NO_SESSIONS_ON_DATE
-                            : "Availability not verified"
-                        : undefined
-                    }
-                    onClick={() => {
-                      setDate(value);
-                    }}
-                  >
-                    <strong>{i + 1}</strong>
-                    <span className="dot" aria-hidden="true" />
-                  </button>
-                );
-              })}
+              {Array.from(
+                { length: calendarView === "month" ? firstDay : 0 },
+                (_, i) => (
+                  <span className="date-placeholder" key={`blank-${i}`} />
+                ),
+              )}
+              {Array.from(
+                { length: calendarView === "week" ? 7 : days.getUTCDate() },
+                (_, i) => {
+                  const value = addDays(
+                    calendarView === "week" ? rangeStart : month,
+                    i,
+                  );
+                  const inBooking = draft.slots.some(
+                    (slot) => slot.date === value,
+                  );
+                  if (value > lastDate)
+                    return <span className="date-placeholder" key={value} />;
+                  return (
+                    <button
+                      key={value}
+                      className={`date${value === date ? " selected" : ""}${inBooking ? " in-booking" : ""}`}
+                      aria-label={dateLabel(value)}
+                      aria-describedby={inBooking ? bookingLegendId : undefined}
+                      aria-pressed={date === value}
+                      disabled={
+                        value < today ||
+                        (live && dayAvailability.get(value) !== true)
+                      }
+                      title={
+                        live
+                          ? dayAvailability.get(value) === true
+                            ? "Available sessions"
+                            : dayAvailability.get(value) === false
+                              ? NO_SESSIONS_ON_DATE
+                              : "Availability not verified"
+                          : undefined
+                      }
+                      onClick={() => {
+                        if (calendarView === "week") setWeekStart(rangeStart);
+                        setDate(value);
+                      }}
+                    >
+                      <strong>{Number(value.slice(-2))}</strong>
+                      <span className="dot" aria-hidden="true" />
+                    </button>
+                  );
+                },
+              )}
             </div>
           </>
+        )}
+        {siblingFailed && (
+          <div className="alert" role="alert">
+            Unable to load some dates.{" "}
+            <button
+              className="text-link"
+              onClick={() => calendar.retry([throughMonth!])}
+            >
+              Try again
+            </button>
+          </div>
         )}
         {live && !calendarBusy && !monthResult && !calendarFailed && (
           <div role="status" className="notice">
@@ -378,6 +501,10 @@ export function TimeStep() {
             <span>
               <i className="legend-mark unavailable" />
               Unavailable
+            </span>
+            <span id={bookingLegendId}>
+              <i className="legend-mark in-booking" />
+              In your booking
             </span>
           </div>
         )}
@@ -558,6 +685,7 @@ export function TimeStep() {
                         : undefined))
                     : addDays(date, 1);
                   if (!next) return;
+                  setWeekStart(null);
                   setDate(next);
                   setMonth(monthAt(next, 0));
                 }}

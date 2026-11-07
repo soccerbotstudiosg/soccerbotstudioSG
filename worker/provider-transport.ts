@@ -106,6 +106,12 @@ export class ProviderAuthenticationError extends ApiError {
     super(503, "provider_auth_failed");
   }
 }
+/** Retain bounded RPC diagnostics without provider messages or customer data. */
+export class ProviderRpcError extends ApiError {
+  constructor(readonly rpcCode: number) {
+    super(503, "provider_rpc_failed");
+  }
+}
 export type ProviderFamily = "public" | "admin";
 export type ProviderOperation =
   | "public-auth"
@@ -695,6 +701,25 @@ export async function providerRequest(
         ),
       );
       if (rpc) {
+        // An error is evidence only when it correlates to this exact request.
+        // Never interpret a foreign/malformed envelope as a rejected write.
+        if (
+          value &&
+          typeof value === "object" &&
+          !Array.isArray(value) &&
+          "id" in value &&
+          value.id === rpcId &&
+          "jsonrpc" in value &&
+          value.jsonrpc === "2.0" &&
+          (!("result" in value) || value.result === null) &&
+          "error" in value &&
+          value.error &&
+          typeof value.error === "object" &&
+          "code" in value.error &&
+          typeof value.error.code === "number" &&
+          Number.isSafeInteger(value.error.code)
+        )
+          throw new ProviderRpcError(value.error.code);
         if (
           !value ||
           typeof value !== "object" ||
@@ -713,6 +738,9 @@ export async function providerRequest(
       console.log(
         JSON.stringify({
           event: "provider_failure",
+          ...(error instanceof ProviderRpcError
+            ? { rpcCode: error.rpcCode }
+            : {}),
           ...(httpStatus === undefined
             ? {}
             : {
@@ -724,7 +752,11 @@ export async function providerRequest(
                       ? "forbidden_unclassified"
                       : httpStatus === 429
                         ? "rate_limited"
-                        : "http_error",
+                        : error instanceof ProviderRpcError
+                          ? "rpc_error"
+                          : httpStatus >= 200 && httpStatus < 300
+                            ? "invalid_response"
+                            : "http_error",
               }),
           retryNotBeforeMs: Date.now() + cooldown,
           correlationId: traceId(),

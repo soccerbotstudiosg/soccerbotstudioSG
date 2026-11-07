@@ -2,14 +2,16 @@
 
 ## Current change
 
-Branch `fix/calendar-context-mobile-address`, based on merged PR35 main `dd414c2`. Add the selected outlet/session name in a bold compact row below the calendar heading and above its duration note. Improve only the mobile hero address with smaller white text and subtle shadow. Existing catalogue and location owners supply display values.
+PR37, branch `fix/calendar-context-type-size`, base/main `58c40e1`. Published `f6d1a00` consolidates18px bold calendar context, sticky desktop cart, compact rolling Week/Month calendar, cart-day colours and message-only incomplete-checkout polling. Its full non-browser verification passed268 tests. CI42361412018 passed frontend and Worker jobs, but live-email browser cases still expected the superseded error message. The follow-up updates those expectations while preserving no-replay, no-payment and original-deadline assertions, and adds numeric provider RPC diagnostics.
 
-Presentation-only scope; no financial, API, dependency, schema or infrastructure changes. Existing tests/inventories retained; targeted source/design, lint and type checks passed. The initial PR36 CI caught catalogue status interference; repaired in the existing catalogue owner and verified with42 affected component tests. Fresh CI, staging and merge are authorized and pending. Browser and physical-device acceptance remain pending.
+The next follow-up fixes the Grafana allowlist dropping `provider_failure`: retain signed numeric RPC codes and classify unknown text categories without dropping events. All11 telemetry tests passed, including sensitive-field exclusion and failure retention at zero success sampling. Raw provider response storage and production Grafana activation are not included.
 
-## Deployed baseline
+## Failure audit
 
-PR35 CI, staging, merge, independent main CI and production deployment passed. Production sandbox settings restored and verified; see [Journey](docs/journey.md) for exact receipts. The current presentation follow-up is not deployed.
+The16:42SGT checkout received HTTP200 with an invalid/error SimplyBook RPC envelope, retained no booking reference and never called HitPay. Read-only provider search found no matching active/cancelled booking; the exact original rejection reason was not retained. Context polling only observes state, and scheduled recovery cannot settle this reference-less attempt. Automatic approval review rejected the proposed automatic release because the provider code whitelist did not prove no booking was created. That proposal was reverted; no release-policy change or live repair is included. Operator-verified recovery remains pending clarification.
 
-## Remaining owner checks
+CI42364940540 passed browser shards and204 sustained runtime tests but failed the stale493/204 inventory expectations and cross-suite entry ordering. The guard-only correction passed all four tooling tests and replayed the original CI TAP successfully. No runtime application change.
 
-Owner considers A/B/C passed; two-tab conflict and defence acceptance remain to be confirmed. Broad documentation PR33 remains paused, including queued clients/providers email reminders3 days and24 hours before. No provider configuration changes or real notification sends are authorized by this presentation work.
+## Delivery and next steps
+
+Production remains PR36 at `58c40e1` with approved sandbox flags verified. The64-test checkout Worker suite, Worker/app types, scoped lint, source boundaries, inventory and formatting passed. Publish the inventory repair, verify all exact-head gates, stage and verify health, then merge under the user’s explicit instruction. PR37 is not deployed or accepted on staging. Browser execution and physical-device acceptance remain owner/CI-run. Docs PR33 remains paused; analytics/Search Console/OpenGraph remain outside implemented scope.
