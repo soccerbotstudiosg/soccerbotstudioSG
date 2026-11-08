@@ -99,6 +99,32 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   );
   const instructors = screen.getByRole("region", { name: "Your instructors" });
   expect(within(instructors).getAllByRole("article")).toHaveLength(2);
+  const faisalProfile = within(instructors).getByRole("button", {
+    name: "Faisal Shahril",
+  });
+  const danielProfile = within(instructors).getByRole("button", {
+    name: "Daniel Tan",
+  });
+  expect(faisalProfile).toHaveAttribute("aria-expanded", "false");
+  expect(danielProfile).toHaveAttribute("aria-expanded", "false");
+  expect(
+    instructors.querySelectorAll(".trainer-bio:not([hidden])"),
+  ).toHaveLength(0);
+  await user.click(faisalProfile);
+  expect(faisalProfile).toHaveAttribute("aria-expanded", "true");
+  expect(
+    instructors.querySelectorAll(".trainer-bio:not([hidden])"),
+  ).toHaveLength(1);
+  await user.click(danielProfile);
+  expect(faisalProfile).toHaveAttribute("aria-expanded", "false");
+  expect(danielProfile).toHaveAttribute("aria-expanded", "true");
+  expect(
+    instructors.querySelectorAll(".trainer-bio:not([hidden])"),
+  ).toHaveLength(1);
+  await user.click(danielProfile);
+  expect(
+    instructors.querySelectorAll(".trainer-bio:not([hidden])"),
+  ).toHaveLength(0);
   expect(
     within(instructors).getByRole("article", { name: "Faisal Shahril" }),
   ).toBeInTheDocument();

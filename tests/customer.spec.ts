@@ -1701,15 +1701,18 @@ test("header blue and the typography hierarchy stay consistent across every book
     "14px",
   );
   await openBookingPanel(page, "trainers");
-  await expect(page.locator(".trainer-heading")).toHaveCSS(
-    "background-color",
-    brand,
+  await expect(page.locator(".trainer-toggle")).toHaveAttribute(
+    "aria-expanded",
+    "false",
   );
+  await page.locator(".trainer-toggle").click();
+  await expect(page.locator(".trainer-toggle")).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(page.locator(".trainer-bio")).toBeVisible();
   await expect(page.locator(".trainer-bio")).toHaveCSS("font-size", "14px");
-  await expect(page.locator(".trainer-identity h3")).toHaveCSS(
-    "font-size",
-    "18px",
-  );
+  await expect(page.locator(".trainer-name")).toHaveCSS("font-size", "18px");
   await closeBookingPanel(page);
   await page
     .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
@@ -2272,6 +2275,20 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await noon.selectOption(`${date}|12:00|demo|faisal`);
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
+  const faisalProfile = cards.getByRole("button", {
+    name: "Faisal Shahril",
+    exact: true,
+  });
+  const danielProfile = cards.getByRole("button", {
+    name: "Daniel Tan",
+    exact: true,
+  });
+  await faisalProfile.click();
+  await expect(faisalProfile).toHaveAttribute("aria-expanded", "true");
+  await danielProfile.click();
+  await expect(faisalProfile).toHaveAttribute("aria-expanded", "false");
+  await expect(danielProfile).toHaveAttribute("aria-expanded", "true");
+  await expect(cards.locator(".trainer-bio:not([hidden])")).toHaveCount(1);
   await expect(
     cards.getByRole("article", { name: "Faisal Shahril", exact: true }),
   ).toContainText("A football player, trainer and coach");
