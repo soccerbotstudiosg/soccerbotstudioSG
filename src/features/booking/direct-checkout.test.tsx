@@ -14,8 +14,13 @@ import { BookingPage } from "./booking-page";
 import { ReviewStep } from "./review-step";
 import { BookingServiceError, type BookingService } from "@/services/contracts";
 import { liveBookingService } from "@/services/booking";
-import { saveLiveDraft, saveBooking } from "@/services/storage";
+import {
+  saveLiveDraft,
+  saveBooking,
+  saveSuppressedSlots,
+} from "@/services/storage";
 import { demoBookingService } from "@/services/demo/booking";
+import { expireBooking } from "@/services/confirmation";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { blankDraft, type Attempt } from "@/domain/booking";
 
@@ -754,7 +759,14 @@ it("expired Review releases only an authoritatively unpaid attempt and preserves
     }),
   );
   function State() {
-    const { update, reserve, attempt, draft: current } = useBooking();
+    const {
+      update,
+      reserve,
+      attempt,
+      draft: current,
+      restartAfterExpiry,
+      action,
+    } = useBooking();
     return (
       <>
         <button
@@ -765,6 +777,17 @@ it("expired Review releases only an authoritatively unpaid attempt and preserves
           Fill details
         </button>
         <button onClick={() => void reserve()}>Reserve</button>
+        <button
+          onClick={async () => {
+            await expireBooking(id);
+            restartAfterExpiry(id);
+          }}
+        >
+          Verify unpaid release
+        </button>
+        <output data-testid="calendar-return">
+          {String(action.returnToCalendar)}
+        </output>
         <output data-testid="attempt">
           {attempt?.id ?? "none"}:{current.contact.email}:{current.slots.length}
         </output>
@@ -793,14 +816,17 @@ it("expired Review releases only an authoritatively unpaid attempt and preserves
     ),
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent(id);
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "Still checking your payment",
+  expect(screen.getByTestId("attempt")).toHaveTextContent(
+    `${id}:${draft.contact.email}:0`,
   );
+  expect(screen.getByTestId("calendar-return")).toHaveTextContent("true");
+  expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+  expect(
+    screen.queryByText("Still checking your payment"),
+  ).not.toBeInTheDocument();
   uncertain = false;
   await act(async () =>
-    fireEvent.click(
-      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
-    ),
+    fireEvent.click(screen.getByText("Verify unpaid release")),
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent(
     `none:${draft.contact.email}:0`,
@@ -941,36 +967,90 @@ it("queue rejection keeps the original attempt on Review for an explicit retry",
 it("rejected checkout window clears the undispatched draft attempt without payment confirmation polling", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
-  const fetch = vi.fn(async () =>
+  const fetch = vi.fn<typeof globalThis.fetch>(async () =>
     Response.json({ error: "checkout_already_active" }, { status: 503 }),
   );
   vi.stubGlobal("fetch", fetch);
-  const view = render(
+  const other = { ...draft.slots[0], start: "12:50" };
+  function Probe() {
+    const state = useBooking();
+    return (
+      <>
+        <button
+          onClick={() =>
+            state.update({ ...draft, slots: [draft.slots[0], other] })
+          }
+        >
+          Seed rejected
+        </button>
+        <button onClick={() => void state.checkout()}>Submit rejected</button>
+        <output data-testid="attempt">{state.attempt?.id ?? "none"}</output>
+        <output data-testid="return">
+          {String(state.action.returnToCalendar)}
+        </output>
+        <output data-testid="cart">{JSON.stringify(state.draft.slots)}</output>
+        <output data-testid="suppressed">
+          {JSON.stringify(state.suppressedSlots)}
+        </output>
+        <p data-testid="notice">{state.selectionNotice}</p>
+      </>
+    );
+  }
+  let finishAvailability!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  const availability = vi.fn<BookingService["availability"]>(
+    () =>
+      new Promise((resolve) => {
+        finishAvailability = resolve;
+      }),
+  );
+  render(
     <BookingProvider
       bookingService={{
         ...liveBookingService,
         restore: undefined,
         calendar: undefined,
         publicCalendar: undefined,
+        availability,
       }}
       identityService={demoCustomerIdentity}
     >
-      <Seed />
-      <ReviewStep />
+      <Probe />
     </BookingProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Seed" }));
-  fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
-  await screen.findByText(
-    "We couldn’t start checkout. Please try again later.",
+  fireEvent.click(screen.getByText("Seed rejected"));
+  fireEvent.click(screen.getByText("Submit rejected"));
+  await waitFor(() =>
+    expect(screen.getByTestId("return")).toHaveTextContent("true"),
   );
-  expect(screen.getByTestId("retained")).toBeEmptyDOMElement();
-  expect(screen.getByTestId("action")).toHaveTextContent("failure");
-  expect(navigation.push).not.toHaveBeenCalled();
-  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(screen.getByTestId("attempt")).toHaveTextContent("none");
+  // A slow fresh read cannot hold the customer on a checkout loading screen.
+  expect(JSON.parse(screen.getByTestId("cart").textContent!)).toEqual([
+    draft.slots[0],
+    other,
+  ]);
+  expect(JSON.parse(screen.getByTestId("suppressed").textContent!)).toEqual([
+    draft.slots[0],
+    other,
+  ]);
+  expect(screen.queryByText("Checking payment…")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText("Submit rejected"));
+  expect(fetch).toHaveBeenCalledTimes(1);
+  await act(async () => finishAvailability([{ ...other, available: true }]));
+  expect(JSON.parse(screen.getByTestId("cart").textContent!)).toEqual([other]);
+  expect(JSON.parse(screen.getByTestId("suppressed").textContent!)).toEqual(
+    draft.slots,
+  );
+  expect(screen.getByTestId("notice")).toHaveTextContent(
+    "Removed unavailable sessions: Tue, 20 Oct 2026, 12:00–12:40.",
+  );
+  expect(availability).toHaveBeenCalledWith(
+    expect.objectContaining({ fresh: true }),
+  );
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(screen.queryByText("Checking payment…")).not.toBeInTheDocument();
-  view.unmount();
+  cleanup();
   const active: Attempt = {
     id,
     draft,
@@ -979,53 +1059,37 @@ it("rejected checkout window clears the undispatched draft attempt without payme
     checkUntil: Date.now() + 600000,
     booking: null,
   };
-  const restore = vi.fn().mockResolvedValueOnce(null).mockResolvedValue(active);
-  render(
-    <BookingProvider
-      bookingService={{
-        ...liveBookingService,
-        restore,
-        calendar: undefined,
-        publicCalendar: undefined,
-      }}
-      identityService={{ ...demoCustomerIdentity, mode: "live" }}
-    >
-      <Seed />
-      <ReviewStep />
-    </BookingProvider>,
-  );
-  await waitFor(() => expect(restore).toHaveBeenCalledTimes(1));
-  fireEvent.click(screen.getByRole("button", { name: "Seed" }));
-  fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
-  await screen.findByText(
-    "You already have a checkout in progress. These selections were not booked.",
-  );
-  expect(screen.getByTestId("retained")).toBeEmptyDOMElement();
-  expect(
-    screen.getByRole("link", { name: "View existing checkout" }),
-  ).toHaveAttribute("href", `/confirmation?attempt=${id}`);
-  expect(navigation.replace).not.toHaveBeenCalled();
-  expect(restore).toHaveBeenCalledTimes(2);
-  expect(fetch).toHaveBeenCalledTimes(2);
-  cleanup();
-  const other = { ...draft.slots[0], start: "12:50" };
-  saveLiveDraft({ ...draft, slots: [draft.slots[0], other] });
-  function RestoredDraft() {
-    const state = useBooking();
-    return (
-      <>
-        <output data-testid="restored-cart">
-          {JSON.stringify(state.draft.slots)}
-        </output>
-        <output data-testid="restored-attempt">
-          {state.attempt?.id ?? "none"}
-        </output>
-        <output data-testid="existing-checkout">
-          {state.action.resumeAttemptId}
-        </output>
-      </>
+  const restore = vi.fn(async () => active);
+  // Exact contact and selections do not establish tab ownership, including a
+  // new tab with no stored attempt marker and a rejected tab with a stale marker.
+  for (const marker of [undefined, "00000000-0000-4000-8000-000000000099"]) {
+    sessionStorage.removeItem("soccerbot-live-draft");
+    saveSuppressedSlots([]);
+    saveLiveDraft(draft, true, marker);
+    render(
+      <BookingProvider
+        bookingService={{
+          ...liveBookingService,
+          restore,
+          calendar: undefined,
+          publicCalendar: undefined,
+          availability,
+        }}
+        identityService={{ ...demoCustomerIdentity, mode: "live" }}
+      >
+        <Probe />
+      </BookingProvider>,
     );
+    await waitFor(() =>
+      expect(screen.getByTestId("return")).toHaveTextContent("true"),
+    );
+    expect(screen.getByTestId("attempt")).toHaveTextContent("none");
+    expect(JSON.parse(screen.getByTestId("cart").textContent!)).toEqual(
+      draft.slots,
+    );
+    cleanup();
   }
+  saveLiveDraft(draft, true, id);
   render(
     <BookingProvider
       bookingService={{
@@ -1033,21 +1097,23 @@ it("rejected checkout window clears the undispatched draft attempt without payme
         restore,
         calendar: undefined,
         publicCalendar: undefined,
+        availability,
       }}
       identityService={{ ...demoCustomerIdentity, mode: "live" }}
     >
-      <RestoredDraft />
+      <Probe />
     </BookingProvider>,
   );
   await waitFor(() =>
-    expect(screen.getByTestId("existing-checkout")).toHaveTextContent(id),
+    expect(screen.getByTestId("attempt")).toHaveTextContent(id),
   );
-  expect(screen.getByTestId("restored-attempt")).toHaveTextContent("none");
-  expect(JSON.parse(screen.getByTestId("restored-cart").textContent!)).toEqual([
-    draft.slots[0],
-    other,
-  ]);
-  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(fetch).toHaveBeenCalledTimes(2);
+  expect(fetch).toHaveBeenNthCalledWith(
+    2,
+    "/api/attempts/00000000-0000-4000-8000-000000000099/checkout",
+    expect.objectContaining({ cache: "no-store", credentials: "same-origin" }),
+  );
+  expect(fetch.mock.calls[1][1]?.body).toBeUndefined();
 });
 
 it("checkout readback uses slot-specific messaging only for verified unavailability", async () => {
@@ -1175,9 +1241,11 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
   expect(
     JSON.parse(screen.getByTestId("conflict-calendar").textContent!),
   ).toEqual([{ ...other, available: true }]);
-  expect(availability).toHaveBeenCalledExactlyOnceWith(
-    expect.objectContaining({ fresh: true, date: draft.slots[0].date }),
-  );
+  expect(availability).toHaveBeenCalledTimes(1);
+  for (const call of availability.mock.calls)
+    expect(call[0]).toEqual(
+      expect.objectContaining({ fresh: true, date: draft.slots[0].date }),
+    );
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(screen.getByTestId("conflict-notice")).toHaveTextContent(
     "Removed unavailable sessions: Tue, 20 Oct 2026, 12:00–12:40.",
@@ -1193,10 +1261,40 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
     checkUntil: Date.now() + 600000,
     booking: null,
   }));
+  let recoveryResult: boolean | undefined;
   function ReloadProbe() {
     const state = useBooking();
     return (
       <>
+        <button
+          onClick={() =>
+            void state
+              .rejectRecoveredSelection(id, {
+                state: "selection_unavailable",
+                rejectedSessionIndex: 0,
+              })
+              .then((result) => {
+                recoveryResult = result;
+              })
+          }
+        >
+          Recover original
+        </button>
+        <button
+          onClick={() =>
+            void state
+              .rejectRecoveredSelection(
+                "00000000-0000-4000-8000-000000000099",
+                { state: "selection_unavailable", rejectedSessionIndex: 0 },
+              )
+              .then((result) => {
+                recoveryResult = result;
+              })
+          }
+        >
+          Recover foreign
+        </button>
+        <output data-testid="reload-notice">{state.selectionNotice}</output>
         <output data-testid="reload-attempt">
           {state.attempt?.id ?? "none"}
         </output>
@@ -1226,6 +1324,93 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
     expect(JSON.parse(screen.getByTestId("reload-cart").textContent!)).toEqual(
       slots,
     );
+    cleanup();
+  }
+  // Lost rejection response: the exact saved attempt can be recovered from
+  // authenticated no-effects evidence even when /current is now empty.
+  for (const recovery of ["retained", "reload", "foreign"] as const) {
+    recoveryResult = undefined;
+    saveSuppressedSlots([]);
+    saveLiveDraft({ ...draft, slots: [draft.slots[0], other] }, true, id);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          attemptId: id,
+          mode: "live",
+          checkout: { state: "unavailable" },
+          selectionRejection: {
+            state: "selection_unavailable",
+            rejectedSessionIndex: 0,
+          },
+          summary: {
+            players: 2,
+            totalMinor: 17600,
+            currency: "SGD",
+            sessions: [draft.slots[0], other].map((slot) => ({
+              startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
+              players: 2,
+            })),
+          },
+          checking: {
+            deadlineMs: Date.now() + 600000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        }),
+      ),
+    );
+    render(
+      <BookingProvider
+        bookingService={{
+          ...liveBookingService,
+          restore: async () =>
+            recovery === "reload"
+              ? null
+              : {
+                  id,
+                  draft: { ...draft, slots: [draft.slots[0], other] },
+                  status: "checking",
+                  outcome: "pending",
+                  checkUntil: Date.now() + 600000,
+                  booking: null,
+                },
+          calendar: undefined,
+          publicCalendar: undefined,
+          availability,
+        }}
+        identityService={{ ...demoCustomerIdentity, mode: "live" }}
+      >
+        <ReloadProbe />
+      </BookingProvider>,
+    );
+    if (recovery !== "reload") {
+      await waitFor(() =>
+        expect(screen.getByTestId("reload-attempt")).toHaveTextContent(id),
+      );
+      fireEvent.click(
+        screen.getByText(
+          recovery === "foreign" ? "Recover foreign" : "Recover original",
+        ),
+      );
+      await waitFor(() => expect(recoveryResult).toBe(recovery !== "foreign"));
+    }
+    if (recovery === "foreign") {
+      expect(screen.getByTestId("reload-attempt")).toHaveTextContent(id);
+      expect(
+        JSON.parse(screen.getByTestId("reload-cart").textContent!),
+      ).toEqual([draft.slots[0], other]);
+    } else {
+      await waitFor(() =>
+        expect(screen.getByTestId("reload-notice")).toHaveTextContent(
+          "Removed unavailable sessions",
+        ),
+      );
+      expect(screen.getByTestId("reload-attempt")).toHaveTextContent("none");
+      expect(
+        JSON.parse(screen.getByTestId("reload-cart").textContent!),
+      ).toEqual([other]);
+    }
     cleanup();
   }
 });
@@ -1301,11 +1486,15 @@ async function verifyExpiryRetention(multi: boolean) {
       draft: current,
       restartAfterExpiry,
       selectionNotice,
+      suppressedSlots,
     } = useBooking();
     return (
       <>
         <button onClick={() => restartAfterExpiry(id)}>Released</button>
         <output data-testid="cart">{JSON.stringify(current)}</output>
+        <output data-testid="suppressed">
+          {JSON.stringify(suppressedSlots)}
+        </output>
         <p role="status" aria-label="Expiry notice">
           {selectionNotice}
         </p>
@@ -1330,14 +1519,19 @@ async function verifyExpiryRetention(multi: boolean) {
     expect(
       screen.getByRole("status", { name: "Expiry notice" }),
     ).toHaveTextContent(
-      "Removed unavailable sessions: Tue, 20 Oct 2026, 12:00–12:40",
+      "Your unpaid reservation has ended. Affected sessions: Tue, 20 Oct 2026, 12:00–12:40",
     ),
   );
   const current = JSON.parse(screen.getByTestId("cart").textContent!);
   expect(current.slots).toEqual([]);
   expect(current.contact).toEqual(draft.contact);
   expect(current.accepted).toBe(false);
-  expect(availability).toHaveBeenCalledExactlyOnceWith(
+  await waitFor(() =>
+    expect(JSON.parse(screen.getByTestId("suppressed").textContent!)).toEqual(
+      draft.slots,
+    ),
+  );
+  expect(availability).toHaveBeenCalledWith(
     expect.objectContaining({
       date: "2026-10-20",
       fresh: true,
@@ -1386,12 +1580,16 @@ async function verifyExpiryStaleRead(outcome: string) {
       restartAfterExpiry,
       update,
       selectionNotice,
+      suppressedSlots,
     } = useBooking();
     return (
       <>
         <button onClick={() => restartAfterExpiry(id)}>Released</button>
         <button onClick={() => update({ players: 2 })}>Edit</button>
         <output data-testid="cart">{JSON.stringify(current)}</output>
+        <output data-testid="suppressed">
+          {JSON.stringify(suppressedSlots)}
+        </output>
         <p role="status" aria-label="Expiry notice">
           {selectionNotice}
         </p>
@@ -1411,12 +1609,14 @@ async function verifyExpiryStaleRead(outcome: string) {
     </BookingProvider>,
   );
   fireEvent.click(screen.getByText("Released"));
+  const originalFinish = finish;
+  const originalFail = fail;
   if (outcome === "edited") fireEvent.click(screen.getByText("Edit"));
   if (outcome === "identity") signedIn = true;
   await act(async () => {
-    if (outcome === "failure") fail(new Error("offline"));
+    if (outcome === "failure") originalFail(new Error("offline"));
     else
-      finish([
+      originalFinish([
         {
           ...draft.slots[0],
           available: true,
@@ -1431,25 +1631,26 @@ async function verifyExpiryStaleRead(outcome: string) {
   const current = JSON.parse(screen.getByTestId("cart").textContent!);
   expect(current.slots).toEqual([]);
   expect(current.contact).toEqual(draft.contact);
-  if (outcome === "failure") {
-    expect(
-      screen.getByRole("status", { name: "Expiry notice" }),
-    ).toHaveTextContent(
-      "Unable to confirm availability for: Tue, 20 Oct 2026, 12:00–12:40",
-    );
-    expect(
-      screen.getByRole("status", { name: "Expiry notice" }),
-    ).not.toHaveTextContent("Removed unavailable sessions");
-  } else if (outcome === "edited") {
+  const suppressed = JSON.parse(screen.getByTestId("suppressed").textContent!);
+  if (["failure", "identity", "edited"].includes(outcome))
+    expect(suppressed).toEqual(draft.slots);
+  else expect(suppressed).toEqual([]);
+  if (outcome === "edited") {
     expect(current.players).toBe(2);
     expect(
       screen.getByRole("status", { name: "Expiry notice" }),
     ).toBeEmptyDOMElement();
     expect(availability.mock.calls[0][0].signal?.aborted).toBe(true);
-  } else if (outcome !== "identity")
+  } else {
     expect(
       screen.getByRole("status", { name: "Expiry notice" }),
-    ).toHaveTextContent("Removed unavailable sessions");
+    ).toHaveTextContent(
+      "Your unpaid reservation has ended. Affected sessions: Tue, 20 Oct 2026, 12:00–12:40",
+    );
+    expect(
+      screen.getByRole("status", { name: "Expiry notice" }),
+    ).not.toHaveTextContent("Unable to confirm availability");
+  }
 }
 it("unpaid expiry never restores an unconfirmed or obsolete selection (failure)", async () => {
   await verifyExpiryStaleRead("failure");
@@ -1481,7 +1682,7 @@ async function verifyExpiryAttemptGuard(kind: string) {
     booking: null,
   };
   const availability = vi.fn<BookingService["availability"]>(async () => []);
-  saveLiveDraft(draft);
+  saveLiveDraft(draft, true, attempt.id);
   if (kind === "paid") saveBooking({ version: 2, draft, attempt });
   function Probe() {
     const {
@@ -1529,4 +1730,406 @@ it("expiry callback cannot clear a paid or different current attempt (paid)", as
 });
 it("expiry callback cannot clear a paid or different current attempt (different)", async () => {
   await verifyExpiryAttemptGuard("different");
+});
+
+/** Exercise provider restoration, route guards and expiry recovery through protected reads. */
+async function verifyMockPaymentExpiry(expired: boolean) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  localStorage.clear();
+  const retained: Attempt = {
+    id,
+    draft,
+    status: "checking",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  };
+  const other = { ...draft.slots[0], start: "12:50" };
+  const offers = [
+    draft.slots[0],
+    { ...draft.slots[0], instructor: "5" },
+    other,
+  ].map((slot) => ({ ...slot, available: true }));
+  let paid = false;
+  let deferStatus = false;
+  let finishStatus!: (response: Response) => void;
+  let failFresh = false;
+  const requests: Array<{ path: string; method: string }> = [];
+  const fetch = vi.fn<typeof globalThis.fetch>(async (input, options) => {
+    const path = String(input);
+    requests.push({ path, method: options?.method ?? "GET" });
+    if (path === `/api/attempts/${id}/expire`)
+      return Response.json(
+        { error: "checkout_expiry_unresolved" },
+        { status: 409 },
+      );
+    if (path === `/api/attempts/${id}/checkout`)
+      return Response.json({
+        attemptId: id,
+        mode: "live",
+        expired: expired && !paid,
+        checkout: { state: "unavailable" },
+        summary: {
+          players: draft.players,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [
+            {
+              startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+              players: draft.players,
+            },
+          ],
+        },
+        checking: {
+          deadlineMs: Date.parse("2026-10-15T00:10:00Z"),
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    if (path === `/api/attempts/${id}/confirmation`) {
+      if (deferStatus)
+        return new Promise<Response>((resolve) => {
+          finishStatus = resolve;
+        });
+      return expired
+        ? Response.json({
+            status: "pending",
+            reason: paid
+              ? "payment_received_booking_pending"
+              : "payment_verification_pending",
+            expired: !paid,
+          })
+        : new Response(null, { status: 503 });
+    }
+    return new Response(null, { status: 503 });
+  });
+  vi.stubGlobal("fetch", fetch);
+  const availability = vi.fn<BookingService["availability"]>(
+    async ({ fresh }) => {
+      if (fresh && failFresh)
+        throw new Error("Synthetic unavailable fresh read");
+      return offers;
+    },
+  );
+  const service: BookingService = {
+    ...liveBookingService,
+    restore: async () => retained,
+    availability,
+    publicCalendar: async ({ month }) => ({
+      month,
+      serviceId: "2",
+      observedAtMs: Date.now(),
+      dates: [
+        {
+          date: draft.slots[0].date,
+          available: true,
+          offers: offers.map((slot) => ({
+            ...slot.native!,
+            instructorId: slot.instructor,
+            startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
+          })),
+        },
+      ],
+    }),
+  };
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  function Probe() {
+    const state = useBooking();
+    return (
+      <>
+        <output data-testid="mock-expiry-attempt">
+          {JSON.stringify(state.attempt)}
+        </output>
+        <output data-testid="mock-expiry-draft">
+          {JSON.stringify(state.draft)}
+        </output>
+        <output data-testid="mock-expiry-return">
+          {String(state.action.returnToCalendar)}
+        </output>
+      </>
+    );
+  }
+  const tree = (step: "payment" | "time") => (
+    <BookingProvider bookingService={service} identityService={identity}>
+      <Probe />
+      <BookingPage step={step} />
+    </BookingProvider>
+  );
+  saveLiveDraft(draft, true, id);
+  let view = render(tree("payment"));
+  if (!expired) {
+    await screen.findByRole("heading", { name: "Confirmation unavailable" });
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    expect(
+      JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!),
+    ).toEqual(retained);
+    expect(
+      JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots,
+    ).toEqual(draft.slots);
+    expect(
+      requests.filter((request) => request.path.endsWith("/expire")),
+    ).toEqual([]);
+    return;
+  }
+  await waitFor(() =>
+    expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
+  );
+  expect(screen.getByTestId("mock-expiry-return")).toHaveTextContent("true");
+  expect(
+    JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!),
+  ).toEqual(retained);
+  expect(
+    JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots,
+  ).toEqual([]);
+  view.rerender(tree("time"));
+  await screen.findByRole("button", { name: /12:50–13:30/ });
+  expect(screen.getByRole("alert")).toHaveTextContent("Affected sessions:");
+  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
+  expect(
+    document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
+  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
+  const assertBackgroundOnly = () => {
+    expect(
+      document.querySelector(
+        ".booking-flow-overlay, .page-loading, .payment-check-feedback, .spinner",
+      ),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
+    expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  };
+  assertBackgroundOnly();
+  // Keep the next scheduled status response in flight: no interval may replace
+  // the usable calendar with a foreground loader.
+  vi.useFakeTimers();
+  view.unmount();
+  view = render(tree("time"));
+  await act(async () => {});
+  assertBackgroundOnly();
+  const statusBefore = requests.filter((request) =>
+    request.path.endsWith("/confirmation"),
+  ).length;
+  deferStatus = true;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(
+    requests.filter((request) => request.path.endsWith("/confirmation")).length,
+  ).toBeGreaterThan(statusBefore);
+  assertBackgroundOnly();
+  deferStatus = false;
+  await act(async () =>
+    finishStatus(
+      Response.json({
+        status: "pending",
+        reason: "payment_verification_pending",
+        expired: true,
+      }),
+    ),
+  );
+  assertBackgroundOnly();
+  const releaseBefore = requests.filter((request) =>
+    request.path.endsWith("/expire"),
+  ).length;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(25000);
+  });
+  expect(
+    requests.filter((request) => request.path.endsWith("/expire")).length,
+  ).toBeGreaterThan(releaseBefore);
+  assertBackgroundOnly();
+  failFresh = true;
+  const freshBefore = availability.mock.calls.filter(
+    ([request]) => request.fresh,
+  ).length;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(30000);
+  });
+  expect(
+    availability.mock.calls.filter(([request]) => request.fresh).length,
+  ).toBeGreaterThan(freshBefore);
+  assertBackgroundOnly();
+  failFresh = false;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(60000);
+  });
+  assertBackgroundOnly();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:02:00Z"));
+  // Refresh retains the unresolved financial attempt but never restores its cart.
+  view.unmount();
+  render(tree("time"));
+  await screen.findByRole("button", { name: /12:50–13:30/ });
+  expect(
+    JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!),
+  ).toEqual(retained);
+  expect(
+    JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots,
+  ).toEqual([]);
+  expect(screen.getByTestId("mock-expiry-return")).toHaveTextContent("true");
+  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+  // Later authenticated payment evidence must return to the original payment
+  // recovery, never permit another checkout or discard the paid attempt.
+  paid = true;
+  vi.setSystemTime(new Date("2026-10-15T00:02:31Z"));
+  fireEvent.focus(window);
+  await waitFor(() =>
+    expect(navigation.replace).toHaveBeenCalledWith("/book/payment/"),
+  );
+  expect(screen.getByTestId("mock-expiry-return")).toHaveTextContent(
+    "undefined",
+  );
+  expect(
+    JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!).id,
+  ).toBe(id);
+  expect(
+    requests
+      .filter((request) => request.method !== "GET")
+      .every((request) => request.path === `/api/attempts/${id}/expire`),
+  ).toBe(true);
+  expect(
+    requests.some((request) => request.path.startsWith("/api/booking/")),
+  ).toBe(false);
+}
+
+it("mock payment expiry returns to calendar preserves recovery across refresh and honours late payment", async () => {
+  await verifyMockPaymentExpiry(true);
+});
+it("mock unavailable payment status cannot masquerade as expiry or clear the original attempt", async () => {
+  await verifyMockPaymentExpiry(false);
+});
+
+it("mock conflict refresh keeps the rejected tab on calendar without adopting an identical-contact checkout", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  localStorage.clear();
+  const otherId = "00000000-0000-4000-8000-000000000002";
+  const available = { ...draft.slots[0], start: "12:50", available: true };
+  let otherActive = false;
+  const restore = vi.fn(async (): Promise<Attempt | null> =>
+    otherActive
+      ? {
+          id: otherId,
+          draft,
+          status: "checking",
+          outcome: "pending",
+          checkUntil: 0,
+          booking: null,
+        }
+      : null,
+  );
+  const checkout = vi.fn<BookingService["checkout"]>(async () => {
+    throw new BookingServiceError(
+      "selection_unavailable",
+      "Synthetic capacity conflict",
+      0,
+    );
+  });
+  const fetch = vi.fn<typeof globalThis.fetch>(
+    async () => new Response(null, { status: 503 }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  const service: BookingService = {
+    ...liveBookingService,
+    restore,
+    checkout,
+    availability: async () => [available],
+    publicCalendar: async ({ month }) => ({
+      month,
+      serviceId: "2",
+      observedAtMs: Date.now(),
+      dates: [
+        {
+          date: available.date,
+          available: true,
+          offers: [
+            {
+              ...available.native!,
+              instructorId: available.instructor,
+              startMs: Date.parse(
+                `${available.date}T${available.start}:00+08:00`,
+              ),
+            },
+          ],
+        },
+      ],
+    }),
+  };
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  function Probe() {
+    const state = useBooking();
+    return (
+      <>
+        <button onClick={() => state.update({ ...draft, accepted: true })}>
+          Review conflicting cart
+        </button>
+        <button onClick={() => void state.checkout()}>Submit conflict</button>
+        <output data-testid="conflict-refresh-attempt">
+          {state.attempt?.id ?? "none"}
+        </output>
+        <output data-testid="conflict-refresh-draft">
+          {JSON.stringify(state.draft)}
+        </output>
+      </>
+    );
+  }
+  const tree = (step: "review" | "time") => (
+    <BookingProvider bookingService={service} identityService={identity}>
+      <Probe />
+      <BookingPage step={step} />
+    </BookingProvider>
+  );
+  saveLiveDraft(draft);
+  const view = render(tree("review"));
+  await act(async () => {});
+  fireEvent.click(screen.getByText("Review conflicting cart"));
+  fireEvent.click(screen.getByText("Submit conflict"));
+  await waitFor(() =>
+    expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
+  );
+  view.rerender(tree("time"));
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Removed unavailable sessions:",
+  );
+  expect(
+    JSON.parse(screen.getByTestId("conflict-refresh-draft").textContent!).slots,
+  ).toEqual([]);
+  expect(screen.getByTestId("conflict-refresh-attempt")).toHaveTextContent(
+    "none",
+  );
+  expect(checkout).toHaveBeenCalledTimes(1);
+  otherActive = true;
+  view.unmount();
+  const restoreBefore = restore.mock.calls.length;
+  render(tree("time"));
+  await waitFor(() => expect(restore).toHaveBeenCalledTimes(restoreBefore + 1));
+  expect(
+    await screen.findByRole("button", { name: /12:50–13:30/ }),
+  ).toBeEnabled();
+  expect(screen.getByTestId("conflict-refresh-attempt")).toHaveTextContent(
+    "none",
+  );
+  const saved = JSON.parse(
+    screen.getByTestId("conflict-refresh-draft").textContent!,
+  );
+  expect(saved.slots).toEqual([]);
+  expect(saved.contact).toEqual(draft.contact);
+  expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(
+    document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
+  ).toBeNull();
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(
+    fetch.mock.calls.every(
+      ([, options]) => !options?.method || options.method === "GET",
+    ),
+  ).toBe(true);
+  expect(
+    fetch.mock.calls.some(([path]) => String(path).includes(otherId)),
+  ).toBe(false);
 });

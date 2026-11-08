@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { blankDraft } from "@/domain/booking";
@@ -7,10 +14,11 @@ import { SessionStep } from "./session-step";
 import { BookingPage } from "./booking-page";
 import { Summary } from "./summary";
 import { ReviewStep } from "./review-step";
-import { BookingProvider } from "./provider";
+import { BookingProvider, useBooking } from "./provider";
 import { demoSession } from "@/services/demo/schedule";
 import { ConfirmationStep } from "./confirmation-step";
-import { demoBookingModel } from "@/services/demo/booking";
+import { TimeStep } from "./time-step";
+import { demoBookingService, demoBookingModel } from "@/services/demo/booking";
 import { loadBooking, saveBooking } from "@/services/storage";
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
@@ -42,6 +50,11 @@ afterEach(() => {
 test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", async () => {
   const user = userEvent.setup();
   const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  vi.stubGlobal("matchMedia", () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
   let calendarBottom = 600;
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
     function (this: HTMLElement) {
@@ -71,6 +84,18 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   );
   await act(async () => {});
   expect(scroll).not.toHaveBeenCalled();
+  fireEvent.click(
+    screen.getByRole("button", { name: dateLabel(restoredDate) }),
+  );
+  expect(scroll).toHaveBeenLastCalledWith({ top: 360, behavior: "smooth" });
+  calendarBottom = -1000;
+  fireEvent.scroll(window);
+  expect(screen.getByRole("button", { name: "Back to calendar" })).toHaveStyle({
+    top: "8px",
+  });
+  calendarBottom = 600;
+  fireEvent.scroll(window);
+  scroll.mockClear();
   expect(todaySG()).toBe("2026-10-07");
   expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
     "month",
@@ -177,7 +202,8 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel(restoredDate) }),
   );
-  expect(scroll).not.toHaveBeenCalled();
+  expect(scroll).toHaveBeenLastCalledWith({ top: 360, behavior: "smooth" });
+  scroll.mockClear();
   vi.stubGlobal("matchMedia", () => ({
     matches: true,
     addEventListener: vi.fn(),
@@ -302,6 +328,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(
     screen.queryByRole("heading", { name: "Your Sessions" }),
   ).not.toBeInTheDocument();
+  view.container.querySelector<HTMLElement>(
+    ".booking-navigation",
+  )!.style.position = "sticky";
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel("2026-10-14") }),
   );
@@ -317,7 +346,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     view.container.querySelector(".session-times-region"),
   ).not.toHaveAttribute("aria-busy", "true");
   expect(scroll).toHaveBeenCalledExactlyOnceWith({
-    top: 364,
+    top: 304,
     behavior: "instant",
   });
   await act(async () => {});
@@ -330,12 +359,13 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel("2026-10-14") }),
   );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 364, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 304, behavior: "smooth" });
   expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
   calendarBottom = 0;
   fireEvent.scroll(window);
   const returnCue = screen.getByRole("button", { name: "Back to calendar" });
   expect(returnCue.querySelector("svg path")).not.toBeNull();
+  expect(returnCue).toHaveStyle({ top: "64px" });
   calendarBottom = 600;
   fireEvent.scroll(window);
   expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
@@ -740,4 +770,121 @@ test("calendar back preserves outlet and session choices while explicit deselect
       name: "Choose Kickoff Special (Trial Price)",
     }),
   ).toHaveAttribute("aria-pressed", "false");
+});
+
+test("expiry recovery hides affected studio times across trainers while other selections remain editable", async () => {
+  const original = demoSession({ date: restoredDate, start: "12:00" })!;
+  const alternateTrainer = { ...original, instructor: "daniel" };
+  const other = demoSession({ date: restoredDate, start: "12:50" })!;
+  const originalDraft = { ...loadBooking().draft, slots: [original] };
+  const retained = {
+    id: "00000000-0000-4000-8000-000000000001",
+    status: "checking" as const,
+    draft: originalDraft,
+    outcome: "pending" as const,
+    checkUntil: Date.now() + 60000,
+    booking: null,
+  };
+  saveBooking({ version: 2, draft: originalDraft, attempt: retained });
+  let freshFails = true;
+  const offers = [original, alternateTrainer, other].map((slot) => ({
+    ...slot,
+    available: true,
+  }));
+  const availability = vi.fn(async ({ fresh }: { fresh?: boolean }) => {
+    if (fresh && freshFails) throw new Error("Synthetic offline fresh read");
+    return offers;
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(null, { status: 503 })),
+  );
+  function Controls() {
+    const state = useBooking();
+    return (
+      <>
+        <button onClick={() => state.browseAfterChecking(retained.id)}>
+          Browse after expiry
+        </button>
+        <button onClick={() => state.restartAfterExpiry(retained.id)}>
+          Authoritative unpaid release
+        </button>
+        <output data-testid="recovery-attempt">
+          {JSON.stringify(state.attempt)}
+        </output>
+        <output data-testid="recovery-cart">
+          {JSON.stringify(state.draft.slots)}
+        </output>
+        <output data-testid="recovery-suppressed">
+          {JSON.stringify(state.suppressedSlots)}
+        </output>
+      </>
+    );
+  }
+  function RecoveryCalendar() {
+    return useBooking().ready ? <TimeStep /> : null;
+  }
+  render(
+    <BookingProvider bookingService={{ ...demoBookingService, availability }}>
+      <Controls />
+      <RecoveryCalendar />
+    </BookingProvider>,
+  );
+  fireEvent.click(screen.getByText("Browse after expiry"));
+  await waitFor(() =>
+    expect(availability).toHaveBeenCalledWith(
+      expect.objectContaining({ fresh: true }),
+    ),
+  );
+  expect(
+    screen.queryByRole("button", { name: /12:00–12:40/ }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
+  expect(JSON.parse(screen.getByTestId("recovery-cart").textContent!)).toEqual(
+    [],
+  );
+  expect(
+    JSON.parse(screen.getByTestId("recovery-attempt").textContent!),
+  ).toEqual(retained);
+  fireEvent.click(screen.getByRole("button", { name: /12:50–13:30/ }));
+  fireEvent.change(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 12:50`),
+    {
+      target: { value: `${restoredDate}|12:50|demo|faisal` },
+    },
+  );
+  expect(JSON.parse(screen.getByTestId("recovery-cart").textContent!)).toEqual([
+    other,
+  ]);
+  expect(
+    JSON.parse(screen.getByTestId("recovery-attempt").textContent!),
+  ).toEqual(retained);
+  expect(
+    document.querySelector(".payment-check-feedback, .booking-flow-overlay"),
+  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
+  // A successful fresh response still cannot release an unresolved payment's time.
+  freshFails = false;
+  vi.setSystemTime(new Date("2026-10-07T02:01:00Z"));
+  fireEvent.focus(window);
+  await act(async () => {});
+  expect(
+    JSON.parse(screen.getByTestId("recovery-suppressed").textContent!),
+  ).toEqual([original]);
+  expect(
+    screen.queryByRole("button", { name: /12:00–12:40/ }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText("Authoritative unpaid release"));
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled(),
+  );
+  expect(
+    JSON.parse(screen.getByTestId("recovery-attempt").textContent!),
+  ).toBeNull();
+  expect(JSON.parse(screen.getByTestId("recovery-cart").textContent!)).toEqual([
+    other,
+  ]);
+  expect(
+    JSON.parse(screen.getByTestId("recovery-suppressed").textContent!),
+  ).toEqual([]);
 });

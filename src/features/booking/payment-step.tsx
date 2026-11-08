@@ -25,11 +25,36 @@ export function PaymentStep() {
     restartAfterConfirmation,
     restartAfterExpiry,
     browseAfterChecking,
+    rejectRecoveredSelection,
   } = useBooking();
   const [method, setMethod] = useState("card");
   useEffect(() => () => cancel(), [cancel]);
   const error = action.error;
   const busy = action.status === "loading";
+  useEffect(() => {
+    if (
+      bookingService.mode !== "demo" ||
+      busy ||
+      !attempt ||
+      !(
+        attempt.status === "pending" ||
+        (attempt.status === "checking" && error)
+      )
+    )
+      return;
+    const refresh = () => {
+      if (!document.hidden)
+        void (attempt.status === "pending" ? check() : resolve());
+    };
+    const timer = setTimeout(refresh, 5000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [bookingService.mode, attempt, busy, error, check, resolve]);
   if (!attempt) return null;
   if (bookingService.mode === "live") {
     if (attempt.status !== "ready")
@@ -41,6 +66,7 @@ export function PaymentStep() {
           sessionRevision={revision}
           onExpired={restartAfterExpiry}
           onAwaitingExpiry={browseAfterChecking}
+          onSelectionRejected={rejectRecoveredSelection}
           onAgain={reset}
           onRestart={restartAfterConfirmation}
         />
@@ -156,27 +182,13 @@ export function PaymentStep() {
               {error}
             </p>
           )}
-          {late ? (
+          {late && (
             <a
               className="button wide payment-status-action"
               href={`tel:${CONTACT.phone}`}
             >
               Contact the studio <Icon name="phone" />
             </a>
-          ) : (
-            <button
-              className="button wide payment-status-action"
-              disabled={busy || (checking && !error)}
-              onClick={() => {
-                void (checking ? resolve() : check());
-              }}
-            >
-              {busy || (checking && !error) ? (
-                <BrandLoading compact label="Checking payment…" />
-              ) : (
-                "Check payment status"
-              )}
-            </button>
           )}
         </section>
       </div>

@@ -978,6 +978,7 @@ test("HitPay creation persists intent before dispatch and never repeats an uncer
   assert.equal(claim.tries, 5);
 });
 test("HitPay creation recovery searches exact reference without another POST", async () => {
+  let providerExpiry = Math.floor((Date.now() + 180000) / 1000) * 1000;
   let posts = 0,
     searches = 0;
   const reference = `soccerbot-dev-${attemptId}`;
@@ -998,6 +999,9 @@ test("HitPay creation recovery searches exact reference without another POST", a
       reference_number: reference,
       status: "pending",
       payments: [],
+      expiry_date: new Date(providerExpiry + 28800000)
+        .toISOString()
+        .slice(0, 19),
     });
   };
   await mf.dispatchFetch(origin + "/test/create");
@@ -1006,6 +1010,18 @@ test("HitPay creation recovery searches exact reference without another POST", a
   assert.equal(searches, 1);
   assert.equal((await row()).request_id, requestId);
   assert.equal((await row()).state, "due");
+  assert.equal((await row()).checkout_expires_ms, providerExpiry);
+  const original = await row();
+  providerExpiry += 60000;
+  await recover();
+  assert.equal((await row()).checkout_expires_ms, original.checkout_expires_ms);
+  providerExpiry -= 120000;
+  await recover();
+  const shortened = await row();
+  assert.equal(shortened.checkout_expires_ms, providerExpiry);
+  assert.equal(shortened.expires_ms, original.expires_ms);
+  assert.equal(shortened.recovery_end_ms, original.recovery_end_ms);
+  assert.equal(posts, 1);
 });
 test("HitPay late payment retains money evidence without recreating or finalizing expired bookings", async () => {
   await seedPayment({ expired: true });

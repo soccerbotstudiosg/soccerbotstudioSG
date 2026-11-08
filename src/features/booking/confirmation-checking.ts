@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CheckoutSelectionRejection } from "@/domain/native-checkout";
 import {
   checkoutNow,
   ConfirmationError,
@@ -66,13 +67,14 @@ export function useConfirmationChecking(
     responseEvidence?: object;
     customerConfirmation?: import("@/services/contracts").CheckoutContext["customerConfirmation"];
     expired?: boolean;
+    selectionRejection?: CheckoutSelectionRejection;
     busy: boolean;
     next: number;
   } | null>(null);
-  const [feedback, setFeedback] = useState<{
+  const retainedView = useRef<{
     id: string;
     revision: number;
-    text: string;
+    view: View;
   } | null>(null);
   const refresh = useRef<() => void>(() => {});
   const check = useCallback(() => refresh.current(), []);
@@ -92,7 +94,15 @@ export function useConfirmationChecking(
     let budget = windowFor(attemptId, serverDeadline ?? now() + 600000);
     save(attemptId, budget);
     let unresolved = false;
+    let displayedView: View =
+      retainedView.current?.id === attemptId &&
+      retainedView.current.revision === sessionRevision &&
+      ["unavailable", "unresolved"].includes(retainedView.current.view)
+        ? retainedView.current.view
+        : "checking";
     const show = (view: View) => {
+      displayedView = view;
+      retainedView.current = { id: attemptId, revision: sessionRevision, view };
       unresolved = view === "unresolved";
       if (active)
         setResult({
@@ -103,6 +113,7 @@ export function useConfirmationChecking(
           responseEvidence,
           customerConfirmation,
           expired,
+          selectionRejection,
           busy,
           next: budget.next,
         });
@@ -112,6 +123,7 @@ export function useConfirmationChecking(
     let responseEvidence: object | undefined;
     let customerConfirmation: import("@/services/contracts").CheckoutContext["customerConfirmation"];
     let expired = false;
+    let selectionRejection: CheckoutSelectionRejection | undefined;
     /** Schedule the next bounded confirmation check for the active attempt. */
     function schedule() {
       clearTimeout(timer);
@@ -124,7 +136,11 @@ export function useConfirmationChecking(
         )
           timer = setTimeout(
             () => void poll("hold"),
-            Math.max(1, holdExpiresAtMs - now()),
+            Math.max(
+              1,
+              holdExpiresAtMs - now(),
+              (budget.refreshNext ?? 0) - now(),
+            ),
           );
         return;
       }
@@ -152,13 +168,8 @@ export function useConfirmationChecking(
           holdChecked: shared.holdChecked ?? budget.holdChecked,
         };
         if (recheck) {
-          const holdDue =
-            holdExpiresAtMs !== undefined &&
-            now() >= holdExpiresAtMs &&
-            budget.holdChecked !== holdExpiresAtMs;
-          if (!holdDue && now() < (budget.refreshNext ?? 0)) return false;
+          if (now() < (budget.refreshNext ?? 0)) return false;
           budget.refreshNext = now() + 30000;
-          if (holdDue) budget.holdChecked = holdExpiresAtMs;
           save(attemptId, budget);
           return true;
         }
@@ -199,13 +210,7 @@ export function useConfirmationChecking(
       ) {
         busy = false;
         if (active) {
-          if (trigger === "focus")
-            setFeedback({
-              id: attemptId,
-              revision: sessionRevision,
-              text: "Please wait a moment before checking again. Your booking is unchanged.",
-            });
-          if (!terminal) show("checking");
+          if (!terminal) show(displayedView);
           schedule();
         }
         return;
@@ -216,7 +221,7 @@ export function useConfirmationChecking(
       }
       const requestController = new AbortController();
       controller = requestController;
-      show(recheck ? "unresolved" : "checking");
+      show(recheck ? "unresolved" : displayedView);
       let requestTimer: ReturnType<typeof setTimeout> | undefined;
       try {
         const response = await Promise.race([
@@ -241,17 +246,16 @@ export function useConfirmationChecking(
         // A successful authenticated response may grant an earlier status
         // read. This never resets the shared count or the original deadline.
         budget.next = response.checking.nextCheckMs ?? budget.next;
+        // A transport failure must not consume the one authenticated hold read.
+        // Failed rechecks retain the shared 30-second spacing across reloads.
+        if (
+          recheck &&
+          holdExpiresAtMs !== undefined &&
+          now() >= holdExpiresAtMs
+        )
+          budget.holdChecked = holdExpiresAtMs;
         save(attemptId, budget);
         responseEvidence = response;
-        if (trigger === "focus")
-          setFeedback({
-            id: attemptId,
-            revision: sessionRevision,
-            text:
-              response.status === "pending" || response.status === "unresolved"
-                ? "Status checked. Payment is still unconfirmed."
-                : "Status checked.",
-          });
         customerConfirmation =
           "customerConfirmation" in response
             ? response.customerConfirmation
@@ -261,6 +265,10 @@ export function useConfirmationChecking(
                 ? customerConfirmation
                 : undefined;
         expired = "expired" in response && response.expired === true;
+        selectionRejection =
+          "selectionRejection" in response
+            ? response.selectionRejection
+            : undefined;
         paymentReceived =
           paymentReceived ||
           response.reason === "payment_received_booking_pending" ||
@@ -278,12 +286,13 @@ export function useConfirmationChecking(
         } else show("checking");
       } catch (error) {
         if (!active || generation !== current) return;
-        if (trigger === "focus")
-          setFeedback({
-            id: attemptId,
-            revision: sessionRevision,
-            text: "We couldn’t check your payment just now. Please try again in a moment.",
-          });
+        if (recheck && error instanceof ConfirmationError) {
+          budget.refreshNext = Math.max(
+            budget.refreshNext ?? 0,
+            error.nextCheckMs ?? 0,
+          );
+          save(attemptId, budget);
+        }
         if (error instanceof ConfirmationError && error.kind === "denied") {
           terminal = true;
           show("denied");
@@ -300,7 +309,8 @@ export function useConfirmationChecking(
           if (error.kind === "exhausted") {
             terminal = true;
             show("unresolved");
-          } else show(error.kind === "throttled" ? "checking" : "unavailable");
+          } else
+            show(error.kind === "throttled" ? displayedView : "unavailable");
         } else show("unavailable");
       } finally {
         clearTimeout(requestTimer);
@@ -370,10 +380,10 @@ export function useConfirmationChecking(
     clock,
   ]);
   return {
-    feedback:
-      feedback?.id === attemptId && feedback.revision === sessionRevision
-        ? feedback.text
-        : null,
+    selectionRejection:
+      result?.id === attemptId && result.revision === sessionRevision
+        ? result.selectionRejection
+        : undefined,
     responseEvidence:
       result?.id === attemptId && result.revision === sessionRevision
         ? result.responseEvidence

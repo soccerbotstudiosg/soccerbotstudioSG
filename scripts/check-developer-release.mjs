@@ -435,6 +435,7 @@ try {
   await migrate("0037_checkout_checking_buffer.sql");
   await migrate("0038_checkout_recovery_buffer.sql");
   await migrate("0039_reservation_abuse.sql");
+  await migrate("0040_hitpay_checkout_expiry.sql");
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,

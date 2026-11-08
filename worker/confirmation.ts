@@ -18,6 +18,7 @@ import {
 import { authenticate, type Access } from "./access";
 import { intentSchema, associationSchema } from "./journal";
 import { ApiError, policy, liveCustomerAccess } from "./policy";
+import { checkoutSelectionRejectionSchema } from "../src/domain/native-checkout";
 export type { StoredAttempt } from "./confirmation-snapshot";
 import type { StoredAttempt } from "./confirmation-snapshot";
 export type CheckingWindow = {
@@ -25,6 +26,42 @@ export type CheckingWindow = {
   nextCheckMs: number;
   remaining: number;
 };
+/** Recover an exact owned rejection only while every effect boundary is absent. */
+async function retainedSelectionRejection(env: Env, id: string, owner: string) {
+  const row = await env.STATE.withSession("first-primary")
+    .prepare(
+      `SELECT g.result_json,a.intent_json FROM attempts a JOIN (
+        SELECT attempt_id,state,result_json,intent_hash FROM native_checkout_grants
+        UNION ALL
+        SELECT attempt_id,state,result_json,intent_hash FROM rejected_native_checkout_grants
+      ) g ON g.attempt_id=a.id
+      WHERE a.id=? AND a.owner_id=? AND a.state='prepared'
+        AND a.association_json IS NULL AND a.observation_json IS NULL
+        AND g.state='blocked' AND g.intent_hash=a.intent_hash
+        AND NOT EXISTS(SELECT 1 FROM dispatches d WHERE d.attempt_id=a.id)
+        AND NOT EXISTS(SELECT 1 FROM session_effects e WHERE e.attempt_id=a.id)
+        AND NOT EXISTS(SELECT 1 FROM hitpay_payments p WHERE p.attempt_id=a.id)
+        AND NOT EXISTS(SELECT 1 FROM hitpay_holds h WHERE h.attempt_id=a.id)
+      LIMIT 1`,
+    )
+    .bind(id, owner)
+    .first<{ result_json: string | null; intent_json: string }>();
+  if (!row?.result_json) return undefined;
+  const result = JSON.parse(row.result_json);
+  if (result?.paymentAvailable !== false) return undefined;
+  const parsed = checkoutSelectionRejectionSchema.safeParse({
+    state: result?.state,
+    rejectedSessionIndex: result?.rejectedSessionIndex,
+  });
+  if (!parsed.success) return undefined;
+  const intent = intentSchema.parse(JSON.parse(row.intent_json));
+  if (
+    parsed.data.rejectedSessionIndex !== undefined &&
+    parsed.data.rejectedSessionIndex >= intent.sessions.length
+  )
+    return undefined;
+  return parsed.data;
+}
 /** Resolve protected confirmation from retained and reconciled evidence. */
 export async function confirmation(
   request: Request,
@@ -37,6 +74,19 @@ export async function confirmation(
   let snapshot = await confirmationSnapshot(env, id, access.owner_id);
   let row = snapshot.row;
   row.deadline_ms = snapshot.deadline;
+  const rejection =
+    row.state === "prepared" && !row.association_json
+      ? await retainedSelectionRejection(env, id, access.owner_id)
+      : undefined;
+  if (rejection) {
+    await authenticate(request, env, Date.now());
+    report?.({ deadlineMs: row.deadline_ms, nextCheckMs: now, remaining: 0 });
+    return {
+      status: "invalid" as const,
+      reason: "checkout_selection_rejected",
+      selectionRejection: rejection,
+    };
+  }
   // D1 may return evidence committed after this HTTP request began.
   // Evaluate against the current clock, never against the evidence timestamp.
   now = Math.max(now, Date.now());
@@ -239,6 +289,10 @@ export async function checkoutContext(
   const snapshot = await confirmationSnapshot(env, id, access.owner_id);
   const row = snapshot.row;
   const intent = intentSchema.parse(JSON.parse(row.intent_json));
+  const selectionRejection =
+    row.state === "prepared" && !row.association_json
+      ? await retainedSelectionRejection(env, id, access.owner_id)
+      : undefined;
   const hitpayCheckout = await storedHitpayCheckout(
     env,
     id,
@@ -309,6 +363,7 @@ export async function checkoutContext(
   return {
     attemptId: id,
     mode: "live" as const,
+    selectionRejection,
     payment,
     confirmation: savedConfirmation,
     details,

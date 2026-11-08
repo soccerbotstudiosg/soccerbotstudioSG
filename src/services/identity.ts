@@ -3,6 +3,7 @@ import { z } from "zod";
 import { blankContact } from "@/domain/contact";
 import type { CustomerIdentityService, VerifiedIdentity } from "./contracts";
 
+const accessSchema = z.strictObject({ access: z.literal("guest") });
 const identitySchema = z.strictObject({
   email: z.email(),
   expiresAt: z.number().int().positive().safe(),
@@ -37,6 +38,13 @@ async function identityRequest(
   signal: AbortSignal,
   body?: unknown,
 ) {
+  const startingBooking = path === "/api/access" && method === "POST";
+  const requestUnavailable = startingBooking
+    ? () =>
+        new CustomerMessageError(
+          "We couldn’t start your booking. Please try again.",
+        )
+    : unavailable;
   const response = await fetch(path, {
     method,
     signal,
@@ -48,11 +56,21 @@ async function identityRequest(
       ...(body ? { "Content-Type": "application/json" } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
+  }).catch((error: unknown) => {
+    if (startingBooking && !signal.aborted) throw requestUnavailable();
+    throw error;
   });
   if (!response.ok) {
+    if (startingBooking) {
+      if (response.status === 429)
+        throw new CustomerMessageError(
+          "Too many booking requests. Please wait a few minutes and try again.",
+        );
+      throw requestUnavailable();
+    }
     if (path === "/api/identity/all-devices" && response.status === 401)
       throw new CustomerMessageError(
-        "Sign in again, then choose Sign out all devices.",
+        "Verify your email again, then choose Sign out all devices.",
       );
     if (path === "/api/identity/all-devices")
       throw new CustomerMessageError(
@@ -68,7 +86,7 @@ async function identityRequest(
       );
     if (response.status === 401)
       throw new CustomerMessageError(
-        "Return to booking options and sign in again.",
+        "Return to booking options and verify your email again.",
       );
     if (path === "/api/identity/verify" && response.status === 400)
       throw new CustomerMessageError("Check your code or request a new one.");
@@ -78,7 +96,7 @@ async function identityRequest(
       );
     throw unavailable();
   }
-  if (!response.body) throw unavailable();
+  if (!response.body) throw requestUnavailable();
   const reader = response.body.getReader(),
     decoder = new TextDecoder();
   let text = "",
@@ -88,11 +106,15 @@ async function identityRequest(
       const part = await reader.read();
       if (part.done) break;
       size += part.value.length;
-      if (size > 4096) throw unavailable();
+      if (size > 4096) throw requestUnavailable();
       text += decoder.decode(part.value, { stream: true });
     }
     text += decoder.decode();
-    return JSON.parse(text) as unknown;
+    const value: unknown = JSON.parse(text);
+    return startingBooking ? accessSchema.parse(value) : value;
+  } catch (error) {
+    if (startingBooking && !signal.aborted) throw requestUnavailable();
+    throw error;
   } finally {
     void reader.cancel().catch(() => {});
     reader.releaseLock();

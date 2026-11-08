@@ -30,6 +30,8 @@ import {
   safeWrite,
   loadLiveDraft,
   mayRestoreLiveCheckout,
+  isCalendarRecovery,
+  saveCalendarRecovery,
   saveLiveDraft,
 } from "@/services/storage";
 class StorageMock {
@@ -622,4 +624,22 @@ it("live draft reload preserves edits but never restores consent or payment auth
   expect(mayRestoreLiveCheckout()).toBe(true);
   expect(loadLiveDraft()).not.toHaveProperty("resumeCheckout");
   expect(loadLiveDraft().accepted).toBe(false);
+  expect(mayRestoreLiveCheckout("attempt-a")).toBe(false);
+  saveLiveDraft(draft, true, "attempt-a");
+  expect(mayRestoreLiveCheckout("attempt-a")).toBe(true);
+  expect(mayRestoreLiveCheckout("attempt-b")).toBe(false);
+  saveCalendarRecovery("attempt-b");
+  expect(isCalendarRecovery("attempt-a")).toBe(false);
+  saveCalendarRecovery("attempt-a");
+  expect(isCalendarRecovery("attempt-a")).toBe(true);
+  expect(isCalendarRecovery("attempt-b")).toBe(false);
+  saveLiveDraft({ ...draft, accepted: true });
+  expect(mayRestoreLiveCheckout("attempt-a")).toBe(true);
+  expect(loadLiveDraft()).not.toHaveProperty("checkoutAttemptId");
+  expect(isCalendarRecovery("attempt-a")).toBe(true);
+  saveLiveDraft(draft, false);
+  expect(mayRestoreLiveCheckout("attempt-a")).toBe(false);
+  expect(isCalendarRecovery("attempt-a")).toBe(false);
+  saveLiveDraft(draft, true, "attempt-b");
+  expect(isCalendarRecovery("attempt-b")).toBe(false);
 });

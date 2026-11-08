@@ -302,6 +302,62 @@ test("combined hold rejects changed price and unavailable selection before creat
         .n,
       0,
     );
+    // A lost rejection response must remain recoverable by exact owned ID,
+    // including after another request has archived its active grant.
+    const rejection = {
+      state: "selection_unavailable",
+      rejectedSessionIndex: 0,
+    };
+    const reads = m.calls.length;
+    for (const archived of [false, true]) {
+      if (archived)
+        await m.db.batch([
+          m.db
+            .prepare(
+              "INSERT INTO rejected_native_checkout_grants SELECT * FROM native_checkout_grants WHERE attempt_id=?",
+            )
+            .bind(c.input.key),
+          m.db
+            .prepare("DELETE FROM native_checkout_grants WHERE attempt_id=?")
+            .bind(c.input.key),
+        ]);
+      for (const operation of ["checkout", "confirmation"]) {
+        const recovered = await m.mf.dispatchFetch(
+          m.origin + `/api/attempts/${c.input.key}/${operation}`,
+          { headers: c.headers },
+        );
+        assert.equal(recovered.status, 200);
+        const value = await recovered.json();
+        assert.deepEqual(value.selectionRejection, rejection);
+        if (operation === "checkout")
+          assert.deepEqual(value.checkout, { state: "unavailable" });
+        else {
+          assert.equal(value.status, "invalid");
+          assert.equal(value.reason, "checkout_selection_rejected");
+        }
+      }
+    }
+    assert.equal(m.calls.length, reads, "rejection recovery is read-only");
+    const other = await customer(m);
+    const foreign = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${c.input.key}/checkout`,
+      { headers: other.headers },
+    );
+    assert.equal(foreign.status, 404);
+    assert.equal((await foreign.json()).selectionRejection, undefined);
+    // Even a retained rejection must never override a later unknown effect.
+    await m.db
+      .prepare(
+        "INSERT INTO session_effects(attempt_id,step,outcome) VALUES(?,'session:0','unknown')",
+      )
+      .bind(c.input.key)
+      .run();
+    const uncertain = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${c.input.key}/checkout`,
+      { headers: c.headers },
+    );
+    assert.equal(uncertain.status, 200);
+    assert.equal((await uncertain.json()).selectionRejection, undefined);
   } finally {
     await m.close();
   }
@@ -346,6 +402,14 @@ test("combined hold retains an unknown provider creation and never replays it af
       { headers: c.headers },
     );
     assert.equal((await current.json()).state, "checking");
+    for (const operation of ["checkout", "confirmation"]) {
+      const protectedRead = await m.mf.dispatchFetch(
+        m.origin + `/api/attempts/${c.input.key}/${operation}`,
+        { headers: c.headers },
+      );
+      assert.equal(protectedRead.status, 200);
+      assert.equal((await protectedRead.json()).selectionRejection, undefined);
+    }
   } finally {
     await m.close();
   }
@@ -1065,6 +1129,55 @@ test("checkout reuses complete creation evidence for one HitPay request without 
     );
     const repeat = await send(true);
     assert.equal(repeat.status, 200);
+    assert.equal((await repeat.json()).attemptId, c.input.key);
+    const saved = await m.db
+      .prepare(
+        "SELECT expires_ms,checkout_expires_ms,recovery_end_ms FROM hitpay_payments WHERE attempt_id=?",
+      )
+      .bind(c.input.key)
+      .first();
+    assert.equal(saved.checkout_expires_ms, result.checkout.expiresAtMs);
+    assert.ok(saved.checkout_expires_ms < saved.expires_ms);
+    const readContext = async () => {
+      const response = await m.mf.dispatchFetch(
+        m.origin + `/api/attempts/${c.input.key}/checkout`,
+        { headers: c.headers },
+      );
+      assert.equal(response.status, 200);
+      return response.json();
+    };
+    const initialContext = await readContext();
+    assert.equal(
+      initialContext.checkout.expiresAtMs,
+      result.checkout.expiresAtMs,
+    );
+    for (const [expiry, reason] of [
+      [Date.now() - 1, "payment_pending"],
+      [null, "payment_pending"],
+      [saved.checkout_expires_ms, "hitpay_payment_expired"],
+      [saved.checkout_expires_ms, "hitpay_payment_failed"],
+      [saved.checkout_expires_ms, "hitpay_payment_canceled"],
+    ]) {
+      await m.db
+        .prepare(
+          "UPDATE hitpay_payments SET checkout_expires_ms=?,reason=? WHERE attempt_id=?",
+        )
+        .bind(expiry, reason, c.input.key)
+        .run();
+      const unavailable = await readContext();
+      assert.equal(unavailable.checkout.state, "unavailable");
+      assert.deepEqual(unavailable.checking, initialContext.checking);
+      const timing = await m.db
+        .prepare(
+          "SELECT expires_ms,recovery_end_ms FROM hitpay_payments WHERE attempt_id=?",
+        )
+        .bind(c.input.key)
+        .first();
+      assert.deepEqual(timing, {
+        expires_ms: saved.expires_ms,
+        recovery_end_ms: saved.recovery_end_ms,
+      });
+    }
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(
       m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,

@@ -15,6 +15,7 @@ import { LOCATION } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import {
   orderedSlots,
+  overlaps,
   sessionInstructorName,
   sessionPrice,
   instructorSchema,
@@ -248,7 +249,12 @@ export function Summary({
 
 /** Retain calendar continuation and fresh-availability guards outside mobile popups. */
 export function BasketContinue() {
-  const { draft, now, availability } = useBooking();
+  const { draft, now, availability, attempt, action, suppressedSlots } =
+    useBooking();
+  const awaitingAvailability = draft.slots.some((slot) =>
+    suppressedSlots.some((hidden) => overlaps(slot, hidden)),
+  );
+  const waitingForRelease = !!attempt && action.returnToCalendar === true;
   const result = availability.result;
   const valid =
     selectionErrors(draft.slots, now).length === 0 &&
@@ -265,7 +271,10 @@ export function BasketContinue() {
   return (
     <>
       <BookingPrimaryAction>
-        {draft.slots.length > 0 && valid ? (
+        {draft.slots.length > 0 &&
+        valid &&
+        !waitingForRelease &&
+        !awaitingAvailability ? (
           <Link className="button wide basket-continue" href="/book/details/">
             Enter Booking Details <BookingActionTotal /> <Icon name="chevron" />
           </Link>
@@ -275,18 +284,25 @@ export function BasketContinue() {
           </button>
         )}
       </BookingPrimaryAction>
-      {draft.slots.length > 0 && !valid && (
-        <p className="notice" role="status">
-          {selectionErrors(draft.slots, now).length > 0 ||
-          result?.status === "success" ? (
-            SESSION_UNAVAILABLE
-          ) : !result ? (
-            <BrandLoading overlay={false} compact label="Checking sessions…" />
-          ) : (
-            AVAILABILITY_LOAD_FAILED
-          )}
-        </p>
-      )}
+      {draft.slots.length > 0 &&
+        !valid &&
+        !waitingForRelease &&
+        !awaitingAvailability && (
+          <p className="notice" role="status">
+            {selectionErrors(draft.slots, now).length > 0 ||
+            result?.status === "success" ? (
+              SESSION_UNAVAILABLE
+            ) : !result ? (
+              <BrandLoading
+                overlay={false}
+                compact
+                label="Checking sessions…"
+              />
+            ) : (
+              AVAILABILITY_LOAD_FAILED
+            )}
+          </p>
+        )}
     </>
   );
 }

@@ -4,6 +4,7 @@ import type {
   nativeOfferSchema,
   receiptSchema,
   bookingDetailsSchema,
+  CheckoutSelectionRejection,
 } from "@/domain/native-checkout";
 import type { Attempt, BookingDraft, Outcome, Session } from "@/domain/booking";
 export type AvailableSlot = Session & { available: boolean };
@@ -129,6 +130,7 @@ export interface IdentityService {
   saveProfile(draft: BookingDraft): void;
 }
 export type CheckoutContext = {
+  selectionRejection?: CheckoutSelectionRejection;
   bookingIssue?: "incomplete";
   paymentIssue?: "link_recovering" | "link_unavailable";
   /** Client-only server time anchor; never serialized as booking authority. */

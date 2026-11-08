@@ -227,20 +227,19 @@ test("live calendar removes selections rejected at checkout and retains contact 
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   fireEvent.click(screen.getByText("Dispatch checkout"));
-  const notices = await screen.findAllByRole("alert");
-  expect(notices).toHaveLength(2); // This fixture mounts calendar and Details together.
-  expect(
-    notices.some((notice) =>
-      notice.textContent?.includes("Removed unavailable sessions:"),
+  await waitFor(() =>
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Removed unavailable sessions:",
     ),
-  ).toBe(true);
+  );
+  // Calendar owns the single conflict notice; background classification must
+  // not leave a second Details error even when both are mounted by this fixture.
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
   expect(
-    notices.some((notice) =>
-      notice.textContent?.includes(
-        "The selected sessions were removed because availability changed.",
-      ),
+    screen.queryByText(
+      "The selected sessions were removed because availability changed.",
     ),
-  ).toBe(true);
+  ).not.toBeInTheDocument();
   expect(push).toHaveBeenCalledWith("/book/review/");
   expect(screen.getByLabelText(/Full name/)).toHaveValue("Test Customer");
   expect(
@@ -555,20 +554,19 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   fireEvent.click(screen.getByText("Dispatch checkout"));
-  const notices = await screen.findAllByRole("alert");
-  expect(notices).toHaveLength(2); // This fixture mounts calendar and Details together.
-  expect(
-    notices.some((notice) =>
-      notice.textContent?.includes("Removed unavailable sessions:"),
+  await waitFor(() =>
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Removed unavailable sessions:",
     ),
-  ).toBe(true);
+  );
+  // Calendar owns the single conflict notice; background classification must
+  // not leave a second Details error even when both are mounted by this fixture.
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
   expect(
-    notices.some((notice) =>
-      notice.textContent?.includes(
-        "The selected sessions were removed because availability changed.",
-      ),
+    screen.queryByText(
+      "The selected sessions were removed because availability changed.",
     ),
-  ).toBe(true);
+  ).not.toBeInTheDocument();
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
     true,
   );
@@ -960,7 +958,9 @@ test("reservation conflict removes its session locally and returns to calendar w
     "Removed unavailable sessions: Tue, 5 Jan 2027, 12:00–12:40.",
   );
   expect(publicCalendar).toHaveBeenCalledTimes(1);
-  expect(availability).not.toHaveBeenCalled();
+  expect(availability).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ date: slot.date, fresh: true, serviceId: "12" }),
+  );
   fireEvent.click(screen.getByText("Choose replacement"));
   view.rerender(tree("details"));
   expect(screen.getByLabelText(/Full name/)).toHaveValue("Test Customer");

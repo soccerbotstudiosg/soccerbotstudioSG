@@ -17,6 +17,7 @@ import {
 import {
   BOOKING_MONTH_COUNT,
   MAX_BOOKING_SESSIONS,
+  START_INTERVAL_MINUTES,
 } from "@/domain/booking-policy";
 import { Icon } from "@/components/icon";
 import { LOCATION } from "@/domain/catalog";
@@ -48,18 +49,21 @@ function stickyBookingHeight() {
   const navigation = document.querySelector(".booking-navigation");
   return (
     (header?.getBoundingClientRect().height ?? 0) +
-    (navigation?.getBoundingClientRect().height ?? 0)
+    (navigation && getComputedStyle(navigation).position === "sticky"
+      ? navigation.getBoundingClientRect().height
+      : 0)
   );
 }
 /** Reveal a booking section below both sticky navigation surfaces. */
-function revealBookingSection(heading: HTMLElement | null) {
+function revealBookingSection(heading: HTMLElement | null, cueSpace = 0) {
   if (!heading) return;
   window.scrollTo({
     top: Math.max(
       0,
       window.scrollY +
         heading.getBoundingClientRect().top -
-        stickyBookingHeight(),
+        stickyBookingHeight() -
+        cueSpace,
     ),
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ? "instant"
@@ -72,12 +76,14 @@ export function TimeStep() {
   const headingRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLElement>(null);
   const [calendarAbove, setCalendarAbove] = useState(false);
+  const [cueTop, setCueTop] = useState(0);
   const pendingScroll = useRef<string | null>(null);
   useEffect(() => {
-    if (!mobile) return;
     const updateCue = () => {
       const bottom = calendarRef.current?.getBoundingClientRect().bottom;
-      setCalendarAbove(bottom !== undefined && bottom <= stickyBookingHeight());
+      const stickyHeight = stickyBookingHeight();
+      setCueTop(stickyHeight + 8);
+      setCalendarAbove(bottom !== undefined && bottom <= stickyHeight + 60);
     };
     updateCue();
     window.addEventListener("scroll", updateCue, { passive: true });
@@ -89,11 +95,13 @@ export function TimeStep() {
   }, [mobile]);
   const {
     selectionNotice,
+    suppressedSlots,
     attempt,
     action,
     confirmationRevision,
     restartAfterExpiry,
     resumePaymentStatus,
+    rejectRecoveredSelection,
   } = useBooking();
   const waitingForRelease = !!attempt && action.returnToCalendar === true;
   const {
@@ -260,14 +268,14 @@ export function TimeStep() {
   );
   const timesRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!mobile || pendingScroll.current !== date) {
+    if (pendingScroll.current !== date) {
       pendingScroll.current = null;
       return;
     }
     if (!result || calendarBusy) return;
     pendingScroll.current = null;
-    revealBookingSection(headingRef.current);
-  }, [mobile, date, result, calendarBusy]);
+    revealBookingSection(headingRef.current, 60);
+  }, [date, result, calendarBusy]);
   const [timesHeight, setTimesHeight] = useState(0);
   useLayoutEffect(() => {
     if (!result || !timesRef.current) return;
@@ -297,7 +305,19 @@ export function TimeStep() {
   }, [live, result, date, now, reconcile]);
   const slots =
     result?.status === "success"
-      ? result.slots.filter((slot) => slot.date === date)
+      ? result.slots.filter(
+          (slot) =>
+            slot.date === date &&
+            !suppressedSlots.some(
+              (hidden) =>
+                hidden.date === slot.date &&
+                Math.abs(
+                  Date.parse(`${slot.date}T${slot.start}:00+08:00`) -
+                    Date.parse(`${hidden.date}T${hidden.start}:00+08:00`),
+                ) <
+                  START_INTERVAL_MINUTES * 60000,
+            ),
+        )
       : [];
   const groups = [
     ...new Map(slots.map((slot) => [slotKey(slot), slot])).keys(),
@@ -374,6 +394,7 @@ export function TimeStep() {
           calendarRecovery
           sessionRevision={confirmationRevision}
           onExpired={restartAfterExpiry}
+          onSelectionRejected={rejectRecoveredSelection}
           onPaymentDetected={resumePaymentStatus}
         />
       )}
@@ -541,15 +562,10 @@ export function TimeStep() {
                       }
                       onClick={() => {
                         if (calendarView === "week") setWeekStart(rangeStart);
-                        pendingScroll.current = mobile ? value : null;
-                        if (
-                          mobile &&
-                          value === date &&
-                          result &&
-                          !calendarBusy
-                        ) {
+                        pendingScroll.current = value;
+                        if (value === date && result && !calendarBusy) {
                           pendingScroll.current = null;
-                          revealBookingSection(headingRef.current);
+                          revealBookingSection(headingRef.current, 60);
                         }
                         setDate(value);
                       }}
@@ -586,10 +602,11 @@ export function TimeStep() {
         <>
           <div className="time-heading" ref={headingRef}>
             <h2>{dateLabel(date)}</h2>
-            {mobile && calendarAbove && (
+            {calendarAbove && (
               <button
                 type="button"
                 className="calendar-return-cue"
+                style={{ top: cueTop }}
                 aria-label="Back to calendar"
                 onClick={() => {
                   setCalendarAbove(false);
@@ -671,11 +688,10 @@ export function TimeStep() {
                         aria-pressed={!!selected}
                         aria-expanded={!selected && choosing === key}
                         disabled={
-                          waitingForRelease ||
-                          ((!available ||
+                          (!available ||
                             elapsed ||
                             draft.slots.length >= MAX_BOOKING_SESSIONS) &&
-                            !selected)
+                          !selected
                         }
                         onClick={() => {
                           if (selected) {
@@ -730,9 +746,7 @@ export function TimeStep() {
                           <select
                             aria-label={`Trainer for ${slot.date} at ${slot.start}`}
                             value=""
-                            disabled={
-                              waitingForRelease || elapsed || !available
-                            }
+                            disabled={elapsed || !available}
                             onChange={(event) => {
                               const offer = offers.find(
                                 (item) =>

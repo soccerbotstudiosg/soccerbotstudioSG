@@ -1,4 +1,8 @@
-import { receiptSchema, bookingDetailsSchema } from "@/domain/native-checkout";
+import {
+  receiptSchema,
+  bookingDetailsSchema,
+  checkoutSelectionRejectionSchema,
+} from "@/domain/native-checkout";
 import type { Booking } from "@/domain/booking";
 import { LOCATION } from "@/domain/catalog";
 import { MAX_PLAYERS } from "@/domain/booking-policy";
@@ -27,7 +31,17 @@ const decisionSchema = z.discriminatedUnion("status", [
     customerConfirmation: receiptSchema.optional(),
     expired: z.boolean().optional(),
   }),
-  z.object({ status: z.literal("invalid"), reason: z.string() }),
+  z
+    .object({
+      status: z.literal("invalid"),
+      reason: z.string(),
+      selectionRejection: checkoutSelectionRejectionSchema.optional(),
+    })
+    .refine(
+      (value) =>
+        !value.selectionRejection ||
+        value.reason === "checkout_selection_rejected",
+    ),
   z.object({ status: z.literal("denied"), reason: z.literal("access_denied") }),
 ]);
 export class ConfirmationError extends Error {
@@ -41,6 +55,7 @@ export class ConfirmationError extends Error {
 }
 const instant = z.number().int().nonnegative().safe();
 const contextSchema = z.strictObject({
+  selectionRejection: checkoutSelectionRejectionSchema.optional(),
   customerConfirmation: receiptSchema.optional(),
   expired: z.boolean().optional(),
   details: bookingDetailsSchema.optional(),
@@ -275,7 +290,16 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
       (context.confirmation && context.confirmation.attemptId !== attemptId) ||
       (context.details && context.details.attemptId !== attemptId) ||
       (context.customerConfirmation &&
-        context.customerConfirmation.attemptId !== attemptId)
+        context.customerConfirmation.attemptId !== attemptId) ||
+      (context.selectionRejection &&
+        (context.checkout.state !== "unavailable" ||
+          context.payment ||
+          context.confirmation ||
+          context.customerConfirmation ||
+          context.bookingIssue ||
+          (context.selectionRejection.rejectedSessionIndex !== undefined &&
+            context.selectionRejection.rejectedSessionIndex >=
+              context.summary.sessions.length)))
     )
       throw new ConfirmationError("unavailable");
     if (context.checkout.state === "available") {
@@ -315,14 +339,17 @@ export async function startSyntheticCheckout(
 }
 
 /** Request an authenticated expiry check without assuming payment cancellation. */
-export async function expireBooking(attemptId: string) {
+export async function expireBooking(attemptId: string, signal?: AbortSignal) {
   const id = idSchema.parse(attemptId);
   const response = await fetch(`/api/attempts/${id}/expire`, {
+    signal,
     method: "POST",
     credentials: "same-origin",
     redirect: "error",
     cache: "no-store",
   });
+  if (response.status === 401 || response.status === 403)
+    throw new ConfirmationError("denied");
   if (!response.ok || !(await response.json()).expired)
     throw new Error(
       "Payment status is still being checked. Your original booking has been kept.",

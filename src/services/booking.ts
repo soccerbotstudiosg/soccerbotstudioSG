@@ -461,7 +461,7 @@ async function nativeRequest(
     if (response.status === 409)
       throw new BookingServiceError(
         "conflict",
-        "This selection has changed. Return to your booking and restart checkout.",
+        "Your booking details have changed. Please review your selected sessions before continuing.",
       );
     throw new BookingServiceError(
       "unavailable",
