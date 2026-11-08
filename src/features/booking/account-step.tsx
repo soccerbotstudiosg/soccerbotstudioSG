@@ -3,7 +3,7 @@ import { BookingPrimaryAction } from "./booking-primary-action";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { blankContact } from "@/domain/contact";
+import { blankContact, validEmail } from "@/domain/contact";
 import { DEMO_CODE } from "@/services/demo/identity";
 import {
   customerMessage,
@@ -113,10 +113,20 @@ export function AccountStep() {
     else startNavigation(() => router.push("/book/session/"));
   }
   function request() {
+    const normalizedEmail = email.trim();
+    if (!validEmail(normalizedEmail)) {
+      setError("Enter a valid email address.");
+      document.getElementById("auth-email")?.focus();
+      return;
+    }
     void perform(async (signal) => {
       let next: CustomerChallenge;
       try {
-        next = await identityService.challenge(email, signal, botToken);
+        next = await identityService.challenge(
+          normalizedEmail,
+          signal,
+          botToken,
+        );
       } finally {
         if (!signal.aborted) {
           setBotToken("");
@@ -164,11 +174,11 @@ export function AccountStep() {
             <p className="text-muted">Book without creating an account.</p>
             <button
               className="button wide"
-              aria-label="Continue as guest"
+              aria-label="Continue as Guest"
               disabled={busy}
               onClick={() => void perform((signal) => proceed(signal))}
             >
-              {busy ? "Preparing booking…" : "Continue as guest"}{" "}
+              {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
               <Icon name="chevron" />
             </button>
           </section>
@@ -323,7 +333,16 @@ export function AccountStep() {
               autoComplete="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={error === "Enter a valid email address."}
+              aria-describedby={error ? "auth-error" : undefined}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError("");
+              }}
+              onBlur={() => {
+                if (!validEmail(email.trim()))
+                  setError("Enter a valid email address.");
+              }}
               maxLength={120}
             />
             <label className="check-label auth-remember">
@@ -364,7 +383,7 @@ export function AccountStep() {
           </>
         )}
         {error && (
-          <p role="alert" className="alert auth-error">
+          <p id="auth-error" role="alert" className="alert auth-error">
             {error}
           </p>
         )}

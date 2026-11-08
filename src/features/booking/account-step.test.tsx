@@ -25,7 +25,7 @@ beforeEach(() => {
 test("guest selection creates a guest contact and continues to the session", async () => {
   const user = userEvent.setup();
   render(<AccountStep />);
-  await user.click(screen.getByRole("button", { name: "Continue as guest" }));
+  await user.click(screen.getByRole("button", { name: "Continue as Guest" }));
   expect(mocks.update).toHaveBeenCalledWith(
     expect.objectContaining({ mode: "guest", accountEmail: "" }),
   );
@@ -98,12 +98,12 @@ test("guest loading remains until the destination commits without exposing the p
   }
   const user = userEvent.setup();
   render(<Router />);
-  await user.click(screen.getByRole("button", { name: "Continue as guest" }));
+  await user.click(screen.getByRole("button", { name: "Continue as Guest" }));
   expect(
     screen.getByRole("status", { name: "Preparing booking…" }),
   ).toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Continue as guest" }),
+    screen.getByRole("button", { name: "Continue as Guest" }),
   ).toBeDisabled();
   await act(async () => finish());
   expect(
@@ -111,7 +111,7 @@ test("guest loading remains until the destination commits without exposing the p
   ).toBeInTheDocument();
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("button", { name: "Continue as guest" }),
+    screen.queryByRole("button", { name: "Continue as Guest" }),
   ).not.toBeInTheDocument();
   mocks.push.mockReset();
 });

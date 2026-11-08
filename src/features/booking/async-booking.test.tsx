@@ -408,7 +408,9 @@ test("calendar and basket share delayed availability once and preserve selection
   );
   expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(
-    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("button", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeDisabled();
   expect(loadBooking().draft.slots).toHaveLength(1);
   expect(availability).toHaveBeenCalledTimes(1);
@@ -420,7 +422,9 @@ test("calendar and basket share delayed availability once and preserve selection
     "true",
   );
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Edit name" }));
   view.rerender(
@@ -457,7 +461,9 @@ test("availability failure is not no slots and an explicit retry retains the bas
   ).not.toBeInTheDocument();
   expect(screen.queryByText(/synthetic private/)).not.toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("button", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
@@ -465,7 +471,9 @@ test("availability failure is not no slots and an explicit retry retains the bas
     second.resolve(demoBookingModel.availability(date));
   });
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeVisible();
   expect(loadBooking().draft.slots).toHaveLength(1);
   expect(availability).toHaveBeenCalledTimes(2);
@@ -570,7 +578,7 @@ test("review waits before navigation and same-turn duplicate checkout has one lo
   expect(screen.getByRole("checkbox")).not.toBeChecked();
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
-    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   );
   fireEvent.click(screen.getByRole("button", { name: "Double checkout" }));
   expect(checkout).toHaveBeenCalledTimes(1);
@@ -597,7 +605,7 @@ test("editing a draft cancels checkout and a late result cannot overwrite entere
   expect(screen.getByRole("checkbox")).not.toBeChecked();
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
-    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   );
   fireEvent.click(screen.getByRole("button", { name: "Edit name" }));
   expect(checkout.mock.calls[0][0].signal?.aborted).toBe(true);
@@ -622,7 +630,7 @@ test("leaving review cancels its pending action without a late navigation or sto
   expect(screen.getByRole("checkbox")).not.toBeChecked();
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
-    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   );
   view.rerender(
     <BookingProvider bookingService={service}>
@@ -733,7 +741,7 @@ test("identity expiry during checkout rejects completion and preserves the membe
   expect(screen.getByRole("checkbox")).not.toBeChecked();
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
-    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   );
   demoIdentityService.signOut();
   await act(async () => {
@@ -839,7 +847,9 @@ test("a changed booking session invalidates availability even if the old date re
   });
   expect(screen.getByText("No sessions available on this date.")).toBeVisible();
   expect(
-    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("button", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeDisabled();
   expect(loadBooking().draft.accountEmail).toBe("changed@example.com");
   expect(availability.mock.calls[0][0].signal.aborted).toBe(true);
@@ -859,7 +869,7 @@ test("malformed checkout cannot navigate or create an attempt and retry preserve
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () => {
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     );
   });
   expect(screen.getByRole("alert")).toHaveTextContent(
@@ -870,7 +880,7 @@ test("malformed checkout cannot navigate or create an attempt and retry preserve
   expect(loadBooking().draft).toEqual(draft());
   await act(async () => {
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     );
   });
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/payment/");
@@ -981,7 +991,9 @@ test("replacing an adapter with the same mode invalidates its completed availabi
   );
   await act(async () => {});
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeVisible();
   view.rerender(
     <BookingProvider bookingService={newService}>
@@ -991,7 +1003,9 @@ test("replacing an adapter with the same mode invalidates its completed availabi
   );
   expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(
-    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("button", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeDisabled();
   await act(async () => {
     pending.resolve([]);
@@ -1013,7 +1027,7 @@ test("replacing an adapter cancels its pending action and releases the new revie
   expect(screen.getByRole("checkbox")).not.toBeChecked();
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
-    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   );
   expect(
     screen.getByRole("button", { name: /^Opening checkout… \$[\d,.]+$/ }),
@@ -1025,7 +1039,7 @@ test("replacing an adapter cancels its pending action and releases the new revie
     </BookingProvider>,
   );
   expect(
-    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   ).toBeDisabled();
   expect(screen.getByRole("checkbox")).not.toBeChecked();
   fireEvent.click(screen.getByRole("checkbox"));
@@ -1037,7 +1051,7 @@ test("replacing an adapter cancels its pending action and releases the new revie
   expect(navigation.push).not.toHaveBeenCalled();
   await act(async () => {
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     );
   });
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/payment/");
@@ -1060,7 +1074,7 @@ test("a checkout capacity conflict invalidates shared availability before return
   );
   await act(async () => {
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     );
   });
   expect(screen.getByRole("alert")).toHaveTextContent("no longer available");
@@ -1074,7 +1088,9 @@ test("a checkout capacity conflict invalidates shared availability before return
   );
   await act(async () => {});
   expect(
-    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("button", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeDisabled();
   expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveTextContent(
     "Unavailable",

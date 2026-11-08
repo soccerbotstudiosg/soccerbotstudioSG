@@ -410,7 +410,9 @@ export function ProtectedConfirmation({
         ? bookingFromReceipt(saved)
         : customerProof
           ? bookingFromReceipt(customerProof)
-          : null;
+          : view === "confirmed" && current?.details
+            ? bookingFromReceipt(current.details)
+            : null;
   const calendarReturned = useRef<string | null>(null);
   useEffect(() => {
     if (calendarRecovery) {

@@ -98,7 +98,7 @@ export function ReviewStep({
   const locked = verifying || attempt?.held;
   return (
     <>
-      <h1 className="page-title">Review booking</h1>
+      <h1 className="page-title">Review Booking</h1>
       <p className="lead">Check your details before payment.</p>
       <section className="surface booking-document">
         <ReviewSessions part="heading" verifying={verifying} />
@@ -167,7 +167,7 @@ export function ReviewStep({
           ) : busy ? (
             <BrandLoading compact label="Opening checkout…" />
           ) : (
-            "Continue to payment"
+            "Proceed to Payment"
           )}{" "}
           <BookingActionTotal />
           {!busy && <Icon name="chevron" />}

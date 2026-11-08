@@ -34,7 +34,7 @@ test("account waits for owned guest access and duplicate click cannot navigate e
       <AccountStep />
     </BookingProvider>,
   );
-  const button = screen.getByRole("button", { name: /Continue as guest/ });
+  const button = screen.getByRole("button", { name: /Continue as Guest/ });
   fireEvent.click(button);
   fireEvent.click(button);
   expect(
@@ -68,6 +68,30 @@ test("account leaving email challenge ignores delayed completion and live mode n
     </BookingProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: /Continue with email/ }));
+  for (const invalid of [
+    "",
+    "missing-at.example.com",
+    "name@domain",
+    "name @example.com",
+  ]) {
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: invalid },
+    });
+    fireEvent.blur(screen.getByLabelText("Email address"));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Enter a valid email address.",
+    );
+    fireEvent.submit(
+      screen
+        .getByRole("button", { name: /Continue with email/ })
+        .closest("form")!,
+    );
+    expect(challenge).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Email address")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+  }
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "synthetic@example.invalid" },
   });
@@ -141,7 +165,7 @@ test("signed-in customer manages saved contact on Account without entering unava
     "readonly",
   );
   expect(
-    screen.queryByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+    screen.queryByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   ).not.toBeInTheDocument();
   expect(screen.queryByLabelText(/Preferred contact/)).not.toBeInTheDocument();
   expect(saveProfile).not.toHaveBeenCalled();
@@ -340,7 +364,7 @@ test("switching email clears the old account and supports back guest and fresh r
     screen.getByRole("button", { name: "Back to booking options" }),
   );
   expect(
-    screen.getByRole("button", { name: "Continue as guest" }),
+    screen.getByRole("button", { name: "Continue as Guest" }),
   ).toBeEnabled();
   expect(screen.queryByText("old@example.invalid")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
@@ -555,6 +579,6 @@ test("invalid code can change email or return to guest options without carrying 
     screen.getByRole("button", { name: "Back to booking options" }),
   );
   expect(
-    screen.getByRole("button", { name: "Continue as guest" }),
+    screen.getByRole("button", { name: "Continue as Guest" }),
   ).toBeEnabled();
 });

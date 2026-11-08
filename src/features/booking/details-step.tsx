@@ -115,6 +115,13 @@ export function DetailsStep({
     update({ contact: { ...c, [key]: value } });
     setErrors((current) => ({ ...current, [key]: undefined }));
   }
+  function validateField(key: keyof ContactDetails) {
+    const next = contactErrors(
+      c,
+      draft.mode === "member" ? draft.accountEmail : undefined,
+    );
+    setErrors((current) => ({ ...current, [key]: next[key] }));
+  }
   /** Render a contact input with its validation feedback. */
   function field(
     key: TextKey,
@@ -141,6 +148,7 @@ export function DetailsStep({
           aria-invalid={!!errors[key]}
           aria-describedby={errors[key] ? `${key}-error` : undefined}
           onChange={(e) => change(key, e.target.value)}
+          onBlur={() => validateField(key)}
         />
         {errors[key] && (
           <p className="field-error" id={`${key}-error`}>
@@ -170,6 +178,7 @@ export function DetailsStep({
           aria-invalid={!!errors[key]}
           aria-describedby={errors[key] ? `${key}-error` : undefined}
           onChange={(e) => change(key, e.target.value)}
+          onBlur={() => validateField(key)}
         >
           {Object.entries(options).map(([value, name]) => (
             <option key={value} value={value}>
@@ -336,7 +345,7 @@ export function DetailsStep({
                   label={saving ? "Saving details…" : "Checking availability…"}
                 />
               ) : (
-                "Review booking"
+                "Review Booking"
               )}{" "}
               <BookingActionTotal />
               {!saving && !checking && <Icon name="chevron" />}

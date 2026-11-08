@@ -246,6 +246,10 @@ it("verified live receipt shows provider invoice number without internal IDs or 
     name: "Order Summary",
   });
   expect(orderSummary).toBeVisible();
+  expect(
+    screen.getByRole("heading", { name: "Booking Confirmed" })
+      .nextElementSibling,
+  ).toHaveTextContent("Your booking confirmation will be sent to your email.");
   expect(orderSummary.closest("details")).toBeNull();
   expect(
     screen
@@ -678,6 +682,10 @@ it("pending confirmation uses the full checkout loader until verified confirmati
   const pending = new Promise<Response>((resolve) => {
     complete = resolve;
   });
+  let finishReceipt!: (value: Response) => void;
+  const delayedReceipt = new Promise<Response>((resolve) => {
+    finishReceipt = resolve;
+  });
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) => {
@@ -701,9 +709,7 @@ it("pending confirmation uses the full checkout loader until verified confirmati
             },
           }),
         );
-      return url.endsWith("/receipt")
-        ? Promise.resolve(Response.json(receipt))
-        : pending;
+      return url.endsWith("/receipt") ? delayedReceipt : pending;
     }),
   );
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
@@ -743,7 +749,16 @@ it("pending confirmation uses the full checkout loader until verified confirmati
   expect(screen.getByLabelText("Booking actions")).toBeVisible();
   expect(screen.getByRole("link", { name: "Back to home" })).toBeVisible();
   expect(trace.mock.calls.at(-1)?.[0].state).toBe("confirmed");
-  expect(trace.mock.calls.at(-1)?.[0].proofSource).not.toBe("none");
+  expect(trace.mock.calls.at(-1)?.[0].proofSource).toBe("confirmed_status");
+  const confirmedHeading = screen.getByRole("heading", {
+    name: "Booking Confirmed",
+  });
+  await act(async () => finishReceipt(Response.json(receipt)));
+  expect(screen.getByRole("heading", { name: "Booking Confirmed" })).toBe(
+    confirmedHeading,
+  );
+  expect(document.querySelector(".page-loading")).toBeNull();
+  expect(trace.mock.calls.at(-1)?.[0].proofSource).toBe("receipt");
   trace.mockRestore();
 });
 

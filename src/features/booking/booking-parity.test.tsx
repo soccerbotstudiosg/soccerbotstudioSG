@@ -215,13 +215,15 @@ test("live calendar removes selections rejected at checkout and retains contact 
     within(region).getByRole("button", { name: dateLabel("2027-01-07") }),
   ).toBeDisabled();
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toHaveAttribute("href", "/book/details");
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
     false,
   );
   fireEvent.click(
-    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   fireEvent.click(screen.getByText("Dispatch checkout"));
@@ -309,7 +311,7 @@ test("live session preserves demo product player and inclusion presentation usin
     screen.getByRole("heading", { name: "Included with your session" }),
   ).toBeInTheDocument();
   expect(
-    await screen.findByRole("link", { name: "See available times" }),
+    await screen.findByRole("link", { name: "Choose Date & Time" }),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: "Remove one player" }),
@@ -541,13 +543,15 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
   expect(availability).not.toHaveBeenCalled();
   expect(publicCalendar).toHaveBeenCalledTimes(1);
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toHaveAttribute("href", "/book/details");
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
     false,
   );
   fireEvent.click(
-    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   fireEvent.click(screen.getByText("Dispatch checkout"));
@@ -723,7 +727,9 @@ test("Details opens local Review without waiting for unavailable providers", asy
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole("button", { name: "Choose test session" }));
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toHaveAttribute("href", "/book/details");
   expect(availability).not.toHaveBeenCalled();
   view.rerender(tree("details"));
@@ -731,7 +737,7 @@ test("Details opens local Review without waiting for unavailable providers", asy
     screen.getByRole("heading", { name: "Your details" }),
   ).toBeInTheDocument();
   fireEvent.click(
-    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   expect(availability).not.toHaveBeenCalled();
@@ -817,7 +823,7 @@ test("failed checkout preparation retains cached calendar and contact without re
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   view.rerender(tree("details"));
   fireEvent.click(
-    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   expect(availability).not.toHaveBeenCalled();
@@ -933,13 +939,13 @@ test("reservation conflict removes its session locally and returns to calendar w
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   view.rerender(tree("details"));
   fireEvent.click(
-    screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
   view.rerender(tree("review"));
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(
-    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(pay).toHaveBeenCalledTimes(1));
   await act(async () => {});

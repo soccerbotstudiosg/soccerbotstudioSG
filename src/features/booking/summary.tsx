@@ -267,11 +267,11 @@ export function BasketContinue() {
       <BookingPrimaryAction>
         {draft.slots.length > 0 && valid ? (
           <Link className="button wide basket-continue" href="/book/details/">
-            Continue <BookingActionTotal /> <Icon name="chevron" />
+            Enter Booking Details <BookingActionTotal /> <Icon name="chevron" />
           </Link>
         ) : (
           <button className="button wide basket-continue" disabled>
-            Continue <BookingActionTotal /> <Icon name="chevron" />
+            Enter Booking Details <BookingActionTotal /> <Icon name="chevron" />
           </button>
         )}
       </BookingPrimaryAction>
