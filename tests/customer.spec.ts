@@ -2162,9 +2162,22 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     .click();
   await page.getByRole("link", { name: "See available times" }).click();
   const date = addDays(DEMO_TODAY, 1);
+  const mobile = page.viewportSize()!.width <= 700;
+  if (mobile) await page.emulateMedia({ reducedMotion: "reduce" });
   await page
     .getByRole("button", { name: dateLabel(date), exact: true })
     .click();
+  if (mobile) {
+    await expect
+      .poll(async () => {
+        const heading = await page.locator(".time-heading").boundingBox();
+        const navigation = await page
+          .locator(".booking-navigation")
+          .boundingBox();
+        return Math.abs(heading!.y - navigation!.y - navigation!.height);
+      })
+      .toBeLessThanOrEqual(1);
+  }
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await expect(
     page.getByRole("button", {
@@ -2189,6 +2202,24 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     "1px",
   );
   await noon.selectOption(`${date}|12:00|demo|daniel`);
+  if (mobile) {
+    const selected = page.getByRole("button", { name: /^12:00–12:40/ });
+    const next = page.getByRole("button", { name: /^12:50–13:30/ });
+    const selectedBox = await selected.boundingBox();
+    const nextBox = await next.boundingBox();
+    expect(selectedBox!.height).toBeCloseTo(nextBox!.height, 0);
+    expect(selectedBox!.x).toBeCloseTo(nextBox!.x, 0);
+    expect(nextBox!.y).toBeGreaterThan(selectedBox!.y + selectedBox!.height);
+    const trainer = await selected.locator(".time-instructor").boundingBox();
+    const price = await selected.locator(".time-rate").boundingBox();
+    expect(trainer!.x + trainer!.width).toBeLessThanOrEqual(price!.x);
+    expect(trainer!.y).toBeCloseTo(price!.y, 0);
+    await expect(selected.locator(".time-instructor")).toHaveCSS(
+      "font-size",
+      "18px",
+    );
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  }
   await page.getByRole("button", { name: /15:20–16:00/ }).click();
   await page
     .getByRole("combobox", { name: `Trainer for ${date} at 15:20` })
