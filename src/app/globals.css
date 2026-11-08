@@ -2378,12 +2378,12 @@
     font-weight: var(--weight-heading);
   }
   @media (min-width: 701px) and (max-height: 850px) {
-    .summary-cart:has(.basket-list > li:nth-child(5)) .basket-list li {
+    .summary-cart-full .basket-list li {
       gap: 0 8px;
       padding: 8px;
       margin-bottom: 6px;
     }
-    .summary-cart:has(.basket-list > li:nth-child(5)) .basket-list li > div {
+    .summary-cart-full .basket-list li > div {
       gap: 0;
     }
   }

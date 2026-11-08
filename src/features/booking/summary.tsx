@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useState, useId, type ReactNode } from "react";
 import { Icon } from "@/components/icon";
 import { LOCATION } from "@/domain/catalog";
+import { MAX_BOOKING_SESSIONS } from "@/domain/booking-policy";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
 import {
   orderedSlots,
@@ -181,7 +182,7 @@ export function Summary({
   return (
     <div className="aside-wrap">
       <aside
-        className={`summary${basket ? " summary-cart" : ""}`}
+        className={`summary${basket ? " summary-cart" : ""}${basket && draft.slots.length >= MAX_BOOKING_SESSIONS ? " summary-cart-full" : ""}`}
         aria-label="Your booking summary"
       >
         <div

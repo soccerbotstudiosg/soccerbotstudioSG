@@ -132,7 +132,7 @@ async function fixture(
     } else if (delivery && url.pathname === "/api/access") {
       status = method === "DELETE" ? 200 : 201;
       if (method === "DELETE") verified = false;
-      result = {};
+      result = { access: method === "DELETE" ? "revoked" : "guest" };
     } else if (
       delivery &&
       url.pathname === "/api/identity/challenges" &&
@@ -177,7 +177,7 @@ test("live guest denial stays on account without Preview fallback", async ({
   const evidence = await fixture(page);
   await page.getByRole("button", { name: "Continue as Guest" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Email verification unavailable. Please continue as a guest.",
+    "We couldn’t start your booking. Please try again.",
   );
   await expect(page).toHaveURL(/\/book\/account\/$/);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
@@ -1137,8 +1137,23 @@ test("real payment recovery confirms the browser return from verified provider s
     );
     const paidBadge = page.locator(".review-head .confirmation-paid-status");
     await expect(paidBadge).toHaveText("Paid");
-    await expect(paidBadge).toHaveCSS("font-size", "23.8px");
-    await expect(paidBadge).toHaveCSS("padding", "8.5px 15.3px");
+    // WebKit serializes fractional CSS pixels as 23.799999px/15.299999px.
+    // Check the requested dimensions numerically, retaining subpixel precision.
+    const paidMetrics = await paidBadge.evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        fontSize: parseFloat(style.fontSize),
+        paddingTop: parseFloat(style.paddingTop),
+        paddingRight: parseFloat(style.paddingRight),
+        paddingBottom: parseFloat(style.paddingBottom),
+        paddingLeft: parseFloat(style.paddingLeft),
+      };
+    });
+    expect(paidMetrics.fontSize).toBeCloseTo(23.8, 5);
+    expect(paidMetrics.paddingTop).toBeCloseTo(8.5, 5);
+    expect(paidMetrics.paddingRight).toBeCloseTo(15.3, 5);
+    expect(paidMetrics.paddingBottom).toBeCloseTo(8.5, 5);
+    expect(paidMetrics.paddingLeft).toBeCloseTo(15.3, 5);
     await expect(page.locator(".confirmation-paid-amount .pill")).toHaveCount(
       0,
     );
@@ -3009,7 +3024,7 @@ test("real API 409 preparation rejection returns to calendar without payment ver
       }),
     ).toBeVisible();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "Unable to confirm availability. Please try again. Your selections are saved.",
+      "These selections were not booked. Please check your sessions again. Your details are saved.",
     );
     await expect(
       page.getByRole("link", { name: "View existing checkout", exact: true }),

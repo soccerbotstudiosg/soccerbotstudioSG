@@ -2398,7 +2398,19 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
         .selectOption({ index: 1 });
     }
     const cart = page.locator(".summary-cart");
-    await expect(cart.locator(".basket-list > li")).toHaveCount(5);
+    const cartRows = cart.locator(".basket-list > li");
+    await expect(cartRows).toHaveCount(5);
+    // Adding the fifth session must compact existing rows as well as the new one.
+    for (const row of await cartRows.all()) {
+      await expect(row).toHaveCSS("padding", "8px");
+      await expect(row).toHaveCSS("margin-bottom", "6px");
+      await expect(row).toHaveCSS("row-gap", "0px");
+      await expect(row.locator(":scope > div").first()).toHaveCSS("gap", "0px");
+      await expect(row.locator(".basket-remove")).toHaveCSS(
+        "min-height",
+        "44px",
+      );
+    }
     await expect(cart.locator(".summary-total")).toHaveCount(0);
     const layout = await cart.evaluate((element) => {
       const card = element.getBoundingClientRect();
@@ -2429,5 +2441,12 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       "overflow-y",
       "visible",
     );
+    await cart.getByRole("button", { name: `Remove ${date} at 17:00` }).click();
+    await expect(cartRows).toHaveCount(4);
+    for (const row of await cartRows.all()) {
+      await expect(row).toHaveCSS("padding", "12px");
+      await expect(row).toHaveCSS("margin-bottom", "12px");
+      await expect(row).toHaveCSS("row-gap", "5px");
+    }
   }
 });
