@@ -2,12 +2,12 @@
 
 ## Current change
 
-Branch `fix/mobile-session-navigation`, based on released PR41 main `231ebd9`. Repair mobile slot formatting with the owner-approved single full-width column, trainer/price aligned on the second row, and explicit-date-tap scrolling after the matching result loads. Standardize all cart banners to the compact calendar height/spacing. No provider, payment, storage or backend behavior changes.
+Branch `feat/compact-trainer-panel`, based on released PR42 main `4c69ba1`. Owner requested a compact trainer panel to review: one shared desktop/mobile panel with unique trainer count, compact avatar/name rows, all biographies collapsed initially and at most one expanded. Sticky cart, top Continue/total and five-session fit remain unchanged. Calendar double-arrow cue is a separate pending request.
 
 ## Verification and delivery
 
-All268 component/service cases and the strict zero-skip receipt passed; frontend types, scoped ESLint and source integrity passed. Removing the completed-date scroll made its regression assertion fail; restoring it passed all10 time-step cases. Draft publication is next; CI and device acceptance remain pending. Existing browser case extended for mobile scroll alignment and equal ordinary card heights; owner/CI runs browsers. No test titles or inventories changed. Preserve five-session desktop fit and top Continue/amount. This bounded UI slice does not authorize a new production release; publish draft for review.
+Eleven focused time-step/instructor cases passed, including initial collapse and exclusive expansion/collapse. TypeScript, scoped ESLint and source integrity passed. Existing browser assertions updated; titles/inventories unchanged. All268 component/service cases and the strict zero-skip receipt also passed. Publish the review candidate and verify staging after CI; no production merge for this trial without owner acceptance.
 
 ## Remaining scope
 
-Device acceptance of scrolling/layout remains pending. Unknown SimplyBook no-creation reconciliation, Grafana activation/contact point and analytics/Search Console/OpenGraph remain separate. Docs PR33 is paused. PR41 delivery receipts are reconciled in Journey.
+Owner visual review of trainer panel; calendar double-arrow cue not implemented. Unknown SimplyBook no-creation reconciliation, Grafana activation/contact point and analytics/Search Console/OpenGraph remain separate. Docs PR33 stays paused. PR42 receipts reconciled in Journey.

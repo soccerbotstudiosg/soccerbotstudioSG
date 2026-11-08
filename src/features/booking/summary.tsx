@@ -9,7 +9,7 @@ import {
 } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, useId, type ReactNode } from "react";
 import { Icon } from "@/components/icon";
 import { LOCATION } from "@/domain/catalog";
 import { SERVICE_NAME } from "@/domain/demo-catalog";
@@ -294,6 +294,8 @@ export function BasketContinue() {
 /** Present each selected instructor once, including provider profile names. */
 export function SelectedTrainers() {
   const { draft } = useBooking();
+  const [expandedTrainer, setExpandedTrainer] = useState<string | null>(null);
+  const headingId = useId();
   const instructors = [
     ...new Map(
       orderedSlots(draft.slots).map((slot) => [slot.instructor, slot]),
@@ -304,14 +306,21 @@ export function SelectedTrainers() {
       {instructors.length > 0 && (
         <section
           className="booking-instructors"
-          aria-labelledby="instructors-heading"
+          aria-label="Your instructors"
+          aria-describedby={headingId}
         >
-          <h2 className="sr-only" id="instructors-heading">
-            Your instructors
+          <h2 id={headingId}>
+            Your Trainers <span>· {instructors.length}</span>
           </h2>
           {instructors.map((slot) => (
             <InstructorProfile
               key={slot.instructor}
+              expanded={expandedTrainer === slot.instructor}
+              onToggle={() =>
+                setExpandedTrainer(
+                  expandedTrainer === slot.instructor ? null : slot.instructor,
+                )
+              }
               {...(slot.native
                 ? {
                     profile: {
