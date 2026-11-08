@@ -41,17 +41,22 @@ afterEach(() => {
 });
 test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", async () => {
   const user = userEvent.setup();
+  const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
     function (this: HTMLElement) {
       return {
         x: 0,
         y: 0,
-        top: 0,
+        top: this.classList.contains("time-heading") ? 420 : 0,
         left: 0,
         right: 400,
         bottom: 600,
         width: 400,
-        height: this.classList.contains("session-times-region") ? 600 : 0,
+        height: this.classList.contains("session-times-region")
+          ? 600
+          : this.classList.contains("booking-navigation")
+            ? 56
+            : 0,
         toJSON: () => ({}),
       };
     },
@@ -62,6 +67,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     </BookingProvider>,
   );
   await act(async () => {});
+  expect(scroll).not.toHaveBeenCalled();
   expect(todaySG()).toBe("2026-10-07");
   expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
     "month",
@@ -135,6 +141,10 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
   ).toBeDisabled();
   expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: dateLabel(restoredDate) }),
+  );
+  expect(scroll).not.toHaveBeenCalled();
   vi.stubGlobal("matchMedia", () => ({
     matches: true,
     addEventListener: vi.fn(),
@@ -260,6 +270,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel("2026-10-14") }),
   );
+  expect(scroll).not.toHaveBeenCalled();
   expect(view.container.querySelector(".session-times-region")).toHaveStyle({
     minHeight: "600px",
   });
@@ -270,6 +281,21 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(
     view.container.querySelector(".session-times-region"),
   ).not.toHaveAttribute("aria-busy", "true");
+  expect(scroll).toHaveBeenCalledExactlyOnceWith({
+    top: 364,
+    behavior: "instant",
+  });
+  await act(async () => {});
+  expect(scroll).toHaveBeenCalledTimes(1);
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === "(max-width: 700px)",
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  fireEvent.click(
+    screen.getByRole("button", { name: dateLabel("2026-10-14") }),
+  );
+  expect(scroll).toHaveBeenLastCalledWith({ top: 364, behavior: "smooth" });
 });
 test("crossing notices persist in the basket and review before payment", async () => {
   const basket = render(

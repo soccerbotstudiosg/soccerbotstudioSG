@@ -2360,10 +2360,6 @@
   .basket-continue {
     margin-top: 0;
   }
-  .summary-cart .summary-cover {
-    height: 40px;
-    padding: 10px 16px;
-  }
   .summary-cart .summary-body {
     padding: 12px;
   }
@@ -2436,6 +2432,7 @@
   .time.selected .time-instructor {
     display: block;
     font-size: var(--text-card);
+    line-height: var(--leading-control);
     color: var(--color-brand);
   }
   .time-rate strong {
@@ -2958,12 +2955,12 @@
     box-shadow: var(--shadow-panel);
   }
   .summary-cover {
-    height: 124px;
+    height: 40px;
     background-size: cover;
     background-position: center 57%;
     display: flex;
     align-items: flex-end;
-    padding: 17px 22px;
+    padding: 10px 16px;
     color: var(--color-surface);
     background-color: var(--color-brand);
     position: relative;
@@ -4374,7 +4371,7 @@
       margin-top: 26px;
     }
     .times {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr);
       gap: 9px;
     }
     .time {
@@ -4401,10 +4398,6 @@
     }
     .time-instructor {
       display: none;
-    }
-    .time.selected .time-instructor {
-      grid-column: 1 / -1;
-      grid-row: 3;
     }
     .time-info {
       display: grid;

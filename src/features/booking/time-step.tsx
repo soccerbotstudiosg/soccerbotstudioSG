@@ -40,8 +40,31 @@ import {
 } from "@/domain/dates";
 import type { AvailableSlot } from "@/services/contracts";
 import { useBooking } from "./provider";
+import { useMobileBooking } from "./booking-tools";
+
+/** Reveal the selected date below both sticky navigation surfaces. */
+function revealSessionHeading(heading: HTMLElement | null) {
+  if (!heading) return;
+  const header = document.querySelector(".site-header");
+  const navigation = document.querySelector(".booking-navigation");
+  const offset =
+    (header?.getBoundingClientRect().height ?? 0) +
+    (navigation?.getBoundingClientRect().height ?? 0);
+  window.scrollTo({
+    top: Math.max(
+      0,
+      window.scrollY + heading.getBoundingClientRect().top - offset,
+    ),
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "instant"
+      : "smooth",
+  });
+}
 /** Manage calendar, session-time and instructor selection. */
 export function TimeStep() {
+  const mobile = useMobileBooking();
+  const headingRef = useRef<HTMLDivElement>(null);
+  const pendingScroll = useRef<string | null>(null);
   const {
     selectionNotice,
     attempt,
@@ -214,6 +237,15 @@ export function TimeStep() {
     [availability.result, date, displayUnavailable],
   );
   const timesRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!mobile || pendingScroll.current !== date) {
+      pendingScroll.current = null;
+      return;
+    }
+    if (!result || calendarBusy) return;
+    pendingScroll.current = null;
+    revealSessionHeading(headingRef.current);
+  }, [mobile, date, result, calendarBusy]);
   const [timesHeight, setTimesHeight] = useState(0);
   useLayoutEffect(() => {
     if (!result || !timesRef.current) return;
@@ -486,6 +518,16 @@ export function TimeStep() {
                       }
                       onClick={() => {
                         if (calendarView === "week") setWeekStart(rangeStart);
+                        pendingScroll.current = mobile ? value : null;
+                        if (
+                          mobile &&
+                          value === date &&
+                          result &&
+                          !calendarBusy
+                        ) {
+                          pendingScroll.current = null;
+                          revealSessionHeading(headingRef.current);
+                        }
                         setDate(value);
                       }}
                     >
@@ -519,7 +561,7 @@ export function TimeStep() {
       </section>
       {!calendarBusy && (
         <>
-          <div className="time-heading">
+          <div className="time-heading" ref={headingRef}>
             <h2>{dateLabel(date)}</h2>
           </div>
           <div
