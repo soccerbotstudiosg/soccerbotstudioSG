@@ -42,18 +42,24 @@ import type { AvailableSlot } from "@/services/contracts";
 import { useBooking } from "./provider";
 import { useMobileBooking } from "./booking-tools";
 
-/** Reveal the selected date below both sticky navigation surfaces. */
-function revealSessionHeading(heading: HTMLElement | null) {
-  if (!heading) return;
+/** Measure the booking surfaces that remain above scrolled content. */
+function stickyBookingHeight() {
   const header = document.querySelector(".site-header");
   const navigation = document.querySelector(".booking-navigation");
-  const offset =
+  return (
     (header?.getBoundingClientRect().height ?? 0) +
-    (navigation?.getBoundingClientRect().height ?? 0);
+    (navigation?.getBoundingClientRect().height ?? 0)
+  );
+}
+/** Reveal a booking section below both sticky navigation surfaces. */
+function revealBookingSection(heading: HTMLElement | null) {
+  if (!heading) return;
   window.scrollTo({
     top: Math.max(
       0,
-      window.scrollY + heading.getBoundingClientRect().top - offset,
+      window.scrollY +
+        heading.getBoundingClientRect().top -
+        stickyBookingHeight(),
     ),
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ? "instant"
@@ -64,7 +70,24 @@ function revealSessionHeading(heading: HTMLElement | null) {
 export function TimeStep() {
   const mobile = useMobileBooking();
   const headingRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLElement>(null);
+  const [dateTapped, setDateTapped] = useState(false);
+  const [calendarAbove, setCalendarAbove] = useState(false);
   const pendingScroll = useRef<string | null>(null);
+  useEffect(() => {
+    if (!mobile || !dateTapped) return;
+    const updateCue = () => {
+      const bottom = calendarRef.current?.getBoundingClientRect().bottom;
+      setCalendarAbove(bottom !== undefined && bottom <= stickyBookingHeight());
+    };
+    updateCue();
+    window.addEventListener("scroll", updateCue, { passive: true });
+    window.addEventListener("resize", updateCue);
+    return () => {
+      window.removeEventListener("scroll", updateCue);
+      window.removeEventListener("resize", updateCue);
+    };
+  }, [mobile, dateTapped]);
   const {
     selectionNotice,
     attempt,
@@ -244,7 +267,7 @@ export function TimeStep() {
     }
     if (!result || calendarBusy) return;
     pendingScroll.current = null;
-    revealSessionHeading(headingRef.current);
+    revealBookingSection(headingRef.current);
   }, [mobile, date, result, calendarBusy]);
   const [timesHeight, setTimesHeight] = useState(0);
   useLayoutEffect(() => {
@@ -376,6 +399,7 @@ export function TimeStep() {
         </p>
       )}
       <section
+        ref={calendarRef}
         className="calendar-panel"
         aria-label="Booking calendar"
         aria-busy={
@@ -519,6 +543,7 @@ export function TimeStep() {
                       onClick={() => {
                         if (calendarView === "week") setWeekStart(rangeStart);
                         pendingScroll.current = mobile ? value : null;
+                        setDateTapped(mobile);
                         if (
                           mobile &&
                           value === date &&
@@ -526,7 +551,7 @@ export function TimeStep() {
                           !calendarBusy
                         ) {
                           pendingScroll.current = null;
-                          revealSessionHeading(headingRef.current);
+                          revealBookingSection(headingRef.current);
                         }
                         setDate(value);
                       }}
@@ -563,6 +588,27 @@ export function TimeStep() {
         <>
           <div className="time-heading" ref={headingRef}>
             <h2>{dateLabel(date)}</h2>
+            {mobile && dateTapped && calendarAbove && (
+              <button
+                type="button"
+                className="calendar-return-cue"
+                aria-label="Back to calendar"
+                onClick={() => {
+                  setDateTapped(false);
+                  revealBookingSection(calendarRef.current);
+                }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path d="m6 12 6-6 6 6M6 18l6-6 6 6" />
+                </svg>
+              </button>
+            )}
           </div>
           <div
             ref={timesRef}

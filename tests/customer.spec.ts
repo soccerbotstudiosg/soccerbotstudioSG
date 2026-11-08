@@ -2180,6 +2180,21 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
         return Math.abs(heading!.y - navigation!.y - navigation!.height);
       })
       .toBeLessThanOrEqual(1);
+    const returnCue = page.getByRole("button", {
+      name: "Back to calendar",
+      exact: true,
+    });
+    await expect(returnCue).toBeVisible();
+    await expect(returnCue.locator("svg")).toHaveCSS("animation-name", "none");
+    await returnCue.click();
+    await expect(returnCue).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: dateLabel(date), exact: true }),
+    ).toBeInViewport();
+    await page
+      .getByRole("button", { name: dateLabel(date), exact: true })
+      .click();
+    await expect(returnCue).toBeVisible();
   }
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await expect(
