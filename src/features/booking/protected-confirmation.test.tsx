@@ -257,7 +257,10 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   );
   expect(
     orderSummary.querySelector(".confirmation-paid-amount"),
-  ).toHaveTextContent("PaidSGD $88.00");
+  ).toHaveTextContent("SGD $88.00");
+  expect(
+    orderSummary.querySelector(".review-head .confirmation-paid-status"),
+  ).toHaveTextContent("Paid");
   fireEvent.click(await screen.findByText("View Full Details"));
   expect(
     Array.from(document.querySelectorAll(".confirmation-card h2")).map(
@@ -607,7 +610,7 @@ it("reopening an expired paid booking shows the saved full confirmation without 
   expect(fetch.mock.calls.at(-1)?.[0]).toBe(`/api/attempts/${first}/dismiss`);
 });
 
-it("pending checkout context uses the compact confirmation shell without checkout or success", async () => {
+it("pending checkout context uses the full checkout loader without summary or success", async () => {
   let finish!: (response: Response) => void;
   const context = new Promise<Response>((resolve) => {
     finish = resolve;
@@ -624,19 +627,11 @@ it("pending checkout context uses the compact confirmation shell without checkou
   expect(
     screen.getByRole("status", { name: "Checking booking…" }),
   ).toBeVisible();
-  const shell = document.querySelector(".confirmation-shell");
   expect(
-    shell?.querySelector(".status-heading .booking-loading-inline"),
+    document.querySelector(".page-loading .page-loading-orbit"),
   ).not.toBeNull();
-  expect(
-    shell?.querySelector(".confirmation-card .booking-loading-inline"),
-  ).toBeNull();
-  expect(screen.getByLabelText("Booking summary")).toHaveTextContent(
-    "Loading summary…",
-  );
-  expect(
-    document.querySelector(".page-loading, .booking-flow-overlay"),
-  ).toBeNull();
+  expect(document.querySelector(".confirmation-shell")).toBeNull();
+  expect(screen.queryByLabelText("Booking summary")).toBeNull();
   expect(
     screen.queryByRole("link", { name: /Open checkout/ }),
   ).not.toBeInTheDocument();
@@ -662,19 +657,19 @@ it("pending checkout context uses the compact confirmation shell without checkou
       },
     }),
   );
+  await screen.findByRole("status", { name: "Checking payment…" });
   expect(
-    await screen.findByRole("region", { name: "Current booking summary" }),
-  ).toBeVisible();
-  expect(document.querySelector(".confirmation-shell")).toBe(shell);
+    screen.queryByRole("region", { name: "Current booking summary" }),
+  ).toBeNull();
   expect(
-    shell?.querySelector(".status-heading .booking-loading-inline"),
+    document.querySelector(".page-loading .page-loading-orbit"),
   ).not.toBeNull();
   expect(
     screen.queryByRole("link", { name: /Open checkout/ }),
   ).not.toBeInTheDocument();
 });
 
-it("pending confirmation retains the booking summary while hiding full details success and every action", async () => {
+it("pending confirmation uses the full checkout loader until verified confirmation replaces it", async () => {
   const trace = vi.spyOn(renderTrace, "useConfirmationRenderTrace");
   const receipt = receiptFixture();
   const details = { ...receipt };
@@ -712,16 +707,17 @@ it("pending confirmation retains the booking summary while hiding full details s
     }),
   );
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
-  await screen.findByText("Checking payment…");
+  await screen.findByRole("status", { name: "Checking payment…" });
   expect(screen.queryByText("View Full Details")).toBeNull();
-  expect(screen.getByLabelText("Booking summary")).toBeVisible();
-  expect(screen.getByText("Please do not close or refresh.")).toBeVisible();
-  expect(screen.getByText("Checking payment…")).toBeVisible();
-  const card = document.querySelector(".confirmation-card");
-  expect(document.querySelector(".booking-loading")).toBeNull();
+  expect(screen.queryByLabelText("Booking summary")).toBeNull();
   expect(
-    document.querySelector(".booking-loading-inline .page-loading-orbit"),
+    screen.getByText("Please do not close or refresh.", { exact: false }),
+  ).toBeVisible();
+  expect(document.querySelector(".confirmation-card")).toBeNull();
+  expect(
+    document.querySelector(".page-loading .page-loading-orbit"),
   ).not.toBeNull();
+  expect(document.querySelector(".booking-loading-inline")).toBeNull();
   for (const name of ["Booking Contact", "Location", "Before Your Session"])
     expect(screen.queryByRole("heading", { name })).toBeNull();
   expect(screen.queryByText("Synthetic Customer")).toBeNull();
@@ -729,7 +725,7 @@ it("pending confirmation retains the booking summary while hiding full details s
     screen.getByRole("status", { name: "Checking payment…" }),
   ).toBeVisible();
   expect(trace.mock.calls.at(-1)?.[0]).toMatchObject({
-    state: "summary",
+    state: undefined,
     proofSource: "none",
   });
   expect(screen.queryByText("Paid", { exact: true })).toBeNull();
@@ -742,7 +738,8 @@ it("pending confirmation retains the booking summary while hiding full details s
     complete(Response.json({ status: "confirmed", reason: "verified" })),
   );
   await screen.findByRole("heading", { name: "Booking Confirmed" });
-  expect(document.querySelector(".confirmation-card")).toBe(card);
+  expect(document.querySelector(".confirmation-card")).not.toBeNull();
+  expect(document.querySelector(".page-loading")).toBeNull();
   expect(screen.getByLabelText("Booking actions")).toBeVisible();
   expect(screen.getByRole("link", { name: "Back to home" })).toBeVisible();
   expect(trace.mock.calls.at(-1)?.[0].state).toBe("confirmed");

@@ -1009,7 +1009,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "pending checkout context uses the compact confirmation shell without checkout or success"
+    "title": "pending checkout context uses the full checkout loader without summary or success"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -1021,7 +1021,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "pending confirmation retains the booking summary while hiding full details success and every action"
+    "title": "pending confirmation uses the full checkout loader until verified confirmation replaces it"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",

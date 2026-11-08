@@ -42,6 +42,7 @@ afterEach(() => {
 test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", async () => {
   const user = userEvent.setup();
   const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  let calendarBottom = 600;
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
     function (this: HTMLElement) {
       return {
@@ -50,7 +51,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
         top: this.classList.contains("time-heading") ? 420 : 0,
         left: 0,
         right: 400,
-        bottom: 600,
+        bottom: this.classList.contains("calendar-panel")
+          ? calendarBottom
+          : 600,
         width: 400,
         height: this.classList.contains("session-times-region")
           ? 600
@@ -322,6 +325,19 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     screen.getByRole("button", { name: dateLabel("2026-10-14") }),
   );
   expect(scroll).toHaveBeenLastCalledWith({ top: 364, behavior: "smooth" });
+  expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
+  calendarBottom = 0;
+  fireEvent.scroll(window);
+  const returnCue = screen.getByRole("button", { name: "Back to calendar" });
+  expect(returnCue.querySelector("svg path")).not.toBeNull();
+  calendarBottom = 600;
+  fireEvent.scroll(window);
+  expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
+  calendarBottom = 0;
+  fireEvent.scroll(window);
+  await user.click(screen.getByRole("button", { name: "Back to calendar" }));
+  expect(scroll).toHaveBeenLastCalledWith({ top: 0, behavior: "smooth" });
+  expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
 });
 test("crossing notices persist in the basket and review before payment", async () => {
   const basket = render(

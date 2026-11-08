@@ -1,5 +1,5 @@
 "use client";
-import { loadingMessage } from "./booking-loading";
+import { BookingLoading, loadingMessage } from "./booking-loading";
 import { BrandLoading as InlineLoading } from "@/components/brand-loading";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -32,11 +32,14 @@ export function PendingConfirmation({
   label = "Checking booking…",
   message,
   children,
+  showSummary = false,
 }: {
   label?: string;
   message?: string;
   children?: ReactNode;
+  showSummary?: boolean;
 }) {
+  if (!showSummary) return <BookingLoading label={label} />;
   return (
     <div className="status-shell confirmation-shell">
       <div className="status-heading">
@@ -119,6 +122,7 @@ export function BookingConfirmation({
       setLeaving(false);
     }
   }
+  if (pending && !pendingAction) return <BookingLoading label={pendingLabel} />;
   return (
     <div className="status-shell confirmation-shell">
       <div className="status-heading">
@@ -306,6 +310,11 @@ export function BookingConfirmation({
           >
             <div className="review-head">
               <h2 id="confirmation-order">Order Summary</h2>
+              {!preview && (
+                <span className="pill success confirmation-paid-status">
+                  Paid
+                </span>
+              )}
             </div>
             <SessionList
               slots={booking.slots}
@@ -316,7 +325,6 @@ export function BookingConfirmation({
               <div className="line-item total confirmation-total">
                 <span>Total Paid{preview ? " · Preview" : ""}</span>
                 <span className="confirmation-paid-amount">
-                  {!preview && <span className="pill success">Paid</span>}
                   <strong>
                     <span className="total-currency">SGD</span>{" "}
                     {money(booking.totalCents)}

@@ -474,7 +474,7 @@ export function ProtectedConfirmation({
           ? "confirmed"
           : paymentReceived
             ? "payment_received"
-            : current
+            : current && allowPaymentContinuation && showLink && !expired
               ? "summary"
               : undefined,
     proofSource: receiptMatches
@@ -658,7 +658,11 @@ export function ProtectedConfirmation({
       );
     }
     return (
-      <PendingConfirmation label={pendingLabel} message={pendingMessage}>
+      <PendingConfirmation
+        label={pendingLabel}
+        message={pendingMessage}
+        showSummary={!!continuation}
+      >
         {current ? (
           <>
             <ConfirmationSummary

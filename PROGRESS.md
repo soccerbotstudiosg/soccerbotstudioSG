@@ -2,12 +2,12 @@
 
 ## Current change
 
-Branch `feat/compact-trainer-panel`, based on released PR42 main `4c69ba1`. Owner requested a compact trainer panel to review: one shared desktop/mobile panel with unique trainer count, compact avatar/name rows, all biographies collapsed initially and at most one expanded. Sticky cart, top Continue/total and five-session fit remain unchanged. Calendar double-arrow cue is a separate pending request.
+Branch `fix/calendar-return-confirmation-loader`, based on PR43 main `257fd22`. Mobile date-selection scroll now exposes the double-chevron return to calendar. Post-payment confirmation uses the full checkout loader directly before verified Booking Confirmed content. Paid is at the top-right of Order Summary with twice its previous text size/padding on mobile and desktop.
 
 ## Verification and delivery
 
-Eleven focused time-step/instructor cases passed, including initial collapse and exclusive expansion/collapse. TypeScript, scoped ESLint and source integrity passed. Existing browser assertions updated; titles/inventories unchanged. All268 component/service cases and the strict zero-skip receipt also passed. Publish the review candidate and verify staging after CI; no production merge for this trial without owner acceptance.
+All268 component/service cases and the strict zero-skip receipt passed. Browser assertions updated for the new loader and calendar return; owner/CI executes browsers. Two component test titles updated in the inventory without removing cases. User authorized stage then merge on8 November. Publish the consolidated candidate, verify exact-head CI and actual staging health before merge, then verify independent main CI and production deployment. Preserve approved runtime settings; no new provider activation. Delivery receipts belong in the PR until the next substantive checkpoint.
 
 ## Remaining scope
 
-Owner visual review of trainer panel; calendar double-arrow cue not implemented. Unknown SimplyBook no-creation reconciliation, Grafana activation/contact point and analytics/Search Console/OpenGraph remain separate. Docs PR33 stays paused. PR42 receipts reconciled in Journey.
+Device acceptance remains pending. Unknown SimplyBook no-creation reconciliation, Grafana activation/contact point, analytics/Search Console/OpenGraph and paused docs PR33 remain separate. PR43 delivery and external Python CodeQL download failures are reconciled in Journey.

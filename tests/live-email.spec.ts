@@ -1049,6 +1049,12 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(
       page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toHaveCount(0);
+    await expect(
+      page.locator(".page-loading .page-loading-orbit"),
+    ).toBeVisible();
+    await expect(
+      page.locator(".booking-loading-inline, .confirmation-card"),
+    ).toHaveCount(0);
     await expect(page.locator(".confirmation-actions")).toHaveCount(0);
     expect(
       await page.evaluate(
@@ -1123,6 +1129,14 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(
       page.getByRole("link", { name: "Continue payment", exact: true }),
     ).toHaveCount(0);
+    const paidBadge = page.locator(".review-head .confirmation-paid-status");
+    await expect(paidBadge).toHaveText("Paid");
+    await expect(paidBadge).toHaveCSS("font-size", "28px");
+    await expect(paidBadge).toHaveCSS("padding", "10px 18px");
+    await expect(page.locator(".confirmation-paid-amount .pill")).toHaveCount(
+      0,
+    );
+    await expect(page.locator(".page-loading")).toHaveCount(0);
     releaseReceipt();
     await expect(
       page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
@@ -2714,15 +2728,10 @@ test("real API unpaid return shows the pending confirmation layout without claim
       page.getByRole("status", { name: "Checking booking…", exact: true }),
     ).toBeVisible();
     await expect(
-      page.locator(
-        ".confirmation-shell .status-heading .booking-loading-inline",
-      ),
+      page.locator(".page-loading .page-loading-orbit"),
     ).toBeVisible();
-    await expect(page.locator(".confirmation-card")).toContainText(
-      "Loading summary…",
-    );
     await expect(
-      page.locator(".page-loading, .booking-flow-overlay"),
+      page.locator(".confirmation-card, .booking-loading-inline"),
     ).toHaveCount(0);
     releaseContext();
     const diagnosticHeaders = await (await contextRead).allHeaders();
@@ -2741,7 +2750,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       page.getByRole("link", { name: "Continue payment", exact: true }),
     ).toHaveCount(0);
     await expect(page.getByRole("timer")).toHaveCount(0);
-    await expect(page.getByLabel("Booking summary")).toBeVisible();
+    await expect(page.getByLabel("Booking summary")).toHaveCount(0);
     await expect(
       page.getByText("View Full Details", { exact: true }),
     ).toHaveCount(0);
@@ -2750,11 +2759,6 @@ test("real API unpaid return shows the pending confirmation layout without claim
         page.getByRole("heading", { name, exact: true }),
       ).toHaveCount(0);
     await expect(page.getByText(/SimplyBook booking ID/)).toHaveCount(0);
-    await expect(
-      page
-        .getByLabel("Booking summary")
-        .getByRole("list", { name: "Selected sessions" }),
-    ).toBeVisible();
     await expect(
       page.getByRole("status", {
         name: "Checking payment…",
@@ -2770,21 +2774,16 @@ test("real API unpaid return shows the pending confirmation layout without claim
       page.getByRole("link", { name: "Back to home", exact: true }),
     ).toHaveCount(0);
     await expect(page.getByText("Paid", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".booking-loading-inline")).toHaveCount(0);
     await expect(
-      page.locator(".booking-loading, .booking-flow-overlay"),
-    ).toHaveCount(0);
-    await expect(
-      page.getByText("Please do not close or refresh.", { exact: true }),
+      page.getByText("Checking payment… Please do not close or refresh.", {
+        exact: true,
+      }),
     ).toBeVisible();
     const loader = page.getByRole("status", {
       name: "Checking payment…",
       exact: true,
     });
-    expect(
-      await loader.evaluate(
-        (element) => element.getBoundingClientRect().height,
-      ),
-    ).toBeLessThan(180);
     await expect(loader.locator(".page-loading-orbit")).toHaveCSS(
       "animation-name",
       "page-loading-orbit",
