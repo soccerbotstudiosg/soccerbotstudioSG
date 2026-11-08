@@ -22,12 +22,18 @@ vi.mock("next/navigation", () => ({
 }));
 test("account waits for owned guest access and duplicate click cannot navigate early", async () => {
   let finish!: () => void;
-  const guest = vi.fn(
-    () =>
-      new Promise<void>((resolve) => {
-        finish = resolve;
-      }),
-  );
+  const guest = vi
+    .fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    )
+    .mockRejectedValueOnce(
+      new CustomerMessageError(
+        "We couldn’t start your booking. Please try again.",
+      ),
+    );
   navigation.push.mockClear();
   render(
     <BookingProvider identityService={{ ...demoCustomerIdentity, guest }}>
@@ -35,6 +41,14 @@ test("account waits for owned guest access and duplicate click cannot navigate e
     </BookingProvider>,
   );
   const button = screen.getByRole("button", { name: /Continue as Guest/ });
+  fireEvent.click(button);
+  await waitFor(() =>
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "We couldn’t start your booking. Please try again.",
+    ),
+  );
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(screen.queryByText(/Email verification unavailable/)).toBeNull();
   fireEvent.click(button);
   fireEvent.click(button);
   expect(
@@ -47,7 +61,7 @@ test("account waits for owned guest access and duplicate click cannot navigate e
   expect(
     screen.getByRole("button", { name: /Continue with email/ }),
   ).toBeDisabled();
-  expect(guest).toHaveBeenCalledTimes(1);
+  expect(guest).toHaveBeenCalledTimes(2);
   expect(navigation.push).not.toHaveBeenCalled();
   await act(async () => finish());
   expect(navigation.push).toHaveBeenCalledWith("/book/session/");

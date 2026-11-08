@@ -12,6 +12,7 @@ function ConfirmationRoute() {
     restartAfterConfirmation,
     restartAfterExpiry,
     browseAfterChecking,
+    rejectRecoveredSelection,
     confirmationRevision,
     bookingService,
   } = useBooking();
@@ -24,6 +25,7 @@ function ConfirmationRoute() {
       checkoutMode={bookingService.mode === "live" ? "live" : undefined}
       onExpired={restartAfterExpiry}
       onAwaitingExpiry={browseAfterChecking}
+      onSelectionRejected={rejectRecoveredSelection}
       onAgain={reset}
       onRestart={restartAfterConfirmation}
     />

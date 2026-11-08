@@ -138,18 +138,61 @@ export function loadLiveDraft() {
   const parsed = draftSchema.safeParse(safeRead("soccerbot-live-draft"));
   return parsed.success ? { ...parsed.data, accepted: false } : blankDraft();
 }
+/** Return only this tab's attempt correlation, never payment authority. */
+export function liveCheckoutAttemptId() {
+  const value = record(safeRead("soccerbot-live-draft"))?.checkoutAttemptId;
+  return typeof value === "string" ? value : null;
+}
 /** Check this tab's navigation preference, never checkout authority. */
-export function mayRestoreLiveCheckout() {
-  return record(safeRead("soccerbot-live-draft"))?.resumeCheckout !== false;
+export function mayRestoreLiveCheckout(attemptId?: string) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  return (
+    stored?.resumeCheckout !== false &&
+    (!attemptId || stored?.checkoutAttemptId === attemptId)
+  );
 }
 /** Persist the live draft and its tab-local checkout navigation preference. */
 export function saveLiveDraft(
   draft: StoredBooking["draft"],
   resumeCheckout = mayRestoreLiveCheckout(),
+  checkoutAttemptId: string | undefined = (() => {
+    const value = record(safeRead("soccerbot-live-draft"))?.checkoutAttemptId;
+    return typeof value === "string" ? value : undefined;
+  })(),
 ) {
+  const previous = record(safeRead("soccerbot-live-draft"));
   safeWrite("soccerbot-live-draft", {
     ...draft,
     accepted: false,
     resumeCheckout,
+    ...(checkoutAttemptId ? { checkoutAttemptId } : {}),
+    calendarRecovery:
+      resumeCheckout &&
+      previous?.checkoutAttemptId === checkoutAttemptId &&
+      previous?.calendarRecovery === true,
   });
+}
+
+/** Retain display-only affected slots across refresh without granting booking authority. */
+export function loadSuppressedSlots() {
+  const parsed = draftSchema.shape.slots.safeParse(
+    safeRead("soccerbot-suppressed-slots"),
+  );
+  return parsed.success ? parsed.data : [];
+}
+/** Save slots hidden pending fresh availability; this never authorizes a checkout. */
+export function saveSuppressedSlots(slots: StoredBooking["draft"]["slots"]) {
+  safeWrite("soccerbot-suppressed-slots", slots);
+}
+
+/** Remember calendar navigation for this tab's retained unresolved attempt only. */
+export function saveCalendarRecovery(attemptId: string) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  if (stored?.checkoutAttemptId === attemptId)
+    safeWrite("soccerbot-live-draft", { ...stored, calendarRecovery: true });
+}
+/** Restore recovery presentation only when the authenticated attempt matches this tab. */
+export function isCalendarRecovery(attemptId: string) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  return mayRestoreLiveCheckout(attemptId) && stored?.calendarRecovery === true;
 }

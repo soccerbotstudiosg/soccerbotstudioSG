@@ -18,6 +18,15 @@ export const hitpayHandoffSchema = z.strictObject({
   expiresAtMs: z.number().int().positive().safe(),
 });
 
+// Only protected server reads with retained no-effect evidence may return this.
+export const checkoutSelectionRejectionSchema = z.strictObject({
+  state: z.enum(["selection_unavailable", "restart_required"]),
+  rejectedSessionIndex: z.number().int().min(0).max(11).optional(),
+});
+export type CheckoutSelectionRejection = z.infer<
+  typeof checkoutSelectionRejectionSchema
+>;
+
 // Owner-supplied token-free historical native destination shape, 9 October 2026.
 // Validating this initial URL does not attest downstream redirects or sandbox mode.
 /** Validate a native checkout URL against the accepted host policy. */

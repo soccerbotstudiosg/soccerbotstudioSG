@@ -221,6 +221,12 @@ before(async () => {
       .replace(/^--.*$/gm, "")
       .replace(/\n/g, " "),
   );
+  // Protected rejection reads inspect both active and archived checkout grants.
+  await db.exec(
+    readFileSync("migrations/0031_rejected_checkout_history.sql", "utf8")
+      .replace(/^--.*$/gm, "")
+      .replace(/\n/g, " "),
+  );
   await db.exec(
     readFileSync("migrations/0032_completed_checkout_history.sql", "utf8")
       .replace(/^--.*$/gm, "")
@@ -253,6 +259,12 @@ before(async () => {
   );
   await db.exec(
     readFileSync("migrations/0039_reservation_abuse.sql", "utf8")
+      .replace(/^--.*$/gm, "")
+      .replace(/\n/g, " "),
+  );
+
+  await db.exec(
+    readFileSync("migrations/0040_hitpay_checkout_expiry.sql", "utf8")
       .replace(/^--.*$/gm, "")
       .replace(/\n/g, " "),
   );

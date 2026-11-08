@@ -28,6 +28,7 @@ export async function confirmationSnapshot(
       CASE WHEN p.attempt_id IS NULL THEN NULL ELSE json_object(
         'attempt_id',p.attempt_id,'scope_json',p.scope_json,'reference',p.reference,
         'request_id',p.request_id,'checkout_url',p.checkout_url,'expires_ms',p.expires_ms,
+        'checkout_expires_ms',p.checkout_expires_ms,
         'created_ms',p.created_ms,'recovery_end_ms',p.recovery_end_ms,
         'state',p.state,'reason',p.reason,'tries',p.tries,'retry_limit',p.retry_limit,
         'ready_ms',p.ready_ms,'generation',p.generation,'paid_ms',p.paid_ms,

@@ -9,18 +9,22 @@ import {
   rememberCompletedExit,
   forgetCompletedExit,
 } from "@/services/confirmation";
-import { isHitpayCheckoutUrl } from "@/domain/native-checkout";
-import { START_INTERVAL_MINUTES } from "@/domain/booking-policy";
+import {
+  type CheckoutSelectionRejection,
+  isHitpayCheckoutUrl,
+} from "@/domain/native-checkout";
 import { todaySG, dateLabel, endTime } from "@/domain/dates";
 import {
   slotKey,
   sessionOfferKey,
   sessionPrice,
   selectionErrors,
+  overlaps,
 } from "@/domain/booking";
 import { useCalendarAvailability } from "./calendar-availability";
 import {
   createContext,
+  useEffectEvent,
   useCallback,
   useContext,
   useEffect,
@@ -48,7 +52,12 @@ import {
 import {
   loadBooking,
   loadLiveDraft,
+  loadSuppressedSlots,
+  saveSuppressedSlots,
   mayRestoreLiveCheckout,
+  saveCalendarRecovery,
+  isCalendarRecovery,
+  liveCheckoutAttemptId,
   saveLiveDraft,
   saveBooking,
   type StoredBooking,
@@ -73,6 +82,7 @@ interface BookingContextValue extends StoredBooking {
   showMonth: (month: string, through?: string) => void;
   setCalendarBrowsing: (active: boolean) => void;
   selectionNotice: string | null;
+  suppressedSlots: BookingDraft["slots"];
   ready: boolean;
   now: number;
   revision: number;
@@ -94,6 +104,10 @@ interface BookingContextValue extends StoredBooking {
   browseAfterChecking: (attemptId: string) => boolean;
   clearReviewConsent: () => void;
   resumePaymentStatus: (attemptId: string) => void;
+  rejectRecoveredSelection: (
+    attemptId: string,
+    rejection: CheckoutSelectionRejection,
+  ) => Promise<boolean>;
   restartAfterConfirmation: (attemptId: string) => Promise<void>;
   rebookingError: string | null;
   retryRebooking: () => void;
@@ -105,6 +119,38 @@ function describeSessions(slots: StoredBooking["draft"]["slots"]) {
       (slot) => `${dateLabel(slot.date)}, ${slot.start}–${endTime(slot.start)}`,
     )
     .join("; ");
+}
+/** Fresh reads identify unavailable selections; failed reads never imply a conflict. */
+async function readConflictSelections(
+  service: BookingService,
+  draft: BookingDraft,
+  signal: AbortSignal,
+) {
+  const dates = [...new Set(draft.slots.map((slot) => slot.date))];
+  const results = await Promise.allSettled(
+    dates.map((date) =>
+      service.availability({
+        date,
+        players: draft.players,
+        serviceId: draft.nativeServiceId,
+        fresh: true,
+        signal,
+      }),
+    ),
+  );
+  const unavailable = draft.slots.filter((slot) => {
+    const result = results[dates.indexOf(slot.date)];
+    return (
+      result.status === "fulfilled" &&
+      !result.value.some(
+        (offer) =>
+          offer.available &&
+          sessionOfferKey(offer) === sessionOfferKey(slot) &&
+          sessionPrice(offer) === sessionPrice(slot),
+      )
+    );
+  });
+  return { dates, results, unavailable };
 }
 const Context = createContext<BookingContextValue | null>(null);
 /** Coordinate draft, identity and checkout state across the booking flow. */
@@ -122,6 +168,18 @@ export function BookingProvider({
     session: false,
   });
   const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
+  const [suppressedSlots, dispatchSuppressedSlots] = useState<
+    BookingDraft["slots"]
+  >(() => (bookingService.mode === "live" ? loadSuppressedSlots() : []));
+  const suppression = useRef({ slots: suppressedSlots, generation: 0 });
+  const setSuppressedSlots = useCallback((slots: BookingDraft["slots"]) => {
+    suppression.current = {
+      slots,
+      generation: suppression.current.generation + 1,
+    };
+    saveSuppressedSlots(slots);
+    dispatchSuppressedSlots(slots);
+  }, []);
   const service = useMemo(
     () => defineBookingService(bookingService),
     [bookingService],
@@ -161,7 +219,6 @@ export function BookingProvider({
     controller: AbortController;
     operation: Action;
   } | null>(null);
-  const expiryRefresh = useRef<AbortController | null>(null);
   const releasedReservation = useRef<string | null>(null);
   const queueRetry = useRef<{ id: string; revision: number } | null>(null);
   const mounted = useRef(false);
@@ -327,7 +384,12 @@ export function BookingProvider({
       };
       latest.current = state;
       if (service.mode === "demo") saveBooking(next);
-      else saveLiveDraft(next.draft, next.attempt ? true : undefined);
+      else
+        saveLiveDraft(
+          next.draft,
+          next.attempt ? true : undefined,
+          next.attempt?.id,
+        );
       dispatch(state);
     },
     [service],
@@ -343,8 +405,6 @@ export function BookingProvider({
       );
   }, [commit]);
   const cancel = useCallback(() => {
-    expiryRefresh.current?.abort();
-    expiryRefresh.current = null;
     if (mounted.current && !latest.current.attempt) pauseCalendar(false);
     const request = active.current;
     if (!request) return;
@@ -357,11 +417,189 @@ export function BookingProvider({
         ...(request.operation === "resolve" || request.operation === "check"
           ? {
               error:
-                "The status check was interrupted. Check payment status to continue.",
+                "The status check was interrupted. Your booking is unchanged.",
             }
           : {}),
       });
   }, [setAction]);
+  const freshChecks = useRef(
+    new WeakMap<BookingService, Map<string, number>>(),
+  );
+  /** Reuse this tick's authoritative day read without replacing its evidence. */
+  const rememberFreshDate = useCallback(
+    (date: string, players: number, serviceId?: string) => {
+      const entries =
+        freshChecks.current.get(service) ?? new Map<string, number>();
+      entries.set(
+        JSON.stringify([date, players, serviceId, identityService.current()]),
+        Date.now(),
+      );
+      freshChecks.current.set(service, entries);
+    },
+    [service, identityService],
+  );
+  const rejectionRead = useRef<AbortController | null>(null);
+  /** Leave a proven no-effects checkout immediately and classify its slots in the background. */
+  const returnRejectedSelection = useCallback(
+    (draft: BookingDraft, indexed?: BookingDraft["slots"][number]) => {
+      rejectionRead.current?.abort();
+      const controller = new AbortController();
+      rejectionRead.current = controller;
+      const identity = JSON.stringify(identityService.current());
+      const candidates = indexed ? [indexed] : draft.slots;
+      const existing = suppression.current.slots;
+      setSuppressedSlots([
+        ...existing.filter(
+          (slot) => !candidates.some((candidate) => overlaps(slot, candidate)),
+        ),
+        ...candidates,
+      ]);
+      const generation = suppression.current.generation;
+      commit({
+        ...latest.current,
+        attempt: null,
+        draft: {
+          ...latest.current.draft,
+          accepted: false,
+          slots: latest.current.draft.slots.filter(
+            (slot) => !indexed || slotKey(slot) !== slotKey(indexed),
+          ),
+        },
+      });
+      if (service.mode === "live") saveLiveDraft(latest.current.draft, false);
+      pauseCalendar(false);
+      setSelectionNotice(
+        indexed
+          ? `Removed unavailable sessions: ${describeSessions([indexed])}.`
+          : "These selections were not booked. Please check your sessions again. Your details are saved.",
+      );
+      setAction({ status: "idle", returnToCalendar: true });
+      for (const date of new Set(draft.slots.map((slot) => slot.date)))
+        rememberFreshDate(date, draft.players, draft.nativeServiceId);
+      void readConflictSelections(service, draft, controller.signal).then(
+        (read) => {
+          if (
+            controller.signal.aborted ||
+            rejectionRead.current !== controller ||
+            suppression.current.generation !== generation ||
+            !mounted.current ||
+            latest.current.attempt ||
+            active.current ||
+            latest.current.draft.mode !== draft.mode ||
+            latest.current.draft.nativeServiceId !== draft.nativeServiceId ||
+            latest.current.draft.players !== draft.players ||
+            JSON.stringify(identityService.current()) !== identity
+          )
+            return;
+          const affected = indexed
+            ? [
+                indexed,
+                ...read.unavailable.filter(
+                  (slot) => slotKey(slot) !== slotKey(indexed),
+                ),
+              ]
+            : read.unavailable;
+          for (const [index, result] of read.results.entries()) {
+            if (result.status === "fulfilled") {
+              const offers = result.value.filter((slot) => slot.available);
+              calendar.reconcile(read.dates[index], offers.length > 0, offers);
+            }
+          }
+          // Only this request's provisional windows can be released here. Older
+          // quarantines and failed reads remain for the regular fresh-read loop.
+          const available = candidates.filter((slot) => {
+            const result = read.results[read.dates.indexOf(slot.date)];
+            return (
+              result?.status === "fulfilled" &&
+              result.value.some(
+                (offer) =>
+                  offer.available &&
+                  sessionOfferKey(offer) === sessionOfferKey(slot) &&
+                  sessionPrice(offer) === sessionPrice(slot),
+              )
+            );
+          });
+          setSuppressedSlots(
+            suppression.current.slots.filter(
+              (slot) =>
+                !available.some(
+                  (released) => slotKey(released) === slotKey(slot),
+                ),
+            ),
+          );
+          commit({
+            ...latest.current,
+            draft: {
+              ...latest.current.draft,
+              accepted: false,
+              slots: latest.current.draft.slots.filter(
+                (slot) =>
+                  !affected.some(
+                    (rejected) => slotKey(rejected) === slotKey(slot),
+                  ),
+              ),
+            },
+          });
+          if (service.mode === "live")
+            saveLiveDraft(latest.current.draft, false);
+          if (affected.length)
+            setSelectionNotice(
+              `Removed unavailable sessions: ${describeSessions(affected)}.`,
+            );
+          rejectionRead.current = null;
+        },
+      );
+    },
+    [
+      service,
+      identityService,
+      calendar,
+      setSuppressedSlots,
+      commit,
+      setAction,
+      rememberFreshDate,
+    ],
+  );
+  /** Apply an authenticated no-effects rejection only to its original tab attempt. */
+  const rejectRecoveredSelection = useCallback(
+    async (id: string, rejection: CheckoutSelectionRejection) => {
+      const current = latest.current;
+      if (
+        active.current ||
+        service.mode !== "live" ||
+        liveCheckoutAttemptId() !== id ||
+        (current.attempt &&
+          (current.attempt.id !== id || current.attempt.status === "paid"))
+      )
+        return false;
+      const indexed =
+        rejection.state === "selection_unavailable"
+          ? current.attempt?.draft.slots[rejection.rejectedSessionIndex ?? -1]
+          : undefined;
+      returnRejectedSelection(current.draft, indexed);
+      return true;
+    },
+    [service, returnRejectedSelection],
+  );
+  const recoverRejectedTab = useEffectEvent(
+    async (id: string, controller: AbortController) => {
+      try {
+        const context = await protectedCheckoutService.context({
+          attemptId: id,
+          mode: "live",
+          signal: controller.signal,
+        });
+        if (
+          !controller.signal.aborted &&
+          context.selectionRejection &&
+          liveCheckoutAttemptId() === id
+        )
+          await rejectRecoveredSelection(id, context.selectionRejection);
+      } catch {
+        /* Unknown reads cannot discard a pending attempt. */
+      }
+    },
+  );
   useEffect(() => {
     mounted.current = true;
     const sameSession =
@@ -409,17 +647,19 @@ export function BookingProvider({
                       sessionPrice(slot) === sessionPrice(other),
                   ),
                 );
-              if (
-                !mayRestoreLiveCheckout() ||
+              if (isCalendarRecovery(attempt.id)) {
+                commit({ version: 2, draft, attempt }, true);
+                setAction({ status: "idle", returnToCalendar: true });
+              } else if (
+                !mayRestoreLiveCheckout(attempt.id) ||
                 (draft.slots.length > 0 && !sameSelections)
               ) {
                 setSelectionNotice(
-                  "Another checkout is in progress. These selections were not booked. You can view the existing checkout or keep browsing the calendar.",
+                  "Another checkout is in progress. Your selections are saved. Please choose available sessions.",
                 );
                 setAction({
                   status: "idle",
                   returnToCalendar: true,
-                  resumeAttemptId: attempt.id,
                 });
               } else
                 commit({ version: 2, draft: attempt.draft, attempt }, true);
@@ -430,16 +670,29 @@ export function BookingProvider({
           },
         )
         .finally(() => {
-          if (!controller.signal.aborted)
+          if (!controller.signal.aborted) {
             setRestoredOwner({ service, identityService });
+            const id = liveCheckoutAttemptId();
+            if (id && mayRestoreLiveCheckout(id) && !latest.current.attempt)
+              void recoverRejectedTab(id, controller);
+          }
         });
     }
     return () => {
       controller.abort();
+      rejectionRead.current?.abort();
       mounted.current = false;
       cancel();
     };
-  }, [commit, cancel, service, identityService, finishExit, setAction]);
+  }, [
+    commit,
+    cancel,
+    service,
+    identityService,
+    finishExit,
+    setAction,
+    setSuppressedSlots,
+  ]);
   useEffect(() => {
     const resume = (event: PageTransitionEvent) => {
       // Browser Back may restore this document with its handoff loader intact.
@@ -455,126 +708,202 @@ export function BookingProvider({
     (id: string) => {
       if (releasedReservation.current === id) return;
       releasedReservation.current = id;
+      // Reads made while the original attempt was locked cannot release slots.
+      freshChecks.current.delete(service);
       cancel();
       const previous =
         latest.current.attempt?.id === id
           ? latest.current.attempt.draft
           : latest.current.draft;
-      const dates = [...new Set(previous.slots.map((slot) => slot.date))];
-      calendar.retry([
-        calendarMonth,
-        ...new Set(dates.map((date) => date.slice(0, 7))),
+      const nextDraft = {
+        ...latest.current.draft,
+        accepted: false,
+        slots: latest.current.draft.slots.filter(
+          (slot) =>
+            !previous.slots.some(
+              (expired) => slotKey(expired) === slotKey(slot),
+            ),
+        ),
+      };
+      setSuppressedSlots([
+        ...suppressedSlots.filter(
+          (slot) => !previous.slots.some((expired) => overlaps(slot, expired)),
+        ),
+        ...previous.slots,
       ]);
       setRestoredOwner({ service, identityService });
-      // Expired selections must not remain actionable while fresh reads resolve.
-      commit({
-        ...latest.current,
-        attempt: null,
-        draft: { ...previous, accepted: false, slots: [] },
-      });
+      commit({ ...latest.current, attempt: null, draft: nextDraft });
+      if (service.mode === "live") saveLiveDraft(nextDraft, false);
       setAction({ status: "idle", returnToCalendar: true });
-      if (!dates.length) {
-        pauseCalendar(false);
-        setSelectionNotice(
-          "Your unpaid reservation has ended. Your details are saved. Please choose your sessions again.",
-        );
-        return;
-      }
-      pauseCalendar(true);
+      pauseCalendar(false);
       setSelectionNotice(
-        "Your unpaid reservation has ended. Checking which sessions are still available…",
+        previous.slots.length
+          ? `Your unpaid reservation has ended. Affected sessions: ${describeSessions(previous.slots)}. These sessions may not be available to book again immediately. Please try again later. Your details are saved.`
+          : "Your unpaid reservation has ended. Your details are saved. Please choose your sessions again.",
       );
-      const controller = new AbortController();
-      expiryRefresh.current = controller;
-      const revision = latest.current.revision;
-      const identity = JSON.stringify(identityService.current());
-      void Promise.allSettled(
-        dates.map((date) =>
-          service.availability({
-            date,
-            players: previous.players,
-            serviceId: previous.nativeServiceId,
-            fresh: true,
-            signal: controller.signal,
-          }),
-        ),
-      ).then((results) => {
-        if (
-          controller.signal.aborted ||
-          expiryRefresh.current !== controller ||
-          !mounted.current
-        )
-          return;
-        if (
-          latest.current.revision !== revision ||
-          latest.current.attempt ||
-          JSON.stringify(identityService.current()) !== identity
-        ) {
-          expiryRefresh.current = null;
-          pauseCalendar(false);
-          if (latest.current.revision === revision && !latest.current.attempt)
-            setSelectionNotice(
-              "Your session has changed. Please check availability again.",
-            );
-          return;
-        }
-        const unavailable: typeof previous.slots = [];
-        const unconfirmed: typeof previous.slots = [];
-        const retained = previous.slots.flatMap((slot) => {
-          const result = results[dates.indexOf(slot.date)];
-          if (result.status !== "fulfilled") {
-            unconfirmed.push(slot);
-            return [];
-          }
-          const offer = result.value.find(
-            (candidate) =>
-              candidate.available &&
-              sessionOfferKey(candidate) === sessionOfferKey(slot) &&
-              sessionPrice(candidate) === sessionPrice(slot) &&
-              candidate.rotationAt === slot.rotationAt &&
-              selectionErrors([candidate], Date.now()).length === 0,
-          );
-          if (!offer) unavailable.push(slot);
-          return offer ? [slot] : [];
-        });
-        commit({
-          ...latest.current,
-          draft: { ...previous, accepted: false, slots: [] },
-        });
-        expiryRefresh.current = null;
-        pauseCalendar(false);
-        setSelectionNotice(
-          [
-            "Your unpaid reservation has ended.",
-            unavailable.length
-              ? `Removed unavailable sessions: ${describeSessions(unavailable)}. These sessions may not be available to book again immediately. Please try again later.`
-              : "",
-            unconfirmed.length
-              ? `Unable to confirm availability for: ${describeSessions(unconfirmed)}. These sessions were removed from your cart. Please refresh availability and select them again.`
-              : "",
-            retained.length ? "Available sessions can be selected again." : "",
-            "Your details are saved.",
-          ]
-            .filter(Boolean)
-            .join(" "),
-        );
-      });
     },
     [
       cancel,
-      calendar,
-      calendarMonth,
       commit,
       identityService,
       service,
       setAction,
+      setSuppressedSlots,
+      suppressedSlots,
     ],
   );
+  // A warm display cache cannot release affected studio capacity. Only these
+  // fresh reads may remove suppression, and never while its payment is unknown.
+  const { reconcile } = calendar;
+  const retainedAttempt = value.attempt;
+  useEffect(() => {
+    if (
+      !value.ready ||
+      restorationPending ||
+      !calendarBrowsing ||
+      !suppressedSlots.length
+    )
+      return;
+    const controller = new AbortController();
+    const generation = suppression.current.generation;
+    const identity = JSON.stringify(identityService.current());
+    const mode = value.draft.mode;
+    const dates = [...new Set(suppressedSlots.map((slot) => slot.date))].filter(
+      (date) => {
+        const checked = freshChecks.current
+          .get(service)
+          ?.get(
+            JSON.stringify([
+              date,
+              value.draft.players,
+              value.draft.nativeServiceId,
+              identityService.current(),
+            ]),
+          );
+        return checked === undefined || checked < now;
+      },
+    );
+    if (!dates.length) return;
+    void Promise.allSettled(
+      dates.map((date) =>
+        service.availability({
+          date,
+          players: value.draft.players,
+          serviceId: value.draft.nativeServiceId,
+          fresh: true,
+          signal: controller.signal,
+        }),
+      ),
+    ).then((results) => {
+      if (
+        controller.signal.aborted ||
+        !mounted.current ||
+        suppression.current.generation !== generation ||
+        latest.current.attempt !== retainedAttempt ||
+        active.current ||
+        latest.current.draft.mode !== mode ||
+        latest.current.draft.players !== value.draft.players ||
+        latest.current.draft.nativeServiceId !== value.draft.nativeServiceId ||
+        JSON.stringify(identityService.current()) !== identity
+      )
+        return;
+      for (const [index, result] of results.entries()) {
+        if (result.status === "fulfilled") {
+          const available = result.value.filter((offer) => offer.available);
+          rememberFreshDate(
+            dates[index],
+            value.draft.players,
+            value.draft.nativeServiceId,
+          );
+          reconcile(dates[index], available.length > 0, available);
+        }
+      }
+      const remaining = suppressedSlots.filter((slot) => {
+        if (retainedAttempt?.draft.slots.some((held) => overlaps(slot, held)))
+          return true;
+        const result = results[dates.indexOf(slot.date)];
+        return (
+          !result ||
+          result.status !== "fulfilled" ||
+          !result.value.some(
+            (offer) =>
+              offer.available &&
+              slotKey(offer) === slotKey(slot) &&
+              selectionErrors([offer], Date.now()).length === 0,
+          )
+        );
+      });
+      // Unknown-index conflicts keep candidates in the cart until a successful
+      // read classifies them; a failed read never removes a selection.
+      const unavailable = suppressedSlots.filter((slot) => {
+        const result = results[dates.indexOf(slot.date)];
+        return (
+          result?.status === "fulfilled" &&
+          !result.value.some(
+            (offer) =>
+              offer.available &&
+              sessionOfferKey(offer) === sessionOfferKey(slot) &&
+              sessionPrice(offer) === sessionPrice(slot),
+          )
+        );
+      });
+      const nextSlots = latest.current.draft.slots.filter(
+        (slot) =>
+          !unavailable.some((hidden) => slotKey(hidden) === slotKey(slot)),
+      );
+      if (nextSlots.length !== latest.current.draft.slots.length) {
+        const removed = latest.current.draft.slots.filter(
+          (slot) =>
+            !nextSlots.some((retained) => slotKey(retained) === slotKey(slot)),
+        );
+        setSelectionNotice(
+          `Removed unavailable sessions: ${describeSessions(removed)}.`,
+        );
+        commit(
+          {
+            ...latest.current,
+            draft: {
+              ...latest.current.draft,
+              accepted: false,
+              slots: nextSlots,
+            },
+          },
+          true,
+        );
+      }
+      if (remaining.length !== suppressedSlots.length)
+        setSuppressedSlots(remaining);
+    });
+    return () => controller.abort();
+  }, [
+    service,
+    value.ready,
+    value.draft.players,
+    value.draft.nativeServiceId,
+    value.draft.mode,
+    restorationPending,
+    calendarBrowsing,
+    suppressedSlots,
+    retainedAttempt,
+    commit,
+    rememberFreshDate,
+    identityService,
+    now,
+    reconcile,
+    setSuppressedSlots,
+  ]);
   const run = useCallback(
     async (operation: Action, outcome: Outcome = "success") => {
       if (active.current || !mounted.current || !latest.current.ready)
         return false;
       let current = latest.current;
+      if (
+        ["checkout", "reserve", "review"].includes(operation) &&
+        current.draft.slots.some((slot) =>
+          suppression.current.slots.some((hidden) => overlaps(slot, hidden)),
+        )
+      )
+        return false;
       if (
         operation !== "checkout" &&
         operation !== "reserve" &&
@@ -764,24 +1093,8 @@ export function BookingProvider({
           error instanceof BookingServiceError &&
           error.code === "checkout_window_blocked"
         ) {
-          // Keep the rejected draft visible. Offer an explicit route to the
-          // existing checkout rather than silently replacing these selections.
-          const restored = await service
-            .restore?.(request.controller.signal)
-            .catch(() => null);
-          if (!isCurrent()) return false;
-          commit({ ...latest.current, attempt: null });
-          if (service.mode === "live")
-            saveLiveDraft(latest.current.draft, false);
-          pauseCalendar(false);
-          setAction({
-            status: "failure",
-            operation,
-            error: restored
-              ? "You already have a checkout in progress. These selections were not booked."
-              : error.message,
-            resumeAttemptId: restored?.id,
-          });
+          // Server rejection establishes that this request dispatched no booking.
+          returnRejectedSelection(current.draft);
           return false;
         }
         // A lost write response is not permission to create another booking.
@@ -846,12 +1159,31 @@ export function BookingProvider({
             if (!isCurrent()) return false;
             restartReleasedReservation(expiredId);
           } catch {
-            if (isCurrent())
-              setAction({
-                status: "failure",
-                operation,
-                error: "Still checking your payment. Don’t pay again.",
-              });
+            if (isCurrent() && latest.current.attempt) {
+              const retained = latest.current.attempt;
+              setSuppressedSlots([
+                ...suppressedSlots.filter(
+                  (slot) =>
+                    !retained.draft.slots.some((held) => overlaps(slot, held)),
+                ),
+                ...retained.draft.slots,
+              ]);
+              commit(
+                {
+                  ...latest.current,
+                  attempt: { ...retained, status: "checking" },
+                  draft: {
+                    ...latest.current.draft,
+                    accepted: false,
+                    slots: [],
+                  },
+                },
+                true,
+              );
+              if (service.mode === "live") saveCalendarRecovery(retained.id);
+              pauseCalendar(false);
+              setAction({ status: "idle", returnToCalendar: true });
+            }
           }
           return false;
         }
@@ -862,96 +1194,11 @@ export function BookingProvider({
           (known.code === "selection_unavailable" ||
             known.code === "selection_changed");
         if (selectionRejected) {
-          const rejected =
-            current.draft.slots[known.rejectedSessionIndex ?? -1];
-          let rejectedSlots = rejected ? [rejected] : [];
-          if (!rejected) {
-            // A conflict without an indexed session is not evidence that every
-            // selected slot is unavailable. Re-read each date before removing it.
-            const dates = [
-              ...new Set(current.draft.slots.map((slot) => slot.date)),
-            ];
-            const results = await Promise.allSettled(
-              dates.map((date) =>
-                service.availability({
-                  date,
-                  players: current.draft.players,
-                  serviceId: current.draft.nativeServiceId,
-                  fresh: true,
-                  signal: request.controller.signal,
-                }),
-              ),
-            );
-            if (!isCurrent()) return false;
-            rejectedSlots = current.draft.slots.filter((slot) => {
-              const result = results[dates.indexOf(slot.date)];
-              return (
-                result.status === "fulfilled" &&
-                !result.value.some(
-                  (offer) =>
-                    offer.available &&
-                    sessionOfferKey(offer) === sessionOfferKey(slot) &&
-                    sessionPrice(offer) === sessionPrice(slot),
-                )
-              );
-            });
-            results.forEach((result, index) => {
-              if (result.status === "fulfilled") {
-                const available = result.value.filter((slot) => slot.available);
-                calendar.reconcile(
-                  dates[index],
-                  available.length > 0,
-                  available,
-                );
-              } else calendar.retry([dates[index].slice(0, 7)]);
-            });
-          }
-          const rejectedKeys = new Set(rejectedSlots.map(slotKey));
-          for (const date of new Set(
-            (rejected ? rejectedSlots : []).map((slot) => slot.date),
-          )) {
-            const cached = calendar.cachedDates[date];
-            if (!cached) {
-              calendar.retry([date.slice(0, 7)]);
-              continue;
-            }
-            const remaining = cached.filter(
-              (slot) =>
-                !rejectedSlots.some(
-                  (rejected) =>
-                    rejected.date === slot.date &&
-                    Math.abs(
-                      Date.parse(`${slot.date}T${slot.start}:00+08:00`) -
-                        Date.parse(
-                          `${rejected.date}T${rejected.start}:00+08:00`,
-                        ),
-                    ) <
-                      START_INTERVAL_MINUTES * 60000,
-                ),
-            );
-            calendar.reconcile(date, remaining.length > 0, remaining);
-          }
-          commit({
-            ...current,
-            attempt: null,
-            draft: {
-              ...current.draft,
-              accepted: false,
-              slots: current.draft.slots.filter(
-                (slot) => !rejectedKeys.has(slotKey(slot)),
-              ),
-            },
-          });
-          // This tab rejected a selection. A shared cookie may still point to
-          // another tab's valid checkout, even when this cart is now empty.
-          if (service.mode === "live")
-            saveLiveDraft(latest.current.draft, false);
-          pauseCalendar(false);
-          setSelectionNotice(
-            rejectedSlots.length
-              ? `Removed unavailable sessions: ${describeSessions(rejectedSlots)}.`
-              : "Unable to confirm availability. Please try again. Your selections are saved.",
+          returnRejectedSelection(
+            current.draft,
+            current.draft.slots[known.rejectedSessionIndex ?? -1],
           );
+          return false;
         } else if (known.code === "conflict") invalidateAvailability();
         setAction({
           status:
@@ -968,12 +1215,7 @@ export function BookingProvider({
       } finally {
         if (active.current === request && !checkoutNavigationStarted)
           active.current = null;
-        if (
-          mounted.current &&
-          !latest.current.attempt &&
-          !expiryRefresh.current
-        )
-          pauseCalendar(false);
+        if (mounted.current && !latest.current.attempt) pauseCalendar(false);
       }
     },
     [
@@ -981,9 +1223,11 @@ export function BookingProvider({
       commit,
       setAction,
       identityService,
-      calendar,
       finishExit,
       restartReleasedReservation,
+      returnRejectedSelection,
+      setSuppressedSlots,
+      suppressedSlots,
     ],
   );
   useEffect(() => {
@@ -1012,6 +1256,7 @@ export function BookingProvider({
         showDate,
         calendar,
         selectionNotice,
+        suppressedSlots,
         showMonth,
         setCalendarBrowsing,
         rebookingError,
@@ -1019,6 +1264,7 @@ export function BookingProvider({
           if (exitWork.current) void finishExit(exitWork.current.id);
         },
         clearReviewConsent,
+        rejectRecoveredSelection,
         resumePaymentStatus(id) {
           if (latest.current.attempt?.id === id) setAction({ status: "idle" });
         },
@@ -1033,6 +1279,15 @@ export function BookingProvider({
           )
             return false;
           if (!action.returnToCalendar) {
+            setSuppressedSlots([
+              ...suppressedSlots.filter(
+                (slot) =>
+                  !current.attempt!.draft.slots.some((held) =>
+                    overlaps(slot, held),
+                  ),
+              ),
+              ...current.attempt.draft.slots,
+            ]);
             commit(
               {
                 ...current,
@@ -1040,6 +1295,7 @@ export function BookingProvider({
               },
               true,
             );
+            if (service.mode === "live") saveCalendarRecovery(id);
             setAction({ status: "idle", returnToCalendar: true });
           }
           return true;
@@ -1090,6 +1346,22 @@ export function BookingProvider({
         /** Apply draft changes while preserving the booking state constraints. */
         update(change) {
           const current = latest.current;
+          if (action.returnToCalendar && current.attempt && !active.current) {
+            if (
+              !change.slots ||
+              Object.keys(change).some((key) => key !== "slots")
+            )
+              return;
+            // Editable new selections are separate from the retained recovery attempt.
+            commit(
+              {
+                ...current,
+                draft: { ...current.draft, ...change, accepted: false },
+              },
+              true,
+            );
+            return;
+          }
           if (current.attempt?.held || current.attempt?.verifying) {
             if (
               (active.current &&

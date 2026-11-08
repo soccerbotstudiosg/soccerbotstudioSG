@@ -71,7 +71,7 @@
   --text-caption: 0.75rem;
   --text-amount: 1.5rem;
   --text-payment-amount: 2rem;
-  --text-payment-status: 1.75rem;
+  --text-payment-status: 1.4875rem;
   --leading-heading: 1.25;
   --leading-body: 1.6;
   --leading-control: 1.4;
@@ -2378,12 +2378,12 @@
     font-weight: var(--weight-heading);
   }
   @media (min-width: 701px) and (max-height: 850px) {
-    .summary-cart:has(.basket-list > li:nth-child(5)) .basket-list li {
+    .summary-cart-full .basket-list li {
       gap: 0 8px;
       padding: 8px;
       margin-bottom: 6px;
     }
-    .summary-cart:has(.basket-list > li:nth-child(5)) .basket-list li > div {
+    .summary-cart-full .basket-list li > div {
       gap: 0;
     }
   }
@@ -3362,7 +3362,6 @@
   .calendar-return-cue {
     position: fixed;
     left: 50%;
-    bottom: calc(72px + env(safe-area-inset-bottom));
     translate: -50% 0;
     z-index: 34;
   }
@@ -3868,13 +3867,8 @@
     white-space: nowrap;
   }
   .confirmation-paid-status {
-    padding: 10px 18px;
+    padding: 8.5px 15.3px;
     font-size: var(--text-payment-status);
-  }
-  .payment-check-feedback {
-    display: flex;
-    align-items: center;
-    gap: 6px;
   }
   .confirmation-total strong {
     display: inline-flex;

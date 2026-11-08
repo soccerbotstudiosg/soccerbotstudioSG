@@ -132,7 +132,7 @@ async function fixture(
     } else if (delivery && url.pathname === "/api/access") {
       status = method === "DELETE" ? 200 : 201;
       if (method === "DELETE") verified = false;
-      result = {};
+      result = { access: method === "DELETE" ? "revoked" : "guest" };
     } else if (
       delivery &&
       url.pathname === "/api/identity/challenges" &&
@@ -177,7 +177,7 @@ test("live guest denial stays on account without Preview fallback", async ({
   const evidence = await fixture(page);
   await page.getByRole("button", { name: "Continue as Guest" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Email verification unavailable. Please continue as a guest.",
+    "We couldn’t start your booking. Please try again.",
   );
   await expect(page).toHaveURL(/\/book\/account\/$/);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
@@ -1137,8 +1137,23 @@ test("real payment recovery confirms the browser return from verified provider s
     );
     const paidBadge = page.locator(".review-head .confirmation-paid-status");
     await expect(paidBadge).toHaveText("Paid");
-    await expect(paidBadge).toHaveCSS("font-size", "28px");
-    await expect(paidBadge).toHaveCSS("padding", "10px 18px");
+    // WebKit serializes fractional CSS pixels as 23.799999px/15.299999px.
+    // Check the requested dimensions numerically, retaining subpixel precision.
+    const paidMetrics = await paidBadge.evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        fontSize: parseFloat(style.fontSize),
+        paddingTop: parseFloat(style.paddingTop),
+        paddingRight: parseFloat(style.paddingRight),
+        paddingBottom: parseFloat(style.paddingBottom),
+        paddingLeft: parseFloat(style.paddingLeft),
+      };
+    });
+    expect(paidMetrics.fontSize).toBeCloseTo(23.8, 5);
+    expect(paidMetrics.paddingTop).toBeCloseTo(8.5, 5);
+    expect(paidMetrics.paddingRight).toBeCloseTo(15.3, 5);
+    expect(paidMetrics.paddingBottom).toBeCloseTo(8.5, 5);
+    expect(paidMetrics.paddingLeft).toBeCloseTo(15.3, 5);
     await expect(page.locator(".confirmation-paid-amount .pill")).toHaveCount(
       0,
     );
@@ -1743,7 +1758,7 @@ async function uncertainHolding(
       fault === "readback"
         ? page.getByRole("status", { name: "Checking payment…", exact: true })
         : page.getByText(
-            "We couldn’t complete your booking. Please try again shortly.",
+            "We’re checking whether your booking was created. Please don’t book or pay again.",
             { exact: true },
           ),
     ).toBeVisible();
@@ -2342,7 +2357,7 @@ async function failedBatch(page: Page, unknown: boolean) {
     await page.reload();
     await expect(
       page.getByText(
-        "We couldn’t complete your booking. Please try again shortly.",
+        "We’re checking whether your booking was created. Please don’t book or pay again.",
         { exact: true },
       ),
     ).toBeVisible();
@@ -2407,7 +2422,7 @@ test("real API exhausted browser checking window retains the original deadline a
       .click();
     await expect(
       page.getByText(
-        "We couldn’t complete your booking. Please try again shortly.",
+        "We’re checking whether your booking was created. Please don’t book or pay again.",
         { exact: true },
       ),
     ).toBeVisible();
@@ -2831,6 +2846,15 @@ test("real API expired unpaid Review retains its hold through the grace window w
       state: "associated",
       paymentAvailable: false,
     });
+    // This fixture resumes the exact attempt previously created by this tab.
+    // A shared cookie alone must never attach an unrelated tab's checkout.
+    await page.addInitScript((id) => {
+      if (!sessionStorage.getItem("soccerbot-live-draft"))
+        sessionStorage.setItem(
+          "soccerbot-live-draft",
+          JSON.stringify({ resumeCheckout: true, checkoutAttemptId: id }),
+        );
+    }, attemptId);
     await page.goto("/book/review/");
     await page
       .getByRole("dialog", {
@@ -2853,9 +2877,20 @@ test("real API expired unpaid Review retains its hold through the grace window w
       })
       .click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "Still checking your payment",
+      "Your payment window has ended. Affected sessions:",
     );
-    await expect(page).toHaveURL(/\/book\/review\/$/);
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    await expect(
+      page.locator(".booking-flow-overlay, .payment-check-feedback"),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Check status", exact: true }),
+    ).toHaveCount(0);
+    const expiredDraft = await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem("soccerbot-live-draft") || "null"),
+    );
+    expect(expiredDraft.slots).toEqual([]);
+    expect(expiredDraft.checkoutAttemptId).toBe(attemptId);
     expect(
       await mechanism.db
         .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
@@ -2966,7 +3001,7 @@ test("real API failed identity warming stays on Review without booking or paymen
   }
 });
 
-test("real API 409 preparation rejection stays on Review without payment verification", async ({
+test("real API 409 preparation rejection returns to calendar without payment verification or cross-tab restoration", async ({
   page,
 }) => {
   const mechanism = await createBookingMechanism({ displayWarming: true });
@@ -2983,15 +3018,23 @@ test("real API 409 preparation rejection stays on Review without payment verific
     expect(response.status()).toBe(409);
     expect(transport.json(response).error).toBe("checkout_already_active");
     await expect(
-      page.getByRole("heading", { name: "Review Booking", exact: true }),
+      page.getByRole("heading", {
+        name: "Select dates and times",
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "You already have a checkout in progress. These selections were not booked.",
+      "These selections were not booked. Please check your sessions again. Your details are saved.",
     );
     await expect(
       page.getByRole("link", { name: "View existing checkout", exact: true }),
-    ).toHaveAttribute("href", `/confirmation/?attempt=${prepared.attemptId}`);
-    await expect(page).toHaveURL(/\/book\/review\/?$/);
+    ).toHaveCount(0);
+    await expect(page).toHaveURL(/\/book\/time\/?$/);
+    await page.reload();
+    await expect(page).toHaveURL(/\/book\/time\/?$/);
+    await expect(
+      page.getByRole("link", { name: "Continue payment", exact: true }),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("status", { name: "Checking payment…", exact: true }),
     ).toHaveCount(0);

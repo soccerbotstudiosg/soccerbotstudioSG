@@ -279,7 +279,7 @@ it("identity failures distinguish throttling expired access bad codes and securi
   const signal = new AbortController().signal;
   for (const [status, message] of [
     [429, "Wait a few minutes before requesting another code"],
-    [401, "Return to booking options and sign in again"],
+    [401, "Return to booking options and verify your email again"],
     [400, "Check your code or request a new one"],
     [503, "Email verification unavailable. Please continue as a guest."],
   ] as const) {
@@ -302,6 +302,38 @@ it("identity failures distinguish throttling expired access bad codes and securi
       "synthetic-token",
     ),
   ).rejects.toThrow("Complete the security check");
+  request.mockResolvedValueOnce(Response.json({}, { status: 401 }));
+  await expect(
+    createLiveIdentityService().signOut(signal, true),
+  ).rejects.toThrow(
+    "Verify your email again, then choose Sign out all devices.",
+  );
+  for (const status of [400, 401, 403, 429, 503]) {
+    request.mockResolvedValueOnce(
+      Response.json({ private: "must not appear" }, { status }),
+    );
+    await expect(createLiveIdentityService().guest(signal)).rejects.toThrow(
+      status === 429
+        ? "Too many booking requests. Please wait a few minutes and try again."
+        : "We couldn’t start your booking. Please try again.",
+    );
+    expect(request.mock.lastCall?.[0]).toBe("/api/access");
+  }
+  for (const response of [
+    new Response(null),
+    new Response("x".repeat(4097)),
+    new Response("not-json"),
+    Response.json({ access: "revoked" }),
+  ]) {
+    request.mockResolvedValueOnce(response);
+    await expect(createLiveIdentityService().guest(signal)).rejects.toThrow(
+      "We couldn’t start your booking. Please try again.",
+    );
+  }
+  request.mockRejectedValueOnce(new TypeError("private transport detail"));
+  await expect(createLiveIdentityService().guest(signal)).rejects.toThrow(
+    "We couldn’t start your booking. Please try again.",
+  );
   request.mockResolvedValueOnce(Response.json({}, { status: 503 }));
   await expect(createLiveIdentityService().signOut(signal)).rejects.toThrow(
     "Could not sign out this browser",

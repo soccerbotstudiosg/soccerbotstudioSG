@@ -173,11 +173,14 @@ export async function recoverHitpay(
       throw new ApiError(409, "hitpay_payment_identity_changed");
     const paidAtMs = row.paid_ms ?? Date.now();
     const evidence = await env.STATE.prepare(
-      "UPDATE hitpay_payments SET request_id=COALESCE(request_id,?),checkout_url=COALESCE(checkout_url,?),paid_ms=COALESCE(paid_ms,?),payment_id=COALESCE(payment_id,?) WHERE attempt_id=? AND state='claimed' AND generation=? AND ready_ms>? AND (payment_id IS NULL OR payment_id=?)",
+      "UPDATE hitpay_payments SET request_id=COALESCE(request_id,?),checkout_url=COALESCE(checkout_url,?),checkout_expires_ms=CASE WHEN ? IS NULL THEN checkout_expires_ms ELSE MIN(COALESCE(checkout_expires_ms,?),?) END,paid_ms=COALESCE(paid_ms,?),payment_id=COALESCE(payment_id,?) WHERE attempt_id=? AND state='claimed' AND generation=? AND ready_ms>? AND (payment_id IS NULL OR payment_id=?)",
     )
       .bind(
         verified.id,
         verified.url,
+        verified.expiresAtMs,
+        verified.expiresAtMs,
+        verified.expiresAtMs,
         verified.paymentId ? paidAtMs : null,
         verified.paymentId ?? null,
         id,

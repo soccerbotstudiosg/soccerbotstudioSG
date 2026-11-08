@@ -655,7 +655,10 @@ test("declined and pending payments remain controlled through retry and refresh"
   await expect(
     page.getByRole("heading", { name: "Payment pending", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Check payment status" }).click();
+  await expect(
+    page.getByRole("button", { name: /check (?:payment )?status/i }),
+  ).toHaveCount(0);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(
     page.getByRole("heading", { name: "Processing payment", exact: true }),
   ).toBeVisible();
@@ -2200,18 +2203,22 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   const date = addDays(DEMO_TODAY, 1);
   const mobile = page.viewportSize()!.width <= 700;
-  if (mobile) await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page
     .getByRole("button", { name: dateLabel(date), exact: true })
     .click();
-  if (mobile) {
+  {
     await expect
       .poll(async () => {
         const heading = await page.locator(".time-heading").boundingBox();
+        const header = await page.locator(".site-header").boundingBox();
         const navigation = await page
           .locator(".booking-navigation")
           .boundingBox();
-        return Math.abs(heading!.y - navigation!.y - navigation!.height);
+        const stickyBottom = mobile
+          ? navigation!.y + navigation!.height
+          : header!.y + header!.height;
+        return Math.abs(heading!.y - stickyBottom - 60);
       })
       .toBeLessThanOrEqual(1);
     const returnCue = page.getByRole("button", {
@@ -2221,6 +2228,12 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(returnCue).toBeVisible();
     await expect(returnCue).toHaveCSS("position", "fixed");
     const cueBox = await returnCue.boundingBox();
+    const stickyBar = await page
+      .locator(mobile ? ".booking-navigation" : ".site-header")
+      .boundingBox();
+    expect(
+      Math.abs(cueBox!.y - stickyBar!.y - stickyBar!.height - 8),
+    ).toBeLessThanOrEqual(1);
     expect(
       Math.abs(cueBox!.x + cueBox!.width / 2 - page.viewportSize()!.width / 2),
     ).toBeLessThanOrEqual(1);
@@ -2385,7 +2398,19 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
         .selectOption({ index: 1 });
     }
     const cart = page.locator(".summary-cart");
-    await expect(cart.locator(".basket-list > li")).toHaveCount(5);
+    const cartRows = cart.locator(".basket-list > li");
+    await expect(cartRows).toHaveCount(5);
+    // Adding the fifth session must compact existing rows as well as the new one.
+    for (const row of await cartRows.all()) {
+      await expect(row).toHaveCSS("padding", "8px");
+      await expect(row).toHaveCSS("margin-bottom", "6px");
+      await expect(row).toHaveCSS("row-gap", "0px");
+      await expect(row.locator(":scope > div").first()).toHaveCSS("gap", "0px");
+      await expect(row.locator(".basket-remove")).toHaveCSS(
+        "min-height",
+        "44px",
+      );
+    }
     await expect(cart.locator(".summary-total")).toHaveCount(0);
     const layout = await cart.evaluate((element) => {
       const card = element.getBoundingClientRect();
@@ -2416,5 +2441,12 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       "overflow-y",
       "visible",
     );
+    await cart.getByRole("button", { name: `Remove ${date} at 17:00` }).click();
+    await expect(cartRows).toHaveCount(4);
+    for (const row of await cartRows.all()) {
+      await expect(row).toHaveCSS("padding", "12px");
+      await expect(row).toHaveCSS("margin-bottom", "12px");
+      await expect(row).toHaveCSS("row-gap", "5px");
+    }
   }
 });

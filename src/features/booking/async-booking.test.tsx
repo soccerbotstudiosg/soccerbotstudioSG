@@ -18,7 +18,7 @@ import {
 } from "@/services/demo/identity";
 import { liveBookingService } from "@/services/booking";
 import type { AvailableSlot, BookingService } from "@/services/contracts";
-import { loadBooking, saveBooking } from "@/services/storage";
+import { loadBooking, saveBooking, saveLiveDraft } from "@/services/storage";
 import { BookingProvider, useBooking } from "./provider";
 import { TimeStep } from "./time-step";
 import { Summary } from "./summary";
@@ -320,6 +320,9 @@ test("reload resumes an interrupted completed exit without restoring that confir
     ...restored,
     id: "00000000-0000-4000-8000-000000000002",
   });
+  // This newer attempt was created in the same tab. The cookie/identical
+  // contact alone must not authorize automatic navigation to another checkout.
+  saveLiveDraft(nativeDraft, true, "00000000-0000-4000-8000-000000000002");
   const restartFailure = vi.fn();
   render(
     <BookingProvider bookingService={service} identityService={identity}>
@@ -815,9 +818,10 @@ test("payment resolution failure ends loading and explicit status recovery keeps
   expect(loadBooking().attempt?.id).toBe(checking.id);
   expect(resolve).toHaveBeenCalledTimes(1);
   await act(async () => {
-    fireEvent.click(
-      screen.getByRole("button", { name: "Check payment status" }),
-    );
+    expect(
+      screen.queryByRole("button", { name: /check (?:payment )?status/i }),
+    ).toBeNull();
+    window.dispatchEvent(new Event("focus"));
   });
   expect(screen.getByTestId("status")).toHaveTextContent("paid");
   expect(loadBooking().attempt?.id).toBe(checking.id);
@@ -946,12 +950,13 @@ test("interrupted status resolution remains recoverable after leaving and return
     </BookingProvider>,
   );
   expect(
-    screen.getByRole("button", { name: "Check payment status" }),
-  ).toBeEnabled();
+    screen.queryByRole("button", { name: /check (?:payment )?status/i }),
+  ).toBeNull();
   await act(async () => {
-    fireEvent.click(
-      screen.getByRole("button", { name: "Check payment status" }),
-    );
+    expect(
+      screen.queryByRole("button", { name: /check (?:payment )?status/i }),
+    ).toBeNull();
+    window.dispatchEvent(new Event("focus"));
   });
   const paid = loadBooking().attempt;
   await act(async () => {

@@ -3,6 +3,7 @@ import {
   checkoutNow,
   protectedCheckoutService,
   confirmationResponseTime,
+  readConfirmation,
 } from "./confirmation";
 const id = "00000000-0000-4000-8000-000000000001";
 const context = {
@@ -67,6 +68,53 @@ it("keeps unsupported live checkout unavailable without synthetic fallback", asy
   );
   vi.stubGlobal("fetch", fetch);
   expect((await read("live")).checkout.state).toBe("unavailable");
+  const rejected = {
+    ...context,
+    mode: "live",
+    checkout: { state: "unavailable" },
+    selectionRejection: {
+      state: "selection_unavailable",
+      rejectedSessionIndex: 0,
+    },
+  };
+  fetch.mockResolvedValue(Response.json(rejected));
+  expect((await read("live")).selectionRejection).toEqual(
+    rejected.selectionRejection,
+  );
+  for (const change of [
+    { payment: { status: "recorded", paidAtMs: 1 } },
+    { bookingIssue: "incomplete" },
+    {
+      selectionRejection: {
+        state: "selection_unavailable",
+        rejectedSessionIndex: 1,
+      },
+    },
+    { selectionRejection: { state: "recovery_required" } },
+  ]) {
+    fetch.mockResolvedValue(Response.json({ ...rejected, ...change }));
+    await expect(read("live")).rejects.toThrow();
+  }
+  fetch.mockResolvedValue(
+    Response.json({
+      status: "invalid",
+      reason: "checkout_selection_rejected",
+      selectionRejection: rejected.selectionRejection,
+    }),
+  );
+  expect(
+    await readConfirmation(id, new AbortController().signal),
+  ).toMatchObject({ selectionRejection: rejected.selectionRejection });
+  fetch.mockResolvedValue(
+    Response.json({
+      status: "invalid",
+      reason: "invoice_expired",
+      selectionRejection: rejected.selectionRejection,
+    }),
+  );
+  await expect(
+    readConfirmation(id, new AbortController().signal),
+  ).rejects.toThrow();
   fetch.mockResolvedValue(Response.json({ ...context, mode: "live" }));
   await expect(read("live")).rejects.toThrow();
   fetch.mockResolvedValue(Response.json(context));

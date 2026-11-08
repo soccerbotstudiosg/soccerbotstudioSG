@@ -21,6 +21,7 @@ export type HitpayRow = {
   request_id: string | null;
   checkout_url: string | null;
   expires_ms: number;
+  checkout_expires_ms?: number | null;
   created_ms: number;
   recovery_end_ms: number;
   state: string;
@@ -192,8 +193,14 @@ export async function prepareHitpay(
   )
     throw new ApiError(409, "hitpay_creation_state_unverified");
   const save = env.STATE.prepare(
-    "UPDATE hitpay_payments SET request_id=?,checkout_url=?,reason='payment_pending',ready_ms=? WHERE attempt_id=? AND request_id IS NULL AND generation=0",
-  ).bind(verified.id, verified.url, Date.now() + 90000, scope.attemptId);
+    "UPDATE hitpay_payments SET request_id=?,checkout_url=?,checkout_expires_ms=?,reason='payment_pending',ready_ms=? WHERE attempt_id=? AND request_id IS NULL AND generation=0",
+  ).bind(
+    verified.id,
+    verified.url,
+    verified.expiresAtMs,
+    Date.now() + 90000,
+    scope.attemptId,
+  );
   const saved = consolidated?.finish
     ? (await consolidated.finish(save), undefined)
     : await save.run();
@@ -260,7 +267,14 @@ export async function storedHitpayCheckout(
     !row.checkout_url ||
     row.paid_ms !== null ||
     row.expires_ms <= now ||
+    !row.checkout_expires_ms ||
+    row.checkout_expires_ms <= now ||
     row.state === "manual_review" ||
+    [
+      "hitpay_payment_expired",
+      "hitpay_payment_failed",
+      "hitpay_payment_canceled",
+    ].includes(row.reason) ||
     hitpaySetting(env, "HITPAY_CHECKOUT") !== "enabled"
   )
     return { state: "unavailable" as const };
@@ -271,7 +285,7 @@ export async function storedHitpayCheckout(
   return {
     state: "available" as const,
     url: row.checkout_url,
-    expiresAtMs: row.expires_ms,
+    expiresAtMs: Math.min(row.expires_ms, row.checkout_expires_ms),
   };
 }
 /** Prepare atomic statements that claim a hosted payment effect. */

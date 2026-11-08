@@ -1,8 +1,8 @@
 # Database schema
 
-Source inventory:34 application D1 tables from migrations0001–0039 and12 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
+Source inventory:34 application D1 tables from migrations0001–0040 and12 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
-- Migration0039 adds reservation source/expiry records; apply it before the candidate Worker.
+- Migration0039 adds reservation source/expiry records. Migration0040 adds nullable `hitpay_payments.checkout_expires_ms`; apply it before the candidate Worker. Existing rows remain unknown until authenticated provider recovery supplies the hosted-link deadline; no financial window is backfilled or extended.
 - Deployment and table-content verification remain separate from this source inventory; no production activation is claimed.
 
 The schema source is [D1 migrations](../../migrations), [coordinator initialization](../../worker/coordinator.ts), [token-cache initialization](../../worker/provider-token-cache.ts) and [display-cache initialization](../../worker/display-snapshots.ts). Retention, expiry and deletion policy belongs to [Data lifecycle](../data-lifecycle.md); authorization and payment invariants belong to [Business rules](../business-rules.md). This document owns table structure and relationships only.
@@ -112,6 +112,7 @@ erDiagram
     TEXT attempt_id PK, FK
     TEXT reference UK
     TEXT request_id UK
+    INTEGER checkout_expires_ms
   }
   hitpay_receipts {
     TEXT digest PK
