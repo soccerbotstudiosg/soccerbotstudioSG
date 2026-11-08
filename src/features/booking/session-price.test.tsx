@@ -97,7 +97,7 @@ test("live session selection uses client prices while demo retains its own rates
     screen.queryByRole("button", { name: /Choose Kickoff Special/ }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("link", { name: "See available times" }),
+    screen.queryByRole("link", { name: "Choose Date & Time" }),
   ).not.toBeInTheDocument();
   fireEvent.click(
     screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
@@ -114,7 +114,7 @@ test("live session selection uses client prices while demo retains its own rates
   );
   expect(screen.getByRole("button", { name: "Add one player" })).toBeVisible();
   expect(
-    screen.getByRole("link", { name: "See available times" }),
+    screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
   const session = screen.getByRole("button", {
     name: "Choose Kickoff Special",
@@ -125,7 +125,7 @@ test("live session selection uses client prices while demo retains its own rates
     screen.queryByRole("button", { name: "Add one player" }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("link", { name: "See available times" }),
+    screen.queryByRole("link", { name: "Choose Date & Time" }),
   ).not.toBeInTheDocument();
   fireEvent.click(session);
   const outlet = screen.getByRole("button", {
@@ -137,7 +137,7 @@ test("live session selection uses client prices while demo retains its own rates
     screen.queryByRole("button", { name: "Choose Kickoff Special" }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("link", { name: "See available times" }),
+    screen.queryByRole("link", { name: "Choose Date & Time" }),
   ).not.toBeInTheDocument();
   fireEvent.click(outlet);
   expect(

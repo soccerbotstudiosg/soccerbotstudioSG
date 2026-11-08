@@ -845,6 +845,14 @@ On mobile, tapping a date reveals that date’s session heading after its offers
 
 ### Confirmation and calendar return presentation — 8 November 2026
 
-After an explicit mobile date tap scrolls to the loaded sessions, a pulsing double-chevron up button returns to the calendar beneath the sticky navigation. It appears only while that calendar is above the viewport; reduced motion keeps it static. Initial load and background refresh do not trigger scrolling.
+A fixed, horizontally centred double-chevron up button sits above the mobile primary action whenever the calendar is above the sticky navigation, including after manual scrolling. It shares the studio cue’s shape, colours, size and pulse, and returns to the calendar below the sticky bars. Reduced motion keeps it static. Initial load and background refresh do not trigger scrolling.
 
 Protected confirmation context and post-payment verification use the full checkout loading presentation, then directly show Booking Confirmed when verified. No small pending spinner or intermediate booking summary appears in that path. Explicit unpaid payment continuation retains its usable summary and action. This presentation does not change payment proof, checking deadlines or failure recovery. The verified Paid badge sits at the top right of Order Summary with twice its previous text size and padding on mobile and desktop; preview summaries do not claim payment.
+
+### Explicit next-step actions and field validation — 8 November 2026
+
+The main booking actions read Continue as Guest, Choose Date & Time, Enter Booking Details, Review Booking and Proceed to Payment. Calendar and review actions retain their displayed amount and chevron. Existing email-verification entry and payment-resume actions retain their distinct meanings.
+
+Contact inputs show their existing validation feedback on blur and are revalidated on submission: trimmed full name2–80 characters, email format and120-character limit, phone8–15 digits with supported separators, an allowed preferred contact method, and optional academy/school/organisation up to120 characters. Verified-email matching remains required. Email-verification entry applies the shared format check before requesting a code; invalid values show an accessible message and make no request. Format validation does not establish mailbox ownership or deliverability.
+
+Verified confirmation now includes “Your booking confirmation will be sent to your email.” directly below Booking Confirmed; previews and pending states do not promise email delivery. When the authenticated status confirms the current attempt and its protected booking details are already loaded, those details render immediately even if the separate receipt request is still pending. Invoice enrichment replaces them without replaying the confirmation heading. Pending payment or browser-return hints alone never enable this path.

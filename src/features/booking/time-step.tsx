@@ -71,11 +71,10 @@ export function TimeStep() {
   const mobile = useMobileBooking();
   const headingRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLElement>(null);
-  const [dateTapped, setDateTapped] = useState(false);
   const [calendarAbove, setCalendarAbove] = useState(false);
   const pendingScroll = useRef<string | null>(null);
   useEffect(() => {
-    if (!mobile || !dateTapped) return;
+    if (!mobile) return;
     const updateCue = () => {
       const bottom = calendarRef.current?.getBoundingClientRect().bottom;
       setCalendarAbove(bottom !== undefined && bottom <= stickyBookingHeight());
@@ -87,7 +86,7 @@ export function TimeStep() {
       window.removeEventListener("scroll", updateCue);
       window.removeEventListener("resize", updateCue);
     };
-  }, [mobile, dateTapped]);
+  }, [mobile]);
   const {
     selectionNotice,
     attempt,
@@ -543,7 +542,6 @@ export function TimeStep() {
                       onClick={() => {
                         if (calendarView === "week") setWeekStart(rangeStart);
                         pendingScroll.current = mobile ? value : null;
-                        setDateTapped(mobile);
                         if (
                           mobile &&
                           value === date &&
@@ -588,13 +586,13 @@ export function TimeStep() {
         <>
           <div className="time-heading" ref={headingRef}>
             <h2>{dateLabel(date)}</h2>
-            {mobile && dateTapped && calendarAbove && (
+            {mobile && calendarAbove && (
               <button
                 type="button"
                 className="calendar-return-cue"
                 aria-label="Back to calendar"
                 onClick={() => {
-                  setDateTapped(false);
+                  setCalendarAbove(false);
                   revealBookingSection(calendarRef.current);
                 }}
               >

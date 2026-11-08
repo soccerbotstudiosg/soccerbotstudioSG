@@ -245,7 +245,7 @@ test("the Payment preview entry and temporary checking failure retain customer s
     })
     .getByRole("button", { name: "Close dialog", exact: true })
     .click();
-  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page.getByRole("button", { name: "Continue as Guest" }).click();
   await page
     .getByRole("button", {
       name: "Select Apex @ Henderson outlet",
@@ -258,7 +258,7 @@ test("the Payment preview entry and temporary checking failure retain customer s
       exact: true,
     })
     .click();
-  await page.getByRole("link", { name: "See available times" }).click();
+  await page.getByRole("link", { name: "Choose Date & Time" }).click();
   await page
     .getByRole("button", {
       name: dateLabel("2026-10-06"),
@@ -270,7 +270,10 @@ test("the Payment preview entry and temporary checking failure retain customer s
     .getByRole("combobox", { name: /Trainer for .* at 12:00/ })
     .selectOption({ index: 1 });
   await page
-    .getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/, exact: true })
+    .getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      exact: true,
+    })
     .click();
   await page
     .getByLabel("Full name", { exact: false })
@@ -282,11 +285,11 @@ test("the Payment preview entry and temporary checking failure retain customer s
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
   await page
-    .getByRole("button", { name: /^Review booking \$[\d,.]+$/ })
+    .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
     .click();
   await page.getByRole("checkbox", { name: /I’ve reviewed/ }).check();
   await page
-    .getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ })
+    .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
     .click();
   const before = await page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!),

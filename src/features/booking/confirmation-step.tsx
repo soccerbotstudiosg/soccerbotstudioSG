@@ -137,6 +137,9 @@ export function BookingConfirmation({
               <Icon name="check" />
             </span>
             <h1>Booking Confirmed</h1>
+            {!preview && (
+              <p>Your booking confirmation will be sent to your email.</p>
+            )}
           </>
         )}
         {!pending && verifiedAtMs !== undefined && (

@@ -112,7 +112,7 @@ it("restored editable Review avoids background catalogue and calendar reads", as
   expect(publicCalendar).not.toHaveBeenCalled();
   expect(fetch).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Mount Review" }));
-  expect(screen.getByRole("heading", { name: "Review booking" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Review Booking" })).toBeVisible();
   expect(screen.getByRole("checkbox")).not.toBeChecked();
   expect(restore).toHaveBeenCalledTimes(1);
   expect(publicCalendar).not.toHaveBeenCalled();
@@ -183,7 +183,7 @@ async function directCase(scenario: string) {
   fireEvent.click(screen.getByText("Seed"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     ),
   );
   expect(screen.getByTestId("retained")).toHaveTextContent(id);
@@ -333,7 +333,7 @@ it("explicit reservation reuses its hold for payment without preparing or checki
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     ),
   );
   expect(checkout).toHaveBeenCalledTimes(1);
@@ -465,7 +465,7 @@ it("HitPay HTTP conflict preserves the hold and shows payment failure without se
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     ),
   );
   expect(screen.getByRole("alert")).toHaveTextContent(
@@ -559,10 +559,10 @@ it("Review performs no provider reads and checkout verifies one booking before H
   ).toHaveTextContent("$88.00");
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: /^Review booking \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
     ),
   );
-  expect(screen.getByRole("heading", { name: "Review booking" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Review Booking" })).toBeVisible();
   expect(
     screen.queryByRole("heading", { name: "Dates & times" }),
   ).not.toBeInTheDocument();
@@ -587,7 +587,7 @@ it("Review performs no provider reads and checkout verifies one booking before H
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     ),
   );
   expect(checkout).toHaveBeenCalledTimes(1);
@@ -789,7 +789,7 @@ it("expired Review releases only an authoritatively unpaid attempt and preserves
   fireEvent.click(screen.getByRole("checkbox"));
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     ),
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent(id);
@@ -799,7 +799,7 @@ it("expired Review releases only an authoritatively unpaid attempt and preserves
   uncertain = false;
   await act(async () =>
     fireEvent.click(
-      screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+      screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
     ),
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent(

@@ -91,7 +91,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(crossing).toHaveTextContent("Crosses the 15:00 instructor rotation");
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
   await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
@@ -167,7 +169,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     screen.queryByRole("region", { name: "Your instructors" }),
   ).not.toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("button", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeDisabled();
   expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
   fireEvent.click(
@@ -269,7 +273,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(cartRail.style.getPropertyValue("--scroll-thumb-top")).toBe("90px");
   expect(
     within(cartPanel).queryByRole("link", {
-      name: /^Continue(?: \$[\d,.]+)?$/,
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
     }),
   ).not.toBeInTheDocument();
   await user.click(
@@ -291,7 +295,9 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
       .querySelector(".booking-cart-count"),
   ).toHaveTextContent("1");
   expect(
-    screen.getAllByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getAllByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toHaveLength(1);
   expect(
     screen.queryByRole("heading", { name: "Your Sessions" }),
@@ -338,6 +344,13 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   await user.click(screen.getByRole("button", { name: "Back to calendar" }));
   expect(scroll).toHaveBeenLastCalledWith({ top: 0, behavior: "smooth" });
   expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
+  calendarBottom = 600;
+  fireEvent.scroll(window);
+  calendarBottom = -1000;
+  fireEvent.scroll(window);
+  expect(
+    screen.getByRole("button", { name: "Back to calendar" }),
+  ).toBeInTheDocument();
 });
 test("crossing notices persist in the basket and review before payment", async () => {
   const basket = render(
@@ -350,7 +363,9 @@ test("crossing notices persist in the basket and review before payment", async (
     within(screen.getByRole("complementary")).getByText(/Crosses the 15:00/),
   ).toHaveTextContent("stays for the full session");
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toHaveAttribute("href", "/book/details");
   const cart = screen.getByRole("complementary");
   expect(cart.querySelector(".summary-total")).toBeNull();
@@ -369,7 +384,7 @@ test("crossing notices persist in the basket and review before payment", async (
     "stays for the full session",
   );
   expect(
-    screen.getByRole("button", { name: /^Continue to payment \$[\d,.]+$/ }),
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   ).toBeDisabled();
 });
 
@@ -477,13 +492,17 @@ test("an open booking page expires a selected slot at its start and keeps it rem
     target: { value: "2026-10-06|12:00|demo|faisal" },
   });
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeInTheDocument();
   await act(async () => {
     vi.advanceTimersByTime(1);
   });
   expect(
-    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("button", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeDisabled();
   await act(async () => {});
   expect(
@@ -516,7 +535,9 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   const basket = within(screen.getByRole("complementary"));
   expect(basket.getByText(/Session has started/)).toBeVisible();
   expect(
-    screen.getByRole("button", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("button", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeDisabled();
   expect(loadBooking().draft.slots).toEqual([stale, future]);
   fireEvent.click(
@@ -526,7 +547,9 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   expect(loadBooking().draft.slots).toEqual([future]);
   expect(basket.queryByText(/Session has started/)).not.toBeInTheDocument();
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeInTheDocument();
 });
 test("selection rechecks time before dispatch and refreshes after a suspended tab resumes", async () => {
@@ -579,7 +602,9 @@ test("an open calendar follows Singapore year rollover without deleting its draf
   ).toHaveAttribute("aria-pressed", "true");
   expect(loadBooking().draft.slots).toEqual([slot]);
   expect(
-    screen.getByRole("link", { name: /^Continue(?: \$[\d,.]+)?$/ }),
+    screen.getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+    }),
   ).toBeInTheDocument();
   view.unmount();
 });
@@ -693,7 +718,7 @@ test("calendar back preserves outlet and session choices while explicit deselect
     }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(
-    screen.getByRole("link", { name: "See available times" }),
+    screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
   expect(screen.getByText("2 players", { exact: true })).toBeVisible();
   await user.click(
@@ -702,7 +727,7 @@ test("calendar back preserves outlet and session choices while explicit deselect
     }),
   );
   expect(
-    screen.queryByRole("link", { name: "See available times" }),
+    screen.queryByRole("link", { name: "Choose Date & Time" }),
   ).not.toBeInTheDocument();
   await user.click(
     screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),

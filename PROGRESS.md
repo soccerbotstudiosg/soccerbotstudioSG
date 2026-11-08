@@ -2,12 +2,12 @@
 
 ## Current change
 
-Branch `fix/calendar-return-confirmation-loader`, based on PR43 main `257fd22`. Mobile date-selection scroll now exposes the double-chevron return to calendar. Post-payment confirmation uses the full checkout loader directly before verified Booking Confirmed content. Paid is at the top-right of Order Summary with twice its previous text size/padding on mobile and desktop.
+Branch `fix/calendar-cue-position`, based on PR44 main `548a7d5`. Owner requested a centred studio-style arrow that persists through manual mobile scrolling, approved explicit next-step action labels, and requested basic validation for all booking details. Implemented fixed shared-style cue, approved labels, contact field validation on blur and email validation before challenge dispatch. Also added confirmation email guidance and removed a demonstrated separate-receipt wait after confirmed status with matched details. The reported live8–9-second latency is not fully attributed without request timing.
 
 ## Verification and delivery
 
-All268 component/service cases and the strict zero-skip receipt passed. Browser assertions updated for the new loader and calendar return; owner/CI executes browsers. Two component test titles updated in the inventory without removing cases. User authorized stage then merge on8 November. Publish the consolidated candidate, verify exact-head CI and actual staging health before merge, then verify independent main CI and production deployment. Preserve approved runtime settings; no new provider activation. Delivery receipts belong in the PR until the next substantive checkpoint.
+All268 final component/service cases and the strict zero-skip inventory receipt passed; all34 focused confirmation cases also passed after removing the demonstrated receipt wait. Lint, TypeScript and source integrity passed. Existing component/browser cases updated without intentional inventory changes. Publish a draft candidate after checks; this new slice has not been authorized for a new production release. Owner/CI operates browser tests. PR44 release receipts and limitations are reconciled in Journey.
 
 ## Remaining scope
 
-Device acceptance remains pending. Unknown SimplyBook no-creation reconciliation, Grafana activation/contact point, analytics/Search Console/OpenGraph and paused docs PR33 remain separate. PR43 delivery and external Python CodeQL download failures are reconciled in Journey.
+CI and device acceptance remain pending. Unknown SimplyBook no-creation reconciliation, Grafana activation/contact point, analytics/Search Console/OpenGraph and paused docs PR33 remain separate.
