@@ -12,9 +12,11 @@ Creation recovery now has a separate authenticated terminal `creationResolution:
 
 ## Verification and delivery
 
-PR49 latest prior head f4a8766/run42548570972 passed frontend and all Worker groups. Browser no-creation assertions raced the existing five-second poll; they now await the exact owned terminal checkout response before unchanged navigation/state assertions. Focused actual component path, lint and types pass. Owner authorized CI and eligible merges on9 November2026.
+Owner requested CodeQL52 repair and all-PR cleanup. PR49 now incorporates exact PR47 setup-python7.1.0 and PR48 npm/lock/inventory changes. PR33 is closed as deferred, preserving branch docs/test-guides-and-reference-cleanup and commit abbf9f2; its stale docs must be reconciled before reopening. Dependency originals will be closed as superseded after this combined source is pushed.
 
-Dependency review template/check added to the required frontend PR step, with a read-only edited-body workflow. Four positive/negative/pagination/stale-head/wiring tests pass, including empty-heading rejection and workflow-only Node/Python/container detection; all three current PR descriptions validate. Source/policy/lint checks pass. Full local tooling188/188 passes; CI workflow-inventory assertion now explicitly permits the added read-only workflow (9/9 focused deployment-policy cases pass). The dedicated edit check still needs branch protection configuration to block later body deletion after earlier frontend success. Connector cannot dispatch workflows/change required checks; gh API returned Forbidden. PR47 and48 have green exact-head CI but no verified staging, so cannot yet merge under current release requirements. PR49 fresh CI/staging remains pending. No merge/deployment performed.
+Prior source8b39597 passed verification42565529774 and staging42567292336, but the separate CodeQL alert check failed. Do not call it fully green or merge-ready. Alert52 identifies comment removal in scripts/dependency-review.mjs. The repair replaces comments with line boundaries and ignores unclosed-comment tails; closed/nested/split-marker regressions pass. A pre-fix probe accepted an entirely hidden assessment; the repaired parser rejects it. No alert dismissed.
+
+Combined local frontend275/275 plus strict inventory, tooling188/188, types/lint/source/policy and generated-version checks pass. Fresh combined CI/CodeQL and staging are pending. The new body-edit check still needs branch-protection configuration; integration admin access is403. No merge or production deployment performed. Desktop/mobile date selection both auto-scroll and show the fixed centered return arrow; existing browser regressions cover both.
 
 ## Recording reconciliation and limits
 

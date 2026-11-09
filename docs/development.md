@@ -324,3 +324,7 @@ Client sandbox setup uses the owner-approved existing app404 HitPay sandbox, wit
 | Access         | Existing developer sandbox release                        | Closed artifact; explicit client sandbox integration does not activate it      |
 
 These are deployment configurations of one codebase, not separate application forks. The shared payment sandbox does not combine Cloudflare storage or SimplyBook identity. Current deployment and owner acceptance evidence belong in Progress.
+
+### Optional CSS compiler fallback host support
+
+Tailwind4.3.4’s optional oxide WASM fallback declares Node `^20.19.0 || ^22.13.0 || >=23.5.0`, increased from `>=14.0.0` in4.3.3. The configured Node24.19.0 satisfies this range; native oxide retains Node>=20. Linux native CI does not establish execution of the optional WASM fallback or native macOS/Windows acceptance. These are build-host requirements, not new customer-browser restrictions; exact package metadata is retained in package-lock.json.
