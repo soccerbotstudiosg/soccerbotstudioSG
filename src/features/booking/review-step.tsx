@@ -72,6 +72,7 @@ export function ReviewStep({
       now,
       action,
       cancel,
+      conflictChecking,
       clearReviewConsent,
       ready,
     } = useBooking(),
@@ -165,7 +166,14 @@ export function ReviewStep({
           {verifying ? (
             "Checking reservation…"
           ) : busy ? (
-            <BrandLoading compact label="Opening checkout…" />
+            <BrandLoading
+              compact
+              label={
+                conflictChecking
+                  ? "Checking available sessions…"
+                  : "Opening checkout…"
+              }
+            />
           ) : (
             "Proceed to Payment"
           )}{" "}

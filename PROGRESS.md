@@ -1,23 +1,19 @@
 # Current checkpoint
 
-## Local presentation follow-up
+## Active outcome
 
-The owner authorized collective draft publication and CI on9 November2026. Mobile calendar rows are reduced from33px to29px; toolbar controls share44px height and focus rings sit inside their borders to avoid neighbouring controls. Source ownership, formatting and diff checks pass. This CSS-only adjustment adds no logic tests; visual acceptance remains owner/CI work.
+Repair complete conflict notices before closing the booking-flow acceptance chapter. Owner requires a fresh full physical A–G round on the staged candidate after automated CI and before merge/production. Earlier A/B/C/E/G acceptance and accurate SimplyBook reconciliation apply to released ae85b4f only. D sandbox background payment works; actual banking-app PayNow remains separate. F controlled tests passed10/10 Worker cases and seven frontend recovery routes without real provider effects.
 
-## Current change
+## Candidate
 
-Branch `fix/consistent-conflict-notice`, based on released PR46 main `64da315`. The candidate standardizes conflict/expiry notices with affected-session bullets, persists conflict notice through refresh until first calendar departure, returns eligible owned checkouts to Calendar at their authenticated payment deadline, and supplies bounded detailed HitPay descriptions from trusted snapshots.
+Branch `fix/complete-conflict-handoff`, based on main ae85b4f. Conflict classification keeps the initial loading state until every affected date has a successful fresh read, then commits notice details and corrected cart together. Validated tab-local original-draft correlation survives refresh; protected original-attempt evidence governs recovery, foreign checkouts cannot be adopted, and stale/cancelled reads cannot alter a later flow. All-available results preserve the cart without inventing affected sessions. Both conflict and expiry notices have explicit visible bullet markers.
 
-Creation recovery now has a separate authenticated terminal `creationResolution: not_created` result. A narrow actual single-book RPC rejection (-32053/-32054) can produce it automatically; a genuinely lost response requires a restricted operator attestation that processing finished with no booking. Empty searches, elapsed time and generic errors remain insufficient. Migration0041 preserves immutable resolution evidence and fences old writes. Frontend clears only the original owned attempt, returns recovery/confirmation routes to Calendar, starts fresh after Home departure, and hides affected windows until fresh availability confirms release.
+Protected reads are bounded at10 seconds, availability at30 seconds (captured valid responses exceeded10 seconds), retries are paced at least30 seconds and respect server pacing. Successful date reads retain the existing60-second freshness limit. Actual booking screens stay mounted during classification, so cleanup cannot cancel the worker. Home departure/direct reload cancels only presentation work; permanent denial or superseding protected state uses the original confirmation route. No backend booking/payment-write logic changed.
 
-## Verification and delivery
+## Verification
 
-Owner requested CodeQL52 repair and all-PR cleanup. PR49 now incorporates exact PR47 setup-python7.1.0 and PR48 npm/lock/inventory changes. PR33 is closed as deferred, preserving branch docs/test-guides-and-reference-cleanup and commit abbf9f2; its stale docs must be reconciled before reopening. Dependency originals will be closed as superseded after this combined source is pushed.
+Independent implementation/test/review agents completed the repair. Follow-up review caught denial masking and late navigation after access revocation; a new integrated regression failed before repair and now passes for payment401 and confirmation403. Exact classifier cancellation preserves the original attempt/cart and persisted correlation. Complete final frontend285/285, strict zero-skip receipt, types, scoped lint, source/policy and formatting checks pass. Tooling188/188 remains valid. First candidate1a1bd45 passed full CI42598185452 and CodeQL; follow-up requires new exact-head CI and actual staging. Failure receipts remain in Journey.
 
-Prior source8b39597 passed verification42565529774 and staging42567292336, but the separate CodeQL alert check failed. Do not call it fully green or merge-ready. Alert52 identifies comment removal in scripts/dependency-review.mjs. The repair replaces comments with line boundaries and ignores unclosed-comment tails; closed/nested/split-marker regressions pass. A pre-fix probe accepted an entirely hidden assessment; the repaired parser rejects it. No alert dismissed.
+## Delivery and remaining acceptance
 
-Combined local frontend275/275 plus strict inventory, tooling188/188, types/lint/source/policy and generated-version checks pass. Fresh combined CI/CodeQL and staging are pending. The new body-edit check still needs branch-protection configuration; integration admin access is403. No merge or production deployment performed. Desktop/mobile date selection both auto-scroll and show the fixed centered return arrow; existing browser regressions cover both.
-
-## Recording reconciliation and limits
-
-Captures7/8 show the same two-tab single-session race: winner succeeds, loser does not adopt its payment flow on refresh. Expiry release succeeds; the later retry is blocked by two proven unpaid expiries on the shared IP, until9 November2026 06:42:29 Singapore time. No production data/settings were changed. HAR cannot prove visual notice/loader behavior or multi-session acceptance. Source and evidence owners are reconciled in Journey and booking-flows. Truly unknown provider writes remain protected pending provider/operator verification; the new endpoint does not turn an empty lookup into proof.
+Production remains ae85b4f with owner-approved sandbox booking/HitPay/warming settings enabled and email disabled. No changes to production in this task. PR50 remains unmerged. Publish the consolidated follow-up for CI and verified staging, then owner performs fresh physical A–G acceptance before merge/release. Domain/Resend/actual PayNow and Grafana production delivery remain separate. Required dependency body-edit branch-protection configuration also remains pending.

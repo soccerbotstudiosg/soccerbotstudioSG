@@ -1,3 +1,4 @@
+import type { CheckoutSelectionRejection } from "@/domain/native-checkout";
 import * as renderTrace from "./confirmation-render-trace";
 import ConfirmationPage from "@/app/confirmation/page";
 import { BookingProvider } from "./provider";
@@ -1686,7 +1687,11 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
     );
     await act(async () => {});
     if (source === "context" || source === "status") {
-      expect(rejected).toHaveBeenCalledWith(first, rejection);
+      expect(rejected).toHaveBeenCalledWith(
+        first,
+        rejection,
+        expect.any(AbortSignal),
+      );
       expect(onAwaitingExpiry).not.toHaveBeenCalled();
       expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
     } else {
@@ -1698,11 +1703,18 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
     localStorage.clear();
   }
   let finish!: (value: boolean) => void;
+  let classificationSignal: AbortSignal | undefined;
   const rejected = vi.fn(
-    () =>
-      new Promise<boolean>((resolve) => {
+    (
+      _id: string,
+      _rejection: CheckoutSelectionRejection,
+      signal?: AbortSignal,
+    ) => {
+      classificationSignal = signal;
+      return new Promise<boolean>((resolve) => {
         finish = resolve;
-      }),
+      });
+    },
   );
   vi.stubGlobal(
     "fetch",
@@ -1739,7 +1751,12 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
     />,
   );
   await act(async () => {});
-  expect(rejected).toHaveBeenCalledWith(first, rejection);
+  expect(rejected).toHaveBeenCalledWith(
+    first,
+    rejection,
+    expect.any(AbortSignal),
+  );
+  expect(classificationSignal?.aborted).toBe(false);
   view.rerender(
     <ProtectedConfirmation
       attemptId={second}
@@ -1748,6 +1765,7 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
       onSelectionRejected={rejected}
     />,
   );
+  expect(classificationSignal?.aborted).toBe(true);
   await act(async () => finish(true));
   expect(navigation.replace).not.toHaveBeenCalled();
 });

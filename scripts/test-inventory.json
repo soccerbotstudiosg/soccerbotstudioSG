@@ -501,6 +501,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "access denial during conflict classification stops recovery and keeps the original cart without calendar navigation"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "cancelled checkout ignores a late saved URL handoff"
   },
   {
@@ -510,6 +514,22 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "checkout readback uses slot-specific messaging only for verified unavailability"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "completed conflict classification preserves all available selections without inventing affected sessions"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "conflict handoff aborts stalled reads and paces recovery without replaying checkout"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "conflict handoff waits for complete classification after all or partial failed reads"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -549,6 +569,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "leaving pending conflict classification prevents late reads from changing a fresh draft or navigation"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "live checkout validates direct handoff scope expiry and destination without persisting the URL"
   },
   {
@@ -577,11 +601,23 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "payment and confirmation consumers retain one classifier until the complete calendar handoff"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "proven unstarted checkout stays editable without entering payment recovery"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "queue rejection keeps the original attempt on Review for an explicit retry"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "refresh after a lost rejection response stays unready until protected evidence and classification finish"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "refresh during conflict classification retains its original indexed snapshot without adopting another checkout"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -598,6 +634,10 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "saved URL from checkout navigates once without a context request"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "stale pending conflict proof routes only its original protected attempt on denied or changed authority"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -630,10 +670,6 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "unpaid expiry never restores an unconfirmed or obsolete selection (rotation)"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes"
   },
   {
     "file": "src/features/booking/email-bot-proof.test.tsx",
@@ -942,6 +978,10 @@
   {
     "file": "src/services/booking.test.ts",
     "title": "offers only complete sessions within noon to 8pm and rotates instructors every three hours"
+  },
+  {
+    "file": "src/services/booking.test.ts",
+    "title": "pending conflict storage validates the original indexed snapshot and exact tab correlation"
   },
   {
     "file": "src/services/booking.test.ts",

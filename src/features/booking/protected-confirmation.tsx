@@ -104,6 +104,7 @@ export function ProtectedConfirmation({
   onSelectionRejected?: (
     attemptId: string,
     rejection: CheckoutSelectionRejection,
+    signal?: AbortSignal,
   ) => Promise<boolean>;
   onRestart?: (attemptId: string) => void | Promise<void>;
 }) {
@@ -178,7 +179,8 @@ export function ProtectedConfirmation({
     router.replace("/book/time/");
   });
   const wantsExpiry =
-    expired || (contextMatches && context.value.expired === true);
+    view !== "denied" &&
+    (expired || (contextMatches && context.value.expired === true));
   const [failedExpiry, setFailedExpiry] = useState<{
     id: string;
     revision: number;
@@ -527,8 +529,10 @@ export function ProtectedConfirmation({
     };
   }, [incomplete, linkRecovering, checkoutMode, attemptId, sessionRevision]);
   const selectionRejection =
-    statusRejection ??
-    (contextMatches ? context.value.selectionRejection : undefined);
+    view === "denied"
+      ? undefined
+      : (statusRejection ??
+        (contextMatches ? context.value.selectionRejection : undefined));
   const rejectionState = selectionRejection?.state;
   const rejectionIndex = selectionRejection?.rejectedSessionIndex;
   const hasPaymentEvidence = !!(
@@ -538,10 +542,12 @@ export function ProtectedConfirmation({
     customerConfirmation ||
     view === "confirmed"
   );
-  const creationResolved = !!(
-    statusCreationResolution ??
-    (contextMatches ? context.value.creationResolution : undefined)
-  );
+  const creationResolved =
+    view !== "denied" &&
+    !!(
+      statusCreationResolution ??
+      (contextMatches ? context.value.creationResolution : undefined)
+    );
   const finishCreationResolution = useEffectEvent((id: string) =>
     onCreationResolved?.(id),
   );
@@ -560,27 +566,30 @@ export function ProtectedConfirmation({
     router,
   ]);
   const rejectSelection = useEffectEvent(
-    (id: string, rejection: CheckoutSelectionRejection) =>
-      onSelectionRejected?.(id, rejection),
+    (id: string, rejection: CheckoutSelectionRejection, signal: AbortSignal) =>
+      onSelectionRejected?.(id, rejection, signal),
   );
   useEffect(() => {
     if (!rejectionState || hasPaymentEvidence) return;
-    let active = true;
+    const controller = new AbortController();
     const rejection: CheckoutSelectionRejection = {
       state: rejectionState,
       ...(rejectionIndex === undefined
         ? {}
         : { rejectedSessionIndex: rejectionIndex }),
     };
-    void Promise.resolve(rejectSelection(attemptId, rejection))
+    void Promise.resolve(
+      rejectSelection(attemptId, rejection, controller.signal),
+    )
       .then((rejected) => {
-        if (active && rejected) router.replace("/book/time/");
+        if (!controller.signal.aborted && rejected)
+          router.replace("/book/time/");
       })
       .catch(() => {
         /* Unknown recovery remains on its original protected attempt. */
       });
     return () => {
-      active = false;
+      controller.abort();
     };
   }, [
     attemptId,
@@ -702,8 +711,10 @@ export function ProtectedConfirmation({
       (paymentReceived || view === "confirmed" ? responseEvidence : current),
     receipt: receiptMatches ? receipt.value : undefined,
   });
+  if (rejectionState && !hasPaymentEvidence)
+    return <BrandLoading compact label="Checking available sessions…" />;
   if (
-    calendarRecovery ||
+    (calendarRecovery && view !== "denied") ||
     (checkoutMode === "live" &&
       paymentWindowEnded &&
       !hasPaymentEvidence &&
@@ -825,7 +836,7 @@ export function ProtectedConfirmation({
         <BrandLoading compact label="Checking your reservation…" />
       </section>
     );
-  if (expiryFailure)
+  if (expiryFailure && view !== "denied")
     return (
       <p className="alert" role="alert">
         We couldn’t confirm that your reservation was released. Please don’t
