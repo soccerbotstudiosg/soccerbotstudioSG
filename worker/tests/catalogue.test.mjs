@@ -35,6 +35,8 @@ const {
   nativeTrialLeadMs,
   ProviderSession,
   providerRequest,
+  ProviderBookRejectedError,
+  ProviderRpcError,
   providerSecrets,
   providerCredentialName,
   providerServiceIds,
@@ -795,6 +797,47 @@ test("ended provider transports release capacity without replaying uncertain wri
             JSON.stringify({ operation, native, partialBody }),
           );
         }
+    // The same numeric error from authentication cannot prove a rejected book.
+    const singleBook = unsafe.find(
+      ([, request]) => request?.kind === "book",
+    )[1];
+    for (const [operation, native, expectedProof] of [
+      ["public-auth", undefined, false],
+      ["native", { kind: "catalogue-services" }, false],
+      ["native", { ...singleBook, batchId: "601" }, false],
+      ["native", singleBook, true],
+    ]) {
+      globalThis.fetch = async (_url, init) => {
+        const request = JSON.parse(init.body);
+        return Response.json({
+          jsonrpc: "2.0",
+          id: request.id,
+          result: null,
+          error: { code: -32054, message: "synthetic unavailable time" },
+        });
+      };
+      await assert.rejects(
+        providerRequest(
+          operation,
+          secrets,
+          "synthetic-token",
+          {
+            reserve: async () => "1",
+            finish: () => {},
+          },
+          native,
+        ),
+        (error) => {
+          assert.ok(error instanceof ProviderRpcError);
+          assert.equal(
+            error instanceof ProviderBookRejectedError,
+            expectedProof,
+          );
+          assert.equal(error.rpcCode, -32054);
+          return true;
+        },
+      );
+    }
   } finally {
     globalThis.fetch = original;
   }

@@ -1,4 +1,5 @@
 import {
+  creationResolutionSchema,
   receiptSchema,
   bookingDetailsSchema,
   checkoutSelectionRejectionSchema,
@@ -14,33 +15,37 @@ import { z } from "zod";
 import type { CheckoutContext, ProtectedCheckoutService } from "./contracts";
 const idSchema = z.string().uuid();
 const decisionSchema = z.discriminatedUnion("status", [
-  z.object({
+  z.strictObject({
     status: z.literal("confirmed"),
     reason: z.literal("verified"),
     customerConfirmation: receiptSchema.optional(),
   }),
-  z.object({
+  z.strictObject({
     status: z.literal("pending"),
     reason: z.string(),
     customerConfirmation: receiptSchema.optional(),
     expired: z.boolean().optional(),
   }),
-  z.object({
+  z.strictObject({
     status: z.literal("unresolved"),
     reason: z.string(),
     customerConfirmation: receiptSchema.optional(),
     expired: z.boolean().optional(),
   }),
   z
-    .object({
+    .strictObject({
       status: z.literal("invalid"),
       reason: z.string(),
+      creationResolution: creationResolutionSchema.optional(),
       selectionRejection: checkoutSelectionRejectionSchema.optional(),
     })
     .refine(
       (value) =>
-        !value.selectionRejection ||
-        value.reason === "checkout_selection_rejected",
+        (!value.selectionRejection ||
+          value.reason === "checkout_selection_rejected") &&
+        (!value.creationResolution ||
+          (value.reason === "booking_not_created" &&
+            !value.selectionRejection)),
     ),
   z.object({ status: z.literal("denied"), reason: z.literal("access_denied") }),
 ]);
@@ -55,6 +60,7 @@ export class ConfirmationError extends Error {
 }
 const instant = z.number().int().nonnegative().safe();
 const contextSchema = z.strictObject({
+  creationResolution: creationResolutionSchema.optional(),
   selectionRejection: checkoutSelectionRejectionSchema.optional(),
   customerConfirmation: receiptSchema.optional(),
   expired: z.boolean().optional(),
@@ -72,7 +78,7 @@ const contextSchema = z.strictObject({
     z.strictObject({
       state: z.literal("available"),
       url: z.string().max(2048),
-      expiresAtMs: instant.optional(),
+      expiresAtMs: instant.positive().optional(),
     }),
   ]),
   summary: z.strictObject({
@@ -91,6 +97,7 @@ const contextSchema = z.strictObject({
   }),
   checking: z.strictObject({
     deadlineMs: instant,
+    paymentExpiresAtMs: instant.positive().optional(),
     holdExpiresAtMs: instant.optional(),
     recoveryEndsAtMs: instant.optional(),
     nextCheckMs: instant,
@@ -287,10 +294,23 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
     if (
       context.attemptId !== attemptId ||
       context.mode !== mode ||
+      (context.checking.paymentExpiresAtMs !== undefined &&
+        (context.checking.paymentExpiresAtMs > context.checking.deadlineMs ||
+          context.bookingIssue === "incomplete")) ||
       (context.confirmation && context.confirmation.attemptId !== attemptId) ||
       (context.details && context.details.attemptId !== attemptId) ||
       (context.customerConfirmation &&
         context.customerConfirmation.attemptId !== attemptId) ||
+      (context.creationResolution &&
+        (context.checkout.state !== "unavailable" ||
+          context.payment ||
+          context.confirmation ||
+          context.customerConfirmation ||
+          context.details ||
+          context.bookingIssue ||
+          context.paymentIssue ||
+          context.expired ||
+          context.selectionRejection)) ||
       (context.selectionRejection &&
         (context.checkout.state !== "unavailable" ||
           context.payment ||
@@ -309,13 +329,34 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
           : (!isNativeCheckoutUrl(context.checkout.url) &&
               !isHitpayCheckoutUrl(context.checkout.url)) ||
             context.checkout.expiresAtMs === undefined ||
-            context.checkout.expiresAtMs <= checkoutNow(clock, true) ||
             context.checkout.expiresAtMs > context.checking.deadlineMs
       )
         throw new ConfirmationError("unavailable");
     }
+    // An authenticated expired handoff still supplies the display deadline.
+    // Hide its URL without discarding the attempt or declaring unpaid release.
+    const elapsedLink =
+      mode === "live" &&
+      context.checkout.state === "available" &&
+      context.checkout.expiresAtMs !== undefined &&
+      context.checkout.expiresAtMs <= checkoutNow(clock, true);
+    const value =
+      elapsedLink && context.checkout.state === "available"
+        ? {
+            ...context,
+            checkout: { state: "unavailable" as const },
+            checking: {
+              ...context.checking,
+              paymentExpiresAtMs: Math.min(
+                context.checking.paymentExpiresAtMs ??
+                  context.checkout.expiresAtMs!,
+                context.checkout.expiresAtMs!,
+              ),
+            },
+          }
+        : context;
     return timeResponse(
-      { ...context, clock },
+      { ...value, clock },
       context.customerConfirmation,
       context.confirmation,
     );

@@ -1,3 +1,4 @@
+import { retainedCreationResolution } from "./native-creation-resolution";
 import { confirmationSnapshot } from "./confirmation-snapshot";
 import { customerConfirmation, checkoutExpired } from "./checkout-progress";
 import {
@@ -74,6 +75,19 @@ export async function confirmation(
   let snapshot = await confirmationSnapshot(env, id, access.owner_id);
   let row = snapshot.row;
   row.deadline_ms = snapshot.deadline;
+  const creationResolution =
+    !row.association_json && row.state === "recovery_required"
+      ? await retainedCreationResolution(env, id, access.owner_id)
+      : undefined;
+  if (creationResolution) {
+    await authenticate(request, env, Date.now());
+    report?.({ deadlineMs: row.deadline_ms, nextCheckMs: now, remaining: 0 });
+    return {
+      status: "invalid" as const,
+      reason: "booking_not_created",
+      creationResolution,
+    };
+  }
   const rejection =
     row.state === "prepared" && !row.association_json
       ? await retainedSelectionRejection(env, id, access.owner_id)
@@ -289,6 +303,10 @@ export async function checkoutContext(
   const snapshot = await confirmationSnapshot(env, id, access.owner_id);
   const row = snapshot.row;
   const intent = intentSchema.parse(JSON.parse(row.intent_json));
+  const creationResolution =
+    !row.association_json && row.state === "recovery_required"
+      ? await retainedCreationResolution(env, id, access.owner_id)
+      : undefined;
   const selectionRejection =
     row.state === "prepared" && !row.association_json
       ? await retainedSelectionRejection(env, id, access.owner_id)
@@ -359,15 +377,38 @@ export async function checkoutContext(
         throw error;
     }
   }
+  // This display-only deadline never shortens the protected reconciliation windows.
+  const paymentWindows =
+    row.association_json &&
+    snapshot.payment.route === "hitpay" &&
+    (row.hold_expires_ms !== null || snapshot.payment.payment !== null)
+      ? [
+          snapshot.payment.payment?.expires_ms,
+          snapshot.payment.payment?.checkout_expires_ms,
+          row.booking_created_ms !== null && row.payment_window_ms !== null
+            ? row.booking_created_ms + row.payment_window_ms
+            : undefined,
+        ].filter(
+          (value): value is number =>
+            typeof value === "number" &&
+            Number.isSafeInteger(value) &&
+            value > 0,
+        )
+      : [];
+  const paymentExpiresAtMs = paymentWindows.length
+    ? Math.min(...paymentWindows)
+    : undefined;
   await authenticate(request, env, Date.now());
   return {
     attemptId: id,
     mode: "live" as const,
     selectionRejection,
+    creationResolution,
     payment,
     confirmation: savedConfirmation,
     details,
-    ...(row.state === "recovery_required" &&
+    ...(!creationResolution &&
+    row.state === "recovery_required" &&
     !row.association_json &&
     !snapshot.payment.payment
       ? { bookingIssue: "incomplete" as const }
@@ -415,6 +456,7 @@ export async function checkoutContext(
     },
     checking: {
       deadlineMs: snapshot.deadline,
+      ...(paymentExpiresAtMs === undefined ? {} : { paymentExpiresAtMs }),
       ...(row.hold_expires_ms === null
         ? {}
         : {

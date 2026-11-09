@@ -1,3 +1,6 @@
+import ConfirmationPage from "@/app/confirmation/page";
+import { dateLabel } from "@/domain/dates";
+import { PAYMENT_WINDOW_ENDED } from "@/domain/booking-messages";
 import { useState } from "react";
 import {
   act,
@@ -32,6 +35,7 @@ const navigation = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => navigation,
   usePathname: () => navigation.path,
+  useSearchParams: () => new URLSearchParams({ attempt: id }),
 }));
 const id = "00000000-0000-4000-8000-000000000001";
 const url = `https://checkout.sandbox.hit-pay.com/payment-request/@soccerbot/${id}/checkout`;
@@ -993,6 +997,17 @@ it("rejected checkout window clears the undispatched draft attempt without payme
           {JSON.stringify(state.suppressedSlots)}
         </output>
         <p data-testid="notice">{state.selectionNotice}</p>
+        <output data-testid="notice-slots">
+          {JSON.stringify(state.selectionNoticeSlots)}
+        </output>
+        <button
+          onClick={() => {
+            state.visitBookingStep("time");
+            state.visitBookingStep("details");
+          }}
+        >
+          Leave calendar
+        </button>
       </>
     );
   }
@@ -1005,7 +1020,7 @@ it("rejected checkout window clears the undispatched draft attempt without payme
         finishAvailability = resolve;
       }),
   );
-  render(
+  const rejectedTree = (
     <BookingProvider
       bookingService={{
         ...liveBookingService,
@@ -1017,14 +1032,18 @@ it("rejected checkout window clears the undispatched draft attempt without payme
       identityService={demoCustomerIdentity}
     >
       <Probe />
-    </BookingProvider>,
+    </BookingProvider>
   );
+  render(rejectedTree);
   fireEvent.click(screen.getByText("Seed rejected"));
   fireEvent.click(screen.getByText("Submit rejected"));
   await waitFor(() =>
     expect(screen.getByTestId("return")).toHaveTextContent("true"),
   );
   expect(screen.getByTestId("attempt")).toHaveTextContent("none");
+  expect(JSON.parse(screen.getByTestId("notice-slots").textContent!)).toEqual(
+    [],
+  );
   // A slow fresh read cannot hold the customer on a checkout loading screen.
   expect(JSON.parse(screen.getByTestId("cart").textContent!)).toEqual([
     draft.slots[0],
@@ -1043,12 +1062,30 @@ it("rejected checkout window clears the undispatched draft attempt without payme
     draft.slots,
   );
   expect(screen.getByTestId("notice")).toHaveTextContent(
-    "Removed unavailable sessions: Tue, 20 Oct 2026, 12:00–12:40.",
+    "Some sessions may no longer be available. Please check again.",
   );
+  expect(JSON.parse(screen.getByTestId("notice-slots").textContent!)).toEqual([
+    { date: draft.slots[0].date, start: draft.slots[0].start },
+  ]);
+  // A later background classification must not restore a notice dismissed by navigation.
+  cleanup();
+  saveSuppressedSlots([]);
+  render(rejectedTree);
+  fireEvent.click(screen.getByText("Seed rejected"));
+  fireEvent.click(screen.getByText("Submit rejected"));
+  await waitFor(() => expect(availability).toHaveBeenCalledTimes(2));
+  fireEvent.click(screen.getByText("Leave calendar"));
+  expect(screen.getByTestId("notice")).toBeEmptyDOMElement();
+  await act(async () => finishAvailability([{ ...other, available: true }]));
+  expect(screen.getByTestId("notice")).toBeEmptyDOMElement();
+  expect(JSON.parse(screen.getByTestId("notice-slots").textContent!)).toEqual(
+    [],
+  );
+  expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
   expect(availability).toHaveBeenCalledWith(
     expect.objectContaining({ fresh: true }),
   );
-  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(fetch).toHaveBeenCalledTimes(2);
   expect(screen.queryByText("Checking payment…")).not.toBeInTheDocument();
   cleanup();
   const active: Attempt = {
@@ -1107,13 +1144,13 @@ it("rejected checkout window clears the undispatched draft attempt without payme
   await waitFor(() =>
     expect(screen.getByTestId("attempt")).toHaveTextContent(id),
   );
-  expect(fetch).toHaveBeenCalledTimes(2);
+  expect(fetch).toHaveBeenCalledTimes(3);
   expect(fetch).toHaveBeenNthCalledWith(
-    2,
+    3,
     "/api/attempts/00000000-0000-4000-8000-000000000099/checkout",
     expect.objectContaining({ cache: "no-store", credentials: "same-origin" }),
   );
-  expect(fetch.mock.calls[1][1]?.body).toBeUndefined();
+  expect(fetch.mock.calls[2][1]?.body).toBeUndefined();
 });
 
 it("checkout readback uses slot-specific messaging only for verified unavailability", async () => {
@@ -1248,7 +1285,7 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
     );
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(screen.getByTestId("conflict-notice")).toHaveTextContent(
-    "Removed unavailable sessions: Tue, 20 Oct 2026, 12:00–12:40.",
+    "Some sessions may no longer be available. Please check again.",
   );
   cleanup();
   // The other tab retains an authorized checkout with identical contact data.
@@ -1403,7 +1440,7 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
     } else {
       await waitFor(() =>
         expect(screen.getByTestId("reload-notice")).toHaveTextContent(
-          "Removed unavailable sessions",
+          "Some sessions may no longer be available. Please check again.",
         ),
       );
       expect(screen.getByTestId("reload-attempt")).toHaveTextContent("none");
@@ -1459,13 +1496,9 @@ it("editing a new selection clears the previous unpaid reservation notice", asyn
   );
   await act(async () => {});
   fireEvent.click(screen.getByText("Released"));
-  expect(screen.getByRole("status")).toHaveTextContent(
-    "Your unpaid reservation has ended. Your details are saved. Please choose your sessions again.",
-  );
+  expect(screen.getByRole("status")).toHaveTextContent(PAYMENT_WINDOW_ENDED);
   fireEvent.click(screen.getByText("New selection"));
-  expect(
-    screen.queryByText(/Your unpaid reservation has ended/),
-  ).not.toBeInTheDocument();
+  expect(screen.queryByText(PAYMENT_WINDOW_ENDED)).not.toBeInTheDocument();
 });
 
 /** Exercise the shared expiry guard with an explicit reviewed case. */
@@ -1518,9 +1551,7 @@ async function verifyExpiryRetention(multi: boolean) {
   await waitFor(() =>
     expect(
       screen.getByRole("status", { name: "Expiry notice" }),
-    ).toHaveTextContent(
-      "Your unpaid reservation has ended. Affected sessions: Tue, 20 Oct 2026, 12:00–12:40",
-    ),
+    ).toHaveTextContent(PAYMENT_WINDOW_ENDED),
   );
   const current = JSON.parse(screen.getByTestId("cart").textContent!);
   expect(current.slots).toEqual([]);
@@ -1644,9 +1675,7 @@ async function verifyExpiryStaleRead(outcome: string) {
   } else {
     expect(
       screen.getByRole("status", { name: "Expiry notice" }),
-    ).toHaveTextContent(
-      "Your unpaid reservation has ended. Affected sessions: Tue, 20 Oct 2026, 12:00–12:40",
-    );
+    ).toHaveTextContent(PAYMENT_WINDOW_ENDED);
     expect(
       screen.getByRole("status", { name: "Expiry notice" }),
     ).not.toHaveTextContent("Unable to confirm availability");
@@ -1884,7 +1913,9 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   ).toEqual([]);
   view.rerender(tree("time"));
   await screen.findByRole("button", { name: /12:50–13:30/ });
-  expect(screen.getByRole("alert")).toHaveTextContent("Affected sessions:");
+  expect(
+    within(screen.getByRole("alert")).getByRole("listitem"),
+  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
   expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
   expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
   expect(
@@ -2007,6 +2038,8 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   localStorage.clear();
+  const notice =
+    "Some sessions may no longer be available. Please check again.";
   const otherId = "00000000-0000-4000-8000-000000000002";
   const available = { ...draft.slots[0], start: "12:50", available: true };
   let otherActive = false;
@@ -2074,10 +2107,13 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
         <output data-testid="conflict-refresh-draft">
           {JSON.stringify(state.draft)}
         </output>
+        <output data-testid="conflict-refresh-notice">
+          {state.selectionNotice}
+        </output>
       </>
     );
   }
-  const tree = (step: "review" | "time") => (
+  const tree = (step: "review" | "time" | "details") => (
     <BookingProvider bookingService={service} identityService={identity}>
       <Probe />
       <BookingPage step={step} />
@@ -2092,9 +2128,18 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
     expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
   );
   view.rerender(tree("time"));
-  expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Removed unavailable sessions:",
+  expect(
+    (await screen.findByRole("alert")).querySelector("p")?.textContent,
+  ).toBe(notice);
+  expect(
+    within(screen.getByRole("alert")).getByRole("listitem"),
+  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
+  expect(screen.getByTestId("conflict-refresh-notice").textContent).toBe(
+    notice,
   );
+  expect(
+    JSON.parse(sessionStorage.getItem("soccerbot-conflict-notice")!),
+  ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
   expect(
     JSON.parse(screen.getByTestId("conflict-refresh-draft").textContent!).slots,
   ).toEqual([]);
@@ -2105,7 +2150,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   otherActive = true;
   view.unmount();
   const restoreBefore = restore.mock.calls.length;
-  render(tree("time"));
+  const refreshed = render(tree("time"));
   await waitFor(() => expect(restore).toHaveBeenCalledTimes(restoreBefore + 1));
   expect(
     await screen.findByRole("button", { name: /12:50–13:30/ }),
@@ -2132,4 +2177,363 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   expect(
     fetch.mock.calls.some(([path]) => String(path).includes(otherId)),
   ).toBe(false);
+  expect(screen.getByRole("alert").querySelector("p")?.textContent).toBe(
+    notice,
+  );
+  expect(
+    within(screen.getByRole("alert")).getByRole("listitem"),
+  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
+  expect(screen.getByTestId("conflict-refresh-notice").textContent).toBe(
+    notice,
+  );
+  expect(
+    JSON.parse(sessionStorage.getItem("soccerbot-conflict-notice")!),
+  ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
+
+  // Calendar edits do not dismiss the conflict explanation.
+  fireEvent.click(screen.getByRole("button", { name: /12:50–13:30/ }));
+  fireEvent.change(
+    screen.getByLabelText(`Trainer for ${available.date} at 12:50`),
+    {
+      target: { value: `${available.date}|12:50|2|4` },
+    },
+  );
+  expect(
+    JSON.parse(screen.getByTestId("conflict-refresh-draft").textContent!).slots,
+  ).toEqual([{ ...draft.slots[0], start: "12:50" }]);
+  expect(screen.getByRole("alert").querySelector("p")?.textContent).toBe(
+    notice,
+  );
+  expect(
+    within(screen.getByRole("alert")).getByRole("listitem"),
+  ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
+  expect(screen.getByTestId("conflict-refresh-notice").textContent).toBe(
+    notice,
+  );
+  expect(
+    JSON.parse(sessionStorage.getItem("soccerbot-conflict-notice")!),
+  ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
+  expect(
+    screen.getByRole("link", { name: /^Enter Booking Details/ }),
+  ).toHaveAttribute("href", "/book/details");
+
+  // Completing the first navigation away clears the notice and its persisted
+  // state. A later calendar visit must not resurrect it from the foreign checkout.
+  refreshed.rerender(tree("details"));
+  expect(
+    await screen.findByRole("heading", {
+      name: "Booking Contact",
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByTestId("conflict-refresh-notice")).toBeEmptyDOMElement();
+  expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
+  refreshed.rerender(tree("time"));
+  expect(
+    await screen.findByRole("button", { name: /12:50–13:30/ }),
+  ).toBeEnabled();
+  expect(screen.getByTestId("conflict-refresh-notice")).toBeEmptyDOMElement();
+  expect(screen.queryByText(notice)).toBeNull();
+  refreshed.unmount();
+  const afterLeaveRestore = restore.mock.calls.length;
+  render(tree("time"));
+  await waitFor(() =>
+    expect(restore).toHaveBeenCalledTimes(afterLeaveRestore + 1),
+  );
+  expect(
+    await screen.findByRole("button", { name: /12:50–13:30/ }),
+  ).toBeEnabled();
+  expect(screen.getByTestId("conflict-refresh-notice")).toBeEmptyDOMElement();
+  expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
+  expect(screen.queryByText(notice)).toBeNull();
+  expect(screen.getByTestId("conflict-refresh-attempt")).toHaveTextContent(
+    "none",
+  );
+  expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(
+    fetch.mock.calls.some(([path]) => String(path).includes(otherId)),
+  ).toBe(false);
+});
+
+it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const notice =
+    "Nothing was booked or charged. Your details are saved; please choose your sessions again.";
+  for (const route of [
+    "recovery",
+    "confirmation",
+    "status",
+    "refresh",
+    "home",
+    "home-refresh",
+    "immediate",
+  ] as const) {
+    cleanup();
+    sessionStorage.clear();
+    localStorage.clear();
+    navigation.replace.mockClear();
+    let resolved = route === "status" || route === "immediate";
+    let refreshed = false;
+    let freshAvailable = false;
+    const retained: Attempt = {
+      id,
+      draft,
+      status: "checking",
+      outcome: "pending",
+      checkUntil: 0,
+      booking: null,
+    };
+    const fetcher = vi.fn<typeof globalThis.fetch>(async (input) => {
+      const path = String(input);
+      if (path === `/api/booking/checkout/${id}`)
+        return Response.json({
+          attemptId: id,
+          state: "recovery_required",
+          paymentAvailable: false,
+          creationResolution: { state: "not_created" },
+        });
+      if (path === `/api/attempts/${id}/checkout`)
+        return Response.json({
+          attemptId: id,
+          mode: "live",
+          checkout: { state: "unavailable" },
+          ...(route === "status"
+            ? {}
+            : resolved
+              ? { creationResolution: { state: "not_created" } }
+              : { bookingIssue: "incomplete" }),
+          summary: {
+            players: draft.players,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [
+              {
+                startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+                players: draft.players,
+              },
+            ],
+          },
+          checking: {
+            deadlineMs: Date.now() + 600000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        });
+      if (path === `/api/attempts/${id}/confirmation`)
+        return Response.json(
+          resolved
+            ? {
+                status: "invalid",
+                reason: "booking_not_created",
+                creationResolution: { state: "not_created" },
+              }
+            : { status: "pending", reason: "payment_verification_pending" },
+        );
+      return new Response(null, { status: 503 });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const service: BookingService = {
+      ...liveBookingService,
+      checkout: async () => ({ ...retained, status: "ready" }),
+      restore: async () =>
+        route === "immediate" || refreshed ? null : retained,
+      publicCalendar: undefined,
+      calendar: async ({ month }) => ({
+        month,
+        observedAtMs: Date.now(),
+        dates: [{ date: draft.slots[0].date, available: true }],
+      }),
+      availability: vi.fn(async ({ fresh }) => {
+        if (fresh && !freshAvailable)
+          throw new Error("Synthetic fresh availability outage");
+        return [
+          ...draft.slots.map((slot) => ({ ...slot, available: true })),
+          {
+            ...draft.slots[0],
+            instructor: "5",
+            native: {
+              ...draft.slots[0].native,
+              instructorName: "Other instructor",
+            },
+            available: true,
+          },
+        ];
+      }),
+    };
+    const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    function Probe() {
+      const state = useBooking();
+      return (
+        <>
+          <output data-testid="creation-attempt">
+            {state.attempt?.id ?? "none"}
+          </output>
+          <output data-testid="creation-draft">
+            {JSON.stringify(state.draft)}
+          </output>
+          <output data-testid="creation-suppressed">
+            {JSON.stringify(state.suppressedSlots)}
+          </output>
+          <button onClick={state.leave}>Leave uncertain booking</button>
+          <button
+            onClick={() =>
+              state.resolveUncreatedBooking(
+                "00000000-0000-4000-8000-000000000099",
+              )
+            }
+          >
+            Foreign proof
+          </button>
+          <button onClick={() => state.update({ ...draft, accepted: true })}>
+            Accept original
+          </button>
+          <button onClick={() => void state.checkout()}>Create original</button>
+        </>
+      );
+    }
+    const tree = (
+      step: "payment" | "time" | "account" | "review" | "confirmation" | null,
+    ) => (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+        {step === "confirmation" ? (
+          <ConfirmationPage />
+        ) : (
+          step && <BookingPage step={step} />
+        )}
+      </BookingProvider>
+    );
+    navigation.path =
+      route === "immediate"
+        ? "/book/review/"
+        : route === "confirmation"
+          ? "/confirmation/"
+          : "/book/payment/";
+    saveLiveDraft(draft, true, route === "immediate" ? undefined : id);
+    let view = render(
+      tree(
+        route === "immediate"
+          ? "review"
+          : route === "confirmation"
+            ? "confirmation"
+            : "payment",
+      ),
+    );
+    if (route === "immediate") {
+      await act(async () => {});
+      fireEvent.click(screen.getByText("Accept original"));
+      fireEvent.click(screen.getByText("Create original"));
+    } else if (route !== "status") {
+      await screen.findByRole("status", { name: "Checking your reservation…" });
+      fireEvent.click(screen.getByText("Foreign proof"));
+      expect(screen.getByTestId("creation-attempt")).toHaveTextContent(id);
+      expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+      expect(
+        JSON.parse(screen.getByTestId("creation-draft").textContent!).slots,
+      ).toEqual(draft.slots);
+      if (route === "home" || route === "home-refresh") {
+        fireEvent.click(screen.getByText("Leave uncertain booking"));
+        navigation.path = "/";
+        view.rerender(tree(null));
+        resolved = true;
+        navigation.replace.mockClear();
+        navigation.path = "/book/account/";
+        if (route === "home-refresh") {
+          view.unmount();
+          refreshed = true;
+          view = render(tree("account"));
+        } else view.rerender(tree("account"));
+      } else if (route === "refresh") {
+        view.unmount();
+        resolved = true;
+        refreshed = true;
+        view = render(tree("payment"));
+      } else {
+        resolved = true;
+        vi.setSystemTime(Date.now() + 5001);
+        fireEvent.focus(window);
+      }
+    }
+    await waitFor(() =>
+      expect(screen.getByTestId("creation-attempt")).toHaveTextContent("none"),
+    );
+    await waitFor(() =>
+      expect(
+        JSON.parse(screen.getByTestId("creation-draft").textContent!).slots,
+        route,
+      ).toEqual([]),
+    );
+    const cleared = JSON.parse(
+      screen.getByTestId("creation-draft").textContent!,
+    );
+    expect(cleared.slots).toEqual([]);
+    expect(cleared.accepted).toBe(false);
+    expect(
+      JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
+    ).toEqual(draft.slots);
+    expect(
+      JSON.parse(sessionStorage.getItem("soccerbot-live-draft")!)
+        .checkoutAttemptId,
+    ).toBeUndefined();
+    if (route === "home" || route === "home-refresh") {
+      await screen.findByRole("heading", { name: "Start your booking" });
+      expect(navigation.replace).not.toHaveBeenCalledWith("/book/payment/");
+      expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+      expect(cleared.mode).toBeNull();
+    } else {
+      expect(cleared.contact).toEqual(draft.contact);
+      expect(cleared.nativeServiceId).toBe(draft.nativeServiceId);
+      await waitFor(() =>
+        expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
+      );
+      navigation.path = "/book/time/";
+      view.rerender(tree("time"));
+      expect(await screen.findByRole("alert")).toHaveTextContent(notice);
+      expect(
+        document.querySelector(
+          ".booking-flow-overlay, .payment-check-feedback",
+        ),
+      ).toBeNull();
+      expect(
+        screen.queryByRole("status", { name: "Checking your reservation…" }),
+      ).toBeNull();
+      const originalDate = await screen.findByRole("button", {
+        name: dateLabel(draft.slots[0].date),
+      });
+      await waitFor(() => expect(originalDate).toBeEnabled());
+      fireEvent.click(originalDate);
+      await waitFor(() =>
+        expect(service.availability).toHaveBeenCalledWith(
+          expect.objectContaining({ fresh: true }),
+        ),
+      );
+      // Warm offers for both trainers must stay hidden through a failed fresh read.
+      expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+      expect(
+        JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
+      ).toEqual(draft.slots);
+      expect(
+        document.querySelector(
+          ".booking-flow-overlay, .payment-check-feedback",
+        ),
+      ).toBeNull();
+      freshAvailable = true;
+      vi.setSystemTime(Date.now() + 60001);
+      fireEvent.focus(window);
+      await waitFor(() =>
+        expect(
+          JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
+        ).toEqual([]),
+      );
+      expect(
+        await screen.findByRole("button", { name: /12:00–12:40/ }),
+      ).toBeEnabled();
+    }
+    const writes = fetcher.mock.calls.filter(
+      ([, options]) => options?.method === "POST",
+    );
+    expect(writes).toHaveLength(route === "immediate" ? 1 : 0);
+    view.unmount();
+  }
 });

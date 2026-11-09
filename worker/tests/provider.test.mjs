@@ -4538,3 +4538,308 @@ async function assertAdminRefreshAcrossEviction() {
     await f.mf.dispose();
   }
 }
+
+async function unresolvedCreation(f) {
+  const a = await ongoingAttempt(f, { unassociated: true });
+  await f.db
+    .prepare("DELETE FROM session_effects WHERE attempt_id=?")
+    .bind(a.id)
+    .run();
+  await f.db
+    .prepare("INSERT INTO session_effects VALUES(?,'session:0','unknown',NULL)")
+    .bind(a.id)
+    .run();
+  await f.db
+    .prepare(
+      "UPDATE attempts SET state='recovery_required',version=2 WHERE id=?",
+    )
+    .bind(a.id)
+    .run();
+  await f.db
+    .prepare("UPDATE guest_access SET expires_ms=? WHERE capability_hash=?")
+    .bind(Date.now() + 600000, a.key)
+    .run();
+  const attempt = await f.db
+    .prepare("SELECT * FROM attempts WHERE id=?")
+    .bind(a.id)
+    .first();
+  const token = await f.grant(Date.now() + 60000, "native_creation_resolution");
+  const hash = createHash("sha256").update(token).digest("hex");
+  const proof = {
+    attemptId: a.id,
+    intentHash: attempt.intent_hash,
+    version: 2,
+    dispatchFence: 1,
+    verifiedMs: Date.now(),
+    evidenceReference: "provider-support:synthetic-case-1",
+    processingFinished: true,
+    noBookingCreated: true,
+  };
+  await f.db
+    .prepare(
+      "UPDATE developer_operations SET result_json=? WHERE capability_hash=?",
+    )
+    .bind(JSON.stringify(proof), hash)
+    .run();
+  return {
+    ...a,
+    operatorToken: token,
+    operatorHash: hash,
+    proof,
+    cookie: `__Host-soccerbot-access=${a.token}`,
+  };
+}
+async function resolveCreation(f, a, body) {
+  return f.mf.dispatchFetch(
+    origin + "/api/developer/native-creation-resolution",
+    {
+      method: "POST",
+      headers: { origin, authorization: `Bearer ${a.operatorToken}` },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    },
+  );
+}
+
+test("operator no-creation proof retires only its exact attempt and preserves terminal ownership on reload", async () => {
+  const f = await fixture({
+    full: true,
+    secrets: { LIVE_CUSTOMER_ACCESS: "enabled" },
+  });
+  try {
+    const a = await unresolvedCreation(f);
+    assert.equal(
+      (await resolveCreation(f, a, { attemptId: crypto.randomUUID() })).status,
+      413,
+    );
+    const result = await resolveCreation(f, a);
+    assert.equal(result.status, 200);
+    assert.deepEqual((await result.json()).result.creationResolution, {
+      state: "not_created",
+    });
+    const saved = await f.db
+      .prepare("SELECT * FROM no_creation_resolutions WHERE attempt_id=?")
+      .bind(a.id)
+      .first();
+    assert.equal(saved.intent_hash, a.proof.intentHash);
+    assert.equal(saved.attempt_version, 3);
+    assert.equal(saved.evidence_source, "operator_verified_provider");
+    assert.equal(saved.evidence_reference, a.proof.evidenceReference);
+    assert.equal(
+      (
+        await f.db
+          .prepare("SELECT state FROM recovery_work WHERE attempt_id=?")
+          .bind(a.id)
+          .first()
+      ).state,
+      "complete",
+    );
+    assert.equal(
+      await f.db
+        .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
+        .bind(a.id)
+        .first(),
+      null,
+    );
+    assert.ok(
+      await f.db
+        .prepare(
+          "SELECT 1 FROM rejected_native_checkout_grants WHERE attempt_id=?",
+        )
+        .bind(a.id)
+        .first(),
+    );
+    assert.ok(
+      await f.db
+        .prepare(
+          "SELECT 1 FROM dispatches WHERE attempt_id=? AND outcome='unknown'",
+        )
+        .bind(a.id)
+        .first(),
+    );
+    const otherToken = "d".repeat(64);
+    await f.db
+      .prepare("INSERT INTO guest_access VALUES(?,?,?,?,NULL)")
+      .bind(
+        createHash("sha256").update(otherToken).digest("hex"),
+        crypto.randomUUID(),
+        Date.now() - 1000,
+        Date.now() + 600000,
+      )
+      .run();
+    for (const suffix of ["checkout", "confirmation"]) {
+      const response = await f.mf.dispatchFetch(
+        origin + `/api/attempts/${a.id}/${suffix}`,
+        { headers: { cookie: a.cookie } },
+      );
+      assert.equal(response.status, 200);
+      assert.deepEqual((await response.json()).creationResolution, {
+        state: "not_created",
+      });
+      assert.equal(
+        (
+          await f.mf.dispatchFetch(origin + `/api/attempts/${a.id}/${suffix}`, {
+            headers: { cookie: `__Host-soccerbot-access=${otherToken}` },
+          })
+        ).status,
+        404,
+      );
+
+      assert.equal(
+        (await f.mf.dispatchFetch(origin + `/api/attempts/${a.id}/${suffix}`))
+          .status,
+        401,
+      );
+    }
+    const current = await f.mf.dispatchFetch(origin + "/api/booking/current", {
+      headers: { cookie: a.cookie },
+    });
+    assert.deepEqual(await current.json(), { state: "empty" });
+    assert.equal((await resolveCreation(f, a)).status, 200);
+    assert.equal(
+      (
+        await f.db
+          .prepare("SELECT count(*) n FROM no_creation_resolutions")
+          .first()
+      ).n,
+      1,
+    );
+    for (const sql of [
+      "UPDATE attempts SET association_json='{}' WHERE id=?",
+      "UPDATE session_effects SET outcome='observed',reference_id='late' WHERE attempt_id=?",
+      "INSERT INTO session_effects VALUES(?,'native-booking-key','observed','late')",
+      "UPDATE recovery_work SET state='due' WHERE attempt_id=?",
+      "DELETE FROM no_creation_resolutions WHERE attempt_id=?",
+    ])
+      await assert.rejects(f.db.prepare(sql).bind(a.id).run());
+    await f.db
+      .prepare(
+        "INSERT INTO native_checkout_grants(capability_hash,source_revision,contract_json,not_before_ms,expires_ms,starting_used,maximum_used,state,ongoing) VALUES(?,?,'{}',?,?,0,30,'granted',1)",
+      )
+      .bind(a.key, "a".repeat(40), Date.now(), Date.now() + 600000)
+      .run();
+    await assert.rejects(
+      f.db
+        .prepare(
+          "UPDATE native_checkout_grants SET attempt_id=? WHERE capability_hash=?",
+        )
+        .bind(a.id, a.key)
+        .run(),
+      /creation already resolved/,
+    );
+    assert.equal(f.calls.length, 0);
+  } finally {
+    await f.mf.dispose();
+  }
+});
+
+test("operator no-creation proof rejects stale partial paid held and unverified evidence without releasing the attempt", async () => {
+  const f = await fixture({
+    full: true,
+    secrets: { LIVE_CUSTOMER_ACCESS: "enabled" },
+  });
+  try {
+    for (const scenario of [
+      "stale",
+      "unfinished",
+      "before-dispatch",
+      "observed",
+      "reference",
+      "association",
+      "hold",
+      "payment",
+      "progress",
+      "expired-grant",
+    ]) {
+      const a = await unresolvedCreation(f);
+      let proof = { ...a.proof };
+      if (scenario === "stale") proof.version = 1;
+      if (scenario === "unfinished") proof.processingFinished = false;
+      if (scenario === "before-dispatch") proof.verifiedMs = 1;
+      if (scenario === "observed")
+        await f.db
+          .prepare(
+            "UPDATE session_effects SET outcome='observed' WHERE attempt_id=?",
+          )
+          .bind(a.id)
+          .run();
+      if (scenario === "reference")
+        await f.db
+          .prepare(
+            "UPDATE session_effects SET reference_id='partial-booking' WHERE attempt_id=?",
+          )
+          .bind(a.id)
+          .run();
+      if (scenario === "association")
+        await f.db
+          .prepare("UPDATE attempts SET association_json='{}' WHERE id=?")
+          .bind(a.id)
+          .run();
+      if (scenario === "hold")
+        await f.db
+          .prepare("INSERT INTO hitpay_holds VALUES(?,'{}','{}',?,?)")
+          .bind(a.id, a.proof.intentHash, Date.now() + 60000)
+          .run();
+      if (scenario === "payment")
+        await f.db
+          .prepare(
+            "INSERT INTO hitpay_payments(attempt_id,scope_json,reference,expires_ms,created_ms,recovery_end_ms,state,reason,ready_ms) VALUES(?,'{}',?,?,?,?,'due','unknown',?)",
+          )
+          .bind(
+            a.id,
+            a.id,
+            Date.now() + 60000,
+            Date.now(),
+            Date.now() + 86400000,
+            Date.now(),
+          )
+          .run();
+      if (scenario === "progress")
+        await f.db
+          .prepare(
+            "INSERT INTO checkout_progress(attempt_id,booking_created_ms,payment_window_ms,hold_window_ms,checking_buffer_ms,recovery_buffer_ms) VALUES(?,?,480000,600000,60000,180000)",
+          )
+          .bind(a.id, Date.now())
+          .run();
+      if (scenario === "expired-grant")
+        await f.db
+          .prepare(
+            "UPDATE developer_operations SET expires_ms=0 WHERE capability_hash=?",
+          )
+          .bind(a.operatorHash)
+          .run();
+      await f.db
+        .prepare(
+          "UPDATE developer_operations SET result_json=? WHERE capability_hash=?",
+        )
+        .bind(JSON.stringify(proof), a.operatorHash)
+        .run();
+      const response = await resolveCreation(f, a);
+      if (scenario === "unfinished")
+        assert.equal(response.status, 409, scenario);
+      else if (scenario === "expired-grant")
+        assert.equal(response.status, 401, scenario);
+      else {
+        assert.equal(response.status, 200, scenario);
+        assert.equal((await response.json()).state, "blocked", scenario);
+      }
+      assert.equal(
+        await f.db
+          .prepare("SELECT 1 FROM no_creation_resolutions WHERE attempt_id=?")
+          .bind(a.id)
+          .first(),
+        null,
+        scenario,
+      );
+      assert.ok(
+        await f.db
+          .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
+          .bind(a.id)
+          .first(),
+        scenario,
+      );
+    }
+    assert.equal(f.calls.length, 0);
+  } finally {
+    await f.mf.dispose();
+  }
+});

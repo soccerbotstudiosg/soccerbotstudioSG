@@ -11,6 +11,8 @@ export type Access = {
   issued_ms: number;
   expires_ms: number;
   fresh_checkout?: number;
+  checkout_key?: string;
+  resolved_checkout?: number;
 };
 /** Validate the presented access capability against retained server state. */
 export async function authenticate(
@@ -21,6 +23,7 @@ export async function authenticate(
   preceding: D1PreparedStatement[] = [],
   inspect?: (results: D1Result[]) => void,
   inspectFreshCheckout = false,
+  checkoutKey?: string,
 ): Promise<Access> {
   const cookies = (request.headers.get("cookie") || "")
     .split(";")
@@ -37,9 +40,12 @@ export async function authenticate(
         (inspectFreshCheckout
           ? ", NOT EXISTS(SELECT 1 FROM native_checkout_grants g WHERE g.capability_hash=guest_access.capability_hash) AS fresh_checkout"
           : "") +
+        (checkoutKey
+          ? ", EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=guest_access.owner_id AND a.idempotency_key=?) AS resolved_checkout"
+          : "") +
         " FROM guest_access WHERE capability_hash = ? AND revoked_ms IS NULL AND issued_ms <= ? AND expires_ms > ?",
     )
-    .bind(hash, now, now);
+    .bind(...(checkoutKey ? [checkoutKey] : []), hash, now, now);
   const results = preceding.length
     ? await db.batch([...preceding, statement])
     : undefined;
@@ -48,7 +54,7 @@ export async function authenticate(
     ? (results.at(-1)!.results[0] as Access | undefined)
     : await statement.first<Access>();
   if (!row) throw new ApiError(401, "access_denied");
-  return row;
+  return checkoutKey ? { ...row, checkout_key: checkoutKey } : row;
 }
 /** Create a bounded server-issued access capability. */
 export async function createAccess(env: Env, now: number) {
@@ -104,7 +110,11 @@ export function clearAccessCookie() {
 // Internal HTTP-to-coordinator context. SQL write fences still recheck access
 // after token warming and before either provider effect.
 /** Authenticate checkout ownership before exposing attempt state. */
-export async function authenticateCheckout(request: Request, env: Env) {
+export async function authenticateCheckout(
+  request: Request,
+  env: Env,
+  checkoutKey?: string,
+) {
   assertBindingShape(env);
   return authenticate(
     request,
@@ -118,5 +128,6 @@ export async function authenticateCheckout(request: Request, env: Env) {
       );
     },
     true,
+    checkoutKey,
   );
 }

@@ -1439,6 +1439,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           })().catch(async (error: unknown) => {
             if (
               !(error instanceof ApiError) ||
+              error.code === "native_attempt_unavailable" ||
               !(
                 error.code === "native_customer_window_unavailable" ||
                 error.status === 409

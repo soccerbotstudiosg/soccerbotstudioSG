@@ -1,8 +1,9 @@
 # Database schema
 
-Source inventory:34 application D1 tables from migrations0001–0040 and12 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
+Source inventory:35 application D1 tables from migrations0001–0041, verified by applying all41 migrations to isolated in-memory SQLite, and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
 - Migration0039 adds reservation source/expiry records. Migration0040 adds nullable `hitpay_payments.checkout_expires_ms`; apply it before the candidate Worker. Existing rows remain unknown until authenticated provider recovery supplies the hosted-link deadline; no financial window is backfilled or extended.
+- Migration0041 adds immutable no-creation proof and extends the existing operator-operation constraint through a preserving table rebuild. Apply it before code using terminal creation resolution. It does not resolve or backfill historical uncertainty.
 - Deployment and table-content verification remain separate from this source inventory; no production activation is claimed.
 
 The schema source is [D1 migrations](../../migrations), [coordinator initialization](../../worker/coordinator.ts), [token-cache initialization](../../worker/provider-token-cache.ts) and [display-cache initialization](../../worker/display-snapshots.ts). Retention, expiry and deletion policy belongs to [Data lifecycle](../data-lifecycle.md); authorization and payment invariants belong to [Business rules](../business-rules.md). This document owns table structure and relationships only.
@@ -13,17 +14,17 @@ D1 retains booking/payment evidence; the Durable Object coordinates provider wor
 
 ```mermaid
 flowchart LR
-  Worker["Booking Worker"] --> D1["D1 · 34 tables in local schema"]
-  Worker --> DO["Account Durable Object · 12 SQLite tables"]
+  Worker["Booking Worker"] --> D1["D1 · 35 tables in local schema"]
+  Worker --> DO["Account Durable Object · 13 SQLite tables"]
   D1 --> Identity["Access, identity, contacts · 10"]
-  D1 --> Booking["Attempts and grant history · 8"]
+  D1 --> Booking["Attempts, resolution and grant history · 11"]
   D1 --> Payment["Payments, confirmation, invoices · 6"]
   D1 --> Webhook["SimplyBook webhook evidence · 6"]
   D1 --> foundation_identity["foundation_identity"]
   D1 --> developer_operations["developer_operations"]
   DO --> Coordination["Admissions, budgets, leases, wakeups · 8"]
   DO --> Tokens["Provider token cache · 1"]
-  DO --> Display["Display snapshots and refresh state · 2"]
+  DO --> Display["Display snapshots and refresh state · 4"]
 ```
 
 ## Reading the diagrams
@@ -46,6 +47,7 @@ erDiagram
   attempts ||--o{ dispatches : attempt_id
   attempts ||--o{ session_effects : attempt_id
   attempts ||--o| recovery_work : attempt_id
+  attempts ||--o| no_creation_resolutions : attempt_id
   attempts o|--o| native_checkout_grants : nullable_attempt_id
   guest_access ||--o| native_checkout_grants : capability_hash
   attempts { TEXT id PK }
@@ -63,6 +65,13 @@ erDiagram
     TEXT step PK
   }
   recovery_work { TEXT attempt_id PK, FK }
+  no_creation_resolutions {
+    TEXT attempt_id PK, FK
+    TEXT intent_hash
+    INTEGER attempt_version
+    INTEGER dispatch_fence
+    TEXT evidence_source
+  }
 ```
 
 Grant archival preserves records; it does not delete the underlying attempt or payment.
@@ -70,7 +79,7 @@ Grant archival preserves records; it does not delete the underlying attempt or p
 ```mermaid
 flowchart LR
   guest_access -. "owner_id checked by application" .-> attempts
-  native_checkout_grants -. "rejected preflight" .-> rejected_native_checkout_grants
+  native_checkout_grants -. "rejected preflight or verified no creation" .-> rejected_native_checkout_grants
   native_checkout_grants -. "completed dismissal" .-> completed_native_checkout_grants
   native_checkout_grants -. "eligible expiry" .-> expired_native_checkout_grants
   rejected_native_checkout_grants -. "attempt_id logical link" .-> attempts
@@ -86,13 +95,15 @@ The three archive tables use `CREATE TABLE AS SELECT`: they **do not inherit pri
 | `dispatches`                       | PK: `id`                          | Durable record of a dispatched operation, including an unknown result.                   |
 | `session_effects`                  | PK: `attempt_id, step`            | Per-attempt operation steps and their retained provider references.                      |
 | `recovery_work`                    | PK: `attempt_id`                  | Bounded recovery scheduling, claim generation and retry state.                           |
+| `no_creation_resolutions`          | PK/FK: `attempt_id → attempts.id` | Immutable provider-backed terminal noncreation proof for one exact attempt.              |
 | `native_checkout_grants`           | PK: `capability_hash`             | Current capability-bound checkout authority and availability snapshots.                  |
-| `rejected_native_checkout_grants`  | No PK; unique index: `attempt_id` | Preserved grant history after preflight rejection.                                       |
+| `rejected_native_checkout_grants`  | No PK; unique index: `attempt_id` | Preserved grant history after preflight rejection or verified no-creation resolution.    |
 | `completed_native_checkout_grants` | No PK; unique index: `attempt_id` | Preserved grant history after leaving a completed booking.                               |
 | `expired_native_checkout_grants`   | No PK; unique index: `attempt_id` | Preserved grant history after an eligible reservation expires.                           |
 
 - `reservation_sources`: PK/FK `attempt_id → attempts.id`; required64-character customer/IP hashes and nonnegative creation time. Indexes `(customer_hash,attempt_id)` and `(ip_hash,attempt_id)`; updates rejected by trigger.
 - `reservation_expiries`: PK/FK `attempt_id → reservation_sources.attempt_id`; nonnegative `expired_ms`, indexed expiry time; updates rejected by trigger. No purge/delete trigger is introduced.
+- `no_creation_resolutions`: required intent hash, attempt version, original dispatch fence, `evidence_source` (`operator_verified_provider` or `correlated_rpc_rejection`), evidence reference of1–128 characters, verification/resolution timestamps with resolution no earlier than verification, and nullable operator-capability hash. The capability hash is required only for operator evidence and is an application-managed link, not a declared FK. Update/delete triggers preserve the resolution; additional triggers fence attempt updates and new financial/session/grant effects after resolution. The original attempt state remains `recovery_required`; this separate record supplies its terminal meaning without rewriting historical enums.
 - Migration0038 adds immutable `recovery_buffer_ms`; existing rows retain their migration default, while new attempts explicitly record the policy value. Migration0039 does not modify financial records.
 
 ## D1: Payments, confirmation and invoices
@@ -286,6 +297,12 @@ erDiagram
     TEXT key PK
     TEXT payload
     INTEGER expires_ms
+  }
+  display_release_probes {
+    TEXT scope PK
+    TEXT attempt_id PK
+    TEXT date PK
+    INTEGER ready_ms
   }
 ```
 

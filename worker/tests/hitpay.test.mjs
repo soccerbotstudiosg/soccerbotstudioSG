@@ -36,7 +36,15 @@ const scope = {
 const fixtures = JSON.parse(
   readFileSync("worker/tests/native-fixtures.json", "utf8"),
 ).responses;
-let script, mf, db, contract, normalization, outbound, handler, logs;
+let script,
+  mf,
+  db,
+  contract,
+  normalization,
+  purposeFormatter,
+  outbound,
+  handler,
+  logs;
 const intent = {
   accountId: config.account_id,
   environmentId: "developer",
@@ -94,6 +102,17 @@ before(async () => {
   contract = await import(
     "data:text/javascript;base64," + Buffer.from(source).toString("base64")
   );
+  const purposeSource = await build({
+    entryPoints: ["worker/hitpay-journal.ts"],
+    bundle: true,
+    write: false,
+    format: "esm",
+    platform: "node",
+  });
+  ({ hitpayPurpose: purposeFormatter } = await import(
+    "data:text/javascript;base64," +
+      Buffer.from(purposeSource.outputFiles[0].text).toString("base64")
+  ));
   const normalized = await build({
     entryPoints: ["worker/provider-normalization.ts"],
     bundle: true,
@@ -1046,6 +1065,16 @@ test("HitPay creation accepts only a bounded Singapore expiry and retains a sing
     posts++;
     const body = await request.json();
     assert.match(body.expires_after, /^[1-4] mins$/);
+    assert.match(
+      body.purpose,
+      /^SoccerBot booking \| Apex @ Henderson \| 1 player \| 1 session \(SGT\)/,
+    );
+    assert.ok(
+      body.purpose.includes("see booking summary") ||
+        /\d{2}:\d{2}–\d{2}:\d{2}/.test(body.purpose),
+    );
+    assert.equal(body.amount, "88.00");
+    assert.equal(body.reference_number, `soccerbot-dev-${attemptId}`);
     return Response.json({
       ...paymentResponse(),
       reference_number: body.reference_number,
@@ -2808,4 +2837,76 @@ test("new recovery buffer releases verified nonpayment after twelve minutes", as
       .first(),
     null,
   );
+});
+
+test("HitPay purpose uses matched retained labels and bounds complete session details", () => {
+  const startMs = Date.parse("2026-11-09T04:00:00Z");
+  const session = { ...intent.sessions[0], startMs, players: 2 };
+  const bookingScope = {
+    attemptId,
+    companyLogin: "synthetic-developer",
+    timezone: "Asia/Singapore",
+    intent: { ...intent, sessions: [session] },
+  };
+  const offer = {
+    serviceId: session.serviceId,
+    instructorId: session.instructorId,
+    startMs,
+    priceMinor: session.totalMinor,
+    currency: "SGD",
+    serviceName: "Kickoff Special",
+    instructorName: "Faisal",
+  };
+  const snapshot = (offers) =>
+    JSON.stringify({
+      "2026-11-09": { date: "2026-11-09", observedAtMs: startMs, offers },
+    });
+  assert.equal(
+    purposeFormatter(bookingScope, snapshot([offer])),
+    "Kickoff Special | Apex @ Henderson | 2 players | 1 session (SGT) | 9 Nov 2026 12:00–12:40 Trainer: Faisal",
+  );
+  const missingLabels = purposeFormatter(bookingScope, null);
+  assert.equal(purposeFormatter(bookingScope, "{broken"), missingLabels);
+  assert.equal(
+    purposeFormatter(bookingScope, '{"legacy":{"offers":"invalid"}}'),
+    missingLabels,
+  );
+  const unrelated = purposeFormatter(
+    bookingScope,
+    snapshot([
+      { ...offer, instructorId: "99", instructorName: "Wrong trainer" },
+    ]),
+  );
+  assert.ok(!unrelated.includes("Wrong trainer"));
+  assert.ok(!unrelated.includes("Kickoff Special"));
+  assert.ok(unrelated.includes("9 Nov 2026 12:00–12:40"));
+  const sessions = Array.from({ length: 5 }, (_, i) => ({
+    ...session,
+    startMs: startMs + i * 86400000,
+  }));
+  const result = purposeFormatter(
+    { ...bookingScope, intent: { ...intent, sessions } },
+    snapshot(sessions.map((s) => ({ ...offer, startMs: s.startMs }))),
+  );
+  assert.equal(
+    result,
+    "Kickoff Special | Apex @ Henderson | 2 players | 5 sessions (SGT) | 9 Nov 2026 12:00–12:40 Trainer: Faisal | 10 Nov 2026 12:00–12:40 Trainer: Faisal | 11 Nov 2026 12:00–12:40 Trainer: Faisal | + 2 more sessions; see booking summary",
+  );
+  assert.ok(result.length <= 255);
+  const long = purposeFormatter(
+    bookingScope,
+    snapshot([
+      {
+        ...offer,
+        serviceName: "界".repeat(256),
+        instructorName: "界".repeat(256),
+      },
+    ]),
+  );
+  assert.equal(
+    long,
+    "SoccerBot booking | Apex @ Henderson | 2 players | 1 session (SGT) | + 1 more session; see booking summary",
+  );
+  assert.equal(result.includes(intent.contact.email), false);
+  assert.equal(result.includes(intent.contact.phone), false);
 });

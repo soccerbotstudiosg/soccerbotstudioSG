@@ -14,6 +14,90 @@ import {
 import { hitpayRequest } from "./provider-transport";
 import { associationSchema } from "./journal";
 import type { NativeScope } from "./native-adapter";
+import { LOCATION } from "../src/domain/catalog";
+import { SESSION_MINUTES } from "../src/domain/booking-policy";
+import { nativeAvailabilitySchema } from "../src/domain/native-checkout";
+
+/** Format retained display metadata within HitPay's 255-character purpose limit. */
+export function hitpayPurpose(
+  scope: NativeScope,
+  availabilityJson: string | null,
+) {
+  let decoded: unknown;
+  try {
+    decoded = JSON.parse(availabilityJson || "{}");
+  } catch {
+    // Optional historical display metadata must not block a verified payment.
+    decoded = {};
+  }
+  const snapshot = z
+    .record(z.string(), nativeAvailabilitySchema)
+    .safeParse(decoded);
+  const offers = snapshot.success
+    ? Object.values(snapshot.data).flatMap((day) => day.offers)
+    : [];
+  const sessions = scope.intent.sessions;
+  const matched = sessions.map((session) =>
+    offers.find(
+      (offer) =>
+        offer.serviceId === session.serviceId &&
+        offer.instructorId === session.instructorId &&
+        offer.startMs === session.startMs &&
+        offer.priceMinor === session.totalMinor,
+    ),
+  );
+  const clean = (value: string) => value.replace(/\s+/g, " ").trim();
+  const names = [
+    ...new Set(
+      matched
+        .filter((offer) => offer !== undefined)
+        .map((offer) => clean(offer.serviceName)),
+    ),
+  ];
+  const service =
+    matched.every(Boolean) && names.length === 1
+      ? names[0]
+      : "SoccerBot booking";
+  const players = [...new Set(sessions.map((session) => session.players))];
+  const playerLabel =
+    players.length === 1
+      ? `${players[0]} player${players[0] === 1 ? "" : "s"}`
+      : "Players per session";
+  const summary = `${LOCATION.building} | ${playerLabel} | ${sessions.length} session${sessions.length === 1 ? "" : "s"} (SGT)`;
+  // Very long provider labels must not consume the entire description budget.
+  const header = `${service.length <= 64 ? service : "SoccerBot booking"} | ${summary}`;
+  const date = new Intl.DateTimeFormat("en-GB", {
+    timeZone: scope.timezone,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const time = new Intl.DateTimeFormat("en-GB", {
+    timeZone: scope.timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  const entries = sessions.map(
+    (session, index) =>
+      `${date.format(session.startMs)} ${time.format(session.startMs)}–${time.format(session.startMs + SESSION_MINUTES * 60000)}${matched[index] ? ` Trainer: ${clean(matched[index].instructorName)}` : ""}${players.length > 1 ? ` (${session.players} players)` : ""}`,
+  );
+  for (let count = entries.length; count >= 0; count--) {
+    const remaining = entries.length - count;
+    const purpose = [
+      header,
+      ...entries.slice(0, count),
+      ...(remaining
+        ? [
+            `+ ${remaining} more session${remaining === 1 ? "" : "s"}; see booking summary`,
+          ]
+        : []),
+    ].join(" | ");
+    if (purpose.length <= 255) return purpose;
+  }
+  return `SoccerBot booking | ${sessions.length} sessions; see booking summary`;
+}
+
 export type HitpayRow = {
   attempt_id: string;
   scope_json: string;
@@ -140,6 +224,14 @@ export async function prepareHitpay(
     if (intent.meta.changes !== 1)
       throw new ApiError(409, "hitpay_creation_already_reserved");
   };
+  // Retained account-scoped display labels only: no extra provider request.
+  const snapshot = await env.STATE.withSession("first-primary")
+    .prepare(
+      "SELECT availability_json FROM native_checkout_grants WHERE attempt_id=?",
+    )
+    .bind(scope.attemptId)
+    .first<{ availability_json: string | null }>();
+  const purpose = hitpayPurpose(scope, snapshot?.availability_json ?? null);
   if (!consolidated) await reserveCreation();
   let verified: ReturnType<typeof verifyHitpayRequest>;
   try {
@@ -165,7 +257,7 @@ export async function prepareHitpay(
                 email: scope.intent.contact.email,
               }
             : {}),
-          purpose: "SoccerBot booking",
+          purpose,
         },
       },
       async () => {

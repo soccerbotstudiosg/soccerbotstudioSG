@@ -15,6 +15,7 @@ import {
 } from "../src/domain/booking-policy";
 import { studioStartsFromIntervals } from "./native-grid";
 import { claimNativeDispatch, claimNativeEffect } from "./native-dispatch";
+import { recordNoCreation } from "./native-creation-resolution";
 import type { Grant } from "./customer-authority";
 import type { CustomerCatalogue } from "../src/domain/catalog";
 import {
@@ -72,6 +73,7 @@ import {
 import { ProviderSession, type ProviderControl } from "./provider-session";
 import {
   ProviderRpcError,
+  ProviderBookRejectedError,
   providerSecrets,
   type NativeExchange,
 } from "./provider-transport";
@@ -275,6 +277,7 @@ export async function executeNativeCheckout(options: {
   let stagedVersion: number | undefined;
   let claimedDispatch = false;
   let claimedBookings = 0;
+  let singleBookRejection: ProviderBookRejectedError | undefined;
   let selectionSnapshot = "{}";
   let cleanupMode = false;
   let cleanupSignal: AbortSignal | undefined;
@@ -478,18 +481,31 @@ export async function executeNativeCheckout(options: {
         "booking-cancel",
       ].includes(operation.kind)
     ) {
-      const response = await provider.nativeWrite(
-        env,
-        control,
-        operation,
-        {
-          beforeIdentity: async () =>
-            cleanupMode ? assertGranted() : assertWindow(),
-          beforeWrite: () => assertGranted(true),
-        },
-        undefined,
-        !!options.creationOnly && !cleanupMode,
-      );
+      const response = await provider
+        .nativeWrite(
+          env,
+          control,
+          operation,
+          {
+            beforeIdentity: async () =>
+              cleanupMode ? assertGranted() : assertWindow(),
+            beforeWrite: () => assertGranted(true),
+          },
+          undefined,
+          !!options.creationOnly && !cleanupMode,
+        )
+        .catch((error: unknown) => {
+          if (
+            error instanceof ProviderBookRejectedError &&
+            !cleanupMode &&
+            operation.kind === "book" &&
+            operation.batchId === undefined &&
+            intent.sessions.length === 1 &&
+            (!consolidated || (claimedDispatch && claimedBookings === 1))
+          )
+            singleBookRejection = error;
+          throw error;
+        });
       if (consolidated && operation.kind === "book")
         rawEvidence.statement = holdEvidenceStatement(
           env.STATE,
@@ -527,6 +543,7 @@ export async function executeNativeCheckout(options: {
     state: string;
     paymentAvailable: boolean;
     rejectedSessionIndex?: number;
+    creationResolution?: { state: "not_created" };
     checkout?: z.infer<typeof hitpayHandoffSchema>;
   } = {
     state: "recovery_required",
@@ -848,6 +865,35 @@ export async function executeNativeCheckout(options: {
       access,
       row,
     );
+    if (
+      result.state === "recovery_required" &&
+      singleBookRejection &&
+      (!consolidated || stagedVersion !== undefined) &&
+      (await recordNoCreation(
+        env,
+        {
+          attemptId,
+          intentHash: row.intent_hash,
+          version: (stagedVersion ?? row.version) + 2,
+          dispatchFence: (stagedVersion ?? row.version) + 1,
+          verifiedMs: singleBookRejection.receivedAtMs,
+          evidenceReference: singleBookRejection.requestId,
+          processingFinished: true,
+          noBookingCreated: true,
+        },
+        {
+          kind: "correlated_rpc_rejection",
+          rpcCode: singleBookRejection.rejectionCode,
+          dispatchFence: (stagedVersion ?? row.version) + 1,
+        },
+      ))
+    )
+      return {
+        attemptId,
+        state: "recovery_required",
+        paymentAvailable: false,
+        creationResolution: { state: "not_created" as const },
+      };
     if (rawEvidence.statement) {
       const retained = await rawEvidence.statement.run();
       if (retained.meta.changes !== 1)

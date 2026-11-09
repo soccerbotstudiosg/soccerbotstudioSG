@@ -115,6 +115,58 @@ it("keeps unsupported live checkout unavailable without synthetic fallback", asy
   await expect(
     readConfirmation(id, new AbortController().signal),
   ).rejects.toThrow();
+  const resolved = {
+    ...context,
+    mode: "live",
+    checkout: { state: "unavailable" },
+    creationResolution: { state: "not_created" },
+  };
+  fetch.mockResolvedValue(Response.json(resolved));
+  expect((await read("live")).creationResolution).toEqual({
+    state: "not_created",
+  });
+  for (const change of [
+    { attemptId: "00000000-0000-4000-8000-000000000002" },
+    { creationResolution: { state: "unknown" } },
+    { payment: { status: "recorded", paidAtMs: 1 } },
+    { bookingIssue: "incomplete" },
+    { selectionRejection: rejected.selectionRejection },
+    { paymentIssue: "link_recovering" },
+    { expired: true },
+    {
+      checkout: {
+        state: "available",
+        url: `https://securecheckout.sandbox.hit-pay.com/payment-request/@soccerbot/${id}/checkout`,
+        expiresAtMs: Date.now() + 1000,
+      },
+      checking: { ...context.checking, deadlineMs: Date.now() + 60000 },
+    },
+  ]) {
+    fetch.mockResolvedValue(Response.json({ ...resolved, ...change }));
+    await expect(read("live")).rejects.toThrow();
+  }
+  const terminal = {
+    status: "invalid",
+    reason: "booking_not_created",
+    creationResolution: { state: "not_created" },
+  };
+  fetch.mockResolvedValue(Response.json(terminal));
+  expect(
+    await readConfirmation(id, new AbortController().signal),
+  ).toMatchObject(terminal);
+  for (const change of [
+    { reason: "invoice_expired" },
+    { status: "pending" },
+    { status: "unresolved" },
+    { status: "confirmed", reason: "verified" },
+    { selectionRejection: rejected.selectionRejection },
+    { creationResolution: { state: "unknown" } },
+  ]) {
+    fetch.mockResolvedValue(Response.json({ ...terminal, ...change }));
+    await expect(
+      readConfirmation(id, new AbortController().signal),
+    ).rejects.toThrow();
+  }
   fetch.mockResolvedValue(Response.json({ ...context, mode: "live" }));
   await expect(read("live")).rejects.toThrow();
   fetch.mockResolvedValue(Response.json(context));
@@ -159,7 +211,7 @@ it("accepts only the backend-issued native path for the matching protected attem
     );
     await expect(read("live")).rejects.toThrow();
   }
-  for (const expiry of [undefined, Date.now() - 1, Date.now() + 180000]) {
+  for (const expiry of [undefined, Date.now() + 180000]) {
     fetch.mockResolvedValue(
       Response.json({
         ...context,
@@ -228,8 +280,29 @@ it("accepts only a bounded protected HitPay sandbox checkout URL", async () => {
     fetch.mockResolvedValue(reply(invalid));
     await expect(read("live")).rejects.toThrow();
   }
-  for (const expiry of [0, Date.now() - 1, Date.now() + 180000]) {
+  for (const expiry of [0, Date.now() + 180000]) {
     fetch.mockResolvedValue(reply(url, expiry));
+    await expect(read("live")).rejects.toThrow();
+  }
+  const expiredAt = Date.now() - 1;
+  fetch.mockResolvedValue(reply(url, expiredAt));
+  const expiredContext = await read("live");
+  expect(expiredContext.checkout).toEqual({ state: "unavailable" });
+  expect(expiredContext.checking.paymentExpiresAtMs).toBe(expiredAt);
+  expect(expiredContext.expired).toBeUndefined();
+  for (const paymentExpiresAtMs of [0, Date.now() + 180000]) {
+    fetch.mockResolvedValue(
+      Response.json({
+        ...context,
+        mode: "live",
+        checkout: { state: "unavailable" },
+        checking: {
+          ...context.checking,
+          deadlineMs: Date.now() + 120000,
+          paymentExpiresAtMs,
+        },
+      }),
+    );
     await expect(read("live")).rejects.toThrow();
   }
   const serverTime = Math.floor(Date.now() / 1000) * 1000;

@@ -112,6 +112,16 @@ export class ProviderRpcError extends ApiError {
     super(503, "provider_rpc_failed");
   }
 }
+/** A correlated single-book precondition rejection, never an authentication error. */
+export class ProviderBookRejectedError extends ProviderRpcError {
+  constructor(
+    readonly rejectionCode: -32053 | -32054,
+    readonly requestId: string,
+    readonly receivedAtMs: number,
+  ) {
+    super(rejectionCode);
+  }
+}
 export type ProviderFamily = "public" | "admin";
 export type ProviderOperation =
   | "public-auth"
@@ -718,8 +728,23 @@ export async function providerRequest(
           "code" in value.error &&
           typeof value.error.code === "number" &&
           Number.isSafeInteger(value.error.code)
-        )
+        ) {
+          // Official book contract: unavailable date/time throws before this
+          // single, non-recurring booking is created. Batch errors are ambiguous.
+          // Provider references: docs/api-contracts.md, verified no-creation resolution.
+          if (
+            operation === "native" &&
+            native?.kind === "book" &&
+            native.batchId === undefined &&
+            (value.error.code === -32053 || value.error.code === -32054)
+          )
+            throw new ProviderBookRejectedError(
+              value.error.code,
+              rpcId,
+              Date.now(),
+            );
           throw new ProviderRpcError(value.error.code);
+        }
         if (
           !value ||
           typeof value !== "object" ||

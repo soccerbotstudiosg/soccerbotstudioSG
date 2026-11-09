@@ -18,6 +18,11 @@ export const hitpayHandoffSchema = z.strictObject({
   expiresAtMs: z.number().int().positive().safe(),
 });
 
+export const creationResolutionSchema = z.strictObject({
+  state: z.literal("not_created"),
+});
+export type CreationResolution = z.infer<typeof creationResolutionSchema>;
+
 // Only protected server reads with retained no-effect evidence may return this.
 export const checkoutSelectionRejectionSchema = z.strictObject({
   state: z.enum(["selection_unavailable", "restart_required"]),

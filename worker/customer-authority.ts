@@ -57,6 +57,19 @@ export async function authorizeCustomerCheckout(
   const services = providerServiceIds(env);
   const access =
     verifiedAccess ?? (await authenticate(request, env, Date.now()));
+  // A retired idempotency key must not mint a replacement grant before the
+  // immutable attempt is inspected. Otherwise replay can strand the next key
+  // behind a fresh grant bound to the already resolved attempt.
+  const resolved =
+    access.checkout_key === input.key && access.resolved_checkout !== undefined
+      ? access.resolved_checkout === 1
+      : await env.STATE.withSession("first-primary")
+          .prepare(
+            "SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=? AND a.idempotency_key=?",
+          )
+          .bind(access.owner_id, input.key)
+          .first();
+  if (resolved) throw new ApiError(409, "native_attempt_unavailable");
   const existing =
     !retainGrant &&
     (await archiveRejectedCustomerGrant(env, access.capability_hash));
@@ -137,7 +150,7 @@ export async function authorizeCustomerCheckout(
   if (!Number.isSafeInteger(maximum))
     throw new ApiError(503, "provider_budget_invalid");
   const insert = env.STATE.prepare(
-    "INSERT INTO native_checkout_grants(capability_hash,source_revision,contract_json,not_before_ms,expires_ms,starting_used,maximum_used,cleanup_allowed,state,available_dates_json,availability_json,read_state,ongoing) VALUES(?,?,?,?,?,?,?,0,'granted',?,?,'available',1) ON CONFLICT(capability_hash) DO NOTHING",
+    "INSERT INTO native_checkout_grants(capability_hash,source_revision,contract_json,not_before_ms,expires_ms,starting_used,maximum_used,cleanup_allowed,state,available_dates_json,availability_json,read_state,ongoing) SELECT ?,?,?,?,?,?,?,0,'granted',?,?,'available',1 WHERE NOT EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=? AND a.idempotency_key=?) ON CONFLICT(capability_hash) DO NOTHING",
   ).bind(
     access.capability_hash,
     p.SOURCE_REVISION,
@@ -148,6 +161,8 @@ export async function authorizeCustomerCheckout(
     maximum,
     JSON.stringify(dates),
     JSON.stringify(available),
+    access.owner_id,
+    input.key,
   );
   if (deferFresh && retainGrant && verifiedAccess?.fresh_checkout === 1) {
     return {

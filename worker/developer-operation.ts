@@ -1,6 +1,7 @@
 import { measure, traceId } from "./diagnostics";
 import { coordinatorStub } from "./bindings";
 import { ApiError, digest } from "./policy";
+import { operatorCreationResolution } from "./native-creation-resolution";
 import { runScheduledRecovery } from "./scheduled-recovery";
 
 /** Dispatch only the developer operation permitted by the retained grant. */
@@ -12,7 +13,8 @@ export async function developerOperation(
     | "provider_identity"
     | "historical_comparison"
     | "native_field_discovery"
-    | "native_recovery_window",
+    | "native_recovery_window"
+    | "native_creation_resolution",
 ) {
   const bearer = request.headers.get("authorization") || "";
   if (!/^Bearer [a-f0-9]{64}$/.test(bearer))
@@ -35,6 +37,8 @@ export async function developerOperation(
     };
   if (String(env.PROVIDER_ACCESS) !== "trusted-reads")
     throw new ApiError(503, "provider_access_disabled");
+  if (operation === "native_creation_resolution")
+    return operatorCreationResolution(env, hash, row.result_json);
   // Private operator admission reuses the identical one-use recovery owner.
   // It cannot drain another grant, accept customer IDs or enable a schedule.
   if (operation === "native_recovery_window")
