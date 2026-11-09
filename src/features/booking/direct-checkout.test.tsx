@@ -3416,3 +3416,131 @@ it("stale pending conflict proof routes only its original protected attempt on d
     vi.useRealTimers();
   }
 });
+
+it("access denial during conflict classification stops recovery and keeps the original cart without calendar navigation", async () => {
+  for (const route of ["payment", "confirmation"] as const) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+    navigation.path = route === "payment" ? "/book/payment/" : "/confirmation/";
+    saveLiveDraft(draft, true, id);
+    const restore = vi.fn<NonNullable<BookingService["restore"]>>(async () => ({
+      id,
+      draft,
+      status: "checking",
+      outcome: "pending",
+      checkUntil: Date.now() + 600000,
+      booking: null,
+    }));
+    let finishAvailability!: (
+      slots: Awaited<ReturnType<BookingService["availability"]>>,
+    ) => void;
+    let finishStatus!: (response: Response) => void;
+    let availabilitySignal: AbortSignal | undefined;
+    const availability = vi.fn<BookingService["availability"]>(({ signal }) => {
+      availabilitySignal = signal;
+      return new Promise((resolve) => {
+        finishAvailability = resolve;
+      });
+    });
+    const fetch = vi.fn<typeof globalThis.fetch>((path) =>
+      String(path).endsWith("/checkout")
+        ? Promise.resolve(
+            Response.json({
+              attemptId: id,
+              mode: "live",
+              checkout: { state: "unavailable" },
+              selectionRejection: {
+                state: "selection_unavailable",
+                rejectedSessionIndex: 0,
+              },
+              summary: {
+                players: 1,
+                totalMinor: 8800,
+                currency: "SGD",
+                sessions: [
+                  {
+                    startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+                    players: 1,
+                  },
+                ],
+              },
+              checking: {
+                deadlineMs: Date.now() + 600000,
+                nextCheckMs: 0,
+                pollAfterMs: 5000,
+              },
+            }),
+          )
+        : new Promise((resolve) => {
+            finishStatus = resolve;
+          }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    const service: BookingService = {
+      ...liveBookingService,
+      restore,
+      availability,
+      calendar: undefined,
+      publicCalendar: undefined,
+    };
+    const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    render(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <ConflictHandoffProbe />
+        {route === "payment" ? (
+          <BookingPage step="payment" />
+        ) : (
+          <ConfirmationPage />
+        )}
+      </BookingProvider>,
+    );
+    await act(async () => {});
+    expect(availability).toHaveBeenCalledTimes(1);
+    expect(availabilitySignal?.aborted).toBe(false);
+    expect(
+      fetch.mock.calls.some(([path]) => String(path).endsWith("/confirmation")),
+    ).toBe(true);
+    await act(async () =>
+      finishStatus(
+        new Response(null, { status: route === "payment" ? 401 : 403 }),
+      ),
+    );
+    expect(
+      screen.getByText(
+        "Contact the studio to view this booking. Don’t pay again.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("Checking available sessions…"),
+    ).not.toBeInTheDocument();
+    expect(availabilitySignal?.aborted).toBe(true);
+    const requestsAfterDenial = fetch.mock.calls.length;
+    await act(async () => {
+      finishAvailability([]);
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+      draft.slots,
+    );
+    expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+    expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    expect(
+      screen.getByText(
+        "Contact the studio to view this booking. Don’t pay again.",
+      ),
+    ).toBeVisible();
+    expect(availability).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(requestsAfterDenial);
+    expect(
+      fetch.mock.calls.every(
+        ([, options]) => !options?.method || options.method === "GET",
+      ),
+    ).toBe(true);
+    cleanup();
+    sessionStorage.clear();
+    localStorage.clear();
+    navigation.replace.mockReset();
+    vi.useRealTimers();
+  }
+});

@@ -127,6 +127,7 @@ interface BookingContextValue extends StoredBooking {
   rejectRecoveredSelection: (
     attemptId: string,
     rejection: CheckoutSelectionRejection,
+    signal?: AbortSignal,
   ) => Promise<boolean>;
   restartAfterConfirmation: (attemptId: string) => Promise<void>;
   rebookingError: string | null;
@@ -659,7 +660,31 @@ export function BookingProvider({
       draft: BookingDraft,
       indexed?: BookingDraft["slots"][number],
       originalId: string | null = latest.current.attempt?.id ?? null,
+      parentSignal?: AbortSignal,
     ): Promise<boolean> => {
+      if (parentSignal?.aborted) return Promise.resolve(false);
+      /** Withdraw this view's rejection authority without releasing the retained attempt. */
+      function observeCancellation(
+        promise: Promise<boolean>,
+        controller: AbortController,
+      ) {
+        if (!parentSignal) return promise;
+        const abort = () => {
+          controller.abort();
+          if (rejectionRead.current === controller) {
+            rejectionRead.current = null;
+            if (mounted.current) {
+              setPendingConflict(null);
+              setSelectionNotice(null);
+            }
+          }
+        };
+        parentSignal.addEventListener("abort", abort, { once: true });
+        if (parentSignal.aborted) abort();
+        return promise.finally(() =>
+          parentSignal.removeEventListener("abort", abort),
+        );
+      }
       const key = JSON.stringify([
         originalId,
         draft,
@@ -671,7 +696,10 @@ export function BookingProvider({
         rejectionRead.current &&
         !rejectionRead.current.signal.aborted
       )
-        return rejectionWork.current.promise;
+        return observeCancellation(
+          rejectionWork.current.promise,
+          rejectionRead.current,
+        );
       const promise = (async () => {
         rejectionRead.current?.abort();
         const controller = new AbortController();
@@ -796,7 +824,7 @@ export function BookingProvider({
         if (rejectionWork.current === work) rejectionWork.current = null;
       };
       void promise.then(finished, finished);
-      return promise;
+      return observeCancellation(promise, rejectionRead.current!);
     },
     [
       service,
@@ -811,7 +839,12 @@ export function BookingProvider({
   );
   /** Apply an authenticated no-effects rejection only to its original tab attempt. */
   const rejectRecoveredSelection = useCallback(
-    async (id: string, rejection: CheckoutSelectionRejection) => {
+    async (
+      id: string,
+      rejection: CheckoutSelectionRejection,
+      signal?: AbortSignal,
+    ) => {
+      if (signal?.aborted) return false;
       const current = latest.current;
       if (
         active.current ||
@@ -835,7 +868,7 @@ export function BookingProvider({
             ? draft.slots[rejection.rejectedSessionIndex ?? -1]
             : undefined
           : undefined;
-      return returnRejectedSelection(draft, indexed, id);
+      return returnRejectedSelection(draft, indexed, id, signal);
     },
     [service, returnRejectedSelection],
   );
