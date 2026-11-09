@@ -1,5 +1,9 @@
 # Current checkpoint
 
+## Local presentation follow-up
+
+The owner authorized collective draft publication and CI on9 November2026. Mobile calendar rows are reduced from33px to29px; toolbar controls share44px height and focus rings sit inside their borders to avoid neighbouring controls. Source ownership, formatting and diff checks pass. This CSS-only adjustment adds no logic tests; visual acceptance remains owner/CI work.
+
 ## Current change
 
 Branch `fix/consistent-conflict-notice`, based on released PR46 main `64da315`. The candidate standardizes conflict/expiry notices with affected-session bullets, persists conflict notice through refresh until first calendar departure, returns eligible owned checkouts to Calendar at their authenticated payment deadline, and supplies bounded detailed HitPay descriptions from trusted snapshots.
