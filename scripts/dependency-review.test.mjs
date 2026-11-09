@@ -69,6 +69,13 @@ test("dependency review rejects missing sections empty tables placeholders and c
       "$1",
     ),
     `<!-- ${body} -->`,
+    `<!-- ${body}`,
+    `<!-- outer <!-- ${body} -->`,
+    body.replace("Customer impact", "Customer<!-- hidden --> impact"),
+    body.replace(
+      "Customer impact",
+      "Customer<!<!-- hidden -->-- hidden --> impact",
+    ),
     body.replace(">=22 | >=22", " | >=22"),
     body.replace("DEFER until", "APPROVE until"),
     body.replace("No intentional UI", "TODO intentional UI"),

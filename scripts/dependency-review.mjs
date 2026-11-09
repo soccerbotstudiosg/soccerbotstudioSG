@@ -19,7 +19,9 @@ export function needsDependencyReview(files) {
 
 /** Reject missing review sections, empty comparisons and unfilled template text. */
 export function validateDependencyReview(body) {
-  const text = String(body || "").replace(/<!--[\s\S]*?-->/g, "");
+  // Separate visible fragments; never concatenate markers across a comment.
+  // An unclosed comment hides the remaining review text too.
+  const text = String(body || "").replace(/<!--[\s\S]*?(?:-->|$)/g, "\n");
   const errors = [];
   for (const label of [
     "Candidate and benefit",
