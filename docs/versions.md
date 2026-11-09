@@ -15,27 +15,27 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 | Item                        | Version           |
 | --------------------------- | ----------------- |
 | @playwright/test            | 1.64.1            |
-| @tailwindcss/postcss        | 4.3.3             |
+| @tailwindcss/postcss        | 4.3.4             |
 | @testing-library/jest-dom   | 7.0.1             |
 | @testing-library/react      | 16.3.3            |
-| @testing-library/user-event | 14.6.7            |
+| @testing-library/user-event | 14.6.8            |
 | @types/node                 | 24.19.1           |
 | @types/react                | 19.3.0            |
 | @types/react-dom            | 19.3.0            |
 | css-tree                    | 3.2.1             |
-| esbuild                     | 0.28.1            |
+| esbuild                     | 0.28.2            |
 | eslint                      | 9.39.5            |
-| eslint-config-next          | 16.4.3            |
+| eslint-config-next          | 16.4.5            |
 | jsdom                       | 30.1.1            |
 | miniflare                   | 5.20261023.0-beta |
-| next                        | 16.4.3            |
-| postcss                     | 8.5.28            |
-| prettier                    | 3.9.9             |
-| react                       | 19.3.0            |
-| react-dom                   | 19.3.0            |
-| tailwindcss                 | 4.3.3             |
+| next                        | 16.4.5            |
+| postcss                     | 8.5.32            |
+| prettier                    | 3.9.10            |
+| react                       | 19.3.1            |
+| react-dom                   | 19.3.1            |
+| tailwindcss                 | 4.3.4             |
 | typescript                  | 6.0.3             |
-| vitest                      | 5.0.3             |
+| vitest                      | 5.1.0             |
 | wrangler                    | 4.153.0           |
 | yaml                        | 2.9.1             |
 | zod                         | 4.6.7             |
@@ -45,7 +45,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 Includes transitive dependencies and optional platform packages. A locked package is not necessarily installed on every platform or included in the deployed application. Paths distinguish multiple versions of the same package.
 
 <details>
-<summary>All 645 locked package entries</summary>
+<summary>All 603 locked package entries</summary>
 
 | Lockfile path                                                                     | Version           | Development | Optional |
 | --------------------------------------------------------------------------------- | ----------------- | ----------- | -------- |
@@ -93,32 +93,32 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@emnapi/core                                                         | 1.10.0            | yes         | yes      |
 | node_modules/@emnapi/runtime                                                      | 1.11.3            | no          | yes      |
 | node_modules/@emnapi/wasi-threads                                                 | 1.2.1             | yes         | yes      |
-| node_modules/@esbuild/aix-ppc64                                                   | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/android-arm                                                 | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/android-arm64                                               | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/android-x64                                                 | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/darwin-arm64                                                | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/darwin-x64                                                  | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/freebsd-arm64                                               | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/freebsd-x64                                                 | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-arm                                                   | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-arm64                                                 | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-ia32                                                  | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-loong64                                               | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-mips64el                                              | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-ppc64                                                 | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-riscv64                                               | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-s390x                                                 | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/linux-x64                                                   | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/netbsd-arm64                                                | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/netbsd-x64                                                  | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/openbsd-arm64                                               | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/openbsd-x64                                                 | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/openharmony-arm64                                           | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/sunos-x64                                                   | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/win32-arm64                                                 | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/win32-ia32                                                  | 0.28.1            | yes         | yes      |
-| node_modules/@esbuild/win32-x64                                                   | 0.28.1            | yes         | yes      |
+| node_modules/@esbuild/aix-ppc64                                                   | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/android-arm                                                 | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/android-arm64                                               | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/android-x64                                                 | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/darwin-arm64                                                | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/darwin-x64                                                  | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/freebsd-arm64                                               | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/freebsd-x64                                                 | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-arm                                                   | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-arm64                                                 | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-ia32                                                  | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-loong64                                               | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-mips64el                                              | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-ppc64                                                 | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-riscv64                                               | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-s390x                                                 | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/linux-x64                                                   | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/netbsd-arm64                                                | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/netbsd-x64                                                  | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/openbsd-arm64                                               | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/openbsd-x64                                                 | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/openharmony-arm64                                           | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/sunos-x64                                                   | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/win32-arm64                                                 | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/win32-ia32                                                  | 0.28.2            | yes         | yes      |
+| node_modules/@esbuild/win32-x64                                                   | 0.28.2            | yes         | yes      |
 | node_modules/@eslint-community/eslint-utils                                       | 4.10.1            | yes         | no       |
 | node_modules/@eslint-community/eslint-utils/node_modules/eslint-visitor-keys      | 3.4.3             | yes         | no       |
 | node_modules/@eslint-community/regexpp                                            | 4.12.2            | yes         | no       |
@@ -170,75 +170,75 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@jridgewell/sourcemap-codec                                          | 1.6.0             | yes         | no       |
 | node_modules/@jridgewell/trace-mapping                                            | 0.3.31            | yes         | no       |
 | node_modules/@napi-rs/wasm-runtime                                                | 1.2.4             | yes         | yes      |
-| node_modules/@next/env                                                            | 16.4.3            | no          | no       |
-| node_modules/@next/eslint-plugin-next                                             | 16.4.3            | yes         | no       |
+| node_modules/@next/env                                                            | 16.4.5            | no          | no       |
+| node_modules/@next/eslint-plugin-next                                             | 16.4.5            | yes         | no       |
 | node_modules/@next/eslint-plugin-next/node_modules/@eslint-community/eslint-utils | 4.9.1             | yes         | no       |
 | node_modules/@next/eslint-plugin-next/node_modules/eslint-visitor-keys            | 3.4.3             | yes         | no       |
-| node_modules/@next/swc-darwin-arm64                                               | 16.4.3            | no          | yes      |
-| node_modules/@next/swc-darwin-x64                                                 | 16.4.3            | no          | yes      |
-| node_modules/@next/swc-linux-arm64-gnu                                            | 16.4.3            | no          | yes      |
-| node_modules/@next/swc-linux-arm64-musl                                           | 16.4.3            | no          | yes      |
-| node_modules/@next/swc-linux-x64-gnu                                              | 16.4.3            | no          | yes      |
-| node_modules/@next/swc-linux-x64-musl                                             | 16.4.3            | no          | yes      |
-| node_modules/@next/swc-win32-arm64-msvc                                           | 16.4.3            | no          | yes      |
-| node_modules/@next/swc-win32-x64-msvc                                             | 16.4.3            | no          | yes      |
+| node_modules/@next/swc-darwin-arm64                                               | 16.4.5            | no          | yes      |
+| node_modules/@next/swc-darwin-x64                                                 | 16.4.5            | no          | yes      |
+| node_modules/@next/swc-linux-arm64-gnu                                            | 16.4.5            | no          | yes      |
+| node_modules/@next/swc-linux-arm64-musl                                           | 16.4.5            | no          | yes      |
+| node_modules/@next/swc-linux-x64-gnu                                              | 16.4.5            | no          | yes      |
+| node_modules/@next/swc-linux-x64-musl                                             | 16.4.5            | no          | yes      |
+| node_modules/@next/swc-win32-arm64-msvc                                           | 16.4.5            | no          | yes      |
+| node_modules/@next/swc-win32-x64-msvc                                             | 16.4.5            | no          | yes      |
 | node_modules/@nodelib/fs.scandir                                                  | 2.1.5             | yes         | no       |
 | node_modules/@nodelib/fs.stat                                                     | 2.0.5             | yes         | no       |
 | node_modules/@nodelib/fs.walk                                                     | 1.2.8             | yes         | no       |
 | node_modules/@nolyfill/is-core-module                                             | 1.0.39            | yes         | no       |
-| node_modules/@oxc-project/types                                                   | 0.155.0           | yes         | no       |
+| node_modules/@oxc-project/types                                                   | 0.156.0           | yes         | no       |
 | node_modules/@playwright/test                                                     | 1.64.1            | no          | no       |
 | node_modules/@poppinss/colors                                                     | 4.1.6             | yes         | no       |
 | node_modules/@poppinss/dumper                                                     | 0.6.5             | yes         | no       |
 | node_modules/@poppinss/dumper/node_modules/supports-color                         | 10.2.2            | yes         | no       |
 | node_modules/@poppinss/exception                                                  | 1.2.3             | yes         | no       |
-| node_modules/@rolldown/binding-android-arm-eabi                                   | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-android-arm64                                      | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-darwin-arm64                                       | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-darwin-x64                                         | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-freebsd-x64                                        | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-arm-gnueabihf                                | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-arm64-gnu                                    | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-arm64-musl                                   | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-ppc64-gnu                                    | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-s390x-gnu                                    | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-x64-gnu                                      | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-linux-x64-musl                                     | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-openharmony-arm64                                  | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-win32-arm64-msvc                                   | 1.2.15            | yes         | yes      |
-| node_modules/@rolldown/binding-win32-x64-msvc                                     | 1.2.15            | yes         | yes      |
+| node_modules/@rolldown/binding-android-arm-eabi                                   | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-android-arm64                                      | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-darwin-arm64                                       | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-darwin-x64                                         | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-freebsd-x64                                        | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-arm-gnueabihf                                | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-arm64-gnu                                    | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-arm64-musl                                   | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-ppc64-gnu                                    | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-s390x-gnu                                    | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-x64-gnu                                      | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-linux-x64-musl                                     | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-openharmony-arm64                                  | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-win32-arm64-msvc                                   | 1.2.16            | yes         | yes      |
+| node_modules/@rolldown/binding-win32-x64-msvc                                     | 1.2.16            | yes         | yes      |
 | node_modules/@rolldown/pluginutils                                                | 1.0.1             | yes         | no       |
 | node_modules/@rtsao/scc                                                           | 1.1.0             | yes         | no       |
 | node_modules/@sindresorhus/is                                                     | 7.2.0             | yes         | no       |
 | node_modules/@speed-highlight/core                                                | 1.2.24            | yes         | no       |
 | node_modules/@swc/helpers                                                         | 0.5.23            | no          | no       |
-| node_modules/@tailwindcss/node                                                    | 4.3.3             | yes         | no       |
-| node_modules/@tailwindcss/oxide                                                   | 4.3.3             | yes         | no       |
-| node_modules/@tailwindcss/oxide-android-arm64                                     | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-darwin-arm64                                      | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-darwin-x64                                        | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-freebsd-x64                                       | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-linux-arm-gnueabihf                               | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-linux-arm64-gnu                                   | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-linux-arm64-musl                                  | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-linux-x64-gnu                                     | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-linux-x64-musl                                    | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-wasm32-wasi                                       | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/core             | 1.11.1            | yes         | yes      |
-| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/runtime          | 1.11.1            | yes         | yes      |
-| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/wasi-threads     | 1.2.2             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@napi-rs/wasm-runtime    | 1.1.4             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@tybys/wasm-util         | 0.10.2            | yes         | yes      |
+| node_modules/@tailwindcss/node                                                    | 4.3.4             | yes         | no       |
+| node_modules/@tailwindcss/oxide                                                   | 4.3.4             | yes         | no       |
+| node_modules/@tailwindcss/oxide-android-arm64                                     | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-darwin-arm64                                      | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-darwin-x64                                        | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-freebsd-x64                                       | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-linux-arm-gnueabihf                               | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-linux-arm64-gnu                                   | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-linux-arm64-musl                                  | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-linux-x64-gnu                                     | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-linux-x64-musl                                    | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi                                       | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/core             | 1.11.3            | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/runtime          | 1.11.3            | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/wasi-threads     | 1.2.3             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@napi-rs/wasm-runtime    | 1.2.2             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@tybys/wasm-util         | 0.10.3            | yes         | yes      |
 | node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/tslib                    | 2.8.1             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-win32-arm64-msvc                                  | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/oxide-win32-x64-msvc                                    | 4.3.3             | yes         | yes      |
-| node_modules/@tailwindcss/postcss                                                 | 4.3.3             | yes         | no       |
+| node_modules/@tailwindcss/oxide-win32-arm64-msvc                                  | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/oxide-win32-x64-msvc                                    | 4.3.4             | yes         | yes      |
+| node_modules/@tailwindcss/postcss                                                 | 4.3.4             | yes         | no       |
 | node_modules/@testing-library/dom                                                 | 10.4.2            | yes         | no       |
 | node_modules/@testing-library/dom/node_modules/aria-query                         | 5.3.0             | yes         | no       |
 | node_modules/@testing-library/jest-dom                                            | 7.0.1             | yes         | no       |
 | node_modules/@testing-library/jest-dom/node_modules/dom-accessibility-api         | 0.6.3             | yes         | no       |
 | node_modules/@testing-library/react                                               | 16.3.3            | yes         | no       |
-| node_modules/@testing-library/user-event                                          | 14.6.7            | yes         | no       |
+| node_modules/@testing-library/user-event                                          | 14.6.8            | yes         | no       |
 | node_modules/@tybys/wasm-util                                                     | 0.10.4            | yes         | yes      |
 | node_modules/@types/aria-query                                                    | 5.0.4             | yes         | no       |
 | node_modules/@types/chai                                                          | 5.2.3             | yes         | no       |
@@ -287,9 +287,8 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/@unrs/resolver-binding-win32-arm64-msvc                              | 1.12.2            | yes         | yes      |
 | node_modules/@unrs/resolver-binding-win32-ia32-msvc                               | 1.12.2            | yes         | yes      |
 | node_modules/@unrs/resolver-binding-win32-x64-msvc                                | 1.12.2            | yes         | yes      |
-| node_modules/@vitest/mocker                                                       | 5.0.3             | yes         | no       |
-| node_modules/@vitest/mocker/node_modules/magic-string                             | 1.4.2             | yes         | no       |
-| node_modules/@vitest/spy                                                          | 5.0.3             | yes         | no       |
+| node_modules/@vitest/mocker                                                       | 5.1.0             | yes         | no       |
+| node_modules/@vitest/spy                                                          | 5.1.0             | yes         | no       |
 | node_modules/acorn                                                                | 8.18.0            | yes         | no       |
 | node_modules/acorn-jsx                                                            | 5.3.2             | yes         | no       |
 | node_modules/ajv                                                                  | 6.15.0            | yes         | no       |
@@ -353,7 +352,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/dunder-proto                                                         | 1.0.1             | yes         | no       |
 | node_modules/electron-to-chromium                                                 | 1.5.444           | yes         | no       |
 | node_modules/emoji-regex                                                          | 9.2.2             | yes         | no       |
-| node_modules/enhanced-resolve                                                     | 5.26.0            | yes         | no       |
+| node_modules/enhanced-resolve                                                     | 5.26.1            | yes         | no       |
 | node_modules/entities                                                             | 8.1.0             | yes         | no       |
 | node_modules/error-stack-parser-es                                                | 1.0.5             | yes         | no       |
 | node_modules/es-abstract                                                          | 1.24.2            | yes         | no       |
@@ -366,11 +365,11 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/es-set-tostringtag                                                   | 2.1.0             | yes         | no       |
 | node_modules/es-shim-unscopables                                                  | 1.1.0             | yes         | no       |
 | node_modules/es-to-primitive                                                      | 1.3.4             | yes         | no       |
-| node_modules/esbuild                                                              | 0.28.1            | yes         | no       |
+| node_modules/esbuild                                                              | 0.28.2            | yes         | no       |
 | node_modules/escalade                                                             | 3.2.0             | yes         | no       |
 | node_modules/escape-string-regexp                                                 | 4.0.0             | yes         | no       |
 | node_modules/eslint                                                               | 9.39.5            | yes         | no       |
-| node_modules/eslint-config-next                                                   | 16.4.3            | yes         | no       |
+| node_modules/eslint-config-next                                                   | 16.4.5            | yes         | no       |
 | node_modules/eslint-import-resolver-node                                          | 0.3.10            | yes         | no       |
 | node_modules/eslint-import-resolver-node/node_modules/debug                       | 3.2.7             | yes         | no       |
 | node_modules/eslint-import-resolver-typescript                                    | 3.10.1            | yes         | no       |
@@ -481,24 +480,24 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/language-subtag-registry                                             | 0.3.23            | yes         | no       |
 | node_modules/language-tags                                                        | 1.0.9             | yes         | no       |
 | node_modules/levn                                                                 | 0.4.1             | yes         | no       |
-| node_modules/lightningcss                                                         | 1.32.0            | yes         | no       |
-| node_modules/lightningcss-android-arm64                                           | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-darwin-arm64                                            | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-darwin-x64                                              | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-freebsd-x64                                             | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-linux-arm-gnueabihf                                     | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-linux-arm64-gnu                                         | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-linux-arm64-musl                                        | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-linux-x64-gnu                                           | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-linux-x64-musl                                          | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-win32-arm64-msvc                                        | 1.32.0            | yes         | yes      |
-| node_modules/lightningcss-win32-x64-msvc                                          | 1.32.0            | yes         | yes      |
+| node_modules/lightningcss                                                         | 1.33.0            | yes         | no       |
+| node_modules/lightningcss-android-arm64                                           | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-darwin-arm64                                            | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-darwin-x64                                              | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-freebsd-x64                                             | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-linux-arm-gnueabihf                                     | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-linux-arm64-gnu                                         | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-linux-arm64-musl                                        | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-linux-x64-gnu                                           | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-linux-x64-musl                                          | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-win32-arm64-msvc                                        | 1.33.0            | yes         | yes      |
+| node_modules/lightningcss-win32-x64-msvc                                          | 1.33.0            | yes         | yes      |
 | node_modules/locate-path                                                          | 6.0.0             | yes         | no       |
 | node_modules/lodash.merge                                                         | 4.6.2             | yes         | no       |
 | node_modules/loose-envify                                                         | 1.4.0             | yes         | no       |
 | node_modules/lru-cache                                                            | 5.1.1             | yes         | no       |
 | node_modules/lz-string                                                            | 1.5.0             | yes         | no       |
-| node_modules/magic-string                                                         | 0.30.21           | yes         | no       |
+| node_modules/magic-string                                                         | 1.4.5             | yes         | no       |
 | node_modules/math-intrinsics                                                      | 1.1.0             | yes         | no       |
 | node_modules/mdn-data                                                             | 2.27.1            | yes         | no       |
 | node_modules/merge2                                                               | 1.4.1             | yes         | no       |
@@ -512,7 +511,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/nanoid                                                               | 3.3.20            | no          | no       |
 | node_modules/napi-postinstall                                                     | 0.3.4             | yes         | no       |
 | node_modules/natural-compare                                                      | 1.4.0             | yes         | no       |
-| node_modules/next                                                                 | 16.4.3            | no          | no       |
+| node_modules/next                                                                 | 16.4.5            | no          | no       |
 | node_modules/next/node_modules/postcss                                            | 8.5.23            | no          | no       |
 | node_modules/node-exports-info                                                    | 1.6.2             | yes         | no       |
 | node_modules/node-exports-info/node_modules/semver                                | 6.3.1             | yes         | no       |
@@ -525,7 +524,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/object.fromentries                                                   | 2.0.8             | yes         | no       |
 | node_modules/object.groupby                                                       | 1.0.3             | yes         | no       |
 | node_modules/object.values                                                        | 1.2.1             | yes         | no       |
-| node_modules/obug                                                                 | 2.2.1             | yes         | no       |
+| node_modules/obug                                                                 | 3.0.0             | yes         | no       |
 | node_modules/optionator                                                           | 0.9.4             | yes         | no       |
 | node_modules/own-keys                                                             | 1.0.2             | yes         | no       |
 | node_modules/p-limit                                                              | 3.1.0             | yes         | no       |
@@ -542,17 +541,17 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/playwright                                                           | 1.64.1            | no          | no       |
 | node_modules/playwright-core                                                      | 1.64.1            | no          | no       |
 | node_modules/possible-typed-array-names                                           | 1.1.0             | yes         | no       |
-| node_modules/postcss                                                              | 8.5.28            | yes         | no       |
+| node_modules/postcss                                                              | 8.5.32            | yes         | no       |
 | node_modules/prelude-ls                                                           | 1.2.1             | yes         | no       |
-| node_modules/prettier                                                             | 3.9.9             | yes         | no       |
+| node_modules/prettier                                                             | 3.9.10            | yes         | no       |
 | node_modules/pretty-format                                                        | 27.5.1            | yes         | no       |
 | node_modules/pretty-format/node_modules/ansi-styles                               | 5.2.0             | yes         | no       |
 | node_modules/pretty-format/node_modules/react-is                                  | 17.0.2            | yes         | no       |
 | node_modules/prop-types                                                           | 15.8.1            | yes         | no       |
 | node_modules/punycode                                                             | 2.3.1             | yes         | no       |
 | node_modules/queue-microtask                                                      | 1.2.3             | yes         | no       |
-| node_modules/react                                                                | 19.3.0            | no          | no       |
-| node_modules/react-dom                                                            | 19.3.0            | no          | no       |
+| node_modules/react                                                                | 19.3.1            | no          | no       |
+| node_modules/react-dom                                                            | 19.3.1            | no          | no       |
 | node_modules/react-is                                                             | 16.13.1           | yes         | no       |
 | node_modules/redent                                                               | 3.0.0             | yes         | no       |
 | node_modules/reflect.getprototypeof                                               | 1.0.10            | yes         | no       |
@@ -562,7 +561,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/resolve-from                                                         | 4.0.0             | yes         | no       |
 | node_modules/resolve-pkg-maps                                                     | 1.0.0             | yes         | no       |
 | node_modules/reusify                                                              | 1.1.0             | yes         | no       |
-| node_modules/rolldown                                                             | 1.2.15            | yes         | no       |
+| node_modules/rolldown                                                             | 1.2.16            | yes         | no       |
 | node_modules/run-parallel                                                         | 1.2.0             | yes         | no       |
 | node_modules/safe-array-concat                                                    | 1.1.4             | yes         | no       |
 | node_modules/safe-push-apply                                                      | 1.0.0             | yes         | no       |
@@ -596,9 +595,9 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/styled-jsx                                                           | 5.1.6             | no          | no       |
 | node_modules/supports-color                                                       | 7.2.0             | yes         | no       |
 | node_modules/supports-preserve-symlinks-flag                                      | 1.0.0             | yes         | no       |
-| node_modules/tailwindcss                                                          | 4.3.3             | yes         | no       |
+| node_modules/tailwindcss                                                          | 4.3.4             | yes         | no       |
 | node_modules/tapable                                                              | 2.3.3             | yes         | no       |
-| node_modules/tinybench                                                            | 6.2.0             | yes         | no       |
+| node_modules/tinybench                                                            | 6.2.3             | yes         | no       |
 | node_modules/tinyexec                                                             | 1.3.1             | yes         | no       |
 | node_modules/tinyglobby                                                           | 0.2.17            | yes         | no       |
 | node_modules/tinyglobby/node_modules/fdir                                         | 6.5.0             | yes         | no       |
@@ -626,23 +625,9 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/unrs-resolver                                                        | 1.12.2            | yes         | no       |
 | node_modules/update-browserslist-db                                               | 1.3.3             | yes         | no       |
 | node_modules/uri-js                                                               | 4.4.1             | yes         | no       |
-| node_modules/vite                                                                 | 8.3.5             | yes         | no       |
-| node_modules/vite/node_modules/lightningcss                                       | 1.33.0            | yes         | no       |
-| node_modules/vite/node_modules/lightningcss-android-arm64                         | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-darwin-arm64                          | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-darwin-x64                            | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-freebsd-x64                           | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-linux-arm-gnueabihf                   | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-linux-arm64-gnu                       | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-linux-arm64-musl                      | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-linux-x64-gnu                         | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-linux-x64-musl                        | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-win32-arm64-msvc                      | 1.33.0            | yes         | yes      |
-| node_modules/vite/node_modules/lightningcss-win32-x64-msvc                        | 1.33.0            | yes         | yes      |
+| node_modules/vite                                                                 | 8.3.6             | yes         | no       |
 | node_modules/vite/node_modules/picomatch                                          | 4.0.7             | yes         | no       |
-| node_modules/vite/node_modules/postcss                                            | 8.5.32            | yes         | no       |
-| node_modules/vitest                                                               | 5.0.3             | yes         | no       |
-| node_modules/vitest/node_modules/magic-string                                     | 1.4.2             | yes         | no       |
+| node_modules/vitest                                                               | 5.1.0             | yes         | no       |
 | node_modules/vitest/node_modules/picomatch                                        | 4.0.7             | yes         | no       |
 | node_modules/w3c-xmlserializer                                                    | 6.0.0             | yes         | no       |
 | node_modules/webidl-conversions                                                   | 8.0.1             | yes         | no       |
@@ -657,33 +642,6 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/word-wrap                                                            | 1.2.5             | yes         | no       |
 | node_modules/workerd                                                              | 1.20261023.1      | yes         | no       |
 | node_modules/wrangler                                                             | 4.153.0           | yes         | no       |
-| node_modules/wrangler/node_modules/@esbuild/aix-ppc64                             | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/android-arm                           | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/android-arm64                         | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/android-x64                           | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/darwin-arm64                          | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/darwin-x64                            | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/freebsd-arm64                         | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/freebsd-x64                           | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-arm                             | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-arm64                           | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-ia32                            | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-loong64                         | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-mips64el                        | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-ppc64                           | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-riscv64                         | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-s390x                           | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/linux-x64                             | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/netbsd-arm64                          | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/netbsd-x64                            | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/openbsd-arm64                         | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/openbsd-x64                           | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/openharmony-arm64                     | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/sunos-x64                             | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/win32-arm64                           | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/win32-ia32                            | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/@esbuild/win32-x64                             | 0.28.2            | yes         | yes      |
-| node_modules/wrangler/node_modules/esbuild                                        | 0.28.2            | yes         | no       |
 | node_modules/ws                                                                   | 8.21.0            | yes         | no       |
 | node_modules/xml-name-validator                                                   | 5.0.0             | yes         | no       |
 | node_modules/xmlchars                                                             | 2.2.0             | yes         | no       |
