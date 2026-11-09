@@ -1826,7 +1826,13 @@ async function uncertainHolding(
         .run();
       const resolved = await mechanism.mf.dispatchFetch(
         mechanism.origin + "/api/developer/native-creation-resolution",
-        { method: "POST", headers: { authorization: `Bearer ${bearer}` } },
+        {
+          method: "POST",
+          headers: {
+            origin: mechanism.origin,
+            authorization: `Bearer ${bearer}`,
+          },
+        },
       );
       expect(resolved.status).toBe(200);
       expect(await resolved.json()).toMatchObject({ state: "complete" });

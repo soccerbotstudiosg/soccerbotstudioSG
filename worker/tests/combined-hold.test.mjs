@@ -2605,10 +2605,8 @@ test("direct batch checkout uses creation responses for two four and five sessio
       console.log(
         `batch ${count}: D1=${trace.spans.d1.count}; provider=${trace.spans.provider?.count}`,
       );
-      assert.ok(
-        trace.spans.d1.count === 12 + (count - 2) * 2,
-        `D1: ${trace.spans.d1.count}`,
-      );
+      // One retained display-metadata read supplies the detailed HitPay purpose.
+      assert.equal(trace.spans.d1.count, 13 + (count - 2) * 2);
       const methods = creationCalls
         .filter((call) => call.url.includes("simplybook.me"))
         .map((call) => call.body?.method)
