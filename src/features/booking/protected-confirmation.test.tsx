@@ -1,3 +1,4 @@
+import type { CheckoutSelectionRejection } from "@/domain/native-checkout";
 import * as renderTrace from "./confirmation-render-trace";
 import ConfirmationPage from "@/app/confirmation/page";
 import { BookingProvider } from "./provider";
@@ -1704,7 +1705,11 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
   let finish!: (value: boolean) => void;
   let classificationSignal: AbortSignal | undefined;
   const rejected = vi.fn(
-    (_id: string, _rejection: typeof rejection, signal?: AbortSignal) => {
+    (
+      _id: string,
+      _rejection: CheckoutSelectionRejection,
+      signal?: AbortSignal,
+    ) => {
       classificationSignal = signal;
       return new Promise<boolean>((resolve) => {
         finish = resolve;
