@@ -33,6 +33,8 @@ import {
   isCalendarRecovery,
   saveCalendarRecovery,
   saveLiveDraft,
+  loadPendingConflict,
+  savePendingConflict,
 } from "@/services/storage";
 class StorageMock {
   private values = new Map<string, string>();
@@ -642,4 +644,38 @@ it("live draft reload preserves edits but never restores consent or payment auth
   expect(isCalendarRecovery("attempt-a")).toBe(false);
   saveLiveDraft(draft, true, "attempt-b");
   expect(isCalendarRecovery("attempt-b")).toBe(false);
+});
+
+it("pending conflict storage validates the original indexed snapshot and exact tab correlation", () => {
+  const original = { ...validDraft(), nativeServiceId: "12" };
+  const attemptId = "00000000-0000-4000-8000-000000000001";
+  saveLiveDraft(original, true, attemptId);
+  savePendingConflict({ attemptId, draft: original, rejectedSessionIndex: 0 });
+  expect(loadPendingConflict()).toEqual({
+    attemptId,
+    draft: original,
+    rejectedSessionIndex: 0,
+  });
+  saveLiveDraft({ ...original, slots: [] }, true, attemptId);
+  expect(loadPendingConflict()?.draft.slots).toEqual(original.slots);
+  expect(loadLiveDraft().slots).toEqual([]);
+  for (const invalid of [
+    { attemptId: "00000000-0000-4000-8000-000000000002", draft: original },
+    { attemptId, draft: original, rejectedSessionIndex: original.slots.length },
+    { attemptId, draft: original, rejectedSessionIndex: -1 },
+    { attemptId, draft: original, checkoutUrl: "https://untrusted.test/pay" },
+    {
+      attemptId,
+      draft: { ...original, slots: [{ date: "bad", start: "bad" }] },
+    },
+  ]) {
+    safeWrite("soccerbot-pending-conflict", invalid);
+    expect(loadPendingConflict()).toBeNull();
+  }
+  savePendingConflict({ attemptId: null, draft: original });
+  expect(loadPendingConflict()).toBeNull();
+  savePendingConflict(null);
+  expect(loadPendingConflict()).toBeNull();
+  expect(mayRestoreLiveCheckout(attemptId)).toBe(true);
+  expect(loadLiveDraft()).not.toHaveProperty("checkoutUrl");
 });

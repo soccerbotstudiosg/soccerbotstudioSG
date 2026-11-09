@@ -21,6 +21,7 @@ import {
   saveLiveDraft,
   saveBooking,
   saveSuppressedSlots,
+  savePendingConflict,
 } from "@/services/storage";
 import { demoBookingService } from "@/services/demo/booking";
 import { expireBooking } from "@/services/confirmation";
@@ -1037,14 +1038,12 @@ it("rejected checkout window clears the undispatched draft attempt without payme
   render(rejectedTree);
   fireEvent.click(screen.getByText("Seed rejected"));
   fireEvent.click(screen.getByText("Submit rejected"));
-  await waitFor(() =>
-    expect(screen.getByTestId("return")).toHaveTextContent("true"),
-  );
-  expect(screen.getByTestId("attempt")).toHaveTextContent("none");
+  await waitFor(() => expect(availability).toHaveBeenCalledTimes(1));
+  expect(screen.getByTestId("return")).not.toHaveTextContent("true");
   expect(JSON.parse(screen.getByTestId("notice-slots").textContent!)).toEqual(
     [],
   );
-  // A slow fresh read cannot hold the customer on a checkout loading screen.
+  // The first Calendar render must wait for the affected-session classification.
   expect(JSON.parse(screen.getByTestId("cart").textContent!)).toEqual([
     draft.slots[0],
     other,
@@ -1057,6 +1056,8 @@ it("rejected checkout window clears the undispatched draft attempt without payme
   fireEvent.click(screen.getByText("Submit rejected"));
   expect(fetch).toHaveBeenCalledTimes(1);
   await act(async () => finishAvailability([{ ...other, available: true }]));
+  expect(screen.getByTestId("return")).toHaveTextContent("true");
+  expect(screen.getByTestId("attempt")).toHaveTextContent("none");
   expect(JSON.parse(screen.getByTestId("cart").textContent!)).toEqual([other]);
   expect(JSON.parse(screen.getByTestId("suppressed").textContent!)).toEqual(
     draft.slots,
@@ -1198,10 +1199,20 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
       expect(fetch).toHaveBeenCalledTimes(1);
     }
   const other = { ...draft.slots[0], start: "12:50" };
-  const availability = vi.fn<BookingService["availability"]>(async () => [
-    { ...draft.slots[0], available: false },
-    { ...other, available: true },
-  ]);
+  let finishAvailability!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  const availability = vi
+    .fn<BookingService["availability"]>(async () => [
+      { ...draft.slots[0], available: false },
+      { ...other, available: true },
+    ])
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishAvailability = resolve;
+        }),
+    );
   const checkout = vi.fn<BookingService["checkout"]>(async () => {
     throw new BookingServiceError(
       "selection_unavailable",
@@ -1221,6 +1232,9 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
         </button>
         <button onClick={() => void state.checkout()}>Checkout multi</button>
         <p data-testid="conflict-notice">{state.selectionNotice}</p>
+        <output data-testid="conflict-slots">
+          {JSON.stringify(state.selectionNoticeSlots)}
+        </output>
         <output data-testid="conflict-cart">
           {JSON.stringify(state.draft.slots)}
         </output>
@@ -1269,6 +1283,14 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
     ),
   );
   fireEvent.click(screen.getByText("Checkout multi"));
+  await waitFor(() => expect(availability).toHaveBeenCalledTimes(1));
+  expect(screen.getByTestId("conflict-action")).not.toHaveTextContent("true");
+  await act(async () =>
+    finishAvailability([
+      { ...draft.slots[0], available: false },
+      { ...other, available: true },
+    ]),
+  );
   await waitFor(() =>
     expect(screen.getByTestId("conflict-action")).toHaveTextContent("true"),
   );
@@ -1283,6 +1305,9 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
     expect(call[0]).toEqual(
       expect.objectContaining({ fresh: true, date: draft.slots[0].date }),
     );
+  expect(JSON.parse(screen.getByTestId("conflict-slots").textContent!)).toEqual(
+    [{ date: draft.slots[0].date, start: draft.slots[0].start }],
+  );
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(screen.getByTestId("conflict-notice")).toHaveTextContent(
     "Some sessions may no longer be available. Please check again.",
@@ -2535,5 +2560,859 @@ it("confirmed no-creation proof clears only its original attempt through recover
     );
     expect(writes).toHaveLength(route === "immediate" ? 1 : 0);
     view.unmount();
+  }
+});
+
+/** Expose observable handoff state without coupling the regression to private helpers. */
+function ConflictHandoffProbe({
+  slots = draft.slots,
+}: {
+  slots?: typeof draft.slots;
+}) {
+  const state = useBooking();
+  return (
+    <>
+      <button onClick={() => state.update({ ...draft, slots })}>
+        Seed handoff
+      </button>
+      <button onClick={() => void state.checkout()}>Submit handoff</button>
+      <button onClick={() => state.leave()}>Leave handoff</button>
+      <button
+        onClick={() =>
+          void state.rejectRecoveredSelection(id, {
+            state: "selection_unavailable",
+            rejectedSessionIndex: 0,
+          })
+        }
+      >
+        Recover handoff
+      </button>
+      <output data-testid="handoff-ready">{String(state.ready)}</output>
+      <output data-testid="handoff-return">
+        {String(state.action.returnToCalendar)}
+      </output>
+      <output data-testid="handoff-attempt">
+        {state.attempt?.id ?? "none"}
+      </output>
+      <output data-testid="handoff-cart">
+        {JSON.stringify(state.draft.slots)}
+      </output>
+      <output data-testid="handoff-notice">
+        {JSON.stringify(state.selectionNoticeSlots)}
+      </output>
+    </>
+  );
+}
+
+it("conflict handoff waits for complete classification after all or partial failed reads", async () => {
+  for (const failure of ["all", "partial"] as const) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+    navigation.path = "/book/review/";
+    const other = { ...draft.slots[0], date: "2026-10-21", start: "12:50" };
+    let recovering = false;
+    const availability = vi.fn<BookingService["availability"]>(
+      async ({ date }) => {
+        if (!recovering && (failure === "all" || date === other.date))
+          throw new Error("Synthetic availability outage");
+        return date === other.date ? [{ ...other, available: true }] : [];
+      },
+    );
+    const checkout = vi.fn<BookingService["checkout"]>(async () => ({
+      id,
+      draft: { ...draft, slots: [draft.slots[0], other] },
+      status: "ready",
+      outcome: "pending",
+      checkUntil: 0,
+      booking: null,
+    }));
+    const pay = vi.fn<BookingService["pay"]>(async () => {
+      throw new BookingServiceError(
+        "selection_unavailable",
+        "Synthetic conflict",
+      );
+    });
+    render(
+      <BookingProvider
+        bookingService={{
+          ...liveBookingService,
+          restore: undefined,
+          calendar: undefined,
+          publicCalendar: undefined,
+          checkout,
+          pay,
+          availability,
+        }}
+      >
+        <ConflictHandoffProbe slots={[draft.slots[0], other]} />
+      </BookingProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText("Seed handoff"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Submit handoff"));
+    });
+    expect(availability).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+    expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+      [draft.slots[0], other],
+    );
+    recovering = true;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(29_999);
+    });
+    expect(availability).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
+    expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+      [other],
+    );
+    expect(
+      JSON.parse(screen.getByTestId("handoff-notice").textContent!),
+    ).toEqual([{ date: draft.slots[0].date, start: draft.slots[0].start }]);
+    expect(checkout).toHaveBeenCalledTimes(1);
+    expect(pay).toHaveBeenCalledTimes(1);
+    cleanup();
+    sessionStorage.clear();
+    vi.useRealTimers();
+  }
+});
+
+it("conflict handoff aborts stalled reads and paces recovery without replaying checkout", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  navigation.path = "/book/review/";
+  let staleFinish!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  let firstSignal: AbortSignal | undefined;
+  const availability = vi
+    .fn<BookingService["availability"]>(async () => [])
+    .mockImplementationOnce(({ signal }) => {
+      firstSignal = signal;
+      return new Promise((resolve) => {
+        staleFinish = resolve;
+      });
+    });
+  const checkout = vi.fn<BookingService["checkout"]>(async () => ({
+    id,
+    draft,
+    status: "ready",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  }));
+  const pay = vi.fn<BookingService["pay"]>(async () => {
+    throw new BookingServiceError(
+      "selection_unavailable",
+      "Synthetic conflict",
+    );
+  });
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        calendar: undefined,
+        publicCalendar: undefined,
+        checkout,
+        pay,
+        availability,
+      }}
+    >
+      <ConflictHandoffProbe />
+    </BookingProvider>,
+  );
+  await act(async () => {
+    fireEvent.click(screen.getByText("Seed handoff"));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("Submit handoff"));
+  });
+  expect(availability).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(29_999);
+  });
+  expect(firstSignal?.aborted).toBe(false);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(firstSignal?.aborted).toBe(true);
+  expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+  await act(async () => {
+    staleFinish([{ ...draft.slots[0], available: true }]);
+  });
+  expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(29_999);
+  });
+  expect(availability).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(availability).toHaveBeenCalledTimes(2);
+  expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
+  expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+    [],
+  );
+  expect(JSON.parse(screen.getByTestId("handoff-notice").textContent!)).toEqual(
+    [{ date: draft.slots[0].date, start: draft.slots[0].start }],
+  );
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(pay).toHaveBeenCalledTimes(1);
+  // A healthy read just above ten seconds matches the captured provider latency;
+  // it must finish normally instead of being discarded by the protected-read deadline.
+  cleanup();
+  sessionStorage.clear();
+  let slowFinish!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  let slowSignal: AbortSignal | undefined;
+  const slowAvailability = vi.fn<BookingService["availability"]>(
+    ({ signal: readSignal }) => {
+      slowSignal = readSignal;
+      return new Promise((resolve) => {
+        slowFinish = resolve;
+      });
+    },
+  );
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        calendar: undefined,
+        publicCalendar: undefined,
+        checkout,
+        pay,
+        availability: slowAvailability,
+      }}
+    >
+      <ConflictHandoffProbe />
+    </BookingProvider>,
+  );
+  await act(async () => {
+    fireEvent.click(screen.getByText("Seed handoff"));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("Submit handoff"));
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(11_000);
+  });
+  expect(slowSignal?.aborted).toBe(false);
+  await act(async () => slowFinish([]));
+  expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
+  expect(slowAvailability).toHaveBeenCalledTimes(1);
+  expect(checkout).toHaveBeenCalledTimes(2);
+  expect(pay).toHaveBeenCalledTimes(2);
+});
+
+it("refresh during conflict classification retains its original indexed snapshot without adopting another checkout", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  navigation.path = "/book/review/";
+  const other = { ...draft.slots[0], start: "12:50" };
+  const original = { ...draft, slots: [draft.slots[0], other] };
+  const foreignId = "00000000-0000-4000-8000-000000000099";
+  let refreshed = false;
+  let firstFinish!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  let refreshFinish!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  let finishContext!: (response: Response) => void;
+  const fetch = vi.fn<typeof globalThis.fetch>(
+    () =>
+      new Promise((resolve) => {
+        finishContext = resolve;
+      }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  const availability = vi.fn<BookingService["availability"]>(
+    () =>
+      new Promise((resolve) => {
+        if (refreshed) refreshFinish = resolve;
+        else firstFinish = resolve;
+      }),
+  );
+  const checkout = vi.fn<BookingService["checkout"]>(async () => ({
+    id,
+    draft: original,
+    status: "ready",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  }));
+  const pay = vi.fn<BookingService["pay"]>(async () => {
+    throw new BookingServiceError(
+      "selection_unavailable",
+      "Synthetic indexed conflict",
+      1,
+    );
+  });
+  const restore = vi.fn<NonNullable<BookingService["restore"]>>(async () =>
+    refreshed
+      ? {
+          id: foreignId,
+          draft: original,
+          status: "checking",
+          outcome: "pending",
+          checkUntil: 0,
+          booking: null,
+        }
+      : null,
+  );
+  const service: BookingService = {
+    ...liveBookingService,
+    calendar: undefined,
+    publicCalendar: undefined,
+    restore,
+    checkout,
+    pay,
+    availability,
+  };
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  const tree = () => (
+    <BookingProvider bookingService={service} identityService={identity}>
+      <ConflictHandoffProbe slots={original.slots} />
+    </BookingProvider>
+  );
+  const view = render(tree());
+  await act(async () => {});
+  await act(async () => {
+    fireEvent.click(screen.getByText("Seed handoff"));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("Submit handoff"));
+  });
+  expect(availability).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+  view.unmount();
+  refreshed = true;
+  render(tree());
+  await act(async () => {});
+  expect(screen.getByTestId("handoff-ready")).toHaveTextContent("false");
+  expect(screen.getByTestId("handoff-attempt")).not.toHaveTextContent(
+    foreignId,
+  );
+  expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(String(fetch.mock.calls[0][0])).toContain(
+    `/api/attempts/${id}/checkout`,
+  );
+  await act(async () =>
+    finishContext(
+      Response.json({
+        attemptId: id,
+        mode: "live",
+        checkout: { state: "unavailable" },
+        selectionRejection: {
+          state: "selection_unavailable",
+          rejectedSessionIndex: 1,
+        },
+        summary: {
+          players: 1,
+          totalMinor: 17600,
+          currency: "SGD",
+          sessions: original.slots.map((slot) => ({
+            startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
+            players: 1,
+          })),
+        },
+        checking: {
+          deadlineMs: Date.now() + 600000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      }),
+    ),
+  );
+  expect(screen.getByTestId("handoff-ready")).toHaveTextContent("false");
+  expect(availability).toHaveBeenCalledTimes(2);
+  await act(async () => firstFinish([]));
+  expect(screen.getByTestId("handoff-ready")).toHaveTextContent("false");
+  await act(async () =>
+    refreshFinish([
+      { ...draft.slots[0], available: true },
+      { ...other, available: true },
+    ]),
+  );
+  expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
+  expect(screen.getByTestId("handoff-ready")).toHaveTextContent("true");
+  expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+    draft.slots,
+  );
+  expect(JSON.parse(screen.getByTestId("handoff-notice").textContent!)).toEqual(
+    [{ date: other.date, start: other.start }],
+  );
+  expect(screen.getByTestId("handoff-attempt")).toHaveTextContent("none");
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(pay).toHaveBeenCalledTimes(1);
+  expect(
+    fetch.mock.calls.some(([path]) => String(path).includes(foreignId)),
+  ).toBe(false);
+});
+
+it("leaving pending conflict classification prevents late reads from changing a fresh draft or navigation", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  navigation.path = "/book/review/";
+  let finish!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  let signal: AbortSignal | undefined;
+  const availability = vi.fn<BookingService["availability"]>((input) => {
+    signal = input.signal;
+    return new Promise((resolve) => {
+      finish = resolve;
+    });
+  });
+  const checkout = vi.fn<BookingService["checkout"]>(async () => ({
+    id,
+    draft,
+    status: "ready",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  }));
+  const pay = vi.fn<BookingService["pay"]>(async () => {
+    throw new BookingServiceError(
+      "selection_unavailable",
+      "Synthetic conflict",
+    );
+  });
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        calendar: undefined,
+        publicCalendar: undefined,
+        checkout,
+        pay,
+        availability,
+      }}
+    >
+      <ConflictHandoffProbe />
+    </BookingProvider>,
+  );
+  await act(async () => {
+    fireEvent.click(screen.getByText("Seed handoff"));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("Submit handoff"));
+  });
+  expect(availability).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    fireEvent.click(screen.getByText("Leave handoff"));
+  });
+  expect(signal?.aborted).toBe(true);
+  await act(async () => {
+    fireEvent.click(screen.getByText("Seed handoff"));
+  });
+  await act(async () => {
+    finish([]);
+    await vi.advanceTimersByTimeAsync(40_000);
+  });
+  expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+    draft.slots,
+  );
+  expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+  expect(JSON.parse(screen.getByTestId("handoff-notice").textContent!)).toEqual(
+    [],
+  );
+  expect(availability).toHaveBeenCalledTimes(1);
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(pay).toHaveBeenCalledTimes(1);
+  // A direct Home load is not a path-change event. Its saved display recovery
+  // must still be dismissed without following the customer away from Home.
+  cleanup();
+  sessionStorage.clear();
+  navigation.path = "/";
+  saveLiveDraft(draft, false, id);
+  savePendingConflict({ attemptId: id, draft, rejectedSessionIndex: 0 });
+  const homeAvailability = vi.fn<BookingService["availability"]>(
+    async () => [],
+  );
+  const homeFetch = vi.fn<typeof globalThis.fetch>(
+    async () => new Response(null, { status: 503 }),
+  );
+  vi.stubGlobal("fetch", homeFetch);
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        calendar: undefined,
+        publicCalendar: undefined,
+        availability: homeAvailability,
+      }}
+    >
+      <ConflictHandoffProbe />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  expect(homeFetch).not.toHaveBeenCalled();
+  expect(homeAvailability).not.toHaveBeenCalled();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(sessionStorage.getItem("soccerbot-pending-conflict")).toBeNull();
+  expect(
+    JSON.parse(sessionStorage.getItem("soccerbot-live-draft")!)
+      .checkoutAttemptId,
+  ).toBe(id);
+});
+
+it("completed conflict classification preserves all available selections without inventing affected sessions", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  navigation.path = "/book/review/";
+  const availability = vi.fn<BookingService["availability"]>(async () => [
+    { ...draft.slots[0], available: true },
+  ]);
+  const checkout = vi.fn<BookingService["checkout"]>(async () => {
+    throw new BookingServiceError(
+      "checkout_window_blocked",
+      "Synthetic transient window rejection",
+    );
+  });
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        calendar: undefined,
+        publicCalendar: undefined,
+        checkout,
+        availability,
+      }}
+    >
+      <ConflictHandoffProbe />
+    </BookingProvider>,
+  );
+  await act(async () => {
+    fireEvent.click(screen.getByText("Seed handoff"));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("Submit handoff"));
+  });
+  expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
+  expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+    draft.slots,
+  );
+  expect(JSON.parse(screen.getByTestId("handoff-notice").textContent!)).toEqual(
+    [],
+  );
+  expect(availability).toHaveBeenCalledTimes(1);
+  expect(checkout).toHaveBeenCalledTimes(1);
+});
+
+it("payment and confirmation consumers retain one classifier until the complete calendar handoff", async () => {
+  for (const route of ["payment", "confirmation"] as const) {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+    navigation.path = route === "payment" ? "/book/payment/" : "/confirmation/";
+    saveLiveDraft(draft, true, id);
+    const restore = vi.fn<NonNullable<BookingService["restore"]>>(async () => ({
+      id,
+      draft,
+      status: "checking",
+      outcome: "pending",
+      checkUntil: Date.now() + 600000,
+      booking: null,
+    }));
+    let finish!: (
+      slots: Awaited<ReturnType<BookingService["availability"]>>,
+    ) => void;
+    let signal: AbortSignal | undefined;
+    const availability = vi.fn<BookingService["availability"]>((input) => {
+      signal = input.signal;
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    });
+    const fetch = vi.fn<typeof globalThis.fetch>(async (path) =>
+      String(path).endsWith("/checkout")
+        ? Response.json({
+            attemptId: id,
+            mode: "live",
+            checkout: { state: "unavailable" },
+            selectionRejection: {
+              state: "selection_unavailable",
+              rejectedSessionIndex: 0,
+            },
+            summary: {
+              players: 1,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [
+                {
+                  startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+                  players: 1,
+                },
+              ],
+            },
+            checking: {
+              deadlineMs: Date.now() + 600000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+            },
+          })
+        : Response.json({
+            status: "invalid",
+            reason: "checkout_selection_rejected",
+            selectionRejection: {
+              state: "selection_unavailable",
+              rejectedSessionIndex: 0,
+            },
+          }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    const service: BookingService = {
+      ...liveBookingService,
+      restore,
+      availability,
+      calendar: undefined,
+      publicCalendar: undefined,
+    };
+    const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    render(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <ConflictHandoffProbe />
+        {route === "payment" ? (
+          <BookingPage step="payment" />
+        ) : (
+          <ConfirmationPage />
+        )}
+      </BookingProvider>,
+    );
+    await act(async () => {});
+    expect(availability).toHaveBeenCalledTimes(1);
+    expect(signal?.aborted).toBe(false);
+    if (route === "confirmation") {
+      await act(async () => {
+        fireEvent.click(screen.getByText("Recover handoff"));
+      });
+      expect(availability).toHaveBeenCalledTimes(1);
+      expect(signal?.aborted).toBe(false);
+    }
+    expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    await act(async () => finish([]));
+    expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
+    expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+    expect(
+      JSON.parse(screen.getByTestId("handoff-notice").textContent!),
+    ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
+    expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+      [],
+    );
+    expect(availability).toHaveBeenCalledTimes(1);
+    expect(
+      fetch.mock.calls.every(
+        ([, options]) => !options?.method || options.method === "GET",
+      ),
+    ).toBe(true);
+    cleanup();
+    sessionStorage.clear();
+    localStorage.clear();
+    navigation.replace.mockReset();
+    vi.useRealTimers();
+  }
+});
+
+it("refresh after a lost rejection response stays unready until protected evidence and classification finish", async () => {
+  for (const pendingSnapshot of [false, true]) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+    navigation.path = "/book/time/";
+    saveLiveDraft(draft, true, id);
+    if (pendingSnapshot)
+      savePendingConflict({ attemptId: id, draft, rejectedSessionIndex: 0 });
+    let finishContext!: (response: Response) => void;
+    let finishAvailability!: (
+      slots: Awaited<ReturnType<BookingService["availability"]>>,
+    ) => void;
+    const fetch = vi.fn<typeof globalThis.fetch>(
+      () =>
+        new Promise((resolve) => {
+          finishContext = resolve;
+        }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    const availability = vi.fn<BookingService["availability"]>(
+      () =>
+        new Promise((resolve) => {
+          finishAvailability = resolve;
+        }),
+    );
+    const restore = vi.fn<NonNullable<BookingService["restore"]>>(() =>
+      pendingSnapshot ? new Promise(() => {}) : Promise.resolve(null),
+    );
+    render(
+      <BookingProvider
+        bookingService={{
+          ...liveBookingService,
+          restore,
+          availability,
+          calendar: undefined,
+          publicCalendar: undefined,
+        }}
+        identityService={{ ...demoCustomerIdentity, mode: "live" }}
+      >
+        <ConflictHandoffProbe />
+      </BookingProvider>,
+    );
+    await act(async () => {});
+    if (pendingSnapshot) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(9_999);
+      });
+      expect(fetch).not.toHaveBeenCalled();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+    }
+    expect(screen.getByTestId("handoff-ready")).toHaveTextContent("false");
+    expect(availability).not.toHaveBeenCalled();
+    await act(async () =>
+      finishContext(
+        Response.json({
+          attemptId: id,
+          mode: "live",
+          checkout: { state: "unavailable" },
+          selectionRejection: {
+            state: "selection_unavailable",
+            rejectedSessionIndex: 0,
+          },
+          summary: {
+            players: 1,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [
+              { startMs: Date.parse("2026-10-20T12:00:00+08:00"), players: 1 },
+            ],
+          },
+          checking: {
+            deadlineMs: Date.now() + 600000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        }),
+      ),
+    );
+    expect(screen.getByTestId("handoff-ready")).toHaveTextContent("false");
+    expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+    await act(async () => finishAvailability([]));
+    expect(screen.getByTestId("handoff-ready")).toHaveTextContent("true");
+    expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
+    expect(
+      JSON.parse(screen.getByTestId("handoff-notice").textContent!),
+    ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
+    expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+      [],
+    );
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(availability).toHaveBeenCalledTimes(1);
+    cleanup();
+    sessionStorage.clear();
+    vi.useRealTimers();
+  }
+});
+
+it("stale pending conflict proof routes only its original protected attempt on denied or changed authority", async () => {
+  for (const proof of ["held", "denied"] as const) {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+    navigation.path = "/book/time/";
+    const foreignId = "00000000-0000-4000-8000-000000000099";
+    saveLiveDraft(draft, false, id);
+    savePendingConflict({ attemptId: id, draft, rejectedSessionIndex: 0 });
+    const restored: Attempt = {
+      id: proof === "held" ? id : foreignId,
+      draft,
+      status: "ready",
+      held: true,
+      outcome: "pending",
+      checkUntil: 0,
+      booking: null,
+    };
+    const restore = vi.fn<NonNullable<BookingService["restore"]>>(
+      async () => restored,
+    );
+    const availability = vi.fn<BookingService["availability"]>(async () => []);
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      proof === "denied"
+        ? new Response(null, { status: 403 })
+        : Response.json({
+            attemptId: id,
+            mode: "live",
+            checkout: { state: "unavailable" },
+            summary: {
+              players: 1,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [
+                {
+                  startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+                  players: 1,
+                },
+              ],
+            },
+            checking: {
+              deadlineMs: Date.now() + 600000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+            },
+          }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    const service: BookingService = {
+      ...liveBookingService,
+      restore,
+      availability,
+      calendar: undefined,
+      publicCalendar: undefined,
+    };
+    const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    const tree = () => (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <ConflictHandoffProbe />
+      </BookingProvider>
+    );
+    const view = render(tree());
+    await act(async () => {});
+    expect(navigation.replace).toHaveBeenCalledWith(
+      `/confirmation/?attempt=${id}`,
+    );
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(
+      proof === "held" ? id : "none",
+    );
+    expect(screen.getByTestId("handoff-attempt")).not.toHaveTextContent(
+      foreignId,
+    );
+    expect(availability).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(String(fetch.mock.calls[0][0])).toContain(
+      `/api/attempts/${id}/checkout`,
+    );
+    navigation.path = "/confirmation/";
+    view.rerender(tree());
+    await act(async () => {});
+    navigation.path = "/book/time/";
+    view.rerender(tree());
+    await act(async () => {});
+    expect(screen.getByTestId("handoff-ready")).toHaveTextContent("true");
+    expect(availability).not.toHaveBeenCalled();
+    cleanup();
+    sessionStorage.clear();
+    localStorage.clear();
+    navigation.replace.mockReset();
+    vi.useRealTimers();
   }
 });

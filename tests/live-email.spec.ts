@@ -2968,6 +2968,9 @@ test("real API expired unpaid Review retains its hold through the grace window w
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
       "Your payment window has ended. These sessions may not be available to book again immediately. Please try again later.",
     );
+    await expect(
+      page.getByRole("main").getByRole("alert").locator("ul"),
+    ).toHaveCSS("list-style-type", "disc");
     await expect(page).toHaveURL(/\/book\/time\/$/);
     await expect(
       page.locator(".booking-flow-overlay, .payment-check-feedback"),

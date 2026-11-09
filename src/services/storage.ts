@@ -221,6 +221,39 @@ export function saveConflictNotice(slots: NoticeSlot[] | null) {
   else safeRemove("soccerbot-conflict-notice");
 }
 
+// Pending conflict data is a tab-local display snapshot, never server authority.
+const pendingConflictSchema = z.strictObject({
+  attemptId: z.string().uuid().nullable(),
+  draft: draftSchema,
+  rejectedSessionIndex: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_BOOKING_SESSIONS - 1)
+    .optional(),
+});
+export type PendingConflict = z.infer<typeof pendingConflictSchema>;
+/** Restore only the pending original draft belonging to this tab's attempt marker. */
+export function loadPendingConflict(): PendingConflict | null {
+  const parsed = pendingConflictSchema.safeParse(
+    safeRead("soccerbot-pending-conflict"),
+  );
+  if (!parsed.success || parsed.data.attemptId !== liveCheckoutAttemptId())
+    return null;
+  if (
+    parsed.data.rejectedSessionIndex !== undefined &&
+    parsed.data.rejectedSessionIndex >= parsed.data.draft.slots.length
+  )
+    return null;
+  return parsed.data;
+}
+/** Persist display correlation while awaiting complete fresh conflict classification. */
+export function savePendingConflict(value: PendingConflict | null) {
+  if (value)
+    safeWrite("soccerbot-pending-conflict", pendingConflictSchema.parse(value));
+  else safeRemove("soccerbot-pending-conflict");
+}
+
 /** Remember deliberate departure while preserving the exact unresolved attempt correlation. */
 export function markBookingDeparture(
   id: string,

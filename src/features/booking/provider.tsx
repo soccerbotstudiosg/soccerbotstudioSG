@@ -4,9 +4,11 @@ import {
   BOOKING_NOT_CREATED,
   PAYMENT_WINDOW_ENDED,
 } from "@/domain/booking-messages";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { CATALOGUE_MAX_AGE_MS } from "@/domain/catalog";
 import { BookingLoadingProvider } from "./booking-loading";
 import {
+  ConfirmationError,
   protectedCheckoutService,
   expireBooking,
   dismissCompletedBooking,
@@ -55,6 +57,9 @@ import {
   type BookingOperation,
 } from "@/services/contracts";
 import {
+  loadPendingConflict,
+  savePendingConflict,
+  type PendingConflict,
   markBookingDeparture,
   loadDepartureSlots,
   isBookingDeparture,
@@ -93,6 +98,7 @@ interface BookingContextValue extends StoredBooking {
   showMonth: (month: string, through?: string) => void;
   setCalendarBrowsing: (active: boolean) => void;
   resolveUncreatedBooking: (id: string) => boolean;
+  conflictChecking: boolean;
   selectionNotice: string | null;
   selectionNoticeSlots: NoticeSlot[];
   visitBookingStep: (step: string) => void;
@@ -126,37 +132,130 @@ interface BookingContextValue extends StoredBooking {
   rebookingError: string | null;
   retryRebooking: () => void;
 }
-/** Fresh reads identify unavailable selections; failed reads never imply a conflict. */
+// Match protected checkout recovery's bounded read and conservative retry cadence.
+const CONFLICT_READ_TIMEOUT_MS = 10_000;
+// Fresh availability can spend fifteen seconds queued plus fifteen in provider transport.
+// Owner captures include valid responses beyond the protected-context ten-second budget.
+const CONFLICT_AVAILABILITY_TIMEOUT_MS = 30_000;
+const CONFLICT_READ_RETRY_MS = 30_000;
+/** Bound one read and ignore a transport that settles after timeout or cancellation. */
+async function conflictRead<T>(
+  read: (signal: AbortSignal) => Promise<T>,
+  signal: AbortSignal,
+  timeoutMs = CONFLICT_READ_TIMEOUT_MS,
+): Promise<T> {
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  let abort: (() => void) | undefined;
+  try {
+    return await Promise.race([
+      new Promise<never>((_, reject) => {
+        abort = () => {
+          controller.abort();
+          reject(new Error("conflict_read_cancelled"));
+        };
+        if (signal.aborted) abort();
+        else signal.addEventListener("abort", abort, { once: true });
+        timeout = setTimeout(() => {
+          controller.abort();
+          reject(new Error("conflict_read_timeout"));
+        }, timeoutMs);
+      }),
+      Promise.resolve().then(() => {
+        if (controller.signal.aborted)
+          throw new Error("conflict_read_cancelled");
+        return read(controller.signal);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+    if (abort) signal.removeEventListener("abort", abort);
+  }
+}
+/** Pace failed read recovery while allowing immediate cancellation on departure. */
+function waitForConflictRead(signal: AbortSignal, nextCheckMs = 0) {
+  return new Promise<void>((resolve) => {
+    const finish = () => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", finish);
+      resolve();
+    };
+    const timer = setTimeout(
+      finish,
+      Math.max(CONFLICT_READ_RETRY_MS, nextCheckMs - Date.now()),
+    );
+    if (signal.aborted) finish();
+    else signal.addEventListener("abort", finish, { once: true });
+  });
+}
+/** Retain successful dates and retry only failed reads until every date is classified. */
 async function readConflictSelections(
   service: BookingService,
   draft: BookingDraft,
   signal: AbortSignal,
+  isCurrent: () => boolean,
 ) {
   const dates = [...new Set(draft.slots.map((slot) => slot.date))];
-  const results = await Promise.allSettled(
-    dates.map((date) =>
-      service.availability({
-        date,
-        players: draft.players,
-        serviceId: draft.nativeServiceId,
-        fresh: true,
-        signal,
-      }),
-    ),
-  );
-  const unavailable = draft.slots.filter((slot) => {
-    const result = results[dates.indexOf(slot.date)];
-    return (
-      result.status === "fulfilled" &&
-      !result.value.some(
-        (offer) =>
-          offer.available &&
-          sessionOfferKey(offer) === sessionOfferKey(slot) &&
-          sessionPrice(offer) === sessionPrice(slot),
-      )
+  const values = new Map<
+    string,
+    {
+      slots: Awaited<ReturnType<BookingService["availability"]>>;
+      observedAtMs: number;
+    }
+  >();
+  while (!signal.aborted && isCurrent()) {
+    for (const [date, read] of values)
+      if (Date.now() - read.observedAtMs >= CATALOGUE_MAX_AGE_MS)
+        values.delete(date);
+    const missing = dates.filter((date) => !values.has(date));
+    const startedAtMs = Date.now();
+    const results = await Promise.allSettled(
+      missing.map((date) =>
+        conflictRead(
+          (readSignal) =>
+            service.availability({
+              date,
+              players: draft.players,
+              serviceId: draft.nativeServiceId,
+              fresh: true,
+              signal: readSignal,
+            }),
+          signal,
+          CONFLICT_AVAILABILITY_TIMEOUT_MS,
+        ),
+      ),
     );
-  });
-  return { dates, results, unavailable };
+    if (signal.aborted || !isCurrent()) return null;
+    for (const [index, result] of results.entries())
+      if (result.status === "fulfilled")
+        values.set(missing[index], {
+          slots: result.value,
+          observedAtMs: startedAtMs,
+        });
+    for (const [date, read] of values)
+      if (Date.now() - read.observedAtMs >= CATALOGUE_MAX_AGE_MS)
+        values.delete(date);
+    if (values.size === dates.length) {
+      const results = dates.map((date) => ({
+        status: "fulfilled" as const,
+        value: values.get(date)!.slots,
+      }));
+      const unavailable = draft.slots.filter(
+        (slot) =>
+          !values
+            .get(slot.date)!
+            .slots.some(
+              (offer) =>
+                offer.available &&
+                sessionOfferKey(offer) === sessionOfferKey(slot) &&
+                sessionPrice(offer) === sessionPrice(slot),
+            ),
+      );
+      return { dates, results, unavailable };
+    }
+    await waitForConflictRead(signal);
+  }
+  return null;
 }
 const Context = createContext<BookingContextValue | null>(null);
 /** Coordinate draft, identity and checkout state across the booking flow. */
@@ -169,17 +268,47 @@ export function BookingProvider({
   bookingService?: BookingService;
   identityService?: CustomerIdentityService;
 }) {
+  const pathname = usePathname();
+  const initialHomeConflict =
+    !!pathname &&
+    !/\/(?:book\/|confirmation)/.test(pathname) &&
+    !!loadPendingConflict();
   const [sessionChoices, setSessionChoices] = useState<SessionChoices>({
     outlet: false,
     session: false,
   });
   const [noticeState, dispatchSelectionNotice] = useState(() => {
-    const slots = bookingService.mode === "live" ? loadConflictNotice() : null;
+    const slots =
+      bookingService.mode === "live" && !initialHomeConflict
+        ? loadConflictNotice()
+        : null;
     return {
       message: slots !== null ? CONFLICT_NOTICE : null,
       slots: slots ?? [],
     };
   });
+  const router = useRouter();
+  const [protectedConflictRedirect, setProtectedConflictRedirect] = useState<
+    string | null
+  >(null);
+  const completedConflict = useRef<string | null>(null);
+  const rejectionRead = useRef<AbortController | null>(null);
+  const rejectionWork = useRef<{
+    key: string;
+    promise: Promise<boolean>;
+  } | null>(null);
+  const [pendingConflict, setPendingConflict] =
+    useState<PendingConflict | null>(() =>
+      bookingService.mode === "live" && !initialHomeConflict
+        ? loadPendingConflict()
+        : null,
+    );
+  const clearPendingConflict = useCallback(() => {
+    rejectionRead.current?.abort();
+    rejectionRead.current = null;
+    savePendingConflict(null);
+    setPendingConflict(null);
+  }, []);
   const noticeCurrent = useRef(noticeState);
   const selectionNotice = noticeState.message;
   const selectionNoticeSlots = noticeState.slots;
@@ -210,9 +339,12 @@ export function BookingProvider({
   const visitBookingStep = useCallback(
     (step: string) => {
       if (step === "time") noticeShownOnCalendar.current = true;
-      else if (noticeShownOnCalendar.current) setSelectionNotice(null);
+      else if (noticeShownOnCalendar.current) {
+        clearPendingConflict();
+        setSelectionNotice(null);
+      }
     },
-    [setSelectionNotice],
+    [setSelectionNotice, clearPendingConflict],
   );
   const [suppressedSlots, dispatchSuppressedSlots] = useState<
     BookingDraft["slots"]
@@ -321,7 +453,12 @@ export function BookingProvider({
   }, []);
   const [calendarPaused, pauseCalendar] = useState(false);
   const [browsingRequested, setCalendarBrowsing] = useState(true);
-  const pathname = usePathname();
+  if (
+    protectedConflictRedirect &&
+    pathname &&
+    /\/(?:book\/)?confirmation\/?$/.test(pathname)
+  )
+    setProtectedConflictRedirect(null);
   const previousNoticePath = useRef(pathname);
   const noticeRoute = useEffectEvent(() => {
     const changed = previousNoticePath.current !== pathname;
@@ -382,6 +519,7 @@ export function BookingProvider({
       restorationPending ||
       !calendarBrowsing ||
       calendarPaused ||
+      !!pendingConflict ||
       (!!value.attempt && !action.returnToCalendar),
     calendarThrough,
   );
@@ -390,6 +528,7 @@ export function BookingProvider({
     (value.attempt && !action.returnToCalendar) ||
       !calendarBrowsing ||
       calendarPaused ||
+      !!pendingConflict ||
       (service.mode === "live" && !date)
       ? []
       : [
@@ -465,24 +604,39 @@ export function BookingProvider({
         true,
       );
   }, [commit]);
-  const cancel = useCallback(() => {
-    if (mounted.current && !latest.current.attempt) pauseCalendar(false);
-    const request = active.current;
-    if (!request) return;
-    active.current = null;
-    request.controller.abort();
-    if (mounted.current)
-      setAction({
-        status: "cancelled",
-        operation: request.operation,
-        ...(request.operation === "resolve" || request.operation === "check"
-          ? {
-              error:
-                "The status check was interrupted. Your booking is unchanged.",
-            }
-          : {}),
-      });
-  }, [setAction]);
+  const cancel = useCallback(
+    (clearConflict = true) => {
+      if (clearConflict) {
+        completedConflict.current = null;
+        clearPendingConflict();
+        setProtectedConflictRedirect(null);
+      }
+      if (mounted.current && !latest.current.attempt) pauseCalendar(false);
+      const request = active.current;
+      if (!request) return;
+      active.current = null;
+      request.controller.abort();
+      if (mounted.current)
+        setAction({
+          status: "cancelled",
+          operation: request.operation,
+          ...(request.operation === "resolve" || request.operation === "check"
+            ? {
+                error:
+                  "The status check was interrupted. Your booking is unchanged.",
+              }
+            : {}),
+        });
+    },
+    [setAction, clearPendingConflict],
+  );
+  const conflictPath = useRef(pathname);
+  useEffect(() => {
+    const changed = conflictPath.current !== pathname;
+    conflictPath.current = pathname;
+    if (changed && pathname && !/\/(?:book\/|confirmation)/.test(pathname))
+      cancel();
+  }, [pathname, cancel]);
   const freshChecks = useRef(
     new WeakMap<BookingService, Map<string, number>>(),
   );
@@ -499,114 +653,150 @@ export function BookingProvider({
     },
     [service, identityService],
   );
-  const rejectionRead = useRef<AbortController | null>(null);
-  /** Leave a proven no-effects checkout immediately and classify its slots in the background. */
+  /** Classify a rejected checkout before returning with its affected-session notice. */
   const returnRejectedSelection = useCallback(
-    (draft: BookingDraft, indexed?: BookingDraft["slots"][number]) => {
-      rejectionRead.current?.abort();
-      const controller = new AbortController();
-      rejectionRead.current = controller;
-      const identity = JSON.stringify(identityService.current());
-      const candidates = indexed ? [indexed] : draft.slots;
-      const existing = suppression.current.slots;
-      setSuppressedSlots([
-        ...existing.filter(
-          (slot) => !candidates.some((candidate) => overlaps(slot, candidate)),
-        ),
-        ...candidates,
+    (
+      draft: BookingDraft,
+      indexed?: BookingDraft["slots"][number],
+      originalId: string | null = latest.current.attempt?.id ?? null,
+    ): Promise<boolean> => {
+      const key = JSON.stringify([
+        originalId,
+        draft,
+        indexed,
+        identityService.current(),
       ]);
-      const generation = suppression.current.generation;
-      commit({
-        ...latest.current,
-        attempt: null,
-        draft: {
-          ...latest.current.draft,
-          accepted: false,
-          slots: latest.current.draft.slots.filter(
-            (slot) => !indexed || slotKey(slot) !== slotKey(indexed),
-          ),
-        },
-      });
-      if (service.mode === "live") saveLiveDraft(latest.current.draft, false);
-      pauseCalendar(false);
-      const noticeGeneration = setSelectionNotice(
-        CONFLICT_NOTICE,
-        indexed ? [indexed] : [],
-      );
-      setAction({ status: "idle", returnToCalendar: true });
-      for (const date of new Set(draft.slots.map((slot) => slot.date)))
-        rememberFreshDate(date, draft.players, draft.nativeServiceId);
-      void readConflictSelections(service, draft, controller.signal).then(
-        (read) => {
-          if (
-            controller.signal.aborted ||
-            rejectionRead.current !== controller ||
-            suppression.current.generation !== generation ||
-            !mounted.current ||
-            latest.current.attempt ||
-            active.current ||
-            latest.current.draft.mode !== draft.mode ||
-            latest.current.draft.nativeServiceId !== draft.nativeServiceId ||
-            latest.current.draft.players !== draft.players ||
-            JSON.stringify(identityService.current()) !== identity
-          )
-            return;
-          const affected = indexed
-            ? [
-                indexed,
-                ...read.unavailable.filter(
-                  (slot) => slotKey(slot) !== slotKey(indexed),
+      if (
+        rejectionWork.current?.key === key &&
+        rejectionRead.current &&
+        !rejectionRead.current.signal.aborted
+      )
+        return rejectionWork.current.promise;
+      const promise = (async () => {
+        rejectionRead.current?.abort();
+        const controller = new AbortController();
+        rejectionRead.current = controller;
+        const pending: PendingConflict = {
+          attemptId: originalId,
+          draft,
+          ...(indexed
+            ? {
+                rejectedSessionIndex: draft.slots.findIndex(
+                  (slot) => slotKey(slot) === slotKey(indexed),
                 ),
-              ]
-            : read.unavailable;
-          for (const [index, result] of read.results.entries()) {
-            if (result.status === "fulfilled") {
-              const offers = result.value.filter((slot) => slot.available);
-              calendar.reconcile(read.dates[index], offers.length > 0, offers);
-            }
+              }
+            : {}),
+        };
+        if (service.mode === "live") {
+          saveLiveDraft(latest.current.draft, false, originalId);
+          savePendingConflict(pending);
+        }
+        setPendingConflict(pending);
+        const identity = JSON.stringify(identityService.current());
+        const operation = active.current;
+        const originalAttempt = latest.current.attempt;
+        const candidates = indexed ? [indexed] : draft.slots;
+        const existing = suppression.current.slots;
+        setSuppressedSlots([
+          ...existing.filter(
+            (slot) =>
+              !candidates.some((candidate) => overlaps(slot, candidate)),
+          ),
+          ...candidates,
+        ]);
+        const generation = suppression.current.generation;
+        pauseCalendar(false);
+        const noticeGeneration = setSelectionNotice(
+          CONFLICT_NOTICE,
+          indexed ? [indexed] : [],
+        );
+        for (const date of new Set(draft.slots.map((slot) => slot.date)))
+          rememberFreshDate(date, draft.players, draft.nativeServiceId);
+        const isCurrent = () =>
+          !controller.signal.aborted &&
+          rejectionRead.current === controller &&
+          suppression.current.generation === generation &&
+          mounted.current &&
+          latest.current.attempt === originalAttempt &&
+          active.current === operation &&
+          latest.current.draft.mode === draft.mode &&
+          latest.current.draft.nativeServiceId === draft.nativeServiceId &&
+          latest.current.draft.players === draft.players &&
+          JSON.stringify(identityService.current()) === identity;
+        const read = await readConflictSelections(
+          service,
+          draft,
+          controller.signal,
+          isCurrent,
+        );
+        if (!read || !isCurrent()) return false;
+        const affected = indexed
+          ? [
+              indexed,
+              ...read.unavailable.filter(
+                (slot) => slotKey(slot) !== slotKey(indexed),
+              ),
+            ]
+          : read.unavailable;
+        for (const [index, result] of read.results.entries()) {
+          if (result.status === "fulfilled") {
+            const offers = result.value.filter((slot) => slot.available);
+            calendar.reconcile(read.dates[index], offers.length > 0, offers);
           }
-          // Only this request's provisional windows can be released here. Older
-          // quarantines and failed reads remain for the regular fresh-read loop.
-          const available = candidates.filter((slot) => {
-            const result = read.results[read.dates.indexOf(slot.date)];
-            return (
-              result?.status === "fulfilled" &&
-              result.value.some(
-                (offer) =>
-                  offer.available &&
-                  sessionOfferKey(offer) === sessionOfferKey(slot) &&
-                  sessionPrice(offer) === sessionPrice(slot),
-              )
-            );
-          });
-          setSuppressedSlots(
-            suppression.current.slots.filter(
+        }
+        // Only this request's provisional windows can be released here. Older
+        // quarantines and failed reads remain for the regular fresh-read loop.
+        const available = candidates.filter((slot) => {
+          const result = read.results[read.dates.indexOf(slot.date)];
+          return (
+            result?.status === "fulfilled" &&
+            result.value.some(
+              (offer) =>
+                offer.available &&
+                sessionOfferKey(offer) === sessionOfferKey(slot) &&
+                sessionPrice(offer) === sessionPrice(slot),
+            )
+          );
+        });
+        setSuppressedSlots(
+          suppression.current.slots.filter(
+            (slot) =>
+              !available.some(
+                (released) => slotKey(released) === slotKey(slot),
+              ),
+          ),
+        );
+        commit({
+          ...latest.current,
+          attempt: null,
+          draft: {
+            ...latest.current.draft,
+            accepted: false,
+            slots: latest.current.draft.slots.filter(
               (slot) =>
-                !available.some(
-                  (released) => slotKey(released) === slotKey(slot),
+                !affected.some(
+                  (rejected) => slotKey(rejected) === slotKey(slot),
                 ),
             ),
-          );
-          commit({
-            ...latest.current,
-            draft: {
-              ...latest.current.draft,
-              accepted: false,
-              slots: latest.current.draft.slots.filter(
-                (slot) =>
-                  !affected.some(
-                    (rejected) => slotKey(rejected) === slotKey(slot),
-                  ),
-              ),
-            },
-          });
-          if (service.mode === "live")
-            saveLiveDraft(latest.current.draft, false);
-          if (noticeRevision.current === noticeGeneration)
-            setSelectionNotice(CONFLICT_NOTICE, affected);
-          rejectionRead.current = null;
-        },
-      );
+          },
+        });
+        if (service.mode === "live") saveLiveDraft(latest.current.draft, false);
+        if (noticeRevision.current === noticeGeneration)
+          setSelectionNotice(CONFLICT_NOTICE, affected);
+        rejectionRead.current = null;
+        completedConflict.current = originalId;
+        savePendingConflict(null);
+        setPendingConflict(null);
+        setAction({ status: "idle", returnToCalendar: true });
+        return true;
+      })();
+      const work = { key, promise };
+      rejectionWork.current = work;
+      const finished = () => {
+        if (rejectionWork.current === work) rejectionWork.current = null;
+      };
+      void promise.then(finished, finished);
+      return promise;
     },
     [
       service,
@@ -631,12 +821,21 @@ export function BookingProvider({
           (current.attempt.id !== id || current.attempt.status === "paid"))
       )
         return false;
+      if (completedConflict.current === id && !current.attempt) return true;
+      const pending = loadPendingConflict();
+      if (!current.attempt && !pending && !mayRestoreLiveCheckout(id))
+        return false;
+      const draft =
+        pending?.attemptId === id
+          ? pending.draft
+          : (current.attempt?.draft ?? current.draft);
       const indexed =
         rejection.state === "selection_unavailable"
-          ? current.attempt?.draft.slots[rejection.rejectedSessionIndex ?? -1]
+          ? pending?.attemptId === id || current.attempt?.id === id
+            ? draft.slots[rejection.rejectedSessionIndex ?? -1]
+            : undefined
           : undefined;
-      returnRejectedSelection(current.draft, indexed);
-      return true;
+      return returnRejectedSelection(draft, indexed, id);
     },
     [service, returnRejectedSelection],
   );
@@ -715,14 +914,115 @@ export function BookingProvider({
       });
     return () => controller.abort();
   }, [pathname, needsEntryCheck, resolveUncreatedBooking]);
+  /** Revalidate a persisted conflict against its original protected attempt before classification. */
+  const recoverPendingConflict = useEffectEvent(
+    async (
+      pending: PendingConflict,
+      parent: AbortSignal,
+      restoredAttempt: StoredBooking["attempt"] = null,
+    ) => {
+      if (pending.attemptId === null)
+        return returnRejectedSelection(pending.draft, undefined, null);
+      const controller = new AbortController();
+      rejectionRead.current?.abort();
+      rejectionRead.current = controller;
+      const abort = () => controller.abort();
+      parent.addEventListener("abort", abort, { once: true });
+      const protectedFallback = () => {
+        if (
+          controller.signal.aborted ||
+          !mounted.current ||
+          liveCheckoutAttemptId() !== pending.attemptId
+        )
+          return false;
+        if (restoredAttempt?.id === pending.attemptId)
+          commit(
+            {
+              ...latest.current,
+              draft: restoredAttempt.draft,
+              attempt: restoredAttempt,
+            },
+            true,
+          );
+        saveLiveDraft(latest.current.draft, true, pending.attemptId);
+        clearPendingConflict();
+        setSelectionNotice(null);
+        setProtectedConflictRedirect(pending.attemptId);
+        router.replace(
+          `/confirmation/?attempt=${encodeURIComponent(pending.attemptId!)}`,
+        );
+        return false;
+      };
+      try {
+        while (
+          !controller.signal.aborted &&
+          mounted.current &&
+          loadPendingConflict()?.attemptId === pending.attemptId
+        ) {
+          try {
+            const context = await conflictRead(
+              (signal) =>
+                protectedCheckoutService.context({
+                  attemptId: pending.attemptId!,
+                  mode: "live",
+                  signal,
+                }),
+              controller.signal,
+            );
+            if (controller.signal.aborted || !mounted.current) return false;
+            if (context.creationResolution)
+              return resolveUncreatedBooking(pending.attemptId);
+            if (context.selectionRejection) {
+              const sameSnapshot =
+                context.summary.sessions.length ===
+                  pending.draft.slots.length &&
+                context.summary.sessions.every(
+                  (session, index) =>
+                    session.players === pending.draft.players &&
+                    session.startMs ===
+                      Date.parse(
+                        `${pending.draft.slots[index].date}T${pending.draft.slots[index].start}:00+08:00`,
+                      ),
+                );
+              // A browser snapshot cannot decide which authenticated original index was rejected.
+              const rejection = sameSnapshot
+                ? context.selectionRejection
+                : { state: context.selectionRejection.state };
+              return rejectRecoveredSelection(pending.attemptId, rejection);
+            }
+            // The original server state supersedes a stale display marker. Preserve its
+            // financial authority; ordinary restoration/confirmation owns that state.
+            return protectedFallback();
+          } catch (error) {
+            if (controller.signal.aborted) return false;
+            if (error instanceof ConfirmationError && error.kind === "denied")
+              return protectedFallback();
+            await waitForConflictRead(
+              controller.signal,
+              error instanceof ConfirmationError
+                ? error.nextCheckMs
+                : undefined,
+            );
+          }
+        }
+        return false;
+      } finally {
+        parent.removeEventListener("abort", abort);
+      }
+    },
+  );
   const recoverRejectedTab = useEffectEvent(
     async (id: string, controller: AbortController) => {
       try {
-        const context = await protectedCheckoutService.context({
-          attemptId: id,
-          mode: "live",
-          signal: controller.signal,
-        });
+        const context = await conflictRead(
+          (signal) =>
+            protectedCheckoutService.context({
+              attemptId: id,
+              mode: "live",
+              signal,
+            }),
+          controller.signal,
+        );
         if (
           !controller.signal.aborted &&
           (context.selectionRejection || context.creationResolution) &&
@@ -736,6 +1036,16 @@ export function BookingProvider({
       }
     },
   );
+  const clearDepartedConflict = useEffectEvent(() => {
+    if (
+      pathname &&
+      !/\/(?:book\/|confirmation)/.test(pathname) &&
+      loadPendingConflict()
+    ) {
+      savePendingConflict(null);
+      saveConflictNotice(null);
+    }
+  });
   useEffect(() => {
     mounted.current = true;
     const sameSession =
@@ -750,19 +1060,27 @@ export function BookingProvider({
         : { version: 2, draft: loadLiveDraft(), attempt: null },
       sameSession,
     );
+    // A direct Home load is a deliberate presentation departure, not permission
+    // to discard the original server-owned attempt or redirect back into recovery.
+    clearDepartedConflict();
     const controller = new AbortController();
     const revision = latest.current.revision;
     const exiting = service.mode === "live" ? completedExitIntent() : null;
     if (exiting) void finishExit(exiting);
+    let restoredAttempt: StoredBooking["attempt"] = null;
     if (
       service.mode === "live" &&
       identityService.mode === "live" &&
       service.restore
     ) {
-      void service
-        .restore(controller.signal)
+      const restoration = loadPendingConflict()
+        ? conflictRead((signal) => service.restore!(signal), controller.signal)
+        : service.restore(controller.signal);
+      void restoration
         .then(
           (attempt) => {
+            restoredAttempt = attempt;
+            if (loadPendingConflict()) return;
             if (
               attempt &&
               attempt.id !== exiting &&
@@ -806,24 +1124,37 @@ export function BookingProvider({
             /* A failed protected read cannot restore private state. */
           },
         )
-        .finally(() => {
+        .finally(async () => {
           if (!controller.signal.aborted) {
-            setRestoredOwner({ service, identityService });
+            const pending = loadPendingConflict();
+            if (pending)
+              await recoverPendingConflict(
+                pending,
+                controller.signal,
+                restoredAttempt,
+              );
             const id = liveCheckoutAttemptId();
             if (
+              !pending &&
               id &&
               (mayRestoreLiveCheckout(id) || isBookingDeparture(id)) &&
               !latest.current.attempt
             )
-              void recoverRejectedTab(id, controller);
+              await recoverRejectedTab(id, controller);
+            if (!controller.signal.aborted)
+              setRestoredOwner({ service, identityService });
           }
         });
+    } else {
+      const pending = loadPendingConflict();
+      if (service.mode === "live" && pending)
+        void recoverPendingConflict(pending, controller.signal);
     }
     return () => {
       controller.abort();
       rejectionRead.current?.abort();
       mounted.current = false;
-      cancel();
+      cancel(false);
     };
   }, [
     commit,
@@ -898,6 +1229,7 @@ export function BookingProvider({
     if (
       !value.ready ||
       restorationPending ||
+      pendingConflict ||
       !calendarBrowsing ||
       !suppressedSlots.length
     )
@@ -1032,6 +1364,7 @@ export function BookingProvider({
     restorationPending,
     calendarBrowsing,
     suppressedSlots,
+    pendingConflict,
     retainedAttempt,
     commit,
     rememberFreshDate,
@@ -1042,7 +1375,13 @@ export function BookingProvider({
   ]);
   const run = useCallback(
     async (operation: Action, outcome: Outcome = "success") => {
-      if (active.current || !mounted.current || !latest.current.ready)
+      if (
+        pendingConflict ||
+        protectedConflictRedirect ||
+        active.current ||
+        !mounted.current ||
+        !latest.current.ready
+      )
         return false;
       let current = latest.current;
       if (
@@ -1254,7 +1593,7 @@ export function BookingProvider({
           error.code === "checkout_window_blocked"
         ) {
           // Server rejection establishes that this request dispatched no booking.
-          returnRejectedSelection(current.draft);
+          await returnRejectedSelection(current.draft);
           return false;
         }
         // A lost write response is not permission to create another booking.
@@ -1354,7 +1693,7 @@ export function BookingProvider({
           (known.code === "selection_unavailable" ||
             known.code === "selection_changed");
         if (selectionRejected) {
-          returnRejectedSelection(
+          await returnRejectedSelection(
             current.draft,
             current.draft.slots[known.rejectedSessionIndex ?? -1],
           );
@@ -1389,6 +1728,8 @@ export function BookingProvider({
       returnRejectedSelection,
       setSuppressedSlots,
       suppressedSlots,
+      pendingConflict,
+      protectedConflictRedirect,
     ],
   );
   useEffect(() => {
@@ -1407,7 +1748,12 @@ export function BookingProvider({
         ...value,
         sessionChoices,
         setSessionChoices,
-        ready: value.ready && !restorationPending && !needsEntryCheck,
+        ready:
+          value.ready &&
+          !restorationPending &&
+          !needsEntryCheck &&
+          !(protectedConflictRedirect && !!pathname?.includes("/book/")),
+        conflictChecking: !!pendingConflict,
         resolveUncreatedBooking,
         now,
         bookingService: service,

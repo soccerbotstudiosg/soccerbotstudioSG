@@ -702,6 +702,8 @@ export function ProtectedConfirmation({
       (paymentReceived || view === "confirmed" ? responseEvidence : current),
     receipt: receiptMatches ? receipt.value : undefined,
   });
+  if (rejectionState && !hasPaymentEvidence)
+    return <BrandLoading compact label="Checking available sessions…" />;
   if (
     calendarRecovery ||
     (checkoutMode === "live" &&
