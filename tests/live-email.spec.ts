@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { isHitPayApiCall } from "../worker/tests/provider-url-fixture.mjs";
 import { createBookingSequence } from "../worker/tests/booking-sequence-fixture.mjs";
 import { createBookingMechanism as createIsolatedMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
@@ -1796,6 +1797,94 @@ async function uncertainHolding(
         .prepare("SELECT COUNT(*) AS n FROM hitpay_holds")
         .first<{ n: number }>())!.n,
     ).toBe(0);
+    if (fault === "creation") {
+      // Exercise the real operator endpoint and real customer route after a
+      // synthetic provider confirms the dispatched request created nothing.
+      const proof = await mechanism.db
+        .prepare(
+          "SELECT a.id AS attemptId,a.intent_hash AS intentHash,a.version,d.fence AS dispatchFence FROM attempts a JOIN dispatches d ON d.attempt_id=a.id WHERE a.id=? AND d.operation='booking.create'",
+        )
+        .bind(row!.id)
+        .first();
+      expect(proof).toBeTruthy();
+      const bearer = "e".repeat(64);
+      await mechanism.db
+        .prepare(
+          "INSERT INTO developer_operations VALUES(?,'native_creation_resolution',?,'granted',?)",
+        )
+        .bind(
+          createHash("sha256").update(bearer).digest("hex"),
+          Date.now() + 60000,
+          JSON.stringify({
+            ...proof,
+            verifiedMs: Date.now(),
+            evidenceReference: "synthetic-provider-no-creation-confirmation",
+            processingFinished: true,
+            noBookingCreated: true,
+          }),
+        )
+        .run();
+      // Wait for the customer's existing background read to observe terminal
+      // proof before asserting navigation; an operator write does not notify
+      // the browser, and the polling interval itself is five seconds.
+      const observedResolution = page.waitForResponse(async (response) => {
+        const path = new URL(response.url()).pathname;
+        if (
+          response.status() !== 200 ||
+          path !== `/api/attempts/${row!.id}/checkout`
+        )
+          return false;
+        const body = await response.json();
+        return body.creationResolution?.state === "not_created";
+      });
+      const resolved = await mechanism.mf.dispatchFetch(
+        mechanism.origin + "/api/developer/native-creation-resolution",
+        {
+          method: "POST",
+          headers: {
+            origin: mechanism.origin,
+            authorization: `Bearer ${bearer}`,
+          },
+        },
+      );
+      expect(resolved.status).toBe(200);
+      expect(await resolved.json()).toMatchObject({ state: "complete" });
+      await observedResolution;
+      await expect(page).toHaveURL(/\/book\/time\/$/);
+      await expect(
+        page.getByText(
+          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
+          { exact: true },
+        ),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("status", {
+          name: "Checking your reservation…",
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      const restoredDraft = await page.evaluate(() =>
+        JSON.parse(sessionStorage.getItem("soccerbot-live-draft") || "null"),
+      );
+      expect(restoredDraft).toMatchObject({
+        accepted: false,
+        slots: [],
+        contact: { name: "Synthetic Guest" },
+      });
+      expect(restoredDraft.checkoutAttemptId).toBeUndefined();
+      await page.reload();
+      await expect(page).toHaveURL(/\/book\/time\/$/);
+      await expect(
+        page.getByRole("status", {
+          name: "Checking your reservation…",
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      expect(
+        mechanism.calls.filter((call) => call.body?.method === "book"),
+      ).toHaveLength(1);
+      await assertNoPaymentOrConfirmation(page, mechanism);
+    }
   } finally {
     await stopMechanism(page, mechanism, transport);
   }
@@ -2877,7 +2966,7 @@ test("real API expired unpaid Review retains its hold through the grace window w
       })
       .click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "Your payment window has ended. Affected sessions:",
+      "Your payment window has ended. These sessions may not be available to book again immediately. Please try again later.",
     );
     await expect(page).toHaveURL(/\/book\/time\/$/);
     await expect(
@@ -3024,7 +3113,7 @@ test("real API 409 preparation rejection returns to calendar without payment ver
       }),
     ).toBeVisible();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "These selections were not booked. Please check your sessions again. Your details are saved.",
+      "Some sessions may no longer be available. Please check again.",
     );
     await expect(
       page.getByRole("link", { name: "View existing checkout", exact: true }),

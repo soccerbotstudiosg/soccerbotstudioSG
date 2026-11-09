@@ -3,6 +3,7 @@ import { isHitPayApiCall } from "./provider-url-fixture.mjs";
 import { setTimeout as waitForClockBoundary } from "node:timers/promises";
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { build } from "esbuild";
 import { createBookingMechanism } from "./booking-mechanism-fixture.mjs";
 
 /** Consume each checkout response before waiting for competing requests. */
@@ -88,6 +89,10 @@ test("combined hold performs one preflight and preserves immutable identity acro
     assert.equal(checking.holdExpiresAtMs, timing.expires_ms);
     assert.equal(checking.recoveryEndsAtMs, timing.booking_created_ms + 720000);
     assert.equal(checking.deadlineMs, timing.booking_created_ms + 540000);
+    assert.equal(
+      checking.paymentExpiresAtMs,
+      timing.booking_created_ms + 480000,
+    );
     assert.equal(timing.payment_window_ms, 480000);
     assert.equal(timing.hold_window_ms, 600000);
     assert.equal(timing.checking_buffer_ms, 60000);
@@ -1151,6 +1156,10 @@ test("checkout reuses complete creation evidence for one HitPay request without 
       initialContext.checkout.expiresAtMs,
       result.checkout.expiresAtMs,
     );
+    assert.equal(
+      initialContext.checking.paymentExpiresAtMs,
+      result.checkout.expiresAtMs,
+    );
     for (const [expiry, reason] of [
       [Date.now() - 1, "payment_pending"],
       [null, "payment_pending"],
@@ -1166,7 +1175,14 @@ test("checkout reuses complete creation evidence for one HitPay request without 
         .run();
       const unavailable = await readContext();
       assert.equal(unavailable.checkout.state, "unavailable");
-      assert.deepEqual(unavailable.checking, initialContext.checking);
+      assert.equal(
+        unavailable.checking.paymentExpiresAtMs,
+        Math.min(expiry ?? saved.expires_ms, saved.expires_ms),
+      );
+      assert.deepEqual(
+        { ...unavailable.checking, paymentExpiresAtMs: undefined },
+        { ...initialContext.checking, paymentExpiresAtMs: undefined },
+      );
       const timing = await m.db
         .prepare(
           "SELECT expires_ms,recovery_end_ms FROM hitpay_payments WHERE attempt_id=?",
@@ -1214,6 +1230,14 @@ test("combined checkout never creates HitPay after failed booking verification a
     });
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(m.calls.filter((c) => isHitPayApiCall(c)).length, 0);
+    const contextResponse = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${c.input.key}/checkout`,
+      { headers: c.headers },
+    );
+    assert.equal(contextResponse.status, 200);
+    const unresolvedContext = await contextResponse.json();
+    assert.equal(unresolvedContext.checking.paymentExpiresAtMs, undefined);
+    assert.equal(unresolvedContext.checkout.state, "unavailable");
     await send();
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
     assert.equal(m.calls.filter((c) => isHitPayApiCall(c)).length, 0);
@@ -2358,9 +2382,11 @@ test("direct single checkout uses only public authentication and creation before
       );
       assert.ok(http, "outer binding read is measured");
       assert.equal(http.spans.d1.count, 1);
-      // Two extra executions resolve trusted identity and evaluate expiry admission.
-      assert.equal(checkout.spans.d1.count, 6);
-      assert.equal(checkout.spans.d1.count + http.spans.d1.count, 7);
+      // Trusted identity and expiry admission add two executions; the detailed
+      // payment purpose adds one retained-metadata read, with no provider call.
+      // The resolved-key fence is folded into the existing HTTP authentication.
+      assert.equal(checkout.spans.d1.count, 7);
+      assert.equal(checkout.spans.d1.count + http.spans.d1.count, 8);
       console.log(`single checkout D1 executions: ${checkout.spans.d1.count}`);
       const payment = await m.db
         .prepare(
@@ -2579,10 +2605,8 @@ test("direct batch checkout uses creation responses for two four and five sessio
       console.log(
         `batch ${count}: D1=${trace.spans.d1.count}; provider=${trace.spans.provider?.count}`,
       );
-      assert.ok(
-        trace.spans.d1.count === 12 + (count - 2) * 2,
-        `D1: ${trace.spans.d1.count}`,
-      );
+      // One retained display-metadata read supplies the detailed HitPay purpose.
+      assert.equal(trace.spans.d1.count, 13 + (count - 2) * 2);
       const methods = creationCalls
         .filter((call) => call.url.includes("simplybook.me"))
         .map((call) => call.body?.method)
@@ -4590,16 +4614,41 @@ test("reservation IP authority ignores forwarded headers and canonicalizes IPv6"
 });
 
 test("provider RPC errors retain numeric diagnostics without treating uncertainty as no booking", async () => {
+  const authorityModule = await build({
+    stdin: {
+      contents:
+        'export { authorizeCustomerCheckout } from "./worker/customer-authority.ts"; export { authenticateCheckout } from "./worker/access.ts";',
+      resolveDir: process.cwd(),
+    },
+    bundle: true,
+    write: false,
+    format: "esm",
+    platform: "node",
+  });
+  const { authorizeCustomerCheckout, authenticateCheckout } = await import(
+    `data:text/javascript;base64,${Buffer.from(authorityModule.outputFiles[0].text).toString("base64")}`
+  );
   for (const scenario of [
     "rejection",
+    "date-rejection",
+    "direct-rejection",
+    "partial-rejection",
+    "authentication",
     "internal",
     "foreign",
     "malformed",
     "ambiguous",
   ]) {
+    let rejectProvider = true;
     const m = await createBookingMechanism({
+      displayWarming: true,
       respond: (call) => {
-        if (call.body?.method !== "book") return;
+        if (!rejectProvider) return;
+        if (
+          call.body?.method !==
+          (scenario === "authentication" ? "getToken" : "book")
+        )
+          return;
         return Response.json({
           jsonrpc: "2.0",
           id: scenario === "foreign" ? "foreign-request" : call.body.id,
@@ -4610,7 +4659,11 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
                 ? "-32054"
                 : scenario === "internal"
                   ? -32603
-                  : -32054,
+                  : scenario === "date-rejection"
+                    ? -32053
+                    : scenario === "partial-rejection"
+                      ? -32055
+                      : -32054,
             message: "private-provider-message-must-not-escape",
             data: {
               email: "private-customer@example.test",
@@ -4622,34 +4675,101 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
     });
     try {
       const c = await customer(m);
-      const result = await checkoutResult(c.send(), 200);
+      if (scenario === "authentication") {
+        const result = await checkoutResult(c.send(), 503);
+        assert.equal(result.error, "checkout_not_started");
+        assert.equal(
+          await m.db
+            .prepare("SELECT 1 FROM no_creation_resolutions WHERE attempt_id=?")
+            .bind(c.input.key)
+            .first(),
+          null,
+        );
+        assert.equal(
+          m.calls.filter((call) => call.body?.method === "book").length,
+          0,
+        );
+        assert.equal(m.calls.filter((call) => isHitPayApiCall(call)).length, 0);
+        continue;
+      }
+      const env = await m.mf.getBindings();
+      const staleAccess = await authenticateCheckout(
+        new Request(m.origin, { headers: c.headers }),
+        env,
+        c.input.key,
+      );
+      assert.equal(staleAccess.resolved_checkout, 0);
+      const send = () =>
+        scenario === "direct-rejection"
+          ? m.mf.dispatchFetch(
+              m.origin + `/api/booking/checkout/${c.input.key}`,
+              {
+                method: "POST",
+                headers: c.headers,
+                body: JSON.stringify({ ...c.input, accepted: true }),
+              },
+            )
+          : c.send();
+      const result = await checkoutResult(send(), 200);
       assert.equal(result.state, "recovery_required");
+      const rejected = [
+        "rejection",
+        "date-rejection",
+        "direct-rejection",
+      ].includes(scenario);
+      assert.deepEqual(
+        result.creationResolution,
+        rejected ? { state: "not_created" } : undefined,
+      );
       const retained = await m.db
         .prepare(
           "SELECT result_json FROM native_checkout_grants WHERE attempt_id=?",
         )
         .bind(c.input.key)
         .first();
-      const diagnostic = JSON.parse(retained.result_json).diagnostic;
-      assert.equal(diagnostic.code, "provider_rpc_failed");
-      assert.equal(
-        diagnostic.rpcCode,
-        scenario === "rejection"
-          ? -32054
-          : scenario === "internal"
-            ? -32603
-            : undefined,
-      );
-      assert.doesNotMatch(
-        retained.result_json,
-        /private-provider|private-customer/,
-      );
+      if (rejected) {
+        assert.equal(retained, null);
+        const proof = await m.db
+          .prepare(
+            "SELECT evidence_source,evidence_reference FROM no_creation_resolutions WHERE attempt_id=?",
+          )
+          .bind(c.input.key)
+          .first();
+        assert.equal(proof.evidence_source, "correlated_rpc_rejection");
+        assert.match(proof.evidence_reference, /^book:-3205[34]:[a-f0-9-]+$/);
+      }
+      const diagnostic = rejected
+        ? undefined
+        : JSON.parse(retained.result_json).diagnostic;
+      if (!rejected) {
+        assert.equal(diagnostic.code, "provider_rpc_failed");
+        assert.equal(
+          diagnostic.rpcCode,
+          ["rejection", "authentication"].includes(scenario)
+            ? -32054
+            : scenario === "date-rejection"
+              ? -32053
+              : scenario === "partial-rejection"
+                ? -32055
+                : scenario === "internal"
+                  ? -32603
+                  : undefined,
+        );
+        assert.doesNotMatch(
+          retained.result_json,
+          /private-provider|private-customer/,
+        );
+      }
       const contextResponse = await m.mf.dispatchFetch(
         m.origin + `/api/attempts/${c.input.key}/checkout`,
         { headers: c.headers },
       );
       const context = await contextResponse.json();
-      assert.equal(context.bookingIssue, "incomplete");
+      assert.equal(context.bookingIssue, rejected ? undefined : "incomplete");
+      assert.deepEqual(
+        context.creationResolution,
+        rejected ? { state: "not_created" } : undefined,
+      );
       assert.equal(context.checkout.state, "unavailable");
       assert.doesNotMatch(
         JSON.stringify(context),
@@ -4663,9 +4783,78 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
       await release.text();
       assert.equal(
         m.calls.filter((call) => call.body?.method === "book").length,
-        1,
+        scenario === "authentication" ? 0 : 1,
       );
       assert.equal(m.calls.filter((call) => isHitPayApiCall(call)).length, 0);
+      if (rejected) {
+        // Authentication may finish before resolution, while grant insertion
+        // resumes afterwards. A cached negative must never recreate the grant.
+        for (const [retain, defer] of [
+          [false, false],
+          [true, false],
+          [true, true],
+        ]) {
+          const grant = await authorizeCustomerCheckout(
+            new Request(m.origin, { headers: c.headers }),
+            c.input,
+            { env, accounting: () => ({ used: 0, active: 0 }) },
+            true,
+            staleAccess,
+            retain,
+            defer,
+          );
+          if (grant?.preparation) await m.db.batch(grant.preparation);
+          assert.equal(
+            await m.db.prepare("SELECT 1 FROM native_checkout_grants").first(),
+            null,
+            "A stale negative resolution snapshot must not mint a grant",
+          );
+        }
+        const replay = await checkoutResult(send(), 409);
+        assert.equal(replay.error, "native_attempt_unavailable");
+        assert.equal(
+          await m.db.prepare("SELECT 1 FROM native_checkout_grants").first(),
+          null,
+          "A retired key replay must not create an active grant",
+        );
+        assert.equal(
+          m.calls.filter((call) => call.body?.method === "book").length,
+          1,
+        );
+        // A new customer decision is allowed after the original proof; simulate
+        // provider cooldown elapsing without ever replaying the original key.
+        const storage = await m.mf.unsafeGetDurableObjectStorage(
+          "booking-mechanism",
+          "SoccerBotAccountCoordinator",
+          { name: "simplybook-developer-account" },
+        );
+        await storage.exec("UPDATE budget SET cooldown_ms=0");
+        await storage.exec("UPDATE refreshes SET expires_ms=0");
+        rejectProvider = false;
+        const next = crypto.randomUUID();
+        const fresh = await checkoutResult(
+          m.mf.dispatchFetch(m.origin + `/api/booking/hold/${next}`, {
+            method: "POST",
+            headers: c.headers,
+            body: JSON.stringify({ ...c.input, key: next }),
+          }),
+          200,
+        );
+        assert.equal(fresh.attemptId, next);
+        assert.notEqual(fresh.attemptId, c.input.key);
+        assert.equal(fresh.state, "associated");
+        assert.ok(
+          await m.db
+            .prepare("SELECT 1 FROM hitpay_holds WHERE attempt_id=?")
+            .bind(next)
+            .first(),
+          "The replacement attempt must own its own verified hold",
+        );
+        assert.equal(
+          m.calls.filter((call) => call.body?.method === "book").length,
+          2,
+        );
+      }
       assert.deepEqual(m.unexpected, []);
     } finally {
       await m.close();

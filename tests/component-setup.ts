@@ -27,4 +27,5 @@ afterEach(() => {
   cleanup();
   sessionStorage.removeItem("soccerbot-live-draft");
   sessionStorage.removeItem("soccerbot-suppressed-slots");
+  sessionStorage.removeItem("soccerbot-conflict-notice");
 });

@@ -1085,8 +1085,10 @@ it("authoritative unpaid expiry releases the original attempt before returning t
     />,
   );
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Affected sessions:",
+    "Your payment window has ended. These sessions may not be available to book again immediately. Please try again later.",
   );
+  expect(screen.getAllByRole("listitem")).toHaveLength(1);
+  expect(screen.getByRole("listitem")).toHaveTextContent(/–/);
   expect(screen.queryByRole("link", { name: "Back to home" })).toBeNull();
   expect(screen.queryByRole("status")).toBeNull();
   expect(document.querySelector(".booking-flow-overlay, .spinner")).toBeNull();
@@ -1827,4 +1829,226 @@ it("retries unavailable checkout context silently and returns expired checkout t
   expect(
     screen.queryByRole("button", { name: /check (?:payment )?status/i }),
   ).toBeNull();
+  cleanup();
+  navigation.replace.mockClear();
+  onAwaitingExpiry.mockClear();
+  localStorage.removeItem(`soccerbot-checking:${first}`);
+  vi.setSystemTime(new Date("2026-11-09T00:00:00Z"));
+  const serverNow = Date.now();
+  let monotonic = 0;
+  const clock = vi
+    .spyOn(performance, "now")
+    .mockImplementation(() => monotonic);
+  fetch.mockImplementation(async (url: string) => {
+    if (url.endsWith("/checkout"))
+      return Response.json(
+        {
+          attemptId: first,
+          mode: "live",
+          checkout: {
+            state: "available",
+            url: "https://checkout.sandbox.hit-pay.com/payment-request/@test/00000000-0000-4000-8000-000000000001/checkout",
+            expiresAtMs: serverNow + 5000,
+          },
+          summary: {
+            players: 2,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: serverNow + 86400000, players: 2 }],
+          },
+          checking: {
+            deadlineMs: serverNow + 65000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        },
+        { headers: { Date: new Date(serverNow).toUTCString() } },
+      );
+    if (url.endsWith("/confirmation"))
+      return Response.json({
+        status: "pending",
+        reason: "payment_verification_pending",
+      });
+    throw new Error(
+      "Payment deadline must not release or recreate the reservation",
+    );
+  });
+  render(
+    <BookingLoadingProvider>
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        allowPaymentContinuation
+        onAwaitingExpiry={onAwaitingExpiry}
+      />
+    </BookingLoadingProvider>,
+  );
+  await act(async () => {});
+  expect(onAwaitingExpiry).not.toHaveBeenCalled();
+  await act(async () => {
+    monotonic = 4000;
+    await vi.advanceTimersByTimeAsync(4000);
+  });
+  expect(onAwaitingExpiry).not.toHaveBeenCalled();
+  await act(async () => {
+    monotonic = 4001;
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
+  expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
+  expect(
+    JSON.parse(localStorage.getItem(`soccerbot-checking:${first}`)!).deadline,
+  ).toBe(serverNow + 65000);
+  expect(
+    document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
+  ).toBeNull();
+  cleanup();
+  for (const scenario of [
+    "expired",
+    "unknown",
+    "missing-clock",
+    "paid",
+    "resume",
+    "denied",
+  ] as const) {
+    navigation.replace.mockClear();
+    onAwaitingExpiry.mockClear();
+    localStorage.removeItem(`soccerbot-checking:${first}`);
+    monotonic = 0;
+    vi.setSystemTime(new Date(serverNow));
+    fetch.mockImplementation(async (url: string) => {
+      if (url.endsWith("/checkout"))
+        return Response.json(
+          {
+            attemptId: first,
+            mode: "live",
+            checkout: { state: "unavailable" },
+            ...(scenario === "paid"
+              ? { payment: { status: "recorded", paidAtMs: serverNow - 1000 } }
+              : {}),
+            summary: {
+              players: 2,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [{ startMs: serverNow + 86400000, players: 2 }],
+            },
+            checking: {
+              deadlineMs: serverNow + 65000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+              ...(scenario === "unknown"
+                ? {}
+                : {
+                    paymentExpiresAtMs:
+                      serverNow +
+                      (scenario === "resume" || scenario === "denied"
+                        ? 5000
+                        : -1),
+                  }),
+            },
+          },
+          scenario === "missing-clock"
+            ? {}
+            : { headers: { Date: new Date(serverNow).toUTCString() } },
+        );
+      if (url.endsWith("/confirmation"))
+        return scenario === "denied"
+          ? new Response(null, { status: 401 })
+          : Response.json({
+              status: "pending",
+              reason:
+                scenario === "paid"
+                  ? "payment_received_booking_pending"
+                  : "payment_verification_pending",
+            });
+      throw new Error("Display expiry does not release or recreate a booking");
+    });
+    render(
+      <BookingLoadingProvider>
+        <ProtectedConfirmation
+          attemptId={first}
+          checkoutMode="live"
+          onAwaitingExpiry={onAwaitingExpiry}
+        />
+      </BookingLoadingProvider>,
+    );
+    await act(async () => {});
+    if (scenario === "resume" || scenario === "denied") {
+      expect(onAwaitingExpiry).not.toHaveBeenCalled();
+      await act(async () => {
+        monotonic = 6000;
+        window.dispatchEvent(new Event("pageshow"));
+      });
+    }
+    if (scenario === "expired" || scenario === "resume") {
+      expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
+      expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
+      expect(
+        document.querySelector(
+          ".booking-flow-overlay, .payment-check-feedback",
+        ),
+      ).toBeNull();
+    } else expect(onAwaitingExpiry, scenario).not.toHaveBeenCalled();
+    expect(
+      fetch.mock.calls.filter(([url]) => url.endsWith("/expire")),
+    ).toHaveLength(1);
+    cleanup();
+  }
+  // An authenticated late payment on the calendar always resumes its original attempt.
+  let statusReads = 0;
+  const detected = vi.fn();
+  navigation.replace.mockClear();
+  monotonic = 0;
+  vi.setSystemTime(new Date(serverNow));
+  fetch.mockImplementation(async (url: string) => {
+    if (url.endsWith("/checkout"))
+      return Response.json(
+        {
+          attemptId: first,
+          mode: "live",
+          checkout: { state: "unavailable" },
+          summary: {
+            players: 2,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: serverNow + 86400000, players: 2 }],
+          },
+          checking: {
+            paymentExpiresAtMs: serverNow - 1,
+            deadlineMs: serverNow + 65000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        },
+        { headers: { Date: new Date(serverNow).toUTCString() } },
+      );
+    if (url.endsWith("/confirmation"))
+      return Response.json({
+        status: "pending",
+        reason:
+          ++statusReads === 1
+            ? "payment_verification_pending"
+            : "payment_received_booking_pending",
+      });
+    throw new Error("No new reservation or payment on a late result");
+  });
+  localStorage.removeItem(`soccerbot-checking:${first}`);
+  render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      calendarRecovery
+      onPaymentDetected={detected}
+    />,
+  );
+  await act(async () => {});
+  expect(detected).not.toHaveBeenCalled();
+  await act(async () => {
+    monotonic = 5000;
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(detected).toHaveBeenCalledWith(first);
+  expect(navigation.replace).toHaveBeenLastCalledWith("/book/payment/");
+  cleanup();
+  clock.mockRestore();
 });

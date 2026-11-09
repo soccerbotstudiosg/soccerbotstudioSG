@@ -26,6 +26,7 @@ export function PaymentStep() {
     restartAfterExpiry,
     browseAfterChecking,
     rejectRecoveredSelection,
+    resolveUncreatedBooking,
   } = useBooking();
   const [method, setMethod] = useState("card");
   useEffect(() => () => cancel(), [cancel]);
@@ -67,6 +68,7 @@ export function PaymentStep() {
           onExpired={restartAfterExpiry}
           onAwaitingExpiry={browseAfterChecking}
           onSelectionRejected={rejectRecoveredSelection}
+          onCreationResolved={resolveUncreatedBooking}
           onAgain={reset}
           onRestart={restartAfterConfirmation}
         />

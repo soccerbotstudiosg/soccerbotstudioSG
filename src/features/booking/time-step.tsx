@@ -95,6 +95,7 @@ export function TimeStep() {
   }, [mobile]);
   const {
     selectionNotice,
+    selectionNoticeSlots,
     suppressedSlots,
     attempt,
     action,
@@ -102,6 +103,7 @@ export function TimeStep() {
     restartAfterExpiry,
     resumePaymentStatus,
     rejectRecoveredSelection,
+    resolveUncreatedBooking,
   } = useBooking();
   const waitingForRelease = !!attempt && action.returnToCalendar === true;
   const {
@@ -395,12 +397,22 @@ export function TimeStep() {
           sessionRevision={confirmationRevision}
           onExpired={restartAfterExpiry}
           onSelectionRejected={rejectRecoveredSelection}
+          onCreationResolved={resolveUncreatedBooking}
           onPaymentDetected={resumePaymentStatus}
         />
       )}
       {selectionNotice && !waitingForRelease && (
         <div className="alert" role="alert">
           <p>{selectionNotice}</p>
+          {selectionNoticeSlots.length > 0 && (
+            <ul>
+              {selectionNoticeSlots.map((slot) => (
+                <li key={`${slot.date}|${slot.start}`}>
+                  {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}.
+                </li>
+              ))}
+            </ul>
+          )}
           {action.resumeAttemptId && (
             <Link
               className="text-link"

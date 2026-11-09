@@ -229,7 +229,7 @@ test("live calendar removes selections rejected at checkout and retains contact 
   fireEvent.click(screen.getByText("Dispatch checkout"));
   await waitFor(() =>
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Removed unavailable sessions:",
+      "Some sessions may no longer be available. Please check again.",
     ),
   );
   // Calendar owns the single conflict notice; background classification must
@@ -556,7 +556,7 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
   fireEvent.click(screen.getByText("Dispatch checkout"));
   await waitFor(() =>
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Removed unavailable sessions:",
+      "Some sessions may no longer be available. Please check again.",
     ),
   );
   // Calendar owns the single conflict notice; background classification must
@@ -955,7 +955,7 @@ test("reservation conflict removes its session locally and returns to calendar w
   expect(screen.getByTestId("contact-name")).toHaveTextContent("Test Customer");
   expect(replace).toHaveBeenCalledWith("/book/time/");
   expect(screen.getByTestId("notice")).toHaveTextContent(
-    "Removed unavailable sessions: Tue, 5 Jan 2027, 12:00–12:40.",
+    "Some sessions may no longer be available. Please check again.",
   );
   expect(publicCalendar).toHaveBeenCalledTimes(1);
   expect(availability).toHaveBeenCalledExactlyOnceWith(

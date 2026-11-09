@@ -1,4 +1,9 @@
 "use client";
+import {
+  CONFLICT_NOTICE,
+  BOOKING_NOT_CREATED,
+  PAYMENT_WINDOW_ENDED,
+} from "@/domain/booking-messages";
 import { usePathname } from "next/navigation";
 import { BookingLoadingProvider } from "./booking-loading";
 import {
@@ -13,7 +18,7 @@ import {
   type CheckoutSelectionRejection,
   isHitpayCheckoutUrl,
 } from "@/domain/native-checkout";
-import { todaySG, dateLabel, endTime } from "@/domain/dates";
+import { todaySG } from "@/domain/dates";
 import {
   slotKey,
   sessionOfferKey,
@@ -50,6 +55,12 @@ import {
   type BookingOperation,
 } from "@/services/contracts";
 import {
+  markBookingDeparture,
+  loadDepartureSlots,
+  isBookingDeparture,
+  loadConflictNotice,
+  type NoticeSlot,
+  saveConflictNotice,
   loadBooking,
   loadLiveDraft,
   loadSuppressedSlots,
@@ -81,7 +92,10 @@ interface BookingContextValue extends StoredBooking {
   calendar: ReturnType<typeof useCalendarAvailability>;
   showMonth: (month: string, through?: string) => void;
   setCalendarBrowsing: (active: boolean) => void;
+  resolveUncreatedBooking: (id: string) => boolean;
   selectionNotice: string | null;
+  selectionNoticeSlots: NoticeSlot[];
+  visitBookingStep: (step: string) => void;
   suppressedSlots: BookingDraft["slots"];
   ready: boolean;
   now: number;
@@ -111,14 +125,6 @@ interface BookingContextValue extends StoredBooking {
   restartAfterConfirmation: (attemptId: string) => Promise<void>;
   rebookingError: string | null;
   retryRebooking: () => void;
-}
-/** Describe affected selections consistently across expiry and conflict notices. */
-function describeSessions(slots: StoredBooking["draft"]["slots"]) {
-  return slots
-    .map(
-      (slot) => `${dateLabel(slot.date)}, ${slot.start}–${endTime(slot.start)}`,
-    )
-    .join("; ");
 }
 /** Fresh reads identify unavailable selections; failed reads never imply a conflict. */
 async function readConflictSelections(
@@ -167,7 +173,47 @@ export function BookingProvider({
     outlet: false,
     session: false,
   });
-  const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
+  const [noticeState, dispatchSelectionNotice] = useState(() => {
+    const slots = bookingService.mode === "live" ? loadConflictNotice() : null;
+    return {
+      message: slots !== null ? CONFLICT_NOTICE : null,
+      slots: slots ?? [],
+    };
+  });
+  const noticeCurrent = useRef(noticeState);
+  const selectionNotice = noticeState.message;
+  const selectionNoticeSlots = noticeState.slots;
+  const noticeRevision = useRef(0);
+  const noticeShownOnCalendar = useRef(false);
+  const setSelectionNotice = useCallback(
+    (notice: string | null, affected: NoticeSlot[] = []) => {
+      const slots = affected
+        .map(({ date, start }) => ({ date, start }))
+        .filter(
+          (slot, index, all) =>
+            all.findIndex(
+              (other) => other.date === slot.date && other.start === slot.start,
+            ) === index,
+        );
+      saveConflictNotice(
+        bookingService.mode === "live" && notice === CONFLICT_NOTICE
+          ? slots
+          : null,
+      );
+      noticeCurrent.current = { message: notice, slots };
+      dispatchSelectionNotice(noticeCurrent.current);
+      if (!notice) noticeShownOnCalendar.current = false;
+      return ++noticeRevision.current;
+    },
+    [bookingService.mode],
+  );
+  const visitBookingStep = useCallback(
+    (step: string) => {
+      if (step === "time") noticeShownOnCalendar.current = true;
+      else if (noticeShownOnCalendar.current) setSelectionNotice(null);
+    },
+    [setSelectionNotice],
+  );
   const [suppressedSlots, dispatchSuppressedSlots] = useState<
     BookingDraft["slots"]
   >(() => (bookingService.mode === "live" ? loadSuppressedSlots() : []));
@@ -276,6 +322,21 @@ export function BookingProvider({
   const [calendarPaused, pauseCalendar] = useState(false);
   const [browsingRequested, setCalendarBrowsing] = useState(true);
   const pathname = usePathname();
+  const previousNoticePath = useRef(pathname);
+  const noticeRoute = useEffectEvent(() => {
+    const changed = previousNoticePath.current !== pathname;
+    previousNoticePath.current = pathname;
+    if (
+      changed &&
+      pathname &&
+      !/\/book\//.test(pathname) &&
+      noticeShownOnCalendar.current
+    )
+      setSelectionNotice(null);
+  });
+  useEffect(() => {
+    noticeRoute();
+  }, [pathname]);
   // The route is known before the streamed page mounts. A page effect alone
   // can briefly enable display reads while restoring an editable Review.
   const calendarBrowsing =
@@ -468,10 +529,9 @@ export function BookingProvider({
       });
       if (service.mode === "live") saveLiveDraft(latest.current.draft, false);
       pauseCalendar(false);
-      setSelectionNotice(
-        indexed
-          ? `Removed unavailable sessions: ${describeSessions([indexed])}.`
-          : "These selections were not booked. Please check your sessions again. Your details are saved.",
+      const noticeGeneration = setSelectionNotice(
+        CONFLICT_NOTICE,
+        indexed ? [indexed] : [],
       );
       setAction({ status: "idle", returnToCalendar: true });
       for (const date of new Set(draft.slots.map((slot) => slot.date)))
@@ -542,10 +602,8 @@ export function BookingProvider({
           });
           if (service.mode === "live")
             saveLiveDraft(latest.current.draft, false);
-          if (affected.length)
-            setSelectionNotice(
-              `Removed unavailable sessions: ${describeSessions(affected)}.`,
-            );
+          if (noticeRevision.current === noticeGeneration)
+            setSelectionNotice(CONFLICT_NOTICE, affected);
           rejectionRead.current = null;
         },
       );
@@ -558,6 +616,7 @@ export function BookingProvider({
       commit,
       setAction,
       rememberFreshDate,
+      setSelectionNotice,
     ],
   );
   /** Apply an authenticated no-effects rejection only to its original tab attempt. */
@@ -581,6 +640,81 @@ export function BookingProvider({
     },
     [service, returnRejectedSelection],
   );
+  /** Clear only the owned attempt after authenticated terminal no-creation proof. */
+  const resolveUncreatedBooking = useCallback(
+    (id: string) => {
+      const current = latest.current;
+      if (
+        service.mode !== "live" ||
+        liveCheckoutAttemptId() !== id ||
+        (current.attempt &&
+          (current.attempt.id !== id || current.attempt.status === "paid"))
+      )
+        return false;
+      const left = isBookingDeparture(id);
+      const originalSlots = current.attempt?.draft.slots.length
+        ? current.attempt.draft.slots
+        : left
+          ? loadDepartureSlots(id)
+          : current.draft.slots;
+      // Non-creation releases this attempt, not provider capacity. Keep the
+      // original studio windows hidden until the existing fresh-read loop
+      // confirms availability, including after Home followed by a reload.
+      setSuppressedSlots([
+        ...suppression.current.slots.filter(
+          (slot) => !originalSlots.some((original) => overlaps(slot, original)),
+        ),
+        ...originalSlots,
+      ]);
+      freshChecks.current.delete(service);
+      const draft = left
+        ? blankDraft()
+        : { ...current.draft, slots: [], accepted: false };
+      cancel();
+      commit({ ...current, draft, attempt: null });
+      saveLiveDraft(draft, false, null);
+      setAction(
+        left ? { status: "idle" } : { status: "idle", returnToCalendar: true },
+      );
+      setSelectionNotice(left ? null : BOOKING_NOT_CREATED);
+      pauseCalendar(false);
+      return true;
+    },
+    [
+      service,
+      cancel,
+      commit,
+      setAction,
+      setSelectionNotice,
+      setSuppressedSlots,
+    ],
+  );
+  const [entryChecked, setEntryChecked] = useState<string | null>(null);
+  const needsEntryCheck =
+    service.mode === "live" &&
+    !!pathname?.includes("/book/") &&
+    isBookingDeparture(liveCheckoutAttemptId()) &&
+    entryChecked !== pathname;
+  useEffect(() => {
+    if (!pathname?.includes("/book/")) return;
+    if (!needsEntryCheck) return;
+    const id = liveCheckoutAttemptId();
+    if (!id) return;
+    const controller = new AbortController();
+    void protectedCheckoutService
+      .context({ attemptId: id, mode: "live", signal: controller.signal })
+      .then((context) => {
+        if (!controller.signal.aborted && context.creationResolution)
+          resolveUncreatedBooking(id);
+      })
+      .catch(() => {
+        /* Unknown reads retain the original attempt and financial lock. */
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setEntryChecked(pathname);
+      });
+    return () => controller.abort();
+  }, [pathname, needsEntryCheck, resolveUncreatedBooking]);
   const recoverRejectedTab = useEffectEvent(
     async (id: string, controller: AbortController) => {
       try {
@@ -591,10 +725,12 @@ export function BookingProvider({
         });
         if (
           !controller.signal.aborted &&
-          context.selectionRejection &&
+          (context.selectionRejection || context.creationResolution) &&
           liveCheckoutAttemptId() === id
         )
-          await rejectRecoveredSelection(id, context.selectionRejection);
+          if (context.creationResolution) resolveUncreatedBooking(id);
+          else if (context.selectionRejection)
+            await rejectRecoveredSelection(id, context.selectionRejection);
       } catch {
         /* Unknown reads cannot discard a pending attempt. */
       }
@@ -647,16 +783,17 @@ export function BookingProvider({
                       sessionPrice(slot) === sessionPrice(other),
                   ),
                 );
-              if (isCalendarRecovery(attempt.id)) {
+              if (isBookingDeparture(attempt.id)) {
+                commit({ version: 2, draft, attempt }, true);
+              } else if (isCalendarRecovery(attempt.id)) {
                 commit({ version: 2, draft, attempt }, true);
                 setAction({ status: "idle", returnToCalendar: true });
               } else if (
                 !mayRestoreLiveCheckout(attempt.id) ||
                 (draft.slots.length > 0 && !sameSelections)
               ) {
-                setSelectionNotice(
-                  "Another checkout is in progress. Your selections are saved. Please choose available sessions.",
-                );
+                // A foreign checkout is not a new conflict. Preserve any saved
+                // notice without resurrecting one after the calendar was left.
                 setAction({
                   status: "idle",
                   returnToCalendar: true,
@@ -673,7 +810,11 @@ export function BookingProvider({
           if (!controller.signal.aborted) {
             setRestoredOwner({ service, identityService });
             const id = liveCheckoutAttemptId();
-            if (id && mayRestoreLiveCheckout(id) && !latest.current.attempt)
+            if (
+              id &&
+              (mayRestoreLiveCheckout(id) || isBookingDeparture(id)) &&
+              !latest.current.attempt
+            )
               void recoverRejectedTab(id, controller);
           }
         });
@@ -736,11 +877,7 @@ export function BookingProvider({
       if (service.mode === "live") saveLiveDraft(nextDraft, false);
       setAction({ status: "idle", returnToCalendar: true });
       pauseCalendar(false);
-      setSelectionNotice(
-        previous.slots.length
-          ? `Your unpaid reservation has ended. Affected sessions: ${describeSessions(previous.slots)}. These sessions may not be available to book again immediately. Please try again later. Your details are saved.`
-          : "Your unpaid reservation has ended. Your details are saved. Please choose your sessions again.",
-      );
+      setSelectionNotice(PAYMENT_WINDOW_ENDED, previous.slots);
     },
     [
       cancel,
@@ -750,6 +887,7 @@ export function BookingProvider({
       setAction,
       setSuppressedSlots,
       suppressedSlots,
+      setSelectionNotice,
     ],
   );
   // A warm display cache cannot release affected studio capacity. Only these
@@ -766,6 +904,7 @@ export function BookingProvider({
       return;
     const controller = new AbortController();
     const generation = suppression.current.generation;
+    const noticeGeneration = noticeRevision.current;
     const identity = JSON.stringify(identityService.current());
     const mode = value.draft.mode;
     const dates = [...new Set(suppressedSlots.map((slot) => slot.date))].filter(
@@ -847,18 +986,26 @@ export function BookingProvider({
           )
         );
       });
+      if (
+        noticeRevision.current === noticeGeneration &&
+        noticeCurrent.current.message === CONFLICT_NOTICE
+      ) {
+        const newlyAffected = unavailable.filter((slot) =>
+          latest.current.draft.slots.some(
+            (selected) => slotKey(selected) === slotKey(slot),
+          ),
+        );
+        if (newlyAffected.length)
+          setSelectionNotice(CONFLICT_NOTICE, [
+            ...noticeCurrent.current.slots,
+            ...newlyAffected,
+          ]);
+      }
       const nextSlots = latest.current.draft.slots.filter(
         (slot) =>
           !unavailable.some((hidden) => slotKey(hidden) === slotKey(slot)),
       );
       if (nextSlots.length !== latest.current.draft.slots.length) {
-        const removed = latest.current.draft.slots.filter(
-          (slot) =>
-            !nextSlots.some((retained) => slotKey(retained) === slotKey(slot)),
-        );
-        setSelectionNotice(
-          `Removed unavailable sessions: ${describeSessions(removed)}.`,
-        );
         commit(
           {
             ...latest.current,
@@ -876,6 +1023,7 @@ export function BookingProvider({
     });
     return () => controller.abort();
   }, [
+    setSelectionNotice,
     service,
     value.ready,
     value.draft.players,
@@ -1057,6 +1205,10 @@ export function BookingProvider({
             signal,
           });
           if (!isCurrent()) return false;
+          if (context.creationResolution) {
+            resolveUncreatedBooking(attempt.id);
+            return false;
+          }
           if (
             context.checkout.state === "available" &&
             isHitpayCheckoutUrl(context.checkout.url)
@@ -1075,6 +1227,14 @@ export function BookingProvider({
         return true;
       } catch (error) {
         if (!isCurrent()) return false;
+        if (
+          error instanceof BookingServiceError &&
+          error.code === "booking_not_created" &&
+          latest.current.attempt
+        ) {
+          resolveUncreatedBooking(latest.current.attempt.id);
+          return false;
+        }
         if (
           error instanceof BookingServiceError &&
           error.code === "queue_busy"
@@ -1225,6 +1385,7 @@ export function BookingProvider({
       identityService,
       finishExit,
       restartReleasedReservation,
+      resolveUncreatedBooking,
       returnRejectedSelection,
       setSuppressedSlots,
       suppressedSlots,
@@ -1246,7 +1407,8 @@ export function BookingProvider({
         ...value,
         sessionChoices,
         setSessionChoices,
-        ready: value.ready && !restorationPending,
+        ready: value.ready && !restorationPending && !needsEntryCheck,
+        resolveUncreatedBooking,
         now,
         bookingService: service,
         identityService,
@@ -1256,6 +1418,8 @@ export function BookingProvider({
         showDate,
         calendar,
         selectionNotice,
+        selectionNoticeSlots,
+        visitBookingStep,
         suppressedSlots,
         showMonth,
         setCalendarBrowsing,
@@ -1393,7 +1557,7 @@ export function BookingProvider({
             return;
           cancel();
           if (action.returnToCalendar) setAction({ status: "idle" });
-          setSelectionNotice(null);
+          if (selectionNotice !== CONFLICT_NOTICE) setSelectionNotice(null);
           pauseCalendar(false);
           commit({
             ...current,
@@ -1408,6 +1572,7 @@ export function BookingProvider({
         check: () => run("check"),
         resolve: () => run("resolve"),
         leave() {
+          setEntryChecked(null);
           // Discard editable data without erasing a dispatched attempt or its
           // server-owned payment recovery. Cancellation invalidates late UI replies.
           cancel();
@@ -1424,7 +1589,10 @@ export function BookingProvider({
           });
           // A held attempt's immutable snapshot remains usable for recovery;
           // the separately persisted editable live draft is still discarded.
-          if (service.mode === "live") saveLiveDraft(blankDraft());
+          if (service.mode === "live") {
+            saveLiveDraft(blankDraft());
+            if (attempt) markBookingDeparture(attempt.id, attempt.draft.slots);
+          }
         },
         reset() {
           const current = latest.current;

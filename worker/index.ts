@@ -237,10 +237,14 @@ export default {
           const value = bookingSelection(await inputBody(request));
           const checkoutAccess =
             holdMatch[1] === "checkout"
-              ? await authenticateCheckout(request, {
-                  ...env,
-                  STATE: instrumentStorage(env.STATE, "d1"),
-                })
+              ? await authenticateCheckout(
+                  request,
+                  {
+                    ...env,
+                    STATE: instrumentStorage(env.STATE, "d1"),
+                  },
+                  holdMatch[2],
+                )
               : undefined;
           if (!checkoutAccess)
             await verifyBindings({
@@ -535,7 +539,8 @@ export default {
           (url.pathname === "/api/developer/provider-identity" ||
             url.pathname === "/api/developer/historical-comparison" ||
             url.pathname === "/api/developer/native-field-discovery" ||
-            url.pathname === "/api/developer/native-readback") &&
+            url.pathname === "/api/developer/native-readback" ||
+            url.pathname === "/api/developer/native-creation-resolution") &&
           (request.method === "POST" || request.method === "GET")
         )
           return json(
@@ -545,11 +550,13 @@ export default {
               now,
               url.pathname.endsWith("provider-identity")
                 ? "provider_identity"
-                : url.pathname.endsWith("native-readback")
-                  ? "native_recovery_window"
-                  : url.pathname.endsWith("native-field-discovery")
-                    ? "native_field_discovery"
-                    : "historical_comparison",
+                : url.pathname.endsWith("native-creation-resolution")
+                  ? "native_creation_resolution"
+                  : url.pathname.endsWith("native-readback")
+                    ? "native_recovery_window"
+                    : url.pathname.endsWith("native-field-discovery")
+                      ? "native_field_discovery"
+                      : "historical_comparison",
             ),
           );
         if (url.pathname === "/api/access" && request.method === "POST") {

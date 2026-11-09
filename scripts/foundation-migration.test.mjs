@@ -123,11 +123,17 @@ for (const deferredRecovery of [false, true]) {
         deferredRecovery
           ? readdirSync("migrations")
               .sort()
-              .filter((name) => !name.startsWith("0006"))
+              .filter(
+                (name) => !name.startsWith("0006") && !name.startsWith("0041"),
+              )
           : undefined,
       );
-      if (deferredRecovery)
+      if (deferredRecovery) {
         db.exec(readFileSync("migrations/0006_recovery_work.sql", "utf8"));
+        db.exec(
+          readFileSync("migrations/0041_no_creation_resolution.sql", "utf8"),
+        );
+      }
       assert.equal(
         db.prepare("SELECT environment FROM foundation_identity").get()
           .environment,

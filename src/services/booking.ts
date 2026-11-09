@@ -1,3 +1,5 @@
+import { creationResolutionSchema } from "@/domain/native-checkout";
+import { BOOKING_NOT_CREATED } from "@/domain/booking-messages";
 import { SESSION_UNAVAILABLE } from "@/domain/booking-messages";
 import {
   CATALOGUE_MAX_AGE_MS,
@@ -748,10 +750,21 @@ export const liveBookingService: BookingService = defineBookingService({
         paymentAvailable: z.boolean(),
         checkout: hitpayHandoffSchema.optional(),
         rejectedSessionIndex: z.number().int().min(0).max(11).optional(),
+        creationResolution: creationResolutionSchema.optional(),
       }),
       raw,
     );
     if (result.attemptId !== attempt.id) throw invalidResponse();
+    if (result.creationResolution) {
+      if (
+        result.state !== "recovery_required" ||
+        result.paymentAvailable ||
+        result.checkout ||
+        result.rejectedSessionIndex !== undefined
+      )
+        throw invalidResponse();
+      throw new BookingServiceError("booking_not_created", BOOKING_NOT_CREATED);
+    }
     if (
       result.state === "restart_required" ||
       result.state === "selection_unavailable"

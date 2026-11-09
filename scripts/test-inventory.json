@@ -632,6 +632,10 @@
     "title": "unpaid expiry never restores an unconfirmed or obsolete selection (rotation)"
   },
   {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes"
+  },
+  {
     "file": "src/features/booking/email-bot-proof.test.tsx",
     "title": "email bot widget binds purpose clears expired proof and ignores callbacks after disposal"
   },

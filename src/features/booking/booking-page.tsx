@@ -42,6 +42,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
       now,
       bookingService,
       setCalendarBrowsing,
+      visitBookingStep,
       action,
     } = useBooking(),
     router = useRouter();
@@ -88,6 +89,9 @@ export function BookingPage({ step }: { step: BookingStep }) {
       window.history.replaceState(null, "", sitePath("/book/review/"));
     } else router.replace(`/book/${actual}/`);
   }, [actual, step, ready, router, retainingReview]);
+  useEffect(() => {
+    if (ready) visitBookingStep(actual);
+  }, [ready, actual, visitBookingStep]);
   useEffect(() => {
     setCalendarBrowsing(["account", "session", "time"].includes(actual));
     return () => setCalendarBrowsing(true);

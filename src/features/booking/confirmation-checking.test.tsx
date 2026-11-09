@@ -257,9 +257,23 @@ it("hides the native payment capability at its expiry without claiming payment c
     });
     expect(screen.queryByRole("link", { name: label })).toBeNull();
     expect(screen.queryByRole("timer")).toBeNull();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Your payment window has ended. These sessions may not be available to book again immediately. Please try again later.",
+    );
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(screen.getByRole("listitem")).toHaveTextContent(
+      /\d{2}:\d{2}–\d{2}:\d{2}\./,
+    );
     expect(
-      screen.getByRole("status", { name: "Checking payment…" }),
-    ).toBeVisible();
+      screen.queryByRole("status", { name: "Checking payment…" }),
+    ).toBeNull();
+    // Link expiry changes the display only; it cannot cancel or recreate a booking.
+    expect(
+      fetch.mock.calls.every(
+        ([path]) =>
+          path.endsWith("/checkout") || path.endsWith("/confirmation"),
+      ),
+    ).toBe(true);
     cleanup();
     localStorage.clear();
     if (hitpay) {

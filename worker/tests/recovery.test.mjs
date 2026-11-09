@@ -201,9 +201,12 @@ beforeEach(async () => {
   await initializeFixture(
     mf,
     db,
-    migrations.filter((name) => !name.startsWith("0006")),
+    migrations.filter(
+      (name) => !name.startsWith("0006") && !name.startsWith("0041"),
+    ),
   );
   await migrate("0006_recovery_work.sql");
+  await migrate("0041_no_creation_resolution.sql");
 });
 afterEach(async () => {
   await mf?.dispose();

@@ -5,6 +5,7 @@ import type {
   receiptSchema,
   bookingDetailsSchema,
   CheckoutSelectionRejection,
+  CreationResolution,
 } from "@/domain/native-checkout";
 import type { Attempt, BookingDraft, Outcome, Session } from "@/domain/booking";
 export type AvailableSlot = Session & { available: boolean };
@@ -68,6 +69,7 @@ export type BookingErrorCode =
   | "selection_changed"
   | "reservation_expired"
   | "checkout_window_blocked"
+  | "booking_not_created"
   | "checkout_not_started"
   | "reservation_blocked"
   | "queue_busy"
@@ -130,6 +132,7 @@ export interface IdentityService {
   saveProfile(draft: BookingDraft): void;
 }
 export type CheckoutContext = {
+  creationResolution?: CreationResolution;
   selectionRejection?: CheckoutSelectionRejection;
   bookingIssue?: "incomplete";
   paymentIssue?: "link_recovering" | "link_unavailable";
@@ -153,6 +156,7 @@ export type CheckoutContext = {
   };
   checking: {
     deadlineMs: number;
+    paymentExpiresAtMs?: number;
     nextCheckMs: number;
     pollAfterMs: number;
     holdExpiresAtMs?: number;

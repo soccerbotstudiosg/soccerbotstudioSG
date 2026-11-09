@@ -268,6 +268,18 @@ before(async () => {
       .replace(/^--.*$/gm, "")
       .replace(/\n/g, " "),
   );
+  for (const name of [
+    "0002_developer_operations.sql",
+    "0004_operator_read_scopes.sql",
+    "0008_native_field_discovery.sql",
+    "0010_customer_read_scopes.sql",
+    "0041_no_creation_resolution.sql",
+  ])
+    await db.exec(
+      readFileSync(`migrations/${name}`, "utf8")
+        .replace(/^--.*$/gm, "")
+        .replace(/\n/g, " "),
+    );
 });
 after(async () => {
   if (mf) await mf.dispose();
@@ -1278,16 +1290,6 @@ test("readiness reports effective expiry served identity and bounded nonce witho
 test("single statement discovery closure returns expiry then independent D1 read preserves evidence", async () => {
   const { expireGrantSql, readGrantSql, fingerprintRows } =
     await import("../../scripts/developer-readiness.mjs");
-  for (const name of [
-    "0002_developer_operations.sql",
-    "0004_operator_read_scopes.sql",
-    "0008_native_field_discovery.sql",
-  ])
-    await db.exec(
-      readFileSync(`migrations/${name}`, "utf8")
-        .replace(/^--.*$/gm, "")
-        .replace(/\n/g, " "),
-    );
   const hash = "c".repeat(64),
     other = "d".repeat(64);
   await db

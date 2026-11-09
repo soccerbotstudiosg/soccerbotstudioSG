@@ -2,6 +2,10 @@
 
 This document owns source-specific assessments, confirmed repairs, regression evidence and remaining proof. [Security infrastructure](security-infrastructure.md) owns controls and trust boundaries. An assessment is not an alert dismissal, scanner suppression, penetration test or universal safety claim. Reassess when the source, dependency, caller or trust boundary changes.
 
+## CodeQL52: dependency-review comment boundaries
+
+On9 November2026, PR49’s separate CodeQL findings check reported `js/incomplete-multi-character-sanitization` in `scripts/dependency-review.mjs`. This string is CI review text, not rendered customer HTML. The source still had a real validation weakness: comment deletion could join fragments, and an unclosed comment left hidden evidence visible to the validator. Comments now become line boundaries; unclosed tails are excluded. Existing regression cases cover hidden, nested and split-marker content; a pre-fix probe accepts the hidden assessment and the repaired parser rejects it. Fresh CodeQL confirmation is pending; the alert is not dismissed or suppressed.
+
 ## Observed findings and disposition
 
 | Finding                                                              | Evidence and disposition                                                                                                                                                                                                                                                                                                                                                                                                             | Limit / next action                                                                                                                                                                                                                                                                |

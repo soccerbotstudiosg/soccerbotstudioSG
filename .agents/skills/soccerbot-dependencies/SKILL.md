@@ -11,7 +11,7 @@ Read root [AGENTS.md](../../../AGENTS.md), [North Star](../../../NORTH_STAR.md),
 
 This skill owns research, suitability, change classification and the merge/defer/reject recommendation. The [testing skill](../soccerbot-testing/SKILL.md) owns test impact, fixtures, guards and verification; the [documentation skill](../soccerbot-documentation/SKILL.md) owns document reconciliation. The runbook owns cadence, operational commands and release procedure; versions.md owns the generated inventory. Link to those owners instead of duplicating their procedures.
 
-This is an agent instruction, not a GitHub Actions hook, automatic summary, unattended monitor or guarantee of compatibility. Put the assessment in the PR description. It grants no additional browser, provider, merge, deployment, secret or account authority. A recommendation to merge is not permission to merge.
+This is an agent instruction, not a GitHub Actions hook, automatic summary, unattended monitor or guarantee of compatibility. Put the assessment in the PR description using [.github/dependency-review-template.md](../../../.github/dependency-review-template.md). The dependency-review script enforces format in frontend PR CI and rechecks description edits; it does not validate evidence quality. Preserve the exact bold labels and before/after table. It grants no additional browser, provider, merge, deployment, secret or account authority. A recommendation to merge is not permission to merge.
 
 ## 1. Establish the candidate and reason
 

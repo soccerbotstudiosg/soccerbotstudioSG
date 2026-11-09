@@ -1,6 +1,9 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CheckoutSelectionRejection } from "@/domain/native-checkout";
+import type {
+  CheckoutSelectionRejection,
+  CreationResolution,
+} from "@/domain/native-checkout";
 import {
   checkoutNow,
   ConfirmationError,
@@ -67,6 +70,7 @@ export function useConfirmationChecking(
     responseEvidence?: object;
     customerConfirmation?: import("@/services/contracts").CheckoutContext["customerConfirmation"];
     expired?: boolean;
+    creationResolution?: CreationResolution;
     selectionRejection?: CheckoutSelectionRejection;
     busy: boolean;
     next: number;
@@ -114,6 +118,7 @@ export function useConfirmationChecking(
           customerConfirmation,
           expired,
           selectionRejection,
+          creationResolution,
           busy,
           next: budget.next,
         });
@@ -123,6 +128,7 @@ export function useConfirmationChecking(
     let responseEvidence: object | undefined;
     let customerConfirmation: import("@/services/contracts").CheckoutContext["customerConfirmation"];
     let expired = false;
+    let creationResolution: CreationResolution | undefined;
     let selectionRejection: CheckoutSelectionRejection | undefined;
     /** Schedule the next bounded confirmation check for the active attempt. */
     function schedule() {
@@ -264,6 +270,10 @@ export function useConfirmationChecking(
               : response.status === "pending"
                 ? customerConfirmation
                 : undefined;
+        creationResolution =
+          "creationResolution" in response
+            ? response.creationResolution
+            : undefined;
         expired = "expired" in response && response.expired === true;
         selectionRejection =
           "selectionRejection" in response
@@ -380,6 +390,10 @@ export function useConfirmationChecking(
     clock,
   ]);
   return {
+    creationResolution:
+      result?.id === attemptId && result.revision === sessionRevision
+        ? result.creationResolution
+        : undefined,
     selectionRejection:
       result?.id === attemptId && result.revision === sessionRevision
         ? result.selectionRejection

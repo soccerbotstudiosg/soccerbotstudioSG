@@ -1,8 +1,10 @@
+import { MAX_BOOKING_SESSIONS } from "@/domain/booking-policy";
 import { z } from "zod";
 import {
   attemptSchema,
   blankDraft,
   draftSchema,
+  slotSchema,
   instructorSchema,
 } from "@/domain/booking";
 import { demoSession } from "./demo/schedule";
@@ -155,7 +157,7 @@ export function mayRestoreLiveCheckout(attemptId?: string) {
 export function saveLiveDraft(
   draft: StoredBooking["draft"],
   resumeCheckout = mayRestoreLiveCheckout(),
-  checkoutAttemptId: string | undefined = (() => {
+  checkoutAttemptId: string | null | undefined = (() => {
     const value = record(safeRead("soccerbot-live-draft"))?.checkoutAttemptId;
     return typeof value === "string" ? value : undefined;
   })(),
@@ -166,6 +168,13 @@ export function saveLiveDraft(
     accepted: false,
     resumeCheckout,
     ...(checkoutAttemptId ? { checkoutAttemptId } : {}),
+    leftBookingFlow:
+      !!checkoutAttemptId &&
+      previous?.checkoutAttemptId === checkoutAttemptId &&
+      previous?.leftBookingFlow === true,
+    ...(checkoutAttemptId && previous?.checkoutAttemptId === checkoutAttemptId
+      ? { departedSlots: loadDepartureSlots(checkoutAttemptId) }
+      : {}),
     calendarRecovery:
       resumeCheckout &&
       previous?.checkoutAttemptId === checkoutAttemptId &&
@@ -195,4 +204,52 @@ export function saveCalendarRecovery(attemptId: string) {
 export function isCalendarRecovery(attemptId: string) {
   const stored = record(safeRead("soccerbot-live-draft"));
   return mayRestoreLiveCheckout(attemptId) && stored?.calendarRecovery === true;
+}
+
+const noticeSlotsSchema = z.array(slotSchema).max(MAX_BOOKING_SESSIONS);
+export type NoticeSlot = z.infer<typeof noticeSlotsSchema>[number];
+/** Read validated display-only affected slots; an empty array retains generic conflict copy. */
+export function loadConflictNotice(): NoticeSlot[] | null {
+  const parsed = noticeSlotsSchema.safeParse(
+    safeRead("soccerbot-conflict-notice"),
+  );
+  return parsed.success ? parsed.data : null;
+}
+/** Retain conflict copy across refresh without persisting booking authority. */
+export function saveConflictNotice(slots: NoticeSlot[] | null) {
+  if (slots !== null) safeWrite("soccerbot-conflict-notice", slots);
+  else safeRemove("soccerbot-conflict-notice");
+}
+
+/** Remember deliberate departure while preserving the exact unresolved attempt correlation. */
+export function markBookingDeparture(
+  id: string,
+  slots: StoredBooking["draft"]["slots"],
+) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  if (stored?.checkoutAttemptId === id)
+    safeWrite("soccerbot-live-draft", {
+      ...stored,
+      leftBookingFlow: true,
+      departedSlots: slots,
+    });
+}
+/** Restore only validated affected times belonging to this tab's departed attempt. */
+export function loadDepartureSlots(id: string) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  const slots = draftSchema.shape.slots
+    .max(MAX_BOOKING_SESSIONS)
+    .safeParse(
+      stored?.checkoutAttemptId === id && stored?.leftBookingFlow === true
+        ? stored.departedSlots
+        : undefined,
+    );
+  return slots.success ? slots.data : [];
+}
+/** Read only this tab's departure marker, never financial authority. */
+export function isBookingDeparture(id: string | null) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  return (
+    !!id && stored?.checkoutAttemptId === id && stored?.leftBookingFlow === true
+  );
 }

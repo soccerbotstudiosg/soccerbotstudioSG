@@ -700,6 +700,10 @@
     "title": "new recovery buffer releases verified nonpayment after twelve minutes"
   },
   {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "HitPay purpose uses matched retained labels and bounds complete session details"
+  },
+  {
     "file": "worker/tests/identity-delivery.test.mjs",
     "title": "delivery default empty window and disabled mode reject before external dispatch"
   },
@@ -1590,6 +1594,14 @@
   {
     "file": "worker/tests/provider.test.mjs",
     "title": "provider tokens survive coordinator eviction and admin rejection preserves the public family"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "operator no-creation proof retires only its exact attempt and preserves terminal ownership on reload"
+  },
+  {
+    "file": "worker/tests/provider.test.mjs",
+    "title": "operator no-creation proof rejects stale partial paid held and unverified evidence without releasing the attempt"
   },
   {
     "file": "worker/tests/recovery.test.mjs",

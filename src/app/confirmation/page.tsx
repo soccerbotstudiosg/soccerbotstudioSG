@@ -13,6 +13,7 @@ function ConfirmationRoute() {
     restartAfterExpiry,
     browseAfterChecking,
     rejectRecoveredSelection,
+    resolveUncreatedBooking,
     confirmationRevision,
     bookingService,
   } = useBooking();
@@ -26,6 +27,7 @@ function ConfirmationRoute() {
       onExpired={restartAfterExpiry}
       onAwaitingExpiry={browseAfterChecking}
       onSelectionRejected={rejectRecoveredSelection}
+      onCreationResolved={resolveUncreatedBooking}
       onAgain={reset}
       onRestart={restartAfterConfirmation}
     />

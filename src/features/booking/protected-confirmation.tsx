@@ -1,8 +1,9 @@
 "use client";
 import {
-  PAYMENT_RELEASE_PENDING,
+  PAYMENT_WINDOW_ENDED,
   PAYMENT_PROVIDER_UNAVAILABLE,
   BOOKING_RECOVERY_MESSAGE,
+  BOOKING_NOT_CREATED,
 } from "@/domain/booking-messages";
 import {
   isHitpayCheckoutUrl,
@@ -88,6 +89,7 @@ export function ProtectedConfirmation({
   calendarRecovery = false,
   onPaymentDetected,
   onSelectionRejected,
+  onCreationResolved,
 }: {
   attemptId: string;
   checkoutMode?: "synthetic" | "live";
@@ -98,6 +100,7 @@ export function ProtectedConfirmation({
   onAwaitingExpiry?: (attemptId: string) => boolean;
   calendarRecovery?: boolean;
   onPaymentDetected?: (attemptId: string) => void;
+  onCreationResolved?: (attemptId: string) => boolean;
   onSelectionRejected?: (
     attemptId: string,
     rejection: CheckoutSelectionRejection,
@@ -139,6 +142,7 @@ export function ProtectedConfirmation({
     responseEvidence,
     customerConfirmation,
     selectionRejection: statusRejection,
+    creationResolution: statusCreationResolution,
     expired,
   } = useConfirmationChecking(
     attemptId,
@@ -413,6 +417,57 @@ export function ProtectedConfirmation({
     );
     return () => clearTimeout(timer);
   }, [link, current?.clock]);
+  const paymentDeadline =
+    current?.checking.paymentExpiresAtMs ?? link?.expiresAtMs;
+  const [elapsedPaymentWindow, setElapsedPaymentWindow] = useState<{
+    id: string;
+    revision: number;
+    deadline: number;
+  } | null>(null);
+  const paymentWindowEnded =
+    !!current?.clock &&
+    paymentDeadline !== undefined &&
+    (checkoutNow(current.clock, true) >= paymentDeadline ||
+      (elapsedPaymentWindow?.id === attemptId &&
+        elapsedPaymentWindow.revision === sessionRevision &&
+        elapsedPaymentWindow.deadline === paymentDeadline));
+  useEffect(() => {
+    if (
+      checkoutMode !== "live" ||
+      !current?.clock ||
+      paymentDeadline === undefined
+    )
+      return;
+    const clock = current.clock;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const check = () => {
+      clearTimeout(timer);
+      const remaining = paymentDeadline - checkoutNow(clock, true);
+      if (remaining <= 0)
+        setElapsedPaymentWindow({
+          id: attemptId,
+          revision: sessionRevision,
+          deadline: paymentDeadline,
+        });
+      else timer = setTimeout(check, remaining);
+    };
+    check();
+    window.addEventListener("focus", check);
+    window.addEventListener("pageshow", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", check);
+      window.removeEventListener("pageshow", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [
+    attemptId,
+    sessionRevision,
+    checkoutMode,
+    current?.clock,
+    paymentDeadline,
+  ]);
   const recordedPayment = current?.payment;
   useEffect(() => {
     if ((!incomplete && !linkRecovering) || !checkoutMode) return;
@@ -483,6 +538,27 @@ export function ProtectedConfirmation({
     customerConfirmation ||
     view === "confirmed"
   );
+  const creationResolved = !!(
+    statusCreationResolution ??
+    (contextMatches ? context.value.creationResolution : undefined)
+  );
+  const finishCreationResolution = useEffectEvent((id: string) =>
+    onCreationResolved?.(id),
+  );
+  useEffect(() => {
+    if (
+      creationResolved &&
+      !hasPaymentEvidence &&
+      finishCreationResolution(attemptId)
+    )
+      router.replace("/book/time/");
+  }, [
+    creationResolved,
+    hasPaymentEvidence,
+    attemptId,
+    sessionRevision,
+    router,
+  ]);
   const rejectSelection = useEffectEvent(
     (id: string, rejection: CheckoutSelectionRejection) =>
       onSelectionRejected?.(id, rejection),
@@ -559,7 +635,8 @@ export function ProtectedConfirmation({
       recordedPayment ||
       displayedReceipt ||
       rejectionState ||
-      (!wantsExpiry &&
+      (!paymentWindowEnded &&
+        !wantsExpiry &&
         (view !== "unresolved" ||
           checkoutNow(current.clock) < current.checking.deadlineMs)) ||
       calendarReturned.current === attemptId
@@ -578,6 +655,8 @@ export function ProtectedConfirmation({
     recordedPayment,
     displayedReceipt,
     wantsExpiry,
+    paymentWindowEnded,
+    sessionRevision,
     rejectionState,
     attemptId,
     onAwaitingExpiry,
@@ -623,28 +702,40 @@ export function ProtectedConfirmation({
       (paymentReceived || view === "confirmed" ? responseEvidence : current),
     receipt: receiptMatches ? receipt.value : undefined,
   });
-  if (calendarRecovery)
+  if (
+    calendarRecovery ||
+    (checkoutMode === "live" &&
+      paymentWindowEnded &&
+      !hasPaymentEvidence &&
+      !rejectionState &&
+      view !== "denied")
+  )
     return (
       <div className="alert" role="alert">
-        <p>
-          {paymentReceived || recordedPayment || displayedReceipt ? (
-            "Payment received. Opening your booking status. Do not pay again."
-          ) : (
-            <>
-              Your payment window has ended. Affected sessions:{" "}
-              {current?.summary.sessions
-                .map((session) => {
+        {paymentReceived || recordedPayment || displayedReceipt ? (
+          <p>
+            Payment received. Opening your booking status. Do not pay again.
+          </p>
+        ) : (
+          <>
+            <p>{PAYMENT_WINDOW_ENDED}</p>
+            {!!current?.summary.sessions.length && (
+              <ul>
+                {current.summary.sessions.map((session, index) => {
                   const wall = new Date(
                     session.startMs + 8 * 3600000,
                   ).toISOString();
                   const start = wall.slice(11, 16);
-                  return `${dateLabel(wall.slice(0, 10))}, ${start}–${endTime(start)}`;
-                })
-                .join("; ") ?? "your selected sessions"}
-              . {PAYMENT_RELEASE_PENDING}
-            </>
-          )}
-        </p>
+                  return (
+                    <li key={`${session.startMs}:${index}`}>
+                      {dateLabel(wall.slice(0, 10))}, {start}–{endTime(start)}.
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </>
+        )}
       </div>
     );
   if (displayedReceipt && checkoutMode !== "synthetic") {
@@ -684,6 +775,12 @@ export function ProtectedConfirmation({
       />
     );
   }
+  if (creationResolved && !hasPaymentEvidence)
+    return (
+      <p className="alert" role="alert">
+        {BOOKING_NOT_CREATED}
+      </p>
+    );
   if (
     linkRecovering &&
     !paymentReceived &&
