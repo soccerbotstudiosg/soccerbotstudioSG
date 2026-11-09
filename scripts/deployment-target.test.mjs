@@ -219,9 +219,18 @@ test("target workflows isolate PR credentials and deploy through trusted main af
   const read = (name) =>
     YAML.parse(readFileSync(`.github/workflows/${name}.yml`, "utf8"));
   assert.deepEqual(readdirSync(".github/workflows").sort(), [
+    "dependency-review.yml",
     "deploy-release.yml",
     "verify-target.yml",
   ]);
+  const review = read("dependency-review");
+  assert.deepEqual(review.permissions, {
+    contents: "read",
+    "pull-requests": "read",
+  });
+  assert.equal(review.on.pull_request_target, undefined);
+  assert.equal(JSON.stringify(review).includes("secrets."), false);
+  assert.ok(review.on.pull_request.types.includes("edited"));
   const verify = read("verify-target");
   assert.deepEqual(verify.on.push.branches, ["main"]);
   assert.deepEqual(verify.on.pull_request, { branches: ["main"] });

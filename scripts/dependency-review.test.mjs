@@ -19,6 +19,18 @@ const body = `**Candidate and benefit:** Upgrade the build tool from1.0 to1.1 fo
 test("dependency review classifies manifests renamed pins and workflow revisions", () => {
   for (const file of [
     { filename: "package-lock.json" },
+    {
+      filename: ".github/workflows/test.yml",
+      patch: '+          python-version: "3.13"',
+    },
+    {
+      filename: ".github/workflows/test.yml",
+      patch: '+          node-version: "26"',
+    },
+    {
+      filename: ".github/workflows/test.yml",
+      patch: "+    container: node:26",
+    },
     { filename: "old", previous_filename: ".nvmrc" },
     {
       filename: ".github/workflows/verify.yml",
@@ -52,6 +64,10 @@ test("dependency review rejects missing sections empty tables placeholders and c
     );
   for (const invalid of [
     "",
+    body.replace(
+      /(\*\*(?:Candidate and benefit|Testing-tool support|Our verified test coverage|Customer impact):\*\*)[^\n]*/g,
+      "$1",
+    ),
     `<!-- ${body} -->`,
     body.replace(">=22 | >=22", " | >=22"),
     body.replace("DEFER until", "APPROVE until"),

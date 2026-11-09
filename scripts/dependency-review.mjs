@@ -9,7 +9,10 @@ export function needsDependencyReview(files) {
         name &&
         (/^(package(-lock)?\.json|\.nvmrc|\.node-version)$/.test(name) ||
           (/^\.github\/workflows\//.test(name) &&
-            (!patch || /^[+-]\s*(?:-\s*)?(?:uses|image):/m.test(patch)))),
+            (!patch ||
+              /^[+-]\s*(?:-\s*)?(?:uses|image|container|node-version|node-version-file|python-version|python-version-file):/m.test(
+                patch,
+              )))),
     ),
   );
 }
@@ -26,7 +29,7 @@ export function validateDependencyReview(body) {
     "Decision",
   ]) {
     const match = text.match(
-      new RegExp(`\\*\\*${label}:?\\*\\*:?\\s*([^\\n]+)`),
+      new RegExp(`\\*\\*${label}:?\\*\\*:?[ \t]*([^\\n]+)`),
     );
     if (
       !match ||
@@ -35,7 +38,7 @@ export function validateDependencyReview(body) {
     )
       errors.push(`Complete **${label}:** with evidence, not a placeholder.`);
   }
-  if (!/\*\*Decision:?\*\*:?\s*(MERGE|DEFER|REJECT)\b/i.test(text))
+  if (!/\*\*Decision:?\*\*:?[ \t]*(MERGE|DEFER|REJECT)\b/i.test(text))
     errors.push("Decision must begin MERGE, DEFER or REJECT.");
   const lines = text.split("\n");
   const header = lines.findIndex((line) =>
