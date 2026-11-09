@@ -1824,6 +1824,19 @@ async function uncertainHolding(
           }),
         )
         .run();
+      // Wait for the customer's existing background read to observe terminal
+      // proof before asserting navigation; an operator write does not notify
+      // the browser, and the polling interval itself is five seconds.
+      const observedResolution = page.waitForResponse(async (response) => {
+        const path = new URL(response.url()).pathname;
+        if (
+          response.status() !== 200 ||
+          path !== `/api/attempts/${row!.id}/checkout`
+        )
+          return false;
+        const body = await response.json();
+        return body.creationResolution?.state === "not_created";
+      });
       const resolved = await mechanism.mf.dispatchFetch(
         mechanism.origin + "/api/developer/native-creation-resolution",
         {
@@ -1836,6 +1849,7 @@ async function uncertainHolding(
       );
       expect(resolved.status).toBe(200);
       expect(await resolved.json()).toMatchObject({ state: "complete" });
+      await observedResolution;
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
         page.getByText(

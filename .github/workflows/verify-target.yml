@@ -16,6 +16,7 @@ on:
           - production
 permissions:
   contents: read
+  pull-requests: read
 concurrency:
   group: target-verify-${{ github.event_name == 'pull_request' && 'staging' || github.event_name == 'push' && 'production' || inputs.target }}-${{ github.ref }}
   cancel-in-progress: false
@@ -124,6 +125,11 @@ jobs:
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: node scripts/deployment-target.mjs
+      - name: Check dependency impact assessment
+        if: github.event_name == 'pull_request'
+        run: node scripts/dependency-review.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
       - run: npm run verify
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
