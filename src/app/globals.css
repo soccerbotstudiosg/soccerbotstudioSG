@@ -540,7 +540,14 @@
     font-size: var(--text-meta);
     overflow-wrap: anywhere;
   }
+  .booking-identity-action,
+  .booking-identity-action > .text-link {
+    min-height: 44px;
+  }
   @media (max-width: 480px) {
+    .booking-identity-status.booking-entry-status {
+      flex-basis: 100%;
+    }
     .booking-heading-row {
       flex-wrap: wrap;
       gap: 0.5rem;

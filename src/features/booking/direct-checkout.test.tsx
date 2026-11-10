@@ -4153,3 +4153,99 @@ it("missing predispatch proof cannot classify a pending conflict or adopt a fore
   expect(navigation.replace).not.toHaveBeenCalled();
   expect(sessionStorage.getItem("soccerbot-pending-conflict")).not.toBeNull();
 });
+
+it("expired held Review with unresolved release returns affected sessions in the first calendar notice", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  sessionStorage.clear();
+  localStorage.clear();
+  navigation.path = "/book/review/";
+  saveLiveDraft(draft, true, id);
+  const requests: Array<{ path: string; method: string }> = [];
+  const fetcher = vi.fn<typeof globalThis.fetch>(async (input, options) => {
+    const path = String(input);
+    requests.push({ path, method: options?.method ?? "GET" });
+    if (path === "/api/booking/current")
+      return Response.json({
+        state: "held",
+        attemptId: id,
+        contact: draft.contact,
+        sessions: [
+          {
+            ...draft.slots[0].native,
+            instructorId: draft.slots[0].instructor,
+            startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+            players: 1,
+          },
+        ],
+      });
+    if (path === `/api/booking/hitpay/${id}`)
+      return Response.json({ error: "hitpay_hold_expired" }, { status: 409 });
+    if (path === `/api/attempts/${id}/expire`)
+      return Response.json({ error: "payment_unresolved" }, { status: 409 });
+    if (path.endsWith("/checkout"))
+      return Response.json({
+        attemptId: id,
+        mode: "live",
+        checkout: { state: "unavailable" },
+        summary: {
+          players: 1,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [
+            { startMs: Date.parse("2026-10-20T12:00:00+08:00"), players: 1 },
+          ],
+        },
+        checking: {
+          paymentExpiresAtMs: Date.now() - 1,
+          deadlineMs: Date.now() + 300000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    if (path.endsWith("/confirmation"))
+      return Response.json({
+        status: "pending",
+        reason: "payment_verification_pending",
+      });
+    return new Response(null, { status: 503 });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const service = {
+    ...liveBookingService,
+    calendar: undefined,
+    publicCalendar: undefined,
+    availability: async () => [],
+  };
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  const tree = (step: "review" | "time") => (
+    <BookingProvider bookingService={service} identityService={identity}>
+      <BookingPage step={step} />
+      <ConflictHandoffProbe />
+    </BookingProvider>
+  );
+  const view = render(tree("review"));
+  await waitFor(() =>
+    expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id),
+  );
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: /^Proceed to Payment/ }));
+  await waitFor(() =>
+    expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
+  );
+  navigation.path = "/book/time/";
+  view.rerender(tree("time"));
+  const notice = await screen.findByRole("alert");
+  expect(notice).toHaveTextContent(PAYMENT_WINDOW_ENDED);
+  expect(within(notice).getByRole("listitem")).toHaveTextContent(
+    "Tue, 20 Oct 2026, 12:00–12:40.",
+  );
+  expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+  expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+    [],
+  );
+  expect(requests.filter((r) => r.method === "POST")).toEqual([
+    { path: `/api/booking/hitpay/${id}`, method: "POST" },
+    { path: `/api/attempts/${id}/expire`, method: "POST" },
+  ]);
+});

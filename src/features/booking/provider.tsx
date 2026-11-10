@@ -1823,6 +1823,8 @@ export function BookingProvider({
           } catch {
             if (isCurrent() && latest.current.attempt) {
               const retained = latest.current.attempt;
+              if (!calendarRecoveryNoticeDismissed(retained.id))
+                setSelectionNotice(PAYMENT_WINDOW_ENDED, retained.draft.slots);
               setSuppressedSlots([
                 ...suppressedSlots.filter(
                   (slot) =>
@@ -1903,6 +1905,7 @@ export function BookingProvider({
       restartReleasedReservation,
       resolveUncreatedBooking,
       returnRejectedSelection,
+      setSelectionNotice,
       setSuppressedSlots,
       suppressedSlots,
       pendingConflict,

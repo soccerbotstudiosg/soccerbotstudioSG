@@ -728,6 +728,10 @@
     "title": "missing predispatch proof cannot classify a pending conflict or adopt a foreign checkout"
   },
   {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expired held Review with unresolved release returns affected sessions in the first calendar notice"
+  },
+  {
     "file": "src/features/booking/email-bot-proof.test.tsx",
     "title": "email bot widget binds purpose clears expired proof and ignores callbacks after disposal"
   },

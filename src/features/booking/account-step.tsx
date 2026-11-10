@@ -211,20 +211,22 @@ export function AccountStep({
         <BookingHeading
           status={
             <div
-              className="booking-identity-status"
+              className="booking-identity-status booking-entry-status"
               aria-label="Booking identity"
             >
               <span>{verifiedIdentity?.email ?? "Guest"}</span>
-              {verifiedIdentity && (
-                <button
-                  type="button"
-                  className="text-link"
-                  disabled={busy}
-                  onClick={signOutToHome}
-                >
-                  Sign out
-                </button>
-              )}
+              <div className="booking-identity-action">
+                {verifiedIdentity && (
+                  <button
+                    type="button"
+                    className="text-link"
+                    disabled={busy}
+                    onClick={signOutToHome}
+                  >
+                    Sign out
+                  </button>
+                )}
+              </div>
             </div>
           }
         >
