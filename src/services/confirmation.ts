@@ -317,6 +317,9 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
           context.confirmation ||
           context.customerConfirmation ||
           context.bookingIssue ||
+          context.selectionRejection.rejectedSessionIndices?.some(
+            (index) => index >= context.summary.sessions.length,
+          ) ||
           (context.selectionRejection.rejectedSessionIndex !== undefined &&
             context.selectionRejection.rejectedSessionIndex >=
               context.summary.sessions.length)))

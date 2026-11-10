@@ -30,9 +30,7 @@ test("live catalogue displays mutable provider labels and empty failure states w
     .mockRejectedValueOnce(new Error("unavailable"))
     .mockResolvedValueOnce(catalogue());
   const view = render(<LiveCatalogue service={{ read }} />);
-  expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Unable to load available sessions. Please try again.",
-  );
+  expect(await screen.findByRole("alert")).toHaveTextContent("Unable to Load.");
   expect(screen.queryByText("Faisal Shahril")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   expect(

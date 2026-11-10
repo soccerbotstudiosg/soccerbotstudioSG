@@ -1,4 +1,5 @@
 import { retainedCreationResolution } from "./native-creation-resolution";
+import { preparationRejectionContext } from "./checkout-preparation-rejection";
 import { confirmationSnapshot } from "./confirmation-snapshot";
 import { customerConfirmation, checkoutExpired } from "./checkout-progress";
 import {
@@ -300,7 +301,21 @@ export async function checkoutContext(
   now: number,
 ) {
   const access = await authenticate(request, env, now);
-  const snapshot = await confirmationSnapshot(env, id, access.owner_id);
+  let snapshot;
+  try {
+    snapshot = await confirmationSnapshot(env, id, access.owner_id);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      const rejection = await preparationRejectionContext(
+        request,
+        env,
+        id,
+        access,
+      );
+      if (rejection) return rejection;
+    }
+    throw error;
+  }
   const row = snapshot.row;
   const intent = intentSchema.parse(JSON.parse(row.intent_json));
   const creationResolution =

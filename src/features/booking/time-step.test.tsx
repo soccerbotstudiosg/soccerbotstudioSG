@@ -61,7 +61,11 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
       return {
         x: 0,
         y: 0,
-        top: this.classList.contains("time-heading") ? 420 : 0,
+        top: this.classList.contains("time-heading")
+          ? 420
+          : this.classList.contains("calendar-panel")
+            ? 200
+            : 0,
         left: 0,
         right: 400,
         bottom: this.classList.contains("calendar-panel")
@@ -87,7 +91,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel(restoredDate) }),
   );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 360, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 336, behavior: "smooth" });
   calendarBottom = -1000;
   fireEvent.scroll(window);
   expect(screen.getByRole("button", { name: "Back to calendar" })).toHaveStyle({
@@ -202,7 +206,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel(restoredDate) }),
   );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 360, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 336, behavior: "smooth" });
   scroll.mockClear();
   vi.stubGlobal("matchMedia", () => ({
     matches: true,
@@ -346,7 +350,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     view.container.querySelector(".session-times-region"),
   ).not.toHaveAttribute("aria-busy", "true");
   expect(scroll).toHaveBeenCalledExactlyOnceWith({
-    top: 304,
+    top: 280,
     behavior: "instant",
   });
   await act(async () => {});
@@ -359,7 +363,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel("2026-10-14") }),
   );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 304, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 280, behavior: "smooth" });
   expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
   calendarBottom = 0;
   fireEvent.scroll(window);
@@ -372,7 +376,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   calendarBottom = 0;
   fireEvent.scroll(window);
   await user.click(screen.getByRole("button", { name: "Back to calendar" }));
-  expect(scroll).toHaveBeenLastCalledWith({ top: 0, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 120, behavior: "smooth" });
   expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
   calendarBottom = 600;
   fireEvent.scroll(window);

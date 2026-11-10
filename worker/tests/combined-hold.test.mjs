@@ -266,7 +266,20 @@ test("combined hold rejects changed price and unavailable selection before creat
         .some((offer) => offer.startMs === m.startMs),
       "price rejection does not mark the session occupied",
     );
-    const response = await c.send();
+    const replay = await c.send();
+    assert.equal(replay.status, 409);
+    assert.deepEqual(await replay.json(), {
+      error: "native_attempt_unavailable",
+    });
+    c.input.key = crypto.randomUUID();
+    const response = await m.mf.dispatchFetch(
+      m.origin + `/api/booking/hold/${c.input.key}`,
+      {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify(c.input),
+      },
+    );
     assert.equal(response.status, 200, await response.clone().text());
     assert.equal((await response.json()).state, "selection_unavailable");
     const rangeReads = m.calls.filter(
@@ -3586,7 +3599,31 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
         },
       );
       assert.deepEqual(await same.json(), {
+        error: "native_attempt_unavailable",
+      });
+      const sameStartKey = crypto.randomUUID();
+      const sameStart = await m.mf.dispatchFetch(
+        m.origin + `/api/booking/checkout/${sameStartKey}`,
+        {
+          method: "POST",
+          headers: c.headers,
+          body: JSON.stringify({
+            ...c.input,
+            key: sameStartKey,
+            accepted: true,
+          }),
+        },
+      );
+      assert.deepEqual(await sameStart.json(), {
         error: "checkout_selection_unavailable",
+        ...(!incomplete
+          ? {
+              selectionRejection: {
+                state: "selection_unavailable",
+                rejectedSessionIndices: [0],
+              },
+            }
+          : {}),
       });
       assert.deepEqual(
         m.calls
@@ -3594,7 +3631,7 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
           .filter((call) => call.body?.method === "getAvailableTimeIntervals")
           .map((call) => String(call.body.params[3]))
           .sort(),
-        ["14", "15"],
+        incomplete ? ["14", "15"] : [],
       );
       assert.equal(
         m.calls.filter((call) => call.body?.method === "book").length,
@@ -3620,6 +3657,14 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
       assert.equal(otherTrainer.status, 503);
       assert.deepEqual(await otherTrainer.json(), {
         error: "checkout_selection_unavailable",
+        ...(!incomplete
+          ? {
+              selectionRejection: {
+                state: "selection_unavailable",
+                rejectedSessionIndices: [0],
+              },
+            }
+          : {}),
       });
       assert.equal(
         m.calls.filter((call) => call.body?.method === "book").length,
@@ -3675,6 +3720,233 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
     );
   } finally {
     await prepared.close();
+  }
+});
+
+test("preparation rejection survives refresh without provider reads and permanently fences exact rejected keys", async () => {
+  let blockProvider = false;
+  const m = await createBookingMechanism({
+    batch: true,
+    batchSize: 2,
+    respond: async () =>
+      blockProvider ? new Response(null, { status: 503 }) : undefined,
+  });
+  try {
+    const c = await customer(m);
+    c.input.sessions.push({
+      ...c.input.sessions[0],
+      startMs: m.startMs + 3000000,
+    });
+    const initial = await c.send();
+    assert.equal(initial.status, 200);
+    await initial.json();
+    blockProvider = true;
+    const before = m.calls.length;
+    const key = crypto.randomUUID();
+    const input = {
+      ...c.input,
+      key,
+      accepted: true,
+      sessions: [
+        ...c.input.sessions,
+        { ...c.input.sessions[0], startMs: m.startMs + 6000000 },
+      ],
+    };
+    const send = (body = input, headers = c.headers) =>
+      m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${key}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+    const rejection = {
+      state: "selection_unavailable",
+      rejectedSessionIndices: [0, 1],
+    };
+    const [first, repeated] = await Promise.all(
+      [send(), send()].map(async (pending) => {
+        const result = await pending;
+        assert.equal(result.status, 503);
+        return result.json();
+      }),
+    );
+    assert.deepEqual(first, {
+      error: "checkout_selection_unavailable",
+      selectionRejection: rejection,
+    });
+    assert.deepEqual(repeated, first);
+    const context = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${key}/checkout`,
+      { headers: c.headers },
+    );
+    assert.equal(context.status, 200);
+    const body = await context.json();
+    assert.equal(body.attemptId, key);
+    assert.deepEqual(body.selectionRejection, rejection);
+    assert.deepEqual(body.checkout, { state: "unavailable" });
+    assert.deepEqual(
+      body.summary.sessions,
+      input.sessions.map(({ startMs, players }) => ({ startMs, players })),
+    );
+    assert.equal(
+      JSON.stringify(body).includes(c.input.key),
+      false,
+      "competing attempt is not disclosed",
+    );
+    assert.equal(
+      m.calls.length,
+      before,
+      "known protected conflict and reload never invoke provider identity or availability",
+    );
+    const changed = await send({
+      ...input,
+      contact: { ...input.contact, name: "Other Synthetic Guest" },
+    });
+    assert.equal(changed.status, 409);
+    assert.deepEqual(await changed.json(), {
+      error: "native_attempt_unavailable",
+    });
+    const foreign = await customer(m);
+    const denied = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${key}/checkout`,
+      { headers: foreign.headers },
+    );
+    assert.equal(denied.status, 404);
+    await denied.text();
+    const foreignReplay = await send(input, foreign.headers);
+    assert.equal(foreignReplay.status, 409);
+    await foreignReplay.text();
+    assert.equal(
+      (
+        await m.db
+          .prepare("SELECT COUNT(*) AS n FROM checkout_preparation_rejections")
+          .first()
+      ).n,
+      1,
+    );
+    assert.equal(
+      (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
+      1,
+    );
+    assert.equal(
+      (
+        await m.db
+          .prepare("SELECT COUNT(*) AS n FROM native_checkout_grants")
+          .first()
+      ).n,
+      1,
+      "foreign replay cannot mint a grant",
+    );
+    const original = await m.db.prepare("SELECT * FROM attempts").first();
+    const columns = Object.keys(original);
+    for (const [id, idempotency] of [
+      [key, key],
+      [crypto.randomUUID(), key],
+    ]) {
+      const row = { ...original, id, idempotency_key: idempotency };
+      await assert.rejects(
+        m.db
+          .prepare(
+            `INSERT INTO attempts(${columns.join(",")}) VALUES(${columns.map(() => "?").join(",")})`,
+          )
+          .bind(...columns.map((column) => row[column]))
+          .run(),
+        /preparation already rejected/,
+      );
+    }
+    for (const statement of [
+      "UPDATE checkout_preparation_rejections SET rejection_json='{}'",
+      "DELETE FROM checkout_preparation_rejections",
+    ])
+      await assert.rejects(
+        m.db.exec(statement),
+        /immutable preparation rejection/,
+      );
+    const absent = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${crypto.randomUUID()}/checkout`,
+      { headers: c.headers },
+    );
+    assert.equal(
+      absent.status,
+      404,
+      "absence without retained proof is not a rejection",
+    );
+    await absent.text();
+    assert.equal(m.calls.length, before);
+    await m.db.exec(
+      "CREATE TRIGGER simulate_rejection_failure BEFORE INSERT ON checkout_preparation_rejections BEGIN SELECT RAISE(ABORT, 'synthetic rejection storage failure'); END",
+    );
+    const failedKey = crypto.randomUUID();
+    const failed = await m.mf.dispatchFetch(
+      m.origin + `/api/booking/checkout/${failedKey}`,
+      {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify({ ...input, key: failedKey }),
+      },
+    );
+    assert.equal(failed.status, 503);
+    assert.deepEqual(await failed.json(), {
+      error: "checkout_recovery_required",
+    });
+    const noProof = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${failedKey}/checkout`,
+      { headers: c.headers },
+    );
+    assert.equal(
+      noProof.status,
+      404,
+      "failed persistence cannot claim a no-effects rejection",
+    );
+    await noProof.text();
+    await m.db.exec("DROP TRIGGER simulate_rejection_failure");
+    const preparedKey = crypto.randomUUID();
+    const preparedRow = {
+      ...original,
+      id: preparedKey,
+      idempotency_key: preparedKey,
+      state: "prepared",
+      association_json: null,
+      version: 0,
+    };
+    await m.db
+      .prepare(
+        `INSERT INTO attempts(${columns.join(",")}) VALUES(${columns.map(() => "?").join(",")})`,
+      )
+      .bind(...columns.map((column) => preparedRow[column]))
+      .run();
+    const preparedRejected = await m.mf.dispatchFetch(
+      m.origin + `/api/booking/checkout/${preparedKey}`,
+      {
+        method: "POST",
+        headers: c.headers,
+        body: JSON.stringify({ ...input, key: preparedKey }),
+      },
+    );
+    assert.equal(preparedRejected.status, 503);
+    assert.deepEqual(await preparedRejected.json(), {
+      error: "checkout_recovery_required",
+    });
+    const retainedProof = await m.db
+      .prepare(
+        "SELECT * FROM checkout_preparation_rejections WHERE attempt_id=?",
+      )
+      .bind(key)
+      .first();
+    const proofColumns = Object.keys(retainedProof);
+    const collidingProof = { ...retainedProof, attempt_id: preparedKey };
+    await assert.rejects(
+      m.db
+        .prepare(
+          `INSERT INTO checkout_preparation_rejections(${proofColumns.join(",")}) VALUES(${proofColumns.map(() => "?").join(",")})`,
+        )
+        .bind(...proofColumns.map((column) => collidingProof[column]))
+        .run(),
+      /preparation rejection has attempt/,
+    );
+    assert.equal(m.calls.length, before);
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
   }
 });
 
@@ -3748,6 +4020,23 @@ test("rejected unbound window checks fresh availability and preserves failed or 
             ? "checkout_selection_unavailable"
             : "checkout_window_unresolved",
       });
+      const callsBeforeRefresh = m.calls.length;
+      const refreshed = await m.mf.dispatchFetch(
+        m.origin + `/api/attempts/${b.input.key}/checkout`,
+        { headers: b.headers },
+      );
+      assert.equal(
+        refreshed.status,
+        200,
+        "pre-attempt rejection remains readable through refresh despite failed provider reads",
+      );
+      const context = await refreshed.json();
+      assert.deepEqual(context.selectionRejection, {
+        state: "restart_required",
+      });
+      assert.deepEqual(context.checkout, { state: "unavailable" });
+      assert.equal(context.attemptId, b.input.key);
+      assert.equal(m.calls.length, callsBeforeRefresh);
       assert.equal(
         m.calls
           .slice(before)
@@ -3889,7 +4178,13 @@ test("automatic recovery completion publishes a receipt before dismissal and rep
     onLog(message) {
       if (!message.startsWith("{")) return;
       const event = JSON.parse(message);
-      if (event.event === "confirmation_trace" && event.boundary === "recovery")
+      // Payment creation also wakes the alarm before a claim is due.
+      // Observe substantive recovery; preserve failure outcomes for assertions.
+      if (
+        event.event === "confirmation_trace" &&
+        event.boundary === "recovery" &&
+        event.result !== "not_claimed"
+      )
         completion.resolve(event);
     },
   });
@@ -4112,7 +4407,13 @@ test("client sandbox guest checkout preserves production scope through duplicate
     onLog(message) {
       if (!message.startsWith("{")) return;
       const event = JSON.parse(message);
-      if (event.event === "confirmation_trace" && event.boundary === "recovery")
+      // Payment creation also wakes the alarm before a claim is due.
+      // Observe substantive recovery; preserve failure outcomes for assertions.
+      if (
+        event.event === "confirmation_trace" &&
+        event.boundary === "recovery" &&
+        event.result !== "not_claimed"
+      )
         completion.resolve(event);
     },
   });

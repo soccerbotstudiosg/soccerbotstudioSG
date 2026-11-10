@@ -1,4 +1,5 @@
 "use client";
+import { BookingHeading } from "./booking-heading";
 import Link from "next/link";
 import {
   AVAILABILITY_LOAD_FAILED,
@@ -62,7 +63,8 @@ function revealBookingSection(heading: HTMLElement | null, cueSpace = 0) {
       window.scrollY +
         heading.getBoundingClientRect().top -
         stickyBookingHeight() -
-        cueSpace,
+        cueSpace -
+        24,
     ),
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ? "instant"
@@ -94,14 +96,8 @@ export function TimeStep({
       window.removeEventListener("resize", updateCue);
     };
   }, [mobile]);
-  const {
-    selectionNotice,
-    selectionNoticeSlots,
-    suppressedSlots,
-    attempt,
-    action,
-  } = useBooking();
-  const waitingForRelease = !!attempt && action.calendarRecovery === true;
+  const { selectionNotice, selectionNoticeSlots, suppressedSlots, action } =
+    useBooking();
   const {
     draft,
     update,
@@ -378,9 +374,9 @@ export function TimeStep({
   }
   return (
     <>
-      <h1 className="page-title">
+      <BookingHeading>
         Select dates<span className="booking-time-title-break"> and times</span>
-      </h1>
+      </BookingHeading>
       {live && bookingService.operations.availability === "live" ? (
         <LiveCatalogue
           renderStatus={(state) => (
@@ -413,7 +409,7 @@ export function TimeStep({
         </p>
       )}
       {recoveryNotice}
-      {selectionNotice && !waitingForRelease && (
+      {selectionNotice && (
         <div className="alert" role="alert">
           <p>{selectionNotice}</p>
           {selectionNoticeSlots.length > 0 && (
@@ -436,12 +432,6 @@ export function TimeStep({
         </div>
       )}
       <p className="lead">40-minute sessions · 10-minute changeover.</p>
-      {draft.slots.length >= MAX_BOOKING_SESSIONS && (
-        <p role="status" className="notice">
-          Maximum {MAX_BOOKING_SESSIONS} sessions per booking. Remove a session
-          to choose another.
-        </p>
-      )}
       <section
         ref={calendarRef}
         className="calendar-panel"
@@ -600,21 +590,26 @@ export function TimeStep({
           </>
         )}
         {calendarFailed && (
-          <div className="alert" role="alert">
-            <p>{AVAILABILITY_LOAD_FAILED}</p>
-            <button className="text-link" onClick={() => calendar.retry()}>
-              Try again
+          <div className="alert availability-alert" role="alert">
+            <span>{AVAILABILITY_LOAD_FAILED}</span>{" "}
+            <button
+              className="text-link"
+              aria-label="Try again"
+              onClick={() => calendar.retry()}
+            >
+              Try again.
             </button>
           </div>
         )}
         {siblingFailed && (
-          <div className="alert" role="alert">
-            Unable to load some dates.{" "}
+          <div className="alert availability-alert" role="alert">
+            <span>{AVAILABILITY_LOAD_FAILED}</span>{" "}
             <button
               className="text-link"
+              aria-label="Try again"
               onClick={() => calendar.retry([throughMonth!])}
             >
-              Try again
+              Try again.
             </button>
           </div>
         )}
@@ -661,11 +656,15 @@ export function TimeStep({
             aria-busy={!result}
           >
             {result && result.status !== "success" && (
-              <div className="alert" role="alert">
-                <p>{result.message}</p>
+              <div className="alert availability-alert" role="alert">
+                <span>{result.message}</span>{" "}
                 {result.status !== "unavailable" && (
-                  <button className="text-link" onClick={retry}>
-                    Try again
+                  <button
+                    className="text-link"
+                    aria-label="Try again"
+                    onClick={retry}
+                  >
+                    Try again.
                   </button>
                 )}
               </div>

@@ -1,4 +1,7 @@
-import { nativePrepareSchema } from "../src/domain/native-checkout";
+import {
+  nativePrepareSchema,
+  checkoutSelectionRejectionSchema,
+} from "../src/domain/native-checkout";
 export { FoundationManagement } from "./foundation-management";
 import {
   createConfirmationTrace,
@@ -685,7 +688,19 @@ export default {
         throw new ApiError(404, "operation_unavailable");
       } catch (error) {
         if (error instanceof ApiError)
-          return json({ error: error.code }, error.status);
+          return json(
+            {
+              error: error.code,
+              ...(error.selectionRejection
+                ? {
+                    selectionRejection: checkoutSelectionRejectionSchema.parse(
+                      error.selectionRejection,
+                    ),
+                  }
+                : {}),
+            },
+            error.status,
+          );
         console.error(
           JSON.stringify({ event: "request_failed", correlationId }),
         );

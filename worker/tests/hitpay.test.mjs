@@ -1525,6 +1525,24 @@ test("HitPay holding appointment payment uses its existing invoice without avail
   const result = await mf.dispatchFetch(endpoint, options);
   assert.equal(result.status, 200, JSON.stringify(await result.clone().json()));
   assert.equal((await result.json()).paymentAvailable, true);
+  const wakeups = await (
+    await mf.dispatchFetch(origin + "/test/wakeups")
+  ).json();
+  assert.equal(
+    wakeups.length,
+    1,
+    "created payment bootstraps its durable deadline alarm",
+  );
+  await mf.dispatchFetch(origin + "/test/alarm");
+  const scheduled = await (
+    await mf.dispatchFetch(origin + "/test/wakeups")
+  ).json();
+  assert.equal(scheduled[0].ready_ms, (await row()).ready_ms);
+  assert.equal(
+    (await row()).tries,
+    0,
+    "bootstrap alarm does not perform an early provider read",
+  );
   assert.equal(provider.writes(), 0);
   assert.equal(posts, 1);
   assert.equal((await mf.dispatchFetch(endpoint, options)).status, 200);
@@ -2362,6 +2380,88 @@ for (const boundary of ["payment", "booking", "accounting", "paid-booking"]) {
   });
 }
 
+test("verified unpaid expiry releases before hold grace while receipt races stay protected", async () => {
+  const options = await seedHold(Date.now() + 300000);
+  await seedCustomerProgress(Date.now() - 480001, true, 180000);
+  await seedPayment({ expired: true });
+  handler = async (request) => {
+    assert.equal(new URL(request.url).hostname, "api.sandbox.hit-pay.com");
+    assert.equal(
+      request.method,
+      "GET",
+      "expiry must not cancel provider bookings",
+    );
+    return Response.json({
+      ...paymentResponse(),
+      status: "expired",
+      payments: [],
+      expiry_date: new Date(Date.now() + 28800000 - 1000)
+        .toISOString()
+        .slice(0, 19),
+    });
+  };
+  const expire = () =>
+    mf.dispatchFetch(origin + `/api/attempts/${attemptId}/expire`, {
+      method: "POST",
+      headers: options.headers,
+    });
+  assert.equal(
+    (await expire()).status,
+    409,
+    "clock alone cannot unlock checkout",
+  );
+  await recover();
+  assert.equal((await row()).reason, "hitpay_unpaid_verified");
+  await db
+    .prepare("INSERT INTO hitpay_receipts VALUES(?,?,?)")
+    .bind("early-expiry-receipt", attemptId, Date.now())
+    .run();
+  assert.equal(
+    (await expire()).status,
+    409,
+    "a new receipt revokes early release",
+  );
+  await recover();
+  assert.equal((await expire()).status, 200);
+  assert.equal(
+    await db
+      .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
+      .bind(attemptId)
+      .first(),
+    null,
+  );
+});
+
+test("pending payment recovery schedules the actual expiry without a ninety second overshoot", async () => {
+  await seedHold(Date.now() + 300000);
+  await seedCustomerProgress();
+  await seedPayment();
+  const deadline = Math.floor((Date.now() + 30000) / 1000) * 1000;
+  handler = async (request) => {
+    assert.equal(request.method, "GET");
+    return Response.json({
+      ...paymentResponse(),
+      status: "pending",
+      payments: [],
+      expiry_date: new Date(deadline + 28800000).toISOString().slice(0, 19),
+    });
+  };
+  await recover();
+  assert.equal((await row()).state, "due");
+  assert.equal((await row()).ready_ms, deadline);
+  const wakeups = await (
+    await mf.dispatchFetch(origin + "/test/wakeups")
+  ).json();
+  assert.equal(wakeups[0].ready_ms, deadline);
+  const tries = (await row()).tries;
+  await mf.dispatchFetch(origin + "/test/recover");
+  assert.equal(
+    (await row()).tries,
+    tries,
+    "early reads must respect the durable deadline",
+  );
+});
+
 test("verified empty expired payment releases checkout but retains late payment reconciliation", async () => {
   const options = await seedHold(Date.now() - 1000);
   await seedCustomerProgress(Date.now() - 900001);
@@ -2736,7 +2836,7 @@ test("unpaid release refreshes only its cached day and preserves the month deadl
   );
 });
 
-test("verified nonpayment at checking expiry still waits for the original hold", async () => {
+test("verified nonpayment releases checkout before the original hold ends", async () => {
   const options = await seedHold(Date.now() + 60000);
   await seedCustomerProgress(Date.now() - 540001, true);
   await seedPayment({ expired: true });
@@ -2761,16 +2861,17 @@ test("verified nonpayment at checking expiry still waits for the original hold",
     origin + `/api/attempts/${attemptId}/expire`,
     { method: "POST", headers: options.headers },
   );
-  assert.equal(response.status, 409);
-  assert.ok(
+  assert.equal(response.status, 200);
+  assert.equal(
     await db
       .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
       .bind(attemptId)
       .first(),
+    null,
   );
 });
 
-test("new recovery buffer blocks verified nonpayment after the provider hold ends", async () => {
+test("recovery buffer does not delay verified nonpayment after the provider hold ends", async () => {
   const options = await seedHold(Date.now() - 60000);
   await seedCustomerProgress(Date.now() - 660000, true, 180000);
   await seedPayment({ expired: true });
@@ -2795,12 +2896,13 @@ test("new recovery buffer blocks verified nonpayment after the provider hold end
     origin + `/api/attempts/${attemptId}/expire`,
     { method: "POST", headers: options.headers },
   );
-  assert.equal(response.status, 409);
-  assert.ok(
+  assert.equal(response.status, 200);
+  assert.equal(
     await db
       .prepare("SELECT 1 FROM native_checkout_grants WHERE attempt_id=?")
       .bind(attemptId)
       .first(),
+    null,
   );
 });
 

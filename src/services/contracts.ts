@@ -91,6 +91,7 @@ export class BookingServiceError extends CustomerMessageError {
     public readonly code: BookingErrorCode,
     message: string,
     public readonly rejectedSessionIndex?: number,
+    public readonly rejectedSessionIndices?: number[],
   ) {
     super(message);
     this.name = "BookingServiceError";

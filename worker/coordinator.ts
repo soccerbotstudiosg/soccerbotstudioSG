@@ -1453,15 +1453,18 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
               )
             )
               throw error;
-            const code = await rejectedCheckoutReadback(request, input, {
+            const rejected = await rejectedCheckoutReadback(request, input, {
               ...this.calendarReadOptions(),
               env,
-            }).catch(() =>
-              error.status === 409
-                ? "checkout_recovery_required"
-                : "checkout_window_unresolved",
+            }).catch(() => ({
+              code: "checkout_recovery_required",
+              selectionRejection: undefined,
+            }));
+            throw new ApiError(
+              error.status,
+              rejected.code,
+              rejected.selectionRejection,
             );
-            throw new ApiError(error.status, code);
           });
           return executeNativeCheckout({
             request,
@@ -1485,7 +1488,10 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
                     this.provider,
                     this.providerControl(false, true),
                     proof,
-                  )
+                  ).then(async (checkout) => {
+                    await this.wakeCreatedPayment(attemptId, correlationId);
+                    return checkout;
+                  })
               : undefined,
             provider: this.provider,
             control: this.providerControl(false, true),
@@ -1569,12 +1575,24 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           scope.attemptId,
           this.provider,
           this.providerControl(false, true),
-        ),
+        ).then(async (checkout) => {
+          await this.wakeCreatedPayment(scope.attemptId, correlationId);
+          return checkout;
+        }),
       ),
     );
     return rpcOutcome(() => pending);
   }
-  // Only authenticated, account-bound webhook ingress calls this RPC. Persist
+  /** Bootstrap the governed deadline alarm after payment creation. */
+  private async wakeCreatedPayment(attemptId: string, correlationId: string) {
+    try {
+      await this.wakeHitpayRecovery(attemptId, correlationId);
+    } catch {
+      // The payment row is already durable; cron remains the recovery fallback.
+      console.error(JSON.stringify({ event: "payment_wakeup_deferred" }));
+    }
+  }
+  // Authenticated account-bound webhook ingress and payment creation persist
   // the wake-up before acknowledging; the minute cron remains the fallback.
   async wakeHitpayRecovery(attemptId: string, correlationId: string) {
     z.string().uuid().parse(attemptId);

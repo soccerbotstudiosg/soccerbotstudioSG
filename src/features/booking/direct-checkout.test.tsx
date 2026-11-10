@@ -1393,8 +1393,14 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
   }
   // Lost rejection response: the exact saved attempt can be recovered from
   // authenticated no-effects evidence even when /current is now empty.
-  for (const recovery of ["retained", "reload", "foreign"] as const) {
+  for (const recovery of [
+    "retained",
+    "reload",
+    "foreign",
+    "mismatched",
+  ] as const) {
     recoveryResult = undefined;
+    const readsBefore = availability.mock.calls.length;
     saveSuppressedSlots([]);
     saveLiveDraft({ ...draft, slots: [draft.slots[0], other] }, true, id);
     vi.stubGlobal(
@@ -1409,12 +1415,12 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
             rejectedSessionIndex: 0,
           },
           summary: {
-            players: 2,
+            players: recovery === "mismatched" ? 2 : draft.players,
             totalMinor: 17600,
             currency: "SGD",
             sessions: [draft.slots[0], other].map((slot) => ({
               startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
-              players: 2,
+              players: recovery === "mismatched" ? 2 : draft.players,
             })),
           },
           checking: {
@@ -1430,7 +1436,7 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
         bookingService={{
           ...liveBookingService,
           restore: async () =>
-            recovery === "reload"
+            recovery === "reload" || recovery === "mismatched"
               ? null
               : {
                   id,
@@ -1449,6 +1455,15 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
         <ReloadProbe />
       </BookingProvider>,
     );
+    if (recovery === "mismatched") {
+      await act(async () => {});
+      expect(
+        JSON.parse(screen.getByTestId("reload-cart").textContent!),
+      ).toEqual([draft.slots[0], other]);
+      expect(availability).toHaveBeenCalledTimes(readsBefore);
+      cleanup();
+      continue;
+    }
     if (recovery !== "reload") {
       await waitFor(() =>
         expect(screen.getByTestId("reload-attempt")).toHaveTextContent(id),
@@ -3856,4 +3871,285 @@ it("verified no-creation permits Back with replacement selections without replay
 
 it("verified rejection permits Back and edits during classification without replaying payment", async () => {
   await expectRecoveryReleaseNavigation("session", "rejected");
+});
+
+it("authenticated predispatch conflict proof survives cooldown and refresh without adopting another checkout", async () => {
+  for (const route of [
+    "immediate",
+    "reload",
+    "retry-proof",
+    "stale-proof",
+    "generic",
+  ] as const) {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(id);
+    sessionStorage.clear();
+    localStorage.clear();
+    navigation.path = "/book/review/";
+    const slots = [
+      draft.slots[0],
+      { ...draft.slots[0], date: "2026-10-21" },
+      { ...draft.slots[0], date: "2026-10-22" },
+    ];
+    const original = { ...draft, slots };
+    const foreignId = "00000000-0000-4000-8000-000000000099";
+    let refreshed = false;
+    let proofUnavailable = route === "retry-proof";
+    let delayProof = route === "stale-proof";
+    let releaseProof!: () => void;
+    const rejection = {
+      state: "selection_unavailable",
+      rejectedSessionIndices: [0, 2],
+    };
+    const fetcher = vi.fn<typeof globalThis.fetch>(async (input) => {
+      const path = String(input);
+      if (path === "/api/booking/current")
+        return Response.json(
+          refreshed
+            ? {
+                state: "checking",
+                attemptId: foreignId,
+                contact: draft.contact,
+                sessions: [
+                  {
+                    ...slots[0].native,
+                    instructorId: slots[0].instructor,
+                    startMs: Date.parse(`${slots[0].date}T12:00:00+08:00`),
+                    players: 1,
+                  },
+                ],
+              }
+            : { state: "empty" },
+        );
+      if (path === `/api/booking/checkout/${id}`)
+        return Response.json(
+          route === "immediate"
+            ? {
+                error: "checkout_selection_unavailable",
+                selectionRejection: rejection,
+              }
+            : { error: "checkout_window_unresolved" },
+          { status: 503 },
+        );
+      if (path === `/api/attempts/${id}/checkout` && delayProof)
+        await new Promise<void>((resolve) => {
+          releaseProof = resolve;
+        });
+      if (path === `/api/attempts/${id}/checkout` && proofUnavailable)
+        return Response.json(
+          { error: "temporarily_unavailable" },
+          { status: 503 },
+        );
+      if (path === `/api/attempts/${id}/checkout`)
+        return Response.json({
+          attemptId: id,
+          mode: "live",
+          checkout: { state: "unavailable" },
+          selectionRejection:
+            route === "generic" ? { state: "restart_required" } : rejection,
+          summary: {
+            players: 1,
+            totalMinor: 26400,
+            currency: "SGD",
+            sessions: slots.map((slot) => ({
+              startMs: Date.parse(`${slot.date}T12:00:00+08:00`),
+              players: 1,
+            })),
+          },
+          checking: {
+            deadlineMs: Date.now() + 600000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        });
+      if (path.startsWith("/api/booking/availability/")) {
+        if (!refreshed || route !== "generic")
+          return Response.json({ error: "cooldown" }, { status: 503 });
+        const date = path.split("/").at(-1)!.split("?")[0];
+        const slot = slots.find((slot) => slot.date === date)!;
+        return Response.json({
+          date,
+          observedAtMs: Date.now(),
+          offers:
+            date === slots[0].date
+              ? []
+              : [
+                  {
+                    ...slot.native,
+                    instructorId: slot.instructor,
+                    startMs: Date.parse(`${date}T12:00:00+08:00`),
+                  },
+                ],
+        });
+      }
+      throw new Error(`Unexpected conflict fixture request ${path}`);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const service = {
+      ...liveBookingService,
+      calendar: undefined,
+      publicCalendar: undefined,
+    };
+    const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    const tree = () => (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <ConflictHandoffProbe slots={slots} />
+      </BookingProvider>
+    );
+    saveLiveDraft(original);
+    const view = render(tree());
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.click(screen.getByText("Seed handoff"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Submit handoff"));
+    });
+    if (route !== "immediate") {
+      expect(screen.getByTestId("handoff-return")).not.toHaveTextContent(
+        "true",
+      );
+      expect(
+        fetcher.mock.calls.filter(([path]) =>
+          String(path).startsWith("/api/booking/availability/"),
+        ),
+      ).toHaveLength(3);
+      // A local index is display-only and must not override authenticated proof.
+      savePendingConflict({
+        attemptId: id,
+        draft: original,
+        rejectedSessionIndex: 1,
+      });
+      view.unmount();
+      refreshed = true;
+      const recovered = render(tree());
+      await act(async () => {});
+      if (route === "stale-proof") {
+        // A successful old response cannot reinterpret a snapshot changed while it was in flight.
+        savePendingConflict({
+          attemptId: id,
+          draft: { ...original, slots: [slots[1]] },
+        });
+        await act(async () => releaseProof());
+        expect(screen.getByTestId("handoff-return")).not.toHaveTextContent(
+          "true",
+        );
+        expect(
+          JSON.parse(screen.getByTestId("handoff-cart").textContent!),
+        ).toEqual(slots);
+        expect(
+          JSON.parse(sessionStorage.getItem("soccerbot-pending-conflict")!)
+            .draft.slots,
+        ).toEqual([slots[1]]);
+        recovered.unmount();
+        delayProof = false;
+        savePendingConflict({ attemptId: id, draft: original });
+        render(tree());
+        await act(async () => {});
+      }
+      if (route === "retry-proof") {
+        expect(screen.getByTestId("handoff-return")).not.toHaveTextContent(
+          "true",
+        );
+        expect(
+          JSON.parse(screen.getByTestId("handoff-cart").textContent!),
+        ).toEqual(slots);
+        expect(
+          sessionStorage.getItem("soccerbot-pending-conflict"),
+        ).not.toBeNull();
+        expect(screen.getByTestId("handoff-attempt")).toHaveTextContent("none");
+        recovered.unmount();
+        proofUnavailable = false;
+        render(tree());
+        await act(async () => {});
+      }
+    }
+    await waitFor(() =>
+      expect(screen.getByTestId("handoff-return")).toHaveTextContent("true"),
+    );
+    const affected = route === "generic" ? [slots[0]] : [slots[0], slots[2]];
+    const retained = route === "generic" ? [slots[1], slots[2]] : [slots[1]];
+    expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+      retained,
+    );
+    expect(
+      JSON.parse(screen.getByTestId("handoff-notice").textContent!),
+    ).toEqual(affected.map(({ date, start }) => ({ date, start })));
+    expect(screen.getByTestId("handoff-attempt")).toHaveTextContent("none");
+    expect(screen.getByTestId("handoff-ready")).toHaveTextContent("true");
+    expect(
+      fetcher.mock.calls.filter(([, options]) => options?.method === "POST"),
+    ).toHaveLength(1);
+    expect(
+      fetcher.mock.calls.some(([path]) => String(path).includes(foreignId)),
+    ).toBe(false);
+    expect(sessionStorage.getItem("soccerbot-pending-conflict")).toBeNull();
+    if (route === "immediate")
+      expect(
+        fetcher.mock.calls.some(([path]) =>
+          String(path).startsWith("/api/booking/availability/"),
+        ),
+      ).toBe(false);
+    cleanup();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  }
+});
+
+it("missing predispatch proof cannot classify a pending conflict or adopt a foreign checkout", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  sessionStorage.clear();
+  localStorage.clear();
+  navigation.path = "/book/review/";
+  saveLiveDraft(draft, false, id);
+  savePendingConflict({ attemptId: id, draft, rejectedSessionIndex: 0 });
+  const foreignId = "00000000-0000-4000-8000-000000000099";
+  const fetcher = vi.fn<typeof globalThis.fetch>(async (input) => {
+    const path = String(input);
+    if (path === "/api/booking/current")
+      return Response.json({
+        state: "checking",
+        attemptId: foreignId,
+        contact: draft.contact,
+        sessions: [
+          {
+            ...draft.slots[0].native,
+            instructorId: draft.slots[0].instructor,
+            startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+            players: 1,
+          },
+        ],
+      });
+    if (path === `/api/attempts/${id}/checkout`)
+      return Response.json({ error: "attempt_unavailable" }, { status: 404 });
+    throw new Error(`Unexpected unproven-conflict request ${path}`);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        calendar: undefined,
+        publicCalendar: undefined,
+      }}
+      identityService={{ ...demoCustomerIdentity, mode: "live" }}
+    >
+      <ConflictHandoffProbe />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  expect(fetcher.mock.calls.map(([path]) => path)).toEqual([
+    "/api/booking/current",
+    `/api/attempts/${id}/checkout`,
+  ]);
+  expect(screen.getByTestId("handoff-ready")).toHaveTextContent("false");
+  expect(screen.getByTestId("handoff-attempt")).toHaveTextContent("none");
+  expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+  expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+    draft.slots,
+  );
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(sessionStorage.getItem("soccerbot-pending-conflict")).not.toBeNull();
 });

@@ -236,6 +236,10 @@
     "title": "switching email clears the old account and supports back guest and fresh remembered sign-in paths"
   },
   {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "booking-options signout retries failure and leaves only after acknowledgement"
+  },
+  {
     "file": "src/features/booking/account-step.test.tsx",
     "title": "email form rejects a wrong verification code and accepts the corrected code"
   },
@@ -338,6 +342,10 @@
   {
     "file": "src/features/booking/async-booking.test.tsx",
     "title": "unsupported live mode exposes unavailable state and cannot restore a paid demo receipt"
+  },
+  {
+    "file": "src/features/booking/async-booking.test.tsx",
+    "title": "expiry after checkout resumes day reads and replacement navigation while the original payment stays protected"
   },
   {
     "file": "src/features/booking/booking-loading.test.tsx",
@@ -706,6 +714,14 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "verified rejection permits Back and edits during classification without replaying payment"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "authenticated predispatch conflict proof survives cooldown and refresh without adopting another checkout"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "missing predispatch proof cannot classify a pending conflict or adopt a foreign checkout"
   },
   {
     "file": "src/features/booking/email-bot-proof.test.tsx",

@@ -1,4 +1,5 @@
 "use client";
+import { BookingHeading } from "./booking-heading";
 import {
   BookingPrimaryAction,
   BookingActionTotal,
@@ -205,7 +206,7 @@ export function DetailsStep({
           >
             {emailChecked
               ? "You’ve checked your email address."
-              : "Please double-check your email address, then confirm using the button."}
+              : "Please double-check your email address, then confirm by selecting the exclamation mark."}
           </p>
         )}
         {errors[key] && (
@@ -252,14 +253,18 @@ export function DetailsStep({
       </div>
     );
   }
-  if (!profileOnly && (attempt?.verifying || attempt?.held))
+  if (
+    !profileOnly &&
+    !action.calendarRecovery &&
+    (attempt?.verifying || attempt?.held)
+  )
     return <ReviewStep verifying={attempt.verifying === true} />;
   return (
     <>
       {profileOnly ? (
-        <h1 className="page-title">Saved contact details</h1>
+        <BookingHeading>Saved contact details</BookingHeading>
       ) : (
-        <h1 className="page-title">Your details</h1>
+        <BookingHeading>Your details</BookingHeading>
       )}
       <form
         id="details-form"

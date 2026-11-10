@@ -1,13 +1,24 @@
-import { BOOKING_LEAD_MINUTES } from "../src/domain/booking-policy";
+import {
+  BOOKING_LEAD_MINUTES,
+  START_INTERVAL_MINUTES,
+} from "../src/domain/booking-policy";
+import {
+  preparationRejection,
+  retainPreparationRejection,
+} from "./checkout-preparation-rejection";
 import { authenticate, type Access } from "./access";
 import {
   ApiError,
   liveCustomerAccess,
   policy,
   providerServiceIds,
+  digest,
 } from "./policy";
 import { sessionPrices } from "../src/domain/session-pricing";
-import { nativePrepareSchema } from "../src/domain/native-checkout";
+import {
+  nativePrepareSchema,
+  type CheckoutSelectionRejection,
+} from "../src/domain/native-checkout";
 import { nativeAccountContractSchema } from "./prebooking";
 import {
   calendarWindow,
@@ -57,6 +68,28 @@ export async function authorizeCustomerCheckout(
   const services = providerServiceIds(env);
   const access =
     verifiedAccess ?? (await authenticate(request, env, Date.now()));
+  if (access.preparation_rejected === 1) {
+    const rejection = await preparationRejection(
+      env,
+      input.key,
+      access.owner_id,
+    );
+    if (
+      !rejection ||
+      rejection.inputHash !== (await digest(JSON.stringify(input)))
+    )
+      throw new ApiError(409, "native_attempt_unavailable");
+    await authenticate(request, env, Date.now());
+    throw new ApiError(
+      503,
+      rejection.selectionRejection.state === "selection_unavailable"
+        ? "checkout_selection_unavailable"
+        : "checkout_window_unresolved",
+      rejection.selectionRejection.rejectedSessionIndices
+        ? rejection.selectionRejection
+        : undefined,
+    );
+  }
   // A retired idempotency key must not mint a replacement grant before the
   // immutable attempt is inspected. Otherwise replay can strand the next key
   // behind a fresh grant bound to the already resolved attempt.
@@ -65,9 +98,9 @@ export async function authorizeCustomerCheckout(
       ? access.resolved_checkout === 1
       : await env.STATE.withSession("first-primary")
           .prepare(
-            "SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=? AND a.idempotency_key=?",
+            "SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=? AND a.idempotency_key=? UNION ALL SELECT 1 FROM checkout_preparation_rejections WHERE attempt_id=?",
           )
-          .bind(access.owner_id, input.key)
+          .bind(access.owner_id, input.key, input.key)
           .first();
   if (resolved) throw new ApiError(409, "native_attempt_unavailable");
   const existing =
@@ -150,7 +183,7 @@ export async function authorizeCustomerCheckout(
   if (!Number.isSafeInteger(maximum))
     throw new ApiError(503, "provider_budget_invalid");
   const insert = env.STATE.prepare(
-    "INSERT INTO native_checkout_grants(capability_hash,source_revision,contract_json,not_before_ms,expires_ms,starting_used,maximum_used,cleanup_allowed,state,available_dates_json,availability_json,read_state,ongoing) SELECT ?,?,?,?,?,?,?,0,'granted',?,?,'available',1 WHERE NOT EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=? AND a.idempotency_key=?) ON CONFLICT(capability_hash) DO NOTHING",
+    "INSERT INTO native_checkout_grants(capability_hash,source_revision,contract_json,not_before_ms,expires_ms,starting_used,maximum_used,cleanup_allowed,state,available_dates_json,availability_json,read_state,ongoing) SELECT ?,?,?,?,?,?,?,0,'granted',?,?,'available',1 WHERE NOT EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=? AND a.idempotency_key=?) AND NOT EXISTS(SELECT 1 FROM checkout_preparation_rejections WHERE attempt_id=?) ON CONFLICT(capability_hash) DO NOTHING",
   ).bind(
     access.capability_hash,
     p.SOURCE_REVISION,
@@ -162,6 +195,7 @@ export async function authorizeCustomerCheckout(
     JSON.stringify(dates),
     JSON.stringify(available),
     access.owner_id,
+    input.key,
     input.key,
   );
   if (deferFresh && retainGrant && verifiedAccess?.fresh_checkout === 1) {
@@ -245,6 +279,25 @@ export async function rejectedCheckoutReadback(
 ) {
   const input = nativePrepareSchema.parse(value);
   const access = await authenticate(request, options.env, Date.now());
+  const replay = await preparationRejection(
+    options.env,
+    input.key,
+    access.owner_id,
+  );
+  if (replay) {
+    if (replay.inputHash !== (await digest(JSON.stringify(input))))
+      throw new ApiError(409, "native_attempt_unavailable");
+    await authenticate(request, options.env, Date.now());
+    return {
+      code:
+        replay.selectionRejection.state === "selection_unavailable"
+          ? "checkout_selection_unavailable"
+          : "checkout_window_unresolved",
+      ...(replay.selectionRejection.rejectedSessionIndices
+        ? { selectionRejection: replay.selectionRejection }
+        : {}),
+    };
+  }
   const db = options.env.STATE.withSession("first-primary");
   const [original, active] = await db.batch<{
     id: string;
@@ -253,6 +306,11 @@ export async function rejectedCheckoutReadback(
     owner_id?: string;
     state?: string;
     effects?: number;
+    intent_hash?: string;
+    hold_expires_ms?: number;
+    hold_association_json?: string;
+    hold_intent_hash?: string;
+    payment_reason?: string;
   }>([
     db
       .prepare(
@@ -261,19 +319,35 @@ export async function rejectedCheckoutReadback(
       .bind(input.key),
     db
       .prepare(
-        "SELECT a.id,a.state,a.intent_json,a.association_json FROM native_checkout_grants g JOIN attempts a ON a.id=g.attempt_id WHERE g.capability_hash=? AND a.owner_id=? LIMIT 1",
+        "SELECT a.id,a.state,a.intent_json,a.intent_hash,a.association_json,h.expires_ms AS hold_expires_ms,h.association_json AS hold_association_json,h.intent_hash AS hold_intent_hash,p.reason AS payment_reason FROM native_checkout_grants g JOIN attempts a ON a.id=g.attempt_id LEFT JOIN hitpay_holds h ON h.attempt_id=a.id LEFT JOIN hitpay_payments p ON p.attempt_id=a.id WHERE g.capability_hash=? AND a.owner_id=? LIMIT 1",
       )
       .bind(access.capability_hash, access.owner_id),
   ]);
   await authenticate(request, options.env, Date.now());
   const retained = original.results[0];
-  if (retained)
-    return retained.owner_id === access.owner_id &&
-      (retained.state !== "prepared" ||
-        retained.association_json ||
-        retained.effects === 1)
-      ? "checkout_recovery_required"
-      : "checkout_window_unresolved";
+  if (retained) return { code: "checkout_recovery_required" };
+  /** Retain no-dispatch proof independently of provider classification availability. */
+  const reject = async (
+    code: string,
+    selectionRejection: CheckoutSelectionRejection = {
+      state: "restart_required",
+    },
+  ) => {
+    const proof = await retainPreparationRejection(
+      request,
+      options.env,
+      input,
+      access,
+      selectionRejection,
+    );
+    if (!proof) throw new ApiError(503, "checkout_recovery_required");
+    return {
+      code,
+      ...(proof.selectionRejection.rejectedSessionIndices
+        ? { selectionRejection: proof.selectionRejection }
+        : {}),
+    };
+  };
   const owned = active.results[0];
   if (owned) {
     // An owned attempt for another studio start, or an unobserved write, cannot
@@ -282,18 +356,31 @@ export async function rejectedCheckoutReadback(
       typeof owned.intent_json !== "string" ||
       (!owned.association_json && owned.state !== "recovery_required")
     )
-      return "checkout_already_active";
+      return reject("checkout_already_active");
     if (typeof owned.association_json === "string")
       associationSchema.parse(JSON.parse(owned.association_json));
     const intent = intentSchema.parse(JSON.parse(owned.intent_json));
-    if (
-      !input.sessions.some((session) =>
-        intent.sessions.some(
-          (existing) => existing.startMs === session.startMs,
-        ),
+    const indexes = input.sessions.flatMap((session, index) =>
+      intent.sessions.some(
+        (existing) =>
+          Math.abs(existing.startMs - session.startMs) <
+          START_INTERVAL_MINUTES * 60000,
       )
+        ? [index]
+        : [],
+    );
+    if (!indexes.length) return reject("checkout_already_active");
+    if (
+      typeof owned.association_json === "string" &&
+      owned.hold_association_json === owned.association_json &&
+      owned.hold_intent_hash === owned.intent_hash &&
+      (owned.hold_expires_ms ?? 0) > Date.now() &&
+      owned.payment_reason !== "hitpay_unpaid_verified"
     )
-      return "checkout_already_active";
+      return reject("checkout_selection_unavailable", {
+        state: "selection_unavailable",
+        rejectedSessionIndices: indexes,
+      });
   }
   const days = new Map<
     string,
@@ -305,12 +392,16 @@ export async function rejectedCheckoutReadback(
       .slice(0, 10);
     let day = days.get(date);
     if (!day) {
-      day = await windowAvailability({
-        ...options,
-        date,
-        serviceId: providerServiceIds(options.env).primary,
-        fresh: true,
-      });
+      try {
+        day = await windowAvailability({
+          ...options,
+          date,
+          serviceId: providerServiceIds(options.env).primary,
+          fresh: true,
+        });
+      } catch {
+        return reject("checkout_window_unresolved");
+      }
       days.set(date, day);
     }
     if (
@@ -322,9 +413,9 @@ export async function rejectedCheckoutReadback(
       )
     ) {
       await authenticate(request, options.env, Date.now());
-      return "checkout_selection_unavailable";
+      return reject("checkout_selection_unavailable");
     }
   }
   await authenticate(request, options.env, Date.now());
-  return "checkout_window_unresolved";
+  return reject("checkout_window_unresolved");
 }

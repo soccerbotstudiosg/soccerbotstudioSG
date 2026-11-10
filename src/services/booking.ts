@@ -1,4 +1,7 @@
-import { creationResolutionSchema } from "@/domain/native-checkout";
+import {
+  creationResolutionSchema,
+  checkoutSelectionRejectionSchema,
+} from "@/domain/native-checkout";
 import { BOOKING_NOT_CREATED } from "@/domain/booking-messages";
 import { SESSION_UNAVAILABLE } from "@/domain/booking-messages";
 import {
@@ -412,11 +415,27 @@ async function nativeRequest(
           "temporarily_unavailable",
           "Checking your booking. Do not book or pay again.",
         );
-      if (error?.error === "checkout_selection_unavailable")
+      if (error?.error === "checkout_selection_unavailable") {
+        const rejection = error.selectionRejection
+          ? decode(checkoutSelectionRejectionSchema, error.selectionRejection)
+          : undefined;
+        const input = rejection ? nativePrepareSchema.safeParse(body) : null;
+        if (
+          rejection &&
+          (rejection.state !== "selection_unavailable" ||
+            !input?.success ||
+            rejection.rejectedSessionIndices?.some(
+              (index) => index >= input.data.sessions.length,
+            ))
+        )
+          throw invalidResponse();
         throw new BookingServiceError(
           "selection_unavailable",
           SESSION_UNAVAILABLE,
+          rejection?.rejectedSessionIndex,
+          rejection?.rejectedSessionIndices,
         );
+      }
       if (
         [
           "checkout_already_active",

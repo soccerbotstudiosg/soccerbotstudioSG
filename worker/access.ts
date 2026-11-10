@@ -13,6 +13,7 @@ export type Access = {
   fresh_checkout?: number;
   checkout_key?: string;
   resolved_checkout?: number;
+  preparation_rejected?: number;
 };
 /** Validate the presented access capability against retained server state. */
 export async function authenticate(
@@ -41,11 +42,11 @@ export async function authenticate(
           ? ", NOT EXISTS(SELECT 1 FROM native_checkout_grants g WHERE g.capability_hash=guest_access.capability_hash) AS fresh_checkout"
           : "") +
         (checkoutKey
-          ? ", EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=guest_access.owner_id AND a.idempotency_key=?) AS resolved_checkout"
+          ? ", EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=guest_access.owner_id AND a.idempotency_key=?) AS resolved_checkout, EXISTS(SELECT 1 FROM checkout_preparation_rejections r WHERE r.attempt_id=?) AS preparation_rejected"
           : "") +
         " FROM guest_access WHERE capability_hash = ? AND revoked_ms IS NULL AND issued_ms <= ? AND expires_ms > ?",
     )
-    .bind(...(checkoutKey ? [checkoutKey] : []), hash, now, now);
+    .bind(...(checkoutKey ? [checkoutKey, checkoutKey] : []), hash, now, now);
   const results = preceding.length
     ? await db.batch([...preceding, statement])
     : undefined;

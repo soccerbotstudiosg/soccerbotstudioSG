@@ -172,7 +172,7 @@ flowchart TB
   Main --> Status["nativeCheckoutStatus / currentCustomerNative<br/>Read retained attempt"]
 ```
 
-[customer-authority.ts](../../worker/customer-authority.ts) owns checkout grants and rejected-preparation handling. [native-checkout.ts](../../worker/native-checkout.ts) coordinates the customer checkout operation. [native-dispatch.ts](../../worker/native-dispatch.ts) claims dispatch/effects before external writes. These boundaries prevent a repeated browser action from being treated as permission to recreate an uncertain booking.
+[customer-authority.ts](../../worker/customer-authority.ts) owns checkout grants and rejected-preparation handling. [checkout-preparation-rejection.ts](../../worker/checkout-preparation-rejection.ts) retains immutable no-dispatch proof and exposes its protected context for rejected keys that never became attempts. [native-checkout.ts](../../worker/native-checkout.ts) coordinates the customer checkout operation. [native-dispatch.ts](../../worker/native-dispatch.ts) claims dispatch/effects before external writes. These boundaries prevent a repeated browser action from being treated as permission to recreate an uncertain booking.
 
 ### 7.1 Booking expansion
 

@@ -1138,17 +1138,11 @@ test("failed public calendar releases full-page loading and leaves retry availab
   );
   await act(async () => {});
   fireEvent.click(screen.getByRole("button", { name: "Choose test session" }));
-  expect(
-    await screen.findByText(
-      "Unable to load available sessions. Please try again.",
-    ),
-  ).toBeInTheDocument();
+  expect(await screen.findByText("Unable to Load.")).toBeInTheDocument();
   await waitFor(() =>
     expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
   );
-  expect(
-    screen.getAllByText("Unable to load available sessions. Please try again."),
-  ).toHaveLength(1);
+  expect(screen.getAllByText("Unable to Load.")).toHaveLength(1);
   expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
   expect(
     screen.queryByRole("button", { name: "Refresh availability" }),
@@ -1397,9 +1391,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
     } else {
       await act(async () => gates.get("2026-10")!());
       if (scenario === "failure") {
-        await screen.findByText(
-          "Unable to load available sessions. Please try again.",
-        );
+        await screen.findByText("Unable to Load.");
         expect(publicCalendar).toHaveBeenCalledTimes(1);
         expect(region).toHaveAttribute("aria-busy", "false");
         expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
@@ -1579,7 +1571,7 @@ test("rolling week starts at first availability crosses months and preserves car
   );
   expect(region.querySelectorAll(".date")).toHaveLength(7);
   expect(day("2026-11-04")).toBeDisabled();
-  await screen.findByText(/Unable to load some dates/);
+  await screen.findByText(/Unable to Load\./);
   expect(day("2026-10-31")).toBeEnabled();
   failNovember = false;
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -1929,11 +1921,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   expect(
     screen.getByRole("group", { name: "Session times" }),
   ).toBeInTheDocument();
-  expect(
-    within(region).getByText(
-      "Unable to load available sessions. Please try again.",
-    ),
-  ).toBeInTheDocument();
+  expect(within(region).getByText("Unable to Load.")).toBeInTheDocument();
   expect(view.container.querySelector(".loading-logo")).toBeNull();
   fireEvent.click(within(region).getByRole("button", { name: "Try again" }));
   await act(async () => {});
@@ -1948,9 +1936,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   await act(async () => pending[2].resolve(snapshot()));
   expect(day()).toBeEnabled();
   expect(day()).toHaveAttribute("title", "Available sessions");
-  expect(
-    screen.queryByText("Unable to load available sessions. Please try again."),
-  ).toBeNull();
+  expect(screen.queryByText("Unable to Load.")).toBeNull();
   expect(JSON.parse(screen.getByTestId("strict-cache").textContent!)).toEqual({
     entry: true,
     offers: 1,

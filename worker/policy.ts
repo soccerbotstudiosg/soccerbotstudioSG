@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CheckoutSelectionRejection } from "../src/domain/native-checkout";
 const duration = (minimum: number, maximum: number) =>
   z.coerce.number().int().min(minimum).max(maximum);
 const schema = z.object({
@@ -133,6 +134,7 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public code: string,
+    public selectionRejection?: CheckoutSelectionRejection,
   ) {
     super(code);
   }
@@ -141,7 +143,14 @@ export class ApiError extends Error {
 // only the same safe status/code already allowed at the HTTP boundary.
 export type RpcOutcome<T> =
   | { ok: true; value: T }
-  | { ok: false; error: { status: number; code: string } };
+  | {
+      ok: false;
+      error: {
+        status: number;
+        code: string;
+        selectionRejection?: CheckoutSelectionRejection;
+      };
+    };
 /** Convert known API failures into safe serializable RPC outcomes. */
 export async function rpcOutcome<T>(
   operation: () => Promise<T>,
@@ -150,12 +159,26 @@ export async function rpcOutcome<T>(
     return { ok: true, value: await operation() };
   } catch (error) {
     if (!(error instanceof ApiError)) throw error;
-    return { ok: false, error: { status: error.status, code: error.code } };
+    return {
+      ok: false,
+      error: {
+        status: error.status,
+        code: error.code,
+        ...(error.selectionRejection
+          ? { selectionRejection: error.selectionRejection }
+          : {}),
+      },
+    };
   }
 }
 /** Restore a known API failure from its safe RPC representation. */
 export function unwrapRpcOutcome<T>(outcome: RpcOutcome<T>): T {
-  if (!outcome.ok) throw new ApiError(outcome.error.status, outcome.error.code);
+  if (!outcome.ok)
+    throw new ApiError(
+      outcome.error.status,
+      outcome.error.code,
+      outcome.error.selectionRejection,
+    );
   return outcome.value;
 }
 /** Hash a string using SHA-256 for retained identity comparisons. */

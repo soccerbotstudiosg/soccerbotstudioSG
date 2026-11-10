@@ -175,6 +175,10 @@ export function saveLiveDraft(
     ...(checkoutAttemptId && previous?.checkoutAttemptId === checkoutAttemptId
       ? { departedSlots: loadDepartureSlots(checkoutAttemptId) }
       : {}),
+    calendarNoticeDismissed:
+      !!checkoutAttemptId &&
+      previous?.checkoutAttemptId === checkoutAttemptId &&
+      previous?.calendarNoticeDismissed === true,
     calendarRecovery:
       resumeCheckout &&
       previous?.checkoutAttemptId === checkoutAttemptId &&
@@ -204,6 +208,24 @@ export function saveCalendarRecovery(attemptId: string) {
 export function isCalendarRecovery(attemptId: string) {
   const stored = record(safeRead("soccerbot-live-draft"));
   return mayRestoreLiveCheckout(attemptId) && stored?.calendarRecovery === true;
+}
+
+/** Remember dismissal of this attempt's calendar notice without changing recovery authority. */
+export function dismissCalendarRecoveryNotice(attemptId: string) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  if (stored?.checkoutAttemptId === attemptId)
+    safeWrite("soccerbot-live-draft", {
+      ...stored,
+      calendarNoticeDismissed: true,
+    });
+}
+/** Read this tab's display-only notice dismissal for the matching attempt. */
+export function calendarRecoveryNoticeDismissed(attemptId: string) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  return (
+    stored?.checkoutAttemptId === attemptId &&
+    stored?.calendarNoticeDismissed === true
+  );
 }
 
 const noticeSlotsSchema = z.array(slotSchema).max(MAX_BOOKING_SESSIONS);

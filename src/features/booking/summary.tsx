@@ -245,12 +245,10 @@ export function Summary({
 
 /** Retain calendar continuation and fresh-availability guards outside mobile popups. */
 export function BasketContinue() {
-  const { draft, now, availability, attempt, action, suppressedSlots } =
-    useBooking();
+  const { draft, now, availability, suppressedSlots } = useBooking();
   const awaitingAvailability = draft.slots.some((slot) =>
     suppressedSlots.some((hidden) => overlaps(slot, hidden)),
   );
-  const waitingForRelease = !!attempt && action.calendarRecovery === true;
   const result = availability.result;
   const valid =
     selectionErrors(draft.slots, now).length === 0 &&
@@ -264,11 +262,7 @@ export function BasketContinue() {
           available.rotationAt === slot.rotationAt,
       ),
     );
-  const canContinue =
-    draft.slots.length > 0 &&
-    valid &&
-    !waitingForRelease &&
-    !awaitingAvailability;
+  const canContinue = draft.slots.length > 0 && valid && !awaitingAvailability;
   return (
     <>
       <BookingPrimaryAction ready={canContinue}>

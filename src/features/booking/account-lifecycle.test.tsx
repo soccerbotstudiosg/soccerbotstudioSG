@@ -4,9 +4,10 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
-import { AccountStep } from "./account-step";
+import { BookingPage } from "./booking-page";
 import { BookingProvider } from "./provider";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { liveBookingService } from "@/services/booking";
@@ -37,7 +38,7 @@ test("account waits for owned guest access and duplicate click cannot navigate e
   navigation.push.mockClear();
   render(
     <BookingProvider identityService={{ ...demoCustomerIdentity, guest }}>
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   const button = screen.getByRole("button", { name: /Continue as Guest/ });
@@ -78,7 +79,7 @@ test("account leaving email challenge ignores delayed completion and live mode n
     <BookingProvider
       identityService={{ ...demoCustomerIdentity, mode: "live", challenge }}
     >
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: /Continue with email/ }));
@@ -114,9 +115,7 @@ test("account leaving email challenge ignores delayed completion and live mode n
       .getByRole("button", { name: /Continue with email/ })
       .closest("form")!,
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Back to booking options" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
   await act(async () =>
     finish({
       email: "synthetic@example.invalid",
@@ -159,7 +158,7 @@ test("signed-in customer manages saved contact on Account without entering unava
         saveProfile,
       }}
     >
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   const manage = await screen.findByRole("button", {
@@ -221,7 +220,7 @@ test("saved-contact entry revalidates expired identity before loading private de
         profile,
       }}
     >
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -266,7 +265,7 @@ test("leaving saved-contact form discards delayed save acknowledgement", async (
         saveProfile,
       }}
     >
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -304,7 +303,7 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
         signOut,
       }}
     >
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -318,7 +317,9 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
     screen.queryByText(/SQLITE_FULL|private provider diagnostic/),
   ).toBeNull();
   expect(screen.getByRole("alert")).toHaveClass("alert");
-  expect(screen.getByText(identity.email)).toBeVisible();
+  expect(
+    within(screen.getByLabelText("Booking identity")).getByText(identity.email),
+  ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
   await waitFor(() =>
     expect(screen.queryByText(identity.email)).not.toBeInTheDocument(),
@@ -365,7 +366,7 @@ test("switching email clears the old account and supports back guest and fresh r
   };
   render(
     <BookingProvider identityService={service}>
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -374,9 +375,7 @@ test("switching email clears the old account and supports back guest and fresh r
   expect(signOut).toHaveBeenCalledExactlyOnceWith(expect.any(AbortSignal));
   expect(screen.getByLabelText("Email address")).toHaveValue("");
   expect(screen.getByLabelText("Remember me")).not.toBeChecked();
-  fireEvent.click(
-    screen.getByRole("button", { name: "Back to booking options" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
   expect(
     screen.getByRole("button", { name: "Continue as Guest" }),
   ).toBeEnabled();
@@ -409,10 +408,12 @@ test("switching email clears the old account and supports back guest and fresh r
     true,
     expect.any(AbortSignal),
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Back to booking options" }),
-  );
-  expect(screen.getByText("new@example.invalid")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  expect(
+    within(screen.getByLabelText("Booking identity")).getByText(
+      "new@example.invalid",
+    ),
+  ).toBeVisible();
   expect(
     screen.getByRole("button", { name: "Manage saved contact" }),
   ).toBeVisible();
@@ -448,10 +449,12 @@ test("switching email clears the old account and supports back guest and fresh r
     false,
     expect.any(AbortSignal),
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Back to booking options" }),
-  );
-  expect(screen.getByText("new@example.invalid")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  expect(
+    within(screen.getByLabelText("Booking identity")).getByText(
+      "new@example.invalid",
+    ),
+  ).toBeVisible();
   expect(
     screen.queryByRole("button", { name: "Manage saved contact" }),
   ).not.toBeInTheDocument();
@@ -475,7 +478,7 @@ test("expired continue-signed-in state returns a usable email choice instead of 
         refresh,
       }}
     >
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -518,7 +521,7 @@ test("failed profile saves keep the form and retry returns to booking options on
         saveProfile,
       }}
     >
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -559,7 +562,7 @@ test("invalid code can change email or return to guest options without carrying 
         }),
       }}
     >
-      <AccountStep />
+      <BookingPage step="account" />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -589,10 +592,65 @@ test("invalid code can change email or return to guest options without carrying 
   expect(screen.getByLabelText("Email address")).toHaveValue(
     "synthetic@example.invalid",
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Back to booking options" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
   expect(
     screen.getByRole("button", { name: "Continue as Guest" }),
   ).toBeEnabled();
+});
+
+test("booking-options signout retries failure and leaves only after acknowledgement", async () => {
+  const verified = {
+    email: "header@example.invalid",
+    expiresAt: Date.now() + 600000,
+    remember: true,
+  };
+  let current: typeof verified | null = verified;
+  let finishSignOut!: () => void;
+  const signOut = vi
+    .fn<CustomerIdentityService["signOut"]>()
+    .mockImplementationOnce(async () => {
+      current = null;
+      throw new Error("private failure");
+    })
+    .mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishSignOut = resolve;
+        }),
+    );
+  navigation.push.mockClear();
+  render(
+    <BookingProvider
+      identityService={{
+        ...demoCustomerIdentity,
+        current: () => current,
+        refresh: async () => current,
+        signOut,
+      }}
+    >
+      <BookingPage step="account" />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  expect(
+    within(screen.getByLabelText("Booking identity")).getByText(verified.email),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+  await waitFor(() =>
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "We couldn’t continue. Please try again.",
+    ),
+  );
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("Booking identity")).toHaveTextContent("Guest");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Try signing out again" }),
+  );
+  expect(
+    screen.getByRole("button", { name: "Continue as Guest" }),
+  ).toBeDisabled();
+  expect(navigation.push).not.toHaveBeenCalled();
+  await act(async () => finishSignOut());
+  expect(signOut).toHaveBeenCalledTimes(2);
+  expect(navigation.push).toHaveBeenLastCalledWith("/");
 });

@@ -113,6 +113,10 @@ export async function recoverHitpay(
       return base.reserve(metadata);
     },
   };
+  let paymentDeadline = Math.min(
+    row.expires_ms,
+    row.checkout_expires_ms ?? row.expires_ms,
+  );
   let checkingDeadline = row.expires_ms + 300000;
   let releaseDeadline = checkingDeadline;
   let result = "due",
@@ -166,6 +170,10 @@ export async function recoverHitpay(
       throw new ApiError(409, "hitpay_scope_mismatch");
     confirmationStage("hitpay");
     const verified = await findHitpayRequest(env, row, reserve);
+    paymentDeadline = Math.min(
+      paymentDeadline,
+      verified.expiresAtMs ?? paymentDeadline,
+    );
     confirmationStage("payment_evidence");
     if (row.paid_ms !== null && !verified.paymentId)
       throw new ApiError(409, "hitpay_paid_state_changed");
@@ -204,7 +212,6 @@ export async function recoverHitpay(
       }
       if (
         verified.unpaidTerminal &&
-        Date.now() >= checkingDeadline &&
         row.external_state === "none" &&
         attempt.hold_expires_ms !== null &&
         verified.expiresAtMs !== null &&
@@ -504,12 +511,14 @@ export async function recoverHitpay(
         ).bind(
           result,
           reason,
-          Date.now() < checkingDeadline
-            ? Math.min(checkingDeadline, Date.now() + 90000)
-            : Date.now() < releaseDeadline
-              ? Math.min(releaseDeadline, Date.now() + 90000)
-              : Date.now() +
-                Math.min(3600000, 90000 * 2 ** Math.min(row.tries - 1, 6)),
+          Date.now() < paymentDeadline
+            ? Math.min(paymentDeadline, Date.now() + 90000)
+            : Date.now() < checkingDeadline
+              ? Math.min(checkingDeadline, Date.now() + 90000)
+              : Date.now() < releaseDeadline
+                ? Math.min(releaseDeadline, Date.now() + 90000)
+                : Date.now() +
+                  Math.min(3600000, 90000 * 2 ** Math.min(row.tries - 1, 6)),
           id,
           row.generation,
         ),

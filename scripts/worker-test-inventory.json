@@ -365,6 +365,10 @@
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
+    "title": "preparation rejection survives refresh without provider reads and permanently fences exact rejected keys"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
     "title": "rejected unbound window checks fresh availability and preserves failed or available readback as unresolved"
   },
   {
@@ -677,6 +681,14 @@
   },
   {
     "file": "worker/tests/hitpay.test.mjs",
+    "title": "verified unpaid expiry releases before hold grace while receipt races stay protected"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "pending payment recovery schedules the actual expiry without a ninety second overshoot"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
     "title": "verified empty expired payment releases checkout but retains late payment reconciliation"
   },
   {
@@ -689,11 +701,11 @@
   },
   {
     "file": "worker/tests/hitpay.test.mjs",
-    "title": "verified nonpayment at checking expiry still waits for the original hold"
+    "title": "verified nonpayment releases checkout before the original hold ends"
   },
   {
     "file": "worker/tests/hitpay.test.mjs",
-    "title": "new recovery buffer blocks verified nonpayment after the provider hold ends"
+    "title": "recovery buffer does not delay verified nonpayment after the provider hold ends"
   },
   {
     "file": "worker/tests/hitpay.test.mjs",
