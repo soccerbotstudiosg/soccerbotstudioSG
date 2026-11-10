@@ -91,6 +91,7 @@ export class BookingServiceError extends CustomerMessageError {
     public readonly code: BookingErrorCode,
     message: string,
     public readonly rejectedSessionIndex?: number,
+    public readonly rejectedSessionIndices?: number[],
   ) {
     super(message);
     this.name = "BookingServiceError";
@@ -188,6 +189,8 @@ export type CustomerChallenge = {
 export interface CustomerIdentityService {
   readonly mode: "demo" | "live";
   current(): VerifiedIdentity | null;
+  /** Inspect the existing identity without creating access or restoring a session. */
+  readCurrent?(signal: AbortSignal): Promise<VerifiedIdentity | null>;
   refresh(signal: AbortSignal): Promise<VerifiedIdentity | null>;
   guest(signal: AbortSignal): Promise<void>;
   challenge(

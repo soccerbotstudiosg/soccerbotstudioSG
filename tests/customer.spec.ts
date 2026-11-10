@@ -2236,7 +2236,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
         const stickyBottom = mobile
           ? navigation!.y + navigation!.height
           : header!.y + header!.height;
-        return Math.abs(heading!.y - stickyBottom - 60);
+        return Math.abs(heading!.y - stickyBottom - 84);
       })
       .toBeLessThanOrEqual(1);
     const returnCue = page.getByRole("button", {
@@ -2258,6 +2258,13 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(returnCue.locator("svg")).toHaveCSS("animation-name", "none");
     await returnCue.click();
     await expect(returnCue).toHaveCount(0);
+    const calendarBox = await page.locator(".calendar-panel").boundingBox();
+    const returnedHeader = await page
+      .locator(mobile ? ".booking-navigation" : ".site-header")
+      .boundingBox();
+    expect(
+      calendarBox!.y - returnedHeader!.y - returnedHeader!.height,
+    ).toBeCloseTo(24, 0);
     await page.evaluate(() =>
       window.scrollTo(0, document.documentElement.scrollHeight),
     );

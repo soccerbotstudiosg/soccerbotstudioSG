@@ -290,7 +290,7 @@ export async function prepareHitpay(
     verified.id,
     verified.url,
     verified.expiresAtMs,
-    Date.now() + 90000,
+    Math.min(verified.expiresAtMs, Date.now() + 90000),
     scope.attemptId,
   );
   const saved = consolidated?.finish

@@ -88,6 +88,11 @@ test("details contains only the five contact fields and validates them before re
   const confirmEmail = screen.getByRole("button", {
     name: "Confirm email address is correct",
   });
+  expect(
+    screen.getByText(
+      "Please double-check your email address, then confirm by selecting the exclamation mark.",
+    ),
+  ).toBeVisible();
   expect(reviewButton).toBeDisabled();
   fireEvent.submit(document.getElementById("details-form")!);
   expect(mocks.push).not.toHaveBeenCalled();

@@ -1,6 +1,14 @@
 "use client";
+import { BookingHeading } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { blankContact, validEmail } from "@/domain/contact";
@@ -9,14 +17,29 @@ import {
   customerMessage,
   CustomerMessageError,
   type CustomerChallenge,
+  type VerifiedIdentity,
 } from "@/services/contracts";
 import { useBooking } from "./provider";
 import { EmailBotProof } from "./email-bot-proof";
 import { DetailsStep } from "./details-step";
 /** Manage guest or verified-account entry into the booking flow. */
-export function AccountStep() {
-  const { update, identityService, rebookingError, retryRebooking } =
-      useBooking(),
+export function AccountStep({
+  onBackChange,
+  onIdentityChange,
+  onExit,
+}: {
+  onExit?: () => void;
+  onBackChange?: (back: (() => void) | null) => void;
+  onIdentityChange?: (identity: VerifiedIdentity | null) => void;
+} = {}) {
+  const {
+      now,
+      update,
+      leave,
+      identityService,
+      rebookingError,
+      retryRebooking,
+    } = useBooking(),
     router = useRouter();
   const [view, setView] = useState<"choice" | "email" | "code" | "profile">(
       "choice",
@@ -27,6 +50,10 @@ export function AccountStep() {
     [error, setError] = useState(""),
     [challenge, setChallenge] = useState<CustomerChallenge | null>(null);
   const [identity, setIdentity] = useState(() => identityService.current());
+  useEffect(() => {
+    onIdentityChange?.(identity);
+  }, [identity, onIdentityChange]);
+  const [signOutFailed, setSignOutFailed] = useState(false);
   const [working, setBusy] = useState(false);
   const [navigating, startNavigation] = useTransition();
   const busy = working || navigating;
@@ -50,13 +77,27 @@ export function AccountStep() {
       active.current?.abort();
     };
   }, [identityService]);
-  function cancel() {
+  const cancel = useCallback(() => {
     active.current?.abort();
     active.current = null;
     setBusy(false);
     setBotToken("");
     setBotGeneration((value) => value + 1);
-  }
+  }, []);
+  useLayoutEffect(() => {
+    onBackChange?.(
+      view === "email" || view === "code"
+        ? () => {
+            cancel();
+            setView("choice");
+            setChallenge(null);
+            setCode("");
+            setError("");
+          }
+        : null,
+    );
+    return () => onBackChange?.(null);
+  }, [view, cancel, onBackChange]);
   /** Clear the previous account's entry state after acknowledged sign-out. */
   function resetIdentityEntry() {
     setIdentity(null);
@@ -89,6 +130,23 @@ export function AccountStep() {
         setBusy(false);
       }
     }
+  }
+  /** End the booking flow only after this browser’s sign-out is acknowledged. */
+  function signOutToHome() {
+    void perform(async (signal) => {
+      setSignOutFailed(false);
+      try {
+        await identityService.signOut(signal);
+      } catch (error) {
+        if (!signal.aborted) setSignOutFailed(true);
+        throw error;
+      }
+      if (signal.aborted) return;
+      setIdentity(null);
+      onExit?.();
+      leave();
+      startNavigation(() => router.push("/"));
+    });
   }
   /** Validate the chosen identity path before advancing the booking flow. */
   async function proceed(
@@ -139,12 +197,41 @@ export function AccountStep() {
       setView("code");
     });
   }
+  const verifiedIdentity =
+    identity &&
+    identity.expiresAt > now &&
+    identityService.current()?.email === identity.email
+      ? identity
+      : null;
   if (view === "profile")
     return <DetailsStep profileOnly onClose={() => setView("choice")} />;
   if (view === "choice")
     return (
       <>
-        <h1 className="page-title">Start your booking</h1>
+        <BookingHeading
+          status={
+            <div
+              className="booking-identity-status booking-entry-status"
+              aria-label="Booking identity"
+            >
+              <span>{verifiedIdentity?.email ?? "Guest"}</span>
+              <div className="booking-identity-action">
+                {verifiedIdentity && (
+                  <button
+                    type="button"
+                    className="text-link"
+                    disabled={busy}
+                    onClick={signOutToHome}
+                  >
+                    Sign out
+                  </button>
+                )}
+              </div>
+            </div>
+          }
+        >
+          Start your booking
+        </BookingHeading>
         {rebookingError && (
           <div className="alert" role="alert">
             <p>{rebookingError}</p>
@@ -157,6 +244,16 @@ export function AccountStep() {
           <p className="alert" role="alert">
             {error}
           </p>
+        )}
+        {signOutFailed && (
+          <button
+            type="button"
+            className="text-link"
+            disabled={busy}
+            onClick={signOutToHome}
+          >
+            Try signing out again
+          </button>
         )}
         {busy && (
           <span
@@ -277,9 +374,9 @@ export function AccountStep() {
     );
   return (
     <>
-      <h1 className="page-title">
+      <BookingHeading>
         {view === "email" ? "Continue with email" : "Verify your email"}
-      </h1>
+      </BookingHeading>
       <p className="lead">
         {view === "email" ? (
           "Verify your email to continue with your saved booking contact details."
@@ -317,9 +414,6 @@ export function AccountStep() {
             });
         }}
       >
-        <span className="auth-mark">
-          <Icon name="mail" />
-        </span>
         {view === "email" ? (
           <>
             <label htmlFor="auth-email" className="field-label">
@@ -423,19 +517,6 @@ export function AccountStep() {
             </>
           )}
         </div>
-        <button
-          type="button"
-          className="text-link auth-back"
-          onClick={() => {
-            cancel();
-            setView("choice");
-            setChallenge(null);
-            setCode("");
-            setError("");
-          }}
-        >
-          Back to booking options
-        </button>
         {view === "email" && identityService.mode === "demo" && (
           <p className="auth-demo">
             Email sign-in preview · No email will be sent.

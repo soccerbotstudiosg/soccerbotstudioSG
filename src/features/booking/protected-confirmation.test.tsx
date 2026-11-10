@@ -1643,6 +1643,7 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
   const rejection = {
     state: "selection_unavailable" as const,
     rejectedSessionIndex: 0,
+    rejectedSessionIndices: [0, 2],
   };
   for (const source of [
     "context",
@@ -1676,7 +1677,10 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
             players: 2,
             totalMinor: 8800,
             currency: "SGD",
-            sessions: [{ startMs: Date.now() + 86400000, players: 2 }],
+            sessions: [1, 2, 3].map((day) => ({
+              startMs: Date.now() + day * 86400000,
+              players: 2,
+            })),
           },
           checking: {
             deadlineMs: Date.now() + (source === "context" ? -1 : 600000),
@@ -1762,7 +1766,10 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
               players: 2,
               totalMinor: 8800,
               currency: "SGD",
-              sessions: [{ startMs: Date.now() + 86400000, players: 2 }],
+              sessions: [1, 2, 3].map((day) => ({
+                startMs: Date.now() + day * 86400000,
+                players: 2,
+              })),
             },
             checking: {
               deadlineMs: Date.now() + 600000,
@@ -2089,11 +2096,13 @@ it("retries unavailable checkout context silently and returns expired checkout t
       attemptId={first}
       checkoutMode="live"
       calendarRecovery
+      silent
       onPaymentDetected={detected}
     />,
   );
   await act(async () => {});
   expect(detected).not.toHaveBeenCalled();
+  expect(screen.queryByRole("status")).toBeNull();
   await act(async () => {
     monotonic = 5000;
     await vi.advanceTimersByTimeAsync(5000);

@@ -7,7 +7,12 @@ import {
 } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
-import { blankDraft, type Attempt, type BookingDraft } from "@/domain/booking";
+import {
+  blankDraft,
+  snapshot,
+  type Attempt,
+  type BookingDraft,
+} from "@/domain/booking";
 import { dateLabel } from "@/domain/dates";
 import { demoBookingModel, demoBookingService } from "@/services/demo/booking";
 import { demoSession } from "@/services/demo/schedule";
@@ -20,15 +25,21 @@ import { liveBookingService } from "@/services/booking";
 import type { AvailableSlot, BookingService } from "@/services/contracts";
 import { loadBooking, saveBooking, saveLiveDraft } from "@/services/storage";
 import { BookingProvider, useBooking } from "./provider";
+import { BookingPage } from "./booking-page";
+import { PAYMENT_WINDOW_ENDED } from "@/domain/booking-messages";
 import { TimeStep } from "./time-step";
 import { Summary } from "./summary";
 import { ReviewStep } from "./review-step";
 import { protectedCheckoutService } from "@/services/confirmation";
 import { PaymentStep } from "./payment-step";
 
-const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const navigation = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+  path: "/",
+}));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => navigation.path,
   useRouter: () => navigation,
 }));
 function deferred<T>() {
@@ -130,6 +141,7 @@ beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   vi.clearAllMocks();
+  navigation.path = "/";
   saveBooking({ version: 2, draft: draft(), attempt: null });
 });
 afterEach(() => {
@@ -456,9 +468,7 @@ test("availability failure is not no slots and an explicit retry retains the bas
   await act(async () => {
     first.reject(new Error("synthetic private transport detail"));
   });
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "Unable to load available sessions. Please try again.",
-  );
+  expect(screen.getByRole("alert")).toHaveTextContent("Unable to Load.");
   expect(
     screen.queryByText("No sessions available on this date."),
   ).not.toBeInTheDocument();
@@ -496,9 +506,7 @@ test("malformed availability is displayed as failure while valid empty availabil
   await act(async () => {
     result.resolve([{ available: true } as AvailableSlot]);
   });
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "Unable to load available sessions. Please try again.",
-  );
+  expect(screen.getByRole("alert")).toHaveTextContent("Unable to Load.");
   expect(
     screen.queryByText("No sessions available on this date."),
   ).not.toBeInTheDocument();
@@ -785,9 +793,7 @@ test("unsupported live mode exposes unavailable state and cannot restore a paid 
     </BookingProvider>,
   );
   await act(async () => {});
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "Unable to load available sessions. Please try again.",
-  );
+  expect(screen.getByRole("alert")).toHaveTextContent("Unable to Load.");
   expect(screen.getByTestId("attempt")).toHaveTextContent("none");
   expect(loadBooking().attempt?.id).toBe(paid.id);
   expect(fetch).not.toHaveBeenCalled();
@@ -1109,4 +1115,241 @@ test("a checkout capacity conflict invalidates shared availability before return
     screen.getByRole("button", { name: "Remove 2026-10-13 at 12:00" }),
   );
   expect(loadBooking().draft.slots).toEqual([]);
+});
+
+test("expiry after checkout resumes day reads and replacement navigation while the original payment stays protected", async () => {
+  navigation.path = "/book/time/";
+  const nativeSlot = (date: string, start: string) => ({
+    date,
+    start,
+    instructor: "4",
+    native: {
+      serviceId: "2",
+      serviceName: "Session",
+      instructorName: "Faisal",
+      priceMinor: 8800,
+      currency: "SGD" as const,
+    },
+  });
+  const original = {
+    ...draft(),
+    nativeServiceId: "2",
+    nativeServiceName: "Session",
+    slots: [nativeSlot(date, "12:00")],
+  };
+  saveLiveDraft(original, false);
+  const originalId = "00000000-0000-4000-8000-000000000042";
+  let retained: Attempt | null = null;
+  const checkout = vi.fn<BookingService["checkout"]>(
+    async ({ draft: selected }) => ({
+      id: originalId,
+      status: "ready",
+      draft: snapshot(selected),
+      outcome: "success",
+      checkUntil: 0,
+      booking: null,
+    }),
+  );
+  const pay = vi.fn<BookingService["pay"]>(async ({ attempt }) => {
+    retained = { ...attempt, status: "checking", held: true };
+    return retained;
+  });
+  const availability = vi.fn<BookingService["availability"]>(
+    async ({ date: offeredDate }) => [
+      { ...nativeSlot(offeredDate, "13:40"), available: true },
+    ],
+  );
+  const service: BookingService = {
+    ...demoBookingService,
+    mode: "live",
+    operations: {
+      availability: "live",
+      checkout: "live",
+      pay: "live",
+      check: "live",
+      resolve: "live",
+    },
+    checkout,
+    pay,
+    availability,
+    restore: async () => retained,
+    publicCalendar: async ({ month }) => ({
+      month,
+      serviceId: "2",
+      observedAtMs: Date.now(),
+      dates: [
+        { date, available: true },
+        { date: "2026-10-14", available: true },
+      ],
+    }),
+  };
+  const fetch = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith("/checkout"))
+      return Response.json({
+        attemptId: originalId,
+        mode: "live",
+        checkout: { state: "unavailable" },
+        summary: {
+          players: 1,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [
+            { startMs: Date.parse(`${date}T12:00:00+08:00`), players: 1 },
+          ],
+        },
+        checking: {
+          deadlineMs: Date.now() + 120000,
+          nextCheckMs: Date.now() + 30000,
+          pollAfterMs: 30000,
+        },
+      });
+    if (url.endsWith("/confirmation"))
+      return Response.json({
+        status: "pending",
+        reason: "payment_verification_pending",
+      });
+    return new Response(null, { status: 503 });
+  });
+  vi.stubGlobal("fetch", fetch);
+  function JourneyProbe() {
+    const state = useBooking();
+    return (
+      <>
+        <Probe />
+        <button onClick={() => state.update({ ...original, accepted: true })}>
+          Seed checkout
+        </button>
+        <output data-testid="expiry-draft">
+          {JSON.stringify(state.draft)}
+        </output>
+        <output data-testid="expiry-original">
+          {JSON.stringify(state.attempt)}
+        </output>
+        <button
+          onClick={() =>
+            state.update({
+              slots: [nativeSlot("2026-10-14", "13:40")],
+            })
+          }
+        >
+          Select replacement
+        </button>
+        <button
+          onClick={() =>
+            void state
+              .review()
+              .then((ok) => ok && navigation.push("/book/review/"))
+          }
+        >
+          Review replacement
+        </button>
+      </>
+    );
+  }
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  const content = (step: "time" | "session" | "details" | "review") => (
+    <BookingProvider bookingService={service} identityService={identity}>
+      <BookingPage step={step} />
+      <JourneyProbe />
+    </BookingProvider>
+  );
+  let view = render(content("time"));
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: dateLabel(date) })).toBeEnabled(),
+  );
+  fireEvent.click(screen.getByText("Seed checkout"));
+  fireEvent.click(screen.getByText("Double checkout"));
+  await waitFor(() =>
+    expect(screen.getByTestId("action")).toHaveTextContent("success"),
+  );
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(pay).toHaveBeenCalledTimes(1);
+  const originalSnapshot = JSON.parse(
+    screen.getByTestId("expiry-original").textContent!,
+  );
+  availability.mockClear();
+  fireEvent.click(screen.getByText("Browse calendar"));
+  expect(screen.getByText(PAYMENT_WINDOW_ENDED)).toBeVisible();
+  fireEvent.click(
+    screen.getByRole("button", { name: dateLabel("2026-10-14") }),
+  );
+  await waitFor(() =>
+    expect(availability).toHaveBeenCalledWith(
+      expect.objectContaining({ date: "2026-10-14" }),
+    ),
+  );
+  fireEvent.click(screen.getByText("Select replacement"));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("link", { name: /^Enter Booking Details/ }),
+    ).toBeVisible(),
+  );
+  expect(
+    JSON.parse(screen.getByTestId("expiry-original").textContent!),
+  ).toEqual(originalSnapshot);
+  navigation.path = "/book/session/";
+  view.rerender(content("session"));
+  expect(screen.queryByText(PAYMENT_WINDOW_ENDED)).toBeNull();
+  navigation.path = "/book/time/";
+  view.rerender(content("time"));
+  expect(screen.queryByText(PAYMENT_WINDOW_ENDED)).toBeNull();
+  navigation.path = "/book/details/";
+  view.rerender(content("details"));
+  expect(screen.getByRole("heading", { name: "Your details" })).toBeVisible();
+  fireEvent.click(screen.getByText("Edit name"));
+  const replacementSnapshot = JSON.parse(
+    screen.getByTestId("expiry-draft").textContent!,
+  );
+  view.unmount();
+  navigation.replace.mockClear();
+  view = render(content("details"));
+  await waitFor(() =>
+    expect(screen.getByTestId("attempt")).toHaveTextContent(originalId),
+  );
+  expect(screen.getByRole("heading", { name: "Your details" })).toBeVisible();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(screen.queryByText(PAYMENT_WINDOW_ENDED)).toBeNull();
+  expect(JSON.parse(screen.getByTestId("expiry-draft").textContent!)).toEqual(
+    replacementSnapshot,
+  );
+  fireEvent.click(screen.getByText("Review replacement"));
+  await waitFor(() =>
+    expect(navigation.push).toHaveBeenCalledWith("/book/review/"),
+  );
+  navigation.path = "/book/review/";
+  view.rerender(content("review"));
+  expect(
+    screen.getByRole("button", { name: /^Proceed to Payment/ }),
+  ).toBeDisabled();
+  fireEvent.click(screen.getByText("Double checkout"));
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(pay).toHaveBeenCalledTimes(1);
+  expect(
+    JSON.parse(screen.getByTestId("expiry-original").textContent!),
+  ).toEqual(originalSnapshot);
+  view.unmount();
+  navigation.path = "/book/time/";
+  view = render(content("time"));
+  await waitFor(() =>
+    expect(screen.getByTestId("attempt")).toHaveTextContent(originalId),
+  );
+  expect(screen.queryByText(PAYMENT_WINDOW_ENDED)).toBeNull();
+  expect(screen.getByText("Select replacement")).toBeVisible();
+  expect(checkout).toHaveBeenCalledTimes(1);
+  // Authoritative completion after navigating away must not resurrect the
+  // dismissed notice or discard the independently edited replacement draft.
+  navigation.path = "/book/details/";
+  view.rerender(content("details"));
+  navigation.replace.mockClear();
+  fireEvent.click(screen.getByText("Release reservation"));
+  expect(screen.getByTestId("attempt")).toHaveTextContent("none");
+  expect(screen.queryByText(PAYMENT_WINDOW_ENDED)).toBeNull();
+  expect(screen.getByRole("heading", { name: "Your details" })).toBeVisible();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(JSON.parse(screen.getByTestId("expiry-draft").textContent!)).toEqual(
+    replacementSnapshot,
+  );
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(pay).toHaveBeenCalledTimes(1);
 });

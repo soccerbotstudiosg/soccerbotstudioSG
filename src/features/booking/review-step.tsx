@@ -1,4 +1,5 @@
 "use client";
+import { BookingHeading } from "./booking-heading";
 import {
   BookingPrimaryAction,
   BookingActionTotal,
@@ -96,15 +97,16 @@ export function ReviewStep({
   const error = action.error;
   const [navigating, startNavigation] = useTransition();
   const busy = action.status === "loading" || navigating;
-  const locked = verifying || attempt?.held;
+  const locked = verifying || (!action.calendarRecovery && attempt?.held);
   const canProceed =
+    !action.calendarRecovery &&
     !verifying &&
     !busy &&
     draft.accepted &&
     selectionErrors(draft.slots, now).length === 0;
   return (
     <>
-      <h1 className="page-title">Review Booking</h1>
+      <BookingHeading>Review Booking</BookingHeading>
       <p className="lead">Check your details before payment.</p>
       <section className="surface booking-document">
         <ReviewSessions part="heading" verifying={verifying} />
@@ -194,7 +196,8 @@ export function ReviewStep({
               the shared studio. Start times are 50 minutes apart.
             </p>
             <p>
-              {attempt?.held &&
+              {!action.calendarRecovery &&
+                attempt?.held &&
                 "Your Sessions are temporarily reserved. Complete payment before the reservation expires. "}
               Follow the instructor’s safety guidance.
             </p>
@@ -217,8 +220,8 @@ export function ReviewSessions({
   part?: "heading" | "order";
   verifying?: boolean;
 }) {
-  const { draft, attempt, now } = useBooking();
-  const locked = verifying || attempt?.held;
+  const { draft, attempt, now, action } = useBooking();
+  const locked = verifying || (!action.calendarRecovery && attempt?.held);
   const cartHeading = (
     <div className="review-block">
       <SessionSummaryHeading

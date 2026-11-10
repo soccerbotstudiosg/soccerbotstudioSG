@@ -1,4 +1,5 @@
 "use client";
+import { BookingHeading } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
@@ -42,7 +43,7 @@ export function SessionStep() {
   };
   return (
     <>
-      <h1 className="page-title">Your session</h1>
+      <BookingHeading>Your session</BookingHeading>
       <h2 className="section-title">Choose your outlet</h2>
       <div className="outlet-options">
         <button

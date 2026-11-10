@@ -538,6 +538,7 @@ export function ProtectedConfirmation({
         (contextMatches ? context.value.selectionRejection : undefined));
   const rejectionState = selectionRejection?.state;
   const rejectionIndex = selectionRejection?.rejectedSessionIndex;
+  const rejectionIndices = selectionRejection?.rejectedSessionIndices;
   const hasPaymentEvidence = !!(
     recordedPayment ||
     paymentReceived ||
@@ -582,6 +583,9 @@ export function ProtectedConfirmation({
       ...(rejectionIndex === undefined
         ? {}
         : { rejectedSessionIndex: rejectionIndex }),
+      ...(rejectionIndices === undefined
+        ? {}
+        : { rejectedSessionIndices: rejectionIndices }),
     };
     void Promise.resolve(
       rejectSelection(attemptId, rejection, controller.signal),
@@ -602,6 +606,7 @@ export function ProtectedConfirmation({
     rejectionState,
     calendarRecovery,
     rejectionIndex,
+    rejectionIndices,
     hasPaymentEvidence,
     router,
   ]);

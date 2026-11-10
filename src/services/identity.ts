@@ -142,6 +142,7 @@ export function createLiveIdentityService(): CustomerIdentityService {
   return {
     mode: "live",
     current: () => (current && current.expiresAt > Date.now() ? current : null),
+    readCurrent: read,
     refresh: async (signal) => {
       const own = ++generation;
       current = null;

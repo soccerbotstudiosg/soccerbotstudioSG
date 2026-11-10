@@ -28,10 +28,23 @@ export const creationResolutionSchema = z.strictObject({
 export type CreationResolution = z.infer<typeof creationResolutionSchema>;
 
 // Only protected server reads with retained no-effect evidence may return this.
-export const checkoutSelectionRejectionSchema = z.strictObject({
-  state: z.enum(["selection_unavailable", "restart_required"]),
-  rejectedSessionIndex: z.number().int().min(0).max(11).optional(),
-});
+export const checkoutSelectionRejectionSchema = z
+  .strictObject({
+    state: z.enum(["selection_unavailable", "restart_required"]),
+    rejectedSessionIndex: z.number().int().min(0).max(11).optional(),
+    rejectedSessionIndices: z
+      .array(z.number().int().min(0).max(11))
+      .min(1)
+      .max(MAX_BOOKING_SESSIONS)
+      .refine((values) => new Set(values).size === values.length)
+      .optional(),
+  })
+  .refine(
+    (value) =>
+      value.rejectedSessionIndex === undefined ||
+      !value.rejectedSessionIndices ||
+      value.rejectedSessionIndices.includes(value.rejectedSessionIndex),
+  );
 export type CheckoutSelectionRejection = z.infer<
   typeof checkoutSelectionRejectionSchema
 >;

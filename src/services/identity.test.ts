@@ -363,3 +363,48 @@ it("a challenge superseded by signout cannot dispatch email after delayed guest 
     ["/api/access", "DELETE"],
   ]);
 });
+
+it("display identity reads never create guest access or restore revoked identity and ignore late signout replies", async () => {
+  let finish!: (response: Response) => void;
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json(null))
+    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+    .mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+    )
+    .mockResolvedValueOnce(Response.json({ access: "revoked" }));
+  vi.stubGlobal("fetch", request);
+  const service = createLiveIdentityService();
+  const signal = new AbortController().signal;
+  expect(await service.readCurrent!(signal)).toBeNull();
+  expect(service.current()).toBeNull();
+  expect(
+    request.mock.calls.map(([path, options]) => [path, options.method]),
+  ).toEqual([["/api/identity", "GET"]]);
+  await expect(service.readCurrent!(signal)).rejects.toThrow();
+  expect(service.current()).toBeNull();
+  expect(
+    request.mock.calls.map(([path, options]) => [path, options.method]),
+  ).toEqual([
+    ["/api/identity", "GET"],
+    ["/api/identity", "GET"],
+  ]);
+  const pending = service.readCurrent!(signal);
+  await vi.waitFor(() => expect(request).toHaveBeenCalledTimes(3));
+  await service.signOut(signal);
+  finish(Response.json(identity));
+  await expect(pending).rejects.toThrow("unavailable");
+  expect(service.current()).toBeNull();
+  expect(
+    request.mock.calls.map(([path, options]) => [path, options.method]),
+  ).toEqual([
+    ["/api/identity", "GET"],
+    ["/api/identity", "GET"],
+    ["/api/identity", "GET"],
+    ["/api/access", "DELETE"],
+  ]);
+});
