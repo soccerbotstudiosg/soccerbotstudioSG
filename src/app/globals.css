@@ -540,6 +540,9 @@
     font-size: var(--text-meta);
     overflow-wrap: anywhere;
   }
+  .booking-identity-action {
+    display: flex;
+  }
   .booking-identity-action,
   .booking-identity-action > .text-link {
     min-height: 44px;
