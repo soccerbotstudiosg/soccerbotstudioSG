@@ -421,6 +421,7 @@ test("calendar and basket share delayed availability once and preserve selection
       <Probe />
     </BookingProvider>,
   );
+  expect(screen.queryByRole("alert")).toBeNull();
   expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(
     screen.getByRole("button", {

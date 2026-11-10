@@ -540,6 +540,18 @@
     font-size: var(--text-meta);
     overflow-wrap: anywhere;
   }
+  .booking-identity-status > span {
+    display: inline-flex;
+    align-items: center;
+    min-height: calc(var(--text-card) * var(--leading-body) + 17px);
+  }
+  .booking-guest-status {
+    padding: 8.5px 15.3px;
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
+    font-size: var(--text-card);
+    font-weight: 700;
+  }
   .booking-identity-action {
     display: flex;
   }

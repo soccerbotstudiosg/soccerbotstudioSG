@@ -65,7 +65,10 @@ export function validateDeployment(directory, revision, target = null) {
     } else assert.equal(config.routes, undefined);
     assert.equal(config.vars.ENVIRONMENT, target.environment);
     if (target.target === "production")
-      assert.equal(config.vars.CLIENT_SANDBOX_ACCESS, "disabled");
+      assert.equal(
+        config.vars.CLIENT_SANDBOX_ACCESS,
+        target.access === "client-sandbox" ? "enabled" : "disabled",
+      );
     if (target.hitpaySandbox) {
       assert.equal(
         config.vars.HITPAY_EXPECTED_MERCHANT,
@@ -134,6 +137,7 @@ export async function awaitDeploymentHealth({
   read,
   pause,
   closed = false,
+  environment = closed ? "production" : "developer",
 }) {
   const observedRevisions = [];
   for (let observation = 0; observation < 16; observation++) {
@@ -146,7 +150,7 @@ export async function awaitDeploymentHealth({
         health.effectiveProviderAccess,
         closed ? "disabled" : "trusted-reads",
       );
-      assert.equal(health.environment, closed ? "production" : "developer");
+      assert.equal(health.environment, environment);
       if (closed)
         assert.ok(
           ["pending", "registered"].includes(health.foundationRegistration),
@@ -260,18 +264,7 @@ async function readSaasResources(target) {
 }
 /** Check deployed sandbox settings and required secret binding names. */
 export function verifySandboxSettings(settings, config) {
-  for (const name of [
-    "SOURCE_REVISION",
-    "CHECKOUT_PAYMENT_ROUTE",
-    "HITPAY_CHECKOUT",
-    "HITPAY_RECOVERY",
-    "HITPAY_WEBHOOK",
-    "HITPAY_MERCHANT",
-    "HITPAY_BUSINESS_ID",
-    "HITPAY_CONTRACT_ACCEPTED",
-    "SIMPLYBOOK_EXTERNAL_PAYMENT",
-    "SIMPLYBOOK_EXTERNAL_PROCESSOR",
-  ]) {
+  for (const name of Object.keys(config.vars)) {
     assert.equal(
       settings.bindings.find(
         (binding) => binding.name === name && binding.type === "plain_text",
@@ -280,10 +273,28 @@ export function verifySandboxSettings(settings, config) {
       `Deployed setting mismatch: ${name}`,
     );
   }
+  assert.ok(
+    ["developer", "production"].includes(config.vars.ENVIRONMENT),
+    "Explicit provider credential environment required",
+  );
+  const prefix =
+    config.vars.ENVIRONMENT === "production"
+      ? "SIMPLYBOOK_PROD"
+      : "SIMPLYBOOK_DEV";
   for (const name of [
     "HITPAY_SANDBOX_API_KEY",
     "HITPAY_WEBHOOK_SALT",
-    "SIMPLYBOOK_DEV_SIGNING_SECRET",
+    config.vars.ENVIRONMENT === "production"
+      ? "TURNSTILE_SECRET_KEY"
+      : "TURNSTILE_SECRET",
+    "IDENTITY_PEPPER",
+    ...[
+      "COMPANY_LOGIN",
+      "ADMIN_LOGIN",
+      "API_KEY",
+      "ADMIN_API_USER_KEY",
+      "SIGNING_SECRET",
+    ].map((suffix) => `${prefix}_${suffix}`),
   ]) {
     assert.ok(
       settings.bindings.some(
@@ -438,6 +449,7 @@ async function deploy() {
     revision,
     previousRevision: previous?.revision,
     closed,
+    environment: config.vars.ENVIRONMENT,
     read: () => readHealth(config.vars.APP_ORIGIN),
     pause: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   });

@@ -214,7 +214,13 @@ export function AccountStep({
               className="booking-identity-status booking-entry-status"
               aria-label="Booking identity"
             >
-              <span>{verifiedIdentity?.email ?? "Guest"}</span>
+              <span
+                className={
+                  verifiedIdentity ? undefined : "pill booking-guest-status"
+                }
+              >
+                {verifiedIdentity?.email ?? "Guest"}
+              </span>
               <div className="booking-identity-action">
                 {verifiedIdentity && (
                   <button

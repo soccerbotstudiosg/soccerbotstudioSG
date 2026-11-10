@@ -2,6 +2,7 @@ import {
   reservationBlockedUntilSql,
   reservationExpiryStatement,
   rejectReservationPreparation,
+  retainReservationDenial,
 } from "./reservation-abuse";
 import type { Access } from "./access";
 import type { Grant } from "./customer-authority";
@@ -41,7 +42,7 @@ export async function claimNativeDispatch(
       .bind(id),
     db
       .prepare(
-        `UPDATE native_checkout_grants SET state='running',availability_json=? WHERE attempt_id=? AND capability_hash=? AND state='granted' AND source_revision=? AND intent_hash=? AND contract_json=? AND expires_ms>? AND EXISTS(SELECT 1 FROM attempts a JOIN guest_access c ON c.owner_id=a.owner_id WHERE a.id=? AND a.version=? AND a.state='prepared' AND a.intent_hash=native_checkout_grants.intent_hash AND a.deadline_ms>? AND c.capability_hash=? AND c.revoked_ms IS NULL AND c.issued_ms<=? AND c.expires_ms>?) AND EXISTS(SELECT 1 FROM checkout_payment_routes WHERE attempt_id=? AND route='hitpay') AND (ongoing=0 OR EXISTS(SELECT 1 FROM reservation_sources admission WHERE admission.attempt_id=native_checkout_grants.attempt_id AND ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now))}<=${now}))`,
+        `UPDATE native_checkout_grants SET state='running',availability_json=? WHERE attempt_id=? AND capability_hash=? AND state='granted' AND source_revision=? AND intent_hash=? AND contract_json=? AND expires_ms>? AND EXISTS(SELECT 1 FROM attempts a JOIN guest_access c ON c.owner_id=a.owner_id WHERE a.id=? AND a.version=? AND a.state='prepared' AND a.intent_hash=native_checkout_grants.intent_hash AND a.deadline_ms>? AND c.capability_hash=? AND c.revoked_ms IS NULL AND c.issued_ms<=? AND c.expires_ms>?) AND EXISTS(SELECT 1 FROM checkout_payment_routes WHERE attempt_id=? AND route='hitpay') AND (ongoing=0 OR EXISTS(SELECT 1 FROM reservation_sources admission WHERE admission.attempt_id=native_checkout_grants.attempt_id AND ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now), "(SELECT owner_id FROM attempts WHERE id=admission.attempt_id)")}<=${now}))`,
       )
       .bind(
         availability,
@@ -79,11 +80,17 @@ export async function claimNativeDispatch(
   if (results[2].meta.changes !== 1 && grant.ongoing === 1) {
     const blocked = await db
       .prepare(
-        `SELECT ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now))} AS until_ms FROM reservation_sources admission WHERE attempt_id=?`,
+        `SELECT ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now), "(SELECT owner_id FROM attempts WHERE id=admission.attempt_id)")} AS until_ms,admission.customer_hash,(SELECT owner_id FROM attempts WHERE id=admission.attempt_id) AS owner_id FROM reservation_sources admission WHERE attempt_id=?`,
       )
       .bind(id)
-      .first<{ until_ms: number }>();
+      .first<{ until_ms: number; customer_hash: string; owner_id: string }>();
     if (blocked && blocked.until_ms > now) {
+      await retainReservationDenial(
+        db,
+        blocked.customer_hash,
+        blocked.owner_id,
+        blocked.until_ms,
+      );
       await rejectReservationPreparation(db, id);
       throw new ApiError(429, "reservation_blocked");
     }

@@ -19,6 +19,7 @@ const pending = () =>
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  sessionStorage.clear();
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -257,6 +258,20 @@ it("hides the native payment capability at its expiry without claiming payment c
     });
     expect(screen.queryByRole("link", { name: label })).toBeNull();
     expect(screen.queryByRole("timer")).toBeNull();
+    expect(
+      screen.getByRole("status", { name: "Checking payment…" }),
+    ).toBeVisible();
+    expect(document.querySelector(".booking-loading-inline")).toBeNull();
+    await act(async () => {
+      elapsed += 9999;
+      await vi.advanceTimersByTimeAsync(9999);
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("link", { name: label })).toBeNull();
+    await act(async () => {
+      elapsed += 1;
+      await vi.advanceTimersByTimeAsync(1);
+    });
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Your payment window has ended. These sessions may not be available to book again immediately. Please try again later.",
     );
@@ -276,6 +291,7 @@ it("hides the native payment capability at its expiry without claiming payment c
     ).toBe(true);
     cleanup();
     localStorage.clear();
+    sessionStorage.clear();
     if (hitpay) {
       // Without a usable server clock, retain checking but offer no payment link.
       vi.setSystemTime(now);

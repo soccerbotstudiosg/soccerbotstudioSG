@@ -2034,12 +2034,16 @@ async function verifyMockPaymentExpiry(expired: boolean) {
     await vi.advanceTimersByTimeAsync(60000);
   });
   assertBackgroundOnly();
+  // Unmount before replacing the timer clock so cleanup owns its original timers.
+  // Flush the mocked restoration/read promises before asserting the refreshed UI.
+  view.unmount();
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:02:00Z"));
   // Refresh retains the unresolved financial attempt but never restores its cart.
-  view.unmount();
-  render(tree("time"));
-  await screen.findByRole("button", { name: /12:50–13:30/ });
+  await act(async () => {
+    render(tree("time"));
+  });
+  expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
   expect(
     JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!),
   ).toEqual(retained);

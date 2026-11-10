@@ -40,7 +40,7 @@ const schema = z.strictObject({
   environment: z.enum(["developer", "production"]),
   campaignId: name,
   turnstileSitekey: z.string().regex(/^0x[a-zA-Z0-9_-]{10,100}$/),
-  access: z.enum(["closed", "developer-sandbox"]),
+  access: z.enum(["closed", "developer-sandbox", "client-sandbox"]),
   pagesProject: z.union([name, z.literal("")]),
   pagesBranch: name,
   saasZone: z
@@ -77,10 +77,9 @@ export function validateTarget(value) {
     target.target === "production" ? "production" : "developer",
   );
   if (target.target === "production") {
-    assert.equal(
-      target.access,
-      "closed",
-      "Client activation requires separate provider acceptance",
+    assert.ok(
+      ["closed", "client-sandbox"].includes(target.access),
+      "Production requires an explicit closed or client sandbox profile",
     );
     assert.equal(target.sandbox, null);
     assert.ok(
@@ -93,7 +92,7 @@ export function validateTarget(value) {
         Boolean(target.saasZone),
         isWorkersDevTarget(target),
       ].filter(Boolean).length === 1,
-      "Client entry requires exactly one Pages, SaaS or closed Workers.dev target",
+      "Client entry requires exactly one Pages, SaaS or Workers.dev target",
     );
   }
   if (target.saasZone) {
@@ -106,6 +105,13 @@ export function validateTarget(value) {
       new URL(target.origin).hostname,
       target.saasZone.name,
       "Custom hostname cannot be the SaaS zone apex",
+    );
+  }
+  if (target.access === "client-sandbox") {
+    assert.equal(target.target, "production");
+    assert.ok(
+      target.simplybook && target.hitpaySandbox,
+      "Client sandbox requires explicit provider identities",
     );
   }
   if (target.access === "developer-sandbox") assert.ok(target.sandbox);
@@ -218,9 +224,12 @@ if (
     );
 }
 
-/** Compose only the supported staging sandbox or closed client release. */
+/** Compose the explicitly reviewed sandbox profile; closed installations stay closed. */
 export function releaseConfig(config, target = loadTarget("staging")) {
+  validateTarget(target);
   if (target.access === "closed") return config;
+  const client = target.access === "client-sandbox";
+  const payment = client ? target.hitpaySandbox : target.sandbox;
   return {
     ...config,
     triggers: { crons: ["* * * * *"] },
@@ -230,15 +239,17 @@ export function releaseConfig(config, target = loadTarget("staging")) {
       LIVE_CUSTOMER_ACCESS: "enabled",
       PUBLIC_DISPLAY_WARMING: "enabled",
       PUBLIC_TOKEN_REFRESH_AHEAD: "enabled",
-      PREMIUM_SERVICE_ID: target.sandbox.premiumServiceId,
-      IDENTITY_DELIVERY: "ongoing",
+      ...(client
+        ? { CLIENT_SANDBOX_ACCESS: "enabled" }
+        : { PREMIUM_SERVICE_ID: target.sandbox.premiumServiceId }),
+      IDENTITY_DELIVERY: client ? "disabled" : "ongoing",
       LIVE_READBACK: "enabled",
       CHECKOUT_PAYMENT_ROUTE: "hitpay",
       HITPAY_CHECKOUT: "enabled",
       HITPAY_RECOVERY: "enabled",
       HITPAY_WEBHOOK: "enabled",
-      HITPAY_MERCHANT: target.sandbox.merchant,
-      HITPAY_BUSINESS_ID: target.sandbox.businessId,
+      HITPAY_MERCHANT: payment.merchant,
+      HITPAY_BUSINESS_ID: payment.businessId,
       HITPAY_CONTRACT_ACCEPTED: "sandbox-reviewed",
       SIMPLYBOOK_EXTERNAL_PAYMENT: "sandbox-reviewed",
       SIMPLYBOOK_EXTERNAL_PROCESSOR: "manual",

@@ -7,6 +7,7 @@ import {
   validateTarget,
   targetConfig,
   targetDigest,
+  releaseConfig,
   pagesConfig,
   isWorkersDevTarget,
 } from "./deployment-target.mjs";
@@ -32,8 +33,8 @@ const production = {
   access: "closed",
   sandbox: null,
 };
-test("deployment targets reject incomplete identities, secret fields and production activation", () => {
-  assert.equal(loadTarget("production").access, "closed");
+test("deployment targets reject incomplete identities, secret fields and unsupported activation", () => {
+  assert.equal(loadTarget("production").access, "client-sandbox");
   assert.throws(() => loadTarget("../staging"));
   assert.deepEqual(validateTarget(production), production);
   for (const change of [
@@ -591,7 +592,7 @@ test("client service mapping is sealed, distinct and cannot enter staging", () =
   );
 });
 
-test("client sandbox mapping stays closed and sealed independently of staging", () => {
+test("client sandbox keeps its base closed and seals the approved release independently of staging", () => {
   const target = loadTarget("production");
   assert.equal(target.hitpaySandbox.merchant, "app404");
   const config = targetConfig(
@@ -600,6 +601,48 @@ test("client sandbox mapping stays closed and sealed independently of staging", 
   );
   assert.equal(config.vars.CLIENT_SANDBOX_ACCESS, "disabled");
   assert.equal(config.vars.HITPAY_EXPECTED_MERCHANT, "app404");
+  const active = releaseConfig(config, target);
+  for (const key of [
+    "CLIENT_SANDBOX_ACCESS",
+    "LIVE_CUSTOMER_ACCESS",
+    "LIVE_READBACK",
+    "PUBLIC_DISPLAY_WARMING",
+    "PUBLIC_TOKEN_REFRESH_AHEAD",
+    "HITPAY_CHECKOUT",
+    "HITPAY_RECOVERY",
+    "HITPAY_WEBHOOK",
+  ])
+    assert.equal(active.vars[key], "enabled");
+  assert.equal(active.vars.IDENTITY_DELIVERY, "disabled");
+  assert.equal(active.vars.PROVIDER_ACCESS, "trusted-reads");
+  assert.equal(active.vars.CHECKOUT_PAYMENT_ROUTE, "hitpay");
+  assert.equal(active.vars.HITPAY_MERCHANT, "app404");
+  assert.equal(
+    active.vars.HITPAY_BUSINESS_ID,
+    "a2d2119d-79f1-41fa-9d65-6e311d06da35",
+  );
+  assert.equal(active.vars.HITPAY_CONTRACT_ACCEPTED, "sandbox-reviewed");
+  assert.equal(active.vars.SIMPLYBOOK_EXTERNAL_PAYMENT, "sandbox-reviewed");
+  assert.equal(active.vars.SIMPLYBOOK_EXTERNAL_PROCESSOR, "manual");
+  assert.equal(active.vars.PREMIUM_SERVICE_ID, "4");
+  assert.deepEqual(active.triggers, { crons: ["* * * * *"] });
+  assert.deepEqual(
+    releaseConfig(config, { ...target, access: "closed" }),
+    config,
+  );
+  assert.notEqual(
+    targetDigest(target),
+    targetDigest({ ...target, access: "closed" }),
+  );
+  assert.throws(() => validateTarget({ ...target, hitpaySandbox: undefined }));
+  assert.throws(() => validateTarget({ ...staging, access: "client-sandbox" }));
+  assert.equal(
+    releaseConfig(
+      targetConfig({ d1_databases: [{}], vars: {} }, staging),
+      staging,
+    ).vars.IDENTITY_DELIVERY,
+    "ongoing",
+  );
   assert.equal(
     config.vars.HITPAY_EXPECTED_BUSINESS_ID,
     target.hitpaySandbox.businessId,

@@ -102,7 +102,7 @@ API responses explicitly set no-store, JSON content type, nosniff and no-referre
 - Reservation abuse controls use a five-session new-checkout cap and the customer/shared-IP policy in [BR-011](../business-rules.md#br-011).
 - IP authority comes from Cloudflare's trusted edge header, not client-supplied forwarded headers. Existing `IDENTITY_PEPPER` produces scoped HMAC hashes; new tables contain no raw address.
 - Verified email links customer strikes across capabilities; unverified guests retain server-issued ownership without mandatory email verification.
-- Shared-IP blocks can affect unrelated visitors; changing both guest identity and network remains a bypass. These controls are an application reservation backstop, not a claim of WAF coverage or complete bot prevention.
+- Shared-IP blocks can affect unrelated visitors. Once refused, the authenticated owner/customer retains that original cooldown even after moving networks or changing guest/email identity; verified payment resets strike counts but does not shorten an observed refusal. This can carry a shared-network penalty to an unrelated visitor after leaving the network. A wholly new guest identity on another network remains unlinked and can evade this backstop; unverified booking contact details do not identify an existing customer. These controls are an application reservation backstop, not a claim of WAF coverage or complete bot prevention.
 - Admission refuses new effects; it does not deny site browsing or override paid/uncertain financial recovery. Atomic dispatch checks close the preflight race.
 
 ## 4. Authorization, validation and environment isolation

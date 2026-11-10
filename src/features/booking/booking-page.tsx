@@ -86,7 +86,11 @@ export function BookingPage({ step }: { step: BookingStep }) {
       : null;
   const headingStatus = (
     <div className="booking-identity-status" aria-label="Booking identity">
-      <span>{verifiedIdentity?.email ?? "Guest"}</span>
+      <span
+        className={verifiedIdentity ? undefined : "pill booking-guest-status"}
+      >
+        {verifiedIdentity?.email ?? "Guest"}
+      </span>
     </div>
   );
   const handingOff =

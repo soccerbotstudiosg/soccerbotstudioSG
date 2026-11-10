@@ -3,7 +3,10 @@ import * as renderTrace from "./confirmation-render-trace";
 import ConfirmationPage from "@/app/confirmation/page";
 import { BookingProvider } from "./provider";
 import { BookingLoadingProvider } from "./booking-loading";
-import { saveLiveDraft } from "@/services/storage";
+import {
+  saveLiveDraft,
+  expiryReconciliationDeadline,
+} from "@/services/storage";
 import { liveBookingService } from "@/services/booking";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { blankDraft, type Attempt } from "@/domain/booking";
@@ -54,6 +57,7 @@ afterEach(() => {
   navigation.status = "canceled";
   vi.useRealTimers();
   localStorage.clear();
+  sessionStorage.clear();
   vi.unstubAllGlobals();
 });
 it("shows checking before the protected server result and confirms only verified evidence", async () => {
@@ -1952,6 +1956,12 @@ it("retries unavailable checkout context silently and returns expired checkout t
     monotonic = 4001;
     await vi.advanceTimersByTimeAsync(1);
   });
+  expect(onAwaitingExpiry).not.toHaveBeenCalled();
+  expect(document.querySelector(".booking-flow-overlay")).not.toBeNull();
+  await act(async () => {
+    monotonic = 14001;
+    await vi.advanceTimersByTimeAsync(10000);
+  });
   expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
   expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
   expect(
@@ -1971,6 +1981,7 @@ it("retries unavailable checkout context silently and returns expired checkout t
   ] as const) {
     navigation.replace.mockClear();
     onAwaitingExpiry.mockClear();
+    sessionStorage.clear();
     localStorage.removeItem(`soccerbot-checking:${first}`);
     monotonic = 0;
     vi.setSystemTime(new Date(serverNow));
@@ -2039,6 +2050,11 @@ it("retries unavailable checkout context silently and returns expired checkout t
       });
     }
     if (scenario === "expired" || scenario === "resume") {
+      expect(onAwaitingExpiry).not.toHaveBeenCalled();
+      await act(async () => {
+        monotonic += 10000;
+        await vi.advanceTimersByTimeAsync(10000);
+      });
       expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
       expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
       expect(
@@ -2111,4 +2127,301 @@ it("retries unavailable checkout context silently and returns expired checkout t
   expect(navigation.replace).toHaveBeenLastCalledWith("/book/payment/");
   cleanup();
   clock.mockRestore();
+});
+
+it("expiry reconciliation keeps one ten-second foreground budget across refresh then detects late payment silently", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-11-09T00:00:00Z"));
+  const started = Date.now();
+  let paymentDeadline = started - 60000;
+  let paid = false;
+  let firstContext = true;
+  const awaiting = vi.fn(() => true),
+    detected = vi.fn();
+  navigation.replace.mockClear();
+  const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+    const path = String(input);
+    if (path.endsWith("/checkout")) {
+      if (firstContext) {
+        firstContext = false;
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+      const responseDate = new Date().toUTCString();
+      return Response.json(
+        {
+          attemptId: first,
+          mode: "live",
+          checkout: { state: "unavailable" },
+          summary: {
+            players: 2,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: started + 86400000, players: 2 }],
+          },
+          checking: {
+            paymentExpiresAtMs: paymentDeadline,
+            deadlineMs: started + 120000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        },
+        { headers: { Date: responseDate } },
+      );
+    }
+    if (path.endsWith("/confirmation"))
+      return Response.json({
+        status: "pending",
+        reason: paid
+          ? "payment_received_booking_pending"
+          : "payment_verification_pending",
+      });
+    throw new Error(`Expiry display must not mutate payment: ${path}`);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const tree = (background = false) => (
+    <BookingLoadingProvider>
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        calendarRecovery={background}
+        silent={background}
+        onAwaitingExpiry={awaiting}
+        onPaymentDetected={detected}
+      />
+    </BookingLoadingProvider>
+  );
+  let view = render(tree());
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(
+    document.querySelector(".booking-flow-overlay .page-loading"),
+  ).not.toBeNull();
+  expect(awaiting).not.toHaveBeenCalled();
+  const budget = sessionStorage.getItem(
+    `soccerbot-expiry-reconciliation:${first}`,
+  );
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(6000);
+  });
+  view.unmount();
+  paymentDeadline += 1000;
+  view = render(tree());
+  await act(async () => {});
+  expect(
+    sessionStorage.getItem(`soccerbot-expiry-reconciliation:${first}`),
+  ).toBe(budget);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(3999);
+  });
+  expect(awaiting).not.toHaveBeenCalled();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+  expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
+  view.rerender(tree(true));
+  expect(
+    document.querySelector(".booking-flow-overlay, .page-loading"),
+  ).toBeNull();
+  paid = true;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(detected).toHaveBeenCalledWith(first);
+  expect(navigation.replace).toHaveBeenLastCalledWith("/book/payment/");
+  expect(
+    document.querySelector(".booking-flow-overlay, .page-loading"),
+  ).toBeNull();
+  expect(
+    fetcher.mock.calls.every(([path]) => !String(path).endsWith("/expire")),
+  ).toBe(true);
+});
+
+it("expiry reconciliation exits early for unpaid proof and preserves payment evidence before its deadline", async () => {
+  for (const outcome of ["unpaid", "confirmed", "money-pending"] as const) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-09T00:00:00Z"));
+    const started = Date.now();
+    let settled = outcome === "unpaid";
+    const awaiting = vi.fn(() => true),
+      released = vi.fn();
+    navigation.replace.mockClear();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path.endsWith("/checkout"))
+          return Response.json(
+            {
+              attemptId: first,
+              mode: "live",
+              checkout: { state: "unavailable" },
+              ...(outcome === "unpaid" ? { expired: true } : {}),
+              summary: {
+                players: 2,
+                totalMinor: 8800,
+                currency: "SGD",
+                sessions: [{ startMs: started + 86400000, players: 2 }],
+              },
+              checking: {
+                paymentExpiresAtMs: started - 1,
+                deadlineMs: started + 120000,
+                nextCheckMs: 0,
+                pollAfterMs: 5000,
+              },
+            },
+            { headers: { Date: new Date().toUTCString() } },
+          );
+        if (path.endsWith("/expire")) return Response.json({ expired: true });
+        if (path.endsWith("/receipt"))
+          return Response.json(receiptFixture(started));
+        if (path.endsWith("/confirmation"))
+          return Response.json(
+            settled && outcome === "confirmed"
+              ? { status: "confirmed", reason: "verified" }
+              : {
+                  status: "pending",
+                  reason:
+                    settled && outcome === "money-pending"
+                      ? "payment_received_booking_pending"
+                      : "payment_verification_pending",
+                },
+          );
+        throw new Error(`Unexpected reconciliation request ${path}`);
+      }),
+    );
+    render(
+      <BookingLoadingProvider>
+        <ProtectedConfirmation
+          attemptId={first}
+          checkoutMode="live"
+          onAwaitingExpiry={awaiting}
+          onExpired={released}
+        />
+      </BookingLoadingProvider>,
+    );
+    await act(async () => {});
+    if (outcome === "unpaid") {
+      expect(released).toHaveBeenCalledWith(first);
+      expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+      expect(Date.now()).toBe(started);
+    } else {
+      expect(awaiting).not.toHaveBeenCalled();
+      settled = true;
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
+      if (outcome === "confirmed")
+        expect(
+          screen.getByRole("heading", { name: "Booking Confirmed" }),
+        ).toBeVisible();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
+      expect(awaiting).not.toHaveBeenCalled();
+      expect(released).not.toHaveBeenCalled();
+      expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    }
+    cleanup();
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.useRealTimers();
+  }
+});
+
+it("late unpaid-release acknowledgement cannot override newer payment evidence and unavailable storage cannot renew expiry waits", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-11-09T00:00:00Z"));
+  const started = Date.now();
+  let paid = false,
+    definitelyUnpaid = true;
+  let finishRelease!: (response: Response) => void;
+  const released = vi.fn(),
+    awaiting = vi.fn(() => false);
+  navigation.replace.mockClear();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.endsWith("/checkout"))
+        return Response.json(
+          {
+            attemptId: first,
+            mode: "live",
+            checkout: { state: "unavailable" },
+            ...(definitelyUnpaid ? { expired: true } : {}),
+            summary: {
+              players: 2,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [{ startMs: started + 86400000, players: 2 }],
+            },
+            checking: {
+              paymentExpiresAtMs: started - 60000,
+              deadlineMs: started + 120000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+            },
+          },
+          { headers: { Date: new Date().toUTCString() } },
+        );
+      if (path.endsWith("/expire"))
+        return new Promise<Response>((resolve) => {
+          finishRelease = resolve;
+        });
+      if (path.endsWith("/confirmation"))
+        return Response.json({
+          status: "pending",
+          reason: paid
+            ? "payment_received_booking_pending"
+            : "payment_verification_pending",
+        });
+      throw new Error(`Unexpected expiry request ${path}`);
+    }),
+  );
+  const tree = () => (
+    <BookingLoadingProvider>
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        onAwaitingExpiry={awaiting}
+        onExpired={released}
+      />
+    </BookingLoadingProvider>
+  );
+  const view = render(tree());
+  await act(async () => {});
+  paid = true;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  navigation.replace.mockClear();
+  await act(async () => finishRelease(Response.json({ expired: true })));
+  expect(released).not.toHaveBeenCalled();
+  expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+  view.unmount();
+  definitelyUnpaid = false;
+  paid = false;
+  localStorage.clear();
+  sessionStorage.clear();
+  awaiting.mockReset().mockReturnValue(true);
+  const write = vi
+    .spyOn(Storage.prototype, "setItem")
+    .mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+  const skewedLocalNow = Date.now() - 365 * 86400000;
+  expect(expiryReconciliationDeadline(first, Date.now(), skewedLocalNow)).toBe(
+    skewedLocalNow,
+  );
+  for (let refresh = 0; refresh < 2; refresh++) {
+    const remount = render(tree());
+    await act(async () => {});
+    expect(awaiting).toHaveBeenCalledWith(first);
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+    remount.unmount();
+    awaiting.mockClear();
+  }
+  write.mockRestore();
 });

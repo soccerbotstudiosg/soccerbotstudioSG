@@ -15,7 +15,7 @@
   "environment": "production",
   "campaignId": "production",
   "turnstileSitekey": "0x4AAAAAAFr7YXp64r3SY34-",
-  "access": "closed",
+  "access": "client-sandbox",
   "pagesProject": "",
   "pagesBranch": "main",
   "sandbox": null,

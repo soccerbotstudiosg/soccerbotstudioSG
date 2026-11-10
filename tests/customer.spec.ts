@@ -1366,6 +1366,18 @@ test("first visit offers the Player App with only store links and dismissal pers
     await expect(label).toHaveCSS("font-size", "16px");
     await expect(label).toHaveCSS("font-weight", "400");
   }
+  await prompt.getByRole("heading").click();
+  await expect(prompt).toBeVisible();
+  for (const link of await prompt.getByRole("link").all()) {
+    // Exercise the click handler without opening external app-store pages.
+    await link.evaluate((element) => {
+      element.addEventListener("click", (event) => event.preventDefault(), {
+        once: true,
+      });
+    });
+    await link.click();
+    await expect(prompt).toBeVisible();
+  }
   const placement = await close.evaluate((button) => {
     const dialog = button.closest("dialog")!.getBoundingClientRect();
     const rect = button.getBoundingClientRect();
