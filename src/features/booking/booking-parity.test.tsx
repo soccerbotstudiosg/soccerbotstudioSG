@@ -1924,6 +1924,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   expect(within(region).getByText("Unable to Load.")).toBeInTheDocument();
   expect(view.container.querySelector(".loading-logo")).toBeNull();
   fireEvent.click(within(region).getByRole("button", { name: "Try again" }));
+  expect(screen.queryByText("Unable to Load.")).toBeNull();
   await act(async () => {});
   expect(day()).toBeEnabled();
   expect(
@@ -1933,7 +1934,23 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   expect(
     screen.getByRole("button", { name: /^Enter Booking Details/ }),
   ).toBeDisabled();
-  await act(async () => pending[2].resolve(snapshot()));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(500);
+  });
+  expect(screen.queryByText("Unable to Load.")).toBeNull();
+  expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
+  await act(async () => pending[2].reject(new Error("synthetic retry failed")));
+  expect(within(region).getByText("Unable to Load.")).toBeInTheDocument();
+  expect(
+    screen.getByRole("group", { name: "Session times" }),
+  ).toBeInTheDocument();
+  expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
+  fireEvent.click(within(region).getByRole("button", { name: "Try again" }));
+  expect(screen.queryByText("Unable to Load.")).toBeNull();
+  expect(
+    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+  ).toBeDisabled();
+  await act(async () => pending[3].resolve(snapshot()));
   expect(day()).toBeEnabled();
   expect(day()).toHaveAttribute("title", "Available sessions");
   expect(screen.queryByText("Unable to Load.")).toBeNull();
@@ -1950,7 +1967,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     await vi.advanceTimersByTimeAsync(1001);
   });
   await act(async () =>
-    pending[3].resolve({
+    pending[4].resolve({
       ...snapshot(),
       dates: snapshot().dates.map((day) => ({
         ...day,

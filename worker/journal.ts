@@ -2,6 +2,7 @@ import {
   reservationExpiryStatement,
   reservationBlockedUntilSql,
   rejectReservationPreparation,
+  retainReservationDenial,
 } from "./reservation-abuse";
 import {
   START_INTERVAL_MINUTES,
@@ -135,7 +136,7 @@ export async function claimDispatch(
     reservationExpiryStatement(db, id, id, now, true),
     db
       .prepare(
-        `UPDATE attempts SET state='dispatching',version=version+1 WHERE id=? AND version=? AND state='prepared' AND deadline_ms>? AND (NOT EXISTS(SELECT 1 FROM native_checkout_grants g WHERE g.attempt_id=attempts.id AND g.ongoing=1) OR EXISTS(SELECT 1 FROM reservation_sources admission WHERE admission.attempt_id=attempts.id AND ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now))}<=${now}))`,
+        `UPDATE attempts SET state='dispatching',version=version+1 WHERE id=? AND version=? AND state='prepared' AND deadline_ms>? AND (NOT EXISTS(SELECT 1 FROM native_checkout_grants g WHERE g.attempt_id=attempts.id AND g.ongoing=1) OR EXISTS(SELECT 1 FROM reservation_sources admission WHERE admission.attempt_id=attempts.id AND ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now), "(SELECT owner_id FROM attempts WHERE id=admission.attempt_id)")}<=${now}))`,
       )
       .bind(id, version, now),
     db
@@ -148,11 +149,17 @@ export async function claimDispatch(
   if (result[0].meta.changes !== 1) {
     const blocked = await db
       .prepare(
-        `SELECT ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now))} AS until_ms FROM reservation_sources admission WHERE attempt_id=?`,
+        `SELECT ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now), "(SELECT owner_id FROM attempts WHERE id=admission.attempt_id)")} AS until_ms,admission.customer_hash,(SELECT owner_id FROM attempts WHERE id=admission.attempt_id) AS owner_id FROM reservation_sources admission WHERE attempt_id=?`,
       )
       .bind(id)
-      .first<{ until_ms: number }>();
+      .first<{ until_ms: number; customer_hash: string; owner_id: string }>();
     if (blocked && blocked.until_ms > now) {
+      await retainReservationDenial(
+        db,
+        blocked.customer_hash,
+        blocked.owner_id,
+        blocked.until_ms,
+      );
       await rejectReservationPreparation(db, id);
       throw new ApiError(429, "reservation_blocked");
     }

@@ -111,6 +111,30 @@ export function safeWrite(
     /* Private browsing may deny persistence. In-memory flow remains available. */
   }
 }
+export const EXPIRY_RECONCILIATION_MS = 10000;
+/** Keep one display-only expiry wait across reloads; this never releases a payment lock. */
+export function expiryReconciliationDeadline(
+  attemptId: string,
+  paymentDeadline: number,
+  now: number,
+) {
+  const key = `soccerbot-expiry-reconciliation:${attemptId}`;
+  const saved = record(safeRead(key));
+  if (
+    saved &&
+    typeof saved.deadline === "number" &&
+    Number.isFinite(saved.deadline)
+  )
+    return Math.min(saved.deadline, now + EXPIRY_RECONCILIATION_MS);
+  const deadline = now + EXPIRY_RECONCILIATION_MS;
+  safeWrite(key, { paymentDeadline, deadline });
+  const written = record(safeRead(key));
+  // Without persistence, skip optional foreground waiting rather than renew it on reload.
+  return written?.paymentDeadline === paymentDeadline &&
+    written.deadline === deadline
+    ? deadline
+    : now;
+}
 /** Remove local state while tolerating unavailable browser storage. */
 export function safeRemove(key: string, persistent = false): void {
   try {

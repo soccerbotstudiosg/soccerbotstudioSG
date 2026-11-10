@@ -4771,7 +4771,49 @@ test("reservation shared IP survives fresh guest access and uses a rolling day w
     assert.equal(source.ipHash, otherSource.ipHash);
     await expiredReservation(m, otherSource, now - 1000);
     await admission(m, other, 429);
+    const deniedBefore = (
+      await m.db
+        .prepare(
+          "SELECT * FROM reservation_denials ORDER BY customer_hash,owner_id",
+        )
+        .all()
+    ).results;
     other.headers["CF-Connecting-IP"] = "192.0.2.22";
+    await admission(m, other, 429);
+    for (let repeat = 0; repeat < 2; repeat++)
+      await checkoutResult(other.send(), 429);
+    assert.deepEqual(
+      (
+        await m.db
+          .prepare(
+            "SELECT * FROM reservation_denials ORDER BY customer_hash,owner_id",
+          )
+          .all()
+      ).results,
+      deniedBefore,
+      "retries cannot restart the original hour",
+    );
+    const owner = otherSource.ownerId;
+    await m.db
+      .prepare(
+        "INSERT INTO verified_identity(access_hash,owner_id,email,verified_ms,expires_ms) SELECT capability_hash,owner_id,'network-test@example.test',?,? FROM guest_access WHERE owner_id=?",
+      )
+      .bind(now - 1000, now + 3600000, owner)
+      .run();
+    await admission(m, other, 429);
+    const fresh = await customer(m);
+    fresh.headers["CF-Connecting-IP"] = "192.0.2.22";
+    await admission(m, fresh);
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      0,
+    );
+    await m.db
+      .prepare(
+        "UPDATE reservation_denials SET blocked_until_ms=? WHERE owner_id=?",
+      )
+      .bind(Date.now() - 1, owner)
+      .run();
     await admission(m, other);
     // No raw addresses or unverified contact emails are used as customer authority.
     assert.match(source.ipHash, /^[a-f0-9]{64}$/);
@@ -4801,7 +4843,47 @@ test("reservation customer strikes reset on verified payment while shared IP rem
       .run();
     await admission(m, c, 429);
     c.headers["CF-Connecting-IP"] = "192.0.2.32";
+    await admission(m, c, 429);
+    // Payment resets strike counting, not a previously observed shared-IP refusal.
+    await m.db
+      .prepare(
+        "UPDATE reservation_denials SET blocked_until_ms=? WHERE owner_id=?",
+      )
+      .bind(Date.now() - 1, source.ownerId)
+      .run();
     await admission(m, c);
+    // Early terminal-unpaid release must count its actual deadline, not a future recovery buffer.
+    const early = await customer(m);
+    early.headers["CF-Connecting-IP"] = "192.0.2.33";
+    const earlySource = await admission(m, early);
+    const deadline = Date.now() - 1000;
+    const earlyId = await expiredReservation(
+      m,
+      earlySource,
+      deadline + 240000,
+      "unpaid",
+    );
+    await admission(m, early);
+    const strike = await m.db
+      .prepare("SELECT expired_ms FROM reservation_expiries WHERE attempt_id=?")
+      .bind(earlyId)
+      .first();
+    assert.equal(strike.expired_ms, deadline);
+    await expiredReservation(m, earlySource, deadline - 1000, "unpaid");
+    const laterPayment = await expiredReservation(
+      m,
+      earlySource,
+      Date.now() + 1000,
+      "paid",
+    );
+    await m.db
+      .prepare(
+        "UPDATE hitpay_payments SET state='complete',reason='hitpay_paid' WHERE attempt_id=?",
+      )
+      .bind(laterPayment)
+      .run();
+    early.headers["CF-Connecting-IP"] = "192.0.2.34";
+    await admission(m, early);
   } finally {
     await m.close();
   }
@@ -4832,7 +4914,12 @@ test("reservation one hour blocks expire without clearing strikes and later expi
 });
 
 test("reservation cooldown arising during preflight prevents the atomic first write and leaves safe retry state", async () => {
-  for (const route of ["hold", "checkout"]) {
+  for (const [route, denial] of [
+    ["hold", false],
+    ["checkout", false],
+    ["hold", true],
+    ["checkout", true],
+  ]) {
     let source,
       mechanism,
       injected = false;
@@ -4845,7 +4932,12 @@ test("reservation cooldown arising during preflight prevents the atomic first wr
             (route === "checkout" ? "getToken" : "getAvailableTimeIntervals")
         ) {
           injected = true;
-          await expiredReservation(mechanism, source, Date.now() - 1000);
+          if (denial)
+            await mechanism.db
+              .prepare("INSERT INTO reservation_denials VALUES(?,?,?)")
+              .bind("e".repeat(64), source.ownerId, Date.now() + 3600000)
+              .run();
+          else await expiredReservation(mechanism, source, Date.now() - 1000);
         }
       },
     });
@@ -4889,6 +4981,19 @@ test("reservation cooldown arising during preflight prevents the atomic first wr
         .bind(c.input.key)
         .first();
       if (grant) assert.equal(grant.state, "blocked");
+      c.headers["CF-Connecting-IP"] = "192.0.2.99";
+      await admission(m, c, 429);
+      assert.equal(
+        (
+          await m.db
+            .prepare(
+              "SELECT COUNT(*) AS n FROM reservation_denials WHERE owner_id=?",
+            )
+            .bind(source.ownerId)
+            .first()
+        ).n,
+        denial ? 2 : 1,
+      );
     } finally {
       await m.close();
     }
@@ -4896,36 +5001,42 @@ test("reservation cooldown arising during preflight prevents the atomic first wr
 });
 
 test("reservation verified customer identity persists across guest capabilities and new network addresses", async () => {
-  const m = await createBookingMechanism();
-  try {
-    const first = await customer(m);
-    first.headers["CF-Connecting-IP"] = "192.0.2.51";
-    const second = await customer(m);
-    second.headers["CF-Connecting-IP"] = "192.0.2.52";
-    const now = Date.now();
-    const access = await m.db
-      .prepare("SELECT * FROM guest_access ORDER BY issued_ms")
-      .all();
-    for (const row of access.results)
-      await m.db
-        .prepare(
-          "INSERT INTO verified_identity(access_hash,owner_id,email,verified_ms,expires_ms) VALUES(?,?,'verified@example.test',?,?)",
-        )
-        .bind(row.capability_hash, row.owner_id, now - 1000, now + 3600000)
-        .run();
-    const a = await admission(m, first),
-      b = await admission(m, second);
-    assert.equal(a.customerHash, b.customerHash);
-    assert.notEqual(a.ipHash, b.ipHash);
-    await expiredReservation(m, a, now - 2000);
-    await expiredReservation(m, a, now - 1000);
-    await admission(m, second, 429);
-    assert.equal(
-      m.calls.filter((call) => call.body?.method === "book").length,
-      0,
-    );
-  } finally {
-    await m.close();
+  for (const inherited of [false, true]) {
+    const m = await createBookingMechanism();
+    try {
+      const first = await customer(m);
+      first.headers["CF-Connecting-IP"] = "192.0.2.51";
+      const second = await customer(m);
+      second.headers["CF-Connecting-IP"] = "192.0.2.52";
+      const now = Date.now();
+      const access = await m.db
+        .prepare("SELECT * FROM guest_access ORDER BY issued_ms")
+        .all();
+      for (const row of access.results)
+        await m.db
+          .prepare(
+            "INSERT INTO verified_identity(access_hash,owner_id,email,verified_ms,expires_ms) VALUES(?,?,'verified@example.test',?,?)",
+          )
+          .bind(row.capability_hash, row.owner_id, now - 1000, now + 3600000)
+          .run();
+      const a = await admission(m, first),
+        b = await admission(m, second);
+      assert.equal(a.customerHash, b.customerHash);
+      assert.notEqual(a.ipHash, b.ipHash);
+      const unrelatedIpSource = inherited
+        ? { ...a, customerHash: "e".repeat(64) }
+        : a;
+      await expiredReservation(m, unrelatedIpSource, now - 2000);
+      await expiredReservation(m, unrelatedIpSource, now - 1000);
+      if (inherited) await admission(m, first, 429);
+      await admission(m, second, 429);
+      assert.equal(
+        m.calls.filter((call) => call.body?.method === "book").length,
+        0,
+      );
+    } finally {
+      await m.close();
+    }
   }
 });
 

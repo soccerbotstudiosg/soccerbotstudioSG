@@ -148,13 +148,13 @@ Owner HAR and invoice evidence align creation around14:52 with due time15:02; ca
 
 Only names and storage locations are recorded here. Never include values, API response headers, EPP codes, passwords, bank details or customer records in this file.
 
-| Store                         | Names / responsibility                                                                                                                                       |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Staging Worker secrets        | `SIMPLYBOOK_DEV_COMPANY_LOGIN`, `SIMPLYBOOK_DEV_ADMIN_LOGIN`, `SIMPLYBOOK_DEV_API_KEY`, `SIMPLYBOOK_DEV_ADMIN_API_USER_KEY`, `SIMPLYBOOK_DEV_SIGNING_SECRET` |
-| Client Worker secrets         | Corresponding `SIMPLYBOOK_PROD_*` names; no developer fallback                                                                                               |
-| Matching Worker secret store  | `HITPAY_SANDBOX_API_KEY`, `HITPAY_WEBHOOK_SALT`, `TURNSTILE_SECRET`, `IDENTITY_PEPPER`; `RESEND_API_KEY` where email is configured                           |
-| Client GitHub Actions secrets | `STAGING_CLOUDFLARE_API_TOKEN`, `PRODUCTION_CLOUDFLARE_API_TOKEN`, separately scoped to the intended accounts                                                |
-| Cloud Containers              | Environment-managed developer credentials for authorized work; presence here does not install them in GitHub or a Worker                                     |
+| Store                         | Names / responsibility                                                                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Staging Worker secrets        | `SIMPLYBOOK_DEV_COMPANY_LOGIN`, `SIMPLYBOOK_DEV_ADMIN_LOGIN`, `SIMPLYBOOK_DEV_API_KEY`, `SIMPLYBOOK_DEV_ADMIN_API_USER_KEY`, `SIMPLYBOOK_DEV_SIGNING_SECRET`                                     |
+| Client Worker secrets         | Corresponding `SIMPLYBOOK_PROD_*` names; no developer fallback                                                                                                                                   |
+| Matching Worker secret store  | `HITPAY_SANDBOX_API_KEY`, `HITPAY_WEBHOOK_SALT`, `IDENTITY_PEPPER`; bot secret `TURNSTILE_SECRET` on staging or `TURNSTILE_SECRET_KEY` on production; `RESEND_API_KEY` where email is configured |
+| Client GitHub Actions secrets | `STAGING_CLOUDFLARE_API_TOKEN`, `PRODUCTION_CLOUDFLARE_API_TOKEN`, separately scoped to the intended accounts                                                                                    |
+| Cloud Containers              | Environment-managed developer credentials for authorized work; presence here does not install them in GitHub or a Worker                                                                         |
 
 Presence is not proof of correctness, entitlement or successful provider authentication. Do not copy proxy placeholder values into provider settings. The owner previously chose a five-year API-user-key expiry; the exact issuance/expiry date was not captured here. Record it privately with renewal reminders and rotate before expiry rather than calculating a date from this document's review date.
 
@@ -205,3 +205,9 @@ Round-four evidence, reconciled 6 November: the retained owner HAR records creat
 Owner instruction: finish final CI, verify exact staging revision/health, merge PR32, verify merged-main deployment, then enable the existing production-named client sandbox for A–D. Read-only Cloudflare inspection before delivery found customer/client sandbox, provider, HitPay and warming switches disabled, existing company soccerbotadmin/service3–4 and reviewed app404 merchant/business mapping retained, and eight secret bindings present. This is the closed baseline, not activation evidence. After deployment, inherit all unrelated bindings/resources/secrets and restore the previously reviewed client-sandbox switches and complete merchant/contract pairing. Keep identity email delivery and public-token refresh-ahead disabled. Do not enable a live merchant or make assistant booking/payment/cancellation operations. Record runtime readback and public-health evidence/limitations in the PR delivery receipt; a screenshot of10 minutes selected is still not a new invoice due-time observation.
 
 Latest delivery correction (6 November): after44540b6 passed CI/staging, the owner said “dont merge”. Automatic approval review rejected the in-flight merge. PR32 remains open/unmerged and the sandbox switches remain at the observed disabled baseline; prior restoration instructions above are superseded. No provider setting or runtime mutation occurred.
+
+### 10 November 2026 — persistent approved sandbox configuration (prepared)
+
+PR53 deployed production `db999ed`; approved runtime settings were restored and independently read back, including the actual/expected app404 merchant and business pairing, customer access, trusted provider reads, HitPay checkout/recovery/webhook, live readback, public display warming and token refresh-ahead. Identity delivery stayed disabled; existing secrets and D1/coordinator identity were preserved. Runtime activation did not persist through ordinary deployment because the manifest still selected closed access.
+
+The consolidated follow-up explicitly selects `client-sandbox` in `deployment/production.json`. Its release overlay declares the approved values and post-deployment readback checks them against the sealed artifact. Closed installation and staging remain separate profiles. This change is prepared for CI/staging, not yet merged/deployed; current production settings remain enabled. Domain/email and live-merchant activation are outside this change.

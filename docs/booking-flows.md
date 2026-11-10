@@ -5,7 +5,7 @@ Source reconciled 8 November 2026 against the current local `fix/consistent-conf
 [Current error-message catalogue](#current-customer-error-catalogue--local-repair-8-november-2026) lists exact wording, triggers and permitted actions.
 
 - New-reservation cooldown: show “New reservations are paused after repeated unpaid reservations. Please try again in up to 1 hour.” Preserve customer selections/contact; no new provider effect starts. Existing uncertain/paid attempts retain recovery rather than returning an editable duplicate checkout.
-- Calendar display expiry retains the date grid during one refresh; refresh shows the shared spinner for0.5 seconds without fading the dates. A failed refresh keeps an explicit retry; expired data never grants reservation authority.
+- Calendar display expiry retains the date grid and loaded cards during background refresh, without a foreground spinner or all-grey flash. A failed refresh keeps explicit retry feedback; expired data never grants reservation authority.
 
 The calendar displays the selected outlet and catalogue session name in a bold18px row above the16px duration note, below its main heading and above the duration note. The home hero address uses smaller white text with a subtle shadow on mobile; desktop styling is unchanged.
 
@@ -24,7 +24,7 @@ flowchart LR
 
 ## 2. Email entry and verification
 
-Steps 1–5 show Guest or the currently verified email beside the heading. Only the initial booking-options heading offers Sign out. It waits for acknowledged sign-out before ending the editable flow and routing Home; failure stays on booking options with “Try signing out again”. Later headings are read-only, and payment/confirmation screens keep their existing protected presentation.
+Steps 1–5 show Guest or the currently verified email beside the heading. Guest uses a larger bold pale-yellow badge; the shared identity label reserves its height to avoid shifting the page when verified identity arrives. Only the initial booking-options heading offers Sign out. It waits for acknowledged sign-out before ending the editable flow and routing Home; failure stays on booking options with “Try signing out again”. Later headings are read-only, and payment/confirmation screens keep their existing protected presentation.
 
 On email/code entry, the top-left Back returns to booking options and cancels pending identity work. The bottom duplicate Back link and email-entry envelope tile are removed. The first booking-options screen retains Home.
 
@@ -219,11 +219,14 @@ flowchart TD
 
 ## 13. Expiry, grace and late payment
 
-An authenticated payment deadline ending returns an eligible owned attempt directly to the calendar and hides payment continuation; only verified releasable expiry permits a new checkout. New attempts use8 minutes to pay,1 further minute of checking and3 further minutes of recovery before grant release eligibility. The configured10-minute provider hold remains independently capped by invoice due time; cancellation may occur later. The recovery buffer does not extend payment or provider occupancy. Old attempts retain their windows. After the original recovery and hold deadlines, an authenticated matching expired/canceled request with an explicit empty list or only matching, zero-refund unstarted payment-method entries may release; ambiguous evidence and unprocessed receipts stay protected. The original financial journal is retained for late payment. Eligible owned attempts return to calendar browsing at the authenticated payment deadline, or when authenticated status confirms expiry; there is no five-minute waiting screen. A failed release request keeps that original attempt locked while release retries silently on the calendar. Without an eligible calendar handoff, show “We couldn’t confirm that your reservation was released. Please don’t book or pay again.” and retain the same release operation. A red calendar notice names affected sessions; rebooking stays locked until authenticated release. No additional Back to home link appears in the notice. Affected-day reads update retained calendar snapshots in the background; a local timer never adds a session back. Bounded affected-day probes handle delayed provider release independently of browser life; the slot remains unavailable until current provider capacity permits it.
+When the authenticated payment deadline ends, payment continuation is hidden and the original attempt gets at most10 seconds of foreground reconciliation using the full booking animation. Confirmed payment/booking opens confirmation; known payment stays in its confirmation flow; proven releasable unpaid expiry returns immediately to Calendar. If still unknown at the end of the bounded window, return to Calendar and continue silent background checks. Only verified releasable expiry permits a new checkout. New attempts use8 minutes to pay,1 further minute of checking and3 further minutes of recovery before grant release eligibility. The configured10-minute provider hold remains independently capped by invoice due time; cancellation may occur later. The recovery buffer does not extend payment or provider occupancy. Old attempts retain their windows. After the original recovery and hold deadlines, an authenticated matching expired/canceled request with an explicit empty list or only matching, zero-refund unstarted payment-method entries may release; ambiguous evidence and unprocessed receipts stay protected. The original financial journal is retained for late payment. The ten-second display window begins when the expiry is first observed for that attempt and payment deadline; reload resumes its remaining time rather than granting another window. Calendar background recovery never starts a foreground wait, and conflict handoff is unchanged. A failed release request keeps that original attempt locked while release retries silently on the calendar. Without an eligible calendar handoff, show “We couldn’t confirm that your reservation was released. Please don’t book or pay again.” and retain the same release operation. A red calendar notice names affected sessions; rebooking stays locked until authenticated release. No additional Back to home link appears in the notice. Affected-day reads update retained calendar snapshots in the background; a local timer never adds a session back. Bounded affected-day probes handle delayed provider release independently of browser life; the slot remains unavailable until current provider capacity permits it.
 
 ```mermaid
 flowchart TD
-  A["Time left to pay ends"] --> B["Calendar immediately; retain silent background checking"]
+  A["Time left to pay ends"] --> W["Full booking animation: at most ten seconds"]
+  W -->|Confirmed| H["Booking confirmed"]
+  W -->|Payment received| P["Continue booking confirmation"]
+  W -->|Proven unpaid or still unknown after ten seconds| B["Calendar; retain silent background checking"]
   B -->|Verified releasable expiry| C["Your payment window has ended. These sessions may not be available to book again immediately. Please try again later."]
   B -->|Eligible owned attempt; trusted payment deadline or authenticated expiry| D["Calendar: expired cart cleared, affected-session notice; rebooking remains locked until release"]
   B -->|Late payment or invalid booking| E["Payment received. Contact us about your booking. Do not pay again."]
@@ -463,7 +466,7 @@ Verified no-creation also temporarily hides the original affected time windows a
 | Identity changes during operation                       | Please verify your email again.                                                            |
 | Invalid checkout consent/selection/service relationship | Review your selection before starting checkout.                                            |
 
-Availability failures offer “Try again” where retry is supported; explicit service-unavailable status omits it. Server-confirmed selection conflicts and expired holds are consumed by the calendar transition; lower-level phrases such as “Your selected time changed” or “Reservation expired” do not remain their normal final screen.
+Explicit availability retry immediately clears the previous error while the request is pending; only a failed retry restores it. Retained calendar content stays visible without a background branded loader. Availability failures offer “Try again” where retry is supported; explicit service-unavailable status omits it. Server-confirmed selection conflicts and expired holds are consumed by the calendar transition; lower-level phrases such as “Your selected time changed” or “Reservation expired” do not remain their normal final screen.
 
 ### Contact, selection and consent validation
 

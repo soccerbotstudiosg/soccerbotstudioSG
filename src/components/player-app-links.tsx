@@ -1,12 +1,6 @@
 import { PLAYER_APP_STORES } from "@/domain/catalog";
 /** Render the same official player-app destinations in the prompt and footer. */
-export function PlayerAppLinks({
-  onNavigate,
-  compact = false,
-}: {
-  onNavigate?: () => void;
-  compact?: boolean;
-}) {
+export function PlayerAppLinks({ compact = false }: { compact?: boolean }) {
   return (
     <div className={compact ? "footer-app-links" : "app-store-links"}>
       {PLAYER_APP_STORES.map((store, index) => (
@@ -16,7 +10,6 @@ export function PlayerAppLinks({
           href={store.url}
           target="_blank"
           rel="noreferrer"
-          onClick={onNavigate}
           aria-label={store.label}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">

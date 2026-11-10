@@ -275,6 +275,7 @@ before(async () => {
     "0010_customer_read_scopes.sql",
     "0041_no_creation_resolution.sql",
     "0042_checkout_preparation_rejections.sql",
+    "0043_reservation_denials.sql",
   ])
     await db.exec(
       readFileSync(`migrations/${name}`, "utf8")

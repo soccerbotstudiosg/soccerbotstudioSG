@@ -1366,6 +1366,18 @@ test("first visit offers the Player App with only store links and dismissal pers
     await expect(label).toHaveCSS("font-size", "16px");
     await expect(label).toHaveCSS("font-weight", "400");
   }
+  await prompt.getByRole("heading").click();
+  await expect(prompt).toBeVisible();
+  for (const link of await prompt.getByRole("link").all()) {
+    // Exercise the click handler without opening external app-store pages.
+    await link.evaluate((element) => {
+      element.addEventListener("click", (event) => event.preventDefault(), {
+        once: true,
+      });
+    });
+    await link.click();
+    await expect(prompt).toBeVisible();
+  }
   const placement = await close.evaluate((button) => {
     const dialog = button.closest("dialog")!.getBoundingClientRect();
     const rect = button.getBoundingClientRect();
@@ -1373,7 +1385,12 @@ test("first visit offers the Player App with only store links and dismissal pers
   });
   expect(placement.top).toBeCloseTo(13, 0);
   expect(placement.right).toBeCloseTo(13, 0);
-  await close.focus();
+  // Reach Close with keyboard navigation after pointer interactions so the
+  // focus-visible assertion exercises the browser's keyboard modality.
+  await prompt
+    .getByRole("link", { name: "App Store", exact: true })
+    .press("Shift+Tab");
+  await expect(close).toBeFocused();
   await expect(close).toHaveCSS("outline-style", "none");
   await expect(close).toHaveCSS("border-top-width", "0px");
   await expect(close).toHaveCSS("border-radius", "0px");
@@ -1590,6 +1607,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   ).toBe(true);
   await sectionType(".access-option h2");
   if ((page.viewportSize()?.width ?? 1280) <= 700) {
+    for (const card of await page.locator(".access-option").all()) {
+      await expect(card).toHaveCSS("padding-top", "14px");
+      await expect(card).toHaveCSS("padding-bottom", "14px");
+    }
     const choices = await page.locator(".access-options").boundingBox();
     expect(choices!.y).toBeGreaterThanOrEqual(0);
     expect(choices!.y + choices!.height).toBeLessThanOrEqual(

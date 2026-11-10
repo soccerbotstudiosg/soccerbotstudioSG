@@ -5,7 +5,8 @@ import {
   validateFoundationSettings,
   runFoundationPhase,
 } from "./foundation-setup.mjs";
-const target = loadTarget("production");
+// First-install fixtures remain explicitly closed, independently of the active release.
+const target = { ...loadTarget("production"), access: "closed" };
 const revision = "a".repeat(40),
   namespaceId = "b".repeat(32),
   coordinatorId = "c".repeat(64),

@@ -238,11 +238,19 @@ export function TimeStep({
   const nextAvailable = monthResult?.dates.find(
     (day) => day.date > date && day.available,
   )?.date;
-  const { retry } = availability;
   const calendarFailed =
     publicCalendarReady && calendar.failed.includes(month.slice(0, 7));
   const siblingFailed =
     !!throughMonth && calendar.failed.includes(throughMonth);
+  /** Retry the failed calendar and day reads together without dropping their retained display. */
+  function retryAvailability() {
+    const failedMonths = [month.slice(0, 7), throughMonth].filter(
+      (value): value is string => !!value && calendar.failed.includes(value),
+    );
+    if (failedMonths.length) calendar.retry(failedMonths);
+    if (availability.result && availability.result.status !== "success")
+      availability.retry();
+  }
   const calendarRefreshing =
     calendar.refreshing(month.slice(0, 7)) ||
     (!!throughMonth && calendar.refreshing(throughMonth));
@@ -598,7 +606,7 @@ export function TimeStep({
             <button
               className="text-link"
               aria-label="Try again"
-              onClick={() => calendar.retry()}
+              onClick={retryAvailability}
             >
               Try again.
             </button>
@@ -610,7 +618,7 @@ export function TimeStep({
             <button
               className="text-link"
               aria-label="Try again"
-              onClick={() => calendar.retry([throughMonth!])}
+              onClick={retryAvailability}
             >
               Try again.
             </button>
@@ -665,7 +673,7 @@ export function TimeStep({
                   <button
                     className="text-link"
                     aria-label="Try again"
-                    onClick={retry}
+                    onClick={retryAvailability}
                   >
                     Try again.
                   </button>

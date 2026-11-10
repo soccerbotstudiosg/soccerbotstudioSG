@@ -55,7 +55,7 @@ Reconciliation verifies provider state before confirmation; arrows do not imply 
 
 ## Client delivery topology
 
-The client repository owns staging and production deployment; both paths have successful execution evidence in Progress. The initial client Worker uses its temporary Workers.dev hostname and the latest production release restores customer/provider access disabled. Domain hookup and activation are later steps. The runtime components above apply independently to each environment.
+The client repository owns staging and production deployment; both paths have successful execution evidence in Progress. The client Worker uses its temporary Workers.dev hostname with owner-approved sandbox access enabled. The prepared production release profile preserves those settings; closed initial installation remains separate. Custom-domain hookup and live-payment activation are later steps. The runtime components above apply independently to each environment.
 
 ```mermaid
 flowchart TB

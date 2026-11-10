@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { build } from "esbuild";
 import assert from "node:assert/strict";
 import {
   mkdtempSync,
@@ -14,6 +15,7 @@ import {
   loadTarget,
   targetConfig,
   targetDigest,
+  releaseConfig,
 } from "./deployment-target.mjs";
 import {
   validateDeployment,
@@ -107,6 +109,7 @@ function fixture() {
     assets: { directory: "./assets" },
     vars: {
       SOURCE_REVISION: revision,
+      ENVIRONMENT: "developer",
       CAMPAIGN_END_MS: "0",
       PROVIDER_ACCESS: "disabled",
       LIVE_CUSTOMER_ACCESS: "disabled",
@@ -289,6 +292,33 @@ test("sealed SaaS artifacts reject substituted zone routes and asset-origin bypa
       writeConfigs(changed);
       assert.throws(() => validateDeployment(f.root, revision, target));
     }
+    target.access = "client-sandbox";
+    writeConfigs(config);
+    const active = releaseConfig(config, target);
+    const writeActive = (value) => {
+      writeFileSync(
+        join(f.root, "developer-release/wrangler-live.json"),
+        JSON.stringify(value),
+      );
+      seal();
+    };
+    writeActive(active);
+    assert.equal(
+      validateDeployment(f.root, revision, target).vars.CLIENT_SANDBOX_ACCESS,
+      "enabled",
+    );
+    assert.equal(active.vars.IDENTITY_DELIVERY, "disabled");
+    for (const key of [
+      "CLIENT_SANDBOX_ACCESS",
+      "HITPAY_BUSINESS_ID",
+      "IDENTITY_DELIVERY",
+      "LIVE_CUSTOMER_ACCESS",
+    ]) {
+      const changed = structuredClone(active);
+      changed.vars[key] = "unexpected";
+      writeActive(changed);
+      assert.throws(() => validateDeployment(f.root, revision, target));
+    }
   } finally {
     rmSync(f.root, { recursive: true, force: true });
   }
@@ -355,6 +385,30 @@ test("deployment readiness observes previous revision until the exact new revisi
   });
   assert.deepEqual(result.observedRevisions, [old, old, revision]);
   assert.deepEqual(pauses, [2000, 2000]);
+  const activeProduction = {
+    revision,
+    liveCustomerAccess: "enabled",
+    effectiveProviderAccess: "trusted-reads",
+    providerCredentialsPresent: true,
+    environment: "production",
+    foundationRegistration: "registered",
+  };
+  const checkProduction = (health) =>
+    awaitDeploymentHealth({
+      revision,
+      previousRevision: old,
+      environment: "production",
+      read: async () => health,
+      pause: async () => assert.fail("invalid active health must not retry"),
+    });
+  await checkProduction(activeProduction);
+  for (const change of [
+    { environment: "developer" },
+    { foundationRegistration: "pending" },
+    { providerCredentialsPresent: false },
+    { liveCustomerAccess: "disabled" },
+  ])
+    await assert.rejects(checkProduction({ ...activeProduction, ...change }));
 });
 test("deployment readiness remains bounded and refuses foreign revisions failed reads or missing credentials", async () => {
   const old = "b".repeat(40);
@@ -399,7 +453,7 @@ test("deployment readiness remains bounded and refuses foreign revisions failed 
   }
 });
 
-test("deployment checks actual sandbox flags and secret presence without requiring secret values", () => {
+test("deployment checks actual sandbox flags and secret presence without requiring secret values", async () => {
   const f = fixture();
   try {
     const config = validateDeployment(f.root, revision);
@@ -411,10 +465,116 @@ test("deployment checks actual sandbox flags and secret presence without requiri
     for (const name of [
       "HITPAY_SANDBOX_API_KEY",
       "HITPAY_WEBHOOK_SALT",
-      "SIMPLYBOOK_DEV_SIGNING_SECRET",
+      "TURNSTILE_SECRET",
+      "IDENTITY_PEPPER",
+      ...[
+        "COMPANY_LOGIN",
+        "ADMIN_LOGIN",
+        "API_KEY",
+        "ADMIN_API_USER_KEY",
+        "SIGNING_SECRET",
+      ].map((suffix) => `SIMPLYBOOK_DEV_${suffix}`),
     ])
       bindings.push({ name, type: "secret_text" });
     verifySandboxSettings({ bindings }, config);
+    const productionConfig = {
+      ...config,
+      vars: { ...config.vars, ENVIRONMENT: "production" },
+    };
+    // Derive environment-scoped fixture names from the actual Worker contract,
+    // independently of the deployment verifier's required binding list.
+    const compiled = await build({
+      entryPoints: ["worker/policy.ts"],
+      bundle: true,
+      write: false,
+      platform: "node",
+      format: "esm",
+    });
+    const runtimePolicy = await import(
+      `data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString("base64")}`
+    );
+    const productionNames = [
+      "HITPAY_SANDBOX_API_KEY",
+      "HITPAY_WEBHOOK_SALT",
+      "IDENTITY_PEPPER",
+      runtimePolicy.turnstileSecretName({ ENVIRONMENT: "production" }),
+      ...[
+        "COMPANY_LOGIN",
+        "ADMIN_LOGIN",
+        "API_KEY",
+        "ADMIN_API_USER_KEY",
+        "SIGNING_SECRET",
+      ].map((suffix) =>
+        runtimePolicy.providerCredentialName(
+          { ENVIRONMENT: "production" },
+          suffix,
+        ),
+      ),
+    ];
+    assert.equal(productionNames.length, 9);
+    assert.equal(
+      runtimePolicy.turnstileSecretName({ ENVIRONMENT: "developer" }),
+      "TURNSTILE_SECRET",
+    );
+    assert.equal(
+      runtimePolicy.turnstileSecretName({ ENVIRONMENT: "production" }),
+      "TURNSTILE_SECRET_KEY",
+    );
+    const productionBindings = [
+      ...Object.entries(productionConfig.vars).map(([name, text]) => ({
+        name,
+        text,
+        type: "plain_text",
+      })),
+      ...productionNames.map((name) => ({ name, type: "secret_text" })),
+    ];
+    verifySandboxSettings({ bindings: productionBindings }, productionConfig);
+    for (const binding of productionBindings.filter(
+      (entry) => entry.type === "secret_text",
+    )) {
+      assert.throws(
+        () =>
+          verifySandboxSettings(
+            {
+              bindings: productionBindings.filter((entry) => entry !== binding),
+            },
+            productionConfig,
+          ),
+        `production requires ${binding.name}`,
+      );
+    }
+    const developerOnly = productionBindings.map((binding) => ({
+      ...binding,
+      name: binding.name.replace("SIMPLYBOOK_PROD_", "SIMPLYBOOK_DEV_"),
+    }));
+    assert.throws(
+      () =>
+        verifySandboxSettings({ bindings: developerOnly }, productionConfig),
+      /SIMPLYBOOK_PROD_COMPANY_LOGIN/,
+    );
+    const wrongTurnstile = productionBindings.map((binding) => ({
+      ...binding,
+      name:
+        binding.name === "TURNSTILE_SECRET_KEY"
+          ? "TURNSTILE_SECRET"
+          : binding.name,
+    }));
+    assert.throws(
+      () =>
+        verifySandboxSettings({ bindings: wrongTurnstile }, productionConfig),
+      /TURNSTILE_SECRET_KEY/,
+    );
+    const wrongSigner = productionBindings.map((binding) => ({
+      ...binding,
+      name:
+        binding.name === "SIMPLYBOOK_PROD_SIGNING_SECRET"
+          ? "SIMPLYBOOK_DEV_SIGNING_SECRET"
+          : binding.name,
+    }));
+    assert.throws(
+      () => verifySandboxSettings({ bindings: wrongSigner }, productionConfig),
+      /SIMPLYBOOK_PROD_SIGNING_SECRET/,
+    );
     for (const name of [
       "CHECKOUT_PAYMENT_ROUTE",
       "HITPAY_MERCHANT",
@@ -428,9 +588,14 @@ test("deployment checks actual sandbox flags and secret presence without requiri
         ),
       );
     }
-    const changed = structuredClone(bindings);
-    changed.find((b) => b.name === "HITPAY_CHECKOUT").text = "disabled";
-    assert.throws(() => verifySandboxSettings({ bindings: changed }, config));
+    for (const name of Object.keys(config.vars)) {
+      const changed = structuredClone(bindings);
+      changed.find((b) => b.name === name).text = "unexpected";
+      assert.throws(
+        () => verifySandboxSettings({ bindings: changed }, config),
+        `every deployed variable is sealed: ${name}`,
+      );
+    }
   } finally {
     rmSync(f.root, { recursive: true, force: true });
   }

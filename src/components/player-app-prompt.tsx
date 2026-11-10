@@ -25,7 +25,7 @@ export function PlayerAppPrompt() {
       onClose={close}
       variant="player-app"
     >
-      <PlayerAppLinks onNavigate={close} />
+      <PlayerAppLinks />
     </Dialog>
   );
 }

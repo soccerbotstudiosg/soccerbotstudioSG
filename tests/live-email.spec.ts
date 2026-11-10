@@ -303,6 +303,12 @@ test("remembered live account edits and rereads contact while native booking sta
     name: "Continue as Guest",
     exact: true,
   });
+  const guestBadge = page.getByLabel("Booking identity").getByText("Guest", {
+    exact: true,
+  });
+  await expect(guestBadge).toHaveCSS("background-color", "rgb(255, 245, 219)");
+  await expect(guestBadge).toHaveCSS("font-size", "18px");
+  await expect(guestBadge).toHaveCSS("font-weight", "700");
   const before = await guest.boundingBox();
   expect(before).not.toBeNull();
   restoreIdentity();

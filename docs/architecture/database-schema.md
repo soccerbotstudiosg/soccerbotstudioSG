@@ -1,9 +1,10 @@
 # Database schema
 
-Source inventory:35 application D1 tables from migrations0001–0041, verified by applying all41 migrations to isolated in-memory SQLite, and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
+Source inventory:37 application D1 tables from migrations0001–0043, verified by applying all43 migrations to isolated in-memory SQLite, and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
 - Migration0039 adds reservation source/expiry records. Migration0040 adds nullable `hitpay_payments.checkout_expires_ms`; apply it before the candidate Worker. Existing rows remain unknown until authenticated provider recovery supplies the hosted-link deadline; no financial window is backfilled or extended.
 - Migration0041 adds immutable no-creation proof and extends the existing operator-operation constraint through a preserving table rebuild. Apply it before code using terminal creation resolution. It does not resolve or backfill historical uncertainty.
+- Migration0043 adds observed reservation-denial deadlines; apply it before the candidate Worker. It neither rewrites historical expiry strikes nor infers prior denials.
 - Deployment and table-content verification remain separate from this source inventory; no production activation is claimed.
 
 The schema source is [D1 migrations](../../migrations), [coordinator initialization](../../worker/coordinator.ts), [token-cache initialization](../../worker/provider-token-cache.ts) and [display-cache initialization](../../worker/display-snapshots.ts). Retention, expiry and deletion policy belongs to [Data lifecycle](../data-lifecycle.md); authorization and payment invariants belong to [Business rules](../business-rules.md). This document owns table structure and relationships only.
@@ -14,12 +15,12 @@ D1 retains booking/payment evidence; the Durable Object coordinates provider wor
 
 ```mermaid
 flowchart LR
-  Worker["Booking Worker"] --> D1["D1 · 35 tables in local schema"]
+  Worker["Booking Worker"] --> D1["D1 · 37 tables in local schema"]
   Worker --> DO["Account Durable Object · 13 SQLite tables"]
-  D1 --> Identity["Access, identity, contacts · 10"]
-  D1 --> Booking["Attempts, resolution and grant history · 11"]
-  D1 --> Payment["Payments, confirmation, invoices · 6"]
-  D1 --> Webhook["SimplyBook webhook evidence · 6"]
+  D1 --> Identity["Access, identity, contacts and observed denials"]
+  D1 --> Booking["Attempts, resolution, preparation rejection and grant history"]
+  D1 --> Payment["Payments, confirmation and invoices"]
+  D1 --> Webhook["SimplyBook webhook evidence"]
   D1 --> foundation_identity["foundation_identity"]
   D1 --> developer_operations["developer_operations"]
   DO --> Coordination["Admissions, budgets, leases, wakeups · 8"]
@@ -105,6 +106,7 @@ The three archive tables use `CREATE TABLE AS SELECT`: they **do not inherit pri
 - `checkout_preparation_rejections` (migration0042): owner link, canonical input hash, bounded summary/rejection JSON and recording time. No attempt FK because the original attempt must not exist. Update/delete triggers retain proof; reciprocal insert guards forbid an attempt and rejection for the same key. The owner index supports protected recovery.
 - `reservation_sources`: PK/FK `attempt_id → attempts.id`; required64-character customer/IP hashes and nonnegative creation time. Indexes `(customer_hash,attempt_id)` and `(ip_hash,attempt_id)`; updates rejected by trigger.
 - `reservation_expiries`: PK/FK `attempt_id → reservation_sources.attempt_id`; nonnegative `expired_ms`, indexed expiry time; updates rejected by trigger. No purge/delete trigger is introduced.
+- `reservation_denials` (migration0043): composite PK `(customer_hash,owner_id)`, nonnegative `blocked_until_ms`, owner/deadline index. Retains an observed original cooldown across network/identity changes; not a strike or foreign key to booking effects. No historical rows are synthesized.
 - `no_creation_resolutions`: required intent hash, attempt version, original dispatch fence, `evidence_source` (`operator_verified_provider` or `correlated_rpc_rejection`), evidence reference of1–128 characters, verification/resolution timestamps with resolution no earlier than verification, and nullable operator-capability hash. The capability hash is required only for operator evidence and is an application-managed link, not a declared FK. Update/delete triggers preserve the resolution; additional triggers fence attempt updates and new financial/session/grant effects after resolution. The original attempt state remains `recovery_required`; this separate record supplies its terminal meaning without rewriting historical enums.
 - Migration0038 adds immutable `recovery_buffer_ms`; existing rows retain their migration default, while new attempts explicitly record the policy value. Migration0039 does not modify financial records.
 

@@ -9,6 +9,7 @@ import {
   isHitpayCheckoutUrl,
   type CheckoutSelectionRejection,
 } from "@/domain/native-checkout";
+import { expiryReconciliationDeadline } from "@/services/storage";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
@@ -142,6 +143,7 @@ export function ProtectedConfirmation({
   const {
     view,
     bindWindow,
+    check: checkConfirmation,
     paymentReceived,
     responseEvidence,
     customerConfirmation,
@@ -177,12 +179,22 @@ export function ProtectedConfirmation({
     revision: number;
     read: number;
   } | null>(null);
-  const finishExpiry = useEffectEvent(() => {
+  const finishExpiry = useEffectEvent((id: string, revision: number) => {
+    if (id !== attemptId || revision !== sessionRevision || hasPaymentEvidence)
+      return;
     onExpired?.(attemptId);
     if (!calendarRecovery) router.replace("/book/time/");
   });
   const wantsExpiry =
     view !== "denied" &&
+    view !== "confirmed" &&
+    !paymentReceived &&
+    !saved &&
+    !customerConfirmation &&
+    !(
+      contextMatches &&
+      (context.value.payment || context.value.customerConfirmation)
+    ) &&
     (expired || (contextMatches && context.value.expired === true));
   const [failedExpiry, setFailedExpiry] = useState<{
     id: string;
@@ -207,7 +219,7 @@ export function ProtectedConfirmation({
         await expireBooking(attemptId, controller.signal);
         if (active) {
           finished = true;
-          finishExpiry();
+          finishExpiry(attemptId, sessionRevision);
         }
       } catch (error) {
         if (!active) return;
@@ -544,8 +556,77 @@ export function ProtectedConfirmation({
     paymentReceived ||
     saved ||
     customerConfirmation ||
+    (contextMatches && context.value.customerConfirmation) ||
     view === "confirmed"
   );
+  const [expiryWait, setExpiryWait] = useState<{
+    id: string;
+    revision: number;
+    paymentDeadline: number;
+    ended: boolean;
+  } | null>(null);
+  const needsExpiryReconciliation =
+    checkoutMode === "live" &&
+    !calendarRecovery &&
+    paymentWindowEnded &&
+    !wantsExpiry &&
+    !hasPaymentEvidence &&
+    !rejectionState &&
+    view !== "denied";
+  const expiryWaitEnded =
+    expiryWait?.id === attemptId &&
+    expiryWait.revision === sessionRevision &&
+    expiryWait.paymentDeadline === paymentDeadline &&
+    expiryWait.ended;
+  const reconcilingExpiry = needsExpiryReconciliation && !expiryWaitEnded;
+  useEffect(() => {
+    if (
+      !needsExpiryReconciliation ||
+      paymentDeadline === undefined ||
+      !current?.clock
+    )
+      return;
+    const deadline = expiryReconciliationDeadline(
+      attemptId,
+      paymentDeadline,
+      Date.now(),
+    );
+    const started = performance.now();
+    const remainingAtStart = Math.max(0, deadline - Date.now());
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const update = () => {
+      clearTimeout(timer);
+      const remaining = Math.min(
+        deadline - Date.now(),
+        remainingAtStart - Math.max(0, performance.now() - started),
+      );
+      setExpiryWait({
+        id: attemptId,
+        revision: sessionRevision,
+        paymentDeadline,
+        ended: remaining <= 0,
+      });
+      if (remaining > 0) timer = setTimeout(update, remaining);
+    };
+    update();
+    if (Date.now() < deadline) checkConfirmation();
+    window.addEventListener("focus", update);
+    window.addEventListener("pageshow", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", update);
+      window.removeEventListener("pageshow", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [
+    needsExpiryReconciliation,
+    paymentDeadline,
+    current?.clock,
+    attemptId,
+    sessionRevision,
+    checkConfirmation,
+  ]);
   const creationResolved =
     view !== "denied" &&
     !!(
@@ -637,12 +718,7 @@ export function ProtectedConfirmation({
   const calendarReturned = useRef<string | null>(null);
   useEffect(() => {
     if (calendarRecovery) {
-      if (
-        paymentReceived ||
-        recordedPayment ||
-        displayedReceipt ||
-        view === "confirmed"
-      ) {
+      if (hasPaymentEvidence || displayedReceipt) {
         onPaymentDetected?.(attemptId);
         router.replace("/book/payment/");
       }
@@ -651,10 +727,10 @@ export function ProtectedConfirmation({
     if (
       checkoutMode !== "live" ||
       !current ||
-      paymentReceived ||
-      recordedPayment ||
+      hasPaymentEvidence ||
       displayedReceipt ||
       rejectionState ||
+      reconcilingExpiry ||
       (!paymentWindowEnded &&
         !wantsExpiry &&
         (view !== "unresolved" ||
@@ -671,11 +747,11 @@ export function ProtectedConfirmation({
     checkoutMode,
     view,
     current,
-    paymentReceived,
-    recordedPayment,
+    hasPaymentEvidence,
     displayedReceipt,
     wantsExpiry,
     paymentWindowEnded,
+    reconcilingExpiry,
     sessionRevision,
     rejectionState,
     attemptId,
@@ -723,6 +799,7 @@ export function ProtectedConfirmation({
     receipt: receiptMatches ? receipt.value : undefined,
   });
   if (silent) return null;
+  if (reconcilingExpiry) return <BrandLoading label="Checking payment…" />;
   if (rejectionState && !hasPaymentEvidence)
     return <BrandLoading compact label="Checking available sessions…" />;
   if (

@@ -1,13 +1,17 @@
 import type { Access } from "./access";
 import { ApiError, keyedHash } from "./policy";
-import { unpaidExpiry } from "./checkout-expiry-policy";
+import { unpaidExpiry, unpaidExpiryDeadline } from "./checkout-expiry-policy";
 import {
   RESERVATION_BLOCK_MS,
   RESERVATION_IP_WINDOW_MS,
   RESERVATION_STRIKE_THRESHOLD,
 } from "../src/domain/booking-policy";
 
-export type ReservationSource = { customerHash: string; ipHash: string };
+export type ReservationSource = {
+  customerHash: string;
+  ipHash: string;
+  ownerId: string;
+};
 
 /** Canonicalize the trusted edge address without accepting forwarded client input. */
 function edgeAddress(request: Request) {
@@ -53,6 +57,7 @@ export async function reservationSource(
     .first<{ email: string }>();
   const scope = [env.DEPLOYMENT_ACCOUNT_ID, env.ENVIRONMENT, env.APP_ORIGIN];
   return {
+    ownerId: access.owner_id,
     customerHash: await keyedHash(pepper, [
       "reservation-customer",
       ...scope,
@@ -80,10 +85,10 @@ export function reservationExpiryStatement(
   return db
     .prepare(
       `INSERT INTO reservation_expiries(attempt_id,expired_ms)
-    SELECT s.attempt_id,MAX(h.expires_ms,c.booking_created_ms+c.payment_window_ms+c.checking_buffer_ms+c.recovery_buffer_ms)
+    SELECT s.attempt_id,${unpaidExpiryDeadline}
     FROM reservation_sources s JOIN attempts a ON a.id=s.attempt_id
     JOIN (SELECT attempt_id,state,ongoing FROM native_checkout_grants UNION ALL SELECT attempt_id,state,ongoing FROM expired_native_checkout_grants) g ON g.attempt_id=a.id
-    JOIN hitpay_holds h ON h.attempt_id=a.id JOIN checkout_progress c ON c.attempt_id=a.id
+    JOIN hitpay_holds h ON h.attempt_id=a.id JOIN checkout_progress c ON c.attempt_id=a.id LEFT JOIN hitpay_payments evidence ON evidence.attempt_id=a.id
     WHERE (s.customer_hash=${attemptScope ? "(SELECT customer_hash FROM reservation_sources WHERE attempt_id=?)" : "?"} OR s.ip_hash=${attemptScope ? "(SELECT ip_hash FROM reservation_sources WHERE attempt_id=?)" : "?"}) AND g.ongoing=1 AND g.state='complete' AND ${proof}
     ON CONFLICT(attempt_id) DO NOTHING`,
     )
@@ -95,6 +100,7 @@ export function reservationBlockedUntilSql(
   customer: string,
   ip: string,
   now: string,
+  owner: string,
 ) {
   const paidReset = `(SELECT COALESCE(MAX(p.paid_ms),0) FROM reservation_sources r JOIN hitpay_payments p ON p.attempt_id=r.attempt_id
     WHERE r.customer_hash=${customer} AND p.paid_ms IS NOT NULL AND p.payment_id IS NOT NULL AND p.external_state='observed')`;
@@ -102,7 +108,7 @@ export function reservationBlockedUntilSql(
     where: string,
   ) => `(SELECT CASE WHEN COUNT(*)>=${RESERVATION_STRIKE_THRESHOLD} THEN COALESCE(MAX(e.expired_ms),0)+${RESERVATION_BLOCK_MS} ELSE 0 END
     FROM reservation_expiries e JOIN reservation_sources s ON s.attempt_id=e.attempt_id WHERE ${where})`;
-  return `MAX(${until(`s.customer_hash=${customer} AND e.expired_ms>${paidReset}`)},${until(`s.ip_hash=${ip} AND e.expired_ms>${now}-${RESERVATION_IP_WINDOW_MS}`)})`;
+  return `MAX(COALESCE((SELECT MAX(blocked_until_ms) FROM reservation_denials WHERE customer_hash=${customer} OR owner_id=${owner}),0),${until(`s.customer_hash=${customer} AND e.expired_ms>${paidReset}`)},${until(`s.ip_hash=${ip} AND e.expired_ms>${now}-${RESERVATION_IP_WINDOW_MS}`)})`;
 }
 
 /** Refuse new reservations while preserving already dispatched checkout recovery. */
@@ -119,12 +125,35 @@ export async function assertReservationAdmission(
       now,
     ),
     env.STATE.prepare(
-      `SELECT ${reservationBlockedUntilSql("q.customer", "q.ip", String(now))} AS blocked_until FROM (SELECT ? AS customer, ? AS ip) q`,
-    ).bind(source.customerHash, source.ipHash),
+      `SELECT ${reservationBlockedUntilSql("q.customer", "q.ip", String(now), "q.owner")} AS blocked_until FROM (SELECT ? AS customer, ? AS ip, ? AS owner) q`,
+    ).bind(source.customerHash, source.ipHash, source.ownerId),
   ]);
   const until = (result[1].results[0] as { blocked_until: number })
     .blocked_until;
-  if (until > now) throw new ApiError(429, "reservation_blocked");
+  if (until > now) {
+    await retainReservationDenial(
+      env.STATE,
+      source.customerHash,
+      source.ownerId,
+      until,
+    );
+    throw new ApiError(429, "reservation_blocked");
+  }
+}
+
+/** Retain an observed refusal until its original deadline without adding a strike. */
+export async function retainReservationDenial(
+  db: D1Database,
+  customer: string,
+  owner: string,
+  until: number,
+) {
+  await db
+    .prepare(
+      "INSERT INTO reservation_denials(customer_hash,owner_id,blocked_until_ms) VALUES(?,?,?) ON CONFLICT(customer_hash,owner_id) DO UPDATE SET blocked_until_ms=MAX(blocked_until_ms,excluded.blocked_until_ms)",
+    )
+    .bind(customer, owner, until)
+    .run();
 }
 
 /** Build the source insert for the same transaction as deferred attempt preparation. */
