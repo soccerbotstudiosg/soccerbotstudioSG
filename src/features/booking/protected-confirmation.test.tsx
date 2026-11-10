@@ -1644,8 +1644,17 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
     state: "selection_unavailable" as const,
     rejectedSessionIndex: 0,
   };
-  for (const source of ["context", "status", "unknown", "paid"] as const) {
+  for (const source of [
+    "context",
+    "status",
+    "unknown",
+    "paid",
+    "background-rejection",
+    "background-not-created",
+  ] as const) {
     const rejected = vi.fn(async () => true);
+    const resolved = vi.fn(() => true);
+    const background = source.startsWith("background-");
     const onAwaitingExpiry = vi.fn(() => true);
     const fetch = vi.fn(async (url: string) => {
       if (source === "unknown") return new Response(null, { status: 503 });
@@ -1654,7 +1663,12 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
           attemptId: first,
           mode: "live",
           checkout: { state: "unavailable" },
-          ...(source === "context" ? { selectionRejection: rejection } : {}),
+          ...(source === "context" || source === "background-rejection"
+            ? { selectionRejection: rejection }
+            : {}),
+          ...(source === "background-not-created"
+            ? { creationResolution: { state: "not_created" } }
+            : {}),
           ...(source === "paid"
             ? { payment: { status: "recorded", paidAtMs: Date.now() } }
             : {}),
@@ -1670,6 +1684,12 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
             pollAfterMs: 5000,
           },
         });
+      if (source === "background-not-created")
+        return Response.json({
+          status: "invalid",
+          reason: "booking_not_created",
+          creationResolution: { state: "not_created" },
+        });
       return Response.json({
         status: "invalid",
         reason: "checkout_selection_rejected",
@@ -1681,12 +1701,25 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
       <ProtectedConfirmation
         attemptId={first}
         checkoutMode="live"
+        calendarRecovery={background}
+        silent={background}
+        onCreationResolved={resolved}
         onSelectionRejected={rejected}
         onAwaitingExpiry={onAwaitingExpiry}
       />,
     );
     await act(async () => {});
-    if (source === "context" || source === "status") {
+    if (background) {
+      if (source === "background-rejection")
+        expect(rejected).toHaveBeenCalledWith(
+          first,
+          rejection,
+          expect.any(AbortSignal),
+        );
+      else expect(resolved).toHaveBeenCalledWith(first);
+      expect(navigation.replace).not.toHaveBeenCalled();
+      expect(view.container).toBeEmptyDOMElement();
+    } else if (source === "context" || source === "status") {
       expect(rejected).toHaveBeenCalledWith(
         first,
         rejection,

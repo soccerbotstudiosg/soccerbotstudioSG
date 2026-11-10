@@ -6,6 +6,7 @@ import type {
   bookingDetailsSchema,
   CheckoutSelectionRejection,
   CreationResolution,
+  CalendarMonthCoverage,
 } from "@/domain/native-checkout";
 import type { Attempt, BookingDraft, Outcome, Session } from "@/domain/booking";
 export type AvailableSlot = Session & { available: boolean };
@@ -20,6 +21,7 @@ export type AvailabilityInput = BookingRequest & {
   fresh?: boolean;
 };
 export type CalendarAvailability = {
+  monthCoverage?: CalendarMonthCoverage;
   displayExpiresAtMs?: number;
   month: string;
   observedAtMs: number;

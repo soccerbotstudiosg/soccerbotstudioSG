@@ -831,7 +831,14 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
             0,
           ),
         });
-        return value;
+        return store
+          ? {
+              ...value,
+              monthCoverage: store.calendarCoverage(
+                persisted ? value : undefined,
+              ),
+            }
+          : value;
       }),
     ).catch((error: unknown) => {
       traceCalendar(correlationId, "build_failed", {

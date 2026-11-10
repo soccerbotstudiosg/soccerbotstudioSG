@@ -87,6 +87,7 @@ export function ProtectedConfirmation({
   onExpired,
   onAwaitingExpiry,
   calendarRecovery = false,
+  silent = false,
   onPaymentDetected,
   onSelectionRejected,
   onCreationResolved,
@@ -99,6 +100,8 @@ export function ProtectedConfirmation({
   onExpired?: (attemptId: string) => void;
   onAwaitingExpiry?: (attemptId: string) => boolean;
   calendarRecovery?: boolean;
+  /** Continue protected recovery without rendering status on other draft steps. */
+  silent?: boolean;
   onPaymentDetected?: (attemptId: string) => void;
   onCreationResolved?: (attemptId: string) => boolean;
   onSelectionRejected?: (
@@ -176,7 +179,7 @@ export function ProtectedConfirmation({
   } | null>(null);
   const finishExpiry = useEffectEvent(() => {
     onExpired?.(attemptId);
-    router.replace("/book/time/");
+    if (!calendarRecovery) router.replace("/book/time/");
   });
   const wantsExpiry =
     view !== "denied" &&
@@ -555,11 +558,13 @@ export function ProtectedConfirmation({
     if (
       creationResolved &&
       !hasPaymentEvidence &&
-      finishCreationResolution(attemptId)
+      finishCreationResolution(attemptId) &&
+      !calendarRecovery
     )
       router.replace("/book/time/");
   }, [
     creationResolved,
+    calendarRecovery,
     hasPaymentEvidence,
     attemptId,
     sessionRevision,
@@ -582,7 +587,7 @@ export function ProtectedConfirmation({
       rejectSelection(attemptId, rejection, controller.signal),
     )
       .then((rejected) => {
-        if (!controller.signal.aborted && rejected)
+        if (!controller.signal.aborted && rejected && !calendarRecovery)
           router.replace("/book/time/");
       })
       .catch(() => {
@@ -595,6 +600,7 @@ export function ProtectedConfirmation({
     attemptId,
     sessionRevision,
     rejectionState,
+    calendarRecovery,
     rejectionIndex,
     hasPaymentEvidence,
     router,
@@ -711,6 +717,7 @@ export function ProtectedConfirmation({
       (paymentReceived || view === "confirmed" ? responseEvidence : current),
     receipt: receiptMatches ? receipt.value : undefined,
   });
+  if (silent) return null;
   if (rejectionState && !hasPaymentEvidence)
     return <BrandLoading compact label="Checking available sessions…" />;
   if (

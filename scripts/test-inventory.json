@@ -361,7 +361,15 @@
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "calendar coverage expiry failures and newly reconciled availability keep future months reachable"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
     "title": "calendar loads only the displayed month and discards an old scope reply"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "calendar month choices trim only fresh trailing empty cache coverage without extra discovery reads"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
@@ -378,6 +386,10 @@
   {
     "file": "src/features/booking/booking-parity.test.tsx",
     "title": "Details opens local Review without waiting for unavailable providers"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "expired calendar refresh retains dates and sessions without branded loading or stale checkout availability"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
@@ -422,6 +434,10 @@
   {
     "file": "src/features/booking/booking-parity.test.tsx",
     "title": "reservation conflict removes its session locally and returns to calendar with contact preserved"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "retained session display rejects changed date players service scope owner and authentication plus obsolete responses"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
@@ -517,6 +533,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "completed conflict allows immediate calendar Back and Continue with retained selections across refresh"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "completed conflict classification preserves all available selections without inventing affected sessions"
   },
   {
@@ -554,6 +574,14 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "expiry callback cannot clear a paid or different current attempt (paid)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expiry release permits Back with replacement selections without replaying payment"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expiry release permits Continue with replacement selections without replaying payment"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -670,6 +698,14 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "unpaid expiry never restores an unconfirmed or obsolete selection (rotation)"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "verified no-creation permits Back with replacement selections without replaying payment"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "verified rejection permits Back and edits during classification without replaying payment"
   },
   {
     "file": "src/features/booking/email-bot-proof.test.tsx",

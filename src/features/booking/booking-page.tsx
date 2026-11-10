@@ -9,6 +9,7 @@ import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useBooking } from "./provider";
 import { AccountStep } from "./account-step";
 import { SessionStep } from "./session-step";
+import { ProtectedConfirmation } from "./protected-confirmation";
 import { TimeStep } from "./time-step";
 import { DetailsStep } from "./details-step";
 import { ReviewStep } from "./review-step";
@@ -44,6 +45,11 @@ export function BookingPage({ step }: { step: BookingStep }) {
       setCalendarBrowsing,
       visitBookingStep,
       action,
+      confirmationRevision,
+      restartAfterExpiry,
+      rejectRecoveredSelection,
+      resolveUncreatedBooking,
+      resumePaymentStatus,
     } = useBooking(),
     router = useRouter();
   const handingOff =
@@ -77,7 +83,11 @@ export function BookingPage({ step }: { step: BookingStep }) {
                 draft.mode &&
                 step === "payment"
               ? "time"
-              : guardedStep(step, draft, attempt, now),
+              : action.calendarRecovery && attempt
+                ? ["account", "session", "time"].includes(step)
+                  ? guardedStep(step, draft, null, now)
+                  : "time"
+                : guardedStep(step, draft, attempt, now),
     current = progress.findIndex(([id]) => id === displayStep);
   const retainingReview =
     step === "details" && actual === "review" && attempt?.held === true;
@@ -90,8 +100,8 @@ export function BookingPage({ step }: { step: BookingStep }) {
     } else router.replace(`/book/${actual}/`);
   }, [actual, step, ready, router, retainingReview]);
   useEffect(() => {
-    if (ready) visitBookingStep(actual);
-  }, [ready, actual, visitBookingStep]);
+    if (ready && (actual === step || retainingReview)) visitBookingStep(actual);
+  }, [ready, actual, step, retainingReview, visitBookingStep]);
   useEffect(() => {
     setCalendarBrowsing(["account", "session", "time"].includes(actual));
     return () => setCalendarBrowsing(true);
@@ -102,6 +112,19 @@ export function BookingPage({ step }: { step: BookingStep }) {
     return <BrandLoading overlay={false} />;
   const Screen = screens[step];
   if (step === "payment" || step === "confirmation") return <Screen />;
+  const recoveryNotice = action.calendarRecovery && attempt && (
+    <ProtectedConfirmation
+      attemptId={attempt.id}
+      checkoutMode="live"
+      calendarRecovery
+      silent={step !== "time"}
+      sessionRevision={confirmationRevision}
+      onExpired={restartAfterExpiry}
+      onSelectionRejected={rejectRecoveredSelection}
+      onCreationResolved={resolveUncreatedBooking}
+      onPaymentDetected={resumePaymentStatus}
+    />
+  );
   return (
     <div
       className={`booking-shell ${["account", "session", "review"].includes(displayStep) ? "session-shell" : ""}`}
@@ -167,7 +190,14 @@ export function BookingPage({ step }: { step: BookingStep }) {
         }
       >
         <section className="booking-main min-w-0">
-          <Screen />
+          {step === "time" ? (
+            <TimeStep recoveryNotice={recoveryNotice} />
+          ) : (
+            <>
+              {recoveryNotice}
+              <Screen />
+            </>
+          )}
         </section>
         {!mobile && ["time", "details"].includes(displayStep) && (
           <Summary basket={step === "time"} />

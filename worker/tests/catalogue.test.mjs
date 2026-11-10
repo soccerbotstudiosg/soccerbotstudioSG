@@ -2404,6 +2404,152 @@ test("persistent display snapshots retain original deadlines across restarts and
     );
     now = expected.displayExpiresAtMs;
     assert.equal(restarted.read("calendar", key), undefined);
+
+    // Navigation coverage is derived from existing public cache only. Unknown
+    // missing, expired or corrupt months are never represented as empty.
+    now = Date.parse("2026-11-09T00:00:00Z");
+    const coverageStore = new DisplaySnapshots(sql, "coverage/source");
+    const coverageMonths = coverageStore.months();
+    assert.deepEqual(
+      coverageStore.calendarCoverage(),
+      coverageMonths.map((month) => ({ month, state: "unknown" })),
+    );
+    const emptyDates = (month, first = 1) =>
+      Array.from(
+        {
+          length: new Date(
+            Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0),
+          ).getUTCDate(),
+        },
+        (_, index) => ({
+          date: `${month}-${String(index + 1).padStart(2, "0")}`,
+          available: false,
+          offers: [],
+        }),
+      ).filter((day) => Number(day.date.slice(-2)) >= first);
+    const currentMonth = {
+      month: "2026-11",
+      serviceId: "2",
+      observedAtMs: now,
+      dates: emptyDates("2026-11", 9),
+    };
+    coverageStore.save(
+      "calendar",
+      "calendar:2026-11",
+      currentMonth,
+      coverageStore.generation(),
+    );
+    coverageStore.save(
+      "calendar",
+      "calendar:2026-12",
+      { ...currentMonth, month: "2026-12", dates: emptyDates("2026-12") },
+      coverageStore.generation(),
+    );
+    coverageStore.save(
+      "calendar",
+      "calendar:2027-01",
+      {
+        ...currentMonth,
+        month: "2027-01",
+        dates: [
+          {
+            date: "2027-01-04",
+            available: true,
+            offers: [
+              { ...offer, startMs: Date.parse("2027-01-04T12:00:00+08:00") },
+            ],
+          },
+        ],
+      },
+      coverageStore.generation(),
+    );
+    const selected = coverageStore.read("calendar", "calendar:2026-11");
+    assert.deepEqual(
+      coverageStore
+        .calendarCoverage(selected)
+        .map(({ month, state }) => ({ month, state })),
+      [
+        { month: "2026-11", state: "empty" },
+        { month: "2026-12", state: "empty" },
+        { month: "2027-01", state: "available" },
+      ],
+    );
+    for (const dates of [[], emptyDates("2026-12").slice(1)]) {
+      coverageStore.save(
+        "calendar",
+        "calendar:2026-12",
+        { ...currentMonth, month: "2026-12", dates },
+        coverageStore.generation(),
+      );
+      assert.deepEqual(
+        coverageStore.calendarCoverage(selected)[1],
+        {
+          month: "2026-12",
+          state: "unknown",
+        },
+        "a partial empty snapshot cannot hide its entire month",
+      );
+    }
+    coverageStore.save(
+      "calendar",
+      "calendar:2026-12",
+      { ...currentMonth, month: "2026-12", dates: emptyDates("2026-12") },
+      coverageStore.generation(),
+    );
+    const originalRead = coverageStore.read.bind(coverageStore);
+    const reads = [];
+    coverageStore.read = (kind, key) => {
+      reads.push(key);
+      return originalRead(kind, key);
+    };
+    coverageStore.calendarCoverage(selected);
+    assert.deepEqual(
+      reads,
+      ["calendar:2026-12", "calendar:2027-01"],
+      "reuse the selected month; only two cache lookups, no provider dependencies",
+    );
+    db.prepare(
+      "UPDATE display_snapshots SET payload='invalid' WHERE scope=? AND key=?",
+    ).run("coverage/source", "calendar:2026-12");
+    assert.deepEqual(coverageStore.calendarCoverage(selected)[1], {
+      month: "2026-12",
+      state: "unknown",
+    });
+    now += 1800000;
+    assert.ok(
+      coverageStore
+        .calendarCoverage(selected)
+        .every((month) => month.state === "unknown"),
+    );
+    // A still-fresh cached offer becomes empty at its lead-time cutoff, without
+    // waiting for another provider refresh or extending the snapshot lifetime.
+    now = Date.parse("2026-11-10T07:59:59.999+08:00");
+    const nearCutoff = {
+      ...currentMonth,
+      observedAtMs: now,
+      dates: emptyDates("2026-11", 10).map((day) =>
+        day.date === "2026-11-10"
+          ? {
+              ...day,
+              available: true,
+              offers: [
+                { ...offer, startMs: Date.parse("2026-11-10T12:00:00+08:00") },
+              ],
+            }
+          : day,
+      ),
+    };
+    coverageStore.save(
+      "calendar",
+      "calendar:2026-11",
+      nearCutoff,
+      coverageStore.generation(),
+    );
+    const firstCoverage = coverageStore.calendarCoverage()[0];
+    assert.equal(firstCoverage.state, "available");
+    assert.equal(firstCoverage.displayExpiresAtMs, now + 2);
+    now += 2;
+    assert.equal(coverageStore.calendarCoverage()[0].state, "empty");
   } finally {
     Date.now = clock;
     db.close();

@@ -5,10 +5,13 @@ import {
 } from "../src/domain/catalog";
 import {
   START_INTERVAL_MINUTES,
+  BOOKING_LEAD_MS,
+  isStudioSessionStart,
   BOOKING_MONTH_COUNT,
 } from "../src/domain/booking-policy";
 import {
   publicCalendarSchema,
+  type CalendarMonthCoverage,
   studioDisplayCalendar,
   nativeAvailabilitySchema,
 } from "../src/domain/native-checkout";
@@ -163,6 +166,64 @@ export class DisplaySnapshots {
     } catch {
       /* Corrupt display data is a cache miss, never write authority. */
     }
+  }
+  /** Summarize only retained month snapshots without triggering provider reads. */
+  calendarCoverage(
+    selected?: z.infer<typeof publicCalendarSchema>,
+  ): CalendarMonthCoverage {
+    const now = Date.now();
+    return this.months().map((month) => {
+      const value =
+        selected?.month === month
+          ? selected
+          : this.read("calendar", `calendar:${month}`);
+      const unknown = { month, state: "unknown" as const };
+      if (
+        !value ||
+        value.month !== month ||
+        !value.displayExpiresAtMs ||
+        value.displayExpiresAtMs <= now ||
+        value.observedAtMs > now ||
+        (selected && value.serviceId !== selected.serviceId) ||
+        value.dates.some((day) => day.offers === undefined)
+      )
+        return unknown;
+      const offers = value.dates
+        .flatMap((day) => day.offers ?? [])
+        .filter(
+          (offer) =>
+            isStudioSessionStart(offer.startMs) &&
+            offer.startMs - now >= BOOKING_LEAD_MS,
+        );
+      if (!offers.length) {
+        // Empty evidence must cover every remaining day, not merely a valid
+        // subset of the month. Positive offers can prove availability on their own.
+        const today = new Date(now + 28800000).toISOString().slice(0, 10);
+        const first = today.startsWith(month) ? today : `${month}-01`;
+        const end = new Date(`${month}-01T00:00:00Z`);
+        end.setUTCMonth(end.getUTCMonth() + 1);
+        const covered = new Set(value.dates.map((day) => day.date));
+        for (
+          const date = new Date(`${first}T00:00:00Z`);
+          date < end;
+          date.setUTCDate(date.getUTCDate() + 1)
+        )
+          if (!covered.has(date.toISOString().slice(0, 10))) return unknown;
+      }
+      return {
+        month,
+        state: offers.length ? ("available" as const) : ("empty" as const),
+        observedAtMs: value.observedAtMs,
+        displayExpiresAtMs: Math.min(
+          value.displayExpiresAtMs,
+          offers.length
+            ? Math.max(...offers.map((offer) => offer.startMs)) -
+                BOOKING_LEAD_MS +
+                1
+            : value.displayExpiresAtMs,
+        ),
+      };
+    });
   }
   /** Save a display snapshot only for the expected generation. */
   save(

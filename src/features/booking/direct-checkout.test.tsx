@@ -1901,6 +1901,9 @@ async function verifyMockPaymentExpiry(expired: boolean) {
         <output data-testid="mock-expiry-return">
           {String(state.action.returnToCalendar)}
         </output>
+        <output data-testid="mock-expiry-recovery">
+          {String(state.action.calendarRecovery)}
+        </output>
       </>
     );
   }
@@ -2025,7 +2028,9 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   expect(
     JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots,
   ).toEqual([]);
-  expect(screen.getByTestId("mock-expiry-return")).toHaveTextContent("true");
+  // Arrival consumes navigation intent while preserving financial recovery.
+  expect(screen.getByTestId("mock-expiry-return")).toHaveTextContent("false");
+  expect(screen.getByTestId("mock-expiry-recovery")).toHaveTextContent("true");
   expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
   expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
   // Later authenticated payment evidence must return to the original payment
@@ -3543,4 +3548,309 @@ it("access denial during conflict classification stops recovery and keeps the or
     navigation.replace.mockReset();
     vi.useRealTimers();
   }
+});
+
+it("completed conflict allows immediate calendar Back and Continue with retained selections across refresh", async () => {
+  for (const refresh of [false, true]) {
+    for (const destination of ["details", "session"] as const) {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+      navigation.path = "/book/review/";
+      const retained = ["12:50", "13:40"].map((start) => ({
+        ...draft.slots[0],
+        start,
+      }));
+      const original = { ...draft, slots: [...draft.slots, ...retained] };
+      saveLiveDraft(original);
+      const foreign = "00000000-0000-4000-8000-000000000002";
+      let refreshed = false;
+      const restore = vi.fn<NonNullable<BookingService["restore"]>>(async () =>
+        refreshed
+          ? {
+              id: foreign,
+              draft: original,
+              status: "checking",
+              outcome: "pending",
+              checkUntil: Date.now() + 600000,
+              booking: null,
+            }
+          : null,
+      );
+      const checkout = vi.fn<BookingService["checkout"]>(async () => {
+        throw new BookingServiceError(
+          "selection_unavailable",
+          "Synthetic conflict",
+          0,
+        );
+      });
+      const fetch = vi.fn<typeof globalThis.fetch>(
+        async () => new Response(null, { status: 503 }),
+      );
+      vi.stubGlobal("fetch", fetch);
+      const service = {
+        ...liveBookingService,
+        restore,
+        checkout,
+        availability: async () =>
+          retained.map((slot) => ({ ...slot, available: true })),
+        calendar: undefined,
+        publicCalendar: undefined,
+      };
+      const identity = { ...demoCustomerIdentity, mode: "live" as const };
+      const tree = (step: "review" | "time" | "details" | "session") => (
+        <BookingProvider bookingService={service} identityService={identity}>
+          <ConflictHandoffProbe slots={original.slots} />
+          <BookingPage step={step} />
+        </BookingProvider>
+      );
+      let view = render(tree("review"));
+      await act(async () => {});
+      await act(async () => {
+        fireEvent.click(screen.getByText("Submit handoff"));
+      });
+      expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+      navigation.path = "/book/time/";
+      view.rerender(tree("time"));
+      await act(async () => {});
+      expect(
+        JSON.parse(screen.getByTestId("handoff-cart").textContent!),
+      ).toEqual(retained);
+      expect(sessionStorage.getItem("soccerbot-conflict-notice")).toContain(
+        "12:00",
+      );
+      if (refresh) {
+        view.unmount();
+        refreshed = true;
+        view = render(tree("time"));
+        await act(async () => {});
+        expect(screen.getByTestId("handoff-attempt")).toHaveTextContent("none");
+        expect(sessionStorage.getItem("soccerbot-conflict-notice")).toContain(
+          "12:00",
+        );
+      }
+      const link = screen.getByRole("link", {
+        name: destination === "details" ? /^Enter Booking Details/ : "Back",
+      });
+      expect(link.getAttribute("href")).toContain(`/book/${destination}`);
+      navigation.replace.mockClear();
+      navigation.path = `/book/${destination}/`;
+      view.rerender(tree(destination));
+      await act(async () => {});
+      expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+      expect(
+        screen.getByText(
+          destination === "details" ? "Your details" : "Your session",
+        ),
+      ).toBeVisible();
+      expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
+      expect(
+        JSON.parse(screen.getByTestId("handoff-cart").textContent!),
+      ).toEqual(retained);
+      expect(checkout).toHaveBeenCalledTimes(1);
+      expect(
+        fetch.mock.calls.every(
+          ([, options]) => !options?.method || options.method === "GET",
+        ),
+      ).toBe(true);
+      cleanup();
+      sessionStorage.clear();
+      localStorage.clear();
+      navigation.replace.mockReset();
+      vi.useRealTimers();
+    }
+  }
+});
+
+async function expectRecoveryReleaseNavigation(
+  destination: "details" | "session",
+  resolution: "expiry" | "not_created" | "rejected",
+) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  navigation.path = "/book/time/";
+  saveLiveDraft(draft, true, id);
+  const replacement = { ...draft.slots[0], start: "13:40" };
+  const restore = vi.fn<NonNullable<BookingService["restore"]>>(async () => ({
+    id,
+    draft,
+    status: "checking",
+    outcome: "pending",
+    checkUntil: Date.now() + 600000,
+    booking: null,
+  }));
+  const fetch = vi.fn<typeof globalThis.fetch>(
+    async () => new Response(null, { status: 503 }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  const checkout = vi.fn<BookingService["checkout"]>();
+  const pay = vi.fn<BookingService["pay"]>();
+  let classify = false;
+  let finishClassification: (() => void) | undefined;
+  const service = {
+    ...liveBookingService,
+    restore,
+    checkout,
+    pay,
+    availability: async () => {
+      if (classify && resolution === "rejected") {
+        await new Promise<void>((resolve) => {
+          finishClassification = resolve;
+        });
+      }
+      return [{ ...replacement, available: true }];
+    },
+    calendar: undefined,
+    publicCalendar: undefined,
+  };
+  function ExpiryProbe() {
+    const state = useBooking();
+    return (
+      <>
+        <ConflictHandoffProbe />
+        <button onClick={() => state.browseAfterChecking(id)}>
+          Browse expired
+        </button>
+        <button onClick={() => state.update({ slots: [replacement] })}>
+          Select replacement
+        </button>
+        <output data-testid="original-recovery-draft">
+          {JSON.stringify(state.attempt?.draft)}
+        </output>
+        <output data-testid="replacement-players">{state.draft.players}</output>
+        <button onClick={() => state.update({ players: 1 })}>
+          Edit during classification
+        </button>
+        <button onClick={() => state.update({ players: 2 })}>
+          Edit replacement players
+        </button>
+        <button
+          onClick={() => {
+            if (resolution === "not_created") state.resolveUncreatedBooking(id);
+            else if (resolution === "rejected")
+              void state.rejectRecoveredSelection(id, {
+                state: "selection_unavailable",
+                rejectedSessionIndex: 0,
+              });
+            else state.restartAfterExpiry(id);
+          }}
+        >
+          Verified release
+        </button>
+      </>
+    );
+  }
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  const tree = (step: "time" | "details" | "session") => (
+    <BookingProvider bookingService={service} identityService={identity}>
+      <ExpiryProbe />
+      <BookingPage step={step} />
+    </BookingProvider>
+  );
+  const view = render(tree("time"));
+  await act(async () => {});
+  expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+  await act(async () => {
+    fireEvent.click(screen.getByText("Browse expired"));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByText("Select replacement"));
+  });
+  expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+  // Browsing must not authorize a duplicate reservation while payment is unresolved.
+  await act(async () => {
+    fireEvent.click(screen.getByText("Submit handoff"));
+  });
+  expect(checkout).not.toHaveBeenCalled();
+  expect(pay).not.toHaveBeenCalled();
+  expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+  if (destination === "session") {
+    // Back must work even while the old payment remains unresolved.
+    navigation.replace.mockClear();
+    navigation.path = "/book/session/";
+    view.rerender(tree("session"));
+    await act(async () => {});
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    expect(screen.getByText("Your session")).toBeVisible();
+    expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Edit replacement players"));
+    });
+    expect(
+      JSON.parse(screen.getByTestId("original-recovery-draft").textContent!),
+    ).toEqual(draft);
+  }
+  classify = true;
+  await act(async () => {
+    fireEvent.click(screen.getByText("Verified release"));
+  });
+  if (resolution === "rejected") {
+    expect(finishClassification).toBeDefined();
+    expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Edit during classification"));
+    });
+    expect(screen.getByTestId("replacement-players")).toHaveTextContent("1");
+    await act(async () => {
+      finishClassification!();
+    });
+    expect(sessionStorage.getItem("soccerbot-pending-conflict")).toBeNull();
+    expect(screen.getByTestId("replacement-players")).toHaveTextContent("1");
+  }
+  if (destination === "session") {
+    // A background release after departure must not revive the calendar notice.
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    expect(screen.getByText("Your session")).toBeVisible();
+    expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
+  }
+  expect(screen.getByTestId("handoff-attempt"), resolution).toHaveTextContent(
+    "none",
+  );
+  expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual([
+    replacement,
+  ]);
+  navigation.replace.mockClear();
+  navigation.path = `/book/${destination}/`;
+  view.rerender(tree(destination));
+  await act(async () => {});
+  expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+  expect(
+    screen.getByText(
+      destination === "details" ? "Your details" : "Your session",
+    ),
+  ).toBeVisible();
+  if (destination === "session") {
+    navigation.path = "/book/details/";
+    view.rerender(tree("details"));
+    await act(async () => {});
+    expect(screen.getByText("Your details")).toBeVisible();
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+  }
+  expect(checkout).not.toHaveBeenCalled();
+  expect(pay).not.toHaveBeenCalled();
+  expect(
+    fetch.mock.calls.every(
+      ([, options]) => !options?.method || options.method === "GET",
+    ),
+  ).toBe(true);
+  cleanup();
+  sessionStorage.clear();
+  localStorage.clear();
+  navigation.replace.mockReset();
+  vi.useRealTimers();
+}
+
+it("expiry release permits Continue with replacement selections without replaying payment", async () => {
+  await expectRecoveryReleaseNavigation("details", "expiry");
+});
+
+it("expiry release permits Back with replacement selections without replaying payment", async () => {
+  await expectRecoveryReleaseNavigation("session", "expiry");
+});
+
+it("verified no-creation permits Back with replacement selections without replaying payment", async () => {
+  await expectRecoveryReleaseNavigation("session", "not_created");
+});
+
+it("verified rejection permits Back and edits during classification without replaying payment", async () => {
+  await expectRecoveryReleaseNavigation("session", "rejected");
 });

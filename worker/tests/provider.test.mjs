@@ -2906,9 +2906,35 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
       origin + "/api/calendar/" + date.slice(0, 7),
     );
     assert.equal(home.status, 200, JSON.stringify(await home.clone().json()));
-    const homepageDay = (await home.json()).dates.find(
-      (day) => day.date === date,
+    const homepage = await home.json();
+    const beforeCoverage = f.calls.length;
+    const cachedHome = await f.mf.dispatchFetch(
+      origin + "/api/calendar/" + date.slice(0, 7),
     );
+    assert.equal(cachedHome.status, 200);
+    const covered = await cachedHome.json();
+    assert.equal(
+      f.calls.length,
+      beforeCoverage,
+      "month coverage adds no provider reads or writes",
+    );
+    assert.equal(covered.monthCoverage.length, 3);
+    assert.equal(
+      covered.monthCoverage.find((entry) => entry.month === date.slice(0, 7))
+        .state,
+      "available",
+    );
+    assert.ok(
+      covered.monthCoverage
+        .filter((entry) => entry.month !== date.slice(0, 7))
+        .every((entry) => entry.state === "unknown"),
+    );
+    assert.equal(
+      covered.monthCoverage.find((entry) => entry.month === date.slice(0, 7))
+        .displayExpiresAtMs,
+      homepage.displayExpiresAtMs,
+    );
+    const homepageDay = homepage.dates.find((day) => day.date === date);
     assert.equal(homepageDay.available, true);
     assert.deepEqual(homepageDay.offers, [
       {
