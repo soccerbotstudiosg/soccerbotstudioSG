@@ -11,6 +11,10 @@ HTMLDialogElement.prototype.close = function () {
 // jsdom omits media queries and viewport scrolling used by date navigation.
 // Tests can override these defaults to exercise mobile and reduced-motion paths.
 beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    configurable: true,
+    value: vi.fn(),
+  });
   vi.stubGlobal("matchMedia", (media: string) => ({
     matches: false,
     media,

@@ -723,6 +723,9 @@ test("native guest journey preserves players contact and one checkout across ref
       );
     });
     await page
+      .getByRole("button", { name: "Confirm email address is correct" })
+      .click();
+    await page
       .getByRole("button", { name: /^Review Booking \$[\d,.]+$/, exact: true })
       .click();
 
@@ -1134,7 +1137,7 @@ test("real payment recovery confirms the browser return from verified provider s
       page.getByRole("link", { name: "Continue payment", exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".status-heading h1 + p")).toHaveText(
-      "Your booking confirmation will be sent to your email.",
+      "Your booking confirmation will be emailed to you.",
     );
     const paidBadge = page.locator(".review-head .confirmation-paid-status");
     await expect(paidBadge).toHaveText("Paid");
@@ -1562,6 +1565,9 @@ async function stopMechanism(
   }
 }
 async function reviewResponse(page: Page) {
+  await page
+    .getByRole("button", { name: "Confirm email address is correct" })
+    .click();
   await page
     .getByRole("button", { name: /^Review Booking \$[\d,.]+$/, exact: true })
     .click();

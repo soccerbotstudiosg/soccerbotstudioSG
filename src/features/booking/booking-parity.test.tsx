@@ -224,6 +224,9 @@ test("live calendar removes selections rejected at checkout and retains contact 
     false,
   );
   fireEvent.click(
+    screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
+  fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
@@ -551,6 +554,9 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
     false,
   );
   fireEvent.click(
+    screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
+  fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
@@ -736,6 +742,9 @@ test("Details opens local Review without waiting for unavailable providers", asy
     screen.getByRole("heading", { name: "Your details" }),
   ).toBeInTheDocument();
   fireEvent.click(
+    screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
+  fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
   await waitFor(() => expect(push).toHaveBeenCalledWith("/book/review/"));
@@ -821,6 +830,9 @@ test("failed checkout preparation retains cached calendar and contact without re
   fireEvent.click(screen.getByText("Choose test session"));
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   view.rerender(tree("details"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
   fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
@@ -937,6 +949,9 @@ test("reservation conflict removes its session locally and returns to calendar w
   fireEvent.click(screen.getByText("Choose test session"));
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   view.rerender(tree("details"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
   fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );

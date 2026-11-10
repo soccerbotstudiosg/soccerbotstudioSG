@@ -285,6 +285,9 @@ test("the Payment preview entry and temporary checking failure retain customer s
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
   await page
+    .getByRole("button", { name: "Confirm email address is correct" })
+    .click();
+  await page
     .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
     .click();
   await page.getByRole("checkbox", { name: /I’ve reviewed/ }).check();

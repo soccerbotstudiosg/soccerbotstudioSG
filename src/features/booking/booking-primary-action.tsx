@@ -2,18 +2,54 @@
 import { totalCents } from "@/domain/booking";
 import { money } from "@/domain/dates";
 import { useBooking } from "./provider";
-import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 /** Float one existing action only until its reserved document position is reached. */
 export function BookingPrimaryAction({
   children,
   className = "",
+  ready,
 }: {
   children: ReactNode;
   className?: string;
+  ready?: boolean;
 }) {
+  const [readiness, setReadiness] = useState({ ready, animate: false });
+  if (readiness.ready !== ready)
+    setReadiness({
+      ready,
+      animate: readiness.ready === false && ready === true,
+    });
   const anchor = useRef<HTMLDivElement>(null);
   const action = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const control = action.current;
+    if (!control || !ready || !("IntersectionObserver" in window)) return;
+    const button = control.querySelector<HTMLElement>(".button");
+    if (!button) return;
+    let active = true;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          !active ||
+          !entries.some(
+            (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.75,
+          )
+        )
+          return;
+        control.dataset.halo = "true";
+        active = false;
+        observer.disconnect();
+      },
+      { threshold: 0.75 },
+    );
+    observer.observe(button);
+    return () => {
+      active = false;
+      observer.disconnect();
+      delete control.dataset.halo;
+    };
+  }, [ready]);
   useLayoutEffect(() => {
     const position = anchor.current;
     const control = action.current;
@@ -64,6 +100,7 @@ export function BookingPrimaryAction({
       <div
         className={`booking-primary-action ${className}`.trim()}
         data-floating="false"
+        data-ready-animation={readiness.animate ? "true" : undefined}
         ref={action}
       >
         {children}

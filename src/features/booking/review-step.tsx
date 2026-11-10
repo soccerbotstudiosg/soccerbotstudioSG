@@ -97,6 +97,11 @@ export function ReviewStep({
   const [navigating, startNavigation] = useTransition();
   const busy = action.status === "loading" || navigating;
   const locked = verifying || attempt?.held;
+  const canProceed =
+    !verifying &&
+    !busy &&
+    draft.accepted &&
+    selectionErrors(draft.slots, now).length === 0;
   return (
     <>
       <h1 className="page-title">Review Booking</h1>
@@ -149,15 +154,10 @@ export function ReviewStep({
           )}
         </div>
       )}
-      <BookingPrimaryAction className="actions">
+      <BookingPrimaryAction className="actions" ready={canProceed}>
         <button
           className="button"
-          disabled={
-            verifying ||
-            busy ||
-            !draft.accepted ||
-            selectionErrors(draft.slots, now).length > 0
-          }
+          disabled={!canProceed}
           onClick={async () => {
             if ((await checkout()) && mounted.current)
               startNavigation(() => router.push("/book/payment/"));

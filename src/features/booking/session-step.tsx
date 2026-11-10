@@ -2,7 +2,7 @@
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { LOCATION, type CustomerCatalogue } from "@/domain/catalog";
 import { Icon } from "@/components/icon";
 import { MAX_PLAYERS } from "@/domain/booking-policy";
@@ -14,10 +14,31 @@ import { useBooking } from "./provider";
 export function SessionStep() {
   const { bookingService, sessionChoices, setSessionChoices } = useBooking();
   const outletSelected = sessionChoices.outlet;
+  const sessions = useRef<HTMLDivElement>(null);
+  const scrollTarget = useRef<"session" | "action" | null>(null);
+  useEffect(() => {
+    const target = scrollTarget.current;
+    scrollTarget.current = null;
+    if (!target || window.matchMedia("(max-width: 700px)").matches) return;
+    const element =
+      target === "session"
+        ? sessions.current
+        : sessions.current?.querySelector<HTMLElement>(
+            ".booking-primary-action",
+          );
+    element?.scrollIntoView({
+      block: target === "session" ? "center" : "nearest",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
+  }, [sessionChoices.outlet, sessionChoices.session]);
   const presentation = {
     expanded: sessionChoices.session,
-    toggle: () =>
-      setSessionChoices({ outlet: true, session: !sessionChoices.session }),
+    toggle: () => {
+      scrollTarget.current = sessionChoices.session ? null : "action";
+      setSessionChoices({ outlet: true, session: !sessionChoices.session });
+    },
   };
   return (
     <>
@@ -30,9 +51,10 @@ export function SessionStep() {
           aria-pressed={outletSelected}
           aria-expanded={outletSelected}
           aria-controls="outlet-sessions"
-          onClick={() =>
-            setSessionChoices({ outlet: !outletSelected, session: false })
-          }
+          onClick={() => {
+            scrollTarget.current = outletSelected ? null : "session";
+            setSessionChoices({ outlet: !outletSelected, session: false });
+          }}
         >
           <Icon name="location" />
           <span>
@@ -43,7 +65,7 @@ export function SessionStep() {
           </span>
         </button>
       </div>
-      <div id="outlet-sessions" hidden={!outletSelected}>
+      <div id="outlet-sessions" ref={sessions} hidden={!outletSelected}>
         {outletSelected &&
           (bookingService.mode === "live" ? (
             <LiveCatalogue
@@ -238,7 +260,7 @@ function SessionPresentation({
               ))}
             </ul>
           </section>
-          <BookingPrimaryAction className="actions">
+          <BookingPrimaryAction className="actions" ready={!pending}>
             {pending ? (
               <button className="button" disabled>
                 <BrandLoading overlay={false} compact label="Loading times…" />

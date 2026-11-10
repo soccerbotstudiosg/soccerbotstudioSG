@@ -166,6 +166,9 @@ async function details(page: Page) {
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
   await page
+    .getByRole("button", { name: "Confirm email address is correct" })
+    .click();
+  await page
     .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
     .click();
   await expect(
@@ -694,10 +697,10 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   await expect(page.locator("#phone-error")).toHaveText(
     "Enter a valid mobile number.",
   );
-  await page
-    .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
-    .click();
-  await expect(page.locator("#name")).toBeFocused();
+  await expect(
+    page.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
+  ).toBeDisabled();
+  await expect(page.locator("#name")).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#details-form input")).toHaveCount(4);
   await expect(page.locator("#details-form select")).toHaveCount(1);
   await expect(page.locator("#details-form textarea")).toHaveCount(0);

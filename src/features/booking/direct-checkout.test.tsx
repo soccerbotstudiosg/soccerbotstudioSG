@@ -567,6 +567,9 @@ it("Review performs no provider reads and checkout verifies one booking before H
   expect(
     detailsSummary.querySelector(".session-trainer-row .session-item-price"),
   ).toHaveTextContent("$88.00");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
   await act(async () =>
     fireEvent.click(
       screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),

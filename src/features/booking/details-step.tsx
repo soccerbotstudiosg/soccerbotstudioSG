@@ -48,7 +48,21 @@ export function DetailsStep({
       cancel();
     };
   }, [cancel]);
-  const [errors, setErrors] = useState<ContactErrors>({});
+  const [touchedErrors, setErrors] = useState<ContactErrors>({});
+  const currentErrors = contactErrors(
+    c,
+    draft.mode === "member" ? draft.accountEmail : undefined,
+  );
+  const errors = {
+    ...touchedErrors,
+    name: currentErrors.name,
+    email: currentErrors.email,
+    phone: currentErrors.phone,
+  };
+  const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
+  const needsEmailCheck = !profileOnly && draft.mode !== "member";
+  const emailChecked = !needsEmailCheck || checkedEmail === c.email;
+  const contactValid = Object.keys(currentErrors).length === 0 && emailChecked;
   const [saveState, setSaveState] = useState({
     key: "",
     saving: false,
@@ -112,6 +126,7 @@ export function DetailsStep({
     activeSave.current?.abort();
     activeSave.current = null;
     setSaveState({ key: "", saving: false, message: "", failed: false });
+    if (key === "email") setCheckedEmail(null);
     update({ contact: { ...c, [key]: value } });
     setErrors((current) => ({ ...current, [key]: undefined }));
   }
@@ -136,20 +151,63 @@ export function DetailsStep({
           {label}
           {required ? " *" : <span className="field-optional">Optional</span>}
         </label>
-        <input
-          id={key}
-          name={key}
-
-          type={type}
-          maxLength={maxLength}
-          required={required}
-          readOnly={key === "email" && draft.mode === "member"}
-          value={c[key]}
-          aria-invalid={!!errors[key]}
-          aria-describedby={errors[key] ? `${key}-error` : undefined}
-          onChange={(e) => change(key, e.target.value)}
-          onBlur={() => validateField(key)}
-        />
+        <div
+          className={
+            key === "email" && needsEmailCheck
+              ? "email-confirm-input"
+              : undefined
+          }
+        >
+          <input
+            id={key}
+            name={key}
+            type={type}
+            maxLength={maxLength}
+            required={required}
+            readOnly={key === "email" && draft.mode === "member"}
+            value={c[key]}
+            aria-invalid={!!errors[key]}
+            aria-describedby={
+              [
+                errors[key] ? `${key}-error` : "",
+                key === "email" && needsEmailCheck ? "email-check-help" : "",
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
+            onChange={(e) => change(key, e.target.value)}
+            onBlur={() => validateField(key)}
+          />
+          {key === "email" && needsEmailCheck && (
+            <button
+              type="button"
+              className="email-confirm-control"
+              aria-label="Confirm email address is correct"
+              aria-pressed={emailChecked}
+              disabled={!!currentErrors.email}
+              onClick={() => {
+                if (!currentErrors.email) setCheckedEmail(c.email);
+              }}
+            >
+              {emailChecked ? (
+                <Icon name="check" />
+              ) : (
+                <span aria-hidden="true">!</span>
+              )}
+            </button>
+          )}
+        </div>
+        {key === "email" && needsEmailCheck && (
+          <p
+            className="email-check-help"
+            id="email-check-help"
+            aria-live="polite"
+          >
+            {emailChecked
+              ? "You’ve checked your email address."
+              : "Please double-check your email address, then confirm using the button."}
+          </p>
+        )}
         {errors[key] && (
           <p className="field-error" id={`${key}-error`}>
             {errors[key]}
@@ -222,6 +280,12 @@ export function DetailsStep({
           const first = Object.keys(next)[0];
           if (first) document.getElementById(first)?.focus();
           else {
+            if (!emailChecked) {
+              document
+                .querySelector<HTMLButtonElement>(".email-confirm-control")
+                ?.focus();
+              return;
+            }
             if (submitting.current) return;
             submitting.current = true;
             setChecking(true);
@@ -296,7 +360,7 @@ export function DetailsStep({
               <button
                 type="submit"
                 className="button"
-                disabled={saving || checking}
+                disabled={saving || checking || !contactValid}
               >
                 {saving ? (
                   <BrandLoading compact label="Saving details…" />
@@ -333,11 +397,14 @@ export function DetailsStep({
           </p>
         )}
         {!profileOnly && (
-          <BookingPrimaryAction className="actions">
+          <BookingPrimaryAction
+            className="actions"
+            ready={contactValid && !saving && !checking}
+          >
             <button
               className="button"
               type="submit"
-              disabled={saving || checking}
+              disabled={saving || checking || !contactValid}
             >
               {checking || saving ? (
                 <BrandLoading
