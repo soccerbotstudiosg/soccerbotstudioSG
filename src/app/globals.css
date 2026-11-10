@@ -4248,12 +4248,12 @@
     .booking-main > .access-options {
       margin-top: 12px;
     }
-    .access-option {
+    .access-option.surface {
       display: grid;
       grid-template-columns: 32px minmax(0, 1fr);
       align-items: center;
       gap: 8px 10px;
-      padding: 12px;
+      padding: 14px;
     }
     .access-option .auth-mark {
       width: 32px;

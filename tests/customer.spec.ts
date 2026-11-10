@@ -1607,6 +1607,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   ).toBe(true);
   await sectionType(".access-option h2");
   if ((page.viewportSize()?.width ?? 1280) <= 700) {
+    for (const card of await page.locator(".access-option").all()) {
+      await expect(card).toHaveCSS("padding-top", "14px");
+      await expect(card).toHaveCSS("padding-bottom", "14px");
+    }
     const choices = await page.locator(".access-options").boundingBox();
     expect(choices!.y).toBeGreaterThanOrEqual(0);
     expect(choices!.y + choices!.height).toBeLessThanOrEqual(
