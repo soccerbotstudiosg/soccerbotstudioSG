@@ -880,9 +880,12 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
 }) => {
   async function fullWidth(selector: string, parent: string) {
     await expect(page.locator(selector)).toBeVisible();
-    const width = await page
-      .locator(selector)
-      .evaluate((element) => element.getBoundingClientRect().width);
+    const width = await page.locator(selector).evaluate(async (element) => {
+      await Promise.all(
+        element.getAnimations().map((animation) => animation.finished),
+      );
+      return element.getBoundingClientRect().width;
+    });
     const container = await page.locator(parent).evaluate((element) => {
       const style = getComputedStyle(element);
       return (
@@ -1465,6 +1468,13 @@ test("header blue and the typography hierarchy stay consistent across every book
       ).toBeGreaterThanOrEqual(6);
       const primaryBar = page.locator(".booking-primary-action");
       if (await primaryBar.count()) {
+        const action = primaryBar.locator(":scope > .button");
+        await expect(action).toHaveCount(1);
+        await action.evaluate(async (element) => {
+          await Promise.all(
+            element.getAnimations().map((animation) => animation.finished),
+          );
+        });
         const anchorBox = await page
           .locator(".booking-action-anchor")
           .boundingBox();
@@ -1490,8 +1500,6 @@ test("header blue and the typography hierarchy stay consistent across every book
           expect(barBox!.x).toBeCloseTo(20, 0);
           expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width - 40, 0);
         }
-        const action = primaryBar.locator(":scope > .button");
-        await expect(action).toHaveCount(1);
         const actionBox = await action.boundingBox();
         await expect(primaryBar).toHaveCSS(
           "background-color",
