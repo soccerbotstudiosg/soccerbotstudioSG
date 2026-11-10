@@ -279,7 +279,7 @@ test("the Payment preview entry and temporary checking failure retain customer s
     .getByLabel("Full name", { exact: false })
     .fill("Synthetic Customer");
   await page
-    .getByLabel("Email address", { exact: false })
+    .getByRole("textbox", { name: /^Email address/ })
     .fill("synthetic@example.com");
   await page
     .getByLabel("Mobile number", { exact: false })

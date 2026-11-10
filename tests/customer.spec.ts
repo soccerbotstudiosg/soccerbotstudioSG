@@ -160,7 +160,7 @@ async function chooseSlots(page: Page, multiple = false) {
 async function details(page: Page) {
   await page.getByLabel("Full name", { exact: false }).fill("Demo Customer");
   await page
-    .getByLabel("Email address", { exact: false })
+    .getByRole("textbox", { name: /^Email address/ })
     .fill("customer@example.com");
   await page
     .getByLabel("Mobile number", { exact: false })
@@ -688,7 +688,9 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   page,
 }) => {
   await chooseSlots(page);
-  await page.getByLabel("Email address", { exact: false }).fill("name@domain");
+  await page
+    .getByRole("textbox", { name: /^Email address/ })
+    .fill("name@domain");
   await page.getByLabel("Mobile number", { exact: false }).fill("abc");
   await expect(page.locator("#email-error")).toHaveText(
     "Enter a valid email address.",
@@ -741,17 +743,20 @@ test("email verification rejects an incorrect code and continues after correctio
 }) => {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue with email" }).click();
-  await page.getByLabel("Email address").fill("name@domain");
+  await page
+    .getByRole("textbox", { name: /^Email address/ })
+    .fill("name@domain");
   await page.getByRole("button", { name: "Continue with email" }).click();
   await expect(page.locator("#auth-error")).toHaveText(
     "Enter a valid email address.",
   );
-  await expect(page.getByLabel("Email address")).toHaveAttribute(
-    "aria-invalid",
-    "true",
-  );
+  await expect(
+    page.getByRole("textbox", { name: /^Email address/ }),
+  ).toHaveAttribute("aria-invalid", "true");
   await expect(page.getByLabel("Verification code")).toHaveCount(0);
-  await page.getByLabel("Email address").fill("customer@example.com");
+  await page
+    .getByRole("textbox", { name: /^Email address/ })
+    .fill("customer@example.com");
   await page.getByRole("button", { name: "Continue with email" }).click();
   await expect(
     page.getByRole("heading", { name: "Verify your email", exact: true }),
@@ -776,7 +781,9 @@ test("enquiry remains available without external submission or a mock assistant"
 }) => {
   await openSite(page, "/enquiry/");
   await page.getByLabel("Full name").fill("Demo Customer");
-  await page.getByLabel("Email address").fill("demo@example.com");
+  await page
+    .getByRole("textbox", { name: /^Email address/ })
+    .fill("demo@example.com");
   await expect(page.getByLabel("Full name")).toHaveValue("Demo Customer");
   await page.getByLabel("Contact number").fill("+65 8123 4567");
   await page.getByLabel("Enquiry type").selectOption("Corporate booking");
