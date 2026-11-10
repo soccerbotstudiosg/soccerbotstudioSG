@@ -1385,7 +1385,12 @@ test("first visit offers the Player App with only store links and dismissal pers
   });
   expect(placement.top).toBeCloseTo(13, 0);
   expect(placement.right).toBeCloseTo(13, 0);
-  await close.focus();
+  // Reach Close with keyboard navigation after pointer interactions so the
+  // focus-visible assertion exercises the browser's keyboard modality.
+  await prompt
+    .getByRole("link", { name: "App Store", exact: true })
+    .press("Shift+Tab");
+  await expect(close).toBeFocused();
   await expect(close).toHaveCSS("outline-style", "none");
   await expect(close).toHaveCSS("border-top-width", "0px");
   await expect(close).toHaveCSS("border-radius", "0px");

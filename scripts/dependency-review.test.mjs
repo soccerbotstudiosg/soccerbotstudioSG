@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import YAML from "yaml";
 import {
   needsDependencyReview,
   validateDependencyReview,
@@ -126,7 +127,13 @@ test("dependency review runs inside the required frontend gate and on PR descrip
       frontend.indexOf("npm run verify"),
   );
   const edit = readFileSync(".github/workflows/dependency-review.yml", "utf8");
-  assert.match(edit, /types: .*edited/);
+  const parsed = YAML.parse(edit);
+  assert.deepEqual(parsed.on.pull_request.types, ["edited"]);
+  assert.equal(parsed.concurrency["cancel-in-progress"], true);
+  assert.equal(
+    parsed.concurrency.group,
+    "dependency-review-${{ github.event.pull_request.number }}",
+  );
   assert.match(edit, /pull-requests: read/);
   assert.doesNotMatch(
     edit,

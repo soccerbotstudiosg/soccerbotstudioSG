@@ -1,7 +1,11 @@
 name: Dependency review format
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited, ready_for_review]
+    # Opening, new commits and reopening are already checked by verify / frontend.
+    types: [edited]
+concurrency:
+  group: dependency-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 permissions:
   contents: read
   pull-requests: read
