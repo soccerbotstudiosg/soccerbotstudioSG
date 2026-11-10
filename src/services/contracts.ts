@@ -189,6 +189,8 @@ export type CustomerChallenge = {
 export interface CustomerIdentityService {
   readonly mode: "demo" | "live";
   current(): VerifiedIdentity | null;
+  /** Inspect the existing identity without creating access or restoring a session. */
+  readCurrent?(signal: AbortSignal): Promise<VerifiedIdentity | null>;
   refresh(signal: AbortSignal): Promise<VerifiedIdentity | null>;
   guest(signal: AbortSignal): Promise<void>;
   challenge(

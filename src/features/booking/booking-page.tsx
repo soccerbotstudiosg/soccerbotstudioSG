@@ -61,10 +61,15 @@ export function BookingPage({ step }: { step: BookingStep }) {
     router = useRouter();
   const [identity, setIdentity] = useState(() => identityService.current());
   useEffect(() => {
-    if (step === "account" || identityService.current()) return;
+    if (
+      step === "account" ||
+      identityService.current() ||
+      !identityService.readCurrent
+    )
+      return;
     const controller = new AbortController();
     void identityService
-      .refresh(controller.signal)
+      .readCurrent(controller.signal)
       .then((value) => {
         if (!controller.signal.aborted) setIdentity(value);
       })

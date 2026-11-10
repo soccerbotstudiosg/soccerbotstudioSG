@@ -64,7 +64,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
         top: this.classList.contains("time-heading")
           ? 420
           : this.classList.contains("calendar-panel")
-            ? 200
+            ? 200.78125
             : 0,
         left: 0,
         right: 400,
@@ -376,7 +376,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   calendarBottom = 0;
   fireEvent.scroll(window);
   await user.click(screen.getByRole("button", { name: "Back to calendar" }));
-  expect(scroll).toHaveBeenLastCalledWith({ top: 120, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 121, behavior: "smooth" });
   expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
   calendarBottom = 600;
   fireEvent.scroll(window);

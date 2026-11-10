@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { BookingPage } from "./booking-page";
+import { blankDraft } from "@/domain/booking";
+import { saveBooking } from "@/services/storage";
 import { BookingProvider } from "./provider";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { liveBookingService } from "@/services/booking";
@@ -653,4 +655,47 @@ test("booking-options signout retries failure and leaves only after acknowledgem
   await act(async () => finishSignOut());
   expect(signOut).toHaveBeenCalledTimes(2);
   expect(navigation.push).toHaveBeenLastCalledWith("/");
+});
+
+test("later booking headings inspect identity without refreshing or recreating guest access", async () => {
+  const verified = {
+    email: "display@example.invalid",
+    expiresAt: Date.now() + 600000,
+  };
+  let current: typeof verified | null = null;
+  const readCurrent = vi.fn(async () => {
+    current = verified;
+    return current;
+  });
+  const refresh = vi.fn(async () => {
+    throw new Error("Display must not restore access");
+  });
+  const guest = vi.fn(async () => {});
+  saveBooking({
+    version: 2,
+    draft: { ...blankDraft(), mode: "guest" },
+    attempt: null,
+  });
+  render(
+    <BookingProvider
+      identityService={{
+        ...demoCustomerIdentity,
+        current: () => current,
+        readCurrent,
+        refresh,
+        guest,
+      }}
+    >
+      <BookingPage step="session" />
+    </BookingProvider>,
+  );
+  await waitFor(() =>
+    expect(screen.getByLabelText("Booking identity")).toHaveTextContent(
+      verified.email,
+    ),
+  );
+  expect(readCurrent).toHaveBeenCalledTimes(1);
+  expect(refresh).not.toHaveBeenCalled();
+  expect(guest).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
 });

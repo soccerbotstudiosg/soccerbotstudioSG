@@ -309,8 +309,8 @@ test("remembered live account edits and rereads contact while native booking sta
   await expect(
     page.getByRole("button", { name: "Continue signed in", exact: true }),
   ).toBeVisible();
-  const signedInEmail = page.getByText("synthetic@example.test", {
-    exact: true,
+  const signedInEmail = page.locator(".signed-in-email").filter({
+    hasText: "synthetic@example.test",
   });
   await expect(signedInEmail).toHaveCSS("font-weight", "700");
   await expect(signedInEmail).toHaveCSS("color", "rgb(23, 96, 120)");
@@ -2142,7 +2142,11 @@ test("real API failed completed dismissal opens the first step and explicit retr
     onLog: (message) => {
       if (!message.startsWith("{")) return;
       const event = JSON.parse(message);
-      if (event.event === "confirmation_trace" && event.boundary === "recovery")
+      if (
+        event.event === "confirmation_trace" &&
+        event.boundary === "recovery" &&
+        event.result !== "not_claimed"
+      )
         recoveryFinished(event);
     },
   });

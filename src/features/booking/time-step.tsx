@@ -58,13 +58,16 @@ function stickyBookingHeight() {
 function revealBookingSection(heading: HTMLElement | null, cueSpace = 0) {
   if (!heading) return;
   window.scrollTo({
-    top: Math.max(
-      0,
-      window.scrollY +
-        heading.getBoundingClientRect().top -
-        stickyBookingHeight() -
-        cueSpace -
-        24,
+    // Give integer-scroll engines the nearest target rather than letting them truncate.
+    top: Math.round(
+      Math.max(
+        0,
+        window.scrollY +
+          heading.getBoundingClientRect().top -
+          stickyBookingHeight() -
+          cueSpace -
+          24,
+      ),
     ),
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ? "instant"

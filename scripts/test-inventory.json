@@ -240,6 +240,10 @@
     "title": "booking-options signout retries failure and leaves only after acknowledgement"
   },
   {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "later booking headings inspect identity without refreshing or recreating guest access"
+  },
+  {
     "file": "src/features/booking/account-step.test.tsx",
     "title": "email form rejects a wrong verification code and accepts the corrected code"
   },
@@ -1190,6 +1194,10 @@
   {
     "file": "src/services/identity.test.ts",
     "title": "website profile save rejects missing or false Remember me without a request"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "display identity reads never create guest access or restore revoked identity and ignore late signout replies"
   },
   {
     "file": "tests/customer.spec.ts",
