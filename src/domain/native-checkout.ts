@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { isStudioSessionStart, MAX_BOOKING_SESSIONS } from "./booking-policy";
+import {
+  isStudioSessionStart,
+  MAX_BOOKING_SESSIONS,
+  BOOKING_MONTH_COUNT,
+} from "./booking-policy";
 import { validDisplayDeadline } from "./catalog";
 import { providerReferencesSchema } from "./provider-references";
 // Initial sandbox checkout URL only; the server binds merchant and request ID.
@@ -75,9 +79,32 @@ export const nativeAvailabilitySchema = z.strictObject({
   observedAtMs: z.number().int().nonnegative().safe(),
   offers: z.array(nativeOfferSchema).max(MAX_DAILY_NATIVE_OFFERS),
 });
+const coverageMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+export const calendarMonthCoverageSchema = z
+  .array(
+    z.union([
+      z.strictObject({ month: coverageMonth, state: z.literal("unknown") }),
+      z
+        .strictObject({
+          month: coverageMonth,
+          state: z.enum(["available", "empty"]),
+          observedAtMs: z.number().int().nonnegative().safe(),
+          displayExpiresAtMs: z.number().int().positive().safe(),
+        })
+        .refine(validDisplayDeadline),
+    ]),
+  )
+  .max(BOOKING_MONTH_COUNT)
+  .refine(
+    (entries) =>
+      new Set(entries.map((entry) => entry.month)).size === entries.length,
+  );
+export type CalendarMonthCoverage = z.infer<typeof calendarMonthCoverageSchema>;
+
 export const publicCalendarSchema = z
   .strictObject({
     displayExpiresAtMs: z.number().int().nonnegative().safe().optional(),
+    monthCoverage: calendarMonthCoverageSchema.optional(),
     month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
     serviceId: providerIdentifier,
     observedAtMs: z.number().int().nonnegative().safe(),

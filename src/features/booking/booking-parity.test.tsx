@@ -7,6 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
+import { useBookingAvailability } from "./availability";
 import { useCalendarAvailability } from "./calendar-availability";
 import { demoBookingService } from "@/services/demo/booking";
 import { BookingServiceError } from "@/services/contracts";
@@ -18,7 +19,7 @@ import { BookingProvider, useBooking } from "./provider";
 import { DetailsStep } from "./details-step";
 import { TimeStep } from "./time-step";
 import { loadLiveDraft } from "@/services/storage";
-import { Summary, SessionSummaryHeading } from "./summary";
+import { BasketContinue, Summary, SessionSummaryHeading } from "./summary";
 import { BookingPage } from "./booking-page";
 import { SessionStep } from "./session-step";
 import { dateLabel } from "@/domain/dates";
@@ -1145,6 +1146,19 @@ test("failed public calendar releases full-page loading and leaves retry availab
   ).toBeEnabled();
 });
 
+/** Explicit negative evidence, rather than omitted/unknown dates. */
+function verifiedEmptyDates(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return Array.from(
+    { length: new Date(Date.UTC(year, monthNumber, 0)).getUTCDate() },
+    (_, index) => ({
+      date: `${month}-${String(index + 1).padStart(2, "0")}`,
+      available: false,
+      offers: [],
+    }),
+  );
+}
+
 test("cold calendar entry and refresh select an available day while retaining a valid chosen day", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-21T02:00:00Z"));
@@ -1160,21 +1174,23 @@ test("cold calendar entry and refresh select an available day while retaining a 
       month,
       serviceId: "2",
       observedAtMs: Date.now(),
-      dates: dates.map((date) => ({
-        date,
-        available: true,
-        offers: [
-          {
-            serviceId: "2",
-            serviceName: "Session",
-            instructorId: "14",
-            instructorName: "Trainer",
-            startMs: Date.parse(`${date}T12:00:00+08:00`),
-            priceMinor: 8800,
-            currency: "SGD" as const,
-          },
-        ],
-      })),
+      dates: dates.length
+        ? dates.map((date) => ({
+            date,
+            available: true,
+            offers: [
+              {
+                serviceId: "2",
+                serviceName: "Session",
+                instructorId: "14",
+                instructorName: "Trainer",
+                startMs: Date.parse(`${date}T12:00:00+08:00`),
+                priceMinor: 8800,
+                currency: "SGD" as const,
+              },
+            ],
+          }))
+        : verifiedEmptyDates(month),
     };
   });
   const service: BookingService = {
@@ -1321,7 +1337,7 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
                   ],
                 },
               ]
-            : [],
+            : verifiedEmptyDates(month),
       };
     });
     const service: BookingService = {
@@ -1579,4 +1595,449 @@ test("rolling week starts at first availability crosses months and preserves car
   fireEvent.click(screen.getByText("Remove test date"));
   expect(day("2026-10-31")).not.toHaveClass("in-booking");
   expect(publicCalendar.mock.calls).toHaveLength(3);
+});
+
+test("calendar month choices trim only fresh trailing empty cache coverage without extra discovery reads", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T02:00:00Z"));
+  for (const scenario of [
+    "trailing",
+    "internal",
+    "unknown",
+    "missing",
+    "expired",
+    "all-empty",
+  ] as const) {
+    localStorage.clear();
+    sessionStorage.clear();
+    const months = ["2026-10", "2026-11", "2026-12"];
+    const publicCalendar = vi.fn(
+      async ({
+        month,
+      }: {
+        month: string;
+      }): ReturnType<NonNullable<BookingService["publicCalendar"]>> => ({
+        month,
+        serviceId: "2",
+        observedAtMs: Date.now(),
+        displayExpiresAtMs: Date.now() + 60000,
+        ...(scenario === "missing"
+          ? {}
+          : {
+              monthCoverage: months.map((value, index) =>
+                scenario === "unknown" && index === 2
+                  ? { month: value, state: "unknown" as const }
+                  : {
+                      month: value,
+                      state:
+                        scenario === "all-empty" ||
+                        index === 1 ||
+                        (scenario !== "internal" && index === 2)
+                          ? ("empty" as const)
+                          : ("available" as const),
+                      observedAtMs: Date.now() - 1000,
+                      displayExpiresAtMs:
+                        Date.now() + (scenario === "expired" ? -1 : 60000),
+                    },
+              ),
+            }),
+        dates:
+          scenario === "all-empty"
+            ? []
+            : [{ date: `${month}-20`, available: true }],
+      }),
+    );
+    const service: BookingService = {
+      ...demoBookingService,
+      mode: "live",
+      operations: { ...demoBookingService.operations, availability: "live" },
+      publicCalendar,
+    };
+    const view = render(
+      <BookingProvider bookingService={service}>
+        <TimeStep />
+      </BookingProvider>,
+    );
+    const picker = screen.getByRole("combobox", { name: "Calendar month" });
+    await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("region", { name: "Booking calendar" }),
+      ).toHaveAttribute("aria-busy", "false"),
+    );
+    const trimmed = scenario === "trailing" || scenario === "all-empty";
+    expect(within(picker).getAllByRole("option")).toHaveLength(trimmed ? 1 : 3);
+    expect(picker).toHaveValue("0");
+    expect(
+      screen.getByRole("button", { name: "Previous month" }),
+    ).toBeDisabled();
+    if (trimmed)
+      expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
+    else
+      expect(screen.getByRole("button", { name: "Next month" })).toBeEnabled();
+    expect(
+      within(picker).getByRole("option", { name: "October 2026" }),
+    ).toBeInTheDocument();
+    expect(publicCalendar).toHaveBeenCalledTimes(1);
+    view.unmount();
+  }
+});
+
+test("calendar coverage expiry failures and newly reconciled availability keep future months reachable", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-15T02:00:00Z"));
+  for (const scenario of ["expired", "failure", "reconciled"] as const) {
+    const publicCalendar = vi.fn(
+      async ({
+        month,
+      }: {
+        month: string;
+      }): ReturnType<NonNullable<BookingService["publicCalendar"]>> => {
+        if (scenario === "failure" && month === "2026-12")
+          throw new Error("read failed");
+        return {
+          month,
+          serviceId: "2",
+          observedAtMs: Date.now(),
+          displayExpiresAtMs: Date.now() + 60000,
+          dates: [{ date: `${month}-20`, available: false }],
+          monthCoverage: ["2026-10", "2026-11", "2026-12"].map((value) => ({
+            month: value,
+            state: "empty",
+            observedAtMs: Date.now(),
+            displayExpiresAtMs: Date.now() + 1000,
+          })),
+        };
+      },
+    );
+    const service: BookingService = { ...demoBookingService, publicCalendar };
+    const initialNow = Date.now();
+    function Probe({ month }: { month: string }) {
+      const calendar = useCalendarAvailability(
+        service,
+        "2",
+        month,
+        "public",
+        false,
+      );
+      return (
+        <>
+          <output>{calendar.lastMonthOffset(initialNow)}</output>
+          <button onClick={() => calendar.reconcile("2026-12-20", true)}>
+            Reconcile available
+          </button>
+        </>
+      );
+    }
+    const view = render(<Probe month="2026-10" />);
+    await act(async () => {});
+    expect(screen.getByRole("status")).toHaveTextContent("0");
+    if (scenario === "expired") {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1001);
+      });
+      expect(publicCalendar).toHaveBeenCalledTimes(1);
+    } else {
+      view.rerender(<Probe month="2026-12" />);
+      await act(async () => {});
+      if (scenario === "reconciled")
+        fireEvent.click(screen.getByText("Reconcile available"));
+      expect(publicCalendar).toHaveBeenCalledTimes(2);
+    }
+    expect(screen.getByRole("status")).toHaveTextContent("2");
+    view.unmount();
+  }
+});
+
+test("expired calendar refresh retains dates and sessions without branded loading or stale checkout availability", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2027-01-01T00:00:00Z"));
+  localStorage.clear();
+  sessionStorage.clear();
+  const pending: Array<{
+    resolve: (
+      value: Awaited<ReturnType<NonNullable<BookingService["publicCalendar"]>>>,
+    ) => void;
+    reject: (error: Error) => void;
+  }> = [];
+  const publicCalendar = vi.fn<NonNullable<BookingService["publicCalendar"]>>(
+    () => new Promise((resolve, reject) => pending.push({ resolve, reject })),
+  );
+  const slotReads: Array<{ reject: (error: Error) => void }> = [];
+  const availability = vi.fn<BookingService["availability"]>(
+    () => new Promise((_resolve, reject) => slotReads.push({ reject })),
+  );
+  const checkout = vi.fn<BookingService["checkout"]>();
+  const service: BookingService = {
+    ...demoBookingService,
+    mode: "live",
+    operations: { ...demoBookingService.operations, availability: "live" },
+    publicCalendar,
+    availability,
+    checkout,
+  };
+  const snapshot = () => ({
+    month: "2027-01",
+    serviceId: "12",
+    observedAtMs: Date.now(),
+    displayExpiresAtMs: Date.now() + 1000,
+    dates: ["2027-01-05", "2027-01-06"].map((date) => ({
+      date,
+      available: true,
+      offers: [
+        {
+          ...slot.native,
+          instructorId: slot.instructor,
+          startMs: Date.parse(`${date}T12:00:00+08:00`),
+        },
+      ],
+    })),
+  });
+  function Probe() {
+    const { calendar, update, now } = useBooking();
+    return (
+      <>
+        <button
+          onClick={() =>
+            update({
+              mode: "guest",
+              nativeServiceId: "12",
+              nativeServiceName: "Test session",
+              slots: [slot],
+            })
+          }
+        >
+          Seed refresh cart
+        </button>
+        <output data-testid="strict-cache">
+          {JSON.stringify({
+            entry: !!calendar.entry("2027-01", now),
+            offers: calendar.cachedDates[slot.date]?.length ?? 0,
+            displayOffers:
+              "offers" in (calendar.displayEntry("2027-01")?.dates[0] ?? {}),
+          })}
+        </output>
+      </>
+    );
+  }
+  const view = render(
+    <BookingProvider bookingService={service}>
+      <Probe />
+      <TimeStep />
+      <BasketContinue />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByText("Seed refresh cart"));
+  await act(async () => pending[0].resolve(snapshot()));
+  const region = screen.getByRole("region", { name: "Booking calendar" });
+  const day = () =>
+    within(region).getByRole("button", { name: dateLabel(slot.date) });
+  expect(day()).toBeEnabled();
+  expect(
+    screen.getByRole("link", { name: /^Enter Booking Details/ }),
+  ).toBeInTheDocument();
+  expect(JSON.parse(screen.getByTestId("strict-cache").textContent!)).toEqual({
+    entry: true,
+    offers: 1,
+    displayOffers: false,
+  });
+  // A resumed tab can observe expiry before its throttled deadline timer runs.
+  await act(async () => {
+    vi.setSystemTime(new Date("2027-01-01T00:00:01.001Z"));
+    window.dispatchEvent(new Event("focus"));
+  });
+  expect(publicCalendar).toHaveBeenCalledTimes(1);
+  expect(JSON.parse(screen.getByTestId("strict-cache").textContent!)).toEqual({
+    entry: false,
+    offers: 0,
+    displayOffers: false,
+  });
+  expect(
+    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+  ).toBeDisabled();
+  expect(
+    screen.getByRole("group", { name: "Session times" }),
+  ).toBeInTheDocument();
+  expect(day()).toBeEnabled();
+  expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1001);
+  });
+  expect(publicCalendar).toHaveBeenCalledTimes(2);
+  expect(
+    screen.getByRole("group", { name: "Session times" }),
+  ).toBeInTheDocument();
+  expect(day()).toBeEnabled();
+  expect(day()).toHaveAttribute("title", "Availability not verified");
+  expect(view.container.querySelector(".loading-logo")).toBeNull();
+  expect(JSON.parse(screen.getByTestId("strict-cache").textContent!)).toEqual({
+    entry: false,
+    offers: 0,
+    displayOffers: false,
+  });
+  expect(
+    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+  ).toBeDisabled();
+  expect(checkout).not.toHaveBeenCalled();
+  for (let tick = 0; tick < 2; tick += 1) {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60000);
+    });
+    expect(
+      screen.getByRole("group", { name: "Session times" }),
+    ).toBeInTheDocument();
+    expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /^Enter Booking Details/ }),
+    ).toBeDisabled();
+  }
+  await act(async () =>
+    slotReads
+      .at(-1)!
+      .reject(
+        new BookingServiceError(
+          "unavailable",
+          "Online booking is unavailable. Please try again later.",
+        ),
+      ),
+  );
+  expect(day()).toBeEnabled();
+  expect(
+    screen.getByRole("group", { name: "Session times" }),
+  ).toBeInTheDocument();
+  expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
+  await act(async () =>
+    pending[1].reject(new Error("synthetic month refresh failed")),
+  );
+  expect(day()).toBeEnabled();
+  expect(
+    screen.getByRole("group", { name: "Session times" }),
+  ).toBeInTheDocument();
+  expect(
+    within(region).getByText(
+      "Unable to load available sessions. Please try again.",
+    ),
+  ).toBeInTheDocument();
+  expect(view.container.querySelector(".loading-logo")).toBeNull();
+  fireEvent.click(within(region).getByRole("button", { name: "Try again" }));
+  await act(async () => {});
+  expect(day()).toBeEnabled();
+  expect(
+    screen.getByRole("group", { name: "Session times" }),
+  ).toBeInTheDocument();
+  expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
+  expect(
+    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+  ).toBeDisabled();
+  await act(async () => pending[2].resolve(snapshot()));
+  expect(day()).toBeEnabled();
+  expect(day()).toHaveAttribute("title", "Available sessions");
+  expect(
+    screen.queryByText("Unable to load available sessions. Please try again."),
+  ).toBeNull();
+  expect(JSON.parse(screen.getByTestId("strict-cache").textContent!)).toEqual({
+    entry: true,
+    offers: 1,
+    displayOffers: false,
+  });
+  expect(
+    screen.getByRole("link", { name: /^Enter Booking Details/ }),
+  ).toBeInTheDocument();
+  expect(checkout).not.toHaveBeenCalled();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1001);
+  });
+  await act(async () =>
+    pending[3].resolve({
+      ...snapshot(),
+      dates: snapshot().dates.map((day) => ({
+        ...day,
+        available: false,
+        offers: [],
+      })),
+    }),
+  );
+  expect(screen.queryByRole("group", { name: "Session times" })).toBeNull();
+  expect(day()).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+  ).toBeDisabled();
+  expect(checkout).not.toHaveBeenCalled();
+});
+
+test("retained session display rejects changed date players service scope owner and authentication plus obsolete responses", async () => {
+  for (const change of [
+    "date",
+    "players",
+    "service",
+    "scope",
+    "owner",
+    "auth",
+  ] as const) {
+    const replies: Array<
+      (slots: Awaited<ReturnType<BookingService["availability"]>>) => void
+    > = [];
+    const availability = vi.fn<BookingService["availability"]>(
+      () => new Promise((resolve) => replies.push(resolve)),
+    );
+    const original: BookingService = { ...demoBookingService, availability };
+    let session = "original-session";
+    const sessionKey = () => session;
+    const initial = {
+      owner: original,
+      dates: [slot.date],
+      players: 1,
+      scope: "public",
+      serviceId: "12",
+      minute: Date.parse("2027-01-01T00:00:00Z") / 60000,
+    };
+    function Probe(props: typeof initial) {
+      const value = useBookingAvailability(
+        props.owner,
+        props.dates,
+        props.players,
+        props.scope,
+        props.minute,
+        sessionKey,
+        props.serviceId,
+      );
+      return (
+        <output>
+          {JSON.stringify({
+            fresh: value.result?.status ?? null,
+            shown: value.displayResult?.slots.length ?? 0,
+          })}
+        </output>
+      );
+    }
+    const view = render(<Probe {...initial} />);
+    await act(async () => replies[0]([{ ...slot, available: true }]));
+    expect(screen.getByRole("status")).toHaveTextContent('"shown":1');
+    view.rerender(<Probe {...initial} minute={initial.minute + 1} />);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      '"fresh":null,"shown":1',
+    );
+    const obsolete = replies[1];
+    const next = { ...initial, minute: initial.minute + 1 };
+    if (change === "date") next.dates = ["2027-01-06"];
+    if (change === "players") next.players = 2;
+    if (change === "service") next.serviceId = "99";
+    if (change === "scope") next.scope = "protected";
+    if (change === "owner") next.owner = { ...original };
+    if (change === "auth") session = "replacement-session";
+    view.rerender(<Probe {...next} />);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      '"fresh":null,"shown":0',
+    );
+    await act(async () => obsolete([{ ...slot, available: true }]));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      '"fresh":null,"shown":0',
+    );
+    await act(async () => replies.at(-1)!([]));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      '"fresh":"success","shown":0',
+    );
+    view.unmount();
+  }
 });

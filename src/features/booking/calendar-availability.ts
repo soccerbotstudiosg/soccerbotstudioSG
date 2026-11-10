@@ -34,6 +34,7 @@ export function useCalendarAvailability(
   scope: string,
   paused: boolean,
   throughMonth?: string,
+  observedNow?: number,
 ) {
   const [reload, setReload] = useState(0);
   const [refreshIndicator, setRefreshIndicator] = useState<string | null>(null);
@@ -153,7 +154,12 @@ export function useCalendarAvailability(
   useEffect(() => {
     if (paused || state?.owner !== service || state.key !== key) return;
     const deadlines = Object.values(state.entries)
-      .map((entry) => entry.observedAtMs + retention(entry))
+      .flatMap((entry) => [
+        entry.observedAtMs + retention(entry),
+        ...(entry.monthCoverage ?? []).flatMap((coverage) =>
+          coverage.state === "unknown" ? [] : [coverage.displayExpiresAtMs],
+        ),
+      ])
       .filter((deadline) => deadline > checkedAt);
     if (!deadlines.length) return;
     const timer = setTimeout(
@@ -184,6 +190,8 @@ export function useCalendarAvailability(
   const current = state?.owner === service && state.key === key ? state : null;
   const reconcile = useCallback(
     (date: string, available: boolean | undefined, slots?: AvailableSlot[]) => {
+      // Failed/unknown reads cannot erase last-known date presentation.
+      if (available === undefined) return;
       setState((previous) => {
         if (!previous || previous.owner !== service || previous.key !== key)
           return previous;
@@ -193,20 +201,19 @@ export function useCalendarAvailability(
         const existing = entry.dates.find((day) => day.date === date);
         if (existing?.available === available && !slots) return previous;
         const dates = entry.dates.filter((day) => day.date !== date);
-        if (available !== undefined)
-          dates.push({
-            date,
-            available,
-            ...(slots && slots.every((slot) => slot.native)
-              ? {
-                  offers: slots.map((slot) => ({
-                    ...slot.native!,
-                    instructorId: slot.instructor,
-                    startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
-                  })),
-                }
-              : {}),
-          });
+        dates.push({
+          date,
+          available,
+          ...(slots && slots.every((slot) => slot.native)
+            ? {
+                offers: slots.map((slot) => ({
+                  ...slot.native!,
+                  instructorId: slot.instructor,
+                  startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
+                })),
+              }
+            : {}),
+        });
         return {
           ...previous,
           entries: {
@@ -228,7 +235,7 @@ export function useCalendarAvailability(
           .filter(
             (entry) =>
               entry.observedAtMs + retention(entry) >
-              Math.max(checkedAt, entry.receivedAtMs),
+              Math.max(observedNow ?? checkedAt, checkedAt, entry.receivedAtMs),
           )
           .flatMap((entry) =>
             entry.dates.flatMap((day) =>
@@ -242,12 +249,55 @@ export function useCalendarAvailability(
             ),
           ),
       ),
-    [current, serviceId, checkedAt],
+    [current, serviceId, checkedAt, observedNow],
   );
   return {
     cachedDates,
+    /** Trim only trailing months proved empty by still-current server cache evidence. */
+    lastMonthOffset(now: number) {
+      const observedNow = Math.max(now, checkedAt);
+      const latestCoverage = Object.values(current?.entries ?? {})
+        .filter((entry) => entry.monthCoverage)
+        .sort((a, b) => b.receivedAtMs - a.receivedAtMs)[0]?.monthCoverage;
+      let offset = BOOKING_MONTH_COUNT - 1;
+      const today = todaySG(new Date(observedNow));
+      while (offset > 0) {
+        const selected = monthAt(today, offset).slice(0, 7);
+        const coverage = latestCoverage?.find(
+          (entry) => entry.month === selected,
+        );
+        const loaded = current?.entries[selected];
+        const hasAvailableDates =
+          loaded &&
+          loaded.observedAtMs + retention(loaded) > observedNow &&
+          loaded.dates.some((day) => day.available);
+        if (
+          hasAvailableDates ||
+          current?.failed.includes(selected) ||
+          coverage?.state !== "empty" ||
+          coverage.observedAtMs === undefined ||
+          coverage.observedAtMs > observedNow ||
+          coverage.displayExpiresAtMs <= observedNow
+        )
+          break;
+        offset -= 1;
+      }
+      return offset;
+    },
     reconcile,
     hasLoaded: (selected: string) => !!current?.entries[selected],
+    /** Last-known grid only: never expose expired offers or extend their deadline. */
+    displayEntry(selected: string) {
+      const entry = current?.entries[selected];
+      return entry
+        ? {
+            dates: entry.dates.map(({ date, available }) => ({
+              date,
+              available,
+            })),
+          }
+        : null;
+    },
     refreshing: (selected: string) =>
       refreshIndicator === JSON.stringify([key, selected]),
     /** Resolve a cached calendar entry and filter offers against the current cutoff. */
@@ -283,11 +333,18 @@ export function useCalendarAvailability(
         ),
       ],
     ) => {
-      // Drop only requested months; retained siblings keep their fixed deadline.
+      // Invalidate requested offers while retaining their display; siblings keep their fixed deadline.
       const previous = retained.current;
       if (previous?.owner === service && previous.key === key) {
         const entries = { ...previous.entries };
-        for (const selected of months) delete entries[selected];
+        for (const selected of months) {
+          const entry = entries[selected];
+          if (entry)
+            entries[selected] = {
+              ...entry,
+              displayExpiresAtMs: entry.observedAtMs,
+            };
+        }
         const next = { ...previous, entries, failed: [] };
         retained.current = next;
         setState(next);

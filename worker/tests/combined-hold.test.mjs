@@ -1553,7 +1553,44 @@ test("warming reuses fresh customer range reads while prebuilding the other two 
       ranges.every((call) => !call.body.params[0].startsWith(month)),
       "the still-fresh current month is not fetched again",
     );
-    assert.deepEqual(await (await m.mf.dispatchFetch(url)).json(), calendar);
+    const afterWarming = m.calls.length;
+    const refreshed = await m.mf.dispatchFetch(url);
+    assert.equal(refreshed.status, 200);
+    const { monthCoverage: initialCoverage, ...initialMonth } = calendar;
+    const { monthCoverage: warmedCoverage, ...warmedMonth } =
+      await refreshed.json();
+    assert.deepEqual(
+      warmedMonth,
+      initialMonth,
+      "warming another month must not change the cached month or renew its timestamps",
+    );
+    assert.equal(initialCoverage.length, 3);
+    assert.equal(warmedCoverage.length, 3);
+    assert.deepEqual(warmedCoverage[0], initialCoverage[0]);
+    assert.deepEqual(initialCoverage.slice(1), [
+      { month: initialCoverage[1].month, state: "unknown" },
+      { month: initialCoverage[2].month, state: "unknown" },
+    ]);
+    const warmedFuture = await m.mf.dispatchFetch(
+      m.origin + "/api/calendar/" + initialCoverage[1].month,
+    );
+    assert.equal(warmedFuture.status, 200);
+    const future = await warmedFuture.json();
+    assert.ok(future.dates.length > 0);
+    assert.ok(future.dates.every((day) => day.offers.length === 0));
+    assert.deepEqual(warmedCoverage[1], {
+      month: future.month,
+      state: "empty",
+      observedAtMs: future.observedAtMs,
+      displayExpiresAtMs: future.displayExpiresAtMs,
+    });
+    assert.equal(future.displayExpiresAtMs, future.observedAtMs + 1800000);
+    assert.deepEqual(warmedCoverage[2], initialCoverage[2]);
+    assert.equal(
+      m.calls.length,
+      afterWarming,
+      "both cached months and updated coverage require no additional provider calls",
+    );
     assert.deepEqual(m.unexpected, []);
   } finally {
     await m.close();

@@ -136,6 +136,8 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 **BR-012** — Polling: at most one check per two seconds for the first 20 checks, then at least ten seconds, with allowance 120 and the original checking deadline. An unresolved page rechecks automatically on focus/foreground (coalesced, minimum30 seconds) and once at the original server hold expiry; no customer-facing status-check button is exposed; hidden pages catch up when visible. This does not restart polling or authorize expiry. After the original checking deadline, unresolved unpaid customers may browse the calendar with an empty cart while the original attempt remains protected. Confirmed/denied pages stay terminal. Only authenticated server outcome permits release. Completed dismissal is repeatable; lost acknowledgement must not create a second attempt or erase uncertain evidence.
 
+Calendar presentation may retain last-known date indicators and session cards during a background refresh or retry, but expired offers remain unusable as current selection/checkout evidence. Retained session presentation is scoped to the same service owner, service, requested dates, players, booking scope and authentication; minute ticks alone do not discard it. Unknown or failed reads are not unavailable-day proof and must retain explicit failure feedback. The month picker trims only trailing months proved empty by complete, fresh cached coverage; missing, expired or partial coverage remains unknown. This display restriction does not reduce the three-month warming or booking-policy horizon.
+
 ### Confirmation and presentation
 
 <a id="br-013"></a>

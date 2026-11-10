@@ -7,7 +7,6 @@ import {
   SESSION_UNAVAILABLE,
   AVAILABILITY_LOAD_FAILED,
 } from "@/domain/booking-messages";
-import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import { useState, useId, type ReactNode } from "react";
 import { Icon } from "@/components/icon";
@@ -255,7 +254,7 @@ export function BasketContinue() {
   const awaitingAvailability = draft.slots.some((slot) =>
     suppressedSlots.some((hidden) => overlaps(slot, hidden)),
   );
-  const waitingForRelease = !!attempt && action.returnToCalendar === true;
+  const waitingForRelease = !!attempt && action.calendarRecovery === true;
   const result = availability.result;
   const valid =
     selectionErrors(draft.slots, now).length === 0 &&
@@ -291,17 +290,11 @@ export function BasketContinue() {
         !awaitingAvailability && (
           <p className="notice" role="status">
             {selectionErrors(draft.slots, now).length > 0 ||
-            result?.status === "success" ? (
-              SESSION_UNAVAILABLE
-            ) : !result ? (
-              <BrandLoading
-                overlay={false}
-                compact
-                label="Checking sessions…"
-              />
-            ) : (
-              AVAILABILITY_LOAD_FAILED
-            )}
+            result?.status === "success"
+              ? SESSION_UNAVAILABLE
+              : !result
+                ? "Updating session availability…"
+                : AVAILABILITY_LOAD_FAILED}
           </p>
         )}
     </>

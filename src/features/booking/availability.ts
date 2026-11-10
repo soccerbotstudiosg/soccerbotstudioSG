@@ -38,6 +38,14 @@ export function useBookingAvailability(
 ) {
   const datesKey = JSON.stringify([...new Set(dates)].sort());
   const session = sessionKey();
+  const displayKey = JSON.stringify([
+    service.mode,
+    serviceId,
+    datesKey,
+    players,
+    scope,
+    session,
+  ]);
   const key = JSON.stringify([
     service.mode,
     serviceId,
@@ -170,10 +178,35 @@ export function useBookingAvailability(
     cached,
     displayCache,
   ]);
+  const currentResult =
+    cached ?? (result?.key === key && result.owner === service ? result : null);
+  const [retained, setRetained] = useState<{
+    owner: BookingService;
+    key: string;
+    result: Extract<Result, { status: "success" }>;
+  } | null>(null);
+  if (currentResult?.status === "success" && retained?.result !== currentResult)
+    setRetained({ owner: service, key: displayKey, result: currentResult });
+  else if (
+    retained &&
+    (retained.owner !== service ||
+      retained.key !== displayKey ||
+      currentResult?.status === "cancelled")
+  )
+    setRetained(null);
   return {
-    result:
-      cached ??
-      (result?.key === key && result.owner === service ? result : null),
+    result: currentResult,
+    // Presentation only: minute refreshes cannot grant stale selection authority.
+    displayResult:
+      currentResult?.status === "success"
+        ? currentResult
+        : (!currentResult ||
+              currentResult.status === "failure" ||
+              currentResult.status === "unavailable") &&
+            retained?.owner === service &&
+            retained.key === displayKey
+          ? retained.result
+          : null,
     retry() {
       setResult(null);
       setReload((value) => value + 1);

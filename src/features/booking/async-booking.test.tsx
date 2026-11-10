@@ -682,7 +682,11 @@ test("leaving review cancels its pending action without a late navigation or sto
   expect(loadBooking().draft.accepted).toBe(false);
   expect(loadBooking().attempt).toEqual(retained);
   fireEvent.click(screen.getByRole("button", { name: "Edit name" }));
-  expect(loadBooking().draft.contact).toEqual(retained.draft.contact);
+  // Recovery permits a new editable draft while the original financial identity stays immutable.
+  expect(loadBooking().draft.contact).toEqual({
+    ...retained.draft.contact,
+    name: "Retained name",
+  });
   expect(loadBooking().attempt).toEqual(retained);
   fireEvent.click(screen.getByRole("button", { name: "Resume payment" }));
   expect(loadBooking().attempt).toEqual(retained);

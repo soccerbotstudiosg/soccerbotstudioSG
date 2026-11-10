@@ -86,6 +86,8 @@ type ActionState = {
   operation?: Action;
   error?: string;
   returnToCalendar?: boolean;
+  /** Retained financial attempt while the independent draft remains editable. */
+  calendarRecovery?: boolean;
   resumeAttemptId?: string;
 };
 type SessionChoices = { outlet: boolean; session: boolean };
@@ -337,16 +339,6 @@ export function BookingProvider({
     },
     [bookingService.mode],
   );
-  const visitBookingStep = useCallback(
-    (step: string) => {
-      if (step === "time") noticeShownOnCalendar.current = true;
-      else if (noticeShownOnCalendar.current) {
-        clearPendingConflict();
-        setSelectionNotice(null);
-      }
-    },
-    [setSelectionNotice, clearPendingConflict],
-  );
   const [suppressedSlots, dispatchSuppressedSlots] = useState<
     BookingDraft["slots"]
   >(() => (bookingService.mode === "live" ? loadSuppressedSlots() : []));
@@ -392,8 +384,23 @@ export function BookingProvider({
     (next: ActionState) => dispatchAction({ ...next, owner: service }),
     [service],
   );
-  const action: ActionState =
-    actionState.owner === service ? actionState : { status: "idle" };
+  const action = useMemo<ActionState>(
+    () => (actionState.owner === service ? actionState : { status: "idle" }),
+    [actionState, service],
+  );
+  const visitBookingStep = useCallback(
+    (step: string) => {
+      if (step === "time") {
+        noticeShownOnCalendar.current = true;
+        if (action.returnToCalendar)
+          setAction({ ...action, returnToCalendar: false });
+      } else if (noticeShownOnCalendar.current) {
+        clearPendingConflict();
+        setSelectionNotice(null);
+      }
+    },
+    [setSelectionNotice, clearPendingConflict, action, setAction],
+  );
   const active = useRef<{
     controller: AbortController;
     operation: Action;
@@ -521,12 +528,13 @@ export function BookingProvider({
       !calendarBrowsing ||
       calendarPaused ||
       !!pendingConflict ||
-      (!!value.attempt && !action.returnToCalendar),
+      (!!value.attempt && !action.calendarRecovery),
     calendarThrough,
+    now,
   );
   const availability = useBookingAvailability(
     service,
-    (value.attempt && !action.returnToCalendar) ||
+    (value.attempt && !action.calendarRecovery) ||
       !calendarBrowsing ||
       calendarPaused ||
       !!pendingConflict ||
@@ -723,6 +731,11 @@ export function BookingProvider({
         const identity = JSON.stringify(identityService.current());
         const operation = active.current;
         const originalAttempt = latest.current.attempt;
+        // Recovery may classify the immutable old attempt while the customer
+        // has already edited the independent draft on an earlier step. During
+        // retained recovery those edits do not invalidate the original attempt's
+        // proof; ordinary checkout classification still rejects stale draft reads.
+        const editableDraft = latest.current.draft;
         const candidates = indexed ? [indexed] : draft.slots;
         const existing = suppression.current.slots;
         setSuppressedSlots([
@@ -734,10 +747,11 @@ export function BookingProvider({
         ]);
         const generation = suppression.current.generation;
         pauseCalendar(false);
-        const noticeGeneration = setSelectionNotice(
-          CONFLICT_NOTICE,
-          indexed ? [indexed] : [],
-        );
+        const showRecoveryNotice =
+          !action.calendarRecovery || noticeShownOnCalendar.current;
+        const noticeGeneration = showRecoveryNotice
+          ? setSelectionNotice(CONFLICT_NOTICE, indexed ? [indexed] : [])
+          : noticeRevision.current;
         for (const date of new Set(draft.slots.map((slot) => slot.date)))
           rememberFreshDate(date, draft.players, draft.nativeServiceId);
         const isCurrent = () =>
@@ -747,9 +761,11 @@ export function BookingProvider({
           mounted.current &&
           latest.current.attempt === originalAttempt &&
           active.current === operation &&
-          latest.current.draft.mode === draft.mode &&
-          latest.current.draft.nativeServiceId === draft.nativeServiceId &&
-          latest.current.draft.players === draft.players &&
+          ((action.calendarRecovery && originalAttempt !== null) ||
+            (latest.current.draft.mode === editableDraft.mode &&
+              latest.current.draft.nativeServiceId ===
+                editableDraft.nativeServiceId &&
+              latest.current.draft.players === editableDraft.players)) &&
           JSON.stringify(identityService.current()) === identity;
         const read = await readConflictSelections(
           service,
@@ -809,13 +825,16 @@ export function BookingProvider({
           },
         });
         if (service.mode === "live") saveLiveDraft(latest.current.draft, false);
-        if (noticeRevision.current === noticeGeneration)
+        if (showRecoveryNotice && noticeRevision.current === noticeGeneration)
           setSelectionNotice(CONFLICT_NOTICE, affected);
         rejectionRead.current = null;
         completedConflict.current = originalId;
         savePendingConflict(null);
         setPendingConflict(null);
-        setAction({ status: "idle", returnToCalendar: true });
+        setAction({
+          status: "idle",
+          returnToCalendar: !action.calendarRecovery,
+        });
         return true;
       })();
       const work = { key, promise };
@@ -830,6 +849,7 @@ export function BookingProvider({
       service,
       identityService,
       calendar,
+      action.calendarRecovery,
       setSuppressedSlots,
       commit,
       setAction,
@@ -901,19 +921,36 @@ export function BookingProvider({
       freshChecks.current.delete(service);
       const draft = left
         ? blankDraft()
-        : { ...current.draft, slots: [], accepted: false };
+        : {
+            ...current.draft,
+            slots: action.calendarRecovery
+              ? current.draft.slots.filter(
+                  (slot) =>
+                    !originalSlots.some(
+                      (original) => slotKey(original) === slotKey(slot),
+                    ),
+                )
+              : [],
+            accepted: false,
+          };
       cancel();
       commit({ ...current, draft, attempt: null });
       saveLiveDraft(draft, false, null);
-      setAction(
-        left ? { status: "idle" } : { status: "idle", returnToCalendar: true },
+      setAction({
+        status: "idle",
+        returnToCalendar: !left && !action.calendarRecovery,
+      });
+      setSelectionNotice(
+        left || (action.calendarRecovery && !noticeShownOnCalendar.current)
+          ? null
+          : BOOKING_NOT_CREATED,
       );
-      setSelectionNotice(left ? null : BOOKING_NOT_CREATED);
       pauseCalendar(false);
       return true;
     },
     [
       service,
+      action.calendarRecovery,
       cancel,
       commit,
       setAction,
@@ -1138,7 +1175,11 @@ export function BookingProvider({
                 commit({ version: 2, draft, attempt }, true);
               } else if (isCalendarRecovery(attempt.id)) {
                 commit({ version: 2, draft, attempt }, true);
-                setAction({ status: "idle", returnToCalendar: true });
+                setAction({
+                  status: "idle",
+                  returnToCalendar: true,
+                  calendarRecovery: true,
+                });
               } else if (
                 !mayRestoreLiveCheckout(attempt.id) ||
                 (draft.slots.length > 0 && !sameSelections)
@@ -1239,11 +1280,13 @@ export function BookingProvider({
       setRestoredOwner({ service, identityService });
       commit({ ...latest.current, attempt: null, draft: nextDraft });
       if (service.mode === "live") saveLiveDraft(nextDraft, false);
-      setAction({ status: "idle", returnToCalendar: true });
+      setAction({ status: "idle", returnToCalendar: !action.calendarRecovery });
       pauseCalendar(false);
-      setSelectionNotice(PAYMENT_WINDOW_ENDED, previous.slots);
+      if (!action.calendarRecovery || noticeShownOnCalendar.current)
+        setSelectionNotice(PAYMENT_WINDOW_ENDED, previous.slots);
     },
     [
+      action.calendarRecovery,
       cancel,
       commit,
       identityService,
@@ -1411,6 +1454,9 @@ export function BookingProvider({
       if (
         pendingConflict ||
         protectedConflictRedirect ||
+        (action.calendarRecovery &&
+          latest.current.attempt &&
+          ["reserve", "review", "checkout", "pay"].includes(operation)) ||
         active.current ||
         !mounted.current ||
         !latest.current.ready
@@ -1714,7 +1760,11 @@ export function BookingProvider({
               );
               if (service.mode === "live") saveCalendarRecovery(retained.id);
               pauseCalendar(false);
-              setAction({ status: "idle", returnToCalendar: true });
+              setAction({
+                status: "idle",
+                returnToCalendar: true,
+                calendarRecovery: true,
+              });
             }
           }
           return false;
@@ -1763,6 +1813,7 @@ export function BookingProvider({
       suppressedSlots,
       pendingConflict,
       protectedConflictRedirect,
+      action.calendarRecovery,
     ],
   );
   useEffect(() => {
@@ -1821,7 +1872,7 @@ export function BookingProvider({
             current.attempt.status === "paid"
           )
             return false;
-          if (!action.returnToCalendar) {
+          if (!action.calendarRecovery) {
             setSuppressedSlots([
               ...suppressedSlots.filter(
                 (slot) =>
@@ -1839,7 +1890,11 @@ export function BookingProvider({
               true,
             );
             if (service.mode === "live") saveCalendarRecovery(id);
-            setAction({ status: "idle", returnToCalendar: true });
+            setAction({
+              status: "idle",
+              returnToCalendar: true,
+              calendarRecovery: true,
+            });
           }
           return true;
         },
@@ -1889,12 +1944,7 @@ export function BookingProvider({
         /** Apply draft changes while preserving the booking state constraints. */
         update(change) {
           const current = latest.current;
-          if (action.returnToCalendar && current.attempt && !active.current) {
-            if (
-              !change.slots ||
-              Object.keys(change).some((key) => key !== "slots")
-            )
-              return;
+          if (action.calendarRecovery && current.attempt && !active.current) {
             // Editable new selections are separate from the retained recovery attempt.
             commit(
               {

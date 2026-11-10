@@ -137,6 +137,38 @@ describe("Singapore session pricing", () => {
       dates: [{ date: "2026-10-17", available: true, offers: [offer] }],
     };
     expect(publicCalendarSchema.safeParse(value).success).toBe(true);
+    const monthCoverage = [
+      {
+        month: "2026-10",
+        state: "available",
+        observedAtMs: 1,
+        displayExpiresAtMs: 1800001,
+      },
+      {
+        month: "2026-11",
+        state: "empty",
+        observedAtMs: 1,
+        displayExpiresAtMs: 1800001,
+      },
+      { month: "2026-12", state: "unknown" },
+    ];
+    expect(
+      publicCalendarSchema.safeParse({ ...value, monthCoverage }).success,
+    ).toBe(true);
+    for (const invalid of [
+      [...monthCoverage, { month: "2027-01", state: "unknown" }],
+      [monthCoverage[0], monthCoverage[0]],
+      [{ ...monthCoverage[2], displayExpiresAtMs: 10 }],
+      [{ month: "2026-10", state: "empty" }],
+      [{ ...monthCoverage[0], displayExpiresAtMs: 1800002 }],
+      [{ ...monthCoverage[0], displayExpiresAtMs: 1 }],
+      [{ ...monthCoverage[0], privateClient: "forbidden" }],
+    ])
+      expect(
+        publicCalendarSchema.safeParse({ ...value, monthCoverage: invalid })
+          .success,
+      ).toBe(false);
+
     expect(
       publicCalendarSchema.safeParse({
         ...value,

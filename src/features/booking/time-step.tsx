@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
-import { ProtectedConfirmation } from "./protected-confirmation";
 import {
   AVAILABILITY_LOAD_FAILED,
   NO_SESSIONS_ON_DATE,
 } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import {
+  type ReactNode,
   useEffect,
   useId,
   useMemo,
@@ -15,7 +15,6 @@ import {
   useLayoutEffect,
 } from "react";
 import {
-  BOOKING_MONTH_COUNT,
   MAX_BOOKING_SESSIONS,
   START_INTERVAL_MINUTES,
 } from "@/domain/booking-policy";
@@ -71,7 +70,9 @@ function revealBookingSection(heading: HTMLElement | null, cueSpace = 0) {
   });
 }
 /** Manage calendar, session-time and instructor selection. */
-export function TimeStep() {
+export function TimeStep({
+  recoveryNotice,
+}: { recoveryNotice?: ReactNode } = {}) {
   const mobile = useMobileBooking();
   const headingRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLElement>(null);
@@ -99,13 +100,8 @@ export function TimeStep() {
     suppressedSlots,
     attempt,
     action,
-    confirmationRevision,
-    restartAfterExpiry,
-    resumePaymentStatus,
-    rejectRecoveredSelection,
-    resolveUncreatedBooking,
   } = useBooking();
-  const waitingForRelease = !!attempt && action.returnToCalendar === true;
+  const waitingForRelease = !!attempt && action.calendarRecovery === true;
   const {
     draft,
     update,
@@ -142,7 +138,9 @@ export function TimeStep() {
   const [findingInitialDay, setFindingInitialDay] = useState(
     () => publicCalendarReady && draft.slots.length === 0,
   );
-  const maxMonthOffset = publicCalendarReady ? BOOKING_MONTH_COUNT - 1 : 11;
+  const maxMonthOffset = publicCalendarReady
+    ? calendar.lastMonthOffset(now)
+    : 11;
   const offset = Math.max(
     0,
     Math.min(
@@ -156,12 +154,18 @@ export function TimeStep() {
     firstDay = (new Date(`${month}T12:00:00Z`).getUTCDay() + 6) % 7;
   const days = new Date(`${monthAt(today, offset + 1)}T12:00:00Z`);
   days.setUTCDate(0);
-  const rangeStart = calendarView === "week" ? (weekStart ?? date) : month;
+  const lastDate = addDays(monthAt(today, maxMonthOffset + 1), -1);
+  const desiredStart = weekStart ?? date;
+  const rangeStart =
+    calendarView === "week"
+      ? desiredStart > lastDate
+        ? month
+        : desiredStart
+      : month;
   const rangeEnd =
     calendarView === "week"
       ? addDays(rangeStart, 6)
       : addDays(month, days.getUTCDate() - 1);
-  const lastDate = addDays(monthAt(today, maxMonthOffset + 1), -1);
   const throughMonth =
     calendarView === "week" &&
     !findingInitialDay &&
@@ -169,10 +173,13 @@ export function TimeStep() {
     rangeEnd.slice(0, 7) !== month.slice(0, 7)
       ? rangeEnd.slice(0, 7)
       : undefined;
-  const monthResult = calendar.entry(month.slice(0, 7), now);
+  const verifiedMonthResult = calendar.entry(month.slice(0, 7), now);
+  const monthResult =
+    verifiedMonthResult ?? calendar.displayEntry(month.slice(0, 7));
   const sibling =
     throughMonth && throughMonth !== month.slice(0, 7)
-      ? calendar.entry(throughMonth, now)
+      ? (calendar.entry(throughMonth, now) ??
+        calendar.displayEntry(throughMonth))
       : null;
   const visibleDays = [
     ...(monthResult?.dates ?? []),
@@ -216,8 +223,12 @@ export function TimeStep() {
   }
   const dateInView =
     calendarView === "month" || (date >= rangeStart && date <= rangeEnd);
+  const verifiedDateMonth = calendar.entry(date.slice(0, 7), now);
   const displayDate =
-    !dateInView || (publicCalendarReady && dayAvailability.get(date) !== true)
+    !dateInView ||
+    (publicCalendarReady &&
+      (!monthResult ||
+        (verifiedDateMonth && dayAvailability.get(date) === false)))
       ? null
       : date;
   useEffect(() => {
@@ -258,7 +269,9 @@ export function TimeStep() {
     setDate(bounded);
   }
   const displayUnavailable =
-    publicCalendarReady && !!monthResult && dayAvailability.get(date) !== true;
+    publicCalendarReady &&
+    !!verifiedDateMonth &&
+    dayAvailability.get(date) === false;
   const result = useMemo(
     () =>
       availability.result?.dates.includes(date)
@@ -268,6 +281,15 @@ export function TimeStep() {
           : null,
     [availability.result, date, displayUnavailable],
   );
+  const displayResult =
+    result?.status === "success"
+      ? result
+      : (!result ||
+            result.status === "failure" ||
+            result.status === "unavailable") &&
+          availability.displayResult?.dates.includes(date)
+        ? availability.displayResult
+        : null;
   const timesRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (pendingScroll.current !== date) {
@@ -306,8 +328,8 @@ export function TimeStep() {
     );
   }, [live, result, date, now, reconcile]);
   const slots =
-    result?.status === "success"
-      ? result.slots.filter(
+    displayResult?.status === "success"
+      ? displayResult.slots.filter(
           (slot) =>
             slot.date === date &&
             !suppressedSlots.some(
@@ -327,10 +349,11 @@ export function TimeStep() {
   /** Commit only an explicitly chosen, currently offered trainer for this time. */
   function select(offered: AvailableSlot) {
     if (
+      result?.status !== "success" ||
       (draft.slots.length >= MAX_BOOKING_SESSIONS &&
         !draft.slots.some((slot) => slotKey(slot) === slotKey(offered))) ||
       isElapsed(offered) ||
-      !slots.some(
+      !result.slots.some(
         (candidate) =>
           sessionOfferKey(candidate) === sessionOfferKey(offered) &&
           candidate.available,
@@ -389,18 +412,7 @@ export function TimeStep() {
           </strong>
         </p>
       )}
-      {waitingForRelease && attempt && (
-        <ProtectedConfirmation
-          attemptId={attempt.id}
-          checkoutMode="live"
-          calendarRecovery
-          sessionRevision={confirmationRevision}
-          onExpired={restartAfterExpiry}
-          onSelectionRejected={rejectRecoveredSelection}
-          onCreationResolved={resolveUncreatedBooking}
-          onPaymentDetected={resumePaymentStatus}
-        />
-      )}
+      {recoveryNotice}
       {selectionNotice && !waitingForRelease && (
         <div className="alert" role="alert">
           <p>{selectionNotice}</p>
@@ -440,11 +452,6 @@ export function TimeStep() {
           (!!throughMonth && !sibling && !siblingFailed)
         }
       >
-        {calendarRefreshing && (
-          <div className="calendar-refresh">
-            <BrandLoading overlay={false} compact label="Updating dates…" />
-          </div>
-        )}
         <div className="calendar-head">
           <div className="month-picker">
             <label className="sr-only" htmlFor="calendar-month">
@@ -565,11 +572,13 @@ export function TimeStep() {
                       }
                       title={
                         live
-                          ? dayAvailability.get(value) === true
-                            ? "Available sessions"
-                            : dayAvailability.get(value) === false
-                              ? NO_SESSIONS_ON_DATE
-                              : "Availability not verified"
+                          ? !calendar.entry(value.slice(0, 7), now)
+                            ? "Availability not verified"
+                            : dayAvailability.get(value) === true
+                              ? "Available sessions"
+                              : dayAvailability.get(value) === false
+                                ? NO_SESSIONS_ON_DATE
+                                : "Availability not verified"
                           : undefined
                       }
                       onClick={() => {
@@ -589,6 +598,14 @@ export function TimeStep() {
               )}
             </div>
           </>
+        )}
+        {calendarFailed && (
+          <div className="alert" role="alert">
+            <p>{AVAILABILITY_LOAD_FAILED}</p>
+            <button className="text-link" onClick={() => calendar.retry()}>
+              Try again
+            </button>
+          </div>
         )}
         {siblingFailed && (
           <div className="alert" role="alert">
@@ -643,21 +660,7 @@ export function TimeStep() {
             style={!result ? { minHeight: timesHeight } : undefined}
             aria-busy={!result}
           >
-            {!result ? (
-              calendarFailed ? (
-                <div className="alert" role="alert">
-                  <p>{AVAILABILITY_LOAD_FAILED}</p>
-                  <button
-                    className="text-link"
-                    onClick={() => calendar.retry()}
-                  >
-                    Try again
-                  </button>
-                </div>
-              ) : (
-                <BrandLoading overlay={false} compact label="Checking times…" />
-              )
-            ) : result.status !== "success" ? (
+            {result && result.status !== "success" && (
               <div className="alert" role="alert">
                 <p>{result.message}</p>
                 {result.status !== "unavailable" && (
@@ -666,6 +669,15 @@ export function TimeStep() {
                   </button>
                 )}
               </div>
+            )}
+            {!displayResult ? (
+              result || calendarFailed ? null : calendar.hasLoaded(
+                  month.slice(0, 7),
+                ) && !verifiedMonthResult ? (
+                <p role="status">Updating session availability…</p>
+              ) : (
+                <BrandLoading overlay={false} compact label="Checking times…" />
+              )
             ) : slots.length ? (
               <div className="times" role="group" aria-label="Session times">
                 <p className="mobile-time-hint">
@@ -758,7 +770,11 @@ export function TimeStep() {
                           <select
                             aria-label={`Trainer for ${slot.date} at ${slot.start}`}
                             value=""
-                            disabled={elapsed || !available}
+                            disabled={
+                              elapsed ||
+                              !available ||
+                              result?.status !== "success"
+                            }
                             onChange={(event) => {
                               const offer = offers.find(
                                 (item) =>
