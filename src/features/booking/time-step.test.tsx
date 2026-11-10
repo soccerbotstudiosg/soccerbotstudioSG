@@ -398,12 +398,22 @@ test("crossing notices persist in the basket and review before payment", async (
     }),
   ).toHaveAttribute("href", "/book/details");
   const cart = screen.getByRole("complementary");
+  expect(
+    within(cart).queryByText("Updating session availability…"),
+  ).not.toBeInTheDocument();
+  expect(
+    within(cart).queryByText("Session no longer available."),
+  ).not.toBeInTheDocument();
   expect(cart.querySelector(".summary-total")).toBeNull();
   expect(
     cart
       .querySelector(".basket-continue")!
       .compareDocumentPosition(cart.querySelector(".basket-list")!),
   ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  expect(cart.querySelector(".booking-primary-action")).toHaveAttribute(
+    "data-ready-animation",
+    "true",
+  );
   basket.unmount();
   render(
     <BookingProvider>
@@ -416,6 +426,15 @@ test("crossing notices persist in the basket and review before payment", async (
   expect(
     screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   ).toBeDisabled();
+  fireEvent.click(screen.getByRole("checkbox"));
+  const payment = screen.getByRole("button", {
+    name: /^Proceed to Payment \$[\d,.]+$/,
+  });
+  expect(payment).toBeEnabled();
+  expect(payment.parentElement).toHaveAttribute("data-ready-animation", "true");
+  fireEvent.click(screen.getByRole("checkbox"));
+  expect(payment).toBeDisabled();
+  expect(payment.parentElement).not.toHaveAttribute("data-ready-animation");
 });
 
 test("confirmation places three retained actions above a compact summary and discloses complete details", async () => {
@@ -714,6 +733,17 @@ test("a trainer choice opened before expiry cannot add the session after its sta
 });
 
 test("calendar back preserves outlet and session choices while explicit deselection still clears them", async () => {
+  const scroll = vi.fn();
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    configurable: true,
+    value: scroll,
+  });
+  const originalMatchMedia = window.matchMedia;
+  let mobile = false;
+  vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+    ...originalMatchMedia(query),
+    matches: query === "(max-width: 700px)" && mobile,
+  }));
   const user = userEvent.setup();
   const view = render(
     <BookingProvider>
@@ -723,11 +753,23 @@ test("calendar back preserves outlet and session choices while explicit deselect
   await user.click(
     screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
   );
+  expect(scroll).toHaveBeenCalledTimes(1);
+  expect(scroll.mock.instances[0]).toBe(
+    document.getElementById("outlet-sessions"),
+  );
   await user.click(
     screen.getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
     }),
   );
+  expect(scroll).toHaveBeenCalledTimes(2);
+  expect(scroll.mock.instances[1]).toBe(
+    document.querySelector(".booking-primary-action"),
+  );
+  expect(scroll).toHaveBeenLastCalledWith({
+    block: "nearest",
+    behavior: "smooth",
+  });
   await user.click(screen.getByRole("button", { name: "Add one player" }));
   view.rerender(
     <BookingProvider>
@@ -751,6 +793,8 @@ test("calendar back preserves outlet and session choices while explicit deselect
     screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
   expect(screen.getByText("2 players", { exact: true })).toBeVisible();
+  expect(scroll).toHaveBeenCalledTimes(2);
+  mobile = true;
   await user.click(
     screen.getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
@@ -770,6 +814,13 @@ test("calendar back preserves outlet and session choices while explicit deselect
       name: "Choose Kickoff Special (Trial Price)",
     }),
   ).toHaveAttribute("aria-pressed", "false");
+  await user.click(
+    screen.getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+    }),
+  );
+  expect(scroll).toHaveBeenCalledTimes(2);
+  Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 
 test("expiry recovery hides affected studio times across trainers while other selections remain editable", async () => {

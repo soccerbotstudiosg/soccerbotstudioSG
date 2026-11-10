@@ -3,10 +3,6 @@ import {
   BookingPrimaryAction,
   BookingActionTotal,
 } from "./booking-primary-action";
-import {
-  SESSION_UNAVAILABLE,
-  AVAILABILITY_LOAD_FAILED,
-} from "@/domain/booking-messages";
 import Link from "next/link";
 import { useState, useId, type ReactNode } from "react";
 import { Icon } from "@/components/icon";
@@ -268,13 +264,15 @@ export function BasketContinue() {
           available.rotationAt === slot.rotationAt,
       ),
     );
+  const canContinue =
+    draft.slots.length > 0 &&
+    valid &&
+    !waitingForRelease &&
+    !awaitingAvailability;
   return (
     <>
-      <BookingPrimaryAction>
-        {draft.slots.length > 0 &&
-        valid &&
-        !waitingForRelease &&
-        !awaitingAvailability ? (
+      <BookingPrimaryAction ready={canContinue}>
+        {canContinue ? (
           <Link className="button wide basket-continue" href="/book/details/">
             Enter Booking Details <BookingActionTotal /> <Icon name="chevron" />
           </Link>
@@ -284,19 +282,6 @@ export function BasketContinue() {
           </button>
         )}
       </BookingPrimaryAction>
-      {draft.slots.length > 0 &&
-        !valid &&
-        !waitingForRelease &&
-        !awaitingAvailability && (
-          <p className="notice" role="status">
-            {selectionErrors(draft.slots, now).length > 0 ||
-            result?.status === "success"
-              ? SESSION_UNAVAILABLE
-              : !result
-                ? "Updating session availability…"
-                : AVAILABILITY_LOAD_FAILED}
-          </p>
-        )}
     </>
   );
 }

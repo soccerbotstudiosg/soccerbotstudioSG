@@ -160,11 +160,14 @@ async function chooseSlots(page: Page, multiple = false) {
 async function details(page: Page) {
   await page.getByLabel("Full name", { exact: false }).fill("Demo Customer");
   await page
-    .getByLabel("Email address", { exact: false })
+    .getByRole("textbox", { name: /^Email address/ })
     .fill("customer@example.com");
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
+  await page
+    .getByRole("button", { name: "Confirm email address is correct" })
+    .click();
   await page
     .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
     .click();
@@ -685,7 +688,9 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   page,
 }) => {
   await chooseSlots(page);
-  await page.getByLabel("Email address", { exact: false }).fill("name@domain");
+  await page
+    .getByRole("textbox", { name: /^Email address/ })
+    .fill("name@domain");
   await page.getByLabel("Mobile number", { exact: false }).fill("abc");
   await expect(page.locator("#email-error")).toHaveText(
     "Enter a valid email address.",
@@ -694,10 +699,10 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   await expect(page.locator("#phone-error")).toHaveText(
     "Enter a valid mobile number.",
   );
-  await page
-    .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
-    .click();
-  await expect(page.locator("#name")).toBeFocused();
+  await expect(
+    page.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
+  ).toBeDisabled();
+  await expect(page.locator("#name")).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#details-form input")).toHaveCount(4);
   await expect(page.locator("#details-form select")).toHaveCount(1);
   await expect(page.locator("#details-form textarea")).toHaveCount(0);
@@ -738,17 +743,20 @@ test("email verification rejects an incorrect code and continues after correctio
 }) => {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue with email" }).click();
-  await page.getByLabel("Email address").fill("name@domain");
+  await page
+    .getByRole("textbox", { name: /^Email address/ })
+    .fill("name@domain");
   await page.getByRole("button", { name: "Continue with email" }).click();
   await expect(page.locator("#auth-error")).toHaveText(
     "Enter a valid email address.",
   );
-  await expect(page.getByLabel("Email address")).toHaveAttribute(
-    "aria-invalid",
-    "true",
-  );
+  await expect(
+    page.getByRole("textbox", { name: /^Email address/ }),
+  ).toHaveAttribute("aria-invalid", "true");
   await expect(page.getByLabel("Verification code")).toHaveCount(0);
-  await page.getByLabel("Email address").fill("customer@example.com");
+  await page
+    .getByRole("textbox", { name: /^Email address/ })
+    .fill("customer@example.com");
   await page.getByRole("button", { name: "Continue with email" }).click();
   await expect(
     page.getByRole("heading", { name: "Verify your email", exact: true }),
@@ -773,7 +781,9 @@ test("enquiry remains available without external submission or a mock assistant"
 }) => {
   await openSite(page, "/enquiry/");
   await page.getByLabel("Full name").fill("Demo Customer");
-  await page.getByLabel("Email address").fill("demo@example.com");
+  await page
+    .getByRole("textbox", { name: /^Email address/ })
+    .fill("demo@example.com");
   await expect(page.getByLabel("Full name")).toHaveValue("Demo Customer");
   await page.getByLabel("Contact number").fill("+65 8123 4567");
   await page.getByLabel("Enquiry type").selectOption("Corporate booking");
@@ -870,9 +880,12 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
 }) => {
   async function fullWidth(selector: string, parent: string) {
     await expect(page.locator(selector)).toBeVisible();
-    const width = await page
-      .locator(selector)
-      .evaluate((element) => element.getBoundingClientRect().width);
+    const width = await page.locator(selector).evaluate(async (element) => {
+      await Promise.all(
+        element.getAnimations().map((animation) => animation.finished),
+      );
+      return element.getBoundingClientRect().width;
+    });
     const container = await page.locator(parent).evaluate((element) => {
       const style = getComputedStyle(element);
       return (
@@ -1455,6 +1468,13 @@ test("header blue and the typography hierarchy stay consistent across every book
       ).toBeGreaterThanOrEqual(6);
       const primaryBar = page.locator(".booking-primary-action");
       if (await primaryBar.count()) {
+        const action = primaryBar.locator(":scope > .button");
+        await expect(action).toHaveCount(1);
+        await action.evaluate(async (element) => {
+          await Promise.all(
+            element.getAnimations().map((animation) => animation.finished),
+          );
+        });
         const anchorBox = await page
           .locator(".booking-action-anchor")
           .boundingBox();
@@ -1480,8 +1500,6 @@ test("header blue and the typography hierarchy stay consistent across every book
           expect(barBox!.x).toBeCloseTo(20, 0);
           expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width - 40, 0);
         }
-        const action = primaryBar.locator(":scope > .button");
-        await expect(action).toHaveCount(1);
         const actionBox = await action.boundingBox();
         await expect(primaryBar).toHaveCSS(
           "background-color",

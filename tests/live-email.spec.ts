@@ -196,7 +196,7 @@ test("live email requires the supplied widget proof before protected requests", 
     .getByRole("button", { name: "Continue with email", exact: true })
     .click();
   await page
-    .getByLabel("Email address", { exact: true })
+    .getByRole("textbox", { name: /^Email address/ })
     .fill("synthetic@example.test");
   const widget = page.getByLabel("Email security check", { exact: true });
   await expect(widget).toHaveAttribute("data-sitekey", sitekey);
@@ -224,7 +224,7 @@ test("synthetic live verification reads server identity and keeps native booking
     .getByRole("button", { name: "Continue with email", exact: true })
     .click();
   await page
-    .getByLabel("Email address", { exact: true })
+    .getByRole("textbox", { name: /^Email address/ })
     .fill("synthetic@example.test");
   await page
     .getByRole("button", {
@@ -703,7 +703,7 @@ test("native guest journey preserves players contact and one checkout across ref
       .getByLabel("Full name", { exact: false })
       .fill("Synthetic Guest");
     await page
-      .getByLabel("Email address", { exact: false })
+      .getByRole("textbox", { name: /^Email address/ })
       .fill("synthetic@example.test");
     await page
       .getByLabel("Mobile number", { exact: false })
@@ -722,6 +722,9 @@ test("native guest journey preserves players contact and one checkout across ref
         response.request().method() === "POST"
       );
     });
+    await page
+      .getByRole("button", { name: "Confirm email address is correct" })
+      .click();
     await page
       .getByRole("button", { name: /^Review Booking \$[\d,.]+$/, exact: true })
       .click();
@@ -1134,7 +1137,7 @@ test("real payment recovery confirms the browser return from verified provider s
       page.getByRole("link", { name: "Continue payment", exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".status-heading h1 + p")).toHaveText(
-      "Your booking confirmation will be sent to your email.",
+      "Your booking confirmation will be emailed to you.",
     );
     const paidBadge = page.locator(".review-head .confirmation-paid-status");
     await expect(paidBadge).toHaveText("Paid");
@@ -1531,7 +1534,7 @@ async function guestDetails(
   ).toBeVisible();
   await page.getByLabel("Full name", { exact: false }).fill("Synthetic Guest");
   await page
-    .getByLabel("Email address", { exact: false })
+    .getByRole("textbox", { name: /^Email address/ })
     .fill("synthetic@example.test");
   await page.getByLabel("Mobile number", { exact: false }).fill("+6591234567");
   const contactMethod = page.getByLabel("Preferred contact method", {
@@ -1562,6 +1565,9 @@ async function stopMechanism(
   }
 }
 async function reviewResponse(page: Page) {
+  await page
+    .getByRole("button", { name: "Confirm email address is correct" })
+    .click();
   await page
     .getByRole("button", { name: /^Review Booking \$[\d,.]+$/, exact: true })
     .click();
@@ -3158,9 +3164,9 @@ test("email account actions return through booking options and sign in again wit
   await page
     .getByRole("button", { name: "Use another email", exact: true })
     .click();
-  await expect(page.getByLabel("Email address", { exact: true })).toHaveValue(
-    "",
-  );
+  await expect(
+    page.getByRole("textbox", { name: /^Email address/ }),
+  ).toHaveValue("");
   await expect(
     page.getByLabel("Remember me", { exact: true }),
   ).not.toBeChecked();
@@ -3172,7 +3178,7 @@ test("email account actions return through booking options and sign in again wit
       .getByRole("button", { name: "Continue with email", exact: true })
       .click();
     await page
-      .getByLabel("Email address", { exact: true })
+      .getByRole("textbox", { name: /^Email address/ })
       .fill("synthetic@example.test");
     await page.getByLabel("Remember me", { exact: true }).setChecked(remember);
     await page

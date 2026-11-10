@@ -18,12 +18,30 @@ beforeEach(() => {
 });
 
 test("details contains only the five contact fields and validates them before review", async () => {
+  const visibility: IntersectionObserverCallback[] = [];
+  const disconnect = vi.fn();
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      constructor(callback: IntersectionObserverCallback) {
+        visibility.push(callback);
+      }
+      observe() {}
+      disconnect = disconnect;
+    },
+  );
   const user = userEvent.setup();
   render(
     <BookingProvider>
       <DetailsStep />
     </BookingProvider>,
   );
+  expect(screen.getByRole("button", { name: "Review Booking" })).toBeDisabled();
+  for (const label of [/Full name/, /Email address/, /Mobile number/])
+    expect(screen.getByLabelText(label)).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
   expect(screen.getAllByRole("textbox")).toHaveLength(4);
   expect(screen.getAllByRole("combobox")).toHaveLength(1);
   expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
@@ -53,7 +71,7 @@ test("details contains only the five contact fields and validates them before re
   fireEvent.blur(method);
   expect(screen.getByText("Select a contact method.")).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Review Booking" }));
-  expect(screen.getByLabelText(/Full name/)).toHaveFocus();
+  expect(screen.getByRole("button", { name: "Review Booking" })).toBeDisabled();
   expect(mocks.push).not.toHaveBeenCalled();
   await user.type(screen.getByLabelText(/Full name/), "Demo Customer");
   await user.type(
@@ -66,6 +84,71 @@ test("details contains only the five contact fields and validates them before re
     "whatsapp",
   );
   await user.type(screen.getByLabelText(/Academy \/ school/), "Demo Academy");
+  const reviewButton = screen.getByRole("button", { name: "Review Booking" });
+  const confirmEmail = screen.getByRole("button", {
+    name: "Confirm email address is correct",
+  });
+  expect(reviewButton).toBeDisabled();
+  fireEvent.submit(document.getElementById("details-form")!);
+  expect(mocks.push).not.toHaveBeenCalled();
+  await user.click(confirmEmail);
+  expect(confirmEmail).toHaveAttribute("aria-pressed", "true");
+  expect(reviewButton).toBeEnabled();
+  const action = reviewButton.parentElement!;
+  expect(action).not.toHaveAttribute("data-halo");
+  const notify = visibility.at(-1)!;
+  act(() =>
+    notify(
+      [
+        {
+          isIntersecting: true,
+          intersectionRatio: 0.5,
+        } as IntersectionObserverEntry,
+      ],
+      {} as IntersectionObserver,
+    ),
+  );
+  expect(action).not.toHaveAttribute("data-halo");
+  act(() =>
+    notify(
+      [
+        {
+          isIntersecting: true,
+          intersectionRatio: 1,
+        } as IntersectionObserverEntry,
+      ],
+      {} as IntersectionObserver,
+    ),
+  );
+  expect(action).toHaveAttribute("data-halo", "true");
+  expect(disconnect).toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText(/Email address/), {
+    target: { value: "changed@example.com" },
+  });
+  expect(confirmEmail).toHaveAttribute("aria-pressed", "false");
+  expect(reviewButton).toBeDisabled();
+  expect(action).not.toHaveAttribute("data-halo");
+  act(() =>
+    notify(
+      [
+        {
+          isIntersecting: true,
+          intersectionRatio: 1,
+        } as IntersectionObserverEntry,
+      ],
+      {} as IntersectionObserver,
+    ),
+  );
+  expect(action).not.toHaveAttribute("data-halo");
+  fireEvent.change(screen.getByLabelText(/Email address/), {
+    target: { value: "customer@example.com" },
+  });
+  expect(reviewButton).toBeDisabled();
+  await user.click(confirmEmail);
+  expect(reviewButton).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Review Booking" }).parentElement,
+  ).toHaveAttribute("data-ready-animation", "true");
   await user.click(screen.getByRole("button", { name: "Review Booking" }));
   expect(mocks.push).toHaveBeenCalledExactlyOnceWith("/book/review/");
 });

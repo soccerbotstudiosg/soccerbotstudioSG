@@ -3455,7 +3455,7 @@
     border-radius: 10px;
     background: var(--color-surface);
   }
-  .empty-state svg {
+  .empty-state > svg {
     width: 34px;
     height: 34px;
     color: var(--color-brand);
@@ -3472,6 +3472,17 @@
   }
   .empty-state .button {
     margin-top: 18px;
+  }
+  .empty-state .calendar-empty-action {
+    min-height: 44px;
+    padding: 8px 16px;
+    gap: 8px;
+    font-size: var(--text-label);
+  }
+  .calendar-empty-action svg {
+    width: 18px;
+    height: 18px;
+    margin: 0;
   }
   .field-grid {
     display: grid;
@@ -3520,6 +3531,39 @@
   .field select[aria-invalid="true"],
   .field textarea[aria-invalid="true"] {
     border-color: var(--color-danger);
+  }
+  .email-confirm-input {
+    position: relative;
+  }
+  .email-confirm-input input {
+    padding-right: 64px;
+  }
+  .email-confirm-control {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-left: 1px solid currentColor;
+    border-radius: 0 6px 6px 0;
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .email-confirm-control[aria-pressed="true"] {
+    color: var(--color-success);
+    background: var(--color-success-soft);
+  }
+  .email-check-help {
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    margin-top: 7px;
   }
   .field-error {
     color: var(--color-danger);
@@ -3895,7 +3939,35 @@
     background: var(--color-confirmation);
     color: var(--color-on-brand);
   }
+  .booking-primary-action > .button {
+    position: relative;
+  }
+  @keyframes booking-action-halo {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+    45% {
+      box-shadow: 0 0 14px 5px
+        color-mix(in srgb, var(--color-logo-blue) 28%, transparent);
+    }
+  }
   @media (prefers-reduced-motion: no-preference) {
+    .booking-primary-action[data-halo="true"]
+      > .button:not(:disabled):not([aria-disabled="true"])::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      animation: booking-action-halo 1100ms ease-in-out 2;
+    }
+    .booking-primary-action[data-halo="true"][data-ready-animation="true"]
+      > .button::after {
+      animation-delay: 380ms;
+    }
+    .email-confirm-control[aria-pressed="true"] .icon,
+    .booking-primary-action[data-ready-animation="true"] > .button,
     .confirmation-shell .status-icon,
     .confirmation-invoice-value,
     .booking-cart-count {

@@ -807,9 +807,8 @@ export function TimeStep({
               <div className="empty-state">
                 <Icon name="calendar" />
                 <h3>{NO_SESSIONS_ON_DATE}</h3>
-                <p>Choose another date. Your selections are saved.</p>
                 <button
-                  className="button secondary"
+                  className="button secondary calendar-empty-action"
                   disabled={live && !nextAvailable && offset === maxMonthOffset}
                   onClick={() => {
                     const next = live

@@ -390,7 +390,7 @@ export function AccountStep() {
         {identityService.mode === "live" && (
           <EmailBotProof key={botGeneration} onToken={setBotToken} />
         )}
-        <BookingPrimaryAction className="actions">
+        <BookingPrimaryAction className="actions" ready={!busy}>
           <button type="submit" className="button" disabled={busy}>
             {view === "email" ? "Continue with email" : "Verify and continue"}
             <Icon name="chevron" />
