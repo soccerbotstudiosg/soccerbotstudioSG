@@ -1,15 +1,13 @@
 # Current checkpoint
 
-## Outcome and authority
+## Outcome
 
-PR55 (`fix/booking-heading-layout`) removes the premature Guest badge from initial choices/Guest→Back and standardizes mobile booking headings. Owner authorized staging then production. Booking, payment, conflict/expiry, provider settings and dependencies are unchanged. Production remains PR54 merge8e842fa.
+Fix the remaining Guest badge on email entry/code verification. PR55 is merged and deployed as f353171; its CI, staging, main verification and production receipts are retained in Journey.
 
-## Evidence and current repair
+## Local correction
 
-Full unit305/305, focused account/async/parity59/59 and direct-checkout51/51 passed. Original failures and corrections are retained in Journey. CI42955586485 on759fd9c passed frontend, Worker verification and three browser shards; backend shard1 failed a synthetic evidence timing fixture, leaving backend/live-email aggregation skipped. The trace returned stale evidence rather than the scenario's expected paid-invalid evidence.
+Branch fix/email-entry-status starts from current main. AccountStep's email/code heading now explicitly suppresses inherited identity status. Existing account lifecycle tests cover direct email entry, code/Change email/Back, and guest continuation→Back→email entry. The old implementation failed two assertions (11 other cases passed). Booking choice verified identity and later-step Guest behaviour remain unchanged.
 
-The browser test now synchronizes its first confirmation read with saved synthetic evidence and checks the exact paid-invalid reason. Production checking rules are untouched. Formatting, ESLint, fresh TypeScript and source/integrity checks pass. Test inventory remains unchanged by this repair. No assistant browser execution or live provider effects.
+## Scope and next action
 
-## Next action
-
-Publish the consolidated test correction to PR55, verify all exact-head gates, then actual staging and production under existing authorization. CI browser proof and physical phone appearance remain pending. Journey owns retained run/artifact evidence; booking scenarios and UAT already describe the entry/header changes.
+Presentation and existing tests/docs only; no booking, auth, checkout, payment, conflict/expiry, settings or dependency change. All13 lifecycle tests, focused ESLint, source/integrity and whitespace checks passed. Owner authorized staging then merge. Publish this correction, verify exact-head CI and actual staging health, then merge. Owner device acceptance remains pending.

@@ -13,7 +13,7 @@ Booking headings use shared deliberate two-line text at widths up to700px, with 
 
 ## 1. Guest entry
 
-The initial booking-choice page shows no Guest badge, including after Continue as Guest → Back or a return with retained guest access. Guest appears only on subsequent booking steps. A verified email and its entry-only Sign out remain visible on the choice page.
+The initial booking-choice page shows no Guest badge, including after Continue as Guest → Back or a return with retained guest access. Email entry and code verification also suppress the badge, including when guest access is retained. Guest appears only on subsequent booking steps. A verified email and its entry-only Sign out remain visible on the choice page.
 
 Continue as Guest, then select sessions without creating an account.
 
@@ -28,7 +28,7 @@ flowchart LR
 
 ## 2. Email entry and verification
 
-Steps 1–5 show Guest or the currently verified email beside the heading. Guest uses a larger bold pale-yellow badge; the shared identity label reserves its height to avoid shifting the page when verified identity arrives. Only the initial booking-options heading offers Sign out. It waits for acknowledged sign-out before ending the editable flow and routing Home; failure stays on booking options with “Try signing out again”. Later headings are read-only, and payment/confirmation screens keep their existing protected presentation.
+Booking steps after entry show Guest or the currently verified email beside the heading. The initial choice page suppresses Guest, and email entry/code verification suppress identity badges. Guest uses a larger bold pale-yellow badge; the shared identity label reserves its height to avoid shifting the page when verified identity arrives. Only the initial booking-options heading offers Sign out. It waits for acknowledged sign-out before ending the editable flow and routing Home; failure stays on booking options with “Try signing out again”. Later headings are read-only, and payment/confirmation screens keep their existing protected presentation.
 
 On email/code entry, the top-left Back returns to booking options and cancels pending identity work. The bottom duplicate Back link and email-entry envelope tile are removed. The first booking-options screen retains Home.
 
