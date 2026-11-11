@@ -385,9 +385,7 @@ export function TimeStep({
   }
   return (
     <>
-      <BookingHeading>
-        Select dates<span className="booking-time-title-break"> and times</span>
-      </BookingHeading>
+      <BookingHeading lines={["Select dates", "and times"]} />
       {live && bookingService.operations.availability === "live" ? (
         <LiveCatalogue
           renderStatus={(state) => (

@@ -303,12 +303,7 @@ test("remembered live account edits and rereads contact while native booking sta
     name: "Continue as Guest",
     exact: true,
   });
-  const guestBadge = page.getByLabel("Booking identity").getByText("Guest", {
-    exact: true,
-  });
-  await expect(guestBadge).toHaveCSS("background-color", "rgb(255, 245, 219)");
-  await expect(guestBadge).toHaveCSS("font-size", "18px");
-  await expect(guestBadge).toHaveCSS("font-weight", "700");
+  await expect(page.getByLabel("Booking identity")).toHaveCount(0);
   const before = await guest.boundingBox();
   expect(before).not.toBeNull();
   restoreIdentity();
@@ -341,7 +336,10 @@ test("remembered live account edits and rereads contact while native booking sta
     );
   }
   const after = await guest.boundingBox();
-  expect(after).toEqual(before);
+  expect(after).not.toBeNull();
+  // Verified identity adds its status; guest choices reserve no empty status row.
+  expect(after!.width).toBe(before!.width);
+  expect(after!.height).toBe(before!.height);
   await page
     .getByRole("button", { name: "Manage saved contact", exact: true })
     .click();

@@ -106,7 +106,7 @@ export function ReviewStep({
     selectionErrors(draft.slots, now).length === 0;
   return (
     <>
-      <BookingHeading>Review Booking</BookingHeading>
+      <BookingHeading lines={["Review", "Booking"]} />
       <p className="lead">Check your details before payment.</p>
       <section className="surface booking-document">
         <ReviewSessions part="heading" verifying={verifying} />

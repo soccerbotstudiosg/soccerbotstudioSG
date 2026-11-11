@@ -559,18 +559,18 @@
   .booking-identity-action > .text-link {
     min-height: 44px;
   }
-  @media (max-width: 480px) {
-    .booking-identity-status.booking-entry-status {
-      flex-basis: 100%;
+  @media (max-width: 700px) {
+    .booking-title-line {
+      display: block;
     }
     .booking-heading-row {
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) fit-content(28%);
       gap: 0.5rem;
     }
     .booking-identity-status {
-      margin-left: auto;
-      flex-basis: auto;
       max-width: 100%;
+      justify-self: end;
     }
   }
 
@@ -4419,9 +4419,6 @@
       flex-direction: column;
       align-items: stretch;
       gap: 0;
-    }
-    .booking-time-title-break {
-      display: block;
     }
     .booking-panel-buttons {
       display: flex;

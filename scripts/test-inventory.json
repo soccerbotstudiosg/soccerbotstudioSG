@@ -244,6 +244,10 @@
     "title": "later booking headings inspect identity without refreshing or recreating guest access"
   },
   {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "guest identity is shown only after choosing guest and stays hidden on return to booking choices"
+  },
+  {
     "file": "src/features/booking/account-step.test.tsx",
     "title": "email form rejects a wrong verification code and accepts the corrected code"
   },
@@ -1290,6 +1294,10 @@
   {
     "file": "tests/customer.spec.ts",
     "title": "public routes remove staff access and fit the viewport"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "booking titles keep deliberate phone line breaks and desktop inline layout"
   },
   {
     "file": "tests/experiment.spec.ts",
