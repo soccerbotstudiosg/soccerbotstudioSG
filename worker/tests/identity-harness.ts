@@ -6,6 +6,7 @@ import app, {
   verifiedContact,
 } from "../index";
 import { createAccess } from "../access";
+import { ApiError } from "../policy";
 import { readContactProfile, saveContactProfile } from "../contact-profile";
 import {
   restoreRememberedIdentity,
@@ -13,6 +14,8 @@ import {
 } from "../remembered-identity";
 export { SoccerBotAccountCoordinator } from "../index";
 const pepper = "SYNTHETIC_PRIVATE_PEPPER_FOR_IDENTITY_123456789";
+let releaseHeldDelivery: (() => void) | undefined;
+let observeHeldDelivery: (() => void) | undefined;
 export default {
   async fetch(request: Request, env: Env) {
     const path = new URL(request.url).pathname;
@@ -28,7 +31,9 @@ export default {
         | "guest"
         | "all-signout"
         | "contact-read"
-        | "contact-save";
+        | "contact-save"
+        | "wait-delivery"
+        | "release-delivery";
       now: number;
       remember?: boolean;
       email?: string;
@@ -36,7 +41,7 @@ export default {
       challengeId?: string;
       botToken?: string;
       bot?: "denied" | "expired" | "wrong-action";
-      delivery?: "lost";
+      delivery?: "lost" | "held";
       source?: string;
       matches?: unknown;
       contact?: unknown;
@@ -66,11 +71,28 @@ export default {
               sent.push(message);
               if (input.delivery === "lost")
                 throw new Error("SYNTHETIC_PRIVATE_DELIVERY_ERROR");
+              if (input.delivery === "held")
+                await new Promise<void>((resolve) => {
+                  releaseHeldDelivery = resolve;
+                  observeHeldDelivery?.();
+                  observeHeldDelivery = undefined;
+                });
               return { accepted: true };
             },
           },
         );
-      else if (input.action === "verify")
+      else if (input.action === "wait-delivery") {
+        if (!releaseHeldDelivery)
+          await new Promise<void>((resolve) => {
+            observeHeldDelivery = resolve;
+          });
+        result = { waiting: true };
+      } else if (input.action === "release-delivery") {
+        if (!releaseHeldDelivery) throw new Error("No held synthetic delivery");
+        releaseHeldDelivery();
+        releaseHeldDelivery = undefined;
+        result = { released: true };
+      } else if (input.action === "verify")
         result = await verifyIdentityChallenge(
           request,
           env,
@@ -113,7 +135,13 @@ export default {
       return Response.json({ result, sent, cookies });
     } catch (error) {
       return Response.json(
-        { error: error instanceof Error ? error.message : "failed", sent },
+        {
+          error: error instanceof Error ? error.message : "failed",
+          ...(error instanceof ApiError
+            ? { retryAfterSeconds: error.retryAfterSeconds }
+            : {}),
+          sent,
+        },
         { status: 400 },
       );
     }

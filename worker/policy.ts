@@ -144,6 +144,7 @@ export class ApiError extends Error {
     public status: number,
     public code: string,
     public selectionRejection?: CheckoutSelectionRejection,
+    public retryAfterSeconds?: number,
   ) {
     super(code);
   }

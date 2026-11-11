@@ -1,3 +1,4 @@
+import { checkoutBotFixture } from "./checkout-bot-fixture.mjs";
 import { isHitPayApiCall } from "./provider-url-fixture.mjs";
 import { initializeFixture } from "./foundation-fixture.mjs";
 import { test, before, after } from "node:test";
@@ -45,6 +46,7 @@ async function fixture({
   if (!persistence) roots.push(root);
   const calls = [];
   const logs = [];
+  const bot = checkoutBotFixture(origin);
   const mf = new Miniflare({
     ...convertV4MiniflareOptions({
       name: "provider-test",
@@ -56,6 +58,7 @@ async function fixture({
       handleStructuredLogs: (entry) => logs.push(entry.message),
       bindings: {
         ...config.vars,
+        ...bot.bindings,
         APP_ORIGIN: origin,
         IDENTITY_PEPPER: "synthetic-reservation-identity-pepper-32-characters",
         PROVIDER_ACCESS: mode,
@@ -79,6 +82,8 @@ async function fixture({
         const body = ["POST", "PUT"].includes(request.method)
           ? await request.json()
           : null;
+        const proof = await bot.respond(request, body);
+        if (proof) return proof;
         calls.push({ url: request.url, method: request.method, body });
         assert.ok(
           ["user-api.simplybook.me", "user-api-v2.simplybook.me"].includes(
@@ -148,6 +153,7 @@ async function fixture({
     resourcePersistencePath: root,
     isolatedResourcePersistencePath: root,
   });
+  bot.attach(mf);
   await mf.ready;
   const db = await mf.getD1Database("STATE");
   if (!persistence)

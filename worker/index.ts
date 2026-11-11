@@ -269,6 +269,7 @@ export default {
               attemptId: holdMatch[2],
               sourceIp: request.headers.get("CF-Connecting-IP") || "",
               checkoutAccess,
+              botToken: request.headers.get("X-Booking-Bot-Proof") || undefined,
               checkout: holdMatch[1] === "checkout",
               cookie: request.headers.get("cookie") || "",
               value,
@@ -292,6 +293,8 @@ export default {
                   cookie: request.headers.get("cookie") || "",
                   sourceIp: request.headers.get("CF-Connecting-IP") || "",
                   value: bookingSelection(await inputBody(request)),
+                  botToken:
+                    request.headers.get("X-Booking-Bot-Proof") || undefined,
                 },
                 correlationId,
               ),
@@ -700,6 +703,12 @@ export default {
                 : {}),
             },
             error.status,
+            error.status === 429 &&
+              Number.isSafeInteger(error.retryAfterSeconds) &&
+              error.retryAfterSeconds! > 0 &&
+              error.retryAfterSeconds! <= 3600
+              ? { "Retry-After": String(error.retryAfterSeconds) }
+              : {},
           );
         console.error(
           JSON.stringify({ event: "request_failed", correlationId }),

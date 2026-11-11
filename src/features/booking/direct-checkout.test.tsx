@@ -1,7 +1,7 @@
 import ConfirmationPage from "@/app/confirmation/page";
 import { dateLabel } from "@/domain/dates";
 import { PAYMENT_WINDOW_ENDED } from "@/domain/booking-messages";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   act,
   fireEvent,
@@ -37,6 +37,26 @@ vi.mock("next/navigation", () => ({
   useRouter: () => navigation,
   usePathname: () => navigation.path,
   useSearchParams: () => new URLSearchParams({ attempt: id }),
+}));
+vi.mock("./email-bot-proof", async (original) => ({
+  ...(await original<typeof import("./email-bot-proof")>()),
+  CheckoutBotProof: function SyntheticCheckoutProof({
+    onToken,
+  }: {
+    onToken: (token: string) => void;
+  }) {
+    useEffect(() => {
+      onToken("synthetic-checkout-proof");
+    }, [onToken]);
+    return (
+      <>
+        <button onClick={() => onToken("")}>Expire checkout proof</button>
+        <button onClick={() => onToken("synthetic-checkout-proof")}>
+          Complete checkout proof
+        </button>
+      </>
+    );
+  },
 }));
 const id = "00000000-0000-4000-8000-000000000001";
 const url = `https://checkout.sandbox.hit-pay.com/payment-request/@soccerbot/${id}/checkout`;
@@ -191,6 +211,17 @@ async function directCase(scenario: string) {
     </BookingProvider>,
   );
   fireEvent.click(screen.getByText("Seed"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Expire checkout proof" }),
+  );
+  expect(
+    screen.getByRole("button", { name: /^Proceed to Payment/ }),
+  ).toBeDisabled();
+  expect(checkout).not.toHaveBeenCalled();
+  expect(pay).not.toHaveBeenCalled();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Complete checkout proof" }),
+  );
   await act(async () =>
     fireEvent.click(
       screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
@@ -198,6 +229,10 @@ async function directCase(scenario: string) {
   );
   expect(screen.getByTestId("retained")).toHaveTextContent(id);
   expect(pay).toHaveBeenCalledTimes(1);
+  expect(pay.mock.calls[0][0].botToken).toBe("synthetic-checkout-proof");
+  expect(JSON.stringify(pay.mock.calls[0][0].attempt)).not.toContain(
+    "synthetic-checkout-proof",
+  );
   fireEvent.click(
     screen.getByRole("button", { name: /^Opening checkout… \$[\d,.]+$/ }),
   );
@@ -351,6 +386,10 @@ it("explicit reservation reuses its hold for payment without preparing or checki
   expect(pay.mock.calls[1][0].attempt.id).toBe(id);
   expect(pay.mock.calls[1][0].attempt.draft.accepted).toBe(true);
   expect(pay.mock.calls[1][0].holding).toBe(false);
+  expect(pay.mock.calls[1][0].botToken).toBeUndefined();
+  expect(
+    screen.queryByRole("button", { name: "Expire checkout proof" }),
+  ).toBeNull();
   expect(availability).toHaveBeenCalledTimes(readsAtHold);
   expect(assign).toHaveBeenCalledWith(url);
   expect(navigation.replace).not.toHaveBeenCalledWith("/book/payment/");
@@ -970,6 +1009,20 @@ it("queue rejection keeps the original attempt on Review for an explicit retry",
   expect(screen.getByTestId("retained")).toHaveTextContent(original!);
   expect(fetch.mock.calls[1][0]).toBe(fetch.mock.calls[0][0]);
   expect(fetch.mock.calls[1][1]?.body).toBe(fetch.mock.calls[0][1]?.body);
+  for (const [status, error] of [
+    [400, "checkout_verification_required"],
+    [503, "checkout_verification_unavailable"],
+  ] as const) {
+    fetch.mockResolvedValueOnce(Response.json({ error }, { status }));
+    const count = fetch.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
+    await screen.findByText(/Complete the security check and try again/);
+    expect(fetch).toHaveBeenCalledTimes(count + 1);
+    expect(screen.getByTestId("retained")).toHaveTextContent(original!);
+    expect(screen.getByTestId("action")).toHaveTextContent("failure");
+    expect(fetch.mock.calls.at(-1)?.[0]).toBe(fetch.mock.calls[0][0]);
+    expect(navigation.push).not.toHaveBeenCalled();
+  }
 });
 
 it("rejected checkout window clears the undispatched draft attempt without payment confirmation polling", async () => {

@@ -1,3 +1,4 @@
+import { checkoutBotFixture } from "./checkout-bot-fixture.mjs";
 // Test-only provider boundary. All application routes, auth, D1 and coordinator
 // code are production code. No network request is forwarded to a provider.
 import assert from "node:assert/strict";
@@ -26,6 +27,10 @@ export async function createBookingMechanism(options = {}) {
   const serviceId = client ? 3 : 2;
   const company = client ? "synthetic-client" : "synthetic-developer";
   const origin = "https://soccerbot.test";
+  const bot = checkoutBotFixture(origin, {
+    automatic: options.checkoutBotProof !== false,
+    result: options.botResult,
+  });
   const day = new Date(Date.now() + 3 * 86400000);
   while (day.getUTCDay() !== 3) day.setUTCDate(day.getUTCDate() + 1);
   const date = day.toISOString().slice(0, 10);
@@ -181,6 +186,7 @@ export async function createBookingMechanism(options = {}) {
       compatibilityFlags: config.compatibility_flags,
       bindings: {
         ...config.vars,
+        ...bot.bindings,
         OBSERVATION_MAX_AGE_MS: String(
           options.observationMaxAgeMs ?? config.vars.OBSERVATION_MAX_AGE_MS,
         ),
@@ -242,6 +248,8 @@ export async function createBookingMechanism(options = {}) {
           request.method === "POST" || request.method === "PUT"
             ? await request.json()
             : null;
+        const proof = await bot.respond(request, body);
+        if (proof) return proof;
         const call = { url: request.url, method: request.method, body };
         calls.push(call);
         const override = await options.respond?.(call);
@@ -467,6 +475,7 @@ export async function createBookingMechanism(options = {}) {
     }),
     unsafeInspectDurableObjects: options.displayWarming === true,
   });
+  bot.attach(mf);
   try {
     await mf.ready;
     mark("runtime-ready");
@@ -488,6 +497,7 @@ export async function createBookingMechanism(options = {}) {
     mark("schema-init");
     return {
       mf,
+      botCalls: bot.calls,
       db,
       origin,
       date,

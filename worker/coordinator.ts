@@ -1,3 +1,4 @@
+import { verifyCheckoutBotProof } from "./checkout-bot-proof";
 import {
   assertClosedFoundation,
   coordinatorName,
@@ -1355,7 +1356,12 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   }
   /** Serialize customer checkout preparation and return a safe RPC outcome. */
   async prepareCustomer(
-    scope: { cookie: string; value: unknown; sourceIp: string },
+    scope: {
+      cookie: string;
+      value: unknown;
+      sourceIp: string;
+      botToken?: string;
+    },
     correlationId: string,
   ) {
     const pending = this.providerQueue.run("foreground", () =>
@@ -1363,12 +1369,19 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         const request = new Request(this.env.APP_ORIGIN, {
           headers: { cookie: scope.cookie, "CF-Connecting-IP": scope.sourceIp },
         });
-        if (liveCustomerAccess(this.env))
+        if (liveCustomerAccess(this.env)) {
+          await verifyCheckoutBotProof(
+            request,
+            this.env,
+            nativePrepareSchema.parse(scope.value),
+            scope.botToken,
+          );
           await authorizeCustomerCheckout(
             request,
             scope.value,
             this.calendarReadOptions(),
           );
+        }
         return prepareCustomerNative(request, this.env, scope.value);
       }),
     );
@@ -1383,6 +1396,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       checkout?: boolean;
       sourceIp: string;
       checkoutAccess?: import("./access").Access;
+      botToken?: string;
     },
     correlationId: string,
   ) {
@@ -1415,6 +1429,13 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
           const access =
             scope.checkoutAccess ??
             (await authenticate(request, env, Date.now()));
+          await verifyCheckoutBotProof(
+            request,
+            env,
+            input,
+            scope.botToken,
+            access,
+          );
           const preparation = await (async () => {
             const retainedGrant = await authorizeCustomerCheckout(
               request,

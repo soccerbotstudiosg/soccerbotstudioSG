@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   act,
   fireEvent,
@@ -7,6 +8,19 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
+vi.mock("./email-bot-proof", async (original) => ({
+  ...(await original<typeof import("./email-bot-proof")>()),
+  CheckoutBotProof: function SyntheticCheckoutProof({
+    onToken,
+  }: {
+    onToken: (token: string) => void;
+  }) {
+    useEffect(() => {
+      onToken("synthetic-checkout-proof");
+    }, [onToken]);
+    return <button onClick={() => onToken("")}>Expire checkout proof</button>;
+  },
+}));
 import { useBookingAvailability } from "./availability";
 import { useCalendarAvailability } from "./calendar-availability";
 import { demoBookingService } from "@/services/demo/booking";

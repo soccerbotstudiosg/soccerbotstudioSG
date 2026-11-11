@@ -14,7 +14,7 @@ export type ReservationSource = {
 };
 
 /** Canonicalize the trusted edge address without accepting forwarded client input. */
-function edgeAddress(request: Request) {
+export function edgeAddress(request: Request) {
   const value = request.headers.get("CF-Connecting-IP");
   if (!value || value.length > 64 || !/^[a-fA-F0-9:.]+$/.test(value))
     throw new ApiError(503, "reservation_identity_unavailable");

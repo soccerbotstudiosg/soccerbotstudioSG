@@ -266,7 +266,13 @@ test("combined hold rejects changed price and unavailable selection before creat
         .some((offer) => offer.startMs === m.startMs),
       "price rejection does not mark the session occupied",
     );
+    const proofsBeforeReplay = m.botCalls.length;
     const replay = await c.send();
+    assert.equal(
+      m.botCalls.length,
+      proofsBeforeReplay,
+      "retired-key rejection does not require another challenge",
+    );
     assert.equal(replay.status, 409);
     assert.deepEqual(await replay.json(), {
       error: "native_attempt_unavailable",
@@ -515,6 +521,7 @@ test("combined hold serializes competing customers and rejects the second slot w
       (await m.db.prepare("SELECT COUNT(*) AS n FROM hitpay_holds").first()).n,
       1,
     );
+    const proofsBeforeForeignReplay = m.botCalls.length;
     const denied = await m.mf.dispatchFetch(
       m.origin + `/api/booking/hold/${first.input.key}`,
       {
@@ -524,6 +531,11 @@ test("combined hold serializes competing customers and rejects the second slot w
       },
     );
     assert.equal(denied.status, 409);
+    assert.equal(
+      m.botCalls.length,
+      proofsBeforeForeignReplay,
+      "foreign existing attempts are denied without Siteverify",
+    );
     assert.equal(
       m.calls.filter((call) => call.body?.method === "book").length,
       1,
@@ -2435,8 +2447,9 @@ test("direct single checkout uses only public authentication and creation before
       // Trusted identity and expiry admission add two executions; the detailed
       // payment purpose adds one retained-metadata read, with no provider call.
       // The resolved-key fence is folded into the existing HTTP authentication.
-      assert.equal(checkout.spans.d1.count, 7);
-      assert.equal(checkout.spans.d1.count + http.spans.d1.count, 8);
+      // Bot admission adds one ownership/proof read batch and one atomic proof write.
+      assert.equal(checkout.spans.d1.count, 9);
+      assert.equal(checkout.spans.d1.count + http.spans.d1.count, 10);
       console.log(`single checkout D1 executions: ${checkout.spans.d1.count}`);
       const payment = await m.db
         .prepare(
@@ -2656,7 +2669,7 @@ test("direct batch checkout uses creation responses for two four and five sessio
         `batch ${count}: D1=${trace.spans.d1.count}; provider=${trace.spans.provider?.count}`,
       );
       // One retained display-metadata read supplies the detailed HitPay purpose.
-      assert.equal(trace.spans.d1.count, 13 + (count - 2) * 2);
+      assert.equal(trace.spans.d1.count, 15 + (count - 2) * 2);
       const methods = creationCalls
         .filter((call) => call.url.includes("simplybook.me"))
         .map((call) => call.body?.method)
@@ -3590,6 +3603,7 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
         m.calls.filter((call) => call.body?.method === "book").length,
         1,
       );
+      const proofsBeforeRetiredReplay = m.botCalls.length;
       const same = await m.mf.dispatchFetch(
         m.origin + `/api/booking/checkout/${key}`,
         {
@@ -3601,6 +3615,11 @@ test("rejected concurrent checkout reads the owned active attempt without repeat
       assert.deepEqual(await same.json(), {
         error: "native_attempt_unavailable",
       });
+      assert.equal(
+        m.botCalls.length,
+        proofsBeforeRetiredReplay,
+        "changed retired intent retains its permanent fence without a new challenge",
+      );
       const sameStartKey = crypto.randomUUID();
       const sameStart = await m.mf.dispatchFetch(
         m.origin + `/api/booking/checkout/${sameStartKey}`,
@@ -3797,6 +3816,7 @@ test("preparation rejection survives refresh without provider reads and permanen
       before,
       "known protected conflict and reload never invoke provider identity or availability",
     );
+    const proofsBeforeRetiredReplay = m.botCalls.length;
     const changed = await send({
       ...input,
       contact: { ...input.contact, name: "Other Synthetic Guest" },
@@ -3815,6 +3835,11 @@ test("preparation rejection survives refresh without provider reads and permanen
     const foreignReplay = await send(input, foreign.headers);
     assert.equal(foreignReplay.status, 409);
     await foreignReplay.text();
+    assert.equal(
+      m.botCalls.length,
+      proofsBeforeRetiredReplay,
+      "retired changed/foreign keys cannot consume more proofs or create grants",
+    );
     assert.equal(
       (
         await m.db
@@ -5308,5 +5333,259 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
     } finally {
       await m.close();
     }
+  }
+});
+
+test("checkout bot proof rejects missing expired wrong-purpose and foreign-host tokens before any reservation", async () => {
+  let proof;
+  const m = await createBookingMechanism({
+    checkoutBotProof: false,
+    botResult: () => Response.json(proof),
+  });
+  try {
+    const c = await customer(m);
+    const input = { ...c.input, accepted: true };
+    const send = (token) =>
+      m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${input.key}`, {
+        method: "POST",
+        headers: {
+          ...c.headers,
+          ...(token ? { "X-Booking-Bot-Proof": token } : {}),
+        },
+        body: JSON.stringify(input),
+      });
+    assert.deepEqual(await checkoutResult(send(), 400), {
+      error: "checkout_verification_required",
+    });
+    assert.equal(m.botCalls.length, 0);
+    const valid = {
+      success: true,
+      action: "create-checkout",
+      hostname: "soccerbot.test",
+      challenge_ts: new Date().toISOString(),
+    };
+    for (const invalid of [
+      { success: false },
+      { ...valid, action: "verify-email" },
+      { ...valid, hostname: "foreign.example" },
+      { ...valid, challenge_ts: new Date(Date.now() - 300001).toISOString() },
+      { ...valid, challenge_ts: new Date(Date.now() + 60000).toISOString() },
+    ]) {
+      proof = invalid;
+      assert.deepEqual(await checkoutResult(send(crypto.randomUUID()), 400), {
+        error: "checkout_verification_required",
+      });
+      assert.equal(
+        (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
+        0,
+      );
+      assert.equal(
+        (
+          await m.db
+            .prepare("SELECT COUNT(*) AS n FROM native_checkout_grants")
+            .first()
+        ).n,
+        0,
+      );
+      assert.equal(
+        m.calls.length,
+        0,
+        "invalid proof cannot call booking or payment providers",
+      );
+    }
+    assert.equal(m.botCalls.length, 5);
+    assert.equal(
+      (
+        await m.db
+          .prepare("SELECT COUNT(*) AS n FROM checkout_bot_proofs")
+          .first()
+      ).n,
+      0,
+    );
+    // Legacy preparation assigns an ID distinct from its idempotency key.
+    // Retiring that un-dispatched grant must not turn its old ID into bot proof.
+    proof = { ...valid, challenge_ts: new Date().toISOString() };
+    const preparedResponse = await m.mf.dispatchFetch(
+      m.origin + "/api/booking/prepare",
+      {
+        method: "POST",
+        headers: {
+          ...c.headers,
+          "X-Booking-Bot-Proof": "synthetic-legacy-proof",
+        },
+        body: JSON.stringify(input),
+      },
+    );
+    assert.equal(
+      preparedResponse.status,
+      201,
+      await preparedResponse.clone().text(),
+    );
+    const prepared = await preparedResponse.json();
+    assert.notEqual(prepared.attemptId, input.key);
+    await m.db.batch([
+      m.db
+        .prepare(
+          "INSERT INTO rejected_native_checkout_grants SELECT * FROM native_checkout_grants WHERE attempt_id=?",
+        )
+        .bind(prepared.attemptId),
+      m.db
+        .prepare("DELETE FROM native_checkout_grants WHERE attempt_id=?")
+        .bind(prepared.attemptId),
+    ]);
+    const proofsBeforeAlias = m.botCalls.length;
+    const alias = await m.mf.dispatchFetch(m.origin + "/api/booking/prepare", {
+      method: "POST",
+      headers: c.headers,
+      body: JSON.stringify({ ...input, key: prepared.attemptId }),
+    });
+    assert.equal(alias.status, 409, await alias.clone().text());
+    assert.deepEqual(await alias.json(), {
+      error: "native_attempt_unavailable",
+    });
+    assert.equal(m.botCalls.length, proofsBeforeAlias);
+    assert.equal(
+      (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
+      1,
+    );
+    assert.equal(
+      (
+        await m.db
+          .prepare("SELECT COUNT(*) AS n FROM native_checkout_grants")
+          .first()
+      ).n,
+      0,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      0,
+    );
+  } finally {
+    await m.close();
+  }
+});
+
+test("checkout bot proof binds one intent and leaves existing checkout callbacks and recovery challenge-free", async () => {
+  const m = await createBookingMechanism({ checkoutBotProof: false });
+  try {
+    const c = await customer(m);
+    const input = { ...c.input, accepted: true };
+    const token = `synthetic-checkout-${crypto.randomUUID()}`;
+    const send = (body = input, proof = token, headers = c.headers) =>
+      m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${body.key}`, {
+        method: "POST",
+        headers: {
+          ...headers,
+          ...(proof ? { "X-Booking-Bot-Proof": proof } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+    await m.db
+      .prepare(
+        "CREATE TRIGGER fail_bot_checkout_preparation BEFORE INSERT ON native_checkout_grants BEGIN SELECT RAISE(ABORT,'synthetic checkout preparation failure'); END",
+      )
+      .run();
+    await checkoutResult(
+      m.mf.dispatchFetch(m.origin + "/api/booking/prepare", {
+        method: "POST",
+        headers: { ...c.headers, "X-Booking-Bot-Proof": token },
+        body: JSON.stringify(input),
+      }),
+      503,
+    );
+    assert.equal(m.botCalls.length, 1);
+    assert.equal(
+      (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
+      0,
+    );
+    assert.equal(
+      (
+        await m.db
+          .prepare("SELECT COUNT(*) AS n FROM checkout_bot_proofs")
+          .first()
+      ).n,
+      1,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      0,
+    );
+    assert.deepEqual(
+      await checkoutResult(
+        send(
+          { ...input, contact: { ...input.contact, name: "Changed intent" } },
+          null,
+        ),
+        400,
+      ),
+      { error: "checkout_verification_required" },
+    );
+    assert.equal(
+      m.botCalls.length,
+      1,
+      "a retained proof cannot authorize a changed intent",
+    );
+    await m.db.prepare("DROP TRIGGER fail_bot_checkout_preparation").run();
+    const first = await checkoutResult(send(input, null), 200);
+    assert.equal(first.paymentAvailable, true, JSON.stringify(first));
+    assert.equal(m.botCalls.length, 1);
+    const receipt = await m.db
+      .prepare(
+        "SELECT attempt_key,capability_hash,input_hash,expires_ms FROM checkout_bot_proofs",
+      )
+      .first();
+    assert.equal(receipt.attempt_key, input.key);
+    assert.match(receipt.input_hash, /^[a-f0-9]{64}$/);
+    await m.db
+      .prepare("UPDATE checkout_bot_proofs SET verified_ms=?,expires_ms=?")
+      .bind(Date.now() - 301000, Date.now() - 1000)
+      .run();
+    assert.equal(
+      (await checkoutResult(send(input, null), 200)).attemptId,
+      input.key,
+    );
+    const current = await m.mf.dispatchFetch(
+      m.origin + `/api/attempts/${input.key}/checkout`,
+      { headers: c.headers },
+    );
+    assert.equal(current.status, 200);
+    await current.text();
+    assert.equal(
+      m.botCalls.length,
+      1,
+      "existing checkout must not redeem proof again even after it expires",
+    );
+    const other = await customer(m);
+    assert.deepEqual(
+      await checkoutResult(
+        send({ ...other.input, accepted: true }, token, other.headers),
+        400,
+      ),
+      { error: "checkout_verification_required" },
+    );
+    assert.equal(m.botCalls.length, 2);
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      1,
+    );
+    assert.equal(
+      (await m.db.prepare("SELECT COUNT(*) AS n FROM attempts").first()).n,
+      1,
+    );
+    const webhook = await m.completePayment();
+    assert.equal(webhook.status, 202, await webhook.clone().text());
+    await webhook.text();
+    await m.recover();
+    assert.equal(
+      m.botCalls.length,
+      2,
+      "signed callback and recovery never call Siteverify",
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      1,
+    );
+  } finally {
+    await m.close();
   }
 });

@@ -13,7 +13,10 @@ import { saveBooking } from "@/services/storage";
 import { BookingProvider } from "./provider";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { liveBookingService } from "@/services/booking";
-import { CustomerMessageError } from "@/services/contracts";
+import {
+  CustomerMessageError,
+  VerificationRequestLimitedError,
+} from "@/services/contracts";
 import type {
   CustomerIdentityService,
   CustomerChallenge,
@@ -543,7 +546,7 @@ test("failed profile saves keep the form and retry returns to booking options on
   expect(saveProfile).toHaveBeenCalledTimes(2);
 });
 
-test("invalid code can change email or return to guest options without carrying an old error", async () => {
+test("invalid code can return to guest options without carrying an old error", async () => {
   const verify = vi
     .fn()
     .mockRejectedValue(
@@ -591,13 +594,9 @@ test("invalid code can change email or return to guest options without carrying 
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Check your code or request a new one",
   );
-  fireEvent.click(screen.getByRole("button", { name: "Change email" }));
-  expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  expect(screen.getByLabelText("Email address")).toHaveValue(
-    "synthetic@example.invalid",
-  );
+  expect(screen.queryByRole("button", { name: "Change email" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
   expect(
     screen.getByRole("button", { name: "Continue as Guest" }),
@@ -750,4 +749,207 @@ test("guest identity is shown only after choosing guest and stays hidden on retu
   expect(screen.getByLabelText("Email address")).toBeVisible();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
   expect(guest).toHaveBeenCalledTimes(1);
+});
+
+test("email resend follows server deadlines and third-request cooldown without automatic sends", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-11-11T08:00:00Z"));
+  let requests = 0;
+  const challenge = vi.fn(async (email: string) => {
+    requests++;
+    return {
+      email,
+      challengeId: `synthetic-${requests}`,
+      expiresAt: Date.now() + 600000,
+      resendAfter: Date.now() + (requests === 3 ? 600000 : 120000),
+      requestLimited: requests === 3,
+    };
+  });
+  const verify = vi
+    .fn()
+    .mockRejectedValue(
+      new CustomerMessageError("Check your code or request a new one."),
+    );
+  let unmount = () => {};
+  try {
+    await act(async () => {
+      ({ unmount } = render(
+        <BookingProvider
+          identityService={{
+            ...demoCustomerIdentity,
+            current: () => null,
+            refresh: async () => null,
+            challenge,
+            verify,
+          }}
+        >
+          <BookingPage step="account" />
+        </BookingProvider>,
+      ));
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue with email" }),
+    );
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: "timer@example.invalid" },
+    });
+    await act(async () => {
+      fireEvent.submit(
+        screen
+          .getByRole("button", { name: "Continue with email" })
+          .closest("form")!,
+      );
+    });
+    expect(screen.getByRole("timer")).toHaveTextContent("02:00");
+    expect(
+      screen.queryByRole("button", { name: "Request another code" }),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Change email" })).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(119999);
+    });
+    expect(
+      screen.queryByRole("button", { name: "Request another code" }),
+    ).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(
+      screen.getByRole("button", { name: "Request another code" }),
+    ).toBeEnabled();
+    expect(challenge).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Request another code" }),
+      );
+    });
+    expect(screen.getByRole("timer")).toHaveTextContent("02:00");
+    // A suspended tab must use the deadline, not restart a relative countdown.
+    vi.setSystemTime(Date.now() + 120000);
+    fireEvent(window, new Event("focus"));
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Request another code" }),
+      );
+    });
+    expect(screen.getByRole("timer")).toHaveTextContent("10:00");
+    expect(
+      screen
+        .getByText("Code requests are temporarily paused.")
+        .closest(".alert"),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Verify and continue" }),
+    ).toBeEnabled();
+    fireEvent.change(screen.getByLabelText("Verification code"), {
+      target: { value: "123456" },
+    });
+    await act(async () => {
+      fireEvent.submit(
+        screen
+          .getByRole("button", { name: "Verify and continue" })
+          .closest("form")!,
+      );
+    });
+    expect(verify).toHaveBeenCalledTimes(1);
+    expect(verify.mock.calls[0][0].challengeId).toBe("synthetic-3");
+    expect(screen.getByRole("timer")).toHaveTextContent("10:00");
+
+    vi.setSystemTime(Date.now() + 599999);
+    fireEvent(document, new Event("visibilitychange"));
+    expect(
+      screen.queryByRole("button", { name: "Request another code" }),
+    ).toBeNull();
+    vi.setSystemTime(Date.now() + 1);
+    fireEvent(window, new Event("focus"));
+    expect(
+      screen.getByRole("button", { name: "Request another code" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByText("Code requests are temporarily paused."),
+    ).toBeNull();
+    expect(challenge).toHaveBeenCalledTimes(3);
+    challenge.mockRejectedValueOnce(
+      new CustomerMessageError(
+        "Email verification unavailable. Please continue as a guest.",
+      ),
+    );
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Request another code" }),
+      );
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Email verification unavailable",
+    );
+    expect(
+      screen.getByRole("button", { name: "Request another code" }),
+    ).toBeEnabled();
+    expect(challenge).toHaveBeenCalledTimes(4);
+  } finally {
+    unmount();
+    vi.useRealTimers();
+  }
+});
+
+test("email request throttling displays server retry time without automatic or premature requests", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-11-11T08:00:00Z"));
+  const challenge = vi
+    .fn()
+    .mockRejectedValue(
+      new VerificationRequestLimitedError(Date.now() + 420000),
+    );
+  let unmount = () => {};
+  try {
+    await act(async () => {
+      ({ unmount } = render(
+        <BookingProvider
+          identityService={{
+            ...demoCustomerIdentity,
+            current: () => null,
+            refresh: async () => null,
+            challenge,
+          }}
+        >
+          <BookingPage step="account" />
+        </BookingProvider>,
+      ));
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue with email" }),
+    );
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: "limit@example.invalid" },
+    });
+    await act(async () => {
+      fireEvent.submit(
+        screen
+          .getByRole("button", { name: "Continue with email" })
+          .closest("form")!,
+      );
+    });
+    expect(screen.getByRole("timer")).toHaveTextContent("07:00");
+    expect(
+      screen.getByRole("button", { name: "Continue with email" }),
+    ).toBeDisabled();
+    fireEvent.submit(
+      screen
+        .getByRole("button", { name: "Continue with email" })
+        .closest("form")!,
+    );
+    expect(challenge).toHaveBeenCalledTimes(1);
+    vi.setSystemTime(Date.now() + 420000);
+    fireEvent(window, new Event("focus"));
+    expect(
+      screen.getByRole("button", { name: "Continue with email" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByText("Code requests are temporarily paused."),
+    ).toBeNull();
+    expect(challenge).toHaveBeenCalledTimes(1);
+  } finally {
+    unmount();
+    vi.useRealTimers();
+  }
 });

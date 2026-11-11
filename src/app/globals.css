@@ -303,7 +303,6 @@
   .auth-demo,
   .auth-demo-code,
   .auth-demo-code span,
-  .auth-code-actions,
   .inclusion-list p,
   .booking-required,
   .series-date,
@@ -564,6 +563,9 @@
     background: var(--color-success-soft);
     color: var(--color-success);
     font-size: var(--text-meta);
+  }
+  .booking-verified-status > strong {
+    font-weight: var(--weight-heading);
   }
   .booking-verified-status > span {
     max-width: 100%;
@@ -2749,12 +2751,15 @@
     flex-basis: 100%;
     text-align: center;
   }
-  .auth-code-actions {
+  .auth-code-feedback {
     width: 100%;
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    margin-top: 20px;
+    text-align: center;
+  }
+  .auth-code-feedback p {
+    margin: 0;
+  }
+  .auth-code-feedback .text-link {
+    min-height: 44px;
   }
   .access-option .signed-in-email {
     color: var(--color-identity);
@@ -2766,18 +2771,20 @@
   }
   .account-actions {
     margin-top: 16px;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     width: 100%;
   }
   .account-actions .button {
     min-width: 0;
-    min-height: 52px;
-    padding: 12px 8px;
+    min-height: 44px;
+    max-width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: var(--text-meta);
     justify-content: center;
     text-align: center;
-    overflow-wrap: anywhere;
   }
   .confirmation-home {
     display: flex;
@@ -3276,7 +3283,8 @@
     gap: 12px;
     margin-bottom: 8px;
   }
-  .payment-continuation [role="timer"] {
+  .payment-continuation [role="timer"],
+  .auth-code-feedback [role="timer"] {
     margin: 12px 0 8px;
     text-align: center;
     font-weight: 700;

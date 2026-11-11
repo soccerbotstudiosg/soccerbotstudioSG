@@ -1,5 +1,6 @@
 "use client";
 import { BookingHeading } from "./booking-heading";
+import { CheckoutBotProof } from "./email-bot-proof";
 import {
   BookingPrimaryAction,
   BookingActionTotal,
@@ -76,9 +77,14 @@ export function ReviewStep({
       conflictChecking,
       clearReviewConsent,
       ready,
+      bookingService,
     } = useBooking(),
     router = useRouter();
   const [policy, setPolicy] = useState(false);
+  const [botToken, setBotToken] = useState("");
+  const [botGeneration, setBotGeneration] = useState(0);
+  const needsProof =
+    bookingService.mode === "live" && !attempt?.held && !verifying;
   const mounted = useRef(false);
   useEffect(() => {
     mounted.current = true;
@@ -102,6 +108,7 @@ export function ReviewStep({
     !action.calendarRecovery &&
     !verifying &&
     !busy &&
+    (!needsProof || !!botToken) &&
     draft.accepted &&
     selectionErrors(draft.slots, now).length === 0;
   return (
@@ -156,13 +163,26 @@ export function ReviewStep({
           )}
         </div>
       )}
+      {needsProof && !busy && (
+        <CheckoutBotProof key={botGeneration} onToken={setBotToken} />
+      )}
       <BookingPrimaryAction className="actions" ready={canProceed}>
         <button
           className="button"
           disabled={!canProceed}
           onClick={async () => {
-            if ((await checkout()) && mounted.current)
-              startNavigation(() => router.push("/book/payment/"));
+            try {
+              if (
+                (await checkout(needsProof ? botToken : undefined)) &&
+                mounted.current
+              )
+                startNavigation(() => router.push("/book/payment/"));
+            } finally {
+              if (mounted.current) {
+                setBotToken("");
+                setBotGeneration((generation) => generation + 1);
+              }
+            }
           }}
         >
           {verifying ? (

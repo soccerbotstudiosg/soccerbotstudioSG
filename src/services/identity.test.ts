@@ -278,7 +278,7 @@ it("identity failures distinguish throttling expired access bad codes and securi
   vi.stubGlobal("fetch", request);
   const signal = new AbortController().signal;
   for (const [status, message] of [
-    [429, "Wait a few minutes before requesting another code"],
+    [429, "Too many verification requests. Please try again later"],
     [401, "Return to booking options and verify your email again"],
     [400, "Check your code or request a new one"],
     [503, "Email verification unavailable. Please continue as a guest."],
@@ -407,4 +407,41 @@ it("display identity reads never create guest access or restore revoked identity
     ["/api/identity", "GET"],
     ["/api/access", "DELETE"],
   ]);
+});
+
+it("identity throttle accepts bounded retry seconds without exposing arbitrary response text", async () => {
+  const request = vi.fn();
+  vi.stubGlobal("fetch", request);
+  const clock = vi.spyOn(Date, "now").mockReturnValue(1794384000000);
+  try {
+    for (const [header, expected] of [
+      ["120", 1794384120000],
+      ["600", 1794384600000],
+      ["3600", 1794387600000],
+      ["-1", null],
+      ["999999999", null],
+      ["tomorrow", null],
+      ["", null],
+    ] as const) {
+      request.mockResolvedValueOnce(
+        Response.json(
+          { message: "private raw text" },
+          { status: 429, headers: { "Retry-After": header } },
+        ),
+      );
+      await expect(
+        createLiveIdentityService().verify(
+          challenge,
+          "123456",
+          true,
+          new AbortController().signal,
+        ),
+      ).rejects.toMatchObject({
+        retryAt: expected,
+        message: "Too many verification requests. Please try again later.",
+      });
+    }
+  } finally {
+    clock.mockRestore();
+  }
 });
