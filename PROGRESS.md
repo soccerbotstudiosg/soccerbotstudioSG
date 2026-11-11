@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Enable and test client Turnstile plus Resend email verification first on the existing production Workers.dev origin. Then finalize SimplyBook notifications; customers cannot self-edit/cancel/reschedule reservations. Domain cutover is deferred. Branch `feat/client-domain-email`, based on deployed main `1f5ce0b` (PR56); email activation is local, not yet deployed.
+Enable and test client Turnstile plus Resend email verification first on the existing production Workers.dev origin. Then finalize SimplyBook notifications; customers cannot self-edit/cancel/reschedule reservations. Domain cutover is deferred. Branch `feat/client-domain-email`, based on deployed main `1f5ce0b` (PR56); email activation is published in PR57, not yet deployed.
 
 ## Prepared change and evidence
 
-Production uses its validated target-owned sender and production Turnstile secret; ongoing client identity delivery becomes part of the release configuration. Missing sender/secret fails closed. Existing guest/booking/payment/recovery logic is unchanged. Focused production tests and the complete affected Worker group pass: 168/168, no skips. Final deployment/inventory tooling passes24/24; production-only cases pass2/2 after the pre-fix regression proof. Source/type/lint checks pass. Full final-head CI, staging and production remain pending. Original test fixture failures and setup evidence belong in Journey.
+Production uses its validated target-owned sender and production Turnstile secret; ongoing client identity delivery becomes part of the release configuration. Missing sender/secret fails closed. Existing guest/booking/payment/recovery logic is unchanged. Focused production tests and the complete affected Worker group pass: 168/168, no skips. Final deployment/inventory tooling passes24/24; production-only cases pass2/2 after the pre-fix regression proof. Source/type/lint checks pass. First CI frontend job passed188 tooling tests then failed documentation formatting; formatting repair is on the same PR. Full final-head CI, staging and production remain pending. Original test fixture failures and setup evidence belong in Journey.
 
 ## External setup confirmed
 
