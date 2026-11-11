@@ -224,6 +224,15 @@ test("identity resend supersedes previous challenge and preserves unknown delive
   );
 });
 test("identity concurrent sends and subject limits cannot be bypassed by a new guest", async () => {
+  await db.exec(
+    "CREATE TABLE synthetic_identity_denial_writes(owner_id TEXT,kind TEXT); CREATE TRIGGER synthetic_identity_denial_insert AFTER INSERT ON identity_request_denials BEGIN INSERT INTO synthetic_identity_denial_writes VALUES(NEW.owner_id,'insert'); END; CREATE TRIGGER synthetic_identity_denial_update AFTER UPDATE ON identity_request_denials BEGIN INSERT INTO synthetic_identity_denial_writes VALUES(NEW.owner_id,'update'); END;",
+  );
+  const denialWrites = async () =>
+    (
+      await db
+        .prepare("SELECT COUNT(*) n FROM synthetic_identity_denial_writes")
+        .first()
+    ).n;
   const cookie = await guest(),
     email = "rate-limited@example.invalid",
     now = Date.now();
@@ -238,6 +247,12 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   const first = concurrent.find((response) => response.sent.length === 1);
   assert.equal(first.result.resendAfter, now + 120000);
   assert.equal(first.result.requestLimited, false);
+  assert.deepEqual(Object.keys(first.result).sort(), [
+    "challengeId",
+    "expiresAt",
+    "requestLimited",
+    "resendAfter",
+  ]);
   const beforeNormal = await challenge(cookie, {
     email: "changed@example.invalid",
     now: now + 119999,
@@ -280,18 +295,36 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   assert.equal(third.sent.length, 1);
   assert.equal(third.result.resendAfter, now + 602000);
   assert.equal(third.result.requestLimited, true);
+  assert.equal(
+    (
+      await db
+        .prepare(
+          "SELECT COUNT(*) n FROM synthetic_identity_denial_writes WHERE kind='update'",
+        )
+        .first()
+    ).n,
+    0,
+  );
   // The third code remains valid while new requests are blocked.
   assert.equal(
     (await call(thirdGuest, verification(third, now + 2001))).result.email,
     "third@example.invalid",
   );
   const observedGuest = await guestAt(now + 122000);
-  const denied = await challenge(observedGuest, {
-    now: now + 122000,
-    source: "rate-source",
-  });
-  assert.equal(denied.sent.length, 0);
-  assert.equal(denied.retryAfterSeconds, 480);
+  const beforeObserved = await denialWrites();
+  const observedResults = await Promise.all(
+    [0, 1].map(() =>
+      challenge(observedGuest, {
+        now: now + 122000,
+        source: "rate-source",
+      }),
+    ),
+  );
+  for (const denied of observedResults) {
+    assert.equal(denied.sent.length, 0);
+    assert.equal(denied.retryAfterSeconds, 480);
+  }
+  assert.equal(await denialWrites(), beforeObserved + 1);
   // A separately blocked IP has a later deadline; observing it must not extend this session's existing block.
   for (const offset of [10000, 20000, 30000]) {
     const accepted = await challenge(await guestAt(now + offset), {
@@ -300,6 +333,7 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
     });
     assert.equal(accepted.sent.length, 1);
   }
+  const beforeRepeated = await denialWrites();
   // An IP-derived denial stays with its session after network/email changes, without extending it.
   for (const session of [thirdGuest, observedGuest]) {
     for (const [offset, seconds] of [
@@ -320,6 +354,7 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
       assert.equal(laterIp.retryAfterSeconds, seconds);
     }
   }
+  assert.equal(await denialWrites(), beforeRepeated);
   // Once the original block expires, the current IP's remaining independent block may be observed.
   const remainingIpBlock = await challenge(observedGuest, {
     now: now + 602000,
@@ -390,6 +425,9 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   assert.equal(
     (await call(slowGuest, verification(slowResult, slowNow + 122001))).error,
     undefined,
+  );
+  await db.exec(
+    "DROP TRIGGER synthetic_identity_denial_insert; DROP TRIGGER synthetic_identity_denial_update; DROP TABLE synthetic_identity_denial_writes;",
   );
 });
 test("identity guest revocation denies verified session and ambiguous contacts never prefill", async () => {

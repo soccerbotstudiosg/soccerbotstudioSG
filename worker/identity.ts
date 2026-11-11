@@ -87,7 +87,11 @@ async function identityRequestWindow(
     .bind(ownerId, now)
     .first<{ blocked_until_ms: number }>();
   if (observed)
-    return { resendAfter: observed.blocked_until_ms, requestLimited: true };
+    return {
+      resendAfter: observed.blocked_until_ms,
+      requestLimited: true,
+      observedDenial: true,
+    };
   const row = await session
     .prepare(
       `SELECT MAX(deadline) AS deadline, MAX(request_limited) AS request_limited FROM (
@@ -105,6 +109,7 @@ async function identityRequestWindow(
   return {
     resendAfter: Math.max(now, row?.deadline ?? now),
     requestLimited: row?.request_limited === 1,
+    observedDenial: false,
   };
 }
 /** Preserve an observed IP block for the session without extending its original deadline. */
@@ -114,13 +119,24 @@ async function retainIdentityDenial(
   deadline: number,
   now: number,
 ) {
-  const retained = await env.STATE.prepare(
-    "INSERT INTO identity_request_denials(owner_id,blocked_until_ms) VALUES(?,?) ON CONFLICT(owner_id) DO UPDATE SET blocked_until_ms=CASE WHEN blocked_until_ms>? THEN blocked_until_ms ELSE excluded.blocked_until_ms END RETURNING blocked_until_ms",
-  )
+  const session = env.STATE.withSession("first-primary");
+  const retained = await session
+    .prepare(
+      "INSERT INTO identity_request_denials(owner_id,blocked_until_ms) VALUES(?,?) ON CONFLICT(owner_id) DO UPDATE SET blocked_until_ms=excluded.blocked_until_ms WHERE identity_request_denials.blocked_until_ms<=? RETURNING blocked_until_ms",
+    )
     .bind(ownerId, deadline, now)
     .first<{ blocked_until_ms: number }>();
-  if (!retained) throw new ApiError(503, "identity_unavailable");
-  return retained.blocked_until_ms;
+  if (retained) return retained.blocked_until_ms;
+  // A concurrent observer may already have retained its winning active deadline.
+  // The conditional UPSERT makes that conflict read-only instead of rewriting it.
+  const existing = await session
+    .prepare(
+      "SELECT blocked_until_ms FROM identity_request_denials WHERE owner_id=? AND blocked_until_ms>?",
+    )
+    .bind(ownerId, now)
+    .first<{ blocked_until_ms: number }>();
+  if (!existing) throw new ApiError(503, "identity_unavailable");
+  return existing.blocked_until_ms;
 }
 
 /** Keep request-limit timing separate from the customer-facing message. */
@@ -162,14 +178,15 @@ export async function requestIdentityChallenge(
     beforeProof,
   );
   if (retryAt.resendAfter > beforeProof) {
-    const deadline = retryAt.requestLimited
-      ? await retainIdentityDenial(
-          env,
-          access.owner_id,
-          retryAt.resendAfter,
-          beforeProof,
-        )
-      : retryAt.resendAfter;
+    const deadline =
+      retryAt.requestLimited && !retryAt.observedDenial
+        ? await retainIdentityDenial(
+            env,
+            access.owner_id,
+            retryAt.resendAfter,
+            beforeProof,
+          )
+        : retryAt.resendAfter;
     throw requestLimited(deadline, beforeProof);
   }
   const proof = await bounded((signal) =>
@@ -237,14 +254,15 @@ export async function requestIdentityChallenge(
         sourceHash,
         checkedAt,
       );
-      const deadline = window.requestLimited
-        ? await retainIdentityDenial(
-            env,
-            access.owner_id,
-            window.resendAfter,
-            checkedAt,
-          )
-        : window.resendAfter;
+      const deadline =
+        window.requestLimited && !window.observedDenial
+          ? await retainIdentityDenial(
+              env,
+              access.owner_id,
+              window.resendAfter,
+              checkedAt,
+            )
+          : window.resendAfter;
       throw requestLimited(deadline, checkedAt);
     }
     if (reason.includes("identity_bot_tokens.token_hash"))
@@ -288,19 +306,20 @@ export async function requestIdentityChallenge(
     sourceHash,
     observedAt,
   );
-  const resendAfter = window.requestLimited
-    ? await retainIdentityDenial(
-        env,
-        access.owner_id,
-        window.resendAfter,
-        observedAt,
-      )
-    : window.resendAfter;
+  const resendAfter =
+    window.requestLimited && !window.observedDenial
+      ? await retainIdentityDenial(
+          env,
+          access.owner_id,
+          window.resendAfter,
+          observedAt,
+        )
+      : window.resendAfter;
   // Same envelope for unknown/existing/shared addresses and uncertain delivery.
   return {
     challengeId: id,
     expiresAt: expires,
-    ...window,
+    requestLimited: window.requestLimited,
     resendAfter,
   };
 }

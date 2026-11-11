@@ -439,6 +439,175 @@ try {
   await migrate("0041_no_creation_resolution.sql");
   await migrate("0042_checkout_preparation_rejections.sql");
   await migrate("0043_reservation_denials.sql");
+  // Upgrade real prior-format challenge rows without rewriting their evidence.
+  const capabilityHash = (
+    await db
+      .prepare("SELECT capability_hash FROM guest_access WHERE owner_id=?")
+      .bind(owner)
+      .first()
+  ).capability_hash;
+  const challengeTimes = [now - 360000, now - 240000, now - 120000];
+  for (const created of challengeTimes)
+    await db
+      .prepare(
+        "INSERT INTO identity_challenges(id,owner_id,access_hash,email,email_hash,source_hash,code_hash,created_ms,expires_ms,state) VALUES(?,?,?,?,?,?,?,?,?,'unknown')",
+      )
+      .bind(
+        crypto.randomUUID(),
+        owner,
+        capabilityHash,
+        "synthetic@example.invalid",
+        "c".repeat(64),
+        "d".repeat(64),
+        "e".repeat(64),
+        created,
+        created + 600000,
+      )
+      .run();
+  const challengeHistory = (
+    await db.prepare("SELECT * FROM identity_challenges ORDER BY rowid").all()
+  ).results;
+  snapshots.set("identity_challenges", challengeHistory);
+  await migrate("0044_identity_request_cooldown.sql");
+  const requestCounters = [
+    {
+      scope: "session",
+      subject_key: owner,
+      request_count: 3,
+      last_request_ms: challengeTimes[2],
+    },
+    {
+      scope: "source",
+      subject_key: "d".repeat(64),
+      request_count: 3,
+      last_request_ms: challengeTimes[2],
+    },
+  ];
+  assert.deepEqual(
+    (
+      await db
+        .prepare("SELECT * FROM identity_request_counters ORDER BY scope")
+        .all()
+    ).results,
+    requestCounters,
+    "Upgrade must retain the last three-request cycle for session and source",
+  );
+  assert.equal(
+    (
+      await db
+        .prepare("SELECT COUNT(*) AS n FROM identity_request_denials")
+        .first()
+    ).n,
+    0,
+  );
+  const blockedRequestTime = challengeTimes[2] + 599999;
+  await assert.rejects(
+    db
+      .prepare(
+        "INSERT INTO identity_challenges(id,owner_id,access_hash,email,email_hash,source_hash,code_hash,created_ms,expires_ms,state) VALUES(?,?,?,?,?,?,?,?,?,'reserved')",
+      )
+      .bind(
+        crypto.randomUUID(),
+        owner,
+        capabilityHash,
+        "synthetic@example.invalid",
+        "c".repeat(64),
+        "d".repeat(64),
+        "f".repeat(64),
+        blockedRequestTime,
+        blockedRequestTime + 600000,
+      )
+      .run(),
+    /identity_request_limited/,
+  );
+  assert.deepEqual(
+    (
+      await db
+        .prepare("SELECT * FROM identity_request_counters ORDER BY scope")
+        .all()
+    ).results,
+    requestCounters,
+  );
+  assert.deepEqual(
+    (await db.prepare("SELECT * FROM identity_challenges ORDER BY rowid").all())
+      .results,
+    challengeHistory,
+  );
+  assert.deepEqual(
+    (
+      await db.prepare("PRAGMA index_info(identity_owner_limit)").all()
+    ).results.map((row) => row.name),
+    ["owner_id", "created_ms"],
+  );
+  await migrate("0045_checkout_bot_proofs.sql");
+  assert.equal(
+    (await db.prepare("SELECT COUNT(*) AS n FROM checkout_bot_proofs").first())
+      .n,
+    0,
+    "Historical checkouts must not acquire inferred Turnstile proof",
+  );
+  const proofKey = crypto.randomUUID();
+  await db
+    .prepare("INSERT INTO checkout_bot_proofs VALUES(?,?,?,?,?,?)")
+    .bind(
+      proofKey,
+      capabilityHash,
+      "a".repeat(64),
+      "b".repeat(64),
+      now,
+      now + 300000,
+    )
+    .run();
+  const retainedProof = await db
+    .prepare("SELECT * FROM checkout_bot_proofs WHERE attempt_key=?")
+    .bind(proofKey)
+    .first();
+  await assert.rejects(
+    db
+      .prepare("INSERT INTO checkout_bot_proofs VALUES(?,?,?,?,?,?)")
+      .bind(
+        crypto.randomUUID(),
+        capabilityHash,
+        "a".repeat(64),
+        "b".repeat(64),
+        now,
+        now + 300000,
+      )
+      .run(),
+    /UNIQUE constraint failed/,
+  );
+  await assert.rejects(
+    db
+      .prepare("INSERT INTO checkout_bot_proofs VALUES(?,?,?,?,?,?)")
+      .bind(
+        crypto.randomUUID(),
+        "missing-capability",
+        "a".repeat(64),
+        "c".repeat(64),
+        now,
+        now + 300000,
+      )
+      .run(),
+    /FOREIGN KEY constraint failed/,
+  );
+  await assert.rejects(
+    db
+      .prepare("INSERT INTO checkout_bot_proofs VALUES(?,?,?,?,?,?)")
+      .bind(
+        crypto.randomUUID(),
+        capabilityHash,
+        "a".repeat(64),
+        "d".repeat(64),
+        now,
+        now,
+      )
+      .run(),
+    /CHECK constraint failed/,
+  );
+  assert.deepEqual(
+    (await db.prepare("SELECT * FROM checkout_bot_proofs").all()).results,
+    [retainedProof],
+  );
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,
@@ -599,6 +768,8 @@ try {
           "file hashes",
           "root export",
           "applied0001–0017 preserve all existing fields, identities, unknown effects and closed grants",
+          "identity request upgrade preserves challenge history and enforces the backfilled cooldown",
+          "checkout proof upgrade starts empty and enforces token uniqueness, access ownership and expiry",
           "empty identity delivery authority and default-closed HTTP",
           "exact Worker revision",
           "protected checkout unavailable",
