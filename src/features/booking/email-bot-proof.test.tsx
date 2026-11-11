@@ -1,6 +1,6 @@
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { EmailBotProof } from "./email-bot-proof";
+import { EmailBotProof, CheckoutBotProof } from "./email-bot-proof";
 vi.mock("next/script", () => ({
   default: ({ onReady }: { onReady: () => void }) => (
     <button onClick={onReady}>Load synthetic widget</button>
@@ -39,4 +39,20 @@ it("email bot widget binds purpose clears expired proof and ignores callbacks af
   expect(remove).toHaveBeenCalledWith("synthetic-widget");
   options.callback("stale");
   expect(token).toHaveBeenCalledTimes(2);
+  const checkout = render(<CheckoutBotProof onToken={token} />);
+  await act(async () => screen.getByText("Load synthetic widget").click());
+  await waitFor(() => expect(renderWidget).toHaveBeenCalledTimes(2));
+  const checkoutOptions = renderWidget.mock.calls[1][1];
+  expect(checkoutOptions.action).toBe("create-checkout");
+  await act(async () => checkoutOptions["error-callback"]());
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Security check unavailable",
+  );
+  await act(async () => checkoutOptions.callback("checkout-proof"));
+  expect(screen.queryByRole("status")).toBeNull();
+  checkoutOptions["expired-callback"]();
+  expect(token.mock.calls.slice(-2)).toEqual([["checkout-proof"], [""]]);
+  checkout.unmount();
+  checkoutOptions.callback("stale-checkout-proof");
+  expect(token).toHaveBeenCalledTimes(5);
 });

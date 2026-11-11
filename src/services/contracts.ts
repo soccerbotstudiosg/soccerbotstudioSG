@@ -32,11 +32,13 @@ export type CalendarAvailability = {
   }[];
 };
 export type CheckoutInput = BookingRequest & {
+  botToken?: string;
   holding?: boolean;
   draft: BookingDraft;
   previous: Attempt | null;
 };
 export type PayInput = BookingRequest & {
+  botToken?: string;
   startCheckout?: boolean;
   onReviewReady?: () => void;
   onCheckoutReady?: (checkout: z.infer<typeof hitpayHandoffSchema>) => void;
@@ -73,6 +75,7 @@ export type BookingErrorCode =
   | "checkout_window_blocked"
   | "booking_not_created"
   | "checkout_not_started"
+  | "checkout_verification_required"
   | "reservation_blocked"
   | "queue_busy"
   | "payment_unavailable"
@@ -82,6 +85,13 @@ export type BookingErrorCode =
   | "cancelled";
 /** Mark locally authored customer guidance, never raw server or transport errors. */
 export class CustomerMessageError extends Error {}
+/** Carry a validated server deadline without exposing raw provider errors. */
+export class VerificationRequestLimitedError extends CustomerMessageError {
+  constructor(public readonly retryAt: number | null) {
+    super("Too many verification requests. Please try again later.");
+    this.name = "VerificationRequestLimitedError";
+  }
+}
 /** Display reviewed guidance or an operation-specific fallback for unexpected errors. */
 export function customerMessage(error: unknown, fallback: string) {
   return error instanceof CustomerMessageError ? error.message : fallback;
@@ -185,6 +195,7 @@ export type CustomerChallenge = {
   expiresAt: number;
   challengeId: string;
   resendAfter: number;
+  requestLimited?: boolean;
 };
 export interface CustomerIdentityService {
   readonly mode: "demo" | "live";

@@ -16,6 +16,7 @@ import { DEMO_CODE } from "@/services/demo/identity";
 import {
   customerMessage,
   CustomerMessageError,
+  VerificationRequestLimitedError,
   type CustomerChallenge,
   type VerifiedIdentity,
 } from "@/services/contracts";
@@ -49,6 +50,36 @@ export function AccountStep({
     [remember, setRemember] = useState(false),
     [error, setError] = useState(""),
     [challenge, setChallenge] = useState<CustomerChallenge | null>(null);
+  const [resendNow, setResendNow] = useState(() => Date.now());
+  const [requestBlockedUntil, setRequestBlockedUntil] = useState(0);
+  const resendAfter = Math.max(
+    view === "code" ? (challenge?.resendAfter ?? 0) : 0,
+    requestBlockedUntil,
+  );
+  const resendSeconds = Math.max(
+    0,
+    Math.ceil((resendAfter - resendNow) / 1000),
+  );
+  useEffect(() => {
+    if (!resendAfter) return;
+    let timer: ReturnType<typeof setTimeout>;
+    /** Refresh the countdown from the server deadline, including after suspension. */
+    function refresh() {
+      clearTimeout(timer);
+      const current = Date.now();
+      setResendNow(current);
+      if (current < resendAfter)
+        timer = setTimeout(refresh, Math.min(1000, resendAfter - current));
+    }
+    refresh();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [resendAfter]);
   const [identity, setIdentity] = useState(() => identityService.current());
   useEffect(() => {
     onIdentityChange?.(identity);
@@ -104,6 +135,7 @@ export function AccountStep({
     setEmail("");
     setCode("");
     setChallenge(null);
+    setRequestBlockedUntil(0);
     setRemember(false);
     setBotToken("");
     setBotGeneration((value) => value + 1);
@@ -122,7 +154,18 @@ export function AccountStep({
     } catch (e) {
       if (!controller.signal.aborted) {
         if (!identityService.current()) setIdentity(null);
-        setError(customerMessage(e, "We couldn’t continue. Please try again."));
+        if (
+          e instanceof VerificationRequestLimitedError &&
+          e.retryAt !== null
+        ) {
+          setResendNow(Date.now());
+          setRequestBlockedUntil(e.retryAt);
+          setError("");
+        } else {
+          setError(
+            customerMessage(e, "We couldn’t continue. Please try again."),
+          );
+        }
       }
     } finally {
       if (active.current === controller) {
@@ -171,6 +214,7 @@ export function AccountStep({
     else startNavigation(() => router.push("/book/session/"));
   }
   function request() {
+    if (Date.now() < resendAfter) return;
     const normalizedEmail = email.trim();
     if (!validEmail(normalizedEmail)) {
       setError("Enter a valid email address.");
@@ -192,6 +236,8 @@ export function AccountStep({
         }
       }
       if (signal.aborted) return;
+      setResendNow(Date.now());
+      setRequestBlockedUntil(next.requestLimited ? next.resendAfter : 0);
       setChallenge(next);
       setCode("");
       setView("code");
@@ -470,9 +516,10 @@ export function AccountStep({
               pattern="[0-9]{6}"
               required
               value={code}
-              onChange={(e) =>
-                setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-              }
+              onChange={(e) => {
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                setError("");
+              }}
             />
             {identityService.mode === "demo" && (
               <p className="auth-demo-code">
@@ -487,42 +534,47 @@ export function AccountStep({
             {error}
           </p>
         )}
-        {identityService.mode === "live" && (
-          <EmailBotProof key={botGeneration} onToken={setBotToken} />
-        )}
-        <BookingPrimaryAction className="actions" ready={!busy}>
-          <button type="submit" className="button" disabled={busy}>
-            {view === "email" ? "Continue with email" : "Verify and continue"}
-            <Icon name="chevron" />
-          </button>
-        </BookingPrimaryAction>
-        <div className="auth-code-actions">
-          {view === "code" && (
-            <>
+        {view === "code" || resendSeconds > 0 ? (
+          <div
+            className={`auth-code-feedback${requestBlockedUntil > resendNow ? " alert" : ""}`}
+          >
+            {requestBlockedUntil > resendNow && (
+              <p>Code requests are temporarily paused.</p>
+            )}
+            {resendSeconds > 0 ? (
+              <p role="timer" aria-live="off">
+                {view === "code" ? "Request another code in" : "Try again in"}:{" "}
+                {String(Math.floor(resendSeconds / 60)).padStart(2, "0")}:
+                {String(resendSeconds % 60).padStart(2, "0")}
+              </p>
+            ) : (
               <button
                 type="button"
                 disabled={busy}
                 className="text-link"
                 onClick={request}
               >
-                Resend code
+                Request another code
               </button>
-              <button
-                type="button"
-                className="text-link"
-                onClick={() => {
-                  cancel();
-                  setChallenge(null);
-                  setCode("");
-                  setError("");
-                  setView("email");
-                }}
-              >
-                Change email
-              </button>
-            </>
-          )}
-        </div>
+            )}
+          </div>
+        ) : null}
+        {identityService.mode === "live" && resendSeconds === 0 && (
+          <EmailBotProof key={botGeneration} onToken={setBotToken} />
+        )}
+        <BookingPrimaryAction
+          className="actions"
+          ready={!busy && !(view === "email" && resendSeconds > 0)}
+        >
+          <button
+            type="submit"
+            className="button"
+            disabled={busy || (view === "email" && resendSeconds > 0)}
+          >
+            {view === "email" ? "Continue with email" : "Verify and continue"}
+            <Icon name="chevron" />
+          </button>
+        </BookingPrimaryAction>
         {view === "email" && identityService.mode === "demo" && (
           <p className="auth-demo">
             Email sign-in preview · No email will be sent.

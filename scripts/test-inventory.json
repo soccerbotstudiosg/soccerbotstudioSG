@@ -217,7 +217,7 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "invalid code can change email or return to guest options without carrying an old error"
+    "title": "invalid code can return to guest options without carrying an old error"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
@@ -1446,5 +1446,17 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "three complete single-booking browser journeys preserve independent confirmations through Back reload and old links"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "email resend follows server deadlines and third-request cooldown without automatic sends"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "email request throttling displays server retry time without automatic or premature requests"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "identity throttle accepts bounded retry seconds without exposing arbitrary response text"
   }
 ]

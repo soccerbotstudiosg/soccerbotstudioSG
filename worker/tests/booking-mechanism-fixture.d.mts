@@ -1,6 +1,11 @@
 import type { Miniflare } from "miniflare";
 export function createBookingMechanism(options?: {
   observationMaxAgeMs?: number;
+  checkoutBotProof?: boolean;
+  botResult?: (body: {
+    secret: string;
+    response: string;
+  }) => Response | Promise<Response>;
   batch?: boolean;
   batchSize?: number;
   missingCreationDeadline?: boolean;
@@ -25,6 +30,7 @@ export function createBookingMechanism(options?: {
     method: string;
     body: Record<string, unknown> | null;
   }[];
+  botCalls: { token: string }[];
   unexpected: string[];
   completePayment(): Promise<{ status: number }>;
   recover(): Promise<unknown>;

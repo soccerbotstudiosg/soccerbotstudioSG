@@ -187,6 +187,16 @@ These are proposals or incomplete acceptance items, **not enabled features**. Re
 | Later: independent assurance                      | Find gaps not represented by current tests                      | Threat-model review and scoped penetration testing of identity, authorization, checkout/webhooks and admin access                                                                  | Written findings, fixes and retest tied to deployed revision; no uncontrolled real financial tests                              |
 | Later: stronger customer authentication if needed | Reduce reliance on mailbox security for higher-risk features    | Consider step-up/passkeys only if future stored payment/admin or sensitive account features justify the UX/recovery burden                                                         | Agreed threat model, recovery design, accessibility and phishing-resistance evidence                                            |
 
+### Approved follow-up: checkout abuse controls (11 November 2026)
+
+Owner-approved consolidated work: checkout Turnstile and recovery exclusions are now implemented locally, pending complete checks/CI and deployment. Custom-domain/edge rate-limit changes remain planned and are not enabled by this note. Targeted client email verification precedes the full physical acceptance round.
+
+1. Connect `soccerbotsg.com` and apply targeted rate limits to new checkout creation. Prevent the direct Workers.dev address from bypassing protection, while preserving existing payment returns and recovery links during cutover. Confirm plan capabilities; Workers Paid does not include a zone Pro/Business security subscription.
+2. Start Turnstile on the **Review Booking page**, allowing silent verification while the customer reviews the booking. Validate proof server-side before new reservation creation, including guest checkout. Handle expired/single-use tokens, network changes and failures with bounded waits and actionable recovery. Preserve idempotency: double-clicks, lost responses and refresh must not create duplicate reservations or restart an existing checkout. Measure actual added latency on staging; no zero-delay guarantee.
+3. Keep payment callbacks and existing checkout recovery outside interactive challenges, retaining signature/authentication checks and existing origin-side limits. Do not return challenge HTML to JSON API requests. Scope protection to new creation so payment continuation and confirmation remain usable.
+
+Acceptance must include normal desktop/mobile checkout, slow/mobile networks, Wi-Fi/data switching, expired proof, double-click/lost response, existing-checkout refresh, signed callback retries and recovery. Distributed valid-looking guest abuse remains a residual risk; these controls do not introduce a global per-email active-checkout lock.
+
 ## 12. Verification and maintenance map
 
 | Control family                         | Evidence owners                                                                                                                                                                                          | What must still be proved outside those tests                                                          |

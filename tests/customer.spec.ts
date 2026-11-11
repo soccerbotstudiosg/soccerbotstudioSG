@@ -782,6 +782,10 @@ test("email verification rejects an incorrect code and continues after correctio
   await expect(
     verified.getByText("long.customer.address@example.com", { exact: true }),
   ).toBeVisible();
+  await expect(verified.getByText("Email verified", { exact: true })).toHaveCSS(
+    "font-weight",
+    "700",
+  );
   await expect(verified).toHaveCSS("font-size", "14px");
   await expect(verified).toHaveCSS("text-align", "right");
   await expect(

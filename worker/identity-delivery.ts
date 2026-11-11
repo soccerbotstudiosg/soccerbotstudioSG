@@ -9,6 +9,7 @@ import {
   verifyIdentityChallenge,
 } from "./identity";
 import { identityRequest } from "./provider-transport";
+import { edgeAddress } from "./reservation-abuse";
 
 const unavailable = () => new ApiError(503, "identity_unavailable");
 const windowSchema = z.object({
@@ -159,12 +160,30 @@ export async function identityDelivery(
     return result;
   }
   // CF-Connecting-IP is supplied by the Worker edge, never X-Forwarded-For or JSON.
-  const source = request.headers.get("CF-Connecting-IP");
-  if (!source || source.length > 64 || !/^[a-fA-F0-9:.]+$/.test(source))
-    throw unavailable();
+  const source = edgeAddress(request);
   const sourceHash = await keyedHash(pepper, ["delivery-source", source]);
   const resendKey = secret(env, "RESEND_API_KEY");
   const botKey = secret(env, turnstileSecretName(env));
+  /** Read when the active source or hourly transport budget permits another dispatch. */
+  async function dispatchRetryAt(kind: "bot" | "email", now: number) {
+    const session = env.STATE.withSession("first-primary");
+    const source = await session
+      .prepare(
+        "SELECT created_ms+60000 AS deadline FROM identity_delivery_dispatches WHERE ?='bot' AND kind='bot' AND source_hash=? AND created_ms>? ORDER BY created_ms DESC LIMIT 1 OFFSET 2",
+      )
+      .bind(kind, sourceHash, now - 60000)
+      .first<{ deadline: number }>();
+    const global =
+      window.singleton === 0
+        ? await session
+            .prepare(
+              "SELECT created_ms+3600000 AS deadline FROM identity_delivery_dispatches WHERE ongoing=1 AND kind=? AND created_ms>? ORDER BY created_ms DESC LIMIT 1 OFFSET ?",
+            )
+            .bind(kind, now - 3600000, kind === "bot" ? 119 : 59)
+            .first<{ deadline: number }>()
+        : null;
+    return Math.max(now, source?.deadline ?? now, global?.deadline ?? now);
+  }
   /** Dispatch the authorized identity action within its delivery window. */
   async function dispatch(
     kind: "bot" | "email",
@@ -184,8 +203,21 @@ export async function identityDelivery(
       )
         .bind(id, kind, access.capability_hash, sourceHash, Date.now())
         .run();
-    } catch {
-      throw new ApiError(429, "verification_request_limited");
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "";
+      if (reason.includes("identity_delivery_limited")) {
+        const now = Date.now();
+        const retryAt = await dispatchRetryAt(kind, now);
+        throw new ApiError(
+          429,
+          "verification_service_limited",
+          undefined,
+          retryAt > now ? Math.ceil((retryAt - now) / 1000) : undefined,
+        );
+      }
+      if (reason.includes("identity_delivery_dispatches.id"))
+        throw new ApiError(400, "verification_unavailable");
+      throw unavailable();
     }
     let state = "unknown";
     try {
@@ -217,6 +249,20 @@ export async function identityDelivery(
     source,
     hostname: new URL(window.origin).hostname,
     verifyBot: async (token, signal) => {
+      if (window.singleton === 0) {
+        const now = Date.now();
+        const retryAt = Math.max(
+          await dispatchRetryAt("bot", now),
+          await dispatchRetryAt("email", now),
+        );
+        if (retryAt > now)
+          throw new ApiError(
+            429,
+            "verification_service_limited",
+            undefined,
+            Math.ceil((retryAt - now) / 1000),
+          );
+      }
       const id = await keyedHash(pepper, ["bot-dispatch", token]);
       const body = await dispatch("bot", id, { token }, signal);
       const proof = z

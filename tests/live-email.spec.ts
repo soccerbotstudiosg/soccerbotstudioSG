@@ -18,6 +18,8 @@ async function createBookingMechanism(
   const testId = test.info().testId;
   return createIsolatedMechanism({
     ...options,
+    // Browser journeys must supply proof through the actual Review UI.
+    checkoutBotProof: false,
     onTiming: (timing) => {
       console.info(
         JSON.stringify({ event: "fixture_phase", testId, ...timing }),
@@ -30,6 +32,46 @@ async function createBookingMechanism(
 // CI-only synthetic transports. No widget script, email or provider is contacted.
 const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 const challengeId = "10000000-0000-4000-8000-000000000001";
+// Exercise the widget callback contract without contacting Cloudflare. Checkout
+// gets fresh purpose-specific proof; email retains its explicit test interaction.
+const syntheticTurnstileScript = `
+  const widgets = new Map();
+  window.turnstile = {
+    render(container, options) {
+      const id = 'synthetic-widget-' + crypto.randomUUID();
+      container.dataset.sitekey = options.sitekey;
+      container.dataset.action = options.action;
+      const complete = () => options.callback(
+        options.action === 'create-checkout'
+          ? 'synthetic-checkout-' + crypto.randomUUID()
+          : 'synthetic-proof'
+      );
+      const expire = () => options['expired-callback']();
+      widgets.set(id, { container, complete, expire });
+      if (options.action === 'create-checkout') {
+        container.addEventListener('synthetic-complete', complete);
+        container.addEventListener('synthetic-expire', expire);
+        queueMicrotask(() => { if (widgets.has(id)) complete(); });
+      } else {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = 'Complete synthetic email check';
+        button.onclick = complete;
+        container.append(button);
+      }
+      return id;
+    },
+    remove(id) {
+      const widget = widgets.get(id);
+      if (!widget) return;
+      widget.container.removeEventListener('synthetic-complete', widget.complete);
+      widget.container.removeEventListener('synthetic-expire', widget.expire);
+      widget.container.replaceChildren();
+      widgets.delete(id);
+    }
+  };
+`;
+
 async function fixture(
   page: Page,
   delivery = false,
@@ -50,21 +92,7 @@ async function fixture(
     ) {
       await route.fulfill({
         contentType: "application/javascript",
-        body: `
-        window.turnstile = {
-          render(container, options) {
-            container.dataset.sitekey = options.sitekey;
-            container.dataset.action = options.action;
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.textContent = 'Complete synthetic email check';
-            button.onclick = () => options.callback('synthetic-proof');
-            container.append(button);
-            return 'synthetic-widget';
-          },
-          remove() {}
-        };
-      `,
+        body: syntheticTurnstileScript,
       });
       return;
     }
@@ -143,7 +171,8 @@ async function fixture(
       result = {
         challengeId,
         expiresAt: Date.now() + 600000,
-        resendAfter: Date.now() + 60000,
+        resendAfter: Date.now() + 120000,
+        requestLimited: false,
       };
     } else if (
       delivery &&
@@ -328,12 +357,22 @@ test("remembered live account edits and rereads contact while native booking sta
       return { x, y, width, height };
     }),
   );
-  for (let index = 1; index < actionBoxes.length; index++) {
-    expect(actionBoxes[index].y).toBe(actionBoxes[0].y);
-    expect(actionBoxes[index].height).toBe(actionBoxes[0].height);
-    expect(actionBoxes[index].x).toBeGreaterThan(
-      actionBoxes[index - 1].x + actionBoxes[index - 1].width,
+  const actionsBox = await page.locator(".account-actions").boundingBox();
+  expect(actionsBox).not.toBeNull();
+  for (const box of actionBoxes) {
+    expect(box.height).toBe(44);
+    expect(box.x).toBeGreaterThanOrEqual(actionsBox!.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(
+      actionsBox!.x + actionsBox!.width + 1,
     );
+  }
+  for (let index = 1; index < actionBoxes.length; index++) {
+    const previous = actionBoxes[index - 1];
+    const current = actionBoxes[index];
+    expect(
+      current.y >= previous.y + previous.height ||
+        current.x >= previous.x + previous.width,
+    ).toBe(true);
   }
   const after = await guest.boundingBox();
   expect(after).not.toBeNull();
@@ -440,6 +479,16 @@ async function mechanismTransport(
   const handle = async (route: Route) => {
     const request = route.request(),
       url = new URL(request.url());
+    if (
+      url.href ===
+      "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+    ) {
+      await route.fulfill({
+        contentType: "application/javascript",
+        body: syntheticTurnstileScript,
+      });
+      return;
+    }
     if (url.href === mechanism.checkoutUrl) {
       await route.fulfill({
         contentType: "text/html",
@@ -766,13 +815,32 @@ test("native guest journey preserves players contact and one checkout across ref
     await page
       .getByRole("checkbox", { name: /I’ve reviewed all selected/ })
       .check();
-    await page
-      .getByRole("button", {
-        name: /^Proceed to Payment \$[\d,.]+$/,
-        exact: true,
-      })
-      .click();
+    const proceed = page.getByRole("button", {
+      name: /^Proceed to Payment \$[\d,.]+$/,
+      exact: true,
+    });
+    await expect(proceed).toBeEnabled();
+    const checkoutCheck = page.getByLabel("Checkout security check", {
+      exact: true,
+    });
+    await expect(checkoutCheck).toHaveAttribute(
+      "data-action",
+      "create-checkout",
+    );
+    await checkoutCheck.dispatchEvent("synthetic-expire");
+    await expect(proceed).toBeDisabled();
+    expect(mechanism.botCalls).toHaveLength(0);
+    expect(
+      calls.filter((call) => call.path.startsWith("/api/booking/checkout/")),
+    ).toHaveLength(0);
+    await checkoutCheck.dispatchEvent("synthetic-complete");
+    await expect(proceed).toBeEnabled();
+    await proceed.click();
     const checkoutResponse = await holdResponse;
+    expect(checkoutResponse.request().headers()["x-booking-bot-proof"]).toMatch(
+      /^synthetic-checkout-/,
+    );
+    expect(mechanism.botCalls).toHaveLength(1);
     expect(checkoutResponse.status()).toBe(200);
     expect(checkoutResponse.headers()["server-timing"]).toMatch(
       /simplybook;dur=[0-9.]+;desc="1 calls"/,
@@ -849,6 +917,10 @@ test("native guest journey preserves players contact and one checkout across ref
         (c) => c.path === "/api/identity/contact" && c.method === "POST",
       ),
     ).toHaveLength(0);
+    await expect(
+      page.getByLabel("Checkout security check", { exact: true }),
+    ).toHaveCount(0);
+    expect(mechanism.botCalls).toHaveLength(1);
     expect(unexpected).toEqual([]);
     const paymentIndex = mechanism.calls.findIndex(
       (c) => isHitPayApiCall(c) && c.method === "POST",
@@ -942,7 +1014,10 @@ async function prepareBrowserAttempt(
         : `/api/booking/${mode}/${key}`),
     {
       method: "POST",
-      headers,
+      headers: {
+        ...headers,
+        "X-Booking-Bot-Proof": `synthetic-checkout-${crypto.randomUUID()}`,
+      },
       body: JSON.stringify({
         key,
         holding: true,
@@ -1024,6 +1099,7 @@ test("real payment recovery confirms the browser return from verified provider s
       mechanism,
       "checkout",
     );
+    expect(mechanism.botCalls).toHaveLength(1);
     expect((await mechanism.completePayment()).status).toBe(202);
     // The authenticated webhook must wake production recovery itself. No
     // manual cron invocation or fabricated application confirmation response.
@@ -1139,6 +1215,10 @@ test("real payment recovery confirms the browser return from verified provider s
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Continue payment", exact: true }),
+    ).toHaveCount(0);
+    expect(mechanism.botCalls).toHaveLength(1);
+    await expect(
+      page.getByLabel("Checkout security check", { exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".status-heading h1 + p")).toHaveText(
       "Your booking confirmation will be emailed to you.",
@@ -2079,6 +2159,10 @@ test("real API lost successful hold response restores the existing reservation w
         (call) => isHitPayApiCall(call) && call.method === "POST",
       ),
     ).toHaveLength(1);
+    expect(mechanism.botCalls).toHaveLength(1);
+    await expect(
+      page.getByLabel("Checkout security check", { exact: true }),
+    ).toHaveCount(0);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
     await stopMechanism(page, mechanism, transport);
@@ -3232,6 +3316,7 @@ test("email account actions return through booking options and sign in again wit
 async function consecutivePaidJourneys(page: Page, sizes: number[]) {
   let completed = Promise.withResolvers<void>();
   const mechanism = await createBookingSequence(sizes, {
+    checkoutBotProof: false,
     onLog(message) {
       if (!message.startsWith("{")) return;
       const event = JSON.parse(message);

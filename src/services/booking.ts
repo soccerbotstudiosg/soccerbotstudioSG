@@ -47,12 +47,14 @@ const availabilityInput = z.object({
   fresh: z.boolean().optional(),
 });
 const checkoutInput = z.object({
+  botToken: z.string().min(1).max(2048).optional(),
   holding: z.boolean().optional(),
   draft: draftSchema,
   previous: attemptSchema.nullable(),
 });
 const attemptInput = z.object({ attempt: attemptSchema });
 const payInput = attemptInput.extend({
+  botToken: z.string().min(1).max(2048).optional(),
   startCheckout: z.boolean().optional(),
   outcome: outcomeSchema,
   holding: z.boolean().optional(),
@@ -366,6 +368,7 @@ async function nativeRequest(
   method: "GET" | "POST",
   signal?: AbortSignal,
   body?: unknown,
+  botToken?: string,
 ) {
   const response = await fetch(path, {
     method,
@@ -375,11 +378,26 @@ async function nativeRequest(
     redirect: "error",
     headers: {
       Accept: "application/json",
+      ...(botToken ? { "X-Booking-Bot-Proof": botToken } : {}),
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   if (!response.ok) {
+    if (response.status === 400 || response.status === 503) {
+      const error = await response
+        .clone()
+        .json()
+        .catch(() => null);
+      if (
+        error?.error === "checkout_verification_required" ||
+        error?.error === "checkout_verification_unavailable"
+      )
+        throw new BookingServiceError(
+          "checkout_verification_required",
+          "Complete the security check and try again. Your selections are saved.",
+        );
+    }
     if (response.status === 429) {
       const error = await response
         .clone()
@@ -622,7 +640,7 @@ export const liveBookingService: BookingService = defineBookingService({
     return nativeDisplaySlots(date, data.offers);
   },
   /** Create checkout under the current protected booking authority. */
-  async checkout({ draft, previous, signal, holding }) {
+  async checkout({ draft, previous, signal, holding, botToken }) {
     if (draft.slots.some((slot) => !slot.native)) return unavailable();
     if (
       previous ||
@@ -668,7 +686,13 @@ export const liveBookingService: BookingService = defineBookingService({
         state: z.literal("prepared"),
       })
       .parse(
-        await nativeRequest("/api/booking/prepare", "POST", signal, request),
+        await nativeRequest(
+          "/api/booking/prepare",
+          "POST",
+          signal,
+          request,
+          botToken,
+        ),
       );
     return {
       id: prepared.attemptId,
@@ -683,6 +707,7 @@ export const liveBookingService: BookingService = defineBookingService({
   async pay({
     attempt,
     signal,
+    botToken,
     holding,
     onReviewReady,
     startCheckout,
@@ -757,6 +782,7 @@ export const liveBookingService: BookingService = defineBookingService({
                 })),
               })
             : undefined,
+        !attempt.held && holding ? botToken : undefined,
       );
     } finally {
       stop();

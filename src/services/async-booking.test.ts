@@ -359,9 +359,14 @@ test("native preparation binds reviewed contact and payment stays under protecte
   const ready = await liveBookingService.checkout({
     draft: data,
     previous: null,
+    botToken: "synthetic-prepare-proof",
   });
   const sent = JSON.parse(String(fetch.mock.calls[0][1]?.body));
   expect(sent.contact).toEqual(data.contact);
+  expect(
+    new Headers(fetch.mock.calls[0][1]?.headers).get("X-Booking-Bot-Proof"),
+  ).toBe("synthetic-prepare-proof");
+  expect(JSON.stringify(sent)).not.toContain("synthetic-prepare-proof");
   expect(sent.sessions[0]).toEqual({
     serviceId: "2",
     instructorId: "33",
@@ -372,10 +377,14 @@ test("native preparation binds reviewed contact and payment stays under protecte
   const checking = await liveBookingService.pay({
     attempt: ready,
     outcome: "success",
+    botToken: "must-not-leak-to-existing-native",
   });
   expect(checking.status).toBe("checking");
   expect(checking.booking).toBeNull();
   expect(fetch.mock.calls[1][1]?.body).toBeUndefined();
+  expect(
+    new Headers(fetch.mock.calls[1][1]?.headers).has("X-Booking-Bot-Proof"),
+  ).toBe(false);
   expect(checking.id).toBe(id);
 });
 
@@ -448,9 +457,17 @@ test("single holding request retains its local identity before dispatch and neve
     attempt: pending,
     holding: true,
     outcome: "pending",
+    botToken: "synthetic-checkout-proof",
   });
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(fetch.mock.calls[0][0]).toBe(`/api/booking/hold/${pending.id}`);
+  expect(
+    new Headers(fetch.mock.calls[0][1]?.headers).get("X-Booking-Bot-Proof"),
+  ).toBe("synthetic-checkout-proof");
+  expect(String(fetch.mock.calls[0][1]?.body)).not.toContain(
+    "synthetic-checkout-proof",
+  );
+  expect(JSON.stringify(pending)).not.toContain("synthetic-checkout-proof");
   expect(JSON.parse(String(fetch.mock.calls[0][1]?.body))).toMatchObject({
     key: pending.id,
     holding: true,

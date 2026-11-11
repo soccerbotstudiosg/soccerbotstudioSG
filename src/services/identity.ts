@@ -1,4 +1,7 @@
-import { CustomerMessageError } from "./contracts";
+import {
+  CustomerMessageError,
+  VerificationRequestLimitedError,
+} from "./contracts";
 import { z } from "zod";
 import { blankContact } from "@/domain/contact";
 import type { CustomerIdentityService, VerifiedIdentity } from "./contracts";
@@ -13,6 +16,7 @@ const challengeSchema = z.strictObject({
   challengeId: z.string().uuid(),
   expiresAt: z.number().int().positive().safe(),
   resendAfter: z.number().int().nonnegative().safe(),
+  requestLimited: z.boolean().optional(),
 });
 const profileSchema = z.strictObject({
   email: z.email(),
@@ -80,10 +84,14 @@ async function identityRequest(
       throw new CustomerMessageError(
         "Could not sign out this browser. Please try again.",
       );
-    if (response.status === 429)
-      throw new CustomerMessageError(
-        "Wait a few minutes before requesting another code.",
+    if (response.status === 429) {
+      const header = response.headers.get("Retry-After");
+      // Accept bounded delta-seconds only; never display arbitrary response text.
+      const seconds = header && /^\d{1,5}$/.test(header) ? Number(header) : 0;
+      throw new VerificationRequestLimitedError(
+        seconds > 0 && seconds <= 86400 ? Date.now() + seconds * 1000 : null,
       );
+    }
     if (response.status === 401)
       throw new CustomerMessageError(
         "Return to booking options and verify your email again.",

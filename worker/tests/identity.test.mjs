@@ -62,6 +62,7 @@ before(async () => {
   for (const name of [
     "0001_developer_journal.sql",
     "0009_identity_challenges.sql",
+    "0044_identity_request_cooldown.sql",
     "0013_remembered_identity.sql",
     "0011_identity_delivery.sql",
     "0015_contact_profiles.sql",
@@ -103,6 +104,7 @@ async function challenge(cookie, overrides = {}) {
     now: Date.now(),
     email: `synthetic${sequence}@example.invalid`,
     botToken: `synthetic-bot-${sequence}`,
+    source: `synthetic-source-${sequence}`,
     ...overrides,
   });
 }
@@ -118,6 +120,7 @@ function verification(response, now = Date.now()) {
 test("identity stores no plaintext code and consumes one concurrent redemption without renewing guest expiry", async () => {
   const cookie = await guest(),
     response = await challenge(cookie);
+  assert.equal(response.error, undefined);
   assert.match(response.sent[0].code, /^\d{6}$/);
   const stored = await db
     .prepare("SELECT * FROM identity_challenges WHERE id=?")
@@ -184,24 +187,24 @@ test("identity rejects bot denial expiry purpose mismatch and durable token repl
   assert.equal(first.sent.length, 1);
   const replay = await challenge(await guest(), { botToken: token });
   assert.equal(replay.sent.length, 0);
-  assert.equal(replay.error, "verification_request_limited");
+  assert.equal(replay.error, "verification_unavailable");
 });
 test("identity resend supersedes previous challenge and preserves unknown delivery without retry across restart", async () => {
   const cookie = await guest(),
     now = Date.now(),
     first = await challenge(cookie, { now });
   const second = await challenge(cookie, {
-    now: now + 61000,
+    now: now + 121000,
     email: first.sent[0].email,
     delivery: "lost",
   });
   assert.equal(second.sent.length, 1);
   assert.equal(
-    (await call(cookie, verification(first, now + 62000))).error,
+    (await call(cookie, verification(first, now + 122000))).error,
     "verification_unavailable",
   );
   assert.equal(
-    (await call(cookie, verification(second, now + 62000))).error,
+    (await call(cookie, verification(second, now + 122000))).error,
     "verification_unavailable",
   );
   await mf.dispose();
@@ -216,7 +219,7 @@ test("identity resend supersedes previous challenge and preserves unknown delive
     "unknown",
   );
   assert.equal(
-    (await call(cookie, verification(second, now + 62000))).error,
+    (await call(cookie, verification(second, now + 122000))).error,
     "verification_unavailable",
   );
 });
@@ -232,26 +235,161 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
     concurrent.reduce((n, r) => n + r.sent.length, 0),
     1,
   );
-  for (const offset of [61000, 122000])
-    assert.equal(
-      (
-        await challenge(await guest(), {
-          email,
-          now: now + offset,
-          source: "rate-source",
-        })
-      ).sent.length,
-      1,
-    );
-  assert.equal(
-    (
-      await challenge(await guest(), {
-        email,
-        now: now + 183000,
+  const first = concurrent.find((response) => response.sent.length === 1);
+  assert.equal(first.result.resendAfter, now + 120000);
+  assert.equal(first.result.requestLimited, false);
+  const beforeNormal = await challenge(cookie, {
+    email: "changed@example.invalid",
+    now: now + 119999,
+    source: "different-network",
+  });
+  assert.equal(beforeNormal.retryAfterSeconds, 1);
+  assert.equal(beforeNormal.sent.length, 0);
+  // A different customer on the same IP need not wait for the first customer's normal resend timer.
+  const second = await challenge(await guestAt(now + 1000), {
+    email: "second@example.invalid",
+    now: now + 1000,
+    source: "rate-source",
+  });
+  assert.equal(second.sent.length, 1);
+  assert.equal(second.result.resendAfter, now + 121000);
+  assert.equal(second.result.requestLimited, false);
+  const thirdCandidates = [
+    await guestAt(now + 2000),
+    await guestAt(now + 2000),
+  ];
+  const thirdResults = await Promise.all(
+    thirdCandidates.map((session) =>
+      challenge(session, {
+        email: "third@example.invalid",
+        now: now + 2000,
         source: "rate-source",
-      })
-    ).sent.length,
-    0,
+      }),
+    ),
+  );
+  assert.equal(
+    thirdResults.reduce((count, result) => count + result.sent.length, 0),
+    1,
+  );
+  const thirdIndex = thirdResults.findIndex(
+    (result) => result.sent.length === 1,
+  );
+  const thirdGuest = thirdCandidates[thirdIndex];
+  const third = thirdResults[thirdIndex];
+  assert.equal(thirdResults[1 - thirdIndex].retryAfterSeconds, 600);
+  assert.equal(third.sent.length, 1);
+  assert.equal(third.result.resendAfter, now + 602000);
+  assert.equal(third.result.requestLimited, true);
+  // The third code remains valid while new requests are blocked.
+  assert.equal(
+    (await call(thirdGuest, verification(third, now + 2001))).result.email,
+    "third@example.invalid",
+  );
+  const observedGuest = await guestAt(now + 122000);
+  const denied = await challenge(observedGuest, {
+    now: now + 122000,
+    source: "rate-source",
+  });
+  assert.equal(denied.sent.length, 0);
+  assert.equal(denied.retryAfterSeconds, 480);
+  // A separately blocked IP has a later deadline; observing it must not extend this session's existing block.
+  for (const offset of [10000, 20000, 30000]) {
+    const accepted = await challenge(await guestAt(now + offset), {
+      now: now + offset,
+      source: "later-blocked-network",
+    });
+    assert.equal(accepted.sent.length, 1);
+  }
+  // An IP-derived denial stays with its session after network/email changes, without extending it.
+  for (const session of [thirdGuest, observedGuest]) {
+    for (const [offset, seconds] of [
+      [122000, 480],
+      [601999, 1],
+    ]) {
+      const blocked = await challenge(session, {
+        now: now + offset,
+        source: "fresh-network",
+      });
+      assert.equal(blocked.sent.length, 0);
+      assert.equal(blocked.retryAfterSeconds, seconds);
+      const laterIp = await challenge(session, {
+        now: now + offset,
+        source: "later-blocked-network",
+      });
+      assert.equal(laterIp.sent.length, 0);
+      assert.equal(laterIp.retryAfterSeconds, seconds);
+    }
+  }
+  // Once the original block expires, the current IP's remaining independent block may be observed.
+  const remainingIpBlock = await challenge(observedGuest, {
+    now: now + 602000,
+    source: "later-blocked-network",
+  });
+  assert.equal(remainingIpBlock.retryAfterSeconds, 28);
+  const restarted = await challenge(thirdGuest, {
+    now: now + 602000,
+    source: "rate-source",
+  });
+  assert.equal(restarted.sent.length, 1);
+  assert.equal(restarted.result.resendAfter, now + 722000);
+  assert.equal(restarted.result.requestLimited, false);
+  const idle = await challenge(thirdGuest, {
+    now: now + 1202000,
+    source: "rate-source",
+  });
+  assert.equal(idle.sent.length, 1);
+  assert.equal(idle.result.requestLimited, false);
+  const counter = await db
+    .prepare(
+      "SELECT request_count FROM identity_request_counters WHERE scope='session' AND subject_key=(SELECT owner_id FROM identity_challenges WHERE id=?)",
+    )
+    .bind(idle.result.challengeId)
+    .first();
+  assert.equal(counter.request_count, 1);
+  // Rotating both email and IP cannot bypass the session's own three-request cycle.
+  const rotating = await guest();
+  const rotatingNow = Date.now();
+  for (const offset of [0, 120000, 240000]) {
+    const accepted = await challenge(rotating, { now: rotatingNow + offset });
+    assert.equal(accepted.sent.length, 1);
+    assert.equal(accepted.result.requestLimited, offset === 240000);
+  }
+  const rotated = await challenge(rotating, { now: rotatingNow + 360000 });
+  assert.equal(rotated.retryAfterSeconds, 480);
+  assert.equal(rotated.sent.length, 0);
+  // A slow first send can observe another session's third request in its success envelope.
+  const slowGuest = await guest();
+  const slowNow = Date.now();
+  const pending = challenge(slowGuest, {
+    now: slowNow,
+    source: "held-source",
+    delivery: "held",
+  });
+  assert.equal(
+    (await call(slowGuest, { action: "wait-delivery", now: slowNow })).result
+      .waiting,
+    true,
+  );
+  for (const offset of [1000, 2000]) {
+    const completed = await challenge(await guestAt(slowNow + offset), {
+      now: slowNow + offset,
+      source: "held-source",
+    });
+    assert.equal(completed.sent.length, 1);
+  }
+  await call(slowGuest, { action: "release-delivery", now: slowNow });
+  const slowResult = await pending;
+  assert.equal(slowResult.result.requestLimited, true);
+  assert.equal(slowResult.result.resendAfter, slowNow + 602000);
+  const slowChangedNetwork = await challenge(slowGuest, {
+    now: slowNow + 122000,
+    source: "held-new-network",
+  });
+  assert.equal(slowChangedNetwork.sent.length, 0);
+  assert.equal(slowChangedNetwork.retryAfterSeconds, 480);
+  assert.equal(
+    (await call(slowGuest, verification(slowResult, slowNow + 122001))).error,
+    undefined,
   );
 });
 test("identity guest revocation denies verified session and ambiguous contacts never prefill", async () => {
@@ -478,7 +616,7 @@ test("remembered logout fences concurrent restore and a delayed issued cookie ca
 });
 test("remembered all-device signout accepts restored and older valid sessions and invalidates older challenges", async () => {
   const r = await remembered(),
-    later = r.now + 61000;
+    later = r.now + 121000;
   const pendingGuest = await guestAt(later);
   const pending = await challenge(pendingGuest, {
     now: later,
@@ -547,7 +685,7 @@ test("fresh remembered login after all-device signout keeps old families revoked
       undefined,
     );
     // Respect the unchanged per-email challenge cooldown.
-    const now = old.now + 61000;
+    const now = old.now + 121000;
     const fresh = await guestAt(now);
     const next = await challenge(fresh, {
       now,
@@ -801,7 +939,7 @@ test("website contact shared email uses latest explicit save without changing re
   await call(first, { ...verification(response), remember: true });
   const email = response.sent[0].email;
   const second = await guest(),
-    later = Date.now() + 61000;
+    later = Date.now() + 121000;
   const shared = await challenge(second, {
     email,
     now: later,
@@ -1009,7 +1147,7 @@ test("website contact opt-out cannot create or replace a profile even with a for
     true,
   );
   const cookie = await guest(),
-    at = Date.now() + 61000;
+    at = Date.now() + 121000;
   const response = await challenge(cookie, {
     email: subject,
     now: at,

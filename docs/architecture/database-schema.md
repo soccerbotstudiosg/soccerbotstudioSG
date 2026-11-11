@@ -1,10 +1,11 @@
 # Database schema
 
-Source inventory:37 application D1 tables from migrations0001–0043, verified by applying all43 migrations to isolated in-memory SQLite, and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
+Source inventory:40 application D1 tables from migrations0001–0045, verified by applying all45 migrations to isolated in-memory SQLite, and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
 - Migration0039 adds reservation source/expiry records. Migration0040 adds nullable `hitpay_payments.checkout_expires_ms`; apply it before the candidate Worker. Existing rows remain unknown until authenticated provider recovery supplies the hosted-link deadline; no financial window is backfilled or extended.
 - Migration0041 adds immutable no-creation proof and extends the existing operator-operation constraint through a preserving table rebuild. Apply it before code using terminal creation resolution. It does not resolve or backfill historical uncertainty.
 - Migration0043 adds observed reservation-denial deadlines; apply it before the candidate Worker. It neither rewrites historical expiry strikes nor infers prior denials.
+- Migration0044 adds session/source email-request counters and sticky observed request denials; migration0045 adds intent-bound checkout bot-proof receipts. Apply both before this candidate Worker; historical challenge rows are preserved. Neither migration authorizes bookings or changes payment evidence.
 - Deployment and table-content verification remain separate from this source inventory; no production activation is claimed.
 
 The schema source is [D1 migrations](../../migrations), [coordinator initialization](../../worker/coordinator.ts), [token-cache initialization](../../worker/provider-token-cache.ts) and [display-cache initialization](../../worker/display-snapshots.ts). Retention, expiry and deletion policy belongs to [Data lifecycle](../data-lifecycle.md); authorization and payment invariants belong to [Business rules](../business-rules.md). This document owns table structure and relationships only.
@@ -15,7 +16,7 @@ D1 retains booking/payment evidence; the Durable Object coordinates provider wor
 
 ```mermaid
 flowchart LR
-  Worker["Booking Worker"] --> D1["D1 · 37 tables in local schema"]
+  Worker["Booking Worker"] --> D1["D1 · 40 tables in local schema"]
   Worker --> DO["Account Durable Object · 13 SQLite tables"]
   D1 --> Identity["Access, identity, contacts and observed denials"]
   D1 --> Booking["Attempts, resolution, preparation rejection and grant history"]
@@ -181,20 +182,23 @@ flowchart TB
   verified_identity -. "verified email plus account/origin" .-> contact_profiles
 ```
 
-Only `remembered_access.family_id → remembered_identity.id` is a declared foreign key in this group. Other identity relationships rely on application checks and, for linked revocation, triggers. Email is not globally unique across access rows; a contact profile is keyed by the complete account/origin/email tuple. `identity_bot_tokens` is an independent replay ledger, not a foreign-key child of a challenge. Email tables do not imply that delivery is currently enabled.
+Declared foreign keys in this group are `remembered_access.family_id → remembered_identity.id` and `checkout_bot_proofs.capability_hash → guest_access.capability_hash`. Other identity relationships rely on application checks and, for linked revocation, triggers. Email is not globally unique across access rows; a contact profile is keyed by the complete account/origin/email tuple. `identity_bot_tokens` is an independent replay ledger, not a foreign-key child of a challenge. Email tables do not imply that delivery is currently enabled.
 
-| Table                          | Key                             | Purpose                                                                     |
-| ------------------------------ | ------------------------------- | --------------------------------------------------------------------------- |
-| `guest_access`                 | PK: `capability_hash`           | Hashed browser access capability, owner and validity/revocation timestamps. |
-| `identity_challenges`          | PK: `id`                        | Email verification challenges, hashed codes and attempt/rate-limit state.   |
-| `identity_bot_tokens`          | PK: `token_hash`                | Consumed bot-verification token hashes for replay protection.               |
-| `verified_identity`            | PK: `access_hash`               | Verified email identity attached to an access hash.                         |
-| `remembered_identity`          | PK: `id`                        | Remember-me token family, rotation and fixed expiry/revocation state.       |
-| `remembered_access`            | PK: `access_hash`               | Access hashes linked to a remembered family and restoration state.          |
-| `identity_revocations`         | PK: `email`                     | Email-level revocation cutoff and operation identity.                       |
-| `contact_profiles`             | PK: `account_id, origin, email` | Saved customer contact details scoped by account, origin and email.         |
-| `identity_delivery_window`     | PK: `singleton`                 | Finite operator-authorized identity email delivery window.                  |
-| `identity_delivery_dispatches` | PK: `id`                        | Identity-email dispatch history, including uncertain delivery.              |
+| Table                          | Key                                                                                           | Purpose                                                                                                |
+| ------------------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `guest_access`                 | PK: `capability_hash`                                                                         | Hashed browser access capability, owner and validity/revocation timestamps.                            |
+| `identity_challenges`          | PK: `id`                                                                                      | Email verification challenges, hashed codes and attempt/rate-limit state.                              |
+| `identity_request_counters`    | PK: `scope,subject_key`                                                                       | Session-owner/source-hash request counts and last accepted request timestamp.                          |
+| `identity_request_denials`     | PK: `owner_id`                                                                                | Observed email-request block deadline retained across network changes.                                 |
+| `checkout_bot_proofs`          | PK: `attempt_key`; UNIQUE: `token_hash`; FK: `capability_hash → guest_access.capability_hash` | Turnstile receipt bound to exact checkout intent/capability; hashed token, verified/expiry timestamps. |
+| `identity_bot_tokens`          | PK: `token_hash`                                                                              | Consumed bot-verification token hashes for replay protection.                                          |
+| `verified_identity`            | PK: `access_hash`                                                                             | Verified email identity attached to an access hash.                                                    |
+| `remembered_identity`          | PK: `id`                                                                                      | Remember-me token family, rotation and fixed expiry/revocation state.                                  |
+| `remembered_access`            | PK: `access_hash`                                                                             | Access hashes linked to a remembered family and restoration state.                                     |
+| `identity_revocations`         | PK: `email`                                                                                   | Email-level revocation cutoff and operation identity.                                                  |
+| `contact_profiles`             | PK: `account_id, origin, email`                                                               | Saved customer contact details scoped by account, origin and email.                                    |
+| `identity_delivery_window`     | PK: `singleton`                                                                               | Finite operator-authorized identity email delivery window.                                             |
+| `identity_delivery_dispatches` | PK: `id`                                                                                      | Identity-email dispatch history, including uncertain delivery.                                         |
 
 ## D1: SimplyBook webhook evidence
 

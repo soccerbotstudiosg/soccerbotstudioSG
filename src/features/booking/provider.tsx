@@ -118,7 +118,7 @@ interface BookingContextValue extends StoredBooking {
   update: (change: Partial<BookingDraft>) => void;
   reserve: () => Promise<boolean>;
   review: () => Promise<boolean>;
-  checkout: () => Promise<boolean>;
+  checkout: (botToken?: string) => Promise<boolean>;
   pay: (outcome: Outcome) => Promise<boolean>;
   check: () => Promise<boolean>;
   resolve: () => Promise<boolean>;
@@ -1530,7 +1530,11 @@ export function BookingProvider({
     setSuppressedSlots,
   ]);
   const run = useCallback(
-    async (operation: Action, outcome: Outcome = "success") => {
+    async (
+      operation: Action,
+      outcome: Outcome = "success",
+      botToken?: string,
+    ) => {
       if (
         pendingConflict ||
         protectedConflictRedirect ||
@@ -1622,6 +1626,7 @@ export function BookingProvider({
             ? current.attempt
             : operation === "checkout" || operation === "reserve"
               ? await service.checkout({
+                  botToken,
                   holding:
                     operation === "reserve" ||
                     (operation === "checkout" && service.mode === "live"),
@@ -1658,6 +1663,7 @@ export function BookingProvider({
           let handoff: { url: string; expiresAtMs: number } | undefined;
           attempt = await service.pay({
             attempt,
+            botToken,
             outcome: "pending",
             signal,
             holding: operation === "reserve" || startCheckout,
@@ -1739,10 +1745,11 @@ export function BookingProvider({
         }
         if (
           error instanceof BookingServiceError &&
-          error.code === "queue_busy"
+          (error.code === "queue_busy" ||
+            error.code === "checkout_verification_required")
         ) {
-          // Admission failed before this operation started. Keep the same
-          // prepared attempt available for an explicit retry.
+          // Admission/proof failed before this request dispatched a booking.
+          // Keep the same prepared identity for an explicit fresh-proof retry.
           if (latest.current.attempt)
             queueRetry.current = {
               id: latest.current.attempt.id,
@@ -2099,7 +2106,7 @@ export function BookingProvider({
         },
         reserve: () => run("reserve"),
         review: () => run("review"),
-        checkout: () => run("checkout"),
+        checkout: (botToken) => run("checkout", "success", botToken),
         pay: (outcome) => run("pay", outcome),
         check: () => run("check"),
         resolve: () => run("resolve"),

@@ -97,6 +97,7 @@ beforeEach(async () => {
   for (const name of [
     "0001_developer_journal.sql",
     "0009_identity_challenges.sql",
+    "0044_identity_request_cooldown.sql",
     "0013_remembered_identity.sql",
     "0011_identity_delivery.sql",
   ])
@@ -258,11 +259,14 @@ test("delivery durable bot replay and source quota precede outbound validation a
   );
   assert.equal(
     (await challenge(await guest(), { botToken: token })).status,
-    429,
+    400,
   );
   await challenge(await guest());
   await challenge(await guest());
-  assert.equal((await challenge(await guest())).status, 429);
+  const sourceBlocked = await challenge(await guest());
+  assert.equal(sourceBlocked.status, 429);
+  assert.ok(Number(sourceBlocked.headers.get("Retry-After")) > 0);
+  assert.ok(Number(sourceBlocked.headers.get("Retry-After")) <= 60);
   assert.equal(calls.length, 3);
   assert.equal(await count("bot"), 3);
 });
@@ -1060,16 +1064,15 @@ test("ongoing delivery charges unknown sends against durable hourly capacity acr
   );
   await mf.dispose();
   await start();
-  const c = await (await challenge(await guest())).json();
-  assert.equal(calls.length, 1);
+  const blocked = await challenge(await guest());
+  assert.equal(blocked.status, 429);
+  assert.equal((await blocked.json()).error, "verification_service_limited");
+  const wait = Number(blocked.headers.get("Retry-After"));
+  assert.ok(wait > 3500 && wait <= 3600);
+  assert.equal(calls.length, 0);
   assert.equal(
-    (
-      await db
-        .prepare("SELECT state FROM identity_challenges WHERE id=?")
-        .bind(c.challengeId)
-        .first()
-    ).state,
-    "unknown",
+    (await db.prepare("SELECT count(*) n FROM identity_challenges").first()).n,
+    0,
   );
   // A later rolling window admits new work without deleting old charged rows.
   await db
@@ -1099,7 +1102,7 @@ test("ongoing delivery retains bot replay source limits and requires live develo
   );
   assert.equal(
     (await challenge(await guest(), { botToken: token })).status,
-    429,
+    400,
   );
   await challenge(await guest());
   await challenge(await guest());
@@ -1175,6 +1178,61 @@ test("client email verification uses its configured sender and production bot se
   assert.equal(verified.status, 200);
   assert.equal((await verified.json()).email, recipient);
   assert.equal(calls.length, 2);
+  const early = await challenge(cookie, { email: recipient });
+  assert.equal(early.status, 429);
+  const retry = Number(early.headers.get("Retry-After"));
+  assert.ok(retry > 110 && retry <= 120);
+  assert.equal((await early.json()).error, "verification_request_limited");
+  assert.equal(calls.length, 2);
+  // Two other sessions on this IP are not delayed by the first session's normal timer.
+  assert.equal(
+    (await challenge(await guest(), { email: "second-client@example.invalid" }))
+      .status,
+    200,
+  );
+  const third = await challenge(await guest(), {
+    email: "third-client@example.invalid",
+  });
+  assert.equal(third.status, 200);
+  assert.equal((await third.json()).requestLimited, true);
+  const blockedSession = await guest();
+  const ipBlocked = await challenge(blockedSession, {
+    email: "fourth-client@example.invalid",
+  });
+  assert.equal(ipBlocked.status, 429);
+  assert.equal((await ipBlocked.json()).error, "verification_request_limited");
+  const ipWait = Number(ipBlocked.headers.get("Retry-After"));
+  assert.ok(ipWait > 590 && ipWait <= 600);
+  const changedNetwork = await request(
+    blockedSession,
+    {
+      email: "changed-client@example.invalid",
+      botToken: crypto.randomUUID(),
+    },
+    "challenges",
+    { "CF-Connecting-IP": "192.0.2.99" },
+  );
+  assert.equal(changedNetwork.status, 429);
+  const retainedWait = Number(changedNetwork.headers.get("Retry-After"));
+  assert.ok(retainedWait > 590 && retainedWait <= ipWait);
+  assert.equal(calls.length, 6);
+  // An unrelated database failure is not misreported as a customer rate limit.
+  await db.exec(
+    "CREATE TRIGGER synthetic_dispatch_failure BEFORE INSERT ON identity_delivery_dispatches BEGIN SELECT RAISE(ABORT,'synthetic_database_failure'); END;",
+  );
+  const broken = await request(
+    await guest(),
+    {
+      email: "database-failure@example.invalid",
+      botToken: crypto.randomUUID(),
+    },
+    "challenges",
+    { "CF-Connecting-IP": "192.0.2.100" },
+  );
+  assert.equal(broken.status, 503);
+  assert.equal(broken.headers.get("Retry-After"), null);
+  assert.equal((await broken.json()).error, "identity_unavailable");
+  assert.equal(calls.length, 6);
 });
 test("client email delivery fails closed for missing sender or production bot secret despite developer credentials", async () => {
   await clientDelivery({ IDENTITY_SENDER: "" });

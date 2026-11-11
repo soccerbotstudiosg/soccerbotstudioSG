@@ -72,6 +72,67 @@ async function bounded<T>(work: (signal: AbortSignal) => Promise<T>) {
   }
 }
 
+/** Read the next permitted request time from durable session/IP limits and observed denials. */
+async function identityRequestWindow(
+  env: Env,
+  ownerId: string,
+  sourceHash: string,
+  now: number,
+) {
+  const session = env.STATE.withSession("first-primary");
+  const observed = await session
+    .prepare(
+      "SELECT blocked_until_ms FROM identity_request_denials WHERE owner_id=? AND blocked_until_ms>?",
+    )
+    .bind(ownerId, now)
+    .first<{ blocked_until_ms: number }>();
+  if (observed)
+    return { resendAfter: observed.blocked_until_ms, requestLimited: true };
+  const row = await session
+    .prepare(
+      `SELECT MAX(deadline) AS deadline, MAX(request_limited) AS request_limited FROM (
+        SELECT last_request_ms+CASE request_count WHEN 3 THEN 600000 ELSE 120000 END AS deadline,
+          CASE WHEN request_count=3 AND last_request_ms+600000>? THEN 1 ELSE 0 END AS request_limited
+        FROM identity_request_counters WHERE (scope='session' AND subject_key=?)
+          OR (scope='source' AND subject_key=? AND request_count=3)
+        UNION ALL
+        SELECT blocked_until_ms AS deadline, CASE WHEN blocked_until_ms>? THEN 1 ELSE 0 END AS request_limited
+          FROM identity_request_denials WHERE owner_id=?
+      )`,
+    )
+    .bind(now, ownerId, sourceHash, now, ownerId)
+    .first<{ deadline: number | null; request_limited: number | null }>();
+  return {
+    resendAfter: Math.max(now, row?.deadline ?? now),
+    requestLimited: row?.request_limited === 1,
+  };
+}
+/** Preserve an observed IP block for the session without extending its original deadline. */
+async function retainIdentityDenial(
+  env: Env,
+  ownerId: string,
+  deadline: number,
+  now: number,
+) {
+  const retained = await env.STATE.prepare(
+    "INSERT INTO identity_request_denials(owner_id,blocked_until_ms) VALUES(?,?) ON CONFLICT(owner_id) DO UPDATE SET blocked_until_ms=CASE WHEN blocked_until_ms>? THEN blocked_until_ms ELSE excluded.blocked_until_ms END RETURNING blocked_until_ms",
+  )
+    .bind(ownerId, deadline, now)
+    .first<{ blocked_until_ms: number }>();
+  if (!retained) throw new ApiError(503, "identity_unavailable");
+  return retained.blocked_until_ms;
+}
+
+/** Keep request-limit timing separate from the customer-facing message. */
+function requestLimited(retryAt: number, now: number) {
+  return new ApiError(
+    429,
+    "verification_request_limited",
+    undefined,
+    Math.max(1, Math.ceil((retryAt - now) / 1000)),
+  );
+}
+
 /** Issue a rate-limited email challenge after validating bot proof. */
 export async function requestIdentityChallenge(
   request: Request,
@@ -85,6 +146,32 @@ export async function requestIdentityChallenge(
   const access = await authenticate(request, env, clock());
   if (!delivery.source || delivery.source.length > 128 || !delivery.hostname)
     throw new ApiError(503, "identity_unavailable");
+  const emailHash = await keyedHash(delivery.pepper, [
+    "email",
+    input.data.email,
+  ]);
+  const sourceHash = await keyedHash(delivery.pepper, [
+    "source",
+    delivery.source,
+  ]);
+  const beforeProof = clock();
+  const retryAt = await identityRequestWindow(
+    env,
+    access.owner_id,
+    sourceHash,
+    beforeProof,
+  );
+  if (retryAt.resendAfter > beforeProof) {
+    const deadline = retryAt.requestLimited
+      ? await retainIdentityDenial(
+          env,
+          access.owner_id,
+          retryAt.resendAfter,
+          beforeProof,
+        )
+      : retryAt.resendAfter;
+    throw requestLimited(deadline, beforeProof);
+  }
   const proof = await bounded((signal) =>
     delivery.verifyBot(input.data.botToken, signal),
   );
@@ -102,10 +189,6 @@ export async function requestIdentityChallenge(
     code = randomCode();
   const expires = Math.min(now + 600000, access.expires_ms);
   if (expires <= now) throw denied();
-  const emailHash = await keyedHash(delivery.pepper, [
-    "email",
-    input.data.email,
-  ]);
   const codeHash = await keyedHash(delivery.pepper, [
     purpose,
     id,
@@ -113,19 +196,15 @@ export async function requestIdentityChallenge(
     input.data.email,
     code,
   ]);
-  const sourceHash = await keyedHash(delivery.pepper, [
-    "source",
-    delivery.source,
-  ]);
-  let inserted: D1Result[];
+  let inserted: D1Result<{ id: string }>[];
   try {
-    inserted = await env.STATE.batch([
+    inserted = await env.STATE.batch<{ id: string }>([
       env.STATE.prepare("INSERT INTO identity_bot_tokens VALUES(?,?)").bind(
         await digest(input.data.botToken),
         now,
       ),
       env.STATE.prepare(
-        "INSERT INTO identity_challenges(id,owner_id,access_hash,email,email_hash,source_hash,code_hash,created_ms,expires_ms,state) SELECT ?,?,?,?,?,?,?,?,?,'reserved' WHERE EXISTS(SELECT 1 FROM guest_access WHERE capability_hash=? AND owner_id=? AND revoked_ms IS NULL AND issued_ms<=? AND expires_ms>?)",
+        "INSERT INTO identity_challenges(id,owner_id,access_hash,email,email_hash,source_hash,code_hash,created_ms,expires_ms,state) SELECT ?,?,?,?,?,?,?,?,?,'reserved' WHERE EXISTS(SELECT 1 FROM guest_access WHERE capability_hash=? AND owner_id=? AND revoked_ms IS NULL AND issued_ms<=? AND expires_ms>?) RETURNING id",
       ).bind(
         id,
         access.owner_id,
@@ -150,14 +229,30 @@ export async function requestIdentityChallenge(
     ]);
   } catch (error) {
     const reason = error instanceof Error ? error.message : "";
-    if (
-      reason.includes("identity_request_limited") ||
-      reason.includes("identity_bot_tokens.token_hash")
-    )
-      throw new ApiError(429, "verification_request_limited");
+    if (reason.includes("identity_request_limited")) {
+      const checkedAt = clock();
+      const window = await identityRequestWindow(
+        env,
+        access.owner_id,
+        sourceHash,
+        checkedAt,
+      );
+      const deadline = window.requestLimited
+        ? await retainIdentityDenial(
+            env,
+            access.owner_id,
+            window.resendAfter,
+            checkedAt,
+          )
+        : window.resendAfter;
+      throw requestLimited(deadline, checkedAt);
+    }
+    if (reason.includes("identity_bot_tokens.token_hash"))
+      throw new ApiError(400, "verification_unavailable");
     throw new ApiError(503, "identity_unavailable");
   }
-  if (inserted[1].meta.changes !== 1) throw denied();
+  if (inserted[1].results.length !== 1 || inserted[1].results[0].id !== id)
+    throw denied();
   // Unknown mail delivery is retained under this challenge; no retry or replay.
   let accepted = false;
   try {
@@ -184,8 +279,30 @@ export async function requestIdentityChallenge(
   )
     .bind(accepted ? "sent" : "unknown", id)
     .run();
+  // A delayed send can observe a later request's shared-IP block. Persist that
+  // observed deadline before returning it, just as for a rejected request.
+  const observedAt = clock();
+  const window = await identityRequestWindow(
+    env,
+    access.owner_id,
+    sourceHash,
+    observedAt,
+  );
+  const resendAfter = window.requestLimited
+    ? await retainIdentityDenial(
+        env,
+        access.owner_id,
+        window.resendAfter,
+        observedAt,
+      )
+    : window.resendAfter;
   // Same envelope for unknown/existing/shared addresses and uncertain delivery.
-  return { challengeId: id, expiresAt: expires, resendAfter: now + 60000 };
+  return {
+    challengeId: id,
+    expiresAt: expires,
+    ...window,
+    resendAfter,
+  };
 }
 
 /** Verify the challenge and issue the permitted customer identity state. */

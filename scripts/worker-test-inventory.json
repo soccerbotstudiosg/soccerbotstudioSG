@@ -448,6 +448,14 @@
     "title": "provider RPC errors retain numeric diagnostics without treating uncertainty as no booking"
   },
   {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "checkout bot proof rejects missing expired wrong-purpose and foreign-host tokens before any reservation"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "checkout bot proof binds one intent and leaves existing checkout callbacks and recovery challenge-free"
+  },
+  {
     "file": "worker/tests/foundation.test.mjs",
     "title": "foundation valid bindings emit correlated storage evidence without secret markers"
   },
