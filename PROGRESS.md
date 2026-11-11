@@ -16,6 +16,6 @@ Resend soccerbotsg.com and all four issued DNS records verified. Existing mailbo
 
 Finish focused guards/source review and documentation, publish one email activation PR, verify exact-head CI/staging, and follow authorized release steps. Owner then performs Turnstile/email acceptance before notification finalization. Do not infer delivery from saved SMTP settings or secret presence.
 
-## Queued UI note — do not implement yet
+## Consolidated UI scope
 
-Desktop SELECT DATES AND TIMES must remain one line with Guest upper right. Mobile retains its two-line layout. This is excluded from the email activation change.
+Owner authorized including the desktop one-line heading fix in PR57, reducing Guest text/background25%, and adding the right-aligned pale-green Email verified/address badge. Mobile retains deliberate two-line headings. Shared status presentation now covers entry and later steps; Sign out remains entry-only. Account lifecycle13/13 passes; browser layout assertions cover Guest and a long verified address at375/430/700/1280/1440px, pending CI. The previous complete CI had only the corrected documentation-format failure; all Worker/browser gates and CodeQL passed. Local types, lint, formatting and40 design/source guard tests pass. One consolidated push is next; prior runs are superseded.

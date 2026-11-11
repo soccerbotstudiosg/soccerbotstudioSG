@@ -52,7 +52,7 @@ Popup follow-up (prepared locally, not deployed): clicking its heading, interior
 
 Guest entry follow-up (11 November 2026, local change): initial booking choices show no Guest badge or reserved status row. Continue as Guest shows the badge on subsequent booking steps; Back to booking choices hides it again despite retained guest access. Also open Continue with email before and after guest continuation/Back: email entry, code verification, invalid-code feedback and Change email must show no Guest badge. Verify on mobile and desktop. Verified email display and entry-only Sign out keep their existing behaviour.
 
-Mobile heading follow-up (local): at375px and430px phone widths, verify consistent two-line booking headings with unchanged32px type, Guest/email beside the heading without overlap, and no Guest on entry or after Back. At desktop widths, headings remain inline. Check email entry/verification, calendar, details and review as well as the initial/session steps.
+Mobile heading follow-up (local): at375px and430px phone widths, verify consistent two-line booking headings with unchanged32px type, Guest/email beside the heading without overlap, and no Guest on entry or after Back. At1280px and1440px desktop widths, the calendar heading remains one line beside either Guest or a long verified email. Verify Guest is25% smaller, and the pale-green Email verified/address badge uses14px text with right alignment and no overlap. Long addresses wrap inside the badge. Check email entry/verification, calendar, details and review as well as the initial/session steps.
 
 ### A — cart, navigation and stable background refresh
 
