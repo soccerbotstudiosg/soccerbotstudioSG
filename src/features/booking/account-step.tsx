@@ -376,6 +376,7 @@ export function AccountStep({
   return (
     <>
       <BookingHeading
+        status={false}
         lines={
           view === "email"
             ? ["Continue", "with email"]

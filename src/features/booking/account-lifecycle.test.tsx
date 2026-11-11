@@ -569,6 +569,7 @@ test("invalid code can change email or return to guest options without carrying 
   );
   await act(async () => {});
   fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
+  expect(screen.queryByLabelText("Booking identity")).toBeNull();
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "synthetic@example.invalid" },
   });
@@ -578,6 +579,7 @@ test("invalid code can change email or return to guest options without carrying 
       .closest("form")!,
   );
   await screen.findByLabelText("Verification code");
+  expect(screen.queryByLabelText("Booking identity")).toBeNull();
   fireEvent.change(screen.getByLabelText("Verification code"), {
     target: { value: "999999" },
   });
@@ -590,11 +592,13 @@ test("invalid code can change email or return to guest options without carrying 
     "Check your code or request a new one",
   );
   fireEvent.click(screen.getByRole("button", { name: "Change email" }));
+  expect(screen.queryByLabelText("Booking identity")).toBeNull();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.getByLabelText("Email address")).toHaveValue(
     "synthetic@example.invalid",
   );
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  expect(screen.queryByLabelText("Booking identity")).toBeNull();
   expect(
     screen.getByRole("button", { name: "Continue as Guest" }),
   ).toBeEnabled();
@@ -737,5 +741,8 @@ test("guest identity is shown only after choosing guest and stays hidden on retu
   expect(
     screen.getByRole("button", { name: "Continue as Guest" }),
   ).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
+  expect(screen.getByLabelText("Email address")).toBeVisible();
+  expect(screen.queryByLabelText("Booking identity")).toBeNull();
   expect(guest).toHaveBeenCalledTimes(1);
 });
