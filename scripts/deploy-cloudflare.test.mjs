@@ -307,7 +307,10 @@ test("sealed SaaS artifacts reject substituted zone routes and asset-origin bypa
       validateDeployment(f.root, revision, target).vars.CLIENT_SANDBOX_ACCESS,
       "enabled",
     );
-    assert.equal(active.vars.IDENTITY_DELIVERY, "disabled");
+    assert.equal(
+      active.vars.IDENTITY_DELIVERY,
+      target.identitySender ? "ongoing" : "disabled",
+    );
     for (const key of [
       "CLIENT_SANDBOX_ACCESS",
       "HITPAY_BUSINESS_ID",
@@ -467,6 +470,7 @@ test("deployment checks actual sandbox flags and secret presence without requiri
       "HITPAY_WEBHOOK_SALT",
       "TURNSTILE_SECRET",
       "IDENTITY_PEPPER",
+      "RESEND_API_KEY",
       ...[
         "COMPANY_LOGIN",
         "ADMIN_LOGIN",
@@ -497,6 +501,7 @@ test("deployment checks actual sandbox flags and secret presence without requiri
       "HITPAY_SANDBOX_API_KEY",
       "HITPAY_WEBHOOK_SALT",
       "IDENTITY_PEPPER",
+      "RESEND_API_KEY",
       runtimePolicy.turnstileSecretName({ ENVIRONMENT: "production" }),
       ...[
         "COMPANY_LOGIN",
@@ -511,7 +516,7 @@ test("deployment checks actual sandbox flags and secret presence without requiri
         ),
       ),
     ];
-    assert.equal(productionNames.length, 9);
+    assert.equal(productionNames.length, 10);
     assert.equal(
       runtimePolicy.turnstileSecretName({ ENVIRONMENT: "developer" }),
       "TURNSTILE_SECRET",

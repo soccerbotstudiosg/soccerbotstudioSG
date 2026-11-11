@@ -287,6 +287,8 @@ The server sets the protected access cookie; the browser does not read or manufa
 }
 ```
 
+For ongoing production delivery, the release supplies a validated server-owned IDENTITY_SENDER and the Worker requires its production Turnstile secret. The request cannot select the sender; missing configuration fails closed. Email verification authorizes saved contact access, not self-service reservation editing or cancellation.
+
 No email or provider-customer lookup result is returned by this wire response. The browser adapter attaches its already-normalized requested email to its local challenge object. A verification request binds that challenge, the same email, six-digit code and remember choice; code values are not included in documentation fixtures. Wrong/expired verification does not fall back to unverified profile lookup. See [identity owner](../worker/identity.ts).
 
 ### B. Prepare a reviewed booking intent

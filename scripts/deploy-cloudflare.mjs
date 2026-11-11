@@ -288,6 +288,7 @@ export function verifySandboxSettings(settings, config) {
       ? "TURNSTILE_SECRET_KEY"
       : "TURNSTILE_SECRET",
     "IDENTITY_PEPPER",
+    ...(config.vars.IDENTITY_DELIVERY === "ongoing" ? ["RESEND_API_KEY"] : []),
     ...[
       "COMPANY_LOGIN",
       "ADMIN_LOGIN",

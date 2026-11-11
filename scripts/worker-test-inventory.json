@@ -832,6 +832,14 @@
     "title": "ongoing delivery retains bot replay source limits and requires live developer authority"
   },
   {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "client email verification uses its configured sender and production bot secret without reservation-management links"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "client email delivery fails closed for missing sender or production bot secret despite developer credentials"
+  },
+  {
     "file": "worker/tests/identity.test.mjs",
     "title": "identity stores no plaintext code and consumes one concurrent redemption without renewing guest expiry"
   },

@@ -1,4 +1,4 @@
-import { turnstileSecretName } from "./policy";
+import { identitySenderSchema, turnstileSecretName } from "./policy";
 import { z } from "zod";
 import { authenticate } from "./access";
 import { verifyBindings } from "./bindings";
@@ -36,12 +36,18 @@ function secret(env: Env, name: string) {
 async function windowFor(env: Env, now: number, reserve = false) {
   const mode: unknown = Reflect.get(env, "IDENTITY_DELIVERY");
   if (mode === "ongoing") {
-    if (env.ENVIRONMENT !== "developer" || !liveCustomerAccess(env))
+    if (!liveCustomerAccess(env)) throw unavailable();
+    const configuredSender = identitySenderSchema.safeParse(
+      Reflect.get(env, "IDENTITY_SENDER"),
+    );
+    if (String(env.ENVIRONMENT) === "production" && !configuredSender.success)
       throw unavailable();
     return {
       singleton: 0,
       origin: env.APP_ORIGIN,
-      sender: "SoccerBotStudioSG Dev <noreply@auth.app404.ai>",
+      sender: configuredSender.success
+        ? configuredSender.data
+        : "SoccerBotStudioSG Dev <noreply@auth.app404.ai>",
       recipient: null,
     };
   }

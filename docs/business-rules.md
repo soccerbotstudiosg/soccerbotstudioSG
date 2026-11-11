@@ -62,7 +62,7 @@ Owner-confirmed client prices are S$108 on weekdays and S$128 on weekends and ga
 
 <a id="br-003"></a>
 
-**BR-003** — Email proof precedes protected existing-customer lookup/prefill. Missing, duplicate or shared-email identities must not leak another customer's details. Guests use server-issued protected capabilities; browser storage/URLs are not credentials or ownership evidence. Turnstile, email challenge limits, expiry, signed/session authority and revocation remain enforced. Resend delivers verification codes; SimplyBook handles booking notifications on final payment in the accepted account configuration. These are separate email flows.
+**BR-003** — Email proof precedes protected existing-customer lookup/prefill. Missing, duplicate or shared-email identities must not leak another customer's details. Guests use server-issued protected capabilities; browser storage/URLs are not credentials or ownership evidence. Turnstile, email challenge limits, expiry, signed/session authority and revocation remain enforced. Resend delivers verification codes; SimplyBook handles booking notifications on final payment in the accepted account configuration. These are separate email flows. Email verification permits saved-contact identity; it does not create a customer reservation-management account. Customer notifications must not offer self-service editing, cancellation or rescheduling.
 
 Access lifetime: explicit access entry and checkout POST may renew an authenticated unexpired guest capability for the configured duration, preserving its owner. Expired/revoked capabilities never regain their grants. Checkout, hold, checking and verified-email lifetimes remain separately bounded. A browser return marked completed suppresses payment links but is never payment evidence.
 
@@ -72,7 +72,7 @@ Access lifetime: explicit access entry and checkout POST may renew an authentica
 
 <a id="br-005"></a>
 
-**BR-005** — Developer and client accounts, merchants, origins, mappings, secrets and data must stay isolated. Portable target validation and account/resource preflight exist, but developer-specific identity delivery, sandbox HitPay hosts and provider safety scopes still require deliberate client configuration work. Moving repositories alone does not establish production portability. Client portability must replace those pins with validated configuration, not remove account/host guards.
+**BR-005** — Developer and client accounts, merchants, origins, mappings, secrets and data must stay isolated. Portable target validation and account/resource preflight exist, but client identity sender/production Turnstile credentials, sandbox HitPay hosts and provider safety scopes require deliberate client configuration. Moving repositories alone does not establish production portability. Client portability must replace those pins with validated configuration, not remove account/host guards.
 
 ### Availability and selection
 

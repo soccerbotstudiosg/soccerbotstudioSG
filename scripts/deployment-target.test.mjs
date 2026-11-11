@@ -45,6 +45,12 @@ test("deployment targets reject incomplete identities, secret fields and unsuppo
     { origin: "https://booking.example.com/path" },
     { origin: "http://example.com" },
     { turnstileSitekey: "" },
+    { identitySender: "" },
+    { identitySender: "Sender <invalid>" },
+    {
+      identitySender:
+        "Sender\r\nBcc: other@example.invalid <mail@example.invalid>",
+    },
     { access: "developer-sandbox" },
     { environment: "developer" },
     { pagesProject: "" },
@@ -613,7 +619,11 @@ test("client sandbox keeps its base closed and seals the approved release indepe
     "HITPAY_WEBHOOK",
   ])
     assert.equal(active.vars[key], "enabled");
-  assert.equal(active.vars.IDENTITY_DELIVERY, "disabled");
+  assert.equal(active.vars.IDENTITY_DELIVERY, "ongoing");
+  assert.equal(
+    active.vars.IDENTITY_SENDER,
+    "SoccerBotStudio Singapore <contact@soccerbotsg.com>",
+  );
   assert.equal(active.vars.PROVIDER_ACCESS, "trusted-reads");
   assert.equal(active.vars.CHECKOUT_PAYMENT_ROUTE, "hitpay");
   assert.equal(active.vars.HITPAY_MERCHANT, "app404");

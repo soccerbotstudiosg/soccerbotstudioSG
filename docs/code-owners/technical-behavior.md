@@ -162,6 +162,8 @@ Evidence: [foundation fixture and checks](../../worker/tests/foundation-fixture.
 
 ## 4. Email identity, Remember me and saved contact
 
+Ongoing delivery reads the server-owned IDENTITY_SENDER. Production rejects a missing/malformed sender and requires TURNSTILE_SECRET_KEY; it cannot fall back to developer sender or bot credentials. The validated sender reaches the fixed Resend endpoint. Historical finite developer proof windows retain their exact sender/recipient restrictions. Existing code expiry, single use, replay protection, rate limits and Remember me consent are unchanged.
+
 Owners: [identity](../../worker/identity.ts), [delivery](../../worker/identity-delivery.ts), [remembered identity](../../worker/remembered-identity.ts), [contact profile](../../worker/contact-profile.ts). Rules: BR-003–005.
 
 ```mermaid
