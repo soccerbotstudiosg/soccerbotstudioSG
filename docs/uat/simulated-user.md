@@ -37,7 +37,9 @@ Run A's independent checks, then B and C with A's recovery-navigation checks, D,
 
 Popup follow-up (prepared locally, not deployed): clicking its heading, interior or any app-store link keeps the popup open; app-store links retain their new-tab destination. Outside click and X dismiss it.
 
-Guest badge visual follow-up (prepared locally, not deployed): verify the larger bold Guest label uses a pale yellow rounded background beside booking headings, with no clipping on mobile. Verified email display and entry-only Sign out keep their existing behaviour.
+Guest entry follow-up (11 November 2026, local change): initial booking choices show no Guest badge or reserved status row. Continue as Guest shows the badge on subsequent booking steps; Back to booking choices hides it again despite retained guest access. Verify on mobile and desktop. Verified email display and entry-only Sign out keep their existing behaviour.
+
+Mobile heading follow-up (local): at375px and430px phone widths, verify consistent two-line booking headings with unchanged32px type, Guest/email beside the heading without overlap, and no Guest on entry or after Back. At desktop widths, headings remain inline. Check email entry/verification, calendar, details and review as well as the initial/session steps.
 
 ### A — cart, navigation and stable background refresh
 

@@ -262,9 +262,9 @@ export function DetailsStep({
   return (
     <>
       {profileOnly ? (
-        <BookingHeading>Saved contact details</BookingHeading>
+        <BookingHeading lines={["Saved contact", "details"]} />
       ) : (
-        <BookingHeading>Your details</BookingHeading>
+        <BookingHeading lines={["Your", "details"]} />
       )}
       <form
         id="details-form"

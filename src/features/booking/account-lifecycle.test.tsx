@@ -644,7 +644,7 @@ test("booking-options signout retries failure and leaves only after acknowledgem
     ),
   );
   expect(navigation.push).not.toHaveBeenCalled();
-  expect(screen.getByLabelText("Booking identity")).toHaveTextContent("Guest");
+  expect(screen.queryByLabelText("Booking identity")).toBeNull();
   fireEvent.click(
     screen.getByRole("button", { name: "Try signing out again" }),
   );
@@ -698,4 +698,44 @@ test("later booking headings inspect identity without refreshing or recreating g
   expect(refresh).not.toHaveBeenCalled();
   expect(guest).not.toHaveBeenCalled();
   expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+});
+
+test("guest identity is shown only after choosing guest and stays hidden on return to booking choices", async () => {
+  const guest = vi.fn(async () => {});
+  const identityService = {
+    ...demoCustomerIdentity,
+    current: () => null,
+    refresh: async () => null,
+    readCurrent: async () => null,
+    guest,
+  };
+  const view = (step: "account" | "session") => (
+    <BookingProvider identityService={identityService}>
+      <BookingPage step={step} />
+    </BookingProvider>
+  );
+  navigation.push.mockClear();
+  const { rerender } = render(view("account"));
+  await act(async () => {});
+  expect(screen.queryByLabelText("Booking identity")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Continue as Guest" }));
+  await waitFor(() =>
+    expect(navigation.push).toHaveBeenCalledWith("/book/session/"),
+  );
+  rerender(view("session"));
+  expect(screen.getByLabelText("Booking identity")).toHaveTextContent("Guest");
+  expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute(
+    "href",
+    "/book/account",
+  );
+  rerender(view("account"));
+  await act(async () => {});
+  expect(
+    screen.getByRole("heading", { name: "Start your booking" }),
+  ).toBeVisible();
+  expect(screen.queryByLabelText("Booking identity")).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "Continue as Guest" }),
+  ).toBeEnabled();
+  expect(guest).toHaveBeenCalledTimes(1);
 });

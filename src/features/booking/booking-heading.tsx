@@ -3,18 +3,24 @@ import { createContext, useContext, type ReactNode } from "react";
 export const BookingHeadingStatus = createContext<ReactNode>(null);
 /** Keep the current identity beside each booking step's title. */
 export function BookingHeading({
-  children,
+  lines,
   status: suppliedStatus,
 }: {
-  children: ReactNode;
+  lines: readonly [string, string];
   status?: ReactNode;
 }) {
   const inheritedStatus = useContext(BookingHeadingStatus);
   const status = suppliedStatus ?? inheritedStatus;
-  if (!status) return <h1 className="page-title">{children}</h1>;
+  const title = (
+    <h1 className="page-title booking-title">
+      <span className="booking-title-line">{lines[0]}</span>{" "}
+      <span className="booking-title-line">{lines[1]}</span>
+    </h1>
+  );
+  if (!status) return title;
   return (
     <div className="booking-heading-row">
-      <h1 className="page-title">{children}</h1>
+      {title}
       {status}
     </div>
   );

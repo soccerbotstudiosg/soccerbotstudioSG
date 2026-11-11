@@ -2496,3 +2496,65 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     }
   }
 });
+
+test("booking titles keep deliberate phone line breaks and desktop inline layout", async ({
+  page,
+}) => {
+  await openSite(page, "/book/account/");
+  const title = page.getByRole("heading", {
+    name: "Start your booking",
+    exact: true,
+  });
+  for (const width of [375, 430, 700, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(title).toBeVisible();
+    await expect(page.getByLabel("Booking identity")).toHaveCount(0);
+    const geometry = await title.evaluate((node) => {
+      const lines = [...node.querySelectorAll(".booking-title-line")].map(
+        (line) => line.getBoundingClientRect(),
+      );
+      return {
+        top: lines[0].top,
+        secondTop: lines[1].top,
+        height: node.getBoundingClientRect().height,
+        lineHeight: parseFloat(getComputedStyle(node).lineHeight),
+        fontSize: getComputedStyle(node).fontSize,
+      };
+    });
+    expect(geometry.secondTop - geometry.top).toBeCloseTo(
+      width <= 700 ? geometry.lineHeight : 0,
+      0,
+    );
+    expect(geometry.height).toBeCloseTo(
+      geometry.lineHeight * (width <= 700 ? 2 : 1),
+      0,
+    );
+    if (width <= 700) expect(geometry.fontSize).toBe("32px");
+  }
+  await page
+    .getByRole("button", { name: "Continue as Guest", exact: true })
+    .click();
+  const sessionTitle = page.getByRole("heading", {
+    name: "Your session",
+    exact: true,
+  });
+  await expect(sessionTitle).toBeVisible();
+  const badge = page
+    .getByLabel("Booking identity")
+    .getByText("Guest", { exact: true });
+  await expect(badge).toHaveCSS("background-color", "rgb(255, 245, 219)");
+  await expect(badge).toHaveCSS("font-size", "18px");
+  await expect(badge).toHaveCSS("font-weight", "700");
+  for (const width of [375, 430, 700]) {
+    await page.setViewportSize({ width, height: 900 });
+    const headingBox = await sessionTitle.boundingBox();
+    const badgeBox = await badge.boundingBox();
+    expect(badgeBox!.x).toBeGreaterThanOrEqual(
+      headingBox!.x + headingBox!.width,
+    );
+    expect(badgeBox!.x + badgeBox!.width).toBeLessThanOrEqual(width);
+  }
+  await page.getByRole("link", { name: "Back", exact: true }).click();
+  await expect(title).toBeVisible();
+  await expect(page.getByLabel("Booking identity")).toHaveCount(0);
+});

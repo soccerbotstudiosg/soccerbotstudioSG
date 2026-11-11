@@ -3660,9 +3660,9 @@ it("completed conflict allows immediate calendar Back and Continue with retained
       await act(async () => {});
       expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
       expect(
-        screen.getByText(
-          destination === "details" ? "Your details" : "Your session",
-        ),
+        screen.getByRole("heading", {
+          name: destination === "details" ? "Your details" : "Your session",
+        }),
       ).toBeVisible();
       expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
       expect(
@@ -3792,7 +3792,7 @@ async function expectRecoveryReleaseNavigation(
     view.rerender(tree("session"));
     await act(async () => {});
     expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
-    expect(screen.getByText("Your session")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Your session" })).toBeVisible();
     expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
     await act(async () => {
       fireEvent.click(screen.getByText("Edit replacement players"));
@@ -3821,7 +3821,7 @@ async function expectRecoveryReleaseNavigation(
   if (destination === "session") {
     // A background release after departure must not revive the calendar notice.
     expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
-    expect(screen.getByText("Your session")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Your session" })).toBeVisible();
     expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
   }
   expect(screen.getByTestId("handoff-attempt"), resolution).toHaveTextContent(
@@ -3836,15 +3836,15 @@ async function expectRecoveryReleaseNavigation(
   await act(async () => {});
   expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
   expect(
-    screen.getByText(
-      destination === "details" ? "Your details" : "Your session",
-    ),
+    screen.getByRole("heading", {
+      name: destination === "details" ? "Your details" : "Your session",
+    }),
   ).toBeVisible();
   if (destination === "session") {
     navigation.path = "/book/details/";
     view.rerender(tree("details"));
     await act(async () => {});
-    expect(screen.getByText("Your details")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Your details" })).toBeVisible();
     expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
   }
   expect(checkout).not.toHaveBeenCalled();

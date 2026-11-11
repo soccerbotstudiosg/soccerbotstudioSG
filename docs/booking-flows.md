@@ -9,7 +9,11 @@ Source reconciled 8 November 2026 against the current local `fix/consistent-conf
 
 The calendar displays the selected outlet and catalogue session name in a bold18px row above the16px duration note, below its main heading and above the duration note. The home hero address uses smaller white text with a subtle shadow on mobile; desktop styling is unchanged.
 
+Booking headings use shared deliberate two-line text at widths up to700px, with the existing32px mobile type size. Desktop keeps the same wording inline. Mobile title and identity occupy separate grid columns; initial guest choices have no status column. Examples: “Start your / booking”, “Your / session”, “Select dates / and times”, “Your / details”, and “Review / Booking”.
+
 ## 1. Guest entry
+
+The initial booking-choice page shows no Guest badge, including after Continue as Guest → Back or a return with retained guest access. Guest appears only on subsequent booking steps. A verified email and its entry-only Sign out remain visible on the choice page.
 
 Continue as Guest, then select sessions without creating an account.
 

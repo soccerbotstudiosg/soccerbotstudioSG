@@ -43,7 +43,7 @@ export function SessionStep() {
   };
   return (
     <>
-      <BookingHeading>Your session</BookingHeading>
+      <BookingHeading lines={["Your", "session"]} />
       <h2 className="section-title">Choose your outlet</h2>
       <div className="outlet-options">
         <button

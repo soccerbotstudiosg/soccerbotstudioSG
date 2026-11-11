@@ -209,20 +209,15 @@ export function AccountStep({
     return (
       <>
         <BookingHeading
+          lines={["Start your", "booking"]}
           status={
-            <div
-              className="booking-identity-status booking-entry-status"
-              aria-label="Booking identity"
-            >
-              <span
-                className={
-                  verifiedIdentity ? undefined : "pill booking-guest-status"
-                }
+            verifiedIdentity ? (
+              <div
+                className="booking-identity-status booking-entry-status"
+                aria-label="Booking identity"
               >
-                {verifiedIdentity?.email ?? "Guest"}
-              </span>
-              <div className="booking-identity-action">
-                {verifiedIdentity && (
+                <span>{verifiedIdentity.email}</span>
+                <div className="booking-identity-action">
                   <button
                     type="button"
                     className="text-link"
@@ -231,13 +226,13 @@ export function AccountStep({
                   >
                     Sign out
                   </button>
-                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              false
+            )
           }
-        >
-          Start your booking
-        </BookingHeading>
+        />
         {rebookingError && (
           <div className="alert" role="alert">
             <p>{rebookingError}</p>
@@ -380,9 +375,13 @@ export function AccountStep({
     );
   return (
     <>
-      <BookingHeading>
-        {view === "email" ? "Continue with email" : "Verify your email"}
-      </BookingHeading>
+      <BookingHeading
+        lines={
+          view === "email"
+            ? ["Continue", "with email"]
+            : ["Verify your", "email"]
+        }
+      />
       <p className="lead">
         {view === "email" ? (
           "Verify your email to continue with your saved booking contact details."

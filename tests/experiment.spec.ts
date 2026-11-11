@@ -54,7 +54,7 @@ async function restoreContext(
   expect(context.attemptId).toBe(attemptId);
   expect(context.mode).toBe("synthetic");
 }
-async function outcome(page: Page, label: string) {
+async function outcome(page: Page, label: string, evidenceSaved?: () => void) {
   const popupPromise = page.waitForEvent("popup");
   await page.getByRole("link", { name: /Open checkout/ }).click();
   const popup = await popupPromise;
@@ -68,15 +68,18 @@ async function outcome(page: Page, label: string) {
       if (!response.url().endsWith("/confirmation")) return false;
       if (label === "Expire synthetic access") return response.status() === 401;
       if (response.status() !== 200) return false;
-      const expected =
-        label === "Simulate successful payment" ? "confirmed" : "unresolved";
-      return (await response.json()).status === expected;
+      const decision = await response.json();
+      return label === "Simulate successful payment"
+        ? decision.status === "confirmed"
+        : decision.status === "unresolved" &&
+            decision.reason === "paid_booking_invalid";
     }),
     (async () => {
       await popup.getByRole("button", { name: label, exact: true }).click();
       await expect(
         popup.getByRole("heading", { name: "Synthetic evidence saved" }),
       ).toBeVisible();
+      evidenceSaved?.();
       await page.bringToFront();
     })(),
   ]);
@@ -139,8 +142,25 @@ test("synthetic checkout opens separately and only canonical evidence confirms t
 test("synthetic paid but invalid booking needs recovery instead of claiming success", async ({
   page,
 }, info) => {
-  await start(page);
-  await outcome(page, "Simulate payment needing review");
+  // This case tests paid-but-invalid evidence, not pending-poll cadence. Hold
+  // the first read until the synthetic provider has saved that exact outcome,
+  // so runner scheduling cannot age a one-shot fixture behind earlier polls.
+  let release!: () => void;
+  const saved = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const confirmationRoute = "**/api/attempts/*/confirmation";
+  await page.route(confirmationRoute, async (route) => {
+    await saved;
+    await route.continue();
+  });
+  try {
+    await start(page);
+    await outcome(page, "Simulate payment needing review", release);
+  } finally {
+    release();
+    await page.unroute(confirmationRoute);
+  }
   await expect(
     page.getByRole("heading", {
       name: "Payment received; booking confirmation pending",
