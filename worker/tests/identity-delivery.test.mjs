@@ -6,7 +6,7 @@ import path from "node:path";
 import { build } from "esbuild";
 import ts from "typescript";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
-import { seedFoundation } from "./foundation-fixture.mjs";
+import { seedFoundation, initializeFixture } from "./foundation-fixture.mjs";
 
 const config = ts.parseConfigFileTextToJson(
   "wrangler.jsonc",
@@ -29,6 +29,7 @@ before(async () => {
   ).outputFiles[0].text;
 });
 async function start() {
+  const persistence = path.join(root, bindings.ENVIRONMENT);
   mf = new Miniflare({
     ...convertV4MiniflareOptions({
       name: "identity-delivery-test",
@@ -39,7 +40,10 @@ async function start() {
       compatibilityFlags: config.compatibility_flags,
       bindings,
       d1Databases: { STATE: "synthetic-delivery" },
-      d1Persist: path.join(root, "d1"),
+      d1Persist: path.join(
+        root,
+        bindings.ENVIRONMENT === "production" ? "client-d1" : "d1",
+      ),
       durableObjects: {
         COORDINATOR: {
           className: "SoccerBotAccountCoordinator",
@@ -69,8 +73,8 @@ async function start() {
           : Response.json({ id: crypto.randomUUID() });
       },
     }),
-    resourcePersistencePath: root,
-    isolatedResourcePersistencePath: root,
+    resourcePersistencePath: persistence,
+    isolatedResourcePersistencePath: persistence,
   });
   await mf.ready;
   db = await mf.getD1Database("STATE");
@@ -1106,4 +1110,89 @@ test("ongoing delivery retains bot replay source limits and requires live develo
   await start();
   assert.equal((await challenge(await guest())).status, 503);
   assert.equal(calls.length, 3);
+});
+
+/** Configure the isolated customer deployment without reusing developer bot credentials. */
+async function clientDelivery(overrides = {}) {
+  Object.assign(bindings, {
+    ENVIRONMENT: "production",
+    IDENTITY_DELIVERY: "ongoing",
+    LIVE_CUSTOMER_ACCESS: "enabled",
+    PROVIDER_ACCESS: "trusted-reads",
+    CLIENT_SANDBOX_ACCESS: "enabled",
+    COORDINATOR_LOCATION_HINT: "apac-ne",
+    PRIMARY_SERVICE_ID: "3",
+    PREMIUM_SERVICE_ID: "4",
+    SIMPLYBOOK_EXPECTED_COMPANY_LOGIN: "synthetic-client",
+    SIMPLYBOOK_PROD_COMPANY_LOGIN: "synthetic-client",
+    HITPAY_EXPECTED_BUSINESS_ID: "22222222-2222-4222-8222-222222222222",
+    HITPAY_BUSINESS_ID: "22222222-2222-4222-8222-222222222222",
+    HITPAY_EXPECTED_MERCHANT: "synthetic-client",
+    HITPAY_MERCHANT: "synthetic-client",
+    HITPAY_CONTRACT_ACCEPTED: "sandbox-reviewed",
+    SIMPLYBOOK_EXTERNAL_PAYMENT: "sandbox-reviewed",
+    SIMPLYBOOK_EXTERNAL_PROCESSOR: "manual",
+    TURNSTILE_SECRET_KEY: "SYNTHETIC_CLIENT_BOT_".repeat(3),
+    IDENTITY_SENDER: "SoccerBotStudio Singapore <contact@soccerbotsg.com>",
+    ...overrides,
+  });
+  await mf.dispose();
+  await start();
+  await initializeFixture(mf, db, undefined, {
+    accountId: bindings.DEPLOYMENT_ACCOUNT_ID,
+    environment: bindings.ENVIRONMENT,
+    databaseId: bindings.STATE_DATABASE_ID,
+    coordinatorName: bindings.COORDINATOR_NAME,
+  });
+}
+test("client email verification uses its configured sender and production bot secret without reservation-management links", async () => {
+  await clientDelivery();
+  const cookie = await guest();
+  const recipient = "client@example.invalid";
+  const response = await challenge(cookie, { email: recipient });
+  assert.equal(response.status, 200);
+  const proof = await response.json();
+  const bot = calls.find((c) => c.url.includes("siteverify"));
+  assert.equal(bot.body.secret, bindings.TURNSTILE_SECRET_KEY);
+  assert.notEqual(bot.body.secret, bindings.TURNSTILE_SECRET);
+  const sent = calls.find((c) => c.url === "https://api.resend.com/emails");
+  assert.equal(
+    sent.body.from,
+    "SoccerBotStudio Singapore <contact@soccerbotsg.com>",
+  );
+  assert.equal(
+    sent.body.subject,
+    "Your SoccerBotStudio Singapore verification code",
+  );
+  assert.deepEqual(sent.body.to, [recipient]);
+  assert.doesNotMatch(sent.body.text, /cancel|reschedule|manage booking/i);
+  const code = sent.body.text.match(/code is (\d{6})/)[1];
+  const verified = await request(
+    cookie,
+    { email: recipient, challengeId: proof.challengeId, code, remember: false },
+    "verify",
+  );
+  assert.equal(verified.status, 200);
+  assert.equal((await verified.json()).email, recipient);
+  assert.equal(calls.length, 2);
+});
+test("client email delivery fails closed for missing sender or production bot secret despite developer credentials", async () => {
+  await clientDelivery({ IDENTITY_SENDER: "" });
+  const cookie = await guest();
+  assert.equal((await challenge(cookie)).status, 503);
+  assert.equal(calls.length, 0);
+  bindings.IDENTITY_SENDER =
+    "SoccerBotStudio Singapore <contact@soccerbotsg.com>";
+  delete bindings.TURNSTILE_SECRET_KEY;
+  await mf.dispose();
+  await start();
+  assert.equal((await challenge(cookie)).status, 503);
+  assert.equal(calls.length, 0);
+  bindings.TURNSTILE_SECRET_KEY = "SYNTHETIC_CLIENT_BOT_".repeat(3);
+  bindings.IDENTITY_SENDER =
+    "Injected\r\nBcc: other@example.invalid <contact@soccerbotsg.com>";
+  await mf.dispose();
+  await start();
+  assert.equal((await challenge(cookie)).status, 503);
+  assert.equal(calls.length, 0);
 });

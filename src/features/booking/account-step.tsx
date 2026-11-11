@@ -1,5 +1,5 @@
 "use client";
-import { BookingHeading } from "./booking-heading";
+import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import {
   useCallback,
@@ -216,7 +216,7 @@ export function AccountStep({
                 className="booking-identity-status booking-entry-status"
                 aria-label="Booking identity"
               >
-                <span>{verifiedIdentity.email}</span>
+                <VerifiedEmailStatus email={verifiedIdentity.email} />
                 <div className="booking-identity-action">
                   <button
                     type="button"

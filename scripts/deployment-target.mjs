@@ -12,6 +12,15 @@ const origin = z
   );
 const schema = z.strictObject({
   target: z.enum(["staging", "production"]),
+  identitySender: z
+    .string()
+    .max(254)
+    .regex(/^[^<>\r\n]+ <[^<>\r\n]+>$/)
+    .refine(
+      (value) =>
+        z.email().safeParse(value.slice(value.indexOf("<") + 1, -1)).success,
+    )
+    .optional(),
   hitpaySandbox: z
     .strictObject({ merchant: name, businessId: z.string().uuid() })
     .optional(),
@@ -242,7 +251,11 @@ export function releaseConfig(config, target = loadTarget("staging")) {
       ...(client
         ? { CLIENT_SANDBOX_ACCESS: "enabled" }
         : { PREMIUM_SERVICE_ID: target.sandbox.premiumServiceId }),
-      IDENTITY_DELIVERY: client ? "disabled" : "ongoing",
+      IDENTITY_DELIVERY:
+        client && !target.identitySender ? "disabled" : "ongoing",
+      ...(target.identitySender
+        ? { IDENTITY_SENDER: target.identitySender }
+        : {}),
       LIVE_READBACK: "enabled",
       CHECKOUT_PAYMENT_ROUTE: "hitpay",
       HITPAY_CHECKOUT: "enabled",

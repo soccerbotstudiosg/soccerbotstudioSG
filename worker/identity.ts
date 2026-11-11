@@ -22,7 +22,7 @@ const verifyInput = z.strictObject({
 });
 const purpose = "verify-email";
 // Server-owned dependencies, never derived from a request's mode/URL/flags.
-// Production composition remains unavailable until sender/bot scope is approved.
+// Delivery composition requires explicit environment-owned sender and bot scope.
 export type IdentityDelivery = {
   pepper: string;
   source: string;

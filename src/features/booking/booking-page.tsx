@@ -3,7 +3,7 @@ import Link from "next/link";
 import { sitePath } from "@/content/site-path";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { BookingHeadingStatus } from "./booking-heading";
+import { BookingHeadingStatus, VerifiedEmailStatus } from "./booking-heading";
 import { guardedStep, type BookingStep } from "@/domain/booking";
 import { Icon } from "@/components/icon";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -86,11 +86,11 @@ export function BookingPage({ step }: { step: BookingStep }) {
       : null;
   const headingStatus = (
     <div className="booking-identity-status" aria-label="Booking identity">
-      <span
-        className={verifiedIdentity ? undefined : "pill booking-guest-status"}
-      >
-        {verifiedIdentity?.email ?? "Guest"}
-      </span>
+      {verifiedIdentity ? (
+        <VerifiedEmailStatus email={verifiedIdentity.email} />
+      ) : (
+        <span className="pill booking-guest-status">Guest</span>
+      )}
     </div>
   );
   const handingOff =

@@ -72,6 +72,7 @@
   --text-amount: 1.5rem;
   --text-payment-amount: 2rem;
   --text-payment-status: 1.4875rem;
+  --text-guest-status: 0.84375rem;
   --leading-heading: 1.25;
   --leading-body: 1.6;
   --leading-control: 1.4;
@@ -531,7 +532,8 @@
   .booking-identity-status {
     display: flex;
     min-width: 0;
-    flex: 0 1 40%;
+    flex: 1 1 0;
+    max-width: 40%;
     flex-direction: column;
     align-items: flex-end;
     gap: 0.25rem;
@@ -543,14 +545,29 @@
   .booking-identity-status > span {
     display: inline-flex;
     align-items: center;
-    min-height: calc(var(--text-card) * var(--leading-body) + 17px);
   }
-  .booking-guest-status {
-    padding: 8.5px 15.3px;
+  .booking-identity-status > .booking-guest-status {
+    min-height: calc(var(--text-guest-status) * var(--leading-body) + 12.75px);
+    padding: 6.375px 11.475px;
+    border-radius: 3.75px;
     background: var(--color-warning-soft);
     color: var(--color-warning);
-    font-size: var(--text-card);
+    font-size: var(--text-guest-status);
     font-weight: 700;
+  }
+  .booking-identity-status > .booking-verified-status {
+    flex-direction: column;
+    align-items: flex-end;
+    max-width: 100%;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: var(--color-success-soft);
+    color: var(--color-success);
+    font-size: var(--text-meta);
+  }
+  .booking-verified-status > span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
   .booking-identity-action {
     display: flex;
@@ -567,6 +584,9 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) fit-content(28%);
       gap: 0.5rem;
+    }
+    .booking-heading-row:has(.booking-verified-status) {
+      grid-template-columns: minmax(0, 1fr) fit-content(32%);
     }
     .booking-identity-status {
       max-width: 100%;

@@ -24,5 +24,6 @@
   "hitpaySandbox": {
     "merchant": "app404",
     "businessId": "a2d2119d-79f1-41fa-9d65-6e311d06da35"
-  }
+  },
+  "identitySender": "SoccerBotStudio Singapore <contact@soccerbotsg.com>"
 }

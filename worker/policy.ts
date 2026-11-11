@@ -1,5 +1,14 @@
 import { z } from "zod";
 import type { CheckoutSelectionRejection } from "../src/domain/native-checkout";
+/** Validate a server-configured display name and mailbox without header injection. */
+export const identitySenderSchema = z
+  .string()
+  .max(254)
+  .regex(/^[^<>\r\n]+ <[^<>\r\n]+>$/)
+  .refine(
+    (value) =>
+      z.email().safeParse(value.slice(value.indexOf("<") + 1, -1)).success,
+  );
 const duration = (minimum: number, maximum: number) =>
   z.coerce.number().int().min(minimum).max(maximum);
 const schema = z.object({

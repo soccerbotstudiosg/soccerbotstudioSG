@@ -756,7 +756,7 @@ test("email verification rejects an incorrect code and continues after correctio
   await expect(page.getByLabel("Verification code")).toHaveCount(0);
   await page
     .getByRole("textbox", { name: /^Email address/ })
-    .fill("customer@example.com");
+    .fill("long.customer.address@example.com");
   await page.getByRole("button", { name: "Continue with email" }).click();
   await expect(
     page.getByRole("heading", { name: "Verify your email", exact: true }),
@@ -775,6 +775,35 @@ test("email verification rejects an incorrect code and continues after correctio
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
+  const verified = page.locator(".booking-verified-status");
+  await expect(
+    verified.getByText("Email verified", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    verified.getByText("long.customer.address@example.com", { exact: true }),
+  ).toBeVisible();
+  await expect(verified).toHaveCSS("font-size", "14px");
+  await expect(verified).toHaveCSS("text-align", "right");
+  await expect(
+    page.getByRole("button", { name: "Sign out", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+      exact: true,
+    })
+    .click();
+  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Select dates and times", exact: true }),
+  ).toBeVisible();
+  await expectCalendarHeadingLayout(page);
 });
 test("enquiry remains available without external submission or a mock assistant", async ({
   page,
@@ -2497,6 +2526,44 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   }
 });
 
+/** Check that identity badges preserve desktop and phone title geometry. */
+async function expectCalendarHeadingLayout(page: Page) {
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  const calendarTitle = page.getByRole("heading", {
+    name: "Select dates and times",
+    exact: true,
+  });
+  for (const width of [1280, 1440, 375, 430, 700]) {
+    await page.setViewportSize({ width, height: 900 });
+    const geometry = await calendarTitle.evaluate((node) => {
+      const title = node.getBoundingClientRect();
+      const badge = document
+        .querySelector(".booking-identity-status > span")!
+        .getBoundingClientRect();
+      const row = node.parentElement!.getBoundingClientRect();
+      return {
+        height: title.height,
+        lineHeight: parseFloat(getComputedStyle(node).lineHeight),
+        titleRight: title.right,
+        badgeLeft: badge.left,
+        badgeRight: badge.right,
+        rowRight: row.right,
+        badgeTop: badge.top,
+        titleTop: title.top,
+      };
+    });
+    expect(geometry.height).toBeCloseTo(
+      geometry.lineHeight * (width <= 700 ? 2 : 1),
+      0,
+    );
+    expect(geometry.badgeLeft).toBeGreaterThanOrEqual(geometry.titleRight);
+    expect(geometry.badgeRight).toBeCloseTo(geometry.rowRight, 0);
+    expect(geometry.badgeTop - geometry.titleTop).toBeLessThan(
+      geometry.lineHeight,
+    );
+  }
+}
+
 test("booking titles keep deliberate phone line breaks and desktop inline layout", async ({
   page,
 }) => {
@@ -2543,7 +2610,8 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     .getByLabel("Booking identity")
     .getByText("Guest", { exact: true });
   await expect(badge).toHaveCSS("background-color", "rgb(255, 245, 219)");
-  await expect(badge).toHaveCSS("font-size", "18px");
+  await expect(badge).toHaveCSS("font-size", "13.5px");
+  await expect(badge).toHaveCSS("padding", "6.375px 11.475px");
   await expect(badge).toHaveCSS("font-weight", "700");
   for (const width of [375, 430, 700]) {
     await page.setViewportSize({ width, height: 900 });
@@ -2554,6 +2622,28 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     );
     expect(badgeBox!.x + badgeBox!.width).toBeLessThanOrEqual(width);
   }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page
+    .getByRole("button", {
+      name: "Select Apex @ Henderson outlet",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Choose Kickoff Special (Trial Price)",
+      exact: true,
+    })
+    .click();
+  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  const calendarTitle = page.getByRole("heading", {
+    name: "Select dates and times",
+    exact: true,
+  });
+  await expect(calendarTitle).toBeVisible();
+  await expectCalendarHeadingLayout(page);
+  await page.getByRole("link", { name: "Back", exact: true }).click();
+  await expect(sessionTitle).toBeVisible();
   await page.getByRole("link", { name: "Back", exact: true }).click();
   await expect(title).toBeVisible();
   await expect(page.getByLabel("Booking identity")).toHaveCount(0);

@@ -639,6 +639,11 @@ test("booking-options signout retries failure and leaves only after acknowledgem
   );
   await act(async () => {});
   expect(
+    within(screen.getByLabelText("Booking identity")).getByText(
+      "Email verified",
+    ),
+  ).toBeVisible();
+  expect(
     within(screen.getByLabelText("Booking identity")).getByText(verified.email),
   ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Sign out" }));

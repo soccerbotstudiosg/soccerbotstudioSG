@@ -16,7 +16,11 @@ import {
   traceHitpayFailure,
   providerTransportTiming,
 } from "./diagnostics";
-import { ApiError, providerCredentialName } from "./policy";
+import {
+  ApiError,
+  identitySenderSchema,
+  providerCredentialName,
+} from "./policy";
 
 // Fixed identity endpoints share the physical transport owner. Their durable
 // admission is owned by identity-delivery, separately from SimplyBook accounting.
@@ -39,11 +43,9 @@ export async function identityRequest(
           response: z.string().min(1).max(2048).parse(payload.token),
         })
       : JSON.stringify({
-          from: z
-            .literal("SoccerBotStudioSG Dev <noreply@auth.app404.ai>")
-            .parse(payload.sender),
+          from: identitySenderSchema.parse(payload.sender),
           to: [z.email().max(254).parse(payload.recipient)],
-          subject: "Your SoccerBotStudioSG Dev verification code",
+          subject: "Your SoccerBotStudio Singapore verification code",
           text: `Your verification code is ${z
             .string()
             .regex(/^\d{6}$/)

@@ -25,3 +25,13 @@ export function BookingHeading({
     </div>
   );
 }
+
+/** Show verified contact identity without implying reservation-management access. */
+export function VerifiedEmailStatus({ email }: { email: string }) {
+  return (
+    <span className="booking-verified-status">
+      <strong>Email verified</strong>
+      <span>{email}</span>
+    </span>
+  );
+}
