@@ -21,3 +21,5 @@ Heading follow-up: shared BookingHeading now owns two line segments for all book
 Latest heading verification:59/59 focused account/async/parity tests, TypeScript, focused ESLint and whitespace checks passed. CI browser geometry and physical phone review remain pending.
 
 Publication checkpoint: all305 unit/component cases pass across27 files with strict inventory validation. Preserved initial300/305 failure in Journey: five existing recovery checks needed accessible-heading selectors after text was split into spans; logic/effect assertions unchanged. Source/inventory checks passed. Staging and production pending the authorized CI/release sequence.
+
+PR55 follow-up: CI42955220588 on da50c07 failed at test TypeScript because `exact` was incorrectly supplied to Testing Library role queries. Removed only the unsupported option; string names already match exactly. Fresh npm run typecheck and51 direct-checkout cases passed. Prior source failure retained in Journey. Follow-up exact-head CI and actual staging pending; production unchanged.
