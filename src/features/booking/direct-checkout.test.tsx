@@ -4285,8 +4285,17 @@ it("expired held Review with unresolved release returns affected sessions in the
   await waitFor(() =>
     expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id),
   );
+  // Restoring the attempt precedes Review's consent-reset effect.
+  // Wait for the same settled, unchecked form the customer must acknowledge.
+  await waitFor(() => {
+    expect(screen.getByTestId("handoff-ready")).toHaveTextContent("true");
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+  });
   fireEvent.click(screen.getByRole("checkbox"));
-  fireEvent.click(screen.getByRole("button", { name: /^Proceed to Payment/ }));
+  const proceed = screen.getByRole("button", { name: /^Proceed to Payment/ });
+  expect(screen.getByRole("checkbox")).toBeChecked();
+  expect(proceed).toBeEnabled();
+  fireEvent.click(proceed);
   await waitFor(() =>
     expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
   );
