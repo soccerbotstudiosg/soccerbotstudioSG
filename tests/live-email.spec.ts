@@ -516,9 +516,10 @@ test("synthetic live verification reads server identity and keeps native booking
       (c) => c.path === "/api/identity" && c.method === "GET",
     ).length,
   ).toBeGreaterThanOrEqual(2);
+  // Verification has reached Session, not the protected Booking Details boundary.
   expect(
     evidence.calls.filter((c) => c.path === "/api/identity/contact"),
-  ).toEqual([{ path: "/api/identity/contact", method: "GET", body: null }]);
+  ).toEqual([]);
   expect(evidence.verifiedCodeRequest()).toBe(1);
   const proofs = evidence.calls
     .filter((call) => call.path === "/api/identity/challenges")
