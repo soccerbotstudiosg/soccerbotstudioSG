@@ -99,7 +99,7 @@ export function AccountStep({
   const restoring =
     identityService.mode === "live" && restoredService !== identityService;
   const [working, setBusy] = useState(false);
-  const [openingProfile, setOpeningProfile] = useState(false);
+  const [preparingPage, setPreparingPage] = useState(false);
   const [departing, setDeparting] = useState(false);
   const [navigating, startNavigation] = useTransition();
   const busy = working || navigating;
@@ -140,7 +140,7 @@ export function AccountStep({
     active.current?.abort();
     active.current = null;
     setBusy(false);
-    setOpeningProfile(false);
+    setPreparingPage(false);
     setDeparting(false);
     setBotToken("");
     setBotGeneration((value) => value + 1);
@@ -176,13 +176,14 @@ export function AccountStep({
   async function perform(
     work: (signal: AbortSignal) => Promise<void>,
     fullPage = false,
+    timeoutMessage = "We couldn’t load your saved details. Please try again.",
   ) {
     if (active.current) return;
     refreshing.current?.cancel();
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
-    setOpeningProfile(fullPage);
+    setPreparingPage(fullPage);
     setError("");
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let timedOut = false;
@@ -194,11 +195,7 @@ export function AccountStep({
             timeout = setTimeout(() => {
               timedOut = true;
               controller.abort();
-              reject(
-                new CustomerMessageError(
-                  "We couldn’t load your saved details. Please try again.",
-                ),
-              );
+              reject(new CustomerMessageError(timeoutMessage));
             }, 10_000);
           }),
         ]);
@@ -224,7 +221,7 @@ export function AccountStep({
       if (active.current === controller) {
         active.current = null;
         setBusy(false);
-        setOpeningProfile(false);
+        setPreparingPage(false);
       }
     }
   }
@@ -286,7 +283,7 @@ export function AccountStep({
     identityService.current()?.email === identity.email
       ? identity
       : null;
-  if ((view === "choice" && restoring) || openingProfile || departing)
+  if ((view === "choice" && restoring) || preparingPage || departing)
     return entryTransition ? null : <BookingLoading label="Opening booking" />;
   if (view === "profile")
     return <DetailsStep profileOnly onClose={() => setView("choice")} />;
@@ -421,13 +418,17 @@ export function AccountStep({
                   className="button secondary"
                   disabled={busy}
                   onClick={() => {
-                    void perform(async (signal) => {
-                      await identityService.signOut(signal);
-                      if (!signal.aborted) {
-                        resetIdentityEntry();
-                        setView("email");
-                      }
-                    });
+                    void perform(
+                      async (signal) => {
+                        await identityService.signOut(signal);
+                        if (!signal.aborted) {
+                          resetIdentityEntry();
+                          setView("email");
+                        }
+                      },
+                      true,
+                      "We couldn’t sign you out. Please try again.",
+                    );
                   }}
                 >
                   Use another email

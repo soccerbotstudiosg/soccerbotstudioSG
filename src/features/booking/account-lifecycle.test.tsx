@@ -361,8 +361,16 @@ test("switching email clears the old account and supports back guest and fresh r
     expiresAt: Date.now() + 600000,
     remember: true,
   };
+  let finishSignOut!: () => void;
+  let firstSignOut = true;
   const signOut = vi.fn(async () => {
     current = null;
+    if (firstSignOut) {
+      firstSignOut = false;
+      await new Promise<void>((resolve) => {
+        finishSignOut = resolve;
+      });
+    }
   });
   const verify = vi.fn<CustomerIdentityService["verify"]>(
     async (challenge, _code, remember) => {
@@ -396,7 +404,18 @@ test("switching email clears the old account and supports back guest and fresh r
   );
   await act(async () => {});
   fireEvent.click(screen.getByRole("button", { name: "Use another email" }));
+  expect(screen.getByRole("status", { name: "Opening booking" })).toBeVisible();
+  expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
+  expect(
+    screen.queryByRole("button", { name: "Continue as Guest" }),
+  ).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue signed in" }),
+  ).toBeNull();
+  expect(screen.queryByLabelText("Email address")).toBeNull();
+  await act(async () => finishSignOut());
   await screen.findByRole("heading", { name: "Continue with email" });
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(signOut).toHaveBeenCalledExactlyOnceWith(expect.any(AbortSignal));
   expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.getByLabelText("Remember me")).not.toBeChecked();

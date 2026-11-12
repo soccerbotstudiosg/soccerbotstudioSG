@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-PR63 merged as cfde5139b7d47fb7089a8381823c292edf9e41ab after successful exact-head CI and staging of 6b3c969. Main CI 43175249648 and production deployment 43176840165 passed, version 4704f0b3-5d68-46fe-a921-f6a87915595d. Deployment health passed; independent custom-domain read returned HTTP403. The owner subsequently reported Guest continuation flicker and clarified it must be immediate with no additional check.
+PR63 merged as cfde5139b7d47fb7089a8381823c292edf9e41ab after successful exact-head CI and staging of 6b3c969. Main CI 43175249648 and production deployment 43176840165 passed, version 4704f0b3-5d68-46fe-a921-f6a87915595d. Deployment health passed; independent custom-domain read returned HTTP403. The owner subsequently reported Guest continuation flicker and clarified it must be immediate with no additional check, then requested Use another email flicker be consolidated into PR64.
 
 ## Current repair
 
@@ -10,7 +10,7 @@ Branch `fix/guest-transition-loader` starts from merged PR63. Fresh entry alread
 
 ## Evidence and next action
 
-All 16 account lifecycle tests, affected source/types/lint checks passed. The new regression fails against pre-fix source and passes with the repair. Browser fixture expectations and unchanged inventory counts are reconciled; owner/CI runs browsers. Owner authorized publishing this follow-up, staging it, then merging after exact-head gates and actual staging health pass. Keep PR63 main/prod receipts in its PR, without changing this repair's scope.
+All 16 account lifecycle tests, affected source/types/lint checks passed. The new regression fails against pre-fix source and passes with the repair. Browser fixture expectations and unchanged inventory counts are reconciled; owner/CI runs browsers. PR64 is open under LimYouSheng. Its initial head071ac16 is superseded by this consolidated email-switch change; publish the new head, verify exact-head gates and actual staging health, then merge under existing owner authorization. Keep PR63 main/prod receipts in its PR, without changing this repair's scope.
 
 ## Publication identity
 
