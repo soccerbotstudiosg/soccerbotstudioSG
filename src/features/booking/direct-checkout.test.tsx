@@ -31,6 +31,7 @@ import {
 } from "@/services/storage";
 import { demoBookingService } from "@/services/demo/booking";
 import { expireBooking } from "@/services/confirmation";
+import { beginIdentitySignOut } from "@/services/identity";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { blankDraft, type Attempt } from "@/domain/booking";
 
@@ -4633,4 +4634,56 @@ it("cutoff pruning waits for protected restoration and leaves a restored hold un
   expect(state!.attempt?.id).toBe(id);
   expect(state!.draft.slots).toEqual(selected.slots);
   expect(state!.selectionNotice).toBeNull();
+});
+
+it("new checkout waits for background identity cleanup and never dispatches after cleanup failure", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  let finish!: () => void;
+  let reject!: (error: Error) => void;
+  const identityService = {
+    ...demoCustomerIdentity,
+    signOut: vi.fn(
+      () =>
+        new Promise<void>((resolve, fail) => {
+          finish = resolve;
+          reject = fail;
+        }),
+    ),
+    guest: vi.fn(async () => {}),
+  };
+  const checkout = vi.fn<BookingService["checkout"]>(async () => {
+    throw new BookingServiceError(
+      "temporarily_unavailable",
+      "Synthetic checkout unavailable.",
+    );
+  });
+  render(
+    <BookingProvider
+      identityService={identityService}
+      bookingService={{ ...demoBookingService, checkout }}
+    >
+      <Seed />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByText("Seed"));
+  let task = beginIdentitySignOut(identityService);
+  fireEvent.click(screen.getByText("Repeat checkout"));
+  expect(screen.getByTestId("action")).toHaveTextContent("loading");
+  expect(checkout).not.toHaveBeenCalled();
+  await act(async () => {
+    finish();
+    await task.promise;
+  });
+  expect(identityService.guest).toHaveBeenCalledTimes(1);
+  expect(checkout).toHaveBeenCalledTimes(1);
+  task = beginIdentitySignOut(identityService);
+  fireEvent.click(screen.getByText("Repeat checkout"));
+  await act(async () => {
+    reject(new Error("Synthetic revocation failure"));
+    await task.promise.catch(() => {});
+  });
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId("action")).toHaveTextContent("failure");
 });

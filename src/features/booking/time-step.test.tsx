@@ -47,7 +47,8 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
-test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", async () => {
+/** Exercise calendar restoration with separate desktop and mobile interaction budgets. */
+async function calendarScenario(mobile: boolean) {
   const user = userEvent.setup();
   const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
   vi.stubGlobal("matchMedia", () => ({
@@ -108,8 +109,10 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     target: { value: "month" },
   });
   const calendar = screen.getByRole("region", { name: "Booking calendar" });
-  const times = () =>
-    within(screen.getByRole("group", { name: "Session times" }));
+  const sessionTimes = within(
+    screen.getByRole("group", { name: "Session times" }),
+  );
+  const times = () => sessionTimes;
   expect(
     within(calendar).getByRole("button", { name: dateLabel(restoredDate) }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -126,89 +129,95 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
     }),
   ).toBeInTheDocument();
-  expect(times().getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
-  await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
-  expect(loadBooking().draft.slots).toHaveLength(1);
-  await user.selectOptions(
-    screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
-    `${restoredDate}|15:20|demo|daniel`,
-  );
-  const instructors = screen.getByRole("region", { name: "Your instructors" });
-  expect(within(instructors).getAllByRole("article")).toHaveLength(2);
-  const faisalProfile = within(instructors).getByRole("button", {
-    name: "Faisal Shahril",
-  });
-  const danielProfile = within(instructors).getByRole("button", {
-    name: "Daniel Tan",
-  });
-  expect(faisalProfile).toHaveAttribute("aria-expanded", "false");
-  expect(danielProfile).toHaveAttribute("aria-expanded", "false");
-  expect(
-    instructors.querySelectorAll(".trainer-bio:not([hidden])"),
-  ).toHaveLength(0);
-  await user.click(faisalProfile);
-  expect(faisalProfile).toHaveAttribute("aria-expanded", "true");
-  expect(
-    instructors.querySelectorAll(".trainer-bio:not([hidden])"),
-  ).toHaveLength(1);
-  await user.click(danielProfile);
-  expect(faisalProfile).toHaveAttribute("aria-expanded", "false");
-  expect(danielProfile).toHaveAttribute("aria-expanded", "true");
-  expect(
-    instructors.querySelectorAll(".trainer-bio:not([hidden])"),
-  ).toHaveLength(1);
-  await user.click(danielProfile);
-  expect(
-    instructors.querySelectorAll(".trainer-bio:not([hidden])"),
-  ).toHaveLength(0);
-  expect(
-    within(instructors).getByRole("article", { name: "Faisal Shahril" }),
-  ).toBeInTheDocument();
-  expect(
-    within(instructors).getByRole("article", { name: "Daniel Tan" }),
-  ).toBeInTheDocument();
-  await user.click(times().getByRole("button", { name: /12:00–12:40/ }));
-  await user.selectOptions(
-    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
-    `${restoredDate}|12:00|demo|faisal`,
-  );
-  expect(within(instructors).getAllByRole("article")).toHaveLength(2);
-  expect(
-    within(instructors)
-      .getByRole("article", { name: "Faisal Shahril" })
-      .querySelector(".trainer-bio"),
-  ).not.toBeEmptyDOMElement();
-  expect(
-    within(
+  if (!mobile) {
+    expect(times().getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
+    await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
+    expect(loadBooking().draft.slots).toHaveLength(1);
+    await user.selectOptions(
+      screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
+      `${restoredDate}|15:20|demo|daniel`,
+    );
+    const instructors = screen.getByRole("region", {
+      name: "Your instructors",
+    });
+    expect(within(instructors).getAllByRole("article")).toHaveLength(2);
+    const faisalProfile = within(instructors).getByRole("button", {
+      name: "Faisal Shahril",
+    });
+    const danielProfile = within(instructors).getByRole("button", {
+      name: "Daniel Tan",
+    });
+    expect(faisalProfile).toHaveAttribute("aria-expanded", "false");
+    expect(danielProfile).toHaveAttribute("aria-expanded", "false");
+    expect(
+      instructors.querySelectorAll(".trainer-bio:not([hidden])"),
+    ).toHaveLength(0);
+    await user.click(faisalProfile);
+    expect(faisalProfile).toHaveAttribute("aria-expanded", "true");
+    expect(
+      instructors.querySelectorAll(".trainer-bio:not([hidden])"),
+    ).toHaveLength(1);
+    await user.click(danielProfile);
+    expect(faisalProfile).toHaveAttribute("aria-expanded", "false");
+    expect(danielProfile).toHaveAttribute("aria-expanded", "true");
+    expect(
+      instructors.querySelectorAll(".trainer-bio:not([hidden])"),
+    ).toHaveLength(1);
+    await user.click(danielProfile);
+    expect(
+      instructors.querySelectorAll(".trainer-bio:not([hidden])"),
+    ).toHaveLength(0);
+    expect(
       within(instructors).getByRole("article", { name: "Faisal Shahril" }),
-    ).queryByRole("list"),
-  ).not.toBeInTheDocument();
-  expect(
-    within(instructors)
-      .getByRole("article", { name: "Daniel Tan" })
-      .querySelector(".trainer-bio"),
-  ).not.toBeEmptyDOMElement();
-  expect(
-    within(
+    ).toBeInTheDocument();
+    expect(
       within(instructors).getByRole("article", { name: "Daniel Tan" }),
-    ).queryByRole("list"),
-  ).not.toBeInTheDocument();
-  await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
-  expect(within(instructors).getAllByRole("article")).toHaveLength(1);
+    ).toBeInTheDocument();
+    await user.click(times().getByRole("button", { name: /12:00–12:40/ }));
+    await user.selectOptions(
+      screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
+      `${restoredDate}|12:00|demo|faisal`,
+    );
+    expect(within(instructors).getAllByRole("article")).toHaveLength(2);
+    expect(
+      within(instructors)
+        .getByRole("article", { name: "Faisal Shahril" })
+        .querySelector(".trainer-bio"),
+    ).not.toBeEmptyDOMElement();
+    expect(
+      within(
+        within(instructors).getByRole("article", { name: "Faisal Shahril" }),
+      ).queryByRole("list"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(instructors)
+        .getByRole("article", { name: "Daniel Tan" })
+        .querySelector(".trainer-bio"),
+    ).not.toBeEmptyDOMElement();
+    expect(
+      within(
+        within(instructors).getByRole("article", { name: "Daniel Tan" }),
+      ).queryByRole("list"),
+    ).not.toBeInTheDocument();
+    await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
+    expect(within(instructors).getAllByRole("article")).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(
+      screen.queryByRole("region", { name: "Your instructors" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      }),
+    ).toBeDisabled();
+    expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: dateLabel(restoredDate) }),
+    );
+    expect(scroll).toHaveBeenLastCalledWith({ top: 336, behavior: "smooth" });
+    return;
+  }
   await user.click(screen.getByRole("button", { name: "Clear all" }));
-  expect(
-    screen.queryByRole("region", { name: "Your instructors" }),
-  ).not.toBeInTheDocument();
-  expect(
-    screen.getByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
-  ).toBeDisabled();
-  expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
-  fireEvent.click(
-    screen.getByRole("button", { name: dateLabel(restoredDate) }),
-  );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 336, behavior: "smooth" });
   scroll.mockClear();
   vi.stubGlobal("matchMedia", () => ({
     matches: true,
@@ -387,7 +396,11 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(
     screen.getByRole("button", { name: "Back to calendar" }),
   ).toBeInTheDocument();
-});
+}
+test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", () =>
+  calendarScenario(false));
+test("mobile calendar selection drawers and responsive scroll preserve restored availability", () =>
+  calendarScenario(true));
 test("crossing notices persist in the basket and review before payment", async () => {
   const basket = render(
     <BookingProvider>

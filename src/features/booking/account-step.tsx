@@ -5,6 +5,9 @@ import { BookingLoading } from "./booking-loading";
 import { useBookingEntryTransition } from "@/components/booking-navigation";
 import {
   takeIdentityEntry,
+  beginIdentitySignOut,
+  identitySignOutTask,
+  waitForIdentitySignOut,
   hasIdentityEntry,
   type IdentityEntryPreparation,
 } from "@/services/identity";
@@ -98,8 +101,53 @@ export function AccountStep({
   );
   const restoring =
     identityService.mode === "live" && restoredService !== identityService;
+  const [signOutTask, setSignOutTask] = useState(() =>
+    identitySignOutTask(identityService),
+  );
+  const [signOutError, setSignOutError] = useState("");
+  useEffect(() => {
+    if (!signOutTask) return;
+    let active = true;
+    const settled = () => {
+      if (active) setSignOutError(signOutTask.warning);
+    };
+    void signOutTask.promise.then(settled, settled);
+    return () => {
+      active = false;
+    };
+  }, [signOutTask]);
+  /** Switch presentation immediately while the identity owner finishes revocation. */
+  function signOutInBackground(
+    allDevices: boolean,
+    nextView: "choice" | "email",
+  ) {
+    refreshing.current?.cancel();
+    resetIdentityEntry();
+    setView(nextView);
+    setSignOutError("");
+    setSignOutTask(beginIdentitySignOut(identityService, allDevices));
+  }
+  const signOutNotice = signOutError && (
+    <div className="alert" role="alert">
+      <p>{signOutError}</p>
+      {signOutTask?.failed && (
+        <button
+          className="text-link"
+          onClick={() => {
+            setError("");
+            setSignOutError("");
+            setSignOutTask(
+              beginIdentitySignOut(identityService, signOutTask.allDevices),
+            );
+          }}
+        >
+          Try again
+        </button>
+      )}
+    </div>
+  );
   const [working, setBusy] = useState(false);
-  const [openingProfile, setOpeningProfile] = useState(false);
+  const [preparingPage, setPreparingPage] = useState(false);
   const [departing, setDeparting] = useState(false);
   const [navigating, startNavigation] = useTransition();
   const busy = working || navigating;
@@ -140,11 +188,11 @@ export function AccountStep({
     active.current?.abort();
     active.current = null;
     setBusy(false);
-    setOpeningProfile(false);
+    setPreparingPage(false);
     setDeparting(false);
     setBotToken("");
     setBotGeneration((value) => value + 1);
-  }, []);
+  }, [setBusy, setPreparingPage, setDeparting]);
   useLayoutEffect(() => {
     onBackChange?.(
       view === "email" || view === "code" || view === "profile"
@@ -176,17 +224,22 @@ export function AccountStep({
   async function perform(
     work: (signal: AbortSignal) => Promise<void>,
     fullPage = false,
+    timeoutMessage = "We couldn’t load your saved details. Please try again.",
   ) {
     if (active.current) return;
     refreshing.current?.cancel();
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
-    setOpeningProfile(fullPage);
+    setPreparingPage(
+      fullPage || identitySignOutTask(identityService)?.pending === true,
+    );
     setError("");
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let timedOut = false;
     try {
+      if (identitySignOutTask(identityService))
+        await waitForIdentitySignOut(identityService, controller.signal);
       if (fullPage) {
         await Promise.race([
           work(controller.signal),
@@ -194,11 +247,7 @@ export function AccountStep({
             timeout = setTimeout(() => {
               timedOut = true;
               controller.abort();
-              reject(
-                new CustomerMessageError(
-                  "We couldn’t load your saved details. Please try again.",
-                ),
-              );
+              reject(new CustomerMessageError(timeoutMessage));
             }, 10_000);
           }),
         ]);
@@ -224,27 +273,24 @@ export function AccountStep({
       if (active.current === controller) {
         active.current = null;
         setBusy(false);
-        setOpeningProfile(false);
+        setPreparingPage(false);
       }
     }
   }
-  /** Validate the chosen identity path before advancing the booking flow. */
+  /** Load the verified contact before advancing or editing its profile. */
   async function proceed(
     signal: AbortSignal,
-    verifiedEmail?: string,
+    verifiedEmail: string,
     editProfile = false,
   ) {
-    if (!verifiedEmail) await identityService.guest(signal);
-    const contact = verifiedEmail
-      ? (await identityService.profile(verifiedEmail, signal)) || {
-          ...blankContact(),
-          email: verifiedEmail,
-        }
-      : blankContact();
+    const contact = (await identityService.profile(verifiedEmail, signal)) || {
+      ...blankContact(),
+      email: verifiedEmail,
+    };
     if (signal.aborted) return;
     update({
-      mode: verifiedEmail ? "member" : "guest",
-      accountEmail: verifiedEmail || "",
+      mode: "member",
+      accountEmail: verifiedEmail,
       contact,
     });
     if (editProfile) setView("profile");
@@ -289,7 +335,7 @@ export function AccountStep({
     identityService.current()?.email === identity.email
       ? identity
       : null;
-  if ((view === "choice" && restoring) || openingProfile || departing)
+  if ((view === "choice" && restoring) || preparingPage || departing)
     return entryTransition ? null : <BookingLoading label="Opening booking" />;
   if (view === "profile")
     return <DetailsStep profileOnly onClose={() => setView("choice")} />;
@@ -311,6 +357,7 @@ export function AccountStep({
             )
           }
         />
+        {signOutNotice}
         {rebookingError && (
           <div className="alert" role="alert">
             <p>{rebookingError}</p>
@@ -319,7 +366,7 @@ export function AccountStep({
             </button>
           </div>
         )}
-        {error && (
+        {error && error !== signOutError && (
           <p className="alert" role="alert">
             {error}
           </p>
@@ -345,7 +392,14 @@ export function AccountStep({
                 className="button wide"
                 aria-label="Continue as Guest"
                 disabled={busy}
-                onClick={() => void perform((signal) => proceed(signal))}
+                onClick={() => {
+                  update({
+                    mode: "guest",
+                    accountEmail: "",
+                    contact: blankContact(),
+                  });
+                  router.push("/book/session/");
+                }}
               >
                 {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
                 <Icon name="chevron" />
@@ -416,15 +470,7 @@ export function AccountStep({
                 <button
                   className="button secondary"
                   disabled={busy}
-                  onClick={() => {
-                    void perform(async (signal) => {
-                      await identityService.signOut(signal);
-                      if (!signal.aborted) {
-                        resetIdentityEntry();
-                        setView("email");
-                      }
-                    });
-                  }}
+                  onClick={() => signOutInBackground(false, "email")}
                 >
                   Use another email
                 </button>
@@ -432,12 +478,7 @@ export function AccountStep({
                   <button
                     className="button secondary"
                     disabled={busy}
-                    onClick={() => {
-                      void perform(async (signal) => {
-                        await identityService.signOut(signal, true);
-                        if (!signal.aborted) resetIdentityEntry();
-                      });
-                    }}
+                    onClick={() => signOutInBackground(true, "choice")}
                   >
                     Sign out all devices
                   </button>
@@ -468,6 +509,7 @@ export function AccountStep({
           </>
         )}
       </p>
+      {signOutNotice}
       {busy && (
         <span
           className="sr-only"
@@ -558,7 +600,7 @@ export function AccountStep({
             )}
           </>
         )}
-        {error && (
+        {error && error !== signOutError && (
           <p id="auth-error" role="alert" className="alert auth-error">
             {error}
           </p>

@@ -85,6 +85,7 @@ async function fixture(
   let requestedCodes = 0;
   let codeBlockUntil = 0;
   let pendingProfile: Promise<void> | null = null;
+  let pendingSignOut: Promise<void> | null = null;
   let verifiedCodeRequest = 0;
   const issuedCodes: {
     id: string;
@@ -125,6 +126,11 @@ async function fixture(
     if (url.pathname === "/api/access" && method === "POST" && initialAccess) {
       initialAccess = false;
       await identityReady;
+    }
+    if (url.pathname === "/api/access" && method === "DELETE") {
+      const signOutGate = pendingSignOut;
+      pendingSignOut = null;
+      await signOutGate;
     }
     const requestNow = Date.now() + identityClockOffset;
     const responseHeaders: Record<string, string> = {};
@@ -278,6 +284,13 @@ async function fixture(
     unexpected,
     closePopup,
     verifiedCodeRequest: () => verifiedCodeRequest,
+    deferNextSignOut() {
+      let release!: () => void;
+      pendingSignOut = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return release;
+    },
     deferNextProfileRead() {
       let release!: () => void;
       pendingProfile = new Promise<void>((resolve) => {
@@ -291,7 +304,7 @@ async function fixture(
   };
 }
 
-test("live guest denial stays on account without Preview fallback", async ({
+test("live entry access denial permits local guest selection without granting authority", async ({
   page,
 }) => {
   let releaseIdentity!: () => void;
@@ -327,12 +340,12 @@ test("live guest denial stays on account without Preview fallback", async ({
     evidence.calls.filter((call) => call.path === "/api/access"),
   ).toHaveLength(1);
   await page.getByRole("button", { name: "Continue as Guest" }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "We couldn’t start your booking. Please try again.",
-  );
-  await expect(page).toHaveURL(/\/book\/account\/$/);
+  await expect(page).toHaveURL(/\/book\/session\/$/);
+  await expect(
+    page.getByRole("heading", { name: "Your session" }),
+  ).toBeVisible();
+  await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
-    { path: "/api/access", method: "POST", body: null },
     { path: "/api/access", method: "POST", body: null },
   ]);
   expect(evidence.unexpected).toEqual([]);
@@ -929,8 +942,12 @@ test("native guest journey preserves players contact and one checkout across ref
     if (Math.abs(guestBox.x - emailBox.x) > 1)
       expect(Math.abs(guestBox.y - emailBox.y)).toBeLessThanOrEqual(1);
     else expect(Math.abs(guestBox.x - emailBox.x)).toBeLessThanOrEqual(1);
+    const accessRequests = () =>
+      calls.filter((call) => call.path === "/api/access").length;
+    const entryAccessRequests = accessRequests();
     await guest.click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
+    expect(accessRequests()).toBe(entryAccessRequests);
     const identityReads = () =>
       calls.filter(
         (call) =>
@@ -945,6 +962,7 @@ test("native guest journey preserves players contact and one checkout across ref
     await guest.click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
     expect(identityReads()).toBe(checkedIdentityReads);
+    expect(accessRequests()).toBe(entryAccessRequests);
     await page
       .getByRole("button", {
         name: "Select Apex @ Henderson outlet",
@@ -3532,9 +3550,25 @@ test("email account actions return through booking options and sign in again wit
   page,
 }) => {
   const evidence = await fixture(page, true, true);
-  await page
-    .getByRole("button", { name: "Use another email", exact: true })
-    .click();
+  const releaseSignOut = evidence.deferNextSignOut();
+  try {
+    await page
+      .getByRole("button", { name: "Use another email", exact: true })
+      .click();
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Continue as Guest", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Continue signed in", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("textbox", { name: /^Email address/ }),
+    ).toBeEnabled();
+  } finally {
+    releaseSignOut();
+  }
+  await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   await expect(
     page.getByRole("textbox", { name: /^Email address/ }),
   ).toHaveValue("");

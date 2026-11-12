@@ -3,7 +3,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -33,7 +33,7 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
       });
   }, []);
   const busy = pending.size > 0;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!busy) return;
     const main = document.getElementById("main");
     const wasInert = main?.inert;
@@ -76,7 +76,8 @@ export function BookingLoading({
 }) {
   const register = useContext(Loading);
   const entryTransition = useBookingEntryTransition();
-  useEffect(
+  // Register before paint so a newly mounted loader cannot expose an intermediate screen.
+  useLayoutEffect(
     () => (overlay && !entryTransition ? register?.(label) : undefined),
     [register, label, overlay, entryTransition],
   );

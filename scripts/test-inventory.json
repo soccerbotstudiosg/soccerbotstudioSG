@@ -213,7 +213,7 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "account waits for owned guest access and duplicate click cannot navigate early"
+    "title": "guest selection advances locally without repeating access or showing preparation"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
@@ -265,7 +265,7 @@
   },
   {
     "file": "src/features/booking/account-step.test.tsx",
-    "title": "guest loading remains until the destination commits without exposing the previous form"
+    "title": "signed-in loading remains until the destination commits without exposing the previous form"
   },
   {
     "file": "src/features/booking/account-step.test.tsx",
@@ -1389,7 +1389,7 @@
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "live guest denial stays on account without Preview fallback"
+    "title": "live entry access denial permits local guest selection without granting authority"
   },
   {
     "file": "tests/live-email.spec.ts",
@@ -1506,5 +1506,33 @@
   {
     "file": "src/services/identity.test.ts",
     "title": "identity throttle accepts bounded retry seconds without exposing arbitrary response text"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "background signout serializes revocation and anonymous access before protected work"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "background signout retries anonymous access without repeating acknowledged global revocation"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "unproven global signout clears this browser and retains the reverification warning"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "background signout times out without allowing late revocation to start anonymous access"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "email requests wait for background signout while the replacement form opens immediately"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "new checkout waits for background identity cleanup and never dispatches after cleanup failure"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "mobile calendar selection drawers and responsive scroll preserve restored availability"
   }
 ]

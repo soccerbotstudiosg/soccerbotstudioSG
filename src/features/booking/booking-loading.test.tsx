@@ -15,6 +15,14 @@ test("overlapping booking reads share one full-page loader and preserve the moun
   const view = render(<Screen first={false} second={false} />);
   const input = screen.getByLabelText("Contact name");
   fireEvent.change(input, { target: { value: "Retained name" } });
+  view.rerender(<Screen first second={false} />);
+  expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
+  view.rerender(<Screen first={false} second />);
+  expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
+  expect(
+    screen.getByRole("status", { name: "Reading calendar" }),
+  ).toBeVisible();
+  expect(screen.getByLabelText("Contact name")).toBe(input);
   view.rerender(<Screen first second />);
   expect(document.querySelectorAll(".page-loading")).toHaveLength(1);
   expect(screen.queryByText("Please do not close or refresh.")).toBeNull();

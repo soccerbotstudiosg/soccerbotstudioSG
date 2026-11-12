@@ -15,20 +15,16 @@ Booking headings use shared deliberate two-line text at widths up to700px, with 
 
 The initial booking-choice page shows no Guest badge, including after Continue as Guest → Back or a return with retained guest access. Email entry and code verification also suppress the badge, including when guest access is retained. Guest appears only on subsequent booking steps. A verified email remains visible on the choice page; its badge has no Sign out link. Booking entry starts the bounded identity check during the hero transition. The banner/direct Book Now path uses the original full-page loader while the check is pending; skipping or finishing the hero uses the same loader if needed. A direct account URL/reload follows the same full-page loading contract. Ordinary entry/step loading has no visible message. One entry loader remains until identity settles; continuing signed in keeps the full loader through navigation, without intermediate choice cards. No subsection loader or temporary Guest choices appear while identity is unresolved. Verified/restored identity shows one full-width Welcome back card instead of the Guest option. Identity restoration must settle before choices appear. It runs once per fresh booking entry; internal Back/forward navigation reuses the latest guest, verified or signed-out state. Continue signed in and Manage saved contact do not repeat identity restoration. Reload/direct later-step entry can inspect existing identity once without restoring or creating access. Owner-approved status presentation (11 November2026): Guest uses a pale-yellow badge with text and dimensions reduced25% (13.5px text). Verified identity uses a pale-green, right-aligned badge: bold “Email verified” above the address without parentheses, at14px. On mobile, long email addresses stay on one line and shrink to fit the badge; header text retains its desktop one-line/mobile two-line layout. This status means verified contact identity, not a self-service reservation account.
 
-Continue as Guest, then select sessions without creating an account.
+Continue as Guest selects the local booking mode and immediately navigates to Your session. It does not repeat fresh-entry access creation or show a preparation loader/disabled-choice phase. Failed initial access does not authorize protected operations; those retain their existing server checks.
 
 ```mermaid
 flowchart LR
-  A["Continue as Guest"] --> B["Preparing booking…"]
-  B -->|Access granted| C["Your session"]
-  B -->|Failure| D["We couldn’t start your booking. Please try again."]
-  B -->|Rate limited| E["Too many booking requests. Please wait a few minutes and try again."]
-  D --> A
+  A["Continue as Guest"] -->|Local choice; no access request| C["Your session"]
 ```
 
 ## 2. Email entry and verification
 
-Booking steps after entry show Guest or the currently verified email beside the heading. The initial choice page suppresses Guest, and email entry/code verification suppress identity badges. Guest uses a compact bold pale-yellow badge; verified status uses Email verified in bold above the address. Initial booking choices reserve no Guest status row. All heading badges are read-only. The signed-in card retains Use another email and Sign out all devices, plus Manage saved contact only for remembered identity. Eligible secondary controls share one row with readable wrapped labels. Payment/confirmation screens keep their existing protected presentation.
+Booking steps after entry show Guest or the currently verified email beside the heading. The initial choice page suppresses Guest, and email entry/code verification suppress identity badges. Guest uses a compact bold pale-yellow badge; verified status uses Email verified in bold above the address. Initial booking choices reserve no Guest status row. All heading badges are read-only. Use another email reveals the email form immediately; Sign out all devices reveals unsigned choices immediately. Server revocation and fresh anonymous access run in the background. A verification or new protected booking action waits if that sequence is unfinished. Failure or timeout retains actionable retry feedback; an immediate local screen change does not prove all-device revocation. The signed-in card retains Use another email and Sign out all devices, plus Manage saved contact only for remembered identity. Eligible secondary controls share one row with readable wrapped labels. Payment/confirmation screens keep their existing protected presentation.
 
 Local email candidate: secondary account actions retain44px touch targets and one-row layout; Email verified is bold. Email/code entry has no Change email action; top Back remains. Each newly issued code has its own120-second validity; the normal view shows “Code expires in: MM:SS” alongside immediately available Request another code, which does not invalidate earlier valid codes. Successful issuance, including the third, does not show a red pause. Only a subsequent denied request shows “Too many code requests. Try again later.” with bare centred `MM:SS` below and separation from Remember me. Deadlines come from the server; timers never send automatically. Invalid-code/network errors must not hide an eligible request action. Verification remains available during blocking. Valid proof clears only stale security guidance; unrelated errors remain visible. BR-003 owns limits and authority.
 
@@ -504,22 +500,24 @@ These retain entered details and block the next action. Some domain guards norma
 
 Email-specific rows apply only when that feature is configured/enabled; this catalogue does not claim it is enabled in production.
 
-| Trigger                                                     | Customer message                                                    |
-| ----------------------------------------------------------- | ------------------------------------------------------------------- |
-| Unexpected email or other identity-action error             | We couldn’t continue. Please try again.                             |
-| Guest access rejected, unavailable, missing or malformed    | We couldn’t start your booking. Please try again.                   |
-| Guest access rate-limited                                   | Too many booking requests. Please wait a few minutes and try again. |
-| Missing/expired security proof                              | Complete the security check and try again.                          |
-| Wrong/expired verification code                             | Check your code or request a new one.                               |
-| Identity rate limit                                         | Too many code requests. Try again later.                            |
-| Identity access denied                                      | Return to booking options and verify your email again.              |
-| Missing site key / unavailable or invalid identity response | Email verification unavailable. Please continue as a guest.         |
-| Signed-in identity cannot be revalidated                    | Verify your email again.                                            |
-| Remembered-profile requirement not met                      | Select Remember me and verify your email to save details.           |
-| Save remembered contact fails                               | We couldn’t save your details. Please try again.                    |
-| All-device sign-out requires fresh access                   | Verify your email again, then choose Sign out all devices.          |
-| All-device sign-out fails                                   | Could not sign out all devices. Please try again.                   |
-| Browser sign-out fails                                      | Could not sign out this browser. Please try again.                  |
+| Trigger                                                     | Customer message                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Unexpected email or other identity-action error             | We couldn’t continue. Please try again.                                   |
+| Guest access rejected, unavailable, missing or malformed    | We couldn’t start your booking. Please try again.                         |
+| Guest access rate-limited                                   | Too many booking requests. Please wait a few minutes and try again.       |
+| Missing/expired security proof                              | Complete the security check and try again.                                |
+| Wrong/expired verification code                             | Check your code or request a new one.                                     |
+| Identity rate limit                                         | Too many code requests. Try again later.                                  |
+| Identity access denied                                      | Return to booking options and verify your email again.                    |
+| Missing site key / unavailable or invalid identity response | Email verification unavailable. Please continue as a guest.               |
+| Signed-in identity cannot be revalidated                    | Verify your email again.                                                  |
+| Remembered-profile requirement not met                      | Select Remember me and verify your email to save details.                 |
+| Save remembered contact fails                               | We couldn’t save your details. Please try again.                          |
+| All-device sign-out requires fresh access                   | Verify your email again, then choose Sign out all devices.                |
+| All-device sign-out fails                                   | Could not sign out all devices. Please try again.                         |
+| Background sign-out cannot finish                           | Could not finish signing out. Please try again.                           |
+| Protected action follows failed background sign-out         | Sign-out could not be completed. Return to booking options and try again. |
+| Browser sign-out fails                                      | Could not sign out this browser. Please try again.                        |
 
 Guest-access failures are classified separately from email verification, including transport and malformed-response failures. Initial background identity refresh failure is silent; it does not show an alert.
 
