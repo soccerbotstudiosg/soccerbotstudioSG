@@ -861,7 +861,11 @@
   },
   {
     "file": "worker/tests/identity.test.mjs",
-    "title": "identity resend supersedes previous challenge and preserves unknown delivery without retry across restart"
+    "title": "identity resend preserves previous live code and unknown delivery without retry across restart"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
+    "title": "identity overlapping codes keep independent expiry and one-use limits through the latest form"
   },
   {
     "file": "worker/tests/identity.test.mjs",

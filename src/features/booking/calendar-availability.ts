@@ -23,9 +23,8 @@ const retention = (entry: CalendarAvailability) =>
     : entry.dates.every((day) => day.offers !== undefined)
       ? BROWSER_CALENDAR_MAX_AGE_MS
       : CATALOGUE_MAX_AGE_MS;
-// Load only the visible month(s). Rolling weeks may span two months.
-// TimeStep may advance initial discovery once
-// through supported months; only display expiry replaces an already loaded month.
+// Prepare the actual advertised cache coverage once; subsequent reads refresh
+// only the visible month(s), without replacing the stable calendar presentation.
 /** Load calendar availability and reconcile the selected day. */
 export function useCalendarAvailability(
   service: BookingService,
@@ -35,9 +34,13 @@ export function useCalendarAvailability(
   paused: boolean,
   throughMonth?: string,
   observedNow?: number,
+  prepareCoverage = true,
 ) {
   const [reload, setReload] = useState(0);
-  const [refreshIndicator, setRefreshIndicator] = useState<string | null>(null);
+  const [prepared, setPrepared] = useState<{
+    owner: BookingService;
+    key: string;
+  } | null>(null);
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
   const protectedServiceId = service.publicCalendar ? undefined : serviceId;
   const key = JSON.stringify([
@@ -50,6 +53,10 @@ export function useCalendarAvailability(
     entries: Record<string, CalendarAvailability & { receivedAtMs: number }>;
     failed: string[];
   } | null>(null);
+  const preparedRef = useRef(prepared);
+  useEffect(() => {
+    preparedRef.current = prepared;
+  }, [prepared]);
   const retained = useRef(state);
   useEffect(() => {
     retained.current = state;
@@ -67,77 +74,145 @@ export function useCalendarAvailability(
         [month, throughMonth].filter((value): value is string => !!value),
       ),
     ];
-    void Promise.all(
-      requested.map(async (next) => {
+    const load = async (
+      next: string,
+    ): Promise<CalendarAvailability | undefined> => {
+      if (
+        next >
+        monthAt(
+          todaySG(new Date(Date.now())).slice(0, 7) + "-01",
+          BOOKING_MONTH_COUNT - 1,
+        ).slice(0, 7)
+      )
+        return;
+      if (controller.signal.aborted) return;
+      const previous = retained.current;
+      const saved =
+        previous?.owner === service && previous.key === key
+          ? previous.entries[next]
+          : undefined;
+      if (saved && Date.now() - saved.observedAtMs < retention(saved))
+        return saved;
+      try {
+        const result = service.publicCalendar
+          ? await service.publicCalendar({
+              month: next,
+              signal: controller.signal,
+            })
+          : await calendar!({
+              month: next,
+              serviceId: protectedServiceId!,
+              signal: controller.signal,
+            });
         if (
-          next >
-          monthAt(
-            todaySG(new Date(Date.now())).slice(0, 7) + "-01",
-            BOOKING_MONTH_COUNT - 1,
-          ).slice(0, 7)
+          protectedServiceId &&
+          "serviceId" in result &&
+          result.serviceId !== protectedServiceId
         )
-          return;
+          throw new Error("calendar_service_changed");
         if (controller.signal.aborted) return;
-        const previous = retained.current;
-        const saved =
-          previous?.owner === service && previous.key === key
-            ? previous.entries[next]
-            : undefined;
-        if (saved && Date.now() - saved.observedAtMs < retention(saved)) return;
-        if (saved) setRefreshIndicator(JSON.stringify([key, next]));
-        try {
-          const result = service.publicCalendar
-            ? await service.publicCalendar({
-                month: next,
-                signal: controller.signal,
-              })
-            : await calendar!({
-                month: next,
-                serviceId: protectedServiceId!,
-                signal: controller.signal,
-              });
-          if (
-            protectedServiceId &&
-            "serviceId" in result &&
-            result.serviceId !== protectedServiceId
-          )
-            throw new Error("calendar_service_changed");
-          if (controller.signal.aborted) return;
-          const receivedAtMs = Date.now();
-          if (result.observedAtMs + retention(result) <= receivedAtMs)
-            throw new Error("calendar_receipt_expired");
+        const receivedAtMs = Date.now();
+        if (result.observedAtMs + retention(result) <= receivedAtMs)
+          throw new Error("calendar_receipt_expired");
+        setState((previous) => {
+          const entries =
+            previous?.owner === service && previous.key === key
+              ? { ...previous.entries }
+              : {};
+          entries[next] = { ...result, receivedAtMs };
+          const retained = Object.fromEntries(
+            Object.entries(entries).slice(-BOOKING_MONTH_COUNT),
+          );
+          const failed =
+            previous?.owner === service && previous.key === key
+              ? previous.failed.filter((value) => value !== next)
+              : [];
+          return { owner: service, key, entries: retained, failed };
+        });
+        return result;
+      } catch {
+        if (!controller.signal.aborted)
           setState((previous) => {
             const entries =
               previous?.owner === service && previous.key === key
                 ? { ...previous.entries }
                 : {};
-            entries[next] = { ...result, receivedAtMs };
-            const retained = Object.fromEntries(
-              Object.entries(entries).slice(-BOOKING_MONTH_COUNT),
-            );
             const failed =
               previous?.owner === service && previous.key === key
-                ? previous.failed.filter((value) => value !== next)
-                : [];
-            return { owner: service, key, entries: retained, failed };
+                ? [...new Set([...previous.failed, next])]
+                : [next];
+            return { owner: service, key, entries, failed };
           });
-        } catch {
-          if (!controller.signal.aborted)
+        return;
+      }
+    };
+    void (async () => {
+      const visible = await Promise.all(requested.map(load));
+      if (controller.signal.aborted || !prepareCoverage) return;
+      if (
+        preparedRef.current?.owner === service &&
+        preparedRef.current.key === key
+      )
+        return;
+      const coverage = visible.find(
+        (entry) => entry?.monthCoverage,
+      )?.monthCoverage;
+      const firstMonth = todaySG(new Date(Date.now())).slice(0, 7);
+      const lastMonth = monthAt(
+        firstMonth + "-01",
+        BOOKING_MONTH_COUNT - 1,
+      ).slice(0, 7);
+      const covered = (coverage ?? []).filter(
+        (entry) =>
+          entry.month >= firstMonth &&
+          entry.month <= lastMonth &&
+          !requested.includes(entry.month),
+      );
+      // Empty cache evidence describes a display-ready empty grid, without
+      // making another request or extending the server's original deadline.
+      const results = await Promise.all(
+        covered.map(async (entry) => {
+          if (
+            entry.state === "empty" &&
+            entry.observedAtMs <= Date.now() &&
+            entry.displayExpiresAtMs > Date.now()
+          ) {
             setState((previous) => {
-              const entries =
-                previous?.owner === service && previous.key === key
-                  ? { ...previous.entries }
-                  : {};
-              const failed =
-                previous?.owner === service && previous.key === key
-                  ? [...new Set([...previous.failed, next])]
-                  : [next];
-              return { owner: service, key, entries, failed };
+              if (
+                previous?.owner !== service ||
+                previous.key !== key ||
+                (previous.entries[entry.month] &&
+                  previous.entries[entry.month].observedAtMs +
+                    retention(previous.entries[entry.month]) >
+                    Date.now())
+              )
+                return previous;
+              return {
+                ...previous,
+                entries: {
+                  ...previous.entries,
+                  [entry.month]: {
+                    month: entry.month,
+                    dates: [],
+                    observedAtMs: entry.observedAtMs,
+                    displayExpiresAtMs: entry.displayExpiresAtMs,
+                    receivedAtMs: Date.now(),
+                  },
+                },
+              };
             });
-          return;
-        }
-      }),
-    );
+            return true;
+          }
+          return !!(await load(entry.month));
+        }),
+      );
+      if (
+        !controller.signal.aborted &&
+        visible.every(Boolean) &&
+        results.every(Boolean)
+      )
+        setPrepared({ owner: service, key });
+    })();
     return () => controller.abort();
   }, [
     service,
@@ -148,6 +223,7 @@ export function useCalendarAvailability(
     paused,
     key,
     reload,
+    prepareCoverage,
   ]);
   // Replace the visible month at its fixed deadline. Retain its layout while
   // fetching, but never reuse expired offers as selectable availability.
@@ -182,11 +258,6 @@ export function useCalendarAvailability(
     );
     return () => clearTimeout(timer);
   }, [state, service, key, month, throughMonth, paused, checkedAt]);
-  useEffect(() => {
-    if (!refreshIndicator) return;
-    const timer = setTimeout(() => setRefreshIndicator(null), 500);
-    return () => clearTimeout(timer);
-  }, [refreshIndicator]);
   const current = state?.owner === service && state.key === key ? state : null;
   const reconcile = useCallback(
     (date: string, available: boolean | undefined, slots?: AvailableSlot[]) => {
@@ -253,6 +324,9 @@ export function useCalendarAvailability(
   );
   return {
     cachedDates,
+    initialReady:
+      !service.publicCalendar ||
+      (prepared?.owner === service && prepared.key === key),
     /** Trim only trailing months proved empty by still-current server cache evidence. */
     lastMonthOffset(now: number) {
       const observedNow = Math.max(now, checkedAt);
@@ -298,8 +372,6 @@ export function useCalendarAvailability(
           }
         : null;
     },
-    refreshing: (selected: string) =>
-      refreshIndicator === JSON.stringify([key, selected]),
     /** Resolve a cached calendar entry and filter offers against the current cutoff. */
     entry(selected: string, now: number) {
       const value = current?.entries[selected];

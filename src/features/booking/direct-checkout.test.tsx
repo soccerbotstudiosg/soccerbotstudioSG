@@ -1978,12 +1978,15 @@ async function verifyMockPaymentExpiry(expired: boolean) {
       </>
     );
   }
-  const tree = (step: "payment" | "time") => (
-    <BookingProvider bookingService={service} identityService={identity}>
-      <Probe />
-      <BookingPage step={step} />
-    </BookingProvider>
-  );
+  const tree = (step: "payment" | "time") => {
+    navigation.path = `/book/${step}/`;
+    return (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+        <BookingPage step={step} />
+      </BookingProvider>
+    );
+  };
   saveLiveDraft(draft, true, id);
   let view = render(tree("payment"));
   if (!expired) {
@@ -2218,12 +2221,15 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
       </>
     );
   }
-  const tree = (step: "review" | "time" | "details") => (
-    <BookingProvider bookingService={service} identityService={identity}>
-      <Probe />
-      <BookingPage step={step} />
-    </BookingProvider>
-  );
+  const tree = (step: "review" | "time" | "details") => {
+    navigation.path = `/book/${step}/`;
+    return (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+        <BookingPage step={step} />
+      </BookingProvider>
+    );
+  };
   saveLiveDraft(draft);
   const view = render(tree("review"));
   await act(async () => {});
@@ -4314,4 +4320,311 @@ it("expired held Review with unresolved release returns affected sessions in the
     { path: `/api/booking/hitpay/${id}`, method: "POST" },
     { path: `/api/attempts/${id}/expire`, method: "POST" },
   ]);
+});
+
+it("idle Review removes cutoff-crossed sessions at the strict four-hour boundary and preserves valid selections", async () => {
+  vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+  vi.setSystemTime(new Date("2026-11-12T11:19:59.999+08:00"));
+  navigation.path = "/book/review/";
+  const slots = ["15:20", "16:10"].map((start) => ({
+    ...draft.slots[0],
+    date: "2026-11-12",
+    start,
+  }));
+  saveLiveDraft({ ...draft, slots });
+  const checkout = vi.fn();
+  const service = {
+    ...liveBookingService,
+    restore: undefined,
+    publicCalendar: undefined,
+    checkout,
+    availability: vi.fn(async () =>
+      slots.map((slot) => ({ ...slot, available: true })),
+    ),
+  };
+  let state: ReturnType<typeof useBooking> | undefined;
+  function Probe() {
+    const snapshot = useBooking();
+    useEffect(() => {
+      state = snapshot;
+    }, [snapshot]);
+    return null;
+  }
+  function Journey() {
+    const [step, setStep] = useState<"review" | "time">("review");
+    useEffect(() => {
+      navigation.replace.mockImplementation(() => {
+        navigation.path = "/book/time/";
+        setStep("time");
+      });
+    }, []);
+    return (
+      <BookingProvider
+        bookingService={service}
+        identityService={demoCustomerIdentity}
+      >
+        <Probe />
+        <BookingPage step={step} />
+      </BookingProvider>
+    );
+  }
+  render(<Journey />);
+  await act(async () => {});
+  expect(screen.getByRole("heading", { name: "Review Booking" })).toBeVisible();
+  await act(async () => {
+    vi.advanceTimersByTime(1);
+  });
+  expect(state!.draft.slots).toEqual(slots);
+  expect(state!.selectionNotice).toBeNull();
+  await act(async () => {
+    vi.advanceTimersByTime(1);
+  });
+  expect(state!.draft.slots).toEqual([slots[1]]);
+  expect(state!.draft.contact).toEqual(draft.contact);
+  expect(state!.draft.accepted).toBe(false);
+  expect(state!.selectionNotice).toBe("Session no longer available.");
+  expect(state!.selectionNoticeSlots).toEqual([
+    { date: "2026-11-12", start: "15:20" },
+  ]);
+  expect(
+    screen.getByRole("heading", { name: "Select dates and times" }),
+  ).toBeVisible();
+  expect(screen.getByText("Session no longer available.")).toBeVisible();
+  expect(
+    within(screen.getByRole("alert")).getByText(/15:20–16:00/),
+  ).toBeVisible();
+  expect(await state!.review()).toBe(true);
+  expect(checkout).not.toHaveBeenCalled();
+});
+
+it("cutoff recovery survives refresh and permits replacement without reviving removed sessions", async () => {
+  vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+  vi.setSystemTime(new Date("2026-11-12T11:20:00.001+08:00"));
+  navigation.path = "/book/time/";
+  const expired = { ...draft.slots[0], date: "2026-11-12", start: "15:20" };
+  const replacement = { ...expired, start: "16:10" };
+  saveLiveDraft({ ...draft, slots: [expired] });
+  const service = {
+    ...liveBookingService,
+    restore: undefined,
+    publicCalendar: undefined,
+    availability: vi.fn(async () => []),
+  };
+  let state: ReturnType<typeof useBooking> | undefined;
+  function Probe() {
+    const snapshot = useBooking();
+    useEffect(() => {
+      state = snapshot;
+    }, [snapshot]);
+    return null;
+  }
+  const view = () => (
+    <BookingProvider
+      bookingService={service}
+      identityService={demoCustomerIdentity}
+    >
+      <Probe />
+    </BookingProvider>
+  );
+  const first = render(view());
+  await act(async () => {});
+  expect(state!.draft.slots).toEqual([]);
+  expect(state!.selectionNotice).toBe("Session no longer available.");
+  first.unmount();
+  render(view());
+  await act(async () => {});
+  expect(state!.draft.slots).toEqual([]);
+  expect(state!.selectionNoticeSlots).toEqual([
+    { date: expired.date, start: expired.start },
+  ]);
+  await act(async () => {
+    state!.update({ slots: [replacement] });
+  });
+  expect(state!.draft.slots).toEqual([replacement]);
+  expect(state!.draft.contact).toEqual(draft.contact);
+  expect(state!.selectionNotice).toBe("Session no longer available.");
+  expect(await state!.review()).toBe(true);
+  act(() => state!.visitBookingStep("time"));
+  act(() => state!.visitBookingStep("details"));
+  expect(state!.selectionNotice).toBeNull();
+});
+
+it("cutoff timers cannot remove a held attempt or an in-flight checkout snapshot", async () => {
+  vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+  vi.setSystemTime(new Date("2026-11-12T11:19:59.999+08:00"));
+  navigation.path = "/book/review/";
+  const selected = {
+    ...draft,
+    slots: [{ ...draft.slots[0], date: "2026-11-12", start: "15:20" }],
+  };
+  saveLiveDraft(selected);
+  let finish!: (attempt: Attempt) => void;
+  const checkout = vi.fn(
+    () =>
+      new Promise<Attempt>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const service = {
+    ...liveBookingService,
+    restore: undefined,
+    publicCalendar: undefined,
+    checkout,
+    pay: vi.fn(async ({ attempt }: { attempt: Attempt }) => attempt),
+    availability: vi.fn(async () => []),
+  };
+  let state: ReturnType<typeof useBooking> | undefined;
+  function Probe() {
+    const snapshot = useBooking();
+    useEffect(() => {
+      state = snapshot;
+    }, [snapshot]);
+    return null;
+  }
+  render(
+    <BookingProvider
+      bookingService={service}
+      identityService={demoCustomerIdentity}
+    >
+      <Probe />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  let pending!: Promise<boolean>;
+  await act(async () => {
+    pending = state!.reserve();
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(2);
+  });
+  expect(state!.draft.slots).toEqual(selected.slots);
+  expect(state!.selectionNotice).toBeNull();
+  const held: Attempt = {
+    id,
+    draft: { ...selected, accepted: false },
+    status: "ready",
+    held: true,
+    outcome: "success",
+    booking: null,
+    checkUntil: Date.now() + 540000,
+  };
+  await act(async () => {
+    finish(held);
+    await pending;
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(60000);
+  });
+  expect(state!.attempt?.id).toBe(id);
+  expect(state!.attempt?.draft.slots).toEqual(selected.slots);
+  expect(state!.draft.slots).toEqual(selected.slots);
+  expect(state!.selectionNotice).toBeNull();
+  expect(checkout).toHaveBeenCalledTimes(1);
+});
+
+it("replacement cancels the old cutoff timer and focus removes only newly stale editable slots", async () => {
+  vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+  vi.setSystemTime(new Date("2026-11-12T11:19:59.999+08:00"));
+  navigation.path = "/book/session/";
+  const original = { ...draft.slots[0], date: "2026-11-12", start: "15:20" };
+  const replacement = { ...original, start: "16:10" };
+  saveLiveDraft({ ...draft, slots: [original] });
+  const service = {
+    ...liveBookingService,
+    restore: undefined,
+    publicCalendar: undefined,
+    availability: vi.fn(async () => []),
+  };
+  let state: ReturnType<typeof useBooking> | undefined;
+  function Probe() {
+    const snapshot = useBooking();
+    useEffect(() => {
+      state = snapshot;
+    }, [snapshot]);
+    return null;
+  }
+  render(
+    <BookingProvider
+      bookingService={service}
+      identityService={demoCustomerIdentity}
+    >
+      <Probe />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  act(() => state!.update({ slots: [replacement] }));
+  await act(async () => {
+    vi.advanceTimersByTime(2);
+  });
+  expect(state!.draft.slots).toEqual([replacement]);
+  expect(state!.selectionNotice).toBeNull();
+  vi.setSystemTime(new Date("2026-11-12T12:10:01+08:00"));
+  await act(async () => {
+    window.dispatchEvent(new Event("focus"));
+  });
+  expect(state!.draft.slots).toEqual([]);
+  expect(state!.selectionNoticeSlots).toEqual([
+    { date: replacement.date, start: replacement.start },
+  ]);
+  expect(state!.action.returnToCalendar).toBe(false);
+  expect(navigation.replace).not.toHaveBeenCalled();
+});
+
+it("cutoff pruning waits for protected restoration and leaves a restored hold unchanged", async () => {
+  vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+  vi.setSystemTime(new Date("2026-11-12T11:20:01+08:00"));
+  navigation.path = "/book/review/";
+  const selected = {
+    ...draft,
+    slots: [{ ...draft.slots[0], date: "2026-11-12", start: "15:20" }],
+  };
+  saveLiveDraft(selected, true, id);
+  let finish!: (attempt: Attempt) => void;
+  const restore = vi.fn(
+    () =>
+      new Promise<Attempt>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const service = {
+    ...liveBookingService,
+    restore,
+    publicCalendar: undefined,
+    availability: vi.fn(async () => []),
+  };
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  let state: ReturnType<typeof useBooking> | undefined;
+  function Probe() {
+    const snapshot = useBooking();
+    useEffect(() => {
+      state = snapshot;
+    }, [snapshot]);
+    return null;
+  }
+  render(
+    <BookingProvider bookingService={service} identityService={identity}>
+      <Probe />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  await act(async () => {
+    vi.advanceTimersByTime(60000);
+  });
+  expect(state!.draft.slots).toEqual(selected.slots);
+  expect(state!.selectionNotice).toBeNull();
+  const held: Attempt = {
+    id,
+    draft: selected,
+    status: "ready",
+    held: true,
+    outcome: "pending",
+    booking: null,
+    checkUntil: 0,
+  };
+  await act(async () => {
+    finish(held);
+  });
+  expect(state!.attempt?.id).toBe(id);
+  expect(state!.draft.slots).toEqual(selected.slots);
+  expect(state!.selectionNotice).toBeNull();
 });

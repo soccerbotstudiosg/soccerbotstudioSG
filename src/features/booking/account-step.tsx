@@ -2,6 +2,11 @@
 import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading } from "./booking-loading";
+import { useBookingEntryTransition } from "@/components/booking-navigation";
+import {
+  takeIdentityEntry,
+  type IdentityEntryPreparation,
+} from "@/services/identity";
 import {
   useCallback,
   useEffect,
@@ -55,16 +60,22 @@ export function AccountStep({
     0,
     Math.ceil((resendAfter - resendNow) / 1000),
   );
+  const codeExpiresAt = view === "code" ? (challenge?.expiresAt ?? 0) : 0;
+  const codeSeconds = Math.max(
+    0,
+    Math.ceil((codeExpiresAt - resendNow) / 1000),
+  );
+  const clockDeadline = Math.max(resendAfter, codeExpiresAt);
   useEffect(() => {
-    if (!resendAfter) return;
+    if (!clockDeadline) return;
     let timer: ReturnType<typeof setTimeout>;
     /** Refresh the countdown from the server deadline, including after suspension. */
     function refresh() {
       clearTimeout(timer);
       const current = Date.now();
       setResendNow(current);
-      if (current < resendAfter)
-        timer = setTimeout(refresh, Math.min(1000, resendAfter - current));
+      if (current < clockDeadline)
+        timer = setTimeout(refresh, Math.min(1000, clockDeadline - current));
     }
     refresh();
     window.addEventListener("focus", refresh);
@@ -74,7 +85,7 @@ export function AccountStep({
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, [resendAfter]);
+  }, [clockDeadline]);
   const [identity, setIdentity] = useState(() => identityService.current());
   useEffect(() => {
     onIdentityChange?.(identity);
@@ -85,6 +96,7 @@ export function AccountStep({
   const restoring =
     identityService.mode === "live" && restoredService !== identityService;
   const [working, setBusy] = useState(false);
+  const [openingProfile, setOpeningProfile] = useState(false);
   const [navigating, startNavigation] = useTransition();
   const busy = working || navigating;
   const [botToken, setBotToken] = useState("");
@@ -96,33 +108,27 @@ export function AccountStep({
         message === EMAIL_SECURITY_CHECK_REQUIRED ? "" : message,
       );
   }, []);
-  const refreshing = useRef<AbortController | null>(null);
+  const entryTransition = useBookingEntryTransition();
+  const refreshing = useRef<IdentityEntryPreparation | null>(null);
   const active = useRef<AbortController | null>(null);
   useEffect(() => {
-    const controller = new AbortController();
-    refreshing.current = controller;
-    // Initial restoration must not leave entry choices hidden on a stalled read.
-    const timeout = setTimeout(() => {
-      if (controller.signal.aborted) return;
-      controller.abort();
-      setIdentity(null);
+    let activeEntry = true;
+    const preparation = takeIdentityEntry(identityService);
+    refreshing.current = {
+      promise: preparation.promise,
+      cancel: () => {
+        activeEntry = false;
+        preparation.cancel();
+      },
+    };
+    void preparation.promise.then((value) => {
+      if (!activeEntry) return;
+      setIdentity(value);
       setRestoredService(identityService);
-    }, 10_000);
-    void identityService
-      .refresh(controller.signal)
-      .then((value) => {
-        if (!controller.signal.aborted) setIdentity(value);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setIdentity(null);
-      })
-      .finally(() => {
-        clearTimeout(timeout);
-        if (!controller.signal.aborted) setRestoredService(identityService);
-      });
+    });
     return () => {
-      clearTimeout(timeout);
-      controller.abort();
+      activeEntry = false;
+      preparation.cancel();
       active.current?.abort();
     };
   }, [identityService]);
@@ -130,12 +136,13 @@ export function AccountStep({
     active.current?.abort();
     active.current = null;
     setBusy(false);
+    setOpeningProfile(false);
     setBotToken("");
     setBotGeneration((value) => value + 1);
   }, []);
   useLayoutEffect(() => {
     onBackChange?.(
-      view === "email" || view === "code"
+      view === "email" || view === "code" || view === "profile"
         ? () => {
             cancel();
             setView("choice");
@@ -161,17 +168,38 @@ export function AccountStep({
     update({ mode: "guest", accountEmail: "", contact: blankContact() });
   }
   /** Run an identity action with shared busy and error handling. */
-  async function perform(work: (signal: AbortSignal) => Promise<void>) {
+  async function perform(
+    work: (signal: AbortSignal) => Promise<void>,
+    fullPage = false,
+  ) {
     if (active.current) return;
-    refreshing.current?.abort();
+    refreshing.current?.cancel();
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
+    setOpeningProfile(fullPage);
     setError("");
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let timedOut = false;
     try {
-      await work(controller.signal);
+      if (fullPage) {
+        await Promise.race([
+          work(controller.signal),
+          new Promise<never>((_, reject) => {
+            timeout = setTimeout(() => {
+              timedOut = true;
+              controller.abort();
+              reject(
+                new CustomerMessageError(
+                  "We couldn’t load your saved details. Please try again.",
+                ),
+              );
+            }, 10_000);
+          }),
+        ]);
+      } else await work(controller.signal);
     } catch (e) {
-      if (!controller.signal.aborted) {
+      if (!controller.signal.aborted || timedOut) {
         if (!identityService.current()) setIdentity(null);
         if (
           e instanceof VerificationRequestLimitedError &&
@@ -187,9 +215,11 @@ export function AccountStep({
         }
       }
     } finally {
+      clearTimeout(timeout);
       if (active.current === controller) {
         active.current = null;
         setBusy(false);
+        setOpeningProfile(false);
       }
     }
   }
@@ -251,6 +281,8 @@ export function AccountStep({
     identityService.current()?.email === identity.email
       ? identity
       : null;
+  if ((view === "choice" && restoring) || openingProfile)
+    return entryTransition ? null : <BookingLoading label="Opening booking" />;
   if (view === "profile")
     return <DetailsStep profileOnly onClose={() => setView("choice")} />;
   if (view === "choice")
@@ -291,131 +323,121 @@ export function AccountStep({
             aria-label="Preparing booking…"
           />
         )}
-        {restoring ? (
-          <BookingLoading label="Checking saved identity…" overlay={false} />
-        ) : (
-          <div
-            className={`access-options${verifiedIdentity ? " access-options-verified" : ""}`}
-          >
-            {!verifiedIdentity && (
-              <section className="surface access-option">
-                <span className="auth-mark">
-                  <Icon name="users" />
-                </span>
-                <h2>Book as a guest</h2>
-                <p className="text-muted">Book without creating an account.</p>
-                <button
-                  className="button wide"
-                  aria-label="Continue as Guest"
-                  disabled={busy}
-                  onClick={() => void perform((signal) => proceed(signal))}
-                >
-                  {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
-                  <Icon name="chevron" />
-                </button>
-              </section>
-            )}
+        <div
+          className={`access-options${verifiedIdentity ? " access-options-verified" : ""}`}
+        >
+          {!verifiedIdentity && (
             <section className="surface access-option">
               <span className="auth-mark">
-                <Icon name="mail" />
+                <Icon name="users" />
               </span>
-              <h2>
-                {verifiedIdentity ? "Welcome back" : "Continue with email"}
-              </h2>
-              <p
-                className={
-                  verifiedIdentity
-                    ? "signed-in-email"
-                    : "break-words text-muted"
-                }
-              >
-                {verifiedIdentity
-                  ? verifiedIdentity.email
-                  : "Verify your email to prefill your name and phone number."}
-              </p>
+              <h2>Book as a guest</h2>
+              <p className="text-muted">Book without creating an account.</p>
               <button
                 className="button wide"
+                aria-label="Continue as Guest"
                 disabled={busy}
-                onClick={() => {
-                  if (verifiedIdentity)
-                    void perform(async (signal) => {
-                      const current = await identityService.refresh(signal);
-                      if (signal.aborted) return;
-                      setIdentity(current);
-                      if (!current)
-                        throw new CustomerMessageError(
-                          "Verify your email again.",
-                        );
-                      await proceed(signal, current.email);
-                    });
-                  else {
-                    setError("");
-                    setView("email");
-                  }
-                }}
+                onClick={() => void perform((signal) => proceed(signal))}
               >
-                {verifiedIdentity
-                  ? "Continue signed in"
-                  : "Continue with email"}
+                {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
                 <Icon name="chevron" />
               </button>
-              {verifiedIdentity && (
-                <div className="account-actions">
-                  {verifiedIdentity.remember === true && (
-                    <button
-                      type="button"
-                      className="button secondary"
-                      disabled={busy}
-                      onClick={() => {
-                        void perform(async (signal) => {
-                          const current = await identityService.refresh(signal);
-                          if (signal.aborted) return;
-                          setIdentity(current);
-                          if (!current || current.remember !== true)
-                            throw new CustomerMessageError(
-                              "Select Remember me and verify your email to save details.",
-                            );
-                          await proceed(signal, current.email, true);
-                        });
-                      }}
-                    >
-                      Manage saved contact
-                    </button>
-                  )}
+            </section>
+          )}
+          <section className="surface access-option">
+            <span className="auth-mark">
+              <Icon name="mail" />
+            </span>
+            <h2>{verifiedIdentity ? "Welcome back" : "Continue with email"}</h2>
+            <p
+              className={
+                verifiedIdentity ? "signed-in-email" : "break-words text-muted"
+              }
+            >
+              {verifiedIdentity
+                ? verifiedIdentity.email
+                : "Verify your email to prefill your name and phone number."}
+            </p>
+            <button
+              className="button wide"
+              disabled={busy}
+              onClick={() => {
+                if (verifiedIdentity)
+                  void perform(async (signal) => {
+                    const current = await identityService.refresh(signal);
+                    if (signal.aborted) return;
+                    setIdentity(current);
+                    if (!current)
+                      throw new CustomerMessageError(
+                        "Verify your email again.",
+                      );
+                    await proceed(signal, current.email);
+                  });
+                else {
+                  setError("");
+                  setView("email");
+                }
+              }}
+            >
+              {verifiedIdentity ? "Continue signed in" : "Continue with email"}
+              <Icon name="chevron" />
+            </button>
+            {verifiedIdentity && (
+              <div className="account-actions">
+                {verifiedIdentity.remember === true && (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    disabled={busy}
+                    onClick={() => {
+                      void perform(async (signal) => {
+                        const current = await identityService.refresh(signal);
+                        if (signal.aborted) return;
+                        setIdentity(current);
+                        if (!current || current.remember !== true)
+                          throw new CustomerMessageError(
+                            "Select Remember me and verify your email to save details.",
+                          );
+                        await proceed(signal, current.email, true);
+                      }, true);
+                    }}
+                  >
+                    Manage saved contact
+                  </button>
+                )}
+                <button
+                  className="button secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    void perform(async (signal) => {
+                      await identityService.signOut(signal);
+                      if (!signal.aborted) {
+                        resetIdentityEntry();
+                        setView("email");
+                      }
+                    });
+                  }}
+                >
+                  Use another email
+                </button>
+                {identityService.mode === "live" && (
                   <button
                     className="button secondary"
                     disabled={busy}
                     onClick={() => {
                       void perform(async (signal) => {
-                        await identityService.signOut(signal);
-                        if (!signal.aborted) {
-                          resetIdentityEntry();
-                          setView("email");
-                        }
+                        await identityService.signOut(signal, true);
+                        if (!signal.aborted) resetIdentityEntry();
                       });
                     }}
                   >
-                    Use another email
+                    Sign out all devices
                   </button>
-                  {identityService.mode === "live" && (
-                    <button
-                      className="button secondary"
-                      disabled={busy}
-                      onClick={() => {
-                        void perform(async (signal) => {
-                          await identityService.signOut(signal, true);
-                          if (!signal.aborted) resetIdentityEntry();
-                        });
-                      }}
-                    >
-                      Sign out all devices
-                    </button>
-                  )}
-                </div>
-              )}
-            </section>
-          </div>
-        )}
+                )}
+              </div>
+            )}
+          </section>
+        </div>
       </>
     );
   return (
@@ -523,7 +545,7 @@ export function AccountStep({
             {identityService.mode === "demo" && (
               <p className="auth-demo-code">
                 Demo code <strong>{DEMO_CODE}</strong>
-                <span>No email sent · Code valid for 10 minutes</span>
+                <span>No email sent · Code valid for 2 minutes</span>
               </p>
             )}
           </>
@@ -540,21 +562,29 @@ export function AccountStep({
             {requestBlockedUntil > resendNow && <p>{EMAIL_REQUEST_LIMITED}</p>}
             {resendSeconds > 0 ? (
               <p role="timer" aria-live="off">
-                {requestBlockedUntil > resendNow || view !== "code"
-                  ? "Try again in"
-                  : "Request another code in"}
-                : {String(Math.floor(resendSeconds / 60)).padStart(2, "0")}:
+                {String(Math.floor(resendSeconds / 60)).padStart(2, "0")}:
                 {String(resendSeconds % 60).padStart(2, "0")}
               </p>
             ) : (
-              <button
-                type="button"
-                disabled={busy}
-                className="text-link"
-                onClick={request}
-              >
-                Request another code
-              </button>
+              <>
+                {codeSeconds > 0 ? (
+                  <p role="timer" aria-live="off">
+                    Code expires in:{" "}
+                    {String(Math.floor(codeSeconds / 60)).padStart(2, "0")}:
+                    {String(codeSeconds % 60).padStart(2, "0")}
+                  </p>
+                ) : view === "code" ? (
+                  <p>This code has expired.</p>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="text-link"
+                  onClick={request}
+                >
+                  Request another code
+                </button>
+              </>
             )}
           </div>
         ) : null}

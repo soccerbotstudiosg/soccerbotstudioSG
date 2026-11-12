@@ -8,6 +8,7 @@ type Turnstile = {
     options: {
       sitekey: string;
       action: string;
+      appearance: "always" | "interaction-only";
       callback: (token: string) => void;
       "expired-callback": () => void;
       "error-callback": () => void;
@@ -49,6 +50,7 @@ function BotProof({
     const id = api.render(container.current, {
       sitekey,
       action: purpose,
+      appearance: purpose === "create-checkout" ? "interaction-only" : "always",
       callback: token,
       "expired-callback": () => token(""),
       "error-callback": () => {

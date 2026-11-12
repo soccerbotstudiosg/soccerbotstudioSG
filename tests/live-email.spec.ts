@@ -44,7 +44,7 @@ const syntheticTurnstileScript = `
       const complete = () => options.callback(
         options.action === 'create-checkout'
           ? 'synthetic-checkout-' + crypto.randomUUID()
-          : 'synthetic-proof'
+          : 'synthetic-email-' + crypto.randomUUID()
       );
       const expire = () => options['expired-callback']();
       widgets.set(id, { container, complete, expire });
@@ -78,10 +78,20 @@ async function fixture(
   remembered = false,
   identityReady?: Promise<void>,
   codeRequestLimit = false,
+  entryRoute = "/book/account/",
 ) {
+  let initialAccess = true;
   let identityClockOffset = 0;
   let requestedCodes = 0;
   let codeBlockUntil = 0;
+  let pendingProfile: Promise<void> | null = null;
+  let verifiedCodeRequest = 0;
+  const issuedCodes: {
+    id: string;
+    code: string;
+    expiresAt: number;
+    consumed: boolean;
+  }[] = [];
   const calls: { path: string; method: string; body: unknown }[] = [];
   const unexpected: string[] = [];
   let verified = remembered;
@@ -112,6 +122,10 @@ async function fixture(
     const method = request.method();
     const body: unknown = request.postData() ? request.postDataJSON() : null;
     calls.push({ path: url.pathname, method, body });
+    if (url.pathname === "/api/access" && method === "POST" && initialAccess) {
+      initialAccess = false;
+      await identityReady;
+    }
     const requestNow = Date.now() + identityClockOffset;
     const responseHeaders: Record<string, string> = {};
     let status = 503,
@@ -131,6 +145,9 @@ async function fixture(
       url.pathname === "/api/identity/contact" &&
       method === "GET"
     ) {
+      const profileGate = pendingProfile;
+      pendingProfile = null;
+      await profileGate;
       status = verified ? 200 : 401;
       result = verified
         ? { email: "synthetic@example.test", contact }
@@ -187,11 +204,20 @@ async function fixture(
         requestedCodes++;
         if (codeRequestLimit && requestedCodes === 3)
           codeBlockUntil = requestNow + 600000;
+        const issuedId = codeRequestLimit
+          ? `10000000-0000-4000-8000-${String(requestedCodes).padStart(12, "0")}`
+          : challengeId;
+        issuedCodes.push({
+          id: issuedId,
+          code: ["246810", "135790", "112233"][requestedCodes - 1] ?? "445566",
+          expiresAt: requestNow + 120000,
+          consumed: false,
+        });
         status = 201;
         result = {
-          challengeId,
-          expiresAt: requestNow + 600000,
-          resendAfter: requestNow + 120000,
+          challengeId: issuedId,
+          expiresAt: requestNow + 120000,
+          resendAfter: requestNow,
           requestLimited: false,
         };
       }
@@ -200,28 +226,65 @@ async function fixture(
       url.pathname === "/api/identity/verify" &&
       method === "POST"
     ) {
-      verified = true;
-      remember = (body as { remember?: boolean }).remember === true;
-      status = 200;
-      result = {
-        email: "synthetic@example.test",
-        expiresAt: requestNow + 600000,
-        remember,
+      const input = body as {
+        challengeId: string;
+        code: string;
+        remember?: boolean;
       };
+      const usableCode = issuedCodes.findIndex(
+        (issued) =>
+          issued.code === input.code &&
+          !issued.consumed &&
+          issued.expiresAt > requestNow,
+      );
+      if (
+        codeRequestLimit &&
+        (input.challengeId !== issuedCodes.at(-1)?.id || usableCode < 0)
+      ) {
+        status = 400;
+        result = { error: "verification_unavailable" };
+      } else {
+        if (codeRequestLimit) {
+          issuedCodes[usableCode].consumed = true;
+          verifiedCodeRequest = usableCode + 1;
+        }
+        verified = true;
+        remember = input.remember === true;
+        status = 200;
+        result = {
+          email: "synthetic@example.test",
+          expiresAt: requestNow + 600000,
+          remember,
+        };
+      }
     }
     await route.fulfill({ status, headers: responseHeaders, json: result });
   });
-  await page.goto("/book/account/");
-  const prompt = page.getByRole("dialog", {
-    name: "Download The Official Soccerbot360 Player App Now.",
-  });
-  await expect(prompt).toBeVisible();
-  await prompt
-    .getByRole("button", { name: "Close dialog", exact: true })
-    .click();
+  await page.goto(entryRoute);
+  /** Dismiss the popup after the shared entry overlay has cleared. */
+  async function closePopup() {
+    const prompt = page.getByRole("dialog", {
+      name: "Download The Official Soccerbot360 Player App Now.",
+    });
+    await expect(prompt).toBeVisible();
+    await prompt
+      .getByRole("button", { name: "Close dialog", exact: true })
+      .click();
+  }
+  // A pending direct-entry preflight owns the full overlay until identity settles.
+  if (!identityReady || entryRoute !== "/book/account/") await closePopup();
   return {
     calls,
     unexpected,
+    closePopup,
+    verifiedCodeRequest: () => verifiedCodeRequest,
+    deferNextProfileRead() {
+      let release!: () => void;
+      pendingProfile = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return release;
+    },
     advanceIdentityClock(ms: number) {
       identityClockOffset += ms;
     },
@@ -231,7 +294,38 @@ async function fixture(
 test("live guest denial stays on account without Preview fallback", async ({
   page,
 }) => {
-  const evidence = await fixture(page);
+  let releaseIdentity!: () => void;
+  const identityReady = new Promise<void>((resolve) => {
+    releaseIdentity = resolve;
+  });
+  const evidence = await fixture(page, false, false, identityReady, false, "/");
+  const preparingIdentity = page.waitForRequest(
+    (request) =>
+      new URL(request.url()).pathname === "/api/access" &&
+      request.method() === "POST",
+  );
+  await page.getByRole("link", { name: /^Book now —/ }).click();
+  await preparingIdentity;
+  const arena = page.getByRole("button", {
+    name: "Skip arena transition",
+    exact: true,
+  });
+  await expect(arena).toBeVisible();
+  expect(
+    evidence.calls.filter((call) => call.path === "/api/access"),
+  ).toHaveLength(1);
+  await arena.click();
+  await expect(page.locator(".page-loading")).toHaveCount(1);
+  await expect(page.locator(".page-loading")).toBeVisible();
+  await expect(page.locator(".booking-loading")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Continue as Guest", exact: true }),
+  ).toHaveCount(0);
+  releaseIdentity();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
+  expect(
+    evidence.calls.filter((call) => call.path === "/api/access"),
+  ).toHaveLength(1);
   await page.getByRole("button", { name: "Continue as Guest" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "We couldn’t start your booking. Please try again.",
@@ -299,35 +393,62 @@ test("synthetic live verification reads server identity and keeps native booking
   await expect(page.locator("main")).not.toHaveAttribute("inert");
   for (let requestNumber = 2; requestNumber <= 4; requestNumber++) {
     // The clock keeps animations running; allow only the elapsed response second.
-    await expect(page.getByRole("timer")).toContainText(/(?:01:59|02:00)$/);
+    await expect(page.getByRole("timer")).toHaveText(
+      /Code expires in: (?:01:59|02:00)$/,
+    );
     await expect(page.locator(".auth-code-feedback.alert")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Request another code", exact: true }),
-    ).toHaveCount(0);
-    evidence.advanceIdentityClock(120000);
-    await page.clock.fastForward(120000);
+    ).toBeEnabled();
+    // Each request overlaps the preceding code's own two-minute lifetime.
+    evidence.advanceIdentityClock(20000);
+    await page.clock.fastForward(20000);
     await page
       .getByRole("button", {
         name: "Complete synthetic email check",
         exact: true,
       })
       .click();
+    const blockedResponse =
+      requestNumber === 4
+        ? page.waitForResponse(
+            (response) =>
+              new URL(response.url()).pathname === "/api/identity/challenges" &&
+              response.status() === 429,
+          )
+        : null;
     await page
       .getByRole("button", { name: "Request another code", exact: true })
       .click();
     if (requestNumber === 4) {
+      const response = await blockedResponse!;
+      const remaining = Number(response.headers()["retry-after"]);
+      expect(remaining).toBeGreaterThan(0);
+      expect(remaining).toBeLessThanOrEqual(580);
+      // Match the authoritative response, allowing one rendering second.
+      const countdown = (seconds: number) =>
+        `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
       const notice = page.locator(".auth-code-feedback.alert");
       await expect(notice).toContainText(
         "Too many code requests. Try again later.",
       );
-      await expect(notice.getByRole("timer")).toContainText(/(?:07:59|08:00)$/);
+      await expect(notice.getByRole("timer")).toHaveText(
+        new RegExp(`^(?:${countdown(remaining)}|${countdown(remaining - 1)})$`),
+      );
+      const noticeBox = await notice.boundingBox();
+      const codeBox = await page
+        .getByLabel("Verification code", { exact: true })
+        .boundingBox();
+      expect(
+        noticeBox!.y - (codeBox!.y + codeBox!.height),
+      ).toBeGreaterThanOrEqual(23);
       await expect(notice).toHaveCSS("text-align", "center");
       await expect(
         page.getByRole("button", { name: "Request another code", exact: true }),
       ).toHaveCount(0);
     }
   }
-  // The rejected fourth request does not invalidate the third delivered code.
+  // The newest form accepts the first still-valid code; later requests do not reset its expiry.
   await expect(
     page.getByRole("button", { name: "Verify and continue", exact: true }),
   ).toBeEnabled();
@@ -360,7 +481,10 @@ test("synthetic live verification reads server identity and keeps native booking
       {
         path: "/api/identity/challenges",
         method: "POST",
-        body: { email: "synthetic@example.test", botToken: "synthetic-proof" },
+        body: {
+          email: "synthetic@example.test",
+          botToken: expect.stringMatching(/^synthetic-email-/),
+        },
       },
     ]).flat(),
     {
@@ -368,7 +492,7 @@ test("synthetic live verification reads server identity and keeps native booking
       method: "POST",
       body: {
         email: "synthetic@example.test",
-        challengeId,
+        challengeId: "10000000-0000-4000-8000-000000000003",
         code: "246810",
         remember: false,
       },
@@ -382,6 +506,11 @@ test("synthetic live verification reads server identity and keeps native booking
   expect(
     evidence.calls.filter((c) => c.path === "/api/identity/contact"),
   ).toEqual([{ path: "/api/identity/contact", method: "GET", body: null }]);
+  expect(evidence.verifiedCodeRequest()).toBe(1);
+  const proofs = evidence.calls
+    .filter((call) => call.path === "/api/identity/challenges")
+    .map((call) => (call.body as { botToken: string }).botToken);
+  expect(new Set(proofs).size).toBe(4);
   expect(evidence.unexpected).toEqual([]);
 });
 
@@ -397,18 +526,28 @@ test("remembered live account edits and rereads contact while native booking sta
     name: "Continue as Guest",
     exact: true,
   });
-  await expect(
-    page.getByRole("status", { name: "Checking saved identity…", exact: true }),
-  ).toHaveCount(1);
+  await expect(page.locator(".page-loading")).toHaveCount(1);
+  await expect(page.locator(".page-loading")).toBeVisible();
+  await expect(page.locator(".booking-loading")).toHaveCount(0);
   await expect(page.getByLabel("Booking identity")).toHaveCount(0);
   await expect(guest).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Continue with email", exact: true }),
   ).toHaveCount(0);
   restoreIdentity();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
+  await evidence.closePopup();
   await expect(
     page.getByRole("button", { name: "Continue signed in", exact: true }),
   ).toBeVisible();
+  expect(
+    evidence.calls.filter((call) => call.path === "/api/access"),
+  ).toHaveLength(1);
+  expect(
+    evidence.calls.filter(
+      (call) => call.path === "/api/identity" && call.method === "GET",
+    ),
+  ).toHaveLength(1);
   const signedInEmail = page.locator(".signed-in-email").filter({
     hasText: "synthetic@example.test",
   });
@@ -461,12 +600,28 @@ test("remembered live account edits and rereads contact while native booking sta
   await expect(
     page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toBeVisible();
+  const releaseProfile = evidence.deferNextProfileRead();
+  const profileRequested = page.waitForRequest(
+    (request) =>
+      new URL(request.url()).pathname === "/api/identity/contact" &&
+      request.method() === "GET",
+  );
   await page
     .getByRole("button", { name: "Manage saved contact", exact: true })
     .click();
+  await profileRequested;
+  await expect(page.locator(".page-loading")).toHaveCount(1);
+  await expect(page.locator(".page-loading")).toBeVisible();
+  await expect(page.locator(".booking-loading")).toHaveCount(0);
+  await expect(page.locator(".access-option")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Saved contact details", exact: true }),
+  ).toHaveCount(0);
+  releaseProfile();
   await expect(
     page.getByRole("heading", { name: "Saved contact details", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
   const saveButton = await page
     .getByRole("button", { name: "Save contact details", exact: true })
     .boundingBox();
@@ -526,9 +681,13 @@ test("remembered live account edits and rereads contact while native booking sta
       },
     },
   ]);
-  await page
-    .getByRole("button", { name: "Back to booking options", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Saved contact details", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Continue as Guest", exact: true }),
+  ).toHaveCount(0);
   await page
     .getByRole("button", { name: "Continue signed in", exact: true })
     .click();
@@ -749,6 +908,20 @@ test("native guest journey preserves players contact and one checkout across ref
     await expect(email).toBeVisible();
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(guest).toBeEnabled();
+    await expect(page.locator(".page-loading, .booking-loading")).toHaveCount(
+      0,
+    );
+    expect(
+      calls.filter(
+        (call) => call.path === "/api/access" && call.method === "POST",
+      ),
+    ).toHaveLength(1);
+    expect(
+      calls.filter(
+        (call) =>
+          call.path === "/api/identity/restore" && call.method === "POST",
+      ),
+    ).toHaveLength(1);
     const guestBox = (await guest.boundingBox())!;
     const emailBox = (await email.boundingBox())!;
     expect(Math.abs(guestBox.width - emailBox.width)).toBeLessThanOrEqual(1);
@@ -817,7 +990,7 @@ test("native guest journey preserves players contact and one checkout across ref
       .selectOption({ index: 1 });
     expect(
       calls.filter((c) => c.path.startsWith("/api/calendar/")),
-    ).toHaveLength(monthOffset === 0 ? 1 : 2);
+    ).toHaveLength(3);
     expect(calls.filter((c) => c.path === "/api/catalogue")).toHaveLength(1);
     expect(
       calls.filter((c) => c.path.startsWith("/api/booking/availability/")),
@@ -3139,12 +3312,22 @@ test("real API expired unpaid Review retains its hold through the grace window w
       .bind(attemptId)
       .first<{ intent_json: string }>();
     await page.getByRole("checkbox").check();
+    // Calendar reveal now waits for all advertised months. Synchronize with
+    // those real reads before checking the retained payment-expiry notice.
+    const preparedMonths = new Set<string>();
+    const calendarPrepared = page.waitForResponse((response) => {
+      const path = new URL(response.url()).pathname;
+      if (path.startsWith("/api/calendar/") && response.status() === 200)
+        preparedMonths.add(path);
+      return preparedMonths.size === 3;
+    });
     await page
       .getByRole("button", {
         name: /^Proceed to Payment \$[\d,.]+$/,
         exact: true,
       })
       .click();
+    await calendarPrepared;
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
       "Your payment window has ended. These sessions may not be available to book again immediately. Please try again later.",
     );

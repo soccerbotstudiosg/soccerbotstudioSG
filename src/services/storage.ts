@@ -255,16 +255,21 @@ export function calendarRecoveryNoticeDismissed(attemptId: string) {
 const noticeSlotsSchema = z.array(slotSchema).max(MAX_BOOKING_SESSIONS);
 export type NoticeSlot = z.infer<typeof noticeSlotsSchema>[number];
 /** Read validated display-only affected slots; an empty array retains generic conflict copy. */
-export function loadConflictNotice(): NoticeSlot[] | null {
+export function loadConflictNotice(
+  kind: "conflict" | "cutoff" = "conflict",
+): NoticeSlot[] | null {
   const parsed = noticeSlotsSchema.safeParse(
-    safeRead("soccerbot-conflict-notice"),
+    safeRead(`soccerbot-${kind}-notice`),
   );
   return parsed.success ? parsed.data : null;
 }
-/** Retain conflict copy across refresh without persisting booking authority. */
-export function saveConflictNotice(slots: NoticeSlot[] | null) {
-  if (slots !== null) safeWrite("soccerbot-conflict-notice", slots);
-  else safeRemove("soccerbot-conflict-notice");
+/** Retain availability copy across refresh without persisting booking authority. */
+export function saveConflictNotice(
+  slots: NoticeSlot[] | null,
+  kind: "conflict" | "cutoff" = "conflict",
+) {
+  if (slots !== null) safeWrite(`soccerbot-${kind}-notice`, slots);
+  else safeRemove(`soccerbot-${kind}-notice`);
 }
 
 // Pending conflict data is a tab-local display snapshot, never server authority.

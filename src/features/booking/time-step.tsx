@@ -197,9 +197,9 @@ export function TimeStep({
           (day.date >= rangeStart && day.date <= rangeEnd)),
     )
     .sort((a, b) => a.date.localeCompare(b.date));
-  // Initial discovery visits at most the three supported months, one at a time.
+  // Initial discovery stays within the supported calendar coverage.
   // Once resolved or manually navigated, refresh never resumes this search.
-  if (publicCalendarReady && monthResult) {
+  if (publicCalendarReady && calendar.initialReady && monthResult) {
     if (
       dayAvailability.get(date) !== true ||
       (calendarView === "week" &&
@@ -251,9 +251,6 @@ export function TimeStep({
     if (availability.result && availability.result.status !== "success")
       availability.retry();
   }
-  const calendarRefreshing =
-    calendar.refreshing(month.slice(0, 7)) ||
-    (!!throughMonth && calendar.refreshing(throughMonth));
   const calendarBusy =
     publicCalendarReady &&
     !calendarFailed &&
@@ -383,6 +380,25 @@ export function TimeStep({
     });
     setChoosing(null);
   }
+  if (
+    publicCalendarReady &&
+    (!calendar.initialReady || (findingInitialDay && calendarBusy))
+  ) {
+    if (calendar.failed.length)
+      return (
+        <div className="alert availability-alert" role="alert">
+          <span>{AVAILABILITY_LOAD_FAILED}</span>{" "}
+          <button
+            className="text-link"
+            aria-label="Try again"
+            onClick={() => calendar.retry(calendar.failed)}
+          >
+            Try again.
+          </button>
+        </div>
+      );
+    return <BrandLoading label="Checking dates…" />;
+  }
   return (
     <>
       <BookingHeading lines={["Select dates", "and times"]} />
@@ -446,9 +462,7 @@ export function TimeStep({
         className="calendar-panel"
         aria-label="Booking calendar"
         aria-busy={
-          calendarBusy ||
-          calendarRefreshing ||
-          (!!throughMonth && !sibling && !siblingFailed)
+          calendarBusy || (!!throughMonth && !sibling && !siblingFailed)
         }
       >
         <div className="calendar-head">

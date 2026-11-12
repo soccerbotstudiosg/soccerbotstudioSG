@@ -45,7 +45,7 @@ export const demoIdentityService: IdentityService = {
       throw new CustomerMessageError("Enter a valid email address.");
     return {
       email: normalized,
-      expiresAt: Date.now() + 600_000,
+      expiresAt: Date.now() + 120_000,
       used: false,
       attempts: 0,
     };

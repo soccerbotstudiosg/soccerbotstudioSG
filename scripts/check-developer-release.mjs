@@ -644,6 +644,40 @@ try {
       .results,
     challengeHistory,
   );
+  await migrate("0047_identity_overlapping_codes.sql");
+  assert.deepEqual(
+    (await db.prepare("SELECT * FROM identity_challenges ORDER BY rowid").all())
+      .results,
+    challengeHistory,
+    "Overlapping-code admission must not rewrite issued deadlines or historical states",
+  );
+  assert.deepEqual(
+    (
+      await db
+        .prepare("SELECT * FROM identity_request_denials ORDER BY owner_id")
+        .all()
+    ).results,
+    retainedDenials,
+  );
+  await assert.rejects(
+    db
+      .prepare(
+        "INSERT INTO identity_challenges(id,owner_id,access_hash,email,email_hash,source_hash,code_hash,created_ms,expires_ms,state) VALUES(?,?,?,?,?,?,?,?,?,'reserved')",
+      )
+      .bind(
+        crypto.randomUUID(),
+        owner,
+        capabilityHash,
+        "synthetic@example.invalid",
+        "c".repeat(64),
+        "d".repeat(64),
+        "f".repeat(64),
+        blockedRequestTime,
+        blockedRequestTime + 120000,
+      )
+      .run(),
+    /identity_request_limited/,
+  );
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,

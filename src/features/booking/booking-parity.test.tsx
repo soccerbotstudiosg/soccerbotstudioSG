@@ -40,7 +40,7 @@ import { dateLabel } from "@/domain/dates";
 const push = vi.fn();
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => "/book/time/",
   useRouter: () => ({ push, replace }),
 }));
 afterEach(() => {
@@ -78,10 +78,7 @@ function CalendarProbe({
     false,
   );
   return (
-    <output
-      data-retained={calendar.hasLoaded("2027-01")}
-      data-refreshing={calendar.refreshing("2027-01")}
-    >
+    <output data-retained={calendar.hasLoaded("2027-01")}>
       {calendar
         .entry("2027-01", now)
         ?.dates.map((d) => d.date)
@@ -446,14 +443,6 @@ test("fresh calendar receipts render before the minute clock ticks and expire at
   expect(calendar).toHaveBeenCalledTimes(2);
   expect(screen.getByRole("status")).toHaveTextContent("loading");
   expect(screen.getByRole("status")).toHaveAttribute("data-retained", "true");
-  expect(screen.getByRole("status")).toHaveAttribute("data-refreshing", "true");
-  await act(async () => vi.advanceTimersByTime(499));
-  expect(screen.getByRole("status")).toHaveAttribute("data-refreshing", "true");
-  await act(async () => vi.advanceTimersByTime(1));
-  expect(screen.getByRole("status")).toHaveAttribute(
-    "data-refreshing",
-    "false",
-  );
   await act(async () =>
     finish({
       month: "2027-01",
@@ -1334,32 +1323,28 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
     localStorage.clear();
     sessionStorage.clear();
     const gates = new Map<string, () => void>();
+    let fail = scenario === "failure";
     const publicCalendar = vi.fn(async ({ month }: { month: string }) => {
       await new Promise<void>((resolve) => gates.set(month, resolve));
-      if (scenario === "failure") throw new Error("synthetic calendar failure");
+      if (fail && month === "2026-11")
+        throw new Error("synthetic calendar failure");
       return {
         month,
         serviceId: "2",
         observedAtMs: Date.now(),
+        displayExpiresAtMs: Date.now() + 60000,
+        monthCoverage: ["2026-10", "2026-11", "2026-12"].map((value) => ({
+          month: value,
+          state:
+            value === "2026-10" || scenario === "empty"
+              ? ("empty" as const)
+              : ("available" as const),
+          observedAtMs: Date.now(),
+          displayExpiresAtMs: Date.now() + 60000,
+        })),
         dates:
-          scenario === "available" && month === "2026-11"
-            ? [
-                {
-                  date: "2026-11-03",
-                  available: true,
-                  offers: [
-                    {
-                      serviceId: "2",
-                      serviceName: "Session",
-                      instructorId: "14",
-                      instructorName: "Trainer",
-                      startMs: Date.parse("2026-11-03T12:00:00+08:00"),
-                      priceMinor: 8800,
-                      currency: "SGD" as const,
-                    },
-                  ],
-                },
-              ]
+          month !== "2026-10" && scenario !== "empty"
+            ? [{ date: `${month}-03`, available: true }]
             : verifiedEmptyDates(month),
       };
     });
@@ -1374,82 +1359,123 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
         <TimeStep />
       </BookingProvider>,
     );
-    const region = screen.getByRole("region", { name: "Booking calendar" });
     await waitFor(() => expect(gates.has("2026-10")).toBe(true));
-    expect(region).toHaveAttribute("aria-busy", "true");
     expect(
-      within(region).getByRole("status", { name: "Checking dates…" }),
+      screen.getByRole("status", { name: "Checking dates…" }),
     ).toBeInTheDocument();
     expect(
-      within(region).queryByRole("button", { name: dateLabel("2026-10-31") }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("No sessions available on this date."),
-    ).not.toBeInTheDocument();
-    if (scenario === "manual") {
-      fireEvent.change(
-        screen.getByRole("combobox", { name: "Calendar month" }),
-        { target: { value: "2" } },
-      );
+      screen.queryByRole("region", { name: "Booking calendar" }),
+    ).toBeNull();
+    await act(async () => gates.get("2026-10")!());
+    if (scenario !== "empty") {
       await waitFor(() => expect(gates.has("2026-12")).toBe(true));
-      await act(async () => gates.get("2026-10")!());
-      await act(async () => gates.get("2026-12")!());
-      await screen.findByText("No sessions available on this date.");
-      expect(publicCalendar.mock.calls.map(([q]) => q.month)).toEqual([
-        "2026-10",
-        "2026-12",
-      ]);
+      await act(async () => gates.get("2026-11")!());
+      // The first usable month is insufficient: the later available month must be ready too.
       expect(
-        screen.getByRole("combobox", { name: "Calendar month" }),
-      ).toHaveValue("2");
-    } else {
-      await act(async () => gates.get("2026-10")!());
+        screen.queryByRole("region", { name: "Booking calendar" }),
+      ).toBeNull();
       if (scenario === "failure") {
-        await screen.findByText("Unable to Load.");
-        expect(publicCalendar).toHaveBeenCalledTimes(1);
-        expect(region).toHaveAttribute("aria-busy", "false");
-        expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
-      } else {
-        await waitFor(() => expect(gates.has("2026-11")).toBe(true));
-        expect(region).toHaveAttribute("aria-busy", "true");
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+          "Unable to Load.",
+        );
+        expect(
+          screen.queryByRole("status", { name: "Checking dates…" }),
+        ).toBeNull();
+      }
+      await act(async () => gates.get("2026-12")!());
+      if (scenario === "failure") {
+        fail = false;
+        fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+        await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(4));
         await act(async () => gates.get("2026-11")!());
-        if (scenario === "available") {
-          await waitFor(() =>
-            expect(
-              within(region).getByRole("button", {
-                name: dateLabel("2026-11-03"),
-              }),
-            ).toHaveAttribute("aria-pressed", "true"),
-          );
-          expect(publicCalendar.mock.calls.map(([q]) => q.month)).toEqual([
-            "2026-10",
-            "2026-11",
-          ]);
-          expect(region).toHaveAttribute("aria-busy", "false");
-        } else {
-          for (const month of ["2026-12"]) {
-            await waitFor(() => expect(gates.has(month)).toBe(true));
-            await act(async () => gates.get(month)!());
-          }
-          await screen.findByText("No sessions available on this date.");
-          expect(publicCalendar.mock.calls.map(([q]) => q.month)).toEqual([
-            "2026-10",
-            "2026-11",
-            "2026-12",
-          ]);
-          fireEvent.change(
-            screen.getByRole("combobox", { name: "Calendar view" }),
-            { target: { value: "month" } },
-          );
-          expect(
-            screen.getByRole("button", { name: "Next month" }),
-          ).toBeDisabled();
-          expect(region).toHaveAttribute("aria-busy", "false");
-        }
       }
     }
+    const region = await screen.findByRole("region", {
+      name: "Booking calendar",
+    });
+    expect(region).toHaveAttribute("aria-busy", "false");
+    expect(
+      screen.queryByRole("status", { name: "Checking dates…" }),
+    ).toBeNull();
+    const picker = screen.getByRole("combobox", { name: "Calendar month" });
+    expect(picker).toHaveValue(scenario === "empty" ? "0" : "1");
+    if (scenario !== "empty") {
+      const reads = publicCalendar.mock.calls.length;
+      fireEvent.change(picker, { target: { value: "2" } });
+      expect(
+        within(region).getByRole("button", { name: dateLabel("2026-12-03") }),
+      ).toHaveAttribute("aria-pressed", "true");
+      fireEvent.change(picker, { target: { value: "0" } });
+      expect(picker).toHaveValue("0");
+      expect(
+        screen.queryByRole("status", { name: "Checking dates…" }),
+      ).toBeNull();
+      expect(publicCalendar).toHaveBeenCalledTimes(reads);
+    } else {
+      expect(publicCalendar).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
+    }
+    expect(
+      publicCalendar.mock.calls.some(([input]) => input.month > "2026-12"),
+    ).toBe(false);
     view.unmount();
   }
+});
+
+test("home calendar warming defers sibling preparation until booking entry", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2027-01-01T00:00:00Z"));
+  const publicCalendar = vi.fn(async ({ month }: { month: string }) => ({
+    month,
+    serviceId: "12",
+    observedAtMs: Date.now(),
+    displayExpiresAtMs: Date.now() + 60000,
+    dates: [],
+    monthCoverage: [
+      {
+        month: "2027-01",
+        state: "empty" as const,
+        observedAtMs: Date.now(),
+        displayExpiresAtMs: Date.now() + 60000,
+      },
+      { month: "2027-02", state: "unknown" as const },
+      { month: "2027-03", state: "unknown" as const },
+    ],
+  }));
+  const service = { ...demoBookingService, publicCalendar };
+  function Probe({ booking }: { booking: boolean }) {
+    const calendar = useCalendarAvailability(
+      service,
+      "12",
+      "2027-01",
+      "public",
+      false,
+      undefined,
+      undefined,
+      booking,
+    );
+    return (
+      <output>
+        {calendar.initialReady
+          ? "Prepared"
+          : calendar.hasLoaded("2027-01")
+            ? "Warmed"
+            : "Loading"}
+      </output>
+    );
+  }
+  const view = render(<Probe booking={false} />);
+  await screen.findByText("Warmed");
+  expect(publicCalendar.mock.calls.map(([input]) => input.month)).toEqual([
+    "2027-01",
+  ]);
+  view.rerender(<Probe booking />);
+  await screen.findByText("Prepared");
+  expect(publicCalendar.mock.calls.map(([input]) => input.month)).toEqual([
+    "2027-01",
+    "2027-02",
+    "2027-03",
+  ]);
 });
 
 test("calendar refresh replaces only the selected month and retains loaded siblings", async () => {
@@ -1679,8 +1705,9 @@ test("calendar month choices trim only fresh trailing empty cache coverage witho
         <TimeStep />
       </BookingProvider>,
     );
-    const picker = screen.getByRole("combobox", { name: "Calendar month" });
-    await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
+    const picker = await screen.findByRole("combobox", {
+      name: "Calendar month",
+    });
     await waitFor(() =>
       expect(
         screen.getByRole("region", { name: "Booking calendar" }),
@@ -1699,7 +1726,13 @@ test("calendar month choices trim only fresh trailing empty cache coverage witho
     expect(
       within(picker).getByRole("option", { name: "October 2026" }),
     ).toBeInTheDocument();
-    expect(publicCalendar).toHaveBeenCalledTimes(1);
+    expect(publicCalendar).toHaveBeenCalledTimes(
+      scenario === "internal" || scenario === "unknown"
+        ? 2
+        : scenario === "expired"
+          ? 3
+          : 1,
+    );
     view.unmount();
   }
 });
@@ -1759,6 +1792,9 @@ test("calendar coverage expiry failures and newly reconciled availability keep f
       });
       expect(publicCalendar).toHaveBeenCalledTimes(1);
     } else {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1001);
+      });
       view.rerender(<Probe month="2026-12" />);
       await act(async () => {});
       if (scenario === "reconciled")

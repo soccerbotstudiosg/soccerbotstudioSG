@@ -31,6 +31,7 @@ it("email bot widget binds purpose clears expired proof and ignores callbacks af
   expect(options).toMatchObject({
     sitekey: "synthetic-public-sitekey",
     action: "verify-email",
+    appearance: "always",
   });
   options.callback("proof");
   options["expired-callback"]();
@@ -44,6 +45,7 @@ it("email bot widget binds purpose clears expired proof and ignores callbacks af
   await waitFor(() => expect(renderWidget).toHaveBeenCalledTimes(2));
   const checkoutOptions = renderWidget.mock.calls[1][1];
   expect(checkoutOptions.action).toBe("create-checkout");
+  expect(checkoutOptions.appearance).toBe("interaction-only");
   await act(async () => checkoutOptions["error-callback"]());
   expect(screen.getByRole("status")).toHaveTextContent(
     "Security check unavailable",

@@ -2,14 +2,22 @@
 
 ## Active outcome
 
-Consolidate email-address request limits and owner-requested email UI fixes on feat/email-address-request-limit, based on production/main3f12c6404f24beae683fbc6822d16a37454093eb. Owner authorized one CI PR for staging. Production remains the accepted base; no deployment of this candidate yet.
+Owner paused physical testing after production defects and authorized consolidating latest repairs into one CI PR and staging deployment. Branch fix/booking-entry-identity-loading is based on accepted production/main bd8c4b3e4213c1ed91988ba02a8cf6b099386de7 (PR60). Ready PR61 is open. First CI43152042417 on19b98e5 caught calendar preparation scope and browser synchronization failures; staging remains blocked pending the corrected exact-head run. Production merge/deployment of this new candidate is not authorized.
 
-## Candidate
+## Candidate scope
 
-Migration0046 adds normalized keyed-email limits alongside session/IP, preserving existing counters/history. Successful code requests always show120 seconds, including request3, while the server keeps its fixed600-second third-request block. A denied later request shows “Too many code requests. Try again later.” and the remaining timer below. Issued codes still verify; denials do not extend deadlines or rewrite already-observed blocks.
+- Share bounded identity preparation across hero, skip and banner/direct Book Now, with the original full-page loader and no subsection loader or duplicate refresh. Repair the known same-route entry edge before publication.
+- Manage saved contact keeps a full loading transition until identity/profile settle; no unsigned/signed-in card flicker. Profile top-left Back returns to booking options.
+- Calendar first reveal waits for actual cached-month coverage readiness; switching prepared months has no small loader. Background refresh retains loaded display and fresh-booking guards.
+- Details-to-Review validation/contact save runs without blocking overlay. Review Turnstile uses interaction-only appearance with server verification intact.
+- Email-block notice has spacing above and only centred MM:SS below its message.
+- Owner clarified and confirmed overlapping codes: each issued code expires120seconds after issuance; a replacement does not cancel it. Requests can overlap code validity, while the third successful request starts a fixed600second block on further requests. Existing session/IP/email limits and one-use/ownership protections remain. Third success remains successful; red block notice appears on a denied later request.
+- Editable unheld selections crossing the four-hour cutoff are removed automatically; red “Session no longer available.” notice lists affected dates/times, preserving valid survivors and contact. Held/payment recovery remains authoritative.
 
-Email UI clears stale missing-proof guidance on valid proof and entry reset; unrelated errors remain. Verified/restored choices become one full-width Welcome back card with no Guest card or header Sign out. Eligible secondary actions share one row; Manage saved contact remains remembered-only. Initial restoration has a visible bounded loading state, then signed-in/unsigned choices, with stale replies fenced. Autofill was already configured and remains unchanged. Distinct aliases remain distinct identities; owner clarified the reported all-device signout case used different aliases, and production revocation audit found no same-address failure.
+## Verification and delivery
 
-## Evidence and next action
+PR60 head446d211 passed CI43140366298, staging43141805507 attempt2, then mergedbd8c4b3. Main CI43142846008 and production43144157994 passed, with migration0046 and enabled booking/warming/HitPay recovery plus ongoing email delivery. Production payments remain sandbox. Separate assistant public-health request returned403; deployment health/settings checks passed.
 
-Owner reports other email tests passed on production3f12c64; that acceptance does not cover this later candidate. Email backend58/58, migration/group guards9/9, all tooling188/188, populated46-migration SQLite/D1 preservation checks and independent review passed. Missing0046 mutation produces2emails instead of1; restored source passes. Frontend inventory309 and Worker inventory504(128/207/169); browser titles/counts unchanged. Complete consolidated frontend/affected Worker verification, publication, exact-head CI and staging are next. Retain original failed main CI42994909211 and its test-only PR59 repair history in Journey. Domain/WAF, booking-notification formalization and physical acceptance remain separate; no live email/payment/provider changes are authorized by these checks.
+Consolidated local verification passed: complete code checks with317 frontend tests; recovery170/170; independent OTP audit found no blocker. Inventories are318 frontend and505 Worker cases (128/207/170). Original comment-policy and isolated mutation-fixture scan failures are retained under /tmp/consolidated61-*; both were corrected before passing verification. A final lifecycle documentation correction follows the application receipts. Browser execution remains CI/owner-only. Push one consolidated PR, verify exact-head gates, then deploy verified staging artifact and public-health check. Preserve original production defect evidence, including testFull-turnstile.devtools and11:20SGT lead-time transition. No live bookings, payments, emails or provider schedule changes.
+
+Current repair: keep homepage warmup to one month; prepare all advertised months after booking entry. Preserve expiry notice assertions but synchronize them with the new calendar-read lifecycle. Original CI artifacts retained; see Journey for diagnosis.

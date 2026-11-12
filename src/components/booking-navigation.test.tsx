@@ -1,12 +1,16 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
 import { BookingLink, BookingNavigation } from "./booking-navigation";
+import { takeIdentityEntry } from "@/services/identity";
+import type { CustomerIdentityService } from "@/services/contracts";
 import { Arena } from "./arena";
 const navigation = vi.hoisted(() => ({
   path: "/",
   push: vi.fn(),
   replace: vi.fn(),
 }));
+const identity = vi.hoisted(() => ({ mode: "demo", refresh: vi.fn() }));
+vi.mock("@/services", () => ({ services: { customerIdentity: identity } }));
 vi.mock("next/navigation", () => ({
   usePathname: () => navigation.path,
   useRouter: () => router,
@@ -36,6 +40,8 @@ const listeners = new Set<() => void>();
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
   navigation.path = "/";
+  identity.mode = "demo";
+  identity.refresh.mockReset().mockResolvedValue(null);
   navigation.push.mockClear();
   navigation.replace.mockClear();
   reduced = false;
@@ -196,4 +202,64 @@ test("studio navigation uses the same branded loader and restores focus after ar
   act(() => vi.advanceTimersByTime(660));
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(screen.getByRole("main")).toHaveFocus();
+});
+
+test("live entry prepares identity during hero and hands off once after skip", async () => {
+  identity.mode = "live";
+  let resolve!: (value: null) => void;
+  identity.refresh.mockImplementation(
+    () =>
+      new Promise((r) => {
+        resolve = r;
+      }),
+  );
+  const view = render(<App arena />);
+  expect(identity.refresh).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("link", { name: /^Book now/ }));
+  expect(identity.refresh).toHaveBeenCalledTimes(1);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Skip arena transition" }),
+  );
+  expect(
+    screen.getByRole("status", { name: "Opening booking" }),
+  ).toBeInTheDocument();
+  navigation.path = "/book/account/";
+  view.rerender(<App arena />);
+  act(() => vi.advanceTimersByTime(660));
+  const prep = takeIdentityEntry(
+    identity as unknown as CustomerIdentityService,
+  );
+  expect(identity.refresh).toHaveBeenCalledTimes(1);
+  await act(async () => resolve(null));
+  await expect(prep.promise).resolves.toBeNull();
+  expect(identity.refresh.mock.calls[0][0].aborted).toBe(false);
+});
+test("live reduced motion keeps the functional full loader and same-route links do not restart identity", () => {
+  identity.mode = "live";
+  reduced = true;
+  const view = render(<App />);
+  fireEvent.click(screen.getByRole("link", { name: "Book now" }));
+  expect(identity.refresh).toHaveBeenCalledTimes(1);
+  expect(
+    screen.getByRole("status", { name: "Opening booking" }),
+  ).toBeInTheDocument();
+  navigation.path = "/book/account";
+  view.rerender(<App />);
+  act(() => vi.advanceTimersByTime(660));
+  fireEvent.click(screen.getByRole("link", { name: "Book now" }));
+  expect(identity.refresh).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole("status")).toBeNull();
+});
+test("cancelled entry aborts its identity preparation and a new entry does not reuse it", async () => {
+  identity.mode = "live";
+  identity.refresh.mockImplementation(() => new Promise(() => {}));
+  render(<App arena />);
+  fireEvent.click(screen.getByRole("link", { name: /^Book now/ }));
+  const signal = identity.refresh.mock.calls[0][0] as AbortSignal;
+  fireEvent.popState(window);
+  expect(signal.aborted).toBe(true);
+  fireEvent.click(screen.getByRole("link", { name: /^Book now/ }));
+  expect(identity.refresh).toHaveBeenCalledTimes(2);
+  await act(async () => vi.advanceTimersByTime(10000));
+  expect(identity.refresh.mock.calls[1][0].aborted).toBe(true);
 });

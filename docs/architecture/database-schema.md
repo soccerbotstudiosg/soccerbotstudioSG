@@ -1,6 +1,6 @@
 # Database schema
 
-Source inventory:40 application D1 tables from migrations0001–0046, verified through isolated SQLite and D1 upgrade checks, and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
+Source inventory:40 application D1 tables from migrations0001–0047 in the local candidate (0047 adds no tables; earlier inventory verified through isolated SQLite and D1 upgrade checks), and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
 - Migration0039 adds reservation source/expiry records. Migration0040 adds nullable `hitpay_payments.checkout_expires_ms`; apply it before the candidate Worker. Existing rows remain unknown until authenticated provider recovery supplies the hosted-link deadline; no financial window is backfilled or extended.
 - Migration0041 adds immutable no-creation proof and extends the existing operator-operation constraint through a preserving table rebuild. Apply it before code using terminal creation resolution. It does not resolve or backfill historical uncertainty.
@@ -336,6 +336,10 @@ A mix of database and application checks is intentional. Prefer database enforce
 | Archive-to-attempt links                                                                 | Currently application-managed; archive tables lack inherited foreign keys. This is an explicit gap in structural enforcement, not a claim that foreign keys are unnecessary. |
 
 The archive tables are still used: completed/expired availability snapshots reconstruct confirmation details; completed dismissal and expiry paths recognise archived attempts; rejection preserves the old grant before allowing a new selection. Do not drop them because they lack foreign keys. Consolidating them or adding constraints requires a separate migration design, existing-data validation and regression coverage. Retention/deletion decisions remain with [Data lifecycle](../data-lifecycle.md).
+
+## Local overlapping-code migration0047
+
+`0047_identity_overlapping_codes.sql` replaces `identity_send_limit` to admit overlapping code requests until a session/source/email counter reaches3. The fixed600-second block and sticky owner denial remain authoritative. It preserves all counter, denial and challenge rows and creates no tables. Per-code120-second expiry and same-capability/email matching are application behavior; old issued rows retain stored expiry. Historical superseded/consumed states remain in the schema and are not revived. Apply this migration before the corresponding Worker; deployment/upgrade evidence is tracked separately.
 
 ## Schema boundaries and maintenance
 

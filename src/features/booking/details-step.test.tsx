@@ -214,6 +214,10 @@ test("verified details saves only on explicit action and ignores completion afte
   expect(
     screen.getByRole("button", { name: "Saving details…" }),
   ).toBeDisabled();
+  expect(
+    document.querySelector(".page-loading, .booking-flow-overlay"),
+  ).toBeNull();
+  expect(screen.getByLabelText(/Full name/)).toBeEnabled();
   await user.type(screen.getByLabelText(/Full name/), " Edited");
   expect(saveProfile.mock.calls[0][1].aborted).toBe(true);
   await act(async () => finish());
