@@ -83,12 +83,15 @@ export type BookingErrorCode =
   | "unavailable"
   | "temporarily_unavailable"
   | "cancelled";
+export const EMAIL_SECURITY_CHECK_REQUIRED =
+  "Complete the security check and try again.";
+export const EMAIL_REQUEST_LIMITED = "Too many code requests. Try again later.";
 /** Mark locally authored customer guidance, never raw server or transport errors. */
 export class CustomerMessageError extends Error {}
 /** Carry a validated server deadline without exposing raw provider errors. */
 export class VerificationRequestLimitedError extends CustomerMessageError {
   constructor(public readonly retryAt: number | null) {
-    super("Too many verification requests. Please try again later.");
+    super(EMAIL_REQUEST_LIMITED);
     this.name = "VerificationRequestLimitedError";
   }
 }

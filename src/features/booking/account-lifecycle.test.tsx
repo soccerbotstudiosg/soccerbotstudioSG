@@ -26,6 +26,13 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useRouter: () => navigation,
 }));
+vi.mock("./email-bot-proof", () => ({
+  EmailBotProof: ({ onToken }: { onToken: (token: string) => void }) => (
+    <button type="button" onClick={() => onToken("synthetic-proof")}>
+      Complete synthetic security check
+    </button>
+  ),
+}));
 test("account waits for owned guest access and duplicate click cannot navigate early", async () => {
   let finish!: () => void;
   const guest = vi
@@ -87,7 +94,9 @@ test("account leaving email challenge ignores delayed completion and live mode n
       <BookingPage step="account" />
     </BookingProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: /Continue with email/ }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: /Continue with email/ }),
+  );
   for (const invalid of [
     "",
     "missing-at.example.com",
@@ -603,66 +612,130 @@ test("invalid code can return to guest options without carrying an old error", a
   ).toBeEnabled();
 });
 
-test("booking-options signout retries failure and leaves only after acknowledgement", async () => {
+test("remembered identity restoration shows only the full-width welcome card without a guest flash", async () => {
   const verified = {
-    email: "header@example.invalid",
+    email: "restored@example.invalid",
     expiresAt: Date.now() + 600000,
     remember: true,
   };
-  let current: typeof verified | null = verified;
-  let finishSignOut!: () => void;
-  const signOut = vi
-    .fn<CustomerIdentityService["signOut"]>()
-    .mockImplementationOnce(async () => {
-      current = null;
-      throw new Error("private failure");
-    })
-    .mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          finishSignOut = resolve;
-        }),
-    );
-  navigation.push.mockClear();
-  render(
+  let current: typeof verified | null = null;
+  let finish!: () => void;
+  const refresh = vi.fn(
+    () =>
+      new Promise<typeof verified>((resolve) => {
+        finish = () => {
+          current = verified;
+          resolve(verified);
+        };
+      }),
+  );
+  const signOut = vi.fn(async () => {
+    current = null;
+  });
+  const mounted = render(
     <BookingProvider
       identityService={{
         ...demoCustomerIdentity,
+        mode: "live",
         current: () => current,
-        refresh: async () => current,
+        refresh,
         signOut,
       }}
     >
       <BookingPage step="account" />
     </BookingProvider>,
   );
-  await act(async () => {});
   expect(
-    within(screen.getByLabelText("Booking identity")).getByText(
-      "Email verified",
-    ),
-  ).toBeVisible();
+    screen.getByRole("status", { name: "Checking saved identity…" }),
+  ).toBeInTheDocument();
   expect(
-    within(screen.getByLabelText("Booking identity")).getByText(verified.email),
+    screen.queryByRole("button", { name: "Continue as Guest" }),
+  ).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue with email" }),
+  ).toBeNull();
+  await act(async () => finish());
+  expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  expect(document.querySelector(".access-options-verified")).not.toBeNull();
+  expect(document.querySelectorAll(".access-option")).toHaveLength(1);
+  expect(
+    screen.queryByRole("button", { name: "Continue as Guest" }),
+  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Try signing out again" }),
+  ).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "Manage saved contact" }),
   ).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+  fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
   await waitFor(() =>
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "We couldn’t continue. Please try again.",
-    ),
+    expect(
+      screen.getByRole("button", { name: "Continue as Guest" }),
+    ).toBeEnabled(),
   );
-  expect(navigation.push).not.toHaveBeenCalled();
-  expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  fireEvent.click(
-    screen.getByRole("button", { name: "Try signing out again" }),
+  expect(document.querySelectorAll(".access-option")).toHaveLength(2);
+  expect(screen.queryByRole("heading", { name: "Welcome back" })).toBeNull();
+  expect(signOut).toHaveBeenCalledExactlyOnceWith(
+    expect.any(AbortSignal),
+    true,
   );
-  expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
-  ).toBeDisabled();
-  expect(navigation.push).not.toHaveBeenCalled();
-  await act(async () => finishSignOut());
-  expect(signOut).toHaveBeenCalledTimes(2);
-  expect(navigation.push).toHaveBeenLastCalledWith("/");
+  mounted.unmount();
+  vi.useFakeTimers();
+  let timedOut = () => {};
+  let unmount = () => {};
+  let signal: AbortSignal | undefined;
+  const stalled = vi.fn((incoming: AbortSignal) => {
+    signal = incoming;
+    return new Promise<typeof verified>((resolve) => {
+      timedOut = () => resolve(verified);
+    });
+  });
+  try {
+    await act(async () => {
+      ({ unmount } = render(
+        <BookingProvider
+          identityService={{
+            ...demoCustomerIdentity,
+            mode: "live",
+            current: () => null,
+            refresh: stalled,
+          }}
+        >
+          <BookingPage step="account" />
+        </BookingProvider>,
+      ));
+    });
+    expect(
+      screen.getByRole("status", { name: "Checking saved identity…" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Continue as Guest" }),
+    ).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(9999);
+    });
+    expect(
+      screen.queryByRole("button", { name: "Continue as Guest" }),
+    ).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(signal?.aborted).toBe(true);
+    expect(
+      screen.getByRole("button", { name: "Continue as Guest" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole("status", { name: "Checking saved identity…" }),
+    ).toBeNull();
+    await act(async () => timedOut());
+    expect(screen.queryByRole("heading", { name: "Welcome back" })).toBeNull();
+    expect(screen.queryByLabelText("Booking identity")).toBeNull();
+    expect(stalled).toHaveBeenCalledTimes(1);
+  } finally {
+    unmount();
+    vi.useRealTimers();
+  }
 });
 
 test("later booking headings inspect identity without refreshing or recreating guest access", async () => {
@@ -761,8 +834,8 @@ test("email resend follows server deadlines and third-request cooldown without a
       email,
       challengeId: `synthetic-${requests}`,
       expiresAt: Date.now() + 600000,
-      resendAfter: Date.now() + (requests === 3 ? 600000 : 120000),
-      requestLimited: requests === 3,
+      resendAfter: Date.now() + 120000,
+      requestLimited: false,
     };
   });
   const verify = vi
@@ -832,12 +905,27 @@ test("email resend follows server deadlines and third-request cooldown without a
         screen.getByRole("button", { name: "Request another code" }),
       );
     });
-    expect(screen.getByRole("timer")).toHaveTextContent("10:00");
+    expect(screen.getByRole("timer")).toHaveTextContent("02:00");
+    expect(document.querySelector(".auth-code-feedback.alert")).toBeNull();
+    const blockEnds = Date.now() + 600000;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120000);
+    });
+    challenge.mockRejectedValueOnce(
+      new VerificationRequestLimitedError(blockEnds),
+    );
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Request another code" }),
+      );
+    });
+    expect(screen.getByRole("timer")).toHaveTextContent("08:00");
     expect(
       screen
-        .getByText("Code requests are temporarily paused.")
+        .getByText("Too many code requests. Try again later.")
         .closest(".alert"),
     ).not.toBeNull();
+    expect(challenge).toHaveBeenCalledTimes(4);
     expect(
       screen.getByRole("button", { name: "Verify and continue" }),
     ).toBeEnabled();
@@ -853,9 +941,9 @@ test("email resend follows server deadlines and third-request cooldown without a
     });
     expect(verify).toHaveBeenCalledTimes(1);
     expect(verify.mock.calls[0][0].challengeId).toBe("synthetic-3");
-    expect(screen.getByRole("timer")).toHaveTextContent("10:00");
+    expect(screen.getByRole("timer")).toHaveTextContent("08:00");
 
-    vi.setSystemTime(Date.now() + 599999);
+    vi.setSystemTime(Date.now() + 479999);
     fireEvent(document, new Event("visibilitychange"));
     expect(
       screen.queryByRole("button", { name: "Request another code" }),
@@ -866,9 +954,9 @@ test("email resend follows server deadlines and third-request cooldown without a
       screen.getByRole("button", { name: "Request another code" }),
     ).toBeEnabled();
     expect(
-      screen.queryByText("Code requests are temporarily paused."),
+      screen.queryByText("Too many code requests. Try again later."),
     ).toBeNull();
-    expect(challenge).toHaveBeenCalledTimes(3);
+    expect(challenge).toHaveBeenCalledTimes(4);
     challenge.mockRejectedValueOnce(
       new CustomerMessageError(
         "Email verification unavailable. Please continue as a guest.",
@@ -885,7 +973,7 @@ test("email resend follows server deadlines and third-request cooldown without a
     expect(
       screen.getByRole("button", { name: "Request another code" }),
     ).toBeEnabled();
-    expect(challenge).toHaveBeenCalledTimes(4);
+    expect(challenge).toHaveBeenCalledTimes(5);
   } finally {
     unmount();
     vi.useRealTimers();
@@ -945,11 +1033,126 @@ test("email request throttling displays server retry time without automatic or p
       screen.getByRole("button", { name: "Continue with email" }),
     ).toBeEnabled();
     expect(
-      screen.queryByText("Code requests are temporarily paused."),
+      screen.queryByText("Too many code requests. Try again later."),
     ).toBeNull();
     expect(challenge).toHaveBeenCalledTimes(1);
   } finally {
     unmount();
     vi.useRealTimers();
   }
+});
+
+test("fresh security proof clears only stale security feedback and reentry starts clean", async () => {
+  let current: ReturnType<CustomerIdentityService["current"]> = null;
+  const challenge = vi.fn<CustomerIdentityService["challenge"]>(
+    async (email, _signal, token) => {
+      if (!token)
+        throw new CustomerMessageError(
+          "Complete the security check and try again.",
+        );
+      return {
+        email,
+        challengeId: "synthetic",
+        expiresAt: Date.now() + 600000,
+        resendAfter: 0,
+      };
+    },
+  );
+  const verify = vi.fn<CustomerIdentityService["verify"]>(async (challenge) => {
+    current = { email: challenge.email, expiresAt: Date.now() + 600000 };
+    return current;
+  });
+  const signOut = vi.fn(async () => {
+    current = null;
+  });
+  render(
+    <BookingProvider
+      identityService={{
+        ...demoCustomerIdentity,
+        mode: "live",
+        current: () => current,
+        refresh: async () => current,
+        profile: async () => null,
+        challenge,
+        verify,
+        signOut,
+      }}
+    >
+      <BookingPage step="account" />
+    </BookingProvider>,
+  );
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Continue with email" }),
+  );
+  fireEvent.change(screen.getByLabelText("Email address"), {
+    target: { value: "proof@example.invalid" },
+  });
+  const submit = () =>
+    fireEvent.submit(
+      screen
+        .getByRole("button", { name: "Continue with email" })
+        .closest("form")!,
+    );
+  await act(async () => {
+    submit();
+  });
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Complete the security check and try again.",
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Complete synthetic security check" }),
+  );
+  expect(screen.queryByRole("alert")).toBeNull();
+  challenge.mockRejectedValueOnce(
+    new CustomerMessageError(
+      "Email verification unavailable. Please continue as a guest.",
+    ),
+  );
+  await act(async () => {
+    submit();
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Complete synthetic security check" }),
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Email verification unavailable.",
+  );
+  await act(async () => {
+    submit();
+  });
+  expect(screen.queryByRole("alert")).toBeNull();
+  fireEvent.change(screen.getByLabelText("Verification code"), {
+    target: { value: "123456" },
+  });
+  await act(async () => {
+    fireEvent.submit(
+      screen
+        .getByRole("button", { name: "Verify and continue" })
+        .closest("form")!,
+    );
+  });
+  expect(verify).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: "Manage saved contact" }),
+  ).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue as Guest" }),
+  ).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Continue with email" }),
+  );
+  expect(screen.getByLabelText("Email address")).toHaveValue("");
+  expect(screen.queryByRole("alert")).toBeNull();
+  await act(async () => {
+    submit();
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Complete synthetic security check" }),
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Enter a valid email address.",
+  );
 });

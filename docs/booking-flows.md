@@ -13,7 +13,7 @@ Booking headings use shared deliberate two-line text at widths up to700px, with 
 
 ## 1. Guest entry
 
-The initial booking-choice page shows no Guest badge, including after Continue as Guest → Back or a return with retained guest access. Email entry and code verification also suppress the badge, including when guest access is retained. Guest appears only on subsequent booking steps. A verified email and its entry-only Sign out remain visible on the choice page. Owner-approved status presentation (11 November2026): Guest uses a pale-yellow badge with text and dimensions reduced25% (13.5px text). Verified identity uses a pale-green, right-aligned badge: bold “Email verified” above the address without parentheses, at14px. Long email addresses wrap within the badge; header text retains its desktop one-line/mobile two-line layout. This status means verified contact identity, not a self-service reservation account.
+The initial booking-choice page shows no Guest badge, including after Continue as Guest → Back or a return with retained guest access. Email entry and code verification also suppress the badge, including when guest access is retained. Guest appears only on subsequent booking steps. A verified email remains visible on the choice page; its badge has no Sign out link. Verified/restored identity shows one full-width Welcome back card instead of the Guest option. Identity restoration must settle before choices appear. Owner-approved status presentation (11 November2026): Guest uses a pale-yellow badge with text and dimensions reduced25% (13.5px text). Verified identity uses a pale-green, right-aligned badge: bold “Email verified” above the address without parentheses, at14px. Long email addresses wrap within the badge; header text retains its desktop one-line/mobile two-line layout. This status means verified contact identity, not a self-service reservation account.
 
 Continue as Guest, then select sessions without creating an account.
 
@@ -28,9 +28,9 @@ flowchart LR
 
 ## 2. Email entry and verification
 
-Booking steps after entry show Guest or the currently verified email beside the heading. The initial choice page suppresses Guest, and email entry/code verification suppress identity badges. Guest uses a compact bold pale-yellow badge; verified status uses Email verified in bold above the address. Initial booking choices reserve no Guest status row. Only the initial booking-options heading offers Sign out. It waits for acknowledged sign-out before ending the editable flow and routing Home; failure stays on booking options with “Try signing out again”. Later headings are read-only, and payment/confirmation screens keep their existing protected presentation.
+Booking steps after entry show Guest or the currently verified email beside the heading. The initial choice page suppresses Guest, and email entry/code verification suppress identity badges. Guest uses a compact bold pale-yellow badge; verified status uses Email verified in bold above the address. Initial booking choices reserve no Guest status row. All heading badges are read-only. The signed-in card retains Use another email and Sign out all devices, plus Manage saved contact only for remembered identity. Eligible secondary controls share one row with readable wrapped labels. Payment/confirmation screens keep their existing protected presentation.
 
-Local email follow-up: secondary account actions are content-sized44px controls; Email verified is explicitly bold. Email-code entry has no Change email action; top Back remains available. The central feedback slot uses the payment countdown's bold tabular `MM:SS` styling. It starts at02:00 for ordinary requests; the third request shows a red paused notice with10:00. When eligible, centred Request another code replaces the countdown/paused notice. These deadlines come from server responses; expiry never sends a code automatically. Ordinary invalid-code/network errors must not hide an otherwise eligible request action. Code verification stays enabled during request blocking. See BR-003 for session/IP scopes and the separate service-wide limits.
+Local email follow-up: secondary account actions are content-sized44px controls; Email verified is explicitly bold. Email-code entry has no Change email action; top Back remains available. The central feedback slot uses the payment countdown's bold tabular `MM:SS` styling. It starts at02:00 for every successful request, including the third. Only a subsequent denied request shows “Too many code requests. Try again later.” in red, with the actual remaining block timer centred below. When eligible, centred Request another code replaces the countdown/paused notice. These deadlines come from server responses; expiry never sends a code automatically. Ordinary invalid-code/network errors must not hide an otherwise eligible request action. Code verification stays enabled during request blocking. Stale missing-proof feedback clears when valid proof arrives and identity entry resets; unrelated verification/network errors remain visible. See BR-003 for session/IP/email scopes and the separate service-wide limits.
 
 On email/code entry, the top-left Back returns to booking options and cancels pending identity work. The bottom duplicate Back link and email-entry envelope tile are removed. The first booking-options screen retains Home.
 
@@ -42,7 +42,7 @@ flowchart TD
   B --> C["Verify and continue"]
   C -->|Valid| D["Your session"]
   C -->|Invalid code| E["Check your code or request a new one."]
-  A -->|Email code request rate-limited| F["Too many verification requests. Please try again later."]
+  A -->|Email code request rate-limited| F["Too many code requests. Try again later."]
   A -->|Email verification unavailable| G["Email verification unavailable. Please continue as a guest."]
   A -->|Booking access fails| H["Guest-access failure or rate-limit message; no code requested"]
 ```
@@ -511,7 +511,7 @@ Email-specific rows apply only when that feature is configured/enabled; this cat
 | Guest access rate-limited                                   | Too many booking requests. Please wait a few minutes and try again. |
 | Missing/expired security proof                              | Complete the security check and try again.                          |
 | Wrong/expired verification code                             | Check your code or request a new one.                               |
-| Identity rate limit                                         | Too many verification requests. Please try again later.             |
+| Identity rate limit                                         | Too many code requests. Try again later.                            |
 | Identity access denied                                      | Return to booking options and verify your email again.              |
 | Missing site key / unavailable or invalid identity response | Email verification unavailable. Please continue as a guest.         |
 | Signed-in identity cannot be revalidated                    | Verify your email again.                                            |

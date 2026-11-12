@@ -608,6 +608,42 @@ try {
     (await db.prepare("SELECT * FROM checkout_bot_proofs").all()).results,
     [retainedProof],
   );
+  const retainedDenials = (
+    await db
+      .prepare("SELECT * FROM identity_request_denials ORDER BY owner_id")
+      .all()
+  ).results;
+  await migrate("0046_identity_email_request_limit.sql");
+  assert.deepEqual(
+    (
+      await db
+        .prepare("SELECT * FROM identity_request_counters ORDER BY scope")
+        .all()
+    ).results,
+    [
+      {
+        scope: "email",
+        subject_key: "c".repeat(64),
+        request_count: 3,
+        last_request_ms: challengeTimes[2],
+      },
+      ...requestCounters,
+    ],
+    "Email limit upgrade preserves session/source cycles and backfills hashed email history",
+  );
+  assert.deepEqual(
+    (
+      await db
+        .prepare("SELECT * FROM identity_request_denials ORDER BY owner_id")
+        .all()
+    ).results,
+    retainedDenials,
+  );
+  assert.deepEqual(
+    (await db.prepare("SELECT * FROM identity_challenges ORDER BY rowid").all())
+      .results,
+    challengeHistory,
+  );
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,

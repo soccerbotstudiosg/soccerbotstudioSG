@@ -278,7 +278,7 @@ it("identity failures distinguish throttling expired access bad codes and securi
   vi.stubGlobal("fetch", request);
   const signal = new AbortController().signal;
   for (const [status, message] of [
-    [429, "Too many verification requests. Please try again later"],
+    [429, "Too many code requests. Try again later"],
     [401, "Return to booking options and verify your email again"],
     [400, "Check your code or request a new one"],
     [503, "Email verification unavailable. Please continue as a guest."],
@@ -438,7 +438,7 @@ it("identity throttle accepts bounded retry seconds without exposing arbitrary r
         ),
       ).rejects.toMatchObject({
         retryAt: expected,
-        message: "Too many verification requests. Please try again later.",
+        message: "Too many code requests. Try again later.",
       });
     }
   } finally {

@@ -77,7 +77,11 @@ async function fixture(
   delivery = false,
   remembered = false,
   identityReady?: Promise<void>,
+  codeRequestLimit = false,
 ) {
+  let identityClockOffset = 0;
+  let requestedCodes = 0;
+  let codeBlockUntil = 0;
   const calls: { path: string; method: string; body: unknown }[] = [];
   const unexpected: string[] = [];
   let verified = remembered;
@@ -108,6 +112,8 @@ async function fixture(
     const method = request.method();
     const body: unknown = request.postData() ? request.postDataJSON() : null;
     calls.push({ path: url.pathname, method, body });
+    const requestNow = Date.now() + identityClockOffset;
+    const responseHeaders: Record<string, string> = {};
     let status = 503,
       result: unknown = { error: "identity_unavailable" };
     if (url.pathname === "/api/identity" && method === "GET") {
@@ -116,7 +122,7 @@ async function fixture(
       result = verified
         ? {
             email: "synthetic@example.test",
-            expiresAt: Date.now() + 600000,
+            expiresAt: requestNow + 600000,
             remember,
           }
         : null;
@@ -167,13 +173,28 @@ async function fixture(
       url.pathname === "/api/identity/challenges" &&
       method === "POST"
     ) {
-      status = 201;
-      result = {
-        challengeId,
-        expiresAt: Date.now() + 600000,
-        resendAfter: Date.now() + 120000,
-        requestLimited: false,
-      };
+      if (
+        codeRequestLimit &&
+        requestedCodes >= 3 &&
+        requestNow < codeBlockUntil
+      ) {
+        status = 429;
+        responseHeaders["Retry-After"] = String(
+          Math.ceil((codeBlockUntil - requestNow) / 1000),
+        );
+        result = { error: "verification_request_limited" };
+      } else {
+        requestedCodes++;
+        if (codeRequestLimit && requestedCodes === 3)
+          codeBlockUntil = requestNow + 600000;
+        status = 201;
+        result = {
+          challengeId,
+          expiresAt: requestNow + 600000,
+          resendAfter: requestNow + 120000,
+          requestLimited: false,
+        };
+      }
     } else if (
       delivery &&
       url.pathname === "/api/identity/verify" &&
@@ -184,11 +205,11 @@ async function fixture(
       status = 200;
       result = {
         email: "synthetic@example.test",
-        expiresAt: Date.now() + 600000,
+        expiresAt: requestNow + 600000,
         remember,
       };
     }
-    await route.fulfill({ status, json: result });
+    await route.fulfill({ status, headers: responseHeaders, json: result });
   });
   await page.goto("/book/account/");
   const prompt = page.getByRole("dialog", {
@@ -198,7 +219,13 @@ async function fixture(
   await prompt
     .getByRole("button", { name: "Close dialog", exact: true })
     .click();
-  return { calls, unexpected };
+  return {
+    calls,
+    unexpected,
+    advanceIdentityClock(ms: number) {
+      identityClockOffset += ms;
+    },
+  };
 }
 
 test("live guest denial stays on account without Preview fallback", async ({
@@ -248,7 +275,8 @@ test("live email requires the supplied widget proof before protected requests", 
 test("synthetic live verification reads server identity and keeps native booking unavailable", async ({
   page,
 }) => {
-  const evidence = await fixture(page, true);
+  await page.clock.install({ time: new Date() });
+  const evidence = await fixture(page, true, false, undefined, true);
   await page
     .getByRole("button", { name: "Continue with email", exact: true })
     .click();
@@ -269,6 +297,40 @@ test("synthetic live verification reads server identity and keeps native booking
   ).toBeVisible();
   await expect(page.getByText("Demo code", { exact: false })).toHaveCount(0);
   await expect(page.locator("main")).not.toHaveAttribute("inert");
+  for (let requestNumber = 2; requestNumber <= 4; requestNumber++) {
+    // The clock keeps animations running; allow only the elapsed response second.
+    await expect(page.getByRole("timer")).toContainText(/(?:01:59|02:00)$/);
+    await expect(page.locator(".auth-code-feedback.alert")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Request another code", exact: true }),
+    ).toHaveCount(0);
+    evidence.advanceIdentityClock(120000);
+    await page.clock.fastForward(120000);
+    await page
+      .getByRole("button", {
+        name: "Complete synthetic email check",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("button", { name: "Request another code", exact: true })
+      .click();
+    if (requestNumber === 4) {
+      const notice = page.locator(".auth-code-feedback.alert");
+      await expect(notice).toContainText(
+        "Too many code requests. Try again later.",
+      );
+      await expect(notice.getByRole("timer")).toContainText(/(?:07:59|08:00)$/);
+      await expect(notice).toHaveCSS("text-align", "center");
+      await expect(
+        page.getByRole("button", { name: "Request another code", exact: true }),
+      ).toHaveCount(0);
+    }
+  }
+  // The rejected fourth request does not invalidate the third delivered code.
+  await expect(
+    page.getByRole("button", { name: "Verify and continue", exact: true }),
+  ).toBeEnabled();
   await page.getByLabel("Verification code", { exact: true }).fill("246810");
   await expect(
     page.getByLabel("Verification code", { exact: true }),
@@ -293,11 +355,14 @@ test("synthetic live verification reads server identity and keeps native booking
     { path: "/api/access", method: "POST", body: null },
     { path: "/api/identity/restore", method: "POST", body: null },
     { path: "/api/access", method: "POST", body: null },
-    {
-      path: "/api/identity/challenges",
-      method: "POST",
-      body: { email: "synthetic@example.test", botToken: "synthetic-proof" },
-    },
+    ...Array.from({ length: 4 }, (_, index) => [
+      ...(index ? [{ path: "/api/access", method: "POST", body: null }] : []),
+      {
+        path: "/api/identity/challenges",
+        method: "POST",
+        body: { email: "synthetic@example.test", botToken: "synthetic-proof" },
+      },
+    ]).flat(),
     {
       path: "/api/identity/verify",
       method: "POST",
@@ -332,9 +397,14 @@ test("remembered live account edits and rereads contact while native booking sta
     name: "Continue as Guest",
     exact: true,
   });
+  await expect(
+    page.getByRole("status", { name: "Checking saved identity…", exact: true }),
+  ).toHaveCount(1);
   await expect(page.getByLabel("Booking identity")).toHaveCount(0);
-  const before = await guest.boundingBox();
-  expect(before).not.toBeNull();
+  await expect(guest).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Continue with email", exact: true }),
+  ).toHaveCount(0);
   restoreIdentity();
   await expect(
     page.getByRole("button", { name: "Continue signed in", exact: true }),
@@ -360,7 +430,9 @@ test("remembered live account edits and rereads contact while native booking sta
   const actionsBox = await page.locator(".account-actions").boundingBox();
   expect(actionsBox).not.toBeNull();
   for (const box of actionBoxes) {
-    expect(box.height).toBe(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.y).toBeCloseTo(actionBoxes[0].y, 0);
+    expect(box.height).toBeCloseTo(actionBoxes[0].height, 0);
     expect(box.x).toBeGreaterThanOrEqual(actionsBox!.x);
     expect(box.x + box.width).toBeLessThanOrEqual(
       actionsBox!.x + actionsBox!.width + 1,
@@ -369,16 +441,26 @@ test("remembered live account edits and rereads contact while native booking sta
   for (let index = 1; index < actionBoxes.length; index++) {
     const previous = actionBoxes[index - 1];
     const current = actionBoxes[index];
+    expect(current.x).toBeGreaterThanOrEqual(previous.x + previous.width);
+  }
+  for (const action of await accountActions.all()) {
+    await expect(action).toHaveCSS("font-size", "14px");
     expect(
-      current.y >= previous.y + previous.height ||
-        current.x >= previous.x + previous.width,
+      await action.evaluate((node) => node.scrollWidth <= node.clientWidth),
     ).toBe(true);
   }
-  const after = await guest.boundingBox();
-  expect(after).not.toBeNull();
-  // Verified identity adds its status; guest choices reserve no empty status row.
-  expect(after!.width).toBe(before!.width);
-  expect(after!.height).toBe(before!.height);
+  await expect(guest).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Sign out", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator(".access-option")).toHaveCount(1);
+  const card = await page.locator(".access-option").boundingBox();
+  const choices = await page.locator(".access-options").boundingBox();
+  expect(card!.x).toBeCloseTo(choices!.x, 0);
+  expect(card!.width).toBeCloseTo(choices!.width, 0);
+  await expect(
+    page.getByRole("heading", { name: "Welcome back", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Manage saved contact", exact: true })
     .click();
@@ -3267,16 +3349,24 @@ test("email account actions return through booking options and sign in again wit
     await page
       .getByRole("button", { name: "Continue with email", exact: true })
       .click();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
       .getByRole("textbox", { name: /^Email address/ })
       .fill("synthetic@example.test");
     await page.getByLabel("Remember me", { exact: true }).setChecked(remember);
+    await page
+      .getByRole("button", { name: "Continue with email", exact: true })
+      .click();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+      "Complete the security check and try again.",
+    );
     await page
       .getByRole("button", {
         name: "Complete synthetic email check",
         exact: true,
       })
       .click();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
       .getByRole("button", { name: "Continue with email", exact: true })
       .click();
@@ -3292,6 +3382,16 @@ test("email account actions return through booking options and sign in again wit
     await expect(
       page.getByRole("button", { name: "Manage saved contact", exact: true }),
     ).toHaveCount(remember ? 1 : 0);
+    await expect(
+      page.getByRole("button", { name: "Continue as Guest", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Sign out", exact: true }),
+    ).toHaveCount(0);
+    await expect(page.locator(".account-actions .button")).toHaveCount(
+      remember ? 3 : 2,
+    );
+    await expect(page.locator(".access-option")).toHaveCount(1);
     await page
       .getByRole("button", { name: "Sign out all devices", exact: true })
       .click();

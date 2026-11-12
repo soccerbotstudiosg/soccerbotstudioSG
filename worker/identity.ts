@@ -72,11 +72,12 @@ async function bounded<T>(work: (signal: AbortSignal) => Promise<T>) {
   }
 }
 
-/** Read the next permitted request time from durable session/IP limits and observed denials. */
+/** Read the next permitted request time from durable session/IP/email limits and observed denials. */
 async function identityRequestWindow(
   env: Env,
   ownerId: string,
   sourceHash: string,
+  emailHash: string,
   now: number,
 ) {
   const session = env.STATE.withSession("first-primary");
@@ -99,12 +100,13 @@ async function identityRequestWindow(
           CASE WHEN request_count=3 AND last_request_ms+600000>? THEN 1 ELSE 0 END AS request_limited
         FROM identity_request_counters WHERE (scope='session' AND subject_key=?)
           OR (scope='source' AND subject_key=? AND request_count=3)
+          OR (scope='email' AND subject_key=?)
         UNION ALL
         SELECT blocked_until_ms AS deadline, CASE WHEN blocked_until_ms>? THEN 1 ELSE 0 END AS request_limited
           FROM identity_request_denials WHERE owner_id=?
       )`,
     )
-    .bind(now, ownerId, sourceHash, now, ownerId)
+    .bind(now, ownerId, sourceHash, emailHash, now, ownerId)
     .first<{ deadline: number | null; request_limited: number | null }>();
   return {
     resendAfter: Math.max(now, row?.deadline ?? now),
@@ -112,7 +114,7 @@ async function identityRequestWindow(
     observedDenial: false,
   };
 }
-/** Preserve an observed IP block for the session without extending its original deadline. */
+/** Preserve an observed shared-subject block for the session without extending its original deadline. */
 async function retainIdentityDenial(
   env: Env,
   ownerId: string,
@@ -175,6 +177,7 @@ export async function requestIdentityChallenge(
     env,
     access.owner_id,
     sourceHash,
+    emailHash,
     beforeProof,
   );
   if (retryAt.resendAfter > beforeProof) {
@@ -252,6 +255,7 @@ export async function requestIdentityChallenge(
         env,
         access.owner_id,
         sourceHash,
+        emailHash,
         checkedAt,
       );
       const deadline =
@@ -297,30 +301,31 @@ export async function requestIdentityChallenge(
   )
     .bind(accepted ? "sent" : "unknown", id)
     .run();
-  // A delayed send can observe a later request's shared-IP block. Persist that
-  // observed deadline before returning it, just as for a rejected request.
+  // A delayed send can observe a later request's shared-IP/email block. Persist that
+  // observed deadline before responding, just as for a rejected request.
   const observedAt = clock();
   const window = await identityRequestWindow(
     env,
     access.owner_id,
     sourceHash,
+    emailHash,
     observedAt,
   );
-  const resendAfter =
-    window.requestLimited && !window.observedDenial
-      ? await retainIdentityDenial(
-          env,
-          access.owner_id,
-          window.resendAfter,
-          observedAt,
-        )
-      : window.resendAfter;
+  if (window.requestLimited && !window.observedDenial)
+    await retainIdentityDenial(
+      env,
+      access.owner_id,
+      window.resendAfter,
+      observedAt,
+    );
+  // Successful responses expose the normal next-attempt timer, not guaranteed
+  // admission. A subsequent denied request reveals the enforced remaining block.
   // Same envelope for unknown/existing/shared addresses and uncertain delivery.
   return {
     challengeId: id,
     expiresAt: expires,
-    requestLimited: window.requestLimited,
-    resendAfter,
+    requestLimited: false,
+    resendAfter: now + 120000,
   };
 }
 

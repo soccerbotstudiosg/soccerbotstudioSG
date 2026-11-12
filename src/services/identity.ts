@@ -1,5 +1,6 @@
 import {
   CustomerMessageError,
+  EMAIL_SECURITY_CHECK_REQUIRED,
   VerificationRequestLimitedError,
 } from "./contracts";
 import { z } from "zod";
@@ -99,9 +100,7 @@ async function identityRequest(
     if (path === "/api/identity/verify" && response.status === 400)
       throw new CustomerMessageError("Check your code or request a new one.");
     if (path === "/api/identity/challenges" && response.status === 400)
-      throw new CustomerMessageError(
-        "Complete the security check and try again.",
-      );
+      throw new CustomerMessageError(EMAIL_SECURITY_CHECK_REQUIRED);
     throw unavailable();
   }
   if (!response.body) throw requestUnavailable();
@@ -180,9 +179,7 @@ export function createLiveIdentityService(): CustomerIdentityService {
     challenge: async (email, signal, botToken) => {
       const normalized = z.email().parse(email.trim().toLowerCase());
       if (!botToken || botToken.length > 2048)
-        throw new CustomerMessageError(
-          "Complete the security check and try again.",
-        );
+        throw new CustomerMessageError(EMAIL_SECURITY_CHECK_REQUIRED);
       const own = ++generation;
       current = null;
       await identityRequest("/api/access", "POST", signal);
