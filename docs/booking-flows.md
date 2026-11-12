@@ -558,3 +558,13 @@ Details → Review is a normal transition without a new full loader. Review Turn
 ### Single calendar snapshot — local follow-up, 12 November 2026
 
 Site arrival downloads one JSON calendar snapshot covering the complete booking window. The account/Session/Calendar routes reuse those month entries with their original deadlines. Opening Calendar or switching a fresh cached month does not fetch another month. If the initial download is unfinished, the full loader waits for that same request. Expiry or explicit retry obtains one replacement snapshot; incomplete/failed/expired replacements cannot establish availability. Checkout, conflict classification and payment/expiry recovery retain their separate authenticated reads and authority.
+
+### A–F follow-up: identity boundaries and completed payment returns
+
+Changing email, signing out and continuing a newly verified/restored identity clear editable outlet/session choices, player count, selected times, contact and consent. Normal Back navigation within an unchanged identity remains local. Held/uncertain payment attempts retain their separate recovery authority.
+
+Get Verification Code immediately replaces its label with a compact spinner in the disabled grey button. Details → Review navigates immediately and saves remembered name/phone in the background. Save errors appear on Review with Try again; new payment waits for an in-flight save and cannot proceed after a failed save. Manage saved contact retains its explicit save behavior.
+
+Visible Review Turnstile has equal vertical spacing, including its visible success frame; the hidden widget reserves no gap. Full confirmation checking/preparation loaders say “Please do not close or refresh.” Back to home from confirmation navigates immediately while cleanup continues.
+
+Provider return query hints are removed from the address after arrival. A repeat provider return goes Home only when this browser has displayed that attempt's confirmation before and the server again supplies confirmed booking evidence. First returns and direct confirmation revisits/refreshes retain protected confirmation and recovery. Storage unavailable or an unrecognized previous confirmation falls back to protected confirmation, never an assumed payment. The external HitPay page remains provider-controlled.

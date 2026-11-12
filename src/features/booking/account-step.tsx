@@ -43,8 +43,14 @@ export function AccountStep({
   onBackChange?: (back: (() => void) | null) => void;
   onIdentityChange?: (identity: VerifiedIdentity | null) => void;
 } = {}) {
-  const { now, update, identityService, rebookingError, retryRebooking } =
-      useBooking(),
+  const {
+      now,
+      update,
+      resetIdentityDraft,
+      identityService,
+      rebookingError,
+      retryRebooking,
+    } = useBooking(),
     router = useRouter();
   const [view, setView] = useState<"choice" | "email" | "code" | "profile">(
       "choice",
@@ -218,7 +224,7 @@ export function AccountStep({
     setRemember(false);
     setBotToken("");
     setBotGeneration((value) => value + 1);
-    update({ mode: "guest", accountEmail: "", contact: blankContact() });
+    resetIdentityDraft();
   }
   /** Run an identity action with shared busy and error handling. */
   async function perform(
@@ -231,9 +237,7 @@ export function AccountStep({
     const controller = new AbortController();
     active.current = controller;
     setBusy(true);
-    setPreparingPage(
-      fullPage || identitySignOutTask(identityService)?.pending === true,
-    );
+    setPreparingPage(fullPage);
     setError("");
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let timedOut = false;
@@ -288,6 +292,7 @@ export function AccountStep({
       email: verifiedEmail,
     };
     if (signal.aborted) return;
+    if (!editProfile) resetIdentityDraft();
     update({
       mode: "member",
       accountEmail: verifiedEmail,
@@ -650,8 +655,18 @@ export function AccountStep({
             className="button"
             disabled={busy || (view === "email" && resendSeconds > 0)}
           >
-            {view === "email" ? "Get Verification Code" : "Verify and continue"}
-            <Icon name="chevron" />
+            {view === "email" && busy ? (
+              <span role="status" aria-label="Requesting verification code">
+                <Icon name="spinner" className="spinner" />
+              </span>
+            ) : (
+              <>
+                {view === "email"
+                  ? "Get Verification Code"
+                  : "Verify and continue"}
+                <Icon name="chevron" />
+              </>
+            )}
           </button>
         </BookingPrimaryAction>
         {view === "email" && identityService.mode === "demo" && (

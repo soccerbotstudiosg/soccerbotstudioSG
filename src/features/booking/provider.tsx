@@ -130,6 +130,9 @@ interface BookingContextValue extends StoredBooking {
   check: () => Promise<boolean>;
   resolve: () => Promise<boolean>;
   reset: () => void;
+  resetIdentityDraft: () => void;
+  saveContact: () => Promise<boolean>;
+  profileSaveError: string;
   leave: () => void;
   restartAfterExpiry: (attemptId: string) => void;
   browseAfterChecking: (attemptId: string) => boolean;
@@ -280,6 +283,17 @@ export function BookingProvider({
   bookingService?: BookingService;
   identityService?: CustomerIdentityService;
 }) {
+  const [profileSaveError, setProfileSaveError] = useState("");
+  const profileSave = useRef<{
+    controller: AbortController;
+    promise: Promise<boolean>;
+  } | null>(null);
+  useEffect(
+    () => () => {
+      profileSave.current?.controller.abort();
+    },
+    [],
+  );
   const pathname = usePathname();
   const initialHomeConflict =
     !!pathname &&
@@ -1738,6 +1752,20 @@ export function BookingProvider({
           }
           if (!isCurrent()) return false;
         }
+        if (
+          (operation === "reserve" || operation === "checkout") &&
+          !current.attempt?.held
+        ) {
+          const savedContact = profileSave.current
+            ? await profileSave.current.promise
+            : !profileSaveError;
+          if (!isCurrent()) return false;
+          if (!savedContact)
+            throw new BookingServiceError(
+              "temporarily_unavailable",
+              "We couldn’t save your details. Please try again.",
+            );
+        }
         const retry = queueRetry.current;
         queueRetry.current = null;
         let attempt =
@@ -2042,6 +2070,7 @@ export function BookingProvider({
       pendingConflict,
       protectedConflictRedirect,
       action.calendarRecovery,
+      profileSaveError,
     ],
   );
   useEffect(() => {
@@ -2054,11 +2083,69 @@ export function BookingProvider({
     );
     return () => clearTimeout(timer);
   }, [value.attempt, run, service.mode]);
+  /** Save remembered contact independently of the Details route lifetime. */
+  function saveContact() {
+    if (profileSave.current) return profileSave.current.promise;
+    const contact = latest.current.draft.contact;
+    const identity = identityService.current();
+    if (!identity?.remember || identity.email !== contact.email)
+      return Promise.resolve(true);
+    const controller = new AbortController();
+    setProfileSaveError("");
+    if (action.error === "We couldn’t save your details. Please try again.")
+      setAction({ status: "idle" });
+    let timeout: ReturnType<typeof setTimeout>;
+    let timedOut = false;
+    const promise = Promise.race([
+      identityService.saveProfile(contact, controller.signal),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+          reject(new Error("profile_save_timeout"));
+        }, 10000);
+      }),
+    ])
+      .then(
+        () => !controller.signal.aborted,
+        () => {
+          if (
+            (!controller.signal.aborted || timedOut) &&
+            identityService.current()?.email === identity.email
+          )
+            setProfileSaveError(
+              "We couldn’t save your details. Please try again.",
+            );
+          return false;
+        },
+      )
+      .finally(() => {
+        clearTimeout(timeout);
+        if (profileSave.current?.controller === controller)
+          profileSave.current = null;
+      });
+    profileSave.current = { controller, promise };
+    return promise;
+  }
   return (
     <Context.Provider
       value={{
         ...value,
         sessionChoices,
+        saveContact,
+        profileSaveError,
+        resetIdentityDraft() {
+          cancel();
+          profileSave.current?.controller.abort();
+          profileSave.current = null;
+          setProfileSaveError("");
+          setSelectionNotice(null);
+          setSessionChoices({ outlet: false, session: false });
+          showDate(null);
+          setCalendarBrowsing(false);
+          setAction({ status: "idle" });
+          commit({ ...latest.current, draft: blankDraft() });
+        },
         setSessionChoices,
         ready:
           value.ready &&
@@ -2177,6 +2264,11 @@ export function BookingProvider({
         },
         /** Apply draft changes while preserving the booking state constraints. */
         update(change) {
+          if (change.contact || change.accountEmail || change.mode) {
+            profileSave.current?.controller.abort();
+            profileSave.current = null;
+            setProfileSaveError("");
+          }
           const current = latest.current;
           if (action.calendarRecovery && current.attempt && !active.current) {
             // Editable new selections are separate from the retained recovery attempt.

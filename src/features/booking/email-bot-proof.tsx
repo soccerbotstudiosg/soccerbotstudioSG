@@ -39,6 +39,7 @@ function BotProof({
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [interactive, setInteractive] = useState(false);
+  const [visible, setVisible] = useState(false);
   const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   useEffect(() => {
     const api = window.turnstile;
@@ -53,6 +54,13 @@ function BotProof({
         onToken(value);
       }
     };
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(([entry]) => {
+            if (active) setVisible(entry.contentRect.height > 0);
+          });
+    observer?.observe(container.current);
     const id = api.render(container.current, {
       sitekey,
       action: purpose,
@@ -72,6 +80,7 @@ function BotProof({
     });
     return () => {
       active = false;
+      observer?.disconnect();
       api.remove(id);
     };
   }, [ready, sitekey, onToken, purpose]);
@@ -98,7 +107,7 @@ function BotProof({
         </p>
       )}
       <div
-        className={`auth-bot-proof${purpose === "create-checkout" && !interactive ? " auth-bot-proof-background" : ""}`}
+        className={`auth-bot-proof${purpose === "create-checkout" ? " checkout-bot-proof" : ""}${purpose === "create-checkout" && !interactive && !visible ? " auth-bot-proof-background" : ""}`}
       >
         <div ref={container} aria-label={label} />
       </div>
