@@ -1,12 +1,25 @@
 "use client";
 import { PendingConfirmation } from "@/features/booking/confirmation-step";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useBooking } from "@/features/booking/provider";
 import { ProtectedConfirmation } from "@/features/booking/protected-confirmation";
 /** Resolve the attempt parameter into a protected confirmation view. */
 function ConfirmationRoute() {
   const params = useSearchParams();
+  const [providerReturn] = useState(
+    () => params.has("reference") && params.has("status"),
+  );
+  const [paymentContinuation] = useState(
+    () => params.get("status") !== "completed",
+  );
+  useEffect(() => {
+    if (!providerReturn) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("status");
+    url.searchParams.delete("reference");
+    window.history.replaceState(window.history.state, "", url);
+  }, [providerReturn]);
   const {
     reset,
     restartAfterConfirmation,
@@ -21,7 +34,8 @@ function ConfirmationRoute() {
     <ProtectedConfirmation
       attemptId={params.get("attempt") || ""}
       // Provider return hints may suppress payment, never establish paid status.
-      allowPaymentContinuation={params.get("status") !== "completed"}
+      allowPaymentContinuation={paymentContinuation}
+      providerReturn={providerReturn}
       sessionRevision={confirmationRevision}
       checkoutMode={bookingService.mode === "live" ? "live" : undefined}
       onExpired={restartAfterExpiry}

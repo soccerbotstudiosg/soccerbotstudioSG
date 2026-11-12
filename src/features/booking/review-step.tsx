@@ -71,6 +71,8 @@ export function ReviewStep({
       attempt,
       update,
       checkout,
+      saveContact,
+      profileSaveError,
       now,
       action,
       cancel,
@@ -145,7 +147,15 @@ export function ReviewStep({
           .
         </span>
       </label>
-      {error && (
+      {profileSaveError && (
+        <div className="alert" role="alert">
+          <p>{profileSaveError}</p>
+          <button className="text-link" onClick={() => void saveContact()}>
+            Try again
+          </button>
+        </div>
+      )}
+      {error && error !== profileSaveError && (
         <div className="alert mt-5" role="alert">
           {error}
           {action.resumeAttemptId && (

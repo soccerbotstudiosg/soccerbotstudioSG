@@ -2,16 +2,14 @@
 
 ## Active outcome
 
-PR63 merged as cfde5139b7d47fb7089a8381823c292edf9e41ab after successful exact-head CI and staging of 6b3c969. Main CI 43175249648 and production deployment 43176840165 passed, version 4704f0b3-5d68-46fe-a921-f6a87915595d. Deployment health passed; independent custom-domain read returned HTTP403. The owner subsequently reported Guest continuation flicker and clarified it must be immediate with no additional check, then requested Use another email flicker be consolidated into PR64.
+PR64 merged as d435b9d511615b4d4adb9e0bb006f716e23bf6e4. Its exact-head CI43183459584 and staging43185205051 passed; independent health confirmed c646a05. Owner supplied A–F capture and requested the corrections consolidated into one PR, passing CI, staged and merged without stopping.
 
 ## Current repair
 
-PR64 on `fix/guest-transition-loader`, published head3af2e21, now has local revisions for immediate Guest, Use another email and Sign out all devices transitions. Explicit logout runs in the background, then creates anonymous access; verification and new protected actions wait only if needed. Failure remains retryable. Shared full-loader handoff registers before paint. Existing held checkout recovery remains unchanged.
+Branch `fix/af-identity-reset` starts from merged main. Changes: identity selection reset, immediate code-button spinner, background remembered-contact save with Review feedback/payment ordering, measured Turnstile spacing, confirmation loader instruction, repeated completed-provider-return navigation versus direct confirmation revisit, and immediate confirmation Home exit.
 
-## Evidence and next action
+Capture shows successful payment/receipt followed by a repeated provider-return receipt409 and then receipt200. No provider transaction was performed by the assistant. Local complete suite passed329 tests; focused new regressions passed. Initial focused failures were obsolete Details save/navigation expectations and a missing Account context mock; repaired with assertions for the new behavior. Test inventory accidentally captured a string inside split as a title during editing; removed that spurious entry. Final source/type/lint checks passed; CI/staging remain to verify. Code requests use only the button spinner while waiting for background revocation.
 
-The first PR64 CI43177684363 failed an obsolete Guest-loader expectation; the delayed-route test now covers signed-in profile loading. Owner cancelled queued CI43178533967. Focused background tests cover ordering, deduplication, retry after acknowledged revocation, all-device401 and timeout. Audit retained a calendar test timeout at /tmp/pr64-audit-all-unit.log; repeated whole-page Session times queries now use the same retained group, preserving all actions/assertions and timeout. The complete local suite passed327 tests after splitting desktop/mobile calendar cases without dropping actions or increasing timeouts. TypeScript, affected lint and source/inventory checks passed. Exact-head CI/staging remain pending; publish the consolidated revision after final diff review. Existing owner authorization is staging then merge using LimYouSheng.
+## Delivery
 
-## Publication identity
-
-Use the verified LimYouSheng GitHub connection for future publication. Commit author/committer settings are explicitly Lim You Sheng, limyousheng.94@gmail.com. Existing PR63 author remains soccerbotsg; shell push actor could not be verified because its authenticated-user endpoint was blocked.
+Publish via LimYouSheng only. Do not change production settings or provider configuration. Finish exact-head frontend/backend/live-email/runtime gates, actual staging and health, then merge under explicit owner authorization. Browser execution belongs to CI/owner. Update delivery receipts in the PR without recursive status commits.

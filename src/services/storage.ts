@@ -337,3 +337,21 @@ export function isBookingDeparture(id: string | null) {
     !!id && stored?.checkoutAttemptId === id && stored?.leftBookingFlow === true
   );
 }
+
+const SEEN_CONFIRMATION_KEY = "soccerbot-confirmation-seen";
+/** Read a bounded presentation hint; this never grants payment or receipt authority. */
+export function hasSeenConfirmation(attemptId: string) {
+  try {
+    return localStorage.getItem(SEEN_CONFIRMATION_KEY) === attemptId;
+  } catch {
+    return false;
+  }
+}
+/** Remember the last displayed confirmation for repeat provider-return navigation only. */
+export function markConfirmationSeen(attemptId: string) {
+  try {
+    localStorage.setItem(SEEN_CONFIRMATION_KEY, attemptId);
+  } catch {
+    /* Storage is optional. */
+  }
+}

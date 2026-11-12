@@ -1,4 +1,5 @@
 "use client";
+import { hasSeenConfirmation, markConfirmationSeen } from "@/services/storage";
 import {
   PAYMENT_WINDOW_ENDED,
   PAYMENT_PROVIDER_UNAVAILABLE,
@@ -12,7 +13,13 @@ import {
 import { expiryReconciliationDeadline } from "@/services/storage";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import { BookingConfirmation, PendingConfirmation } from "./confirmation-step";
 type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
@@ -82,6 +89,7 @@ export function ProtectedConfirmation({
   attemptId,
   checkoutMode,
   allowPaymentContinuation = false,
+  providerReturn = false,
   sessionRevision = 0,
   onAgain,
   onRestart,
@@ -96,6 +104,7 @@ export function ProtectedConfirmation({
   attemptId: string;
   checkoutMode?: "synthetic" | "live";
   allowPaymentContinuation?: boolean;
+  providerReturn?: boolean;
   sessionRevision?: number;
   onAgain?: () => void;
   onExpired?: (attemptId: string) => void;
@@ -113,6 +122,8 @@ export function ProtectedConfirmation({
   onRestart?: (attemptId: string) => void | Promise<void>;
 }) {
   const router = useRouter();
+  const [homeDeparture, setHomeDeparture] = useState<ReactNode>(null);
+  const [seenConfirmation] = useState(() => hasSeenConfirmation(attemptId));
   const [context, setContext] = useState<{
     value: CheckoutContext;
     revision: number;
@@ -768,6 +779,12 @@ export function ProtectedConfirmation({
     receipt.revision === sessionRevision;
   const confirmedCard =
     !!displayedReceipt || (view === "confirmed" && receiptUnavailable);
+  const repeatedProviderReturn =
+    providerReturn && seenConfirmation && !!saved && view !== "denied";
+  useEffect(() => {
+    if (repeatedProviderReturn) router.replace("/");
+    else if (confirmedCard && !silent) markConfirmationSeen(attemptId);
+  }, [repeatedProviderReturn, confirmedCard, silent, attemptId, router]);
   useConfirmationRenderTrace({
     attemptId,
     revision: sessionRevision,
@@ -798,7 +815,8 @@ export function ProtectedConfirmation({
       (paymentReceived || view === "confirmed" ? responseEvidence : current),
     receipt: receiptMatches ? receipt.value : undefined,
   });
-  if (silent) return null;
+  if (homeDeparture) return homeDeparture;
+  if (silent || repeatedProviderReturn) return null;
   if (reconcilingExpiry) return <BrandLoading label="Checking payment…" />;
   if (rejectionState && !hasPaymentEvidence)
     return <BrandLoading compact label="Checking available sessions…" />;
@@ -839,7 +857,7 @@ export function ProtectedConfirmation({
       </div>
     );
   if (displayedReceipt && checkoutMode !== "synthetic") {
-    return (
+    const confirmation = (
       <BookingConfirmation
         booking={displayedReceipt.booking}
         invoicePending={
@@ -862,18 +880,20 @@ export function ProtectedConfirmation({
           onAgain?.();
           window.location.assign(sitePath("/book/account/"));
         }}
-        onHome={async () => {
-          if (onRestart) {
-            await onRestart(attemptId);
-            router.push("/");
-            return;
+        onHome={() => {
+          setHomeDeparture(confirmation);
+          router.push("/");
+          if (onRestart)
+            void Promise.resolve(onRestart(attemptId)).catch(() => {});
+          else {
+            if (checkoutMode === "live")
+              void dismissCompletedBooking(attemptId).catch(() => {});
+            onAgain?.();
           }
-          if (checkoutMode === "live") await dismissCompletedBooking(attemptId);
-          onAgain?.();
-          window.location.assign(sitePath("/"));
         }}
       />
     );
+    return confirmation;
   }
   if (creationResolved && !hasPaymentEvidence)
     return (

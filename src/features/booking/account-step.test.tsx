@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({ update: vi.fn(), push: vi.fn() }));
 vi.mock("./provider", () => ({
   useBooking: () => ({
     update: mocks.update,
+    resetIdentityDraft: vi.fn(),
     now: Date.now(),
     identityService: demoCustomerIdentity,
   }),

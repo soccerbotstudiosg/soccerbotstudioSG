@@ -31,6 +31,7 @@ export function DetailsStep({
       identityService,
       bookingService,
       review,
+      saveContact,
       action,
       selectionNotice,
       cancel,
@@ -296,8 +297,7 @@ export function DetailsStep({
             setChecking(true);
             void (async () => {
               try {
-                if (draft.mode === "member" && remember && !(await save()))
-                  return;
+                if (draft.mode === "member" && remember) void saveContact();
                 // Review uses the local draft; checkout owns server validation.
                 if (!mounted.current) return;
                 if (bookingService.mode === "live") {

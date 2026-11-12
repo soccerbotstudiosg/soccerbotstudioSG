@@ -652,7 +652,8 @@ it("reopening an expired paid booking shows the saved full confirmation without 
     Promise.resolve(Response.json({ dismissed: true })),
   );
   fireEvent.click(screen.getByRole("link", { name: "Back to home" }));
-  await waitFor(() => expect(assign).toHaveBeenCalledTimes(2));
+  expect(navigation.push).toHaveBeenCalledWith("/");
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(fetch.mock.calls.at(-1)?.[0]).toBe(`/api/attempts/${first}/dismiss`);
 });
 
@@ -2424,4 +2425,59 @@ it("late unpaid-release acknowledgement cannot override newer payment evidence a
     awaiting.mockClear();
   }
   write.mockRestore();
+});
+
+it("repeat provider return goes home only after server confirmation while direct revisits remain visible", async () => {
+  const now = Date.now();
+  const fetch = vi.fn(async (url: string) =>
+    Response.json(
+      url.endsWith("/checkout")
+        ? {
+            attemptId: first,
+            mode: "live",
+            confirmation: receiptFixture(),
+            payment: { status: "recorded", paidAtMs: now },
+            checkout: { state: "unavailable" },
+            summary: {
+              players: 2,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [{ startMs: now + 86400000, players: 2 }],
+            },
+            checking: {
+              deadlineMs: now + 60000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+            },
+          }
+        : receiptFixture(),
+    ),
+  );
+  vi.stubGlobal("fetch", fetch);
+  navigation.replace.mockClear();
+  let page = render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      providerReturn
+    />,
+  );
+  await screen.findByRole("link", { name: "Back to home" });
+  expect(navigation.replace).not.toHaveBeenCalledWith("/");
+  page.unmount();
+  page = render(
+    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+  );
+  await screen.findByRole("link", { name: "Back to home" });
+  expect(navigation.replace).not.toHaveBeenCalledWith("/");
+  page.unmount();
+  render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      providerReturn
+    />,
+  );
+  await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
+  expect(screen.queryByText("Confirmation unavailable")).toBeNull();
 });

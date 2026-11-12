@@ -77,4 +77,10 @@ test("display loading leaves navigation interactive while payment loading still 
   );
   expect(button.closest("[inert]")).not.toBeNull();
   expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
+  view.rerender(
+    <BookingLoadingProvider>
+      <BookingLoading label="Preparing confirmation…" />
+    </BookingLoadingProvider>,
+  );
+  expect(screen.getByText(/Please do not close or refresh/)).toBeVisible();
 });

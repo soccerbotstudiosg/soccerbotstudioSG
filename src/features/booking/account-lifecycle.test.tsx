@@ -10,7 +10,7 @@ import { expect, test, vi } from "vitest";
 import { BookingPage } from "./booking-page";
 import { blankDraft } from "@/domain/booking";
 import { saveBooking } from "@/services/storage";
-import { BookingProvider } from "./provider";
+import { BookingProvider, useBooking } from "./provider";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { liveBookingService } from "@/services/booking";
 import {
@@ -1263,10 +1263,67 @@ test("email requests wait for background signout while the replacement form open
       .getByRole("button", { name: "Get Verification Code" })
       .closest("form")!,
   );
-  expect(document.querySelector(".booking-flow-overlay")).not.toBeNull();
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  expect(
+    screen.getByRole("status", { name: "Requesting verification code" }),
+  ).toBeVisible();
   expect(challenge).not.toHaveBeenCalled();
   await act(async () => finish());
   expect(await screen.findByLabelText("Verification code")).toBeEnabled();
   expect(challenge).toHaveBeenCalledTimes(1);
   expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+});
+
+test("switching identity clears selected session and cart without repeating entry preparation", async () => {
+  let current: ReturnType<CustomerIdentityService["current"]> = {
+    email: "old@example.invalid",
+    expiresAt: Date.now() + 600000,
+  };
+  const service = {
+    ...demoCustomerIdentity,
+    current: () => current,
+    refresh: async () => current,
+    guest: async () => {},
+    signOut: async () => {
+      current = null;
+    },
+  };
+  function Selection() {
+    const { update, draft, sessionChoices, setSessionChoices } = useBooking();
+    return (
+      <>
+        <button
+          onClick={() => {
+            update({ players: 4, nativeServiceId: "old-service" });
+            setSessionChoices({ outlet: true, session: true });
+          }}
+        >
+          Seed selection
+        </button>
+        <output data-testid="selection">
+          {JSON.stringify({
+            players: draft.players,
+            service: draft.nativeServiceId,
+            sessionChoices,
+            slots: draft.slots,
+          })}
+        </output>
+      </>
+    );
+  }
+  render(
+    <BookingProvider identityService={service}>
+      <Selection />
+      <BookingPage step="account" />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByText("Seed selection"));
+  expect(screen.getByTestId("selection")).toHaveTextContent("old-service");
+  fireEvent.click(screen.getByRole("button", { name: "Use another email" }));
+  expect(screen.getByTestId("selection")).not.toHaveTextContent("old-service");
+  expect(screen.getByTestId("selection")).toHaveTextContent('"players":1');
+  expect(screen.getByTestId("selection")).toHaveTextContent('"session":false');
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  await act(async () => {});
 });

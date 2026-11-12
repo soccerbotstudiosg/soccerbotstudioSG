@@ -541,7 +541,7 @@
   },
   {
     "file": "src/features/booking/details-step.test.tsx",
-    "title": "verified details reports an explicit save and retains editable contact on failure"
+    "title": "verified details advances immediately and reports background save failure on review"
   },
   {
     "file": "src/features/booking/details-step.test.tsx",
@@ -1534,5 +1534,13 @@
   {
     "file": "src/features/booking/time-step.test.tsx",
     "title": "mobile calendar selection drawers and responsive scroll preserve restored availability"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "repeat provider return goes home only after server confirmation while direct revisits remain visible"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "switching identity clears selected session and cart without repeating entry preparation"
   }
 ]

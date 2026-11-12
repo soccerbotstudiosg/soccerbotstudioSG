@@ -12,7 +12,13 @@ import { useBookingEntryTransition } from "@/components/booking-navigation";
 import { BrandLoading } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
 const feedbackMessage = (label?: string) =>
-  label === "Opening checkout…" || label === "Checking payment…"
+  [
+    "Opening checkout…",
+    "Checking payment…",
+    "Checking booking…",
+    "Preparing confirmation…",
+    "Payment received. Confirming booking.",
+  ].includes(label ?? "")
     ? `${label} ${loadingMessage}`
     : undefined;
 const Loading = createContext<((label: string) => () => void) | null>(null);
