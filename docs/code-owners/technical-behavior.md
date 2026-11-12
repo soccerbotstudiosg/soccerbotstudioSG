@@ -544,3 +544,9 @@ ConfirmationRoute captures provider return hints, then removes status/reference 
 Account advances after verification without fetching a profile. Details reads before revealing its form behind the existing full loader, once per entry/retry. The bounded, abortable read cannot overwrite typing or a later retry. Local identity expiry also returns to Account without a protected fetch. Manage saved contact reads before its editor opens; explicit saving handles revoked identity with the same entry recovery.
 
 Identity transport distinguishes `identity_unavailable` on optional profile POST from failed booking capability/transport. Provider permits checkout with the entered contact after that specific denial; live checkout authorization remains server-owned rather than depending on cached email proof. Other profile-save errors retain the existing retry behavior. `revokeAllIdentities` marks remembered-family revocation as profile-only; migration0048 updates the trigger to preserve guest booking access for this scope. Default booking-scope revocation still propagates for local logout and token replay. Existing historical revocations are not undone.
+
+### Review pending proof and active-checkout notice
+
+BotProof reports pending background work through an optional callback, derived from sitekey, failure, interaction and token state. ReviewStep combines it with consent, token absence and existing busy state to render the small spinner and aria-busy. Server admission and token handling remain unchanged.
+
+Native booking transport preserves `checkout_already_active` as a distinct BookingServiceError code. The existing rejected-selection classifier chooses the corresponding approved notice while retaining fresh availability classification and late-response guards. Its existing pending-conflict snapshot optionally retains this reason across interrupted classification; the enum is presentation data and never authority to adopt another checkout.

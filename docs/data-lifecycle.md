@@ -204,3 +204,5 @@ The `soccerbot-confirmation-seen` localStorage entry stores only the last displa
 Saved name/phone are fetched at Booking Details or Manage saved contact, before reveal. A denied profile entry clears editable draft and local identity. Already displayed/user-entered contacts can continue through checkout after remote email sign-out; existing draft reset/exit retention remains unchanged. No new browser storage key is introduced.
 
 Migration0048 adds `remembered_identity.revocation_scope` with default `booking`. All-device email sign-out explicitly records `profile`, revoking email/remembered authority and older challenges while retaining other devices’ booking access. The revised family trigger retains booking revocation for local logout/token replay. Existing revoked rows remain revoked; no historical rows are restored or deleted and no retention deadline changes.
+
+The existing `soccerbot-pending-conflict` snapshot may additionally retain the optional enum reason `checkout_already_active` so interrupted classification preserves accurate guidance. No additional identity/contact data, storage key, expiry or server retention policy changes.

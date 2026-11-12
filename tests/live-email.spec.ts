@@ -3512,7 +3512,7 @@ test("real API 409 preparation rejection returns to calendar without payment ver
       }),
     ).toBeVisible();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      "Some sessions may no longer be available. Please check again.",
+      "You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.",
     );
     await expect(
       page.getByRole("link", { name: "View existing checkout", exact: true }),

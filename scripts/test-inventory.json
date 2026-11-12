@@ -1570,5 +1570,9 @@
   {
     "file": "src/features/booking/access-recovery.test.tsx",
     "title": "saved-profile timeout offers retry without exposing fields or restarting booking"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "active checkout rejection keeps its own notice instead of an availability warning"
   }
 ]

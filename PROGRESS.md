@@ -2,12 +2,12 @@
 
 ## Active outcome
 
-Simplify remote email revocation to protected saved-contact entry: Booking Details and Manage saved contact return to guest/email choices with the sign-out notice. Already-entered details continue through checkout. Branch `fix/revoked-session-recovery` starts at PR66/main `0abaf9d2a94322f91c1710dafaa11878b793f310`. Prior release is complete; this repair is not deployed.
+Review button feedback and accurate second-tab rejection copy, based on merged PR67/main `bf2c6aba31a8f9d8f6eae778b74f5bb45537bc50`. Branch `fix/review-security-loader`. Owner requested spinner only after selecting consent while background Turnstile remains pending; provider challenge still starts when Review opens.
 
-## Current implementation
+## Current changes
 
-Saved-profile fetch moves to Details behind the standard message-free full loader. No extra calendar/session checks or persistent checkout lock. Optional profile save skips confirmed identity revocation without blocking booking; explicit profile editor still redirects. Migration0048 separates all-device email revocation from remote booking-capability revocation, preserving local logout/token replay safeguards and never reviving old capabilities.
+Reuse the small existing spinner in place of the payment arrow, retaining label/total and disabled admission. Interaction, failure and completion stop the background spinner. The supplied second-tab capture confirms503 `checkout_already_active`; map it separately to active-checkout guidance rather than generic session availability. Preserve existing conflict classification, original checkout ownership and capacity guards; persist only the enum reason in the existing tab-local pending-conflict snapshot.
 
 ## Evidence and next step
 
-All28 isolated Worker identity tests pass after the database-trigger correction; preserved failure evidence and final behavior are in Journey. Final full unit/component suite passes336 tests; all28 isolated Worker identity tests, types, lint and source integrity pass. Foundation migration checks pass; the release migration guard now exercises0048 and checks preservation. No live provider effects or assistant browser execution. Draft PR67 is published via LimYouSheng at c623ddcf3ac3bc31ff9a04c3f20dc45a98487d81. Initial CI43238485689 hit a GitHub503 before frontend tests and an obsolete browser assertion expecting early contact fetch. Correct the assertion to require no pre-Details contact read and push the same PR; CI, staging, merge and physical acceptance remain separate. No new staging/merge authorization is inferred from completed PR66.
+Focused Turnstile/direct-checkout cases pass including actual503 response mapping, retained available cart, no duplicate write and checkbox-controlled spinner. Types, lint and source checks pass. Full suite initially passed335 of337; two existing assertions still expected the superseded active-checkout copy/code. Those were updated, and all60 affected Turnstile/direct-checkout cases now pass. The other27 test files passed unchanged. Corresponding browser assertion updated; CI execution pending. Publish one draft PR after consolidation. No staging, merge or production deployment authorized for this new change; user/CI browser acceptance remains separate.

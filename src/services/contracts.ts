@@ -78,6 +78,7 @@ export type BookingErrorCode =
   | "selection_changed"
   | "reservation_expired"
   | "checkout_window_blocked"
+  | "checkout_already_active"
   | "booking_not_created"
   | "checkout_not_started"
   | "checkout_verification_required"

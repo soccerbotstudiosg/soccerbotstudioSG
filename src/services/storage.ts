@@ -274,6 +274,7 @@ export function saveConflictNotice(
 
 // Pending conflict data is a tab-local display snapshot, never server authority.
 const pendingConflictSchema = z.strictObject({
+  reason: z.literal("checkout_already_active").optional(),
   attemptId: z.string().uuid().nullable(),
   draft: draftSchema,
   rejectedSessionIndex: z
