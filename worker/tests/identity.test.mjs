@@ -66,6 +66,7 @@ before(async () => {
     "0046_identity_email_request_limit.sql",
     "0047_identity_overlapping_codes.sql",
     "0013_remembered_identity.sql",
+    "0048_profile_only_signout.sql",
     "0011_identity_delivery.sql",
     "0015_contact_profiles.sql",
   ])
@@ -924,8 +925,8 @@ test("remembered all-device signout accepts restored and older valid sessions an
     undefined,
   );
   assert.equal(
-    (await call(r.guest, { action: "read", now: later + 1 })).error,
-    "access_denied",
+    (await call(r.guest, { action: "read", now: later + 1 })).result,
+    null,
   );
   assert.equal(
     (
@@ -937,8 +938,40 @@ test("remembered all-device signout accepts restored and older valid sessions an
     "verification_unavailable",
   );
   assert.equal(
-    (await call(other, { action: "read", now: later + 2 })).error,
-    "access_denied",
+    (await call(other, { action: "read", now: later + 2 })).result,
+    null,
+  );
+  // The booking capability survives, but no profile can be read or changed.
+  for (const cookie of [r.guest, other]) {
+    assert.equal(
+      (await call(cookie, { action: "contact-read", now: later + 2 })).error,
+      "identity_unavailable",
+    );
+    assert.equal(
+      (
+        await call(cookie, {
+          action: "contact-save",
+          now: later + 2,
+          contact: {
+            email: r.email,
+            name: "Untrusted change",
+            phone: "81234567",
+          },
+        })
+      ).error,
+      "identity_unavailable",
+    );
+  }
+  assert.equal(
+    (
+      await db
+        .prepare(
+          "SELECT revoked_ms FROM guest_access WHERE capability_hash=(SELECT origin_access_hash FROM remembered_identity WHERE id=?)",
+        )
+        .bind(r.id)
+        .first()
+    ).revoked_ms,
+    null,
   );
   const old = await remembered();
   assert.equal(
@@ -990,10 +1023,7 @@ test("fresh remembered login after all-device signout keeps old families revoked
     assert.equal(verified.error, undefined);
     assert.equal(verified.result.email, old.email);
     assert.equal(verified.result.remember, remember);
-    assert.equal(
-      (await call(old.guest, { action: "read", now })).error,
-      "access_denied",
-    );
+    assert.equal((await call(old.guest, { action: "read", now })).result, null);
     assert.equal(
       (
         await call(`${await guestAt(now)}; ${old.cookie}`, {

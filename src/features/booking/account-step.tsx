@@ -1,4 +1,5 @@
 "use client";
+import { BOOKING_SIGNED_OUT } from "@/domain/booking-messages";
 import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading } from "./booking-loading";
@@ -45,6 +46,8 @@ export function AccountStep({
 } = {}) {
   const {
       now,
+      profileAccessRevision,
+      draft,
       update,
       resetIdentityDraft,
       identityService,
@@ -287,7 +290,11 @@ export function AccountStep({
     verifiedEmail: string,
     editProfile = false,
   ) {
-    const contact = (await identityService.profile(verifiedEmail, signal)) || {
+    // Saved fields are private: fetch only when opening their editor.
+    // Booking Details owns its own protected read before revealing the form.
+    const contact = (await (editProfile
+      ? identityService.profile(verifiedEmail, signal)
+      : null)) || {
       ...blankContact(),
       email: verifiedEmail,
     };
@@ -362,6 +369,11 @@ export function AccountStep({
             )
           }
         />
+        {profileAccessRevision > 0 && !draft.mode && !verifiedIdentity && (
+          <p className="alert" role="alert">
+            {BOOKING_SIGNED_OUT}
+          </p>
+        )}
         {signOutNotice}
         {rebookingError && (
           <div className="alert" role="alert">

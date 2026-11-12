@@ -44,6 +44,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
   }, []);
   const {
       identityService,
+      profileAccessRevision,
       ready,
       draft,
       attempt,
@@ -115,27 +116,33 @@ export function BookingPage({ step }: { step: BookingStep }) {
       ? "review"
       : step;
   const actual =
-      action.returnToCalendar &&
-      ["time", "details", "review", "payment"].includes(step)
-        ? "time"
-        : handingOff || reserving
-          ? step
-          : bookingService.mode === "live" &&
-              bookingService.operations.availability === "unavailable" &&
-              step !== "account"
-            ? "session"
+      profileAccessRevision > 0 && !draft.mode
+        ? "account"
+        : action.returnToCalendar &&
+            ["time", "details", "review", "payment"].includes(step)
+          ? "time"
+          : handingOff || reserving
+            ? step
             : bookingService.mode === "live" &&
-                !attempt &&
-                draft.mode &&
-                step === "payment"
-              ? "time"
-              : action.calendarRecovery && attempt
-                ? ["account", "session", "time", "details", "review"].includes(
-                    step,
-                  )
-                  ? guardedStep(step, draft, null, now)
-                  : "time"
-                : guardedStep(step, draft, attempt, now),
+                bookingService.operations.availability === "unavailable" &&
+                step !== "account"
+              ? "session"
+              : bookingService.mode === "live" &&
+                  !attempt &&
+                  draft.mode &&
+                  step === "payment"
+                ? "time"
+                : action.calendarRecovery && attempt
+                  ? [
+                      "account",
+                      "session",
+                      "time",
+                      "details",
+                      "review",
+                    ].includes(step)
+                    ? guardedStep(step, draft, null, now)
+                    : "time"
+                  : guardedStep(step, draft, attempt, now),
     current = progress.findIndex(([id]) => id === displayStep);
   const retainingReview =
     !action.calendarRecovery &&
@@ -259,6 +266,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
                 {recoveryNotice}
                 {step === "account" ? (
                   <AccountStep
+                    key={profileAccessRevision}
                     onBackChange={registerAccountBack}
                     onIdentityChange={setIdentity}
                   />

@@ -1,4 +1,12 @@
 "use client";
+import {
+  profileAccessGeneration,
+  reportProfileAccessLoss,
+} from "@/services/profile-access";
+import {
+  customerMessage,
+  ProfileAccessRevokedError,
+} from "@/services/contracts";
 import { BookingHeading } from "./booking-heading";
 import {
   BookingPrimaryAction,
@@ -38,6 +46,88 @@ export function DetailsStep({
     } = useBooking(),
     router = useRouter(),
     c = draft.contact;
+  const needsProfile =
+    !profileOnly &&
+    bookingService.mode === "live" &&
+    identityService.mode === "live" &&
+    draft.mode === "member";
+  const [profileRead, setProfileRead] = useState<{
+    email: string;
+    ready: boolean;
+    error: string;
+  }>({ email: "", ready: false, error: "" });
+  const [profileRetry, setProfileRetry] = useState(0);
+  const profileTarget = useRef({ contact: draft.contact, update });
+  profileTarget.current = { contact: draft.contact, update };
+  useEffect(() => {
+    if (!needsProfile) return;
+    const controller = new AbortController();
+    const email = draft.accountEmail;
+    const own = profileAccessGeneration();
+    setProfileRead({ email, ready: false, error: "" });
+    // A restored draft does not prove that its saved-profile identity is valid.
+    if (identityService.current()?.email !== email) {
+      reportProfileAccessLoss(own);
+      return () => controller.abort();
+    }
+    const timeout = setTimeout(() => {
+      setProfileRead({
+        email,
+        ready: false,
+        error: "Unable to load saved details. Please try again.",
+      });
+      controller.abort();
+    }, 10000);
+    void identityService
+      .profile(email, controller.signal)
+      .then(
+        (profile) => {
+          if (controller.signal.aborted) return;
+          if (own !== profileAccessGeneration()) {
+            setProfileRead({
+              email,
+              ready: false,
+              error: "Your sign-in changed. Please try again.",
+            });
+            return;
+          }
+          if (identityService.current()?.email !== email) {
+            reportProfileAccessLoss(own);
+            return;
+          }
+          if (profile)
+            profileTarget.current.update({
+              contact: {
+                ...profile,
+                ...Object.fromEntries(
+                  Object.entries(profileTarget.current.contact).filter(
+                    ([, value]) => value !== "",
+                  ),
+                ),
+                email,
+              },
+            });
+          setProfileRead({ email, ready: true, error: "" });
+        },
+        (error: unknown) => {
+          if (!controller.signal.aborted)
+            setProfileRead({
+              email,
+              ready: false,
+              error: customerMessage(
+                error,
+                "Unable to load saved details. Please try again.",
+              ),
+            });
+        },
+      )
+      .finally(() => clearTimeout(timeout));
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+    // One protected read per editor entry/retry; typing must never refetch or overwrite the draft.
+  }, [needsProfile, draft.accountEmail, identityService, profileRetry]);
   const [working, setChecking] = useState(false);
   const [navigating, startNavigation] = useTransition();
   const checking = working || navigating;
@@ -94,6 +184,7 @@ export function DetailsStep({
       return false;
     }
     const controller = new AbortController();
+    const own = profileAccessGeneration();
     activeSave.current = controller;
     setSaveState({ key: contactKey, saving: true, message: "", failed: false });
     try {
@@ -106,7 +197,14 @@ export function DetailsStep({
           failed: false,
         });
       return !controller.signal.aborted;
-    } catch {
+    } catch (error) {
+      if (
+        error instanceof ProfileAccessRevokedError &&
+        !controller.signal.aborted
+      ) {
+        reportProfileAccessLoss(own);
+        return false;
+      }
       if (!controller.signal.aborted)
         setSaveState({
           key: contactKey,
@@ -260,6 +358,24 @@ export function DetailsStep({
     (attempt?.verifying || attempt?.held)
   )
     return <ReviewStep verifying={attempt.verifying === true} />;
+  if (
+    needsProfile &&
+    (!profileRead.ready || profileRead.email !== draft.accountEmail)
+  ) {
+    if (profileRead.error)
+      return (
+        <div className="alert" role="alert">
+          <p>{profileRead.error}</p>
+          <button
+            className="button secondary"
+            onClick={() => setProfileRetry((value) => value + 1)}
+          >
+            Try again
+          </button>
+        </div>
+      );
+    return <BrandLoading />;
+  }
   return (
     <>
       {profileOnly ? (

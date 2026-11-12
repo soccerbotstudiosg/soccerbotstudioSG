@@ -1,4 +1,5 @@
 "use client";
+import { onProfileAccessLoss } from "@/services/profile-access";
 import {
   clearIdentityEntry,
   identitySignOutTask,
@@ -42,6 +43,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useReducer,
   useMemo,
   useRef,
@@ -60,6 +62,7 @@ import { customerCatalogueService } from "@/services/customer-catalogue";
 import { defineBookingService } from "@/services/booking";
 import {
   BookingServiceError,
+  ProfileAccessRevokedError,
   type BookingService,
   type BookingOperation,
 } from "@/services/contracts";
@@ -101,6 +104,7 @@ type ActionState = {
 };
 type SessionChoices = { outlet: boolean; session: boolean };
 interface BookingContextValue extends StoredBooking {
+  profileAccessRevision: number;
   sessionChoices: SessionChoices;
   setSessionChoices: (choices: SessionChoices) => void;
   availability: ReturnType<typeof useBookingAvailability>;
@@ -283,6 +287,7 @@ export function BookingProvider({
   bookingService?: BookingService;
   identityService?: CustomerIdentityService;
 }) {
+  const [profileAccessRevision, setProfileAccessRevision] = useState(0);
   const [profileSaveError, setProfileSaveError] = useState("");
   const profileSave = useRef<{
     controller: AbortController;
@@ -764,6 +769,34 @@ export function BookingProvider({
         });
     },
     [setAction, clearPendingConflict],
+  );
+  useLayoutEffect(
+    () =>
+      onProfileAccessLoss(() => {
+        if (service.mode !== "live" || identityService.mode !== "live") return;
+        identityService.invalidate?.();
+        clearIdentityEntry(identityService);
+        if (!pathname || !/\/(?:book\/|confirmation)/.test(pathname)) return;
+        cancel(false);
+        profileSave.current?.controller.abort();
+        profileSave.current = null;
+        setProfileSaveError("");
+        setSessionChoices({ outlet: false, session: false });
+        setProfileAccessRevision((revision) => revision + 1);
+        setAction({ status: "idle" });
+        // Preserve original financial authority; only the editable profile/draft is reset.
+        commit({ ...latest.current, draft: blankDraft() });
+        router.replace("/book/account/");
+      }),
+    [
+      service.mode,
+      identityService,
+      pathname,
+      cancel,
+      commit,
+      router,
+      setAction,
+    ],
   );
   const conflictPath = useRef(pathname);
   useEffect(() => {
@@ -1797,7 +1830,10 @@ export function BookingProvider({
                     signal,
                   });
         if (!isCurrent()) return false;
-        if (JSON.stringify(identity()) !== sessionKey)
+        if (
+          service.mode === "demo" &&
+          JSON.stringify(identity()) !== sessionKey
+        )
           throw new BookingServiceError(
             "conflict",
             "Please verify your email again.",
@@ -2108,7 +2144,13 @@ export function BookingProvider({
     ])
       .then(
         () => !controller.signal.aborted,
-        () => {
+        (error: unknown) => {
+          // Profile storage is optional. Revoked email proof does not revoke a booking.
+          if (
+            error instanceof ProfileAccessRevokedError &&
+            !controller.signal.aborted
+          )
+            return true;
           if (
             (!controller.signal.aborted || timedOut) &&
             identityService.current()?.email === identity.email
@@ -2131,6 +2173,7 @@ export function BookingProvider({
     <Context.Provider
       value={{
         ...value,
+        profileAccessRevision,
         sessionChoices,
         saveContact,
         profileSaveError,

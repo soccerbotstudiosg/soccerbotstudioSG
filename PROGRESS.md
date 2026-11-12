@@ -2,14 +2,12 @@
 
 ## Active outcome
 
-Investigate the owner’s returning session-day flicker using test-flicker.devtools. Base is merged PR65, main 1f98c08d006dc8074610f04de314df6d9453b722. PR65 staging and merge were completed; this checkpoint does not claim a new production deployment.
+Simplify remote email revocation to protected saved-contact entry: Booking Details and Manage saved contact return to guest/email choices with the sign-out notice. Already-entered details continue through checkout. Branch `fix/revoked-session-recovery` starts at PR66/main `0abaf9d2a94322f91c1710dafaa11878b793f310`. Prior release is complete; this repair is not deployed.
 
-## Current repair
+## Current implementation
 
-Branch `fix/cached-day-transition`: synchronize TimeStep’s selected date with the shared cached availability read before paint. Capture shows one successful calendar snapshot and no per-day availability calls or failed API responses. See the dated Journey entry and technical behavior for cause and evidence limits.
+Saved-profile fetch moves to Details behind the standard message-free full loader. No extra calendar/session checks or persistent checkout lock. Optional profile save skips confirmed identity revocation without blocking booking; explicit profile editor still redirects. Migration0048 separates all-device email revocation from remote booking-capability revocation, preserving local logout/token replay safeguards and never reviving old capabilities.
 
-Existing focused suites passed 37 tests; type checking, targeted lint and formatting passed. Initial type generation was blocked by sandbox Git subprocess permissions; the authorized rerun passed. They retain cache freshness, date/identity separation and checkout guards; no test inventory change. Rendered-frame verification remains pending with owner/CI, since component tests flush effects and HAR does not record paint.
+## Evidence and next step
 
-## Remaining
-
-Review and publish the scoped candidate through LimYouSheng; verify exact-head CI and actual staging health, then merge under the owner’s explicit “stage and merge” authorization. Owner visual confirmation remains a separately reported evidence gap. No provider or production setting changes. Browser execution belongs to CI/owner.
+All28 isolated Worker identity tests pass after the database-trigger correction; preserved failure evidence and final behavior are in Journey. Final full unit/component suite passes336 tests; all28 isolated Worker identity tests, types, lint and source integrity pass. Foundation migration checks pass; the release migration guard now exercises0048 and checks preservation. No live provider effects or assistant browser execution. Publish one draft PR via LimYouSheng; CI, staging, merge and physical acceptance remain separate. No new staging/merge authorization is inferred from completed PR66.
