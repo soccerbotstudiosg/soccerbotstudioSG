@@ -161,6 +161,18 @@ export const publicCalendarSchema = z
       ),
   );
 
+/** Bound one public response to the complete booking-window month set. */
+export const publicCalendarSnapshotSchema = z
+  .strictObject({
+    months: z.array(publicCalendarSchema).length(BOOKING_MONTH_COUNT),
+  })
+  .refine(
+    ({ months }) =>
+      new Set(months.map((entry) => entry.month)).size ===
+        BOOKING_MONTH_COUNT &&
+      months.every((entry) => entry.serviceId === months[0].serviceId),
+  );
+
 export const nativeCalendarSchema = z
   .strictObject({
     month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),

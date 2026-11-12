@@ -30,6 +30,7 @@ import { SESSION_STARTS } from "@/domain/demo-catalog";
 import { BookingServiceError, type BookingService } from "./contracts";
 import {
   publicCalendarSchema,
+  publicCalendarSnapshotSchema,
   MAX_DAILY_NATIVE_OFFERS,
   nativeDisplaySlots,
   studioDisplayCalendar,
@@ -206,6 +207,31 @@ export function defineBookingService(adapter: BookingService): BookingService {
               )
                 throw invalidResponse();
               return parsed;
+            }),
+        }
+      : {}),
+    ...(adapter.publicCalendarSnapshot
+      ? {
+          publicCalendarSnapshot: (
+            input: Parameters<
+              NonNullable<BookingService["publicCalendarSnapshot"]>
+            >[0],
+          ) =>
+            invoke(input.signal, async () => {
+              supported("availability");
+              const value = decode(
+                publicCalendarSnapshotSchema,
+                await adapter.publicCalendarSnapshot!(input),
+              );
+              if (
+                value.months.some(
+                  (entry) =>
+                    entry.observedAtMs > Date.now() ||
+                    Date.now() >= displayDeadline(entry, CATALOGUE_MAX_AGE_MS),
+                )
+              )
+                throw invalidResponse();
+              return value;
             }),
         }
       : {}),
@@ -563,6 +589,18 @@ export const liveBookingService: BookingService = defineBookingService({
         slots,
       },
     };
+  },
+  async publicCalendarSnapshot({ signal }) {
+    const response = await fetch("/api/calendar/snapshot", {
+      signal,
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw invalidResponse();
+    const result = decode(publicCalendarSnapshotSchema, await response.json());
+    return { months: result.months.map(studioDisplayCalendar) };
   },
   async publicCalendar({ month, signal }) {
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw invalidResponse();

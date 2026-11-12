@@ -1,4 +1,5 @@
 "use client";
+import { clearIdentityEntry } from "@/services/identity";
 import {
   CONFLICT_NOTICE,
   BOOKING_NOT_CREATED,
@@ -441,29 +442,33 @@ export function BookingProvider({
     failed: boolean;
   } | null>(null);
   const [rebookingError, setRebookingError] = useState<string | null>(null);
-  const finishExit = useCallback((id: string) => {
-    if (exitWork.current?.id === id && !exitWork.current.failed)
-      return exitWork.current.promise;
-    rememberCompletedExit(id);
-    setRebookingError(null);
-    const work = { id, failed: false, promise: Promise.resolve(false) };
-    exitWork.current = work;
-    work.promise = dismissCompletedBooking(id).then(
-      () => {
-        forgetCompletedExit(id);
-        return true;
-      },
-      () => {
-        work.failed = true;
-        if (mounted.current && exitWork.current === work)
-          setRebookingError(
-            "Unable to start a new booking. Please try again. Your confirmed booking is unchanged.",
-          );
-        return false;
-      },
-    );
-    return work.promise;
-  }, []);
+  const finishExit = useCallback(
+    (id: string) => {
+      if (exitWork.current?.id === id && !exitWork.current.failed)
+        return exitWork.current.promise;
+      clearIdentityEntry(identityService);
+      rememberCompletedExit(id);
+      setRebookingError(null);
+      const work = { id, failed: false, promise: Promise.resolve(false) };
+      exitWork.current = work;
+      work.promise = dismissCompletedBooking(id).then(
+        () => {
+          forgetCompletedExit(id);
+          return true;
+        },
+        () => {
+          work.failed = true;
+          if (mounted.current && exitWork.current === work)
+            setRebookingError(
+              "Unable to start a new booking. Please try again. Your confirmed booking is unchanged.",
+            );
+          return false;
+        },
+      );
+      return work.promise;
+    },
+    [identityService],
+  );
   const [availabilityRevision, invalidateAvailability] = useReducer(
     (revision: number) => revision + 1,
     0,
@@ -2239,6 +2244,7 @@ export function BookingProvider({
                 )))
           )
             return;
+          clearIdentityEntry(identityService);
           cancel();
           setSelectionNotice(null);
           setSessionChoices({ outlet: false, session: false });

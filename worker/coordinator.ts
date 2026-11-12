@@ -56,7 +56,10 @@ import {
   customerNativeCalendar,
 } from "./native-checkout";
 import { z } from "zod";
-import { nativePrepareSchema } from "../src/domain/native-checkout";
+import {
+  nativePrepareSchema,
+  publicCalendarSnapshotSchema,
+} from "../src/domain/native-checkout";
 import { intentSchema, associationSchema } from "./journal";
 import { runNativeReadback } from "./recovery";
 import {
@@ -88,6 +91,7 @@ import {
   ApiError,
   policy,
   rpcOutcome,
+  unwrapRpcOutcome,
   liveCustomerAccess,
 } from "./policy";
 import { ProviderSession, type ProviderControl } from "./provider-session";
@@ -858,6 +862,23 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         durationMs: performance.now() - started,
       });
     return outcome;
+  }
+
+  /** Return the complete public booking window in one bounded response. */
+  async publicCalendarSnapshot(correlationId: string) {
+    return rpcOutcome(async () => {
+      const months = this.snapshots().months();
+      const values = await Promise.all(
+        months.map(async (month) =>
+          unwrapRpcOutcome(await this.publicCalendar(month, correlationId)),
+        ),
+      );
+      // Reconcile coverage after all misses have been filled; never renew a snapshot deadline.
+      const coverage = this.snapshots().calendarCoverage();
+      return publicCalendarSnapshotSchema.parse({
+        months: values.map((value) => ({ ...value, monthCoverage: coverage })),
+      });
+    });
   }
 
   /** Filter cached display dates using the current booking cutoff. */

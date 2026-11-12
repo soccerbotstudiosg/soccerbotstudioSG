@@ -49,6 +49,10 @@ export type PayInput = BookingRequest & {
 export type AttemptInput = BookingRequest & { attempt: Attempt };
 export type ResolveInput = AttemptInput & { now?: number };
 export interface BookingService {
+  publicCalendarSnapshot?(
+    input: BookingRequest,
+  ): Promise<{ months: (CalendarAvailability & { serviceId: string })[] }>;
+
   publicCalendar?(
     input: BookingRequest & { month: string },
   ): Promise<CalendarAvailability & { serviceId: string }>;

@@ -2,16 +2,16 @@
 
 ## Active outcome
 
-Consolidate booking presentation fixes on `fix/booking-loader-and-code-exit`, based on production/main f39f5e7a1ba2f904ceadc5fa3124a0c94e938b8a. Owner authorized ready PR, CI and staging only. Production remains unchanged.
+Owner authorized a new ready PR, CI and staging for once-per-fresh-entry identity checks and a single JSON calendar-window request. Branch `fix/identity-once-per-booking` starts at production/main f5a58fe7c12639260a526ceedde0249053fca228 (PR62). Prior release evidence is in Journey/PR62. No follow-up merge authorization.
 
-## Candidate and acceptance
+## Scope and acceptance
 
-Single message-free entry/step loader; no signed-in choice-card flash; explicit empty cached days without lingering session loader; one-line mobile verified email; Get Verification Code form label. Existing leave-booking warning remains; no code-specific warning, invalidation, API/schema change or limit change. Codes keep independent120-second validity. See booking scenarios and technical behavior owners.
+Retain current guest/verified/signed-out presentation throughout internal navigation. Fresh entry resets the readiness marker; protected operations retain server authentication. One `/api/calendar/snapshot` download on site arrival supplies the booking window and original freshness deadlines; switching fresh months requires no extra request. Missing/expired/failed data never proves availability. Conflict, payment and expiry recovery remain separate and authoritative.
 
-## Verification and next action
+## Evidence and next action
 
-Local `npm run verify:code` passed (source/policy/audit/tooling/installer/format/lint/types/unit inventory/build/export); retained focused failures and cause are in Journey. Push ready PR, require all exact-head frontend/backend/live-email CI gates and actual staging deployment/health. Browser and physical-device execution remains owner/CI-only. No merge/production authorization. Test inventories remain unchanged because existing cases are strengthened; removed cancellation prototype is excluded. Ordered owner test plan is in docs/uat/simulated-user.md.
+Complete code verification passed 320 unit tests, strict inventory and production export; Worker types, four inventory guards, 207 sustained Worker tests and baseline/fault load smoke passed. Subsequent UI changes collapse Review Turnstile spacing when hidden and use regular-weight footer headings. Both widget lifecycle tests, affected lint and source ownership checks passed; final type check is included before publication. First failures and diagnoses remain in Journey. Publish the consolidated ready PR and verify all exact-head CI gates plus actual staging/health. CI, staging and owner visual/provider acceptance remain pending. No follow-up merge or production authorization.
 
 ## Work block
 
-Continue one bounded publication block with existing checkout and no agents: finish checks, publish, inspect CI failures if any, verify staged revision. Preserve first failures and report concrete blockers; do not weaken gates or change deployment configuration.
+One checkout, no agents. Continue the authorized implementation/publication block, preserving first failures. Test inventory adds two frontend cases; Worker inventory remains unchanged because the existing warming scenario is strengthened. Keep unrelated configuration, dependencies and production untouched.

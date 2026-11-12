@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { hasIdentityEntry, takeIdentityEntry } from "@/services/identity";
 import { sitePath } from "@/content/site-path";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -62,20 +63,19 @@ export function BookingPage({ step }: { step: BookingStep }) {
   useEffect(() => {
     if (
       step === "account" ||
-      identityService.current() ||
-      !identityService.readCurrent
+      hasIdentityEntry(identityService) ||
+      identityService.mode !== "live"
     )
       return;
-    const controller = new AbortController();
-    void identityService
-      .readCurrent(controller.signal)
-      .then((value) => {
-        if (!controller.signal.aborted) setIdentity(value);
-      })
-      .catch(() => {
-        /* Unverified identity is presented as Guest. */
-      });
-    return () => controller.abort();
+    let active = true;
+    const entry = takeIdentityEntry(identityService, true);
+    void entry.promise.then((value) => {
+      if (active) setIdentity(value);
+    });
+    return () => {
+      active = false;
+      entry.cancel();
+    };
   }, [identityService, step]);
   const verifiedIdentity =
     identity &&

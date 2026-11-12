@@ -108,13 +108,15 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
     target: { value: "month" },
   });
   const calendar = screen.getByRole("region", { name: "Booking calendar" });
+  const times = () =>
+    within(screen.getByRole("group", { name: "Session times" }));
   expect(
     within(calendar).getByRole("button", { name: dateLabel(restoredDate) }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(
     within(calendar).getByRole("button", { name: dateLabel(todaySG()) }),
   ).toHaveAttribute("aria-pressed", "false");
-  const crossing = screen.getByRole("button", { name: /14:30–15:10/ });
+  const crossing = times().getByRole("button", { name: /14:30–15:10/ });
   expect(crossing).toHaveAttribute("aria-pressed", "true");
   expect(crossing).toHaveTextContent("Faisal Shahril");
   expect(crossing).toHaveTextContent("Crosses the 15:00 instructor rotation");
@@ -124,8 +126,8 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
     }),
   ).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
-  await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
+  expect(times().getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
+  await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
   expect(loadBooking().draft.slots).toHaveLength(1);
   await user.selectOptions(
     screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
@@ -165,7 +167,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   expect(
     within(instructors).getByRole("article", { name: "Daniel Tan" }),
   ).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.click(times().getByRole("button", { name: /12:00–12:40/ }));
   await user.selectOptions(
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
     `${restoredDate}|12:00|demo|faisal`,
@@ -191,7 +193,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
       within(instructors).getByRole("article", { name: "Daniel Tan" }),
     ).queryByRole("list"),
   ).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
+  await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
   expect(within(instructors).getAllByRole("article")).toHaveLength(1);
   await user.click(screen.getByRole("button", { name: "Clear all" }));
   expect(
@@ -226,12 +228,12 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
       .getByRole("button", { name: "Open cart, 0 sessions" })
       .querySelector(".booking-cart-count"),
   ).toBeNull();
-  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.click(times().getByRole("button", { name: /12:00–12:40/ }));
   await user.selectOptions(
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
     `${restoredDate}|12:00|demo|faisal`,
   );
-  await user.click(screen.getByRole("button", { name: /14:30–15:10/ }));
+  await user.click(times().getByRole("button", { name: /14:30–15:10/ }));
   await user.selectOptions(
     screen.getByLabelText(`Trainer for ${restoredDate} at 14:30`),
     `${restoredDate}|14:30|demo|faisal`,
@@ -246,7 +248,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
       .getByRole("button", { name: "View selected trainers, 1 trainer" })
       .querySelector(".booking-cart-count"),
   ).toHaveTextContent("1");
-  await user.click(screen.getByRole("button", { name: /15:20–16:00/ }));
+  await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
   await user.selectOptions(
     screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
     `${restoredDate}|15:20|demo|daniel`,

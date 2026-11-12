@@ -437,6 +437,15 @@ export default {
             throw new ApiError(405, "operation_unavailable");
           return json(await currentCustomerNative(request, env));
         }
+        if (
+          url.pathname === "/api/calendar/snapshot" &&
+          request.method === "GET"
+        )
+          return json(
+            unwrapRpcOutcome(
+              await coordinatorStub(env).publicCalendarSnapshot(correlationId),
+            ),
+          );
         const publicMonth = /^\/api\/calendar\/(\d{4}-(?:0[1-9]|1[0-2]))$/.exec(
           url.pathname,
         );

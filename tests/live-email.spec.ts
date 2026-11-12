@@ -931,6 +931,20 @@ test("native guest journey preserves players contact and one checkout across ref
     else expect(Math.abs(guestBox.x - emailBox.x)).toBeLessThanOrEqual(1);
     await guest.click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
+    const identityReads = () =>
+      calls.filter(
+        (call) =>
+          call.path === "/api/identity" ||
+          call.path === "/api/identity/restore",
+      ).length;
+    const checkedIdentityReads = identityReads();
+    await page.getByRole("link", { name: "Back", exact: true }).click();
+    await expect(guest).toBeVisible();
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
+    expect(identityReads()).toBe(checkedIdentityReads);
+    await guest.click();
+    await expect(page).toHaveURL(/\/book\/session\/$/);
+    expect(identityReads()).toBe(checkedIdentityReads);
     await page
       .getByRole("button", {
         name: "Select Apex @ Henderson outlet",
@@ -990,7 +1004,7 @@ test("native guest journey preserves players contact and one checkout across ref
       .selectOption({ index: 1 });
     expect(
       calls.filter((c) => c.path.startsWith("/api/calendar/")),
-    ).toHaveLength(3);
+    ).toHaveLength(1);
     expect(calls.filter((c) => c.path === "/api/catalogue")).toHaveLength(1);
     expect(
       calls.filter((c) => c.path.startsWith("/api/booking/availability/")),
@@ -3115,8 +3129,8 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       await expect(page).toHaveURL(/\/book\/account\/$/);
       const refreshed = await (await nextCalendar).json();
       expect(
-        refreshed.dates.flatMap(
-          (day: { offers?: unknown[] }) => day.offers ?? [],
+        refreshed.months.flatMap((month: { dates: { offers?: unknown[] }[] }) =>
+          month.dates.flatMap((day) => day.offers ?? []),
         ),
       ).toEqual([]);
       await dismissed;
@@ -3312,14 +3326,14 @@ test("real API expired unpaid Review retains its hold through the grace window w
       .bind(attemptId)
       .first<{ intent_json: string }>();
     await page.getByRole("checkbox").check();
-    // Calendar reveal now waits for all advertised months. Synchronize with
-    // those real reads before checking the retained payment-expiry notice.
+    // Calendar reveal waits for the complete window in one snapshot response.
+    // Synchronize with that read before checking the retained expiry notice.
     const preparedMonths = new Set<string>();
     const calendarPrepared = page.waitForResponse((response) => {
       const path = new URL(response.url()).pathname;
       if (path.startsWith("/api/calendar/") && response.status() === 200)
         preparedMonths.add(path);
-      return preparedMonths.size === 3;
+      return preparedMonths.size === 1;
     });
     await page
       .getByRole("button", {

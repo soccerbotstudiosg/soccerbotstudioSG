@@ -178,13 +178,6 @@ test("signed-in customer manages saved contact on Account without entering unava
   const manage = await screen.findByRole("button", {
     name: "Manage saved contact",
   });
-  let releaseRefresh!: () => void;
-  refresh.mockImplementationOnce(
-    () =>
-      new Promise((resolve) => {
-        releaseRefresh = () => resolve(verified);
-      }),
-  );
   let releaseProfile!: () => void;
   profile.mockImplementationOnce(
     () =>
@@ -207,10 +200,6 @@ test("signed-in customer manages saved contact on Account without entering unava
     screen.queryByRole("button", { name: "Continue as Guest" }),
   ).toBeNull();
   expect(screen.queryByText("Welcome back")).toBeNull();
-  await act(async () => releaseRefresh());
-  expect(
-    screen.getByRole("status", { name: "Opening booking" }),
-  ).toBeInTheDocument();
   await act(async () => releaseProfile());
   expect(
     await screen.findByRole("heading", { name: "Saved contact details" }),
@@ -219,7 +208,7 @@ test("signed-in customer manages saved contact on Account without entering unava
     verified.email,
     expect.any(AbortSignal),
   );
-  expect(refresh).toHaveBeenCalledTimes(2);
+  expect(refresh).toHaveBeenCalledTimes(1);
   expect(screen.getByLabelText("Full name *")).toHaveValue("Shared Contact");
   expect(screen.getByLabelText("Email address (verified) *")).toHaveAttribute(
     "readonly",
@@ -259,16 +248,14 @@ test("saved-contact entry revalidates expired identity before loading private de
     expiresAt: Date.now() + 600000,
     remember: true,
   };
-  const refresh = vi
-    .fn()
-    .mockResolvedValueOnce(verified)
-    .mockResolvedValueOnce(null);
+  let current: typeof verified | null = verified;
+  const refresh = vi.fn().mockResolvedValue(verified);
   const profile = vi.fn();
   render(
     <BookingProvider
       identityService={{
         ...demoCustomerIdentity,
-        current: () => verified,
+        current: () => current,
         refresh,
         profile,
       }}
@@ -277,6 +264,7 @@ test("saved-contact entry revalidates expired identity before loading private de
     </BookingProvider>,
   );
   await act(async () => {});
+  current = null;
   fireEvent.click(screen.getByRole("button", { name: "Manage saved contact" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Select Remember me and verify your email to save details.",
@@ -519,15 +507,13 @@ test("expired continue-signed-in state returns a usable email choice instead of 
     expiresAt: Date.now() + 600000,
     remember: true,
   };
-  const refresh = vi
-    .fn()
-    .mockResolvedValueOnce(identity)
-    .mockResolvedValueOnce(null);
+  let current: typeof identity | null = identity;
+  const refresh = vi.fn().mockResolvedValue(identity);
   render(
     <BookingProvider
       identityService={{
         ...demoCustomerIdentity,
-        current: () => identity,
+        current: () => current,
         refresh,
       }}
     >
@@ -535,6 +521,7 @@ test("expired continue-signed-in state returns a usable email choice instead of 
     </BookingProvider>,
   );
   await act(async () => {});
+  current = null;
   fireEvent.click(screen.getByRole("button", { name: "Continue signed in" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Verify your email again.",
@@ -792,7 +779,7 @@ test("later booking headings inspect identity without refreshing or recreating g
     email: "display@example.invalid",
     expiresAt: Date.now() + 600000,
   };
-  let current: typeof verified | null = null;
+  let current: typeof verified | null = verified;
   const readCurrent = vi.fn(async () => {
     current = verified;
     return current;
@@ -824,18 +811,20 @@ test("later booking headings inspect identity without refreshing or recreating g
       verified.email,
     ),
   );
-  expect(readCurrent).toHaveBeenCalledTimes(1);
+  expect(readCurrent).not.toHaveBeenCalled();
   expect(refresh).not.toHaveBeenCalled();
   expect(guest).not.toHaveBeenCalled();
   expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
 });
 
 test("guest identity is shown only after choosing guest and stays hidden on return to booking choices", async () => {
+  const refresh = vi.fn(async () => null);
   const guest = vi.fn(async () => {});
   const identityService = {
     ...demoCustomerIdentity,
+    mode: "live" as const,
     current: () => null,
-    refresh: async () => null,
+    refresh,
     readCurrent: async () => null,
     guest,
   };
@@ -859,7 +848,9 @@ test("guest identity is shown only after choosing guest and stays hidden on retu
     "/book/account",
   );
   rerender(view("account"));
+  expect(screen.queryByRole("status", { name: "Opening booking" })).toBeNull();
   await act(async () => {});
+  expect(refresh).toHaveBeenCalledTimes(1);
   expect(
     screen.getByRole("heading", { name: "Start your booking" }),
   ).toBeVisible();
@@ -1124,9 +1115,12 @@ test("fresh security proof clears only stale security feedback and reentry start
       <BookingPage step="account" />
     </BookingProvider>,
   );
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Continue with email" }),
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Continue with email" }),
+    ).toBeEnabled(),
   );
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "proof@example.invalid" },
   });
@@ -1184,9 +1178,12 @@ test("fresh security proof clears only stale security feedback and reentry start
     screen.queryByRole("button", { name: "Continue as Guest" }),
   ).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Continue with email" }),
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Continue with email" }),
+    ).toBeEnabled(),
   );
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.queryByRole("alert")).toBeNull();
   await act(async () => {

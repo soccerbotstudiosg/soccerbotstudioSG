@@ -16,7 +16,13 @@ import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
 import { ReviewStep } from "./review-step";
 import { BookingServiceError, type BookingService } from "@/services/contracts";
-import { liveBookingService } from "@/services/booking";
+import { liveBookingService as liveTransport } from "@/services/booking";
+// These isolated recovery cases inject their own per-day/month reads. The
+// full snapshot transport is exercised by calendar and live browser suites.
+const liveBookingService = {
+  ...liveTransport,
+  publicCalendarSnapshot: undefined,
+};
 import {
   saveLiveDraft,
   saveBooking,
