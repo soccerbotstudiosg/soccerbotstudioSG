@@ -411,14 +411,7 @@ export function DetailsStep({
               type="submit"
               disabled={saving || checking || !contactValid}
             >
-              {checking || saving ? (
-                <BrandLoading
-                  compact
-                  label={saving ? "Saving details…" : "Checking availability…"}
-                />
-              ) : (
-                "Review Booking"
-              )}{" "}
+              {saving ? "Saving details…" : "Review Booking"}{" "}
               <BookingActionTotal />
               {!saving && !checking && <Icon name="chevron" />}
             </button>

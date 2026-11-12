@@ -64,6 +64,7 @@ before(async () => {
     "0009_identity_challenges.sql",
     "0044_identity_request_cooldown.sql",
     "0046_identity_email_request_limit.sql",
+    "0047_identity_overlapping_codes.sql",
     "0013_remembered_identity.sql",
     "0011_identity_delivery.sql",
     "0015_contact_profiles.sql",
@@ -144,7 +145,7 @@ test("identity stores no plaintext code and consumes one concurrent redemption w
   );
   const identity = await call(cookie, { action: "read", now: Date.now() });
   assert.equal(identity.result.email, response.sent[0].email);
-  assert(identity.result.expiresAt <= stored.expires_ms + 1200000);
+  assert(identity.result.expiresAt <= stored.created_ms + 1800000);
 });
 test("identity rejects wrong expired reused and foreign email or guest codes", async () => {
   const cookie = await guest(),
@@ -190,22 +191,27 @@ test("identity rejects bot denial expiry purpose mismatch and durable token repl
   assert.equal(replay.sent.length, 0);
   assert.equal(replay.error, "verification_unavailable");
 });
-test("identity resend supersedes previous challenge and preserves unknown delivery without retry across restart", async () => {
+test("identity resend preserves previous live code and unknown delivery without retry across restart", async () => {
   const cookie = await guest(),
     now = Date.now(),
     first = await challenge(cookie, { now });
   const second = await challenge(cookie, {
-    now: now + 121000,
+    now: now + 30000,
     email: first.sent[0].email,
     delivery: "lost",
   });
   assert.equal(second.sent.length, 1);
   assert.equal(
-    (await call(cookie, verification(first, now + 122000))).error,
-    "verification_unavailable",
+    (
+      await call(cookie, {
+        ...verification(first, now + 31000),
+        challengeId: second.result.challengeId,
+      })
+    ).result.email,
+    first.sent[0].email,
   );
   assert.equal(
-    (await call(cookie, verification(second, now + 122000))).error,
+    (await call(cookie, verification(second, now + 31000))).error,
     "verification_unavailable",
   );
   await mf.dispose();
@@ -220,9 +226,148 @@ test("identity resend supersedes previous challenge and preserves unknown delive
     "unknown",
   );
   assert.equal(
-    (await call(cookie, verification(second, now + 122000))).error,
+    (await call(cookie, verification(second, now + 31000))).error,
     "verification_unavailable",
   );
+});
+test("identity overlapping codes keep independent expiry and one-use limits through the latest form", async () => {
+  const now = Date.now(),
+    cookie = await guestAt(now),
+    email = "overlap@example.invalid";
+  const first = await challenge(cookie, { email, now });
+  const second = await challenge(cookie, { email, now: now + 30000 });
+  const third = await challenge(cookie, { email, now: now + 60000 });
+  for (const [response, offset] of [
+    [first, 0],
+    [second, 30000],
+    [third, 60000],
+  ]) {
+    assert.equal(response.sent.length, 1);
+    assert.equal(response.result.expiresAt, now + offset + 120000);
+    assert.equal(response.result.resendAfter, now + offset);
+  }
+  assert.equal(
+    (await challenge(cookie, { email, now: now + 60001 })).retryAfterSeconds,
+    600,
+  );
+  const latest = {
+    ...verification(first, now + 60002),
+    challengeId: third.result.challengeId,
+    remember: true,
+  };
+  assert.equal(
+    (await call(await guestAt(now + 60002), latest)).error,
+    "verification_unavailable",
+  );
+  assert.equal(
+    (await call(cookie, { ...latest, email: "foreign@example.invalid" })).error,
+    "verification_unavailable",
+  );
+  const concurrent = await Promise.all([
+    call(cookie, latest),
+    call(cookie, latest),
+  ]);
+  assert.equal(concurrent.filter((r) => r.result?.email === email).length, 1);
+  assert.equal(
+    concurrent.filter((r) => r.error === "verification_unavailable").length,
+    1,
+  );
+  const family = await db
+    .prepare("SELECT id FROM remembered_identity WHERE id=?")
+    .bind(first.result.challengeId)
+    .first();
+  assert.equal(family.id, first.result.challengeId);
+  const beforeReplay = await db
+    .prepare("SELECT * FROM verified_identity WHERE email=?")
+    .bind(email)
+    .first();
+  assert.equal(
+    (await call(cookie, { ...latest, now: now + 60003 })).error,
+    "verification_unavailable",
+  );
+  assert.deepEqual(
+    await db
+      .prepare("SELECT * FROM verified_identity WHERE email=?")
+      .bind(email)
+      .first(),
+    beforeReplay,
+  );
+  // The second code remains live after the first code's own deadline.
+  assert.equal(
+    (
+      await call(cookie, {
+        ...verification(second, now + 120000),
+        challengeId: third.result.challengeId,
+      })
+    ).result.email,
+    email,
+  );
+  assert.equal(
+    (await call(cookie, { ...verification(third, now + 180000) })).error,
+    "verification_unavailable",
+  );
+  const boundaryEmail = "overlap-boundary@example.invalid",
+    boundaryCookie = await guestAt(now);
+  const older = await challenge(boundaryCookie, { email: boundaryEmail, now });
+  const newer = await challenge(boundaryCookie, {
+    email: boundaryEmail,
+    now: now + 30000,
+  });
+  assert.equal(
+    (
+      await call(boundaryCookie, {
+        ...verification(older, now + 120000),
+        challengeId: newer.result.challengeId,
+      })
+    ).error,
+    "verification_unavailable",
+  );
+  assert.equal(
+    (await call(boundaryCookie, verification(newer, now + 120000))).result
+      .email,
+    boundaryEmail,
+  );
+  // Five wrong guesses through the latest context exhaust both live candidates.
+  const guessingCookie = await guestAt(now),
+    guessingEmail = "overlap-guesses@example.invalid";
+  const a = await challenge(guessingCookie, { email: guessingEmail, now });
+  const b = await challenge(guessingCookie, {
+    email: guessingEmail,
+    now: now + 1000,
+  });
+  const wrong = ["000000", "111111", "222222"].find(
+    (value) => ![a.sent[0].code, b.sent[0].code].includes(value),
+  );
+  for (let i = 0; i < 5; i++)
+    assert.equal(
+      (
+        await call(guessingCookie, {
+          ...verification(b, now + 2000 + i),
+          code: wrong,
+        })
+      ).error,
+      "verification_unavailable",
+    );
+  for (const response of [a, b]) {
+    assert.equal(
+      (
+        await call(guessingCookie, {
+          ...verification(response, now + 3000),
+          challengeId: b.result.challengeId,
+        })
+      ).error,
+      "verification_unavailable",
+    );
+    assert.equal(
+      (
+        await db
+          .prepare("SELECT attempts FROM identity_challenges WHERE id=?")
+          .bind(response.result.challengeId)
+          .first()
+      ).attempts,
+      5,
+    );
+  }
 });
 test("identity email limits survive session and network changes without extending denied retries", async () => {
   const email = "shared-limit@example.invalid",
@@ -239,27 +384,18 @@ test("identity email limits survive session and network changes without extendin
   );
   assert.equal(
     firstCandidates.reduce((n, response) => n + response.sent.length, 0),
-    1,
+    2,
   );
-  const first = firstCandidates.find((response) => response.sent.length);
-  assert.equal(first.result.resendAfter, now + 120000);
-  assert.equal(
-    firstCandidates.find((response) => !response.sent.length).retryAfterSeconds,
-    120,
-  );
-  const fresh = await guestAt(now + 119999);
-  const early = await challenge(fresh, { email, now: now + 119999 });
-  assert.equal(early.retryAfterSeconds, 1);
-  assert.equal(early.sent.length, 0);
-  // Different addresses/aliases are independent even when they reach the same inbox.
-  const alias = await challenge(await guestAt(now + 119999), {
+  for (const response of firstCandidates) {
+    assert.equal(response.result.resendAfter, now);
+    assert.equal(response.result.expiresAt, now + 120000);
+  }
+  // Aliases remain independent even when they reach the same mailbox.
+  const alias = await challenge(await guestAt(now + 1000), {
     email: "shared-limit+alias@example.invalid",
-    now: now + 119999,
+    now: now + 1000,
   });
   assert.equal(alias.sent.length, 1);
-  const second = await challenge(fresh, { email, now: now + 120000 });
-  assert.equal(second.sent.length, 1);
-  assert.equal(second.result.requestLimited, false);
   const thirdCookies = await Promise.all([
     guestAt(now + 240000),
     guestAt(now + 240000),
@@ -274,7 +410,7 @@ test("identity email limits survive session and network changes without extendin
     1,
   );
   const winner = thirds.findIndex((response) => response.sent.length);
-  assert.equal(thirds[winner].result.resendAfter, now + 360000);
+  assert.equal(thirds[winner].result.resendAfter, now + 240000);
   assert.equal(thirds[winner].result.requestLimited, false);
   assert.equal(thirds[1 - winner].retryAfterSeconds, 600);
   // An issued code can still verify while the shared email request limit is active.
@@ -342,7 +478,7 @@ test("identity email limits survive session and network changes without extendin
   const reset = await challenge(observer, { email, now: now + 840000 });
   assert.equal(reset.sent.length, 1);
   assert.equal(reset.result.requestLimited, false);
-  assert.equal(reset.result.resendAfter, now + 960000);
+  assert.equal(reset.result.resendAfter, now + 840000);
   const emailCounter = await db
     .prepare(
       "SELECT request_count,last_request_ms FROM identity_request_counters WHERE scope='email' AND subject_key=(SELECT email_hash FROM identity_challenges WHERE id=?)",
@@ -367,16 +503,9 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   const cookie = await guest(),
     email = "rate-limited@example.invalid",
     now = Date.now();
-  const concurrent = await Promise.all([
-    challenge(cookie, { email, now, source: "rate-source" }),
-    challenge(cookie, { email, now, source: "rate-source" }),
-  ]);
-  assert.equal(
-    concurrent.reduce((n, r) => n + r.sent.length, 0),
-    1,
-  );
-  const first = concurrent.find((response) => response.sent.length === 1);
-  assert.equal(first.result.resendAfter, now + 120000);
+  const first = await challenge(cookie, { email, now, source: "rate-source" });
+  assert.equal(first.sent.length, 1);
+  assert.equal(first.result.resendAfter, now);
   assert.equal(first.result.requestLimited, false);
   assert.deepEqual(Object.keys(first.result).sort(), [
     "challengeId",
@@ -384,21 +513,13 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
     "requestLimited",
     "resendAfter",
   ]);
-  const beforeNormal = await challenge(cookie, {
-    email: "changed@example.invalid",
-    now: now + 119999,
-    source: "different-network",
-  });
-  assert.equal(beforeNormal.retryAfterSeconds, 1);
-  assert.equal(beforeNormal.sent.length, 0);
-  // A different customer on the same IP need not wait for the first customer's normal resend timer.
   const second = await challenge(await guestAt(now + 1000), {
     email: "second@example.invalid",
     now: now + 1000,
     source: "rate-source",
   });
   assert.equal(second.sent.length, 1);
-  assert.equal(second.result.resendAfter, now + 121000);
+  assert.equal(second.result.resendAfter, now + 1000);
   assert.equal(second.result.requestLimited, false);
   const thirdCandidates = [
     await guestAt(now + 2000),
@@ -424,7 +545,7 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   const third = thirdResults[thirdIndex];
   assert.equal(thirdResults[1 - thirdIndex].retryAfterSeconds, 600);
   assert.equal(third.sent.length, 1);
-  assert.equal(third.result.resendAfter, now + 122000);
+  assert.equal(third.result.resendAfter, now + 2000);
   assert.equal(third.result.requestLimited, false);
   assert.equal(
     (
@@ -497,7 +618,7 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
     source: "rate-source",
   });
   assert.equal(restarted.sent.length, 1);
-  assert.equal(restarted.result.resendAfter, now + 722000);
+  assert.equal(restarted.result.resendAfter, now + 602000);
   assert.equal(restarted.result.requestLimited, false);
   const idle = await challenge(thirdGuest, {
     now: now + 1202000,
@@ -546,7 +667,7 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   await call(slowGuest, { action: "release-delivery", now: slowNow });
   const slowResult = await pending;
   assert.equal(slowResult.result.requestLimited, false);
-  assert.equal(slowResult.result.resendAfter, slowNow + 120000);
+  assert.equal(slowResult.result.resendAfter, slowNow);
   const slowChangedNetwork = await challenge(slowGuest, {
     now: slowNow + 122000,
     source: "held-new-network",
@@ -554,7 +675,7 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   assert.equal(slowChangedNetwork.sent.length, 0);
   assert.equal(slowChangedNetwork.retryAfterSeconds, 480);
   assert.equal(
-    (await call(slowGuest, verification(slowResult, slowNow + 122001))).error,
+    (await call(slowGuest, verification(slowResult, slowNow + 119999))).error,
     undefined,
   );
   await db.exec(
@@ -853,7 +974,7 @@ test("fresh remembered login after all-device signout keeps old families revoked
         .error,
       undefined,
     );
-    // Respect the unchanged per-email challenge cooldown.
+    // Issue a new challenge after revocation without reviving the older family.
     const now = old.now + 121000;
     const fresh = await guestAt(now);
     const next = await challenge(fresh, {

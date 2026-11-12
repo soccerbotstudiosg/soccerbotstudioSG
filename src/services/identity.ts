@@ -284,3 +284,67 @@ export function createLiveIdentityService(): CustomerIdentityService {
   };
 }
 export const liveCustomerIdentity = createLiveIdentityService();
+
+export type IdentityEntryPreparation = {
+  promise: Promise<VerifiedIdentity | null>;
+  cancel: () => void;
+};
+const entryPreparations = new WeakMap<
+  CustomerIdentityService,
+  IdentityEntryPreparation
+>();
+/** Bound one entry identity read and fence its late completion without retrying. */
+function createIdentityEntryPreparation(
+  service: CustomerIdentityService,
+): IdentityEntryPreparation {
+  const controller = new AbortController();
+  let resolve!: (identity: VerifiedIdentity | null) => void;
+  let settled = false;
+  const promise = new Promise<VerifiedIdentity | null>((complete) => {
+    resolve = complete;
+  });
+  const finish = (identity: VerifiedIdentity | null) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timeout);
+    resolve(identity);
+  };
+  const cancel = () => {
+    controller.abort();
+    finish(null);
+  };
+  const timeout = setTimeout(cancel, 10_000);
+  try {
+    void service.refresh(controller.signal).then(
+      (identity) => {
+        if (!controller.signal.aborted) finish(identity);
+      },
+      () => finish(null),
+    );
+  } catch {
+    finish(null);
+  }
+  return { promise, cancel };
+}
+/** Start identity preparation only for an explicit booking entry. */
+export function prepareIdentityEntry(service: CustomerIdentityService) {
+  entryPreparations.get(service)?.cancel();
+  const preparation = createIdentityEntryPreparation(service);
+  entryPreparations.set(service, preparation);
+  return preparation;
+}
+/** Adopt this entry's existing read once, or prepare a direct account visit. */
+export function takeIdentityEntry(service: CustomerIdentityService) {
+  const preparation = entryPreparations.get(service);
+  entryPreparations.delete(service);
+  return preparation ?? createIdentityEntryPreparation(service);
+}
+/** Cancel an abandoned navigation without aborting an operation adopted by Account. */
+export function cancelIdentityEntry(
+  service: CustomerIdentityService,
+  preparation: IdentityEntryPreparation,
+) {
+  if (entryPreparations.get(service) !== preparation) return;
+  entryPreparations.delete(service);
+  preparation.cancel();
+}

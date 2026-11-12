@@ -51,7 +51,7 @@ export async function identityRequest(
             .regex(/^\d{6}$/)
             .parse(
               payload.code,
-            )}. It expires within 10 minutes. If you did not request this, ignore this email.`,
+            )}. It expires within 2 minutes. If you did not request this, ignore this email.`,
         });
   const response = await fetch(url, {
     method: "POST",

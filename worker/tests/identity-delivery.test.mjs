@@ -99,6 +99,7 @@ beforeEach(async () => {
     "0009_identity_challenges.sql",
     "0044_identity_request_cooldown.sql",
     "0046_identity_email_request_limit.sql",
+    "0047_identity_overlapping_codes.sql",
     "0013_remembered_identity.sql",
     "0011_identity_delivery.sql",
   ])
@@ -1170,6 +1171,7 @@ test("client email verification uses its configured sender and production bot se
   );
   assert.deepEqual(sent.body.to, [recipient]);
   assert.doesNotMatch(sent.body.text, /cancel|reschedule|manage booking/i);
+  assert.match(sent.body.text, /expires within 2 minutes/);
   const code = sent.body.text.match(/code is (\d{6})/)[1];
   const verified = await request(
     cookie,
@@ -1179,13 +1181,7 @@ test("client email verification uses its configured sender and production bot se
   assert.equal(verified.status, 200);
   assert.equal((await verified.json()).email, recipient);
   assert.equal(calls.length, 2);
-  const early = await challenge(cookie, { email: recipient });
-  assert.equal(early.status, 429);
-  const retry = Number(early.headers.get("Retry-After"));
-  assert.ok(retry > 110 && retry <= 120);
-  assert.equal((await early.json()).error, "verification_request_limited");
-  assert.equal(calls.length, 2);
-  // Two other sessions on this IP are not delayed by the first session's normal timer.
+  // Two further requests on this IP are admitted without inter-request spacing.
   assert.equal(
     (await challenge(await guest(), { email: "second-client@example.invalid" }))
       .status,
@@ -1198,7 +1194,8 @@ test("client email verification uses its configured sender and production bot se
   const thirdEnvelope = await third.json();
   assert.equal(thirdEnvelope.requestLimited, false);
   const thirdTimer = thirdEnvelope.resendAfter - Date.now();
-  assert.ok(thirdTimer > 110000 && thirdTimer <= 120000);
+  assert.ok(thirdTimer <= 0 && thirdTimer > -10000);
+  assert.equal(thirdEnvelope.expiresAt - thirdEnvelope.resendAfter, 120000);
   const blockedSession = await guest();
   const ipBlocked = await challenge(blockedSession, {
     email: "fourth-client@example.invalid",

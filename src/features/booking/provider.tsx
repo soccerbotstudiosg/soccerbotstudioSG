@@ -3,8 +3,10 @@ import {
   CONFLICT_NOTICE,
   BOOKING_NOT_CREATED,
   PAYMENT_WINDOW_ENDED,
+  SESSION_UNAVAILABLE,
 } from "@/domain/booking-messages";
 import { usePathname, useRouter } from "next/navigation";
+import { BOOKING_LEAD_MS, MAX_BOOKING_SESSIONS } from "@/domain/booking-policy";
 import { CATALOGUE_MAX_AGE_MS } from "@/domain/catalog";
 import { BookingLoadingProvider } from "./booking-loading";
 import {
@@ -283,6 +285,13 @@ export function BookingProvider({
     session: false,
   });
   const [noticeState, dispatchSelectionNotice] = useState(() => {
+    const cutoff =
+      bookingService.mode === "live" &&
+      !!pathname &&
+      /\/(?:book\/|confirmation)/.test(pathname)
+        ? loadConflictNotice("cutoff")
+        : null;
+    if (cutoff !== null) return { message: SESSION_UNAVAILABLE, slots: cutoff };
     const slots =
       bookingService.mode === "live" && !initialHomeConflict
         ? loadConflictNotice()
@@ -328,11 +337,18 @@ export function BookingProvider({
             all.findIndex(
               (other) => other.date === slot.date && other.start === slot.start,
             ) === index,
-        );
+        )
+        .slice(-MAX_BOOKING_SESSIONS);
       saveConflictNotice(
         bookingService.mode === "live" && notice === CONFLICT_NOTICE
           ? slots
           : null,
+      );
+      saveConflictNotice(
+        bookingService.mode === "live" && notice === SESSION_UNAVAILABLE
+          ? slots
+          : null,
+        "cutoff",
       );
       if (!notice || noticeCurrent.current.message !== notice)
         noticeShownOnCalendar.current = false;
@@ -486,7 +502,8 @@ export function BookingProvider({
       changed &&
       pathname &&
       !/\/book\//.test(pathname) &&
-      noticeShownOnCalendar.current
+      (noticeShownOnCalendar.current ||
+        noticeCurrent.current.message === SESSION_UNAVAILABLE)
     ) {
       if (action.calendarRecovery && value.attempt)
         dismissCalendarRecoveryNotice(value.attempt.id);
@@ -617,6 +634,77 @@ export function BookingProvider({
     },
     [service],
   );
+  // A Review draft is not a hold. Remove only time-cutoff selections while it
+  // remains editable; financial attempts and in-flight writes keep their snapshot.
+  useEffect(() => {
+    const current = latest.current;
+    if (
+      !pathname ||
+      !/\/book\//.test(pathname) ||
+      !current.ready ||
+      restorationPending ||
+      current.attempt ||
+      active.current ||
+      pendingConflict ||
+      service.mode !== "live"
+    )
+      return;
+    const time = Date.now();
+    const cutoff = (slot: BookingDraft["slots"][number]) =>
+      slot.native
+        ? Date.parse(`${slot.date}T${slot.start}:00+08:00`) - BOOKING_LEAD_MS
+        : Infinity;
+    const affected = current.draft.slots.filter((slot) => cutoff(slot) < time);
+    if (affected.length) {
+      const removed = new Set(affected);
+      setSelectionNotice(SESSION_UNAVAILABLE, [
+        ...(noticeCurrent.current.message === SESSION_UNAVAILABLE
+          ? noticeCurrent.current.slots
+          : []),
+        ...affected,
+      ]);
+      commit(
+        {
+          ...current,
+          draft: {
+            ...current.draft,
+            slots: current.draft.slots.filter((slot) => !removed.has(slot)),
+            accepted: false,
+          },
+        },
+        true,
+      );
+      pauseCalendar(false);
+      setAction({
+        status: "idle",
+        returnToCalendar:
+          !!pathname &&
+          /\/book\/(?:time|details|review|payment)\/?$/.test(pathname),
+      });
+      return;
+    }
+    // Four hours exactly is still valid. Catch the first invalid millisecond,
+    // including when the normal minute tick lands exactly on that boundary.
+    const next = Math.min(...current.draft.slots.map(cutoff)) + 1;
+    if (!Number.isFinite(next) || next - time > 60_000) return;
+    const timer = setTimeout(
+      () => setNow(Date.now()),
+      Math.max(1, next - time),
+    );
+    return () => clearTimeout(timer);
+  }, [
+    now,
+    value.revision,
+    restorationPending,
+    pendingConflict,
+    service,
+    pathname,
+    action.status,
+    commit,
+    setAction,
+    setSelectionNotice,
+  ]);
+
   /** Clear editable consent without changing a dispatched payment snapshot. */
   const clearReviewConsent = useCallback(() => {
     const current = latest.current;
@@ -1178,6 +1266,8 @@ export function BookingProvider({
     },
   );
   const clearDepartedConflict = useEffectEvent(() => {
+    if (pathname && !/\/(?:book\/|confirmation)/.test(pathname))
+      saveConflictNotice(null, "cutoff");
     if (
       pathname &&
       !/\/(?:book\/|confirmation)/.test(pathname) &&
@@ -2096,7 +2186,11 @@ export function BookingProvider({
             return;
           cancel();
           if (action.returnToCalendar) setAction({ status: "idle" });
-          if (selectionNotice !== CONFLICT_NOTICE) setSelectionNotice(null);
+          if (
+            selectionNotice !== CONFLICT_NOTICE &&
+            selectionNotice !== SESSION_UNAVAILABLE
+          )
+            setSelectionNotice(null);
           pauseCalendar(false);
           commit({
             ...current,

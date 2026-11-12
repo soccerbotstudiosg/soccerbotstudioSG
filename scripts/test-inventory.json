@@ -44,6 +44,18 @@
     "title": "unmount cleans the animation timers and preserves the previous scroll style"
   },
   {
+    "file": "src/components/booking-navigation.test.tsx",
+    "title": "live entry prepares identity during hero and hands off once after skip"
+  },
+  {
+    "file": "src/components/booking-navigation.test.tsx",
+    "title": "live reduced motion keeps the functional full loader and same-route links do not restart identity"
+  },
+  {
+    "file": "src/components/booking-navigation.test.tsx",
+    "title": "cancelled entry aborts its identity preparation and a new entry does not reuse it"
+  },
+  {
     "file": "src/components/studio-hero-video.test.tsx",
     "title": "mobile studio video shows a scroll cue only after playback ends"
   },
@@ -734,6 +746,26 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "expired held Review with unresolved release returns affected sessions in the first calendar notice"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "idle Review removes cutoff-crossed sessions at the strict four-hour boundary and preserves valid selections"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "cutoff recovery survives refresh and permits replacement without reviving removed sessions"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "cutoff timers cannot remove a held attempt or an in-flight checkout snapshot"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "replacement cancels the old cutoff timer and focus removes only newly stale editable slots"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "cutoff pruning waits for protected restoration and leaves a restored hold unchanged"
   },
   {
     "file": "src/features/booking/email-bot-proof.test.tsx",

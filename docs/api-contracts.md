@@ -80,7 +80,7 @@ JSON body operations using `inputBody` require `application/json`, at most 4096 
 
 Access and remembered cookies are Secure, HttpOnly, SameSite=Strict, Path=/; access uses `__Host-soccerbot-access`. Cookies are server-issued capabilities, never values to log or embed in links. Browser adapters use same-origin credentials, no-store and reject redirects. Foundation/account/environment verification and configured operation windows apply in addition to the per-route guards.
 
-Successful identity challenge responses include `resendAfter` at the original accepted request time plus120 seconds and `requestLimited: false`, including the third successful request. This is the next visible request-attempt time, not a guarantee of admission: durable session/IP/email limits still apply. Known429 request/service denials include bounded numeric `Retry-After` seconds; clients do not infer a fixed wait when that header is missing. The code-request UI counts down without sending automatically, then exposes Request another code. Code verification remains available during request cooldowns. The local email-address limit adds the normalized keyed-email scope alongside session/IP; changing browser and network cannot reset the same address's request deadline. Response shape and denial Retry-After semantics are unchanged. A subsequent denied request shows the actual remaining server block; it does not renew the deadline.
+Current local candidate: successful identity challenge responses include `expiresAt = min(issuedAt + 120000, accessExpiry)`, `resendAfter = issuedAt` and `requestLimited: false`. Another explicit request is permitted while a previous code is valid, subject to session/IP/normalized-email and service limits; no timer sends automatically. The third admitted request starts the fixed600-second block, but only a subsequent denied request reveals the red block notice. Known429 responses carry bounded numeric `Retry-After` for the actual remaining wait; clients never invent a deadline when it is absent. A verification request uses the supplied challenge as an authenticated same-capability/email anchor and may match another still-valid unconsumed code for that same scope. The matched code retains its own expiry; another email, owner or consumed code cannot be borrowed. Wrong guesses charge the eligible live candidate budgets, preventing a newer anchor from resetting attempts. Legacy issued challenges retain stored validity during upgrade. Migration0047 and this contract are candidate behavior, not a deployment receipt.
 
 Customer new-checkout preparation accepts ephemeral `X-Booking-Bot-Proof` for the `create-checkout` Turnstile action. The header is excluded from checkout intent hashes and browser persistence. Missing/expired/mismatched proof returns `checkout_verification_required`; failed verification transport returns `checkout_verification_unavailable`. Existing authenticated attempt recovery and callbacks retain their original contracts without proof headers. Review prepares proof before the user submits; only an explicit checkout action may create reservations.
 
@@ -286,8 +286,9 @@ The server sets the protected access cookie; the browser does not read or manufa
 ```json
 {
   "challengeId": "11111111-1111-4111-8111-111111111111",
-  "expiresAt": 1800000600000,
-  "resendAfter": 1800000060000
+  "expiresAt": 1800000120000,
+  "resendAfter": 1800000000000,
+  "requestLimited": false
 }
 ```
 

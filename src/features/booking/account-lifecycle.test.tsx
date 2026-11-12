@@ -178,7 +178,40 @@ test("signed-in customer manages saved contact on Account without entering unava
   const manage = await screen.findByRole("button", {
     name: "Manage saved contact",
   });
+  let releaseRefresh!: () => void;
+  refresh.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        releaseRefresh = () => resolve(verified);
+      }),
+  );
+  let releaseProfile!: () => void;
+  profile.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        releaseProfile = () =>
+          resolve({
+            name: "Shared Contact",
+            email: verified.email,
+            phone: "+65 8123 4567",
+            contactMethod: "email",
+            academy: "",
+          });
+      }),
+  );
   fireEvent.click(manage);
+  expect(
+    screen.getByRole("status", { name: "Opening booking" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Continue as Guest" }),
+  ).toBeNull();
+  expect(screen.queryByText("Welcome back")).toBeNull();
+  await act(async () => releaseRefresh());
+  expect(
+    screen.getByRole("status", { name: "Opening booking" }),
+  ).toBeInTheDocument();
+  await act(async () => releaseProfile());
   expect(
     await screen.findByRole("heading", { name: "Saved contact details" }),
   ).toBeInTheDocument();
@@ -209,6 +242,12 @@ test("signed-in customer manages saved contact on Account without entering unava
     expect.objectContaining({ name: "Updated Contact", email: verified.email }),
     expect.any(AbortSignal),
   );
+  fireEvent.click(screen.getByRole("button", { name: "Manage saved contact" }));
+  await screen.findByRole("heading", { name: "Saved contact details" });
+  fireEvent.click(screen.getAllByRole("button", { name: "Back" })[0]);
+  expect(
+    screen.getByRole("heading", { name: "Start your booking" }),
+  ).toBeInTheDocument();
   expect(navigation.push).not.toHaveBeenCalled();
   expect(
     screen.getByRole("heading", { name: "Start your booking" }),
@@ -387,7 +426,7 @@ test("switching email clears the old account and supports back guest and fresh r
   fireEvent.click(screen.getByRole("button", { name: "Use another email" }));
   await screen.findByRole("heading", { name: "Continue with email" });
   expect(signOut).toHaveBeenCalledExactlyOnceWith(expect.any(AbortSignal));
-  expect(screen.getByLabelText("Email address")).toHaveValue("");
+  expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.getByLabelText("Remember me")).not.toBeChecked();
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
   expect(
@@ -437,7 +476,7 @@ test("switching email clears the old account and supports back guest and fresh r
   );
   expect(signOut).toHaveBeenLastCalledWith(expect.any(AbortSignal), true);
   fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
-  expect(screen.getByLabelText("Email address")).toHaveValue("");
+  expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.getByLabelText("Remember me")).not.toBeChecked();
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "new@example.invalid" },
@@ -646,8 +685,13 @@ test("remembered identity restoration shows only the full-width welcome card wit
     </BookingProvider>,
   );
   expect(
-    screen.getByRole("status", { name: "Checking saved identity…" }),
+    screen.getByRole("status", { name: "Opening booking" }),
   ).toBeInTheDocument();
+  expect(document.querySelector(".page-loading")).not.toBeNull();
+  expect(document.querySelector(".booking-loading")).toBeNull();
+  expect(
+    screen.queryByRole("heading", { name: "Start your booking" }),
+  ).toBeNull();
   expect(
     screen.queryByRole("button", { name: "Continue as Guest" }),
   ).toBeNull();
@@ -707,7 +751,7 @@ test("remembered identity restoration shows only the full-width welcome card wit
       ));
     });
     expect(
-      screen.getByRole("status", { name: "Checking saved identity…" }),
+      screen.getByRole("status", { name: "Opening booking" }),
     ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Continue as Guest" }),
@@ -726,7 +770,7 @@ test("remembered identity restoration shows only the full-width welcome card wit
       screen.getByRole("button", { name: "Continue as Guest" }),
     ).toBeEnabled();
     expect(
-      screen.queryByRole("status", { name: "Checking saved identity…" }),
+      screen.queryByRole("status", { name: "Opening booking" }),
     ).toBeNull();
     await act(async () => timedOut());
     expect(screen.queryByRole("heading", { name: "Welcome back" })).toBeNull();
@@ -833,8 +877,8 @@ test("email resend follows server deadlines and third-request cooldown without a
     return {
       email,
       challengeId: `synthetic-${requests}`,
-      expiresAt: Date.now() + 600000,
-      resendAfter: Date.now() + 120000,
+      expiresAt: Date.now() + 120000,
+      resendAfter: Date.now(),
       requestLimited: false,
     };
   });
@@ -875,21 +919,15 @@ test("email resend follows server deadlines and third-request cooldown without a
     });
     expect(screen.getByRole("timer")).toHaveTextContent("02:00");
     expect(
-      screen.queryByRole("button", { name: "Request another code" }),
-    ).toBeNull();
-    expect(screen.queryByRole("button", { name: "Change email" })).toBeNull();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(119999);
-    });
-    expect(
-      screen.queryByRole("button", { name: "Request another code" }),
-    ).toBeNull();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1);
-    });
-    expect(
       screen.getByRole("button", { name: "Request another code" }),
     ).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Change email" })).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20000);
+    });
+    expect(screen.getByRole("timer")).toHaveTextContent(
+      "Code expires in: 01:40",
+    );
     expect(challenge).toHaveBeenCalledTimes(1);
     await act(async () => {
       fireEvent.click(
@@ -898,7 +936,7 @@ test("email resend follows server deadlines and third-request cooldown without a
     });
     expect(screen.getByRole("timer")).toHaveTextContent("02:00");
     // A suspended tab must use the deadline, not restart a relative countdown.
-    vi.setSystemTime(Date.now() + 120000);
+    vi.setSystemTime(Date.now() + 20000);
     fireEvent(window, new Event("focus"));
     await act(async () => {
       fireEvent.click(
@@ -909,7 +947,7 @@ test("email resend follows server deadlines and third-request cooldown without a
     expect(document.querySelector(".auth-code-feedback.alert")).toBeNull();
     const blockEnds = Date.now() + 600000;
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(120000);
+      await vi.advanceTimersByTimeAsync(20000);
     });
     challenge.mockRejectedValueOnce(
       new VerificationRequestLimitedError(blockEnds),
@@ -919,7 +957,7 @@ test("email resend follows server deadlines and third-request cooldown without a
         screen.getByRole("button", { name: "Request another code" }),
       );
     });
-    expect(screen.getByRole("timer")).toHaveTextContent("08:00");
+    expect(screen.getByRole("timer")).toHaveTextContent("09:40");
     expect(
       screen
         .getByText("Too many code requests. Try again later.")
@@ -941,9 +979,9 @@ test("email resend follows server deadlines and third-request cooldown without a
     });
     expect(verify).toHaveBeenCalledTimes(1);
     expect(verify.mock.calls[0][0].challengeId).toBe("synthetic-3");
-    expect(screen.getByRole("timer")).toHaveTextContent("08:00");
+    expect(screen.getByRole("timer")).toHaveTextContent("09:40");
 
-    vi.setSystemTime(Date.now() + 479999);
+    vi.setSystemTime(Date.now() + 579999);
     fireEvent(document, new Event("visibilitychange"));
     expect(
       screen.queryByRole("button", { name: "Request another code" }),
@@ -1144,7 +1182,7 @@ test("fresh security proof clears only stale security feedback and reentry start
   fireEvent.click(
     await screen.findByRole("button", { name: "Continue with email" }),
   );
-  expect(screen.getByLabelText("Email address")).toHaveValue("");
+  expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.queryByRole("alert")).toBeNull();
   await act(async () => {
     submit();

@@ -96,11 +96,11 @@ async function identityRequestWindow(
   const row = await session
     .prepare(
       `SELECT MAX(deadline) AS deadline, MAX(request_limited) AS request_limited FROM (
-        SELECT last_request_ms+CASE request_count WHEN 3 THEN 600000 ELSE 120000 END AS deadline,
+        SELECT last_request_ms+600000 AS deadline,
           CASE WHEN request_count=3 AND last_request_ms+600000>? THEN 1 ELSE 0 END AS request_limited
-        FROM identity_request_counters WHERE (scope='session' AND subject_key=?)
-          OR (scope='source' AND subject_key=? AND request_count=3)
-          OR (scope='email' AND subject_key=?)
+        FROM identity_request_counters WHERE request_count=3 AND ((scope='session' AND subject_key=?)
+          OR (scope='source' AND subject_key=?)
+          OR (scope='email' AND subject_key=?))
         UNION ALL
         SELECT blocked_until_ms AS deadline, CASE WHEN blocked_until_ms>? THEN 1 ELSE 0 END AS request_limited
           FROM identity_request_denials WHERE owner_id=?
@@ -207,7 +207,7 @@ export async function requestIdentityChallenge(
     throw denied();
   const id = crypto.randomUUID(),
     code = randomCode();
-  const expires = Math.min(now + 600000, access.expires_ms);
+  const expires = Math.min(now + 120000, access.expires_ms);
   if (expires <= now) throw denied();
   const codeHash = await keyedHash(delivery.pepper, [
     purpose,
@@ -240,9 +240,6 @@ export async function requestIdentityChallenge(
         now,
         now,
       ),
-      env.STATE.prepare(
-        "UPDATE identity_challenges SET state='superseded' WHERE access_hash=? AND id<>? AND state IN ('reserved','sent','unknown') AND EXISTS(SELECT 1 FROM identity_challenges WHERE id=?)",
-      ).bind(access.capability_hash, id, id),
       env.STATE.prepare(
         "UPDATE verified_identity SET revoked_ms=? WHERE access_hash=? AND EXISTS(SELECT 1 FROM identity_challenges WHERE id=?)",
       ).bind(now, access.capability_hash, id),
@@ -325,7 +322,7 @@ export async function requestIdentityChallenge(
     challengeId: id,
     expiresAt: expires,
     requestLimited: false,
-    resendAfter: now + 120000,
+    resendAfter: now,
   };
 }
 
@@ -341,15 +338,80 @@ export async function verifyIdentityChallenge(
   const input = verifyInput.safeParse(raw);
   if (!input.success) throw denied();
   const access = await authenticate(request, env, clock());
-  const { challengeId, email, code } = input.data;
-  const hash = await keyedHash(pepper, [
-    purpose,
-    challengeId,
-    access.capability_hash,
-    email,
-    code,
-  ]);
-  const now = clock();
+  const { email, code } = input.data;
+  let now = clock();
+  // The form keeps its latest context, but a still-live code for this exact
+  // capability/email may verify. The request cycle bounds candidates to three;
+  // a fourth row fails closed instead of broadening a corrupted history.
+  const candidates = await env.STATE.withSession("first-primary")
+    .prepare(
+      "SELECT id,code_hash,state,attempts FROM identity_challenges WHERE access_hash=? AND email=? AND created_ms>=? AND created_ms<=? AND expires_ms>? AND created_ms>COALESCE((SELECT cutoff_ms FROM identity_revocations WHERE email=identity_challenges.email),-1) AND state IN ('sent','consumed') AND EXISTS(SELECT 1 FROM identity_challenges anchor WHERE anchor.id=? AND anchor.access_hash=? AND anchor.email=? AND anchor.created_ms<=? AND anchor.expires_ms>? AND anchor.state IN ('reserved','sent','unknown','consumed') AND anchor.created_ms>COALESCE((SELECT cutoff_ms FROM identity_revocations WHERE email=anchor.email),-1)) ORDER BY created_ms DESC,id LIMIT 4",
+    )
+    .bind(
+      access.capability_hash,
+      email,
+      now - 600000,
+      now,
+      now,
+      input.data.challengeId,
+      access.capability_hash,
+      email,
+      now,
+      now,
+    )
+    .all<{ id: string; code_hash: string; state: string; attempts: number }>();
+  if (!candidates.results.length || candidates.results.length > 3)
+    throw denied();
+  const hashes = await Promise.all(
+    candidates.results.map(async (candidate) => ({
+      ...candidate,
+      hash: await keyedHash(pepper, [
+        purpose,
+        candidate.id,
+        access.capability_hash,
+        email,
+        code,
+      ]),
+    })),
+  );
+  // A consumed matching code cannot fall through to a rare duplicate six-digit
+  // issuance. Replay must never renew verified or remembered authority.
+  if (
+    hashes.some(
+      (candidate) =>
+        candidate.hash === candidate.code_hash &&
+        candidate.state === "consumed",
+    )
+  )
+    throw denied();
+  const matched = hashes.find(
+    (candidate) =>
+      candidate.hash === candidate.code_hash &&
+      candidate.state === "sent" &&
+      candidate.attempts < 5,
+  );
+  now = clock();
+  if (!matched) {
+    // One submitted guess applies to every live candidate, preserving each
+    // code's five-attempt ceiling even when the form points at an unknown send.
+    await env.STATE.prepare(
+      "UPDATE identity_challenges SET attempts=attempts+1 WHERE access_hash=? AND email=? AND state='sent' AND attempts<5 AND created_ms>=? AND created_ms<=? AND expires_ms>? AND created_ms>COALESCE((SELECT cutoff_ms FROM identity_revocations WHERE email=identity_challenges.email),-1) AND EXISTS(SELECT 1 FROM guest_access WHERE capability_hash=? AND revoked_ms IS NULL AND issued_ms<=? AND expires_ms>?)",
+    )
+      .bind(
+        access.capability_hash,
+        email,
+        now - 600000,
+        now,
+        now,
+        access.capability_hash,
+        now,
+        now,
+      )
+      .run();
+    throw denied();
+  }
+  const challengeId = matched.id,
+    hash = matched.hash;
   const issuance = input.data.remember
     ? await rememberedIssuance(env, access, email, now, challengeId)
     : null;
