@@ -226,6 +226,8 @@ test("live entry prepares identity during hero and hands off once after skip", a
   navigation.path = "/book/account/";
   view.rerender(<App arena />);
   act(() => vi.advanceTimersByTime(660));
+  expect(screen.getAllByRole("status")).toHaveLength(1);
+  expect(screen.queryByText("Please do not close or refresh.")).toBeNull();
   const prep = takeIdentityEntry(
     identity as unknown as CustomerIdentityService,
   );
@@ -234,7 +236,7 @@ test("live entry prepares identity during hero and hands off once after skip", a
   await expect(prep.promise).resolves.toBeNull();
   expect(identity.refresh.mock.calls[0][0].aborted).toBe(false);
 });
-test("live reduced motion keeps the functional full loader and same-route links do not restart identity", () => {
+test("live reduced motion keeps the functional full loader and same-route links do not restart identity", async () => {
   identity.mode = "live";
   reduced = true;
   const view = render(<App />);
@@ -243,6 +245,7 @@ test("live reduced motion keeps the functional full loader and same-route links 
   expect(
     screen.getByRole("status", { name: "Opening booking" }),
   ).toBeInTheDocument();
+  await act(async () => {});
   navigation.path = "/book/account";
   view.rerender(<App />);
   act(() => vi.advanceTimersByTime(660));

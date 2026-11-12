@@ -355,7 +355,7 @@ test("live email requires the supplied widget proof before protected requests", 
     page.getByText("Email sign-in preview", { exact: false }),
   ).toHaveCount(0);
   await page
-    .getByRole("button", { name: "Continue with email", exact: true })
+    .getByRole("button", { name: "Get Verification Code", exact: true })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Complete the security check and try again.",
@@ -384,7 +384,7 @@ test("synthetic live verification reads server identity and keeps native booking
     })
     .click();
   await page
-    .getByRole("button", { name: "Continue with email", exact: true })
+    .getByRole("button", { name: "Get Verification Code", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Verify your email", exact: true }),
@@ -3538,7 +3538,7 @@ test("email account actions return through booking options and sign in again wit
       .fill("synthetic@example.test");
     await page.getByLabel("Remember me", { exact: true }).setChecked(remember);
     await page
-      .getByRole("button", { name: "Continue with email", exact: true })
+      .getByRole("button", { name: "Get Verification Code", exact: true })
       .click();
     await expect(page.getByRole("main").getByRole("alert")).toHaveText(
       "Complete the security check and try again.",
@@ -3551,7 +3551,7 @@ test("email account actions return through booking options and sign in again wit
       .click();
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
-      .getByRole("button", { name: "Continue with email", exact: true })
+      .getByRole("button", { name: "Get Verification Code", exact: true })
       .click();
     await page.getByLabel("Verification code", { exact: true }).fill("123456");
     await page

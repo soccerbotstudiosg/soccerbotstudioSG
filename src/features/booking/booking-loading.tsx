@@ -8,12 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { useBookingEntryTransition } from "@/components/booking-navigation";
 import { BrandLoading } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
 const feedbackMessage = (label?: string) =>
   label === "Opening checkout…" || label === "Checking payment…"
     ? `${label} ${loadingMessage}`
-    : loadingMessage;
+    : undefined;
 const Loading = createContext<((label: string) => () => void) | null>(null);
 
 // Keep the active screen mounted: loading must not discard contact, consent,
@@ -74,12 +75,13 @@ export function BookingLoading({
   overlay?: boolean;
 }) {
   const register = useContext(Loading);
+  const entryTransition = useBookingEntryTransition();
   useEffect(
-    () => (overlay ? register?.(label) : undefined),
-    [register, label, overlay],
+    () => (overlay && !entryTransition ? register?.(label) : undefined),
+    [register, label, overlay, entryTransition],
   );
   // A standalone screen can still render the same loading presentation.
-  return register && overlay ? (
+  return entryTransition || (register && overlay) ? (
     <span className="sr-only">{label}</span>
   ) : (
     <BrandLoading

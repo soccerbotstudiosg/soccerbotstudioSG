@@ -1733,6 +1733,16 @@ test("calendar month choices trim only fresh trailing empty cache coverage witho
           ? 3
           : 1,
     );
+    if (scenario === "internal") {
+      fireEvent.change(picker, { target: { value: "1" } });
+      await waitFor(() => expect(picker).toHaveValue("1"));
+    }
+    if (scenario === "internal" || scenario === "all-empty") {
+      expect(
+        screen.queryByRole("status", { name: "Checking times…" }),
+      ).toBeNull();
+      expect(document.querySelector(".booking-loading")).toBeNull();
+    }
     view.unmount();
   }
 });
