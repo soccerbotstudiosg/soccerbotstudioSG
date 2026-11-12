@@ -228,23 +228,20 @@ export function AccountStep({
       }
     }
   }
-  /** Validate the chosen identity path before advancing the booking flow. */
+  /** Load the verified contact before advancing or editing its profile. */
   async function proceed(
     signal: AbortSignal,
-    verifiedEmail?: string,
+    verifiedEmail: string,
     editProfile = false,
   ) {
-    if (!verifiedEmail) await identityService.guest(signal);
-    const contact = verifiedEmail
-      ? (await identityService.profile(verifiedEmail, signal)) || {
-          ...blankContact(),
-          email: verifiedEmail,
-        }
-      : blankContact();
+    const contact = (await identityService.profile(verifiedEmail, signal)) || {
+      ...blankContact(),
+      email: verifiedEmail,
+    };
     if (signal.aborted) return;
     update({
-      mode: verifiedEmail ? "member" : "guest",
-      accountEmail: verifiedEmail || "",
+      mode: "member",
+      accountEmail: verifiedEmail,
       contact,
     });
     if (editProfile) setView("profile");
@@ -345,7 +342,14 @@ export function AccountStep({
                 className="button wide"
                 aria-label="Continue as Guest"
                 disabled={busy}
-                onClick={() => void perform((signal) => proceed(signal))}
+                onClick={() => {
+                  update({
+                    mode: "guest",
+                    accountEmail: "",
+                    contact: blankContact(),
+                  });
+                  router.push("/book/session/");
+                }}
               >
                 {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
                 <Icon name="chevron" />

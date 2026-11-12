@@ -33,51 +33,35 @@ vi.mock("./email-bot-proof", () => ({
     </button>
   ),
 }));
-test("account waits for owned guest access and duplicate click cannot navigate early", async () => {
-  let finish!: () => void;
-  const guest = vi
-    .fn(
-      () =>
-        new Promise<void>((resolve) => {
-          finish = resolve;
-        }),
-    )
-    .mockRejectedValueOnce(
-      new CustomerMessageError(
-        "We couldn’t start your booking. Please try again.",
-      ),
-    );
+test("guest selection advances locally without repeating access or showing preparation", async () => {
+  const guest = vi.fn(async () => {});
+  const identityService = { ...demoCustomerIdentity, guest };
   navigation.push.mockClear();
-  render(
-    <BookingProvider identityService={{ ...demoCustomerIdentity, guest }}>
-      <BookingPage step="account" />
-    </BookingProvider>,
+  const view = (step: "account" | "session") => (
+    <BookingProvider identityService={identityService}>
+      <BookingPage step={step} />
+    </BookingProvider>
   );
-  const button = screen.getByRole("button", { name: /Continue as Guest/ });
-  fireEvent.click(button);
-  await waitFor(() =>
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "We couldn’t start your booking. Please try again.",
-    ),
-  );
-  expect(navigation.push).not.toHaveBeenCalled();
-  expect(screen.queryByText(/Email verification unavailable/)).toBeNull();
-  fireEvent.click(button);
-  fireEvent.click(button);
-  expect(
-    screen.getByRole("status", { name: "Preparing booking…" }),
-  ).toHaveClass("sr-only");
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
-  expect(button.closest("[inert]")).toBeNull();
-  expect(button).toHaveTextContent("Preparing booking…");
-  expect(document.querySelector(".booking-loading-inline")).toBeNull();
-  expect(
-    screen.getByRole("button", { name: /Continue with email/ }),
-  ).toBeDisabled();
-  expect(guest).toHaveBeenCalledTimes(2);
-  expect(navigation.push).not.toHaveBeenCalled();
-  await act(async () => finish());
+  const { rerender } = render(view("account"));
+  await act(async () => {});
+  fireEvent.click(screen.getByRole("button", { name: "Continue as Guest" }));
   expect(navigation.push).toHaveBeenCalledWith("/book/session/");
+  expect(guest).not.toHaveBeenCalled();
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  expect(screen.queryByText("Preparing booking…")).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "Continue as Guest" }),
+  ).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue with email" }),
+  ).toBeEnabled();
+  rerender(view("session"));
+  expect(screen.getByRole("heading", { name: "Your session" })).toBeVisible();
+  expect(screen.getByLabelText("Booking identity")).toHaveTextContent("Guest");
+  rerender(view("account"));
+  fireEvent.click(screen.getByRole("button", { name: "Continue as Guest" }));
+  expect(guest).not.toHaveBeenCalled();
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
 });
 test("account leaving email challenge ignores delayed completion and live mode never displays demo code", async () => {
   let finish!: (value: CustomerChallenge) => void;
@@ -861,7 +845,7 @@ test("guest identity is shown only after choosing guest and stays hidden on retu
   fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(screen.getByLabelText("Email address")).toBeVisible();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  expect(guest).toHaveBeenCalledTimes(1);
+  expect(guest).not.toHaveBeenCalled();
 });
 
 test("email resend follows server deadlines and third-request cooldown without automatic sends", async () => {

@@ -291,7 +291,7 @@ async function fixture(
   };
 }
 
-test("live guest denial stays on account without Preview fallback", async ({
+test("live entry access denial permits local guest selection without granting authority", async ({
   page,
 }) => {
   let releaseIdentity!: () => void;
@@ -327,12 +327,12 @@ test("live guest denial stays on account without Preview fallback", async ({
     evidence.calls.filter((call) => call.path === "/api/access"),
   ).toHaveLength(1);
   await page.getByRole("button", { name: "Continue as Guest" }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "We couldn’t start your booking. Please try again.",
-  );
-  await expect(page).toHaveURL(/\/book\/account\/$/);
+  await expect(page).toHaveURL(/\/book\/session\/$/);
+  await expect(
+    page.getByRole("heading", { name: "Your session" }),
+  ).toBeVisible();
+  await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
-    { path: "/api/access", method: "POST", body: null },
     { path: "/api/access", method: "POST", body: null },
   ]);
   expect(evidence.unexpected).toEqual([]);
@@ -929,8 +929,12 @@ test("native guest journey preserves players contact and one checkout across ref
     if (Math.abs(guestBox.x - emailBox.x) > 1)
       expect(Math.abs(guestBox.y - emailBox.y)).toBeLessThanOrEqual(1);
     else expect(Math.abs(guestBox.x - emailBox.x)).toBeLessThanOrEqual(1);
+    const accessRequests = () =>
+      calls.filter((call) => call.path === "/api/access").length;
+    const entryAccessRequests = accessRequests();
     await guest.click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
+    expect(accessRequests()).toBe(entryAccessRequests);
     const identityReads = () =>
       calls.filter(
         (call) =>
@@ -945,6 +949,7 @@ test("native guest journey preserves players contact and one checkout across ref
     await guest.click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
     expect(identityReads()).toBe(checkedIdentityReads);
+    expect(accessRequests()).toBe(entryAccessRequests);
     await page
       .getByRole("button", {
         name: "Select Apex @ Henderson outlet",

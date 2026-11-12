@@ -213,7 +213,7 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "account waits for owned guest access and duplicate click cannot navigate early"
+    "title": "guest selection advances locally without repeating access or showing preparation"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
@@ -1389,7 +1389,7 @@
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "live guest denial stays on account without Preview fallback"
+    "title": "live entry access denial permits local guest selection without granting authority"
   },
   {
     "file": "tests/live-email.spec.ts",

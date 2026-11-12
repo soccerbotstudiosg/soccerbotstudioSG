@@ -15,15 +15,11 @@ Booking headings use shared deliberate two-line text at widths up to700px, with 
 
 The initial booking-choice page shows no Guest badge, including after Continue as Guest → Back or a return with retained guest access. Email entry and code verification also suppress the badge, including when guest access is retained. Guest appears only on subsequent booking steps. A verified email remains visible on the choice page; its badge has no Sign out link. Booking entry starts the bounded identity check during the hero transition. The banner/direct Book Now path uses the original full-page loader while the check is pending; skipping or finishing the hero uses the same loader if needed. A direct account URL/reload follows the same full-page loading contract. Ordinary entry/step loading has no visible message. One entry loader remains until identity settles; continuing signed in keeps the full loader through navigation, without intermediate choice cards. No subsection loader or temporary Guest choices appear while identity is unresolved. Verified/restored identity shows one full-width Welcome back card instead of the Guest option. Identity restoration must settle before choices appear. It runs once per fresh booking entry; internal Back/forward navigation reuses the latest guest, verified or signed-out state. Continue signed in and Manage saved contact do not repeat identity restoration. Reload/direct later-step entry can inspect existing identity once without restoring or creating access. Owner-approved status presentation (11 November2026): Guest uses a pale-yellow badge with text and dimensions reduced25% (13.5px text). Verified identity uses a pale-green, right-aligned badge: bold “Email verified” above the address without parentheses, at14px. On mobile, long email addresses stay on one line and shrink to fit the badge; header text retains its desktop one-line/mobile two-line layout. This status means verified contact identity, not a self-service reservation account.
 
-Continue as Guest, then select sessions without creating an account.
+Continue as Guest selects the local booking mode and immediately navigates to Your session. It does not repeat fresh-entry access creation or show a preparation loader/disabled-choice phase. Failed initial access does not authorize protected operations; those retain their existing server checks.
 
 ```mermaid
 flowchart LR
-  A["Continue as Guest"] --> B["Preparing booking…"]
-  B -->|Access granted| C["Your session"]
-  B -->|Failure| D["We couldn’t start your booking. Please try again."]
-  B -->|Rate limited| E["Too many booking requests. Please wait a few minutes and try again."]
-  D --> A
+  A["Continue as Guest"] -->|Local choice; no access request| C["Your session"]
 ```
 
 ## 2. Email entry and verification
