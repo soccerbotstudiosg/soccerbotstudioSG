@@ -40,7 +40,7 @@ import { dateLabel } from "@/domain/dates";
 const push = vi.fn();
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => "/book/time/",
   useRouter: () => ({ push, replace }),
 }));
 afterEach(() => {
@@ -1420,6 +1420,62 @@ test("initial calendar discovery hides unresolved dates searches bounded months 
     ).toBe(false);
     view.unmount();
   }
+});
+
+test("home calendar warming defers sibling preparation until booking entry", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2027-01-01T00:00:00Z"));
+  const publicCalendar = vi.fn(async ({ month }: { month: string }) => ({
+    month,
+    serviceId: "12",
+    observedAtMs: Date.now(),
+    displayExpiresAtMs: Date.now() + 60000,
+    dates: [],
+    monthCoverage: [
+      {
+        month: "2027-01",
+        state: "empty" as const,
+        observedAtMs: Date.now(),
+        displayExpiresAtMs: Date.now() + 60000,
+      },
+      { month: "2027-02", state: "unknown" as const },
+      { month: "2027-03", state: "unknown" as const },
+    ],
+  }));
+  const service = { ...demoBookingService, publicCalendar };
+  function Probe({ booking }: { booking: boolean }) {
+    const calendar = useCalendarAvailability(
+      service,
+      "12",
+      "2027-01",
+      "public",
+      false,
+      undefined,
+      undefined,
+      booking,
+    );
+    return (
+      <output>
+        {calendar.initialReady
+          ? "Prepared"
+          : calendar.hasLoaded("2027-01")
+            ? "Warmed"
+            : "Loading"}
+      </output>
+    );
+  }
+  const view = render(<Probe booking={false} />);
+  await screen.findByText("Warmed");
+  expect(publicCalendar.mock.calls.map(([input]) => input.month)).toEqual([
+    "2027-01",
+  ]);
+  view.rerender(<Probe booking />);
+  await screen.findByText("Prepared");
+  expect(publicCalendar.mock.calls.map(([input]) => input.month)).toEqual([
+    "2027-01",
+    "2027-02",
+    "2027-03",
+  ]);
 });
 
 test("calendar refresh replaces only the selected month and retains loaded siblings", async () => {

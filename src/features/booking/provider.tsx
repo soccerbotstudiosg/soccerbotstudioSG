@@ -562,6 +562,7 @@ export function BookingProvider({
       (!!value.attempt && !action.calendarRecovery),
     calendarThrough,
     now,
+    !!pathname && /\/book\//.test(pathname),
   );
   const availability = useBookingAvailability(
     service,

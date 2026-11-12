@@ -34,6 +34,7 @@ export function useCalendarAvailability(
   paused: boolean,
   throughMonth?: string,
   observedNow?: number,
+  prepareCoverage = true,
 ) {
   const [reload, setReload] = useState(0);
   const [prepared, setPrepared] = useState<{
@@ -147,7 +148,7 @@ export function useCalendarAvailability(
     };
     void (async () => {
       const visible = await Promise.all(requested.map(load));
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || !prepareCoverage) return;
       if (
         preparedRef.current?.owner === service &&
         preparedRef.current.key === key
@@ -222,6 +223,7 @@ export function useCalendarAvailability(
     paused,
     key,
     reload,
+    prepareCoverage,
   ]);
   // Replace the visible month at its fixed deadline. Retain its layout while
   // fetching, but never reuse expired offers as selectable availability.

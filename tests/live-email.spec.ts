@@ -990,7 +990,7 @@ test("native guest journey preserves players contact and one checkout across ref
       .selectOption({ index: 1 });
     expect(
       calls.filter((c) => c.path.startsWith("/api/calendar/")),
-    ).toHaveLength(monthOffset === 0 ? 1 : 2);
+    ).toHaveLength(3);
     expect(calls.filter((c) => c.path === "/api/catalogue")).toHaveLength(1);
     expect(
       calls.filter((c) => c.path.startsWith("/api/booking/availability/")),
@@ -3312,12 +3312,22 @@ test("real API expired unpaid Review retains its hold through the grace window w
       .bind(attemptId)
       .first<{ intent_json: string }>();
     await page.getByRole("checkbox").check();
+    // Calendar reveal now waits for all advertised months. Synchronize with
+    // those real reads before checking the retained payment-expiry notice.
+    const preparedMonths = new Set<string>();
+    const calendarPrepared = page.waitForResponse((response) => {
+      const path = new URL(response.url()).pathname;
+      if (path.startsWith("/api/calendar/") && response.status() === 200)
+        preparedMonths.add(path);
+      return preparedMonths.size === 3;
+    });
     await page
       .getByRole("button", {
         name: /^Proceed to Payment \$[\d,.]+$/,
         exact: true,
       })
       .click();
+    await calendarPrepared;
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
       "Your payment window has ended. These sessions may not be available to book again immediately. Please try again later.",
     );

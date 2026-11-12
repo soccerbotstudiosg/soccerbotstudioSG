@@ -1978,12 +1978,15 @@ async function verifyMockPaymentExpiry(expired: boolean) {
       </>
     );
   }
-  const tree = (step: "payment" | "time") => (
-    <BookingProvider bookingService={service} identityService={identity}>
-      <Probe />
-      <BookingPage step={step} />
-    </BookingProvider>
-  );
+  const tree = (step: "payment" | "time") => {
+    navigation.path = `/book/${step}/`;
+    return (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+        <BookingPage step={step} />
+      </BookingProvider>
+    );
+  };
   saveLiveDraft(draft, true, id);
   let view = render(tree("payment"));
   if (!expired) {
@@ -2218,12 +2221,15 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
       </>
     );
   }
-  const tree = (step: "review" | "time" | "details") => (
-    <BookingProvider bookingService={service} identityService={identity}>
-      <Probe />
-      <BookingPage step={step} />
-    </BookingProvider>
-  );
+  const tree = (step: "review" | "time" | "details") => {
+    navigation.path = `/book/${step}/`;
+    return (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+        <BookingPage step={step} />
+      </BookingProvider>
+    );
+  };
   saveLiveDraft(draft);
   const view = render(tree("review"));
   await act(async () => {});
