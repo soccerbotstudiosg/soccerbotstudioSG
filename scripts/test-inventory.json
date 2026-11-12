@@ -1542,5 +1542,33 @@
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "switching identity clears selected session and cart without repeating entry preparation"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "revoked saved-contact editor returns to guest choices without revealing the profile"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "saved booking details stay behind the full loader until the protected profile read succeeds"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "revoked profile read on Details never reveals persisted fields and returns to booking entry"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "expired local identity at Details returns to entry before any profile read"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "old and duplicate access denials cannot reset a newly established session"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "revoked email skips optional profile saving without clearing entered booking details"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "saved-profile timeout offers retry without exposing fields or restarting booking"
   }
 ]

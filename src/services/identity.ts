@@ -1,5 +1,11 @@
 import {
+  profileAccessGeneration,
+  establishedProfileAccess,
+  reportProfileAccessLoss,
+} from "./profile-access";
+import {
   CustomerMessageError,
+  ProfileAccessRevokedError,
   customerMessage,
   EMAIL_SECURITY_CHECK_REQUIRED,
   VerificationRequestLimitedError,
@@ -148,6 +154,7 @@ async function identityRequest(
   signal: AbortSignal,
   body?: unknown,
 ) {
+  const accessGeneration = profileAccessGeneration();
   const startingBooking = path === "/api/access" && method === "POST";
   const requestUnavailable = startingBooking
     ? () =>
@@ -170,6 +177,22 @@ async function identityRequest(
     if (startingBooking && !signal.aborted) throw requestUnavailable();
     throw error;
   });
+  if (
+    response.status === 401 &&
+    !signal.aborted &&
+    path === "/api/identity/contact"
+  ) {
+    if (method === "GET") reportProfileAccessLoss(accessGeneration);
+    else if (method === "POST") {
+      const rejection = await response
+        .clone()
+        .json()
+        .catch(() => null);
+      if (rejection?.error === "identity_unavailable")
+        throw new ProfileAccessRevokedError();
+    }
+  }
+  if (response.ok && startingBooking) establishedProfileAccess();
   if (!response.ok) {
     if (startingBooking) {
       if (response.status === 429)
@@ -254,6 +277,10 @@ export function createLiveIdentityService(): CustomerIdentityService {
   return {
     mode: "live",
     current: () => (current && current.expiresAt > Date.now() ? current : null),
+    invalidate() {
+      ++generation;
+      current = null;
+    },
     readCurrent: read,
     refresh: async (signal) => {
       const own = ++generation;
@@ -360,13 +387,22 @@ export function createLiveIdentityService(): CustomerIdentityService {
       )
         throw unavailable();
       const own = generation;
-      const value = savedSchema.parse(
-        await identityRequest("/api/identity/contact", "POST", signal, {
-          email: contact.email,
-          name: contact.name,
-          phone: contact.phone,
-        }),
-      );
+      let value;
+      try {
+        value = savedSchema.parse(
+          await identityRequest("/api/identity/contact", "POST", signal, {
+            email: contact.email,
+            name: contact.name,
+            phone: contact.phone,
+          }),
+        );
+      } catch (error) {
+        if (error instanceof ProfileAccessRevokedError && own === generation) {
+          ++generation;
+          current = null;
+        }
+        throw error;
+      }
       if (
         signal.aborted ||
         own !== generation ||
@@ -404,6 +440,8 @@ export function hasIdentityEntry(service: CustomerIdentityService) {
 export function clearIdentityEntry(service: CustomerIdentityService) {
   checkedEntries.delete(service);
   entryGenerations.set(service, (entryGenerations.get(service) ?? 0) + 1);
+  entryPreparations.get(service)?.cancel();
+  entryPreparations.delete(service);
 }
 const entryPreparations = new WeakMap<
   CustomerIdentityService,
@@ -459,7 +497,6 @@ function createIdentityEntryPreparation(
 /** Start identity preparation only for an explicit booking entry. */
 export function prepareIdentityEntry(service: CustomerIdentityService) {
   clearIdentityEntry(service);
-  entryPreparations.get(service)?.cancel();
   const preparation = createIdentityEntryPreparation(service);
   entryPreparations.set(service, preparation);
   return preparation;

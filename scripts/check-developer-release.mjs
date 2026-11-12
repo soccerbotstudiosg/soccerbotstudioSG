@@ -678,6 +678,19 @@ try {
       .run(),
     /identity_request_limited/,
   );
+  const rememberedBeforeProfileScope = (
+    await db.prepare("SELECT * FROM remembered_identity ORDER BY id").all()
+  ).results;
+  await migrate("0048_profile_only_signout.sql");
+  assert.deepEqual(
+    (await db.prepare("SELECT * FROM remembered_identity ORDER BY id").all())
+      .results,
+    rememberedBeforeProfileScope.map((row) => ({
+      ...row,
+      revocation_scope: "booking",
+    })),
+    "Profile-only signout upgrade preserves historical families and revocation state",
+  );
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,

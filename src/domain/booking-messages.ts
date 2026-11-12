@@ -1,3 +1,5 @@
+export const BOOKING_SIGNED_OUT =
+  "You’ve been signed out. Continue as a guest or verify your email again.";
 // Customer copy for distinct availability outcomes; never payment authority.
 export const SESSION_UNAVAILABLE = "Session no longer available.";
 export const AVAILABILITY_LOAD_FAILED = "Unable to Load.";

@@ -136,5 +136,6 @@ test("signed-in loading remains until the destination commits without exposing t
   mocks.push.mockReset();
   current.mockRestore();
   refresh.mockRestore();
+  expect(profile).not.toHaveBeenCalled();
   profile.mockRestore();
 });

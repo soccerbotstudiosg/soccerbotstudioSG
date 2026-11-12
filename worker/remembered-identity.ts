@@ -209,11 +209,10 @@ export async function revokeAllIdentities(
       now,
     ),
     env.STATE.prepare(
-      "UPDATE remembered_identity SET revoked_ms=? WHERE revoked_ms IS NULL AND email IN (SELECT email FROM identity_revocations WHERE operation_id=? AND email=(SELECT email FROM verified_identity WHERE access_hash=?)) AND changes()=1",
+      "UPDATE remembered_identity SET revoked_ms=?,revocation_scope='profile' WHERE revoked_ms IS NULL AND email IN (SELECT email FROM identity_revocations WHERE operation_id=? AND email=(SELECT email FROM verified_identity WHERE access_hash=?)) AND changes()=1",
     ).bind(now, operation, access.capability_hash),
-    env.STATE.prepare(
-      "UPDATE guest_access SET revoked_ms=? WHERE revoked_ms IS NULL AND capability_hash IN (SELECT access_hash FROM verified_identity WHERE email IN (SELECT email FROM identity_revocations WHERE operation_id=? AND email=(SELECT email FROM verified_identity WHERE access_hash=?)))",
-    ).bind(now, operation, access.capability_hash),
+    // Email proof grants saved-profile access, not booking ownership. Keep other
+    // devices' booking capabilities valid for entered details and existing checkout.
     env.STATE.prepare(
       "UPDATE verified_identity SET revoked_ms=? WHERE revoked_ms IS NULL AND email IN (SELECT email FROM identity_revocations WHERE operation_id=? AND email=(SELECT email FROM verified_identity WHERE access_hash=?))",
     ).bind(now, operation, access.capability_hash),

@@ -1,3 +1,4 @@
+import { BOOKING_SIGNED_OUT } from "@/domain/booking-messages";
 import type { z } from "zod";
 import type {
   hitpayHandoffSchema,
@@ -97,6 +98,12 @@ export class VerificationRequestLimitedError extends CustomerMessageError {
   constructor(public readonly retryAt: number | null) {
     super(EMAIL_REQUEST_LIMITED);
     this.name = "VerificationRequestLimitedError";
+  }
+}
+/** Distinguish revoked profile consent from failed booking access or transport. */
+export class ProfileAccessRevokedError extends CustomerMessageError {
+  constructor() {
+    super(BOOKING_SIGNED_OUT);
   }
 }
 /** Display reviewed guidance or an operation-specific fallback for unexpected errors. */
@@ -207,6 +214,8 @@ export type CustomerChallenge = {
 export interface CustomerIdentityService {
   readonly mode: "demo" | "live";
   current(): VerifiedIdentity | null;
+  /** Forget displayed identity and fence late profile/verification replies. */
+  invalidate?(): void;
   /** Inspect the existing identity without creating access or restoring a session. */
   readCurrent?(signal: AbortSignal): Promise<VerifiedIdentity | null>;
   refresh(signal: AbortSignal): Promise<VerifiedIdentity | null>;
