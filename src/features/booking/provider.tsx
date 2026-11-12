@@ -1,5 +1,9 @@
 "use client";
-import { clearIdentityEntry } from "@/services/identity";
+import {
+  clearIdentityEntry,
+  identitySignOutTask,
+  waitForIdentitySignOut,
+} from "@/services/identity";
 import {
   CONFLICT_NOTICE,
   BOOKING_NOT_CREATED,
@@ -1310,9 +1314,18 @@ export function BookingProvider({
       identityService.mode === "live" &&
       service.restore
     ) {
-      const restoration = loadPendingConflict()
-        ? conflictRead((signal) => service.restore!(signal), controller.signal)
-        : service.restore(controller.signal);
+      const restore = () =>
+        loadPendingConflict()
+          ? conflictRead(
+              (signal) => service.restore!(signal),
+              controller.signal,
+            )
+          : service.restore!(controller.signal);
+      const restoration = identitySignOutTask(identityService)
+        ? waitForIdentitySignOut(identityService, controller.signal).then(
+            restore,
+          )
+        : restore();
       void restoration
         .then(
           (attempt) => {
@@ -1709,6 +1722,21 @@ export function BookingProvider({
             throw new BookingServiceError("conflict", errors[0]);
           setAction({ status: "success", operation });
           return true;
+        }
+        if (
+          (operation === "reserve" || operation === "checkout") &&
+          !current.attempt?.held &&
+          identitySignOutTask(identityService)
+        ) {
+          try {
+            await waitForIdentitySignOut(identityService, signal);
+          } catch {
+            throw new BookingServiceError(
+              "temporarily_unavailable",
+              "Sign-out could not be completed. Return to booking options and try again.",
+            );
+          }
+          if (!isCurrent()) return false;
         }
         const retry = queueRetry.current;
         queueRetry.current = null;

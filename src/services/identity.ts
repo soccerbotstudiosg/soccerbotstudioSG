@@ -1,11 +1,116 @@
 import {
   CustomerMessageError,
+  customerMessage,
   EMAIL_SECURITY_CHECK_REQUIRED,
   VerificationRequestLimitedError,
 } from "./contracts";
 import { z } from "zod";
 import { blankContact } from "@/domain/contact";
 import type { CustomerIdentityService, VerifiedIdentity } from "./contracts";
+
+class IdentityReverificationRequired extends CustomerMessageError {}
+export type IdentitySignOutTask = {
+  promise: Promise<void>;
+  allDevices: boolean;
+  pending: boolean;
+  failed: boolean;
+  revoked: boolean;
+  warning: string;
+};
+const signOutTasks = new WeakMap<
+  CustomerIdentityService,
+  IdentitySignOutTask
+>();
+/** Inspect explicit sign-out work retained across internal navigation. */
+export function identitySignOutTask(service: CustomerIdentityService) {
+  return signOutTasks.get(service);
+}
+/** Revoke in the background, then prepare anonymous access without blocking local navigation. */
+export function beginIdentitySignOut(
+  service: CustomerIdentityService,
+  allDevices = false,
+) {
+  const previous = signOutTasks.get(service);
+  if (previous?.pending) return previous;
+  const controller = new AbortController();
+  const task: IdentitySignOutTask = {
+    promise: Promise.resolve(),
+    allDevices,
+    pending: true,
+    failed: false,
+    revoked:
+      previous?.failed === true &&
+      previous.allDevices === allDevices &&
+      previous.revoked,
+    warning: "",
+  };
+  signOutTasks.set(service, task);
+  let timeout: ReturnType<typeof setTimeout>;
+  task.promise = Promise.race([
+    (async () => {
+      if (!task.revoked) {
+        try {
+          await service.signOut(controller.signal, allDevices);
+        } catch (error) {
+          // An unauthenticated all-device request cannot revoke other devices.
+          // Clear this browser explicitly so verification can safely establish a new identity.
+          if (
+            !(error instanceof IdentityReverificationRequired) ||
+            controller.signal.aborted
+          )
+            throw error;
+          task.warning = error.message;
+          await service.signOut(controller.signal, false);
+        }
+        if (controller.signal.aborted)
+          throw new DOMException("Aborted", "AbortError");
+        task.revoked = !task.warning;
+      }
+      await service.guest(controller.signal);
+      if (controller.signal.aborted)
+        throw new DOMException("Aborted", "AbortError");
+    })(),
+    new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort();
+        reject(
+          new CustomerMessageError(
+            "Could not finish signing out. Please try again.",
+          ),
+        );
+      }, 10_000);
+    }),
+  ])
+    .then(
+      () => {
+        if (!task.warning && signOutTasks.get(service) === task)
+          signOutTasks.delete(service);
+      },
+      (error: unknown) => {
+        task.failed = true;
+        task.warning = customerMessage(
+          error,
+          "Could not finish signing out. Please try again.",
+        );
+        throw new CustomerMessageError(task.warning);
+      },
+    )
+    .finally(() => {
+      clearTimeout(timeout);
+      task.pending = false;
+    });
+  // Navigation can remove the observing screen; failure remains retained and retryable.
+  void task.promise.catch(() => {});
+  return task;
+}
+/** Wait only at identity or protected-action boundaries; never cancel background revocation on Back. */
+export async function waitForIdentitySignOut(
+  service: CustomerIdentityService,
+  signal?: AbortSignal,
+) {
+  await signOutTasks.get(service)?.promise;
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+}
 
 const accessSchema = z.strictObject({ access: z.literal("guest") });
 const identitySchema = z.strictObject({
@@ -74,7 +179,7 @@ async function identityRequest(
       throw requestUnavailable();
     }
     if (path === "/api/identity/all-devices" && response.status === 401)
-      throw new CustomerMessageError(
+      throw new IdentityReverificationRequired(
         "Verify your email again, then choose Sign out all devices.",
       );
     if (path === "/api/identity/all-devices")
@@ -335,7 +440,12 @@ function createIdentityEntryPreparation(
   try {
     const read =
       readOnly && service.readCurrent ? service.readCurrent : service.refresh;
-    void read(controller.signal).then(
+    const operation = identitySignOutTask(service)
+      ? waitForIdentitySignOut(service, controller.signal).then(() =>
+          read(controller.signal),
+        )
+      : read(controller.signal);
+    void operation.then(
       (identity) => {
         if (!controller.signal.aborted) finish(identity);
       },

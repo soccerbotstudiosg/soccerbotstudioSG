@@ -3555,7 +3555,7 @@ test("email account actions return through booking options and sign in again wit
     await page
       .getByRole("button", { name: "Use another email", exact: true })
       .click();
-    await expect(page.locator(".booking-flow-overlay")).toHaveCount(1);
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Continue as Guest", exact: true }),
     ).toHaveCount(0);
@@ -3564,7 +3564,7 @@ test("email account actions return through booking options and sign in again wit
     ).toHaveCount(0);
     await expect(
       page.getByRole("textbox", { name: /^Email address/ }),
-    ).toHaveCount(0);
+    ).toBeEnabled();
   } finally {
     releaseSignOut();
   }

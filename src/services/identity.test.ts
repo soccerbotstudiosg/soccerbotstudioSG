@@ -5,6 +5,9 @@ import {
   takeIdentityEntry,
   hasIdentityEntry,
   clearIdentityEntry,
+  beginIdentitySignOut,
+  identitySignOutTask,
+  waitForIdentitySignOut,
 } from "./identity";
 import { demoCustomerIdentity } from "./demo/identity";
 afterEach(() => vi.unstubAllGlobals());
@@ -490,4 +493,118 @@ it("booking entry reuses the latest signed-in or signed-out state until a fresh 
   completeOld(identity);
   await old.promise;
   expect(hasIdentityEntry(stale)).toBe(false);
+});
+
+it("background signout serializes revocation and anonymous access before protected work", async () => {
+  let revoke!: (value: Response) => void;
+  let access!: (value: Response) => void;
+  const request = vi
+    .fn()
+    .mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          revoke = resolve;
+        }),
+    )
+    .mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          access = resolve;
+        }),
+    );
+  vi.stubGlobal("fetch", request);
+  const service = createLiveIdentityService();
+  const task = beginIdentitySignOut(service, true);
+  expect(beginIdentitySignOut(service, true)).toBe(task);
+  expect(request).toHaveBeenCalledTimes(1);
+  const protectedAction = vi.fn();
+  const waiting = waitForIdentitySignOut(service).then(protectedAction);
+  revoke(Response.json({ access: "revoked" }));
+  await vi.waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  expect(
+    request.mock.calls.map(([path, options]) => [path, options.method]),
+  ).toEqual([
+    ["/api/identity/all-devices", "DELETE"],
+    ["/api/access", "POST"],
+  ]);
+  expect(protectedAction).not.toHaveBeenCalled();
+  access(Response.json({ access: "guest" }));
+  await waiting;
+  expect(protectedAction).toHaveBeenCalledTimes(1);
+  expect(identitySignOutTask(service)).toBeUndefined();
+});
+it("background signout retries anonymous access without repeating acknowledged global revocation", async () => {
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({ access: "revoked" }))
+    .mockRejectedValueOnce(new Error("synthetic outage"))
+    .mockResolvedValueOnce(Response.json({ access: "guest" }));
+  vi.stubGlobal("fetch", request);
+  const service = createLiveIdentityService();
+  const first = beginIdentitySignOut(service, true);
+  await expect(first.promise).rejects.toThrow();
+  expect(first).toMatchObject({ failed: true, revoked: true, pending: false });
+  await expect(waitForIdentitySignOut(service)).rejects.toThrow();
+  await beginIdentitySignOut(service, true).promise;
+  expect(request.mock.calls.map(([, options]) => options.method)).toEqual([
+    "DELETE",
+    "POST",
+    "POST",
+  ]);
+  expect(identitySignOutTask(service)).toBeUndefined();
+});
+it("unproven global signout clears this browser and retains the reverification warning", async () => {
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+    .mockResolvedValueOnce(Response.json({ access: "revoked" }))
+    .mockResolvedValueOnce(Response.json({ access: "guest" }));
+  vi.stubGlobal("fetch", request);
+  const service = createLiveIdentityService();
+  const task = beginIdentitySignOut(service, true);
+  await task.promise;
+  expect(task.warning).toBe(
+    "Verify your email again, then choose Sign out all devices.",
+  );
+  expect(task.failed).toBe(false);
+  expect(
+    request.mock.calls.map(([path, options]) => [path, options.method]),
+  ).toEqual([
+    ["/api/identity/all-devices", "DELETE"],
+    ["/api/access", "DELETE"],
+    ["/api/access", "POST"],
+  ]);
+  await expect(waitForIdentitySignOut(service)).resolves.toBeUndefined();
+  request
+    .mockResolvedValueOnce(Response.json({ access: "revoked" }))
+    .mockResolvedValueOnce(Response.json({ access: "guest" }));
+  await beginIdentitySignOut(service, true).promise;
+  expect(request.mock.calls[3][0]).toBe("/api/identity/all-devices");
+  expect(request.mock.calls[3][1].method).toBe("DELETE");
+});
+it("background signout times out without allowing late revocation to start anonymous access", async () => {
+  vi.useFakeTimers();
+  try {
+    let finish!: (value: Response) => void;
+    const request = vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    vi.stubGlobal("fetch", request);
+    const service = createLiveIdentityService();
+    const task = beginIdentitySignOut(service);
+    const rejected = expect(task.promise).rejects.toThrow(
+      "Could not finish signing out",
+    );
+    await vi.advanceTimersByTimeAsync(10000);
+    await rejected;
+    expect(task).toMatchObject({ pending: false, failed: true });
+    finish(Response.json({ access: "revoked" }));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(request).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
 });

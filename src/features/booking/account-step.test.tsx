@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({ update: vi.fn(), push: vi.fn() }));
 vi.mock("./provider", () => ({
   useBooking: () => ({
     update: mocks.update,
+    now: Date.now(),
     identityService: demoCustomerIdentity,
   }),
 }));
@@ -80,7 +81,20 @@ test("remember me is explicit default off and opted in preview expiry stays nine
   expect(saved.expiresAt).toBeLessThanOrEqual(Date.now() + 90 * 86400000);
 });
 
-test("guest loading remains until the destination commits without exposing the previous form", async () => {
+test("signed-in loading remains until the destination commits without exposing the previous form", async () => {
+  const identity = {
+    email: "signed-in@example.invalid",
+    expiresAt: Date.now() + 600000,
+  };
+  const current = vi
+    .spyOn(demoCustomerIdentity, "current")
+    .mockReturnValue(identity);
+  const refresh = vi
+    .spyOn(demoCustomerIdentity, "refresh")
+    .mockResolvedValue(identity);
+  const profile = vi
+    .spyOn(demoCustomerIdentity, "profile")
+    .mockResolvedValue(null);
   let finish!: () => void;
   const route = new Promise<void>((resolve) => {
     finish = resolve;
@@ -102,12 +116,12 @@ test("guest loading remains until the destination commits without exposing the p
   }
   const user = userEvent.setup();
   render(<Router />);
-  await user.click(screen.getByRole("button", { name: "Continue as Guest" }));
+  await user.click(screen.getByRole("button", { name: "Continue signed in" }));
   expect(
     screen.getByRole("status", { name: "Opening booking" }),
   ).toBeInTheDocument();
   expect(
-    screen.queryByRole("button", { name: "Continue as Guest" }),
+    screen.queryByRole("button", { name: "Continue signed in" }),
   ).not.toBeInTheDocument();
   expect(screen.queryByText("Please do not close or refresh.")).toBeNull();
   await act(async () => finish());
@@ -116,7 +130,10 @@ test("guest loading remains until the destination commits without exposing the p
   ).toBeInTheDocument();
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("button", { name: "Continue as Guest" }),
+    screen.queryByRole("button", { name: "Continue signed in" }),
   ).not.toBeInTheDocument();
   mocks.push.mockReset();
+  current.mockRestore();
+  refresh.mockRestore();
+  profile.mockRestore();
 });
