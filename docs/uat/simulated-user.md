@@ -487,3 +487,13 @@ After signing in, delay Use another email sign-out: the blank email form appears
 - Check Review Turnstile during interaction/success and hidden states: equal visible spacing, no hidden gap.
 - Complete approved sandbox payment: the pending full loader includes “Please do not close or refresh.” Confirmation → Home is immediate without a new full loader.
 - Reopen/refresh the clean confirmation URL: confirmation remains available while authorized. Revisit the completed HitPay URL in the same browser: after its provider redirect and server verification, return Home. A first payment return or uncertain/unpaid payment must not be redirected as completed. New browser/cleared storage has no previous-display hint and uses normal protected confirmation.
+
+## 13 November 2026 — owner test follow-up
+
+Owner explicitly accepts remote sign-out enforcement at both saved-contact boundaries: before Booking Details and before Manage saved contact, returning to booking options with the sign-out notice without exposing saved details. This acceptance concerns the owner's tested release, not the unpushed PR68 follow-up.
+
+`test-rechallenge.devtools` records Turnstile automatically requesting `auto_exp` around five minutes after the Review challenge, followed by successful challenge exchanges. The capture ends before a subsequent checkout submission, so refreshed-token checkout acceptance remains unproven by this file alone. Cloudflare PAT401 responses occur within successful challenge exchanges and are not booking API authorization failures.
+
+`test-reconnect.devtools` records one checkout submission interrupted by `net::ERR_INTERNET_DISCONNECTED`. After reconnect, current booking is empty and the original attempt context returns404 `attempt_unavailable`; availability then loads successfully. No duplicate checkout submission is present. This covers interruption with no recoverable attempt found; it does not establish recovery of an already-created checkout whose response was lost. Visible final navigation remains owner-observed rather than inferred from network requests.
+
+`test-block.devtools` confirms checkout expiry, eventual successful expiry acknowledgement, then429 `reservation_blocked` on the next checkout submission at17:00:31 UTC12 November. Response timing records zero SimplyBook, booking-work and HitPay calls for the blocked request. No later successful checkout is captured. Block enforcement passes at the API boundary; this file alone does not establish network switching or automatic unblock after one hour. Several expiry acknowledgement requests were aborted/timed out before one succeeded; do not conflate this with rejection failure or duplicate booking creation.

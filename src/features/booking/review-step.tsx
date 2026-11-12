@@ -219,7 +219,7 @@ export function ReviewStep({
           )}{" "}
           <BookingActionTotal />
           {checkingProof ? (
-            <span role="status" aria-label="Checking security">
+            <span aria-hidden="true">
               <Icon name="spinner" className="spinner" />
             </span>
           ) : !busy ? (
