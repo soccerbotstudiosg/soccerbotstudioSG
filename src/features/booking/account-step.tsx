@@ -5,6 +5,7 @@ import { BookingLoading } from "./booking-loading";
 import { useBookingEntryTransition } from "@/components/booking-navigation";
 import {
   takeIdentityEntry,
+  hasIdentityEntry,
   type IdentityEntryPreparation,
 } from "@/services/identity";
 import {
@@ -91,7 +92,9 @@ export function AccountStep({
     onIdentityChange?.(identity);
   }, [identity, onIdentityChange]);
   const [restoredService, setRestoredService] = useState(() =>
-    identityService.mode === "demo" ? identityService : null,
+    identityService.mode === "demo" || hasIdentityEntry(identityService)
+      ? identityService
+      : null,
   );
   const restoring =
     identityService.mode === "live" && restoredService !== identityService;
@@ -369,7 +372,7 @@ export function AccountStep({
               onClick={() => {
                 if (verifiedIdentity)
                   void perform(async (signal) => {
-                    const current = await identityService.refresh(signal);
+                    const current = identityService.current();
                     if (signal.aborted) return;
                     setIdentity(current);
                     if (!current)
@@ -396,7 +399,7 @@ export function AccountStep({
                     disabled={busy}
                     onClick={() => {
                       void perform(async (signal) => {
-                        const current = await identityService.refresh(signal);
+                        const current = identityService.current();
                         if (signal.aborted) return;
                         setIdentity(current);
                         if (!current || current.remember !== true)

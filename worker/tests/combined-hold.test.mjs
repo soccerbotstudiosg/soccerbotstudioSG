@@ -1616,6 +1616,28 @@ test("warming reuses fresh customer range reads while prebuilding the other two 
       afterWarming,
       "both cached months and updated coverage require no additional provider calls",
     );
+    // The complete response reuses warmed bytes and cannot renew their deadlines.
+    const combined = await m.mf.dispatchFetch(
+      m.origin + "/api/calendar/snapshot",
+    );
+    assert.equal(combined.status, 200);
+    const snapshot = await combined.json();
+    assert.equal(snapshot.months.length, 3);
+    assert.equal(new Set(snapshot.months.map((entry) => entry.month)).size, 3);
+    const first = snapshot.months.find((entry) => entry.month === month);
+    assert.equal(first.observedAtMs, calendar.observedAtMs);
+    assert.equal(first.displayExpiresAtMs, calendar.displayExpiresAtMs);
+    const afterSnapshot = m.calls.length;
+    const repeated = await m.mf.dispatchFetch(
+      m.origin + "/api/calendar/snapshot",
+    );
+    assert.equal(repeated.status, 200);
+    assert.deepEqual(await repeated.json(), snapshot);
+    assert.equal(
+      m.calls.length,
+      afterSnapshot,
+      "fresh full-window reads make no provider calls",
+    );
     assert.deepEqual(m.unexpected, []);
   } finally {
     await m.close();

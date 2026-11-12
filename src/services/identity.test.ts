@@ -1,5 +1,12 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { createLiveIdentityService } from "./identity";
+import {
+  createLiveIdentityService,
+  prepareIdentityEntry,
+  takeIdentityEntry,
+  hasIdentityEntry,
+  clearIdentityEntry,
+} from "./identity";
+import { demoCustomerIdentity } from "./demo/identity";
 afterEach(() => vi.unstubAllGlobals());
 const identity = {
   email: "synthetic@example.invalid",
@@ -444,4 +451,43 @@ it("identity throttle accepts bounded retry seconds without exposing arbitrary r
   } finally {
     clock.mockRestore();
   }
+});
+
+it("booking entry reuses the latest signed-in or signed-out state until a fresh entry", async () => {
+  let current: typeof identity | null = null;
+  const refresh = vi.fn(async () => current);
+  const service = { ...demoCustomerIdentity, current: () => current, refresh };
+  expect(hasIdentityEntry(service)).toBe(false);
+  await takeIdentityEntry(service).promise;
+  expect(refresh).toHaveBeenCalledTimes(1);
+  expect(hasIdentityEntry(service)).toBe(true);
+  await expect(takeIdentityEntry(service).promise).resolves.toBeNull();
+  current = identity;
+  await expect(takeIdentityEntry(service).promise).resolves.toEqual(identity);
+  current = null;
+  await expect(takeIdentityEntry(service).promise).resolves.toBeNull();
+  expect(refresh).toHaveBeenCalledTimes(1);
+  const fresh = prepareIdentityEntry(service);
+  expect(hasIdentityEntry(service)).toBe(false);
+  expect(takeIdentityEntry(service)).toBe(fresh);
+  await fresh.promise;
+  expect(refresh).toHaveBeenCalledTimes(2);
+  clearIdentityEntry(service);
+  await takeIdentityEntry(service).promise;
+  expect(refresh).toHaveBeenCalledTimes(3);
+  let completeOld!: (value: typeof identity | null) => void;
+  const stale = {
+    ...service,
+    refresh: vi.fn(
+      () =>
+        new Promise<typeof identity | null>((resolve) => {
+          completeOld = resolve;
+        }),
+    ),
+  };
+  const old = takeIdentityEntry(stale);
+  clearIdentityEntry(stale);
+  completeOld(identity);
+  await old.promise;
+  expect(hasIdentityEntry(stale)).toBe(false);
 });

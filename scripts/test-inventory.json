@@ -457,6 +457,10 @@
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "one calendar snapshot prepares every month and rejects incomplete or expired replacements"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
     "title": "preloaded browser slots survive edits and checkout rejects changed availability"
   },
   {
@@ -1198,6 +1202,10 @@
   {
     "file": "src/services/customer-catalogue.test.ts",
     "title": "scheduled display catalogue retains original expiry and rejects renewed or overdue snapshots"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "booking entry reuses the latest signed-in or signed-out state until a fresh entry"
   },
   {
     "file": "src/services/identity.test.ts",

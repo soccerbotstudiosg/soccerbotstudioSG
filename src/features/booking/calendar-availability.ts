@@ -49,6 +49,7 @@ export function useCalendarAvailability(
   prepareCoverage = true,
 ) {
   const [reload, setReload] = useState(0);
+  const prepareWindow = service.publicCalendarSnapshot ? true : prepareCoverage;
   const [prepared, setPrepared] = useState<{
     owner: BookingService;
     key: string;
@@ -175,8 +176,74 @@ export function useCalendarAvailability(
       }
     };
     void (async () => {
+      if (service.publicCalendarSnapshot) {
+        const previous = retained.current;
+        const first = todaySG(new Date(Date.now())).slice(0, 7) + "-01";
+        const months = Array.from({ length: BOOKING_MONTH_COUNT }, (_, index) =>
+          monthAt(first, index).slice(0, 7),
+        );
+        if (
+          previous?.owner === service &&
+          previous.key === key &&
+          months.every((month) => {
+            const entry = previous.entries[month];
+            return (
+              entry &&
+              entry.observedAtMs <= Date.now() &&
+              entry.observedAtMs + retention(entry) > Date.now()
+            );
+          })
+        ) {
+          setPrepared({ owner: service, key });
+          return;
+        }
+        try {
+          const snapshot = await service.publicCalendarSnapshot({
+            signal: controller.signal,
+          });
+          if (controller.signal.aborted) return;
+          const receivedAtMs = Date.now();
+          if (
+            snapshot.months.length !== months.length ||
+            months.some(
+              (month) =>
+                !snapshot.months.some((entry) => entry.month === month),
+            ) ||
+            snapshot.months.some(
+              (entry) =>
+                entry.observedAtMs > receivedAtMs ||
+                entry.observedAtMs + retention(entry) <= receivedAtMs,
+            )
+          )
+            throw new Error("calendar_snapshot_incomplete");
+          setState({
+            owner: service,
+            key,
+            entries: Object.fromEntries(
+              snapshot.months.map((entry) => [
+                entry.month,
+                { ...entry, receivedAtMs },
+              ]),
+            ),
+            failed: [],
+          });
+          setPrepared({ owner: service, key });
+        } catch {
+          if (!controller.signal.aborted)
+            setState((previous) => ({
+              owner: service,
+              key,
+              entries:
+                previous?.owner === service && previous.key === key
+                  ? previous.entries
+                  : {},
+              failed: months,
+            }));
+        }
+        return;
+      }
       const visible = await Promise.all(requested.map(load));
-      if (controller.signal.aborted || !prepareCoverage) return;
+      if (controller.signal.aborted || !prepareWindow) return;
       if (
         preparedRef.current?.owner === service &&
         preparedRef.current.key === key
@@ -251,7 +318,7 @@ export function useCalendarAvailability(
     paused,
     key,
     reload,
-    prepareCoverage,
+    prepareWindow,
   ]);
   // Replace the visible month at its fixed deadline. Retain its layout while
   // fetching, but never reuse expired offers as selectable availability.

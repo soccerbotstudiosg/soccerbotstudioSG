@@ -46,12 +46,22 @@ it("email bot widget binds purpose clears expired proof and ignores callbacks af
   const checkoutOptions = renderWidget.mock.calls[1][1];
   expect(checkoutOptions.action).toBe("create-checkout");
   expect(checkoutOptions.appearance).toBe("interaction-only");
+  const wrapper = screen.getByLabelText(
+    "Checkout security check",
+  ).parentElement;
+  expect(wrapper).toHaveClass("auth-bot-proof-background");
+  await act(async () => checkoutOptions["before-interactive-callback"]());
+  expect(wrapper).not.toHaveClass("auth-bot-proof-background");
+  await act(async () => checkoutOptions["after-interactive-callback"]());
+  expect(wrapper).toHaveClass("auth-bot-proof-background");
+  await act(async () => checkoutOptions["before-interactive-callback"]());
   await act(async () => checkoutOptions["error-callback"]());
   expect(screen.getByRole("status")).toHaveTextContent(
     "Security check unavailable",
   );
   await act(async () => checkoutOptions.callback("checkout-proof"));
   expect(screen.queryByRole("status")).toBeNull();
+  expect(wrapper).toHaveClass("auth-bot-proof-background");
   checkoutOptions["expired-callback"]();
   expect(token.mock.calls.slice(-2)).toEqual([["checkout-proof"], [""]]);
   checkout.unmount();

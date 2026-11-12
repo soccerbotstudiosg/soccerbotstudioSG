@@ -3,6 +3,7 @@ import {
   act,
   fireEvent,
   render,
+  renderHook,
   screen,
   waitFor,
   within,
@@ -2118,4 +2119,82 @@ test("retained session display rejects changed date players service scope owner 
     );
     view.unmount();
   }
+});
+
+test("one calendar snapshot prepares every month and rejects incomplete or expired replacements", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T02:00:00Z"));
+  const months = ["2026-10", "2026-11", "2026-12"].map((month) => ({
+    month,
+    serviceId: "2",
+    observedAtMs: Date.now(),
+    displayExpiresAtMs: Date.now() + 60000,
+    dates: [{ date: month + "-20", available: false, offers: [] }],
+  }));
+  let finish!: (value: { months: typeof months }) => void;
+  let pendingSignal: AbortSignal | undefined;
+  const publicCalendarSnapshot = vi.fn(
+    async ({ signal }: { signal?: AbortSignal }) => {
+      pendingSignal = signal;
+      return new Promise<{ months: typeof months }>((resolve) => {
+        finish = resolve;
+      });
+    },
+  );
+  const publicCalendar = vi.fn();
+  const service = {
+    ...demoBookingService,
+    publicCalendar,
+    publicCalendarSnapshot,
+  };
+  const view = renderHook(
+    ({ month, prepare }) =>
+      useCalendarAvailability(
+        service,
+        "2",
+        month,
+        "public",
+        false,
+        undefined,
+        undefined,
+        prepare,
+      ),
+    { initialProps: { month: "2026-10", prepare: false } },
+  );
+  await waitFor(() => expect(publicCalendarSnapshot).toHaveBeenCalledTimes(1));
+  view.rerender({ month: "2026-10", prepare: true });
+  expect(pendingSignal?.aborted).toBe(false);
+  expect(publicCalendarSnapshot).toHaveBeenCalledTimes(1);
+  await act(async () => finish({ months }));
+  await waitFor(() => expect(view.result.current.initialReady).toBe(true));
+  expect(publicCalendarSnapshot).toHaveBeenCalledTimes(1);
+  for (const month of ["2026-11", "2026-12", "2026-10"]) {
+    view.rerender({ month, prepare: true });
+    expect(view.result.current.entry(month, Date.now())?.dates).toEqual([
+      { date: month + "-20", available: false, offers: [] },
+    ]);
+    expect(view.result.current.cachedDates[month + "-20"]).toEqual([]);
+  }
+  expect(publicCalendarSnapshot).toHaveBeenCalledTimes(1);
+  expect(publicCalendar).not.toHaveBeenCalled();
+  publicCalendarSnapshot.mockResolvedValueOnce({ months: months.slice(0, 2) });
+  act(() => view.result.current.retry());
+  await waitFor(() => expect(view.result.current.failed).toHaveLength(3));
+  expect(view.result.current.entry("2026-10", Date.now())).toBeNull();
+  publicCalendarSnapshot.mockResolvedValueOnce({
+    months: months.map((entry) => ({
+      ...entry,
+      displayExpiresAtMs: Date.now() - 1,
+    })),
+  });
+  act(() => view.result.current.retry());
+  await waitFor(() => expect(view.result.current.failed).toHaveLength(3));
+  expect(publicCalendarSnapshot).toHaveBeenCalledTimes(3);
+  expect(view.result.current.entry("2026-10", Date.now())).toBeNull();
+  publicCalendarSnapshot.mockResolvedValueOnce({ months });
+  act(() => view.result.current.retry());
+  await waitFor(() =>
+    expect(view.result.current.entry("2026-10", Date.now())).not.toBeNull(),
+  );
+  expect(view.result.current.failed).toHaveLength(0);
 });

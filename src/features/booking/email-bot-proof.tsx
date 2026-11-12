@@ -10,6 +10,8 @@ type Turnstile = {
       action: string;
       appearance: "always" | "interaction-only";
       callback: (token: string) => void;
+      "before-interactive-callback": () => void;
+      "after-interactive-callback": () => void;
       "expired-callback": () => void;
       "error-callback": () => void;
     },
@@ -36,6 +38,7 @@ function BotProof({
   const container = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [interactive, setInteractive] = useState(false);
   const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   useEffect(() => {
     const api = window.turnstile;
@@ -43,7 +46,10 @@ function BotProof({
     let active = true;
     const token = (value: string) => {
       if (active) {
-        if (value) setFailed(false);
+        if (value) {
+          setFailed(false);
+          setInteractive(false);
+        }
         onToken(value);
       }
     };
@@ -52,6 +58,12 @@ function BotProof({
       action: purpose,
       appearance: purpose === "create-checkout" ? "interaction-only" : "always",
       callback: token,
+      "before-interactive-callback": () => {
+        if (active) setInteractive(true);
+      },
+      "after-interactive-callback": () => {
+        if (active) setInteractive(false);
+      },
       "expired-callback": () => token(""),
       "error-callback": () => {
         if (active) setFailed(true);
@@ -85,7 +97,9 @@ function BotProof({
           Security check unavailable. Please refresh this page and try again.
         </p>
       )}
-      <div className="auth-bot-proof">
+      <div
+        className={`auth-bot-proof${purpose === "create-checkout" && !interactive ? " auth-bot-proof-background" : ""}`}
+      >
         <div ref={container} aria-label={label} />
       </div>
     </>

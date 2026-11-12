@@ -289,6 +289,17 @@ export type IdentityEntryPreparation = {
   promise: Promise<VerifiedIdentity | null>;
   cancel: () => void;
 };
+const checkedEntries = new WeakSet<CustomerIdentityService>();
+const entryGenerations = new WeakMap<CustomerIdentityService, number>();
+/** Report whether this booking flow has already restored its identity. */
+export function hasIdentityEntry(service: CustomerIdentityService) {
+  return checkedEntries.has(service);
+}
+/** End the flow-local identity check without changing authenticated state. */
+export function clearIdentityEntry(service: CustomerIdentityService) {
+  checkedEntries.delete(service);
+  entryGenerations.set(service, (entryGenerations.get(service) ?? 0) + 1);
+}
 const entryPreparations = new WeakMap<
   CustomerIdentityService,
   IdentityEntryPreparation
@@ -296,8 +307,10 @@ const entryPreparations = new WeakMap<
 /** Bound one entry identity read and fence its late completion without retrying. */
 function createIdentityEntryPreparation(
   service: CustomerIdentityService,
+  readOnly = false,
 ): IdentityEntryPreparation {
   const controller = new AbortController();
+  const generation = entryGenerations.get(service) ?? 0;
   let resolve!: (identity: VerifiedIdentity | null) => void;
   let settled = false;
   const promise = new Promise<VerifiedIdentity | null>((complete) => {
@@ -306,6 +319,11 @@ function createIdentityEntryPreparation(
   const finish = (identity: VerifiedIdentity | null) => {
     if (settled) return;
     settled = true;
+    if (
+      !controller.signal.aborted &&
+      generation === (entryGenerations.get(service) ?? 0)
+    )
+      checkedEntries.add(service);
     clearTimeout(timeout);
     resolve(identity);
   };
@@ -315,7 +333,9 @@ function createIdentityEntryPreparation(
   };
   const timeout = setTimeout(cancel, 10_000);
   try {
-    void service.refresh(controller.signal).then(
+    const read =
+      readOnly && service.readCurrent ? service.readCurrent : service.refresh;
+    void read(controller.signal).then(
       (identity) => {
         if (!controller.signal.aborted) finish(identity);
       },
@@ -328,16 +348,23 @@ function createIdentityEntryPreparation(
 }
 /** Start identity preparation only for an explicit booking entry. */
 export function prepareIdentityEntry(service: CustomerIdentityService) {
+  clearIdentityEntry(service);
   entryPreparations.get(service)?.cancel();
   const preparation = createIdentityEntryPreparation(service);
   entryPreparations.set(service, preparation);
   return preparation;
 }
 /** Adopt this entry's existing read once, or prepare a direct account visit. */
-export function takeIdentityEntry(service: CustomerIdentityService) {
+export function takeIdentityEntry(
+  service: CustomerIdentityService,
+  readOnly = false,
+) {
   const preparation = entryPreparations.get(service);
   entryPreparations.delete(service);
-  return preparation ?? createIdentityEntryPreparation(service);
+  if (preparation) return preparation;
+  if (hasIdentityEntry(service))
+    return { promise: Promise.resolve(service.current()), cancel: () => {} };
+  return createIdentityEntryPreparation(service, readOnly);
 }
 /** Cancel an abandoned navigation without aborting an operation adopted by Account. */
 export function cancelIdentityEntry(

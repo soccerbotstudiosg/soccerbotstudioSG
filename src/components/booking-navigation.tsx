@@ -15,6 +15,7 @@ import { BrandLoading } from "./brand-loading";
 import { services } from "@/services";
 import {
   prepareIdentityEntry,
+  clearIdentityEntry,
   cancelIdentityEntry,
   type IdentityEntryPreparation,
 } from "@/services/identity";
@@ -54,6 +55,10 @@ export function useBookingEntryTransition() {
 export function BookingNavigation({ children }: { children: ReactNode }) {
   const router = useRouter(),
     pathname = usePathname();
+  useEffect(() => {
+    if (!pathname.startsWith("/book/"))
+      clearIdentityEntry(services.customerIdentity);
+  }, [pathname]);
   const [entry, setEntry] = useState<Entry | null>(null),
     [leaving, setLeaving] = useState(false),
     [identityReady, setIdentityReady] = useState(true);

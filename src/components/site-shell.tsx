@@ -159,7 +159,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   className="footer-contact-heading"
                   id="footer-service-title"
                 >
-                  <strong>Services</strong>
+                  Services
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
                   <Link href="/terms-of-service/">Terms of Service</Link>
@@ -174,7 +174,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               <div className="footer-contact-copy">
                 <h2 className="footer-contact-heading" id="footer-help-title">
-                  <strong>Connect With Us</strong>
+                  Connect With Us
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
                   <a
@@ -217,7 +217,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   className="footer-contact-heading"
                   id="footer-location-title"
                 >
-                  <strong>Find Us</strong>
+                  Find Us
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
                   <a
@@ -242,7 +242,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             >
               <div className="footer-contact-copy">
                 <h2 className="footer-contact-heading" id="footer-apps-title">
-                  <strong>Soccerbot360 Player App:</strong>
+                  Soccerbot360 Player App:
                 </h2>
                 <PlayerAppLinks compact />
                 <div className="footer-brand">

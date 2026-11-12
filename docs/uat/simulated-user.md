@@ -472,3 +472,9 @@ Run against the confirmed staging revision, email first and expiry-abuse tests l
 | 15    | Unpaid expiry then a different session; repeated expiry and1hr block last        | Safe calendar recovery; new booking allowed when policy permits; repeated-expiry block persists across reload/tab/network changes within its configured scope.                                                                      |
 
 Record Pass/Fail/Blocked separately with deployed SHA and device/browser. CI success does not establish real inbox, Turnstile, payment or phone acceptance.
+
+## Once-per-entry and one-request calendar acceptance
+
+On the next staged revision, start fresh on Home with Network recording. Expect one `/api/calendar/snapshot` response containing all three months; no individual month requests when entering booking or switching fresh cached months. With slower networking, enter Calendar before it completes: one full loader should wait for that request, then reveal the ready window. Offline retry must clear the old notice while pending and restore it only on failure. Expired/incomplete data must not enable checkout.
+
+Compare Guest → Session → Back with Email form → Back: neither repeats identity restoration within the same flow. Verify an email, navigate away/back internally, then sign out and repeat; always show the latest confirmed state, never restore the old sign-in. Continue signed in and Manage saved contact should not repeat `/api/identity/restore`; saved contact still needs its protected data request. A fresh Book now/reload performs one new entry check. Repeat existing conflict, expiry and paid-late recovery checks to establish that display batching did not alter server authority.
