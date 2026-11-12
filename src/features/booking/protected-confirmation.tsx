@@ -124,6 +124,7 @@ export function ProtectedConfirmation({
   const router = useRouter();
   const [homeDeparture, setHomeDeparture] = useState<ReactNode>(null);
   const [seenConfirmation] = useState(() => hasSeenConfirmation(attemptId));
+  const returnedHome = useRef<string | null>(null);
   const [context, setContext] = useState<{
     value: CheckoutContext;
     revision: number;
@@ -782,9 +783,20 @@ export function ProtectedConfirmation({
   const repeatedProviderReturn =
     providerReturn && seenConfirmation && !!saved && view !== "denied";
   useEffect(() => {
-    if (repeatedProviderReturn) router.replace("/");
-    else if (confirmedCard && !silent) markConfirmationSeen(attemptId);
-  }, [repeatedProviderReturn, confirmedCard, silent, attemptId, router]);
+    if (repeatedProviderReturn) {
+      if (returnedHome.current === attemptId) return;
+      returnedHome.current = attemptId;
+      router.replace("/");
+      if (onRestart) void Promise.resolve(onRestart(attemptId)).catch(() => {});
+    } else if (confirmedCard && !silent) markConfirmationSeen(attemptId);
+  }, [
+    repeatedProviderReturn,
+    confirmedCard,
+    silent,
+    attemptId,
+    router,
+    onRestart,
+  ]);
   useConfirmationRenderTrace({
     attemptId,
     revision: sessionRevision,

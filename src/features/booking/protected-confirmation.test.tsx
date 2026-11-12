@@ -2429,6 +2429,7 @@ it("late unpaid-release acknowledgement cannot override newer payment evidence a
 
 it("repeat provider return goes home only after server confirmation while direct revisits remain visible", async () => {
   const now = Date.now();
+  const restart = vi.fn(async () => {});
   const fetch = vi.fn(async (url: string) =>
     Response.json(
       url.endsWith("/checkout")
@@ -2460,10 +2461,12 @@ it("repeat provider return goes home only after server confirmation while direct
       attemptId={first}
       checkoutMode="live"
       providerReturn
+      onRestart={restart}
     />,
   );
   await screen.findByRole("link", { name: "Back to home" });
   expect(navigation.replace).not.toHaveBeenCalledWith("/");
+  expect(restart).not.toHaveBeenCalled();
   page.unmount();
   page = render(
     <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
@@ -2476,8 +2479,10 @@ it("repeat provider return goes home only after server confirmation while direct
       attemptId={first}
       checkoutMode="live"
       providerReturn
+      onRestart={restart}
     />,
   );
   await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
   expect(screen.queryByText("Confirmation unavailable")).toBeNull();
+  expect(restart).toHaveBeenCalledExactlyOnceWith(first);
 });
