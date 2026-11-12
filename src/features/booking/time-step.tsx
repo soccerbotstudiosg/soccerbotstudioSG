@@ -230,7 +230,8 @@ export function TimeStep({
         (verifiedDateMonth && dayAvailability.get(date) === false)))
       ? null
       : date;
-  useEffect(() => {
+  // Align the shared day read before paint; cached day changes must not flash a loader.
+  useLayoutEffect(() => {
     showMonth(month.slice(0, 7), throughMonth);
     showDate(displayDate);
     return () => showDate(null);

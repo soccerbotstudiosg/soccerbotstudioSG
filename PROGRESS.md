@@ -2,14 +2,14 @@
 
 ## Active outcome
 
-PR64 merged as d435b9d511615b4d4adb9e0bb006f716e23bf6e4. Its exact-head CI43183459584 and staging43185205051 passed; independent health confirmed c646a05. Owner supplied A–F capture and requested the corrections consolidated into one PR, passing CI, staged and merged without stopping.
+Investigate the owner’s returning session-day flicker using test-flicker.devtools. Base is merged PR65, main 1f98c08d006dc8074610f04de314df6d9453b722. PR65 staging and merge were completed; this checkpoint does not claim a new production deployment.
 
 ## Current repair
 
-Branch `fix/af-identity-reset` starts from merged main. Changes: identity selection reset, immediate code-button spinner, background remembered-contact save with Review feedback/payment ordering, measured Turnstile spacing, confirmation loader instruction, repeated completed-provider-return navigation versus direct confirmation revisit, and immediate confirmation Home exit.
+Branch `fix/cached-day-transition`: synchronize TimeStep’s selected date with the shared cached availability read before paint. Capture shows one successful calendar snapshot and no per-day availability calls or failed API responses. See the dated Journey entry and technical behavior for cause and evidence limits.
 
-Capture shows successful payment/receipt followed by a repeated provider-return receipt409 and then receipt200. No provider transaction was performed by the assistant. Local complete suite passed329 tests; focused new regressions passed. Initial focused failures were obsolete Details save/navigation expectations and a missing Account context mock; repaired with assertions for the new behavior. Test inventory accidentally captured a string inside split as a title during editing; removed that spurious entry. Final source/type/lint checks passed; CI/staging remain to verify. Code requests use only the button spinner while waiting for background revocation.
+Existing focused suites passed 37 tests; type checking, targeted lint and formatting passed. Initial type generation was blocked by sandbox Git subprocess permissions; the authorized rerun passed. They retain cache freshness, date/identity separation and checkout guards; no test inventory change. Rendered-frame verification remains pending with owner/CI, since component tests flush effects and HAR does not record paint.
 
-## Delivery
+## Remaining
 
-Publish via LimYouSheng only. Do not change production settings or provider configuration. Finish exact-head frontend/backend/live-email/runtime gates, actual staging and health, then merge under explicit owner authorization. Browser execution belongs to CI/owner. Update delivery receipts in the PR without recursive status commits.
+Review and publish the scoped candidate through LimYouSheng; verify exact-head CI and actual staging health, then merge under the owner’s explicit “stage and merge” authorization. Owner visual confirmation remains a separately reported evidence gap. No provider or production setting changes. Browser execution belongs to CI/owner.
