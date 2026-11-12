@@ -237,7 +237,7 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "booking-options signout retries failure and leaves only after acknowledgement"
+    "title": "remembered identity restoration shows only the full-width welcome card without a guest flash"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
@@ -1454,6 +1454,10 @@
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "email request throttling displays server retry time without automatic or premature requests"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "fresh security proof clears only stale security feedback and reentry starts clean"
   },
   {
     "file": "src/services/identity.test.ts",

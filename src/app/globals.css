@@ -571,13 +571,6 @@
     max-width: 100%;
     overflow-wrap: anywhere;
   }
-  .booking-identity-action {
-    display: flex;
-  }
-  .booking-identity-action,
-  .booking-identity-action > .text-link {
-    min-height: 44px;
-  }
   @media (max-width: 700px) {
     .booking-title-line {
       display: block;
@@ -2655,6 +2648,9 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px;
   }
+  .access-options-verified {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .access-option {
     display: flex;
     flex-direction: column;
@@ -2771,8 +2767,9 @@
   }
   .account-actions {
     margin-top: 16px;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     gap: 8px;
     width: 100%;
   }
@@ -2780,7 +2777,7 @@
     min-width: 0;
     min-height: 44px;
     max-width: 100%;
-    padding: 8px 12px;
+    padding: 6px 8px;
     border-radius: 8px;
     font-size: var(--text-meta);
     justify-content: center;

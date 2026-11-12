@@ -865,6 +865,10 @@
   },
   {
     "file": "worker/tests/identity.test.mjs",
+    "title": "identity email limits survive session and network changes without extending denied retries"
+  },
+  {
+    "file": "worker/tests/identity.test.mjs",
     "title": "identity concurrent sends and subject limits cannot be bypassed by a new guest"
   },
   {

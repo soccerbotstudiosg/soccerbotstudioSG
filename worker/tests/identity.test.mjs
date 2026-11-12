@@ -63,6 +63,7 @@ before(async () => {
     "0001_developer_journal.sql",
     "0009_identity_challenges.sql",
     "0044_identity_request_cooldown.sql",
+    "0046_identity_email_request_limit.sql",
     "0013_remembered_identity.sql",
     "0011_identity_delivery.sql",
     "0015_contact_profiles.sql",
@@ -223,6 +224,136 @@ test("identity resend supersedes previous challenge and preserves unknown delive
     "verification_unavailable",
   );
 });
+test("identity email limits survive session and network changes without extending denied retries", async () => {
+  const email = "shared-limit@example.invalid",
+    now = Date.now();
+  const cookies = await Promise.all([guestAt(now), guestAt(now)]);
+  const firstCandidates = await Promise.all(
+    cookies.map((cookie, index) =>
+      challenge(cookie, {
+        email: index ? " Shared-Limit@Example.Invalid " : email,
+        now,
+        source: `email-limit-first-${index}`,
+      }),
+    ),
+  );
+  assert.equal(
+    firstCandidates.reduce((n, response) => n + response.sent.length, 0),
+    1,
+  );
+  const first = firstCandidates.find((response) => response.sent.length);
+  assert.equal(first.result.resendAfter, now + 120000);
+  assert.equal(
+    firstCandidates.find((response) => !response.sent.length).retryAfterSeconds,
+    120,
+  );
+  const fresh = await guestAt(now + 119999);
+  const early = await challenge(fresh, { email, now: now + 119999 });
+  assert.equal(early.retryAfterSeconds, 1);
+  assert.equal(early.sent.length, 0);
+  // Different addresses/aliases are independent even when they reach the same inbox.
+  const alias = await challenge(await guestAt(now + 119999), {
+    email: "shared-limit+alias@example.invalid",
+    now: now + 119999,
+  });
+  assert.equal(alias.sent.length, 1);
+  const second = await challenge(fresh, { email, now: now + 120000 });
+  assert.equal(second.sent.length, 1);
+  assert.equal(second.result.requestLimited, false);
+  const thirdCookies = await Promise.all([
+    guestAt(now + 240000),
+    guestAt(now + 240000),
+  ]);
+  const thirds = await Promise.all(
+    thirdCookies.map((cookie) =>
+      challenge(cookie, { email, now: now + 240000 }),
+    ),
+  );
+  assert.equal(
+    thirds.reduce((n, response) => n + response.sent.length, 0),
+    1,
+  );
+  const winner = thirds.findIndex((response) => response.sent.length);
+  assert.equal(thirds[winner].result.resendAfter, now + 360000);
+  assert.equal(thirds[winner].result.requestLimited, false);
+  assert.equal(thirds[1 - winner].retryAfterSeconds, 600);
+  // An issued code can still verify while the shared email request limit is active.
+  assert.equal(
+    (
+      await call(
+        thirdCookies[winner],
+        verification(thirds[winner], now + 240001),
+      )
+    ).result.email,
+    email,
+  );
+  const observer = await guestAt(now + 300000);
+  const denied = await challenge(observer, { email, now: now + 300000 });
+  assert.equal(denied.retryAfterSeconds, 540);
+  assert.equal(denied.sent.length, 0);
+  const snapshot = async () =>
+    Promise.all(
+      [
+        "identity_challenges",
+        "identity_bot_tokens",
+        "identity_request_counters",
+        "identity_request_denials",
+      ].map(
+        async (table) =>
+          (await db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all())
+            .results,
+      ),
+    );
+  const retained = await snapshot();
+  // Reject any attempted write, including a no-op UPDATE, on repeated blocked requests.
+  for (const table of [
+    "identity_challenges",
+    "identity_bot_tokens",
+    "identity_request_counters",
+    "identity_request_denials",
+  ])
+    for (const operation of ["INSERT", "UPDATE", "DELETE"])
+      await db.exec(
+        `CREATE TRIGGER synthetic_email_no_write_${table}_${operation} BEFORE ${operation} ON ${table} BEGIN SELECT RAISE(ABORT,'unexpected_denied_write'); END;`,
+      );
+  try {
+    for (const offset of [300001, 500000, 839999]) {
+      const repeated = await challenge(observer, { email, now: now + offset });
+      assert.equal(repeated.error, "verification_request_limited");
+      assert.equal(
+        repeated.retryAfterSeconds,
+        Math.ceil((840000 - offset) / 1000),
+      );
+      assert.equal(repeated.sent.length, 0);
+    }
+    assert.deepEqual(await snapshot(), retained);
+  } finally {
+    for (const table of [
+      "identity_challenges",
+      "identity_bot_tokens",
+      "identity_request_counters",
+      "identity_request_denials",
+    ])
+      for (const operation of ["INSERT", "UPDATE", "DELETE"])
+        await db.exec(
+          `DROP TRIGGER synthetic_email_no_write_${table}_${operation};`,
+        );
+  }
+  const reset = await challenge(observer, { email, now: now + 840000 });
+  assert.equal(reset.sent.length, 1);
+  assert.equal(reset.result.requestLimited, false);
+  assert.equal(reset.result.resendAfter, now + 960000);
+  const emailCounter = await db
+    .prepare(
+      "SELECT request_count,last_request_ms FROM identity_request_counters WHERE scope='email' AND subject_key=(SELECT email_hash FROM identity_challenges WHERE id=?)",
+    )
+    .bind(reset.result.challengeId)
+    .first();
+  assert.deepEqual(emailCounter, {
+    request_count: 1,
+    last_request_ms: now + 840000,
+  });
+});
 test("identity concurrent sends and subject limits cannot be bypassed by a new guest", async () => {
   await db.exec(
     "CREATE TABLE synthetic_identity_denial_writes(owner_id TEXT,kind TEXT); CREATE TRIGGER synthetic_identity_denial_insert AFTER INSERT ON identity_request_denials BEGIN INSERT INTO synthetic_identity_denial_writes VALUES(NEW.owner_id,'insert'); END; CREATE TRIGGER synthetic_identity_denial_update AFTER UPDATE ON identity_request_denials BEGIN INSERT INTO synthetic_identity_denial_writes VALUES(NEW.owner_id,'update'); END;",
@@ -293,8 +424,8 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   const third = thirdResults[thirdIndex];
   assert.equal(thirdResults[1 - thirdIndex].retryAfterSeconds, 600);
   assert.equal(third.sent.length, 1);
-  assert.equal(third.result.resendAfter, now + 602000);
-  assert.equal(third.result.requestLimited, true);
+  assert.equal(third.result.resendAfter, now + 122000);
+  assert.equal(third.result.requestLimited, false);
   assert.equal(
     (
       await db
@@ -387,12 +518,12 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   for (const offset of [0, 120000, 240000]) {
     const accepted = await challenge(rotating, { now: rotatingNow + offset });
     assert.equal(accepted.sent.length, 1);
-    assert.equal(accepted.result.requestLimited, offset === 240000);
+    assert.equal(accepted.result.requestLimited, false);
   }
   const rotated = await challenge(rotating, { now: rotatingNow + 360000 });
   assert.equal(rotated.retryAfterSeconds, 480);
   assert.equal(rotated.sent.length, 0);
-  // A slow first send can observe another session's third request in its success envelope.
+  // A slow send retains an observed shared block while returning the normal success timer.
   const slowGuest = await guest();
   const slowNow = Date.now();
   const pending = challenge(slowGuest, {
@@ -414,8 +545,8 @@ test("identity concurrent sends and subject limits cannot be bypassed by a new g
   }
   await call(slowGuest, { action: "release-delivery", now: slowNow });
   const slowResult = await pending;
-  assert.equal(slowResult.result.requestLimited, true);
-  assert.equal(slowResult.result.resendAfter, slowNow + 602000);
+  assert.equal(slowResult.result.requestLimited, false);
+  assert.equal(slowResult.result.resendAfter, slowNow + 120000);
   const slowChangedNetwork = await challenge(slowGuest, {
     now: slowNow + 122000,
     source: "held-new-network",

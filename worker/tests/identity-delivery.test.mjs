@@ -98,6 +98,7 @@ beforeEach(async () => {
     "0001_developer_journal.sql",
     "0009_identity_challenges.sql",
     "0044_identity_request_cooldown.sql",
+    "0046_identity_email_request_limit.sql",
     "0013_remembered_identity.sql",
     "0011_identity_delivery.sql",
   ])
@@ -1194,7 +1195,10 @@ test("client email verification uses its configured sender and production bot se
     email: "third-client@example.invalid",
   });
   assert.equal(third.status, 200);
-  assert.equal((await third.json()).requestLimited, true);
+  const thirdEnvelope = await third.json();
+  assert.equal(thirdEnvelope.requestLimited, false);
+  const thirdTimer = thirdEnvelope.resendAfter - Date.now();
+  assert.ok(thirdTimer > 110000 && thirdTimer <= 120000);
   const blockedSession = await guest();
   const ipBlocked = await challenge(blockedSession, {
     email: "fourth-client@example.invalid",

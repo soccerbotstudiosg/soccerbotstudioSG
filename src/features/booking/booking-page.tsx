@@ -37,7 +37,6 @@ const screens = {
 /** Render the guarded booking step and its navigation controls. */
 export function BookingPage({ step }: { step: BookingStep }) {
   const mobile = useMobileBooking();
-  const [leavingAccount, setLeavingAccount] = useState(false);
   const [accountBack, setAccountBack] = useState<(() => void) | null>(null);
   const registerAccountBack = useCallback((back: (() => void) | null) => {
     setAccountBack(() => back);
@@ -144,13 +143,13 @@ export function BookingPage({ step }: { step: BookingStep }) {
     actual === "review" &&
     attempt?.held === true;
   useEffect(() => {
-    if (leavingAccount || !ready || actual === step) return;
+    if (!ready || actual === step) return;
     if (retainingReview) {
       // Review is already interactive. Commit its URL without remounting it
       // through the app-router loading boundary. Refresh still opens Review.
       window.history.replaceState(null, "", sitePath("/book/review/"));
     } else router.replace(`/book/${actual}/`);
-  }, [actual, step, ready, router, retainingReview, leavingAccount]);
+  }, [actual, step, ready, router, retainingReview]);
   useEffect(() => {
     if (ready && (actual === step || retainingReview)) visitBookingStep(actual);
   }, [ready, actual, step, retainingReview, visitBookingStep]);
@@ -160,7 +159,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
   }, [actual, setCalendarBrowsing]);
   // Review is already mounted after creation. Preserve it while the URL
   // catches up after verification; routing must not bring the overlay back.
-  if (!ready || (!leavingAccount && actual !== step && !retainingReview))
+  if (!ready || (actual !== step && !retainingReview))
     return <BrandLoading overlay={false} />;
   const Screen = screens[step];
   if (step === "payment" || step === "confirmation") return <Screen />;
@@ -262,7 +261,6 @@ export function BookingPage({ step }: { step: BookingStep }) {
                   <AccountStep
                     onBackChange={registerAccountBack}
                     onIdentityChange={setIdentity}
-                    onExit={() => setLeavingAccount(true)}
                   />
                 ) : (
                   <Screen />
