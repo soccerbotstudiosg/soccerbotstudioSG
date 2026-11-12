@@ -17,7 +17,7 @@ test("overlapping booking reads share one full-page loader and preserve the moun
   fireEvent.change(input, { target: { value: "Retained name" } });
   view.rerender(<Screen first second />);
   expect(document.querySelectorAll(".page-loading")).toHaveLength(1);
-  expect(screen.getByText("Please do not close or refresh.")).toBeVisible();
+  expect(screen.queryByText("Please do not close or refresh.")).toBeNull();
   expect(document.querySelector(".booking-loading-inline")).toBeNull();
   expect(input.parentElement).toHaveAttribute("inert");
   view.rerender(<Screen first={false} second />);

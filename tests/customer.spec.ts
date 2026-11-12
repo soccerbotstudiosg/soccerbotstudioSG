@@ -746,7 +746,7 @@ test("email verification rejects an incorrect code and continues after correctio
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("name@domain");
-  await page.getByRole("button", { name: "Continue with email" }).click();
+  await page.getByRole("button", { name: "Get Verification Code" }).click();
   await expect(page.locator("#auth-error")).toHaveText(
     "Enter a valid email address.",
   );
@@ -757,7 +757,7 @@ test("email verification rejects an incorrect code and continues after correctio
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("long.customer.address@example.com");
-  await page.getByRole("button", { name: "Continue with email" }).click();
+  await page.getByRole("button", { name: "Get Verification Code" }).click();
   await expect(
     page.getByRole("heading", { name: "Verify your email", exact: true }),
   ).toBeVisible();
@@ -788,6 +788,18 @@ test("email verification rejects an incorrect code and continues after correctio
   );
   await expect(verified).toHaveCSS("font-size", "14px");
   await expect(verified).toHaveCSS("text-align", "right");
+  if ((page.viewportSize()?.width ?? 1280) <= 700) {
+    const address = verified.locator("span").last();
+    await expect(address).toHaveCSS("white-space", "nowrap");
+    await expect
+      .poll(() =>
+        address.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth + 1,
+        ),
+      )
+      .toBe(true);
+  }
+
   await expect(
     page.getByRole("button", { name: "Sign out", exact: true }),
   ).toHaveCount(0);

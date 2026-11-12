@@ -97,6 +97,7 @@ export function AccountStep({
     identityService.mode === "live" && restoredService !== identityService;
   const [working, setBusy] = useState(false);
   const [openingProfile, setOpeningProfile] = useState(false);
+  const [departing, setDeparting] = useState(false);
   const [navigating, startNavigation] = useTransition();
   const busy = working || navigating;
   const [botToken, setBotToken] = useState("");
@@ -137,6 +138,7 @@ export function AccountStep({
     active.current = null;
     setBusy(false);
     setOpeningProfile(false);
+    setDeparting(false);
     setBotToken("");
     setBotGeneration((value) => value + 1);
   }, []);
@@ -243,7 +245,10 @@ export function AccountStep({
       contact,
     });
     if (editProfile) setView("profile");
-    else startNavigation(() => router.push("/book/session/"));
+    else {
+      setDeparting(true);
+      startNavigation(() => router.push("/book/session/"));
+    }
   }
   function request() {
     if (Date.now() < resendAfter) return;
@@ -281,7 +286,7 @@ export function AccountStep({
     identityService.current()?.email === identity.email
       ? identity
       : null;
-  if ((view === "choice" && restoring) || openingProfile)
+  if ((view === "choice" && restoring) || openingProfile || departing)
     return entryTransition ? null : <BookingLoading label="Opening booking" />;
   if (view === "profile")
     return <DetailsStep profileOnly onClose={() => setView("choice")} />;
@@ -372,7 +377,7 @@ export function AccountStep({
                         "Verify your email again.",
                       );
                     await proceed(signal, current.email);
-                  });
+                  }, true);
                 else {
                   setError("");
                   setView("email");
@@ -600,7 +605,7 @@ export function AccountStep({
             className="button"
             disabled={busy || (view === "email" && resendSeconds > 0)}
           >
-            {view === "email" ? "Continue with email" : "Verify and continue"}
+            {view === "email" ? "Get Verification Code" : "Verify and continue"}
             <Icon name="chevron" />
           </button>
         </BookingPrimaryAction>

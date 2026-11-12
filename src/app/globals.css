@@ -587,6 +587,11 @@
       max-width: 100%;
       justify-self: end;
     }
+    .booking-verified-status > span {
+      min-width: 0;
+      white-space: nowrap;
+      overflow-wrap: normal;
+    }
   }
 
   .surface {

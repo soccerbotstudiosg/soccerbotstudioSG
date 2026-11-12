@@ -55,7 +55,8 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
   const router = useRouter(),
     pathname = usePathname();
   const [entry, setEntry] = useState<Entry | null>(null),
-    [leaving, setLeaving] = useState(false);
+    [leaving, setLeaving] = useState(false),
+    [identityReady, setIdentityReady] = useState(true);
   const generation = useRef(0);
   const preparation = useRef<IdentityEntryPreparation | null>(null);
   /** Release only an unconsumed preflight when this navigation is abandoned. */
@@ -87,6 +88,11 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
     ) {
       discardPreparation();
       preparation.current = prepareIdentityEntry(services.customerIdentity);
+      const pending = preparation.current;
+      setIdentityReady(false);
+      void pending.promise.then(() => {
+        if (preparation.current === pending) setIdentityReady(true);
+      });
     }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       if (!preparation.current) {
@@ -130,7 +136,7 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
       committed.current = true;
       router.replace(entry.to);
     }
-    if (arrived) {
+    if (arrived && identityReady) {
       setEntry(null);
       active.current = false;
     } else setEntry({ ...entry, kind: "logo", skip: true });
@@ -182,7 +188,7 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [entry, router]);
   useEffect(() => {
-    if (!entry || !arrived) return;
+    if (!entry || !arrived || !identityReady) return;
     const delay = entry.skip
       ? 0
       : entry.kind === "arena"
@@ -206,7 +212,7 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
       clearTimeout(timer);
       clearTimeout(fade);
     };
-  }, [entry, arrived]);
+  }, [entry, arrived, identityReady]);
   useEffect(() => {
     if (entry || /^\/book\/account\/?$/.test(pathname)) return;
     if (preparation.current)

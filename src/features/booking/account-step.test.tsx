@@ -36,7 +36,9 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   render(<AccountStep />);
   await user.click(screen.getByRole("button", { name: "Continue with email" }));
   await user.type(screen.getByLabelText("Email address"), "demo@example.com");
-  await user.click(screen.getByRole("button", { name: "Continue with email" }));
+  await user.click(
+    screen.getByRole("button", { name: "Get Verification Code" }),
+  );
   await user.type(screen.getByLabelText("Verification code"), "000000");
   await user.click(screen.getByRole("button", { name: "Verify and continue" }));
   expect(screen.getByRole("alert")).toHaveTextContent("incorrect");
@@ -65,7 +67,9 @@ test("remember me is explicit default off and opted in preview expiry stays nine
     screen.getByLabelText("Email address"),
     "remember@example.invalid",
   );
-  await user.click(screen.getByRole("button", { name: "Continue with email" }));
+  await user.click(
+    screen.getByRole("button", { name: "Get Verification Code" }),
+  );
   await user.type(screen.getByLabelText("Verification code"), "360360");
   const before = Date.now();
   await user.click(screen.getByRole("button", { name: "Verify and continue" }));
@@ -100,11 +104,12 @@ test("guest loading remains until the destination commits without exposing the p
   render(<Router />);
   await user.click(screen.getByRole("button", { name: "Continue as Guest" }));
   expect(
-    screen.getByRole("status", { name: "Preparing booking…" }),
+    screen.getByRole("status", { name: "Opening booking" }),
   ).toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
-  ).toBeDisabled();
+    screen.queryByRole("button", { name: "Continue as Guest" }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText("Please do not close or refresh.")).toBeNull();
   await act(async () => finish());
   expect(
     await screen.findByRole("heading", { name: "Choose your session" }),

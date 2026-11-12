@@ -4,7 +4,7 @@ import {
   BROWSER_CALENDAR_MAX_AGE_MS,
   nativeDisplaySlots,
 } from "@/domain/native-checkout";
-import { monthAt, todaySG } from "@/domain/dates";
+import { addDays, monthAt, todaySG } from "@/domain/dates";
 import {
   BOOKING_LEAD_MS,
   BOOKING_MONTH_COUNT,
@@ -17,6 +17,18 @@ import type {
   CalendarAvailability,
 } from "@/services/contracts";
 
+/** Expand fresh empty-month evidence into explicit empty day entries. */
+function emptyCalendarDates(month: string) {
+  const [year, number] = month.split("-").map(Number);
+  return Array.from(
+    { length: new Date(Date.UTC(year, number, 0)).getUTCDate() },
+    (_, index) => ({
+      date: addDays(month + "-01", index),
+      available: false,
+      offers: [],
+    }),
+  );
+}
 const retention = (entry: CalendarAvailability) =>
   entry.displayExpiresAtMs !== undefined
     ? entry.displayExpiresAtMs - entry.observedAtMs
@@ -94,7 +106,7 @@ export function useCalendarAvailability(
       if (saved && Date.now() - saved.observedAtMs < retention(saved))
         return saved;
       try {
-        const result = service.publicCalendar
+        let result = service.publicCalendar
           ? await service.publicCalendar({
               month: next,
               signal: controller.signal,
@@ -114,6 +126,22 @@ export function useCalendarAvailability(
         const receivedAtMs = Date.now();
         if (result.observedAtMs + retention(result) <= receivedAtMs)
           throw new Error("calendar_receipt_expired");
+        const emptyCoverage = result.monthCoverage?.find(
+          (entry) =>
+            entry.month === next &&
+            entry.state === "empty" &&
+            entry.observedAtMs <= receivedAtMs &&
+            entry.displayExpiresAtMs > receivedAtMs,
+        );
+        if (!result.dates.length && emptyCoverage?.state === "empty")
+          result = {
+            ...result,
+            dates: emptyCalendarDates(next),
+            displayExpiresAtMs: Math.min(
+              result.observedAtMs + retention(result),
+              emptyCoverage.displayExpiresAtMs,
+            ),
+          };
         setState((previous) => {
           const entries =
             previous?.owner === service && previous.key === key
@@ -193,7 +221,7 @@ export function useCalendarAvailability(
                   ...previous.entries,
                   [entry.month]: {
                     month: entry.month,
-                    dates: [],
+                    dates: emptyCalendarDates(entry.month),
                     observedAtMs: entry.observedAtMs,
                     displayExpiresAtMs: entry.displayExpiresAtMs,
                     receivedAtMs: Date.now(),

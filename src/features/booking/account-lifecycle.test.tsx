@@ -112,7 +112,7 @@ test("account leaving email challenge ignores delayed completion and live mode n
     );
     fireEvent.submit(
       screen
-        .getByRole("button", { name: /Continue with email/ })
+        .getByRole("button", { name: "Get Verification Code" })
         .closest("form")!,
     );
     expect(challenge).not.toHaveBeenCalled();
@@ -126,7 +126,7 @@ test("account leaving email challenge ignores delayed completion and live mode n
   });
   fireEvent.submit(
     screen
-      .getByRole("button", { name: /Continue with email/ })
+      .getByRole("button", { name: "Get Verification Code" })
       .closest("form")!,
   );
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
@@ -440,7 +440,7 @@ test("switching email clears the old account and supports back guest and fresh r
   fireEvent.click(screen.getByLabelText("Remember me"));
   fireEvent.submit(
     screen
-      .getByRole("button", { name: "Continue with email" })
+      .getByRole("button", { name: "Get Verification Code" })
       .closest("form")!,
   );
   await screen.findByLabelText("Verification code");
@@ -483,7 +483,7 @@ test("switching email clears the old account and supports back guest and fresh r
   });
   fireEvent.submit(
     screen
-      .getByRole("button", { name: "Continue with email" })
+      .getByRole("button", { name: "Get Verification Code" })
       .closest("form")!,
   );
   await screen.findByLabelText("Verification code");
@@ -626,7 +626,7 @@ test("invalid code can return to guest options without carrying an old error", a
   });
   fireEvent.submit(
     screen
-      .getByRole("button", { name: "Continue with email" })
+      .getByRole("button", { name: "Get Verification Code" })
       .closest("form")!,
   );
   await screen.findByLabelText("Verification code");
@@ -644,10 +644,15 @@ test("invalid code can return to guest options without carrying an old error", a
   );
   expect(screen.queryByRole("button", { name: "Change email" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
   expect(
     screen.getByRole("button", { name: "Continue as Guest" }),
+  ).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
+  expect(
+    screen.getByRole("button", { name: "Get Verification Code" }),
   ).toBeEnabled();
 });
 
@@ -913,7 +918,7 @@ test("email resend follows server deadlines and third-request cooldown without a
     await act(async () => {
       fireEvent.submit(
         screen
-          .getByRole("button", { name: "Continue with email" })
+          .getByRole("button", { name: "Get Verification Code" })
           .closest("form")!,
       );
     });
@@ -1051,24 +1056,24 @@ test("email request throttling displays server retry time without automatic or p
     await act(async () => {
       fireEvent.submit(
         screen
-          .getByRole("button", { name: "Continue with email" })
+          .getByRole("button", { name: "Get Verification Code" })
           .closest("form")!,
       );
     });
     expect(screen.getByRole("timer")).toHaveTextContent("07:00");
     expect(
-      screen.getByRole("button", { name: "Continue with email" }),
+      screen.getByRole("button", { name: "Get Verification Code" }),
     ).toBeDisabled();
     fireEvent.submit(
       screen
-        .getByRole("button", { name: "Continue with email" })
+        .getByRole("button", { name: "Get Verification Code" })
         .closest("form")!,
     );
     expect(challenge).toHaveBeenCalledTimes(1);
     vi.setSystemTime(Date.now() + 420000);
     fireEvent(window, new Event("focus"));
     expect(
-      screen.getByRole("button", { name: "Continue with email" }),
+      screen.getByRole("button", { name: "Get Verification Code" }),
     ).toBeEnabled();
     expect(
       screen.queryByText("Too many code requests. Try again later."),
@@ -1128,7 +1133,7 @@ test("fresh security proof clears only stale security feedback and reentry start
   const submit = () =>
     fireEvent.submit(
       screen
-        .getByRole("button", { name: "Continue with email" })
+        .getByRole("button", { name: "Get Verification Code" })
         .closest("form")!,
     );
   await act(async () => {
