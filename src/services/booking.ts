@@ -2,7 +2,10 @@ import {
   creationResolutionSchema,
   checkoutSelectionRejectionSchema,
 } from "@/domain/native-checkout";
-import { BOOKING_NOT_CREATED } from "@/domain/booking-messages";
+import {
+  ACTIVE_CHECKOUT_NOTICE,
+  BOOKING_NOT_CREATED,
+} from "@/domain/booking-messages";
 import { SESSION_UNAVAILABLE } from "@/domain/booking-messages";
 import {
   CATALOGUE_MAX_AGE_MS,
@@ -480,9 +483,13 @@ async function nativeRequest(
           rejection?.rejectedSessionIndices,
         );
       }
+      if (error?.error === "checkout_already_active")
+        throw new BookingServiceError(
+          "checkout_already_active",
+          ACTIVE_CHECKOUT_NOTICE,
+        );
       if (
         [
-          "checkout_already_active",
           "checkout_window_unresolved",
           "native_customer_window_unavailable",
         ].includes(error?.error)

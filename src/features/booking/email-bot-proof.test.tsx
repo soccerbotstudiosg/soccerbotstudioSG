@@ -33,14 +33,20 @@ it("email bot widget binds purpose clears expired proof and ignores callbacks af
     action: "verify-email",
     appearance: "always",
   });
-  options.callback("proof");
-  options["expired-callback"]();
+  await act(async () => {
+    options.callback("proof");
+    options["expired-callback"]();
+  });
   expect(token.mock.calls).toEqual([["proof"], [""]]);
   mounted.unmount();
   expect(remove).toHaveBeenCalledWith("synthetic-widget");
   options.callback("stale");
   expect(token).toHaveBeenCalledTimes(2);
-  const checkout = render(<CheckoutBotProof onToken={token} />);
+  const pending = vi.fn();
+  const checkout = render(
+    <CheckoutBotProof onToken={token} onPendingChange={pending} />,
+  );
+  expect(pending).toHaveBeenLastCalledWith(true);
   await act(async () => screen.getByText("Load synthetic widget").click());
   await waitFor(() => expect(renderWidget).toHaveBeenCalledTimes(2));
   const checkoutOptions = renderWidget.mock.calls[1][1];
@@ -52,17 +58,22 @@ it("email bot widget binds purpose clears expired proof and ignores callbacks af
   expect(wrapper).toHaveClass("auth-bot-proof-background");
   await act(async () => checkoutOptions["before-interactive-callback"]());
   expect(wrapper).not.toHaveClass("auth-bot-proof-background");
+  expect(pending).toHaveBeenLastCalledWith(false);
   await act(async () => checkoutOptions["after-interactive-callback"]());
   expect(wrapper).toHaveClass("auth-bot-proof-background");
+  expect(pending).toHaveBeenLastCalledWith(true);
   await act(async () => checkoutOptions["before-interactive-callback"]());
   await act(async () => checkoutOptions["error-callback"]());
+  expect(pending).toHaveBeenLastCalledWith(false);
   expect(screen.getByRole("status")).toHaveTextContent(
     "Security check unavailable",
   );
   await act(async () => checkoutOptions.callback("checkout-proof"));
   expect(screen.queryByRole("status")).toBeNull();
+  expect(pending).toHaveBeenLastCalledWith(false);
   expect(wrapper).toHaveClass("auth-bot-proof-background");
-  checkoutOptions["expired-callback"]();
+  await act(async () => checkoutOptions["expired-callback"]());
+  expect(pending).toHaveBeenLastCalledWith(true);
   expect(token.mock.calls.slice(-2)).toEqual([["checkout-proof"], [""]]);
   checkout.unmount();
   checkoutOptions.callback("stale-checkout-proof");

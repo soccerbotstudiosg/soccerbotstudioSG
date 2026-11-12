@@ -1540,6 +1540,10 @@
     "title": "repeat provider return goes home only after server confirmation while direct revisits remain visible"
   },
   {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "expiry waits for the first paced post-expiry status response without extending recovery indefinitely"
+  },
+  {
     "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "switching identity clears selected session and cart without repeating entry preparation"
   },
@@ -1570,5 +1574,9 @@
   {
     "file": "src/features/booking/access-recovery.test.tsx",
     "title": "saved-profile timeout offers retry without exposing fields or restarting booking"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "active checkout rejection keeps its own notice instead of an availability warning"
   }
 ]

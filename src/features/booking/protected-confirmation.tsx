@@ -158,6 +158,7 @@ export function ProtectedConfirmation({
     check: checkConfirmation,
     paymentReceived,
     responseEvidence,
+    responseCheckedAtMs,
     customerConfirmation,
     selectionRejection: statusRejection,
     creationResolution: statusCreationResolution,
@@ -585,6 +586,10 @@ export function ProtectedConfirmation({
     !hasPaymentEvidence &&
     !rejectionState &&
     view !== "denied";
+  const awaitingFreshExpiryStatus =
+    paymentDeadline !== undefined &&
+    (responseCheckedAtMs === undefined ||
+      responseCheckedAtMs < paymentDeadline);
   const expiryWaitEnded =
     expiryWait?.id === attemptId &&
     expiryWait.revision === sessionRevision &&
@@ -602,6 +607,7 @@ export function ProtectedConfirmation({
       attemptId,
       paymentDeadline,
       Date.now(),
+      awaitingFreshExpiryStatus,
     );
     const started = performance.now();
     const remainingAtStart = Math.max(0, deadline - Date.now());
@@ -633,6 +639,7 @@ export function ProtectedConfirmation({
     };
   }, [
     needsExpiryReconciliation,
+    awaitingFreshExpiryStatus,
     paymentDeadline,
     current?.clock,
     attemptId,

@@ -49,16 +49,30 @@ vi.mock("./email-bot-proof", async (original) => ({
   ...(await original<typeof import("./email-bot-proof")>()),
   CheckoutBotProof: function SyntheticCheckoutProof({
     onToken,
+    onPendingChange,
   }: {
     onToken: (token: string) => void;
+    onPendingChange?: (pending: boolean) => void;
   }) {
     useEffect(() => {
       onToken("synthetic-checkout-proof");
     }, [onToken]);
     return (
       <>
-        <button onClick={() => onToken("")}>Expire checkout proof</button>
-        <button onClick={() => onToken("synthetic-checkout-proof")}>
+        <button
+          onClick={() => {
+            onToken("");
+            onPendingChange?.(true);
+          }}
+        >
+          Expire checkout proof
+        </button>
+        <button
+          onClick={() => {
+            onToken("synthetic-checkout-proof");
+            onPendingChange?.(false);
+          }}
+        >
           Complete checkout proof
         </button>
       </>
@@ -224,11 +238,39 @@ async function directCase(scenario: string) {
   expect(
     screen.getByRole("button", { name: /^Proceed to Payment/ }),
   ).toBeDisabled();
+  expect(
+    screen
+      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .querySelector(".spinner"),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: /^Proceed to Payment/ }),
+  ).toHaveAttribute("aria-busy", "true");
+  fireEvent.click(screen.getByRole("checkbox"));
+  expect(
+    screen
+      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .querySelector(".spinner"),
+  ).toBeNull();
+  expect(
+    screen.getByRole("button", { name: /^Proceed to Payment/ }),
+  ).toBeDisabled();
+  fireEvent.click(screen.getByRole("checkbox"));
+  expect(
+    screen
+      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .querySelector(".spinner"),
+  ).toBeVisible();
   expect(checkout).not.toHaveBeenCalled();
   expect(pay).not.toHaveBeenCalled();
   fireEvent.click(
     screen.getByRole("button", { name: "Complete checkout proof" }),
   );
+  expect(
+    screen
+      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .querySelector(".spinner"),
+  ).toBeNull();
   await act(async () =>
     fireEvent.click(
       screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
@@ -1126,7 +1168,7 @@ it("rejected checkout window clears the undispatched draft attempt without payme
     draft.slots,
   );
   expect(screen.getByTestId("notice")).toHaveTextContent(
-    "Some sessions may no longer be available. Please check again.",
+    "You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.",
   );
   expect(JSON.parse(screen.getByTestId("notice-slots").textContent!)).toEqual([
     { date: draft.slots[0].date, start: draft.slots[0].start },
@@ -1251,13 +1293,17 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
             ? "temporarily_unavailable"
             : error === "checkout_selection_unavailable"
               ? "selection_unavailable"
-              : "checkout_window_blocked",
+              : error === "checkout_already_active"
+                ? "checkout_already_active"
+                : "checkout_window_blocked",
         message:
           error === "checkout_recovery_required"
             ? "Checking your booking. Do not book or pay again."
             : error === "checkout_selection_unavailable"
               ? "Session no longer available."
-              : "We couldn’t start checkout. Please try again later.",
+              : error === "checkout_already_active"
+                ? "You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another."
+                : "We couldn’t start checkout. Please try again later.",
       });
       expect(fetch).toHaveBeenCalledTimes(1);
     }
@@ -2690,6 +2736,7 @@ function ConflictHandoffProbe({
       <output data-testid="handoff-cart">
         {JSON.stringify(state.draft.slots)}
       </output>
+      <output data-testid="handoff-message">{state.selectionNotice}</output>
       <output data-testid="handoff-notice">
         {JSON.stringify(state.selectionNoticeSlots)}
       </output>
@@ -3202,6 +3249,48 @@ it("completed conflict classification preserves all available selections without
   );
   expect(availability).toHaveBeenCalledTimes(1);
   expect(checkout).toHaveBeenCalledTimes(1);
+});
+
+it("active checkout rejection keeps its own notice instead of an availability warning", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  navigation.path = "/book/review/";
+  const fetcher = vi.fn<typeof fetch>(async () =>
+    Response.json({ error: "checkout_already_active" }, { status: 503 }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  const availability = vi.fn<BookingService["availability"]>(async () => [
+    { ...draft.slots[0], available: true },
+  ]);
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        calendar: undefined,
+        publicCalendar: undefined,
+        availability,
+      }}
+    >
+      <ConflictHandoffProbe />
+    </BookingProvider>,
+  );
+  fireEvent.click(screen.getByText("Seed handoff"));
+  await act(async () => fireEvent.click(screen.getByText("Submit handoff")));
+  expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
+  expect(screen.getByTestId("handoff-message")).toHaveTextContent(
+    "You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.",
+  );
+  expect(
+    screen.queryByText(
+      "Some sessions may no longer be available. Please check again.",
+    ),
+  ).toBeNull();
+  expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+    draft.slots,
+  );
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(String(fetcher.mock.calls[0][0])).toContain("/api/booking/checkout/");
 });
 
 it("payment and confirmation consumers retain one classifier until the complete calendar handoff", async () => {

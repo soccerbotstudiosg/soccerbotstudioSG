@@ -117,7 +117,10 @@ export function expiryReconciliationDeadline(
   attemptId: string,
   paymentDeadline: number,
   now: number,
+  awaitingFreshStatus = false,
 ) {
+  // Allow one bounded status-response window when server pacing spans the grace period.
+  const settlement = awaitingFreshStatus ? EXPIRY_RECONCILIATION_MS : 0;
   const key = `soccerbot-expiry-reconciliation:${attemptId}`;
   const saved = record(safeRead(key));
   if (
@@ -125,14 +128,17 @@ export function expiryReconciliationDeadline(
     typeof saved.deadline === "number" &&
     Number.isFinite(saved.deadline)
   )
-    return Math.min(saved.deadline, now + EXPIRY_RECONCILIATION_MS);
+    return Math.min(
+      saved.deadline + settlement,
+      now + EXPIRY_RECONCILIATION_MS + settlement,
+    );
   const deadline = now + EXPIRY_RECONCILIATION_MS;
   safeWrite(key, { paymentDeadline, deadline });
   const written = record(safeRead(key));
   // Without persistence, skip optional foreground waiting rather than renew it on reload.
   return written?.paymentDeadline === paymentDeadline &&
     written.deadline === deadline
-    ? deadline
+    ? deadline + settlement
     : now;
 }
 /** Remove local state while tolerating unavailable browser storage. */
@@ -274,6 +280,7 @@ export function saveConflictNotice(
 
 // Pending conflict data is a tab-local display snapshot, never server authority.
 const pendingConflictSchema = z.strictObject({
+  reason: z.literal("checkout_already_active").optional(),
   attemptId: z.string().uuid().nullable(),
   draft: draftSchema,
   rejectedSessionIndex: z

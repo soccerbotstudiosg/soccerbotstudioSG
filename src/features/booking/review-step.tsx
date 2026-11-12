@@ -84,6 +84,7 @@ export function ReviewStep({
     router = useRouter();
   const [policy, setPolicy] = useState(false);
   const [botToken, setBotToken] = useState("");
+  const [proofPending, setProofPending] = useState(false);
   const [botGeneration, setBotGeneration] = useState(0);
   const needsProof =
     bookingService.mode === "live" && !attempt?.held && !verifying;
@@ -105,6 +106,8 @@ export function ReviewStep({
   const error = action.error;
   const [navigating, startNavigation] = useTransition();
   const busy = action.status === "loading" || navigating;
+  const checkingProof =
+    draft.accepted && needsProof && !botToken && proofPending && !busy;
   const locked = verifying || (!action.calendarRecovery && attempt?.held);
   const canProceed =
     !action.calendarRecovery &&
@@ -174,12 +177,17 @@ export function ReviewStep({
         </div>
       )}
       {needsProof && !busy && (
-        <CheckoutBotProof key={botGeneration} onToken={setBotToken} />
+        <CheckoutBotProof
+          key={botGeneration}
+          onToken={setBotToken}
+          onPendingChange={setProofPending}
+        />
       )}
       <BookingPrimaryAction className="actions" ready={canProceed}>
         <button
           className="button"
           disabled={!canProceed}
+          aria-busy={checkingProof || undefined}
           onClick={async () => {
             try {
               if (
@@ -210,7 +218,13 @@ export function ReviewStep({
             "Proceed to Payment"
           )}{" "}
           <BookingActionTotal />
-          {!busy && <Icon name="chevron" />}
+          {checkingProof ? (
+            <span aria-hidden="true">
+              <Icon name="spinner" className="spinner" />
+            </span>
+          ) : !busy ? (
+            <Icon name="chevron" />
+          ) : null}
         </button>
       </BookingPrimaryAction>
       {verifying && (

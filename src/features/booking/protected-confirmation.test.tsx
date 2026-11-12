@@ -2486,3 +2486,98 @@ it("repeat provider return goes home only after server confirmation while direct
   expect(screen.queryByText("Confirmation unavailable")).toBeNull();
   expect(restart).toHaveBeenCalledExactlyOnceWith(first);
 });
+
+it("expiry waits for the first paced post-expiry status response without extending recovery indefinitely", async () => {
+  for (const outcome of ["paid", "pending", "stalled"] as const) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-09T00:00:00Z"));
+    const started = Date.now();
+    const awaiting = vi.fn(() => true);
+    const reads: number[] = [];
+    navigation.replace.mockClear();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path.endsWith("/checkout"))
+          return Response.json(
+            {
+              attemptId: first,
+              mode: "live",
+              checkout: { state: "unavailable" },
+              summary: {
+                players: 2,
+                totalMinor: 8800,
+                currency: "SGD",
+                sessions: [{ startMs: started + 86400000, players: 2 }],
+              },
+              checking: {
+                paymentExpiresAtMs: started + 1000,
+                deadlineMs: started + 120000,
+                nextCheckMs: 0,
+                pollAfterMs: 5000,
+              },
+            },
+            { headers: { Date: new Date().toUTCString() } },
+          );
+        if (path.endsWith("/confirmation")) {
+          reads.push(Date.now());
+          if (reads.length === 1)
+            return Response.json(
+              { status: "pending", reason: "payment_verification_pending" },
+              { headers: { "X-Next-Check": String(started + 11500) } },
+            );
+          if (outcome === "stalled") return new Promise<Response>(() => {});
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          return Response.json({
+            status: "pending",
+            reason:
+              outcome === "paid"
+                ? "payment_received_booking_pending"
+                : "payment_verification_pending",
+          });
+        }
+        throw new Error(`Unexpected expiry request ${path}`);
+      }),
+    );
+    render(
+      <BookingLoadingProvider>
+        <ProtectedConfirmation
+          attemptId={first}
+          checkoutMode="live"
+          onAwaitingExpiry={awaiting}
+        />
+      </BookingLoadingProvider>,
+    );
+    await act(async () => {});
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+    expect(awaiting).not.toHaveBeenCalled();
+    expect(
+      document.querySelector(".booking-flow-overlay .page-loading"),
+    ).not.toBeNull();
+    expect(reads).toEqual([started]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(reads).toEqual([started, started + 11500]);
+    if (outcome === "pending")
+      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+    else expect(awaiting).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(9000);
+    });
+    if (outcome === "stalled")
+      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+    if (outcome === "paid")
+      expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    cleanup();
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.useRealTimers();
+  }
+});

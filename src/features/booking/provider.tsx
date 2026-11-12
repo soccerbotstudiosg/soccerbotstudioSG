@@ -7,6 +7,7 @@ import {
 } from "@/services/identity";
 import {
   CONFLICT_NOTICE,
+  ACTIVE_CHECKOUT_NOTICE,
   BOOKING_NOT_CREATED,
   PAYMENT_WINDOW_ENDED,
   SESSION_UNAVAILABLE,
@@ -829,7 +830,12 @@ export function BookingProvider({
       originalId: string | null = latest.current.attempt?.id ?? null,
       parentSignal?: AbortSignal,
       provenAffected?: BookingDraft["slots"],
+      reason?: PendingConflict["reason"],
     ): Promise<boolean> => {
+      const notice =
+        reason === "checkout_already_active"
+          ? ACTIVE_CHECKOUT_NOTICE
+          : CONFLICT_NOTICE;
       if (parentSignal?.aborted) return Promise.resolve(false);
       /** Withdraw this view's rejection authority without releasing the retained attempt. */
       function observeCancellation(
@@ -858,6 +864,7 @@ export function BookingProvider({
         draft,
         indexed,
         provenAffected,
+        reason,
         identityService.current(),
       ]);
       if (
@@ -875,6 +882,7 @@ export function BookingProvider({
         rejectionRead.current = controller;
         const pending: PendingConflict = {
           attemptId: originalId,
+          ...(reason ? { reason } : {}),
           draft,
           ...(indexed
             ? {
@@ -913,7 +921,7 @@ export function BookingProvider({
           !action.calendarRecovery || noticeShownOnCalendar.current;
         const noticeGeneration = showRecoveryNotice
           ? setSelectionNotice(
-              CONFLICT_NOTICE,
+              notice,
               provenAffected ?? (indexed ? [indexed] : []),
             )
           : noticeRevision.current;
@@ -1005,7 +1013,7 @@ export function BookingProvider({
         });
         if (service.mode === "live") saveLiveDraft(latest.current.draft, false);
         if (showRecoveryNotice && noticeRevision.current === noticeGeneration)
-          setSelectionNotice(CONFLICT_NOTICE, affected);
+          setSelectionNotice(notice, affected);
         rejectionRead.current = null;
         completedConflict.current = originalId;
         savePendingConflict(null);
@@ -1185,7 +1193,14 @@ export function BookingProvider({
       restoredAttempt: StoredBooking["attempt"] = null,
     ) => {
       if (pending.attemptId === null)
-        return returnRejectedSelection(pending.draft, undefined, null);
+        return returnRejectedSelection(
+          pending.draft,
+          undefined,
+          null,
+          parent,
+          undefined,
+          pending.reason,
+        );
       const controller = new AbortController();
       rejectionRead.current?.abort();
       rejectionRead.current = controller;
@@ -1948,10 +1963,18 @@ export function BookingProvider({
         }
         if (
           error instanceof BookingServiceError &&
-          error.code === "checkout_window_blocked"
+          (error.code === "checkout_window_blocked" ||
+            error.code === "checkout_already_active")
         ) {
           // Server rejection establishes that this request dispatched no booking.
-          await returnRejectedSelection(current.draft);
+          await returnRejectedSelection(
+            current.draft,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            error.code === "checkout_already_active" ? error.code : undefined,
+          );
           return false;
         }
         // A lost write response is not permission to create another booking.

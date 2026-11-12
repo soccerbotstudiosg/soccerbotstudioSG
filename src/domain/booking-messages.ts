@@ -18,3 +18,6 @@ export const PAYMENT_WINDOW_ENDED =
 
 export const BOOKING_NOT_CREATED =
   "Nothing was booked or charged. Your details are saved; please choose your sessions again.";
+
+export const ACTIVE_CHECKOUT_NOTICE =
+  "You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.";

@@ -68,6 +68,7 @@ export function useConfirmationChecking(
     view: View;
     paymentReceived: boolean;
     responseEvidence?: object;
+    responseCheckedAtMs?: number;
     customerConfirmation?: import("@/services/contracts").CheckoutContext["customerConfirmation"];
     expired?: boolean;
     creationResolution?: CreationResolution;
@@ -115,6 +116,7 @@ export function useConfirmationChecking(
           view,
           paymentReceived,
           responseEvidence,
+          responseCheckedAtMs,
           customerConfirmation,
           expired,
           selectionRejection,
@@ -126,6 +128,7 @@ export function useConfirmationChecking(
     let terminal = false;
     let paymentReceived = false;
     let responseEvidence: object | undefined;
+    let responseCheckedAtMs: number | undefined;
     let customerConfirmation: import("@/services/contracts").CheckoutContext["customerConfirmation"];
     let expired = false;
     let creationResolution: CreationResolution | undefined;
@@ -225,6 +228,7 @@ export function useConfirmationChecking(
         busy = false;
         return;
       }
+      const checkedAtMs = now();
       const requestController = new AbortController();
       controller = requestController;
       show(recheck ? "unresolved" : displayedView);
@@ -262,6 +266,7 @@ export function useConfirmationChecking(
           budget.holdChecked = holdExpiresAtMs;
         save(attemptId, budget);
         responseEvidence = response;
+        responseCheckedAtMs = checkedAtMs;
         customerConfirmation =
           "customerConfirmation" in response
             ? response.customerConfirmation
@@ -390,6 +395,10 @@ export function useConfirmationChecking(
     clock,
   ]);
   return {
+    responseCheckedAtMs:
+      result?.id === attemptId && result.revision === sessionRevision
+        ? result.responseCheckedAtMs
+        : undefined,
     creationResolution:
       result?.id === attemptId && result.revision === sessionRevision
         ? result.creationResolution

@@ -29,24 +29,31 @@ function BotProof({
   purpose,
   label,
   unavailable,
+  onPendingChange,
 }: {
   onToken: (token: string) => void;
   purpose: "verify-email" | "create-checkout";
   label: string;
   unavailable: string;
+  onPendingChange?: (pending: boolean) => void;
 }) {
   const container = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [interactive, setInteractive] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
   const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  useEffect(() => {
+    onPendingChange?.(!!sitekey && !failed && !interactive && !hasToken);
+  }, [sitekey, failed, interactive, hasToken, onPendingChange]);
   useEffect(() => {
     const api = window.turnstile;
     if (!ready || !sitekey || !api || !container.current) return;
     let active = true;
     const token = (value: string) => {
       if (active) {
+        setHasToken(!!value);
         if (value) {
           setFailed(false);
           setInteractive(false);
@@ -134,12 +141,15 @@ export function EmailBotProof({
 /** Prepare checkout proof on Review without challenging payment continuation. */
 export function CheckoutBotProof({
   onToken,
+  onPendingChange,
 }: {
   onToken: (token: string) => void;
+  onPendingChange?: (pending: boolean) => void;
 }) {
   return (
     <BotProof
       onToken={onToken}
+      onPendingChange={onPendingChange}
       purpose="create-checkout"
       label="Checkout security check"
       unavailable="Security check unavailable. Please refresh this page and try again."

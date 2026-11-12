@@ -728,30 +728,43 @@ export function TimeStep({
                   const available = offers.some((offer) => offer.available);
                   const key = slotKey(slot);
                   const elapsed = isElapsed(slot, now);
+                  const disabled =
+                    (!available ||
+                      elapsed ||
+                      draft.slots.length >= MAX_BOOKING_SESSIONS) &&
+                    !selected;
+                  const toggle = () => {
+                    if (disabled) return;
+                    if (selected) {
+                      update({
+                        slots: draft.slots.filter(
+                          (item) => slotKey(item) !== key,
+                        ),
+                      });
+                      setChoosing(null);
+                    } else if (!isElapsed(slot) && available) {
+                      setChoosing(choosing === key ? null : key);
+                    }
+                  };
                   return (
-                    <div className="time-choice" key={key}>
+                    <div
+                      className="time-choice"
+                      key={key}
+                      onClick={(event) => {
+                        if (
+                          !(event.target instanceof Element) ||
+                          event.target.closest("button, select")
+                        )
+                          return;
+                        toggle();
+                      }}
+                    >
                       <button
                         className={`time${selected ? " selected" : ""}`}
                         aria-pressed={!!selected}
                         aria-expanded={!selected && choosing === key}
-                        disabled={
-                          (!available ||
-                            elapsed ||
-                            draft.slots.length >= MAX_BOOKING_SESSIONS) &&
-                          !selected
-                        }
-                        onClick={() => {
-                          if (selected) {
-                            update({
-                              slots: draft.slots.filter(
-                                (item) => slotKey(item) !== key,
-                              ),
-                            });
-                            setChoosing(null);
-                          } else if (!isElapsed(slot) && available) {
-                            setChoosing(choosing === key ? null : key);
-                          }
-                        }}
+                        disabled={disabled}
+                        onClick={toggle}
                       >
                         <span className="time-details">
                           <span className="time-range">
@@ -788,7 +801,7 @@ export function TimeStep({
                         <Icon name={selected ? "check" : "plus"} />
                       </button>
                       {!selected && choosing === key && (
-                        <label className="trainer-choice">
+                        <div className="trainer-choice">
                           <span>Trainer</span>
                           <select
                             aria-label={`Trainer for ${slot.date} at ${slot.start}`}
@@ -820,7 +833,7 @@ export function TimeStep({
                               </option>
                             ))}
                           </select>
-                        </label>
+                        </div>
                       )}
                     </div>
                   );
