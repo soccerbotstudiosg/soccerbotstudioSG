@@ -1578,5 +1578,33 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "active checkout rejection keeps its own notice instead of an availability warning"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "contact methods reject inherited properties while accepting every supported option"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "contact writes trim outer whitespace and reject embedded controls without restricting international names"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "email validation shares the 254 character boundary and preserves distinct aliases"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "checkout request validation rejects invalid contacts before accepting a booking selection"
+  },
+  {
+    "file": "src/features/booking/details-step.test.tsx",
+    "title": "invalid saved contacts remain editable in booking details and contact management"
+  },
+  {
+    "file": "src/features/booking/phone-input.test.tsx",
+    "title": "phone input blocks invalid Singapore edits and retains a correctable existing number"
+  },
+  {
+    "file": "src/features/booking/phone-input.test.tsx",
+    "title": "phone country search supports keyboard selection and full international paste"
   }
 ]

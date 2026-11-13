@@ -11,7 +11,11 @@ import {
   VerificationRequestLimitedError,
 } from "./contracts";
 import { z } from "zod";
-import { blankContact } from "@/domain/contact";
+import {
+  blankContact,
+  emailSchema,
+  contactProfileInputSchema,
+} from "@/domain/contact";
 import type { CustomerIdentityService, VerifiedIdentity } from "./contracts";
 
 class IdentityReverificationRequired extends CustomerMessageError {}
@@ -309,7 +313,7 @@ export function createLiveIdentityService(): CustomerIdentityService {
       await identityRequest("/api/access", "POST", signal);
     },
     challenge: async (email, signal, botToken) => {
-      const normalized = z.email().parse(email.trim().toLowerCase());
+      const normalized = emailSchema.parse(email);
       if (!botToken || botToken.length > 2048)
         throw new CustomerMessageError(EMAIL_SECURITY_CHECK_REQUIRED);
       const own = ++generation;
@@ -379,22 +383,23 @@ export function createLiveIdentityService(): CustomerIdentityService {
         : null;
     },
     saveProfile: async (contact, signal) => {
+      const input = contactProfileInputSchema.parse({
+        email: contact.email,
+        name: contact.name,
+        phone: contact.phone,
+      });
       if (
         !current ||
         current.remember !== true ||
         current.expiresAt <= Date.now() ||
-        current.email !== contact.email
+        current.email !== input.email
       )
         throw unavailable();
       const own = generation;
       let value;
       try {
         value = savedSchema.parse(
-          await identityRequest("/api/identity/contact", "POST", signal, {
-            email: contact.email,
-            name: contact.name,
-            phone: contact.phone,
-          }),
+          await identityRequest("/api/identity/contact", "POST", signal, input),
         );
       } catch (error) {
         if (error instanceof ProfileAccessRevokedError && own === generation) {
@@ -408,8 +413,8 @@ export function createLiveIdentityService(): CustomerIdentityService {
         own !== generation ||
         !current ||
         current.expiresAt <= Date.now() ||
-        current.email !== contact.email ||
-        value.email !== contact.email
+        current.email !== input.email ||
+        value.email !== input.email
       )
         throw unavailable();
     },

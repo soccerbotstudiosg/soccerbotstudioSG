@@ -9,7 +9,7 @@ import {
   clearRememberedCookie,
   rememberedConsentSql,
 } from "./remembered-identity";
-const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
+import { emailSchema } from "../src/domain/contact";
 const challengeInput = z.strictObject({
   email: emailSchema,
   botToken: z.string().min(1).max(2048),

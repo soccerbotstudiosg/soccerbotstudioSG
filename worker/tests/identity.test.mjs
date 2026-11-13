@@ -1234,6 +1234,23 @@ test("website contact requires verified identity and a guessed email cannot read
       .result,
     { email, saved: true },
   );
+  for (const patch of [
+    { name: "Test\nCustomer" },
+    { phone: "8123\t4567" },
+    { email: "a..b@example.com" },
+  ]) {
+    const rejected = await call(cookie, {
+      action: "contact-save",
+      now: Date.now(),
+      contact: { ...contact, ...patch },
+    });
+    assert.equal(rejected.error, "invalid_contact");
+    assert.deepEqual(
+      (await call(cookie, { action: "contact-read", now: Date.now() })).result
+        .contact,
+      { name: contact.name, phone: "+6581234567" },
+    );
+  }
   const foreign = await guest(),
     foreignChallenge = await challenge(foreign, {
       source: crypto.randomUUID(),
@@ -1250,8 +1267,25 @@ test("website contact requires verified identity and a guessed email cannot read
   );
   assert.deepEqual(
     (await call(cookie, { action: "contact-read", now: Date.now() })).result,
-    { email, contact: { name: contact.name, phone: contact.phone } },
+    { email, contact: { name: contact.name, phone: "+6581234567" } },
   );
+  for (const phone of ["+4412345", "+441234567890123"]) {
+    assert.deepEqual(
+      (
+        await call(cookie, {
+          action: "contact-save",
+          now: Date.now(),
+          contact: { ...contact, phone },
+        })
+      ).result,
+      { email, saved: true },
+    );
+    assert.equal(
+      (await call(cookie, { action: "contact-read", now: Date.now() })).result
+        .contact.phone,
+      phone,
+    );
+  }
 });
 test("website contact shared email uses latest explicit save without changing retained attempts or identity expiry", async () => {
   const first = await guest(),

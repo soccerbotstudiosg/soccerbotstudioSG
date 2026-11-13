@@ -13,7 +13,7 @@ import {
   HOLD_WINDOW_MS,
 } from "../src/domain/booking-policy";
 import type { Access } from "./access";
-import { contactSchema, contactErrors } from "../src/domain/contact";
+import { journalContactSchema } from "../src/domain/contact";
 import { z } from "zod";
 import { ApiError, digest } from "./policy";
 // Internal server-approved intent only. No HTTP endpoint accepts this envelope.
@@ -27,16 +27,7 @@ export const intentSchema = z
     customerMode: z.literal("booking-contact").optional(),
     // Optional only for compatibility with previously journalled attempts.
     // New native creation requires the submitted snapshot; it is not identity proof.
-    contact: contactSchema
-      .strict()
-      .refine(
-        (value) =>
-          Object.keys(contactErrors(value)).length === 0 &&
-          Object.values(value).every(
-            (text) => text === text.trim() && !/[\x00-\x1f\x7f]/.test(text),
-          ),
-      )
-      .optional(),
+    contact: journalContactSchema.optional(),
     currency: z.literal("SGD"),
     totalMinor: z.number().int().nonnegative().safe(),
     taxMinor: z.number().int().nonnegative().safe(),

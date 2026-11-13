@@ -27,6 +27,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 | eslint                      | 9.39.5            |
 | eslint-config-next          | 16.4.5            |
 | jsdom                       | 30.1.1            |
+| libphonenumber-js           | 1.13.16           |
 | miniflare                   | 5.20261023.0-beta |
 | next                        | 16.4.5            |
 | postcss                     | 8.5.32            |
@@ -45,7 +46,7 @@ Versions configured on this branch, generated from the manifests and lockfile. T
 Includes transitive dependencies and optional platform packages. A locked package is not necessarily installed on every platform or included in the deployed application. Paths distinguish multiple versions of the same package.
 
 <details>
-<summary>All 603 locked package entries</summary>
+<summary>All 604 locked package entries</summary>
 
 | Lockfile path                                                                     | Version           | Development | Optional |
 | --------------------------------------------------------------------------------- | ----------------- | ----------- | -------- |
@@ -480,6 +481,7 @@ Includes transitive dependencies and optional platform packages. A locked packag
 | node_modules/language-subtag-registry                                             | 0.3.23            | yes         | no       |
 | node_modules/language-tags                                                        | 1.0.9             | yes         | no       |
 | node_modules/levn                                                                 | 0.4.1             | yes         | no       |
+| node_modules/libphonenumber-js                                                    | 1.13.16           | no          | no       |
 | node_modules/lightningcss                                                         | 1.33.0            | yes         | no       |
 | node_modules/lightningcss-android-arm64                                           | 1.33.0            | yes         | yes      |
 | node_modules/lightningcss-darwin-arm64                                            | 1.33.0            | yes         | yes      |

@@ -362,7 +362,7 @@ test("native preparation binds reviewed contact and payment stays under protecte
     botToken: "synthetic-prepare-proof",
   });
   const sent = JSON.parse(String(fetch.mock.calls[0][1]?.body));
-  expect(sent.contact).toEqual(data.contact);
+  expect(sent.contact).toEqual({ ...data.contact, phone: "+6581234567" });
   expect(
     new Headers(fetch.mock.calls[0][1]?.headers).get("X-Booking-Bot-Proof"),
   ).toBe("synthetic-prepare-proof");
@@ -472,7 +472,7 @@ test("single holding request retains its local identity before dispatch and neve
     key: pending.id,
     holding: true,
     accepted: false,
-    contact: data.contact,
+    contact: { ...data.contact, phone: "+6581234567" },
   });
   response.resolve(
     Response.json({

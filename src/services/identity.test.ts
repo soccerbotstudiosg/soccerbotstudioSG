@@ -208,7 +208,7 @@ it("website profile is loaded only for the current identity and saves only expli
   expect(JSON.parse(request.mock.calls[3][1].body)).toEqual({
     email: identity.email,
     name: "Synthetic Contact",
-    phone: "+65 8123 4567",
+    phone: "+6581234567",
   });
 });
 it("website profile discards foreign and delayed post-signout responses", async () => {

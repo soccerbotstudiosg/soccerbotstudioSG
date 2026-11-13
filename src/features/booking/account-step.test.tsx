@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { Suspense, use, useState } from "react";
 import { BookingLoadingProvider } from "./booking-loading";
 import userEvent from "@testing-library/user-event";
@@ -37,6 +37,16 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   const user = userEvent.setup();
   render(<AccountStep />);
   await user.click(screen.getByRole("button", { name: "Continue with email" }));
+  expect(screen.getByLabelText("Email address")).toHaveAttribute(
+    "maxlength",
+    "254",
+  );
+  fireEvent.change(screen.getByLabelText("Email address"), {
+    target: { value: "a..b@example.com" },
+  });
+  fireEvent.blur(screen.getByLabelText("Email address"));
+  expect(screen.getByText("Enter a valid email address.")).toBeVisible();
+  await user.clear(screen.getByLabelText("Email address"));
   await user.type(screen.getByLabelText("Email address"), "demo@example.com");
   await user.click(
     screen.getByRole("button", { name: "Get Verification Code" }),

@@ -1,4 +1,5 @@
 "use client";
+import { EMAIL_MAX_LENGTH } from "@/domain/contact";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/icon";
@@ -16,6 +17,17 @@ const blank: Enquiry = {
   date: "",
   time: "",
   message: "",
+};
+const hints: Record<keyof Enquiry, string> = {
+  name: "Your name.",
+  email: "abc@gmail.com",
+  phone: "Include your country code, for example +65 81234567.",
+  organisation: "Optional—your academy, school or organisation.",
+  purpose: "Choose the option that best describes your enquiry.",
+  guests: "Optional—your estimated group size, from 1 to 999.",
+  date: "Optional—your preferred date, subject to availability.",
+  time: "Optional—your preferred time in Singapore time (SGT).",
+  message: "Tell us what you need. Maximum 2,000 characters.",
 };
 // The exported HTML must not accept input before React can retain changes.
 const subscribeToHydration = () => () => {};
@@ -51,15 +63,26 @@ export function EnquiryPage() {
       </label>
       <input
         id={`enquiry-${key}`}
+        placeholder={
+          type === "date" || type === "time" ? undefined : hints[key]
+        }
+        aria-describedby={
+          type === "date" || type === "time" ? `enquiry-${key}-hint` : undefined
+        }
         className="field-control"
         value={value[key]}
         type={type}
         required={required}
         min={type === "date" ? todaySG() : type === "number" ? 1 : undefined}
         max={type === "number" ? 999 : undefined}
-        maxLength={key === "email" ? 120 : 160}
+        maxLength={key === "email" ? EMAIL_MAX_LENGTH : 160}
         onChange={(e) => change(key, e.target.value)}
       />
+      {(type === "date" || type === "time") && (
+        <p className="field-hint" id={`enquiry-${key}-hint`}>
+          {hints[key]}
+        </p>
+      )}
     </div>
   );
   return (
@@ -138,6 +161,7 @@ export function EnquiryPage() {
                   </label>
                   <select
                     id="enquiry-purpose"
+                    aria-describedby="enquiry-purpose-hint"
                     className="field-control"
                     required
                     value={value.purpose}
@@ -148,6 +172,9 @@ export function EnquiryPage() {
                       <option key={type}>{type}</option>
                     ))}
                   </select>
+                  <p className="field-hint" id="enquiry-purpose-hint">
+                    {hints.purpose}
+                  </p>
                 </div>
                 {field("guests", "Number of guests", "number")}
                 {field("date", "Preferred date", "date")}
@@ -158,6 +185,7 @@ export function EnquiryPage() {
                   </label>
                   <textarea
                     id="enquiry-message"
+                    placeholder={hints.message}
                     rows={5}
                     className="field-control"
                     required

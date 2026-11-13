@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  cleanup,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { BookingProvider, useBooking } from "./provider";
@@ -41,7 +48,7 @@ test("details contains only the five contact fields and validates them before re
   for (const label of [/Full name/, /Email address/, /Mobile number/])
     expect(screen.getByLabelText(label)).toHaveAttribute(
       "aria-invalid",
-      "true",
+      "false",
     );
   expect(screen.getAllByRole("textbox")).toHaveLength(4);
   expect(screen.getAllByRole("combobox")).toHaveLength(1);
@@ -49,7 +56,11 @@ test("details contains only the five contact fields and validates them before re
   for (const [label, value, message] of [
     [/Full name/, " ", "Enter the booking contact’s full name."],
     [/Email address/, "name@domain", "Enter a valid email address."],
-    [/Mobile number/, "abc", "Enter a valid mobile number."],
+    [
+      /Mobile number/,
+      "abc",
+      "Remove invalid characters or extra digits from the mobile number.",
+    ],
   ] as const) {
     const input = screen.getByLabelText(label);
     fireEvent.change(input, { target: { value } });
@@ -335,4 +346,73 @@ test("verified opt-out details submit without saving a contact profile", async (
   await user.click(screen.getByRole("button", { name: "Review Booking" }));
   expect(saveProfile).not.toHaveBeenCalled();
   expect(mocks.push).toHaveBeenCalledExactlyOnceWith("/book/review/");
+});
+
+test("invalid saved contacts remain editable in booking details and contact management", async () => {
+  for (const profileOnly of [false, true]) {
+    const saveProfile = vi
+      .fn<CustomerIdentityService["saveProfile"]>()
+      .mockResolvedValue(undefined);
+    const identity = {
+      ...demoCustomerIdentity,
+      current: () => ({
+        email: "saved@example.com",
+        expiresAt: Date.now() + 600000,
+        remember: true,
+      }),
+      saveProfile,
+    };
+    function SavedEditor() {
+      const { update } = useBooking();
+      const [open, setOpen] = useState(false);
+      return open ? (
+        <DetailsStep profileOnly={profileOnly} />
+      ) : (
+        <button
+          onClick={() => {
+            update({
+              mode: "member",
+              accountEmail: "saved@example.com",
+              contact: {
+                name: "Test\tCustomer",
+                email: "saved@example.com",
+                phone: "81234567",
+                contactMethod: "email",
+                academy: "",
+              },
+            });
+            setOpen(true);
+          }}
+        >
+          Open saved contact
+        </button>
+      );
+    }
+    render(
+      <BookingProvider identityService={identity}>
+        <SavedEditor />
+      </BookingProvider>,
+    );
+    fireEvent.click(screen.getByText("Open saved contact"));
+    const name = screen.getByLabelText(/Full name/);
+    expect(name).not.toBeDisabled();
+    expect(name).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(/Email address/)).toHaveAttribute(
+      "maxlength",
+      "254",
+    );
+    fireEvent.submit(document.getElementById("details-form")!);
+    expect(name).toHaveFocus();
+    expect(saveProfile).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+    fireEvent.change(name, { target: { value: "J" } });
+    expect(name).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(name, { target: { value: "José O’Neill 王" } });
+    expect(name).toHaveAttribute("aria-invalid", "false");
+    expect(
+      screen.queryByText("Enter the booking contact’s full name."),
+    ).toBeNull();
+    cleanup();
+    sessionStorage.clear();
+  }
 });

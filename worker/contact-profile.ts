@@ -1,20 +1,8 @@
-import { z } from "zod";
+import { contactProfileInputSchema } from "../src/domain/contact";
 import { authenticate } from "./access";
 import { ApiError, liveCustomerAccess } from "./policy";
 import { rememberedConsentSql } from "./remembered-identity";
 
-const inputSchema = z.strictObject({
-  email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
-  name: z.string().trim().min(2).max(80),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+?[\d\s()-]{8,24}$/)
-    .refine((value) => {
-      const digits = value.replace(/\D/g, "").length;
-      return digits >= 8 && digits <= 15;
-    }),
-});
 // Browser email is a correlation constraint, never the source of authority.
 // Each statement rechecks both credentials at the actual read/write boundary.
 const authority = `v.access_hash=? AND v.owner_id=? AND v.revoked_ms IS NULL
@@ -77,7 +65,7 @@ export async function saveContactProfile(
   raw: unknown,
   now: number,
 ) {
-  const input = inputSchema.safeParse(raw);
+  const input = contactProfileInputSchema.safeParse(raw);
   if (!input.success) throw new ApiError(400, "invalid_contact");
   const access = await authenticate(request, env, now);
   const result = await env.STATE.prepare(

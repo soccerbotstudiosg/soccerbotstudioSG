@@ -1128,6 +1128,21 @@ test("checkout reuses complete creation evidence for one HitPay request without 
         body: JSON.stringify({ ...c.input, accepted }),
       });
     assert.equal((await send(false)).status, 400);
+    const originalContact = c.input.contact;
+    const callsBeforeInvalid = m.calls.length;
+    for (const patch of [
+      { contactMethod: "constructor" },
+      { phone: "8123\n4567" },
+      { name: "Test\tCustomer" },
+      { email: "a..b@example.com" },
+    ]) {
+      c.input.contact = { ...originalContact, ...patch };
+      assert.deepEqual(await checkoutResult(send(true), 400), {
+        error: "invalid_booking_selection",
+      });
+      assert.equal(m.calls.length, callsBeforeInvalid);
+    }
+    c.input.contact = originalContact;
     assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 0);
     const response = await send(true);
     assert.equal(response.status, 200, await response.clone().text());
