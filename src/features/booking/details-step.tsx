@@ -244,11 +244,11 @@ export function DetailsStep({
     setErrors((current) => ({ ...current, [key]: next[key] }));
   }
   const hints: Record<keyof ContactDetails, string> = {
-    name: "Your name.",
+    name: "John Doe",
     email: draft.mode === "member" ? "" : "abc@gmail.com",
     phone: "Select your country code and enter your mobile number.",
-    contactMethod: "Choose how the studio should contact you if needed.",
-    academy: "Optional—your academy, school or organisation.",
+    contactMethod: "",
+    academy: "International Sports School",
   };
   /** Render a contact input with its validation feedback. */
   function field(
@@ -284,7 +284,12 @@ export function DetailsStep({
             aria-describedby={
               [
                 errors[key] ? `${key}-error` : "",
-                key === "email" && needsEmailCheck ? "email-check-help" : "",
+                key === "email" &&
+                needsEmailCheck &&
+                !currentErrors.email &&
+                !errors.email
+                  ? "email-check-help"
+                  : "",
               ]
                 .filter(Boolean)
                 .join(" ") || undefined
@@ -319,17 +324,20 @@ export function DetailsStep({
             </button>
           )}
         </div>
-        {key === "email" && needsEmailCheck && (
-          <p
-            className="email-check-help"
-            id="email-check-help"
-            aria-live="polite"
-          >
-            {emailChecked
-              ? "You’ve checked your email address."
-              : "Please double-check your email address, then confirm by selecting the exclamation mark."}
-          </p>
-        )}
+        {key === "email" &&
+          needsEmailCheck &&
+          !currentErrors.email &&
+          !errors.email && (
+            <p
+              className="email-check-help"
+              id="email-check-help"
+              aria-live="polite"
+            >
+              {emailChecked
+                ? "You’ve checked your email address."
+                : "Please double-check your email address, then confirm by selecting the exclamation mark."}
+            </p>
+          )}
         {errors[key] && (
           <p className="field-error" id={`${key}-error`}>
             {errors[key]}
@@ -356,7 +364,7 @@ export function DetailsStep({
           value={c[key]}
           required
           aria-invalid={!!errors[key]}
-          aria-describedby={`${key}-hint${errors[key] ? ` ${key}-error` : ""}`}
+          aria-describedby={errors[key] ? `${key}-error` : undefined}
           onChange={(e) => change(key, e.target.value)}
           onBlur={() => validateField(key)}
         >
@@ -366,9 +374,6 @@ export function DetailsStep({
             </option>
           ))}
         </select>
-        <p className="field-hint" id={`${key}-hint`}>
-          {hints[key]}
-        </p>
         {errors[key] && (
           <p className="field-error" id={`${key}-error`}>
             {errors[key]}

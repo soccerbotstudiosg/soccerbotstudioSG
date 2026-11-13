@@ -1,3 +1,4 @@
+import type { Enquiry } from "@/domain/enquiry";
 import { BOOKING_SIGNED_OUT } from "@/domain/booking-messages";
 import type { z } from "zod";
 import type {
@@ -125,17 +126,7 @@ export class BookingServiceError extends CustomerMessageError {
 export interface EnquiryService {
   submit(values: Enquiry): Promise<{ email: string; delivered: false }>;
 }
-export type Enquiry = {
-  name: string;
-  email: string;
-  phone: string;
-  organisation: string;
-  purpose: string;
-  guests: string;
-  date: string;
-  time: string;
-  message: string;
-};
+export type { Enquiry } from "@/domain/enquiry";
 export type VerifiedIdentity = {
   email: string;
   expiresAt: number;

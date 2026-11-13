@@ -43,8 +43,12 @@ test("phone input blocks invalid Singapore edits and retains a correctable exist
   expect(screen.getByTestId("stored")).toHaveTextContent("+6581234567");
   fireEvent.change(input, { target: { value: "812345678" } });
   expect(input).toHaveValue("81234567");
+  expect(input).toHaveAttribute("aria-invalid", "false");
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   fireEvent.change(input, { target: { value: "8123x4567" } });
   expect(input).toHaveValue("81234567");
+  expect(input).toHaveAttribute("aria-invalid", "false");
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 test("phone country search supports keyboard selection and full international paste", () => {
   render(<Field />);
@@ -79,4 +83,23 @@ test("phone country search supports keyboard selection and full international pa
   );
   fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
   expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+test("phone input silently ignores rejected characters without changing valid international digits", () => {
+  render(<Field initial="+441234567890123" />);
+  const input = screen.getByLabelText(/Mobile number/);
+  for (const value of [
+    "12345678901234",
+    "1234567890123x",
+    "1234567890123!",
+    "1234567890123\n",
+  ]) {
+    fireEvent.change(input, { target: { value } });
+    expect(input).toHaveValue("1234567890123");
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByTestId("stored")).toHaveTextContent("+441234567890123");
+  }
+  fireEvent.change(input, { target: { value: "123456789012" } });
+  expect(input).toHaveValue("123456789012");
 });

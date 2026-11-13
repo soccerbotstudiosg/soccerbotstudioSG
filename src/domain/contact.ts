@@ -36,7 +36,14 @@ export const contactNameSchema = z
   .trim()
   .min(2)
   .max(80)
-  .refine(noControlCharacters);
+  .refine(noControlCharacters)
+  .regex(/^(?:\p{L}\p{M}*|\p{Nd}|[ ’'-])+$/u)
+  .refine((value) => /[\p{L}\p{Nd}]/u.test(value));
+export const organisationSchema = z
+  .string()
+  .trim()
+  .max(120)
+  .regex(/^(?:\p{L}\p{M}*|\p{Nd}|[ ’'&.,()/+\-])*$/u);
 export const contactPhoneSchema = z
   .string()
   .trim()
@@ -80,7 +87,7 @@ export function contactErrors(
     errors.contactMethod = "Select a contact method.";
   if (c.academy.length > 120)
     errors.academy = "Use no more than 120 characters.";
-  else if (!noControlCharacters(c.academy))
+  else if (!organisationSchema.safeParse(c.academy).success)
     errors.academy = "Remove invalid characters from the organisation name.";
   return errors;
 }

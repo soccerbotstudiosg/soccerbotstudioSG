@@ -1606,5 +1606,25 @@
   {
     "file": "src/features/booking/phone-input.test.tsx",
     "title": "phone country search supports keyboard selection and full international paste"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "name allowlist rejects decorative symbols at form and write boundaries"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "organisation validation permits business punctuation but rejects decorative and invisible characters"
+  },
+  {
+    "file": "src/features/booking/phone-input.test.tsx",
+    "title": "phone input silently ignores rejected characters without changing valid international digits"
+  },
+  {
+    "file": "src/features/enquiry/enquiry-page.test.tsx",
+    "title": "enquiry validates edits immediately and blocks invalid service submission"
+  },
+  {
+    "file": "src/services/enquiry.test.ts",
+    "title": "enquiry fields and submission share strict validation without rejecting ordinary prose"
   }
 ]

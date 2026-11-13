@@ -2,18 +2,18 @@
 
 ## Active outcome
 
-Consolidate contact validation, country-code phone entry and approved field placeholders on `fix/shared-contact-validation`, based on merged PR69/main `fd26544f0002b853bf722c4d21553aaa857358d1`. Owner authorizes implementation, staging and merge after checks; physical acceptance is explicitly deferred to a full regression pass later.
+Consolidate immediate field validation and quieter form feedback on `fix/strict-field-feedback`, based on merged PR70/main `3dd68cfbea8ce2cb7305b7904d65f449b13a8ac5`. Owner authorizes staging and merge after exact-head CI and actual staging health.
 
 ## Current slice
 
-- Share contact validation across forms, services and Worker write boundaries: email maximum254, embedded-control rejection and explicit contact-method membership. Preserve historical booking recovery and editable invalid saved profiles.
-- Add a searchable country-code phone selector: Singapore eight digits starting8/9, permissive overseas numbers (recognized calling code, digits, international7–15-digit range), canonical new phone writes and immediate feedback. Add `libphonenumber-js`1.13.16 with min metadata and official mobile examples.
-- Use approved regular grey placeholders and retain existing instructions, including guest email acknowledgement. Verified email remains read-only without an editable-field hint.
-- Update affected documentation and tests. No new network checks, provider changes or live transactions.
+- Tighten shared name and organisation character rules; keep international letters/accents, selected punctuation and existing API validation/recovery boundaries.
+- Ignore rejected phone edits silently. Keep incomplete accepted-value feedback and existing Singapore/international rules.
+- Use John Doe / International Sports School placeholders, remove redundant contact-method guidance and show guest email error or valid-address guidance exclusively after editing.
+- Align preview enquiry live/submission checks across all editable fields. No live enquiry route or notification delivery added.
 
 ## Evidence and delivery
 
-PR69 merged after CI and staging passed (receipts retained in its PR and Journey). All345 local domain/component/service tests and29 isolated Worker tests pass. Frontend/Worker types, lint and source integrity pass. Initial canonical-phone expectation failures were corrected; a five-second component-test timeout occurred while full tests competed with Worker/type/lint processes, with focused tests passing. The isolated complete suite passed with the original timeout. Preserve both receipts; no retries or timeout relaxation were added. PR70 initial CI43357430023 found a cross-realm options-object incompatibility in the injected-clock tooling harness. The initial runtime-supported three-argument fix passed all188 tooling tests, but CI43358003672 correctly rejected its unsupported TypeScript signature. The public two-argument country form retains the existing whole-input numeric/separator whitelist; explicit type and clock checks are required before republishing. Four provider HTTP fixtures still used the newly invalid00000000 number; they now use a valid Singapore number and all four original scenarios pass. Historical recovery fixtures retain their original values. CI43358735159 passed frontend, both backend browser shards, contracts and recovery; sustained testing found two new-preparation requests still inheriting the legacy00000000 fixture. The three request baselines now explicitly use a valid Singapore phone; all three focused native preparation/date-scope tests pass without changing historical evidence or assertions. The correction stays on PR70; final exact-head CI, staging health and merge remain pending. Record final receipts in the PR rather than status-only commits.
+All 350 domain/component/service tests and two isolated Worker regressions pass locally; frontend types and affected lint/source checks pass. Complete exact-head CI/staging before merge. PR70 was merged after its CI/staging passed; previous physical acceptance does not certify this candidate. Record final delivery receipts in this PR without status-only commits.
 
 ## Remaining targeted acceptance
 

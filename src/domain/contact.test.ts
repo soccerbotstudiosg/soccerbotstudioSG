@@ -155,6 +155,8 @@ test("checkout request validation rejects invalid contacts before accepting a bo
     { contactMethod: "constructor" },
     { phone: "8123\n4567" },
     { name: "Test\tCustomer" },
+    { name: "John ␤ Doe" },
+    { name: "⋆.𐙚 ̊" },
     { email: "a..b@example.com" },
   ])
     expect(
@@ -162,5 +164,77 @@ test("checkout request validation rejects invalid contacts before accepting a bo
         ...input,
         contact: { ...contact, ...patch },
       }).success,
+    ).toBe(false);
+});
+
+test("name allowlist rejects decorative symbols at form and write boundaries", () => {
+  for (const [names, accepted] of [
+    [
+      [
+        "John Doe",
+        "José O’Neill 王",
+        "Anne-Marie",
+        "O'Connor",
+        "Jose\u0301",
+        "李小明",
+        "राम कुमार",
+        "Customer 2",
+      ],
+      true,
+    ],
+    [
+      [
+        "John ␤ Doe",
+        "⋆.𐙚 ̊",
+        "John★",
+        "John😀",
+        "John_2",
+        "John@Doe",
+        "\u030aJohn",
+        "John \u030a",
+        "---",
+        "''",
+      ],
+      false,
+    ],
+  ] as const) {
+    for (const name of names) {
+      const changed = { ...contact, name };
+      expect(!contactErrors(changed).name, name).toBe(accepted);
+      expect(validatedContactSchema.safeParse(changed).success, name).toBe(
+        accepted,
+      );
+      expect(
+        contactProfileInputSchema.safeParse({
+          name,
+          email: contact.email,
+          phone: contact.phone,
+        }).success,
+        name,
+      ).toBe(accepted);
+    }
+  }
+});
+
+test("organisation validation permits business punctuation but rejects decorative and invisible characters", () => {
+  for (const academy of [
+    "",
+    "International Sports School",
+    "St. Mary's (SG) & Co",
+    "Sport/Art + School",
+    "学校",
+    "École",
+  ])
+    expect(
+      validatedContactSchema.safeParse({ ...contact, academy }).success,
+    ).toBe(true);
+  for (const academy of [
+    "School★",
+    "School\u200bName",
+    "School\tName",
+    "School😀",
+  ])
+    expect(
+      validatedContactSchema.safeParse({ ...contact, academy }).success,
     ).toBe(false);
 });

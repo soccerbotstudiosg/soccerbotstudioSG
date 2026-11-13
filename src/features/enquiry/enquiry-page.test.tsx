@@ -76,3 +76,27 @@ test("enquiry waits for hydration then preserves entered details through submiss
   expect(screen.getByLabelText("Full name", { exact: false })).toHaveValue("");
   expect(screen.getByRole("button", { name: "Send enquiry" })).toBeEnabled();
 });
+
+test("enquiry validates edits immediately and blocks invalid service submission", () => {
+  render(<EnquiryPage />);
+  const submit = vi.spyOn(services.enquiry, "submit");
+  const name = screen.getByLabelText("Full name", { exact: false });
+  expect(name).toHaveAttribute("aria-invalid", "false");
+  fireEvent.change(name, { target: { value: "John★" } });
+  expect(name).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getByText("Enter your full name.")).toBeVisible();
+  fireEvent.change(name, { target: { value: "John Doe" } });
+  expect(name).toHaveAttribute("aria-invalid", "false");
+  const organisation = screen.getByLabelText(/Academy, school/);
+  expect(organisation).toHaveAttribute(
+    "placeholder",
+    "International Sports School",
+  );
+  fireEvent.change(organisation, { target: { value: "School★" } });
+  expect(organisation).toHaveAttribute("aria-invalid", "true");
+  fireEvent.submit(
+    screen.getByRole("button", { name: "Send enquiry" }).closest("form")!,
+  );
+  expect(submit).not.toHaveBeenCalled();
+  submit.mockRestore();
+});
