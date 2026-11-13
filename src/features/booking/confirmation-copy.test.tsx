@@ -48,6 +48,15 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
   });
   expect(button.textContent).toBe("");
   expect(button.querySelector("svg rect")).not.toBeNull();
+  const details = screen.getByText("View Full Details");
+  expect(button.closest("summary")).toBeNull();
+  expect(button.closest(".confirmation-details-row")).toBe(
+    details.parentElement?.parentElement,
+  );
+  expect(screen.getByText("Paid").parentElement).toBe(
+    screen.getByRole("heading", { name: "Order Summary" }).parentElement,
+  );
+  expect(details.parentElement).not.toHaveAttribute("open");
   expect(
     button.compareDocumentPosition(screen.getByText("Paid")) &
       Node.DOCUMENT_POSITION_FOLLOWING,
@@ -56,6 +65,7 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
     fireEvent.click(button);
   });
   expect(screen.getByRole("status")).toHaveTextContent("Copied");
+  expect(details.parentElement).not.toHaveAttribute("open");
   const message = writeText.mock.calls[0][0];
   expect(message).toContain("Booking confirmed · Paid\n");
   expect(message).toContain(

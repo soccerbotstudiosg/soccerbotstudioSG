@@ -5,6 +5,7 @@ import { sitePath } from "@/content/site-path";
 import {
   completedPaymentReturn,
   isBookingDeparture,
+  isUnresolvedCheckout,
   mayRestoreLiveCheckout,
 } from "@/services/storage";
 import { useRouter } from "next/navigation";
@@ -63,6 +64,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
       rejectRecoveredSelection,
       resolveUncreatedBooking,
       resumePaymentStatus,
+      browseAfterChecking,
     } = useBooking(),
     router = useRouter();
   const [identity, setIdentity] = useState(() => identityService.current());
@@ -120,6 +122,10 @@ export function BookingPage({ step }: { step: BookingStep }) {
     (attempt?.verifying || attempt?.held)
       ? "review"
       : step;
+  const unresolvedCreation =
+    action.calendarRecovery &&
+    attempt &&
+    (action.unresolvedCheckout || isUnresolvedCheckout(attempt.id));
   const actual =
       profileAccessRevision > 0 && !draft.mode
         ? "account"
@@ -138,13 +144,9 @@ export function BookingPage({ step }: { step: BookingStep }) {
                   step === "payment"
                 ? "time"
                 : action.calendarRecovery && attempt
-                  ? [
-                      "account",
-                      "session",
-                      "time",
-                      "details",
-                      "review",
-                    ].includes(step)
+                  ? ["account", "session", "time"].includes(step) ||
+                    (!unresolvedCreation &&
+                      ["details", "review"].includes(step))
                     ? guardedStep(step, draft, null, now)
                     : "time"
                   : guardedStep(step, draft, attempt, now),
@@ -160,6 +162,9 @@ export function BookingPage({ step }: { step: BookingStep }) {
     mayRestoreLiveCheckout(attempt.id) &&
     !isBookingDeparture(attempt.id) &&
     completedPaymentReturn(attempt.id);
+  const returningFromUnresolvedCreation =
+    unresolvedCreation &&
+    ["details", "review", "payment", "confirmation"].includes(step);
   useEffect(() => {
     if (ready && returningToConfirmation && attempt) {
       router.replace(
@@ -168,6 +173,8 @@ export function BookingPage({ step }: { step: BookingStep }) {
       return;
     }
     if (!ready || actual === step) return;
+    if (returningFromUnresolvedCreation && attempt && !action.returnToCalendar)
+      browseAfterChecking(attempt.id, true);
     if (retainingReview) {
       // Review is already interactive. Commit its URL without remounting it
       // through the app-router loading boundary. Refresh still opens Review.
@@ -181,6 +188,9 @@ export function BookingPage({ step }: { step: BookingStep }) {
     retainingReview,
     returningToConfirmation,
     attempt,
+    returningFromUnresolvedCreation,
+    action.returnToCalendar,
+    browseAfterChecking,
   ]);
   useEffect(() => {
     if (ready && (actual === step || retainingReview)) visitBookingStep(actual);

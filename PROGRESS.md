@@ -2,24 +2,24 @@
 
 ## Active outcome
 
-Repair PR72 confirmation/recovery regressions against merged main5769f68d0b693547652a0bb90506ead354f3560e. Owner authorizes independent ultra-agent implementation review, two final UI/route audits before the first PR CI, then CI, staging and merge. No deployment rollback or provider mutation is authorized by the investigation itself.
+Repair the retest findings against merged PR73 (`ed89d568879cc7f37b775cc0ecd467c8559d29cf`): confirmation layout and navigation after an uncertain second checkout. Owner authorizes independent ultra-agent audits, two final audits before publication, CI, staging and merge. Enquiry changes remain deferred; no provider mutations or cleanup.
 
 ## Current slice
 
-- Ordinary refresh, unpaid HitPay return, conflict, active-checkout and successful late payment must never flash a dead-end/Pending page.
-- Before checkout, proven failure or exhausted uncertain creation returns to Calendar with the appropriate inline notice and preserved original financial identity when uncertain.
-- After payment, genuinely exhausted recovery uses the existing confirmation document: red help notice above details/Order Summary, Pending badge and truthful payment evidence; no standalone error page or oversized Pending heading.
-- Keep authenticated saved confirmation through fresh reads. Persist late-payment recovery under the original attempt without overriding deliberate departure.
-- Strengthen transition, deadline, reload, stale-read and no-duplicate-effect tests, including transient DOM assertions in CI browser coverage.
-- Confirmation copy is an icon at the section’s top right above Paid, with a three-second Copied popup and preserved badge sizing. Enquiry standardization is deferred; its files remain unchanged.
+- Align the confirmation copy icon with View Full Details at the top right; align the original-sized Paid badge with Order Summary and reduce the gap to its session content. Preserve the three-second Copied popup.
+- Prevent unresolved pre-checkout recovery from admitting the customer to an unusable Review screen. Keep its existing inline notice on Calendar, preserve the original attempt and duplicate-write protection, and test back/forward/direct navigation.
+- Before any checkout link exists, continue fresh background availability recovery after creation timeout and restore available sessions smoothly. Preserve the unknown financial attempt until authoritative resolution; existing-link expiry/payment recovery stays unchanged.
+- Distinguish the provider timeout from the UI defect. Do not release an unknown booking write without authoritative proof or add unwanted error pages.
 
 ## Evidence and delivery
 
-PR72 is merged. Both independent final route/UI audits passed on the repaired candidate before publication. All359 domain/component/service tests pass; source/policy/inventory, TypeScript, ESLint, formatting and whitespace checks pass. Three added regression groups retain all previous cases. Pre-fix/mutation checks prove the fresh-read guard, late-payment route, original lost-response budget and delayed safe-retry regressions detect their original defects. Browser CI now asserts actual Back/reload and transient DOM absence; browser/provider acceptance is not inferred from local simulation. Three current owner captures were inspected offline; the latest expiry and late-payment captures exceed the32MiB transfer limit and remain uninspected. Exact-head PR CI, staging and merge are the next delivery steps.
+PR73 passed all17 checks in verification43406913990; staging43408534524 deployed its exact head and passed health/settings. It merged as `ed89d568879cc7f37b775cc0ecd467c8559d29cf`. Current production Worker settings now confirm that source revision.
+
+Read-only D1 and Cloudflare logs confirm the second booking used a distinct attempt and its SimplyBook `book` call timed out at15000ms. Checkout handling took15462ms; no HitPay call started. The booking write remains genuinely uncertain without a returned provider reference. The large retest ZIP is intact but its HAR member is truncated; its recoverable first checkout succeeded in5.24seconds and it lacks the second creation request. The later small capture confirms the unresolved state and subsequent availability cooldown. Existing provider draft updates forcibly reset acceptance while navigation still admits Review, explaining the newly reported checkbox failure. The confirmation layout, compact Calendar help notice, creation-recovery navigation and earlier-step Calendar notice repairs are implemented. The owner selected the recommended policy: retain the unknown financial lock until authoritative resolution; implement only fresh-positive before-link slot display restoration, without a new physical checkout or automatic release. The display change is implemented and focused tests pass. All361 local tests across33 files pass; TypeScript, targeted ESLint and source/policy guards pass. The new regression fails on the original review-admission defect and passes with the narrow creation-recovery guard. The64 navigation/notice/copy cases and two final display/expiry cases pass. Both independent reviews found no remaining source defect; the display delta received incremental review. One unchanged saved-details test hit its5-second timeout during the first final suite with concurrent lint; the same case passed alone and the complete361-case suite then passed with no other heavy process. Its receipt is retained; no timeout or test assertion was weakened. Exact-head CI/staging/merge remain pending; no new PR published yet.
 
 ## Remaining targeted acceptance
 
-Normal confirmation refresh, unpaid native return/browser Back, delayed late payment, conflict/active checkout recovery, and deliberately unresolved fixtures are the affected checks. Preserve original attempts and enforce no duplicate writes. Existing four-hour cutoff physical acceptance remains outside this repair. The full physical suite is not marked accepted by source or simulated tests.
+Check confirmation copy/details alignment and compact Order Summary spacing on desktop/mobile. Exercise first paid confirmation followed by a second booking, normal successful Review consent, unresolved creation followed by Calendar/back/forward/Review attempts, and retained-attempt recovery with no duplicate writes. Browser execution belongs to owner/CI; source tests do not establish provider or physical acceptance. Existing four-hour cutoff acceptance remains outside this repair.
 
 ## Ordered work after this slice
 
@@ -42,4 +42,4 @@ The queue is recorded now, before the full documentation reconciliation. These a
 
 ## Next action
 
-Complete independent final audits and consolidated checks, publish one ready PR using LimYouSheng, verify exact-head CI and actual staging health, then perform the authorized merge. Keep the local reset note unpublished.
+Publish the consolidated reviewed candidate, require exact-head CI and successful staging health/settings, then merge under the owner’s instruction. Preserve the local reset note unpublished. Physical acceptance remains separate.

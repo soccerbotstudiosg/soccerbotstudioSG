@@ -4178,6 +4178,36 @@
   .booking-help p:not(:empty) {
     margin-top: 8px;
   }
+  .calendar-recovery-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 12px 16px;
+  }
+  .calendar-recovery-notice > p {
+    flex: 1 1 240px;
+  }
+  .calendar-recovery-notice > .booking-help {
+    display: contents;
+  }
+  .calendar-recovery-notice > .booking-help > .button {
+    min-height: 44px;
+    margin-left: auto;
+    padding: 8px 12px;
+  }
+  .calendar-recovery-notice > .booking-help > p {
+    flex: 0 0 100%;
+    margin: 0;
+    text-align: right;
+  }
+  .calendar-recovery-notice > .booking-help > p:empty {
+    position: absolute;
+  }
+  .calendar-recovery-notice > ul {
+    flex: 0 0 100%;
+    margin: 0;
+  }
   .confirmation-paid-actions {
     display: flex;
     flex-direction: column;
@@ -4304,6 +4334,20 @@
   }
   .confirmation-summary p {
     margin: 0;
+  }
+  .confirmation-details-row {
+    position: relative;
+  }
+  .confirmation-details-row > .confirmation-copy-control {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+  .confirmation-details-row.has-copy > .confirmation-full-details > summary {
+    padding-right: 56px;
+  }
+  .confirmation-card .review-head + .series-list > li:first-child {
+    padding-top: 0;
   }
   .confirmation-full-details {
     text-align: left;

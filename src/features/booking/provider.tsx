@@ -109,6 +109,7 @@ type ActionState = {
   returnToCalendar?: boolean;
   /** Retained financial attempt while the independent draft remains editable. */
   calendarRecovery?: boolean;
+  unresolvedCheckout?: boolean;
   resumeAttemptId?: string;
 };
 type SessionChoices = { outlet: boolean; session: boolean };
@@ -443,6 +444,17 @@ export function BookingProvider({
   const visitBookingStep = useCallback(
     (step: string) => {
       if (step === "time") {
+        if (
+          action.calendarRecovery &&
+          value.attempt &&
+          (action.unresolvedCheckout ||
+            isUnresolvedCheckout(value.attempt.id)) &&
+          noticeCurrent.current.message !== CHECKOUT_UNRESOLVED
+        ) {
+          setSelectionNotice(CHECKOUT_UNRESOLVED, value.attempt.draft.slots);
+          if (service.mode === "live")
+            saveCalendarRecovery(value.attempt.id, true);
+        }
         noticeShownOnCalendar.current = true;
         if (action.returnToCalendar)
           setAction({ ...action, returnToCalendar: false });
@@ -459,6 +471,7 @@ export function BookingProvider({
       action,
       setAction,
       value.attempt,
+      service.mode,
     ],
   );
   const active = useRef<{
@@ -1127,14 +1140,23 @@ export function BookingProvider({
         : left
           ? loadDepartureSlots(id)
           : current.draft.slots;
-      // Non-creation releases this attempt, not provider capacity. Keep the
-      // original studio windows hidden until the existing fresh-read loop
-      // confirms availability, including after Home followed by a reload.
+      // Non-creation releases this attempt, not provider capacity. Calendar
+      // recovery may already have restored an original time through a fresh
+      // availability read; preserve any deliberate selection of that time.
+      const hiddenOriginals =
+        action.calendarRecovery &&
+        (action.unresolvedCheckout || isUnresolvedCheckout(id))
+          ? originalSlots.filter((original) =>
+              suppression.current.slots.some((slot) =>
+                overlaps(slot, original),
+              ),
+            )
+          : originalSlots;
       setSuppressedSlots([
         ...suppression.current.slots.filter(
           (slot) => !originalSlots.some((original) => overlaps(slot, original)),
         ),
-        ...originalSlots,
+        ...hiddenOriginals,
       ]);
       freshChecks.current.delete(service);
       const draft = left
@@ -1144,7 +1166,7 @@ export function BookingProvider({
             slots: action.calendarRecovery
               ? current.draft.slots.filter(
                   (slot) =>
-                    !originalSlots.some(
+                    !hiddenOriginals.some(
                       (original) => slotKey(original) === slotKey(slot),
                     ),
                 )
@@ -1169,6 +1191,7 @@ export function BookingProvider({
     [
       service,
       action.calendarRecovery,
+      action.unresolvedCheckout,
       cancel,
       commit,
       setAction,
@@ -1454,6 +1477,7 @@ export function BookingProvider({
                     attempt.id,
                   ),
                   calendarRecovery: true,
+                  unresolvedCheckout: isUnresolvedCheckout(attempt.id),
                 });
               } else if (
                 !mayRestoreLiveCheckout(attempt.id) ||
@@ -1577,10 +1601,16 @@ export function BookingProvider({
       setSelectionNotice,
     ],
   );
-  // A warm display cache cannot release affected studio capacity. Only these
-  // fresh reads may remove suppression, and never while its payment is unknown.
+  // Fresh availability can restore pre-link creation recovery's display while
+  // its original financial attempt stays locked. Issued-link expiry retains
+  // suppression until authoritative release; warm caches cannot restore either.
   const { reconcile } = calendar;
   const retainedAttempt = value.attempt;
+  const creationRecovery =
+    service.mode === "live" &&
+    action.calendarRecovery &&
+    !!retainedAttempt &&
+    (action.unresolvedCheckout || isUnresolvedCheckout(retainedAttempt.id));
   useEffect(() => {
     if (
       !value.ready ||
@@ -1646,7 +1676,10 @@ export function BookingProvider({
         }
       }
       const remaining = suppressedSlots.filter((slot) => {
-        if (retainedAttempt?.draft.slots.some((held) => overlaps(slot, held)))
+        if (
+          !creationRecovery &&
+          retainedAttempt?.draft.slots.some((held) => overlaps(slot, held))
+        )
           return true;
         const result = results[dates.indexOf(slot.date)];
         return (
@@ -1719,6 +1752,7 @@ export function BookingProvider({
     value.draft.mode,
     restorationPending,
     calendarBrowsing,
+    creationRecovery,
     suppressedSlots,
     pendingConflict,
     retainedAttempt,
@@ -1740,7 +1774,10 @@ export function BookingProvider({
         protectedConflictRedirect ||
         (action.calendarRecovery &&
           latest.current.attempt &&
-          ["reserve", "checkout", "pay"].includes(operation)) ||
+          (["reserve", "checkout", "pay"].includes(operation) ||
+            (operation === "review" &&
+              (action.unresolvedCheckout ||
+                isUnresolvedCheckout(latest.current.attempt.id))))) ||
         active.current ||
         !mounted.current ||
         !latest.current.ready
@@ -2190,6 +2227,7 @@ export function BookingProvider({
       pendingConflict,
       protectedConflictRedirect,
       action.calendarRecovery,
+      action.unresolvedCheckout,
       profileSaveError,
     ],
   );
@@ -2322,7 +2360,23 @@ export function BookingProvider({
             current.attempt.status === "paid"
           )
             return false;
+          // A read from before the unknown creation cannot restore its display.
+          if (unresolved && !action.unresolvedCheckout)
+            freshChecks.current.delete(service);
           pauseCalendar(false);
+          if (action.calendarRecovery && unresolved) {
+            setSelectionNotice(
+              CHECKOUT_UNRESOLVED,
+              current.attempt.draft.slots,
+            );
+            if (service.mode === "live") saveCalendarRecovery(id, true);
+            setAction({
+              status: "idle",
+              returnToCalendar: true,
+              calendarRecovery: true,
+              unresolvedCheckout: true,
+            });
+          }
           if (!action.calendarRecovery) {
             if (!calendarRecoveryNoticeDismissed(id))
               setSelectionNotice(
@@ -2350,6 +2404,7 @@ export function BookingProvider({
               status: "idle",
               returnToCalendar: true,
               calendarRecovery: true,
+              unresolvedCheckout: unresolved,
             });
           }
           return true;

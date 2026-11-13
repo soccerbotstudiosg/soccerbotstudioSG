@@ -4013,6 +4013,7 @@ it("completed conflict allows immediate calendar Back and Continue with retained
 async function expectRecoveryReleaseNavigation(
   destination: "details" | "session",
   resolution: "expiry" | "not_created" | "rejected",
+  checkReviewGuard = false,
 ) {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
@@ -4034,6 +4035,7 @@ async function expectRecoveryReleaseNavigation(
   const checkout = vi.fn<BookingService["checkout"]>();
   const pay = vi.fn<BookingService["pay"]>();
   let classify = false;
+  let reviewResult: boolean | undefined;
   let finishClassification: (() => void) | undefined;
   const service = {
     ...liveBookingService,
@@ -4056,15 +4058,32 @@ async function expectRecoveryReleaseNavigation(
     return (
       <>
         <ConflictHandoffProbe />
-        <button onClick={() => state.browseAfterChecking(id)}>
+        <button onClick={() => state.browseAfterChecking(id, checkReviewGuard)}>
           Browse expired
         </button>
-        <button onClick={() => state.update({ slots: [replacement] })}>
+        <button
+          onClick={async () => {
+            reviewResult = await state.review();
+          }}
+        >
+          Review replacement
+        </button>
+        <button
+          onClick={() => {
+            state.update({ slots: [replacement] });
+            state.showDate(replacement.date);
+          }}
+        >
           Select replacement
         </button>
         <output data-testid="original-recovery-draft">
           {JSON.stringify(state.attempt?.draft)}
         </output>
+        {checkReviewGuard && (
+          <output data-testid="replacement-availability">
+            {JSON.stringify(state.availability.result)}
+          </output>
+        )}
         <output data-testid="replacement-players">{state.draft.players}</output>
         <button onClick={() => state.update({ players: 1 })}>
           Edit during classification
@@ -4089,13 +4108,15 @@ async function expectRecoveryReleaseNavigation(
     );
   }
   const identity = { ...demoCustomerIdentity, mode: "live" as const };
-  const tree = (step: "time" | "details" | "session") => (
+  const tree = (
+    step: "time" | "details" | "session" | "review" | "payment",
+  ) => (
     <BookingProvider bookingService={service} identityService={identity}>
       <ExpiryProbe />
       <BookingPage step={step} />
     </BookingProvider>
   );
-  const view = render(tree("time"));
+  let view = render(tree("time"));
   await act(async () => {});
   expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
   await act(async () => {
@@ -4112,6 +4133,80 @@ async function expectRecoveryReleaseNavigation(
   expect(checkout).not.toHaveBeenCalled();
   expect(pay).not.toHaveBeenCalled();
   expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+  if (checkReviewGuard) {
+    await waitFor(() =>
+      expect(screen.getByTestId("replacement-availability")).toHaveTextContent(
+        '"status":"success"',
+      ),
+    );
+    expect(
+      JSON.parse(screen.getByTestId("replacement-availability").textContent!)
+        .slots,
+    ).toContainEqual({ ...replacement, available: true });
+    const readStorage = Storage.prototype.getItem;
+    const unavailableStorage = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(function (this: Storage, key) {
+        if (key === "soccerbot-live-draft")
+          throw new Error("Synthetic unavailable browser storage");
+        return readStorage.call(this, key);
+      });
+    expect(
+      screen.getByRole("button", { name: /^Enter Booking Details/ }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Review replacement" }));
+    await act(async () => {});
+    expect(reviewResult).toBe(false);
+    for (const requested of ["details", "review", "payment"] as const) {
+      navigation.replace.mockClear();
+      navigation.path = `/book/${requested}/`;
+      view.rerender(tree(requested));
+      await act(async () => {});
+      expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+      expect(screen.queryByRole("checkbox")).toBeNull();
+      expect(
+        screen.queryByRole("heading", { name: "Review Booking" }),
+      ).toBeNull();
+      navigation.path = "/book/time/";
+      view.rerender(tree("time"));
+      await act(async () => {});
+      expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
+      expect(
+        screen.getByRole("button", { name: "Request Help" }),
+      ).toBeVisible();
+    }
+    unavailableStorage.mockRestore();
+    navigation.path = "/book/session/";
+    view.rerender(tree("session"));
+    await act(async () => {});
+    expect(screen.getByRole("heading", { name: "Your session" })).toBeVisible();
+    navigation.path = "/book/time/";
+    view.rerender(tree("time"));
+    await act(async () => {});
+    expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
+    expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+    navigation.path = "/book/session/";
+    view.rerender(tree("session"));
+    await act(async () => {});
+    navigation.replace.mockClear();
+    navigation.path = "/book/review/";
+    view.rerender(tree("review"));
+    await act(async () => {});
+    expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+    navigation.path = "/book/time/";
+    view.rerender(tree("time"));
+    await act(async () => {});
+    expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
+    expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+    view.unmount();
+    view = render(tree("time"));
+    await act(async () => {});
+    expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
+    expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+    expect(
+      JSON.parse(screen.getByTestId("original-recovery-draft").textContent!),
+    ).toEqual(draft);
+  }
   if (destination === "session") {
     // Back must work even while the old payment remains unresolved.
     navigation.replace.mockClear();
@@ -4157,6 +4252,10 @@ async function expectRecoveryReleaseNavigation(
   expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual([
     replacement,
   ]);
+  if (checkReviewGuard)
+    expect(
+      await screen.findByRole("link", { name: /^Enter Booking Details/ }),
+    ).toHaveAttribute("href", "/book/details");
   navigation.replace.mockClear();
   navigation.path = `/book/${destination}/`;
   view.rerender(tree(destination));
@@ -4176,6 +4275,25 @@ async function expectRecoveryReleaseNavigation(
   }
   expect(checkout).not.toHaveBeenCalled();
   expect(pay).not.toHaveBeenCalled();
+  if (checkReviewGuard) {
+    navigation.path = "/book/review/";
+    view.rerender(tree("review"));
+    await act(async () => {});
+    expect(
+      screen.getByRole("heading", { name: "Review Booking" }),
+    ).toBeVisible();
+    const acknowledgement = screen.getByRole("checkbox");
+    expect(acknowledgement).not.toBeChecked();
+    fireEvent.click(acknowledgement);
+    expect(acknowledgement).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: /^Proceed to Payment/ }),
+    ).toBeEnabled();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(checkout).not.toHaveBeenCalled();
+    expect(pay).not.toHaveBeenCalled();
+  }
   expect(
     fetch.mock.calls.every(
       ([, options]) => !options?.method || options.method === "GET",
@@ -4202,6 +4320,10 @@ it("verified no-creation permits Back with replacement selections without replay
 
 it("verified rejection permits Back and edits during classification without replaying payment", async () => {
   await expectRecoveryReleaseNavigation("session", "rejected");
+});
+
+it("unresolved creation keeps forward navigation on Calendar until verified release permits Review acknowledgement", async () => {
+  await expectRecoveryReleaseNavigation("details", "not_created", true);
 });
 
 it("authenticated predispatch conflict proof survives cooldown and refresh without adopting another checkout", async () => {
