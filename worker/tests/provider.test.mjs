@@ -2746,7 +2746,7 @@ test("inspection window serves session catalogue and cached times without granti
         contact: {
           name: "Synthetic Guest",
           email: "guest@example.com",
-          phone: "00000000",
+          phone: "+6581234567",
           contactMethod: "email",
           academy: "Synthetic school",
         },
@@ -3053,7 +3053,7 @@ test("ongoing customer access survives campaign closure and preserves fresh cons
       contact: {
         name: "Synthetic Guest",
         email: "guest@example.com",
-        phone: "00000000",
+        phone: "+6581234567",
         contactMethod: "email",
         academy: "",
       },
@@ -3290,7 +3290,7 @@ test("native availability and preparation cross the real HTTP coordinator bounda
       contact: {
         name: "Synthetic Guest",
         email: "guest@example.com",
-        phone: "00000000",
+        phone: "+6581234567",
         contactMethod: "email",
         academy: "Synthetic school",
       },
@@ -4200,7 +4200,7 @@ test("ongoing checkout admits the priced weekend service with the customer lead-
         contact: {
           name: "Synthetic Guest",
           email: "guest@example.com",
-          phone: "00000000",
+          phone: "+6581234567",
           contactMethod: "email",
           academy: "",
         },

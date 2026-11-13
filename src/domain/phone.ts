@@ -14,10 +14,7 @@ const cleanCharacters = (value: string) => /^\+?[\d ()-]+$/.test(value);
 export function bookingPhone(value: string) {
   const text = value.trim();
   if (!cleanCharacters(text)) return undefined;
-  return parsePhoneNumberFromString(text, {
-    defaultCountry: "SG",
-    extract: false,
-  });
+  return parsePhoneNumberFromString(text, "SG", { extract: false });
 }
 /** Enforce Singapore mobile rules and a permissive international digit ceiling. */
 export function validBookingPhone(value: string) {
