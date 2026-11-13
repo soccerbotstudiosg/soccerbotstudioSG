@@ -32,6 +32,7 @@ import {
   mayRestoreLiveCheckout,
   isCalendarRecovery,
   saveCalendarRecovery,
+  clearCalendarRecovery,
   saveLiveDraft,
   loadPendingConflict,
   savePendingConflict,
@@ -635,6 +636,12 @@ it("live draft reload preserves edits but never restores consent or payment auth
   saveCalendarRecovery("attempt-a");
   expect(isCalendarRecovery("attempt-a")).toBe(true);
   expect(isCalendarRecovery("attempt-b")).toBe(false);
+  clearCalendarRecovery("attempt-b");
+  expect(isCalendarRecovery("attempt-a")).toBe(true);
+  clearCalendarRecovery("attempt-a");
+  expect(isCalendarRecovery("attempt-a")).toBe(false);
+  expect(mayRestoreLiveCheckout("attempt-a")).toBe(true);
+  saveCalendarRecovery("attempt-a");
   saveLiveDraft({ ...draft, accepted: true });
   expect(mayRestoreLiveCheckout("attempt-a")).toBe(true);
   expect(loadLiveDraft()).not.toHaveProperty("checkoutAttemptId");

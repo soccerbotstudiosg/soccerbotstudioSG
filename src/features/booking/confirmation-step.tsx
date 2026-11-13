@@ -2,7 +2,7 @@
 import { BookingLoading, loadingMessage } from "./booking-loading";
 import { BrandLoading as InlineLoading } from "@/components/brand-loading";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
@@ -38,6 +38,68 @@ export function bookingConfirmationMessage(booking: Booking) {
     `Total paid: SGD ${money(booking.totalCents)}`,
   ].join("\n");
 }
+/** Copy a confirmed receipt and keep transient feedback scoped to its mounted booking. */
+function ConfirmationCopy({ booking }: { booking: Booking }) {
+  const [state, setState] = useState<"idle" | "copying" | "copied" | "failed">(
+    "idle",
+  );
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const generation = useRef(0);
+  const busy = useRef(false);
+  useEffect(
+    () => () => {
+      generation.current += 1;
+      clearTimeout(timer.current);
+    },
+    [],
+  );
+  async function copy() {
+    if (busy.current) return;
+    busy.current = true;
+    const request = ++generation.current;
+    clearTimeout(timer.current);
+    setState("copying");
+    try {
+      await navigator.clipboard.writeText(bookingConfirmationMessage(booking));
+      if (request !== generation.current) return;
+      setState("copied");
+      timer.current = setTimeout(() => setState("idle"), 3000);
+    } catch {
+      if (request === generation.current) setState("failed");
+    } finally {
+      if (request === generation.current) busy.current = false;
+    }
+  }
+  return (
+    <div className="confirmation-copy-control">
+      <button
+        type="button"
+        className="icon-button confirmation-copy"
+        aria-label="Copy booking confirmation"
+        title="Copy booking confirmation"
+        disabled={state === "copying"}
+        onClick={() => void copy()}
+      >
+        <Icon
+          name={state === "copying" ? "spinner" : "copy"}
+          className={state === "copying" ? "spinner" : ""}
+        />
+      </button>
+      <span
+        className={`confirmation-copy-feedback${state === "failed" ? " failed" : ""}`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {state === "copied"
+          ? "Copied"
+          : state === "failed"
+            ? "Couldn’t copy. Try again."
+            : ""}
+      </span>
+    </div>
+  );
+}
 function PendingConfirmationHeading({
   label,
   message,
@@ -60,22 +122,40 @@ export function PendingConfirmation({
   message,
   children,
   showSummary = false,
+  pendingNotice,
 }: {
   label?: string;
   message?: string;
   children?: ReactNode;
   showSummary?: boolean;
+  pendingNotice?: ReactNode;
 }) {
   if (!showSummary) return <BookingLoading label={label} />;
   return (
     <div className="status-shell confirmation-shell">
-      <div className="status-heading">
-        <PendingConfirmationHeading label={label} message={message} />
-      </div>
+      {!pendingNotice && (
+        <div className="status-heading">
+          <PendingConfirmationHeading label={label} message={message} />
+        </div>
+      )}
+      {pendingNotice}
       <section
         className="surface confirmation-card booking-document"
-        aria-busy="true"
+        aria-busy={!pendingNotice}
       >
+        {pendingNotice && (
+          <div className="review-head">
+            <h2>Order Summary</h2>
+            <div className="confirmation-paid-actions">
+              <span className="pill confirmation-pending-status confirmation-paid-status">
+                Pending
+              </span>
+              {label !== "Pending" && (
+                <p className="text-sm text-muted">{label}</p>
+              )}
+            </div>
+          </div>
+        )}
         {children ?? (
           <div
             className="confirmation-summary review-block"
@@ -139,19 +219,6 @@ export function BookingConfirmation({
 }) {
   const [error, setError] = useState(""),
     [leaving, setLeaving] = useState(false);
-  const [copyState, setCopyState] = useState<
-    "idle" | "copying" | "copied" | "failed"
-  >("idle");
-  async function copyConfirmation() {
-    if (copyState === "copying") return;
-    setCopyState("copying");
-    try {
-      await navigator.clipboard.writeText(bookingConfirmationMessage(booking));
-      setCopyState("copied");
-    } catch {
-      setCopyState("failed");
-    }
-  }
   async function leave(operation: () => void | Promise<void>) {
     if (leaving) return;
     setLeaving(true);
@@ -166,68 +233,69 @@ export function BookingConfirmation({
   }
   if (pending && !pendingAction && !pendingNotice)
     return <BookingLoading label={pendingLabel} />;
+  const showReceipt = !pending || !!pendingNotice;
   return (
     <div className="status-shell confirmation-shell">
-      <div className="status-heading">
-        {pendingNotice ? (
-          <h1>{pendingLabel}</h1>
-        ) : pending ? (
-          <PendingConfirmationHeading
-            label={pendingLabel}
-            message={pendingMessage}
-          />
-        ) : (
-          <>
-            <span className="status-icon">
-              <Icon name="check" />
-            </span>
-            <h1>Booking Confirmed</h1>
-            {!preview && (
-              <p>Your booking confirmation will be emailed to you.</p>
-            )}
-          </>
-        )}
-        {!pending && verifiedAtMs !== undefined && (
-          <p className="confirmation-verified">
-            Verified{" "}
-            {new Intl.DateTimeFormat("en-SG", {
-              timeZone: "Asia/Singapore",
-              dateStyle: "medium",
-              timeStyle: "short",
-            }).format(verifiedAtMs)}{" "}
-            (Singapore time)
-          </p>
-        )}
-        {!pending &&
-          !preview &&
-          (booking.providerReferences?.invoiceNumber || invoicePending) && (
-            <p className="reference" aria-live="polite" aria-atomic="true">
-              Invoice number{" "}
-              {booking.providerReferences?.invoiceNumber ? (
-                <strong
-                  className="text-ink confirmation-invoice-value"
-                  key={booking.providerReferences.invoiceNumber}
-                >
-                  {booking.providerReferences.invoiceNumber}
-                </strong>
-              ) : (
-                <span
-                  className="confirmation-invoice-loader"
-                  role="status"
-                  aria-label="Checking invoice number"
-                >
-                  <Icon name="spinner" className="spinner" />
-                </span>
+      {!pendingNotice && (
+        <div className="status-heading">
+          {pending ? (
+            <PendingConfirmationHeading
+              label={pendingLabel}
+              message={pendingMessage}
+            />
+          ) : (
+            <>
+              <span className="status-icon">
+                <Icon name="check" />
+              </span>
+              <h1>Booking Confirmed</h1>
+              {!preview && (
+                <p>Your booking confirmation will be emailed to you.</p>
               )}
+            </>
+          )}
+          {!pending && verifiedAtMs !== undefined && (
+            <p className="confirmation-verified">
+              Verified{" "}
+              {new Intl.DateTimeFormat("en-SG", {
+                timeZone: "Asia/Singapore",
+                dateStyle: "medium",
+                timeStyle: "short",
+              }).format(verifiedAtMs)}{" "}
+              (Singapore time)
             </p>
           )}
-        {!pending && preview && (
-          <p className="reference">
-            Booking reference{" "}
-            <strong className="text-ink">{booking.reference}</strong>
-          </p>
-        )}
-      </div>
+          {!pending &&
+            !preview &&
+            (booking.providerReferences?.invoiceNumber || invoicePending) && (
+              <p className="reference" aria-live="polite" aria-atomic="true">
+                Invoice number{" "}
+                {booking.providerReferences?.invoiceNumber ? (
+                  <strong
+                    className="text-ink confirmation-invoice-value"
+                    key={booking.providerReferences.invoiceNumber}
+                  >
+                    {booking.providerReferences.invoiceNumber}
+                  </strong>
+                ) : (
+                  <span
+                    className="confirmation-invoice-loader"
+                    role="status"
+                    aria-label="Checking invoice number"
+                  >
+                    <Icon name="spinner" className="spinner" />
+                  </span>
+                )}
+              </p>
+            )}
+          {!pending && preview && (
+            <p className="reference">
+              Booking reference{" "}
+              <strong className="text-ink">{booking.reference}</strong>
+            </p>
+          )}
+        </div>
+      )}
       {!pending && (
         <div className="confirmation-actions" aria-label="Booking actions">
           <button
@@ -265,7 +333,7 @@ export function BookingConfirmation({
       )}
       {pendingNotice}
       <section className="surface confirmation-card booking-document">
-        {pending && (
+        {pending && !pendingNotice && (
           <div
             className="confirmation-summary review-block"
             aria-label="Booking summary"
@@ -288,7 +356,7 @@ export function BookingConfirmation({
           </div>
         )}
         {pending && pendingAction}
-        {!pending && (
+        {showReceipt && (
           <details className="confirmation-full-details">
             <summary>View Full Details</summary>
             <div className="confirmation-details-grid">
@@ -352,7 +420,7 @@ export function BookingConfirmation({
             </div>
           </details>
         )}
-        {!pending && (
+        {showReceipt && (
           <section
             className="confirmation-section review-block"
             aria-labelledby="confirmation-order"
@@ -361,34 +429,20 @@ export function BookingConfirmation({
               <h2 id="confirmation-order">Order Summary</h2>
               {!preview && (
                 <div className="confirmation-paid-actions">
-                  <span className="pill success confirmation-paid-status">
-                    Paid
+                  {!pending && (
+                    <ConfirmationCopy
+                      key={booking.reference}
+                      booking={booking}
+                    />
+                  )}
+                  <span
+                    className={`pill ${pending ? "confirmation-pending-status" : "success"} confirmation-paid-status`}
+                  >
+                    {pending ? "Pending" : "Paid"}
                   </span>
-
-                  <button
-                    type="button"
-                    className="button secondary confirmation-copy"
-                    disabled={copyState === "copying"}
-                    onClick={() => void copyConfirmation()}
-                  >
-                    {copyState === "copied"
-                      ? "Copied"
-                      : copyState === "copying"
-                        ? "Copying…"
-                        : "Copy booking confirmation"}
-                  </button>
-                  <p
-                    className={
-                      copyState === "failed" ? "field-error" : "field-hint"
-                    }
-                    aria-live="polite"
-                  >
-                    {copyState === "failed"
-                      ? "Couldn’t copy. Please try again or select the details to copy them."
-                      : copyState === "copied"
-                        ? "Booking confirmation copied."
-                        : ""}
-                  </p>
+                  {pending && pendingLabel !== "Pending" && (
+                    <p className="text-sm text-muted">{pendingLabel}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -399,7 +453,10 @@ export function BookingConfirmation({
             />
             <div className="price-breakdown">
               <div className="line-item total confirmation-total">
-                <span>Total Paid{preview ? " · Preview" : ""}</span>
+                <span>
+                  {pending ? "Total" : "Total Paid"}
+                  {preview ? " · Preview" : ""}
+                </span>
                 <span className="confirmation-paid-amount">
                   <strong>
                     <span className="total-currency">SGD</span>{" "}

@@ -11,7 +11,7 @@ import {
 import { useConfirmationChecking } from "./confirmation-checking";
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 const id = "00000000-0000-4000-8000-000000000001";
 const pending = () =>
@@ -79,10 +79,12 @@ it("stops a hung read at the original deadline without claiming cancellation", a
   const fetch = vi.fn(() => new Promise<Response>(() => {}));
   vi.stubGlobal("fetch", fetch);
   const hook = renderHook(() => useConfirmationChecking(id));
+  expect(hook.result.current.settled).toBe(false);
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1000);
   });
   expect(hook.result.current.view).toBe("unresolved");
+  expect(hook.result.current.settled).toBe(true);
   expect(fetch.mock.calls).toHaveLength(1);
   await act(async () => {
     await vi.advanceTimersByTimeAsync(100000);
@@ -167,6 +169,7 @@ it("hides the native payment capability at its expiry without claiming payment c
     "https://checkout.sandbox.hit-pay.com/payment-request/@test/00000000-0000-4000-8000-000000000001/checkout",
   ]) {
     const hitpay = url.includes("hit-pay");
+    const awaiting = vi.fn(() => true);
     const now = serverStart;
     let elapsed = 0;
     vi.spyOn(performance, "now").mockImplementation(() => elapsed);
@@ -220,6 +223,7 @@ it("hides the native payment capability at its expiry without claiming payment c
         attemptId={id}
         checkoutMode="live"
         allowPaymentContinuation
+        onAwaitingExpiry={awaiting}
       />,
     );
     await act(async () => {});
@@ -243,6 +247,7 @@ it("hides the native payment capability at its expiry without claiming payment c
         attemptId={id}
         checkoutMode="live"
         allowPaymentContinuation
+        onAwaitingExpiry={awaiting}
       />,
     );
     await act(async () => {});
@@ -272,16 +277,11 @@ it("hides the native payment capability at its expiry without claiming payment c
       elapsed += 1;
       await vi.advanceTimersByTimeAsync(1);
     });
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Your payment window has ended. These sessions may not be available to book again immediately. Please try again later.",
-    );
-    expect(screen.getAllByRole("listitem")).toHaveLength(1);
-    expect(screen.getByRole("listitem")).toHaveTextContent(
-      /\d{2}:\d{2}–\d{2}:\d{2}\./,
-    );
+    expect(awaiting).toHaveBeenCalledWith(id);
+    expect(screen.queryByRole("alert")).toBeNull();
     expect(
-      screen.queryByRole("status", { name: "Checking payment…" }),
-    ).toBeNull();
+      screen.getByRole("status", { name: "Checking payment…" }),
+    ).toBeVisible();
     // Link expiry changes the display only; it cannot cancel or recreate a booking.
     expect(
       fetch.mock.calls.every(
@@ -353,7 +353,15 @@ it("uses a server-granted early check without extending the deadline or resettin
     ),
   );
   vi.stubGlobal("fetch", fetch);
-  const hook = renderHook(() => useConfirmationChecking(id));
+  const observations: { deadline: number; settled: boolean }[] = [];
+  const hook = renderHook(
+    ({ bound }) => {
+      const state = useConfirmationChecking(id, 0, true, bound);
+      observations.push({ deadline: bound, settled: state.settled });
+      return state;
+    },
+    { initialProps: { bound: deadline } },
+  );
   await act(async () => {});
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1000);
@@ -362,6 +370,10 @@ it("uses a server-granted early check without extending the deadline or resettin
   const saved = JSON.parse(localStorage.getItem(`soccerbot-checking:${id}`)!);
   expect(saved.deadline).toBe(deadline);
   expect(saved.count).toBe(2);
+  hook.rerender({ bound: deadline - 1000 });
+  expect(
+    observations.find((value) => value.deadline === deadline - 1000)?.settled,
+  ).toBe(false);
   hook.unmount();
 });
 

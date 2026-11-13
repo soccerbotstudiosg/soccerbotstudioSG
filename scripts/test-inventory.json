@@ -608,6 +608,10 @@
     "title": "confirmed booking copies a formatted paid summary and reports clipboard failures honestly"
   },
   {
+    "file": "src/features/booking/confirmation-copy.test.tsx",
+    "title": "unresolved post-payment confirmation keeps the receipt layout with a pending badge rather than a pending page"
+  },
+  {
     "file": "src/features/booking/confirmation-render-trace.test.tsx",
     "title": "confirmation timing defers hidden frames and discards stale unmounted callbacks without affecting UI"
   },
@@ -973,6 +977,10 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "completed return recovery remains bounded while checkout context is still recovering"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "pending checkout context uses the full checkout loader without summary or success"
   },
   {
@@ -986,6 +994,10 @@
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "reopening an expired paid booking shows the saved full confirmation without polling or granting exports"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "an expired confirmation wait cannot replace fresh reads on refresh or native unpaid return"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
