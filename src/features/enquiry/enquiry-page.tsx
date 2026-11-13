@@ -1,4 +1,5 @@
 "use client";
+import { enquiryErrors } from "@/domain/enquiry";
 import { EMAIL_MAX_LENGTH } from "@/domain/contact";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
@@ -19,10 +20,10 @@ const blank: Enquiry = {
   message: "",
 };
 const hints: Record<keyof Enquiry, string> = {
-  name: "Your name.",
+  name: "John Doe",
   email: "abc@gmail.com",
   phone: "Include your country code, for example +65 81234567.",
-  organisation: "Optional—your academy, school or organisation.",
+  organisation: "International Sports School",
   purpose: "Choose the option that best describes your enquiry.",
   guests: "Optional—your estimated group size, from 1 to 999.",
   date: "Optional—your preferred date, subject to availability.",
@@ -44,8 +45,28 @@ export function EnquiryPage() {
     [receipt, setReceipt] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const change = (key: keyof Enquiry, text: string) =>
+  const [touched, setTouched] = useState<
+    Partial<Record<keyof Enquiry, boolean>>
+  >({});
+  const validation = enquiryErrors(value);
+  const errorFor = (key: keyof Enquiry) =>
+    touched[key] ? validation[key] : undefined;
+  const change = (key: keyof Enquiry, text: string) => {
+    if (key === "guests" && !/^\d{0,3}$/.test(text)) return;
+    if (
+      key === "phone" &&
+      (!/^\+?[\d ()-]*$/.test(text) || text.replace(/\D/g, "").length > 15)
+    )
+      return;
+    setTouched((current) => ({ ...current, [key]: true }));
     setValue((current) => ({ ...current, [key]: text }));
+  };
+  const feedback = (key: keyof Enquiry) =>
+    errorFor(key) ? (
+      <p className="field-error" id={`enquiry-${key}-error`} role="alert">
+        {errorFor(key)}
+      </p>
+    ) : null;
   const field = (
     key: keyof Enquiry,
     label: string,
@@ -67,18 +88,33 @@ export function EnquiryPage() {
           type === "date" || type === "time" ? undefined : hints[key]
         }
         aria-describedby={
-          type === "date" || type === "time" ? `enquiry-${key}-hint` : undefined
+          errorFor(key)
+            ? `enquiry-${key}-error`
+            : type === "date" || type === "time"
+              ? `enquiry-${key}-hint`
+              : undefined
         }
+        aria-invalid={!!errorFor(key)}
         className="field-control"
         value={value[key]}
         type={type}
         required={required}
         min={type === "date" ? todaySG() : type === "number" ? 1 : undefined}
         max={type === "number" ? 999 : undefined}
-        maxLength={key === "email" ? EMAIL_MAX_LENGTH : 160}
+        maxLength={
+          key === "email"
+            ? EMAIL_MAX_LENGTH
+            : key === "name"
+              ? 80
+              : key === "organisation"
+                ? 120
+                : 160
+        }
         onChange={(e) => change(key, e.target.value)}
+        onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
       />
-      {(type === "date" || type === "time") && (
+      {feedback(key)}
+      {!errorFor(key) && (type === "date" || type === "time") && (
         <p className="field-hint" id={`enquiry-${key}-hint`}>
           {hints[key]}
         </p>
@@ -108,6 +144,7 @@ export function EnquiryPage() {
             onClick={() => {
               setReceipt("");
               setValue(blank);
+              setTouched({});
             }}
           >
             Send another enquiry
@@ -122,9 +159,16 @@ export function EnquiryPage() {
           <form
             className="surface mt-8 space-y-7"
             aria-busy={!ready || busy}
+            noValidate
             onSubmit={async (event) => {
               event.preventDefault();
               if (!ready || busy) return;
+              setTouched(
+                Object.fromEntries(
+                  Object.keys(blank).map((key) => [key, true]),
+                ),
+              );
+              if (Object.keys(validation).length) return;
               setBusy(true);
               setError("");
               try {
@@ -161,7 +205,12 @@ export function EnquiryPage() {
                   </label>
                   <select
                     id="enquiry-purpose"
-                    aria-describedby="enquiry-purpose-hint"
+                    aria-describedby={
+                      errorFor("purpose")
+                        ? "enquiry-purpose-error"
+                        : "enquiry-purpose-hint"
+                    }
+                    aria-invalid={!!errorFor("purpose")}
                     className="field-control"
                     required
                     value={value.purpose}
@@ -172,6 +221,7 @@ export function EnquiryPage() {
                       <option key={type}>{type}</option>
                     ))}
                   </select>
+                  {feedback("purpose")}
                   <p className="field-hint" id="enquiry-purpose-hint">
                     {hints.purpose}
                   </p>
@@ -185,6 +235,10 @@ export function EnquiryPage() {
                   </label>
                   <textarea
                     id="enquiry-message"
+                    aria-invalid={!!errorFor("message")}
+                    aria-describedby={
+                      errorFor("message") ? "enquiry-message-error" : undefined
+                    }
                     placeholder={hints.message}
                     rows={5}
                     className="field-control"
@@ -192,7 +246,11 @@ export function EnquiryPage() {
                     maxLength={2000}
                     value={value.message}
                     onChange={(e) => change("message", e.target.value)}
+                    onBlur={() =>
+                      setTouched((current) => ({ ...current, message: true }))
+                    }
                   />
+                  {feedback("message")}
                 </div>
               </div>
             </fieldset>

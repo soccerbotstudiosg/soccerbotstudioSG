@@ -697,7 +697,7 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   );
   await page.getByLabel("Full name", { exact: false }).focus();
   await expect(page.locator("#phone-error")).toHaveText(
-    "Remove invalid characters or extra digits from the mobile number.",
+    "Enter an 8-digit mobile number starting with 8 or 9.",
   );
   await expect(
     page.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
@@ -709,7 +709,7 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   await expect(page.locator("#details-form textarea")).toHaveCount(0);
   await expect(page.locator("#name")).toHaveAttribute(
     "placeholder",
-    "Your name.",
+    "John Doe",
   );
   await expect(page.locator("#email")).toHaveAttribute(
     "placeholder",

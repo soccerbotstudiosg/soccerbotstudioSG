@@ -48,7 +48,6 @@ export function PhoneInput({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const [rejected, setRejected] = useState(false);
   const root = useRef<HTMLDivElement>(null),
     trigger = useRef<HTMLButtonElement>(null),
     search = useRef<HTMLInputElement>(null);
@@ -63,13 +62,11 @@ export function PhoneInput({
   const options = countries.filter((item) =>
     countrySearch.get(item)!.includes(query.trim().toLowerCase()),
   );
-  const message = rejected
-    ? "Remove invalid characters or extra digits from the mobile number."
-    : error
-      ? country === "SG"
-        ? SINGAPORE_PHONE_ERROR
-        : INTERNATIONAL_PHONE_ERROR
-      : undefined;
+  const message = error
+    ? country === "SG"
+      ? SINGAPORE_PHONE_ERROR
+      : INTERNATIONAL_PHONE_ERROR
+    : undefined;
   useEffect(() => {
     if (!open) return;
     search.current?.focus();
@@ -87,11 +84,10 @@ export function PhoneInput({
   /** Preserve the entered national digits when changing the selected country. */
   function select(next: CountryCode) {
     setCountry(next);
-    setRejected(false);
     onChange(number ? `+${getCountryCallingCode(next)}${number}` : "");
     close();
   }
-  /** Reject invalid edits while allowing incomplete numbers to be corrected. */
+  /** Ignore invalid edits silently while keeping incomplete numbers correctable. */
   function edit(raw: string) {
     const nextCountry = raw.trim().startsWith("+")
       ? phoneCountry(raw.trim())
@@ -101,10 +97,8 @@ export function PhoneInput({
       !acceptsPhoneEdit(digits, nextCountry) &&
       !(digits.length < number.length && /^\d*$/.test(digits))
     ) {
-      setRejected(true);
       return;
     }
-    setRejected(false);
     setCountry(nextCountry);
     onChange(digits ? `+${getCountryCallingCode(nextCountry)}${digits}` : "");
   }

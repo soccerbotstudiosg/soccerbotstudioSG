@@ -53,13 +53,25 @@ test("details contains only the five contact fields and validates them before re
   expect(screen.getAllByRole("textbox")).toHaveLength(4);
   expect(screen.getAllByRole("combobox")).toHaveLength(1);
   expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  expect(document.getElementById("email-check-help")).toBeNull();
+  expect(screen.getByLabelText(/Full name/)).toHaveAttribute(
+    "placeholder",
+    "John Doe",
+  );
+  expect(screen.getByLabelText(/Academy \/ school/)).toHaveAttribute(
+    "placeholder",
+    "International Sports School",
+  );
+  expect(
+    screen.queryByText("Choose how the studio should contact you if needed."),
+  ).toBeNull();
   for (const [label, value, message] of [
     [/Full name/, " ", "Enter the booking contact’s full name."],
     [/Email address/, "name@domain", "Enter a valid email address."],
     [
       /Mobile number/,
       "abc",
-      "Remove invalid characters or extra digits from the mobile number.",
+      "Enter an 8-digit mobile number starting with 8 or 9.",
     ],
   ] as const) {
     const input = screen.getByLabelText(label);
@@ -67,6 +79,7 @@ test("details contains only the five contact fields and validates them before re
     fireEvent.blur(input);
     expect(screen.getByText(message)).toBeVisible();
     expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(document.getElementById("email-check-help")).toBeNull();
     expect(mocks.push).not.toHaveBeenCalled();
     fireEvent.change(input, { target: { value: "" } });
   }
@@ -407,6 +420,11 @@ test("invalid saved contacts remain editable in booking details and contact mana
     expect(mocks.push).not.toHaveBeenCalled();
     fireEvent.change(name, { target: { value: "J" } });
     expect(name).toHaveAttribute("aria-invalid", "true");
+    for (const value of ["John ␤ Doe", "⋆.𐙚 ̊"]) {
+      fireEvent.change(name, { target: { value } });
+      expect(name).toHaveAttribute("aria-invalid", "true");
+      expect(saveProfile).not.toHaveBeenCalled();
+    }
     fireEvent.change(name, { target: { value: "José O’Neill 王" } });
     expect(name).toHaveAttribute("aria-invalid", "false");
     expect(

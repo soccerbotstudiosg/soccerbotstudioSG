@@ -1134,6 +1134,8 @@ test("checkout reuses complete creation evidence for one HitPay request without 
       { contactMethod: "constructor" },
       { phone: "8123\n4567" },
       { name: "Test\tCustomer" },
+      { name: "John ␤ Doe" },
+      { academy: "School★" },
       { email: "a..b@example.com" },
     ]) {
       c.input.contact = { ...originalContact, ...patch };

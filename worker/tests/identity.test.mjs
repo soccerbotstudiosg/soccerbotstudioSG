@@ -1236,6 +1236,7 @@ test("website contact requires verified identity and a guessed email cannot read
   );
   for (const patch of [
     { name: "Test\nCustomer" },
+    { name: "John ␤ Doe" },
     { phone: "8123\t4567" },
     { email: "a..b@example.com" },
   ]) {
