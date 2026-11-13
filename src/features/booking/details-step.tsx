@@ -7,6 +7,7 @@ import {
   customerMessage,
   ProfileAccessRevokedError,
 } from "@/services/contracts";
+import { PhoneInput } from "./phone-input";
 import { BookingHeading } from "./booking-heading";
 import {
   BookingPrimaryAction,
@@ -19,6 +20,7 @@ import { Icon } from "@/components/icon";
 import { CONTACT_METHODS } from "@/domain/catalog";
 import {
   contactErrors,
+  EMAIL_MAX_LENGTH,
   type ContactDetails,
   type ContactErrors,
 } from "@/domain/contact";
@@ -95,18 +97,19 @@ export function DetailsStep({
             reportProfileAccessLoss(own);
             return;
           }
-          if (profile)
-            profileTarget.current.update({
-              contact: {
-                ...profile,
-                ...Object.fromEntries(
-                  Object.entries(profileTarget.current.contact).filter(
-                    ([, value]) => value !== "",
-                  ),
+          if (profile) {
+            const contact = {
+              ...profile,
+              ...Object.fromEntries(
+                Object.entries(profileTarget.current.contact).filter(
+                  ([, value]) => value !== "",
                 ),
-                email,
-              },
-            });
+              ),
+              email,
+            };
+            profileTarget.current.update({ contact });
+            setErrors(contactErrors(contact, email));
+          }
           setProfileRead({ email, ready: true, error: "" });
         },
         (error: unknown) => {
@@ -140,17 +143,14 @@ export function DetailsStep({
       cancel();
     };
   }, [cancel]);
-  const [touchedErrors, setErrors] = useState<ContactErrors>({});
+  const [touchedErrors, setErrors] = useState<ContactErrors>(() =>
+    draft.mode === "member" ? contactErrors(c, draft.accountEmail) : {},
+  );
   const currentErrors = contactErrors(
     c,
     draft.mode === "member" ? draft.accountEmail : undefined,
   );
-  const errors = {
-    ...touchedErrors,
-    name: currentErrors.name,
-    email: currentErrors.email,
-    phone: currentErrors.phone,
-  };
+  const errors = touchedErrors;
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
   const needsEmailCheck = !profileOnly && draft.mode !== "member";
   const emailChecked = !needsEmailCheck || checkedEmail === c.email;
@@ -228,7 +228,13 @@ export function DetailsStep({
     setSaveState({ key: "", saving: false, message: "", failed: false });
     if (key === "email") setCheckedEmail(null);
     update({ contact: { ...c, [key]: value } });
-    setErrors((current) => ({ ...current, [key]: undefined }));
+    setErrors((current) => ({
+      ...current,
+      [key]: contactErrors(
+        { ...c, [key]: value },
+        draft.mode === "member" ? draft.accountEmail : undefined,
+      )[key],
+    }));
   }
   function validateField(key: keyof ContactDetails) {
     const next = contactErrors(
@@ -237,6 +243,13 @@ export function DetailsStep({
     );
     setErrors((current) => ({ ...current, [key]: next[key] }));
   }
+  const hints: Record<keyof ContactDetails, string> = {
+    name: "Your name.",
+    email: draft.mode === "member" ? "" : "abc@gmail.com",
+    phone: "Select your country code and enter your mobile number.",
+    contactMethod: "Choose how the studio should contact you if needed.",
+    academy: "Optional—your academy, school or organisation.",
+  };
   /** Render a contact input with its validation feedback. */
   function field(
     key: TextKey,
@@ -265,6 +278,7 @@ export function DetailsStep({
             maxLength={maxLength}
             required={required}
             readOnly={key === "email" && draft.mode === "member"}
+            placeholder={hints[key] || undefined}
             value={c[key]}
             aria-invalid={!!errors[key]}
             aria-describedby={
@@ -275,6 +289,14 @@ export function DetailsStep({
                 .filter(Boolean)
                 .join(" ") || undefined
             }
+            onPaste={(event) => {
+              const pasted = event.clipboardData.getData("text").trim();
+              if (/[\x00-\x1f\x7f-\x9f]/.test(pasted)) {
+                event.preventDefault();
+                const next = contactErrors({ ...c, [key]: pasted });
+                setErrors((current) => ({ ...current, [key]: next[key] }));
+              }
+            }}
             onChange={(e) => change(key, e.target.value)}
             onBlur={() => validateField(key)}
           />
@@ -334,7 +356,7 @@ export function DetailsStep({
           value={c[key]}
           required
           aria-invalid={!!errors[key]}
-          aria-describedby={errors[key] ? `${key}-error` : undefined}
+          aria-describedby={`${key}-hint${errors[key] ? ` ${key}-error` : ""}`}
           onChange={(e) => change(key, e.target.value)}
           onBlur={() => validateField(key)}
         >
@@ -344,6 +366,9 @@ export function DetailsStep({
             </option>
           ))}
         </select>
+        <p className="field-hint" id={`${key}-hint`}>
+          {hints[key]}
+        </p>
         {errors[key] && (
           <p className="field-error" id={`${key}-error`}>
             {errors[key]}
@@ -456,9 +481,14 @@ export function DetailsStep({
                 : "Email address",
               "email",
               true,
-              120,
+              EMAIL_MAX_LENGTH,
             )}
-            {field("phone", "Mobile number", "tel", true, 24)}
+            <PhoneInput
+              value={c.phone}
+              onChange={(value) => change("phone", value)}
+              onBlur={() => validateField("phone")}
+              error={errors.phone}
+            />
             {!profileOnly &&
               select(
                 "contactMethod",

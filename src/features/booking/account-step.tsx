@@ -22,7 +22,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { blankContact, validEmail } from "@/domain/contact";
+import { blankContact, validEmail, EMAIL_MAX_LENGTH } from "@/domain/contact";
 import { DEMO_CODE } from "@/services/demo/identity";
 import {
   customerMessage,
@@ -568,16 +568,31 @@ export function AccountStep({
               required
               value={email}
               aria-invalid={error === "Enter a valid email address."}
+              placeholder="abc@gmail.com"
               aria-describedby={error ? "auth-error" : undefined}
+              onPaste={(event) => {
+                if (
+                  /[\x00-\x1f\x7f-\x9f]/.test(
+                    event.clipboardData.getData("text").trim(),
+                  )
+                ) {
+                  event.preventDefault();
+                  setError("Enter a valid email address.");
+                }
+              }}
               onChange={(e) => {
                 setEmail(e.target.value);
-                setError("");
+                setError(
+                  validEmail(e.target.value)
+                    ? ""
+                    : "Enter a valid email address.",
+                );
               }}
               onBlur={() => {
                 if (!validEmail(email.trim()))
                   setError("Enter a valid email address.");
               }}
-              maxLength={120}
+              maxLength={EMAIL_MAX_LENGTH}
             />
             <label className="check-label auth-remember">
               <input
@@ -597,6 +612,8 @@ export function AccountStep({
             <input
               disabled={busy}
               id="auth-code"
+              placeholder="Enter the 6-digit code from your email."
+              aria-describedby={error ? "auth-error" : undefined}
               className="field-control auth-code"
               inputMode="numeric"
               autoComplete="one-time-code"

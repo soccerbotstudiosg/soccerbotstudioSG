@@ -1,3 +1,4 @@
+import { emailSchema } from "../src/domain/contact";
 import { identitySenderSchema, turnstileSecretName } from "./policy";
 import { z } from "zod";
 import { authenticate } from "./access";
@@ -138,9 +139,7 @@ export async function identityDelivery(
   const window = await windowFor(env, Date.now());
   const pepper = secret(env, "IDENTITY_PEPPER");
   const raw = await inputBody(request);
-  const email = z
-    .object({ email: z.string().trim().toLowerCase().pipe(z.email()) })
-    .safeParse(raw);
+  const email = z.object({ email: emailSchema }).safeParse(raw);
   if (
     !email.success ||
     (window.recipient !== null && email.data.email !== window.recipient)

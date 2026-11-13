@@ -1,6 +1,10 @@
 import { CustomerMessageError } from "../contracts";
 import { z } from "zod";
-import { blankContact, normalizeContact, validEmail } from "@/domain/contact";
+import {
+  blankContact,
+  validatedContactSchema,
+  validEmail,
+} from "@/domain/contact";
 import type {
   IdentityService,
   CustomerIdentityService,
@@ -31,7 +35,7 @@ function saveContact(
   contact: Parameters<CustomerIdentityService["saveProfile"]>[0],
 ) {
   const parsed = profilesSchema.safeParse(safeRead(PROFILES));
-  const normalized = normalizeContact(contact);
+  const normalized = validatedContactSchema.parse(contact);
   safeWrite(PROFILES, {
     ...(parsed.success ? parsed.data : {}),
     [normalized.email]: { name: normalized.name, phone: normalized.phone },

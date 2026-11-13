@@ -697,15 +697,47 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   );
   await page.getByLabel("Full name", { exact: false }).focus();
   await expect(page.locator("#phone-error")).toHaveText(
-    "Enter a valid mobile number.",
+    "Remove invalid characters or extra digits from the mobile number.",
   );
   await expect(
     page.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   ).toBeDisabled();
+  await page.getByLabel("Full name", { exact: false }).blur();
   await expect(page.locator("#name")).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#details-form input")).toHaveCount(4);
   await expect(page.locator("#details-form select")).toHaveCount(1);
   await expect(page.locator("#details-form textarea")).toHaveCount(0);
+  await expect(page.locator("#name")).toHaveAttribute(
+    "placeholder",
+    "Your name.",
+  );
+  await expect(page.locator("#email")).toHaveAttribute(
+    "placeholder",
+    "abc@gmail.com",
+  );
+  await expect(page.locator("#phone")).toHaveAttribute(
+    "placeholder",
+    "9123 4567",
+  );
+  await page
+    .getByRole("button", { name: "Country code: Singapore +65" })
+    .click();
+  const countrySearch = page.getByRole("combobox", {
+    name: "Search country or dial code",
+  });
+  await countrySearch.fill("United Kingdom");
+  await countrySearch.press("Enter");
+  await expect(page.locator("#phone")).toHaveAttribute(
+    "placeholder",
+    "07400 123456",
+  );
+  await page.locator("#phone").fill("7911123456");
+  await expect(page.locator("#phone")).toHaveAttribute("aria-invalid", "false");
+  await page
+    .getByRole("button", { name: "Country code: United Kingdom +44" })
+    .click();
+  await countrySearch.fill("Singapore");
+  await countrySearch.press("Enter");
   await details(page);
   await page.evaluate(() => {
     const stored = JSON.parse(

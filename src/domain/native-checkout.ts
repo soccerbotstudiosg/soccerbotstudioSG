@@ -62,7 +62,7 @@ export function isNativeCheckoutUrl(value: string): boolean {
 // totals are display/consent snapshots; the Worker revalidates provider truth.
 import { isDate } from "./dates";
 import { providerIdentifier } from "./catalog";
-import { contactSchema } from "./contact";
+import { contactSchema, validatedContactSchema } from "./contact";
 import { MAX_PLAYERS } from "./booking-policy";
 // Bound response size independently of the number of providers in the roster.
 export const MAX_DAILY_NATIVE_OFFERS = 2000;
@@ -183,7 +183,7 @@ export const nativeCalendarSchema = z
 export const nativePrepareSchema = z
   .strictObject({
     key: z.string().regex(/^[A-Za-z0-9_-]{16,128}$/),
-    contact: contactSchema.strict(),
+    contact: validatedContactSchema,
     accepted: z.boolean(),
     holding: z.literal(true).optional(),
     sessions: z

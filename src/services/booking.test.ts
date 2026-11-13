@@ -266,7 +266,7 @@ describe("customer verification preview", () => {
     identity.saveProfile(draft);
     const profile = identity.profile("customer@example.com");
     expect(profile?.name).toBe("Demo Customer");
-    expect(profile?.phone).toBe("+65 8123 4567");
+    expect(profile?.phone).toBe("+6581234567");
     expect(profile?.academy).toBe("");
     expect(Object.keys(profile!).sort()).toEqual([
       "academy",

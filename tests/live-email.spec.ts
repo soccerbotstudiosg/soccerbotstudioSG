@@ -678,8 +678,11 @@ test("remembered live account edits and rereads contact while native booking sta
     "Synthetic Contact",
   );
   await expect(page.getByLabel("Mobile number", { exact: false })).toHaveValue(
-    "+65 8123 4567",
+    "81234567",
   );
+  await expect(
+    page.getByRole("button", { name: "Country code: Singapore +65" }),
+  ).toBeVisible();
   expect(
     evidence.calls.filter(
       (c) => c.path === "/api/identity/contact" && c.method === "POST",
@@ -691,7 +694,7 @@ test("remembered live account edits and rereads contact while native booking sta
       body: {
         email: "synthetic@example.test",
         name: "Synthetic Contact",
-        phone: "+65 8123 4567",
+        phone: "+6581234567",
       },
     },
   ]);

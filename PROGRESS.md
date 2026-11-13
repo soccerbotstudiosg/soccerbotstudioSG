@@ -2,17 +2,18 @@
 
 ## Active outcome
 
-Consolidate the final expiry/loading refinements and immediate operations-readiness queue into one staging PR, based on merged PR68/main `315b00a29e7af7ca7141a064c1659ae19510dcab`. Branch `fix/expiry-grace-20-seconds`. Owner authorizes publication and staging CI; merge and production release are not part of this request.
+Consolidate contact validation, country-code phone entry and approved field placeholders on `fix/shared-contact-validation`, based on merged PR69/main `fd26544f0002b853bf722c4d21553aaa857358d1`. Owner authorizes implementation, staging and merge after checks; physical acceptance is explicitly deferred to a full regression pass later.
 
 ## Current slice
 
-- Increase foreground expiry reconciliation from10 to20 seconds. Preserve the existing conditional extra10 seconds while awaiting the first successful status read started after expiry (30 seconds maximum), reload deadline, server pacing and financial locks.
-- Show distinct approved conflict and active-checkout loader messages, each ending “Please do not close or refresh.” Keep normal checkout creation and expiry messages, final notices and ownership rules unchanged. Copy is owned by [booking scenarios](docs/booking-flows.md#approved-rejection-loading-copy--13-november-2026).
-- Update affected tests and documentation only; the full documentation reconciliation remains the next workstream.
+- Share contact validation across forms, services and Worker write boundaries: email maximum254, embedded-control rejection and explicit contact-method membership. Preserve historical booking recovery and editable invalid saved profiles.
+- Add a searchable country-code phone selector: Singapore eight digits starting8/9, permissive overseas numbers (recognized calling code, digits, international7–15-digit range), canonical new phone writes and immediate feedback. Add `libphonenumber-js`1.13.16 with min metadata and official mobile examples.
+- Use approved regular grey placeholders and retain existing instructions, including guest email acknowledgement. Verified email remains read-only without an editable-field hint.
+- Update affected documentation and tests. No new network checks, provider changes or live transactions.
 
 ## Evidence and delivery
 
-PR68 was merged after its final CI and staging health passed. Owner accepted session-tile selection, review spinner/rechallenge, second-tab ownership and lost-connection checkout recovery; the latest late-payment test still briefly showed Calendar before confirmation. This slice addresses the display window, not provider latency or payment authority. All90 affected component tests pass, along with TypeScript, affected ESLint and source-integrity checks. Existing timing assertions were updated for the approved20-second behaviour; mutation checks detect the old grace and hidden rejection messages. Initial CI run43345280695 found another old10-second boundary expectation in confirmation-checking (337/338 passed). That fixture now asserts the20-second boundary; all220 component tests pass locally, with affected lint/format checks. The same PR will receive this test-only correction; final exact-head staging CI and deployment remain pending. Record delivery receipts in the PR and dated Journey rather than adding status-only commits.
+PR69 merged after CI and staging passed (receipts retained in its PR and Journey). All345 local domain/component/service tests and29 isolated Worker tests pass. Frontend/Worker types, lint and source integrity pass. Initial canonical-phone expectation failures were corrected; a five-second component-test timeout occurred while full tests competed with Worker/type/lint processes, with focused tests passing. The isolated complete suite passed with the original timeout. Preserve both receipts; no retries or timeout relaxation were added. PR70 initial CI43357430023 found a cross-realm options-object incompatibility in the injected-clock tooling harness. The initial runtime-supported three-argument fix passed all188 tooling tests, but CI43358003672 correctly rejected its unsupported TypeScript signature. The public two-argument country form retains the existing whole-input numeric/separator whitelist; explicit type and clock checks are required before republishing. Four provider HTTP fixtures still used the newly invalid00000000 number; they now use a valid Singapore number and all four original scenarios pass. Historical recovery fixtures retain their original values. CI43358735159 passed frontend, both backend browser shards, contracts and recovery; sustained testing found two new-preparation requests still inheriting the legacy00000000 fixture. The three request baselines now explicitly use a valid Singapore phone; all three focused native preparation/date-scope tests pass without changing historical evidence or assertions. The correction stays on PR70; final exact-head CI, staging health and merge remain pending. Record final receipts in the PR rather than status-only commits.
 
 ## Remaining targeted acceptance
 
@@ -22,6 +23,8 @@ PR68 was merged after its final CI and staging health passed. Owner accepted ses
 | Unpaid expiry / unresolved status | Bounded foreground wait, at most30 seconds with the existing conditional allowance; refresh retains the original deadline; silent recovery and payment locks remain intact.   |
 | Session conflict                  | Creation message changes to approved availability-check message, followed by the correct final notice and corrected cart.                                                     |
 | Second-tab active checkout        | Creation message changes to approved active-checkout message; no duplicate checkout, takeover or damage to the first tab.                                                     |
+
+Additional targeted physical acceptance for this slice is recorded in [simulated-user UAT](docs/uat/simulated-user.md#contact-validation-and-country-code-entry). Owner subsequently requested a full physical pass later, including conflict, active-checkout and expiry messages plus the new contact/phone/email checks.
 
 ## Ordered work after this slice
 
@@ -44,4 +47,4 @@ The queue is recorded now, before the full documentation reconciliation. These a
 
 ## Next action
 
-Complete affected local checks, review the consolidated diff, publish one ready PR under LimYouSheng, and verify its CI and actual staging deployment/health. Then obtain the four targeted owner test results before moving to full docs reconciliation. No live bookings, payment actions, provider configuration or notification sends are authorized by this planning update.
+Finish consolidated verification and publish one ready PR through LimYouSheng. Verify all exact-head CI gates and actual staging deployment/health, then perform the authorized merge. Owner performs the full physical regression pass, including contact/phone/verification and remaining expiry/conflict acceptance afterwards; full documentation reconciliation follows the ordered queue.
