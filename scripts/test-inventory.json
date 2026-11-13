@@ -884,6 +884,10 @@
     "title": "verified rejection permits Back and edits during classification without replaying payment"
   },
   {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unresolved creation keeps forward navigation on Calendar until verified release permits Review acknowledgement"
+  },
+  {
     "file": "src/features/booking/email-bot-proof.test.tsx",
     "title": "email bot widget binds purpose clears expired proof and ignores callbacks after disposal"
   },
@@ -1082,6 +1086,10 @@
   {
     "file": "src/features/booking/time-step.test.tsx",
     "title": "each time requires an independent trainer choice and changing it preserves other sessions and survives restoration"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "pre-checkout recovery restores fresh display times without releasing the original attempt"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",

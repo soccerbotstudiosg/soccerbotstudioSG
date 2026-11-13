@@ -357,68 +357,76 @@ export function BookingConfirmation({
         )}
         {pending && pendingAction}
         {showReceipt && (
-          <details className="confirmation-full-details">
-            <summary>View Full Details</summary>
-            <div className="confirmation-details-grid">
-              <section className="review-block">
-                <SessionSummaryHeading
-                  draft={{ ...booking.draft, slots: booking.slots }}
-                />
-              </section>
-              <section
-                className="confirmation-section review-block"
-                aria-labelledby="confirmation-client"
-              >
-                <h2 className="section-title" id="confirmation-client">
-                  Booking Contact
-                </h2>
-                <ClientDetails contact={booking.draft.contact} />
-              </section>
-              <section
-                className="confirmation-section review-block"
-                aria-labelledby="confirmation-location"
-              >
-                <h2 className="section-title" id="confirmation-location">
-                  Location
-                </h2>
-                <p>
-                  <strong>
-                    {[
-                      ...new Set(booking.slots.map((slot) => slot.studio)),
-                    ].join(", ")}
-                  </strong>
-                  <br />
-                  {ADDRESS}
-                </p>
-              </section>
-              <section
-                className="confirmation-section confirmation-disclaimers review-block"
-                aria-labelledby="confirmation-disclaimers"
-              >
-                <h2 className="section-title" id="confirmation-disclaimers">
-                  Before Your Session
-                </h2>
-                {booking.slots
-                  .filter((slot) => slot.rotationAt)
-                  .map((slot) => (
-                    <p
-                      className="rotation-notice"
-                      key={`${slot.date}|${slot.start}`}
-                    >
-                      {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}
-                      : Crosses the {slot.rotationAt} instructor rotation. Your
-                      assigned instructor stays for the full session.
-                    </p>
-                  ))}
-                <Arrival compact />
-                {preview && (
-                  <p className="payment-foot">
-                    Payment preview · No money was charged.
+          <div
+            className={`confirmation-details-row${!pending && !preview ? " has-copy" : ""}`}
+          >
+            <details className="confirmation-full-details">
+              <summary>View Full Details</summary>
+              <div className="confirmation-details-grid">
+                <section className="review-block">
+                  <SessionSummaryHeading
+                    draft={{ ...booking.draft, slots: booking.slots }}
+                  />
+                </section>
+                <section
+                  className="confirmation-section review-block"
+                  aria-labelledby="confirmation-client"
+                >
+                  <h2 className="section-title" id="confirmation-client">
+                    Booking Contact
+                  </h2>
+                  <ClientDetails contact={booking.draft.contact} />
+                </section>
+                <section
+                  className="confirmation-section review-block"
+                  aria-labelledby="confirmation-location"
+                >
+                  <h2 className="section-title" id="confirmation-location">
+                    Location
+                  </h2>
+                  <p>
+                    <strong>
+                      {[
+                        ...new Set(booking.slots.map((slot) => slot.studio)),
+                      ].join(", ")}
+                    </strong>
+                    <br />
+                    {ADDRESS}
                   </p>
-                )}
-              </section>
-            </div>
-          </details>
+                </section>
+                <section
+                  className="confirmation-section confirmation-disclaimers review-block"
+                  aria-labelledby="confirmation-disclaimers"
+                >
+                  <h2 className="section-title" id="confirmation-disclaimers">
+                    Before Your Session
+                  </h2>
+                  {booking.slots
+                    .filter((slot) => slot.rotationAt)
+                    .map((slot) => (
+                      <p
+                        className="rotation-notice"
+                        key={`${slot.date}|${slot.start}`}
+                      >
+                        {dateLabel(slot.date)}, {slot.start}–
+                        {endTime(slot.start)}: Crosses the {slot.rotationAt}{" "}
+                        instructor rotation. Your assigned instructor stays for
+                        the full session.
+                      </p>
+                    ))}
+                  <Arrival compact />
+                  {preview && (
+                    <p className="payment-foot">
+                      Payment preview · No money was charged.
+                    </p>
+                  )}
+                </section>
+              </div>
+            </details>
+            {!pending && !preview && (
+              <ConfirmationCopy key={booking.reference} booking={booking} />
+            )}
+          </div>
         )}
         {showReceipt && (
           <section
@@ -427,24 +435,21 @@ export function BookingConfirmation({
           >
             <div className="review-head">
               <h2 id="confirmation-order">Order Summary</h2>
-              {!preview && (
-                <div className="confirmation-paid-actions">
-                  {!pending && (
-                    <ConfirmationCopy
-                      key={booking.reference}
-                      booking={booking}
-                    />
-                  )}
-                  <span
-                    className={`pill ${pending ? "confirmation-pending-status" : "success"} confirmation-paid-status`}
-                  >
-                    {pending ? "Pending" : "Paid"}
+              {!preview &&
+                (pending ? (
+                  <div className="confirmation-paid-actions">
+                    <span className="pill confirmation-pending-status confirmation-paid-status">
+                      Pending
+                    </span>
+                    {pendingLabel !== "Pending" && (
+                      <p className="text-sm text-muted">{pendingLabel}</p>
+                    )}
+                  </div>
+                ) : (
+                  <span className="pill success confirmation-paid-status">
+                    Paid
                   </span>
-                  {pending && pendingLabel !== "Pending" && (
-                    <p className="text-sm text-muted">{pendingLabel}</p>
-                  )}
-                </div>
-              )}
+                ))}
             </div>
             <SessionList
               slots={booking.slots}

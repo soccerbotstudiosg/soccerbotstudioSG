@@ -26,6 +26,7 @@ import {
 import { dateLabel, endTime, money } from "@/domain/dates";
 import { bookingCover } from "@/content/media";
 import { customerCatalogueService } from "@/services/customer-catalogue";
+import { isUnresolvedCheckout } from "@/services/storage";
 import { InstructorProfile } from "./instructor";
 import { useBooking } from "./provider";
 /** Present the same session heading and service description across booking summaries. */
@@ -245,7 +246,12 @@ export function Summary({
 
 /** Retain calendar continuation and fresh-availability guards outside mobile popups. */
 export function BasketContinue() {
-  const { draft, now, availability, suppressedSlots } = useBooking();
+  const { draft, now, availability, suppressedSlots, action, attempt } =
+    useBooking();
+  const unresolvedCreation =
+    action.calendarRecovery &&
+    attempt &&
+    (action.unresolvedCheckout || isUnresolvedCheckout(attempt.id));
   const awaitingAvailability = draft.slots.some((slot) =>
     suppressedSlots.some((hidden) => overlaps(slot, hidden)),
   );
@@ -262,7 +268,11 @@ export function BasketContinue() {
           available.rotationAt === slot.rotationAt,
       ),
     );
-  const canContinue = draft.slots.length > 0 && valid && !awaitingAvailability;
+  const canContinue =
+    !unresolvedCreation &&
+    draft.slots.length > 0 &&
+    valid &&
+    !awaitingAvailability;
   return (
     <>
       <BookingPrimaryAction ready={canContinue}>

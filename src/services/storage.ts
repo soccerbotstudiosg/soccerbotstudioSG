@@ -266,6 +266,7 @@ export function saveCalendarRecovery(attemptId: string, unresolved = false) {
       ...stored,
       calendarRecovery: true,
       unresolvedCheckout: unresolved,
+      calendarNoticeDismissed: false,
     });
 }
 /** Leave calendar recovery only for the matching tab's original financial attempt. */

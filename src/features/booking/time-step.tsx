@@ -456,7 +456,14 @@ export function TimeStep({
       )}
       {recoveryNotice}
       {selectionNotice && (
-        <div className="alert" role="alert">
+        <div
+          className={
+            selectionNotice === CHECKOUT_UNRESOLVED && attempt
+              ? "alert calendar-recovery-notice"
+              : "alert"
+          }
+          role="alert"
+        >
           <p>
             {selectionNotice === CHECKOUT_UNRESOLVED ? (
               <strong>{selectionNotice}</strong>

@@ -12,14 +12,21 @@ import { blankDraft } from "@/domain/booking";
 import { dateLabel, todaySG } from "@/domain/dates";
 import { SessionStep } from "./session-step";
 import { BookingPage } from "./booking-page";
-import { Summary } from "./summary";
+import { BasketContinue, Summary } from "./summary";
 import { ReviewStep } from "./review-step";
 import { BookingProvider, useBooking } from "./provider";
 import { demoSession } from "@/services/demo/schedule";
 import { ConfirmationStep } from "./confirmation-step";
 import { TimeStep } from "./time-step";
 import { demoBookingService, demoBookingModel } from "@/services/demo/booking";
-import { loadBooking, saveBooking } from "@/services/storage";
+import {
+  loadBooking,
+  saveBooking,
+  saveLiveDraft,
+  saveSuppressedSlots,
+} from "@/services/storage";
+import { demoCustomerIdentity } from "@/services/demo/identity";
+import type { AvailableSlot, BookingService } from "@/services/contracts";
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -854,6 +861,216 @@ test("calendar back preserves outlet and session choices while explicit deselect
   );
   expect(scroll).toHaveBeenCalledTimes(2);
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+});
+
+test("pre-checkout recovery restores fresh display times without releasing the original attempt", async () => {
+  const original = {
+    date: restoredDate,
+    start: "12:00",
+    instructor: "4",
+    native: {
+      serviceId: "12",
+      serviceName: "Session",
+      instructorName: "Instructor",
+      priceMinor: 8800,
+      currency: "SGD" as const,
+    },
+  };
+  const other = { ...original, start: "12:50" };
+  const draft = {
+    ...blankDraft(),
+    mode: "guest" as const,
+    nativeServiceId: "12",
+    accepted: true,
+    contact: {
+      name: "Test Customer",
+      email: "test@example.com",
+      phone: "+6581234567",
+      contactMethod: "email",
+      academy: "",
+    },
+    slots: [original],
+  };
+  const retained = {
+    id: "00000000-0000-4000-8000-000000000001",
+    status: "checking" as const,
+    draft,
+    outcome: "pending" as const,
+    checkUntil: Date.now() + 600000,
+    booking: null,
+  };
+  saveLiveDraft(draft, true, retained.id);
+  saveSuppressedSlots([original]);
+  const offers = [original, other].map((slot) => ({
+    ...slot,
+    available: true,
+  }));
+  const reads: {
+    signal: AbortSignal;
+    resolve: (slots: AvailableSlot[]) => void;
+    reject: (error: Error) => void;
+  }[] = [];
+  const availability = vi.fn(({ fresh, signal }) =>
+    fresh
+      ? new Promise<AvailableSlot[]>((resolve, reject) => {
+          reads.push({ signal: signal!, resolve, reject });
+        })
+      : Promise.resolve(offers),
+  );
+  const checkout = vi.fn();
+  const pay = vi.fn();
+  let reviewResult: boolean | undefined;
+  const service: BookingService = {
+    ...demoBookingService,
+    mode: "live",
+    operations: {
+      availability: "live",
+      checkout: "live",
+      pay: "live",
+      check: "unavailable",
+      resolve: "unavailable",
+    },
+    restore: async () => retained,
+    availability,
+    calendar: async ({ month }) => ({
+      month,
+      observedAtMs: Date.now(),
+      dates: [{ date: restoredDate, available: true }],
+    }),
+    checkout,
+    pay,
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(null, { status: 503 })),
+  );
+  function Recovery() {
+    const state = useBooking();
+    return (
+      <>
+        <button onClick={() => state.browseAfterChecking(retained.id, true)}>
+          Browse unresolved creation
+        </button>
+        <button onClick={() => state.update({ players: 2 })}>
+          Change scope
+        </button>
+        <button onClick={() => void state.checkout()}>Try checkout</button>
+        <button
+          onClick={() =>
+            void state.review().then((result) => {
+              reviewResult = result;
+            })
+          }
+        >
+          Try Review
+        </button>
+        <button onClick={() => state.resolveUncreatedBooking(retained.id)}>
+          Verified no creation
+        </button>
+        <output data-testid="creation-attempt">
+          {JSON.stringify(state.attempt)}
+        </output>
+        <output data-testid="creation-cart">
+          {JSON.stringify(state.draft.slots)}
+        </output>
+        <output data-testid="creation-consent">
+          {String(state.draft.accepted)}
+        </output>
+        <output data-testid="creation-suppressed">
+          {JSON.stringify(state.suppressedSlots)}
+        </output>
+        {state.ready && state.action.calendarRecovery ? (
+          <>
+            <TimeStep />
+            <BasketContinue />
+          </>
+        ) : null}
+        {state.ready && !state.attempt ? <ReviewStep /> : null}
+      </>
+    );
+  }
+  render(
+    <BookingProvider
+      bookingService={service}
+      identityService={{ ...demoCustomerIdentity, mode: "live" }}
+    >
+      <Recovery />
+    </BookingProvider>,
+  );
+  await waitFor(() => expect(reads).toHaveLength(1));
+  // An earlier positive fresh read cannot substitute for a read after recovery entry.
+  await act(async () => reads[0].resolve(offers));
+  fireEvent.click(screen.getByText("Browse unresolved creation"));
+  await waitFor(() => expect(reads).toHaveLength(2));
+  fireEvent.click(
+    await screen.findByRole("button", { name: dateLabel(restoredDate) }),
+  );
+  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  await act(async () => reads[1].resolve([offers[1]]));
+  expect(
+    JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
+  ).toEqual([original]);
+  vi.setSystemTime(new Date("2026-10-07T02:01:00Z"));
+  fireEvent.focus(window);
+  await waitFor(() => expect(reads).toHaveLength(3));
+  await act(async () =>
+    reads[2].reject(new Error("Synthetic offline fresh read")),
+  );
+  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  vi.setSystemTime(new Date("2026-10-07T02:02:00Z"));
+  fireEvent.focus(window);
+  await waitFor(() => expect(reads).toHaveLength(4));
+  fireEvent.click(screen.getByText("Change scope"));
+  await waitFor(() => expect(reads).toHaveLength(5));
+  expect(reads[3].signal.aborted).toBe(true);
+  await act(async () => reads[3].resolve(offers));
+  expect(
+    JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
+  ).toEqual([original]);
+  await act(async () => reads[4].resolve(offers));
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled(),
+  );
+  expect(
+    JSON.parse(screen.getByTestId("creation-attempt").textContent!),
+  ).toEqual(retained);
+  expect(
+    JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
+  ).toEqual([]);
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  fireEvent.change(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
+    {
+      target: { value: `${restoredDate}|12:00|12|4` },
+    },
+  );
+  expect(JSON.parse(screen.getByTestId("creation-cart").textContent!)).toEqual([
+    original,
+  ]);
+  expect(
+    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+  ).toBeDisabled();
+  await act(async () => fireEvent.click(screen.getByText("Try Review")));
+  expect(reviewResult).toBe(false);
+  fireEvent.click(screen.getByText("Try checkout"));
+  expect(checkout).not.toHaveBeenCalled();
+  expect(pay).not.toHaveBeenCalled();
+  expect(
+    JSON.parse(screen.getByTestId("creation-attempt").textContent!),
+  ).toEqual(retained);
+  fireEvent.click(screen.getByText("Verified no creation"));
+  expect(
+    JSON.parse(screen.getByTestId("creation-attempt").textContent!),
+  ).toBeNull();
+  expect(JSON.parse(screen.getByTestId("creation-cart").textContent!)).toEqual([
+    original,
+  ]);
+  fireEvent.click(screen.getByRole("checkbox"));
+  expect(screen.getByRole("checkbox")).toBeChecked();
+  expect(screen.getByTestId("creation-consent")).toHaveTextContent("true");
+  expect(checkout).not.toHaveBeenCalled();
+  expect(pay).not.toHaveBeenCalled();
 });
 
 test("expiry recovery hides affected studio times across trainers while other selections remain editable", async () => {

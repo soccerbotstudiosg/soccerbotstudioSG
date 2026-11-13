@@ -1585,7 +1585,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(page.locator(".status-heading h1 + p")).toHaveText(
       "Your booking confirmation will be emailed to you.",
     );
-    const paidBadge = page.locator(".review-head .confirmation-paid-status");
+    const paidBadge = page.locator(".review-head > .confirmation-paid-status");
     await expect(paidBadge).toHaveText("Paid");
     // WebKit serializes fractional CSS pixels as 23.799999px/15.299999px.
     // Check the requested dimensions numerically, retaining subpixel precision.
@@ -1613,18 +1613,39 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(copyButton).toHaveText("");
     await expect(copyButton.locator("svg")).toBeVisible();
     await copyButton.scrollIntoViewIfNeeded();
+    const details = page.locator(".confirmation-full-details");
+    await expect(details).toHaveJSProperty("open", false);
+    expect(
+      await copyButton.evaluate((button) => !button.closest("details")),
+    ).toBe(true);
     const copyBox = await copyButton.boundingBox();
+    const detailsSummaryBox = await details.locator("summary").boundingBox();
     const paidBox = await paidBadge.boundingBox();
-    const orderBox = await page
-      .getByRole("region", { name: "Order Summary", exact: true })
+    const order = page.getByRole("region", {
+      name: "Order Summary",
+      exact: true,
+    });
+    const orderBox = await order.boundingBox();
+    const orderHead = order.locator(".review-head");
+    await expect(orderHead).toHaveCSS("align-items", "baseline");
+    const orderHeadBox = await orderHead.boundingBox();
+    const firstSessionBox = await order
+      .locator(".series-list > li:first-child .series-date")
       .boundingBox();
     expect(copyBox).not.toBeNull();
+    expect(detailsSummaryBox).not.toBeNull();
     expect(paidBox).not.toBeNull();
     expect(orderBox).not.toBeNull();
+    expect(orderHeadBox).not.toBeNull();
+    expect(firstSessionBox).not.toBeNull();
     // The accepted badge is 23.8px text at 1.6 line-height plus 17px padding.
     // Assert its rendered height independently of its computed CSS values.
     expect(Math.abs(paidBox!.height - 55.08)).toBeLessThan(0.1);
-    expect(copyBox!.y + copyBox!.height).toBeLessThanOrEqual(paidBox!.y);
+    expect(copyBox!.y).toBeCloseTo(detailsSummaryBox!.y, 1);
+    expect(copyBox!.y + copyBox!.height).toBeCloseTo(
+      detailsSummaryBox!.y + detailsSummaryBox!.height,
+      1,
+    );
     expect(copyBox!.x + copyBox!.width).toBeCloseTo(
       paidBox!.x + paidBox!.width,
       0,
@@ -1633,6 +1654,10 @@ test("real payment recovery confirms the browser return from verified provider s
       orderBox!.x + orderBox!.width,
       0,
     );
+    expect(orderHeadBox!.height).toBeCloseTo(paidBox!.height, 1);
+    expect(
+      firstSessionBox!.y - (orderHeadBox!.y + orderHeadBox!.height),
+    ).toBeCloseTo(10, 1);
     // Keep clipboard acceptance deterministic across Chromium and WebKit;
     // the actual receipt formatter and click handler still execute.
     await page.evaluate(() => {
@@ -1649,6 +1674,7 @@ test("real payment recovery confirms the browser return from verified provider s
     const copied = page.locator(".confirmation-copy-feedback");
     await expect(copied).toHaveText("Copied");
     await expect(copied).toBeVisible();
+    await expect(details).toHaveJSProperty("open", false);
     await expect(copied).toHaveCSS("font-size", "12px");
     expect(
       await page.locator("html").getAttribute("data-copied-booking"),
@@ -2167,18 +2193,21 @@ async function checkoutHoldResponse(
     page.getByRole("heading", { name: "Review Booking", exact: true }),
   ).toBeVisible();
   beforeCheckout?.();
-  await page.getByRole("checkbox").check();
+  const consent = page.getByRole("checkbox");
+  await consent.check();
+  await expect(consent).toBeChecked();
+  await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
+  const proceed = page.getByRole("button", {
+    name: /^Proceed to Payment \$[\d,.]+$/,
+    exact: true,
+  });
+  await expect(proceed).toBeEnabled();
   const response = page.waitForResponse(
     (response) =>
       new URL(response.url()).pathname.startsWith("/api/booking/checkout/") &&
       response.request().method() === "POST",
   );
-  await page
-    .getByRole("button", {
-      name: /^Proceed to Payment \$[\d,.]+$/,
-      exact: true,
-    })
-    .click();
+  await proceed.click();
   return response;
 }
 
@@ -2365,6 +2394,13 @@ async function uncertainHolding(
     const restored = page.waitForResponse(
       (response) => new URL(response.url()).pathname === "/api/booking/current",
     );
+    if (fault === "creation")
+      await page.evaluate((id) => {
+        sessionStorage.setItem(
+          `soccerbot-checkout-wait:${id}`,
+          JSON.stringify({ deadline: Date.now() - 1000 }),
+        );
+      }, row!.id);
     await page.reload();
     await restored;
     await expect(
@@ -2386,6 +2422,102 @@ async function uncertainHolding(
         .first<{ n: number }>())!.n,
     ).toBe(0);
     if (fault === "creation") {
+      await expect(page).toHaveURL(/\/book\/time\/$/);
+      await expect(
+        page.getByText("We couldn’t confirm your booking status.", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Request Help", exact: true }),
+      ).toBeVisible();
+      const recoveryNotice = page.locator(".calendar-recovery-notice");
+      await expect(recoveryNotice).toHaveCount(1);
+      await expect(recoveryNotice).toHaveCSS("padding-top", "12px");
+      await expect(recoveryNotice).toHaveCSS("padding-bottom", "12px");
+      await recoveryNotice.scrollIntoViewIfNeeded();
+      const noticeGeometry = await recoveryNotice.evaluate((notice) => {
+        const bounds = notice.getBoundingClientRect();
+        const message = notice.querySelector(":scope > p")!;
+        const help = notice.querySelector(".booking-help > button")!;
+        const style = getComputedStyle(notice);
+        return {
+          bounds: bounds.toJSON(),
+          message: message.getBoundingClientRect().toJSON(),
+          help: help.getBoundingClientRect().toJSON(),
+          innerWidth:
+            notice.clientWidth -
+            parseFloat(style.paddingLeft) -
+            parseFloat(style.paddingRight),
+          contentRight:
+            bounds.right -
+            parseFloat(style.borderRightWidth) -
+            parseFloat(style.paddingRight),
+          overflow: notice.scrollWidth > notice.clientWidth,
+        };
+      });
+      expect(noticeGeometry.overflow).toBe(false);
+      expect(noticeGeometry.bounds.height).toBeLessThanOrEqual(180);
+      expect(noticeGeometry.help.height).toBeGreaterThanOrEqual(44);
+      expect(noticeGeometry.help.height).toBeLessThanOrEqual(46);
+      expect(noticeGeometry.help.right).toBeCloseTo(
+        noticeGeometry.contentRight,
+        1,
+      );
+      if (noticeGeometry.innerWidth >= 240 + 16 + noticeGeometry.help.width)
+        expect(
+          noticeGeometry.help.y + noticeGeometry.help.height / 2,
+        ).toBeCloseTo(
+          noticeGeometry.message.y + noticeGeometry.message.height / 2,
+          1,
+        );
+      else
+        expect(noticeGeometry.help.top).toBeGreaterThanOrEqual(
+          noticeGeometry.message.bottom + 8,
+        );
+      // Direct/back navigation must not expose an editable-looking Review
+      // while the original unknown write still owns its financial lock.
+      await page.addInitScript(() => {
+        if (location.origin !== "http://127.0.0.1:4173") return;
+        new MutationObserver(() => {
+          const draft = JSON.parse(
+            sessionStorage.getItem("soccerbot-live-draft") || "null",
+          );
+          if (
+            draft?.calendarRecovery &&
+            document.querySelector(".review-terms")
+          )
+            document.documentElement.setAttribute(
+              "data-unexpected-review",
+              "true",
+            );
+        }).observe(document, { childList: true, subtree: true });
+      });
+      for (const step of ["details", "review"]) {
+        await page.goto(`/book/${step}/`);
+        await expect(page).toHaveURL(/\/book\/time\/$/);
+        await expect(page.getByRole("checkbox")).toHaveCount(0);
+        await expect(
+          page.getByRole("heading", { name: "Review Booking", exact: true }),
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole("button", { name: /^Enter Booking Details/ }),
+        ).toBeDisabled();
+        await expect(page.locator("html")).not.toHaveAttribute(
+          "data-unexpected-review",
+          "true",
+        );
+      }
+      expect(
+        mechanism.calls.filter((call) => call.body?.method === "book"),
+      ).toHaveLength(1);
+      expect(
+        transport.calls.filter(
+          (call) =>
+            call.method === "POST" &&
+            call.path.startsWith("/api/booking/checkout/"),
+        ),
+      ).toHaveLength(1);
       // Exercise the real operator endpoint and real customer route after a
       // synthetic provider confirms the dispatched request created nothing.
       const proof = await mechanism.db
@@ -2412,9 +2544,8 @@ async function uncertainHolding(
           }),
         )
         .run();
-      // Wait for the customer's existing background read to observe terminal
-      // proof before asserting navigation; an operator write does not notify
-      // the browser, and the polling interval itself is five seconds.
+      // Observe terminal proof through the customer's authenticated context;
+      // the operator response cannot clear browser state or replay its write.
       const observedResolution = page.waitForResponse(async (response) => {
         const path = new URL(response.url()).pathname;
         if (
@@ -2437,6 +2568,9 @@ async function uncertainHolding(
       );
       expect(resolved.status).toBe(200);
       expect(await resolved.json()).toMatchObject({ state: "complete" });
+      // A normal reload observes the operator's new authority immediately;
+      // it does not renew the expired foreground wait or replay the write.
+      await page.reload();
       await observedResolution;
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
