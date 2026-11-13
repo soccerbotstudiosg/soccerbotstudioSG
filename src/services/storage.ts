@@ -111,7 +111,28 @@ export function safeWrite(
     /* Private browsing may deny persistence. In-memory flow remains available. */
   }
 }
+/** Remember only a payment-return hint; this suppresses repayment and never proves payment. */
+export function completedPaymentReturn(attemptId: string, received = false) {
+  const key = `soccerbot-payment-return:${attemptId}`;
+  if (received) safeWrite(key, { completed: true });
+  return received || record(safeRead(key))?.completed === true;
+}
 export const EXPIRY_RECONCILIATION_MS = 20000;
+export const CHECKOUT_RECOVERY_WAIT_MS = 30000;
+/** One foreground wait per attempt, including response loss and reload. Not financial authority. */
+export function checkoutRecoveryDeadline(
+  attemptId: string,
+  now = Date.now(),
+  phase: "checkout" | "confirmation" = "checkout",
+) {
+  const key = `soccerbot-${phase}-wait:${attemptId}`;
+  const saved = record(safeRead(key));
+  if (typeof saved?.deadline === "number" && Number.isFinite(saved.deadline))
+    return Math.min(saved.deadline, now + CHECKOUT_RECOVERY_WAIT_MS);
+  const deadline = now + CHECKOUT_RECOVERY_WAIT_MS;
+  safeWrite(key, { deadline });
+  return deadline;
+}
 const EXPIRY_STATUS_SETTLEMENT_MS = 10000;
 /** Keep one display-only expiry wait across reloads; this never releases a payment lock. */
 export function expiryReconciliationDeadline(
@@ -214,6 +235,10 @@ export function saveLiveDraft(
       resumeCheckout &&
       previous?.checkoutAttemptId === checkoutAttemptId &&
       previous?.calendarRecovery === true,
+    unresolvedCheckout:
+      resumeCheckout &&
+      previous?.checkoutAttemptId === checkoutAttemptId &&
+      previous?.unresolvedCheckout === true,
   });
 }
 
@@ -230,10 +255,21 @@ export function saveSuppressedSlots(slots: StoredBooking["draft"]["slots"]) {
 }
 
 /** Remember calendar navigation for this tab's retained unresolved attempt only. */
-export function saveCalendarRecovery(attemptId: string) {
+export function saveCalendarRecovery(attemptId: string, unresolved = false) {
   const stored = record(safeRead("soccerbot-live-draft"));
   if (stored?.checkoutAttemptId === attemptId)
-    safeWrite("soccerbot-live-draft", { ...stored, calendarRecovery: true });
+    safeWrite("soccerbot-live-draft", {
+      ...stored,
+      calendarRecovery: true,
+      unresolvedCheckout: unresolved,
+    });
+}
+export function isUnresolvedCheckout(attemptId: string) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  return (
+    stored?.checkoutAttemptId === attemptId &&
+    stored?.unresolvedCheckout === true
+  );
 }
 /** Restore recovery presentation only when the authenticated attempt matches this tab. */
 export function isCalendarRecovery(attemptId: string) {

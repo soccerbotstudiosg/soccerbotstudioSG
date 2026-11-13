@@ -136,7 +136,10 @@ async function fixture(
     const responseHeaders: Record<string, string> = {};
     let status = 503,
       result: unknown = { error: "identity_unavailable" };
-    if (url.pathname === "/api/identity" && method === "GET") {
+    if (url.pathname === "/api/identity/email-domain" && method === "POST") {
+      status = 200;
+      result = { status: "valid" };
+    } else if (url.pathname === "/api/identity" && method === "GET") {
       await identityReady;
       status = 200;
       result = verified
@@ -2140,7 +2143,7 @@ async function uncertainHolding(
       fault === "readback"
         ? page.getByRole("status", { name: "Checking payment…", exact: true })
         : page.getByText(
-            "We’re checking whether your booking was created. Please don’t book or pay again.",
+            "Checking whether your booking was created… Please do not close or refresh.",
             { exact: true },
           ),
     ).toBeVisible();
@@ -2240,7 +2243,7 @@ async function uncertainHolding(
       ).toBeVisible();
       await expect(
         page.getByRole("status", {
-          name: "Checking your reservation…",
+          name: "Checking whether your booking was created…",
           exact: true,
         }),
       ).toHaveCount(0);
@@ -2257,7 +2260,7 @@ async function uncertainHolding(
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
         page.getByRole("status", {
-          name: "Checking your reservation…",
+          name: "Checking whether your booking was created…",
           exact: true,
         }),
       ).toHaveCount(0);
@@ -2296,11 +2299,11 @@ test("real API revoked access at checkout retains the draft and denies protected
   const transport = await mechanismTransport(page, mechanism);
   try {
     await guestDetails(page, mechanism);
+    await reviewResponse(page);
     await mechanism.db
       .prepare("UPDATE guest_access SET revoked_ms=?")
       .bind(Date.now())
       .run();
-    await reviewResponse(page);
     const response = await checkoutHoldResponse(page, undefined, true);
     expect(response.status()).toBe(401);
     await expect(page).toHaveURL(/\/book\/payment\/$/);
@@ -2479,7 +2482,7 @@ test("real API payment creation failure preserves the hold and never returns to 
     await expect(page).toHaveURL(/\/book\/payment\/$/);
     await expect(
       page.getByRole("status", {
-        name: "Preparing payment…",
+        name: "Preparing your payment link…",
         exact: true,
       }),
     ).toBeVisible();
@@ -2835,7 +2838,7 @@ async function failedBatch(page: Page, unknown: boolean) {
     await page.reload();
     await expect(
       page.getByText(
-        "We’re checking whether your booking was created. Please don’t book or pay again.",
+        "Checking whether your booking was created… Please do not close or refresh.",
         { exact: true },
       ),
     ).toBeVisible();
@@ -2900,13 +2903,13 @@ test("real API exhausted browser checking window retains the original deadline a
       .click();
     await expect(
       page.getByText(
-        "We’re checking whether your booking was created. Please don’t book or pay again.",
+        "Checking whether your booking was created… Please do not close or refresh.",
         { exact: true },
       ),
     ).toBeVisible();
     await expect(
       page.getByRole("status", {
-        name: "Checking your reservation…",
+        name: "Checking whether your booking was created…",
         exact: true,
       }),
     ).toBeVisible();

@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 const bundle = await build({
   stdin: {
-    contents: `export * from './worker/hitpay-contract'; export * from './worker/policy'; export * from './worker/provider-token-cache'; export * from './worker/display-snapshots'; export * from './worker/parallel-reads'; export * from './worker/customer-catalogue'; export * from './worker/public-calendar'; export * from './worker/native-calendar'; export * from './worker/native-grid'; export * from './worker/catalogue'; export * from './worker/prebooking'; export * from './worker/provider-session'; export * from './worker/provider-transport';`,
+    contents: `export * from './worker/email-domain'; export * from './worker/hitpay-contract'; export * from './worker/policy'; export * from './worker/provider-token-cache'; export * from './worker/display-snapshots'; export * from './worker/parallel-reads'; export * from './worker/customer-catalogue'; export * from './worker/public-calendar'; export * from './worker/native-calendar'; export * from './worker/native-grid'; export * from './worker/catalogue'; export * from './worker/prebooking'; export * from './worker/provider-session'; export * from './worker/provider-transport';`,
     resolveDir: process.cwd(),
   },
   bundle: true,
@@ -15,6 +15,7 @@ const bundle = await build({
   format: "esm",
 });
 const {
+  emailDomainStatus,
   studioStartsFromIntervals,
   ProviderTokenCache,
   DisplaySnapshots,
@@ -3493,5 +3494,62 @@ test("warming rotates failed months across restarts without rebuilding fresh sib
   } finally {
     Date.now = original;
     db.close();
+  }
+});
+
+test("email domain lookup distinguishes mail routing invalid domains and DNS outages without exposing mailboxes", async () => {
+  const original = globalThis.fetch;
+  try {
+    for (const scenario of [
+      "mx",
+      "ipv4",
+      "ipv6",
+      "nullmx",
+      "missing",
+      "none",
+      "outage",
+      "malformed",
+    ]) {
+      const calls = [];
+      globalThis.fetch = async (url, options) => {
+        const target = new URL(url);
+        calls.push(target);
+        assert.equal(target.origin, "https://cloudflare-dns.com");
+        assert.equal(target.searchParams.get("name"), "example.com");
+        assert.equal(String(url).includes("synthetic-person"), false);
+        assert.ok(options.signal instanceof AbortSignal);
+        const type = target.searchParams.get("type");
+        if (scenario === "outage") return new Response(null, { status: 503 });
+        if (scenario === "malformed") return Response.json({ Status: "0" });
+        return Response.json({
+          Status: scenario === "missing" ? 3 : 0,
+          Answer:
+            scenario === "mx"
+              ? [{ type: 15, TTL: 60, data: "10 mail.example.com." }]
+              : scenario === "nullmx"
+                ? [{ type: 15, TTL: 60, data: "0 ." }]
+                : scenario === "ipv4" && type === "A"
+                  ? [{ type: 1, TTL: 60, data: "192.0.2.1" }]
+                  : scenario === "ipv6" && type === "AAAA"
+                    ? [{ type: 28, TTL: 60, data: "2001:db8::1" }]
+                    : [],
+        });
+      };
+      assert.equal(
+        await emailDomainStatus("synthetic-person@example.com"),
+        ["mx", "ipv4", "ipv6"].includes(scenario)
+          ? "valid"
+          : ["outage", "malformed"].includes(scenario)
+            ? "unavailable"
+            : "invalid",
+      );
+      assert.ok(calls.length <= 3);
+    }
+    globalThis.fetch = () => {
+      throw new Error("Invalid email must not query DNS");
+    };
+    assert.equal(await emailDomainStatus("not-an-email"), "invalid");
+  } finally {
+    globalThis.fetch = original;
   }
 });

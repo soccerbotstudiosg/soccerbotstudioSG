@@ -194,9 +194,10 @@ test("signed-in customer manages saved contact on Account without entering unava
   );
   expect(refresh).toHaveBeenCalledTimes(1);
   expect(screen.getByLabelText("Full name *")).toHaveValue("Shared Contact");
-  expect(screen.getByLabelText("Email address (verified) *")).toHaveAttribute(
-    "readonly",
+  expect(screen.getByLabelText("Email address (verified) *")).toHaveTextContent(
+    verified.email,
   );
+  expect(screen.queryByRole("textbox", { name: /Email address/ })).toBeNull();
   expect(
     screen.queryByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   ).not.toBeInTheDocument();

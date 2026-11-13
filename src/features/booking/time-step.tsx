@@ -1,4 +1,6 @@
 "use client";
+import { BookingHelp } from "./booking-help";
+import { CHECKOUT_UNRESOLVED } from "@/domain/booking-messages";
 import { BookingHeading } from "./booking-heading";
 import Link from "next/link";
 import {
@@ -16,6 +18,7 @@ import {
   useLayoutEffect,
 } from "react";
 import {
+  BOOKING_LEAD_MS,
   MAX_BOOKING_SESSIONS,
   START_INTERVAL_MINUTES,
 } from "@/domain/booking-policy";
@@ -42,6 +45,15 @@ import {
 import type { AvailableSlot } from "@/services/contracts";
 import { useBooking } from "./provider";
 import { useMobileBooking } from "./booking-tools";
+
+/** Hide native offers at the strict lead-time boundary, including retained display data. */
+function pastSelectionCutoff(slot: AvailableSlot, now = Date.now()) {
+  return (
+    isElapsed(slot, now) ||
+    (!!slot.native &&
+      Date.parse(`${slot.date}T${slot.start}:00+08:00`) - now < BOOKING_LEAD_MS)
+  );
+}
 
 /** Measure the booking surfaces that remain above scrolled content. */
 function stickyBookingHeight() {
@@ -99,8 +111,13 @@ export function TimeStep({
       window.removeEventListener("resize", updateCue);
     };
   }, [mobile]);
-  const { selectionNotice, selectionNoticeSlots, suppressedSlots, action } =
-    useBooking();
+  const {
+    selectionNotice,
+    selectionNoticeSlots,
+    suppressedSlots,
+    action,
+    attempt,
+  } = useBooking();
   const {
     draft,
     update,
@@ -327,7 +344,9 @@ export function TimeStep({
       result.status === "success"
         ? result.slots.some(
             (slot) =>
-              slot.date === date && slot.available && !isElapsed(slot, now),
+              slot.date === date &&
+              slot.available &&
+              !pastSelectionCutoff(slot, now),
           )
         : undefined,
     );
@@ -337,6 +356,7 @@ export function TimeStep({
       ? displayResult.slots.filter(
           (slot) =>
             slot.date === date &&
+            (!slot.native || !pastSelectionCutoff(slot, now)) &&
             !suppressedSlots.some(
               (hidden) =>
                 hidden.date === slot.date &&
@@ -357,7 +377,7 @@ export function TimeStep({
       result?.status !== "success" ||
       (draft.slots.length >= MAX_BOOKING_SESSIONS &&
         !draft.slots.some((slot) => slotKey(slot) === slotKey(offered))) ||
-      isElapsed(offered) ||
+      pastSelectionCutoff(offered) ||
       !result.slots.some(
         (candidate) =>
           sessionOfferKey(candidate) === sessionOfferKey(offered) &&
@@ -437,7 +457,16 @@ export function TimeStep({
       {recoveryNotice}
       {selectionNotice && (
         <div className="alert" role="alert">
-          <p>{selectionNotice}</p>
+          <p>
+            {selectionNotice === CHECKOUT_UNRESOLVED ? (
+              <strong>{selectionNotice}</strong>
+            ) : (
+              selectionNotice
+            )}
+          </p>
+          {selectionNotice === CHECKOUT_UNRESOLVED && attempt && (
+            <BookingHelp key={attempt.id} attemptId={attempt.id} />
+          )}
           {selectionNoticeSlots.length > 0 && (
             <ul>
               {selectionNoticeSlots.map((slot) => (
@@ -727,7 +756,7 @@ export function TimeStep({
                     : first;
                   const available = offers.some((offer) => offer.available);
                   const key = slotKey(slot);
-                  const elapsed = isElapsed(slot, now);
+                  const elapsed = pastSelectionCutoff(slot, now);
                   const disabled =
                     (!available ||
                       elapsed ||
@@ -742,7 +771,7 @@ export function TimeStep({
                         ),
                       });
                       setChoosing(null);
-                    } else if (!isElapsed(slot) && available) {
+                    } else if (!pastSelectionCutoff(slot) && available) {
                       setChoosing(choosing === key ? null : key);
                     }
                   };

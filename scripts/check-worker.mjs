@@ -20,8 +20,8 @@ export function checkWorker(root) {
     );
     if (name === "provider-transport.ts") {
       if (
-        (text.match(/\bfetch\(/g) || []).length !== 3 ||
-        (text.match(/redirect: "manual"/g) || []).length !== 3 ||
+        (text.match(/\bfetch\(/g) || []).length !== 4 ||
+        (text.match(/redirect: "manual"/g) || []).length !== 4 ||
         !text.includes("await dispatch.reserve({") ||
         !text.includes("await reserve();") ||
         !text.includes("signal: controller.signal")
@@ -33,6 +33,7 @@ export function checkWorker(root) {
         JSON.stringify(
           [
             "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+            "https://cloudflare-dns.com/dns-query",
             "https://api.resend.com/emails",
             "https://api.sandbox.hit-pay.com/v1/payment-requests",
             "https://user-api.simplybook.me/login",
@@ -83,6 +84,7 @@ export function checkWorker(root) {
               "../src/domain/booking-policy",
               "../src/domain/catalog",
               "../src/domain/contact",
+              "../src/domain/dates",
               "../src/domain/session-pricing",
             ].includes(spec)
           )

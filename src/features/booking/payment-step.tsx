@@ -63,6 +63,7 @@ export function PaymentStep() {
         <ProtectedConfirmation
           attemptId={attempt.id}
           checkoutMode="live"
+          confirmationRoute
           allowPaymentContinuation
           sessionRevision={revision}
           onExpired={restartAfterExpiry}

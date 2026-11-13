@@ -11,6 +11,7 @@ import {
   ACTIVE_CHECKOUT_CHECKING,
   ACTIVE_CHECKOUT_NOTICE,
   BOOKING_NOT_CREATED,
+  CHECKOUT_UNRESOLVED,
   PAYMENT_WINDOW_ENDED,
   SESSION_UNAVAILABLE,
 } from "@/domain/booking-messages";
@@ -85,7 +86,9 @@ import {
   saveSuppressedSlots,
   mayRestoreLiveCheckout,
   saveCalendarRecovery,
+  checkoutRecoveryDeadline,
   isCalendarRecovery,
+  isUnresolvedCheckout,
   dismissCalendarRecoveryNotice,
   calendarRecoveryNoticeDismissed,
   liveCheckoutAttemptId,
@@ -142,7 +145,7 @@ interface BookingContextValue extends StoredBooking {
   profileSaveError: string;
   leave: () => void;
   restartAfterExpiry: (attemptId: string) => void;
-  browseAfterChecking: (attemptId: string) => boolean;
+  browseAfterChecking: (attemptId: string, unresolved?: boolean) => boolean;
   clearReviewConsent: () => void;
   resumePaymentStatus: (attemptId: string) => void;
   rejectRecoveredSelection: (
@@ -717,7 +720,14 @@ export function BookingProvider({
     }
     // Four hours exactly is still valid. Catch the first invalid millisecond,
     // including when the normal minute tick lands exactly on that boundary.
-    const next = Math.min(...current.draft.slots.map(cutoff)) + 1;
+    const candidates = [
+      ...current.draft.slots,
+      ...(calendarBrowsing ? (availability.displayResult?.slots ?? []) : []),
+    ];
+    const next =
+      Math.min(
+        ...candidates.map(cutoff).filter((boundary) => boundary >= time),
+      ) + 1;
     if (!Number.isFinite(next) || next - time > 60_000) return;
     const timer = setTimeout(
       () => setNow(Date.now()),
@@ -732,6 +742,8 @@ export function BookingProvider({
     service,
     pathname,
     action.status,
+    calendarBrowsing,
+    availability.displayResult,
     commit,
     setAction,
     setSelectionNotice,
@@ -1420,7 +1432,12 @@ export function BookingProvider({
               } else if (isCalendarRecovery(attempt.id)) {
                 commit({ version: 2, draft, attempt }, true);
                 if (!calendarRecoveryNoticeDismissed(attempt.id))
-                  setSelectionNotice(PAYMENT_WINDOW_ENDED, attempt.draft.slots);
+                  setSelectionNotice(
+                    isUnresolvedCheckout(attempt.id)
+                      ? CHECKOUT_UNRESOLVED
+                      : PAYMENT_WINDOW_ENDED,
+                    attempt.draft.slots,
+                  );
                 setAction({
                   status: "idle",
                   returnToCalendar: !calendarRecoveryNoticeDismissed(
@@ -1912,11 +1929,30 @@ export function BookingProvider({
             checkoutNavigationStarted = true;
             return false;
           }
-          const context = await protectedCheckoutService.context({
-            attemptId: attempt.id,
-            mode: "live",
-            signal,
+          const contextController = new AbortController();
+          let contextTimer: ReturnType<typeof setTimeout> | undefined;
+          const timeout = new Promise<never>((_, reject) => {
+            contextTimer = setTimeout(
+              () => {
+                contextController.abort();
+                reject(
+                  new BookingServiceError(
+                    "checkout_timeout",
+                    "Checkout status is still being checked.",
+                  ),
+                );
+              },
+              Math.max(1, checkoutRecoveryDeadline(attempt.id) - Date.now()),
+            );
           });
+          const context = await Promise.race([
+            protectedCheckoutService.context({
+              attemptId: attempt.id,
+              mode: "live",
+              signal: AbortSignal.any([signal, contextController.signal]),
+            }),
+            timeout,
+          ]).finally(() => clearTimeout(contextTimer));
           if (!isCurrent()) return false;
           if (context.creationResolution) {
             resolveUncreatedBooking(attempt.id);
@@ -2016,7 +2052,12 @@ export function BookingProvider({
           setAction({ status: "failure", operation, error: error.message });
           return false;
         }
-        if (holdDispatched && latest.current.attempt) {
+        if (
+          (holdDispatched ||
+            (error instanceof BookingServiceError &&
+              error.code === "checkout_timeout")) &&
+          latest.current.attempt
+        ) {
           commit({
             ...latest.current,
             attempt: {
@@ -2250,7 +2291,7 @@ export function BookingProvider({
           if (latest.current.attempt?.id === id) setAction({ status: "idle" });
         },
         /** Browse availability while retaining the original unresolved payment lock. */
-        browseAfterChecking(id) {
+        browseAfterChecking(id, unresolved = false) {
           const current = latest.current;
           if (
             active.current ||
@@ -2263,7 +2304,7 @@ export function BookingProvider({
           if (!action.calendarRecovery) {
             if (!calendarRecoveryNoticeDismissed(id))
               setSelectionNotice(
-                PAYMENT_WINDOW_ENDED,
+                unresolved ? CHECKOUT_UNRESOLVED : PAYMENT_WINDOW_ENDED,
                 current.attempt.draft.slots,
               );
             setSuppressedSlots([
@@ -2282,7 +2323,7 @@ export function BookingProvider({
               },
               true,
             );
-            if (service.mode === "live") saveCalendarRecovery(id);
+            if (service.mode === "live") saveCalendarRecovery(id, unresolved);
             setAction({
               status: "idle",
               returnToCalendar: true,

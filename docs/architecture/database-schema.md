@@ -1,6 +1,6 @@
 # Database schema
 
-Source inventory:40 application D1 tables from migrations0001–0047 in the local candidate (0047 adds no tables; earlier inventory verified through isolated SQLite and D1 upgrade checks), and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
+Source inventory:41 application D1 tables from migrations0001–0049 in the local candidate (0049 adds booking_support_reports; earlier inventory verified through isolated SQLite and D1 upgrade checks), and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
 - Migration0039 adds reservation source/expiry records. Migration0040 adds nullable `hitpay_payments.checkout_expires_ms`; apply it before the candidate Worker. Existing rows remain unknown until authenticated provider recovery supplies the hosted-link deadline; no financial window is backfilled or extended.
 - Migration0041 adds immutable no-creation proof and extends the existing operator-operation constraint through a preserving table rebuild. Apply it before code using terminal creation resolution. It does not resolve or backfill historical uncertainty.
@@ -16,7 +16,7 @@ D1 retains booking/payment evidence; the Durable Object coordinates provider wor
 
 ```mermaid
 flowchart LR
-  Worker["Booking Worker"] --> D1["D1 · 40 tables in local schema"]
+  Worker["Booking Worker"] --> D1["D1 · 41 tables in local schema"]
   Worker --> DO["Account Durable Object · 13 SQLite tables"]
   D1 --> Identity["Access, identity, contacts and observed denials"]
   D1 --> Booking["Attempts, resolution, preparation rejection and grant history"]
@@ -349,3 +349,7 @@ The archive tables are still used: completed/expired availability snapshots reco
 - Temporary migration tables such as `native_checkout_grants_next`, `developer_operations_migrating` and `foundation_identity_upgrade` are replaced/renamed during migration; they are not additional final-schema tables.
 - When changing migrations or runtime `CREATE TABLE` statements, rebuild the final schema in an isolated empty SQLite database, compare `table_info`, `foreign_key_list` and unique indexes, then update affected diagrams/inventories. Verify upgrades and runtime behavior separately; a schema map is not migration acceptance.
 - This map was checked by applying all36 migration files to an in-memory SQLite database and extracting the11 runtime table declarations into isolated SQLite databases. No production/customer rows were read or changed for this document. The existing application tests remain separate evidence.
+
+## Customer help reports (migration0049)
+
+`booking_support_reports` has one row per `attempt_id` (primary key and foreign key to attempts), immutable-by-application first-request time/category, pending/sent state, next retry admission and sent timestamp. Categories distinguish booking, checkout and paid-confirmation uncertainty. Contact data is not duplicated; report text derives from the retained original intent. Apply0049 before the candidate Worker. No automatic expiry/deletion or new financial authority is introduced.

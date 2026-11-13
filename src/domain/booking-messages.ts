@@ -6,6 +6,7 @@ export const AVAILABILITY_LOAD_FAILED = "Unable to Load.";
 export const NO_SESSIONS_ON_DATE = "No sessions available on this date.";
 export const BOOKING_RECOVERY_MESSAGE =
   "We’re checking whether your booking was created. Please don’t book or pay again.";
+export const CHECKOUT_UNRESOLVED = "We couldn’t confirm your booking status.";
 
 export const PAYMENT_PROVIDER_UNAVAILABLE =
   "Our payment provider may be temporarily unavailable.";

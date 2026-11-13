@@ -461,6 +461,10 @@ it("failed booking restoration does not block independent protected confirmation
 });
 it("expired checking shows authenticated recorded payment without confirming or exporting stale booking evidence", async () => {
   const deadline = Date.now() - 1000;
+  sessionStorage.setItem(
+    `soccerbot-confirmation-wait:${first}`,
+    JSON.stringify({ deadline }),
+  );
   localStorage.setItem(
     `soccerbot-checking:${first}`,
     JSON.stringify({ deadline, next: 0, count: 1 }),
@@ -508,13 +512,13 @@ it("expired checking shows authenticated recorded payment without confirming or 
   );
   expect(
     await screen.findByRole("heading", {
-      name: "Payment received",
+      name: "Payment received; booking confirmation pending",
     }),
   ).toBeInTheDocument();
-  expect(screen.getByText(/Do not pay again/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
   expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
   expect(screen.getByText("Trainer: Native Trainer")).toBeVisible();
-  expect(screen.getByLabelText("Current booking summary")).toBeVisible();
+  expect(screen.getByLabelText("Booking summary")).toBeVisible();
   expect(
     screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).not.toBeInTheDocument();
@@ -1500,9 +1504,10 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
 
 it("incomplete provider booking shows reservation recovery without a payment spinner or checkout link", async () => {
   vi.useFakeTimers();
-  let incomplete = true;
-  let denied = false;
+  let incomplete = true,
+    denied = false;
   let paymentIssue: "link_recovering" | "link_unavailable" | undefined;
+  const awaiting = vi.fn(() => true);
   const fetcher = vi.fn(async (url: string) =>
     denied
       ? new Response(null, { status: 403 })
@@ -1531,70 +1536,74 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   );
   vi.stubGlobal("fetch", fetcher);
   const rendered = render(
-    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      onAwaitingExpiry={awaiting}
+    />,
   );
   await act(async () => {});
+  expect(
+    screen.getByRole("status", {
+      name: "Checking whether your booking was created…",
+    }),
+  ).toBeVisible();
+  expect(screen.queryByRole("link", { name: /payment|checkout/i })).toBeNull();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(29999);
+  });
+  expect(awaiting).not.toHaveBeenCalled();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
+  expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "We’re checking whether your booking was created. Please don’t book or pay again.",
+    "We couldn’t confirm your booking status.",
   );
   expect(
-    screen.getByRole("status", { name: "Checking your reservation…" }),
-  ).toBeVisible();
-  expect(
-    screen.queryByLabelText("Current booking summary"),
-  ).not.toBeInTheDocument();
-  expect(
-    screen.queryByRole("link", { name: /payment|checkout/i }),
-  ).not.toBeInTheDocument();
-  expect(
-    screen.queryByRole("heading", { name: "Booking Confirmed" }),
-  ).not.toBeInTheDocument();
+    screen.queryByRole("status", {
+      name: "Checking whether your booking was created…",
+    }),
+  ).toBeNull();
+  const reads = fetcher.mock.calls.length;
   await act(async () => {
     await vi.advanceTimersByTimeAsync(60000);
   });
-  expect(
-    screen.queryByRole("status", { name: "Checking your reservation…" }),
-  ).toBeVisible();
-  expect(screen.getByRole("alert")).toBeVisible();
-  const reads = fetcher.mock.calls.length;
-  expect(reads).toBe(13);
+  expect(fetcher).toHaveBeenCalledTimes(reads + 2);
   expect(fetcher.mock.calls.every(([url]) => url.endsWith("/checkout"))).toBe(
     true,
   );
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(60000);
-  });
-  expect(fetcher).toHaveBeenCalledTimes(reads + 12);
   incomplete = false;
   await act(async () => {
-    window.dispatchEvent(new Event("focus"));
-    await vi.advanceTimersByTimeAsync(5000);
+    await vi.advanceTimersByTimeAsync(30000);
   });
-  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  expect(
-    fetcher.mock.calls.filter(([url]) => url.endsWith("/checkout")),
-  ).toHaveLength(reads + 13);
+  expect(screen.queryByRole("alert")).toBeNull();
   rendered.unmount();
   const finalReads = fetcher.mock.calls.length;
   await act(async () => {
     await vi.advanceTimersByTimeAsync(60000);
   });
   expect(fetcher).toHaveBeenCalledTimes(finalReads);
+  // Reopening the same unresolved attempt does not renew the foreground wait.
   incomplete = true;
-  const revoked = render(
-    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+  const reopened = render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      onAwaitingExpiry={awaiting}
+    />,
   );
-  await act(async () => {});
-  expect(
-    screen.getByRole("status", { name: "Checking your reservation…" }),
-  ).toBeVisible();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "We couldn’t confirm your booking status.",
+  );
   denied = true;
   await act(async () => {
     await vi.advanceTimersByTimeAsync(5000);
   });
-  expect(
-    screen.queryByRole("status", { name: "Checking your reservation…" }),
-  ).not.toBeInTheDocument();
   expect(
     screen.getByText(
       "Contact the studio to view this booking. Don’t pay again.",
@@ -1605,43 +1614,34 @@ it("incomplete provider booking shows reservation recovery without a payment spi
     await vi.advanceTimersByTimeAsync(60000);
   });
   expect(fetcher).toHaveBeenCalledTimes(deniedReads);
-  revoked.unmount();
+  reopened.unmount();
+  // A separate payment-link failure uses the same timeout without exposing a new checkout.
+  sessionStorage.clear();
   denied = false;
   incomplete = false;
   paymentIssue = "link_recovering";
-  const paymentRecovery = render(
+  const payment = render(
     <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
   );
   await act(async () => {});
   expect(
-    screen.getByRole("status", { name: "Preparing payment…" }),
+    screen.getByRole("status", { name: "Preparing your payment link…" }),
   ).toBeVisible();
   paymentIssue = "link_unavailable";
   await act(async () => {
     await vi.advanceTimersByTimeAsync(5000);
   });
   expect(
-    screen.getByRole("heading", { name: "Payment Unavailable" }),
+    screen.getByRole("status", { name: "Preparing your payment link…" }),
   ).toBeVisible();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(25000);
+  });
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "Our payment provider may be temporarily unavailable.",
+    "We couldn’t confirm your booking status.",
   );
-  expect(
-    screen.getByText(
-      "Your reservation still needs to be resolved. Please don’t book or pay again. Contact the studio for help.",
-    ),
-  ).toBeVisible();
-  expect(screen.queryByText(/Please try again later/)).toBeNull();
-  expect(
-    screen.queryByRole("status", { name: "Preparing payment…" }),
-  ).not.toBeInTheDocument();
-  expect(
-    screen.queryByRole("link", { name: /payment|checkout/i }),
-  ).not.toBeInTheDocument();
-  expect(
-    screen.queryByLabelText("Current booking summary"),
-  ).not.toBeInTheDocument();
-  paymentRecovery.unmount();
+  expect(screen.queryByRole("link", { name: /payment|checkout/i })).toBeNull();
+  payment.unmount();
 });
 
 it("routes only authenticated no-effect selection rejections to the calendar", async () => {
@@ -1859,29 +1859,21 @@ it("retries unavailable checkout context silently and returns expired checkout t
     </BookingLoadingProvider>,
   );
   await act(async () => {});
-  const heading = screen.getByRole("heading", {
-    name: "Confirmation unavailable",
-  });
   expect(
-    screen.getByText(
-      "Payment status is temporarily unavailable. We’ll check again automatically.",
-    ),
+    screen.getByRole("status", { name: "Checking booking…" }),
   ).toBeVisible();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(29999);
   });
   expect(contextCalls).toBe(1);
   expect(
-    screen.getByRole("heading", { name: "Confirmation unavailable" }),
-  ).toBe(heading);
-  expect(
-    document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
-  ).toBeNull();
+    screen.getByRole("status", { name: "Checking booking…" }),
+  ).toBeVisible();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1);
   });
   expect(contextCalls).toBe(2);
-  expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
+  expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first, true);
   expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
   expect(
     document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
@@ -2580,4 +2572,107 @@ it("expiry waits for the first paced post-expiry status response without extendi
     sessionStorage.clear();
     vi.useRealTimers();
   }
+});
+
+it("payment return stops foreground waiting at thirty seconds retains Pending across reload and recovers the same paid booking", async () => {
+  vi.useFakeTimers();
+  const started = Date.now();
+  let paid = false,
+    confirmed = false;
+  const awaiting = vi.fn(() => true);
+  navigation.replace.mockClear();
+  const fetch = vi.fn(async (input: RequestInfo | URL) => {
+    const path = String(input);
+    if (path.endsWith("/checkout"))
+      return Response.json(
+        {
+          attemptId: first,
+          mode: "live",
+          checkout: { state: "unavailable" },
+          summary: {
+            players: 2,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: started + 86400000, players: 2 }],
+          },
+          checking: {
+            paymentExpiresAtMs: started - 60000,
+            deadlineMs: started + 120000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        },
+        { headers: { Date: new Date().toUTCString() } },
+      );
+    if (path.endsWith("/confirmation"))
+      return Response.json(
+        confirmed
+          ? { status: "confirmed", reason: "verified" }
+          : {
+              status: "pending",
+              reason: paid
+                ? "payment_received_booking_pending"
+                : "payment_verification_pending",
+            },
+      );
+    if (path.endsWith("/receipt"))
+      return Response.json(receiptFixture(started));
+    throw new Error(`Unexpected recovery request ${path}`);
+  });
+  vi.stubGlobal("fetch", fetch);
+  const tree = (returnHint: boolean) => (
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      confirmationRoute
+      providerReturn={returnHint}
+      allowPaymentContinuation={!returnHint}
+      onAwaitingExpiry={awaiting}
+    />
+  );
+  const rendered = render(tree(true));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(29999);
+  });
+  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(screen.getByRole("heading", { name: "Pending" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "We couldn’t confirm your booking status.",
+  );
+  expect(
+    screen.queryByRole("status", { name: "Checking payment…" }),
+  ).toBeNull();
+  expect(awaiting).not.toHaveBeenCalled();
+  expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+  rendered.unmount();
+  render(tree(false));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(screen.getByRole("heading", { name: "Pending" })).toBeVisible();
+  paid = true;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10000);
+  });
+  expect(
+    screen.getByRole("heading", {
+      name: "Payment received; booking confirmation pending",
+    }),
+  ).toBeVisible();
+  confirmed = true;
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10000);
+  });
+  expect(
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
+  ).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+  expect(fetch.mock.calls.every(([url]) => String(url).includes(first))).toBe(
+    true,
+  );
+  expect(awaiting).not.toHaveBeenCalled();
 });

@@ -255,6 +255,15 @@ export async function createBookingMechanism(options = {}) {
         const override = await options.respond?.(call);
         if (override) return override;
         if (
+          url.origin === "https://cloudflare-dns.com" &&
+          url.pathname === "/dns-query" &&
+          request.method === "GET"
+        )
+          return Response.json({
+            Status: 0,
+            Answer: [{ type: 15, TTL: 60, data: "10 mail.example.test." }],
+          });
+        if (
           url.hostname === "api.sandbox.hit-pay.com" &&
           url.pathname === "/v1/payment-requests" &&
           request.method === "POST"

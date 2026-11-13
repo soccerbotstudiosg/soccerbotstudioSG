@@ -26,6 +26,7 @@ import {
 } from "@/domain/contact";
 import { useBooking } from "./provider";
 import { ReviewStep } from "./review-step";
+import { checkEmailDomain } from "@/services/email-domain";
 type TextKey = {
   [K in keyof ContactDetails]: ContactDetails[K] extends string ? K : never;
 }[keyof ContactDetails];
@@ -152,6 +153,41 @@ export function DetailsStep({
   );
   const errors = touchedErrors;
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
+  const [emailChecking, setEmailChecking] = useState(false);
+  const emailWork = useRef<AbortController | null>(null);
+  useEffect(
+    () => () => {
+      emailWork.current?.abort();
+      emailWork.current = null;
+    },
+    [c.email, draft.mode],
+  );
+  async function confirmEmail() {
+    if (currentErrors.email || emailWork.current) return;
+    if (bookingService.mode !== "live") {
+      setCheckedEmail(c.email);
+      return;
+    }
+    const request = new AbortController();
+    emailWork.current = request;
+    setEmailChecking(true);
+    setErrors((errors) => ({ ...errors, email: undefined }));
+    const timeout = setTimeout(() => request.abort(), 7000);
+    const status = await checkEmailDomain(c.email, request.signal);
+    clearTimeout(timeout);
+    if (emailWork.current !== request) return;
+    emailWork.current = null;
+    setEmailChecking(false);
+    if (status === "valid" && !request.signal.aborted) setCheckedEmail(c.email);
+    else
+      setErrors((errors) => ({
+        ...errors,
+        email:
+          status === "invalid"
+            ? "This email domain cannot receive email. Check your email address."
+            : "Couldn’t check your email domain. Please try again.",
+      }));
+  }
   const needsEmailCheck = !profileOnly && draft.mode !== "member";
   const emailChecked = !needsEmailCheck || checkedEmail === c.email;
   const contactValid = Object.keys(currentErrors).length === 0 && emailChecked;
@@ -226,7 +262,12 @@ export function DetailsStep({
     activeSave.current?.abort();
     activeSave.current = null;
     setSaveState({ key: "", saving: false, message: "", failed: false });
-    if (key === "email") setCheckedEmail(null);
+    if (key === "email") {
+      emailWork.current?.abort();
+      emailWork.current = null;
+      setEmailChecking(false);
+      setCheckedEmail(null);
+    }
     update({ contact: { ...c, [key]: value } });
     setErrors((current) => ({
       ...current,
@@ -260,10 +301,16 @@ export function DetailsStep({
   ) {
     return (
       <div className="field">
-        <label className="field-label" htmlFor={key}>
-          {label}
-          {required ? " *" : <span className="field-optional">Optional</span>}
-        </label>
+        {key === "email" && draft.mode === "member" ? (
+          <div className="field-label" id="verified-email-label">
+            {label} *
+          </div>
+        ) : (
+          <label className="field-label" htmlFor={key}>
+            {label}
+            {required ? " *" : <span className="field-optional">Optional</span>}
+          </label>
+        )}
         <div
           className={
             key === "email" && needsEmailCheck
@@ -271,52 +318,62 @@ export function DetailsStep({
               : undefined
           }
         >
-          <input
-            id={key}
-            name={key}
-            type={type}
-            maxLength={maxLength}
-            required={required}
-            readOnly={key === "email" && draft.mode === "member"}
-            placeholder={hints[key] || undefined}
-            value={c[key]}
-            aria-invalid={!!errors[key]}
-            aria-describedby={
-              [
-                errors[key] ? `${key}-error` : "",
-                key === "email" &&
-                needsEmailCheck &&
-                !currentErrors.email &&
-                !errors.email
-                  ? "email-check-help"
-                  : "",
-              ]
-                .filter(Boolean)
-                .join(" ") || undefined
-            }
-            onPaste={(event) => {
-              const pasted = event.clipboardData.getData("text").trim();
-              if (/[\x00-\x1f\x7f-\x9f]/.test(pasted)) {
-                event.preventDefault();
-                const next = contactErrors({ ...c, [key]: pasted });
-                setErrors((current) => ({ ...current, [key]: next[key] }));
+          {key === "email" && draft.mode === "member" ? (
+            <div
+              id={key}
+              className="verified-email-value"
+              aria-labelledby="verified-email-label"
+            >
+              {c.email}
+            </div>
+          ) : (
+            <input
+              id={key}
+              name={key}
+              type={type}
+              maxLength={maxLength}
+              required={required}
+              placeholder={hints[key] || undefined}
+              value={c[key]}
+              aria-invalid={!!errors[key]}
+              aria-describedby={
+                [
+                  errors[key] ? `${key}-error` : "",
+                  key === "email" &&
+                  needsEmailCheck &&
+                  !currentErrors.email &&
+                  !errors.email
+                    ? "email-check-help"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ") || undefined
               }
-            }}
-            onChange={(e) => change(key, e.target.value)}
-            onBlur={() => validateField(key)}
-          />
+              onPaste={(event) => {
+                const pasted = event.clipboardData.getData("text").trim();
+                if (/[\x00-\x1f\x7f-\x9f]/.test(pasted)) {
+                  event.preventDefault();
+                  const next = contactErrors({ ...c, [key]: pasted });
+                  setErrors((current) => ({ ...current, [key]: next[key] }));
+                }
+              }}
+              onChange={(e) => change(key, e.target.value)}
+              onBlur={() => validateField(key)}
+            />
+          )}
           {key === "email" && needsEmailCheck && (
             <button
               type="button"
               className="email-confirm-control"
               aria-label="Confirm email address is correct"
               aria-pressed={emailChecked}
-              disabled={!!currentErrors.email}
-              onClick={() => {
-                if (!currentErrors.email) setCheckedEmail(c.email);
-              }}
+              disabled={!!currentErrors.email || emailChecking}
+              aria-busy={emailChecking}
+              onClick={() => void confirmEmail()}
             >
-              {emailChecked ? (
+              {emailChecking ? (
+                <Icon name="spinner" className="spinner" />
+              ) : emailChecked ? (
                 <Icon name="check" />
               ) : (
                 <span aria-hidden="true">!</span>

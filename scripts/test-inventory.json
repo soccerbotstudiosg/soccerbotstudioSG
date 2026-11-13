@@ -17,11 +17,23 @@
   },
   {
     "file": "src/components/booking-navigation.test.tsx",
+    "title": "cancelled entry aborts its identity preparation and a new entry does not reuse it"
+  },
+  {
+    "file": "src/components/booking-navigation.test.tsx",
     "title": "clicking the hero transition skips directly to booking without a delayed duplicate navigation"
   },
   {
     "file": "src/components/booking-navigation.test.tsx",
     "title": "keeps the hero scene separate from the logo and commits booking only once"
+  },
+  {
+    "file": "src/components/booking-navigation.test.tsx",
+    "title": "live entry prepares identity during hero and hands off once after skip"
+  },
+  {
+    "file": "src/components/booking-navigation.test.tsx",
+    "title": "live reduced motion keeps the functional full loader and same-route links do not restart identity"
   },
   {
     "file": "src/components/booking-navigation.test.tsx",
@@ -42,18 +54,6 @@
   {
     "file": "src/components/booking-navigation.test.tsx",
     "title": "unmount cleans the animation timers and preserves the previous scroll style"
-  },
-  {
-    "file": "src/components/booking-navigation.test.tsx",
-    "title": "live entry prepares identity during hero and hands off once after skip"
-  },
-  {
-    "file": "src/components/booking-navigation.test.tsx",
-    "title": "live reduced motion keeps the functional full loader and same-route links do not restart identity"
-  },
-  {
-    "file": "src/components/booking-navigation.test.tsx",
-    "title": "cancelled entry aborts its identity preparation and a new entry does not reuse it"
   },
   {
     "file": "src/components/studio-hero-video.test.tsx",
@@ -188,6 +188,30 @@
     "title": "uses explicit inclusive access start and exclusive expiry boundaries"
   },
   {
+    "file": "src/domain/contact.test.ts",
+    "title": "checkout request validation rejects invalid contacts before accepting a booking selection"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "contact methods reject inherited properties while accepting every supported option"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "contact writes trim outer whitespace and reject embedded controls without restricting international names"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "email validation shares the 254 character boundary and preserves distinct aliases"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "name allowlist rejects decorative symbols at form and write boundaries"
+  },
+  {
+    "file": "src/domain/contact.test.ts",
+    "title": "organisation validation permits business punctuation but rejects decorative and invisible characters"
+  },
+  {
     "file": "src/domain/session-pricing.test.ts",
     "title": "accepts priced public slots and rejects foreign dates, services, duplicate trainer offers and private fields"
   },
@@ -208,16 +232,52 @@
     "title": "totals a mixed demo cart by date and preserves native quote amounts"
   },
   {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "expired local identity at Details returns to entry before any profile read"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "old and duplicate access denials cannot reset a newly established session"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "revoked email skips optional profile saving without clearing entered booking details"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "revoked profile read on Details never reveals persisted fields and returns to booking entry"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "revoked saved-contact editor returns to guest choices without revealing the profile"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "saved booking details stay behind the full loader until the protected profile read succeeds"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "saved-profile timeout offers retry without exposing fields or restarting booking"
+  },
+  {
     "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "account leaving email challenge ignores delayed completion and live mode never displays demo code"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "guest selection advances locally without repeating access or showing preparation"
+    "title": "all-device signout shows failure, permits retry and clears the signed-in email on success"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "all-device signout shows failure, permits retry and clears the signed-in email on success"
+    "title": "email request throttling displays server retry time without automatic or premature requests"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "email requests wait for background signout while the replacement form opens immediately"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "email resend follows server deadlines and third-request cooldown without automatic sends"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
@@ -229,11 +289,31 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "fresh security proof clears only stale security feedback and reentry starts clean"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "guest identity is shown only after choosing guest and stays hidden on return to booking choices"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "guest selection advances locally without repeating access or showing preparation"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "invalid code can return to guest options without carrying an old error"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "later booking headings inspect identity without refreshing or recreating guest access"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
     "title": "leaving saved-contact form discards delayed save acknowledgement"
+  },
+  {
+    "file": "src/features/booking/account-lifecycle.test.tsx",
+    "title": "remembered identity restoration shows only the full-width welcome card without a guest flash"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
@@ -249,23 +329,11 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "remembered identity restoration shows only the full-width welcome card without a guest flash"
-  },
-  {
-    "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "later booking headings inspect identity without refreshing or recreating guest access"
-  },
-  {
-    "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "guest identity is shown only after choosing guest and stays hidden on return to booking choices"
+    "title": "switching identity clears selected session and cart without repeating entry preparation"
   },
   {
     "file": "src/features/booking/account-step.test.tsx",
     "title": "email form rejects a wrong verification code and accepts the corrected code"
-  },
-  {
-    "file": "src/features/booking/account-step.test.tsx",
-    "title": "signed-in loading remains until the destination commits without exposing the previous form"
   },
   {
     "file": "src/features/booking/account-step.test.tsx",
@@ -274,6 +342,10 @@
   {
     "file": "src/features/booking/account-step.test.tsx",
     "title": "remember me is explicit default off and opted in preview expiry stays ninety days from verification"
+  },
+  {
+    "file": "src/features/booking/account-step.test.tsx",
+    "title": "signed-in loading remains until the destination commits without exposing the previous form"
   },
   {
     "file": "src/features/booking/async-booking.test.tsx",
@@ -302,6 +374,10 @@
   {
     "file": "src/features/booking/async-booking.test.tsx",
     "title": "editing a draft cancels checkout and a late result cannot overwrite entered information"
+  },
+  {
+    "file": "src/features/booking/async-booking.test.tsx",
+    "title": "expiry after checkout resumes day reads and replacement navigation while the original payment stays protected"
   },
   {
     "file": "src/features/booking/async-booking.test.tsx",
@@ -364,8 +440,8 @@
     "title": "unsupported live mode exposes unavailable state and cannot restore a paid demo receipt"
   },
   {
-    "file": "src/features/booking/async-booking.test.tsx",
-    "title": "expiry after checkout resumes day reads and replacement navigation while the original payment stays protected"
+    "file": "src/features/booking/booking-help.test.tsx",
+    "title": "booking help prevents duplicate clicks reports failures honestly and confirms only accepted reports"
   },
   {
     "file": "src/features/booking/booking-loading.test.tsx",
@@ -378,10 +454,6 @@
   {
     "file": "src/features/booking/booking-loading.test.tsx",
     "title": "unmounting a pending booking screen releases the overlay and existing page inert state"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "home calendar warming defers sibling preparation until booking entry"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
@@ -434,6 +506,10 @@
   {
     "file": "src/features/booking/booking-parity.test.tsx",
     "title": "fresh calendar receipts render before the minute clock ticks and expire at their own deadline"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "home calendar warming defers sibling preparation until booking entry"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
@@ -528,6 +604,10 @@
     "title": "uses a server-granted early check without extending the deadline or resetting the shared count"
   },
   {
+    "file": "src/features/booking/confirmation-copy.test.tsx",
+    "title": "confirmed booking copies a formatted paid summary and reports clipboard failures honestly"
+  },
+  {
     "file": "src/features/booking/confirmation-render-trace.test.tsx",
     "title": "confirmation timing defers hidden frames and discards stale unmounted callbacks without affecting UI"
   },
@@ -538,6 +618,14 @@
   {
     "file": "src/features/booking/details-step.test.tsx",
     "title": "details contains only the five contact fields and validates them before review"
+  },
+  {
+    "file": "src/features/booking/details-step.test.tsx",
+    "title": "guest email checks show progress reject invalid domains and ignore stale replies while verified email skips lookup"
+  },
+  {
+    "file": "src/features/booking/details-step.test.tsx",
+    "title": "invalid saved contacts remain editable in booking details and contact management"
   },
   {
     "file": "src/features/booking/details-step.test.tsx",
@@ -554,6 +642,14 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "access denial during conflict classification stops recovery and keeps the original cart without calendar navigation"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "active checkout rejection keeps its own notice instead of an availability warning"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "authenticated predispatch conflict proof survives cooldown and refresh without adopting another checkout"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -589,6 +685,18 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "cutoff pruning waits for protected restoration and leaves a restored hold unchanged"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "cutoff recovery survives refresh and permits replacement without reviving removed sessions"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "cutoff timers cannot remove a held attempt or an in-flight checkout snapshot"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "direct checkout opens HitPay once in the same tab"
   },
   {
@@ -598,6 +706,10 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "editing a new selection clears the previous unpaid reservation notice"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "expired held Review with unresolved release returns affected sessions in the first calendar notice"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -629,6 +741,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "idle Review removes cutoff-crossed sessions at the strict four-hour boundary and preserves valid selections"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "keeps booking UI unready until protected restoration finishes"
   },
   {
@@ -645,11 +761,19 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "lost checkout response ends at thirty seconds without retrying or inventing a failed booking"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "lost hold response cannot adopt a different attempt returned by recovery"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "lost hold response restores only the same verified attempt without repeating the write"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "missing predispatch proof cannot classify a pending conflict or adopt a foreign checkout"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -662,6 +786,10 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "mock unavailable payment status cannot masquerade as expiry or clear the original attempt"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "new checkout waits for background identity cleanup and never dispatches after cleanup failure"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -686,6 +814,10 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "rejected checkout window clears the undispatched draft attempt without payment confirmation polling"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "replacement cancels the old cutoff timer and focus removes only newly stale editable slots"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -737,43 +869,15 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unselected calendar offers disappear at cutoff while a background availability read is pending"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "verified no-creation permits Back with replacement selections without replaying payment"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "verified rejection permits Back and edits during classification without replaying payment"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "authenticated predispatch conflict proof survives cooldown and refresh without adopting another checkout"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "missing predispatch proof cannot classify a pending conflict or adopt a foreign checkout"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "expired held Review with unresolved release returns affected sessions in the first calendar notice"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "idle Review removes cutoff-crossed sessions at the strict four-hour boundary and preserves valid selections"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "cutoff recovery survives refresh and permits replacement without reviving removed sessions"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "cutoff timers cannot remove a held attempt or an in-flight checkout snapshot"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "replacement cancels the old cutoff timer and focus removes only newly stale editable slots"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "cutoff pruning waits for protected restoration and leaves a restored hold unchanged"
   },
   {
     "file": "src/features/booking/email-bot-proof.test.tsx",
@@ -794,6 +898,18 @@
   {
     "file": "src/features/booking/live-catalogue.test.tsx",
     "title": "live catalogue displays mutable provider labels and empty failure states without Preview records"
+  },
+  {
+    "file": "src/features/booking/phone-input.test.tsx",
+    "title": "phone country search supports keyboard selection and full international paste"
+  },
+  {
+    "file": "src/features/booking/phone-input.test.tsx",
+    "title": "phone input blocks invalid Singapore edits and retains a correctable existing number"
+  },
+  {
+    "file": "src/features/booking/phone-input.test.tsx",
+    "title": "phone input silently ignores rejected characters without changing valid international digits"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -825,6 +941,18 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "expiry reconciliation exits early for unpaid proof and preserves payment evidence before its deadline"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "expiry reconciliation keeps one twenty-second foreground budget across refresh then detects late payment silently"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "expiry waits for the first paced post-expiry status response without extending recovery indefinitely"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "failed booking restoration does not block independent protected confirmation"
   },
   {
@@ -833,7 +961,15 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "late unpaid-release acknowledgement cannot override newer payment evidence and unavailable storage cannot renew expiry waits"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "manual review supersedes an earlier customer confirmation without exposing downloads"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "payment return stops foreground waiting at thirty seconds retains Pending across reload and recovers the same paid booking"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -850,6 +986,10 @@
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "reopening an expired paid booking shows the saved full confirmation without polling or granting exports"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "repeat provider return goes home only after server confirmation while direct revisits remain visible"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -890,18 +1030,6 @@
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "verified payment shows confirmation before reconciliation without export actions"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "expiry reconciliation keeps one twenty-second foreground budget across refresh then detects late payment silently"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "expiry reconciliation exits early for unpaid proof and preserves payment evidence before its deadline"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "late unpaid-release acknowledgement cannot override newer payment evidence and unavailable storage cannot renew expiry waits"
   },
   {
     "file": "src/features/booking/session-price.test.tsx",
@@ -949,11 +1077,19 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
+    "title": "mobile calendar selection drawers and responsive scroll preserve restored availability"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
     "title": "restored elapsed sessions remain labelled and removable alongside valid future sessions"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
     "title": "selection rechecks time before dispatch and refreshes after a suspended tab resumes"
+  },
+  {
+    "file": "src/features/enquiry/enquiry-page.test.tsx",
+    "title": "enquiry validates edits immediately and blocks invalid service submission"
   },
   {
     "file": "src/features/enquiry/enquiry-page.test.tsx",
@@ -1204,8 +1340,8 @@
     "title": "scheduled display catalogue retains original expiry and rejects renewed or overdue snapshots"
   },
   {
-    "file": "src/services/identity.test.ts",
-    "title": "booking entry reuses the latest signed-in or signed-out state until a fresh entry"
+    "file": "src/services/enquiry.test.ts",
+    "title": "enquiry fields and submission share strict validation without rejecting ordinary prose"
   },
   {
     "file": "src/services/identity.test.ts",
@@ -1217,7 +1353,31 @@
   },
   {
     "file": "src/services/identity.test.ts",
+    "title": "background signout retries anonymous access without repeating acknowledged global revocation"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "background signout serializes revocation and anonymous access before protected work"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "background signout times out without allowing late revocation to start anonymous access"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "booking entry reuses the latest signed-in or signed-out state until a fresh entry"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "display identity reads never create guest access or restore revoked identity and ignore late signout replies"
+  },
+  {
+    "file": "src/services/identity.test.ts",
     "title": "identity failures distinguish throttling expired access bad codes and security checks without exposing response bodies"
+  },
+  {
+    "file": "src/services/identity.test.ts",
+    "title": "identity throttle accepts bounded retry seconds without exposing arbitrary response text"
   },
   {
     "file": "src/services/identity.test.ts",
@@ -1249,6 +1409,10 @@
   },
   {
     "file": "src/services/identity.test.ts",
+    "title": "unproven global signout clears this browser and retains the reverification warning"
+  },
+  {
+    "file": "src/services/identity.test.ts",
     "title": "website profile discards foreign and delayed post-signout responses"
   },
   {
@@ -1260,16 +1424,16 @@
     "title": "website profile save rejects missing or false Remember me without a request"
   },
   {
-    "file": "src/services/identity.test.ts",
-    "title": "display identity reads never create guest access or restore revoked identity and ignore late signout replies"
-  },
-  {
     "file": "tests/customer.spec.ts",
     "title": "50-minute cadence, chosen instructors, contact validation and final-slot conflict"
   },
   {
     "file": "tests/customer.spec.ts",
     "title": "Back during hero entry stays on home even when the previous page was Studio"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "booking titles keep deliberate phone line breaks and desktop inline layout"
   },
   {
     "file": "tests/customer.spec.ts",
@@ -1338,10 +1502,6 @@
   {
     "file": "tests/customer.spec.ts",
     "title": "public routes remove staff access and fit the viewport"
-  },
-  {
-    "file": "tests/customer.spec.ts",
-    "title": "booking titles keep deliberate phone line breaks and desktop inline layout"
   },
   {
     "file": "tests/experiment.spec.ts",
@@ -1490,141 +1650,5 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "three complete single-booking browser journeys preserve independent confirmations through Back reload and old links"
-  },
-  {
-    "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "email resend follows server deadlines and third-request cooldown without automatic sends"
-  },
-  {
-    "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "email request throttling displays server retry time without automatic or premature requests"
-  },
-  {
-    "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "fresh security proof clears only stale security feedback and reentry starts clean"
-  },
-  {
-    "file": "src/services/identity.test.ts",
-    "title": "identity throttle accepts bounded retry seconds without exposing arbitrary response text"
-  },
-  {
-    "file": "src/services/identity.test.ts",
-    "title": "background signout serializes revocation and anonymous access before protected work"
-  },
-  {
-    "file": "src/services/identity.test.ts",
-    "title": "background signout retries anonymous access without repeating acknowledged global revocation"
-  },
-  {
-    "file": "src/services/identity.test.ts",
-    "title": "unproven global signout clears this browser and retains the reverification warning"
-  },
-  {
-    "file": "src/services/identity.test.ts",
-    "title": "background signout times out without allowing late revocation to start anonymous access"
-  },
-  {
-    "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "email requests wait for background signout while the replacement form opens immediately"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "new checkout waits for background identity cleanup and never dispatches after cleanup failure"
-  },
-  {
-    "file": "src/features/booking/time-step.test.tsx",
-    "title": "mobile calendar selection drawers and responsive scroll preserve restored availability"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "repeat provider return goes home only after server confirmation while direct revisits remain visible"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "expiry waits for the first paced post-expiry status response without extending recovery indefinitely"
-  },
-  {
-    "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "switching identity clears selected session and cart without repeating entry preparation"
-  },
-  {
-    "file": "src/features/booking/access-recovery.test.tsx",
-    "title": "revoked saved-contact editor returns to guest choices without revealing the profile"
-  },
-  {
-    "file": "src/features/booking/access-recovery.test.tsx",
-    "title": "saved booking details stay behind the full loader until the protected profile read succeeds"
-  },
-  {
-    "file": "src/features/booking/access-recovery.test.tsx",
-    "title": "revoked profile read on Details never reveals persisted fields and returns to booking entry"
-  },
-  {
-    "file": "src/features/booking/access-recovery.test.tsx",
-    "title": "expired local identity at Details returns to entry before any profile read"
-  },
-  {
-    "file": "src/features/booking/access-recovery.test.tsx",
-    "title": "old and duplicate access denials cannot reset a newly established session"
-  },
-  {
-    "file": "src/features/booking/access-recovery.test.tsx",
-    "title": "revoked email skips optional profile saving without clearing entered booking details"
-  },
-  {
-    "file": "src/features/booking/access-recovery.test.tsx",
-    "title": "saved-profile timeout offers retry without exposing fields or restarting booking"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "active checkout rejection keeps its own notice instead of an availability warning"
-  },
-  {
-    "file": "src/domain/contact.test.ts",
-    "title": "contact methods reject inherited properties while accepting every supported option"
-  },
-  {
-    "file": "src/domain/contact.test.ts",
-    "title": "contact writes trim outer whitespace and reject embedded controls without restricting international names"
-  },
-  {
-    "file": "src/domain/contact.test.ts",
-    "title": "email validation shares the 254 character boundary and preserves distinct aliases"
-  },
-  {
-    "file": "src/domain/contact.test.ts",
-    "title": "checkout request validation rejects invalid contacts before accepting a booking selection"
-  },
-  {
-    "file": "src/features/booking/details-step.test.tsx",
-    "title": "invalid saved contacts remain editable in booking details and contact management"
-  },
-  {
-    "file": "src/features/booking/phone-input.test.tsx",
-    "title": "phone input blocks invalid Singapore edits and retains a correctable existing number"
-  },
-  {
-    "file": "src/features/booking/phone-input.test.tsx",
-    "title": "phone country search supports keyboard selection and full international paste"
-  },
-  {
-    "file": "src/domain/contact.test.ts",
-    "title": "name allowlist rejects decorative symbols at form and write boundaries"
-  },
-  {
-    "file": "src/domain/contact.test.ts",
-    "title": "organisation validation permits business punctuation but rejects decorative and invisible characters"
-  },
-  {
-    "file": "src/features/booking/phone-input.test.tsx",
-    "title": "phone input silently ignores rejected characters without changing valid international digits"
-  },
-  {
-    "file": "src/features/enquiry/enquiry-page.test.tsx",
-    "title": "enquiry validates edits immediately and blocks invalid service submission"
-  },
-  {
-    "file": "src/services/enquiry.test.ts",
-    "title": "enquiry fields and submission share strict validation without rejecting ordinary prose"
   }
 ]
