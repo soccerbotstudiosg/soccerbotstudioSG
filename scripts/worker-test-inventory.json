@@ -188,6 +188,10 @@
     "title": "warming rotates failed months across restarts without rebuilding fresh siblings"
   },
   {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "email domain lookup distinguishes mail routing invalid domains and DNS outages without exposing mailboxes"
+  },
+  {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "combined hold performs one preflight and preserves immutable identity across concurrent requests and restoration"
   },
@@ -846,6 +850,14 @@
   {
     "file": "worker/tests/identity-delivery.test.mjs",
     "title": "client email delivery fails closed for missing sender or production bot secret despite developer credentials"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "customer booking help is owned deduplicated and sends only a fixed staff report with retry-safe content"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "guest email domain endpoint authenticates caches by domain and leaves DNS outages retryable"
   },
   {
     "file": "worker/tests/identity.test.mjs",
@@ -2018,17 +2030,5 @@
   {
     "file": "worker/tests/webhook.test.mjs",
     "title": "invoice capture retains authentication boundaries and immutable event authority"
-  },
-  {
-    "file": "worker/tests/catalogue.test.mjs",
-    "title": "email domain lookup distinguishes mail routing invalid domains and DNS outages without exposing mailboxes"
-  },
-  {
-    "file": "worker/tests/identity-delivery.test.mjs",
-    "title": "customer booking help is owned deduplicated and sends only a fixed staff report with retry-safe content"
-  },
-  {
-    "file": "worker/tests/identity-delivery.test.mjs",
-    "title": "guest email domain endpoint authenticates caches by domain and leaves DNS outages retryable"
   }
 ]

@@ -14,7 +14,7 @@ Consolidate guest DNS validation, bounded checkout/payment-return recovery, cust
 
 ## Evidence and delivery
 
-355 domain/component/service tests passed, followed by all60 direct-checkout tests including the added lost-response regression. All81 tests in the affected Worker suites pass. Pending-return boundary/reload/recovery, synthetic staff email/DNS, source/type checks and updated test-inventory guards pass. Exact-head CI, staging and merge remain pending; no current delivery success is claimed. Original failures remain in task receipts. Browser/provider and physical acceptance remain separate.
+355 domain/component/service tests passed, followed by all60 direct-checkout tests including the added lost-response regression. All81 tests in the affected Worker suites pass. Pending-return boundary/reload/recovery, synthetic staff email/DNS, source/type checks and updated test-inventory guards pass. Initial PR72 CI ran all129 contracts and172 recovery cases successfully but rejected the inventory file order. The corrected order matches both runtime logs, and a mutation confirms the new global-order guard rejects the defect. The reopened-payment path also passes90 focused UI cases. Initial frontend/backend browser gates passed; live-email caught unrelated control-height leakage and a checkout-revocation fixture that now needed to pass DNS before revoking. Both are corrected without lowering layout assertions or authorization checks. Corrected-head CI, staging and merge remain pending; no current delivery success is claimed. Original failures remain in task receipts. Browser/provider and physical acceptance remain separate.
 
 ## Remaining targeted acceptance
 

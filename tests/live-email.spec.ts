@@ -2299,11 +2299,11 @@ test("real API revoked access at checkout retains the draft and denies protected
   const transport = await mechanismTransport(page, mechanism);
   try {
     await guestDetails(page, mechanism);
+    await reviewResponse(page);
     await mechanism.db
       .prepare("UPDATE guest_access SET revoked_ms=?")
       .bind(Date.now())
       .run();
-    await reviewResponse(page);
     const response = await checkoutHoldResponse(page, undefined, true);
     expect(response.status()).toBe(401);
     await expect(page).toHaveURL(/\/book\/payment\/$/);

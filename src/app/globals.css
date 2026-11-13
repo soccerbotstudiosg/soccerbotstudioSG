@@ -475,8 +475,7 @@
     font-weight: 700;
     color: var(--color-brand);
     background: var(--color-brand-soft);
-    height: var(--calendar-control-height);
-    min-height: var(--calendar-control-height);
+    min-height: 44px;
     padding: 10px 14px;
     border: 1px solid var(--color-line);
     border-radius: 8px;
@@ -1500,8 +1499,7 @@
     right: 16px;
     bottom: 16px;
     min-width: 88px;
-    height: var(--calendar-control-height);
-    min-height: var(--calendar-control-height);
+    min-height: 44px;
     padding: 8px 16px;
     border-radius: 8px;
     background: var(--color-player-app);
@@ -2777,8 +2775,7 @@
     margin: 0;
   }
   .auth-code-feedback .text-link {
-    height: var(--calendar-control-height);
-    min-height: var(--calendar-control-height);
+    min-height: 44px;
   }
   .access-option .signed-in-email {
     color: var(--color-identity);
@@ -2798,8 +2795,7 @@
   }
   .account-actions .button {
     min-width: 0;
-    height: var(--calendar-control-height);
-    min-height: var(--calendar-control-height);
+    min-height: 44px;
     max-width: 100%;
     padding: 6px 8px;
     border-radius: 8px;

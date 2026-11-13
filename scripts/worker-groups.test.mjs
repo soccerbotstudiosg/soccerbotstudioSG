@@ -58,6 +58,11 @@ test("Worker inventory preserves literal source declaration order before runtime
   const inventory = JSON.parse(
     readFileSync("scripts/worker-test-inventory.json", "utf8"),
   );
+  assert.deepEqual(
+    inventory.map((item) => item.file),
+    inventory.map((item) => item.file).sort(),
+    "Inventory must follow runtime file order as well as declaration order",
+  );
   for (const file of groupFiles()) {
     const source = ts.createSourceFile(
       file,
