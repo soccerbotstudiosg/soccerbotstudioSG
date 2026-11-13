@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-Consolidate contact validation, country-code phone entry and approved field placeholders on `fix/shared-contact-validation`, based on merged PR69/main `fd26544f0002b853bf722c4d21553aaa857358d1`. Owner authorizes implementation, staging and merge after checks; physical acceptance is explicitly deferred to targeted tests.
+Consolidate contact validation, country-code phone entry and approved field placeholders on `fix/shared-contact-validation`, based on merged PR69/main `fd26544f0002b853bf722c4d21553aaa857358d1`. Owner authorizes implementation, staging and merge after checks; physical acceptance is explicitly deferred to a full regression pass later.
 
 ## Current slice
 
@@ -13,7 +13,7 @@ Consolidate contact validation, country-code phone entry and approved field plac
 
 ## Evidence and delivery
 
-PR69 merged after CI and staging passed (receipts retained in its PR and Journey). All345 local domain/component/service tests and29 isolated Worker tests pass. Frontend/Worker types, lint and source integrity pass. Initial canonical-phone expectation failures were corrected; a five-second component-test timeout occurred while full tests competed with Worker/type/lint processes, with focused tests passing. The isolated complete suite passed with the original timeout. Preserve both receipts; no retries or timeout relaxation were added. PR70 initial CI43357430023 found a cross-realm options-object incompatibility in the injected-clock tooling harness. The equivalent documented parser overload fixes it; all188 tooling tests now pass. Four provider HTTP fixtures still used the newly invalid00000000 number; they now use a valid Singapore number and all four original scenarios pass. Historical recovery fixtures retain their original values. The correction stays on PR70; final exact-head CI, staging health and merge remain pending. Record final receipts in the PR rather than status-only commits.
+PR69 merged after CI and staging passed (receipts retained in its PR and Journey). All345 local domain/component/service tests and29 isolated Worker tests pass. Frontend/Worker types, lint and source integrity pass. Initial canonical-phone expectation failures were corrected; a five-second component-test timeout occurred while full tests competed with Worker/type/lint processes, with focused tests passing. The isolated complete suite passed with the original timeout. Preserve both receipts; no retries or timeout relaxation were added. PR70 initial CI43357430023 found a cross-realm options-object incompatibility in the injected-clock tooling harness. The initial runtime-supported three-argument fix passed all188 tooling tests, but CI43358003672 correctly rejected its unsupported TypeScript signature. The public two-argument country form retains the existing whole-input numeric/separator whitelist; explicit type and clock checks are required before republishing. Four provider HTTP fixtures still used the newly invalid00000000 number; they now use a valid Singapore number and all four original scenarios pass. Historical recovery fixtures retain their original values. The correction stays on PR70; final exact-head CI, staging health and merge remain pending. Record final receipts in the PR rather than status-only commits.
 
 ## Remaining targeted acceptance
 
@@ -24,7 +24,7 @@ PR69 merged after CI and staging passed (receipts retained in its PR and Journey
 | Session conflict                  | Creation message changes to approved availability-check message, followed by the correct final notice and corrected cart.                                                     |
 | Second-tab active checkout        | Creation message changes to approved active-checkout message; no duplicate checkout, takeover or damage to the first tab.                                                     |
 
-Additional targeted physical acceptance for this slice is recorded in [simulated-user UAT](docs/uat/simulated-user.md#contact-validation-and-country-code-entry). Previously passed full physical coverage need not be repeated; perform these focused checks plus one end-to-end booking.
+Additional targeted physical acceptance for this slice is recorded in [simulated-user UAT](docs/uat/simulated-user.md#contact-validation-and-country-code-entry). Owner subsequently requested a full physical pass later, including conflict, active-checkout and expiry messages plus the new contact/phone/email checks.
 
 ## Ordered work after this slice
 
@@ -47,4 +47,4 @@ The queue is recorded now, before the full documentation reconciliation. These a
 
 ## Next action
 
-Finish consolidated verification and publish one ready PR through LimYouSheng. Verify all exact-head CI gates and actual staging deployment/health, then perform the authorized merge. Owner performs targeted contact/phone/verification checks and remaining expiry/conflict acceptance afterwards; full documentation reconciliation follows the ordered queue.
+Finish consolidated verification and publish one ready PR through LimYouSheng. Verify all exact-head CI gates and actual staging deployment/health, then perform the authorized merge. Owner performs the full physical regression pass, including contact/phone/verification and remaining expiry/conflict acceptance afterwards; full documentation reconciliation follows the ordered queue.

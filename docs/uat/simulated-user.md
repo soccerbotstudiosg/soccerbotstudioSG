@@ -500,7 +500,7 @@ Owner explicitly accepts remote sign-out enforcement at both saved-contact bound
 
 ## Contact validation and country-code entry
 
-Prepared 13 November 2026; owner physical execution pending for the contact-validation candidate. Automated API tampering tests are not customer tasks. Existing accepted full-flow tests remain accepted; repeat these focused checks and one complete booking after staging/release.
+Prepared 13 November 2026; owner physical execution pending for the contact-validation candidate. Automated API tampering tests are not customer tasks. Owner subsequently requested a full physical regression pass after staging/release, including the existing suite and conflict, active-checkout and expiry message checks. Include the following contact-focused checks in that pass.
 
 | Check                                    | Expected result                                                                                                                                                                                                                                                                          |
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
