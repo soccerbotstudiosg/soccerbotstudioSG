@@ -2698,7 +2698,7 @@ test("native customer preparation binds one immutable cart and restores only the
     .run();
   const value = {
     key: crypto.randomUUID(),
-    contact: data.scope.intent.contact,
+    contact: { ...data.scope.intent.contact, phone: "+6581234567" },
     accepted: true,
     sessions: [
       {
@@ -2754,7 +2754,7 @@ test("native customer preparation rejects price drift unapproved dates and incom
     .run();
   const base = {
     key: crypto.randomUUID(),
-    contact: data.scope.intent.contact,
+    contact: { ...data.scope.intent.contact, phone: "+6581234567" },
     accepted: true,
     sessions: [
       {
@@ -3412,7 +3412,7 @@ test("native date-scoped owner exception reaches fresh availability and exact tw
       const value = {
         key: crypto.randomUUID(),
         accepted: true,
-        contact: data.scope.intent.contact,
+        contact: { ...data.scope.intent.contact, phone: "+6581234567" },
         sessions,
       };
       for (const rejected of [
