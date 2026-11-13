@@ -111,7 +111,8 @@ export function safeWrite(
     /* Private browsing may deny persistence. In-memory flow remains available. */
   }
 }
-export const EXPIRY_RECONCILIATION_MS = 10000;
+export const EXPIRY_RECONCILIATION_MS = 20000;
+const EXPIRY_STATUS_SETTLEMENT_MS = 10000;
 /** Keep one display-only expiry wait across reloads; this never releases a payment lock. */
 export function expiryReconciliationDeadline(
   attemptId: string,
@@ -120,7 +121,7 @@ export function expiryReconciliationDeadline(
   awaitingFreshStatus = false,
 ) {
   // Allow one bounded status-response window when server pacing spans the grace period.
-  const settlement = awaitingFreshStatus ? EXPIRY_RECONCILIATION_MS : 0;
+  const settlement = awaitingFreshStatus ? EXPIRY_STATUS_SETTLEMENT_MS : 0;
   const key = `soccerbot-expiry-reconciliation:${attemptId}`;
   const saved = record(safeRead(key));
   if (

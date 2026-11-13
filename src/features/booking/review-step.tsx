@@ -76,7 +76,7 @@ export function ReviewStep({
       now,
       action,
       cancel,
-      conflictChecking,
+      conflictLoadingLabel,
       clearReviewConsent,
       ready,
       bookingService,
@@ -208,11 +208,7 @@ export function ReviewStep({
           ) : busy ? (
             <BrandLoading
               compact
-              label={
-                conflictChecking
-                  ? "Checking available sessions…"
-                  : "Opening checkout…"
-              }
+              label={conflictLoadingLabel ?? "Opening checkout…"}
             />
           ) : (
             "Proceed to Payment"

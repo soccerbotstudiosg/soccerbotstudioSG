@@ -263,8 +263,8 @@ it("hides the native payment capability at its expiry without claiming payment c
     ).toBeVisible();
     expect(document.querySelector(".booking-loading-inline")).toBeNull();
     await act(async () => {
-      elapsed += 9999;
-      await vi.advanceTimersByTimeAsync(9999);
+      elapsed += 19999;
+      await vi.advanceTimersByTimeAsync(19999);
     });
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("link", { name: label })).toBeNull();

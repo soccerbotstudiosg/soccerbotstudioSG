@@ -21,3 +21,7 @@ export const BOOKING_NOT_CREATED =
 
 export const ACTIVE_CHECKOUT_NOTICE =
   "You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.";
+
+export const CONFLICT_CHECKING = "Some sessions may no longer be available.";
+export const ACTIVE_CHECKOUT_CHECKING =
+  "You may already have an active checkout.";

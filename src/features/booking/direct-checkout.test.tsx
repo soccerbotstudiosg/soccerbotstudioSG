@@ -1340,6 +1340,9 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
           Seed multi
         </button>
         <button onClick={() => void state.checkout()}>Checkout multi</button>
+        <output data-testid="conflict-loading">
+          {state.conflictLoadingLabel}
+        </output>
         <p data-testid="conflict-notice">{state.selectionNotice}</p>
         <output data-testid="conflict-slots">
           {JSON.stringify(state.selectionNoticeSlots)}
@@ -1394,6 +1397,9 @@ it("checkout readback uses slot-specific messaging only for verified unavailabil
   fireEvent.click(screen.getByText("Checkout multi"));
   await waitFor(() => expect(availability).toHaveBeenCalledTimes(1));
   expect(screen.getByTestId("conflict-action")).not.toHaveTextContent("true");
+  expect(screen.getByTestId("conflict-loading")).toHaveTextContent(
+    "Some sessions may no longer be available.",
+  );
   await act(async () =>
     finishAvailability([
       { ...draft.slots[0], available: false },
@@ -2726,6 +2732,9 @@ function ConflictHandoffProbe({
       >
         Recover handoff
       </button>
+      <output data-testid="handoff-loading">
+        {state.conflictLoadingLabel}
+      </output>
       <output data-testid="handoff-ready">{String(state.ready)}</output>
       <output data-testid="handoff-return">
         {String(state.action.returnToCalendar)}
@@ -3259,9 +3268,15 @@ it("active checkout rejection keeps its own notice instead of an availability wa
     Response.json({ error: "checkout_already_active" }, { status: 503 }),
   );
   vi.stubGlobal("fetch", fetcher);
-  const availability = vi.fn<BookingService["availability"]>(async () => [
-    { ...draft.slots[0], available: true },
-  ]);
+  let finishAvailability!: (
+    slots: Awaited<ReturnType<BookingService["availability"]>>,
+  ) => void;
+  const availability = vi.fn<BookingService["availability"]>(
+    () =>
+      new Promise((resolve) => {
+        finishAvailability = resolve;
+      }),
+  );
   render(
     <BookingProvider
       bookingService={{
@@ -3277,6 +3292,14 @@ it("active checkout rejection keeps its own notice instead of an availability wa
   );
   fireEvent.click(screen.getByText("Seed handoff"));
   await act(async () => fireEvent.click(screen.getByText("Submit handoff")));
+  expect(screen.getByTestId("handoff-loading")).toHaveTextContent(
+    "You may already have an active checkout.",
+  );
+  expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
+  await act(async () =>
+    finishAvailability([{ ...draft.slots[0], available: true }]),
+  );
+  expect(screen.getByTestId("handoff-loading")).toBeEmptyDOMElement();
   expect(screen.getByTestId("handoff-return")).toHaveTextContent("true");
   expect(screen.getByTestId("handoff-message")).toHaveTextContent(
     "You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.",
@@ -3693,7 +3716,9 @@ it("access denial during conflict classification stops recovery and keeps the or
       ),
     ).toBeVisible();
     expect(
-      screen.queryByText("Checking available sessions…"),
+      screen.queryByText(
+        "Some sessions may no longer be available. Please do not close or refresh.",
+      ),
     ).not.toBeInTheDocument();
     expect(availabilitySignal?.aborted).toBe(true);
     const requestsAfterDenial = fetch.mock.calls.length;

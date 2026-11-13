@@ -2,6 +2,7 @@
 import { hasSeenConfirmation, markConfirmationSeen } from "@/services/storage";
 import {
   PAYMENT_WINDOW_ENDED,
+  CONFLICT_CHECKING,
   PAYMENT_PROVIDER_UNAVAILABLE,
   BOOKING_RECOVERY_MESSAGE,
   BOOKING_NOT_CREATED,
@@ -838,7 +839,7 @@ export function ProtectedConfirmation({
   if (silent || repeatedProviderReturn) return null;
   if (reconcilingExpiry) return <BrandLoading label="Checking payment…" />;
   if (rejectionState && !hasPaymentEvidence)
-    return <BrandLoading compact label="Checking available sessions…" />;
+    return <BrandLoading compact label={CONFLICT_CHECKING} />;
   if (
     (calendarRecovery && view !== "denied") ||
     (checkoutMode === "live" &&
