@@ -691,6 +691,49 @@ try {
     })),
     "Profile-only signout upgrade preserves historical families and revocation state",
   );
+  const paymentsBeforeSupport = (
+    await db.prepare("SELECT * FROM hitpay_payments ORDER BY attempt_id").all()
+  ).results;
+  await migrate("0049_booking_support_reports.sql");
+  assert.equal(
+    (await db.prepare("SELECT COUNT(*) n FROM booking_support_reports").first())
+      .n,
+    0,
+    "Upgrading must not invent customer help requests",
+  );
+  await db
+    .prepare(
+      "INSERT INTO booking_support_reports(attempt_id,created_ms,category,state,next_ms) VALUES(?,?,'booking_unconfirmed','pending',0)",
+    )
+    .bind(id, now)
+    .run();
+  await assert.rejects(
+    db
+      .prepare(
+        "INSERT INTO booking_support_reports(attempt_id,created_ms,category,state,next_ms) VALUES(?,?,'checkout_unconfirmed','pending',0)",
+      )
+      .bind(id, now)
+      .run(),
+    /UNIQUE constraint/,
+  );
+  await assert.rejects(
+    db
+      .prepare(
+        "UPDATE booking_support_reports SET category='unsupported' WHERE attempt_id=?",
+      )
+      .bind(id)
+      .run(),
+    /CHECK constraint/,
+  );
+  assert.deepEqual(
+    (
+      await db
+        .prepare("SELECT * FROM hitpay_payments ORDER BY attempt_id")
+        .all()
+    ).results,
+    paymentsBeforeSupport,
+    "Help-report upgrade must not rewrite financial evidence",
+  );
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,
@@ -849,6 +892,7 @@ try {
         testedCheckout: manifest.testedCheckout,
         checks: [
           "file hashes",
+          "support-report migration starts empty, enforces one valid report per attempt and preserves financial evidence",
           "root export",
           "applied0001–0017 preserve all existing fields, identities, unknown effects and closed grants",
           "identity request upgrade preserves challenge history and enforces the backfilled cooldown",
