@@ -17,6 +17,9 @@ import type {
   CalendarAvailability,
 } from "@/services/contracts";
 
+// Keep an absent cache stable so clock-only updates do not restart day reads.
+const EMPTY_CACHED_DATES: Record<string, AvailableSlot[]> = Object.freeze({});
+
 /** Expand fresh empty-month evidence into explicit empty day entries. */
 function emptyCalendarDates(month: string) {
   const [year, number] = month.split("-").map(Number);
@@ -394,29 +397,28 @@ export function useCalendarAvailability(
     },
     [service, key],
   );
-  const cachedDates = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.values(current?.entries ?? {})
-          .filter(
-            (entry) =>
-              entry.observedAtMs + retention(entry) >
-              Math.max(observedNow ?? checkedAt, checkedAt, entry.receivedAtMs),
-          )
-          .flatMap((entry) =>
-            entry.dates.flatMap((day) =>
-              day.offers &&
-              day.offers.every(
-                (offer) =>
-                  (offer.productServiceId ?? offer.serviceId) === serviceId,
-              )
-                ? [[day.date, nativeDisplaySlots(day.date, day.offers)]]
-                : [],
-            ),
+  const cachedDates = useMemo(() => {
+    const entries = Object.fromEntries(
+      Object.values(current?.entries ?? {})
+        .filter(
+          (entry) =>
+            entry.observedAtMs + retention(entry) >
+            Math.max(observedNow ?? checkedAt, checkedAt, entry.receivedAtMs),
+        )
+        .flatMap((entry) =>
+          entry.dates.flatMap((day) =>
+            day.offers &&
+            day.offers.every(
+              (offer) =>
+                (offer.productServiceId ?? offer.serviceId) === serviceId,
+            )
+              ? [[day.date, nativeDisplaySlots(day.date, day.offers)]]
+              : [],
           ),
-      ),
-    [current, serviceId, checkedAt, observedNow],
-  );
+        ),
+    );
+    return Object.keys(entries).length ? entries : EMPTY_CACHED_DATES;
+  }, [current, serviceId, checkedAt, observedNow]);
   return {
     cachedDates,
     initialReady:

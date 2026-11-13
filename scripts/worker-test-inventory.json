@@ -2018,5 +2018,17 @@
   {
     "file": "worker/tests/webhook.test.mjs",
     "title": "invoice capture retains authentication boundaries and immutable event authority"
+  },
+  {
+    "file": "worker/tests/catalogue.test.mjs",
+    "title": "email domain lookup distinguishes mail routing invalid domains and DNS outages without exposing mailboxes"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "customer booking help is owned deduplicated and sends only a fixed staff report with retry-safe content"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "guest email domain endpoint authenticates caches by domain and leaves DNS outages retryable"
   }
 ]

@@ -7,10 +7,37 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
 import { dateLabel, endTime, money } from "@/domain/dates";
-import type { Booking } from "@/domain/booking";
+import {
+  orderedSlots,
+  sessionInstructorName,
+  type Booking,
+} from "@/domain/booking";
 import { useBooking } from "./provider";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { Arrival, ClientDetails } from "./review-step";
+/** Share only the visible confirmed booking summary, never payment links or credentials. */
+export function bookingConfirmationMessage(booking: Booking) {
+  return [
+    "SOCCERBOTSTUDIO Singapore",
+    "Booking confirmed · Paid",
+    ...(booking.providerReferences?.invoiceNumber
+      ? [`Invoice: ${booking.providerReferences.invoiceNumber}`]
+      : []),
+    "",
+    ...orderedSlots(booking.slots).flatMap((slot, index) => [
+      `${index + 1}. ${dateLabel(slot.date)}`,
+      `${slot.start}–${endTime(slot.start)} SGT`,
+      ...(slot.native?.serviceName ? [slot.native.serviceName] : []),
+      `Trainer: ${sessionInstructorName(slot)}`,
+      "",
+    ]),
+    `Players: ${booking.draft.players}`,
+    `Location: ${[...new Set(booking.slots.map((slot) => slot.studio))].join(", ")}`,
+    ADDRESS,
+    "",
+    `Total paid: SGD ${money(booking.totalCents)}`,
+  ].join("\n");
+}
 function PendingConfirmationHeading({
   label,
   message,
@@ -92,6 +119,7 @@ export function BookingConfirmation({
   pendingLabel = "Checking payment…",
   pendingMessage,
   pendingAction,
+  pendingNotice,
   verifiedAtMs,
   invoicePending = false,
   onAgain,
@@ -103,6 +131,7 @@ export function BookingConfirmation({
   pendingLabel?: string;
   pendingMessage?: string;
   pendingAction?: ReactNode;
+  pendingNotice?: ReactNode;
   verifiedAtMs?: number;
   invoicePending?: boolean;
   onAgain: () => void | Promise<void>;
@@ -110,6 +139,19 @@ export function BookingConfirmation({
 }) {
   const [error, setError] = useState(""),
     [leaving, setLeaving] = useState(false);
+  const [copyState, setCopyState] = useState<
+    "idle" | "copying" | "copied" | "failed"
+  >("idle");
+  async function copyConfirmation() {
+    if (copyState === "copying") return;
+    setCopyState("copying");
+    try {
+      await navigator.clipboard.writeText(bookingConfirmationMessage(booking));
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+  }
   async function leave(operation: () => void | Promise<void>) {
     if (leaving) return;
     setLeaving(true);
@@ -122,11 +164,14 @@ export function BookingConfirmation({
       setLeaving(false);
     }
   }
-  if (pending && !pendingAction) return <BookingLoading label={pendingLabel} />;
+  if (pending && !pendingAction && !pendingNotice)
+    return <BookingLoading label={pendingLabel} />;
   return (
     <div className="status-shell confirmation-shell">
       <div className="status-heading">
-        {pending ? (
+        {pendingNotice ? (
+          <h1>{pendingLabel}</h1>
+        ) : pending ? (
           <PendingConfirmationHeading
             label={pendingLabel}
             message={pendingMessage}
@@ -218,6 +263,7 @@ export function BookingConfirmation({
           </Link>
         </div>
       )}
+      {pendingNotice}
       <section className="surface confirmation-card booking-document">
         {pending && (
           <div
@@ -314,9 +360,36 @@ export function BookingConfirmation({
             <div className="review-head">
               <h2 id="confirmation-order">Order Summary</h2>
               {!preview && (
-                <span className="pill success confirmation-paid-status">
-                  Paid
-                </span>
+                <div className="confirmation-paid-actions">
+                  <span className="pill success confirmation-paid-status">
+                    Paid
+                  </span>
+
+                  <button
+                    type="button"
+                    className="button secondary confirmation-copy"
+                    disabled={copyState === "copying"}
+                    onClick={() => void copyConfirmation()}
+                  >
+                    {copyState === "copied"
+                      ? "Copied"
+                      : copyState === "copying"
+                        ? "Copying…"
+                        : "Copy booking confirmation"}
+                  </button>
+                  <p
+                    className={
+                      copyState === "failed" ? "field-error" : "field-hint"
+                    }
+                    aria-live="polite"
+                  >
+                    {copyState === "failed"
+                      ? "Couldn’t copy. Please try again or select the details to copy them."
+                      : copyState === "copied"
+                        ? "Booking confirmation copied."
+                        : ""}
+                  </p>
+                </div>
               )}
             </div>
             <SessionList

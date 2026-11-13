@@ -1,3 +1,6 @@
+vi.mock("@/services/email-domain", () => ({
+  checkEmailDomain: vi.fn(async () => "valid"),
+}));
 import ConfirmationPage from "@/app/confirmation/page";
 import { dateLabel } from "@/domain/dates";
 import { PAYMENT_WINDOW_ENDED } from "@/domain/booking-messages";
@@ -657,6 +660,11 @@ it("Review performs no provider reads and checkout verifies one booking before H
   ).toHaveTextContent("$88.00");
   fireEvent.click(
     screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Confirm email address is correct" }),
+    ).toHaveAttribute("aria-pressed", "true"),
   );
   await act(async () =>
     fireEvent.click(
@@ -2595,7 +2603,9 @@ it("confirmed no-creation proof clears only its original attempt through recover
       fireEvent.click(screen.getByText("Accept original"));
       fireEvent.click(screen.getByText("Create original"));
     } else if (route !== "status") {
-      await screen.findByRole("status", { name: "Checking your reservation…" });
+      await screen.findByRole("status", {
+        name: "Checking whether your booking was created…",
+      });
       fireEvent.click(screen.getByText("Foreign proof"));
       expect(screen.getByTestId("creation-attempt")).toHaveTextContent(id);
       expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
@@ -2666,7 +2676,9 @@ it("confirmed no-creation proof clears only its original attempt through recover
         ),
       ).toBeNull();
       expect(
-        screen.queryByRole("status", { name: "Checking your reservation…" }),
+        screen.queryByRole("status", {
+          name: "Checking whether your booking was created…",
+        }),
       ).toBeNull();
       const originalDate = await screen.findByRole("button", {
         name: dateLabel(draft.slots[0].date),
@@ -4514,8 +4526,69 @@ it("idle Review removes cutoff-crossed sessions at the strict four-hour boundary
   expect(
     within(screen.getByRole("alert")).getByText(/15:20–16:00/),
   ).toBeVisible();
+  const times = screen.getByRole("group", { name: "Session times" });
+  expect(within(times).queryByRole("button", { name: /15:20/ })).toBeNull();
+  expect(within(times).getByRole("button", { name: /16:10/ })).toBeVisible();
   expect(await state!.review()).toBe(true);
   expect(checkout).not.toHaveBeenCalled();
+});
+
+it("unselected calendar offers disappear at cutoff while a background availability read is pending", async () => {
+  vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
+  vi.setSystemTime(new Date("2026-11-12T11:19:59.999+08:00"));
+  navigation.path = "/book/time/";
+  const slots = ["15:20", "16:10"].map((start) => ({
+    ...draft.slots[0],
+    date: "2026-11-12",
+    start,
+    available: true,
+  }));
+  saveLiveDraft({ ...draft, slots: [] });
+  const availability = vi
+    .fn()
+    .mockResolvedValueOnce(slots)
+    .mockImplementation(() => new Promise(() => {}));
+  const service = {
+    ...liveBookingService,
+    restore: undefined,
+    publicCalendar: undefined,
+    availability,
+  };
+  render(
+    <BookingProvider
+      bookingService={service}
+      identityService={demoCustomerIdentity}
+    >
+      <BookingPage step="time" />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  const times = screen.getByRole("group", { name: "Session times" });
+  fireEvent.click(within(times).getByRole("button", { name: /15:20/ }));
+  expect(within(times).getByRole("button", { name: /15:20/ })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  const readsBeforeCutoff = availability.mock.calls.length;
+  await act(async () => {
+    vi.advanceTimersByTime(1);
+  });
+  expect(within(times).getByRole("button", { name: /15:20/ })).toBeVisible();
+  await act(async () => {
+    vi.advanceTimersByTime(1);
+  });
+  expect(within(times).queryByRole("button", { name: /15:20/ })).toBeNull();
+  expect(within(times).getByRole("button", { name: /16:10/ })).toBeVisible();
+  expect(screen.queryByText("Session no longer available.")).toBeNull();
+  // The normal minute refresh is the only additional read; hiding is local.
+  expect(availability).toHaveBeenCalledTimes(readsBeforeCutoff + 1);
+  await act(async () => {
+    vi.advanceTimersByTime(10_000);
+  });
+  expect(availability).toHaveBeenCalledTimes(readsBeforeCutoff + 1);
+  expect(
+    document.querySelector(".page-loading, .booking-flow-overlay"),
+  ).toBeNull();
 });
 
 it("cutoff recovery survives refresh and permits replacement without reviving removed sessions", async () => {
@@ -4800,4 +4873,31 @@ it("new checkout waits for background identity cleanup and never dispatches afte
   });
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(screen.getByTestId("action")).toHaveTextContent("failure");
+});
+
+it("lost checkout response ends at thirty seconds without retrying or inventing a failed booking", async () => {
+  vi.useFakeTimers();
+  const attempt: Attempt = {
+    id,
+    draft,
+    status: "ready",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  };
+  const fetch = vi.fn((input: RequestInfo | URL) => {
+    void input;
+    return new Promise<Response>(() => {});
+  });
+  vi.stubGlobal("fetch", fetch);
+  const result = liveBookingService
+    .pay({ attempt, outcome: "pending", holding: true, startCheckout: true })
+    .catch((error) => error);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(30000);
+  });
+  expect(await result).toMatchObject({ code: "checkout_timeout" });
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(String(fetch.mock.calls[0]?.[0])).toContain(id);
+  expect(attempt.status).toBe("ready");
 });

@@ -10,6 +10,9 @@ import {
   finishConfirmationTrace,
 } from "./confirmation-tracing";
 import { z } from "zod";
+import { emailSchema } from "../src/domain/contact";
+import { cachedEmailDomainStatus } from "./email-domain";
+import { requestBookingHelp } from "./booking-support";
 import { receiveHitpayWebhook } from "./hitpay-webhook";
 import { bookingReceipt } from "./receipt";
 import { webhookRoute } from "./webhook-contract";
@@ -212,6 +215,24 @@ export default {
           for (const cookie of cookies)
             response.headers.append("Set-Cookie", cookie);
           return response;
+        }
+        const supportMatch = /^\/api\/attempts\/([a-f0-9-]{36})\/support$/.exec(
+          url.pathname,
+        );
+        if (supportMatch) {
+          if (request.method !== "POST")
+            throw new ApiError(405, "operation_unavailable");
+          return json(await requestBookingHelp(request, env, supportMatch[1]));
+        }
+        if (url.pathname === "/api/identity/email-domain") {
+          if (request.method !== "POST")
+            throw new ApiError(405, "operation_unavailable");
+          await authenticate(request, env, Date.now());
+          const input = z
+            .strictObject({ email: emailSchema })
+            .parse(await inputBody(request));
+          const status = await cachedEmailDomainStatus(input.email);
+          return json({ status }, status === "unavailable" ? 503 : 200);
         }
         if (url.pathname === "/api/identity/contact") {
           if (request.method !== "GET" && request.method !== "POST")

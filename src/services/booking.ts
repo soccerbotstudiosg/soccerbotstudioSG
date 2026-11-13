@@ -7,6 +7,7 @@ import {
   BOOKING_NOT_CREATED,
 } from "@/domain/booking-messages";
 import { SESSION_UNAVAILABLE } from "@/domain/booking-messages";
+import { checkoutRecoveryDeadline } from "./storage";
 import {
   CATALOGUE_MAX_AGE_MS,
   displayDeadline,
@@ -801,35 +802,58 @@ export const liveBookingService: BookingService = defineBookingService({
     if (holding && attempt.draft.slots.length === 1 && onReviewReady)
       timer = setTimeout(() => void inspect(), 1000);
     let raw: unknown;
+    const writeController = new AbortController();
+    const abortWrite = () => writeController.abort();
+    signal?.addEventListener("abort", abortWrite, { once: true });
+    const remaining = Math.max(
+      1,
+      checkoutRecoveryDeadline(attempt.id) - Date.now(),
+    );
+    let writeTimer: ReturnType<typeof setTimeout> | undefined;
     try {
-      raw = await nativeRequest(
-        attempt.held
-          ? `/api/booking/hitpay/${attempt.id}`
-          : holding
-            ? `/api/booking/${startCheckout ? "checkout" : "hold"}/${attempt.id}`
-            : `/api/booking/native/${attempt.id}`,
-        "POST",
-        signal,
-        attempt.held
-          ? { accepted: attempt.draft.accepted }
-          : holding
-            ? nativePrepareSchema.parse({
-                key: attempt.id,
-                contact: attempt.draft.contact,
-                accepted: attempt.draft.accepted,
-                holding: true,
-                sessions: attempt.draft.slots.map((slot) => ({
-                  serviceId: slot.native?.serviceId,
-                  instructorId: slot.instructor,
-                  startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
-                  players: attempt.draft.players,
-                  totalMinor: slot.native?.priceMinor,
-                })),
-              })
-            : undefined,
-        !attempt.held && holding ? botToken : undefined,
-      );
+      raw = await Promise.race([
+        nativeRequest(
+          attempt.held
+            ? `/api/booking/hitpay/${attempt.id}`
+            : holding
+              ? `/api/booking/${startCheckout ? "checkout" : "hold"}/${attempt.id}`
+              : `/api/booking/native/${attempt.id}`,
+          "POST",
+          writeController.signal,
+          attempt.held
+            ? { accepted: attempt.draft.accepted }
+            : holding
+              ? nativePrepareSchema.parse({
+                  key: attempt.id,
+                  contact: attempt.draft.contact,
+                  accepted: attempt.draft.accepted,
+                  holding: true,
+                  sessions: attempt.draft.slots.map((slot) => ({
+                    serviceId: slot.native?.serviceId,
+                    instructorId: slot.instructor,
+                    startMs: Date.parse(`${slot.date}T${slot.start}:00+08:00`),
+                    players: attempt.draft.players,
+                    totalMinor: slot.native?.priceMinor,
+                  })),
+                })
+              : undefined,
+          !attempt.held && holding ? botToken : undefined,
+        ),
+        new Promise<never>((_, reject) => {
+          writeTimer = setTimeout(() => {
+            writeController.abort();
+            reject(
+              new BookingServiceError(
+                "checkout_timeout",
+                "Checkout status is still being checked.",
+              ),
+            );
+          }, remaining);
+        }),
+      ]);
     } finally {
+      clearTimeout(writeTimer);
+      signal?.removeEventListener("abort", abortWrite);
       stop();
       signal?.removeEventListener("abort", stop);
     }

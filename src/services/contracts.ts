@@ -82,6 +82,7 @@ export type BookingErrorCode =
   | "checkout_already_active"
   | "booking_not_created"
   | "checkout_not_started"
+  | "checkout_timeout"
   | "checkout_verification_required"
   | "reservation_blocked"
   | "queue_busy"

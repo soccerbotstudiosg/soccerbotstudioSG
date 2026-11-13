@@ -43,6 +43,7 @@
   --color-on-brand-muted: #dce1f1;
   --color-ink: #101636;
   --color-muted: #586174;
+  --color-hint: #767676;
   --color-paper: #f5f6fa;
   --color-surface: #ffffff;
   --color-line: #d6dae6;
@@ -474,7 +475,8 @@
     font-weight: 700;
     color: var(--color-brand);
     background: var(--color-brand-soft);
-    min-height: 44px;
+    height: var(--calendar-control-height);
+    min-height: var(--calendar-control-height);
     padding: 10px 14px;
     border: 1px solid var(--color-line);
     border-radius: 8px;
@@ -1498,7 +1500,8 @@
     right: 16px;
     bottom: 16px;
     min-width: 88px;
-    min-height: 44px;
+    height: var(--calendar-control-height);
+    min-height: var(--calendar-control-height);
     padding: 8px 16px;
     border-radius: 8px;
     background: var(--color-player-app);
@@ -2774,7 +2777,8 @@
     margin: 0;
   }
   .auth-code-feedback .text-link {
-    min-height: 44px;
+    height: var(--calendar-control-height);
+    min-height: var(--calendar-control-height);
   }
   .access-option .signed-in-email {
     color: var(--color-identity);
@@ -2794,7 +2798,8 @@
   }
   .account-actions .button {
     min-width: 0;
-    min-height: 44px;
+    height: var(--calendar-control-height);
+    min-height: var(--calendar-control-height);
     max-width: 100%;
     padding: 6px 8px;
     border-radius: 8px;
@@ -2831,9 +2836,16 @@
     color: var(--color-ink);
     overflow-wrap: anywhere;
   }
-  .field input[readonly] {
+  .verified-email-value {
+    min-height: var(--control-height);
+    padding: 12px 14px;
+    border: 1px solid var(--color-control-border);
+    border-radius: 10px;
     background: var(--color-brand-soft);
     color: var(--color-muted);
+    user-select: text;
+    overflow-wrap: anywhere;
+    font-size: var(--text-body);
   }
   .outlet-options {
     margin: 20px 0 28px;
@@ -3292,6 +3304,7 @@
     background: var(--color-surface);
   }
   .calendar-head {
+    --calendar-control-height: 36px;
     font-size: var(--text-label);
     display: flex;
     align-items: center;
@@ -3319,8 +3332,9 @@
     border: 1px solid var(--color-line);
     border-radius: 7px;
     font: inherit;
-    padding: 10px 28px 10px 11px;
-    min-height: 44px;
+    padding: 4px 28px 4px 11px;
+    height: var(--calendar-control-height);
+    min-height: var(--calendar-control-height);
   }
   .calendar-head :is(select, button):focus-visible {
     outline-offset: -3px;
@@ -3331,7 +3345,7 @@
     align-items: center;
   }
   .calendar-nav .icon-button {
-    height: 44px;
+    height: var(--calendar-control-height);
     min-width: 32px;
     width: 32px;
   }
@@ -3630,7 +3644,7 @@
   .field input::placeholder,
   .field textarea::placeholder,
   .field-control::placeholder {
-    color: var(--color-muted);
+    color: var(--color-hint);
     font-weight: 400;
     opacity: 1;
   }
@@ -3646,7 +3660,7 @@
   .field-hint {
     font-weight: 400;
     margin-top: 6px;
-    color: var(--color-muted);
+    color: var(--color-hint);
     font-size: var(--text-label);
     line-height: 1.45;
   }
@@ -3773,8 +3787,12 @@
     color: var(--color-success);
     background: var(--color-success-soft);
   }
-  .email-check-help {
+  .email-confirm-control[aria-busy="true"] {
     color: var(--color-muted);
+    background: var(--color-brand-soft);
+  }
+  .email-check-help {
+    color: var(--color-hint);
     font-size: var(--text-meta);
     margin-top: 7px;
   }
@@ -4127,6 +4145,24 @@
   .confirmation-paid-status {
     padding: 8.5px 15.3px;
     font-size: var(--text-payment-status);
+  }
+  .confirmation-copy {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: var(--text-meta);
+  }
+  .booking-help {
+    margin-top: 16px;
+  }
+  .booking-help p:not(:empty) {
+    margin-top: 8px;
+  }
+  .confirmation-paid-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 240px;
   }
   .confirmation-total strong {
     display: inline-flex;
@@ -4698,20 +4734,20 @@
     }
     .month-picker select,
     .calendar-nav select {
-      height: var(--icon-control-size);
+      height: var(--calendar-control-height);
     }
     .month-picker select {
-      padding: 8px 20px 8px 8px;
+      padding: 4px 20px 4px 8px;
     }
     .calendar-nav {
       gap: 4px;
     }
     .calendar-nav .icon-button {
-      height: var(--icon-control-size);
+      height: var(--calendar-control-height);
       min-width: 32px;
     }
     .calendar-nav select {
-      padding: 8px 18px 8px 5px;
+      padding: 4px 18px 4px 5px;
     }
     .calendar-weekdays,
     .dates {

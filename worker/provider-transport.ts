@@ -9,6 +9,7 @@ import {
   type WebhookEvent,
 } from "./webhook-contract";
 import { z } from "zod";
+import { CONTACT } from "../src/domain/catalog";
 import { providerId } from "./provider-normalization";
 import {
   measure,
@@ -24,9 +25,24 @@ import {
 
 // Fixed identity endpoints share the physical transport owner. Their durable
 // admission is owned by identity-delivery, separately from SimplyBook accounting.
+/** DNS checks have a fixed resolver and disclose only the domain. */
+export function emailDnsRequest(
+  domain: string,
+  type: "MX" | "A" | "AAAA",
+  signal: AbortSignal,
+) {
+  const url = new URL("https://cloudflare-dns.com/dns-query");
+  url.searchParams.set("name", domain);
+  url.searchParams.set("type", type);
+  return fetch(url, {
+    headers: { Accept: "application/dns-json" },
+    redirect: "manual",
+    signal,
+  });
+}
 /** Send the bounded identity-provider request with validated credentials. */
 export async function identityRequest(
-  kind: "bot" | "email",
+  kind: "bot" | "email" | "support",
   secret: string,
   payload: Record<string, string>,
   signal: AbortSignal,
@@ -42,29 +58,40 @@ export async function identityRequest(
           secret,
           response: z.string().min(1).max(2048).parse(payload.token),
         })
-      : JSON.stringify({
-          from: identitySenderSchema.parse(payload.sender),
-          to: [z.email().max(254).parse(payload.recipient)],
-          subject: "Your SoccerBotStudio Singapore verification code",
-          text: `Your verification code is ${z
-            .string()
-            .regex(/^\d{6}$/)
-            .parse(
-              payload.code,
-            )}. It expires within 2 minutes. If you did not request this, ignore this email.`,
-        });
+      : kind === "support"
+        ? JSON.stringify({
+            from: identitySenderSchema.parse(payload.sender),
+            to: [CONTACT.email],
+            subject: "SoccerBotStudio booking help requested",
+            text: z.string().min(1).max(8192).parse(payload.text),
+          })
+        : JSON.stringify({
+            from: identitySenderSchema.parse(payload.sender),
+            to: [z.email().max(254).parse(payload.recipient)],
+            subject: "Your SoccerBotStudio Singapore verification code",
+            text: `Your verification code is ${z
+              .string()
+              .regex(/^\d{6}$/)
+              .parse(
+                payload.code,
+              )}. It expires within 2 minutes. If you did not request this, ignore this email.`,
+          });
   const response = await fetch(url, {
     method: "POST",
     redirect: "manual",
     signal,
     headers: {
       "Content-Type": "application/json",
-      ...(kind === "email"
+      ...(kind !== "bot"
         ? {
             Authorization: `Bearer ${secret}`,
             "Idempotency-Key": z
               .string()
-              .regex(/^verification\/[a-f0-9-]{36}$/)
+              .regex(
+                kind === "support"
+                  ? /^booking-support\/[a-f0-9-]{36}$/
+                  : /^verification\/[a-f0-9-]{36}$/,
+              )
               .parse(payload.idempotencyKey),
           }
         : {}),

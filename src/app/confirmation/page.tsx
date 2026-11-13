@@ -36,6 +36,7 @@ function ConfirmationRoute() {
       // Provider return hints may suppress payment, never establish paid status.
       allowPaymentContinuation={paymentContinuation}
       providerReturn={providerReturn}
+      confirmationRoute
       sessionRevision={confirmationRevision}
       checkoutMode={bookingService.mode === "live" ? "live" : undefined}
       onExpired={restartAfterExpiry}

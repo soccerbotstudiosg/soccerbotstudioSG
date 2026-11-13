@@ -15,7 +15,7 @@ const config = ts.parseConfigFileTextToJson(
 const origin = "https://soccerbot.test",
   revision = "a".repeat(40),
   email = "sheng@app404.ai";
-let script, mf, db, root, calls, botResult, mailResult, bindings;
+let script, mf, db, root, calls, botResult, mailResult, dnsResult, bindings;
 before(async () => {
   script = (
     await build({
@@ -52,6 +52,20 @@ async function start() {
       },
       serviceBindings: { ASSETS: () => new Response("synthetic") },
       outboundService: async (request) => {
+        if (new URL(request.url).origin === "https://cloudflare-dns.com") {
+          assert.equal(request.method, "GET");
+          calls.push({
+            url: request.url,
+            body: null,
+            headers: request.headers,
+          });
+          return dnsResult
+            ? dnsResult()
+            : Response.json({
+                Status: 0,
+                Answer: [{ type: 15, TTL: 60, data: "10 mail.example.com." }],
+              });
+        }
         assert.equal(request.method, "POST");
         const body = await request.json();
         calls.push({ url: request.url, body, headers: request.headers });
@@ -84,6 +98,7 @@ beforeEach(async () => {
   calls = [];
   botResult = null;
   mailResult = null;
+  dnsResult = null;
   bindings = {
     ...config.vars,
     APP_ORIGIN: origin,
@@ -1254,4 +1269,186 @@ test("client email delivery fails closed for missing sender or production bot se
   await start();
   assert.equal((await challenge(cookie)).status, 503);
   assert.equal(calls.length, 0);
+});
+
+test("customer booking help is owned deduplicated and sends only a fixed staff report with retry-safe content", async () => {
+  await mf.dispose();
+  rmSync(root, { recursive: true, force: true });
+  root = mkdtempSync(path.join(tmpdir(), "soccerbot-support-"));
+  Object.assign(bindings, {
+    LIVE_CUSTOMER_ACCESS: "enabled",
+    PROVIDER_ACCESS: "trusted-reads",
+    IDENTITY_SENDER: "SoccerBotStudioSG Dev <noreply@auth.app404.ai>",
+  });
+  await start();
+  await initializeFixture(mf, db);
+  const cookie = await guest();
+  const owner = (
+    await db.prepare("SELECT owner_id FROM guest_access LIMIT 1").first()
+  ).owner_id;
+  const foreign = await guest();
+  const id = crypto.randomUUID(),
+    retryId = crypto.randomUUID(),
+    now = Date.now();
+  const intent = {
+    accountId: bindings.DEPLOYMENT_ACCOUNT_ID,
+    environmentId: "developer",
+    customerId: "synthetic",
+    customerMode: "booking-contact",
+    contact: {
+      name: "Synthetic Customer",
+      email: "synthetic@example.com",
+      phone: "+6591234567",
+      contactMethod: "email",
+      academy: "",
+    },
+    currency: "SGD",
+    totalMinor: 10800,
+    taxMinor: 0,
+    sessions: [
+      {
+        serviceId: "3",
+        instructorId: "2",
+        startMs: now + 86400000,
+        players: 1,
+        totalMinor: 10800,
+        taxMinor: 0,
+      },
+    ],
+  };
+  for (const attemptId of [id, retryId])
+    await db
+      .prepare(
+        "INSERT INTO attempts(id,owner_id,idempotency_key,intent_json,intent_hash,created_ms,deadline_ms,state) VALUES(?,?,?,?,?,?,?,'recovery_required')",
+      )
+      .bind(
+        attemptId,
+        owner,
+        attemptId,
+        JSON.stringify(intent),
+        "a".repeat(64),
+        now - 60000,
+        now + 600000,
+      )
+      .run();
+  const send = (attemptId = id, access = cookie, originHeader = origin) =>
+    mf.dispatchFetch(`${origin}/api/attempts/${attemptId}/support`, {
+      method: "POST",
+      headers: { origin: originHeader, cookie: access },
+    });
+  assert.equal((await send(id, foreign)).status, 404);
+  assert.equal((await send(id, "")).status, 401);
+  assert.equal(
+    (await send(id, cookie, "https://foreign.example.com")).status,
+    403,
+  );
+  assert.equal(calls.length, 0);
+  const first = await send();
+  assert.equal(first.status, 200);
+  assert.deepEqual(await first.json(), { status: "sent" });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].body.to, ["contact@soccerbotsg.com"]);
+  assert.match(calls[0].body.text, /Synthetic Customer/);
+  assert.match(calls[0].body.text, /booking_unconfirmed/);
+  assert.match(calls[0].body.text, /synthetic@example.com/);
+  assert.equal(
+    calls[0].headers.get("Idempotency-Key"),
+    `booking-support/${id}`,
+  );
+  assert.equal((await send()).status, 200);
+  assert.equal(calls.length, 1);
+  mailResult = () => new Response(null, { status: 503 });
+  assert.equal((await send(retryId)).status, 503);
+  const originalPayload = calls[1].body;
+  assert.equal((await send(retryId)).status, 429);
+  assert.equal(calls.length, 2);
+  await db
+    .prepare("UPDATE booking_support_reports SET next_ms=0 WHERE attempt_id=?")
+    .bind(retryId)
+    .run();
+  mailResult = null;
+  assert.equal((await send(retryId)).status, 200);
+  assert.deepEqual(calls[2].body, originalPayload);
+  assert.equal(
+    calls[2].headers.get("Idempotency-Key"),
+    `booking-support/${retryId}`,
+  );
+  assert.equal(
+    (await db.prepare("SELECT state FROM attempts WHERE id=?").bind(id).first())
+      .state,
+    "recovery_required",
+  );
+  const paidId = crypto.randomUUID();
+  await db
+    .prepare(
+      "INSERT INTO attempts(id,owner_id,idempotency_key,intent_json,intent_hash,created_ms,deadline_ms,state) VALUES(?,?,?,?,?,?,?,'observed')",
+    )
+    .bind(
+      paidId,
+      owner,
+      paidId,
+      JSON.stringify(intent),
+      "b".repeat(64),
+      now - 60000,
+      now + 600000,
+    )
+    .run();
+  await db
+    .prepare(
+      "INSERT INTO hitpay_payments(attempt_id,scope_json,reference,expires_ms,created_ms,recovery_end_ms,state,reason,ready_ms,paid_ms) VALUES(?,'{}',?,?,?,?,'due','payment_received_booking_pending',?,?)",
+    )
+    .bind(paidId, paidId, now + 60000, now - 60000, now + 600000, now, now)
+    .run();
+  assert.equal((await send(paidId)).status, 200);
+  assert.match(calls.at(-1).body.text, /payment_confirmation_pending/);
+  assert.equal(
+    (
+      await db
+        .prepare("SELECT paid_ms FROM hitpay_payments WHERE attempt_id=?")
+        .bind(paidId)
+        .first()
+    ).paid_ms,
+    now,
+  );
+});
+
+test("guest email domain endpoint authenticates caches by domain and leaves DNS outages retryable", async () => {
+  const cookie = await guest();
+  assert.equal((await request("", {}, "email-domain")).status, 401);
+  assert.equal(calls.length, 0);
+  assert.deepEqual(
+    await (
+      await request(cookie, { email: "first@example.com" }, "email-domain")
+    ).json(),
+    { status: "valid" },
+  );
+  assert.deepEqual(
+    await (
+      await request(cookie, { email: "second@example.com" }, "email-domain")
+    ).json(),
+    { status: "valid" },
+  );
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url.includes("first"), false);
+  dnsResult = () => Response.json({ Status: 3 });
+  assert.deepEqual(
+    await (
+      await request(cookie, { email: "first@example.con" }, "email-domain")
+    ).json(),
+    { status: "invalid" },
+  );
+  dnsResult = () => new Response(null, { status: 503 });
+  const before = calls.length;
+  for (let i = 0; i < 2; i++)
+    assert.equal(
+      (
+        await request(
+          cookie,
+          { email: "first@other.example.com" },
+          "email-domain",
+        )
+      ).status,
+      503,
+    );
+  assert.equal(calls.length, before + 2);
 });

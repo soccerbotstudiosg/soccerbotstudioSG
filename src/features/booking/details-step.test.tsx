@@ -13,6 +13,7 @@ import { ReviewStep } from "./review-step";
 import { DetailsStep } from "./details-step";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import type { CustomerIdentityService } from "@/services/contracts";
+import { liveBookingService } from "@/services/booking";
 
 const mocks = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -23,6 +24,75 @@ beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   mocks.push.mockClear();
+});
+
+test("guest email checks show progress reject invalid domains and ignore stale replies while verified email skips lookup", async () => {
+  let finish!: (response: Response) => void;
+  const fetcher = vi.fn(
+    () =>
+      new Promise<Response>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  function Seed() {
+    const { update } = useBooking();
+    return (
+      <button
+        onClick={() =>
+          update({ mode: "member", accountEmail: "verified@example.com" })
+        }
+      >
+        Use verified identity
+      </button>
+    );
+  }
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        restore: undefined,
+        publicCalendar: undefined,
+        calendar: undefined,
+      }}
+      identityService={demoCustomerIdentity}
+    >
+      <Seed />
+      <DetailsStep />
+    </BookingProvider>,
+  );
+  const email = screen.getByLabelText(/Email address/);
+  fireEvent.change(email, { target: { value: "first@example.com" } });
+  const control = screen.getByRole("button", {
+    name: "Confirm email address is correct",
+  });
+  fireEvent.click(control);
+  expect(control).toHaveAttribute("aria-busy", "true");
+  expect(control).toBeDisabled();
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  fireEvent.change(email, { target: { value: "second@example.com" } });
+  await act(async () => finish(Response.json({ status: "valid" })));
+  expect(control).toHaveAttribute("aria-pressed", "false");
+  expect(control).not.toBeDisabled();
+  fireEvent.click(control);
+  await act(async () => finish(Response.json({ status: "invalid" })));
+  expect(
+    screen.getByText(/This email domain cannot receive email/),
+  ).toBeVisible();
+  fireEvent.click(control);
+  await act(async () => finish(new Response(null, { status: 503 })));
+  expect(screen.getByText(/Couldn’t check your email domain/)).toBeVisible();
+  fireEvent.click(control);
+  await act(async () => finish(Response.json({ status: "valid" })));
+  expect(control).toHaveAttribute("aria-pressed", "true");
+  const calls = fetcher.mock.calls.length;
+  fireEvent.click(screen.getByText("Use verified identity"));
+  expect(
+    screen.queryByRole("button", { name: "Confirm email address is correct" }),
+  ).toBeNull();
+  expect(fetcher).toHaveBeenCalledTimes(calls);
+  cleanup();
+  vi.unstubAllGlobals();
 });
 
 test("details contains only the five contact fields and validates them before review", async () => {
@@ -230,6 +300,10 @@ test("verified details saves only on explicit action and ignores completion afte
     </BookingProvider>,
   );
   await user.click(screen.getByRole("button", { name: "Choose member" }));
+  expect(screen.queryByRole("textbox", { name: /Email address/ })).toBeNull();
+  expect(document.querySelector(".verified-email-value")).not.toHaveAttribute(
+    "tabindex",
+  );
   expect(saveProfile).not.toHaveBeenCalled();
   expect(
     screen.getByText(/Anyone using this verified email shares/),
@@ -410,10 +484,7 @@ test("invalid saved contacts remain editable in booking details and contact mana
     const name = screen.getByLabelText(/Full name/);
     expect(name).not.toBeDisabled();
     expect(name).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByLabelText(/Email address/)).toHaveAttribute(
-      "maxlength",
-      "254",
-    );
+    expect(screen.queryByRole("textbox", { name: /Email address/ })).toBeNull();
     fireEvent.submit(document.getElementById("details-form")!);
     expect(name).toHaveFocus();
     expect(saveProfile).not.toHaveBeenCalled();

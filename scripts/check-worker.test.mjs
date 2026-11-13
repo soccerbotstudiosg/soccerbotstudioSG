@@ -96,6 +96,7 @@ test("rejects direct provider fetch and suppression", () => {
 test("rejects provider redirects alternate hosts and unreserved dispatch", () => {
   for (const [from, to] of [
     ['redirect: "manual"', 'redirect: "follow"'],
+    ["https://cloudflare-dns.com/dns-query", "https://other.invalid/dns-query"],
     ["https://api.resend.com/emails", "https://other.invalid/emails"],
     [
       "https://api.sandbox.hit-pay.com/v1/payment-requests",

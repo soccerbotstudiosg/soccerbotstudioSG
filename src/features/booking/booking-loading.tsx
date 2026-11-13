@@ -18,6 +18,8 @@ export const loadingMessage = "Please do not close or refresh.";
 const feedbackMessage = (label?: string) =>
   [
     "Opening checkout…",
+    "Checking whether your booking was created…",
+    "Preparing your payment link…",
     CONFLICT_CHECKING,
     ACTIVE_CHECKOUT_CHECKING,
     "Checking payment…",

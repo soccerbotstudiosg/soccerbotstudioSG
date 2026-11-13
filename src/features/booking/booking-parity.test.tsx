@@ -1,3 +1,6 @@
+vi.mock("@/services/email-domain", () => ({
+  checkEmailDomain: vi.fn(async () => "valid"),
+}));
 import { useEffect } from "react";
 import {
   act,
@@ -237,6 +240,11 @@ test("live calendar removes selections rejected at checkout and retains contact 
   );
   fireEvent.click(
     screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Confirm email address is correct" }),
+    ).toHaveAttribute("aria-pressed", "true"),
   );
   fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
@@ -560,6 +568,11 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
   fireEvent.click(
     screen.getByRole("button", { name: "Confirm email address is correct" }),
   );
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Confirm email address is correct" }),
+    ).toHaveAttribute("aria-pressed", "true"),
+  );
   fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
@@ -748,6 +761,11 @@ test("Details opens local Review without waiting for unavailable providers", asy
   fireEvent.click(
     screen.getByRole("button", { name: "Confirm email address is correct" }),
   );
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Confirm email address is correct" }),
+    ).toHaveAttribute("aria-pressed", "true"),
+  );
   fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   );
@@ -836,6 +854,11 @@ test("failed checkout preparation retains cached calendar and contact without re
   view.rerender(tree("details"));
   fireEvent.click(
     screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Confirm email address is correct" }),
+    ).toHaveAttribute("aria-pressed", "true"),
   );
   fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
@@ -955,6 +978,11 @@ test("reservation conflict removes its session locally and returns to calendar w
   view.rerender(tree("details"));
   fireEvent.click(
     screen.getByRole("button", { name: "Confirm email address is correct" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Confirm email address is correct" }),
+    ).toHaveAttribute("aria-pressed", "true"),
   );
   fireEvent.click(
     screen.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),

@@ -2,29 +2,23 @@
 
 ## Active outcome
 
-Consolidate immediate field validation and quieter form feedback on `fix/strict-field-feedback`, based on merged PR70/main `3dd68cfbea8ce2cb7305b7904d65f449b13a8ac5`. Owner authorizes staging and merge after exact-head CI and actual staging health.
+Consolidate guest DNS validation, bounded checkout/payment-return recovery, customer help reports and approved UI refinements. Base is merged PR71/main60075540083423d95e80149e578f03c3caf1f160. Owner authorizes CI, actual staging and merge; no live payment or email test is authorized by this delivery work.
 
 ## Current slice
 
-- Tighten shared name and organisation character rules; keep international letters/accents, selected punctuation and existing API validation/recovery boundaries.
-- Ignore rejected phone edits silently. Keep incomplete accepted-value feedback and existing Singapore/international rules.
-- Use John Doe / International Sports School placeholders, remove redundant contact-method guidance and show guest email error or valid-address guidance exclusively after editing.
-- Align preview enquiry live/submission checks across all editable fields. No live enquiry route or notification delivery added.
+- Guest email: quick format validation then explicit bounded domain-routing check; verified email is selectable text.
+- One30-second creation wait returns unresolved attempts to Calendar with the shared notice and Request Help while preserving financial locks.
+- Payment return: bounded waiting, Pending plus known details/help, then authoritative confirmation when recovered. Remembered return hints never prove payment.
+- One staff report per owned attempt; migration0049, fixed studio recipient, bounded idempotent send/retry.
+- Confirmation copy beneath Paid, lighter placeholders, shorter Calendar controls and immediate cutoff removal from visible slots as well as cart.
 
 ## Evidence and delivery
 
-All 350 domain/component/service tests and two isolated Worker regressions pass locally; frontend types and affected lint/source checks pass. Complete exact-head CI/staging before merge. PR70 was merged after its CI/staging passed; previous physical acceptance does not certify this candidate. Record final delivery receipts in this PR without status-only commits.
+355 domain/component/service tests passed, followed by all60 direct-checkout tests including the added lost-response regression. All81 tests in the affected Worker suites pass. Pending-return boundary/reload/recovery, synthetic staff email/DNS, source/type checks and updated test-inventory guards pass. Exact-head CI, staging and merge remain pending; no current delivery success is claimed. Original failures remain in task receipts. Browser/provider and physical acceptance remain separate.
 
 ## Remaining targeted acceptance
 
-| Test                              | Required result                                                                                                                                                               |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Late payment after expiry         | Remain in the foreground check during the20-second grace and go directly to confirmation when payment evidence arrives; verify the Calendar flash is absent in this scenario. |
-| Unpaid expiry / unresolved status | Bounded foreground wait, at most30 seconds with the existing conditional allowance; refresh retains the original deadline; silent recovery and payment locks remain intact.   |
-| Session conflict                  | Creation message changes to approved availability-check message, followed by the correct final notice and corrected cart.                                                     |
-| Second-tab active checkout        | Creation message changes to approved active-checkout message; no duplicate checkout, takeover or damage to the first tab.                                                     |
-
-Additional targeted physical acceptance for this slice is recorded in [simulated-user UAT](docs/uat/simulated-user.md#contact-validation-and-country-code-entry). Owner subsequently requested a full physical pass later, including conflict, active-checkout and expiry messages plus the new contact/phone/email checks.
+Owner-run checks are recorded in [simulated-user UAT](docs/uat/simulated-user.md#payment-completed-before-browser-closure): close immediately after payment, reconnect, reopen in the same profile, and separately expired access. Also verify DNS tick/retry, report delivery, confirmation copy, cutoff timing and conflict/active-checkout/expiry messages. Do not infer missing-webhook/provider-outage acceptance from a successful browser-close test.
 
 ## Ordered work after this slice
 
