@@ -2,23 +2,23 @@
 
 ## Active outcome
 
-Consolidate guest DNS validation, bounded checkout/payment-return recovery, customer help reports and approved UI refinements. Base is merged PR71/main60075540083423d95e80149e578f03c3caf1f160. Owner authorizes CI, actual staging and merge; no live payment or email test is authorized by this delivery work.
+Repair PR72 confirmation/recovery regressions against merged main5769f68d0b693547652a0bb90506ead354f3560e. Owner authorizes independent ultra-agent implementation review, two final UI/route audits before the first PR CI, then CI, staging and merge. No deployment rollback or provider mutation is authorized by the investigation itself.
 
 ## Current slice
 
-- Guest email: quick format validation then explicit bounded domain-routing check; verified email is selectable text.
-- One30-second creation wait returns unresolved attempts to Calendar with the shared notice and Request Help while preserving financial locks.
-- Payment return: bounded waiting, Pending plus known details/help, then authoritative confirmation when recovered. Remembered return hints never prove payment.
-- One staff report per owned attempt; migration0049, fixed studio recipient, bounded idempotent send/retry.
-- Confirmation copy beneath Paid, lighter placeholders, shorter Calendar controls and immediate cutoff removal from visible slots as well as cart.
+- Ordinary refresh, unpaid HitPay return, conflict, active-checkout and successful late payment must never flash a dead-end/Pending page.
+- Before checkout, proven failure or exhausted uncertain creation returns to Calendar with the appropriate inline notice and preserved original financial identity when uncertain.
+- After payment, genuinely exhausted recovery uses the existing confirmation document: red help notice above details/Order Summary, Pending badge and truthful payment evidence; no standalone error page or oversized Pending heading.
+- Keep authenticated saved confirmation through fresh reads. Persist late-payment recovery under the original attempt without overriding deliberate departure.
+- Strengthen transition, deadline, reload, stale-read and no-duplicate-effect tests, including transient DOM assertions in CI browser coverage.
 
 ## Evidence and delivery
 
-355 domain/component/service tests passed, followed by all60 direct-checkout tests including the added lost-response regression. All81 tests in the affected Worker suites pass. Pending-return boundary/reload/recovery, synthetic staff email/DNS, source/type checks and updated test-inventory guards pass. Initial PR72 CI ran all129 contracts and172 recovery cases successfully but rejected the inventory file order. The corrected order matches both runtime logs, and a mutation confirms the new global-order guard rejects the defect. The reopened-payment path also passes90 focused UI cases. Initial frontend/backend browser gates passed; live-email caught unrelated control-height leakage and a checkout-revocation fixture that now needed to pass DNS before revoking. Both are corrected without lowering layout assertions or authorization checks. Run43387292006 passed every test/browser/Worker/security gate, then both packaging jobs rejected migration0049 because the explicit upgrade checker stopped at0048. The checker now exercises0049 and verifies empty initial reports, uniqueness/category constraints and unchanged financial evidence. Rechecking both exact CI artifacts locally passes with zero provider requests and remote operations. Final corrected-checker CI, staging and merge remain pending; no current delivery success is claimed. Original failures remain in task receipts. Browser/provider and physical acceptance remain separate.
+PR72 is merged. Both independent final route/UI audits passed on the repaired candidate before publication. All359 domain/component/service tests pass; source/policy/inventory, TypeScript, ESLint, formatting and whitespace checks pass. Three added regression groups retain all previous cases. Pre-fix/mutation checks prove the fresh-read guard, late-payment route, original lost-response budget and delayed safe-retry regressions detect their original defects. Browser CI now asserts actual Back/reload and transient DOM absence; browser/provider acceptance is not inferred from local simulation. Three current owner captures were inspected offline; the latest expiry and late-payment captures exceed the32MiB transfer limit and remain uninspected. Exact-head PR CI, staging and merge are the next delivery steps.
 
 ## Remaining targeted acceptance
 
-Owner-run checks are recorded in [simulated-user UAT](docs/uat/simulated-user.md#payment-completed-before-browser-closure): close immediately after payment, reconnect, reopen in the same profile, and separately expired access. Also verify DNS tick/retry, report delivery, confirmation copy, cutoff timing and conflict/active-checkout/expiry messages. Do not infer missing-webhook/provider-outage acceptance from a successful browser-close test.
+Normal confirmation refresh, unpaid native return/browser Back, delayed late payment, conflict/active checkout recovery, and deliberately unresolved fixtures are the affected checks. Preserve original attempts and enforce no duplicate writes. Existing four-hour cutoff physical acceptance remains outside this repair. The full physical suite is not marked accepted by source or simulated tests.
 
 ## Ordered work after this slice
 
@@ -41,4 +41,4 @@ The queue is recorded now, before the full documentation reconciliation. These a
 
 ## Next action
 
-Finish consolidated verification and publish one ready PR through LimYouSheng. Verify all exact-head CI gates and actual staging deployment/health, then perform the authorized merge. Owner performs the full physical regression pass, including contact/phone/verification and remaining expiry/conflict acceptance afterwards; full documentation reconciliation follows the ordered queue.
+Complete independent final audits and consolidated checks, publish one ready PR using LimYouSheng, verify exact-head CI and actual staging health, then perform the authorized merge. Keep the local reset note unpublished.

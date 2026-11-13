@@ -4142,6 +4142,10 @@
     padding: 8.5px 15.3px;
     font-size: var(--text-payment-status);
   }
+  .confirmation-pending-status {
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
+  }
   .confirmation-copy {
     min-height: 36px;
     padding: 6px 12px;

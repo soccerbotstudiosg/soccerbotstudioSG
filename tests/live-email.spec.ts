@@ -887,7 +887,28 @@ test("native guest journey preserves players contact and one checkout across ref
   page,
 }) => {
   const mechanism = await createBookingMechanism({ displayWarming: true });
-  const transport = await mechanismTransport(page, mechanism);
+  let releaseReturnContext = () => {};
+  const returnContext = new Promise<void>((resolve) => {
+    releaseReturnContext = resolve;
+  });
+  let returnContextStarted!: () => void;
+  const returning = new Promise<void>((resolve) => {
+    returnContextStarted = resolve;
+  });
+  let returningFromCheckout = false;
+  const transport = await mechanismTransport(page, mechanism, async (path) => {
+    if (path.startsWith("/api/booking/checkout/"))
+      await page.evaluate((attemptId) => {
+        sessionStorage.setItem(
+          `soccerbot-confirmation-wait:${attemptId}`,
+          JSON.stringify({ deadline: Date.now() - 1000 }),
+        );
+      }, path.split("/").at(-1)!);
+    if (returningFromCheckout && path.endsWith("/checkout")) {
+      returnContextStarted();
+      await returnContext;
+    }
+  });
   try {
     await mechanism.recover();
     const { date, startMs, checkoutUrl } = mechanism;
@@ -1179,10 +1200,49 @@ test("native guest journey preserves players contact and one checkout across ref
         },
       ],
     });
-    await page.goto(
-      `http://127.0.0.1:4173/confirmation/?attempt=${transport.attemptId()}`,
+    // Native Back restores the real pre-checkout document, including its
+    // expired foreground wait; a direct goto cannot exercise that lifecycle.
+    returningFromCheckout = true;
+    await page.goBack();
+    await returning;
+    await expect(page).toHaveURL(/\/book\/payment\/$/);
+    await expect(page.locator(".page-loading")).toBeVisible();
+    await expect(page.locator(".confirmation-pending-status")).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", {
+        name: /^(?:Pending|Confirmation unavailable)$/,
+      }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Request Help", exact: true }),
+    ).toHaveCount(0);
+    releaseReturnContext();
+    const continuation = page.getByRole("link", {
+      name: "Continue payment",
+      exact: true,
+    });
+    await expect(continuation).toBeVisible();
+    await expect(continuation).toHaveAttribute("href", checkoutUrl);
+    await expect(page.getByRole("timer")).toHaveText(
+      /^Time left to pay: \d{2}:\d{2}$/,
     );
+    await expect(page.locator(".page-loading")).toHaveCount(0);
     await page.reload();
+    await expect(page).toHaveURL(/\/book\/payment\/$/);
+    await expect(continuation).toBeVisible();
+    await expect(continuation).toHaveAttribute("href", checkoutUrl);
+    await expect(page.getByRole("timer")).toHaveText(
+      /^Time left to pay: \d{2}:\d{2}$/,
+    );
+    await expect(page.locator(".confirmation-pending-status")).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", {
+        name: /^(?:Pending|Confirmation unavailable)$/,
+      }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Request Help", exact: true }),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Open checkout", exact: true }),
     ).toHaveCount(0);
@@ -1252,6 +1312,7 @@ test("native guest journey preserves players contact and one checkout across ref
     ).toHaveLength(0);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
+    releaseReturnContext();
     try {
       // Stop polling and cache warming before draining intercepted requests.
       // Otherwise the still-mounted app can create work during teardown.
@@ -1379,7 +1440,14 @@ test("real payment recovery confirms the browser return from verified provider s
   const receiptRead = new Promise<void>((resolve) => {
     receiptStarted = resolve;
   });
+  let refreshContext: Promise<void> | undefined;
+  let releaseRefreshContext = () => {};
+  let refreshContextStarted = () => {};
   const transport = await mechanismTransport(page, mechanism, (path) => {
+    if (path.endsWith("/checkout") && refreshContext) {
+      refreshContextStarted();
+      return refreshContext;
+    }
     if (path.endsWith("/receipt")) {
       receiptStarted();
       return receiptGate;
@@ -1539,6 +1607,13 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(page.locator(".confirmation-paid-amount .pill")).toHaveCount(
       0,
     );
+    await expect(page.locator(".confirmation-pending-status")).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Pending", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Request Help", exact: true }),
+    ).toHaveCount(0);
     await expect(page.locator(".page-loading")).toHaveCount(0);
     releaseReceipt();
     await expect(
@@ -1559,6 +1634,23 @@ test("real payment recovery confirms the browser return from verified provider s
     expect(tickBox!.width).toBeGreaterThanOrEqual(48);
     expect(tickBox!.height).toBeGreaterThanOrEqual(48);
     await page.getByText("View Full Details", { exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Order Summary", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Booking Contact", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".confirmation-card")).toHaveCount(1);
+    expect(
+      await page.locator(".confirmation-full-details").evaluate((details) => {
+        const order = document.getElementById("confirmation-order");
+        return !!(
+          order &&
+          details.compareDocumentPosition(order) &
+            Node.DOCUMENT_POSITION_FOLLOWING
+        );
+      }),
+    ).toBe(true);
     await expect(page.locator(".confirmation-details-grid")).toHaveCSS(
       "text-align",
       "left",
@@ -1594,11 +1686,65 @@ test("real payment recovery confirms the browser return from verified provider s
         `soccerbot-checking:${id}`,
         JSON.stringify({ deadline: Date.now() - 1, next: 0, count: 120 }),
       );
+      sessionStorage.setItem(
+        `soccerbot-confirmation-wait:${id}`,
+        JSON.stringify({ deadline: Date.now() - 1000 }),
+      );
+      sessionStorage.setItem(
+        `soccerbot-payment-return:${id}`,
+        JSON.stringify({ completed: true }),
+      );
     }, attemptId);
+    const refreshing = new Promise<void>((resolve) => {
+      refreshContextStarted = resolve;
+    });
+    refreshContext = new Promise<void>((resolve) => {
+      releaseRefreshContext = resolve;
+    });
+    // Record transient regressions as well as the final page. A later verified
+    // response must not hide a Pending/error flash before fresh reads settle.
+    await page.addInitScript(() => {
+      new MutationObserver(() => {
+        if (
+          document.querySelector(".confirmation-pending-status") ||
+          Array.from(document.querySelectorAll("h1")).some((heading) =>
+            /^(?:Pending|Confirmation unavailable)$/.test(
+              heading.textContent?.trim() || "",
+            ),
+          )
+        )
+          document.documentElement.setAttribute(
+            "data-unexpected-confirmation-state",
+            "true",
+          );
+      }).observe(document, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    });
     await page.reload();
+    await refreshing;
+    await expect(page).toHaveURL(
+      new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
+    );
+    await expect(page.locator(".page-loading")).toBeVisible();
+    await expect(page.locator(".confirmation-card")).toHaveCount(0);
+    await expect(page.locator(".confirmation-pending-status")).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Pending", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Request Help", exact: true }),
+    ).toHaveCount(0);
+    releaseRefreshContext();
     await expect(
       page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
+    await expect(page.locator("html")).not.toHaveAttribute(
+      "data-unexpected-confirmation-state",
+      "true",
+    );
     await page.getByText("View Full Details", { exact: true }).click();
     await expect(
       page.getByRole("heading", { name: "Booking Contact" }),
@@ -1692,6 +1838,7 @@ test("real payment recovery confirms the browser return from verified provider s
     ).toHaveLength(1);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
+    releaseRefreshContext();
     releaseReceipt();
     releaseAccounting();
     releaseDismiss();

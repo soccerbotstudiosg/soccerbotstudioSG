@@ -3,7 +3,6 @@ import { hasSeenConfirmation, markConfirmationSeen } from "@/services/storage";
 import {
   PAYMENT_WINDOW_ENDED,
   CONFLICT_CHECKING,
-  BOOKING_NOT_CREATED,
   CHECKOUT_UNRESOLVED,
 } from "@/domain/booking-messages";
 import {
@@ -169,6 +168,7 @@ export function ProtectedConfirmation({
     customerConfirmation,
     selectionRejection: statusRejection,
     creationResolution: statusCreationResolution,
+    settled: confirmationReadSettled,
     expired,
   } = useConfirmationChecking(
     attemptId,
@@ -603,8 +603,7 @@ export function ProtectedConfirmation({
     string | null
   >(null);
   useEffect(() => {
-    if (!confirmationRoute || checkoutMode !== "live" || view === "denied")
-      return;
+    if (!postPayment || checkoutMode !== "live" || view === "denied") return;
     const deadline = checkoutRecoveryDeadline(
       attemptId,
       Date.now(),
@@ -615,15 +614,17 @@ export function ProtectedConfirmation({
       Math.max(0, deadline - Date.now()),
     );
     return () => clearTimeout(timer);
-  }, [confirmationRoute, checkoutMode, attemptId, view]);
+  }, [postPayment, checkoutMode, attemptId, view]);
   const awaitingCreation =
     checkoutMode === "live" &&
     !calendarRecovery &&
     !postPayment &&
-    (!contextMatches ||
-      incomplete ||
-      linkRecovering ||
-      context.value.paymentIssue === "link_unavailable") &&
+    !paymentWindowEnded &&
+    !wantsExpiry &&
+    !(
+      contextMatches &&
+      checkoutNow(context.value.clock) >= context.value.checking.deadlineMs
+    ) &&
     !hasPaymentEvidence &&
     !link &&
     view !== "denied" &&
@@ -636,15 +637,34 @@ export function ProtectedConfirmation({
       router.replace("/book/time/");
     }
   });
+  const creationDeadline = awaitingCreation
+    ? checkoutRecoveryDeadline(attemptId)
+    : undefined;
   useEffect(() => {
-    if (!awaitingCreation || recoveryTimedOut === attemptId) return;
-    const deadline = checkoutRecoveryDeadline(attemptId);
+    if (
+      !awaitingCreation ||
+      !contextSettled ||
+      !(confirmationReadSettled || incomplete || linkRecovering) ||
+      creationDeadline === undefined ||
+      recoveryTimedOut === attemptId
+    )
+      return;
     const timer = setTimeout(
       () => leaveUnresolved(),
-      Math.max(0, deadline - Date.now()),
+      Math.max(0, creationDeadline - Date.now()),
     );
     return () => clearTimeout(timer);
-  }, [awaitingCreation, attemptId, sessionRevision, recoveryTimedOut]);
+  }, [
+    awaitingCreation,
+    contextSettled,
+    confirmationReadSettled,
+    incomplete,
+    linkRecovering,
+    creationDeadline,
+    attemptId,
+    sessionRevision,
+    recoveryTimedOut,
+  ]);
   const needsExpiryReconciliation =
     checkoutMode === "live" &&
     !calendarRecovery &&
@@ -786,6 +806,14 @@ export function ProtectedConfirmation({
     current?.checkout.state === "available" &&
     current.checkout.url !== expiredLink &&
     !["confirmed", "denied", "unresolved"].includes(view);
+  const recoverableHandoff =
+    checkoutMode === "live" &&
+    allowPaymentContinuation &&
+    view === "unavailable" &&
+    showLink &&
+    !!link &&
+    isHitpayCheckoutUrl(link.url) &&
+    !expired;
   const customerProof = !["denied", "unresolved"].includes(view)
     ? (customerConfirmation ??
       (contextMatches ? context.value.customerConfirmation : undefined))
@@ -806,7 +834,9 @@ export function ProtectedConfirmation({
     if (calendarRecovery) {
       if (hasPaymentEvidence || displayedReceipt) {
         onPaymentDetected?.(attemptId);
-        router.replace("/book/payment/");
+        router.replace(
+          `/confirmation/?attempt=${encodeURIComponent(attemptId)}`,
+        );
       }
       return;
     }
@@ -818,6 +848,7 @@ export function ProtectedConfirmation({
       displayedReceipt ||
       rejectionState ||
       reconcilingExpiry ||
+      (awaitingCreation && !wantsExpiry) ||
       (!paymentWindowEnded &&
         !wantsExpiry &&
         (view !== "unresolved" ||
@@ -840,6 +871,7 @@ export function ProtectedConfirmation({
     wantsExpiry,
     paymentWindowEnded,
     reconcilingExpiry,
+    awaitingCreation,
     sessionRevision,
     rejectionState,
     attemptId,
@@ -909,14 +941,16 @@ export function ProtectedConfirmation({
   if (rejectionState && !hasPaymentEvidence)
     return <BrandLoading compact label={CONFLICT_CHECKING} />;
   if (
-    (calendarRecovery && view !== "denied") ||
-    (checkoutMode === "live" &&
-      paymentWindowEnded &&
-      !postPayment &&
-      !hasPaymentEvidence &&
-      !rejectionState &&
-      view !== "denied")
+    !calendarRecovery &&
+    checkoutMode === "live" &&
+    paymentWindowEnded &&
+    !postPayment &&
+    !hasPaymentEvidence &&
+    !rejectionState &&
+    view !== "denied"
   )
+    return <BrandLoading overlay={false} label="Checking payment…" />;
+  if (calendarRecovery && view !== "denied")
     return (
       <div className="alert" role="alert">
         {paymentReceived || recordedPayment || displayedReceipt ? (
@@ -985,14 +1019,15 @@ export function ProtectedConfirmation({
     return confirmation;
   }
   if (
-    confirmationRoute &&
+    postPayment &&
     checkoutMode === "live" &&
     confirmationTimedOut === attemptId &&
+    contextSettled &&
+    (confirmationReadSettled || incomplete || linkRecovering) &&
     !confirmedCard &&
     !displayedReceipt &&
     view !== "denied" &&
-    !creationResolved &&
-    (postPayment || !(allowPaymentContinuation && showLink && link && !expired))
+    !creationResolved
   ) {
     const notice = (
       <div className="alert" role="alert">
@@ -1015,28 +1050,19 @@ export function ProtectedConfirmation({
         />
       );
     return (
-      <div className="status-shell confirmation-shell">
-        <div className="status-heading">
-          <h1>{label}</h1>
-        </div>
-        {notice}
-        {current && (
-          <section className="surface confirmation-card">
+      <PendingConfirmation label={label} pendingNotice={notice} showSummary>
+        <>
+          {current && (
             <ConfirmationSummary
               summary={current.summary}
               details={current.details}
             />
-          </section>
-        )}
-      </div>
+          )}
+        </>
+      </PendingConfirmation>
     );
   }
-  if (
-    postPayment &&
-    confirmationTimedOut !== attemptId &&
-    view !== "denied" &&
-    !confirmedCard
-  )
+  if (postPayment && view !== "denied" && !confirmedCard)
     return (
       <BrandLoading
         label={
@@ -1047,17 +1073,9 @@ export function ProtectedConfirmation({
       />
     );
   if (creationResolved && !hasPaymentEvidence)
-    return (
-      <p className="alert" role="alert">
-        {BOOKING_NOT_CREATED}
-      </p>
-    );
+    return <BrandLoading label="Checking booking…" />;
   if (recoveryTimedOut === attemptId && awaitingCreation)
-    return (
-      <p className="alert" role="alert">
-        {CHECKOUT_UNRESOLVED}
-      </p>
-    );
+    return <BrandLoading label="Checking booking…" />;
   if (awaitingCreation && !contextMatches)
     return <BrandLoading label="Checking booking…" />;
   if (
@@ -1083,15 +1101,21 @@ export function ProtectedConfirmation({
     view !== "denied"
   )
     return <BrandLoading label="Checking whether your booking was created…" />;
-  if (expiryFailure && view !== "denied")
-    return (
-      <p className="alert" role="alert">
-        We couldn’t confirm that your reservation was released. Please don’t
-        book or pay again.
-      </p>
-    );
+  if (awaitingCreation && (view === "unavailable" || view === "unresolved"))
+    return <BrandLoading label="Checking booking…" />;
   if (
-    (view === "checking" &&
+    checkoutMode === "live" &&
+    !postPayment &&
+    !hasPaymentEvidence &&
+    view === "unresolved" &&
+    current &&
+    checkoutNow(current.clock) >= current.checking.deadlineMs
+  )
+    return <BrandLoading overlay={false} label="Checking payment…" />;
+  if (expiryFailure && view !== "denied")
+    return <BrandLoading label="Checking payment…" />;
+  if (
+    ((view === "checking" || recoverableHandoff) &&
       !(showLink && link && !isHitpayCheckoutUrl(link.url))) ||
     (view === "confirmed" &&
       checkoutMode !== "synthetic" &&
@@ -1111,7 +1135,7 @@ export function ProtectedConfirmation({
       allowPaymentContinuation &&
       showLink &&
       !expired &&
-      view === "checking" &&
+      (view === "checking" || recoverableHandoff) &&
       current?.clock &&
       link?.expiresAtMs &&
       isHitpayCheckoutUrl(link.url) ? (

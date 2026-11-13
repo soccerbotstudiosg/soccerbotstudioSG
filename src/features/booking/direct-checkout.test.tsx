@@ -3,7 +3,10 @@ vi.mock("@/services/email-domain", () => ({
 }));
 import ConfirmationPage from "@/app/confirmation/page";
 import { dateLabel } from "@/domain/dates";
-import { PAYMENT_WINDOW_ENDED } from "@/domain/booking-messages";
+import {
+  CHECKOUT_UNRESOLVED,
+  PAYMENT_WINDOW_ENDED,
+} from "@/domain/booking-messages";
 import { useEffect, useState } from "react";
 import {
   act,
@@ -31,6 +34,9 @@ import {
   saveBooking,
   saveSuppressedSlots,
   savePendingConflict,
+  isCalendarRecovery,
+  isBookingDeparture,
+  completedPaymentReturn,
 } from "@/services/storage";
 import { demoBookingService } from "@/services/demo/booking";
 import { expireBooking } from "@/services/confirmation";
@@ -124,6 +130,7 @@ function Seed({ accepted = true }: { accepted?: boolean }) {
   );
 }
 afterEach(() => {
+  sessionStorage.removeItem(`soccerbot-payment-return:${id}`);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   vi.useRealTimers();
@@ -1080,6 +1087,41 @@ it("queue rejection keeps the original attempt on Review for an explicit retry",
     expect(fetch.mock.calls.at(-1)?.[0]).toBe(fetch.mock.calls[0][0]);
     expect(navigation.push).not.toHaveBeenCalled();
   }
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-15T00:02:00Z"));
+  const assign = vi.fn();
+  vi.stubGlobal("location", { assign });
+  let completeRetry!: (response: Response) => void;
+  fetch.mockImplementationOnce(
+    () =>
+      new Promise<Response>((resolve) => {
+        completeRetry = resolve;
+      }),
+  );
+  const count = fetch.mock.calls.length;
+  fireEvent.click(screen.getByRole("button", { name: "Repeat checkout" }));
+  await act(async () => {});
+  expect(fetch).toHaveBeenCalledTimes(count + 1);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1000);
+  });
+  expect(screen.getByTestId("action")).toHaveTextContent("loading");
+  const handoff = `https://checkout.sandbox.hit-pay.com/payment-request/@soccerbot/${original}/checkout`;
+  await act(async () => {
+    completeRetry(
+      Response.json({
+        attemptId: original,
+        state: "associated",
+        paymentAvailable: true,
+        checkout: { url: handoff, expiresAtMs: Date.now() + 480000 },
+      }),
+    );
+  });
+  expect(assign).toHaveBeenCalledExactlyOnceWith(handoff);
+  expect(screen.getByTestId("retained")).toHaveTextContent(original!);
+  expect(fetch.mock.calls.at(-1)?.[0]).toBe(fetch.mock.calls[0][0]);
+  expect(fetch.mock.calls.at(-1)?.[1]?.body).toBe(fetch.mock.calls[0][1]?.body);
+  expect(fetch).toHaveBeenCalledTimes(count + 1);
 });
 
 it("rejected checkout window clears the undispatched draft attempt without payment confirmation polling", async () => {
@@ -1926,7 +1968,7 @@ it("expiry callback cannot clear a paid or different current attempt (different)
 
 /** Exercise provider restoration, route guards and expiry recovery through protected reads. */
 async function verifyMockPaymentExpiry(expired: boolean) {
-  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.useFakeTimers(expired ? { toFake: ["Date"] } : undefined);
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   localStorage.clear();
   const retained: Attempt = {
@@ -1944,9 +1986,30 @@ async function verifyMockPaymentExpiry(expired: boolean) {
     other,
   ].map((slot) => ({ ...slot, available: true }));
   let paid = false;
+  let confirmed = false;
   let deferStatus = false;
   let finishStatus!: (response: Response) => void;
   let failFresh = false;
+  const receipt = () => ({
+    attemptId: id,
+    verifiedAtMs: Date.now(),
+    createdAtMs: Date.parse("2026-10-15T00:00:00Z"),
+    totalMinor: 8800,
+    taxMinor: 0,
+    contact: draft.contact,
+    sessions: [
+      {
+        serviceId: "2",
+        serviceName: "Session",
+        instructorId: "4",
+        instructorName: "Instructor",
+        startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+        priceMinor: 8800,
+        currency: "SGD",
+        players: draft.players,
+      },
+    ],
+  });
   const requests: Array<{ path: string; method: string }> = [];
   const fetch = vi.fn<typeof globalThis.fetch>(async (input, options) => {
     const path = String(input);
@@ -1980,6 +2043,12 @@ async function verifyMockPaymentExpiry(expired: boolean) {
         },
       });
     if (path === `/api/attempts/${id}/confirmation`) {
+      if (confirmed)
+        return Response.json({
+          status: "confirmed",
+          reason: "verified",
+          customerConfirmation: receipt(),
+        });
       if (deferStatus)
         return new Promise<Response>((resolve) => {
           finishStatus = resolve;
@@ -1994,6 +2063,8 @@ async function verifyMockPaymentExpiry(expired: boolean) {
           })
         : new Response(null, { status: 503 });
     }
+    if (path === `/api/attempts/${id}/receipt` && confirmed)
+      return Response.json(receipt());
     return new Response(null, { status: 503 });
   });
   vi.stubGlobal("fetch", fetch);
@@ -2042,22 +2113,34 @@ async function verifyMockPaymentExpiry(expired: boolean) {
         <output data-testid="mock-expiry-recovery">
           {String(state.action.calendarRecovery)}
         </output>
+        <button onClick={state.leave}>Leave recovery</button>
       </>
     );
   }
-  const tree = (step: "payment" | "time") => {
-    navigation.path = `/book/${step}/`;
+  const tree = (step: "payment" | "time" | "confirmation") => {
+    navigation.path =
+      step === "confirmation" ? "/confirmation/" : `/book/${step}/`;
     return (
       <BookingProvider bookingService={service} identityService={identity}>
         <Probe />
-        <BookingPage step={step} />
+        {step === "confirmation" ? (
+          <ConfirmationPage />
+        ) : (
+          <BookingPage step={step} />
+        )}
       </BookingProvider>
     );
   };
   saveLiveDraft(draft, true, id);
   let view = render(tree("payment"));
   if (!expired) {
-    await screen.findByRole("heading", { name: "Confirmation unavailable" });
+    await act(async () => {});
+    expect(
+      screen.getByRole("status", { name: "Checking booking…" }),
+    ).toBeVisible();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(29999);
+    });
     expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
     expect(
       JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!),
@@ -2065,6 +2148,17 @@ async function verifyMockPaymentExpiry(expired: boolean) {
     expect(
       JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots,
     ).toEqual(draft.slots);
+    expect(
+      requests.filter((request) => request.path.endsWith("/expire")),
+    ).toEqual([]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+    view.rerender(tree("time"));
+    await act(async () => {});
+    expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
+    expect(screen.getByTestId("mock-expiry-attempt")).toHaveTextContent(id);
     expect(
       requests.filter((request) => request.path.endsWith("/expire")),
     ).toEqual([]);
@@ -2164,7 +2258,7 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   vi.setSystemTime(new Date("2026-10-15T00:02:00Z"));
   // Refresh retains the unresolved financial attempt but never restores its cart.
   await act(async () => {
-    render(tree("time"));
+    view = render(tree("time"));
   });
   expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
   expect(
@@ -2184,7 +2278,9 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   vi.setSystemTime(new Date("2026-10-15T00:02:31Z"));
   fireEvent.focus(window);
   await waitFor(() =>
-    expect(navigation.replace).toHaveBeenCalledWith("/book/payment/"),
+    expect(navigation.replace).toHaveBeenCalledWith(
+      `/confirmation/?attempt=${id}`,
+    ),
   );
   expect(screen.getByTestId("mock-expiry-return")).toHaveTextContent(
     "undefined",
@@ -2192,6 +2288,45 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   expect(
     JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!).id,
   ).toBe(id);
+  expect(isCalendarRecovery(id)).toBe(false);
+  expect(completedPaymentReturn(id)).toBe(true);
+  view.unmount();
+  navigation.replace.mockClear();
+  await act(async () => {
+    render(tree("time"));
+  });
+  expect(navigation.replace).toHaveBeenCalledWith(
+    `/confirmation/?attempt=${id}`,
+  );
+  expect(screen.getByTestId("mock-expiry-recovery")).toHaveTextContent(
+    "undefined",
+  );
+  expect(screen.queryByRole("button", { name: /12:50–13:30/ })).toBeNull();
+  cleanup();
+  await act(async () => {
+    render(tree("confirmation"));
+  });
+  expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+  expect(screen.getByTestId("mock-expiry-attempt")).toHaveTextContent(id);
+  confirmed = true;
+  vi.setSystemTime(new Date("2026-10-15T00:03:02Z"));
+  fireEvent.focus(window);
+  expect(
+    await screen.findByRole("heading", { name: "Booking Confirmed" }),
+  ).toBeVisible();
+  expect(screen.getByText("Paid")).toBeVisible();
+  expect(screen.getByTestId("mock-expiry-attempt")).toHaveTextContent(id);
+  fireEvent.click(screen.getByRole("button", { name: "Leave recovery" }));
+  expect(isBookingDeparture(id)).toBe(true);
+  cleanup();
+  navigation.replace.mockClear();
+  await act(async () => {
+    render(tree("time"));
+  });
+  expect(navigation.replace).not.toHaveBeenCalledWith(
+    `/confirmation/?attempt=${id}`,
+  );
+  expect(screen.getByTestId("mock-expiry-attempt")).toHaveTextContent(id);
   expect(
     requests
       .filter((request) => request.method !== "GET")
@@ -4877,6 +5012,7 @@ it("new checkout waits for background identity cleanup and never dispatches afte
 
 it("lost checkout response ends at thirty seconds without retrying or inventing a failed booking", async () => {
   vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const attempt: Attempt = {
     id,
     draft,
@@ -4900,4 +5036,65 @@ it("lost checkout response ends at thirty seconds without retrying or inventing 
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(String(fetch.mock.calls[0]?.[0])).toContain(id);
   expect(attempt.status).toBe("ready");
+
+  const originalId = "00000000-0000-4000-8000-000000000002";
+  let rejectWrite!: (error: Error) => void;
+  let restoreSignal: AbortSignal | undefined;
+  fetch.mockImplementation(
+    () =>
+      new Promise<Response>((_, reject) => {
+        rejectWrite = reject;
+      }),
+  );
+  const restore = vi.fn<NonNullable<BookingService["restore"]>>((signal) => {
+    restoreSignal = signal;
+    return new Promise(() => {});
+  });
+  const checkout = vi.fn<BookingService["checkout"]>(async () => ({
+    ...attempt,
+    id: originalId,
+  }));
+  function RecoveryAttempt() {
+    const { attempt } = useBooking();
+    return <output data-testid="lost-write-status">{attempt?.status}</output>;
+  }
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        checkout,
+        restore,
+        publicCalendar: undefined,
+        calendar: undefined,
+        availability: async () => [],
+      }}
+    >
+      <Seed />
+      <RecoveryAttempt />
+    </BookingProvider>,
+  );
+  await act(async () => {});
+  fireEvent.click(screen.getByText("Seed"));
+  fireEvent.click(screen.getByText("Repeat checkout"));
+  await act(async () => {});
+  expect(fetch).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10000);
+    rejectWrite(new TypeError("Synthetic lost response"));
+  });
+  expect(restore).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(19999);
+  });
+  expect(screen.getByTestId("action")).toHaveTextContent("loading");
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(restoreSignal?.aborted).toBe(true);
+  expect(screen.getByTestId("action")).toHaveTextContent("failure");
+  expect(screen.getByTestId("retained")).toHaveTextContent(originalId);
+  expect(screen.getByTestId("lost-write-status")).toHaveTextContent("checking");
+  expect(checkout).toHaveBeenCalledTimes(1);
+  expect(restore).toHaveBeenCalledTimes(1);
+  expect(fetch).toHaveBeenCalledTimes(2);
 });

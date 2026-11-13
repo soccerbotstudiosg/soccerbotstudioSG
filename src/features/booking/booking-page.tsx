@@ -2,6 +2,11 @@
 import Link from "next/link";
 import { hasIdentityEntry, takeIdentityEntry } from "@/services/identity";
 import { sitePath } from "@/content/site-path";
+import {
+  completedPaymentReturn,
+  isBookingDeparture,
+  mayRestoreLiveCheckout,
+} from "@/services/storage";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { BookingHeadingStatus, VerifiedEmailStatus } from "./booking-heading";
@@ -149,14 +154,34 @@ export function BookingPage({ step }: { step: BookingStep }) {
     step === "details" &&
     actual === "review" &&
     attempt?.held === true;
+  const returningToConfirmation =
+    bookingService.mode === "live" &&
+    !!attempt &&
+    mayRestoreLiveCheckout(attempt.id) &&
+    !isBookingDeparture(attempt.id) &&
+    completedPaymentReturn(attempt.id);
   useEffect(() => {
+    if (ready && returningToConfirmation && attempt) {
+      router.replace(
+        `/confirmation/?attempt=${encodeURIComponent(attempt.id)}`,
+      );
+      return;
+    }
     if (!ready || actual === step) return;
     if (retainingReview) {
       // Review is already interactive. Commit its URL without remounting it
       // through the app-router loading boundary. Refresh still opens Review.
       window.history.replaceState(null, "", sitePath("/book/review/"));
     } else router.replace(`/book/${actual}/`);
-  }, [actual, step, ready, router, retainingReview]);
+  }, [
+    actual,
+    step,
+    ready,
+    router,
+    retainingReview,
+    returningToConfirmation,
+    attempt,
+  ]);
   useEffect(() => {
     if (ready && (actual === step || retainingReview)) visitBookingStep(actual);
   }, [ready, actual, step, retainingReview, visitBookingStep]);
@@ -166,7 +191,11 @@ export function BookingPage({ step }: { step: BookingStep }) {
   }, [actual, setCalendarBrowsing]);
   // Review is already mounted after creation. Preserve it while the URL
   // catches up after verification; routing must not bring the overlay back.
-  if (!ready || (actual !== step && !retainingReview))
+  if (
+    !ready ||
+    returningToConfirmation ||
+    (actual !== step && !retainingReview)
+  )
     return <BrandLoading overlay={false} />;
   const Screen = screens[step];
   if (step === "payment" || step === "confirmation") return <Screen />;

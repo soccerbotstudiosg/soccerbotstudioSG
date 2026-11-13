@@ -73,6 +73,10 @@ export function useConfirmationChecking(
     expired?: boolean;
     creationResolution?: CreationResolution;
     selectionRejection?: CheckoutSelectionRejection;
+    serverDeadline?: number;
+    holdExpiresAtMs?: number;
+    clock?: import("@/services/contracts").CheckoutContext["clock"];
+    settled: boolean;
     busy: boolean;
     next: number;
   } | null>(null);
@@ -99,6 +103,7 @@ export function useConfirmationChecking(
     let budget = windowFor(attemptId, serverDeadline ?? now() + 600000);
     save(attemptId, budget);
     let unresolved = false;
+    let settled = false;
     let displayedView: View =
       retainedView.current?.id === attemptId &&
       retainedView.current.revision === sessionRevision &&
@@ -121,6 +126,10 @@ export function useConfirmationChecking(
           expired,
           selectionRejection,
           creationResolution,
+          serverDeadline,
+          holdExpiresAtMs,
+          clock,
+          settled,
           busy,
           next: budget.next,
         });
@@ -184,6 +193,7 @@ export function useConfirmationChecking(
         }
         if ((now() >= budget.deadline && budget.final) || budget.count >= 120) {
           terminal = true;
+          settled = true;
           show("unresolved");
           return false;
         }
@@ -219,7 +229,12 @@ export function useConfirmationChecking(
       ) {
         busy = false;
         if (active) {
-          if (!terminal) show(displayedView);
+          if (!terminal) {
+            // A shared next-read reservation is already paced; no local read is
+            // outstanding. Protected context may present its current evidence.
+            settled = true;
+            show(displayedView);
+          }
           schedule();
         }
         return;
@@ -249,6 +264,7 @@ export function useConfirmationChecking(
           }),
         ]);
         if (!active || generation !== current) return;
+        settled = true;
         budget.deadline = Math.min(
           budget.deadline,
           response.checking.deadlineMs ?? budget.deadline,
@@ -301,6 +317,7 @@ export function useConfirmationChecking(
         } else show("checking");
       } catch (error) {
         if (!active || generation !== current) return;
+        settled = true;
         if (recheck && error instanceof ConfirmationError) {
           budget.refreshNext = Math.max(
             budget.refreshNext ?? 0,
@@ -365,6 +382,7 @@ export function useConfirmationChecking(
       save(attemptId, budget);
       if (!terminal && now() >= budget.deadline && (budget.final || busy)) {
         terminal = true;
+        settled = true;
         generation++;
         controller?.abort();
         busy = false;
@@ -395,6 +413,15 @@ export function useConfirmationChecking(
     clock,
   ]);
   return {
+    settled:
+      enabled &&
+      result?.id === attemptId &&
+      result.revision === sessionRevision &&
+      result.serverDeadline === serverDeadline &&
+      result.holdExpiresAtMs === holdExpiresAtMs &&
+      result.clock === clock
+        ? result.settled
+        : false,
     responseCheckedAtMs:
       result?.id === attemptId && result.revision === sessionRevision
         ? result.responseCheckedAtMs

@@ -86,7 +86,10 @@ import {
   saveSuppressedSlots,
   mayRestoreLiveCheckout,
   saveCalendarRecovery,
+  clearCalendarRecovery,
+  completedPaymentReturn,
   checkoutRecoveryDeadline,
+  clearCheckoutRecoveryDeadline,
   isCalendarRecovery,
   isUnresolvedCheckout,
   dismissCalendarRecoveryNotice,
@@ -1429,6 +1432,13 @@ export function BookingProvider({
                 );
               if (isBookingDeparture(attempt.id)) {
                 commit({ version: 2, draft, attempt }, true);
+              } else if (
+                mayRestoreLiveCheckout(attempt.id) &&
+                completedPaymentReturn(attempt.id)
+              ) {
+                clearCalendarRecovery(attempt.id);
+                commit({ version: 2, draft: attempt.draft, attempt }, true);
+                setAction({ status: "idle" });
               } else if (isCalendarRecovery(attempt.id)) {
                 commit({ version: 2, draft, attempt }, true);
                 if (!calendarRecoveryNoticeDismissed(attempt.id))
@@ -1835,13 +1845,17 @@ export function BookingProvider({
         }
         const retry = queueRetry.current;
         queueRetry.current = null;
+        const retryingUndispatchedCheckout =
+          operation === "checkout" &&
+          current.attempt?.status === "ready" &&
+          retry?.id === current.attempt.id &&
+          retry.revision === current.revision;
+        if (retryingUndispatchedCheckout)
+          clearCheckoutRecoveryDeadline(current.attempt!.id);
         let attempt =
           operation === "checkout" &&
           current.attempt &&
-          (current.attempt.held ||
-            (current.attempt.status === "ready" &&
-              retry?.id === current.attempt.id &&
-              retry.revision === current.revision))
+          (current.attempt.held || retryingUndispatchedCheckout)
             ? current.attempt
             : operation === "checkout" || operation === "reserve"
               ? await service.checkout({
@@ -2026,9 +2040,13 @@ export function BookingProvider({
             error.code === "temporarily_unavailable")
         ) {
           const originalId = latest.current.attempt?.id;
-          const restored = await service
-            .restore(request.controller.signal)
-            .catch(() => null);
+          const restored = originalId
+            ? await conflictRead(
+                (signal) => service.restore!(signal),
+                request.controller.signal,
+                Math.max(1, checkoutRecoveryDeadline(originalId) - Date.now()),
+              ).catch(() => null)
+            : null;
           if (!isCurrent()) return false;
           if (
             restored?.id === originalId &&
@@ -2288,7 +2306,11 @@ export function BookingProvider({
         clearReviewConsent,
         rejectRecoveredSelection,
         resumePaymentStatus(id) {
-          if (latest.current.attempt?.id === id) setAction({ status: "idle" });
+          if (latest.current.attempt?.id !== id) return;
+          completedPaymentReturn(id, true);
+          clearCalendarRecovery(id);
+          setSelectionNotice(null);
+          setAction({ status: "idle" });
         },
         /** Browse availability while retaining the original unresolved payment lock. */
         browseAfterChecking(id, unresolved = false) {

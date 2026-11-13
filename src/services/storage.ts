@@ -133,6 +133,10 @@ export function checkoutRecoveryDeadline(
   safeWrite(key, { deadline });
   return deadline;
 }
+/** Restart only the creation wait for an explicit retry after proven non-dispatch. */
+export function clearCheckoutRecoveryDeadline(attemptId: string) {
+  safeRemove(`soccerbot-checkout-wait:${attemptId}`);
+}
 const EXPIRY_STATUS_SETTLEMENT_MS = 10000;
 /** Keep one display-only expiry wait across reloads; this never releases a payment lock. */
 export function expiryReconciliationDeadline(
@@ -262,6 +266,16 @@ export function saveCalendarRecovery(attemptId: string, unresolved = false) {
       ...stored,
       calendarRecovery: true,
       unresolvedCheckout: unresolved,
+    });
+}
+/** Leave calendar recovery only for the matching tab's original financial attempt. */
+export function clearCalendarRecovery(attemptId: string) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  if (stored?.checkoutAttemptId === attemptId)
+    safeWrite("soccerbot-live-draft", {
+      ...stored,
+      calendarRecovery: false,
+      unresolvedCheckout: false,
     });
 }
 export function isUnresolvedCheckout(attemptId: string) {

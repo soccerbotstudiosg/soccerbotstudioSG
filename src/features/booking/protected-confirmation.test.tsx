@@ -511,14 +511,12 @@ it("expired checking shows authenticated recorded payment without confirming or 
     </BookingProvider>,
   );
   expect(
-    await screen.findByRole("heading", {
-      name: "Payment received; booking confirmation pending",
-    }),
+    await screen.findByText("Payment received; booking confirmation pending"),
   ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
   expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
   expect(screen.getByText("Trainer: Native Trainer")).toBeVisible();
-  expect(screen.getByLabelText("Booking summary")).toBeVisible();
+  expect(screen.getByRole("region", { name: "Order Summary" })).toBeVisible();
   expect(
     screen.queryByRole("heading", { name: "Booking Confirmed" }),
   ).not.toBeInTheDocument();
@@ -659,6 +657,171 @@ it("reopening an expired paid booking shows the saved full confirmation without 
   expect(navigation.push).toHaveBeenCalledWith("/");
   expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(fetch.mock.calls.at(-1)?.[0]).toBe(`/api/attempts/${first}/dismiss`);
+});
+
+it("an expired confirmation wait cannot replace fresh reads on refresh or native unpaid return", async () => {
+  vi.useFakeTimers();
+  const started = Date.now();
+  for (const outcome of [
+    "confirmed",
+    "unpaid",
+    "checking",
+    "revisit",
+  ] as const) {
+    const savedConfirmation = outcome === "confirmed" || outcome === "revisit";
+    const awaiting = vi.fn(() => true);
+    navigation.replace.mockClear();
+    sessionStorage.setItem(
+      `soccerbot-confirmation-wait:${first}`,
+      JSON.stringify({ deadline: started - 1000 }),
+    );
+    if (outcome !== "unpaid" && outcome !== "revisit")
+      sessionStorage.setItem(
+        `soccerbot-payment-return:${first}`,
+        JSON.stringify({ completed: true }),
+      );
+    if (outcome === "revisit")
+      sessionStorage.setItem(
+        `soccerbot-checkout-wait:${first}`,
+        JSON.stringify({ deadline: started - 1000 }),
+      );
+    let finishContext!: (response: Response) => void;
+    const context = new Promise<Response>((resolve) => {
+      finishContext = resolve;
+    });
+    let finishStatus!: (response: Response) => void;
+    const status = new Promise<Response>((resolve) => {
+      finishStatus = resolve;
+    });
+    const fetch = vi.fn((url: string) =>
+      url.endsWith("/checkout")
+        ? context
+        : url.endsWith("/receipt")
+          ? Promise.resolve(new Response(null, { status: 409 }))
+          : outcome === "checking"
+            ? status
+            : outcome === "unpaid"
+              ? Promise.resolve(new Response(null, { status: 503 }))
+              : Promise.resolve(
+                  Response.json({
+                    status: "pending",
+                    reason: "payment_verification_pending",
+                  }),
+                ),
+    );
+    vi.stubGlobal("fetch", fetch);
+    render(
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        confirmationRoute
+        providerReturn={outcome === "unpaid"}
+        allowPaymentContinuation
+        onAwaitingExpiry={awaiting}
+      />,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(
+      screen.getByRole("status", {
+        name:
+          outcome !== "unpaid" && outcome !== "revisit"
+            ? "Checking payment…"
+            : "Checking booking…",
+      }),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    expect(awaiting).not.toHaveBeenCalled();
+    const proof = receiptFixture(started - 3600000);
+    await act(async () => {
+      finishContext(
+        Response.json(
+          {
+            attemptId: first,
+            mode: "live",
+            ...(savedConfirmation
+              ? {
+                  confirmation: proof,
+                  payment: { status: "recorded", paidAtMs: proof.verifiedAtMs },
+                }
+              : outcome === "checking"
+                ? { payment: { status: "recorded", paidAtMs: started } }
+                : {}),
+            checkout:
+              outcome !== "unpaid"
+                ? { state: "unavailable" }
+                : {
+                    state: "available",
+                    url: "https://checkout.sandbox.hit-pay.com/payment-request/@test/00000000-0000-4000-8000-000000000001/checkout",
+                    expiresAtMs: started + 60000,
+                  },
+            details: Object.fromEntries(
+              Object.entries(proof).filter(([key]) => key !== "verifiedAtMs"),
+            ),
+            summary: {
+              players: 2,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [{ startMs: started + 86400000, players: 2 }],
+            },
+            checking: {
+              deadlineMs: started + 120000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+            },
+          },
+          { headers: { Date: new Date().toUTCString() } },
+        ),
+      );
+    });
+    if (outcome === "checking") {
+      expect(
+        screen.getByRole("status", {
+          name: "Payment received. Confirming booking.",
+        }),
+      ).toBeVisible();
+      expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+      expect(screen.queryByRole("alert")).toBeNull();
+      await act(async () => {
+        finishStatus(
+          Response.json({ status: "confirmed", reason: "verified" }),
+        );
+      });
+    }
+    if (savedConfirmation) {
+      expect(
+        screen.getByRole("heading", { name: "Booking Confirmed" }),
+      ).toBeVisible();
+      expect(fetch.mock.calls.map(([url]) => url.split("/").at(-1))).toEqual([
+        "checkout",
+        "receipt",
+      ]);
+    } else if (outcome === "unpaid") {
+      expect(
+        screen.getByRole("link", { name: "Continue payment" }),
+      ).toBeVisible();
+      expect(
+        sessionStorage.getItem(`soccerbot-confirmation-wait:${first}`),
+      ).toBe(JSON.stringify({ deadline: started - 1000 }));
+    }
+    if (outcome !== "unpaid") {
+      expect(
+        screen.getByRole("heading", { name: "Booking Confirmed" }),
+      ).toBeVisible();
+      expect(fetch.mock.calls.some(([url]) => url.endsWith("/receipt"))).toBe(
+        true,
+      );
+    }
+    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(awaiting).not.toHaveBeenCalled();
+    cleanup();
+    localStorage.clear();
+    sessionStorage.clear();
+  }
 });
 
 it("pending checkout context uses the full checkout loader without summary or success", async () => {
@@ -1049,11 +1212,16 @@ it("authoritative unpaid expiry releases the original attempt before returning t
       attemptId={second}
       checkoutMode="live"
       onExpired={onExpired}
+      onAwaitingExpiry={() => true}
     />,
   );
-  expect(await screen.findByRole("alert")).toHaveTextContent(
-    "We couldn’t confirm that your reservation was released.",
+  await waitFor(() =>
+    expect(
+      screen.getByRole("status", { name: "Checking payment…" }),
+    ).toBeVisible(),
   );
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
   expect(onExpired).toHaveBeenCalledTimes(1);
   expired = false;
   view.rerender(
@@ -1085,6 +1253,10 @@ it("authoritative unpaid expiry releases the original attempt before returning t
   );
   expect(onExpired).toHaveBeenCalledTimes(1);
   expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
+  expect(
+    screen.queryByRole("heading", { name: "Confirmation unavailable" }),
+  ).toBeNull();
+  expect(screen.queryByRole("alert")).toBeNull();
   view.rerender(
     <ProtectedConfirmation
       attemptId={first}
@@ -1504,6 +1676,10 @@ it("revisiting a saved confirmation enriches its invoice without replaying confi
 
 it("incomplete provider booking shows reservation recovery without a payment spinner or checkout link", async () => {
   vi.useFakeTimers();
+  sessionStorage.setItem(
+    `soccerbot-confirmation-wait:${first}`,
+    JSON.stringify({ deadline: Date.now() - 1000 }),
+  );
   let incomplete = true,
     denied = false;
   let paymentIssue: "link_recovering" | "link_unavailable" | undefined;
@@ -1539,6 +1715,7 @@ it("incomplete provider booking shows reservation recovery without a payment spi
     <ProtectedConfirmation
       attemptId={first}
       checkoutMode="live"
+      confirmationRoute
       onAwaitingExpiry={awaiting}
     />,
   );
@@ -1549,6 +1726,7 @@ it("incomplete provider booking shows reservation recovery without a payment spi
     }),
   ).toBeVisible();
   expect(screen.queryByRole("link", { name: /payment|checkout/i })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(29999);
   });
@@ -1558,9 +1736,10 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   });
   expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
   expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "We couldn’t confirm your booking status.",
-  );
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(
+    screen.getByRole("status", { name: "Checking booking…" }),
+  ).toBeVisible();
   expect(
     screen.queryByRole("status", {
       name: "Checking whether your booking was created…",
@@ -1594,12 +1773,14 @@ it("incomplete provider booking shows reservation recovery without a payment spi
       onAwaitingExpiry={awaiting}
     />,
   );
+  await act(async () => {});
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1);
   });
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "We couldn’t confirm your booking status.",
-  );
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(
+    screen.getByRole("status", { name: "Checking booking…" }),
+  ).toBeVisible();
   denied = true;
   await act(async () => {
     await vi.advanceTimersByTimeAsync(5000);
@@ -1621,7 +1802,11 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   incomplete = false;
   paymentIssue = "link_recovering";
   const payment = render(
-    <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      onAwaitingExpiry={awaiting}
+    />,
   );
   await act(async () => {});
   expect(
@@ -1637,9 +1822,10 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   await act(async () => {
     await vi.advanceTimersByTimeAsync(25000);
   });
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "We couldn’t confirm your booking status.",
-  );
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(
+    screen.getByRole("status", { name: "Checking booking…" }),
+  ).toBeVisible();
   expect(screen.queryByRole("link", { name: /payment|checkout/i })).toBeNull();
   payment.unmount();
 });
@@ -2117,7 +2303,9 @@ it("retries unavailable checkout context silently and returns expired checkout t
     await vi.advanceTimersByTimeAsync(5000);
   });
   expect(detected).toHaveBeenCalledWith(first);
-  expect(navigation.replace).toHaveBeenLastCalledWith("/book/payment/");
+  expect(navigation.replace).toHaveBeenLastCalledWith(
+    `/confirmation/?attempt=${first}`,
+  );
   cleanup();
   clock.mockRestore();
 });
@@ -2222,7 +2410,9 @@ it("expiry reconciliation keeps one twenty-second foreground budget across refre
     await vi.advanceTimersByTimeAsync(5000);
   });
   expect(detected).toHaveBeenCalledWith(first);
-  expect(navigation.replace).toHaveBeenLastCalledWith("/book/payment/");
+  expect(navigation.replace).toHaveBeenLastCalledWith(
+    `/confirmation/?attempt=${first}`,
+  );
   expect(
     document.querySelector(".booking-flow-overlay, .page-loading"),
   ).toBeNull();
@@ -2638,7 +2828,11 @@ it("payment return stops foreground waiting at thirty seconds retains Pending ac
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1);
   });
-  expect(screen.getByRole("heading", { name: "Pending" })).toBeVisible();
+  expect(
+    screen.getByText("Pending", { selector: ".confirmation-pending-status" }),
+  ).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Order Summary" })).toBeVisible();
+  expect(screen.queryByRole("heading", { name: "Pending" })).toBeNull();
   expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
   expect(screen.getByRole("alert")).toHaveTextContent(
     "We couldn’t confirm your booking status.",
@@ -2653,15 +2847,15 @@ it("payment return stops foreground waiting at thirty seconds retains Pending ac
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1);
   });
-  expect(screen.getByRole("heading", { name: "Pending" })).toBeVisible();
+  expect(
+    screen.getByText("Pending", { selector: ".confirmation-pending-status" }),
+  ).toBeVisible();
   paid = true;
   await act(async () => {
     await vi.advanceTimersByTimeAsync(10000);
   });
   expect(
-    screen.getByRole("heading", {
-      name: "Payment received; booking confirmation pending",
-    }),
+    screen.getByText("Payment received; booking confirmation pending"),
   ).toBeVisible();
   confirmed = true;
   await act(async () => {
@@ -2675,4 +2869,72 @@ it("payment return stops foreground waiting at thirty seconds retains Pending ac
     true,
   );
   expect(awaiting).not.toHaveBeenCalled();
+});
+
+it("completed return recovery remains bounded while checkout context is still recovering", async () => {
+  vi.useFakeTimers();
+  for (const issue of ["booking", "payment"] as const) {
+    const started = Date.now();
+    const fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (!path.endsWith("/checkout"))
+        throw new Error(
+          `Unresolved creation cannot grant a new payment: ${path}`,
+        );
+      return Response.json({
+        attemptId: first,
+        mode: "live",
+        ...(issue === "booking"
+          ? { bookingIssue: "incomplete" }
+          : { paymentIssue: "link_recovering" }),
+        checkout: { state: "unavailable" },
+        summary: {
+          players: 2,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [{ startMs: started + 86400000, players: 2 }],
+        },
+        checking: {
+          deadlineMs: started + 120000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetch);
+    render(
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        confirmationRoute
+        providerReturn
+      />,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(29999);
+    });
+    expect(
+      screen.getByRole("status", { name: "Checking payment…" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "We couldn’t confirm your booking status.",
+    );
+    expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+    expect(
+      screen.getByText("Pending", { selector: ".confirmation-pending-status" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("status", { name: "Checking payment…" }),
+    ).toBeNull();
+    expect(
+      fetch.mock.calls.every(([url]) => String(url).endsWith("/checkout")),
+    ).toBe(true);
+    cleanup();
+    sessionStorage.clear();
+    localStorage.clear();
+  }
 });
