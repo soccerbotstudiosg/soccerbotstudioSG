@@ -83,4 +83,18 @@ test("display loading leaves navigation interactive while payment loading still 
     </BookingLoadingProvider>,
   );
   expect(screen.getByText(/Please do not close or refresh/)).toBeVisible();
+  for (const label of [
+    "Some sessions may no longer be available.",
+    "You may already have an active checkout.",
+  ]) {
+    view.rerender(
+      <BookingLoadingProvider>
+        <BookingLoading label={label} />
+      </BookingLoadingProvider>,
+    );
+    expect(
+      screen.getByText(`${label} Please do not close or refresh.`),
+    ).toBeVisible();
+    expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
+  }
 });

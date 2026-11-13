@@ -7,6 +7,8 @@ import {
 } from "@/services/identity";
 import {
   CONFLICT_NOTICE,
+  CONFLICT_CHECKING,
+  ACTIVE_CHECKOUT_CHECKING,
   ACTIVE_CHECKOUT_NOTICE,
   BOOKING_NOT_CREATED,
   PAYMENT_WINDOW_ENDED,
@@ -114,7 +116,7 @@ interface BookingContextValue extends StoredBooking {
   showMonth: (month: string, through?: string) => void;
   setCalendarBrowsing: (active: boolean) => void;
   resolveUncreatedBooking: (id: string) => boolean;
-  conflictChecking: boolean;
+  conflictLoadingLabel: string | null;
   selectionNotice: string | null;
   selectionNoticeSlots: NoticeSlot[];
   visitBookingStep: (step: string) => void;
@@ -2218,7 +2220,11 @@ export function BookingProvider({
           !restorationPending &&
           !needsEntryCheck &&
           !(protectedConflictRedirect && !!pathname?.includes("/book/")),
-        conflictChecking: !!pendingConflict,
+        conflictLoadingLabel: pendingConflict
+          ? pendingConflict.reason === "checkout_already_active"
+            ? ACTIVE_CHECKOUT_CHECKING
+            : CONFLICT_CHECKING
+          : null,
         resolveUncreatedBooking,
         now,
         bookingService: service,

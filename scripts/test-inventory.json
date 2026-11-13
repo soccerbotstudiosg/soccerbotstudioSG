@@ -893,7 +893,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "expiry reconciliation keeps one ten-second foreground budget across refresh then detects late payment silently"
+    "title": "expiry reconciliation keeps one twenty-second foreground budget across refresh then detects late payment silently"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",

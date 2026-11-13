@@ -9,11 +9,17 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useBookingEntryTransition } from "@/components/booking-navigation";
+import {
+  CONFLICT_CHECKING,
+  ACTIVE_CHECKOUT_CHECKING,
+} from "@/domain/booking-messages";
 import { BrandLoading } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
 const feedbackMessage = (label?: string) =>
   [
     "Opening checkout…",
+    CONFLICT_CHECKING,
+    ACTIVE_CHECKOUT_CHECKING,
     "Checking payment…",
     "Checking booking…",
     "Preparing confirmation…",
