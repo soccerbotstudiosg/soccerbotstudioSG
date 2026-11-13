@@ -55,6 +55,7 @@ afterEach(() => {
   expect(document.querySelector(".payment-check-feedback")).toBeNull();
   cleanup();
   navigation.status = "canceled";
+  navigation.reference = "";
   vi.useRealTimers();
   localStorage.clear();
   sessionStorage.clear();
@@ -366,13 +367,15 @@ const navigation = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
   status: "canceled",
+  reference: "",
 }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useRouter: () => navigation,
   useSearchParams: () =>
     new URLSearchParams(
-      `attempt=00000000-0000-4000-8000-000000000001&status=${navigation.status}`,
+      `attempt=00000000-0000-4000-8000-000000000001&status=${navigation.status}` +
+        (navigation.reference ? `&reference=${navigation.reference}` : ""),
     ),
 }));
 it("booking restoration does not restart a protected confirmation read", async () => {
@@ -710,15 +713,33 @@ it("an expired confirmation wait cannot replace fresh reads on refresh or native
                 ),
     );
     vi.stubGlobal("fetch", fetch);
+    const providerReturnRead =
+      outcome === "unpaid"
+        ? vi.spyOn(window.history, "replaceState")
+        : undefined;
+    if (outcome === "unpaid") navigation.reference = "synthetic-unpaid-return";
     render(
-      <ProtectedConfirmation
-        attemptId={first}
-        checkoutMode="live"
-        confirmationRoute
-        providerReturn={outcome === "unpaid"}
-        allowPaymentContinuation
-        onAwaitingExpiry={awaiting}
-      />,
+      outcome === "unpaid" ? (
+        <BookingProvider
+          bookingService={{
+            ...liveBookingService,
+            restore: undefined,
+            publicCalendar: undefined,
+            calendar: undefined,
+          }}
+          identityService={demoCustomerIdentity}
+        >
+          <ConfirmationPage />
+        </BookingProvider>
+      ) : (
+        <ProtectedConfirmation
+          attemptId={first}
+          checkoutMode="live"
+          confirmationRoute
+          allowPaymentContinuation
+          onAwaitingExpiry={awaiting}
+        />
+      ),
     );
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
@@ -800,12 +821,16 @@ it("an expired confirmation wait cannot replace fresh reads on refresh or native
         "receipt",
       ]);
     } else if (outcome === "unpaid") {
+      expect(providerReturnRead).toHaveBeenCalled();
       expect(
         screen.getByRole("link", { name: "Continue payment" }),
       ).toBeVisible();
       expect(
         sessionStorage.getItem(`soccerbot-confirmation-wait:${first}`),
       ).toBe(JSON.stringify({ deadline: started - 1000 }));
+      expect(
+        sessionStorage.getItem(`soccerbot-payment-return:${first}`),
+      ).toBeNull();
     }
     if (outcome !== "unpaid") {
       expect(
@@ -819,6 +844,8 @@ it("an expired confirmation wait cannot replace fresh reads on refresh or native
     expect(screen.queryByRole("alert")).toBeNull();
     expect(awaiting).not.toHaveBeenCalled();
     cleanup();
+    providerReturnRead?.mockRestore();
+    navigation.reference = "";
     localStorage.clear();
     sessionStorage.clear();
   }

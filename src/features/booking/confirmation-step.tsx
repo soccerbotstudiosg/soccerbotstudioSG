@@ -2,7 +2,7 @@
 import { BookingLoading, loadingMessage } from "./booking-loading";
 import { BrandLoading as InlineLoading } from "@/components/brand-loading";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
@@ -37,6 +37,68 @@ export function bookingConfirmationMessage(booking: Booking) {
     "",
     `Total paid: SGD ${money(booking.totalCents)}`,
   ].join("\n");
+}
+/** Copy a confirmed receipt and keep transient feedback scoped to its mounted booking. */
+function ConfirmationCopy({ booking }: { booking: Booking }) {
+  const [state, setState] = useState<"idle" | "copying" | "copied" | "failed">(
+    "idle",
+  );
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const generation = useRef(0);
+  const busy = useRef(false);
+  useEffect(
+    () => () => {
+      generation.current += 1;
+      clearTimeout(timer.current);
+    },
+    [],
+  );
+  async function copy() {
+    if (busy.current) return;
+    busy.current = true;
+    const request = ++generation.current;
+    clearTimeout(timer.current);
+    setState("copying");
+    try {
+      await navigator.clipboard.writeText(bookingConfirmationMessage(booking));
+      if (request !== generation.current) return;
+      setState("copied");
+      timer.current = setTimeout(() => setState("idle"), 3000);
+    } catch {
+      if (request === generation.current) setState("failed");
+    } finally {
+      if (request === generation.current) busy.current = false;
+    }
+  }
+  return (
+    <div className="confirmation-copy-control">
+      <button
+        type="button"
+        className="icon-button confirmation-copy"
+        aria-label="Copy booking confirmation"
+        title="Copy booking confirmation"
+        disabled={state === "copying"}
+        onClick={() => void copy()}
+      >
+        <Icon
+          name={state === "copying" ? "spinner" : "copy"}
+          className={state === "copying" ? "spinner" : ""}
+        />
+      </button>
+      <span
+        className={`confirmation-copy-feedback${state === "failed" ? " failed" : ""}`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {state === "copied"
+          ? "Copied"
+          : state === "failed"
+            ? "Couldn’t copy. Try again."
+            : ""}
+      </span>
+    </div>
+  );
 }
 function PendingConfirmationHeading({
   label,
@@ -157,19 +219,6 @@ export function BookingConfirmation({
 }) {
   const [error, setError] = useState(""),
     [leaving, setLeaving] = useState(false);
-  const [copyState, setCopyState] = useState<
-    "idle" | "copying" | "copied" | "failed"
-  >("idle");
-  async function copyConfirmation() {
-    if (copyState === "copying") return;
-    setCopyState("copying");
-    try {
-      await navigator.clipboard.writeText(bookingConfirmationMessage(booking));
-      setCopyState("copied");
-    } catch {
-      setCopyState("failed");
-    }
-  }
   async function leave(operation: () => void | Promise<void>) {
     if (leaving) return;
     setLeaving(true);
@@ -380,6 +429,12 @@ export function BookingConfirmation({
               <h2 id="confirmation-order">Order Summary</h2>
               {!preview && (
                 <div className="confirmation-paid-actions">
+                  {!pending && (
+                    <ConfirmationCopy
+                      key={booking.reference}
+                      booking={booking}
+                    />
+                  )}
                   <span
                     className={`pill ${pending ? "confirmation-pending-status" : "success"} confirmation-paid-status`}
                   >
@@ -387,35 +442,6 @@ export function BookingConfirmation({
                   </span>
                   {pending && pendingLabel !== "Pending" && (
                     <p className="text-sm text-muted">{pendingLabel}</p>
-                  )}
-
-                  {!pending && (
-                    <>
-                      <button
-                        type="button"
-                        className="button secondary confirmation-copy"
-                        disabled={copyState === "copying"}
-                        onClick={() => void copyConfirmation()}
-                      >
-                        {copyState === "copied"
-                          ? "Copied"
-                          : copyState === "copying"
-                            ? "Copying…"
-                            : "Copy booking confirmation"}
-                      </button>
-                      <p
-                        className={
-                          copyState === "failed" ? "field-error" : "field-hint"
-                        }
-                        aria-live="polite"
-                      >
-                        {copyState === "failed"
-                          ? "Couldn’t copy. Please try again or select the details to copy them."
-                          : copyState === "copied"
-                            ? "Booking confirmation copied."
-                            : ""}
-                      </p>
-                    </>
                   )}
                 </div>
               )}

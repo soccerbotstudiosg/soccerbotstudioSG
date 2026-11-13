@@ -11,6 +11,7 @@ Repair PR72 confirmation/recovery regressions against merged main5769f68d0b69354
 - After payment, genuinely exhausted recovery uses the existing confirmation document: red help notice above details/Order Summary, Pending badge and truthful payment evidence; no standalone error page or oversized Pending heading.
 - Keep authenticated saved confirmation through fresh reads. Persist late-payment recovery under the original attempt without overriding deliberate departure.
 - Strengthen transition, deadline, reload, stale-read and no-duplicate-effect tests, including transient DOM assertions in CI browser coverage.
+- Confirmation copy is an icon at the section’s top right above Paid, with a three-second Copied popup and preserved badge sizing. Enquiry standardization is deferred; its files remain unchanged.
 
 ## Evidence and delivery
 

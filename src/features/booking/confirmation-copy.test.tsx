@@ -1,11 +1,18 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { blankDraft, type Booking } from "@/domain/booking";
 import { BookingConfirmation, PendingConfirmation } from "./confirmation-step";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 const booking: Booking = {
@@ -30,15 +37,25 @@ const booking: Booking = {
   ],
 };
 test("confirmed booking copies a formatted paid summary and reports clipboard failures honestly", async () => {
+  vi.useFakeTimers();
   const writeText = vi.fn().mockResolvedValue(undefined);
   vi.stubGlobal("navigator", { clipboard: { writeText } });
   const view = render(
     <BookingConfirmation booking={booking} onAgain={() => {}} />,
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Copy booking confirmation" }),
-  );
-  expect(await screen.findByText("Booking confirmation copied.")).toBeVisible();
+  const button = screen.getByRole("button", {
+    name: "Copy booking confirmation",
+  });
+  expect(button.textContent).toBe("");
+  expect(button.querySelector("svg rect")).not.toBeNull();
+  expect(
+    button.compareDocumentPosition(screen.getByText("Paid")) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  expect(screen.getByRole("status")).toHaveTextContent("Copied");
   const message = writeText.mock.calls[0][0];
   expect(message).toContain("Booking confirmed · Paid\n");
   expect(message).toContain(
@@ -47,15 +64,114 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
   expect(message).toContain("Players: 2");
   expect(message).toContain("Total paid: SGD $108.00");
   expect(message).not.toContain("synthetic-confirmation");
+  await act(async () => {
+    vi.advanceTimersByTime(2999);
+  });
+  expect(screen.getByText("Copied")).toBeVisible();
+  await act(async () => {
+    vi.advanceTimersByTime(1);
+  });
+  expect(screen.queryByText("Copied")).toBeNull();
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(2000);
+  });
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(2999);
+  });
+  expect(screen.getByText("Copied")).toBeVisible();
+  await act(async () => {
+    vi.advanceTimersByTime(1);
+  });
+  expect(screen.queryByText("Copied")).toBeNull();
   writeText.mockRejectedValueOnce(new Error("clipboard denied"));
-  fireEvent.click(screen.getByRole("button", { name: "Copied" }));
-  expect(await screen.findByText(/Couldn’t copy/)).toBeVisible();
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Couldn’t copy. Try again.",
+  );
+  expect(screen.queryByText("Copied")).toBeNull();
+  let finish!: () => void;
+  writeText.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  expect(button).toBeDisabled();
+  expect(screen.queryByText("Copied")).toBeNull();
+  view.rerender(
+    <BookingConfirmation
+      booking={{ ...booking, reference: "next-booking" }}
+      onAgain={() => {}}
+    />,
+  );
+  await act(async () => {
+    finish();
+  });
+  expect(screen.queryByText("Copied")).toBeNull();
+  expect(vi.getTimerCount()).toBe(0);
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy booking confirmation" }),
+    );
+  });
+  expect(screen.getByText("Copied")).toBeVisible();
   view.rerender(
     <BookingConfirmation booking={booking} preview onAgain={() => {}} />,
   );
   expect(
     screen.queryByRole("button", { name: "Copy booking confirmation" }),
   ).toBeNull();
+  expect(screen.queryByText("Copied")).toBeNull();
+  expect(vi.getTimerCount()).toBe(0);
+  view.rerender(<BookingConfirmation booking={booking} onAgain={() => {}} />);
+  let fail!: (error: Error) => void;
+  writeText.mockImplementationOnce(
+    () =>
+      new Promise<void>((_resolve, reject) => {
+        fail = reject;
+      }),
+  );
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy booking confirmation" }),
+    );
+  });
+  view.rerender(
+    <BookingConfirmation
+      booking={booking}
+      pending
+      pendingLabel="Pending"
+      pendingNotice={
+        <div role="alert">We couldn’t confirm your booking status.</div>
+      }
+      onAgain={() => {}}
+    />,
+  );
+  await act(async () => {
+    fail(new Error("late clipboard failure"));
+  });
+  expect(screen.queryByText("Couldn’t copy. Try again.")).toBeNull();
+  expect(screen.queryByText("Copied")).toBeNull();
+  expect(vi.getTimerCount()).toBe(0);
+  view.rerender(<BookingConfirmation booking={booking} onAgain={() => {}} />);
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy booking confirmation" }),
+    );
+  });
+  view.unmount();
+  expect(vi.getTimerCount()).toBe(0);
 });
 
 test("unresolved post-payment confirmation keeps the receipt layout with a pending badge rather than a pending page", () => {

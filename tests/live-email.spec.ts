@@ -1593,6 +1593,7 @@ test("real payment recovery confirms the browser return from verified provider s
       const style = getComputedStyle(node);
       return {
         fontSize: parseFloat(style.fontSize),
+        lineHeight: parseFloat(style.lineHeight),
         paddingTop: parseFloat(style.paddingTop),
         paddingRight: parseFloat(style.paddingRight),
         paddingBottom: parseFloat(style.paddingBottom),
@@ -1600,10 +1601,66 @@ test("real payment recovery confirms the browser return from verified provider s
       };
     });
     expect(paidMetrics.fontSize).toBeCloseTo(23.8, 5);
+    expect(paidMetrics.lineHeight).toBeCloseTo(38.08, 5);
     expect(paidMetrics.paddingTop).toBeCloseTo(8.5, 5);
     expect(paidMetrics.paddingRight).toBeCloseTo(15.3, 5);
     expect(paidMetrics.paddingBottom).toBeCloseTo(8.5, 5);
     expect(paidMetrics.paddingLeft).toBeCloseTo(15.3, 5);
+    const copyButton = page.getByRole("button", {
+      name: "Copy booking confirmation",
+      exact: true,
+    });
+    await expect(copyButton).toHaveText("");
+    await expect(copyButton.locator("svg")).toBeVisible();
+    await copyButton.scrollIntoViewIfNeeded();
+    const copyBox = await copyButton.boundingBox();
+    const paidBox = await paidBadge.boundingBox();
+    const orderBox = await page
+      .getByRole("region", { name: "Order Summary", exact: true })
+      .boundingBox();
+    expect(copyBox).not.toBeNull();
+    expect(paidBox).not.toBeNull();
+    expect(orderBox).not.toBeNull();
+    // The accepted badge is 23.8px text at 1.6 line-height plus 17px padding.
+    // Assert its rendered height independently of its computed CSS values.
+    expect(Math.abs(paidBox!.height - 55.08)).toBeLessThan(0.1);
+    expect(copyBox!.y + copyBox!.height).toBeLessThanOrEqual(paidBox!.y);
+    expect(copyBox!.x + copyBox!.width).toBeCloseTo(
+      paidBox!.x + paidBox!.width,
+      0,
+    );
+    expect(copyBox!.x + copyBox!.width).toBeCloseTo(
+      orderBox!.x + orderBox!.width,
+      0,
+    );
+    // Keep clipboard acceptance deterministic across Chromium and WebKit;
+    // the actual receipt formatter and click handler still execute.
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (text: string) => {
+            document.documentElement.setAttribute("data-copied-booking", text);
+          },
+        },
+      });
+    });
+    await copyButton.click();
+    const copied = page.locator(".confirmation-copy-feedback");
+    await expect(copied).toHaveText("Copied");
+    await expect(copied).toBeVisible();
+    await expect(copied).toHaveCSS("font-size", "12px");
+    expect(
+      await page.locator("html").getAttribute("data-copied-booking"),
+    ).toContain("Booking confirmed · Paid");
+    const copiedBox = await copied.boundingBox();
+    expect(copiedBox).not.toBeNull();
+    expect(copiedBox!.height).toBeLessThanOrEqual(34);
+    expect(copiedBox!.y + copiedBox!.height).toBeLessThanOrEqual(copyBox!.y);
+    const paidAfterCopy = await paidBadge.boundingBox();
+    expect(paidAfterCopy).not.toBeNull();
+    expect(paidAfterCopy!.y).toBeCloseTo(paidBox!.y, 1);
+    expect(paidAfterCopy!.height).toBeCloseTo(paidBox!.height, 1);
     await expect(page.locator(".confirmation-paid-amount .pill")).toHaveCount(
       0,
     );
