@@ -12,9 +12,11 @@ Enquiry delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com 
 
 ## Verification and immediate next action
 
-Run43595003996 on080d47fb confirms the frontend import/sender repairs, all three Worker groups, Worker aggregation and both live-email shards. Backend shard1 passed; shard2 exposed one later desktop geometry assertion: it could sample Calendar before the Details navigation settled. Added exact Details URL/heading preconditions without changing the1px tolerance. Types/lint and independent audit passed. All remaining jobs finished without another independent failure. Push this final correction, then verify fresh exact-head CI and actual staging.
+Run43596743966 on0fba6871 passed frontend, both builds, all four browser shards and every Worker suite/aggregation. Both final release gates failed because `check-developer-release.mjs` stopped at migration0049 while the package correctly included0050. Added explicit enquiry upgrade checks, preserving the strict complete-migration assertion and all existing preservation checks. No application or SQL migration changes.
 
-Application verification remains371 frontend tests,11 enquiry Worker cases and33 identity-delivery cases with intercepted providers. CI owns browser execution; no live enquiries were sent. Earlier repair verification includes191 tooling cases and2 widget lifecycle cases. Retain detailed failure evidence in [Journey](docs/journey.md); record final CI/deployment receipts in the PR without status-only commit loops. Leave PR75 unmerged.
+The original failure reproduced against the downloaded backend CI artifact. Corrected verification passes against both exact CI artifacts with zero provider requests/remote operations. New assertions cover empty initial enquiry state, immutable input/proof/terminal delivery, duplicate request/proof rejection, retained support/financial state and a disabled enquiry endpoint in offline packages. Independent packaging audit passed; no further fixed migration-count assumptions found.
+
+Push the corrected verifier after both artifact replays and scoped lint/format checks, then check fresh exact-head CI and actual staging. CI owns browser execution; no real enquiries were sent. Keep detailed evidence in [Journey](docs/journey.md), final CI/deployment receipts in the PR, and PR75 unmerged.
 
 ## Remaining owner acceptance
 
