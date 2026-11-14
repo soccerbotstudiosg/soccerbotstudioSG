@@ -117,9 +117,9 @@ export function completedPaymentReturn(attemptId: string, received = false) {
   if (received) safeWrite(key, { completed: true });
   return received || record(safeRead(key))?.completed === true;
 }
-export const EXPIRY_RECONCILIATION_MS = 20000;
-export const CHECKOUT_RECOVERY_WAIT_MS = 30000;
-/** One foreground wait per attempt, including response loss and reload. Not financial authority. */
+const EXPIRY_RECONCILIATION_MS = 20000;
+const CHECKOUT_RECOVERY_WAIT_MS = 30000;
+/** Bound foreground waiting across reloads without establishing payment status. */
 export function checkoutRecoveryDeadline(
   attemptId: string,
   now = Date.now(),

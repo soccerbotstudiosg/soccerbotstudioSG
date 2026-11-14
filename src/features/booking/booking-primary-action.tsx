@@ -109,7 +109,7 @@ export function BookingPrimaryAction({
   );
 }
 
-/** Show the total from the existing selected-session price owner beside a next action. */
+/** Show the selected-session total beside the booking action. */
 export function BookingActionTotal() {
   const { draft } = useBooking();
   return draft.slots.length > 0 ? (

@@ -163,8 +163,7 @@ interface BookingContextValue extends StoredBooking {
 }
 // Match protected checkout recovery's bounded read and conservative retry cadence.
 const CONFLICT_READ_TIMEOUT_MS = 10_000;
-// Fresh availability can spend fifteen seconds queued plus fifteen in provider transport.
-// Owner captures include valid responses beyond the protected-context ten-second budget.
+// Allow fifteen seconds each for provider admission and availability transport.
 const CONFLICT_AVAILABILITY_TIMEOUT_MS = 30_000;
 const CONFLICT_READ_RETRY_MS = 30_000;
 /** Bound one read and ignore a transport that settles after timeout or cancellation. */
@@ -1798,8 +1797,7 @@ export function BookingProvider({
         !current.attempt
       )
         return false;
-      // Review is navigation over the replacement draft, not a new reservation.
-      // Retain the unresolved original attempt and its recovery state unchanged.
+      // Review uses the editable replacement draft while retaining the original financial attempt.
       if (operation === "review" && action.calendarRecovery && current.attempt)
         return selectionErrors(current.draft.slots, Date.now()).length === 0;
       const request = { controller: new AbortController(), operation };
