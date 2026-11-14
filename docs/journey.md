@@ -6439,3 +6439,7 @@ This follows PR77 merged as8f89f89 after all gates and actual staging; its indep
 Pre-publication validation also rejected an obsolete field-hint CSS owner after hint removal and unsupported Testing Library role-query exact options. Removed the unused owner and used anchored accessible-name matchers; required assertions and validation remain intact.
 
 Final focused verification: six enquiry/phone cases, TypeScript, ESLint, source/policy, formatting and diff checks passed after cleanup. Browser shape/font/rendering assertions remain for exact-head CI; no assistant browser execution or real enquiry send.
+
+The booking-choice “or” uses the same Roboto 900 italic font and body size as its action labels. Guest and envelope icons appear inside their respective buttons in inherited white, with the existing trailing chevrons retained; decorative icons do not alter accessible names or navigation.
+
+Booking-entry follow-up verification: 22 focused account-step/account-lifecycle cases pass, alongside type checking, affected-file lint, source/policy and diff checks. The existing customer-browser presentation case now checks divider typography and white decorative icons; CI owns execution. No test identities or inventories changed.

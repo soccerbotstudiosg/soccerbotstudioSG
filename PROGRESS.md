@@ -6,7 +6,7 @@ Stage and merge the owner's queued enquiry/header refinements after exact-head C
 
 ## Current scope
 
-Enquiry top-left control says Home; remove the heading full stop and grey introduction. Remove the three grey enquiry-type/date/time hints and the red requirements helper line while preserving required-field validation, initial red outlines and neutral optional fields. Home and Send enquiry use the existing approved corner token. The Singapore flag uses the same corner shape as Book now; The studio and Book now use the existing Roboto900 italic action face. The ten-second Home acknowledgement and all server contracts remain unchanged.
+Enquiry top-left control says Home; remove the heading full stop and grey introduction. Remove the three grey enquiry-type/date/time hints and the red requirements helper line while preserving required-field validation, initial red outlines and neutral optional fields. Home and Send enquiry use the existing approved corner token. The Singapore flag uses the same corner shape as Book now; The studio and Book now use the existing Roboto900 italic action face. The booking-choice “or” uses the same Roboto 900 italic font and body size as its action labels. Guest and envelope icons appear inside their respective buttons in inherited white, with the existing trailing chevrons retained; decorative icons do not alter accessible names or navigation. The ten-second Home acknowledgement and all server contracts remain unchanged.
 
 ## Verification and next action
 

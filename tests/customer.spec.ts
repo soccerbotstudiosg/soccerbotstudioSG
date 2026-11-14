@@ -1840,6 +1840,21 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(guest).toHaveCSS("font-weight", "900");
   await expect(guest).toHaveCSS("font-style", "italic");
   await expect(guest).toHaveCSS("font-size", "16px");
+  const divider = page.locator(".access-choice-divider");
+  await expect(divider).toHaveCSS("font-family", /Roboto/);
+  await expect(divider).toHaveCSS("font-size", "16px");
+  await expect(divider).toHaveCSS("font-weight", "900");
+  await expect(divider).toHaveCSS("font-style", "italic");
+  for (const action of [
+    guest,
+    page.getByRole("button", { name: "Continue with email" }),
+  ]) {
+    await expect(action.locator("svg")).toHaveCount(2);
+    for (const icon of await action.locator("svg").all()) {
+      await expect(icon).toHaveAttribute("aria-hidden", "true");
+      await expect(icon).toHaveCSS("stroke", "rgb(255, 255, 255)");
+    }
+  }
   const entryWidth = await guest.evaluate((button) => {
     const panel = button.parentElement!;
     const style = getComputedStyle(panel);
