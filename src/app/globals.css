@@ -45,6 +45,7 @@
   --color-ink: #101636;
   --color-muted: #586174;
   --color-hint: #767676;
+  --color-placeholder: #9a9aa5;
   --color-paper: #f5f6fa;
   --color-surface: #ffffff;
   --color-line: #d6dae6;
@@ -352,6 +353,11 @@
     letter-spacing: 0;
     text-transform: none;
   }
+  .booking-primary-action > .button,
+  .button.booking-entry-action {
+    font-weight: var(--weight-display);
+    font-style: italic;
+  }
   .nav-flag {
     display: block;
     flex: 0 0 auto;
@@ -440,6 +446,11 @@
   }
   .booking-entry-action {
     position: relative;
+  }
+  .button-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
   .button:hover {
     background: var(--color-action-hover);
@@ -2520,6 +2531,7 @@
     min-width: 0;
   }
   .time-range {
+    font-size: var(--text-card);
     grid-column: 1 / -1;
     padding-right: 24px;
     white-space: nowrap;
@@ -2670,6 +2682,12 @@
   .access-option {
     min-width: 0;
     padding: 32px;
+  }
+  @media (min-width: 701px) {
+    .access-options:not(.access-options-verified) > .button {
+      width: 60%;
+      align-self: center;
+    }
   }
   .access-choice-divider {
     align-self: center;
@@ -3131,7 +3149,7 @@
     color: var(--color-ink);
   }
   .summary-total {
-    margin-top: 21px;
+    margin-top: 0;
     padding-top: 19px;
     border-top: 1px solid var(--color-line);
     display: flex;
@@ -3453,19 +3471,20 @@
   }
   .date:disabled {
     border-color: transparent;
-    color: var(--color-muted);
+    color: color-mix(in srgb, var(--color-muted) 45%, var(--color-surface));
     background: color-mix(
       in srgb,
-      var(--color-disabled) 60%,
+      var(--color-disabled) 75%,
       var(--color-surface)
     );
+    box-shadow: none;
   }
   .date.selected:not(:disabled) {
     border-color: var(--color-navy);
     background: var(--color-navy);
     color: var(--color-on-brand);
   }
-  .date.in-booking strong {
+  .date.in-booking:not(:disabled) strong {
     background: var(--color-navy);
     color: var(--color-on-brand);
   }
@@ -3697,7 +3716,7 @@
   .field input::placeholder,
   .field textarea::placeholder,
   .field-control::placeholder {
-    color: var(--color-hint);
+    color: var(--color-placeholder);
     font-weight: 400;
     opacity: 1;
   }
@@ -3843,6 +3862,17 @@
   .email-confirm-control[aria-busy="true"] {
     color: var(--color-muted);
     background: var(--color-brand-soft);
+  }
+  .email-hint-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    font-weight: var(--weight-heading);
+    line-height: 1;
   }
   .email-check-help {
     color: var(--color-hint);
@@ -4349,6 +4379,7 @@
       > .button::after {
       animation-delay: 240ms;
     }
+    .booking-entry-action:not(:disabled):not([aria-disabled="true"]),
     .booking-primary-action[data-ready-animation="true"] > .button {
       animation: booking-action-ready 240ms ease-out;
     }
@@ -4770,7 +4801,6 @@
       padding: 26px 20px;
     }
     .summary-total {
-      margin-top: 14px;
       padding-top: 14px;
     }
     .lead {
@@ -4910,7 +4940,6 @@
     }
     .time-range {
       padding-right: 22px;
-      font-size: var(--text-label);
     }
     .time > svg {
       top: 12px;

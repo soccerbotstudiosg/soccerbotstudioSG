@@ -1400,6 +1400,10 @@
     "title": "enquiry fields and submission share strict validation without rejecting ordinary prose"
   },
   {
+    "file": "src/services/enquiry.test.ts",
+    "title": "live enquiries require proof and acknowledgement while retaining the retry key"
+  },
+  {
     "file": "src/services/identity.test.ts",
     "title": "a challenge superseded by signout cannot dispatch email after delayed guest access"
   },

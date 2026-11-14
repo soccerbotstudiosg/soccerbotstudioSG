@@ -161,6 +161,10 @@ export function AccountStep({
   const [navigating, startNavigation] = useTransition();
   const busy = working || navigating;
   const [botToken, setBotToken] = useState("");
+  const [proofPending, setProofPending] = useState(false);
+  const waitingForProof =
+    view === "email" && identityService.mode === "live" && !botToken;
+  const showProofSpinner = waitingForProof && proofPending && validEmail(email);
   const [botGeneration, setBotGeneration] = useState(0);
   const receiveBotToken = useCallback((token: string) => {
     setBotToken(token);
@@ -659,20 +663,38 @@ export function AccountStep({
           </div>
         ) : null}
         {identityService.mode === "live" && resendSeconds === 0 && (
-          <EmailBotProof key={botGeneration} onToken={receiveBotToken} />
+          <EmailBotProof
+            key={botGeneration}
+            onToken={receiveBotToken}
+            onPendingChange={setProofPending}
+          />
         )}
         <BookingPrimaryAction
           className="actions"
-          ready={!busy && !(view === "email" && resendSeconds > 0)}
+          ready={
+            !busy &&
+            !waitingForProof &&
+            !(view === "email" && resendSeconds > 0)
+          }
         >
           <button
             type="submit"
             className="button"
-            disabled={busy || (view === "email" && resendSeconds > 0)}
+            aria-label={view === "email" ? "Get Verification Code" : undefined}
+            disabled={
+              busy || waitingForProof || (view === "email" && resendSeconds > 0)
+            }
           >
-            {view === "email" && busy ? (
-              <span role="status" aria-label="Requesting verification code">
+            {view === "email" && (busy || showProofSpinner) ? (
+              <span
+                className="button-loading"
+                role="status"
+                aria-label={
+                  busy ? "Requesting verification code" : "Checking security"
+                }
+              >
                 <Icon name="spinner" className="spinner" />
+                {busy ? "Sending code…" : "Checking security…"}
               </span>
             ) : (
               <>

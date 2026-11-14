@@ -138,16 +138,17 @@ async function chooseSlots(page: Page, multiple = false) {
     ).toHaveCount(0);
   }
   await expect(
-    page.locator(".booking-primary-action .booking-action-total"),
+    page.locator(".booking-primary-action .booking-action-total").first(),
   ).toHaveText(multiple ? "$176.00" : "$88.00");
   await page
     .getByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await expect(
-    page.locator(".booking-primary-action .booking-action-total"),
+    page.locator(".booking-primary-action .booking-action-total").first(),
   ).toHaveText(multiple ? "$176.00" : "$88.00");
   await openBookingPanel(page, "cart");
   await expect(
@@ -178,7 +179,7 @@ async function details(page: Page) {
     .locator(".booking-document .line-item.total strong")
     .innerText();
   await expect(
-    page.locator(".booking-primary-action .booking-action-total"),
+    page.locator(".booking-primary-action .booking-action-total").first(),
   ).toHaveText(totalText.replace(/^SGD\s*/, ""));
   if (page.viewportSize()!.width <= 700) {
     await openBookingPanel(page, "cart");
@@ -761,10 +762,12 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
     0,
   );
   await expect(
-    page.getByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      exact: true,
-    }),
+    page
+      .getByRole("button", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        exact: true,
+      })
+      .first(),
   ).toBeDisabled();
   await expect(page.getByText("Preview controls", { exact: true })).toHaveCount(
     0,
@@ -862,7 +865,7 @@ test("enquiry remains available without external submission or a mock assistant"
     .getByRole("textbox", { name: /^Email address/ })
     .fill("demo@example.com");
   await expect(page.getByLabel("Full name")).toHaveValue("Demo Customer");
-  await page.getByLabel("Contact number").fill("+65 8123 4567");
+  await page.getByLabel("Mobile number").fill("+65 8123 4567");
   await page.getByLabel("Enquiry type").selectOption("Corporate booking");
   await page
     .getByLabel("Your requirements")
@@ -1174,10 +1177,12 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   ).toBeVisible();
   await closeBookingPanel(page);
   await expect(
-    page.getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      exact: true,
-    }),
+    page
+      .getByRole("link", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        exact: true,
+      })
+      .first(),
   ).toBeVisible();
   if (page.viewportSize()!.width > 700) {
     await expect(page.locator(".booking-layout > .aside-wrap")).toHaveCSS(
@@ -1211,6 +1216,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
@@ -1758,7 +1764,24 @@ test("header blue and the typography hierarchy stay consistent across every book
   await page.mouse.move(0, 0);
   await expect(guest).toHaveCSS("background-color", brand);
   await expect(guest).toHaveCSS("text-transform", "none");
+  await expect(guest).toHaveCSS("font-weight", "900");
+  await expect(guest).toHaveCSS("font-style", "italic");
   await expect(guest).toHaveCSS("font-size", "16px");
+  const entryWidth = await guest.evaluate((button) => {
+    const panel = button.parentElement!;
+    const style = getComputedStyle(panel);
+    return {
+      button: parseFloat(getComputedStyle(button).width),
+      content:
+        panel.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight),
+    };
+  });
+  expect(entryWidth.button).toBeCloseTo(
+    entryWidth.content * ((page.viewportSize()?.width ?? 1280) > 700 ? 0.6 : 1),
+    0,
+  );
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
     const card = page.locator(".access-option").filter({ has: guest });
     const background = await card.evaluate(
@@ -1901,6 +1924,11 @@ test("header blue and the typography hierarchy stay consistent across every book
     "white-space",
     "nowrap",
   );
+  await expect(crossing.locator(".time-range")).toHaveCSS("font-size", "18px");
+  await expect(crossing.locator(".time-rate strong")).toHaveCSS(
+    "font-size",
+    "18px",
+  );
   const slotPlacement = await crossing.evaluate((node) => {
     const range = node.querySelector(".time-range")!.getBoundingClientRect();
     const price = node.querySelector(".time-rate")!.getBoundingClientRect();
@@ -1970,9 +1998,16 @@ test("header blue and the typography hierarchy stay consistent across every book
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await pageHeading("Your details");
   await sectionType("#details-form h2");
+  if ((page.viewportSize()?.width ?? 1280) > 700) {
+    const row = page.locator(".summary .series-list li").first();
+    await expect(row).toHaveCSS("padding-top", "18px");
+    await expect(row).toHaveCSS("padding-bottom", "18px");
+    await expect(page.locator(".summary-total")).toHaveCSS("margin-top", "0px");
+  }
   await expect(page.locator("label[for='name']")).toHaveCSS(
     "font-size",
     "14px",
@@ -2175,10 +2210,12 @@ test("elapsed selections block checkout on an open page and remain removable bef
   ).toBeVisible();
   await closeBookingPanel(page);
   await expect(
-    page.getByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      exact: true,
-    }),
+    page
+      .getByRole("button", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        exact: true,
+      })
+      .first(),
   ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: /12:00–12:40/ }),
@@ -2226,6 +2263,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await details(page);
   await payment(page);
@@ -2479,10 +2517,12 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   }
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await expect(
-    page.getByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      exact: true,
-    }),
+    page
+      .getByRole("button", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        exact: true,
+      })
+      .first(),
   ).toBeDisabled();
   const noon = page.getByRole("combobox", {
     name: `Trainer for ${date} at 12:00`,

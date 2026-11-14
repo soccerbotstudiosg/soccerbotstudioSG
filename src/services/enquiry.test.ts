@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { enquiryErrors } from "@/domain/enquiry";
 import { demoEnquiryService } from "@/services/demo/enquiry";
 import { todaySG } from "@/domain/dates";
@@ -40,5 +40,48 @@ test("enquiry fields and submission share strict validation without rejecting or
     const input = { ...valid, ...patch };
     expect(Object.keys(enquiryErrors(input))).toContain(Object.keys(patch)[0]);
     await expect(demoEnquiryService.submit(input)).rejects.toThrow();
+  }
+});
+
+test("live enquiries require proof and acknowledgement while retaining the retry key", async () => {
+  const { liveEnquiryService } = await import("./enquiry");
+  const request = vi.fn<typeof fetch>();
+  vi.stubGlobal("fetch", request);
+  const proof = {
+    key: "7d176e59-1f67-4911-b466-b1e56e3a970b",
+    botToken: "test-proof",
+  };
+  try {
+    await expect(liveEnquiryService.submit(valid)).rejects.toThrow(
+      /security check/,
+    );
+    expect(request).not.toHaveBeenCalled();
+    request.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: "pending" }), { status: 200 }),
+    );
+    await expect(liveEnquiryService.submit(valid, proof)).rejects.toThrow(
+      /acknowledgement/,
+    );
+    request.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: "sent" }), { status: 200 }),
+    );
+    await expect(liveEnquiryService.submit(valid, proof)).resolves.toEqual({
+      email: valid.email,
+      delivered: true,
+    });
+    expect(request).toHaveBeenCalledTimes(2);
+    for (const [url, init] of request.mock.calls) {
+      expect(url).toBe("/api/enquiry");
+      expect(JSON.parse(String(init?.body))).toEqual({
+        values: valid,
+        ...proof,
+      });
+      expect(init?.credentials).toBe("same-origin");
+    }
+    request.mockResolvedValueOnce(new Response("{}", { status: 503 }));
+    await expect(liveEnquiryService.submit(valid, proof)).rejects.toThrow();
+    expect(request).toHaveBeenCalledTimes(3);
+  } finally {
+    vi.unstubAllGlobals();
   }
 });

@@ -50,7 +50,10 @@ export function BookingHelp({ attemptId }: { attemptId: string }) {
         onClick={() => void send()}
       >
         {state === "sending" ? (
-          <Icon name="spinner" className="spinner" />
+          <span className="button-loading">
+            <Icon name="spinner" className="spinner" />
+            Sending request…
+          </span>
         ) : state === "sent" ? (
           "Report sent"
         ) : (

@@ -37,14 +37,14 @@ flowchart TB
   Routes --> Public["page.tsx + studio/page.tsx<br/>Home and studio"]
   Routes --> Book["book/[step]/page.tsx<br/>Static booking step routes"]
   Routes --> Confirmation["confirmation/page.tsx<br/>Payment return / confirmation entry"]
-  Routes --> Other["enquiry/page.tsx + experiment/page.tsx"]
+  Routes --> Other["enquiry/page.tsx"]
   Book --> Page["features/booking/booking-page.tsx<br/>Guarded step rendering"]
   Page --> State["features/booking/provider.tsx<br/>Shared booking state and actions"]
   Page --> Steps["2.1 · Step components"]
   Public --> Visual["components/arena*.tsx + content/media.ts<br/>Arena presentation and imagery"]
 ```
 
-Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/book/[step]/page.tsx), [BookingPage](../../src/features/booking/booking-page.tsx), [booking provider](../../src/features/booking/provider.tsx). Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css). [Enquiry](../../src/features/enquiry/enquiry-page.tsx) remains a separate preview-only feature; the persistent mock assistant is retired.
+Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/book/[step]/page.tsx), [BookingPage](../../src/features/booking/booking-page.tsx), [booking provider](../../src/features/booking/provider.tsx). Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css). [Enquiry](../../src/features/enquiry/enquiry-page.tsx) is a separate feature with build-time live/preview service composition; the persistent mock assistant is retired.
 
 ### 2.1 Booking UI expansion
 

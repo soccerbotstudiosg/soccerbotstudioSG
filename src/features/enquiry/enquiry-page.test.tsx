@@ -17,7 +17,7 @@ test("enquiry waits for hydration then preserves entered details through submiss
   const controls = container.querySelectorAll(
     "input, select, textarea, button",
   );
-  expect(controls).toHaveLength(10);
+  expect(controls).toHaveLength(11);
   for (const control of controls) expect(control).toBeDisabled();
 
   const hydrationErrors: unknown[] = [];
@@ -41,7 +41,7 @@ test("enquiry waits for hydration then preserves entered details through submiss
     target: { value: "demo@example.com" },
   });
   expect(name).toHaveValue("Demo Customer");
-  fireEvent.change(screen.getByLabelText("Contact number", { exact: false }), {
+  fireEvent.change(screen.getByLabelText("Mobile number", { exact: false }), {
     target: { value: "+65 8123 4567" },
   });
   await user.selectOptions(
@@ -66,8 +66,11 @@ test("enquiry waits for hydration then preserves entered details through submiss
   expect(screen.getByRole("alert")).toHaveClass("alert");
   expect(screen.queryByText(/SQLITE_FULL|identity=private/)).toBeNull();
   expect(name).toHaveValue("Demo Customer");
+  const failedKey = submit.mock.calls[0][1]?.key;
   submit.mockRestore();
+  const retry = vi.spyOn(services.enquiry, "submit");
   await user.click(screen.getByRole("button", { name: "Send enquiry" }));
+  expect(retry.mock.calls[0][1]?.key).toBe(failedKey);
   expect(await screen.findByText("Preview · No enquiry sent.")).toBeVisible();
   expect(screen.getByText("demo@example.com")).toBeVisible();
   await user.click(
@@ -75,13 +78,31 @@ test("enquiry waits for hydration then preserves entered details through submiss
   );
   expect(screen.getByLabelText("Full name", { exact: false })).toHaveValue("");
   expect(screen.getByRole("button", { name: "Send enquiry" })).toBeEnabled();
+  for (const [label, text] of [
+    ["Full name", "Demo Customer"],
+    ["Email address", "demo@example.com"],
+    ["Mobile number", "+65 8123 4567"],
+    ["Your requirements", "A group session for our team."],
+  ]) {
+    fireEvent.change(screen.getByLabelText(label, { exact: false }), {
+      target: { value: text },
+    });
+  }
+  await user.selectOptions(
+    screen.getByLabelText("Enquiry type", { exact: false }),
+    "Corporate booking",
+  );
+  await user.click(screen.getByRole("button", { name: "Send enquiry" }));
+  expect(retry).toHaveBeenCalledTimes(2);
+  expect(retry.mock.calls[1][1]?.key).not.toBe(failedKey);
+  retry.mockRestore();
 });
 
 test("enquiry validates edits immediately and blocks invalid service submission", () => {
   render(<EnquiryPage />);
   const submit = vi.spyOn(services.enquiry, "submit");
   const name = screen.getByLabelText("Full name", { exact: false });
-  expect(name).toHaveAttribute("aria-invalid", "false");
+  expect(name).toHaveAttribute("aria-invalid", "true");
   fireEvent.change(name, { target: { value: "John★" } });
   expect(name).toHaveAttribute("aria-invalid", "true");
   expect(screen.getByText("Enter your full name.")).toBeVisible();

@@ -131,10 +131,16 @@ async function calendarScenario(mobile: boolean) {
   expect(crossing).toHaveTextContent("Faisal Shahril");
   expect(crossing).toHaveTextContent("Crosses the 15:00 instructor rotation");
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  const continues = screen.getAllByRole("link", {
+    name: /^Enter Booking Details/,
+  });
+  expect(continues).toHaveLength(2);
+  for (const control of continues)
+    expect(control).toHaveAttribute("href", "/book/details");
   expect(
-    screen.getByRole("link", {
+    screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toBeInTheDocument();
   if (!mobile) {
     expect(times().getByRole("button", { name: /15:20–16:00/ })).toBeEnabled();
@@ -213,9 +219,9 @@ async function calendarScenario(mobile: boolean) {
       screen.queryByRole("region", { name: "Your instructors" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", {
+      screen.getAllByRole("button", {
         name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      }),
+      })[0],
     ).toBeDisabled();
     expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
     fireEvent.click(
@@ -249,6 +255,9 @@ async function calendarScenario(mobile: boolean) {
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
     `${restoredDate}|12:00|demo|faisal`,
   );
+  expect(
+    screen.getAllByRole("link", { name: /^Enter Booking Details/ }),
+  ).toHaveLength(1);
   await user.click(times().getByRole("button", { name: /14:30–15:10/ }));
   await user.selectOptions(
     screen.getByLabelText(`Trainer for ${restoredDate} at 14:30`),
@@ -419,9 +428,9 @@ test("crossing notices persist in the basket and review before payment", async (
     within(screen.getByRole("complementary")).getByText(/Crosses the 15:00/),
   ).toHaveTextContent("stays for the full session");
   expect(
-    screen.getByRole("link", {
+    screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toHaveAttribute("href", "/book/details");
   const cart = screen.getByRole("complementary");
   expect(
@@ -567,17 +576,17 @@ test("an open booking page expires a selected slot at its start and keeps it rem
     target: { value: "2026-10-06|12:00|demo|faisal" },
   });
   expect(
-    screen.getByRole("link", {
+    screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toBeInTheDocument();
   await act(async () => {
     vi.advanceTimersByTime(1);
   });
   expect(
-    screen.getByRole("button", {
+    screen.getAllByRole("button", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toBeDisabled();
   await act(async () => {});
   expect(
@@ -610,9 +619,9 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   const basket = within(screen.getByRole("complementary"));
   expect(basket.getByText(/Session has started/)).toBeVisible();
   expect(
-    screen.getByRole("button", {
+    screen.getAllByRole("button", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toBeDisabled();
   expect(loadBooking().draft.slots).toEqual([stale, future]);
   fireEvent.click(
@@ -622,9 +631,9 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   expect(loadBooking().draft.slots).toEqual([future]);
   expect(basket.queryByText(/Session has started/)).not.toBeInTheDocument();
   expect(
-    screen.getByRole("link", {
+    screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toBeInTheDocument();
 });
 test("selection rechecks time before dispatch and refreshes after a suspended tab resumes", async () => {
@@ -677,9 +686,9 @@ test("an open calendar follows Singapore year rollover without deleting its draf
   ).toHaveAttribute("aria-pressed", "true");
   expect(loadBooking().draft.slots).toEqual([slot]);
   expect(
-    screen.getByRole("link", {
+    screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toBeInTheDocument();
   view.unmount();
 });
@@ -1049,7 +1058,7 @@ test("pre-checkout recovery restores fresh display times without releasing the o
     original,
   ]);
   expect(
-    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
   ).toBeDisabled();
   await act(async () => fireEvent.click(screen.getByText("Try Review")));
   expect(reviewResult).toBe(false);

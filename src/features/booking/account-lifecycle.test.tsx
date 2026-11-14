@@ -432,6 +432,12 @@ test("switching email clears the old account and supports back guest and fresh r
   expect(screen.getByLabelText("Email address")).toBeEnabled();
   expect(
     screen.getByRole("button", { name: "Get Verification Code" }),
+  ).toBeDisabled();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Complete synthetic security check" }),
+  );
+  expect(
+    screen.getByRole("button", { name: "Get Verification Code" }),
   ).toBeEnabled();
   await act(async () => finishSignOut());
   await screen.findByRole("heading", { name: "Continue with email" });

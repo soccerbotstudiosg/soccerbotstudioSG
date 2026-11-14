@@ -371,12 +371,10 @@ test("live email requires the supplied widget proof before protected requests", 
   await expect(
     page.getByText("Email sign-in preview", { exact: false }),
   ).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Get Verification Code", exact: true })
-    .click();
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Complete the security check and try again.",
-  );
+  await expect(
+    page.getByRole("button", { name: "Get Verification Code", exact: true }),
+  ).toBeDisabled();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
     { path: "/api/access", method: "POST", body: null },
   ]);
@@ -1065,6 +1063,7 @@ test("native guest journey preserves players contact and one checkout across ref
         name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
         exact: true,
       })
+      .first()
       .click();
     await expect(
       page.getByRole("heading", { name: "Your details", exact: true }),
@@ -2145,6 +2144,7 @@ async function guestDetails(
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await expect(
     page.getByRole("heading", { name: "Your details", exact: true }),
@@ -2522,7 +2522,7 @@ async function uncertainHolding(
           page.getByRole("heading", { name: "Review Booking", exact: true }),
         ).toHaveCount(0);
         await expect(
-          page.getByRole("button", { name: /^Enter Booking Details/ }),
+          page.getByRole("button", { name: /^Enter Booking Details/ }).first(),
         ).toBeDisabled();
         await expect(page.locator("html")).not.toHaveAttribute(
           "data-unexpected-review",
@@ -3951,12 +3951,10 @@ test("email account actions return through booking options and sign in again wit
       .getByRole("textbox", { name: /^Email address/ })
       .fill("synthetic@example.test");
     await page.getByLabel("Remember me", { exact: true }).setChecked(remember);
-    await page
-      .getByRole("button", { name: "Get Verification Code", exact: true })
-      .click();
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-      "Complete the security check and try again.",
-    );
+    await expect(
+      page.getByRole("button", { name: "Get Verification Code", exact: true }),
+    ).toBeDisabled();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
       .getByRole("button", {
         name: "Complete synthetic email check",

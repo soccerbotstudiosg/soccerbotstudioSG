@@ -460,6 +460,50 @@
     "title": "checkout bot proof binds one intent and leaves existing checkout callbacks and recovery challenge-free"
   },
   {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry sends fixed staff recipients and customer reply-to without creating booking access"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry rejects invalid fields and cross-origin requests before provider dispatch"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry requires fresh bot proof for its exact action and hostname"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry deduplicates completed keys and rejects changed enquiry content"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry rejects a bot token already bound to another submission"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry concurrent submissions reserve one physical email dispatch"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry retains uncertain sends and retries with the original email idempotency key"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry stops uncertain retries before the provider idempotency window ends"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry shares the existing hourly email budget and rejects before Resend dispatch when exhausted"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry shares the existing source bot limit without creating guest sessions"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry fails closed for disabled delivery and missing sender or provider bindings"
+  },
+  {
     "file": "worker/tests/foundation.test.mjs",
     "title": "foundation valid bindings emit correlated storage evidence without secret markers"
   },

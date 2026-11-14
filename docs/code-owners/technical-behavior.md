@@ -554,3 +554,9 @@ Identity transport distinguishes `identity_unavailable` on optional profile POST
 BotProof reports pending background work through an optional callback, derived from sitekey, failure, interaction and token state. ReviewStep combines it with consent, token absence and existing busy state to render the small spinner and aria-busy. Server admission and token handling remain unchanged.
 
 Native booking transport preserves `checkout_already_active` as a distinct BookingServiceError code. The existing rejected-selection classifier chooses the corresponding approved notice while retaining fresh availability classification and late-response guards. Its existing pending-conflict snapshot optionally retains this reason across interrupted classification; the enum is presentation data and never authority to adopt another checkout.
+
+### Enquiry and contact presentation
+
+Enquiry reuses the booking phone input/country picker and shared validation, with a background `send-enquiry` proof and independent anonymous server endpoint. Shared bot UI now uses interaction-only appearance for verification-code, checkout and enquiry challenges; pending state is reported separately from interactivity/failure. Valid email shows a small labelled security spinner before a code request; no request can bypass server verification. Contact email DNS checking text sits below its field while the field control contains only the spinner.
+
+Booking required fields show initial validation; Manage saved contact starts without red prompts and validates edits/submission. Calendar unavailable dates use transparent borders and faded grey text/background. Desktop calendar offers both bottom and cart continuation through BasketContinue; mobile renders one continuation. Guest/email desktop choices are60% width, centred; mobile remains full width.

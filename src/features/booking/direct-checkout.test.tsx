@@ -2527,7 +2527,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
     JSON.parse(sessionStorage.getItem("soccerbot-conflict-notice")!),
   ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
   expect(
-    screen.getByRole("link", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("link", { name: /^Enter Booking Details/ })[0],
   ).toHaveAttribute("href", "/book/details");
 
   // Completing the first navigation away clears the notice and its persisted
@@ -3971,9 +3971,9 @@ it("completed conflict allows immediate calendar Back and Continue with retained
           "12:00",
         );
       }
-      const link = screen.getByRole("link", {
+      const link = screen.getAllByRole("link", {
         name: destination === "details" ? /^Enter Booking Details/ : "Back",
-      });
+      })[0];
       expect(link.getAttribute("href")).toContain(`/book/${destination}`);
       navigation.replace.mockClear();
       navigation.path = `/book/${destination}/`;
@@ -4146,7 +4146,7 @@ async function expectRecoveryReleaseNavigation(
         return readStorage.call(this, key);
       });
     expect(
-      screen.getByRole("button", { name: /^Enter Booking Details/ }),
+      screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
     ).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Review replacement" }));
     await act(async () => {});
@@ -4248,7 +4248,9 @@ async function expectRecoveryReleaseNavigation(
   ]);
   if (checkReviewGuard)
     expect(
-      await screen.findByRole("link", { name: /^Enter Booking Details/ }),
+      (
+        await screen.findAllByRole("link", { name: /^Enter Booking Details/ })
+      )[0],
     ).toHaveAttribute("href", "/book/details");
   navigation.replace.mockClear();
   navigation.path = `/book/${destination}/`;

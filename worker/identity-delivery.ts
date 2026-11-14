@@ -89,7 +89,10 @@ export async function assertIdentityProofOpen(env: Env) {
 }
 // Bounded before parsing, and never includes request bodies or provider errors in logs.
 /** Read and validate the bounded identity request payload. */
-export async function inputBody(request: Request): Promise<unknown> {
+export async function inputBody(
+  request: Request,
+  maximumBytes = 4096,
+): Promise<unknown> {
   if (
     request.headers.get("content-type")?.split(";")[0].trim() !==
       "application/json" ||
@@ -108,7 +111,8 @@ export async function inputBody(request: Request): Promise<unknown> {
           const part = await reader.read();
           if (part.done) break;
           size += part.value.byteLength;
-          if (size > 4096) throw new ApiError(413, "verification_unavailable");
+          if (size > maximumBytes)
+            throw new ApiError(413, "verification_unavailable");
           text += decoder.decode(part.value, { stream: true });
         }
         return JSON.parse(text + decoder.decode()) as unknown;

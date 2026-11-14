@@ -42,7 +42,7 @@ export function emailDnsRequest(
 }
 /** Send the bounded identity-provider request with validated credentials. */
 export async function identityRequest(
-  kind: "bot" | "email" | "support",
+  kind: "bot" | "email" | "support" | "enquiry",
   secret: string,
   payload: Record<string, string>,
   signal: AbortSignal,
@@ -58,24 +58,32 @@ export async function identityRequest(
           secret,
           response: z.string().min(1).max(2048).parse(payload.token),
         })
-      : kind === "support"
+      : kind === "enquiry"
         ? JSON.stringify({
             from: identitySenderSchema.parse(payload.sender),
-            to: [CONTACT.email],
-            subject: "SoccerBotStudio booking help requested",
+            to: [CONTACT.email, "glenna@soccerbotsg.com"],
+            reply_to: z.email().max(254).parse(payload.replyTo),
+            subject: "SoccerBotStudio website enquiry",
             text: z.string().min(1).max(8192).parse(payload.text),
           })
-        : JSON.stringify({
-            from: identitySenderSchema.parse(payload.sender),
-            to: [z.email().max(254).parse(payload.recipient)],
-            subject: "Your SoccerBotStudio Singapore verification code",
-            text: `Your verification code is ${z
-              .string()
-              .regex(/^\d{6}$/)
-              .parse(
-                payload.code,
-              )}. It expires within 2 minutes. If you did not request this, ignore this email.`,
-          });
+        : kind === "support"
+          ? JSON.stringify({
+              from: identitySenderSchema.parse(payload.sender),
+              to: [CONTACT.email],
+              subject: "SoccerBotStudio booking help requested",
+              text: z.string().min(1).max(8192).parse(payload.text),
+            })
+          : JSON.stringify({
+              from: identitySenderSchema.parse(payload.sender),
+              to: [z.email().max(254).parse(payload.recipient)],
+              subject: "Your SoccerBotStudio Singapore verification code",
+              text: `Your verification code is ${z
+                .string()
+                .regex(/^\d{6}$/)
+                .parse(
+                  payload.code,
+                )}. It expires within 2 minutes. If you did not request this, ignore this email.`,
+            });
   const response = await fetch(url, {
     method: "POST",
     redirect: "manual",
@@ -88,9 +96,11 @@ export async function identityRequest(
             "Idempotency-Key": z
               .string()
               .regex(
-                kind === "support"
-                  ? /^booking-support\/[a-f0-9-]{36}$/
-                  : /^verification\/[a-f0-9-]{36}$/,
+                kind === "enquiry"
+                  ? /^enquiry\/[a-f0-9-]{36}$/
+                  : kind === "support"
+                    ? /^booking-support\/[a-f0-9-]{36}$/
+                    : /^verification\/[a-f0-9-]{36}$/,
               )
               .parse(payload.idempotencyKey),
           }

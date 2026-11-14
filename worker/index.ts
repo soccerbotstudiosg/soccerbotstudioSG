@@ -13,6 +13,7 @@ import { z } from "zod";
 import { emailSchema } from "../src/domain/contact";
 import { cachedEmailDomainStatus } from "./email-domain";
 import { requestBookingHelp } from "./booking-support";
+import { submitEnquiry } from "./enquiry";
 import { receiveHitpayWebhook } from "./hitpay-webhook";
 import { bookingReceipt } from "./receipt";
 import { webhookRoute } from "./webhook-contract";
@@ -204,6 +205,8 @@ export default {
           request.headers.get("origin") !== url.origin
         )
           throw new ApiError(403, "origin_denied");
+        if (url.pathname === "/api/enquiry")
+          return json(await submitEnquiry(request, env));
         // Empty durable window and disabled deployment default keep delivery closed.
         if (
           ["/api/identity/challenges", "/api/identity/verify"].includes(

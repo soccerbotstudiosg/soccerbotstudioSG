@@ -14,7 +14,10 @@ export function BookingPrimaryAction({
   className?: string;
   ready?: boolean;
 }) {
-  const [readiness, setReadiness] = useState({ ready, animate: false });
+  const [readiness, setReadiness] = useState({
+    ready,
+    animate: ready === true,
+  });
   if (readiness.ready !== ready)
     setReadiness({
       ready,

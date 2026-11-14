@@ -4,6 +4,7 @@ import { liveCustomerIdentity } from "./identity";
 import { demoCustomerIdentity } from "./demo/identity";
 import { demoBookingService } from "./demo/booking";
 import { demoIdentityService } from "./demo/identity";
+import { liveEnquiryService } from "./enquiry";
 import { demoEnquiryService } from "./demo/enquiry";
 const mode = process.env.NEXT_PUBLIC_BOOKING_MODE ?? "demo";
 if (mode !== "demo" && mode !== "live")
@@ -13,5 +14,5 @@ export const services = {
   identity: demoIdentityService,
   customerIdentity:
     mode === "live" ? liveCustomerIdentity : demoCustomerIdentity,
-  enquiry: demoEnquiryService,
+  enquiry: mode === "live" ? liveEnquiryService : demoEnquiryService,
 };

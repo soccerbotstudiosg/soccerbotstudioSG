@@ -231,9 +231,9 @@ test("live calendar removes selections rejected at checkout and retains contact 
     within(region).getByRole("button", { name: dateLabel("2027-01-07") }),
   ).toBeDisabled();
   expect(
-    screen.getByRole("link", {
+    screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toHaveAttribute("href", "/book/details");
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
     false,
@@ -558,9 +558,9 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
   expect(availability).not.toHaveBeenCalled();
   expect(publicCalendar).toHaveBeenCalledTimes(1);
   expect(
-    screen.getByRole("link", {
+    screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toHaveAttribute("href", "/book/details");
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
     false,
@@ -749,9 +749,9 @@ test("Details opens local Review without waiting for unavailable providers", asy
   await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole("button", { name: "Choose test session" }));
   expect(
-    screen.getByRole("link", {
+    screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-    }),
+    })[0],
   ).toHaveAttribute("href", "/book/details");
   expect(availability).not.toHaveBeenCalled();
   view.rerender(tree("details"));
@@ -1931,7 +1931,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     within(region).getByRole("button", { name: dateLabel(slot.date) });
   expect(day()).toBeEnabled();
   expect(
-    screen.getByRole("link", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("link", { name: /^Enter Booking Details/ })[0],
   ).toBeInTheDocument();
   expect(JSON.parse(screen.getByTestId("strict-cache").textContent!)).toEqual({
     entry: true,
@@ -1950,7 +1950,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     displayOffers: false,
   });
   expect(
-    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
   ).toBeDisabled();
   expect(
     screen.getByRole("group", { name: "Session times" }),
@@ -1973,7 +1973,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     displayOffers: false,
   });
   expect(
-    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
   ).toBeDisabled();
   expect(checkout).not.toHaveBeenCalled();
   for (let tick = 0; tick < 2; tick += 1) {
@@ -1985,7 +1985,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     ).toBeInTheDocument();
     expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
     expect(
-      screen.getByRole("button", { name: /^Enter Booking Details/ }),
+      screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
     ).toBeDisabled();
   }
   await act(async () =>
@@ -2021,7 +2021,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   ).toBeInTheDocument();
   expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
   expect(
-    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
   ).toBeDisabled();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(500);
@@ -2037,7 +2037,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   fireEvent.click(within(region).getByRole("button", { name: "Try again" }));
   expect(screen.queryByText("Unable to Load.")).toBeNull();
   expect(
-    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
   ).toBeDisabled();
   await act(async () => pending[3].resolve(snapshot()));
   expect(day()).toBeEnabled();
@@ -2049,7 +2049,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     displayOffers: false,
   });
   expect(
-    screen.getByRole("link", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("link", { name: /^Enter Booking Details/ })[0],
   ).toBeInTheDocument();
   expect(checkout).not.toHaveBeenCalled();
   await act(async () => {
@@ -2068,7 +2068,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   expect(screen.queryByRole("group", { name: "Session times" })).toBeNull();
   expect(day()).toBeDisabled();
   expect(
-    screen.getByRole("button", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
   ).toBeDisabled();
   expect(checkout).not.toHaveBeenCalled();
 });
