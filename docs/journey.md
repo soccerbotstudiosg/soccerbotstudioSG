@@ -6429,3 +6429,17 @@ The production static build also passed for this local candidate. Publication an
 Owner authorized staging and merge of the local presentation slice, followed by their major edge-case round. Refresh found PR75 already merged as55ea55d, with upstream0050 verifier and trusted sender repairs. Reconciled the preserved local candidate onto that current main; its tree matches the inspected upstream PR75 head before our presentation delta. New follow-up PR is required because PR75 is closed. The earlier leave-unmerged instruction is superseded for this requested slice; no live provider effects are included.
 
 Reconciled local verification at5f8770f:372 tests across33 files passed with the strict unit identity/file/zero-skip/retry receipt. Source/policy, formatting and diff checks passed. Retain the earlier timeout as unresolved historical evidence; no test limits or assertions changed.
+
+### 2026-11-14 — Enquiry copy and header refinements authorized for release
+
+Owner queued removal of the enquiry requirements red helper, three grey type/date/time hints and grey introduction; Home label, heading punctuation, enquiry Home/Send shapes, flag corners and alternate header action typography. They then authorized pushing CI, staging and merging this follow-up. Implemented in existing enquiry and CSS owners, retaining required/invalid semantics, immediate compulsory red borders, optional-field neutrality, submission guards and the ten-second acknowledgement. Removed obsolete aria-description references and hint values. Existing tests cover the updated copy, validation and visual contracts; no inventory or runtime/provider change.
+
+This follows PR77 merged as8f89f89 after all gates and actual staging; its independent main verification was still running at preparation. No physical/provider acceptance is claimed. A local review caught and removed a duplicate normal font-style declaration before publication; header links now use the intended existing900 italic face.
+
+Pre-publication validation also rejected an obsolete field-hint CSS owner after hint removal and unsupported Testing Library role-query exact options. Removed the unused owner and used anchored accessible-name matchers; required assertions and validation remain intact.
+
+Final focused verification: six enquiry/phone cases, TypeScript, ESLint, source/policy, formatting and diff checks passed after cleanup. Browser shape/font/rendering assertions remain for exact-head CI; no assistant browser execution or real enquiry send.
+
+The booking-choice “or” uses the same Roboto 900 italic font and body size as its action labels. Guest and envelope icons appear inside their respective buttons in inherited white, with the existing trailing chevrons retained; decorative icons do not alter accessible names or navigation.
+
+Booking-entry follow-up verification: 22 focused account-step/account-lifecycle cases pass, alongside type checking, affected-file lint, source/policy and diff checks. The existing customer-browser presentation case now checks divider typography and white decorative icons; CI owns execution. No test identities or inventories changed.

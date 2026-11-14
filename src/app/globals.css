@@ -345,7 +345,8 @@
   .button,
   .button.secondary,
   .dialog-actions .button,
-  .confirmation-actions .button {
+  .confirmation-actions .button,
+  .access-choice-divider {
     font-size: var(--text-body);
     font-weight: var(--weight-heading);
     font-style: normal;
@@ -354,7 +355,8 @@
     text-transform: none;
   }
   .booking-primary-action > .button,
-  .button.booking-entry-action {
+  .button.booking-entry-action,
+  .access-choice-divider {
     font-weight: var(--weight-display);
     font-style: italic;
   }
@@ -366,11 +368,12 @@
     align-self: center;
     margin: 0 8px 0 0;
     object-fit: contain;
+    border-radius: var(--radius-booking-control);
   }
   .nav-links > a {
     font-size: var(--text-label);
-    font-weight: var(--weight-heading);
-    font-style: normal;
+    font-weight: var(--weight-display);
+    font-style: italic;
     line-height: var(--leading-control);
     letter-spacing: 0;
     text-transform: none;
@@ -434,6 +437,8 @@
   }
   .booking-shell
     .button:not(.account-actions .button):not(.profile-actions .button),
+  .enquiry-page .button,
+  .enquiry-page .back,
   .booking-shell .back,
   .payment-shell .back,
   .payment-shell .button,
@@ -3730,13 +3735,6 @@
   .field select[aria-invalid="true"],
   .field textarea[aria-invalid="true"] {
     border-color: var(--color-danger);
-  }
-  .field-hint {
-    font-weight: 400;
-    margin-top: 6px;
-    color: var(--color-hint);
-    font-size: var(--text-label);
-    line-height: 1.45;
   }
   .phone-field {
     position: relative;
