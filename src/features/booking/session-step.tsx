@@ -174,9 +174,12 @@ function SessionPresentation({
     <>
       <h2 className="section-title">Select your session</h2>
       <div className="session-products">
-        <section className="surface session-product" aria-label={serviceName}>
+        <section
+          className="surface session-product booking-entry-action"
+          aria-label={serviceName}
+        >
           <button
-            className="session-product-choice booking-entry-action"
+            className="session-product-choice"
             aria-label={`Choose ${serviceName}`}
             aria-pressed={expanded}
             aria-expanded={expanded}

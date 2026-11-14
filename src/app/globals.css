@@ -2903,7 +2903,10 @@
   @media (hover: hover) {
     :is(.outlet-option, .time):not(:disabled):not([aria-disabled="true"]):not(
         .selected
-      ):not([aria-pressed="true"]):not([aria-expanded="true"]):hover {
+      ):not([aria-pressed="true"]):not([aria-expanded="true"]):hover,
+    .session-product:has(
+        > .session-product-choice[aria-pressed="false"]
+      ):hover {
       border-color: var(--color-identity);
       background: color-mix(
         in srgb,
