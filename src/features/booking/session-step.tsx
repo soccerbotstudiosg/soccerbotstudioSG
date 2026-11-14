@@ -185,10 +185,10 @@ function SessionPresentation({
             aria-expanded={expanded}
             onClick={toggle}
           >
-            <span className="session-product-icon">
-              <Icon name="ball" />
-            </span>
             <span className="session-product-details">
+              <span className="session-product-icon">
+                <Icon name="ball" />
+              </span>
               <span className="session-product-name">{serviceName}</span>
               <span className="session-product-meta">
                 40 minutes · 1–{MAX_PLAYERS} players

@@ -1056,9 +1056,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     });
   const expectedCardWidth = cardWidths.mobile
     ? cardWidths.grid
-    : cardWidths.medium
-      ? (cardWidths.grid - cardWidths.gap) / 2
-      : (cardWidths.grid - 2 * cardWidths.gap) / 3;
+    : (cardWidths.grid - cardWidths.gap) / 2;
   expect(Math.abs(cardWidths.card - expectedCardWidth)).toBeLessThanOrEqual(1);
   const outletWidth = await page
     .locator(".outlet-option")
