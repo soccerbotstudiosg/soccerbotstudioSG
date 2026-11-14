@@ -173,6 +173,7 @@ function fixture() {
     assets: { directory: "./assets" },
     vars: {
       SOURCE_REVISION: revision,
+      IDENTITY_SENDER: "SoccerBotStudioSG Dev <noreply@auth.app404.ai>",
       ENVIRONMENT: "developer",
       CAMPAIGN_END_MS: "0",
       PROVIDER_ACCESS: "disabled",

@@ -2,25 +2,19 @@
 
 ## Active outcome
 
-Consolidate the owner's latest presentation changes locally on PR75's branch; do not push, stage, merge or release. Whole-control mobile focus, consistent required enquiry outlines, Home acknowledgement for ten seconds and the Open Graph slogan “Performance · Experience · Production” are implemented locally. Preserve the existing PR75 repairs and migration-coverage blocker below. PR76 remains closed.
+Publish, stage and merge the owner's four presentation changes, then hand over the deployed revision for an owner-run major edge-case round. The owner explicitly authorized staging and merge on14November2026 after local consolidation; the planned manual round follows release. No live provider operations or notification sends are authorized for the assistant.
 
 ## Current scope
 
-PR75 includes branded Open Graph/domain configuration, compact navy mobile popup, booking button typography/shapes/motion, navy selected cards, faded unavailable dates, confirmation spacing/copy controls and balanced recovery notices. Entry choices share one panel and are narrower only on desktop. Required booking fields show initial guidance; untouched optional saved-contact fields do not. Calendar continuation shares the existing action. Loading labels identify security, code, email, save and enquiry work. Confirmation without usable identity returns Home; valid confirmation survives idle and optional invoice failures.
+Whole-control mobile focus; consistent red borders for invalid required enquiry fields; successful enquiry replaces the route with Home and shows a thin ten-second banner; Open Graph artwork, description and alt use “Performance · Experience · Production”. Preview remains explicitly no-send. Failure input/retry identity and server delivery contracts remain unchanged.
 
-Enquiry delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com with customer Reply-To, background Turnstile, bounded waiting and durable duplicate-send protection. Migration0050 and the explicit existing staging sender accompany it. GA/GSC, Grafana, major-module refactoring and the older local blue Request Help acknowledgement remain excluded. SimplyBook hiding was not applied.
+## Verification and next action
 
-## Verification and immediate next action
+Working branch `fix/enquiry-presentation` incorporates merged PR75/main `55ea55d720464243e505c7f62d8c08dbe44eefa0`, including the migration0050 release-verifier and trusted staging-sender repairs. These repairs were completed upstream while the presentation slice was local; retain their original evidence in Journey/PR75.
 
-As of 14 November 2026 (Singapore), the workspace is reconciled to client repository `soccerbotstudiosg/soccerbotstudioSG`, PR75 branch `feat/opengraph-custom-domain`, head `0fba6871878d88c3543fb148123629f2a2186e38`. Main is `16a87d0a9bda3d7acb936bd3cc2de4336e37d989` (merged PR74). AGENTS and all six repository skills are loaded; the retired developer repository remains available through the local `legacy` remote.
+Six focused enquiry/phone cases, TypeScript, lint, source/policy, formatting, production build and export passed locally. The prior full suite recorded371 passes and one unchanged recovery case timing out at5000ms; that case passed alone. First failure retained; no timeout/assertion/runner changes. New candidate requires exact-head CI and actual staging health/settings before the authorized merge, then independent main verification/deployment. Owner physical/provider acceptance remains separate.
 
-[Exact-head run 43596743966](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/43596743966) completed: frontend, all three Worker groups, Worker aggregation and all four backend/live-email browser shards passed. Both final release-packaging gates failed at `scripts/check-developer-release.mjs:743`: “Every packaged migration must be exercised.” The exercised set stops at `0049_booking_support_reports.sql`, while the artifact includes `0050_enquiry_requests.sql`. The earlier geometry correction passed its browser jobs; the current blocker is migration exercise coverage, not that earlier assertion. Exact-head staging is not established.
-
-**Next action:** repair the existing release-check owner to exercise migration0050 and its enquiry-state constraints while retaining prior-state preservation and the strict complete-migration guard. Review dependent release fixtures/receipts and run meaningful isolated checks before consolidating the repair on PR75. Then require fresh exact-head CI and actual staging health/settings under the applicable authorization. Leave PR75 unmerged; do not reopen PR76 or release production.
-
-The subsequent owner-requested local presentation slice changes frontend styles, enquiry acknowledgement/navigation, social artwork/metadata and affected tests. Migration, dependency pins, Worker behavior and workflows remain unchanged. All local changes remain unpublished; consolidate before any future CI. Historical application verification and original failures remain in [Journey](docs/journey.md). Browser execution belongs to owner/CI; no live enquiries or provider mutations were performed.
-
-Local verification: six focused enquiry/phone tests pass, including exact ten-second expiry; types, lint, production static build, formatting and source/policy checks pass. The full suite recorded371 passes and one unchanged `direct-checkout` recovery test timing out at its existing five-second limit. That test passed in isolation; the first failure is retained and its full-suite timing cause remains unresolved. No timeout, assertion or runner setting changed. Browser visual acceptance and fresh CI remain pending.
+Next: validate the reconciled delta, publish the follow-up PR, verify required exact-head checks and actual staging, then merge and verify the release. Do not reopen PR76. Record final run/revision receipts in the PR without status-only commit loops.
 
 ## Remaining owner acceptance
 
