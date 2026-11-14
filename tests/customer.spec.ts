@@ -1402,17 +1402,24 @@ test("first visit offers the Player App with only store links and dismissal pers
   });
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     "content",
-    "SOCCERBOTSTUDIO Singapore | Interactive Football",
+    "SOCCERBOTSTUDIO Singapore | Interactive Football Experience",
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    new URL(sitePath("/assets/09c58bd19cf8.jpg"), "https://soccerbotsg.com")
+    new URL(sitePath("/assets/91d938ee515c.jpg"), "https://soccerbotsg.com")
       .href,
   );
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
     "content",
     "summary_large_image",
   );
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+    "content",
+    "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Play, compete and sharpen your skills in a 360° football arena.",
+  );
+  await expect(
+    page.locator('link[rel="icon"][type="image/svg+xml"]'),
+  ).toHaveAttribute("href", sitePath("/favicon.svg"));
   await expect(prompt).toBeVisible();
   await expect(prompt.locator("p")).toHaveCount(0);
   await expect(prompt.getByRole("link")).toHaveCount(3);

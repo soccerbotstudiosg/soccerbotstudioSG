@@ -3,13 +3,14 @@ import { BookingProvider } from "@/features/booking/provider";
 import { BookingNavigation } from "@/components/booking-navigation";
 import { SiteShell } from "@/components/site-shell";
 import { sitePath } from "@/content/site-path";
-import { studioMedia } from "@/content/media";
+import { homeMedia } from "@/content/media";
 import productionTarget from "../../deployment/production.json";
 import "./globals.css";
-const shareTitle = "SOCCERBOTSTUDIO Singapore | Interactive Football";
+const shareTitle =
+  "SOCCERBOTSTUDIO Singapore | Interactive Football Experience";
 const shareDescription =
-  "Experience interactive football at Apex @ Henderson. Book a 40-minute session for up to four players, with Single, Team and Battle play and instructor guidance.";
-const shareImage = studioMedia[1];
+  "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Play, compete and sharpen your skills in a 360° football arena.";
+const shareImage = homeMedia.studio;
 export const metadata: Metadata = {
   metadataBase: new URL(productionTarget.origin),
   openGraph: {
@@ -37,9 +38,14 @@ export const metadata: Metadata = {
     default: "Book Now | SOCCERBOTSTUDIO Singapore",
     template: "%s | SOCCERBOTSTUDIO Singapore",
   },
-  description:
-    "Book the Kickoff Special: 40 minutes for up to four players, with Single, Team and Battle play and instructor guidance.",
-  icons: { icon: sitePath("/favicon.svg") },
+  description: shareDescription,
+  icons: {
+    icon: {
+      url: sitePath("/favicon.svg"),
+      type: "image/svg+xml",
+      sizes: "any",
+    },
+  },
   robots: { index: false, follow: false },
 };
 export const viewport: Viewport = { themeColor: "#050a2f" };
