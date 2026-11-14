@@ -128,6 +128,72 @@ test("SaaS target seals its dedicated zone and routes all assets through the ori
     assert.throws(() => validateTarget({ ...saas, ...patch }));
   assert.throws(() => validateTarget({ ...staging, saasZone: saas.saasZone }));
 });
+test("native custom domains seal their zone and retain the existing Worker resources", () => {
+  const target = {
+    ...production,
+    pagesProject: "",
+    customDomain: { zoneId: "c".repeat(32), zoneName: "example.com" },
+  };
+  assert.deepEqual(validateTarget(target), target);
+  const config = targetConfig(
+    {
+      d1_databases: [{ binding: "STATE" }],
+      vars: {},
+      assets: { binding: "ASSETS" },
+    },
+    target,
+  );
+  assert.deepEqual(config.routes, [
+    {
+      pattern: "booking.example.com",
+      zone_id: target.customDomain.zoneId,
+      custom_domain: true,
+    },
+  ]);
+  assert.equal(config.workers_dev, false);
+  assert.equal(config.preview_urls, false);
+  assert.equal(config.assets.run_worker_first, true);
+  assert.equal(config.name, target.workerName);
+  assert.equal(config.account_id, target.accountId);
+  assert.equal(config.d1_databases[0].database_id, target.databaseId);
+  assert.equal(config.vars.COORDINATOR_NAME, target.coordinatorName);
+  assert.equal(config.vars.APP_ORIGIN, target.origin);
+  assert.notEqual(
+    targetDigest(target),
+    targetDigest({
+      ...target,
+      customDomain: { ...target.customDomain, zoneId: "d".repeat(32) },
+    }),
+  );
+  assert.equal(
+    validateTarget({ ...target, origin: "https://example.com" }).origin,
+    "https://example.com",
+  );
+  for (const patch of [
+    { pagesProject: "client-entry" },
+    {
+      saasZone: {
+        id: "d".repeat(32),
+        name: "hosting.example.com",
+        fallbackOrigin: "fallback.hosting.example.com",
+      },
+    },
+    { origin: "https://example.com.attacker.invalid" },
+    { origin: "https://*.example.com" },
+    { origin: "https://booking..example.com" },
+    { origin: "https://-booking.example.com" },
+    { origin: "https://booking-.example.com" },
+    { origin: `https://${"a".repeat(64)}.example.com` },
+    { origin: "https://booking.example.com:444" },
+    { customDomain: { ...target.customDomain, zoneId: "invalid" } },
+    { customDomain: { ...target.customDomain, zoneName: "*.example.com" } },
+    { customDomain: { ...target.customDomain, apiToken: "forbidden" } },
+  ])
+    assert.throws(() => validateTarget({ ...target, ...patch }));
+  assert.throws(() =>
+    validateTarget({ ...staging, customDomain: target.customDomain }),
+  );
+});
 const revision = "a".repeat(40);
 const run = {
   id: 42,
@@ -445,7 +511,11 @@ test("target workflows isolate PR credentials and deploy through trusted main af
 });
 
 test("closed client Workers.dev entry preserves the existing database and first-use placement", () => {
-  const client = loadTarget("production");
+  const client = {
+    ...loadTarget("production"),
+    customDomain: null,
+    origin: "https://soccerbot-production.lucky-poetry-b25e.workers.dev",
+  };
   assert.equal(client.databaseId, "e2a21801-0107-4db5-8551-ca1ff338df53");
   assert.equal(client.coordinatorName, "simplybook-production-account");
   assert.equal(client.coordinatorLocationHint, "apac-ne");

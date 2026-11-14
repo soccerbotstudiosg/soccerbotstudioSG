@@ -62,6 +62,14 @@ export function validateDeployment(directory, revision, target = null) {
         { pattern: "*/*", zone_id: target.saasZone.id },
       ]);
       assert.equal(config.assets.run_worker_first, true);
+    } else if (target.customDomain) {
+      assert.deepEqual(config.routes, [
+        {
+          pattern: new URL(target.origin).hostname,
+          zone_id: target.customDomain.zoneId,
+          custom_domain: true,
+        },
+      ]);
     } else assert.equal(config.routes, undefined);
     assert.equal(config.vars.ENVIRONMENT, target.environment);
     if (target.target === "production")
@@ -232,6 +240,60 @@ export function verifySaasResources(
       "SaaS Worker route missing after deployment",
     );
 }
+/** Reject foreign zones and another Worker's native domain before deployment. */
+export function verifyCustomDomainResources(
+  target,
+  { zone, domains },
+  deployed = false,
+) {
+  assert.ok(target.customDomain);
+  assert.equal(zone.id, target.customDomain.zoneId);
+  assert.equal(zone.name, target.customDomain.zoneName);
+  assert.equal(zone.account.id, target.accountId);
+  assert.equal(zone.status, "active");
+  assert.equal(zone.paused, false);
+  const matching = domains.filter(
+    (domain) => domain.hostname === new URL(target.origin).hostname,
+  );
+  assert.ok(matching.length <= 1, "Custom domain has competing registrations");
+  for (const domain of matching) {
+    assert.equal(domain.zone_id, target.customDomain.zoneId);
+    assert.equal(
+      domain.service,
+      target.workerName,
+      "Do not replace another Worker's custom domain",
+    );
+    assert.equal(domain.environment, "production");
+  }
+  if (deployed)
+    assert.equal(matching.length, 1, "Custom domain missing after deployment");
+}
+/** Read native domain ownership without creating routes or changing DNS. */
+async function readCustomDomainResources(target) {
+  const get = async (resource) => {
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/${resource}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+        },
+        redirect: "error",
+        signal: AbortSignal.timeout(15000),
+      },
+    );
+    assert.equal(response.status, 200, "Custom domain resource read failed");
+    const result = await response.json();
+    assert.equal(result.success, true);
+    if (result.result_info?.total_pages)
+      assert.ok(result.result_info.total_pages <= 1);
+    return result.result;
+  };
+  const [zone, domains] = await Promise.all([
+    get(`zones/${target.customDomain.zoneId}`),
+    get(`accounts/${target.accountId}/workers/domains`),
+  ]);
+  return { zone, domains };
+}
 /** Read the declared SaaS resources without changing DNS or custom hostnames. */
 async function readSaasResources(target) {
   const get = async (suffix) => {
@@ -342,6 +404,11 @@ async function deploy() {
   if (target) {
     if (target.saasZone)
       verifySaasResources(target, await readSaasResources(target));
+    if (target.customDomain)
+      verifyCustomDomainResources(
+        target,
+        await readCustomDomainResources(target),
+      );
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${target.accountId}/d1/database/${target.databaseId}`,
       {
@@ -426,6 +493,12 @@ async function deploy() {
   checkpoint("worker-uploaded");
   if (target?.saasZone)
     verifySaasResources(target, await readSaasResources(target), true);
+  if (target?.customDomain)
+    verifyCustomDomainResources(
+      target,
+      await readCustomDomainResources(target),
+      true,
+    );
   if (target?.pagesProject) {
     execFileSync(
       process.execPath,

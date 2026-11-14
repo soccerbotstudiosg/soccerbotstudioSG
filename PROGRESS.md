@@ -2,24 +2,17 @@
 
 ## Active outcome
 
-Repair the retest findings against merged PR73 (`ed89d568879cc7f37b775cc0ecd467c8559d29cf`): confirmation layout and navigation after an uncertain second checkout. Owner authorizes independent ultra-agent audits, two final audits before publication, CI, staging and merge. Enquiry changes remain deferred; no provider mutations or cleanup.
+Prepare Open Graph/Twitter link previews and preserve the already connected soccerbotsg.com domain through future production releases. Owner authorizes this separate PR and CI/staging; the owner will merge it. Do not merge or enable auto-merge.
 
 ## Current slice
 
-- Align the confirmation copy icon with View Full Details at the top right; align the original-sized Paid badge with Order Summary and reduce the gap to its session content. Preserve the three-second Copied popup.
-- Prevent unresolved pre-checkout recovery from admitting the customer to an unusable Review screen. Keep its existing inline notice on Calendar, preserve the original attempt and duplicate-write protection, and test back/forward/direct navigation.
-- Before any checkout link exists, continue fresh background availability recovery after creation timeout and restore available sessions smoothly. Preserve the unknown financial attempt until authoritative resolution; existing-link expiry/payment recovery stays unchanged.
-- Distinguish the provider timeout from the UI defect. Do not release an unknown booking write without authoritative proof or add unwanted error pages.
+- Add public studio title, description and existing arena photo to static social metadata, using the reviewed production origin. Preserve existing robots/noindex and booking behavior; GA/GSC are deferred.
+- Add native same-account custom-domain target support, ownership preflight, sealed-route validation and post-deploy registration checks. Preserve original Worker, D1/coordinator and sandbox pairing. The current production domain was configured externally and owner-accepted through a complete payment and confirmation.
+- Keep selection/card/calendar/mobile-popup work in a separate follow-up PR. The older Request Help acknowledgement and local reset note remain unpublished.
 
-## Evidence and delivery
+## Evidence and remaining checks
 
-PR73 passed all17 checks in verification43406913990; staging43408534524 deployed its exact head and passed health/settings. It merged as `ed89d568879cc7f37b775cc0ecd467c8559d29cf`. Current production Worker settings now confirm that source revision.
-
-Read-only D1 and Cloudflare logs confirm the second booking used a distinct attempt and its SimplyBook `book` call timed out at15000ms. Checkout handling took15462ms; no HitPay call started. The booking write remains genuinely uncertain without a returned provider reference. The large retest ZIP is intact but its HAR member is truncated; its recoverable first checkout succeeded in5.24seconds and it lacks the second creation request. The later small capture confirms the unresolved state and subsequent availability cooldown. Existing provider draft updates forcibly reset acceptance while navigation still admits Review, explaining the newly reported checkbox failure. The confirmation layout, compact Calendar help notice, creation-recovery navigation and earlier-step Calendar notice repairs are implemented. The owner selected the recommended policy: retain the unknown financial lock until authoritative resolution; implement only fresh-positive before-link slot display restoration, without a new physical checkout or automatic release. The display change is implemented and focused tests pass. All361 local tests across33 files pass; TypeScript, targeted ESLint and source/policy guards pass. The new regression fails on the original review-admission defect and passes with the narrow creation-recovery guard. The64 navigation/notice/copy cases and two final display/expiry cases pass. Both independent reviews found no remaining source defect; the display delta received incremental review. One unchanged saved-details test hit its5-second timeout during the first final suite with concurrent lint; the same case passed alone and the complete361-case suite then passed with no other heavy process. Its receipt is retained; no timeout or test assertion was weakened. Exact-head CI/staging/merge remain pending; no new PR published yet.
-
-## Remaining targeted acceptance
-
-Check confirmation copy/details alignment and compact Order Summary spacing on desktop/mobile. Exercise first paid confirmation followed by a second booking, normal successful Review consent, unresolved creation followed by Calendar/back/forward/Review attempts, and retained-attempt recovery with no duplicate writes. Browser execution belongs to owner/CI; source tests do not establish provider or physical acceptance. Existing four-hour cutoff acceptance remains outside this repair.
+Native target10/10, deploy12/12 and foundation4/4 local tests passed, plus source/lint/format checks. Existing browser coverage checks social metadata; CI browser execution and exact-head staging remain pending. No live merchant activation or data cleanup. Before a later production release, its deployment credential must support zone/domain reads and custom-domain routing; current runtime success does not prove CI-token permissions. No merger is performed by the assistant.
 
 ## Ordered work after this slice
 
@@ -42,4 +35,4 @@ The queue is recorded now, before the full documentation reconciliation. These a
 
 ## Next action
 
-Publish the consolidated reviewed candidate, require exact-head CI and successful staging health/settings, then merge under the owner’s instruction. Preserve the local reset note unpublished. Physical acceptance remains separate.
+Publish through LimYouSheng, verify exact-head CI and actual staging health/settings, and leave the PR open for owner merge. Prepare visual follow-up separately with its dependency disclosed.

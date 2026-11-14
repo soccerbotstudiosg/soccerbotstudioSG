@@ -1400,6 +1400,19 @@ test("first visit offers the Player App with only store links and dismissal pers
   const prompt = page.getByRole("dialog", {
     name: "Download The Official Soccerbot360 Player App Now.",
   });
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+    "content",
+    "SOCCERBOTSTUDIO Singapore | Interactive Football",
+  );
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    new URL(sitePath("/assets/09c58bd19cf8.jpg"), "https://soccerbotsg.com")
+      .href,
+  );
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
+    "content",
+    "summary_large_image",
+  );
   await expect(prompt).toBeVisible();
   await expect(prompt.locator("p")).toHaveCount(0);
   await expect(prompt.getByRole("link")).toHaveCount(3);
