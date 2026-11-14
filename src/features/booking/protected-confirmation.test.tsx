@@ -389,7 +389,11 @@ it("booking restoration does not restart a protected confirmation read", async (
   const fetch = vi.fn((url: string) =>
     Promise.resolve(
       url.endsWith("/confirmation")
-        ? Response.json({ status: "confirmed", reason: "verified" })
+        ? Response.json({
+            status: "confirmed",
+            reason: "verified",
+            customerConfirmation: receiptFixture(),
+          })
         : new Response(null, { status: 503 }),
     ),
   );
@@ -435,7 +439,11 @@ it("failed booking restoration does not block independent protected confirmation
   const fetch = vi.fn((url: string) =>
     Promise.resolve(
       url.endsWith("/confirmation")
-        ? Response.json({ status: "confirmed", reason: "verified" })
+        ? Response.json({
+            status: "confirmed",
+            reason: "verified",
+            customerConfirmation: receiptFixture(),
+          })
         : new Response(null, { status: 503 }),
     ),
   );
@@ -1812,11 +1820,8 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   await act(async () => {
     await vi.advanceTimersByTimeAsync(5000);
   });
-  expect(
-    screen.getByText(
-      "Contact the studio to view this booking. Don’t pay again.",
-    ),
-  ).toBeVisible();
+  expect(navigation.replace).toHaveBeenCalledWith("/");
+  expect(screen.queryByText("Confirmation unavailable")).toBeNull();
   const deniedReads = fetcher.mock.calls.length;
   await act(async () => {
     await vi.advanceTimersByTimeAsync(60000);
@@ -2964,4 +2969,67 @@ it("completed return recovery remains bounded while checkout context is still re
     sessionStorage.clear();
     localStorage.clear();
   }
+});
+
+it("invalid confirmation links go home without protected requests or storage changes", async () => {
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
+  for (const attemptId of ["", "not-an-attempt"]) {
+    navigation.replace.mockReset();
+    sessionStorage.setItem("retained-financial-lock", "keep");
+    const page = render(
+      <ProtectedConfirmation
+        attemptId={attemptId}
+        checkoutMode="live"
+        confirmationRoute
+      />,
+    );
+    await act(async () => {});
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(page.container).toBeEmptyDOMElement();
+    expect(sessionStorage.getItem("retained-financial-lock")).toBe("keep");
+    page.unmount();
+  }
+});
+it("failed confirmation recovery handoff goes home after its budget without releasing the attempt", async () => {
+  vi.useFakeTimers();
+  navigation.replace.mockReset();
+  const fetcher = vi.fn<
+    (url: string, options?: RequestInit) => Promise<Response>
+  >(async () => new Response(null, { status: 503 }));
+  vi.stubGlobal("fetch", fetcher);
+  const handoff = vi.fn(() => false);
+  const expired = vi.fn();
+  const restart = vi.fn();
+  render(
+    <BookingLoadingProvider>
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        confirmationRoute
+        onAwaitingExpiry={handoff}
+        onExpired={expired}
+        onRestart={restart}
+      />
+    </BookingLoadingProvider>,
+  );
+  await act(async () => {});
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(29999);
+  });
+  expect(navigation.replace).not.toHaveBeenCalled();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(handoff).toHaveBeenCalledExactlyOnceWith(first, true);
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+  expect(expired).not.toHaveBeenCalled();
+  expect(restart).not.toHaveBeenCalled();
+  expect(
+    fetcher.mock.calls.every(
+      ([, options]) => !options?.method || options.method === "GET",
+    ),
+  ).toBe(true);
+  expect(screen.queryByText("Confirmation unavailable")).toBeNull();
 });

@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { Icon } from "./icon";
 
 const isBookingFlow = (pathname: string) =>
-  /^\/(?:book(?:\/|$)|confirmation(?:\/|$)|experiment(?:\/|$))/.test(pathname);
+  /^\/(?:book(?:\/|$)|confirmation(?:\/|$))/.test(pathname);
 
 /** Stage offscreen sections before a single entrance while preserving accessible interaction. */
 export function SectionReveals() {

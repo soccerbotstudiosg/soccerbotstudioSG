@@ -614,7 +614,7 @@ On Calendar only, the unresolved notice uses a compact row: message on the left,
 
 Request Help sends a fixed-recipient staff report to contact@soccerbotsg.com using retained contact/attempt details. Its pending spinner prevents duplicate clicks; success is shown only after acceptance by the mail provider, with retry feedback for failure. No report-content explanation is shown in the customer notice. One idempotent report is retained per attempt. This candidate has synthetic mail evidence only, not live delivery acceptance.
 
-The confirmed-booking copy control is an icon-only button at the top right of the confirmation card, aligned with View Full Details and outside its disclosure toggle. Paid keeps its original size and aligns directly with Order Summary. Removing the copy/status stack and the first session’s extra top padding brings the session content closer to that heading. It keeps the accessible name “Copy booking confirmation” and copies the formatted booking message. Successful copying shows a small “Copied” popup for3 seconds without moving the badge or summary; another successful copy restarts that interval. Pending/preview states never expose this paid-message action. Clipboard failure shows “Couldn’t copy. Try again.” instead of success. Leaving the confirmed booking clears the popup/timer and ignores late clipboard replies.
+The confirmed-booking copy control is an icon-only button at the top right of the confirmation card, aligned with View Full Details and outside its disclosure toggle. Paid uses the compact status badge and aligns directly with Order Summary. Removing the copy/status stack and the first session’s extra top padding brings the session content closer to that heading. It keeps the accessible name “Copy booking confirmation” and copies the formatted booking message. Successful copying shows a small “Copied” popup for3 seconds without moving the badge or summary; another successful copy restarts that interval. Pending/preview states never expose this paid-message action. Clipboard failure shows “Couldn’t copy. Try again.” instead of success. Leaving the confirmed booking clears the popup/timer and ignores late clipboard replies.
 
 ### 14 November presentation refinement
 
@@ -625,3 +625,9 @@ Social metadata uses one branded logo-and-arena image and studio-wide wording ac
 ### Compact Player App prompt
 
 The Player App popup uses the main-header navy with white text/icons. On phones it has a compact single-line “Get the Soccerbot360 Player App” heading and three equal-width store links in one row, with icons above labels. Close remains44px; link destinations, dismissal persistence and modal focus behavior are unchanged. Browser/mobile visual acceptance remains pending because the owner reports exhausted GitHub Actions minutes on the private repository.
+
+### Ultimate confirmation exits
+
+Missing or malformed attempt IDs return Home before protected reads. Live access denial returns Home without displaying protected details. A creation-recovery timeout still offers its existing Calendar handoff first; if that handoff cannot accept the attempt, return Home instead of leaving a permanent loader. Other terminal live confirmation fallbacks return Home. These exits do not reset the draft, clear financial locks, dismiss/cancel an attempt, declare payment failed or stop server reconciliation. Valid accessible attempts retain the existing continuation, Calendar recovery and bounded post-payment Pending document.
+
+The exported Experiment route and its preview entry link are removed. Isolated synthetic provider fixtures remain test-only; they are not a customer page. Popup responsive dimensions belong to its component CSS without competing Tailwind padding/width/alignment utilities.

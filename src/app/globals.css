@@ -3238,10 +3238,13 @@
     margin-top: 0;
   }
   .player-app-dialog {
+    max-width: 42rem;
+    padding: 24px;
     background: var(--color-navy);
     color: var(--color-surface);
   }
   .player-app-header {
+    align-items: flex-start;
     margin-bottom: 20px;
   }
   .player-app-dialog::backdrop {

@@ -37,6 +37,10 @@ The queue is recorded now, before the full documentation reconciliation. These a
 
 Include the compact phone Player App popup with navy background, white text/icons and three links in one row. CI startup failure is owner-confirmed as exhausted Actions minutes after making the repository private. Do not merge or claim new staging until CI resumes and passes.
 
+## Approved fallback and popup repair
+
+Remove the exported Experiment page/entry, route invalid or denied confirmation and exhausted recovery without a usable handoff Home, and preserve financial locks/server reconciliation. Existing valid Calendar and post-payment Pending flows remain. Fix the popup CSS layer conflict by removing competing utilities. Two new regressions fail against pre-fix source; focused50 tests pass after repair. Retire seven browser cases only for the removed Experiment UI; protected capability/expiry/ownership tests remain. All363 unit/component/service tests, lint, TypeScript and source checks passed. The retired-route export regression passes. Full export-tooling execution is incomplete: localhost binding is blocked and a child-process path probe returned unexpected empty output; preserve these failures for CI. Independent audit precedes publication. CI/staging remain blocked by exhausted Actions minutes; no merge.
+
 ## Next action
 
 Complete exact-head verification and actual staging health/settings checks, report PR75 and staging URL, and leave unmerged. Record immutable CI/deploy receipts in the PR without creating status-only commit loops. Before a later production release, verify native-domain CI-token permissions; staging does not prove those production permissions.

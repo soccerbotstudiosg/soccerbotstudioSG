@@ -551,3 +551,7 @@ Remaining focused edge cases: simultaneous four-hour cart/tile removal; confirma
 ### Compact Player App prompt
 
 The Player App popup uses the main-header navy with white text/icons. On phones it has a compact single-line “Get the Soccerbot360 Player App” heading and three equal-width store links in one row, with icons above labels. Close remains44px; link destinations, dismissal persistence and modal focus behavior are unchanged. Browser/mobile visual acceptance remains pending because the owner reports exhausted GitHub Actions minutes on the private repository.
+
+### Home fallback acceptance
+
+On staging, open confirmation without an attempt ID and with a malformed ID: expect Home, no standalone error or permanent loader. Open a valid but inaccessible attempt: expect Home without details. Simulate inaccessible creation context with no matching local attempt: after the existing30-second budget expect Home; verify no cancellation/reset/write was triggered. Retest accessible unpaid continuation, expired Calendar return and delayed paid confirmation to prove they keep their established destinations. `/experiment/` should be unavailable and no preview entry should remain. On phone, verify compact popup padding12px/max-width420px/header alignment now take effect. CI/device acceptance remains pending.

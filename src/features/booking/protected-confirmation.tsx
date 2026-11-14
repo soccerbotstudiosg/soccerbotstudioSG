@@ -30,6 +30,7 @@ type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
 import { sitePath } from "@/content/site-path";
 import {
   checkoutNow,
+  isConfirmationAttemptId,
   ConfirmationError,
   readBookingReceipt,
   dismissCompletedBooking,
@@ -88,8 +89,26 @@ function PaymentContinuation({
     </div>
   );
 }
+/** Leave an unusable confirmation view without changing retained financial state. */
+function ConfirmationHome() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/");
+  }, [router]);
+  return null;
+}
+/** Reject invalid links before mounting any protected reads or recovery timers. */
+export function ProtectedConfirmation(
+  props: Parameters<typeof ProtectedConfirmationBody>[0],
+) {
+  return isConfirmationAttemptId(props.attemptId) ? (
+    <ProtectedConfirmationBody {...props} />
+  ) : (
+    <ConfirmationHome />
+  );
+}
 /** Present protected checkout status without trusting browser payment claims. */
-export function ProtectedConfirmation({
+function ProtectedConfirmationBody({
   attemptId,
   checkoutMode,
   allowPaymentContinuation = false,
@@ -128,6 +147,7 @@ export function ProtectedConfirmation({
   onRestart?: (attemptId: string) => void | Promise<void>;
 }) {
   const router = useRouter();
+  const [homeFallback, setHomeFallback] = useState<string | null>(null);
   const [homeDeparture, setHomeDeparture] = useState<ReactNode>(null);
   const [seenConfirmation] = useState(() => hasSeenConfirmation(attemptId));
   const returnedHome = useRef<string | null>(null);
@@ -635,6 +655,10 @@ export function ProtectedConfirmation({
     if (onAwaitingExpiry?.(attemptId, true)) {
       calendarReturned.current = attemptId;
       router.replace("/book/time/");
+    } else {
+      // A missing local attempt cannot accept a Calendar recovery handoff.
+      // Keep server reconciliation and stored locks intact; only leave this view.
+      setHomeFallback(attemptId);
     }
   });
   const creationDeadline = awaitingCreation
@@ -886,8 +910,7 @@ export function ProtectedConfirmation({
     (view === "confirmed" || !!saved) &&
     receipt?.value.attemptId === attemptId &&
     receipt.revision === sessionRevision;
-  const confirmedCard =
-    !!displayedReceipt || (view === "confirmed" && receiptUnavailable);
+  const confirmedCard = !!displayedReceipt;
   const repeatedProviderReturn =
     providerReturn && seenConfirmation && !!saved && view !== "denied";
   useEffect(() => {
@@ -935,6 +958,11 @@ export function ProtectedConfirmation({
       (paymentReceived || view === "confirmed" ? responseEvidence : current),
     receipt: receiptMatches ? receipt.value : undefined,
   });
+  if (
+    homeFallback === attemptId ||
+    (checkoutMode === "live" && view === "denied")
+  )
+    return silent ? null : <ConfirmationHome />;
   if (homeDeparture) return homeDeparture;
   if (silent || repeatedProviderReturn) return null;
   if (reconcilingExpiry) return <BrandLoading label="Checking payment…" />;
@@ -1183,6 +1211,11 @@ export function ProtectedConfirmation({
         ) : undefined}
       </PendingConfirmation>
     );
+  }
+  if (checkoutMode === "live" && confirmationRoute) {
+    // A successful handoff already owns navigation; never race it with Home.
+    if (recoveryTimedOut === attemptId) return null;
+    return <ConfirmationHome />;
   }
   return (
     <div className="status-shell">

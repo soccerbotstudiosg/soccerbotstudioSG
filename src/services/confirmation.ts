@@ -14,6 +14,10 @@ import {
 import { z } from "zod";
 import type { CheckoutContext, ProtectedCheckoutService } from "./contracts";
 const idSchema = z.string().uuid();
+/** Validate confirmation navigation before starting protected reads. */
+export function isConfirmationAttemptId(value: string) {
+  return idSchema.safeParse(value).success;
+}
 const decisionSchema = z.discriminatedUnion("status", [
   z.strictObject({
     status: z.literal("confirmed"),
@@ -365,22 +369,6 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
     );
   },
 };
-
-/** Create an attempt through the isolated local preview endpoint. */
-export async function startSyntheticCheckout(
-  signal: AbortSignal,
-): Promise<string> {
-  const response = await fetch("/__experiment/attempts", {
-    method: "POST",
-    credentials: "same-origin",
-    redirect: "error",
-    cache: "no-store",
-    signal,
-  });
-  if (!response.ok) throw new ConfirmationError("unavailable");
-  return z.strictObject({ attemptId: idSchema }).parse(await response.json())
-    .attemptId;
-}
 
 /** Request an authenticated expiry check without assuming payment cancellation. */
 export async function expireBooking(attemptId: string, signal?: AbortSignal) {

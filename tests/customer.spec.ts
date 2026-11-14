@@ -1396,6 +1396,8 @@ test("leave booking uses equal-width sentence-case actions with home left and st
 test("first visit offers the Player App with only store links and dismissal persists", async ({
   page,
 }) => {
+  const retiredPreview = await page.request.get(sitePath("/experiment/"));
+  expect(retiredPreview.status()).toBe(404);
   await page.goto(sitePath("/"));
   const prompt = page.getByRole("dialog", {
     name: "Get the Soccerbot360 Player App",

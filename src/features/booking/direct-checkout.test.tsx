@@ -3857,11 +3857,8 @@ it("access denial during conflict classification stops recovery and keeps the or
         new Response(null, { status: route === "payment" ? 401 : 403 }),
       ),
     );
-    expect(
-      screen.getByText(
-        "Contact the studio to view this booking. Don’t pay again.",
-      ),
-    ).toBeVisible();
+    expect(navigation.replace).toHaveBeenCalledWith("/");
+    expect(screen.queryByText("Confirmation unavailable")).toBeNull();
     expect(
       screen.queryByText(
         "Some sessions may no longer be available. Please do not close or refresh.",
@@ -3879,11 +3876,8 @@ it("access denial during conflict classification stops recovery and keeps the or
     expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
     expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
     expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
-    expect(
-      screen.getByText(
-        "Contact the studio to view this booking. Don’t pay again.",
-      ),
-    ).toBeVisible();
+    expect(navigation.replace).toHaveBeenCalledWith("/");
+    expect(screen.queryByText("Confirmation unavailable")).toBeNull();
     expect(availability).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledTimes(requestsAfterDenial);
     expect(
