@@ -44,7 +44,7 @@ flowchart TB
   Public --> Visual["components/arena*.tsx + content/media.ts<br/>Arena presentation and imagery"]
 ```
 
-Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/book/[step]/page.tsx), [BookingPage](../../src/features/booking/booking-page.tsx), [booking provider](../../src/features/booking/provider.tsx). Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css). [Enquiry](../../src/features/enquiry/enquiry-page.tsx) is a separate feature with build-time live/preview service composition; the persistent mock assistant is retired.
+Entry owners: [layout](../../src/app/layout.tsx), [booking route](../../src/app/book/[step]/page.tsx), [BookingPage](../../src/features/booking/booking-page.tsx), [booking provider](../../src/features/booking/provider.tsx). Shared navigation belongs to [booking-navigation.tsx](../../src/components/booking-navigation.tsx); visual rules live in [globals.css](../../src/app/globals.css). [Enquiry](../../src/features/enquiry/enquiry-page.tsx) is a separate feature with build-time live/preview service composition; the persistent mock assistant is retired. [Enquiry acknowledgement](../../src/features/enquiry/enquiry-notice.tsx) owns the transient Home status banner and its ten-second lifecycle.
 
 ### 2.1 Booking UI expansion
 

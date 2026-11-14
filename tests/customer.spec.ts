@@ -866,6 +866,25 @@ test("enquiry remains available without external submission or a mock assistant"
   page,
 }) => {
   await openSite(page, "/enquiry/");
+  for (const selector of [
+    "#enquiry-name",
+    "#enquiry-email",
+    ".phone-control",
+    "#enquiry-purpose",
+    "#enquiry-message",
+  ]) {
+    await expect(page.locator(selector)).toHaveCSS(
+      "border-top-color",
+      "rgb(168, 34, 53)",
+    );
+  }
+  const phone = page.getByLabel("Mobile number");
+  await phone.focus();
+  await expect(page.locator(".phone-control")).toHaveCSS(
+    "outline-style",
+    "solid",
+  );
+  await expect(phone).toHaveCSS("outline-style", "none");
   await page.getByLabel("Full name").fill("Demo Customer");
   await page
     .getByRole("textbox", { name: /^Email address/ })
@@ -877,7 +896,10 @@ test("enquiry remains available without external submission or a mock assistant"
     .getByLabel("Your requirements")
     .fill("A group session for our team.");
   await page.getByRole("button", { name: "Send enquiry" }).click();
-  await expect(page.getByText("Preview · No enquiry sent.")).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`${sitePath("/")}$`));
+  await expect(page.getByRole("status")).toHaveText(
+    "Preview · No enquiry sent.",
+  );
   await expect(
     page.getByRole("button", { name: /studio assistant/i }),
   ).toHaveCount(0);
@@ -1447,7 +1469,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   );
   await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
     "content",
-    "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Play, compete and sharpen your skills in a 360° football arena.",
+    "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.",
   );
   await expect(
     page.locator('link[rel="icon"][type="image/svg+xml"]'),

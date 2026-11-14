@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-Fix the current PR75 CI failures, verify and stage the approved candidate, and leave it unmerged. PR76 is closed and must not be reopened. Native soccerbotsg.com configuration remains included; staging retains its separate hostname. No production release is authorized.
+Consolidate the owner's latest presentation changes locally on PR75's branch; do not push, stage, merge or release. Whole-control mobile focus, consistent required enquiry outlines, Home acknowledgement for ten seconds and the Open Graph slogan “Performance · Experience · Production” are implemented locally. Preserve the existing PR75 repairs and migration-coverage blocker below. PR76 remains closed.
 
 ## Current scope
 
@@ -12,9 +12,15 @@ Enquiry delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com 
 
 ## Verification and immediate next action
 
-Run43595003996 on080d47fb confirms the frontend import/sender repairs, all three Worker groups, Worker aggregation and both live-email shards. Backend shard1 passed; shard2 exposed one later desktop geometry assertion: it could sample Calendar before the Details navigation settled. Added exact Details URL/heading preconditions without changing the1px tolerance. Types/lint and independent audit passed. All remaining jobs finished without another independent failure. Push this final correction, then verify fresh exact-head CI and actual staging.
+As of 14 November 2026 (Singapore), the workspace is reconciled to client repository `soccerbotstudiosg/soccerbotstudioSG`, PR75 branch `feat/opengraph-custom-domain`, head `0fba6871878d88c3543fb148123629f2a2186e38`. Main is `16a87d0a9bda3d7acb936bd3cc2de4336e37d989` (merged PR74). AGENTS and all six repository skills are loaded; the retired developer repository remains available through the local `legacy` remote.
 
-Application verification remains371 frontend tests,11 enquiry Worker cases and33 identity-delivery cases with intercepted providers. CI owns browser execution; no live enquiries were sent. Earlier repair verification includes191 tooling cases and2 widget lifecycle cases. Retain detailed failure evidence in [Journey](docs/journey.md); record final CI/deployment receipts in the PR without status-only commit loops. Leave PR75 unmerged.
+[Exact-head run 43596743966](https://github.com/soccerbotstudiosg/soccerbotstudioSG/actions/runs/43596743966) completed: frontend, all three Worker groups, Worker aggregation and all four backend/live-email browser shards passed. Both final release-packaging gates failed at `scripts/check-developer-release.mjs:743`: “Every packaged migration must be exercised.” The exercised set stops at `0049_booking_support_reports.sql`, while the artifact includes `0050_enquiry_requests.sql`. The earlier geometry correction passed its browser jobs; the current blocker is migration exercise coverage, not that earlier assertion. Exact-head staging is not established.
+
+**Next action:** repair the existing release-check owner to exercise migration0050 and its enquiry-state constraints while retaining prior-state preservation and the strict complete-migration guard. Review dependent release fixtures/receipts and run meaningful isolated checks before consolidating the repair on PR75. Then require fresh exact-head CI and actual staging health/settings under the applicable authorization. Leave PR75 unmerged; do not reopen PR76 or release production.
+
+The subsequent owner-requested local presentation slice changes frontend styles, enquiry acknowledgement/navigation, social artwork/metadata and affected tests. Migration, dependency pins, Worker behavior and workflows remain unchanged. All local changes remain unpublished; consolidate before any future CI. Historical application verification and original failures remain in [Journey](docs/journey.md). Browser execution belongs to owner/CI; no live enquiries or provider mutations were performed.
+
+Local verification: six focused enquiry/phone tests pass, including exact ten-second expiry; types, lint, production static build, formatting and source/policy checks pass. The full suite recorded371 passes and one unchanged `direct-checkout` recovery test timing out at its existing five-second limit. That test passed in isolation; the first failure is retained and its full-suite timing cause remains unresolved. No timeout, assertion or runner setting changed. Browser visual acceptance and fresh CI remain pending.
 
 ## Remaining owner acceptance
 

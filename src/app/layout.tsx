@@ -1,3 +1,4 @@
+import { EnquiryNoticeProvider } from "@/features/enquiry/enquiry-notice";
 import type { Metadata, Viewport } from "next";
 import { BookingProvider } from "@/features/booking/provider";
 import { BookingNavigation } from "@/components/booking-navigation";
@@ -9,7 +10,7 @@ import "./globals.css";
 const shareTitle =
   "SOCCERBOTSTUDIO Singapore | Interactive Football Experience";
 const shareDescription =
-  "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Play, compete and sharpen your skills in a 360° football arena.";
+  "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.";
 const shareImage = socialPreview;
 export const metadata: Metadata = {
   metadataBase: new URL(productionTarget.origin),
@@ -60,7 +61,9 @@ export default function RootLayout({
       <body>
         <BookingProvider>
           <BookingNavigation>
-            <SiteShell>{children}</SiteShell>
+            <EnquiryNoticeProvider>
+              <SiteShell>{children}</SiteShell>
+            </EnquiryNoticeProvider>
           </BookingNavigation>
         </BookingProvider>
       </body>
