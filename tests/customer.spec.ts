@@ -1581,7 +1581,11 @@ test("header blue and the typography hierarchy stay consistent across every book
       ),
     ).toBeLessThanOrEqual(1);
   }
-  async function sectionType(selector: string, expectedSize = 20) {
+  async function sectionType(
+    selector: string,
+    expectedSize = 20,
+    expectedColor = brand,
+  ) {
     if (
       page.viewportSize()!.width <= 700 &&
       (await page.locator(".booking-navigation").count())
@@ -1708,7 +1712,7 @@ test("header blue and the typography hierarchy stay consistent across every book
       expect(style.size).toBeCloseTo(expectedSize, 5);
       expect(style.weight).toBe("700");
       expect(style.style).toBe("normal");
-      expect(style.color).toBe(brand);
+      expect(style.color).toBe(expectedColor);
     }
   }
   await openSite(page, "/book/account/");
@@ -1775,7 +1779,12 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   await sectionType(
-    ".session-product-name, .session-inclusions h2",
+    '.session-product[aria-pressed="true"] .session-product-name',
+    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
+    "rgb(255, 255, 255)",
+  );
+  await sectionType(
+    ".session-inclusions h2",
     (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
   );
   for (const card of [
