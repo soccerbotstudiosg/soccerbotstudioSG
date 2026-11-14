@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import YAML from "yaml";
+import ts from "typescript";
 import {
   loadTarget,
   validateTarget,
@@ -742,4 +743,29 @@ test("client sandbox keeps its base closed and seals the approved release indepe
         hitpaySandbox: { ...target.hitpaySandbox, ...patch },
       }),
     );
+});
+
+test("packaged developer sender preserves staging target and production delivery boundaries", () => {
+  const base = ts.parseConfigFileTextToJson(
+    "wrangler.jsonc",
+    readFileSync("wrangler.jsonc", "utf8"),
+  ).config;
+  const developerSender = "SoccerBotStudioSG Dev <noreply@auth.app404.ai>";
+  assert.equal(base.vars.IDENTITY_DELIVERY, "disabled");
+  assert.equal(base.vars.IDENTITY_SENDER, developerSender);
+  assert.equal(staging.identitySender, undefined);
+  const staged = releaseConfig(targetConfig(base, staging), staging);
+  assert.equal(staged.vars.IDENTITY_SENDER, developerSender);
+  assert.equal(staged.vars.IDENTITY_DELIVERY, "ongoing");
+  const client = loadTarget("production");
+  const clientBase = targetConfig(base, client);
+  const active = releaseConfig(clientBase, client);
+  assert.equal(active.vars.IDENTITY_SENDER, client.identitySender);
+  assert.notEqual(active.vars.IDENTITY_SENDER, developerSender);
+  const { identitySender, ...unconfigured } = client;
+  assert.ok(identitySender);
+  assert.equal(
+    releaseConfig(clientBase, unconfigured).vars.IDENTITY_DELIVERY,
+    "disabled",
+  );
 });

@@ -173,6 +173,7 @@ function fixture() {
     assets: { directory: "./assets" },
     vars: {
       SOURCE_REVISION: revision,
+      IDENTITY_SENDER: "SoccerBotStudioSG Dev <noreply@auth.app404.ai>",
       ENVIRONMENT: "developer",
       CAMPAIGN_END_MS: "0",
       PROVIDER_ACCESS: "disabled",
@@ -191,7 +192,6 @@ function fixture() {
       PUBLIC_TOKEN_REFRESH_AHEAD: "enabled",
       PREMIUM_SERVICE_ID: "3",
       IDENTITY_DELIVERY: "ongoing",
-      IDENTITY_SENDER: "SoccerBotStudioSG Dev <noreply@auth.app404.ai>",
       LIVE_READBACK: "enabled",
       CHECKOUT_PAYMENT_ROUTE: "hitpay",
       HITPAY_CHECKOUT: "enabled",

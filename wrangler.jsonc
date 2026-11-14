@@ -46,6 +46,7 @@
     "HITPAY_WEBHOOK": "disabled",
     "PROVIDER_CALL_CEILING": "80",
     "IDENTITY_DELIVERY": "disabled",
+    "IDENTITY_SENDER": "SoccerBotStudioSG Dev <noreply@auth.app404.ai>",
     "SOURCE_REVISION": "unpublished",
     "ACCESS_LIFETIME_MS": "1800000",
     "OBSERVATION_MAX_AGE_MS": "15000",

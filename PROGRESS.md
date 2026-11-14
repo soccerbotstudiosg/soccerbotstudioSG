@@ -12,11 +12,11 @@ Enquiry delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com 
 
 ## Verification and immediate next action
 
-Run43596743966 on0fba6871 passed frontend, both builds, all four browser shards and every Worker suite/aggregation. Both final release gates failed because `check-developer-release.mjs` stopped at migration0049 while the package correctly included0050. Added explicit enquiry upgrade checks, preserving the strict complete-migration assertion and all existing preservation checks. No application or SQL migration changes.
+Run43599033268 on16d7209 passed every required gate, including both final release checks; CodeQL passed. Staging deployment43600064352 then stopped before mutation because the candidate's new staging sender field differed from the trusted-main target.
 
-The original failure reproduced against the downloaded backend CI artifact. Corrected verification passes against both exact CI artifacts with zero provider requests/remote operations. New assertions cover empty initial enquiry state, immutable input/proof/terminal delivery, duplicate request/proof rejection, retained support/financial state and a disabled enquiry endpoint in offline packages. Independent packaging audit passed; no further fixed migration-count assumptions found.
+The configuration-only repair moves the same public developer sender into closed Wrangler vars and restores staging.json byte-for-byte to main. Effective live staging configuration is proven identical. Closed delivery remains disabled; production explicitly overrides the sender or disables delivery when unconfigured. No runtime or migration change, no bypass of exact artifact/target validation. Twelve deployment tests and11 target tests, both typechecks, source/Worker guards and independent review passed.
 
-Push the corrected verifier after both artifact replays and scoped lint/format checks, then check fresh exact-head CI and actual staging. CI owns browser execution; no real enquiries were sent. Keep detailed evidence in [Journey](docs/journey.md), final CI/deployment receipts in the PR, and PR75 unmerged.
+Publish the configuration repair, verify fresh exact-head CI and actual staging health/settings, then leave PR75 unmerged. The packaged0050 upgrade repair remains included and passed against both retained CI artifacts with zero provider requests/remote operations. Record final CI/deployment receipts in PR75 without status-only commit loops; detailed evidence remains in [Journey](docs/journey.md).
 
 ## Remaining owner acceptance
 
