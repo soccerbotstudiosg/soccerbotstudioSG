@@ -621,3 +621,7 @@ The confirmed-booking copy control is an icon-only button at the top right of th
 Enabled Continue buttons share the main-header navy token. Outlet and session cards have right-centred chevrons and reserved text space. Available calendar dates are outlined; unavailable dates have no visible outline and a lighter grey fill. Confirmation status badges are approximately35% shorter and the copy-icon button is20% narrower, retaining the existing alignment and content. Recovery notices group the message and session bullets together, with Request Help centred against that group, equal top/bottom padding and safe mobile wrapping. Report sending and recovery logic are unchanged.
 
 Social metadata uses one branded logo-and-arena image and studio-wide wording across Open Graph and Twitter cards. Messenger-controlled cropping, layout and cached previews can differ. No booking, validation, payment, expiry, recovery or authorization transition is changed.
+
+### Compact Player App prompt
+
+The Player App popup uses the main-header navy with white text/icons. On phones it has a compact single-line “Get the Soccerbot360 Player App” heading and three equal-width store links in one row, with icons above labels. Close remains44px; link destinations, dismissal persistence and modal focus behavior are unchanged. Browser/mobile visual acceptance remains pending because the owner reports exhausted GitHub Actions minutes on the private repository.

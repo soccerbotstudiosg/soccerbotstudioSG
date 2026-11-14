@@ -33,6 +33,10 @@ The queue is recorded now, before the full documentation reconciliation. These a
 | 11    | Runbook and drills                  | Exercise payment uncertainty, provider outage, delayed release, notification failure and deployment rollback, incorporating backup/reconciliation procedures. Owner: [runbook](docs/runbook.md); preserve drill evidence in role UAT/Journey.                                                                                                                                                                                                                |
 | 12    | Operations manual                   | Produce a separate daily-use manual covering SimplyBook bookings, schedules, customers and cancellations plus HitPay payment lookup, reconciliation, refunds and payouts; specify cross-system order and escalation. Keep technical recovery in the runbook and link it from the manual.                                                                                                                                                                     |
 
+## Additional approved popup scope
+
+Include the compact phone Player App popup with navy background, white text/icons and three links in one row. CI startup failure is owner-confirmed as exhausted Actions minutes after making the repository private. Do not merge or claim new staging until CI resumes and passes.
+
 ## Next action
 
 Complete exact-head verification and actual staging health/settings checks, report PR75 and staging URL, and leave unmerged. Record immutable CI/deploy receipts in the PR without creating status-only commit loops. Before a later production release, verify native-domain CI-token permissions; staging does not prove those production permissions.

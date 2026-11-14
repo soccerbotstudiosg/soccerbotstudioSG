@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 async function openSite(page: Page, route: string) {
   await page.goto(sitePath(route));
   const prompt = page.getByRole("dialog", {
-    name: "Download The Official Soccerbot360 Player App Now.",
+    name: "Get the Soccerbot360 Player App",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -1398,7 +1398,7 @@ test("first visit offers the Player App with only store links and dismissal pers
 }) => {
   await page.goto(sitePath("/"));
   const prompt = page.getByRole("dialog", {
-    name: "Download The Official Soccerbot360 Player App Now.",
+    name: "Get the Soccerbot360 Player App",
   });
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     "content",
@@ -1422,6 +1422,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   await expect(
     page.locator('link[rel="icon"][type="image/svg+xml"]'),
   ).toHaveAttribute("href", sitePath("/favicon.svg"));
+  const phonePrompt = (page.viewportSize()?.width ?? 1280) <= 700;
   await expect(prompt).toBeVisible();
   await expect(prompt.locator("p")).toHaveCount(0);
   await expect(prompt.getByRole("link")).toHaveCount(3);
@@ -1439,8 +1440,8 @@ test("first visit offers the Player App with only store links and dismissal pers
   for (const link of await prompt.getByRole("link").all()) {
     await expect(link).toHaveCSS("justify-content", "center");
     await expect(link).toHaveCSS("align-items", "center");
-    await expect(link).toHaveCSS("color", "rgb(16, 22, 54)");
-    await expect(link.locator("svg")).toHaveCSS("color", "rgb(16, 22, 54)");
+    await expect(link).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(link.locator("svg")).toHaveCSS("color", "rgb(255, 255, 255)");
   }
   for (const [name, href] of storeDestinations) {
     await expect(
@@ -1454,16 +1455,44 @@ test("first visit offers the Player App with only store links and dismissal pers
     name: "Close dialog",
     exact: true,
   });
-  await expect(prompt).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(prompt).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(prompt.locator(".dialog-title")).toHaveCSS(
     "font-family",
     /Roboto/,
   );
-  await expect(prompt.locator(".dialog-title")).toHaveCSS("font-size", "24px");
+  await expect(prompt.locator(".dialog-title")).toHaveCSS(
+    "font-size",
+    phonePrompt ? "12px" : "24px",
+  );
   await expect(prompt.locator(".dialog-title")).toHaveCSS("font-weight", "400");
+  await expect(prompt.locator(".dialog-title")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
+  );
   for (const label of await prompt.locator(".app-store-link span").all()) {
-    await expect(label).toHaveCSS("font-size", "16px");
+    await expect(label).toHaveCSS("font-size", phonePrompt ? "12px" : "16px");
     await expect(label).toHaveCSS("font-weight", "400");
+  }
+  if (phonePrompt) {
+    const geometry = await prompt.evaluate((dialog) => {
+      const links = [...dialog.querySelectorAll(".app-store-link")].map(
+        (link) => link.getBoundingClientRect().toJSON(),
+      );
+      const title = dialog.querySelector(".dialog-title")!;
+      return {
+        links,
+        height: dialog.getBoundingClientRect().height,
+        overflow: dialog.scrollWidth > dialog.clientWidth,
+        titleOverflow: title.scrollWidth > title.clientWidth,
+      };
+    });
+    expect(geometry.height).toBeLessThanOrEqual(160);
+    expect(geometry.overflow).toBe(false);
+    expect(geometry.titleOverflow).toBe(false);
+    expect(geometry.links[0].top).toBeCloseTo(geometry.links[1].top, 1);
+    expect(geometry.links[1].top).toBeCloseTo(geometry.links[2].top, 1);
+    expect(geometry.links[0].right).toBeLessThan(geometry.links[1].left);
+    expect(geometry.links[1].right).toBeLessThan(geometry.links[2].left);
   }
   await prompt.getByRole("heading").click();
   await expect(prompt).toBeVisible();
@@ -1493,7 +1522,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   await expect(close).toHaveCSS("outline-style", "none");
   await expect(close).toHaveCSS("border-top-width", "0px");
   await expect(close).toHaveCSS("border-radius", "0px");
-  await expect(close).toHaveCSS("color", "rgb(23, 96, 120)");
+  await expect(close).toHaveCSS("color", "rgb(70, 172, 220)");
   await expect(close).toHaveCSS("box-shadow", "none");
   await expect(close).toHaveCSS("text-decoration-line", "none");
   await close.click();

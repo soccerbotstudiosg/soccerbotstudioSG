@@ -547,3 +547,7 @@ Pre-link availability follow-up: during unresolved creation Calendar recovery, o
 Pending owner acceptance on the staged revision: desktop/phone/tablet chevrons and date borders; enabled Continue/header colour; compact Paid badge and narrower copy icon; balanced Calendar and confirmation help notices including wrapped/error feedback. Share the canonical link in WhatsApp, Telegram, WeChat and LINE: common title, description and branded image, allowing client-controlled layout/cache differences. Existing normal/consecutive booking, conflict, active checkout, expiry-return and late-payment acceptance does not establish these new visuals.
 
 Remaining focused edge cases: simultaneous four-hour cart/tile removal; confirmation refresh and unpaid native/browser Back without interim error; pay then close/offline and reopen the same profile; isolated unknown creation and exhausted post-payment recovery with the existing notice placements. No new provider-failure acceptance is claimed.
+
+### Compact Player App prompt
+
+The Player App popup uses the main-header navy with white text/icons. On phones it has a compact single-line “Get the Soccerbot360 Player App” heading and three equal-width store links in one row, with icons above labels. Close remains44px; link destinations, dismissal persistence and modal focus behavior are unchanged. Browser/mobile visual acceptance remains pending because the owner reports exhausted GitHub Actions minutes on the private repository.

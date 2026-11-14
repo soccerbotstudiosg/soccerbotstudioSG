@@ -3238,8 +3238,11 @@
     margin-top: 0;
   }
   .player-app-dialog {
-    background: var(--color-surface);
-    color: var(--color-ink);
+    background: var(--color-navy);
+    color: var(--color-surface);
+  }
+  .player-app-header {
+    margin-bottom: 20px;
   }
   .player-app-dialog::backdrop {
     background: var(--color-player-app-backdrop);
@@ -3247,9 +3250,10 @@
   .player-app-close:focus-visible {
     outline: none;
     box-shadow: none;
-    color: var(--color-identity);
+    color: var(--color-logo-blue);
   }
   .player-app-dialog .dialog-title {
+    color: inherit;
     padding-right: var(--icon-control-size);
     font-weight: var(--weight-body);
   }
@@ -3257,7 +3261,7 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    color: var(--color-brand);
+    color: var(--color-surface);
     border: 0;
     box-shadow: none;
     text-decoration: none;
@@ -3291,8 +3295,43 @@
     flex-shrink: 0;
   }
   .app-store-link:hover {
-    background: var(--color-brand-soft);
+    background: var(--color-action-hover);
     border-color: var(--color-control-border);
+  }
+  @media (max-width: 700px) {
+    .player-app-dialog {
+      width: calc(100% - 32px);
+      max-width: 420px;
+      padding: 12px;
+    }
+    .player-app-header {
+      min-height: 44px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .player-app-dialog .dialog-title {
+      font-size: var(--text-caption);
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .app-store-links {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .app-store-link {
+      min-width: 0;
+      min-height: 64px;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 4px;
+      border-radius: 8px;
+      font-size: var(--text-caption);
+      white-space: nowrap;
+    }
+    .app-store-link svg {
+      width: 22px;
+      height: 22px;
+    }
   }
   .summary .hint {
     margin-top: 12px;

@@ -3,7 +3,7 @@ import { sitePath } from "../src/content/site-path";
 async function start(page: Page) {
   await page.goto(sitePath("/experiment/"));
   const prompt = page.getByRole("dialog", {
-    name: "Download The Official Soccerbot360 Player App Now.",
+    name: "Get the Soccerbot360 Player App",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -261,7 +261,7 @@ test("the Payment preview entry and temporary checking failure retain customer s
   await page.goto(sitePath("/book/account/"));
   await page
     .getByRole("dialog", {
-      name: "Download The Official Soccerbot360 Player App Now.",
+      name: "Get the Soccerbot360 Player App",
     })
     .getByRole("button", { name: "Close dialog", exact: true })
     .click();
