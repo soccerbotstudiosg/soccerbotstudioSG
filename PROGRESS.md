@@ -2,17 +2,25 @@
 
 ## Active outcome
 
-Stage the latest approved presentation and branded Open Graph update on PR75; leave it unmerged. PR76 is closed and must not be reopened. Native soccerbotsg.com deployment support remains included; staging retains its separate hostname.
+Fix the current PR75 CI failures, verify and stage the approved candidate, and leave it unmerged. PR76 is closed and must not be reopened. Native soccerbotsg.com configuration remains included; staging retains its separate hostname. No production release is authorized.
 
-## Scope and evidence
+## Current scope
 
-Continue buttons share header navy; outlet/session chevrons; outlined available and lighter unavailable dates; shorter confirmation status badges and narrower copy icon; balanced recovery-notice content; branded social preview and studio-wide metadata. Booking transitions, validation, identity, payment/recovery and expiry are unchanged. Older blue Request Help acknowledgement and reset work remain excluded/local. GA/GSC and enquiry changes are deferred. SimplyBook hiding was not applied.
+PR75 includes branded Open Graph/domain configuration, compact navy mobile popup, booking button typography/shapes/motion, navy selected cards, faded unavailable dates, confirmation spacing/copy controls and balanced recovery notices. Entry choices share one panel and are narrower only on desktop. Required booking fields show initial guidance; untouched optional saved-contact fields do not. Calendar continuation shares the existing action. Loading labels identify security, code, email, save and enquiry work. Confirmation without usable identity returns Home; valid confirmation survives idle and optional invoice failures.
 
-Canonical main is16a87d0a; local index matches its published tree. PR75 was last staged at7c8f73a7 with verification43537456575 and deployment43538769250. New candidate requires fresh exact-head CI and staging; no production release or merge is authorized. Scoped component/type/lint checks and browser assertion updates accompany publication; CI owns browser execution. Source, device and provider acceptance remain separate.
+Enquiry delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com with customer Reply-To, background Turnstile, bounded waiting and durable duplicate-send protection. Migration0050 and the explicit existing staging sender accompany it. GA/GSC, Grafana, major-module refactoring and the older local blue Request Help acknowledgement remain excluded. SimplyBook hiding was not applied.
 
-## Remaining acceptance
+## Verification and immediate next action
 
-See [simulated-user UAT](docs/uat/simulated-user.md) for focused four-hour cutoff, confirmation refresh/Back, immediate post-payment close/reopen, isolated unresolved recovery and final presentation/messenger checks. Owner already accepted normal and consecutive booking, conflict, active checkout, expiry-return and last-minute payment on the preceding release. Domain access and a complete sandbox payment were owner-confirmed.
+Published head d699aeab is under verification in run43592982146. All three Worker suites and both profile builds passed. Frontend tooling failed because the new enquiry domain import lacked its exact allowlist entry and deployment fixtures lacked the explicit staging sender. Worker aggregation hit the same import guard. Backend browser cases found an ambiguous code-field label and measured card geometry during the entrance animation.
+
+Local corrections preserve strict boundaries, exact sender checks, authentication assertions and the existing1px geometry tolerance. All191 tooling cases passed across the initial sweep and targeted environment reruns. Types, lint and formatting passed; independent repair audit passed. Earlier application evidence remains371 frontend tests,11 enquiry Worker cases and33 identity-delivery compatibility cases, using intercepted providers. CI owns browser execution. No live enquiries were sent.
+
+Live-email also exposed a stale synthetic widget fixture: it requested manual proof without invoking the interaction-required callback. The fixture now follows the before/after interaction lifecycle; proof gating is retained. Push the consolidated correction after scoped checks. Fresh exact-head CI and actual staging health/settings checks remain required. Record CI/deployment receipts in the PR without status-only commit loops. Detailed evidence is retained in [Journey](docs/journey.md). Do not merge.
+
+## Remaining owner acceptance
+
+See [simulated-user UAT](docs/uat/simulated-user.md) for four-hour cutoff, confirmation refresh/Back, immediate post-payment close/reopen, isolated unresolved recovery and final presentation/messenger checks. Owner accepted normal and consecutive booking, conflict, active checkout, expiry-return and last-minute payment on the preceding release. Domain access and a complete sandbox payment were owner-confirmed; changed source still needs candidate acceptance. Before production release, verify native-domain CI-token permissions; staging does not prove them.
 
 ## Ordered work after this slice
 
@@ -32,21 +40,3 @@ The queue is recorded now, before the full documentation reconciliation. These a
 | 10    | Launch readiness                    | Verify production/test separation, configuration, test-data disposition, spending alerts, customer support and responsibility coverage. Owners: [provider settings](docs/external-providers-config.md), [admin UAT](docs/uat/admin.md).                                                                                                                                                                                                                      |
 | 11    | Runbook and drills                  | Exercise payment uncertainty, provider outage, delayed release, notification failure and deployment rollback, incorporating backup/reconciliation procedures. Owner: [runbook](docs/runbook.md); preserve drill evidence in role UAT/Journey.                                                                                                                                                                                                                |
 | 12    | Operations manual                   | Produce a separate daily-use manual covering SimplyBook bookings, schedules, customers and cancellations plus HitPay payment lookup, reconciliation, refunds and payouts; specify cross-system order and escalation. Keep technical recovery in the runbook and link it from the manual.                                                                                                                                                                     |
-
-## Current verification and confirmation repair
-
-PR75 includes the approved presentation/domain/preview work, compact navy mobile popup, Experiment retirement and verified lean-code cleanup (250 net source/tooling lines removed before this functional repair). Grafana, enquiry and large-module refactoring remain untouched.
-
-Actions capacity is available again. Run43579003363 attempt2 on c3665b43 passed all Worker groups/runtime and builds but browser/frontend cases still expected retired confirmation-unavailable/receipt-failure pages. The non-live confirmation route also exposed an unbounded receipt-failure loader. Corrected that path and aligned browser expectations with Home while preserving authorization and no-provider-effect assertions.
-
-The owner HAR starts with a fresh confirmation document, current-booking empty and structured404 attempt_unavailable. It cannot prove prior owner rotation or payment expiry. Initial/status/recovery/expiry inaccessible identity now exits Home without extra financial writes. After the existing30-second wait, no usable context also exits Home; validated Pending summaries remain. Failed Calendar handoff exits Home and ignores a late expiry acknowledgement. Optional invoice404/503 retains verified confirmation; explicit401/403 exits Home. Mounted confirmation remains visible through35-minute idle testing.
-
-New regressions fail against pre-fix source; scoped and broad local verification are recorded in Journey and the PR. Exact repaired-head CI and actual staging are pending. Leave PR75 unmerged.
-
-## Next action
-
-Owner authorized consolidation and push on 14 November. Guest/email share one outlined section with two stacked buttons and “or”, without decorative icons or duplicated copy. Primary, Back/Home and selection-card corners match the header; account/profile secondary action shapes remain unchanged. Existing bounded halo motion extends to entry choices, outlet/session cards and Continue payment, respecting reduced motion. Selected outlet/session/time cards, dates and payment choices use header navy with white text. Local lint, TypeScript, source guards and370 tests pass on the consolidated implementation; browser assertions cover the new presentation. Complete repaired exact-head verification and actual staging health/settings checks, report PR75 and staging URL, and leave unmerged. Record immutable CI/deploy receipts in the PR without creating status-only commit loops. Before a later production release, verify native-domain CI-token permissions; staging does not prove those production permissions.
-
-## Local follow-up after PR75 formatting correction
-
-Owner-approved form guidance, faded unavailable calendar dates, Continue typography/entrance motion and loading labels are consolidated locally. Desktop guest/email choices narrow to60%; calendar adds a second desktop continuation using the shared action, with one on phones. Enquiry live delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com with customer Reply-To, background Turnstile and durable duplicate-send protection. New migration0050 and explicit existing staging sender accompany it. Worker enquiry11 and identity-delivery33 cases passed; frontend371 passed, final form subset8 passed, Worker grouping4 and deployment-target10 direct tooling tests passed. Types, lint, formatting and source/inventory guards passed. Owner authorized pushing this consolidated follow-up to PR75. No live enquiries sent; exact-head CI and deployment remain pending. Leave unmerged.

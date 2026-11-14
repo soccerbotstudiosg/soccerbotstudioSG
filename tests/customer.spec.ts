@@ -788,7 +788,9 @@ test("email verification rejects an incorrect code and continues after correctio
   await expect(
     page.getByRole("textbox", { name: /^Email address/ }),
   ).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByLabel("Verification code")).toHaveCount(0);
+  await expect(
+    page.getByLabel("Verification code", { exact: true }),
+  ).toHaveCount(0);
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("long.customer.address@example.com");
@@ -798,14 +800,18 @@ test("email verification rejects an incorrect code and continues after correctio
   ).toBeVisible();
   // The code view mounts before the loading overlay releases page inertness.
   await expect(page.locator("main")).not.toHaveAttribute("inert");
-  await page.getByLabel("Verification code").fill("000000");
-  await expect(page.getByLabel("Verification code")).toHaveValue("000000");
+  await page.getByLabel("Verification code", { exact: true }).fill("000000");
+  await expect(
+    page.getByLabel("Verification code", { exact: true }),
+  ).toHaveValue("000000");
   await page.getByRole("button", { name: "Verify and continue" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText(
     "incorrect",
   );
-  await page.getByLabel("Verification code").fill("360360");
-  await expect(page.getByLabel("Verification code")).toHaveValue("360360");
+  await page.getByLabel("Verification code", { exact: true }).fill("360360");
+  await expect(
+    page.getByLabel("Verification code", { exact: true }),
+  ).toHaveValue("360360");
   await page.getByRole("button", { name: "Verify and continue" }).click();
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
@@ -1009,13 +1015,25 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   }
   const cardWidths = await page
     .locator(".session-products")
-    .evaluate((grid) => ({
-      grid: grid.getBoundingClientRect().width,
-      card: grid.children[0].getBoundingClientRect().width,
-      gap: parseFloat(getComputedStyle(grid).columnGap),
-      mobile: matchMedia("(max-width: 700px)").matches,
-      medium: matchMedia("(max-width: 1200px)").matches,
-    }));
+    .evaluate(async (grid) => {
+      await Promise.all(
+        grid.children[0]
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation instanceof CSSAnimation &&
+              animation.animationName === "booking-action-ready",
+          )
+          .map((animation) => animation.finished),
+      );
+      return {
+        grid: grid.getBoundingClientRect().width,
+        card: grid.children[0].getBoundingClientRect().width,
+        gap: parseFloat(getComputedStyle(grid).columnGap),
+        mobile: matchMedia("(max-width: 700px)").matches,
+        medium: matchMedia("(max-width: 1200px)").matches,
+      };
+    });
   const expectedCardWidth = cardWidths.mobile
     ? cardWidths.grid
     : cardWidths.medium

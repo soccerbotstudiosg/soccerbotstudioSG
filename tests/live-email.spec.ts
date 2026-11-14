@@ -57,8 +57,12 @@ const syntheticTurnstileScript = `
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = 'Complete synthetic email check';
-        button.onclick = complete;
+        button.onclick = () => {
+          options['after-interactive-callback']();
+          complete();
+        };
         container.append(button);
+        options['before-interactive-callback']();
       }
       return id;
     },
@@ -368,6 +372,12 @@ test("live email requires the supplied widget proof before protected requests", 
   const widget = page.getByLabel("Email security check", { exact: true });
   await expect(widget).toHaveAttribute("data-sitekey", sitekey);
   await expect(widget).toHaveAttribute("data-action", "verify-email");
+  await expect(
+    page.getByRole("button", {
+      name: "Complete synthetic email check",
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(
     page.getByText("Email sign-in preview", { exact: false }),
   ).toHaveCount(0);

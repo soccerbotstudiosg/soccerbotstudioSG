@@ -84,6 +84,7 @@ export function checkWorker(root) {
               "../src/domain/booking-policy",
               "../src/domain/catalog",
               "../src/domain/contact",
+              "../src/domain/enquiry",
               "../src/domain/dates",
               "../src/domain/session-pricing",
             ].includes(spec)
