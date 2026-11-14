@@ -47,7 +47,7 @@ export function SessionStep() {
       <h2 className="section-title">Choose your outlet</h2>
       <div className="outlet-options">
         <button
-          className="surface outlet-option"
+          className="surface outlet-option booking-entry-action"
           aria-label={`Select ${LOCATION.building} outlet`}
           aria-pressed={outletSelected}
           aria-expanded={outletSelected}
@@ -204,7 +204,7 @@ function SessionPresentation({
       <h2 className="section-title">Select your session</h2>
       <div className="session-products">
         <button
-          className="surface session-product"
+          className="surface session-product booking-entry-action"
           aria-label={`Choose ${serviceName}`}
           aria-pressed={expanded}
           aria-expanded={expanded}

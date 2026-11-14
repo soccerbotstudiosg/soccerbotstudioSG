@@ -1589,7 +1589,11 @@ test("header blue and the typography hierarchy stay consistent across every book
       ),
     ).toBeLessThanOrEqual(1);
   }
-  async function sectionType(selector: string, expectedSize = 20) {
+  async function sectionType(
+    selector: string,
+    expectedSize = 20,
+    expectedColor = brand,
+  ) {
     if (
       page.viewportSize()!.width <= 700 &&
       (await page.locator(".booking-navigation").count())
@@ -1716,7 +1720,7 @@ test("header blue and the typography hierarchy stay consistent across every book
       expect(style.size).toBeCloseTo(expectedSize, 5);
       expect(style.weight).toBe("700");
       expect(style.style).toBe("normal");
-      expect(style.color).toBe(brand);
+      expect(style.color).toBe(expectedColor);
     }
   }
   await openSite(page, "/book/account/");
@@ -1735,7 +1739,9 @@ test("header blue and the typography hierarchy stay consistent across every book
         document.fonts.check("italic 900 32px Roboto"),
     ),
   ).toBe(true);
-  await sectionType(".access-option h2");
+  await expect(page.locator(".access-option")).toHaveCount(1);
+  await expect(page.locator(".access-option h2")).toHaveCount(0);
+  await expect(page.locator(".access-choice-divider")).toHaveText("or");
   if ((page.viewportSize()?.width ?? 1280) <= 700) {
     for (const card of await page.locator(".access-option").all()) {
       await expect(card).toHaveCSS("padding-top", "14px");
@@ -1761,7 +1767,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     const border = await card.evaluate(
       (node) => getComputedStyle(node).borderColor,
     );
-    await card.getByRole("heading").hover();
+    await card.getByText("or", { exact: true }).hover();
     await expect(card).toHaveCSS("background-color", background);
     await expect(card).toHaveCSS("border-color", border);
     await guest.hover();
@@ -1783,13 +1789,21 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   await sectionType(
-    ".session-product-name, .session-inclusions h2",
+    ".session-product-name",
+    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
+    "rgb(255, 255, 255)",
+  );
+  await sectionType(
+    ".session-inclusions h2",
     (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
   );
   for (const card of [
     page.locator(".outlet-option"),
     page.locator(".session-product"),
   ]) {
+    await expect(card).toHaveCSS("background-color", brand);
+    await expect(card).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(card).toHaveCSS("border-radius", "3px 12px");
     const chevron = card.locator(".selection-chevron");
     await expect(chevron).toBeVisible();
     const geometry = await card.evaluate((node) => {
@@ -1869,9 +1883,14 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".calendar-legend")).toHaveCount(0);
   await expect(page.locator(".date .dot")).toHaveCount(0);
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
+  await expect(page.locator(".date.selected")).toHaveCSS("border-color", brand);
   await expect(page.locator(".date.selected")).toHaveCSS(
-    "border-color",
-    "rgb(86, 102, 168)",
+    "background-color",
+    brand,
+  );
+  await expect(page.locator(".date.selected")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
   );
   await expect(page.locator(".date.selected strong")).toHaveCSS(
     "background-color",
@@ -2272,15 +2291,13 @@ test("protected confirmation waits for server evidence and rejects a tampered re
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   release();
+  await expect(page).toHaveURL(sitePath("/"));
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
-  ).toBeVisible();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "Booking confirmed. Try loading your details again.",
+  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Request Help" })).toHaveCount(
+    0,
   );
-  await expect(
-    page.getByRole("button", { name: "Load booking details", exact: true }),
-  ).toBeVisible();
   await page.unroute(`**/api/attempts/${attempt}/confirmation`);
   await page.route(`**/api/attempts/${attempt}/confirmation`, (route) =>
     route.fulfill({
@@ -2289,10 +2306,8 @@ test("protected confirmation waits for server evidence and rejects a tampered re
       body: '{"error":"access_denied"}',
     }),
   );
-  await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "Confirmation unavailable" }),
-  ).toBeVisible();
+  await page.goto(sitePath(`/confirmation/?attempt=${attempt}&paid=true`));
+  await expect(page).toHaveURL(sitePath("/"));
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);

@@ -1,3 +1,4 @@
+import { sitePath } from "../src/content/site-path";
 import { createHash } from "node:crypto";
 import { isHitPayApiCall } from "../worker/tests/provider-url-fixture.mjs";
 import { createBookingSequence } from "../worker/tests/booking-sequence-fixture.mjs";
@@ -611,9 +612,13 @@ test("remembered live account edits and rereads contact while native booking sta
   ).toHaveCount(0);
   await expect(page.locator(".access-option")).toHaveCount(1);
   const card = await page.locator(".access-option").boundingBox();
-  const choices = await page.locator(".access-options").boundingBox();
-  expect(card!.x).toBeCloseTo(choices!.x, 0);
-  expect(card!.width).toBeCloseTo(choices!.width, 0);
+  for (const action of await page.locator(".access-option button").all()) {
+    const bounds = await action.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(card!.x);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
+      card!.x + card!.width,
+    );
+  }
   await expect(
     page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toBeVisible();
@@ -2660,16 +2665,16 @@ test("real API revoked access at checkout retains the draft and denies protected
       .run();
     const response = await checkoutHoldResponse(page, undefined, true);
     expect(response.status()).toBe(401);
-    await expect(page).toHaveURL(/\/book\/payment\/$/);
+    await expect(page).toHaveURL(sitePath("/"));
     await expect(
       page.getByRole("heading", {
         name: "Confirmation unavailable",
         exact: true,
       }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
-      page.getByText(/Contact the studio to view this booking/),
-    ).toBeVisible();
+      page.getByRole("button", { name: "Request Help" }),
+    ).toHaveCount(0);
     expect(
       await page.evaluate(() =>
         JSON.parse(sessionStorage.getItem("soccerbot-live-draft") || "null"),

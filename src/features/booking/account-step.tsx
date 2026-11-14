@@ -397,17 +397,12 @@ export function AccountStep({
           />
         )}
         <div
-          className={`access-options${verifiedIdentity ? " access-options-verified" : ""}`}
+          className={`surface access-option access-options${verifiedIdentity ? " access-options-verified" : ""}`}
         >
           {!verifiedIdentity && (
-            <section className="surface access-option">
-              <span className="auth-mark">
-                <Icon name="users" />
-              </span>
-              <h2>Book as a guest</h2>
-              <p className="text-muted">Book without creating an account.</p>
+            <>
               <button
-                className="button wide"
+                className="button wide booking-entry-action"
                 aria-label="Continue as Guest"
                 disabled={busy}
                 onClick={() => {
@@ -422,88 +417,78 @@ export function AccountStep({
                 {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
                 <Icon name="chevron" />
               </button>
-            </section>
+              <span className="access-choice-divider">or</span>
+            </>
           )}
-          <section className="surface access-option">
-            <span className="auth-mark">
-              <Icon name="mail" />
-            </span>
-            <h2>{verifiedIdentity ? "Welcome back" : "Continue with email"}</h2>
-            <p
-              className={
-                verifiedIdentity ? "signed-in-email" : "break-words text-muted"
+          {verifiedIdentity && (
+            <>
+              <h2>Welcome back</h2>
+              <p className="signed-in-email">{verifiedIdentity.email}</p>
+            </>
+          )}
+          <button
+            className="button wide booking-entry-action"
+            disabled={busy}
+            onClick={() => {
+              if (verifiedIdentity)
+                void perform(async (signal) => {
+                  const current = identityService.current();
+                  if (signal.aborted) return;
+                  setIdentity(current);
+                  if (!current)
+                    throw new CustomerMessageError("Verify your email again.");
+                  await proceed(signal, current.email);
+                }, true);
+              else {
+                setError("");
+                setView("email");
               }
-            >
-              {verifiedIdentity
-                ? verifiedIdentity.email
-                : "Verify your email to prefill your name and phone number."}
-            </p>
-            <button
-              className="button wide"
-              disabled={busy}
-              onClick={() => {
-                if (verifiedIdentity)
-                  void perform(async (signal) => {
-                    const current = identityService.current();
-                    if (signal.aborted) return;
-                    setIdentity(current);
-                    if (!current)
-                      throw new CustomerMessageError(
-                        "Verify your email again.",
-                      );
-                    await proceed(signal, current.email);
-                  }, true);
-                else {
-                  setError("");
-                  setView("email");
-                }
-              }}
-            >
-              {verifiedIdentity ? "Continue signed in" : "Continue with email"}
-              <Icon name="chevron" />
-            </button>
-            {verifiedIdentity && (
-              <div className="account-actions">
-                {verifiedIdentity.remember === true && (
-                  <button
-                    type="button"
-                    className="button secondary"
-                    disabled={busy}
-                    onClick={() => {
-                      void perform(async (signal) => {
-                        const current = identityService.current();
-                        if (signal.aborted) return;
-                        setIdentity(current);
-                        if (!current || current.remember !== true)
-                          throw new CustomerMessageError(
-                            "Select Remember me and verify your email to save details.",
-                          );
-                        await proceed(signal, current.email, true);
-                      }, true);
-                    }}
-                  >
-                    Manage saved contact
-                  </button>
-                )}
+            }}
+          >
+            {verifiedIdentity ? "Continue signed in" : "Continue with email"}
+            <Icon name="chevron" />
+          </button>
+          {verifiedIdentity && (
+            <div className="account-actions">
+              {verifiedIdentity.remember === true && (
+                <button
+                  type="button"
+                  className="button secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    void perform(async (signal) => {
+                      const current = identityService.current();
+                      if (signal.aborted) return;
+                      setIdentity(current);
+                      if (!current || current.remember !== true)
+                        throw new CustomerMessageError(
+                          "Select Remember me and verify your email to save details.",
+                        );
+                      await proceed(signal, current.email, true);
+                    }, true);
+                  }}
+                >
+                  Manage saved contact
+                </button>
+              )}
+              <button
+                className="button secondary"
+                disabled={busy}
+                onClick={() => signOutInBackground(false, "email")}
+              >
+                Use another email
+              </button>
+              {identityService.mode === "live" && (
                 <button
                   className="button secondary"
                   disabled={busy}
-                  onClick={() => signOutInBackground(false, "email")}
+                  onClick={() => signOutInBackground(true, "choice")}
                 >
-                  Use another email
+                  Sign out all devices
                 </button>
-                {identityService.mode === "live" && (
-                  <button
-                    className="button secondary"
-                    disabled={busy}
-                    onClick={() => signOutInBackground(true, "choice")}
-                  >
-                    Sign out all devices
-                  </button>
-                )}
-              </div>
-            )}
-          </section>
+              )}
+            </div>
+          )}
         </div>
       </>
     );

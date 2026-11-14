@@ -55,7 +55,8 @@ const decisionSchema = z.discriminatedUnion("status", [
 ]);
 export class ConfirmationError extends Error {
   constructor(
-    public kind: "denied" | "unavailable" | "throttled" | "exhausted",
+    public kind:
+      "denied" | "missing" | "unavailable" | "throttled" | "exhausted",
     public nextCheckMs?: number,
     public deadlineMs?: number,
   ) {
@@ -108,6 +109,21 @@ const contextSchema = z.strictObject({
     pollAfterMs: z.number().int().min(1000).max(30000),
   }),
 });
+/** Reject inaccessible attempts without treating missing ownership as payment failure. */
+async function rejectInaccessibleAttempt(response: Response) {
+  if (response.status === 401 || response.status === 403)
+    throw new ConfirmationError("denied");
+  if (response.status === 404) {
+    const body: unknown = await response.json().catch(() => null);
+    if (
+      body !== null &&
+      typeof body === "object" &&
+      "error" in body &&
+      body.error === "attempt_unavailable"
+    )
+      throw new ConfirmationError("missing");
+  }
+}
 /** Read protected booking data with consistent response validation. */
 async function protectedRead(
   attemptId: string,
@@ -142,8 +158,7 @@ async function protectedRead(
     nextCheckMs: value("X-Next-Check"),
     deadlineMs: value("X-Checking-Deadline"),
   };
-  if (response.status === 401 || response.status === 403)
-    throw new ConfirmationError("denied");
+  await rejectInaccessibleAttempt(response);
   if (response.status === 429)
     throw new ConfirmationError(
       response.headers.get("X-Checks-Remaining") === "0"
@@ -380,8 +395,7 @@ export async function expireBooking(attemptId: string, signal?: AbortSignal) {
     redirect: "error",
     cache: "no-store",
   });
-  if (response.status === 401 || response.status === 403)
-    throw new ConfirmationError("denied");
+  await rejectInaccessibleAttempt(response);
   if (!response.ok || !(await response.json()).expired)
     throw new Error(
       "Payment status is still being checked. Your original booking has been kept.",

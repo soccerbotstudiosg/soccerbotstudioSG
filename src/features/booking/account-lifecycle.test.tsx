@@ -736,7 +736,9 @@ test("remembered identity restoration shows only the full-width welcome card wit
       screen.getByRole("button", { name: "Continue as Guest" }),
     ).toBeEnabled(),
   );
-  expect(document.querySelectorAll(".access-option")).toHaveLength(2);
+  expect(document.querySelectorAll(".access-option")).toHaveLength(1);
+  expect(screen.getByText("or")).toBeVisible();
+  expect(screen.queryByRole("heading", { name: "Book as a guest" })).toBeNull();
   expect(screen.queryByRole("heading", { name: "Welcome back" })).toBeNull();
   expect(signOut).toHaveBeenCalledExactlyOnceWith(
     expect.any(AbortSignal),

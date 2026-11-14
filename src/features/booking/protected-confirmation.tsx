@@ -73,7 +73,7 @@ function PaymentContinuation({
         {String(seconds % 60).padStart(2, "0")}
       </p>
       <a
-        className="button wide"
+        className="button wide booking-entry-action"
         href={url}
         data-booking-continuation
         referrerPolicy="no-referrer"
@@ -194,6 +194,7 @@ function ProtectedConfirmationBody({
     attemptId,
     sessionRevision,
     (!checkoutMode || contextSettled) &&
+      homeFallback !== attemptId &&
       !saved &&
       !incomplete &&
       !linkRecovering,
@@ -220,7 +221,12 @@ function ProtectedConfirmationBody({
     read: number;
   } | null>(null);
   const finishExpiry = useEffectEvent((id: string, revision: number) => {
-    if (id !== attemptId || revision !== sessionRevision || hasPaymentEvidence)
+    if (
+      id !== attemptId ||
+      revision !== sessionRevision ||
+      hasPaymentEvidence ||
+      homeFallback === id
+    )
       return;
     onExpired?.(attemptId);
     if (!calendarRecovery) router.replace("/book/time/");
@@ -264,9 +270,13 @@ function ProtectedConfirmationBody({
       } catch (error) {
         if (!active) return;
         setFailedExpiry({ id: attemptId, revision: sessionRevision });
-        if (error instanceof ConfirmationError && error.kind === "denied")
+        if (
+          error instanceof ConfirmationError &&
+          (error.kind === "denied" || error.kind === "missing")
+        ) {
           finished = true;
-        else
+          setHomeFallback(attemptId);
+        } else
           timer = setTimeout(() => {
             timer = undefined;
             void release();
@@ -338,8 +348,14 @@ function ProtectedConfirmationBody({
           finish();
           return;
         }
-      } catch {
+      } catch (error) {
         if (controller.signal.aborted) return;
+        if (error instanceof ConfirmationError && error.kind === "denied") {
+          clearTimeout(deadlineTimer);
+          setHomeFallback(attemptId);
+          finish();
+          return;
+        }
         if (!refresh)
           setReceiptFailure({ id: attemptId, revision: sessionRevision });
       }
@@ -419,9 +435,13 @@ function ProtectedConfirmationBody({
         if (!active) return;
         setPreparation("unavailable");
         setContextFailure({ id: attemptId, revision: sessionRevision });
-        if (error instanceof ConfirmationError && error.kind === "denied")
+        if (
+          error instanceof ConfirmationError &&
+          (error.kind === "denied" || error.kind === "missing")
+        ) {
           finished = true;
-        else {
+          setHomeFallback(attemptId);
+        } else {
           nextReadMs = Math.max(
             Date.now() + 30000,
             error instanceof ConfirmationError ? (error.nextCheckMs ?? 0) : 0,
@@ -553,8 +573,12 @@ function ProtectedConfirmationBody({
       } catch (error) {
         // A failed read cannot clear the uncertain attempt or authorize another write.
         if (controller.signal.aborted) return;
-        if (error instanceof ConfirmationError && error.kind === "denied") {
+        if (
+          error instanceof ConfirmationError &&
+          (error.kind === "denied" || error.kind === "missing")
+        ) {
           controller.abort();
+          setHomeFallback(attemptId);
           setContext(null);
           setContextFailure({ id: attemptId, revision: sessionRevision });
           return;
@@ -611,6 +635,7 @@ function ProtectedConfirmationBody({
   const calendarReturned = useRef<string | null>(null);
   const [recoveryTimedOut, setRecoveryTimedOut] = useState<string | null>(null);
   const postPayment =
+    checkoutMode === "live" &&
     confirmationRoute &&
     (hasPaymentEvidence ||
       (providerReturn && !allowPaymentContinuation) ||
@@ -854,6 +879,15 @@ function ProtectedConfirmationBody({
           : view === "confirmed" && current?.details
             ? bookingFromReceipt(current.details)
             : null;
+  const returnExpiredCheckout = useEffectEvent(() => {
+    if (onAwaitingExpiry?.(attemptId)) {
+      calendarReturned.current = attemptId;
+      router.replace("/book/time/");
+    } else if (confirmationRoute) {
+      calendarReturned.current = attemptId;
+      setHomeFallback(attemptId);
+    }
+  });
   useEffect(() => {
     if (calendarRecovery) {
       if (hasPaymentEvidence || displayedReceipt) {
@@ -880,12 +914,10 @@ function ProtectedConfirmationBody({
       calendarReturned.current === attemptId
     )
       return;
-    if (onAwaitingExpiry?.(attemptId)) {
-      calendarReturned.current = attemptId;
-      router.replace("/book/time/");
-    }
+    returnExpiredCheckout();
   }, [
     calendarRecovery,
+    confirmationRoute,
     postPayment,
     checkoutMode,
     view,
@@ -1057,6 +1089,7 @@ function ProtectedConfirmationBody({
     view !== "denied" &&
     !creationResolved
   ) {
+    if (!current) return <ConfirmationHome />;
     const notice = (
       <div className="alert booking-help-notice" role="alert">
         <div className="booking-help-content">
@@ -1083,14 +1116,10 @@ function ProtectedConfirmationBody({
       );
     return (
       <PendingConfirmation label={label} pendingNotice={notice} showSummary>
-        <>
-          {current && (
-            <ConfirmationSummary
-              summary={current.summary}
-              details={current.details}
-            />
-          )}
-        </>
+        <ConfirmationSummary
+          summary={current.summary}
+          details={current.details}
+        />
       </PendingConfirmation>
     );
   }
@@ -1212,7 +1241,7 @@ function ProtectedConfirmationBody({
       </PendingConfirmation>
     );
   }
-  if (checkoutMode === "live" && confirmationRoute) {
+  if (checkoutMode !== "synthetic" && confirmationRoute) {
     // A successful handoff already owns navigation; never race it with Home.
     if (recoveryTimedOut === attemptId) return null;
     return <ConfirmationHome />;

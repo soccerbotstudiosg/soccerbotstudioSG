@@ -337,3 +337,19 @@ it("accepts only a bounded protected HitPay sandbox checkout URL", async () => {
     expect(Number.isSafeInteger(checkoutNow(result.clock))).toBe(true);
   }
 });
+
+it("distinguishes unavailable attempt identity from temporary protected-read failures", async () => {
+  for (const [status, body, kind] of [
+    [404, { error: "attempt_unavailable" }, "missing"],
+    [404, { error: "route_unavailable" }, "unavailable"],
+    [503, { error: "attempt_unavailable" }, "unavailable"],
+    [401, { error: "access_denied" }, "denied"],
+    [403, { error: "access_denied" }, "denied"],
+  ] as const) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json(body, { status })),
+    );
+    await expect(read("live")).rejects.toMatchObject({ kind });
+  }
+});

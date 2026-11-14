@@ -933,7 +933,15 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "an expired checkout with no accepted calendar handoff returns home without claiming release"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "an expired confirmation wait cannot replace fresh reads on refresh or native unpaid return"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "an unavailable retained attempt goes home instead of showing payment uncertainty"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -946,6 +954,10 @@
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "completed return recovery remains bounded while checkout context is still recovering"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "confirmation routes without live recovery go home after receipt failure or denied access"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -969,11 +981,27 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "explicit receipt access denial returns home instead of retaining protected details"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "failed booking restoration does not block independent protected confirmation"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "failed confirmation recovery handoff goes home after its budget without releasing the attempt"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "failed post-payment context returns home after the budget instead of rendering an empty Pending summary"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "idling and failed invoice enrichment retain an already verified confirmation"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "inaccessible expiry checks go home without releasing or retrying the booking"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1006,6 +1034,10 @@
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "poll-confirmed payment retains its displayed proof while the final receipt is delayed"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "recovery polling goes home and stops when booking identity becomes inaccessible"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1338,6 +1370,10 @@
   {
     "file": "src/services/confirmation.test.ts",
     "title": "accepts only the protected synthetic checkout bound to the requested attempt"
+  },
+  {
+    "file": "src/services/confirmation.test.ts",
+    "title": "distinguishes unavailable attempt identity from temporary protected-read failures"
   },
   {
     "file": "src/services/confirmation.test.ts",

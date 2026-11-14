@@ -1140,7 +1140,9 @@ test("expiry recovery hides affected studio times across trainers while other se
   expect(
     screen.queryByRole("button", { name: /12:00–12:40/ }),
   ).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
+  expect(
+    await screen.findByRole("button", { name: /12:50–13:30/ }),
+  ).toBeEnabled();
   expect(JSON.parse(screen.getByTestId("recovery-cart").textContent!)).toEqual(
     [],
   );
