@@ -12,11 +12,9 @@ Enquiry delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com 
 
 ## Verification and immediate next action
 
-Published head d699aeab is under verification in run43592982146. All three Worker suites and both profile builds passed. Frontend tooling failed because the new enquiry domain import lacked its exact allowlist entry and deployment fixtures lacked the explicit staging sender. Worker aggregation hit the same import guard. Backend browser cases found an ambiguous code-field label and measured card geometry during the entrance animation.
+Run43595003996 on080d47fb confirms the frontend import/sender repairs, all three Worker groups, Worker aggregation and both live-email shards. Backend shard1 passed; shard2 exposed one later desktop geometry assertion: it could sample Calendar before the Details navigation settled. Added exact Details URL/heading preconditions without changing the1px tolerance. Types/lint and independent audit passed. All remaining jobs finished without another independent failure. Push this final correction, then verify fresh exact-head CI and actual staging.
 
-Local corrections preserve strict boundaries, exact sender checks, authentication assertions and the existing1px geometry tolerance. All191 tooling cases passed across the initial sweep and targeted environment reruns. Types, lint and formatting passed; independent repair audit passed. Earlier application evidence remains371 frontend tests,11 enquiry Worker cases and33 identity-delivery compatibility cases, using intercepted providers. CI owns browser execution. No live enquiries were sent.
-
-Live-email also exposed a stale synthetic widget fixture: it requested manual proof without invoking the interaction-required callback. The fixture now follows the before/after interaction lifecycle; proof gating is retained. Push the consolidated correction after scoped checks. Fresh exact-head CI and actual staging health/settings checks remain required. Record CI/deployment receipts in the PR without status-only commit loops. Detailed evidence is retained in [Journey](docs/journey.md). Do not merge.
+Application verification remains371 frontend tests,11 enquiry Worker cases and33 identity-delivery cases with intercepted providers. CI owns browser execution; no live enquiries were sent. Earlier repair verification includes191 tooling cases and2 widget lifecycle cases. Retain detailed failure evidence in [Journey](docs/journey.md); record final CI/deployment receipts in the PR without status-only commit loops. Leave PR75 unmerged.
 
 ## Remaining owner acceptance
 

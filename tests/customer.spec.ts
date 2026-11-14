@@ -1236,6 +1236,10 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     })
     .first()
     .click();
+  await expect(page).toHaveURL(/\/book\/details\/$/);
+  await expect(
+    page.getByRole("heading", { name: "Your details", exact: true }),
+  ).toBeVisible();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
   await details(page);
