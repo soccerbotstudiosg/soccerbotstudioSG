@@ -781,44 +781,25 @@ test("a trainer choice opened before expiry cannot add the session after its sta
   expect(loadBooking().draft.slots).toHaveLength(1);
 });
 
-test("calendar back preserves outlet and session choices while explicit deselection still clears them", async () => {
+test("calendar back preserves player count with the outlet session and action immediately visible", async () => {
   const scroll = vi.fn();
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
     configurable: true,
     value: scroll,
   });
-  const originalMatchMedia = window.matchMedia;
-  let mobile = false;
-  vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-    ...originalMatchMedia(query),
-    matches: query === "(max-width: 700px)" && mobile,
-  }));
   const user = userEvent.setup();
   const view = render(
     <BookingProvider>
       <SessionStep />
     </BookingProvider>,
   );
-  await user.click(
-    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
-  );
-  expect(scroll).toHaveBeenCalledTimes(1);
-  expect(scroll.mock.instances[0]).toBe(
-    document.getElementById("outlet-sessions"),
-  );
-  await user.click(
-    screen.getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-    }),
-  );
-  expect(scroll).toHaveBeenCalledTimes(2);
-  expect(scroll.mock.instances[1]).toBe(
-    document.querySelector(".booking-primary-action"),
-  );
-  expect(scroll).toHaveBeenLastCalledWith({
-    block: "nearest",
-    behavior: "smooth",
-  });
+  expect(
+    screen.getByRole("region", { name: "Kickoff Special (Trial Price)" }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("link", { name: "Choose Date & Time" }),
+  ).toBeVisible();
+  expect(scroll).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: "Add one player" }));
   view.rerender(
     <BookingProvider>
@@ -831,44 +812,34 @@ test("calendar back preserves outlet and session choices while explicit deselect
     </BookingProvider>,
   );
   expect(
-    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
-  ).toHaveAttribute("aria-pressed", "true");
-  expect(
-    screen.getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-    }),
-  ).toHaveAttribute("aria-pressed", "true");
+    screen.getByRole("region", { name: "Kickoff Special (Trial Price)" }),
+  ).toBeVisible();
   expect(
     screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
-  expect(screen.getByText("2 players", { exact: true })).toBeVisible();
-  expect(scroll).toHaveBeenCalledTimes(2);
-  mobile = true;
+  expect(screen.getByRole("status", { name: "Players" })).toHaveTextContent(
+    "2",
+  );
+  expect(scroll).not.toHaveBeenCalled();
   await user.click(
     screen.getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
     }),
   );
+  expect(
+    screen.queryByRole("button", { name: "Add one player" }),
+  ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("link", { name: "Choose Date & Time" }),
   ).not.toBeInTheDocument();
   await user.click(
-    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
-  );
-  await user.click(
-    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
-  );
-  expect(
-    screen.getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-    }),
-  ).toHaveAttribute("aria-pressed", "false");
-  await user.click(
     screen.getByRole("button", {
       name: "Choose Kickoff Special (Trial Price)",
     }),
   );
-  expect(scroll).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole("status", { name: "Players" })).toHaveTextContent(
+    "2",
+  );
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 

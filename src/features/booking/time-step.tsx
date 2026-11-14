@@ -10,6 +10,7 @@ import {
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import {
   type ReactNode,
+  type CSSProperties,
   useEffect,
   useId,
   useMemo,
@@ -368,9 +369,9 @@ export function TimeStep({
             ),
         )
       : [];
-  const groups = [
-    ...new Map(slots.map((slot) => [slotKey(slot), slot])).keys(),
-  ].map((key) => slots.filter((slot) => slotKey(slot) === key));
+  const groups = [...new Map(slots.map((slot) => [slotKey(slot), slot])).keys()]
+    .map((key) => slots.filter((slot) => slotKey(slot) === key))
+    .sort((left, right) => left[0].start.localeCompare(right[0].start));
   /** Commit only an explicitly chosen, currently offered trainer for this time. */
   function select(offered: AvailableSlot) {
     if (
@@ -740,7 +741,16 @@ export function TimeStep({
                 <BrandLoading overlay={false} compact label="Checking times…" />
               )
             ) : slots.length ? (
-              <div className="times" role="group" aria-label="Session times">
+              <div
+                className="times"
+                role="group"
+                aria-label="Session times"
+                style={
+                  {
+                    "--time-rows": Math.ceil(groups.length / 2),
+                  } as CSSProperties
+                }
+              >
                 <p className="mobile-time-hint">
                   <span className="time-info" aria-hidden="true">
                     i

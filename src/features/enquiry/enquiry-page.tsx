@@ -22,15 +22,11 @@ const blank: Enquiry = {
   time: "",
   message: "",
 };
-const hints: Record<keyof Enquiry, string> = {
+const placeholders: Partial<Record<keyof Enquiry, string>> = {
   name: "John Doe",
   email: "abc@gmail.com",
-  phone: "Include your country code, for example +65 81234567.",
   organisation: "International Sports School",
-  purpose: "Choose the option that best describes your enquiry.",
   guests: "12",
-  date: "Your preferred date, subject to availability.",
-  time: "Your preferred time in Singapore time (SGT).",
   message: "Tell us what you need. Maximum 2,000 characters.",
 };
 // The exported HTML must not accept input before React can retain changes.
@@ -97,15 +93,9 @@ export function EnquiryPage() {
       <input
         id={`enquiry-${key}`}
         placeholder={
-          type === "date" || type === "time" ? undefined : hints[key]
+          type === "date" || type === "time" ? undefined : placeholders[key]
         }
-        aria-describedby={
-          errorFor(key)
-            ? `enquiry-${key}-error`
-            : type === "date" || type === "time"
-              ? `enquiry-${key}-hint`
-              : undefined
-        }
+        aria-describedby={errorFor(key) ? `enquiry-${key}-error` : undefined}
         aria-invalid={!!errorFor(key)}
         className="field-control"
         value={value[key]}
@@ -126,23 +116,15 @@ export function EnquiryPage() {
         onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
       />
       {feedback(key)}
-      {!errorFor(key) && (type === "date" || type === "time") && (
-        <p className="field-hint" id={`enquiry-${key}-hint`}>
-          {hints[key]}
-        </p>
-      )}
     </div>
   );
   return (
-    <div className="mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-10">
+    <div className="enquiry-page mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-10">
       <Link className="back mb-8" href="/">
         <Icon name="back" />
-        Back to home
+        Home
       </Link>
-      <h1 className="page-title">Contact the studio.</h1>
-      <p className="mt-4 text-muted">
-        Tell us about your special arrangements or reservation.
-      </p>
+      <h1 className="page-title">Contact the studio</h1>
       <form
         className="surface mt-8 space-y-7"
         aria-busy={!ready || busy}
@@ -211,9 +193,7 @@ export function EnquiryPage() {
               <select
                 id="enquiry-purpose"
                 aria-describedby={
-                  errorFor("purpose")
-                    ? "enquiry-purpose-error"
-                    : "enquiry-purpose-hint"
+                  errorFor("purpose") ? "enquiry-purpose-error" : undefined
                 }
                 aria-invalid={!!errorFor("purpose")}
                 className="field-control"
@@ -227,9 +207,6 @@ export function EnquiryPage() {
                 ))}
               </select>
               {feedback("purpose")}
-              <p className="field-hint" id="enquiry-purpose-hint">
-                {hints.purpose}
-              </p>
             </div>
             {field("guests", "Number of guests", "number")}
             {field("date", "Preferred date", "date")}
@@ -241,10 +218,7 @@ export function EnquiryPage() {
               <textarea
                 id="enquiry-message"
                 aria-invalid={!!errorFor("message")}
-                aria-describedby={
-                  errorFor("message") ? "enquiry-message-error" : undefined
-                }
-                placeholder={hints.message}
+                placeholder={placeholders.message}
                 rows={5}
                 className="field-control"
                 required
@@ -255,7 +229,6 @@ export function EnquiryPage() {
                   setTouched((current) => ({ ...current, message: true }))
                 }
               />
-              {feedback("message")}
             </div>
           </div>
         </fieldset>

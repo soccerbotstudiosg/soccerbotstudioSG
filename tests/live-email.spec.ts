@@ -485,12 +485,6 @@ test("synthetic live verification reads server identity and keeps native booking
     .getByRole("button", { name: "Verify and continue", exact: true })
     .click();
   await expect(page).toHaveURL(/\/book\/session\/$/);
-  await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
-    .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Unable to Load.",
   );
@@ -723,12 +717,6 @@ test("remembered live account edits and rereads contact while native booking sta
   ).toHaveCount(0);
   await page
     .getByRole("button", { name: "Continue signed in", exact: true })
-    .click();
-  await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
     .click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Unable to Load.",
@@ -1004,13 +992,6 @@ test("native guest journey preserves players contact and one checkout across ref
     await expect(page).toHaveURL(/\/book\/session\/$/);
     expect(identityReads()).toBe(checkedIdentityReads);
     expect(accessRequests()).toBe(entryAccessRequests);
-    await page
-      .getByRole("button", {
-        name: "Select Apex @ Henderson outlet",
-        exact: true,
-      })
-      .click();
-    await page.getByRole("button", { name: /^Choose / }).click();
     await page
       .getByRole("button", { name: "Add one player", exact: true })
       .click();
@@ -2105,13 +2086,6 @@ async function guestDetails(
     .getByRole("button", { name: "Continue as Guest", exact: true })
     .click();
   await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
-    .click();
-  await page.getByRole("button", { name: /^Choose / }).click();
-  await page
     .getByRole("link", { name: "Choose Date & Time", exact: true })
     .click();
   const today = new Intl.DateTimeFormat("en-CA", {
@@ -3043,12 +3017,6 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
       .getByRole("button", { name: "Continue as Guest", exact: true })
       .click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
-    await page
-      .getByRole("button", {
-        name: "Select Apex @ Henderson outlet",
-        exact: true,
-      })
-      .click();
     await expect(
       page.getByText("Unable to Load.", {
         exact: true,

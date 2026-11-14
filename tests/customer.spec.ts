@@ -76,18 +76,6 @@ async function closeBookingPanel(page: Page) {
 async function chooseSlots(page: Page, multiple = false) {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as Guest" }).click();
-  await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
-    .click();
-  await page
-    .getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-      exact: true,
-    })
-    .click();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   await page
     .getByRole("button", {
@@ -844,18 +832,6 @@ test("email verification rejects an incorrect code and continues after correctio
   await expect(
     page.getByRole("button", { name: "Sign out", exact: true }),
   ).toHaveCount(0);
-  await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
-    .click();
-  await page
-    .getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-      exact: true,
-    })
-    .click();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   await expect(
     page.getByRole("heading", { name: "Select dates and times", exact: true }),
@@ -866,6 +842,35 @@ test("enquiry remains available without external submission or a mock assistant"
   page,
 }) => {
   await openSite(page, "/enquiry/");
+  const enquiryHome = page
+    .locator(".enquiry-page")
+    .getByRole("link", { name: "Home", exact: true });
+  await expect(enquiryHome).toHaveAttribute("href", sitePath("/"));
+  await expect(
+    page.getByRole("heading", { name: "Contact the studio", exact: true }),
+  ).toBeVisible();
+  for (const control of [
+    enquiryHome,
+    page.getByRole("button", { name: "Send enquiry" }),
+    page.locator(".nav-flag"),
+  ]) {
+    await expect(control).toHaveCSS("border-top-left-radius", "3px");
+    await expect(control).toHaveCSS("border-top-right-radius", "12px");
+    await expect(control).toHaveCSS("border-bottom-right-radius", "3px");
+    await expect(control).toHaveCSS("border-bottom-left-radius", "12px");
+  }
+  for (const control of [
+    page.locator(".nav-studio"),
+    page.locator(".nav-book"),
+  ]) {
+    await expect(control).toHaveCSS("font-family", /Roboto/);
+    await expect(control).toHaveCSS("font-weight", "900");
+    await expect(control).toHaveCSS("font-style", "italic");
+  }
+  await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
+  await expect(
+    page.getByText("Enter your requirements using 1–2,000 characters."),
+  ).toHaveCount(0);
   for (const selector of [
     "#enquiry-name",
     "#enquiry-email",
@@ -1017,24 +1022,17 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".session-products")).toHaveCount(0);
-  await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
-    .click();
+  await expect(page.locator(".session-products")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Add one player" }),
-  ).toHaveCount(0);
-  if ((page.viewportSize()?.width ?? 1280) <= 700) {
-    const outlet = await page.locator(".outlet-option").boundingBox();
-    const sessions = await page.locator(".session-products").boundingBox();
-    expect(outlet!.y).toBeGreaterThanOrEqual(0);
-    expect(sessions!.y + sessions!.height).toBeLessThanOrEqual(
-      page.viewportSize()!.height,
-    );
-  }
+  ).toBeVisible();
+  const next = page.getByRole("link", { name: "Choose Date & Time" });
+  await expect(next).toBeInViewport({ ratio: 1 });
+  const nextBox = await next.boundingBox();
+  expect(nextBox!.y).toBeGreaterThanOrEqual(0);
+  expect(nextBox!.y + nextBox!.height).toBeLessThanOrEqual(
+    page.viewportSize()!.height - 8,
+  );
   const cardWidths = await page
     .locator(".session-products")
     .evaluate(async (grid) => {
@@ -1058,9 +1056,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     });
   const expectedCardWidth = cardWidths.mobile
     ? cardWidths.grid
-    : cardWidths.medium
-      ? (cardWidths.grid - cardWidths.gap) / 2
-      : (cardWidths.grid - 2 * cardWidths.gap) / 3;
+    : (cardWidths.grid - cardWidths.gap) / 2;
   expect(Math.abs(cardWidths.card - expectedCardWidth)).toBeLessThanOrEqual(1);
   const outletWidth = await page
     .locator(".outlet-option")
@@ -1089,70 +1085,49 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   for (const row of priceRows)
     expect(row.amount.right).toBeLessThanOrEqual(row.box.right + 1);
 
-  await page
-    .getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-      exact: true,
-    })
-    .click();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator(".session-product")).toContainText("40 minutes");
-  await expect(page.locator(".session-product")).toHaveAttribute(
-    "aria-pressed",
-    "true",
+  await expect(page.locator(".session-product")).toContainText(
+    "Trainer included",
   );
   await expect(page.locator(".session-product-prices")).toContainText(
     "Weekdays",
   );
-  const selectedCardWidth = await page
-    .locator(".session-product")
-    .evaluate((element) => element.getBoundingClientRect().width);
-  expect(Math.abs(selectedCardWidth - expectedCardWidth)).toBeLessThanOrEqual(
-    1,
-  );
-  const playerWidth = await page
-    .locator(".player-selection")
-    .evaluate((element) => {
-      const style = getComputedStyle(element);
-      return (
-        element.clientWidth -
-        parseFloat(style.paddingLeft) -
-        parseFloat(style.paddingRight)
-      );
-    });
-  const counterWidth = await page
-    .locator(".counter")
-    .evaluate((element) => element.getBoundingClientRect().width);
-  expect(Math.abs(playerWidth - counterWidth)).toBeLessThanOrEqual(1);
+  await expect(
+    page.locator(".session-product .player-selection"),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Add one player" }).click();
-  await expect(page.locator(".counter output")).toHaveText("2 players");
-  const sessionCard = page.getByRole("button", {
+  await expect(page.locator(".counter output")).toHaveText("2");
+  await page.getByRole("button", { name: "Add one player" }).click();
+  await page.getByRole("button", { name: "Add one player" }).click();
+  await expect(page.locator(".counter output")).toHaveText("4");
+  await expect(
+    page.getByRole("button", { name: "Add one player" }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Remove one player" }).click();
+  await page.getByRole("button", { name: "Remove one player" }).click();
+  await expect(page.locator(".counter output")).toHaveText("2");
+  const sessionChoice = page.getByRole("button", {
     name: "Choose Kickoff Special (Trial Price)",
     exact: true,
   });
-  await sessionCard.click();
-  await expect(sessionCard).toHaveAttribute("aria-pressed", "false");
+  await sessionChoice.click();
+  await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator(".player-selection")).toHaveCount(0);
-  await expect(
-    page.getByRole("link", { name: "Choose Date & Time" }),
-  ).toHaveCount(0);
-  await sessionCard.click();
-  await expect(page.locator(".counter output")).toHaveText("2 players");
-  const outletCard = page.getByRole("button", {
+  await expect(next).toHaveCount(0);
+  await sessionChoice.click();
+  await expect(page.locator(".counter output")).toHaveText("2");
+  const outletChoice = page.getByRole("button", {
     name: "Select Apex @ Henderson outlet",
     exact: true,
   });
-  await outletCard.click();
-  await expect(outletCard).toHaveAttribute("aria-pressed", "false");
-  await expect(sessionCard).toHaveCount(0);
-  await expect(
-    page.getByRole("link", { name: "Choose Date & Time" }),
-  ).toHaveCount(0);
-  await outletCard.click();
-  await expect(sessionCard).toHaveAttribute("aria-pressed", "false");
+  await outletChoice.click();
+  await expect(page.locator(".session-products")).toHaveCount(0);
+  await outletChoice.click();
+  await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator(".player-selection")).toHaveCount(0);
-  await sessionCard.click();
-  await expect(page.locator(".counter output")).toHaveText("2 players");
+  await sessionChoice.click();
+  await expect(page.locator(".counter output")).toHaveText("2");
   const productFontSize = await page
     .locator(".session-product-name")
     .evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
@@ -1160,11 +1135,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
     5,
   );
-  for (const name of [
-    "Choose your outlet",
-    "Select your session",
-    "Included with your session",
-  ]) {
+  for (const name of ["Your outlet", "Select your session"]) {
     await expect(page.getByRole("heading", { name, exact: true })).toHaveCSS(
       "font-style",
       "normal",
@@ -1195,6 +1166,33 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("group", { name: "Session times" }).getByRole("button"),
   ).toHaveCount(9);
+  const timeCards = await page
+    .locator(".times > .time-choice")
+    .evaluateAll((cards) =>
+      cards.map((card) => ({
+        start: card.querySelector(".time-range")!.textContent!.slice(0, 5),
+        x: card.getBoundingClientRect().x,
+        y: card.getBoundingClientRect().y,
+      })),
+    );
+  expect(timeCards.map((card) => card.start)).toEqual(
+    timeCards.map((card) => card.start).sort(),
+  );
+  const rows =
+    page.viewportSize()!.width > 700
+      ? Math.ceil(timeCards.length / 2)
+      : timeCards.length;
+  for (let index = 1; index < timeCards.length; index += 1) {
+    const previous = timeCards[index - 1];
+    const current = timeCards[index];
+    if (index === rows) {
+      expect(current.x).toBeGreaterThan(previous.x);
+      expect(current.y).toBeCloseTo(timeCards[0].y, 0);
+    } else {
+      expect(current.x).toBeCloseTo(previous.x, 0);
+      expect(current.y).toBeGreaterThan(previous.y);
+    }
+  }
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
   await expect(crossing).toContainText("Crosses the 15:00 instructor rotation");
   await crossing.click();
@@ -1811,6 +1809,21 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(guest).toHaveCSS("font-weight", "900");
   await expect(guest).toHaveCSS("font-style", "italic");
   await expect(guest).toHaveCSS("font-size", "16px");
+  const divider = page.locator(".access-choice-divider");
+  await expect(divider).toHaveCSS("font-family", /Roboto/);
+  await expect(divider).toHaveCSS("font-size", "16px");
+  await expect(divider).toHaveCSS("font-weight", "900");
+  await expect(divider).toHaveCSS("font-style", "italic");
+  for (const action of [
+    guest,
+    page.getByRole("button", { name: "Continue with email" }),
+  ]) {
+    await expect(action.locator("svg")).toHaveCount(2);
+    for (const icon of await action.locator("svg").all()) {
+      await expect(icon).toHaveAttribute("aria-hidden", "true");
+      await expect(icon).toHaveCSS("stroke", "rgb(255, 255, 255)");
+    }
+  }
   const entryWidth = await guest.evaluate((button) => {
     const panel = button.parentElement!;
     const style = getComputedStyle(panel);
@@ -1843,26 +1856,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   }
   await guest.click();
   await pageHeading("Your session");
-  await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
-    .click();
-  await page
-    .getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-      exact: true,
-    })
-    .click();
   await sectionType(
     ".session-product-name",
     (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
     "rgb(255, 255, 255)",
-  );
-  await sectionType(
-    ".session-inclusions h2",
-    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
   );
   for (const card of [
     page.locator(".outlet-option"),
@@ -1871,28 +1868,10 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(card).toHaveCSS("background-color", brand);
     await expect(card).toHaveCSS("color", "rgb(255, 255, 255)");
     await expect(card).toHaveCSS("border-radius", "3px 12px");
-    const chevron = card.locator(".selection-chevron");
-    await expect(chevron).toBeVisible();
-    const geometry = await card.evaluate((node) => {
-      // Measure in one frame: session expansion may still be smoothly scrolling.
-      const cardBox = node.getBoundingClientRect();
-      const chevronBox = node
-        .querySelector(".selection-chevron")!
-        .getBoundingClientRect();
-      return {
-        centerOffset: Math.abs(
-          chevronBox.y +
-            chevronBox.height / 2 -
-            (cardBox.y + cardBox.height / 2),
-        ),
-        rightOffset: chevronBox.x - (cardBox.x + cardBox.width / 2),
-      };
-    });
-    expect(geometry.centerOffset).toBeLessThanOrEqual(1);
-    expect(geometry.rightOffset).toBeGreaterThan(0);
+    await expect(card.locator(".selection-chevron")).toBeVisible();
   }
   const selectedCardBackground = await page
-    .locator('.session-product[aria-pressed="true"]')
+    .locator(".session-product")
     .evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(
     page.getByRole("dialog", { name: "Kickoff Special (Trial Price)" }),
@@ -2486,18 +2465,6 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
 }) => {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue as Guest" }).click();
-  await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
-    .click();
-  await page
-    .getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-      exact: true,
-    })
-    .click();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   const date = addDays(DEMO_TODAY, 1);
   const mobile = page.viewportSize()!.width <= 700;
@@ -2855,18 +2822,6 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     expect(badgeBox!.x + badgeBox!.width).toBeLessThanOrEqual(width);
   }
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page
-    .getByRole("button", {
-      name: "Select Apex @ Henderson outlet",
-      exact: true,
-    })
-    .click();
-  await page
-    .getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
-      exact: true,
-    })
-    .click();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   const calendarTitle = page.getByRole("heading", {
     name: "Select dates and times",

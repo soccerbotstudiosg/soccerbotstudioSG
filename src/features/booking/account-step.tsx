@@ -418,6 +418,7 @@ export function AccountStep({
                   router.push("/book/session/");
                 }}
               >
+                <Icon name="users" />
                 {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
                 <Icon name="chevron" />
               </button>
@@ -449,6 +450,7 @@ export function AccountStep({
               }
             }}
           >
+            <Icon name="mail" />
             {verifiedIdentity ? "Continue signed in" : "Continue with email"}
             <Icon name="chevron" />
           </button>

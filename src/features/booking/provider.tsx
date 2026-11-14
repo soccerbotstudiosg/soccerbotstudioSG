@@ -314,8 +314,8 @@ export function BookingProvider({
     !/\/(?:book\/|confirmation)/.test(pathname) &&
     !!loadPendingConflict();
   const [sessionChoices, setSessionChoices] = useState<SessionChoices>({
-    outlet: false,
-    session: false,
+    outlet: true,
+    session: true,
   });
   const [noticeState, dispatchSelectionNotice] = useState(() => {
     const cutoff =
@@ -811,7 +811,7 @@ export function BookingProvider({
         profileSave.current?.controller.abort();
         profileSave.current = null;
         setProfileSaveError("");
-        setSessionChoices({ outlet: false, session: false });
+        setSessionChoices({ outlet: true, session: true });
         setProfileAccessRevision((revision) => revision + 1);
         setAction({ status: "idle" });
         // Preserve original financial authority; only the editable profile/draft is reset.
@@ -2303,7 +2303,7 @@ export function BookingProvider({
           profileSave.current = null;
           setProfileSaveError("");
           setSelectionNotice(null);
-          setSessionChoices({ outlet: false, session: false });
+          setSessionChoices({ outlet: true, session: true });
           showDate(null);
           setCalendarBrowsing(false);
           setAction({ status: "idle" });
@@ -2447,7 +2447,7 @@ export function BookingProvider({
           pauseCalendar(false);
           setSelectionNotice(null);
           setRestoredOwner({ service, identityService });
-          setSessionChoices({ outlet: false, session: false });
+          setSessionChoices({ outlet: true, session: true });
           commit({ version: 2, draft: blankDraft(), attempt: null });
         },
         /** Apply draft changes while preserving the booking state constraints. */
@@ -2525,7 +2525,7 @@ export function BookingProvider({
           cancel();
           setAction({ status: "idle" });
           setSelectionNotice(null);
-          setSessionChoices({ outlet: false, session: false });
+          setSessionChoices({ outlet: true, session: true });
           showDate(null);
           setCalendarBrowsing(false);
           const attempt = latest.current.attempt;
@@ -2555,7 +2555,7 @@ export function BookingProvider({
           clearIdentityEntry(identityService);
           cancel();
           setSelectionNotice(null);
-          setSessionChoices({ outlet: false, session: false });
+          setSessionChoices({ outlet: true, session: true });
           commit({ version: 2, draft: blankDraft(), attempt: null });
         },
       }}

@@ -1332,7 +1332,7 @@ test("switching identity clears selected session and cart without repeating entr
   fireEvent.click(screen.getByRole("button", { name: "Use another email" }));
   expect(screen.getByTestId("selection")).not.toHaveTextContent("old-service");
   expect(screen.getByTestId("selection")).toHaveTextContent('"players":1');
-  expect(screen.getByTestId("selection")).toHaveTextContent('"session":false');
+  expect(screen.getByTestId("selection")).toHaveTextContent('"session":true');
   expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   await act(async () => {});
 });

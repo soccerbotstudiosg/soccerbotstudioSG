@@ -112,6 +112,30 @@ test("enquiry waits for hydration then preserves entered details through submiss
 test("enquiry validates edits immediately and blocks invalid service submission", () => {
   render(<Enquiry />);
   const submit = vi.spyOn(services.enquiry, "submit");
+  expect(screen.getByRole("link", { name: /^Home$/ })).toHaveAttribute(
+    "href",
+    "/",
+  );
+  expect(
+    screen.getByRole("heading", { name: /^Contact the studio$/ }),
+  ).toBeVisible();
+  for (const removed of [
+    "Tell us about your special arrangements or reservation.",
+    "Choose the option that best describes your enquiry.",
+    "Your preferred date, subject to availability.",
+    "Your preferred time in Singapore time (SGT).",
+    "Enter your requirements using 1–2,000 characters.",
+  ])
+    expect(screen.queryByText(removed)).toBeNull();
+  expect(
+    screen.getByLabelText("Your requirements", { exact: false }),
+  ).not.toHaveAttribute("aria-describedby");
+  expect(
+    screen.getByLabelText("Preferred date", { exact: false }),
+  ).not.toHaveAttribute("aria-describedby");
+  expect(
+    screen.getByLabelText("Preferred time", { exact: false }),
+  ).not.toHaveAttribute("aria-describedby");
   for (const label of [
     "Full name",
     "Email address",

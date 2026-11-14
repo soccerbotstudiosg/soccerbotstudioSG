@@ -284,7 +284,7 @@ test("live calendar removes selections rejected at checkout and retains contact 
   ).not.toBeInTheDocument();
 });
 
-test("live session preserves demo product player and inclusion presentation using provider labels", async () => {
+test("live session preserves demo pricing and inline player controls using provider labels", async () => {
   vi.stubGlobal(
     "fetch",
     vi.fn(async () =>
@@ -313,26 +313,12 @@ test("live session preserves demo product player and inclusion presentation usin
       <SessionStep />
     </BookingProvider>,
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
-  );
-  const card = await screen.findByRole("button", {
-    name: "Choose Real session",
-  });
-  expect(card).toHaveTextContent("Weekdays $88");
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  fireEvent.click(card);
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Choose Real session" })).toBe(
-    card,
-  );
+  const card = await screen.findByRole("region", { name: "Real session" });
   expect(card).toBeVisible();
-  expect(card).toHaveAttribute("aria-pressed", "true");
   expect(card).toHaveTextContent("Weekdays $88");
   expect(card).toHaveTextContent("Weekends/Public Holiday $108");
-  expect(
-    screen.getByRole("heading", { name: "Included with your session" }),
-  ).toBeInTheDocument();
+  expect(card).toHaveTextContent("Trainer included");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(
     await screen.findByRole("link", { name: "Choose Date & Time" }),
   ).toBeInTheDocument();
@@ -340,9 +326,13 @@ test("live session preserves demo product player and inclusion presentation usin
     screen.getByRole("button", { name: "Remove one player" }),
   ).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Add one player" }));
-  expect(screen.getByText("2 players")).toBeInTheDocument();
+  expect(screen.getByRole("status", { name: "Players" })).toHaveTextContent(
+    "2",
+  );
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  expect(screen.getByText("2 players")).toBeInTheDocument();
+  expect(screen.getByRole("status", { name: "Players" })).toHaveTextContent(
+    "2",
+  );
   expect(
     screen.queryByRole("button", { name: "Select session" }),
   ).not.toBeInTheDocument();
