@@ -22,8 +22,7 @@ import {
 } from "../src/domain/native-checkout";
 import { customerCatalogueSchema } from "../src/domain/catalog";
 
-// Management-owned, closed by absence. Visitors supply only a calendar month;
-// no anonymous identity, booking grant or customer information is created.
+// Server-authorized display reads create no customer identity or checkout authority.
 const windowSchema = z.strictObject({
   sourceRevision: z.string().regex(/^[a-f0-9]{40}$/),
   serviceId: z.string().regex(/^[1-9]\d{0,14}$/),
@@ -47,7 +46,7 @@ export type ReadOptions = {
   beforeProviderRead?: () => void;
   onFreshDay?: (day: z.infer<typeof nativeAvailabilitySchema>) => void;
 };
-/** Check whether a public calendar read window is configured. */
+/** Check whether live access or a public calendar window permits display reads. */
 export function hasPublicCalendarWindow(env: Env) {
   return (
     liveCustomerAccess(env) ||

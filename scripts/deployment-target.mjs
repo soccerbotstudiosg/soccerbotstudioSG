@@ -52,6 +52,15 @@ const schema = z.strictObject({
   access: z.enum(["closed", "developer-sandbox", "client-sandbox"]),
   pagesProject: z.union([name, z.literal("")]),
   pagesBranch: name,
+  customDomain: z
+    .strictObject({
+      zoneId: z.string().regex(/^[a-f0-9]{32}$/),
+      zoneName: z
+        .string()
+        .regex(/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/),
+    })
+    .nullable()
+    .optional(),
   saasZone: z
     .strictObject({
       id: z.string().regex(/^[a-f0-9]{32}$/),
@@ -99,9 +108,33 @@ export function validateTarget(value) {
       [
         Boolean(target.pagesProject),
         Boolean(target.saasZone),
+        Boolean(target.customDomain),
         isWorkersDevTarget(target),
       ].filter(Boolean).length === 1,
-      "Client entry requires exactly one Pages, SaaS or Workers.dev target",
+      "Client entry requires exactly one Pages, SaaS, custom domain or Workers.dev target",
+    );
+  }
+  if (target.customDomain) {
+    assert.equal(target.target, "production", "Custom domains are client-only");
+    const url = new URL(target.origin);
+    assert.ok(
+      url.hostname.length <= 253 &&
+        url.hostname
+          .split(".")
+          .every((label) =>
+            /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label),
+          ),
+      "Custom domains require an exact DNS hostname",
+    );
+    assert.equal(
+      url.port,
+      "",
+      "Custom domains require the standard HTTPS port",
+    );
+    assert.ok(
+      url.hostname === target.customDomain.zoneName ||
+        url.hostname.endsWith(`.${target.customDomain.zoneName}`),
+      "Custom domain must belong to its declared zone",
     );
   }
   if (target.saasZone) {
@@ -146,6 +179,7 @@ export function isWorkersDevTarget(target) {
   return (
     !target.pagesProject &&
     !target.saasZone &&
+    !target.customDomain &&
     new RegExp(
       `^https://${target.workerName}\\.[a-z0-9-]+\\.workers\\.dev$`,
     ).test(target.origin)
@@ -166,6 +200,17 @@ export function targetConfig(base, target) {
     ...(target.saasZone
       ? {
           routes: [{ pattern: "*/*", zone_id: target.saasZone.id }],
+        }
+      : {}),
+    ...(target.customDomain
+      ? {
+          routes: [
+            {
+              pattern: new URL(target.origin).hostname,
+              zone_id: target.customDomain.zoneId,
+              custom_domain: true,
+            },
+          ],
         }
       : {}),
     d1_databases: [

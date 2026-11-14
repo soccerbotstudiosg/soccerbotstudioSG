@@ -17,7 +17,7 @@ const scopeSchema = z.strictObject({
   startingUsed: z.number().int().min(0).max(58),
   maxCalls: z.literal(6),
 });
-/** Authorize and serve customer catalogue or availability requests. */
+/** Authorize and serve the customer catalogue. */
 export async function customerCatalogue(
   request: Request,
   env: Env,

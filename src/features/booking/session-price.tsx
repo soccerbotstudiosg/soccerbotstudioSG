@@ -8,7 +8,7 @@ import {
 import { useBooking } from "./provider";
 
 /** Format approved display prices without granting booking or payment authority. */
-export function sessionPriceLabel(environment: "developer" | "production") {
+function sessionPriceLabel(environment: "developer" | "production") {
   const prices = sessionPrices(environment);
   return `S$${prices.ordinary / 100} weekdays · S$${prices.premium / 100} weekends and Singapore public holidays`;
 }

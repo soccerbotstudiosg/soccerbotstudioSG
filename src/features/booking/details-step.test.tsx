@@ -118,7 +118,7 @@ test("details contains only the five contact fields and validates them before re
   for (const label of [/Full name/, /Email address/, /Mobile number/])
     expect(screen.getByLabelText(label)).toHaveAttribute(
       "aria-invalid",
-      "false",
+      "true",
     );
   expect(screen.getAllByRole("textbox")).toHaveLength(4);
   expect(screen.getAllByRole("combobox")).toHaveLength(1);
@@ -183,11 +183,10 @@ test("details contains only the five contact fields and validates them before re
   const confirmEmail = screen.getByRole("button", {
     name: "Confirm email address is correct",
   });
-  expect(
-    screen.getByText(
-      "Please double-check your email address, then confirm by selecting the exclamation mark.",
-    ),
-  ).toBeVisible();
+  expect(document.getElementById("email-check-help")).toHaveTextContent(
+    "Select ! to confirm email address.",
+  );
+  expect(screen.getByRole("img", { name: "exclamation mark" })).toBeVisible();
   expect(reviewButton).toBeDisabled();
   fireEvent.submit(document.getElementById("details-form")!);
   expect(mocks.push).not.toHaveBeenCalled();
@@ -483,7 +482,7 @@ test("invalid saved contacts remain editable in booking details and contact mana
     fireEvent.click(screen.getByText("Open saved contact"));
     const name = screen.getByLabelText(/Full name/);
     expect(name).not.toBeDisabled();
-    expect(name).toHaveAttribute("aria-invalid", "true");
+    expect(name).toHaveAttribute("aria-invalid", String(!profileOnly));
     expect(screen.queryByRole("textbox", { name: /Email address/ })).toBeNull();
     fireEvent.submit(document.getElementById("details-form")!);
     expect(name).toHaveFocus();

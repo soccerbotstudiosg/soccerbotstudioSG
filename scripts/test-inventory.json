@@ -457,6 +457,14 @@
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "Details aborts an explicitly opened month and calendar return retains loaded months"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
+    "title": "Details opens local Review without waiting for unavailable providers"
+  },
+  {
+    "file": "src/features/booking/booking-parity.test.tsx",
     "title": "browser slot cache expires after five minutes"
   },
   {
@@ -482,14 +490,6 @@
   {
     "file": "src/features/booking/booking-parity.test.tsx",
     "title": "cold calendar entry and refresh select an available day while retaining a valid chosen day"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "Details aborts an explicitly opened month and calendar return retains loaded months"
-  },
-  {
-    "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "Details opens local Review without waiting for unavailable providers"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
@@ -645,6 +645,14 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "HitPay HTTP conflict preserves the hold and shows payment failure without selection recovery"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "Review performs no provider reads and checkout verifies one booking before HitPay"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "access denial during conflict classification stops recovery and keeps the original cart without calendar navigation"
   },
   {
@@ -713,11 +721,11 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "expired held Review with unresolved release returns affected sessions in the first calendar notice"
+    "title": "expired Review releases only an authoritatively unpaid attempt and preserves contact on calendar return"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "expired Review releases only an authoritatively unpaid attempt and preserves contact on calendar return"
+    "title": "expired held Review with unresolved release returns affected sessions in the first calendar notice"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -738,10 +746,6 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "explicit reservation reuses its hold for payment without preparing or checking availability again"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "HitPay HTTP conflict preserves the hold and shows payment failure without selection recovery"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -829,10 +833,6 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "Review performs no provider reads and checkout verifies one booking before HitPay"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "saved URL from checkout navigates once without a context request"
   },
   {
@@ -873,6 +873,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "unresolved creation keeps forward navigation on Calendar until verified release permits Review acknowledgement"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "unselected calendar offers disappear at cutoff while a background availability read is pending"
   },
   {
@@ -882,10 +886,6 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "verified rejection permits Back and edits during classification without replaying payment"
-  },
-  {
-    "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "unresolved creation keeps forward navigation on Calendar until verified release permits Review acknowledgement"
   },
   {
     "file": "src/features/booking/email-bot-proof.test.tsx",
@@ -921,6 +921,10 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "Back to home starts the shared background exit and navigates without awaiting dismissal"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "a late reply from a previous attempt cannot confirm the current attempt"
   },
   {
@@ -929,15 +933,31 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "an expired checkout with no accepted calendar handoff returns home without claiming release"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "an expired confirmation wait cannot replace fresh reads on refresh or native unpaid return"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "an unavailable retained attempt goes home instead of showing payment uncertainty"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "authoritative unpaid expiry releases the original attempt before returning to the calendar"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "Back to home starts the shared background exit and navigates without awaiting dismissal"
+    "title": "booking restoration does not restart a protected confirmation read"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "booking restoration does not restart a protected confirmation read"
+    "title": "completed return recovery remains bounded while checkout context is still recovering"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "confirmation routes without live recovery go home after receipt failure or denied access"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -961,11 +981,35 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "explicit receipt access denial returns home instead of retaining protected details"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "failed booking restoration does not block independent protected confirmation"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "failed confirmation recovery handoff goes home after its budget without releasing the attempt"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "failed post-payment context returns home after the budget instead of rendering an empty Pending summary"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "idling and failed invoice enrichment retain an already verified confirmation"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "inaccessible expiry checks go home without releasing or retrying the booking"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "incomplete provider booking shows reservation recovery without a payment spinner or checkout link"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "invalid confirmation links go home without protected requests or storage changes"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -981,10 +1025,6 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "completed return recovery remains bounded while checkout context is still recovering"
-  },
-  {
-    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "pending checkout context uses the full checkout loader without summary or success"
   },
   {
@@ -997,11 +1037,11 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "reopening an expired paid booking shows the saved full confirmation without polling or granting exports"
+    "title": "recovery polling goes home and stops when booking identity becomes inaccessible"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "an expired confirmation wait cannot replace fresh reads on refresh or native unpaid return"
+    "title": "reopening an expired paid booking shows the saved full confirmation without polling or granting exports"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1089,15 +1129,15 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
-    "title": "pre-checkout recovery restores fresh display times without releasing the original attempt"
-  },
-  {
-    "file": "src/features/booking/time-step.test.tsx",
     "title": "expiry recovery hides affected studio times across trainers while other selections remain editable"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
     "title": "mobile calendar selection drawers and responsive scroll preserve restored availability"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "pre-checkout recovery restores fresh display times without releasing the original attempt"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
@@ -1301,11 +1341,11 @@
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
+    "title": "uses Singapore instants across month and year boundaries regardless of UTC date"
   },
   {
     "file": "src/services/booking.test.ts",
-    "title": "uses Singapore instants across month and year boundaries regardless of UTC date"
+    "title": "uses one shared studio with 40-minute sessions every 50 minutes"
   },
   {
     "file": "src/services/booking.test.ts",
@@ -1313,19 +1353,11 @@
   },
   {
     "file": "src/services/catalogue.test.ts",
-    "title": "catalogue additions and response order do not change approved identity"
+    "title": "shared catalogue schema accepts stable provider IDs without preview aliases"
   },
   {
     "file": "src/services/catalogue.test.ts",
-    "title": "catalogue review reports rename price and relationship changes while preserving selection"
-  },
-  {
-    "file": "src/services/catalogue.test.ts",
-    "title": "live catalogue boundary accepts stable provider IDs without preview aliases"
-  },
-  {
-    "file": "src/services/catalogue.test.ts",
-    "title": "live catalogue boundary rejects stale incomplete foreign and unavailable data"
+    "title": "shared catalogue schema rejects incomplete data and duplicate provider identities"
   },
   {
     "file": "src/services/confirmation.test.ts",
@@ -1338,6 +1370,10 @@
   {
     "file": "src/services/confirmation.test.ts",
     "title": "accepts only the protected synthetic checkout bound to the requested attempt"
+  },
+  {
+    "file": "src/services/confirmation.test.ts",
+    "title": "distinguishes unavailable attempt identity from temporary protected-read failures"
   },
   {
     "file": "src/services/confirmation.test.ts",
@@ -1362,6 +1398,10 @@
   {
     "file": "src/services/enquiry.test.ts",
     "title": "enquiry fields and submission share strict validation without rejecting ordinary prose"
+  },
+  {
+    "file": "src/services/enquiry.test.ts",
+    "title": "live enquiries require proof and acknowledgement while retaining the retry key"
   },
   {
     "file": "src/services/identity.test.ts",
@@ -1522,34 +1562,6 @@
   {
     "file": "tests/customer.spec.ts",
     "title": "public routes remove staff access and fit the viewport"
-  },
-  {
-    "file": "tests/experiment.spec.ts",
-    "title": "checkout binds its server deadline while the first confirmation response is pending"
-  },
-  {
-    "file": "tests/experiment.spec.ts",
-    "title": "checkout stays unavailable while its protected context is pending"
-  },
-  {
-    "file": "tests/experiment.spec.ts",
-    "title": "reload and duplicate tabs retain one checking window with a shared server allowance"
-  },
-  {
-    "file": "tests/experiment.spec.ts",
-    "title": "synthetic access revocation hides protected details and stops checking"
-  },
-  {
-    "file": "tests/experiment.spec.ts",
-    "title": "synthetic checkout opens separately and only canonical evidence confirms the preserved attempt"
-  },
-  {
-    "file": "tests/experiment.spec.ts",
-    "title": "synthetic paid but invalid booking needs recovery instead of claiming success"
-  },
-  {
-    "file": "tests/experiment.spec.ts",
-    "title": "the Payment preview entry and temporary checking failure retain customer selections and contact"
   },
   {
     "file": "tests/live-email.spec.ts",

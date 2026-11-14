@@ -13,6 +13,7 @@ import { z } from "zod";
 import { emailSchema } from "../src/domain/contact";
 import { cachedEmailDomainStatus } from "./email-domain";
 import { requestBookingHelp } from "./booking-support";
+import { submitEnquiry } from "./enquiry";
 import { receiveHitpayWebhook } from "./hitpay-webhook";
 import { bookingReceipt } from "./receipt";
 import { webhookRoute } from "./webhook-contract";
@@ -86,7 +87,7 @@ const headers = {
   "Referrer-Policy": "no-referrer",
 };
 export default {
-  /** Run due recovery and configured display warming from the scheduler. */
+  /** Run scheduled recovery, booking annotations and display warming. */
   async scheduled(event: ScheduledController, env: Env) {
     event.noRetry();
     try {
@@ -204,6 +205,8 @@ export default {
           request.headers.get("origin") !== url.origin
         )
           throw new ApiError(403, "origin_denied");
+        if (url.pathname === "/api/enquiry")
+          return json(await submitEnquiry(request, env));
         // Empty durable window and disabled deployment default keep delivery closed.
         if (
           ["/api/identity/challenges", "/api/identity/verify"].includes(
@@ -323,7 +326,6 @@ export default {
             201,
           );
         }
-        // These initial named operations accept no payload at all.
         const hitpayPayment = /^\/api\/booking\/hitpay\/([a-f0-9-]{36})$/.exec(
           url.pathname,
         );
@@ -349,6 +351,7 @@ export default {
             ),
           );
         }
+        // Remaining operations reject request bodies.
         if (request.body !== null) {
           const reader = request.body.getReader();
           let timer: ReturnType<typeof setTimeout> | undefined;

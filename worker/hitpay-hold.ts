@@ -12,7 +12,7 @@ import type { ProviderSession, ProviderControl } from "./provider-session";
 
 // The anchored hold and its observation are committed in one D1 batch.
 // The original booking timestamp is read by SQLite, not a separate round trip.
-/** Prepare the retained hold query used by hosted payment creation. */
+/** Prepare the retained hold insert used by hosted payment creation. */
 export function hitpayHoldStatement(
   env: Env,
   scope: NativeScope,

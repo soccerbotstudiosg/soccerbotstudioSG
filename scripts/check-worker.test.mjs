@@ -60,6 +60,7 @@ test("rejects Worker orphan cycle and UI imports", () => {
     ['import "../src/components/icon";', "Forbidden Worker layer"],
     ['import "../src/domain/demo-catalog";', "Forbidden Worker layer"],
     ['import "../src/domain/contact-extra";', "Forbidden Worker layer"],
+    ['import "../src/domain/enquiry-extra";', "Forbidden Worker layer"],
     ['import "../src/domain/session-pricing-extra";', "Forbidden Worker layer"],
     [
       'import "../src/domain/provider-references-extra";',

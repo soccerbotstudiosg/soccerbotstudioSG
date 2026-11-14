@@ -125,7 +125,11 @@ export class BookingServiceError extends CustomerMessageError {
   }
 }
 export interface EnquiryService {
-  submit(values: Enquiry): Promise<{ email: string; delivered: false }>;
+  readonly mode: "demo" | "live";
+  submit(
+    values: Enquiry,
+    proof?: { key: string; botToken: string },
+  ): Promise<{ email: string; delivered: boolean }>;
 }
 export type { Enquiry } from "@/domain/enquiry";
 export type VerifiedIdentity = {
@@ -189,12 +193,6 @@ export interface ProtectedCheckoutService {
     mode: "synthetic" | "live";
     signal: AbortSignal;
   }): Promise<CheckoutContext>;
-}
-
-export interface CatalogueService {
-  read(
-    input: BookingRequest,
-  ): Promise<import("@/domain/catalog").ProviderCatalogue>;
 }
 
 export type CustomerChallenge = {

@@ -541,3 +541,17 @@ Confirmed copy-control follow-up: on desktop and phone, verify the icon-only con
 Calendar unresolved-notice follow-up: for both uncertain booking creation and booking-created/checkout-failed fixtures, verify the compact notice keeps its message left and Request Help right, with affected-session bullets beneath when available. On a narrow phone the action may wrap but must remain fully visible; sending, accepted and failed-help feedback must remain readable. Post-payment confirmation notice layout is unchanged.
 
 Pre-link availability follow-up: during unresolved creation Calendar recovery, observe a new matching fresh positive availability response restoring the original time without an overlay. Warm, failed, omitted or stale responses must leave it hidden. Select the restored time: the original attempt must remain protected, Enter Booking Details disabled and direct Review blocked, with no new booking/payment. When separately arranged authoritative no-creation proof arrives, retain that deliberate selection and verify normal Review acknowledgement is usable. A positive availability read alone must never unlock checkout. Repeat ordinary issued-link expiry recovery to confirm its behavior is unchanged.
+
+### Presentation and social preview follow-up — 14 November
+
+Pending owner acceptance on the staged revision: desktop/phone/tablet chevrons and date borders; enabled Continue/header colour; compact Paid badge and narrower copy icon; balanced Calendar and confirmation help notices including wrapped/error feedback. Share the canonical link in WhatsApp, Telegram, WeChat and LINE: common title, description and branded image, allowing client-controlled layout/cache differences. Existing normal/consecutive booking, conflict, active checkout, expiry-return and late-payment acceptance does not establish these new visuals.
+
+Remaining focused edge cases: simultaneous four-hour cart/tile removal; confirmation refresh and unpaid native/browser Back without interim error; pay then close/offline and reopen the same profile; isolated unknown creation and exhausted post-payment recovery with the existing notice placements. No new provider-failure acceptance is claimed.
+
+### Compact Player App prompt
+
+The Player App popup uses the main-header navy with white text/icons. On phones it has a compact single-line “Get the Soccerbot360 Player App” heading and three equal-width store links in one row, with icons above labels. Close remains44px; link destinations, dismissal persistence and modal focus behavior are unchanged. Browser/mobile visual acceptance remains pending because the owner reports exhausted GitHub Actions minutes on the private repository.
+
+### Home fallback acceptance
+
+On staging, open confirmation without an attempt ID and with a malformed ID: expect Home, no standalone error or permanent loader. Open a valid but inaccessible attempt: expect Home without details. Simulate inaccessible creation context with no matching local attempt: after the existing30-second budget expect Home; verify no cancellation/reset/write was triggered. Retest accessible unpaid continuation, expired Calendar return and delayed paid confirmation to prove they keep their established destinations. `/experiment/` should be unavailable and no preview entry should remain. On phone, verify compact popup padding12px/max-width420px/header alignment now take effect. CI/device acceptance remains pending.

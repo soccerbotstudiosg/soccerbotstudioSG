@@ -1,8 +1,10 @@
 "use client";
+import { PhoneInput } from "@/features/booking/phone-input";
+import { EnquiryBotProof } from "@/features/booking/email-bot-proof";
 import { enquiryErrors } from "@/domain/enquiry";
 import { EMAIL_MAX_LENGTH } from "@/domain/contact";
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/icon";
 import { ENQUIRY_TYPES } from "@/domain/catalog";
 import { todaySG } from "@/domain/dates";
@@ -25,9 +27,9 @@ const hints: Record<keyof Enquiry, string> = {
   phone: "Include your country code, for example +65 81234567.",
   organisation: "International Sports School",
   purpose: "Choose the option that best describes your enquiry.",
-  guests: "Optional—your estimated group size, from 1 to 999.",
-  date: "Optional—your preferred date, subject to availability.",
-  time: "Optional—your preferred time in Singapore time (SGT).",
+  guests: "12",
+  date: "Your preferred date, subject to availability.",
+  time: "Your preferred time in Singapore time (SGT).",
   message: "Tell us what you need. Maximum 2,000 characters.",
 };
 // The exported HTML must not accept input before React can retain changes.
@@ -48,9 +50,19 @@ export function EnquiryPage() {
   const [touched, setTouched] = useState<
     Partial<Record<keyof Enquiry, boolean>>
   >({});
+  const [delivered, setDelivered] = useState(false);
+  const [botToken, setBotToken] = useState("");
+  const [proofPending, setProofPending] = useState(false);
+  const [botGeneration, setBotGeneration] = useState(0);
+  const submission = useRef<{ snapshot: string; key: string } | null>(null);
+  const sending = useRef(false);
+  const live = services.enquiry.mode === "live";
   const validation = enquiryErrors(value);
   const errorFor = (key: keyof Enquiry) =>
-    touched[key] ? validation[key] : undefined;
+    touched[key] ||
+    ["name", "email", "phone", "purpose", "message"].includes(key)
+      ? validation[key]
+      : undefined;
   const change = (key: keyof Enquiry, text: string) => {
     if (key === "guests" && !/^\d{0,3}$/.test(text)) return;
     if (
@@ -135,13 +147,20 @@ export function EnquiryPage() {
           />
           <h1 className="page-title">Thank you.</h1>
           <p className="mt-6">
-            Your enquiry for <strong>{receipt}</strong> is ready in this
-            preview.
+            {delivered
+              ? "Your enquiry has been sent. We’ll reply to "
+              : "Your enquiry is ready in this preview for "}
+            <strong>{receipt}</strong>.
           </p>
-          <p className="mt-3 text-sm text-muted">Preview · No enquiry sent.</p>
+          {!delivered && (
+            <p className="mt-3 text-sm text-muted">
+              Preview · No enquiry sent.
+            </p>
+          )}
           <button
             className="button mt-8"
             onClick={() => {
+              submission.current = null;
               setReceipt("");
               setValue(blank);
               setTouched({});
@@ -162,17 +181,25 @@ export function EnquiryPage() {
             noValidate
             onSubmit={async (event) => {
               event.preventDefault();
-              if (!ready || busy) return;
+              if (!ready || sending.current || (live && !botToken)) return;
               setTouched(
                 Object.fromEntries(
                   Object.keys(blank).map((key) => [key, true]),
                 ),
               );
               if (Object.keys(validation).length) return;
+              sending.current = true;
               setBusy(true);
               setError("");
               try {
-                const result = await services.enquiry.submit(value);
+                const snapshot = JSON.stringify(value);
+                if (submission.current?.snapshot !== snapshot)
+                  submission.current = { snapshot, key: crypto.randomUUID() };
+                const result = await services.enquiry.submit(value, {
+                  key: submission.current.key,
+                  botToken,
+                });
+                setDelivered(result.delivered);
                 setReceipt(result.email);
               } catch (e) {
                 setError(
@@ -182,7 +209,10 @@ export function EnquiryPage() {
                   ),
                 );
               } finally {
+                sending.current = false;
                 setBusy(false);
+                setBotToken("");
+                setBotGeneration((current) => current + 1);
               }
             }}
           >
@@ -192,7 +222,14 @@ export function EnquiryPage() {
               <div className="grid gap-5 sm:grid-cols-2">
                 {field("name", "Full name", "text", true)}
                 {field("email", "Email address", "email", true)}
-                {field("phone", "Contact number", "tel", true)}
+                <PhoneInput
+                  value={value.phone}
+                  onChange={(phone) => change("phone", phone)}
+                  onBlur={() =>
+                    setTouched((current) => ({ ...current, phone: true }))
+                  }
+                  error={errorFor("phone")}
+                />
                 {field("organisation", "Academy, school or organisation")}
               </div>
             </fieldset>
@@ -259,9 +296,35 @@ export function EnquiryPage() {
                 {error}
               </p>
             )}
-            <button className="button" disabled={!ready || busy}>
-              {busy ? "Preparing…" : "Send enquiry"}
-              <Icon name="chevron" />
+            {live && (
+              <EnquiryBotProof
+                key={botGeneration}
+                onToken={setBotToken}
+                onPendingChange={setProofPending}
+              />
+            )}
+            <button
+              className="button wide booking-entry-action"
+              disabled={!ready || busy || (live && !botToken)}
+            >
+              {busy ? (
+                <span className="button-loading">
+                  <Icon name="spinner" className="spinner" />
+                  Sending enquiry…
+                </span>
+              ) : live && proofPending && !Object.keys(validation).length ? (
+                "Checking security…"
+              ) : (
+                "Send enquiry"
+              )}
+              {live &&
+              proofPending &&
+              !Object.keys(validation).length &&
+              !busy ? (
+                <Icon name="spinner" className="spinner" />
+              ) : !busy ? (
+                <Icon name="chevron" />
+              ) : null}
             </button>
           </form>
         </>

@@ -1,6 +1,6 @@
 import { invoiceNumberSchema } from "../src/domain/provider-references";
 
-/** Resolve paid display metadata against the original authenticated unpaid document. */
+/** Return a validated invoice number distinct from the retained unpaid order number. */
 export async function retainedInvoiceNumber(
   env: Env,
   id: string,

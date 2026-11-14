@@ -53,6 +53,7 @@ export function designAudit(text) {
       .filter((n) => n.type === "decl")
       .map((n) => [n.prop, n.value]),
   );
+  /** Resolve a design token reference and reject missing or cyclic aliases. */
   function resolve(name, seen = new Set()) {
     if (seen.has(name)) throw Error(`Cyclic design token: ${name}`);
     seen.add(name);
@@ -125,13 +126,7 @@ export function designAudit(text) {
   css.walkRules((rule) => {
     if (!artwork.test(rule.selector))
       rule.walkDecls((d) => {
-        // Owner-approved dark Player App promotion; keep booking controls blue.
-        const appAccent =
-          (rule.selector === ".player-app-dialog .app-prompt-eyebrow" &&
-            d.prop === "color") ||
-          (rule.selector === ".player-app-dialog .app-store-link" &&
-            d.prop === "border");
-        if (d.value.includes("var(--color-arena-accent)") && !appAccent)
+        if (d.value.includes("var(--color-arena-accent)"))
           errors.push(`Decorative accent used in interface: ${rule.selector}`);
       });
     if (!functional.test(rule.selector) || artwork.test(rule.selector)) return;

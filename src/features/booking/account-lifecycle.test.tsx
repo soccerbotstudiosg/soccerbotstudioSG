@@ -432,6 +432,12 @@ test("switching email clears the old account and supports back guest and fresh r
   expect(screen.getByLabelText("Email address")).toBeEnabled();
   expect(
     screen.getByRole("button", { name: "Get Verification Code" }),
+  ).toBeDisabled();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Complete synthetic security check" }),
+  );
+  expect(
+    screen.getByRole("button", { name: "Get Verification Code" }),
   ).toBeEnabled();
   await act(async () => finishSignOut());
   await screen.findByRole("heading", { name: "Continue with email" });
@@ -736,7 +742,9 @@ test("remembered identity restoration shows only the full-width welcome card wit
       screen.getByRole("button", { name: "Continue as Guest" }),
     ).toBeEnabled(),
   );
-  expect(document.querySelectorAll(".access-option")).toHaveLength(2);
+  expect(document.querySelectorAll(".access-option")).toHaveLength(1);
+  expect(screen.getByText("or")).toBeVisible();
+  expect(screen.queryByRole("heading", { name: "Book as a guest" })).toBeNull();
   expect(screen.queryByRole("heading", { name: "Welcome back" })).toBeNull();
   expect(signOut).toHaveBeenCalledExactlyOnceWith(
     expect.any(AbortSignal),

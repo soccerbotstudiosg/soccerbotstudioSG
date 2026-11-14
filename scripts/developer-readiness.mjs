@@ -2,15 +2,13 @@
 // The caller must reserve every request under a separately approved packet.
 import assert from "node:assert/strict";
 import { randomBytes, createHash } from "node:crypto";
-import { spawn } from "node:child_process";
 
 export const expireGrantSql =
   "UPDATE developer_operations SET expires_ms=MIN(expires_ms,?) WHERE capability_hash=? AND operation='native_field_discovery' RETURNING state,result_json,expires_ms";
 export const readGrantSql =
   "SELECT state,result_json,expires_ms FROM developer_operations WHERE capability_hash=? AND operation='native_field_discovery'";
 
-// All newly applied columns remain in the fingerprint. No deletion or default
-// substitution can hide a changed recovery/checking counter.
+// Include every column so deletion or default substitution cannot hide changed counters.
 /** Hash retained rows for before-and-after preservation checks. */
 export function fingerprintRows(rows, key) {
   assert(Array.isArray(rows));
@@ -126,60 +124,6 @@ export async function verifyReadiness(expected, io) {
     if (count + 1 < expected.maxRequests) await io.wait(2000);
   }
   return { ready: false, reason: "readiness_exhausted", receipts };
-}
-
-/** Read deployment health with bounded transport and captured diagnostics. */
-export function curlHealth(origin, nonce) {
-  assert.equal(new URL(origin).origin, origin);
-  assert.equal(new URL(origin).protocol, "https:");
-  assert.match(nonce, /^[a-f0-9]{32}$/);
-  return new Promise((resolve, reject) => {
-    const child = spawn(
-      "curl",
-      [
-        "--disable",
-        "--proto",
-        "=https",
-        "--silent",
-        "--show-error",
-        "--max-time",
-        "5",
-        "--max-filesize",
-        "16384",
-        "--dump-header",
-        "-",
-        "--header",
-        `X-Readiness-Nonce: ${nonce}`,
-        "--header",
-        "Cache-Control: no-cache",
-        "--header",
-        "Accept: application/json",
-        `${origin}/api/health`,
-      ],
-      { shell: false },
-    );
-    const chunks = [];
-    let size = 0,
-      failed = false;
-    child.stdout.on("data", (part) => {
-      size += part.length;
-      if (size > 32768) {
-        failed = true;
-        child.kill();
-      } else chunks.push(part);
-    });
-    child.stderr.resume(); // no uncontrolled proxy/provider error body in logs
-    child.on("error", () => reject(new Error("health_transport_unknown")));
-    child.on("close", (code) => {
-      if (failed || code !== 0)
-        return reject(new Error("health_transport_unknown"));
-      try {
-        resolve(parseCurlHealth(Buffer.concat(chunks).toString("utf8")));
-      } catch {
-        reject(new Error("health_representation_invalid"));
-      }
-    });
-  });
 }
 
 // Parse final headers without splitting blank lines inside a formatted JSON body.

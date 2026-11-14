@@ -74,9 +74,8 @@ async function windowFor(env: Env, now: number, reserve = false) {
     throw unavailable();
   return window;
 }
-// Once provisioned, the proof lifetime also bounds identity reads/restoration.
-// This is developer test authority, separate from the immutable 90-day expiry.
-/** Require a currently open identity-proof window. */
+// A provisioned finite-test proof also bounds identity reads and restoration.
+/** Enforce the configured identity-proof window for reads and restoration. */
 export async function assertIdentityProofOpen(env: Env) {
   const mode: unknown = Reflect.get(env, "IDENTITY_DELIVERY");
   if (mode === "ongoing") {
@@ -90,7 +89,10 @@ export async function assertIdentityProofOpen(env: Env) {
 }
 // Bounded before parsing, and never includes request bodies or provider errors in logs.
 /** Read and validate the bounded identity request payload. */
-export async function inputBody(request: Request): Promise<unknown> {
+export async function inputBody(
+  request: Request,
+  maximumBytes = 4096,
+): Promise<unknown> {
   if (
     request.headers.get("content-type")?.split(";")[0].trim() !==
       "application/json" ||
@@ -109,7 +111,8 @@ export async function inputBody(request: Request): Promise<unknown> {
           const part = await reader.read();
           if (part.done) break;
           size += part.value.byteLength;
-          if (size > 4096) throw new ApiError(413, "verification_unavailable");
+          if (size > maximumBytes)
+            throw new ApiError(413, "verification_unavailable");
           text += decoder.decode(part.value, { stream: true });
         }
         return JSON.parse(text + decoder.decode()) as unknown;

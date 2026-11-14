@@ -2,24 +2,25 @@
 
 ## Active outcome
 
-Repair the retest findings against merged PR73 (`ed89d568879cc7f37b775cc0ecd467c8559d29cf`): confirmation layout and navigation after an uncertain second checkout. Owner authorizes independent ultra-agent audits, two final audits before publication, CI, staging and merge. Enquiry changes remain deferred; no provider mutations or cleanup.
+Fix the current PR75 CI failures, verify and stage the approved candidate, and leave it unmerged. PR76 is closed and must not be reopened. Native soccerbotsg.com configuration remains included; staging retains its separate hostname. No production release is authorized.
 
-## Current slice
+## Current scope
 
-- Align the confirmation copy icon with View Full Details at the top right; align the original-sized Paid badge with Order Summary and reduce the gap to its session content. Preserve the three-second Copied popup.
-- Prevent unresolved pre-checkout recovery from admitting the customer to an unusable Review screen. Keep its existing inline notice on Calendar, preserve the original attempt and duplicate-write protection, and test back/forward/direct navigation.
-- Before any checkout link exists, continue fresh background availability recovery after creation timeout and restore available sessions smoothly. Preserve the unknown financial attempt until authoritative resolution; existing-link expiry/payment recovery stays unchanged.
-- Distinguish the provider timeout from the UI defect. Do not release an unknown booking write without authoritative proof or add unwanted error pages.
+PR75 includes branded Open Graph/domain configuration, compact navy mobile popup, booking button typography/shapes/motion, navy selected cards, faded unavailable dates, confirmation spacing/copy controls and balanced recovery notices. Entry choices share one panel and are narrower only on desktop. Required booking fields show initial guidance; untouched optional saved-contact fields do not. Calendar continuation shares the existing action. Loading labels identify security, code, email, save and enquiry work. Confirmation without usable identity returns Home; valid confirmation survives idle and optional invoice failures.
 
-## Evidence and delivery
+Enquiry delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com with customer Reply-To, background Turnstile, bounded waiting and durable duplicate-send protection. Migration0050 and the explicit existing staging sender accompany it. GA/GSC, Grafana, major-module refactoring and the older local blue Request Help acknowledgement remain excluded. SimplyBook hiding was not applied.
 
-PR73 passed all17 checks in verification43406913990; staging43408534524 deployed its exact head and passed health/settings. It merged as `ed89d568879cc7f37b775cc0ecd467c8559d29cf`. Current production Worker settings now confirm that source revision.
+## Verification and immediate next action
 
-Read-only D1 and Cloudflare logs confirm the second booking used a distinct attempt and its SimplyBook `book` call timed out at15000ms. Checkout handling took15462ms; no HitPay call started. The booking write remains genuinely uncertain without a returned provider reference. The large retest ZIP is intact but its HAR member is truncated; its recoverable first checkout succeeded in5.24seconds and it lacks the second creation request. The later small capture confirms the unresolved state and subsequent availability cooldown. Existing provider draft updates forcibly reset acceptance while navigation still admits Review, explaining the newly reported checkbox failure. The confirmation layout, compact Calendar help notice, creation-recovery navigation and earlier-step Calendar notice repairs are implemented. The owner selected the recommended policy: retain the unknown financial lock until authoritative resolution; implement only fresh-positive before-link slot display restoration, without a new physical checkout or automatic release. The display change is implemented and focused tests pass. All361 local tests across33 files pass; TypeScript, targeted ESLint and source/policy guards pass. The new regression fails on the original review-admission defect and passes with the narrow creation-recovery guard. The64 navigation/notice/copy cases and two final display/expiry cases pass. Both independent reviews found no remaining source defect; the display delta received incremental review. One unchanged saved-details test hit its5-second timeout during the first final suite with concurrent lint; the same case passed alone and the complete361-case suite then passed with no other heavy process. Its receipt is retained; no timeout or test assertion was weakened. Exact-head CI/staging/merge remain pending; no new PR published yet.
+Run43599033268 on16d7209 passed every required gate, including both final release checks; CodeQL passed. Staging deployment43600064352 then stopped before mutation because the candidate's new staging sender field differed from the trusted-main target.
 
-## Remaining targeted acceptance
+The configuration-only repair moves the same public developer sender into closed Wrangler vars and restores staging.json byte-for-byte to main. Effective live staging configuration is proven identical. Closed delivery remains disabled; production explicitly overrides the sender or disables delivery when unconfigured. No runtime or migration change, no bypass of exact artifact/target validation. Twelve deployment tests and11 target tests, both typechecks, source/Worker guards and independent review passed.
 
-Check confirmation copy/details alignment and compact Order Summary spacing on desktop/mobile. Exercise first paid confirmation followed by a second booking, normal successful Review consent, unresolved creation followed by Calendar/back/forward/Review attempts, and retained-attempt recovery with no duplicate writes. Browser execution belongs to owner/CI; source tests do not establish provider or physical acceptance. Existing four-hour cutoff acceptance remains outside this repair.
+Publish the configuration repair, verify fresh exact-head CI and actual staging health/settings, then leave PR75 unmerged. The packaged0050 upgrade repair remains included and passed against both retained CI artifacts with zero provider requests/remote operations. Record final CI/deployment receipts in PR75 without status-only commit loops; detailed evidence remains in [Journey](docs/journey.md).
+
+## Remaining owner acceptance
+
+See [simulated-user UAT](docs/uat/simulated-user.md) for four-hour cutoff, confirmation refresh/Back, immediate post-payment close/reopen, isolated unresolved recovery and final presentation/messenger checks. Owner accepted normal and consecutive booking, conflict, active checkout, expiry-return and last-minute payment on the preceding release. Domain access and a complete sandbox payment were owner-confirmed; changed source still needs candidate acceptance. Before production release, verify native-domain CI-token permissions; staging does not prove them.
 
 ## Ordered work after this slice
 
@@ -39,7 +40,3 @@ The queue is recorded now, before the full documentation reconciliation. These a
 | 10    | Launch readiness                    | Verify production/test separation, configuration, test-data disposition, spending alerts, customer support and responsibility coverage. Owners: [provider settings](docs/external-providers-config.md), [admin UAT](docs/uat/admin.md).                                                                                                                                                                                                                      |
 | 11    | Runbook and drills                  | Exercise payment uncertainty, provider outage, delayed release, notification failure and deployment rollback, incorporating backup/reconciliation procedures. Owner: [runbook](docs/runbook.md); preserve drill evidence in role UAT/Journey.                                                                                                                                                                                                                |
 | 12    | Operations manual                   | Produce a separate daily-use manual covering SimplyBook bookings, schedules, customers and cancellations plus HitPay payment lookup, reconciliation, refunds and payouts; specify cross-system order and escalation. Keep technical recovery in the runbook and link it from the manual.                                                                                                                                                                     |
-
-## Next action
-
-Publish the consolidated reviewed candidate, require exact-head CI and successful staging health/settings, then merge under the owner’s instruction. Preserve the local reset note unpublished. Physical acceptance remains separate.

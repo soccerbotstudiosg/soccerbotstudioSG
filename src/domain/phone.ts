@@ -11,7 +11,7 @@ export const INTERNATIONAL_PHONE_ERROR =
   "Enter a valid mobile number for the selected country.";
 const cleanCharacters = (value: string) => /^\+?[\d ()-]+$/.test(value);
 /** Parse an explicitly international number, or a Singapore national number. */
-export function bookingPhone(value: string) {
+function bookingPhone(value: string) {
   const text = value.trim();
   if (!cleanCharacters(text)) return undefined;
   // The whole input already passed the numeric/separator whitelist above.

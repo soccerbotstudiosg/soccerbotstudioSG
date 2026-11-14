@@ -50,7 +50,7 @@ export const ENQUIRY_TYPES = [
   "Other special arrangement",
 ];
 
-// Live catalogue DTOs use provider IDs. Legacy preview IDs live in demo-catalog.
+// Provider IDs and demo identifiers use separate catalogue types.
 // These normalized contracts are not provider wire envelopes or write authority.
 import { z } from "zod";
 import { MAX_PLAYERS } from "./booking-policy";
@@ -162,7 +162,7 @@ export const providerSelectionSchema = z.strictObject({
   startMs: z.number().int().positive().safe(),
   players: z.number().int().min(1).max(MAX_PLAYERS),
 });
-export type ProviderSelection = z.infer<typeof providerSelectionSchema>;
+type ProviderSelection = z.infer<typeof providerSelectionSchema>;
 /** Resolve a selected service against the available catalogue. */
 export function catalogueSelection(
   catalogue: ProviderCatalogue,
@@ -181,23 +181,4 @@ export function catalogueSelection(
   )
     return null;
   return { service, instructor };
-}
-// Refresh display/review without rewriting the selected IDs, contact or committed intent.
-/** Validate catalogue selections before presenting review details. */
-export function catalogueReview(
-  previous: ProviderCatalogue,
-  current: ProviderCatalogue,
-  selection: ProviderSelection,
-) {
-  const before = catalogueSelection(previous, selection),
-    after = catalogueSelection(current, selection);
-  if (JSON.stringify(previous.binding) !== JSON.stringify(current.binding))
-    return { state: "unavailable" as const };
-  if (!after) return { state: "selection_unavailable" as const, selection };
-  const changed = !before || JSON.stringify(before) !== JSON.stringify(after);
-  return {
-    state: changed ? ("review_required" as const) : ("unchanged" as const),
-    selection,
-    ...after,
-  };
 }

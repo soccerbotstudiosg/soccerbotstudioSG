@@ -1,3 +1,4 @@
+import { sitePath } from "../src/content/site-path";
 import { createHash } from "node:crypto";
 import { isHitPayApiCall } from "../worker/tests/provider-url-fixture.mjs";
 import { createBookingSequence } from "../worker/tests/booking-sequence-fixture.mjs";
@@ -56,8 +57,12 @@ const syntheticTurnstileScript = `
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = 'Complete synthetic email check';
-        button.onclick = complete;
+        button.onclick = () => {
+          options['after-interactive-callback']();
+          complete();
+        };
         container.append(button);
+        options['before-interactive-callback']();
       }
       return id;
     },
@@ -273,7 +278,7 @@ async function fixture(
   /** Dismiss the popup after the shared entry overlay has cleared. */
   async function closePopup() {
     const prompt = page.getByRole("dialog", {
-      name: "Download The Official Soccerbot360 Player App Now.",
+      name: "Get the Soccerbot360 Player App",
     });
     await expect(prompt).toBeVisible();
     await prompt
@@ -368,14 +373,18 @@ test("live email requires the supplied widget proof before protected requests", 
   await expect(widget).toHaveAttribute("data-sitekey", sitekey);
   await expect(widget).toHaveAttribute("data-action", "verify-email");
   await expect(
+    page.getByRole("button", {
+      name: "Complete synthetic email check",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
     page.getByText("Email sign-in preview", { exact: false }),
   ).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Get Verification Code", exact: true })
-    .click();
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Complete the security check and try again.",
-  );
+  await expect(
+    page.getByRole("button", { name: "Get Verification Code", exact: true }),
+  ).toBeDisabled();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
     { path: "/api/access", method: "POST", body: null },
   ]);
@@ -611,9 +620,13 @@ test("remembered live account edits and rereads contact while native booking sta
   ).toHaveCount(0);
   await expect(page.locator(".access-option")).toHaveCount(1);
   const card = await page.locator(".access-option").boundingBox();
-  const choices = await page.locator(".access-options").boundingBox();
-  expect(card!.x).toBeCloseTo(choices!.x, 0);
-  expect(card!.width).toBeCloseTo(choices!.width, 0);
+  for (const action of await page.locator(".access-option button").all()) {
+    const bounds = await action.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(card!.x);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
+      card!.x + card!.width,
+    );
+  }
   await expect(
     page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toBeVisible();
@@ -923,7 +936,7 @@ test("native guest journey preserves players contact and one checkout across ref
     await page.goto("/");
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -1060,6 +1073,7 @@ test("native guest journey preserves players contact and one checkout across ref
         name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
         exact: true,
       })
+      .first()
       .click();
     await expect(
       page.getByRole("heading", { name: "Your details", exact: true }),
@@ -1484,7 +1498,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -1601,10 +1615,10 @@ test("real payment recovery confirms the browser return from verified provider s
       };
     });
     expect(paidMetrics.fontSize).toBeCloseTo(23.8, 5);
-    expect(paidMetrics.lineHeight).toBeCloseTo(38.08, 5);
-    expect(paidMetrics.paddingTop).toBeCloseTo(8.5, 5);
+    expect(paidMetrics.lineHeight).toBeCloseTo(28.56, 5);
+    expect(paidMetrics.paddingTop).toBeCloseTo(3.6, 5);
     expect(paidMetrics.paddingRight).toBeCloseTo(15.3, 5);
-    expect(paidMetrics.paddingBottom).toBeCloseTo(8.5, 5);
+    expect(paidMetrics.paddingBottom).toBeCloseTo(3.6, 5);
     expect(paidMetrics.paddingLeft).toBeCloseTo(15.3, 5);
     const copyButton = page.getByRole("button", {
       name: "Copy booking confirmation",
@@ -1633,14 +1647,15 @@ test("real payment recovery confirms the browser return from verified provider s
       .locator(".series-list > li:first-child .series-date")
       .boundingBox();
     expect(copyBox).not.toBeNull();
+    expect(copyBox!.width).toBeCloseTo(35.2, 1);
     expect(detailsSummaryBox).not.toBeNull();
     expect(paidBox).not.toBeNull();
     expect(orderBox).not.toBeNull();
     expect(orderHeadBox).not.toBeNull();
     expect(firstSessionBox).not.toBeNull();
-    // The accepted badge is 23.8px text at 1.6 line-height plus 17px padding.
+    // The accepted badge is 23.8px text at 1.2 line-height plus 7.2px padding.
     // Assert its rendered height independently of its computed CSS values.
-    expect(Math.abs(paidBox!.height - 55.08)).toBeLessThan(0.1);
+    expect(Math.abs(paidBox!.height - 35.76)).toBeLessThan(0.1);
     expect(copyBox!.y).toBeCloseTo(detailsSummaryBox!.y, 1);
     expect(copyBox!.y + copyBox!.height).toBeCloseTo(
       detailsSummaryBox!.y + detailsSummaryBox!.height,
@@ -1654,7 +1669,10 @@ test("real payment recovery confirms the browser return from verified provider s
       orderBox!.x + orderBox!.width,
       0,
     );
-    expect(orderHeadBox!.height).toBeCloseTo(paidBox!.height, 1);
+    expect(paidBox!.y).toBeGreaterThanOrEqual(orderHeadBox!.y);
+    expect(paidBox!.y + paidBox!.height).toBeLessThanOrEqual(
+      orderHeadBox!.y + orderHeadBox!.height,
+    );
     expect(
       firstSessionBox!.y - (orderHeadBox!.y + orderHeadBox!.height),
     ).toBeCloseTo(10, 1);
@@ -2078,7 +2096,7 @@ async function guestDetails(
     await page.goto("/book/account/");
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -2136,6 +2154,7 @@ async function guestDetails(
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await expect(
     page.getByRole("heading", { name: "Your details", exact: true }),
@@ -2438,7 +2457,7 @@ async function uncertainHolding(
       await recoveryNotice.scrollIntoViewIfNeeded();
       const noticeGeometry = await recoveryNotice.evaluate((notice) => {
         const bounds = notice.getBoundingClientRect();
-        const message = notice.querySelector(":scope > p")!;
+        const message = notice.querySelector(".booking-help-content")!;
         const help = notice.querySelector(".booking-help > button")!;
         const style = getComputedStyle(notice);
         return {
@@ -2457,6 +2476,18 @@ async function uncertainHolding(
         };
       });
       expect(noticeGeometry.overflow).toBe(false);
+      const contentTop = Math.min(
+        noticeGeometry.message.top,
+        noticeGeometry.help.top,
+      );
+      const contentBottom = Math.max(
+        noticeGeometry.message.bottom,
+        noticeGeometry.help.bottom,
+      );
+      expect(contentTop - noticeGeometry.bounds.top).toBeCloseTo(
+        noticeGeometry.bounds.bottom - contentBottom,
+        1,
+      );
       expect(noticeGeometry.bounds.height).toBeLessThanOrEqual(180);
       expect(noticeGeometry.help.height).toBeGreaterThanOrEqual(44);
       expect(noticeGeometry.help.height).toBeLessThanOrEqual(46);
@@ -2501,7 +2532,7 @@ async function uncertainHolding(
           page.getByRole("heading", { name: "Review Booking", exact: true }),
         ).toHaveCount(0);
         await expect(
-          page.getByRole("button", { name: /^Enter Booking Details/ }),
+          page.getByRole("button", { name: /^Enter Booking Details/ }).first(),
         ).toBeDisabled();
         await expect(page.locator("html")).not.toHaveAttribute(
           "data-unexpected-review",
@@ -2644,16 +2675,16 @@ test("real API revoked access at checkout retains the draft and denies protected
       .run();
     const response = await checkoutHoldResponse(page, undefined, true);
     expect(response.status()).toBe(401);
-    await expect(page).toHaveURL(/\/book\/payment\/$/);
+    await expect(page).toHaveURL(sitePath("/"));
     await expect(
       page.getByRole("heading", {
         name: "Confirmation unavailable",
         exact: true,
       }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
-      page.getByText(/Contact the studio to view this booking/),
-    ).toBeVisible();
+      page.getByRole("button", { name: "Request Help" }),
+    ).toHaveCount(0);
     expect(
       await page.evaluate(() =>
         JSON.parse(sessionStorage.getItem("soccerbot-live-draft") || "null"),
@@ -2733,7 +2764,7 @@ test("real API lost successful hold response restores the existing reservation w
     await page.goto("/book/review/");
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -2922,7 +2953,7 @@ test("real API failed completed dismissal opens the first step and explicit retr
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -3004,7 +3035,7 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
     await page.goto("/book/account/");
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -3235,7 +3266,7 @@ test("real API exhausted browser checking window retains the original deadline a
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -3563,7 +3594,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
     await page.goto(`/confirmation/?attempt=${attemptId}`);
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -3677,7 +3708,7 @@ test("real API expired unpaid Review retains its hold through the grace window w
     await page.goto("/book/review/");
     await page
       .getByRole("dialog", {
-        name: "Download The Official Soccerbot360 Player App Now.",
+        name: "Get the Soccerbot360 Player App",
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -3930,12 +3961,10 @@ test("email account actions return through booking options and sign in again wit
       .getByRole("textbox", { name: /^Email address/ })
       .fill("synthetic@example.test");
     await page.getByLabel("Remember me", { exact: true }).setChecked(remember);
-    await page
-      .getByRole("button", { name: "Get Verification Code", exact: true })
-      .click();
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-      "Complete the security check and try again.",
-    );
+    await expect(
+      page.getByRole("button", { name: "Get Verification Code", exact: true }),
+    ).toBeDisabled();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
       .getByRole("button", {
         name: "Complete synthetic email check",

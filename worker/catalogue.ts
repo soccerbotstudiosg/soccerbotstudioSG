@@ -9,9 +9,9 @@ import {
 import { ApiError } from "./policy";
 import { providerId, providerFlag, minorUnits } from "./provider-normalization";
 import type { NativeExchange } from "./provider-transport";
-// Local operational bounds, not a four-instructor business limit or provider TTL.
-export const CATALOGUE_CACHE_MS = CATALOGUE_MAX_AGE_MS;
-export const PREBOOKING_FRESH_MS = 15000;
+// Bound local cache freshness and scope count.
+const CATALOGUE_CACHE_MS = CATALOGUE_MAX_AGE_MS;
+const PREBOOKING_FRESH_MS = 15000;
 const MAX_CACHE_SCOPES = 8;
 const unknown = (): never => {
   throw new ApiError(503, "catalogue_representation_unavailable");

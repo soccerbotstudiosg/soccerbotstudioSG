@@ -31,7 +31,7 @@ it("email bot widget binds purpose clears expired proof and ignores callbacks af
   expect(options).toMatchObject({
     sitekey: "synthetic-public-sitekey",
     action: "verify-email",
-    appearance: "always",
+    appearance: "interaction-only",
   });
   await act(async () => {
     options.callback("proof");

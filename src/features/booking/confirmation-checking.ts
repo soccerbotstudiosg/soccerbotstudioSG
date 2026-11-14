@@ -325,7 +325,10 @@ export function useConfirmationChecking(
           );
           save(attemptId, budget);
         }
-        if (error instanceof ConfirmationError && error.kind === "denied") {
+        if (
+          error instanceof ConfirmationError &&
+          (error.kind === "denied" || error.kind === "missing")
+        ) {
           terminal = true;
           show("denied");
         } else if (now() >= budget.deadline) {
@@ -357,6 +360,7 @@ export function useConfirmationChecking(
         }
       }
     }
+    /** Pause hidden-tab reads and resume protected checks on return. */
     function visibility() {
       if (document.hidden) {
         generation++;

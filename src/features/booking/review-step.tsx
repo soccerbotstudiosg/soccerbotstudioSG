@@ -11,7 +11,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Icon } from "@/components/icon";
 import { Dialog } from "@/components/dialog";
-import { selectionErrors } from "@/domain/booking";
+import { money } from "@/domain/dates";
+import { totalCents, selectionErrors } from "@/domain/booking";
 import { CONTACT_METHODS } from "@/domain/catalog";
 import { normalizeContact, type ContactDetails } from "@/domain/contact";
 import { useBooking } from "./provider";
@@ -188,6 +189,11 @@ export function ReviewStep({
           className="button"
           disabled={!canProceed}
           aria-busy={checkingProof || undefined}
+          aria-label={
+            checkingProof
+              ? `Proceed to Payment ${money(totalCents(draft))}`
+              : undefined
+          }
           onClick={async () => {
             try {
               if (
@@ -210,6 +216,8 @@ export function ReviewStep({
               compact
               label={conflictLoadingLabel ?? "Opening checkout…"}
             />
+          ) : checkingProof ? (
+            "Checking security…"
           ) : (
             "Proceed to Payment"
           )}{" "}
@@ -253,7 +261,7 @@ export function ReviewStep({
 }
 
 /** Reuse review selections and their existing edit locks in inline and phone-panel layouts. */
-export function ReviewSessions({
+function ReviewSessions({
   part,
   verifying = false,
 }: {

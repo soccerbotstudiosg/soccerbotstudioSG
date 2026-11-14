@@ -10,7 +10,7 @@
   "workerName": "soccerbot-production",
   "databaseName": "soccerbot-production-state",
   "databaseId": "e2a21801-0107-4db5-8551-ca1ff338df53",
-  "origin": "https://soccerbot-production.lucky-poetry-b25e.workers.dev",
+  "origin": "https://soccerbotsg.com",
   "coordinatorName": "simplybook-production-account",
   "environment": "production",
   "campaignId": "production",
@@ -21,6 +21,10 @@
   "sandbox": null,
   "coordinatorLocationHint": "apac-ne",
   "saasZone": null,
+  "customDomain": {
+    "zoneId": "fcddb18f854bdd23f1d8b03804961a60",
+    "zoneName": "soccerbotsg.com"
+  },
   "hitpaySandbox": {
     "merchant": "app404",
     "businessId": "a2d2119d-79f1-41fa-9d65-6e311d06da35"

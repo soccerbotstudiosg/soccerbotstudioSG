@@ -84,6 +84,7 @@ export function checkWorker(root) {
               "../src/domain/booking-policy",
               "../src/domain/catalog",
               "../src/domain/contact",
+              "../src/domain/enquiry",
               "../src/domain/dates",
               "../src/domain/session-pricing",
             ].includes(spec)
@@ -105,6 +106,7 @@ export function checkWorker(root) {
   }
   const visited = new Set(),
     visiting = new Set();
+  /** Traverse Worker imports and report dependency cycles. */
   function dfs(name) {
     if (visiting.has(name)) {
       errors.push(`Worker cycle: ${name}`);

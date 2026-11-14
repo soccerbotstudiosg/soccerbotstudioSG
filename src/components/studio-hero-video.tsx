@@ -55,6 +55,7 @@ function StudioPlayback({
     else void video.play().catch(() => setStatus("play"));
     return () => video.pause();
   }, [reducedMotion]);
+  /** Toggle playback and restart an ended video. */
   function activate() {
     const video = ref.current;
     if (!video) return;

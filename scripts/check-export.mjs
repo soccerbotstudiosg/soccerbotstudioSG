@@ -15,6 +15,7 @@ import { siteBasePath } from "../src/content/site-path.ts";
 /** Fingerprint the files in a static export for artifact verification. */
 export function exportInventory(directory) {
   const result = {};
+  /** Fingerprint export files while rejecting symbolic links. */
   function visit(folder) {
     for (const entry of readdirSync(folder, { withFileTypes: true }).sort(
       (a, b) => a.name.localeCompare(b.name),
@@ -38,6 +39,8 @@ export function exportInventory(directory) {
 export function checkExport(directory, basePath) {
   const root = resolve(directory),
     files = exportInventory(root);
+  if (files["experiment/index.html"])
+    throw new Error("Retired Experiment route must not be exported");
   const required = [
     "index.html",
     "404.html",

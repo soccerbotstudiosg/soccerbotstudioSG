@@ -14,6 +14,10 @@ import {
 import { z } from "zod";
 import type { CheckoutContext, ProtectedCheckoutService } from "./contracts";
 const idSchema = z.string().uuid();
+/** Validate confirmation navigation before starting protected reads. */
+export function isConfirmationAttemptId(value: string) {
+  return idSchema.safeParse(value).success;
+}
 const decisionSchema = z.discriminatedUnion("status", [
   z.strictObject({
     status: z.literal("confirmed"),
@@ -51,7 +55,8 @@ const decisionSchema = z.discriminatedUnion("status", [
 ]);
 export class ConfirmationError extends Error {
   constructor(
-    public kind: "denied" | "unavailable" | "throttled" | "exhausted",
+    public kind:
+      "denied" | "missing" | "unavailable" | "throttled" | "exhausted",
     public nextCheckMs?: number,
     public deadlineMs?: number,
   ) {
@@ -104,6 +109,21 @@ const contextSchema = z.strictObject({
     pollAfterMs: z.number().int().min(1000).max(30000),
   }),
 });
+/** Reject inaccessible attempts without treating missing ownership as payment failure. */
+async function rejectInaccessibleAttempt(response: Response) {
+  if (response.status === 401 || response.status === 403)
+    throw new ConfirmationError("denied");
+  if (response.status === 404) {
+    const body: unknown = await response.json().catch(() => null);
+    if (
+      body !== null &&
+      typeof body === "object" &&
+      "error" in body &&
+      body.error === "attempt_unavailable"
+    )
+      throw new ConfirmationError("missing");
+  }
+}
 /** Read protected booking data with consistent response validation. */
 async function protectedRead(
   attemptId: string,
@@ -138,8 +158,7 @@ async function protectedRead(
     nextCheckMs: value("X-Next-Check"),
     deadlineMs: value("X-Checking-Deadline"),
   };
-  if (response.status === 401 || response.status === 403)
-    throw new ConfirmationError("denied");
+  await rejectInaccessibleAttempt(response);
   if (response.status === 429)
     throw new ConfirmationError(
       response.headers.get("X-Checks-Remaining") === "0"
@@ -366,22 +385,6 @@ export const protectedCheckoutService: ProtectedCheckoutService = {
   },
 };
 
-/** Create an attempt through the isolated local preview endpoint. */
-export async function startSyntheticCheckout(
-  signal: AbortSignal,
-): Promise<string> {
-  const response = await fetch("/__experiment/attempts", {
-    method: "POST",
-    credentials: "same-origin",
-    redirect: "error",
-    cache: "no-store",
-    signal,
-  });
-  if (!response.ok) throw new ConfirmationError("unavailable");
-  return z.strictObject({ attemptId: idSchema }).parse(await response.json())
-    .attemptId;
-}
-
 /** Request an authenticated expiry check without assuming payment cancellation. */
 export async function expireBooking(attemptId: string, signal?: AbortSignal) {
   const id = idSchema.parse(attemptId);
@@ -392,8 +395,7 @@ export async function expireBooking(attemptId: string, signal?: AbortSignal) {
     redirect: "error",
     cache: "no-store",
   });
-  if (response.status === 401 || response.status === 403)
-    throw new ConfirmationError("denied");
+  await rejectInaccessibleAttempt(response);
   if (!response.ok || !(await response.json()).expired)
     throw new Error(
       "Payment status is still being checked. Your original booking has been kept.",

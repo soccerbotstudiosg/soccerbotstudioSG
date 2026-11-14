@@ -116,6 +116,9 @@ test("live session selection uses client prices while demo retains its own rates
   expect(
     screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
+  expect(
+    screen.getByRole("link", { name: "Choose Date & Time" }).parentElement,
+  ).toHaveAttribute("data-ready-animation", "true");
   const session = screen.getByRole("button", {
     name: "Choose Kickoff Special",
   });

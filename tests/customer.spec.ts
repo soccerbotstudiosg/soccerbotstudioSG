@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 async function openSite(page: Page, route: string) {
   await page.goto(sitePath(route));
   const prompt = page.getByRole("dialog", {
-    name: "Download The Official Soccerbot360 Player App Now.",
+    name: "Get the Soccerbot360 Player App",
   });
   await expect(prompt).toBeVisible();
   await prompt
@@ -138,16 +138,17 @@ async function chooseSlots(page: Page, multiple = false) {
     ).toHaveCount(0);
   }
   await expect(
-    page.locator(".booking-primary-action .booking-action-total"),
+    page.locator(".booking-primary-action .booking-action-total").first(),
   ).toHaveText(multiple ? "$176.00" : "$88.00");
   await page
     .getByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await expect(
-    page.locator(".booking-primary-action .booking-action-total"),
+    page.locator(".booking-primary-action .booking-action-total").first(),
   ).toHaveText(multiple ? "$176.00" : "$88.00");
   await openBookingPanel(page, "cart");
   await expect(
@@ -178,7 +179,7 @@ async function details(page: Page) {
     .locator(".booking-document .line-item.total strong")
     .innerText();
   await expect(
-    page.locator(".booking-primary-action .booking-action-total"),
+    page.locator(".booking-primary-action .booking-action-total").first(),
   ).toHaveText(totalText.replace(/^SGD\s*/, ""));
   if (page.viewportSize()!.width <= 700) {
     await openBookingPanel(page, "cart");
@@ -761,10 +762,12 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
     0,
   );
   await expect(
-    page.getByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      exact: true,
-    }),
+    page
+      .getByRole("button", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        exact: true,
+      })
+      .first(),
   ).toBeDisabled();
   await expect(page.getByText("Preview controls", { exact: true })).toHaveCount(
     0,
@@ -785,7 +788,9 @@ test("email verification rejects an incorrect code and continues after correctio
   await expect(
     page.getByRole("textbox", { name: /^Email address/ }),
   ).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByLabel("Verification code")).toHaveCount(0);
+  await expect(
+    page.getByLabel("Verification code", { exact: true }),
+  ).toHaveCount(0);
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("long.customer.address@example.com");
@@ -795,14 +800,18 @@ test("email verification rejects an incorrect code and continues after correctio
   ).toBeVisible();
   // The code view mounts before the loading overlay releases page inertness.
   await expect(page.locator("main")).not.toHaveAttribute("inert");
-  await page.getByLabel("Verification code").fill("000000");
-  await expect(page.getByLabel("Verification code")).toHaveValue("000000");
+  await page.getByLabel("Verification code", { exact: true }).fill("000000");
+  await expect(
+    page.getByLabel("Verification code", { exact: true }),
+  ).toHaveValue("000000");
   await page.getByRole("button", { name: "Verify and continue" }).click();
   await expect(page.locator("main").getByRole("alert")).toContainText(
     "incorrect",
   );
-  await page.getByLabel("Verification code").fill("360360");
-  await expect(page.getByLabel("Verification code")).toHaveValue("360360");
+  await page.getByLabel("Verification code", { exact: true }).fill("360360");
+  await expect(
+    page.getByLabel("Verification code", { exact: true }),
+  ).toHaveValue("360360");
   await page.getByRole("button", { name: "Verify and continue" }).click();
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
@@ -862,7 +871,7 @@ test("enquiry remains available without external submission or a mock assistant"
     .getByRole("textbox", { name: /^Email address/ })
     .fill("demo@example.com");
   await expect(page.getByLabel("Full name")).toHaveValue("Demo Customer");
-  await page.getByLabel("Contact number").fill("+65 8123 4567");
+  await page.getByLabel("Mobile number").fill("+65 8123 4567");
   await page.getByLabel("Enquiry type").selectOption("Corporate booking");
   await page
     .getByLabel("Your requirements")
@@ -1006,13 +1015,25 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   }
   const cardWidths = await page
     .locator(".session-products")
-    .evaluate((grid) => ({
-      grid: grid.getBoundingClientRect().width,
-      card: grid.children[0].getBoundingClientRect().width,
-      gap: parseFloat(getComputedStyle(grid).columnGap),
-      mobile: matchMedia("(max-width: 700px)").matches,
-      medium: matchMedia("(max-width: 1200px)").matches,
-    }));
+    .evaluate(async (grid) => {
+      await Promise.all(
+        grid.children[0]
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation instanceof CSSAnimation &&
+              animation.animationName === "booking-action-ready",
+          )
+          .map((animation) => animation.finished),
+      );
+      return {
+        grid: grid.getBoundingClientRect().width,
+        card: grid.children[0].getBoundingClientRect().width,
+        gap: parseFloat(getComputedStyle(grid).columnGap),
+        mobile: matchMedia("(max-width: 700px)").matches,
+        medium: matchMedia("(max-width: 1200px)").matches,
+      };
+    });
   const expectedCardWidth = cardWidths.mobile
     ? cardWidths.grid
     : cardWidths.medium
@@ -1174,10 +1195,12 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   ).toBeVisible();
   await closeBookingPanel(page);
   await expect(
-    page.getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      exact: true,
-    }),
+    page
+      .getByRole("link", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        exact: true,
+      })
+      .first(),
   ).toBeVisible();
   if (page.viewportSize()!.width > 700) {
     await expect(page.locator(".booking-layout > .aside-wrap")).toHaveCSS(
@@ -1211,7 +1234,12 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
+  await expect(page).toHaveURL(/\/book\/details\/$/);
+  await expect(
+    page.getByRole("heading", { name: "Your details", exact: true }),
+  ).toBeVisible();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
   await details(page);
@@ -1396,10 +1424,35 @@ test("leave booking uses equal-width sentence-case actions with home left and st
 test("first visit offers the Player App with only store links and dismissal persists", async ({
   page,
 }) => {
+  const retiredPreview = await page.request.get(sitePath("/experiment/"));
+  expect(retiredPreview.status()).toBe(404);
   await page.goto(sitePath("/"));
   const prompt = page.getByRole("dialog", {
-    name: "Download The Official Soccerbot360 Player App Now.",
+    name: "Get the Soccerbot360 Player App",
   });
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+    "content",
+    "SOCCERBOTSTUDIO Singapore | Interactive Football Experience",
+  );
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    new URL(
+      sitePath("/assets/soccerbot-social-preview.jpg"),
+      "https://soccerbotsg.com",
+    ).href,
+  );
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
+    "content",
+    "summary_large_image",
+  );
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+    "content",
+    "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Play, compete and sharpen your skills in a 360° football arena.",
+  );
+  await expect(
+    page.locator('link[rel="icon"][type="image/svg+xml"]'),
+  ).toHaveAttribute("href", sitePath("/favicon.svg"));
+  const phonePrompt = (page.viewportSize()?.width ?? 1280) <= 700;
   await expect(prompt).toBeVisible();
   await expect(prompt.locator("p")).toHaveCount(0);
   await expect(prompt.getByRole("link")).toHaveCount(3);
@@ -1417,8 +1470,8 @@ test("first visit offers the Player App with only store links and dismissal pers
   for (const link of await prompt.getByRole("link").all()) {
     await expect(link).toHaveCSS("justify-content", "center");
     await expect(link).toHaveCSS("align-items", "center");
-    await expect(link).toHaveCSS("color", "rgb(16, 22, 54)");
-    await expect(link.locator("svg")).toHaveCSS("color", "rgb(16, 22, 54)");
+    await expect(link).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(link.locator("svg")).toHaveCSS("color", "rgb(255, 255, 255)");
   }
   for (const [name, href] of storeDestinations) {
     await expect(
@@ -1432,16 +1485,44 @@ test("first visit offers the Player App with only store links and dismissal pers
     name: "Close dialog",
     exact: true,
   });
-  await expect(prompt).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(prompt).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(prompt.locator(".dialog-title")).toHaveCSS(
     "font-family",
     /Roboto/,
   );
-  await expect(prompt.locator(".dialog-title")).toHaveCSS("font-size", "24px");
+  await expect(prompt.locator(".dialog-title")).toHaveCSS(
+    "font-size",
+    phonePrompt ? "12px" : "24px",
+  );
   await expect(prompt.locator(".dialog-title")).toHaveCSS("font-weight", "400");
+  await expect(prompt.locator(".dialog-title")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
+  );
   for (const label of await prompt.locator(".app-store-link span").all()) {
-    await expect(label).toHaveCSS("font-size", "16px");
+    await expect(label).toHaveCSS("font-size", phonePrompt ? "12px" : "16px");
     await expect(label).toHaveCSS("font-weight", "400");
+  }
+  if (phonePrompt) {
+    const geometry = await prompt.evaluate((dialog) => {
+      const links = [...dialog.querySelectorAll(".app-store-link")].map(
+        (link) => link.getBoundingClientRect().toJSON(),
+      );
+      const title = dialog.querySelector(".dialog-title")!;
+      return {
+        links,
+        height: dialog.getBoundingClientRect().height,
+        overflow: dialog.scrollWidth > dialog.clientWidth,
+        titleOverflow: title.scrollWidth > title.clientWidth,
+      };
+    });
+    expect(geometry.height).toBeLessThanOrEqual(160);
+    expect(geometry.overflow).toBe(false);
+    expect(geometry.titleOverflow).toBe(false);
+    expect(geometry.links[0].top).toBeCloseTo(geometry.links[1].top, 1);
+    expect(geometry.links[1].top).toBeCloseTo(geometry.links[2].top, 1);
+    expect(geometry.links[0].right).toBeLessThan(geometry.links[1].left);
+    expect(geometry.links[1].right).toBeLessThan(geometry.links[2].left);
   }
   await prompt.getByRole("heading").click();
   await expect(prompt).toBeVisible();
@@ -1471,7 +1552,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   await expect(close).toHaveCSS("outline-style", "none");
   await expect(close).toHaveCSS("border-top-width", "0px");
   await expect(close).toHaveCSS("border-radius", "0px");
-  await expect(close).toHaveCSS("color", "rgb(23, 96, 120)");
+  await expect(close).toHaveCSS("color", "rgb(70, 172, 220)");
   await expect(close).toHaveCSS("box-shadow", "none");
   await expect(close).toHaveCSS("text-decoration-line", "none");
   await close.click();
@@ -1536,7 +1617,11 @@ test("header blue and the typography hierarchy stay consistent across every book
       ),
     ).toBeLessThanOrEqual(1);
   }
-  async function sectionType(selector: string, expectedSize = 20) {
+  async function sectionType(
+    selector: string,
+    expectedSize = 20,
+    expectedColor = brand,
+  ) {
     if (
       page.viewportSize()!.width <= 700 &&
       (await page.locator(".booking-navigation").count())
@@ -1663,7 +1748,7 @@ test("header blue and the typography hierarchy stay consistent across every book
       expect(style.size).toBeCloseTo(expectedSize, 5);
       expect(style.weight).toBe("700");
       expect(style.style).toBe("normal");
-      expect(style.color).toBe(brand);
+      expect(style.color).toBe(expectedColor);
     }
   }
   await openSite(page, "/book/account/");
@@ -1682,7 +1767,9 @@ test("header blue and the typography hierarchy stay consistent across every book
         document.fonts.check("italic 900 32px Roboto"),
     ),
   ).toBe(true);
-  await sectionType(".access-option h2");
+  await expect(page.locator(".access-option")).toHaveCount(1);
+  await expect(page.locator(".access-option h2")).toHaveCount(0);
+  await expect(page.locator(".access-choice-divider")).toHaveText("or");
   if ((page.viewportSize()?.width ?? 1280) <= 700) {
     for (const card of await page.locator(".access-option").all()) {
       await expect(card).toHaveCSS("padding-top", "14px");
@@ -1699,7 +1786,24 @@ test("header blue and the typography hierarchy stay consistent across every book
   await page.mouse.move(0, 0);
   await expect(guest).toHaveCSS("background-color", brand);
   await expect(guest).toHaveCSS("text-transform", "none");
+  await expect(guest).toHaveCSS("font-weight", "900");
+  await expect(guest).toHaveCSS("font-style", "italic");
   await expect(guest).toHaveCSS("font-size", "16px");
+  const entryWidth = await guest.evaluate((button) => {
+    const panel = button.parentElement!;
+    const style = getComputedStyle(panel);
+    return {
+      button: parseFloat(getComputedStyle(button).width),
+      content:
+        panel.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight),
+    };
+  });
+  expect(entryWidth.button).toBeCloseTo(
+    entryWidth.content * ((page.viewportSize()?.width ?? 1280) > 700 ? 0.6 : 1),
+    0,
+  );
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
     const card = page.locator(".access-option").filter({ has: guest });
     const background = await card.evaluate(
@@ -1708,7 +1812,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     const border = await card.evaluate(
       (node) => getComputedStyle(node).borderColor,
     );
-    await card.getByRole("heading").hover();
+    await card.getByText("or", { exact: true }).hover();
     await expect(card).toHaveCSS("background-color", background);
     await expect(card).toHaveCSS("border-color", border);
     await guest.hover();
@@ -1730,9 +1834,41 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   await sectionType(
-    ".session-product-name, .session-inclusions h2",
+    ".session-product-name",
+    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
+    "rgb(255, 255, 255)",
+  );
+  await sectionType(
+    ".session-inclusions h2",
     (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
   );
+  for (const card of [
+    page.locator(".outlet-option"),
+    page.locator(".session-product"),
+  ]) {
+    await expect(card).toHaveCSS("background-color", brand);
+    await expect(card).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(card).toHaveCSS("border-radius", "3px 12px");
+    const chevron = card.locator(".selection-chevron");
+    await expect(chevron).toBeVisible();
+    const geometry = await card.evaluate((node) => {
+      // Measure in one frame: session expansion may still be smoothly scrolling.
+      const cardBox = node.getBoundingClientRect();
+      const chevronBox = node
+        .querySelector(".selection-chevron")!
+        .getBoundingClientRect();
+      return {
+        centerOffset: Math.abs(
+          chevronBox.y +
+            chevronBox.height / 2 -
+            (cardBox.y + cardBox.height / 2),
+        ),
+        rightOffset: chevronBox.x - (cardBox.x + cardBox.width / 2),
+      };
+    });
+    expect(geometry.centerOffset).toBeLessThanOrEqual(1);
+    expect(geometry.rightOffset).toBeGreaterThan(0);
+  }
   const selectedCardBackground = await page
     .locator('.session-product[aria-pressed="true"]')
     .evaluate((element) => getComputedStyle(element).backgroundColor);
@@ -1745,6 +1881,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(
     page.getByRole("combobox", { name: "Calendar view" }),
   ).toHaveValue("month");
+  await expect(page.locator(".date:disabled").first()).toHaveCSS(
+    "border-top-color",
+    "rgba(0, 0, 0, 0)",
+  );
   await page
     .getByRole("combobox", { name: "Calendar view" })
     .selectOption("week");
@@ -1781,12 +1921,21 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
+  await expect(
+    page.locator(".date:not(:disabled):not(.selected)").first(),
+  ).toHaveCSS("border-top-color", "rgb(122, 130, 153)");
+
   await expect(page.locator(".calendar-legend")).toHaveCount(0);
   await expect(page.locator(".date .dot")).toHaveCount(0);
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
+  await expect(page.locator(".date.selected")).toHaveCSS("border-color", brand);
   await expect(page.locator(".date.selected")).toHaveCSS(
-    "border-color",
-    "rgb(86, 102, 168)",
+    "background-color",
+    brand,
+  );
+  await expect(page.locator(".date.selected")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
   );
   await expect(page.locator(".date.selected strong")).toHaveCSS(
     "background-color",
@@ -1796,6 +1945,11 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(crossing.locator(".time-range")).toHaveCSS(
     "white-space",
     "nowrap",
+  );
+  await expect(crossing.locator(".time-range")).toHaveCSS("font-size", "18px");
+  await expect(crossing.locator(".time-rate strong")).toHaveCSS(
+    "font-size",
+    "18px",
   );
   const slotPlacement = await crossing.evaluate((node) => {
     const range = node.querySelector(".time-range")!.getBoundingClientRect();
@@ -1866,9 +2020,16 @@ test("header blue and the typography hierarchy stay consistent across every book
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await pageHeading("Your details");
   await sectionType("#details-form h2");
+  if ((page.viewportSize()?.width ?? 1280) > 700) {
+    const row = page.locator(".summary .series-list li").first();
+    await expect(row).toHaveCSS("padding-top", "18px");
+    await expect(row).toHaveCSS("padding-bottom", "18px");
+    await expect(page.locator(".summary-total")).toHaveCSS("margin-top", "0px");
+  }
   await expect(page.locator("label[for='name']")).toHaveCSS(
     "font-size",
     "14px",
@@ -2071,10 +2232,12 @@ test("elapsed selections block checkout on an open page and remain removable bef
   ).toBeVisible();
   await closeBookingPanel(page);
   await expect(
-    page.getByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      exact: true,
-    }),
+    page
+      .getByRole("button", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        exact: true,
+      })
+      .first(),
   ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: /12:00–12:40/ }),
@@ -2122,6 +2285,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
       exact: true,
     })
+    .first()
     .click();
   await details(page);
   await payment(page);
@@ -2187,15 +2351,13 @@ test("protected confirmation waits for server evidence and rejects a tampered re
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
   release();
+  await expect(page).toHaveURL(sitePath("/"));
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
-  ).toBeVisible();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "Booking confirmed. Try loading your details again.",
+  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Request Help" })).toHaveCount(
+    0,
   );
-  await expect(
-    page.getByRole("button", { name: "Load booking details", exact: true }),
-  ).toBeVisible();
   await page.unroute(`**/api/attempts/${attempt}/confirmation`);
   await page.route(`**/api/attempts/${attempt}/confirmation`, (route) =>
     route.fulfill({
@@ -2204,10 +2366,8 @@ test("protected confirmation waits for server evidence and rejects a tampered re
       body: '{"error":"access_denied"}',
     }),
   );
-  await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "Confirmation unavailable" }),
-  ).toBeVisible();
+  await page.goto(sitePath(`/confirmation/?attempt=${attempt}&paid=true`));
+  await expect(page).toHaveURL(sitePath("/"));
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
@@ -2379,10 +2539,12 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   }
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await expect(
-    page.getByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
-      exact: true,
-    }),
+    page
+      .getByRole("button", {
+        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        exact: true,
+      })
+      .first(),
   ).toBeDisabled();
   const noon = page.getByRole("combobox", {
     name: `Trainer for ${date} at 12:00`,

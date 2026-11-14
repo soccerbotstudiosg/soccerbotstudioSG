@@ -15,7 +15,7 @@ test("design policy rejects a teal action token even if it remains a valid CSS c
   assert.ok(
     designAudit(
       css.replace(
-        "--color-action: var(--color-brand)",
+        "--color-action: var(--color-navy)",
         "--color-action: #006d80",
       ),
     ).errors.some((e) => e.includes("Header blue drift")),

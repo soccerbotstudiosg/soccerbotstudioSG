@@ -1,4 +1,4 @@
-// Approved business policy, independent of provider catalogue and demo fixtures.
+// Shared business limits; provider data and demo fixtures do not override them.
 export const SESSION_MINUTES = 40;
 export const CHANGEOVER_MINUTES = 10;
 export const START_INTERVAL_MINUTES = SESSION_MINUTES + CHANGEOVER_MINUTES;
@@ -9,7 +9,6 @@ export const RESERVATION_IP_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const RESERVATION_STRIKE_THRESHOLD = 2;
 // Current Singapore month plus the following two calendar months.
 export const BOOKING_MONTH_COUNT = 3;
-export const STUDIO_CAPACITY = 1;
 // New attempts: eight minutes to pay, one to check, three for recovery.
 // The provider hold remains independently capped by its invoice deadline.
 export const PAYMENT_WINDOW_MS = 480000;

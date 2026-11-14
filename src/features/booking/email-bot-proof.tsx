@@ -32,7 +32,7 @@ function BotProof({
   onPendingChange,
 }: {
   onToken: (token: string) => void;
-  purpose: "verify-email" | "create-checkout";
+  purpose: "verify-email" | "create-checkout" | "send-enquiry";
   label: string;
   unavailable: string;
   onPendingChange?: (pending: boolean) => void;
@@ -71,7 +71,7 @@ function BotProof({
     const id = api.render(container.current, {
       sitekey,
       action: purpose,
-      appearance: purpose === "create-checkout" ? "interaction-only" : "always",
+      appearance: "interaction-only",
       callback: token,
       "before-interactive-callback": () => {
         if (active) setInteractive(true);
@@ -114,7 +114,7 @@ function BotProof({
         </p>
       )}
       <div
-        className={`auth-bot-proof${purpose === "create-checkout" ? " checkout-bot-proof" : ""}${purpose === "create-checkout" && !interactive && !visible ? " auth-bot-proof-background" : ""}`}
+        className={`auth-bot-proof checkout-bot-proof${!interactive && !visible ? " auth-bot-proof-background" : ""}`}
       >
         <div ref={container} aria-label={label} />
       </div>
@@ -125,13 +125,16 @@ function BotProof({
 /** Prepare email proof while preserving the email-specific unavailable guidance. */
 export function EmailBotProof({
   onToken,
+  onPendingChange,
 }: {
   onToken: (token: string) => void;
+  onPendingChange?: (pending: boolean) => void;
 }) {
   return (
     <BotProof
       onToken={onToken}
       purpose="verify-email"
+      onPendingChange={onPendingChange}
       label="Email security check"
       unavailable="Email verification unavailable. Please continue as a guest."
     />
@@ -152,6 +155,25 @@ export function CheckoutBotProof({
       onPendingChange={onPendingChange}
       purpose="create-checkout"
       label="Checkout security check"
+      unavailable="Security check unavailable. Please refresh this page and try again."
+    />
+  );
+}
+
+/** Bind enquiry submission to its own security challenge. */
+export function EnquiryBotProof({
+  onToken,
+  onPendingChange,
+}: {
+  onToken: (token: string) => void;
+  onPendingChange: (pending: boolean) => void;
+}) {
+  return (
+    <BotProof
+      onToken={onToken}
+      onPendingChange={onPendingChange}
+      purpose="send-enquiry"
+      label="Enquiry security check"
       unavailable="Security check unavailable. Please refresh this page and try again."
     />
   );

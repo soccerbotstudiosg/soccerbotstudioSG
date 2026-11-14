@@ -149,7 +149,7 @@ export async function selectPaymentRoute(env: Env, id: string) {
   if (row?.route !== selected) throw new ApiError(409, "payment_route_changed");
   return selected;
 }
-/** Reserve payment state against validated booking and invoice evidence. */
+/** Reserve, create and retain a validated hosted payment request. */
 export async function prepareHitpay(
   env: Env,
   scope: NativeScope,

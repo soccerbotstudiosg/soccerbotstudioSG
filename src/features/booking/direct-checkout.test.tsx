@@ -2527,7 +2527,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
     JSON.parse(sessionStorage.getItem("soccerbot-conflict-notice")!),
   ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
   expect(
-    screen.getByRole("link", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("link", { name: /^Enter Booking Details/ })[0],
   ).toHaveAttribute("href", "/book/details");
 
   // Completing the first navigation away clears the notice and its persisted
@@ -3857,11 +3857,8 @@ it("access denial during conflict classification stops recovery and keeps the or
         new Response(null, { status: route === "payment" ? 401 : 403 }),
       ),
     );
-    expect(
-      screen.getByText(
-        "Contact the studio to view this booking. Don’t pay again.",
-      ),
-    ).toBeVisible();
+    expect(navigation.replace).toHaveBeenCalledWith("/");
+    expect(screen.queryByText("Confirmation unavailable")).toBeNull();
     expect(
       screen.queryByText(
         "Some sessions may no longer be available. Please do not close or refresh.",
@@ -3879,11 +3876,8 @@ it("access denial during conflict classification stops recovery and keeps the or
     expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
     expect(screen.getByTestId("handoff-return")).not.toHaveTextContent("true");
     expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
-    expect(
-      screen.getByText(
-        "Contact the studio to view this booking. Don’t pay again.",
-      ),
-    ).toBeVisible();
+    expect(navigation.replace).toHaveBeenCalledWith("/");
+    expect(screen.queryByText("Confirmation unavailable")).toBeNull();
     expect(availability).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledTimes(requestsAfterDenial);
     expect(
@@ -3977,9 +3971,9 @@ it("completed conflict allows immediate calendar Back and Continue with retained
           "12:00",
         );
       }
-      const link = screen.getByRole("link", {
+      const link = screen.getAllByRole("link", {
         name: destination === "details" ? /^Enter Booking Details/ : "Back",
-      });
+      })[0];
       expect(link.getAttribute("href")).toContain(`/book/${destination}`);
       navigation.replace.mockClear();
       navigation.path = `/book/${destination}/`;
@@ -4152,7 +4146,7 @@ async function expectRecoveryReleaseNavigation(
         return readStorage.call(this, key);
       });
     expect(
-      screen.getByRole("button", { name: /^Enter Booking Details/ }),
+      screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
     ).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Review replacement" }));
     await act(async () => {});
@@ -4254,7 +4248,9 @@ async function expectRecoveryReleaseNavigation(
   ]);
   if (checkReviewGuard)
     expect(
-      await screen.findByRole("link", { name: /^Enter Booking Details/ }),
+      (
+        await screen.findAllByRole("link", { name: /^Enter Booking Details/ })
+      )[0],
     ).toHaveAttribute("href", "/book/details");
   navigation.replace.mockClear();
   navigation.path = `/book/${destination}/`;

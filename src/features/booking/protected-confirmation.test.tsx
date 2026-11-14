@@ -74,7 +74,8 @@ it("shows checking before the protected server result and confirms only verified
     url.endsWith("/receipt") ? receipt : confirmation,
   );
   vi.stubGlobal("fetch", fetch);
-  render(<ProtectedConfirmation attemptId={first} />);
+  navigation.replace.mockReset();
+  render(<ProtectedConfirmation attemptId={first} confirmationRoute />);
   expect(
     screen.getByRole("status", { name: "Checking payment…" }),
   ).toBeInTheDocument();
@@ -87,6 +88,7 @@ it("shows checking before the protected server result and confirms only verified
   expect(
     await screen.findByRole("heading", { name: "Booking Confirmed" }),
   ).toBeInTheDocument();
+  expect(navigation.replace).not.toHaveBeenCalled();
   expect(fetch).toHaveBeenCalledWith(
     `/api/attempts/${first}/confirmation`,
     expect.objectContaining({
@@ -389,7 +391,11 @@ it("booking restoration does not restart a protected confirmation read", async (
   const fetch = vi.fn((url: string) =>
     Promise.resolve(
       url.endsWith("/confirmation")
-        ? Response.json({ status: "confirmed", reason: "verified" })
+        ? Response.json({
+            status: "confirmed",
+            reason: "verified",
+            customerConfirmation: receiptFixture(),
+          })
         : new Response(null, { status: 503 }),
     ),
   );
@@ -435,7 +441,11 @@ it("failed booking restoration does not block independent protected confirmation
   const fetch = vi.fn((url: string) =>
     Promise.resolve(
       url.endsWith("/confirmation")
-        ? Response.json({ status: "confirmed", reason: "verified" })
+        ? Response.json({
+            status: "confirmed",
+            reason: "verified",
+            customerConfirmation: receiptFixture(),
+          })
         : new Response(null, { status: 503 }),
     ),
   );
@@ -1812,11 +1822,8 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   await act(async () => {
     await vi.advanceTimersByTimeAsync(5000);
   });
-  expect(
-    screen.getByText(
-      "Contact the studio to view this booking. Don’t pay again.",
-    ),
-  ).toBeVisible();
+  expect(navigation.replace).toHaveBeenCalledWith("/");
+  expect(screen.queryByText("Confirmation unavailable")).toBeNull();
   const deniedReads = fetcher.mock.calls.length;
   await act(async () => {
     await vi.advanceTimersByTimeAsync(60000);
@@ -2963,5 +2970,442 @@ it("completed return recovery remains bounded while checkout context is still re
     cleanup();
     sessionStorage.clear();
     localStorage.clear();
+  }
+});
+
+it("invalid confirmation links go home without protected requests or storage changes", async () => {
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
+  for (const attemptId of ["", "not-an-attempt"]) {
+    navigation.replace.mockReset();
+    sessionStorage.setItem("retained-financial-lock", "keep");
+    const page = render(
+      <ProtectedConfirmation
+        attemptId={attemptId}
+        checkoutMode="live"
+        confirmationRoute
+      />,
+    );
+    await act(async () => {});
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(page.container).toBeEmptyDOMElement();
+    expect(sessionStorage.getItem("retained-financial-lock")).toBe("keep");
+    page.unmount();
+  }
+});
+it("failed confirmation recovery handoff goes home after its budget without releasing the attempt", async () => {
+  vi.useFakeTimers();
+  navigation.replace.mockReset();
+  const fetcher = vi.fn<
+    (url: string, options?: RequestInit) => Promise<Response>
+  >(async () => new Response(null, { status: 503 }));
+  vi.stubGlobal("fetch", fetcher);
+  const handoff = vi.fn(() => false);
+  const expired = vi.fn();
+  const restart = vi.fn();
+  render(
+    <BookingLoadingProvider>
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        confirmationRoute
+        onAwaitingExpiry={handoff}
+        onExpired={expired}
+        onRestart={restart}
+      />
+    </BookingLoadingProvider>,
+  );
+  await act(async () => {});
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(29999);
+  });
+  expect(navigation.replace).not.toHaveBeenCalled();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(handoff).toHaveBeenCalledExactlyOnceWith(first, true);
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+  expect(expired).not.toHaveBeenCalled();
+  expect(restart).not.toHaveBeenCalled();
+  expect(
+    fetcher.mock.calls.every(
+      ([, options]) => !options?.method || options.method === "GET",
+    ),
+  ).toBe(true);
+  expect(screen.queryByText("Confirmation unavailable")).toBeNull();
+});
+
+it("confirmation routes without live recovery go home after receipt failure or denied access", async () => {
+  for (const denied of [false, true]) {
+    navigation.replace.mockReset();
+    const fetcher = vi.fn(async (url: string) =>
+      url.endsWith("/receipt")
+        ? new Response(null, { status: 503 })
+        : denied
+          ? new Response(null, { status: 401 })
+          : Response.json({ status: "confirmed", reason: "verified" }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    sessionStorage.setItem("retained-financial-lock", "keep");
+    const page = render(
+      <ProtectedConfirmation attemptId={first} confirmationRoute />,
+    );
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"),
+    );
+    expect(page.container).toBeEmptyDOMElement();
+    expect(fetcher.mock.calls.map(([url]) => url)).toEqual(
+      denied
+        ? [`/api/attempts/${first}/confirmation`]
+        : [
+            `/api/attempts/${first}/confirmation`,
+            `/api/attempts/${first}/receipt`,
+          ],
+    );
+    expect(sessionStorage.getItem("retained-financial-lock")).toBe("keep");
+    page.unmount();
+  }
+});
+
+it("an unavailable retained attempt goes home instead of showing payment uncertainty", async () => {
+  navigation.replace.mockReset();
+  const fetcher = vi.fn(async () =>
+    Response.json({ error: "attempt_unavailable" }, { status: 404 }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  sessionStorage.setItem(
+    `soccerbot-payment-return:${first}`,
+    JSON.stringify({ completed: true }),
+  );
+  sessionStorage.setItem("retained-financial-lock", "keep");
+  const page = render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      confirmationRoute
+    />,
+  );
+  await waitFor(() =>
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"),
+  );
+  expect(page.container).toBeEmptyDOMElement();
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(sessionStorage.getItem("retained-financial-lock")).toBe("keep");
+  expect(screen.queryByText("Pending")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+});
+
+it("idling and failed invoice enrichment retain an already verified confirmation", async () => {
+  vi.useFakeTimers();
+  navigation.replace.mockReset();
+  const now = Date.now();
+  const proof = receiptFixture(now);
+  const fetcher = vi.fn(async (url: string) =>
+    url.endsWith("/checkout")
+      ? Response.json({
+          attemptId: first,
+          mode: "live",
+          confirmation: proof,
+          checkout: { state: "unavailable" },
+          summary: {
+            players: 2,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: proof.sessions[0].startMs, players: 2 }],
+          },
+          checking: {
+            deadlineMs: now + 60000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        })
+      : Response.json({ error: "attempt_unavailable" }, { status: 404 }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      confirmationRoute
+    />,
+  );
+  await act(async () => {});
+  expect(
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
+  ).toBeVisible();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(35 * 60_000);
+  });
+  window.dispatchEvent(new Event("focus"));
+  document.dispatchEvent(new Event("visibilitychange"));
+  await act(async () => {});
+  expect(
+    screen.getByRole("heading", { name: "Booking Confirmed" }),
+  ).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+  expect(screen.queryByText("Pending")).toBeNull();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(
+    fetcher.mock.calls.filter(([url]) => url.endsWith("/receipt")).length,
+  ).toBeGreaterThan(0);
+  expect(
+    fetcher.mock.calls.every(
+      ([url]) => url.endsWith("/checkout") || url.endsWith("/receipt"),
+    ),
+  ).toBe(true);
+});
+
+it("failed post-payment context returns home after the budget instead of rendering an empty Pending summary", async () => {
+  vi.useFakeTimers();
+  for (const failure of ["offline", "unavailable", "malformed"] as const) {
+    navigation.replace.mockReset();
+    const fetcher = vi.fn(async () => {
+      if (failure === "offline") throw new TypeError("Synthetic offline");
+      return failure === "unavailable"
+        ? new Response(null, { status: 503 })
+        : Response.json({ invalid: true });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const restart = vi.fn();
+    const page = render(
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        confirmationRoute
+        providerReturn
+        onRestart={restart}
+      />,
+    );
+    await act(async () => {});
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(29999);
+    });
+    expect(navigation.replace).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+    expect(page.container).toBeEmptyDOMElement();
+    expect(restart).not.toHaveBeenCalled();
+    expect(
+      sessionStorage.getItem(`soccerbot-payment-return:${first}`),
+    ).not.toBeNull();
+    page.unmount();
+    sessionStorage.clear();
+  }
+});
+
+it("recovery polling goes home and stops when booking identity becomes inaccessible", async () => {
+  vi.useFakeTimers();
+  for (const issue of ["booking", "payment"] as const) {
+    for (const status of [401, 403, 404]) {
+      navigation.replace.mockReset();
+      let calls = 0;
+      const fetcher = vi.fn(async () => {
+        if (++calls > 1)
+          return Response.json(
+            { error: status === 404 ? "attempt_unavailable" : "access_denied" },
+            { status },
+          );
+        return Response.json({
+          attemptId: first,
+          mode: "live",
+          ...(issue === "booking"
+            ? { bookingIssue: "incomplete" }
+            : { paymentIssue: "link_recovering" }),
+          checkout: { state: "unavailable" },
+          summary: {
+            players: 2,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: Date.now() + 86400000, players: 2 }],
+          },
+          checking: {
+            deadlineMs: Date.now() + 600000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        });
+      });
+      vi.stubGlobal("fetch", fetcher);
+      const page = render(
+        <ProtectedConfirmation
+          attemptId={first}
+          checkoutMode="live"
+          confirmationRoute
+          providerReturn
+        />,
+      );
+      await act(async () => {});
+      expect(navigation.replace).not.toHaveBeenCalled();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
+      expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+      expect(page.container).toBeEmptyDOMElement();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60000);
+      });
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      page.unmount();
+      sessionStorage.clear();
+    }
+  }
+});
+
+it("inaccessible expiry checks go home without releasing or retrying the booking", async () => {
+  vi.useFakeTimers();
+  for (const status of [401, 403, 404]) {
+    navigation.replace.mockReset();
+    const expired = vi.fn();
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.endsWith("/expire"))
+        return Response.json(
+          { error: status === 404 ? "attempt_unavailable" : "access_denied" },
+          { status },
+        );
+      if (url.endsWith("/checkout"))
+        return Response.json({
+          attemptId: first,
+          mode: "live",
+          expired: true,
+          checkout: { state: "unavailable" },
+          summary: {
+            players: 2,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: Date.now() + 86400000, players: 2 }],
+          },
+          checking: {
+            deadlineMs: Date.now() + 60000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        });
+      return Response.json({
+        status: "pending",
+        reason: "payment_verification_pending",
+      });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const page = render(
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        confirmationRoute
+        onExpired={expired}
+      />,
+    );
+    await act(async () => {});
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+    expect(page.container).toBeEmptyDOMElement();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60000);
+    });
+    expect(
+      fetcher.mock.calls.filter(([url]) => url.endsWith("/expire")),
+    ).toHaveLength(1);
+    expect(expired).not.toHaveBeenCalled();
+    page.unmount();
+    sessionStorage.clear();
+  }
+});
+
+it("an expired checkout with no accepted calendar handoff returns home without claiming release", async () => {
+  navigation.replace.mockReset();
+  const handoff = vi.fn(() => false);
+  const expired = vi.fn();
+  let finishRelease!: (response: Response) => void;
+  const release = new Promise<Response>((resolve) => {
+    finishRelease = resolve;
+  });
+  const fetcher = vi.fn(async (url: string) => {
+    if (url.endsWith("/expire")) return release;
+    if (url.endsWith("/checkout"))
+      return Response.json({
+        attemptId: first,
+        mode: "live",
+        expired: true,
+        checkout: { state: "unavailable" },
+        summary: {
+          players: 2,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [{ startMs: Date.now() + 86400000, players: 2 }],
+        },
+        checking: {
+          deadlineMs: Date.now() + 60000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    return Response.json({
+      status: "pending",
+      reason: "payment_verification_pending",
+    });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const page = render(
+    <ProtectedConfirmation
+      attemptId={first}
+      checkoutMode="live"
+      confirmationRoute
+      onAwaitingExpiry={handoff}
+      onExpired={expired}
+    />,
+  );
+  await waitFor(() =>
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"),
+  );
+  await act(async () => finishRelease(Response.json({ expired: true })));
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+  expect(handoff).toHaveBeenCalledExactlyOnceWith(first);
+  expect(expired).not.toHaveBeenCalled();
+  expect(page.container).toBeEmptyDOMElement();
+});
+
+it("explicit receipt access denial returns home instead of retaining protected details", async () => {
+  for (const status of [401, 403]) {
+    navigation.replace.mockReset();
+    const proof = receiptFixture();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.endsWith("/checkout")
+          ? Response.json({
+              attemptId: first,
+              mode: "live",
+              confirmation: proof,
+              checkout: { state: "unavailable" },
+              summary: {
+                players: 2,
+                totalMinor: 8800,
+                currency: "SGD",
+                sessions: [{ startMs: proof.sessions[0].startMs, players: 2 }],
+              },
+              checking: {
+                deadlineMs: Date.now() + 60000,
+                nextCheckMs: 0,
+                pollAfterMs: 5000,
+              },
+            })
+          : new Response(null, { status }),
+      ),
+    );
+    const page = render(
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        confirmationRoute
+      />,
+    );
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"),
+    );
+    expect(page.container).toBeEmptyDOMElement();
+    page.unmount();
+    sessionStorage.clear();
   }
 });

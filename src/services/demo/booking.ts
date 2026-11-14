@@ -37,6 +37,7 @@ function blocked() {
 function studioKey(slot: Slot, studio: string) {
   return `${studio}|${slotKey(slot)}`;
 }
+/** Return studios free under the deterministic demo timetable. */
 function availableStudios(slot: Slot): string[] {
   const unavailable = blocked();
   const weekday = new Date(`${slot.date}T12:00:00Z`).getUTCDay();
@@ -51,6 +52,7 @@ function availableStudios(slot: Slot): string[] {
     );
   });
 }
+/** Assign available demo studios while retaining continuity between sessions. */
 function assign(slots: Session[]) {
   const assigned: Array<Session & { studio: string }> = [];
   let previous: string | null = null;

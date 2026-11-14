@@ -292,7 +292,6 @@ export function decideStoredConfirmation(
     : verifyRecordedConfirmation(input, recordedAtMs);
 }
 
-// A protected context/read boundary, not an invented native preparation method.
 /** Build protected checkout context for handoff and recovery presentation. */
 export async function checkoutContext(
   request: Request,

@@ -22,7 +22,13 @@ export const workerGroups = [
   },
   {
     id: "recovery",
-    suites: ["recovery", "provider", "identity", "identity-delivery"],
+    suites: [
+      "recovery",
+      "provider",
+      "identity",
+      "identity-delivery",
+      "enquiry",
+    ],
   },
 ];
 

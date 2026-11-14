@@ -109,7 +109,7 @@ export function DetailsStep({
               email,
             };
             profileTarget.current.update({ contact });
-            setErrors(contactErrors(contact, email));
+            if (!profileOnly) setErrors(contactErrors(contact, email));
           }
           setProfileRead({ email, ready: true, error: "" });
         },
@@ -131,7 +131,13 @@ export function DetailsStep({
       controller.abort();
     };
     // One protected read per editor entry/retry; typing must never refetch or overwrite the draft.
-  }, [needsProfile, draft.accountEmail, identityService, profileRetry]);
+  }, [
+    needsProfile,
+    draft.accountEmail,
+    identityService,
+    profileRetry,
+    profileOnly,
+  ]);
   const [working, setChecking] = useState(false);
   const [navigating, startNavigation] = useTransition();
   const checking = working || navigating;
@@ -145,7 +151,12 @@ export function DetailsStep({
     };
   }, [cancel]);
   const [touchedErrors, setErrors] = useState<ContactErrors>(() =>
-    draft.mode === "member" ? contactErrors(c, draft.accountEmail) : {},
+    profileOnly
+      ? {}
+      : contactErrors(
+          c,
+          draft.mode === "member" ? draft.accountEmail : undefined,
+        ),
   );
   const currentErrors = contactErrors(
     c,
@@ -162,6 +173,7 @@ export function DetailsStep({
     },
     [c.email, draft.mode],
   );
+  /** Check guest email routing and ignore results for an edited address. */
   async function confirmEmail() {
     if (currentErrors.email || emailWork.current) return;
     if (bookingService.mode !== "live") {
@@ -255,6 +267,7 @@ export function DetailsStep({
       }
     }
   }
+  /** Update a contact field and invalidate any superseded save or email check. */
   function change<K extends keyof ContactDetails>(
     key: K,
     value: ContactDetails[K],
@@ -390,9 +403,23 @@ export function DetailsStep({
               id="email-check-help"
               aria-live="polite"
             >
-              {emailChecked
-                ? "You’ve checked your email address."
-                : "Please double-check your email address, then confirm by selecting the exclamation mark."}
+              {emailChecking ? (
+                "Checking email…"
+              ) : emailChecked ? (
+                "You’ve checked your email address."
+              ) : (
+                <>
+                  Select{" "}
+                  <span
+                    className="email-hint-mark"
+                    role="img"
+                    aria-label="exclamation mark"
+                  >
+                    !
+                  </span>{" "}
+                  to confirm email address.
+                </>
+              )}
             </p>
           )}
         {errors[key] && (
@@ -576,7 +603,10 @@ export function DetailsStep({
                 disabled={saving || checking || !contactValid}
               >
                 {saving ? (
-                  <BrandLoading compact label="Saving details…" />
+                  <span className="button-loading">
+                    <Icon name="spinner" className="spinner" />
+                    Saving…
+                  </span>
                 ) : (
                   "Save contact details"
                 )}

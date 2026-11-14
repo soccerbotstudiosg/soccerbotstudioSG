@@ -16,7 +16,7 @@ import { useBooking } from "./provider";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { Arrival, ClientDetails } from "./review-step";
 /** Share only the visible confirmed booking summary, never payment links or credentials. */
-export function bookingConfirmationMessage(booking: Booking) {
+function bookingConfirmationMessage(booking: Booking) {
   return [
     "SOCCERBOTSTUDIO Singapore",
     "Booking confirmed · Paid",
@@ -53,6 +53,7 @@ function ConfirmationCopy({ booking }: { booking: Booking }) {
     },
     [],
   );
+  /** Copy the current receipt and ignore results after unmount. */
   async function copy() {
     if (busy.current) return;
     busy.current = true;
@@ -100,6 +101,7 @@ function ConfirmationCopy({ booking }: { booking: Booking }) {
     </div>
   );
 }
+/** Show progress text without claiming a confirmed booking. */
 function PendingConfirmationHeading({
   label,
   message,
@@ -219,6 +221,7 @@ export function BookingConfirmation({
 }) {
   const [error, setError] = useState(""),
     [leaving, setLeaving] = useState(false);
+  /** Run the requested departure once and retain retry feedback on failure. */
   async function leave(operation: () => void | Promise<void>) {
     if (leaving) return;
     setLeaving(true);

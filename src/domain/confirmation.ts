@@ -161,6 +161,7 @@ function sameMoney(
 function unique(ids: string[]): boolean {
   return new Set(ids).size === ids.length;
 }
+/** Compare provider identity and occupied times for the same booking session. */
 function sameSession(
   a: z.infer<typeof session>,
   b: z.infer<typeof session>,

@@ -96,3 +96,10 @@ export const studioHero = {
     source: "https://soccerbot360.com/en",
   },
 };
+
+export const socialPreview = {
+  src: sitePath("/assets/soccerbot-social-preview.jpg"),
+  width: 1734,
+  height: 907,
+  alt: "SOCCERBOTSTUDIO Singapore — Interactive Football. Play. Compete. Improve. Two players in the interactive football arena.",
+};

@@ -1,9 +1,10 @@
 // Build-time composition only. No URL, browser storage or failed request can select Preview.
-import { liveBookingService, liveCatalogueService } from "./booking";
+import { liveBookingService } from "./booking";
 import { liveCustomerIdentity } from "./identity";
 import { demoCustomerIdentity } from "./demo/identity";
 import { demoBookingService } from "./demo/booking";
 import { demoIdentityService } from "./demo/identity";
+import { liveEnquiryService } from "./enquiry";
 import { demoEnquiryService } from "./demo/enquiry";
 const mode = process.env.NEXT_PUBLIC_BOOKING_MODE ?? "demo";
 if (mode !== "demo" && mode !== "live")
@@ -13,13 +14,5 @@ export const services = {
   identity: demoIdentityService,
   customerIdentity:
     mode === "live" ? liveCustomerIdentity : demoCustomerIdentity,
-  enquiry: demoEnquiryService,
+  enquiry: mode === "live" ? liveEnquiryService : demoEnquiryService,
 };
-
-// Available for an explicitly composed future live journey; never selected by a URL or failed request.
-export const bookingAdapters = {
-  demo: demoBookingService,
-  live: liveBookingService,
-} as const;
-
-export const catalogueService = liveCatalogueService;

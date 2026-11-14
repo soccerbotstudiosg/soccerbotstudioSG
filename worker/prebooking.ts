@@ -62,7 +62,7 @@ export function offeredStarts(raw: unknown, date: string): string[] {
   return starts;
 }
 /** Select instructors eligible for the requested service. */
-export function eligibleInstructors(raw: unknown): string[] {
+function eligibleInstructors(raw: unknown): string[] {
   if (!Array.isArray(raw) || raw.length > CATALOGUE_RECORD_LIMIT)
     throw new ApiError(503, "eligibility_representation_unavailable");
   const ids = raw.map((value) => providerId(value));
@@ -140,7 +140,7 @@ export function nativeCustomerHours(
 // Lead policy comes from a trusted server-owned account contract, never a
 // customer DTO. Ongoing customer contracts use 240 minutes; historical finite
 // trials retain their original 48-hour rule or exact date-specific exception.
-/** Resolve the lead-time policy within the permitted native trial scope. */
+/** Resolve the server-authorized lead time for the selected session. */
 export function nativeTrialLeadMs(
   contractValue: unknown,
   binding: CatalogueBinding,

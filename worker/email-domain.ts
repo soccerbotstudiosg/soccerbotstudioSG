@@ -17,7 +17,7 @@ const dnsResponse = z.object({
     .optional(),
 });
 export type EmailDomainStatus = "valid" | "invalid" | "unavailable";
-/** Query a fixed resolver only. Domain checks never send the mailbox/local part. */
+/** Check domain mail delivery through a fixed resolver without sending the mailbox. */
 export async function emailDomainStatus(
   email: string,
 ): Promise<EmailDomainStatus> {
@@ -27,6 +27,7 @@ export async function emailDomainStatus(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
+    /** Read and validate a bounded DNS response under the shared timeout. */
     async function query(type: "MX" | "A" | "AAAA") {
       const response = await emailDnsRequest(domain, type, controller.signal);
       if (!response.ok) throw new Error("dns_unavailable");

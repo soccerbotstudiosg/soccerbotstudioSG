@@ -82,7 +82,7 @@ export async function assertPaymentScope(env: Env, scope: PaymentScope) {
   )
     throw new ApiError(409, "hitpay_scope_mismatch");
 }
-/** Convert a validated payment amount to integer minor units. */
+/** Validate and convert a payment amount to integer minor units. */
 export function minorAmount(value: unknown) {
   if (typeof value !== "string" && typeof value !== "number")
     throw new ApiError(409, "hitpay_money_mismatch");
@@ -110,7 +110,7 @@ const requestSchema = z.object({
   url: z.string().max(2048),
   payments: z.array(payment).max(20).optional(),
 });
-// Field names only: never retain returned URLs, account IDs or payloads.
+/** Report association mismatches using field names without provider values. */
 export class HitpayAssociationError extends ApiError {
   constructor(
     readonly field:

@@ -237,6 +237,11 @@ for (const [name, mutate, error] of [
     /Unprefixed/,
   ],
   [
+    "retired Experiment route",
+    (f) => f.write("experiment/index.html", "<h1>Synthetic preview</h1>"),
+    /Retired Experiment route/,
+  ],
+  [
     "missing booking route",
     (f) => rmSync(join(f.root, "book/payment/index.html")),
     /Missing exported route/,

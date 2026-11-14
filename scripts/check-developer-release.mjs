@@ -196,7 +196,7 @@ try {
       (await db.prepare(`SELECT * FROM "${table}" ORDER BY rowid`).all())
         .results,
     );
-  // Retain additive-upgrade coverage even though these migrations are now applied.
+  // Exercise additive upgrades against previously migrated data.
   for (const name of names.slice(14, 16)) await migrate(name);
   assert.equal(
     (await db.prepare("SELECT COUNT(*) n FROM native_checkout_grants").first())
@@ -230,7 +230,7 @@ try {
     ).results,
     retainedNative,
   );
-  // The new schema admits only the reviewed ceiling and preserves retained fields.
+  // Enforce the capacity ceiling while preserving retained fields.
   await db.prepare("UPDATE native_checkout_grants SET maximum_used=176").run();
   await assert.rejects(
     db.prepare("UPDATE native_checkout_grants SET maximum_used=177").run(),
@@ -322,7 +322,7 @@ try {
       (await db.prepare(`SELECT count(*) n FROM "${table}"`).first()).n,
       0,
     );
-  // The new scope table must preserve the already applied capture history.
+  // Preserve capture history when adding scope records.
   const legacyWindow = crypto.randomUUID();
   await db
     .prepare(
@@ -734,6 +734,128 @@ try {
     paymentsBeforeSupport,
     "Help-report upgrade must not rewrite financial evidence",
   );
+  const supportBeforeEnquiry = (
+    await db
+      .prepare("SELECT * FROM booking_support_reports ORDER BY attempt_id")
+      .all()
+  ).results;
+  await migrate("0050_enquiry_requests.sql");
+  assert.equal(
+    (await db.prepare("SELECT COUNT(*) n FROM enquiry_requests").first()).n,
+    0,
+    "Upgrading must not invent customer enquiries",
+  );
+  const enquiryKey = "synthetic-enquiry",
+    enquiryHash = "a".repeat(64);
+  const insertEnquiry = db.prepare(
+    "INSERT INTO enquiry_requests(request_key,input_hash,created_ms,state) VALUES(?,?,?,'pending')",
+  );
+  await insertEnquiry.bind(enquiryKey, enquiryHash, now).run();
+  await assert.rejects(
+    insertEnquiry.bind(enquiryKey, enquiryHash, now).run(),
+    /UNIQUE constraint/,
+  );
+  await assert.rejects(
+    insertEnquiry.bind("invalid-hash", "short", now).run(),
+    /CHECK constraint/,
+  );
+  for (const assignment of [
+    "request_key='changed'",
+    "input_hash='" + "b".repeat(64) + "'",
+    "created_ms=0",
+  ])
+    await assert.rejects(
+      db
+        .prepare(
+          `UPDATE enquiry_requests SET ${assignment} WHERE request_key=?`,
+        )
+        .bind(enquiryKey)
+        .run(),
+      /enquiry_request_immutable/,
+    );
+  for (const assignment of [
+    "state='unknown'",
+    "verified_ms=1",
+    "token_hash='unpaired'",
+  ])
+    await assert.rejects(
+      db
+        .prepare(
+          `UPDATE enquiry_requests SET ${assignment} WHERE request_key=?`,
+        )
+        .bind(enquiryKey)
+        .run(),
+      /CHECK constraint/,
+    );
+  const proofHash = "b".repeat(64);
+  await db
+    .prepare(
+      "UPDATE enquiry_requests SET verified_ms=?,token_hash=?,claim_id='claim',next_ms=? WHERE request_key=?",
+    )
+    .bind(now, proofHash, now + 30000, enquiryKey)
+    .run();
+  for (const assignment of ["verified_ms=0", "token_hash='changed'"])
+    await assert.rejects(
+      db
+        .prepare(
+          `UPDATE enquiry_requests SET ${assignment} WHERE request_key=?`,
+        )
+        .bind(enquiryKey)
+        .run(),
+      /enquiry_request_immutable/,
+    );
+  await insertEnquiry.bind("second-enquiry", enquiryHash, now).run();
+  await assert.rejects(
+    db
+      .prepare(
+        "UPDATE enquiry_requests SET verified_ms=?,token_hash=? WHERE request_key='second-enquiry'",
+      )
+      .bind(now, proofHash)
+      .run(),
+    /UNIQUE constraint/,
+  );
+  await assert.rejects(
+    db
+      .prepare(
+        "UPDATE enquiry_requests SET verified_ms=NULL,token_hash=NULL WHERE request_key=?",
+      )
+      .bind(enquiryKey)
+      .run(),
+    /enquiry_request_immutable/,
+  );
+  await db
+    .prepare(
+      "UPDATE enquiry_requests SET state='sent',sent_ms=?,claim_id=NULL WHERE request_key=?",
+    )
+    .bind(now, enquiryKey)
+    .run();
+  await assert.rejects(
+    db
+      .prepare(
+        "UPDATE enquiry_requests SET state='pending' WHERE request_key=?",
+      )
+      .bind(enquiryKey)
+      .run(),
+    /enquiry_request_immutable/,
+  );
+  assert.deepEqual(
+    (
+      await db
+        .prepare("SELECT * FROM booking_support_reports ORDER BY attempt_id")
+        .all()
+    ).results,
+    supportBeforeEnquiry,
+    "Enquiry upgrade must preserve customer help requests",
+  );
+  assert.deepEqual(
+    (
+      await db
+        .prepare("SELECT * FROM hitpay_payments ORDER BY attempt_id")
+        .all()
+    ).results,
+    paymentsBeforeSupport,
+    "Enquiry upgrade must not rewrite financial evidence",
+  );
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,
@@ -863,6 +985,13 @@ try {
   });
   assert.equal(delivery.status, 503);
   assert.deepEqual(await delivery.json(), { error: "identity_unavailable" });
+  const enquiry = await mf.dispatchFetch(`${origin}/api/enquiry`, {
+    method: "POST",
+    headers: { origin, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  assert.equal(enquiry.status, 503);
+  assert.deepEqual(await enquiry.json(), { error: "enquiry_unavailable" });
   const url = `${origin}/api/attempts/${id}/checkout`;
   assert.equal((await mf.dispatchFetch(url)).status, 401);
   const context = await mf.dispatchFetch(url, { headers: { cookie } });
@@ -897,6 +1026,7 @@ try {
           "applied0001–0017 preserve all existing fields, identities, unknown effects and closed grants",
           "identity request upgrade preserves challenge history and enforces the backfilled cooldown",
           "checkout proof upgrade starts empty and enforces token uniqueness, access ownership and expiry",
+          "enquiry upgrade starts empty, preserves financial/support evidence and enforces immutable payloads, proof uniqueness and terminal delivery",
           "empty identity delivery authority and default-closed HTTP",
           "exact Worker revision",
           "protected checkout unavailable",

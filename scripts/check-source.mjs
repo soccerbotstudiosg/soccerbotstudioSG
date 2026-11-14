@@ -196,6 +196,7 @@ export function checkSource(root) {
     "session-pricing",
   ]) {
     const seen = new Set();
+    /** Reject preview dependencies in the shared domain graph. */
     function inspectShared(file) {
       if (seen.has(file)) return;
       seen.add(file);
@@ -227,6 +228,7 @@ export function checkSource(root) {
 
   const visited = new Set(),
     visiting = new Set();
+  /** Traverse the import graph and report dependency cycles. */
   function dfs(file) {
     if (visiting.has(file)) {
       errors.push(`Dependency cycle: ${path.relative(root, file)}`);

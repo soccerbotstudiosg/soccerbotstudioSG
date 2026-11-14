@@ -153,7 +153,7 @@ export async function subscriptionSnapshot(raw: unknown) {
 
 // Account response diagnostics only. Retain field names/types, never IDs, URLs,
 // event values, secrets or contacts. This is not normalized subscription proof.
-/** Validate the supported webhook subscription response structure. */
+/** Inspect bounded webhook response field names and types. */
 export function webhookSubscriptionStructure(raw: unknown): unknown {
   const known = new Set([
     "id",

@@ -23,8 +23,72 @@ import {
   awaitDeploymentHealth,
   readDeploymentPredecessor,
   verifySaasResources,
+  verifyCustomDomainResources,
 } from "./deploy-cloudflare.mjs";
 const revision = "a".repeat(40);
+test("native domain preflight rejects foreign zones and registrations while preserving other domains", () => {
+  const target = {
+    accountId: "a".repeat(32),
+    workerName: "client-worker",
+    origin: "https://booking.example.com",
+    customDomain: { zoneId: "c".repeat(32), zoneName: "example.com" },
+  };
+  const domain = {
+    hostname: "booking.example.com",
+    zone_id: target.customDomain.zoneId,
+    service: target.workerName,
+    environment: "production",
+  };
+  const resources = {
+    zone: {
+      id: target.customDomain.zoneId,
+      name: target.customDomain.zoneName,
+      account: { id: target.accountId },
+      status: "active",
+      paused: false,
+    },
+    domains: [
+      { ...domain, hostname: "unrelated.example.com", service: "other-worker" },
+    ],
+  };
+  verifyCustomDomainResources(target, resources);
+  assert.throws(() => verifyCustomDomainResources(target, resources, true));
+  resources.domains.push(domain);
+  verifyCustomDomainResources(target, resources, true);
+  for (const mutate of [
+    (r) => {
+      r.zone.account.id = "foreign";
+    },
+    (r) => {
+      r.zone.id = "d".repeat(32);
+    },
+    (r) => {
+      r.zone.name = "foreign.example.com";
+    },
+    (r) => {
+      r.zone.status = "pending";
+    },
+    (r) => {
+      r.zone.paused = true;
+    },
+    (r) => {
+      r.domains[1].service = "other-worker";
+    },
+    (r) => {
+      r.domains[1].zone_id = "d".repeat(32);
+    },
+    (r) => {
+      r.domains[1].environment = "staging";
+    },
+    (r) => {
+      r.domains.push(domain);
+    },
+  ]) {
+    const changed = structuredClone(resources);
+    mutate(changed);
+    assert.throws(() => verifyCustomDomainResources(target, changed));
+  }
+});
 test("SaaS preflight rejects foreign identity, inactive fallback, DNS mismatch and competing routes", () => {
   const target = {
     accountId: "a".repeat(32),
@@ -109,6 +173,7 @@ function fixture() {
     assets: { directory: "./assets" },
     vars: {
       SOURCE_REVISION: revision,
+      IDENTITY_SENDER: "SoccerBotStudioSG Dev <noreply@auth.app404.ai>",
       ENVIRONMENT: "developer",
       CAMPAIGN_END_MS: "0",
       PROVIDER_ACCESS: "disabled",
@@ -184,146 +249,158 @@ test("Cloudflare deploy accepts only unchanged artifact bytes with matching main
     rmSync(f.root, { recursive: true, force: true });
   }
 });
-test("sealed SaaS artifacts reject substituted zone routes and asset-origin bypass", () => {
-  const f = fixture();
-  try {
-    const target = {
-      ...loadTarget("staging"),
-      target: "production",
-      environment: "production",
-      accountId: "b".repeat(32),
-      databaseId: "11111111-1111-4111-8111-111111111111",
-      workerName: "client-worker",
-      databaseName: "client-state",
-      origin: "https://booking.example.com",
-      coordinatorName: "client-coordinator",
-      coordinatorLocationHint: "apac-ne",
-      hitpaySandbox: {
-        merchant: "synthetic",
-        businessId: "11111111-1111-4111-8111-111111111111",
-      },
-      simplybook: {
-        companyLogin: "synthetic-client",
-        primaryServiceId: "3",
-        premiumServiceId: "4",
-      },
-      sandbox: null,
-      access: "closed",
-      saasZone: {
-        id: "c".repeat(32),
-        name: "hosting.example.com",
-        fallbackOrigin: "fallback.hosting.example.com",
-      },
-    };
-    const original = JSON.parse(
-      readFileSync(join(f.root, "developer-release/wrangler.json"), "utf8"),
-    );
-    for (const flag of [
-      "IDENTITY_DELIVERY",
-      "HITPAY_CHECKOUT",
-      "HITPAY_RECOVERY",
-      "HITPAY_WEBHOOK",
-    ])
-      original.vars[flag] = "disabled";
-    const config = targetConfig(original, target);
-    const seal = () =>
-      f.change("developer-release/manifest.json", (manifest) => {
-        manifest.target = target;
-        manifest.targetDigest = targetDigest(target);
-        manifest.turnstileSitekey = target.turnstileSitekey;
-        const files = exportInventory(join(f.root, "developer-release"));
-        delete files["manifest.json"];
-        manifest.files = files;
+test("sealed SaaS and native domain artifacts reject substituted routes and asset-origin bypass", () => {
+  for (const native of [false, true]) {
+    const f = fixture();
+    try {
+      const target = {
+        ...loadTarget("staging"),
+        target: "production",
+        environment: "production",
+        accountId: "b".repeat(32),
+        databaseId: "11111111-1111-4111-8111-111111111111",
+        workerName: "client-worker",
+        databaseName: "client-state",
+        origin: "https://booking.example.com",
+        coordinatorName: "client-coordinator",
+        coordinatorLocationHint: "apac-ne",
+        hitpaySandbox: {
+          merchant: "synthetic",
+          businessId: "11111111-1111-4111-8111-111111111111",
+        },
+        simplybook: {
+          companyLogin: "synthetic-client",
+          primaryServiceId: "3",
+          premiumServiceId: "4",
+        },
+        sandbox: null,
+        access: "closed",
+        saasZone: native
+          ? null
+          : {
+              id: "c".repeat(32),
+              name: "hosting.example.com",
+              fallbackOrigin: "fallback.hosting.example.com",
+            },
+        ...(native
+          ? {
+              customDomain: { zoneId: "c".repeat(32), zoneName: "example.com" },
+            }
+          : {}),
+      };
+      const original = JSON.parse(
+        readFileSync(join(f.root, "developer-release/wrangler.json"), "utf8"),
+      );
+      for (const flag of [
+        "IDENTITY_DELIVERY",
+        "HITPAY_CHECKOUT",
+        "HITPAY_RECOVERY",
+        "HITPAY_WEBHOOK",
+      ])
+        original.vars[flag] = "disabled";
+      const config = targetConfig(original, target);
+      const seal = () =>
+        f.change("developer-release/manifest.json", (manifest) => {
+          manifest.target = target;
+          manifest.targetDigest = targetDigest(target);
+          manifest.turnstileSitekey = target.turnstileSitekey;
+          const files = exportInventory(join(f.root, "developer-release"));
+          delete files["manifest.json"];
+          manifest.files = files;
+        });
+      const writeConfigs = (value) => {
+        for (const name of ["wrangler.json", "wrangler-live.json"])
+          writeFileSync(
+            join(f.root, "developer-release", name),
+            JSON.stringify(value),
+          );
+        seal();
+      };
+      f.change("verification-browser.json", (browser) => {
+        browser.turnstileSitekey = target.turnstileSitekey;
       });
-    const writeConfigs = (value) => {
-      for (const name of ["wrangler.json", "wrangler-live.json"])
+      writeConfigs(config);
+      assert.equal(
+        validateDeployment(f.root, revision, target).name,
+        target.workerName,
+      );
+      for (const mutate of [
+        (c) => {
+          c.vars.CLIENT_SANDBOX_ACCESS = "enabled";
+        },
+        (c) => {
+          c.vars.HITPAY_EXPECTED_MERCHANT = "foreign";
+        },
+        (c) => {
+          c.vars.HITPAY_EXPECTED_BUSINESS_ID =
+            "22222222-2222-4222-8222-222222222222";
+        },
+        (c) => {
+          c.vars.SIMPLYBOOK_EXPECTED_COMPANY_LOGIN = "foreign-company";
+        },
+        (c) => {
+          c.vars.PRIMARY_SERVICE_ID = "2";
+        },
+        (c) => {
+          c.vars.PREMIUM_SERVICE_ID = "3";
+        },
+        (c) => {
+          c.routes[0].zone_id = "d".repeat(32);
+        },
+        (c) => {
+          c.routes[0].pattern = "example.com/*";
+        },
+        (c) => {
+          c.routes[0].custom_domain = !native;
+        },
+        (c) => {
+          c.assets.run_worker_first = false;
+        },
+        (c) => {
+          c.workers_dev = true;
+        },
+        (c) => {
+          c.preview_urls = true;
+        },
+      ]) {
+        const changed = structuredClone(config);
+        mutate(changed);
+        writeConfigs(changed);
+        assert.throws(() => validateDeployment(f.root, revision, target));
+      }
+      target.access = "client-sandbox";
+      writeConfigs(config);
+      const active = releaseConfig(config, target);
+      const writeActive = (value) => {
         writeFileSync(
-          join(f.root, "developer-release", name),
+          join(f.root, "developer-release/wrangler-live.json"),
           JSON.stringify(value),
         );
-      seal();
-    };
-    f.change("verification-browser.json", (browser) => {
-      browser.turnstileSitekey = target.turnstileSitekey;
-    });
-    writeConfigs(config);
-    assert.equal(
-      validateDeployment(f.root, revision, target).name,
-      target.workerName,
-    );
-    for (const mutate of [
-      (c) => {
-        c.vars.CLIENT_SANDBOX_ACCESS = "enabled";
-      },
-      (c) => {
-        c.vars.HITPAY_EXPECTED_MERCHANT = "foreign";
-      },
-      (c) => {
-        c.vars.HITPAY_EXPECTED_BUSINESS_ID =
-          "22222222-2222-4222-8222-222222222222";
-      },
-      (c) => {
-        c.vars.SIMPLYBOOK_EXPECTED_COMPANY_LOGIN = "foreign-company";
-      },
-      (c) => {
-        c.vars.PRIMARY_SERVICE_ID = "2";
-      },
-      (c) => {
-        c.vars.PREMIUM_SERVICE_ID = "3";
-      },
-      (c) => {
-        c.routes[0].zone_id = "d".repeat(32);
-      },
-      (c) => {
-        c.routes[0].pattern = "example.com/*";
-      },
-      (c) => {
-        c.assets.run_worker_first = false;
-      },
-      (c) => {
-        c.workers_dev = true;
-      },
-      (c) => {
-        c.preview_urls = true;
-      },
-    ]) {
-      const changed = structuredClone(config);
-      mutate(changed);
-      writeConfigs(changed);
-      assert.throws(() => validateDeployment(f.root, revision, target));
-    }
-    target.access = "client-sandbox";
-    writeConfigs(config);
-    const active = releaseConfig(config, target);
-    const writeActive = (value) => {
-      writeFileSync(
-        join(f.root, "developer-release/wrangler-live.json"),
-        JSON.stringify(value),
+        seal();
+      };
+      writeActive(active);
+      assert.equal(
+        validateDeployment(f.root, revision, target).vars.CLIENT_SANDBOX_ACCESS,
+        "enabled",
       );
-      seal();
-    };
-    writeActive(active);
-    assert.equal(
-      validateDeployment(f.root, revision, target).vars.CLIENT_SANDBOX_ACCESS,
-      "enabled",
-    );
-    assert.equal(
-      active.vars.IDENTITY_DELIVERY,
-      target.identitySender ? "ongoing" : "disabled",
-    );
-    for (const key of [
-      "CLIENT_SANDBOX_ACCESS",
-      "HITPAY_BUSINESS_ID",
-      "IDENTITY_DELIVERY",
-      "LIVE_CUSTOMER_ACCESS",
-    ]) {
-      const changed = structuredClone(active);
-      changed.vars[key] = "unexpected";
-      writeActive(changed);
-      assert.throws(() => validateDeployment(f.root, revision, target));
+      assert.equal(
+        active.vars.IDENTITY_DELIVERY,
+        target.identitySender ? "ongoing" : "disabled",
+      );
+      for (const key of [
+        "CLIENT_SANDBOX_ACCESS",
+        "HITPAY_BUSINESS_ID",
+        "IDENTITY_DELIVERY",
+        "LIVE_CUSTOMER_ACCESS",
+      ]) {
+        const changed = structuredClone(active);
+        changed.vars[key] = "unexpected";
+        writeActive(changed);
+        assert.throws(() => validateDeployment(f.root, revision, target));
+      }
+    } finally {
+      rmSync(f.root, { recursive: true, force: true });
     }
-  } finally {
-    rmSync(f.root, { recursive: true, force: true });
   }
 });
 test("Cloudflare deploy refuses failed or substituted browser and Worker receipts", () => {
