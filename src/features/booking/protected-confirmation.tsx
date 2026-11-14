@@ -1030,8 +1030,12 @@ export function ProtectedConfirmation({
     !creationResolved
   ) {
     const notice = (
-      <div className="alert" role="alert">
-        <strong>{CHECKOUT_UNRESOLVED}</strong>
+      <div className="alert booking-help-notice" role="alert">
+        <div className="booking-help-content">
+          <p>
+            <strong>{CHECKOUT_UNRESOLVED}</strong>
+          </p>
+        </div>
         <BookingHelp key={attemptId} attemptId={attemptId} />
       </div>
     );

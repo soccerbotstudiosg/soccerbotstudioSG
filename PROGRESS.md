@@ -2,17 +2,17 @@
 
 ## Active outcome
 
-Prepare Open Graph/Twitter link previews and preserve the already connected soccerbotsg.com domain through future production releases. Owner authorizes this separate PR and CI/staging; the owner will merge it. Do not merge or enable auto-merge.
+Stage the latest approved presentation and branded Open Graph update on PR75; leave it unmerged. PR76 is closed and must not be reopened. Native soccerbotsg.com deployment support remains included; staging retains its separate hostname.
 
-## Current slice
+## Scope and evidence
 
-- Add public studio title, description and existing arena photo to static social metadata, using the reviewed production origin. Preserve existing robots/noindex and booking behavior; GA/GSC are deferred.
-- Add native same-account custom-domain target support, ownership preflight, sealed-route validation and post-deploy registration checks. Preserve original Worker, D1/coordinator and sandbox pairing. The current production domain was configured externally and owner-accepted through a complete payment and confirmation.
-- Keep selection/card/calendar/mobile-popup work in a separate follow-up PR. The older Request Help acknowledgement and local reset note remain unpublished.
+Continue buttons share header navy; outlet/session chevrons; outlined available and lighter unavailable dates; shorter confirmation status badges and narrower copy icon; balanced recovery-notice content; branded social preview and studio-wide metadata. Booking transitions, validation, identity, payment/recovery and expiry are unchanged. Older blue Request Help acknowledgement and reset work remain excluded/local. GA/GSC and enquiry changes are deferred. SimplyBook hiding was not applied.
 
-## Evidence and remaining checks
+Canonical main is16a87d0a; local index matches its published tree. PR75 was last staged at7c8f73a7 with verification43537456575 and deployment43538769250. New candidate requires fresh exact-head CI and staging; no production release or merge is authorized. Scoped component/type/lint checks and browser assertion updates accompany publication; CI owns browser execution. Source, device and provider acceptance remain separate.
 
-Native target10/10, deploy12/12 and foundation4/4 local tests passed, plus source/lint/format checks. Existing browser coverage checks social metadata; CI browser execution and exact-head staging remain pending. No live merchant activation or data cleanup. Before a later production release, its deployment credential must support zone/domain reads and custom-domain routing; current runtime success does not prove CI-token permissions. No merger is performed by the assistant.
+## Remaining acceptance
+
+See [simulated-user UAT](docs/uat/simulated-user.md) for focused four-hour cutoff, confirmation refresh/Back, immediate post-payment close/reopen, isolated unresolved recovery and final presentation/messenger checks. Owner already accepted normal and consecutive booking, conflict, active checkout, expiry-return and last-minute payment on the preceding release. Domain access and a complete sandbox payment were owner-confirmed.
 
 ## Ordered work after this slice
 
@@ -35,4 +35,4 @@ The queue is recorded now, before the full documentation reconciliation. These a
 
 ## Next action
 
-Publish through LimYouSheng, verify exact-head CI and actual staging health/settings, and leave the PR open for owner merge. Prepare visual follow-up separately with its dependency disclosed.
+Complete exact-head verification and actual staging health/settings checks, report PR75 and staging URL, and leave unmerged. Record immutable CI/deploy receipts in the PR without creating status-only commit loops. Before a later production release, verify native-domain CI-token permissions; staging does not prove those production permissions.

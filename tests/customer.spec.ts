@@ -1406,8 +1406,10 @@ test("first visit offers the Player App with only store links and dismissal pers
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    new URL(sitePath("/assets/91d938ee515c.jpg"), "https://soccerbotsg.com")
-      .href,
+    new URL(
+      sitePath("/assets/soccerbot-social-preview.jpg"),
+      "https://soccerbotsg.com",
+    ).href,
   );
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
     "content",
@@ -1753,6 +1755,30 @@ test("header blue and the typography hierarchy stay consistent across every book
     ".session-product-name, .session-inclusions h2",
     (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
   );
+  for (const card of [
+    page.locator(".outlet-option"),
+    page.locator(".session-product"),
+  ]) {
+    const chevron = card.locator(".selection-chevron");
+    await expect(chevron).toBeVisible();
+    const geometry = await card.evaluate((node) => {
+      // Measure in one frame: session expansion may still be smoothly scrolling.
+      const cardBox = node.getBoundingClientRect();
+      const chevronBox = node
+        .querySelector(".selection-chevron")!
+        .getBoundingClientRect();
+      return {
+        centerOffset: Math.abs(
+          chevronBox.y +
+            chevronBox.height / 2 -
+            (cardBox.y + cardBox.height / 2),
+        ),
+        rightOffset: chevronBox.x - (cardBox.x + cardBox.width / 2),
+      };
+    });
+    expect(geometry.centerOffset).toBeLessThanOrEqual(1);
+    expect(geometry.rightOffset).toBeGreaterThan(0);
+  }
   const selectedCardBackground = await page
     .locator('.session-product[aria-pressed="true"]')
     .evaluate((element) => getComputedStyle(element).backgroundColor);
@@ -1765,6 +1791,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(
     page.getByRole("combobox", { name: "Calendar view" }),
   ).toHaveValue("month");
+  await expect(page.locator(".date:disabled").first()).toHaveCSS(
+    "border-top-color",
+    "rgba(0, 0, 0, 0)",
+  );
   await page
     .getByRole("combobox", { name: "Calendar view" })
     .selectOption("week");
@@ -1801,6 +1831,10 @@ test("header blue and the typography hierarchy stay consistent across every book
     })
     .click();
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
+  await expect(
+    page.locator(".date:not(:disabled):not(.selected)").first(),
+  ).toHaveCSS("border-top-color", "rgb(122, 130, 153)");
+
   await expect(page.locator(".calendar-legend")).toHaveCount(0);
   await expect(page.locator(".date .dot")).toHaveCount(0);
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);

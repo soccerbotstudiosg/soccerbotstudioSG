@@ -464,32 +464,34 @@ export function TimeStep({
           }
           role="alert"
         >
-          <p>
-            {selectionNotice === CHECKOUT_UNRESOLVED ? (
-              <strong>{selectionNotice}</strong>
-            ) : (
-              selectionNotice
+          <div className="booking-help-content">
+            <p>
+              {selectionNotice === CHECKOUT_UNRESOLVED ? (
+                <strong>{selectionNotice}</strong>
+              ) : (
+                selectionNotice
+              )}
+            </p>
+            {selectionNoticeSlots.length > 0 && (
+              <ul>
+                {selectionNoticeSlots.map((slot) => (
+                  <li key={`${slot.date}|${slot.start}`}>
+                    {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}.
+                  </li>
+                ))}
+              </ul>
             )}
-          </p>
+            {action.resumeAttemptId && (
+              <Link
+                className="text-link"
+                href={`/confirmation/?attempt=${encodeURIComponent(action.resumeAttemptId)}`}
+              >
+                View existing checkout
+              </Link>
+            )}
+          </div>
           {selectionNotice === CHECKOUT_UNRESOLVED && attempt && (
             <BookingHelp key={attempt.id} attemptId={attempt.id} />
-          )}
-          {selectionNoticeSlots.length > 0 && (
-            <ul>
-              {selectionNoticeSlots.map((slot) => (
-                <li key={`${slot.date}|${slot.start}`}>
-                  {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}.
-                </li>
-              ))}
-            </ul>
-          )}
-          {action.resumeAttemptId && (
-            <Link
-              className="text-link"
-              href={`/confirmation/?attempt=${encodeURIComponent(action.resumeAttemptId)}`}
-            >
-              View existing checkout
-            </Link>
           )}
         </div>
       )}

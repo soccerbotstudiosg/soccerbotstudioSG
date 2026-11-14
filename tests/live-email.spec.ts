@@ -1601,10 +1601,10 @@ test("real payment recovery confirms the browser return from verified provider s
       };
     });
     expect(paidMetrics.fontSize).toBeCloseTo(23.8, 5);
-    expect(paidMetrics.lineHeight).toBeCloseTo(38.08, 5);
-    expect(paidMetrics.paddingTop).toBeCloseTo(8.5, 5);
+    expect(paidMetrics.lineHeight).toBeCloseTo(28.56, 5);
+    expect(paidMetrics.paddingTop).toBeCloseTo(3.6, 5);
     expect(paidMetrics.paddingRight).toBeCloseTo(15.3, 5);
-    expect(paidMetrics.paddingBottom).toBeCloseTo(8.5, 5);
+    expect(paidMetrics.paddingBottom).toBeCloseTo(3.6, 5);
     expect(paidMetrics.paddingLeft).toBeCloseTo(15.3, 5);
     const copyButton = page.getByRole("button", {
       name: "Copy booking confirmation",
@@ -1633,14 +1633,15 @@ test("real payment recovery confirms the browser return from verified provider s
       .locator(".series-list > li:first-child .series-date")
       .boundingBox();
     expect(copyBox).not.toBeNull();
+    expect(copyBox!.width).toBeCloseTo(35.2, 1);
     expect(detailsSummaryBox).not.toBeNull();
     expect(paidBox).not.toBeNull();
     expect(orderBox).not.toBeNull();
     expect(orderHeadBox).not.toBeNull();
     expect(firstSessionBox).not.toBeNull();
-    // The accepted badge is 23.8px text at 1.6 line-height plus 17px padding.
+    // The accepted badge is 23.8px text at 1.2 line-height plus 7.2px padding.
     // Assert its rendered height independently of its computed CSS values.
-    expect(Math.abs(paidBox!.height - 55.08)).toBeLessThan(0.1);
+    expect(Math.abs(paidBox!.height - 35.76)).toBeLessThan(0.1);
     expect(copyBox!.y).toBeCloseTo(detailsSummaryBox!.y, 1);
     expect(copyBox!.y + copyBox!.height).toBeCloseTo(
       detailsSummaryBox!.y + detailsSummaryBox!.height,
@@ -1654,7 +1655,10 @@ test("real payment recovery confirms the browser return from verified provider s
       orderBox!.x + orderBox!.width,
       0,
     );
-    expect(orderHeadBox!.height).toBeCloseTo(paidBox!.height, 1);
+    expect(paidBox!.y).toBeGreaterThanOrEqual(orderHeadBox!.y);
+    expect(paidBox!.y + paidBox!.height).toBeLessThanOrEqual(
+      orderHeadBox!.y + orderHeadBox!.height,
+    );
     expect(
       firstSessionBox!.y - (orderHeadBox!.y + orderHeadBox!.height),
     ).toBeCloseTo(10, 1);
@@ -2438,7 +2442,7 @@ async function uncertainHolding(
       await recoveryNotice.scrollIntoViewIfNeeded();
       const noticeGeometry = await recoveryNotice.evaluate((notice) => {
         const bounds = notice.getBoundingClientRect();
-        const message = notice.querySelector(":scope > p")!;
+        const message = notice.querySelector(".booking-help-content")!;
         const help = notice.querySelector(".booking-help > button")!;
         const style = getComputedStyle(notice);
         return {
@@ -2457,6 +2461,18 @@ async function uncertainHolding(
         };
       });
       expect(noticeGeometry.overflow).toBe(false);
+      const contentTop = Math.min(
+        noticeGeometry.message.top,
+        noticeGeometry.help.top,
+      );
+      const contentBottom = Math.max(
+        noticeGeometry.message.bottom,
+        noticeGeometry.help.bottom,
+      );
+      expect(contentTop - noticeGeometry.bounds.top).toBeCloseTo(
+        noticeGeometry.bounds.bottom - contentBottom,
+        1,
+      );
       expect(noticeGeometry.bounds.height).toBeLessThanOrEqual(180);
       expect(noticeGeometry.help.height).toBeGreaterThanOrEqual(44);
       expect(noticeGeometry.help.height).toBeLessThanOrEqual(46);

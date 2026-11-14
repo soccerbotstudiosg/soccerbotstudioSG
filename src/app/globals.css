@@ -31,9 +31,9 @@
   --color-player-app-backdrop: rgb(0 0 0 / 65%);
   --color-brand: #050a2f;
   --color-navy: var(--color-brand);
-  --color-action: var(--color-brand);
+  --color-action: var(--color-navy);
   --color-action-hover: #202957;
-  --color-action-border: var(--color-brand);
+  --color-action-border: var(--color-navy);
   --color-brand-soft: #eef0f7;
   --color-brand-tint: #dce1f1;
   --color-focus: #5666a8;
@@ -2847,6 +2847,8 @@
     margin: 20px 0 28px;
   }
   .outlet-option {
+    position: relative;
+    padding: 24px 42px 24px 18px;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -2873,6 +2875,8 @@
     gap: 20px;
   }
   .session-product {
+    position: relative;
+    padding: 24px 42px 24px 18px;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: flex-start;
@@ -2895,6 +2899,15 @@
         var(--color-surface)
       );
     }
+  }
+  .selection-chevron {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
   }
   .session-product-details {
     display: grid;
@@ -3378,7 +3391,7 @@
     position: relative;
     min-width: 0;
     min-height: 29px;
-    border: 1px solid transparent;
+    border: 1px solid var(--color-control-border);
     border-radius: 6px;
     padding: 2px;
     display: flex;
@@ -3401,10 +3414,15 @@
     background: var(--color-brand-soft);
   }
   .date:disabled {
+    border-color: transparent;
     color: var(--color-muted);
-    background: var(--color-disabled);
+    background: color-mix(
+      in srgb,
+      var(--color-disabled) 60%,
+      var(--color-surface)
+    );
   }
-  .date.selected {
+  .date.selected:not(:disabled) {
     border-color: var(--color-focus);
     background: var(--color-brand-soft);
   }
@@ -4139,8 +4157,9 @@
     white-space: nowrap;
   }
   .confirmation-paid-status {
-    padding: 8.5px 15.3px;
+    padding: 3.6px 15.3px;
     font-size: var(--text-payment-status);
+    line-height: 1.2;
   }
   .confirmation-pending-status {
     background: var(--color-warning-soft);
@@ -4150,6 +4169,8 @@
     position: relative;
   }
   .confirmation-copy {
+    min-width: 35.2px;
+    width: 35.2px;
     color: var(--color-action);
   }
   .confirmation-copy-feedback {
@@ -4172,11 +4193,29 @@
   .confirmation-copy-feedback.failed {
     color: var(--color-danger);
   }
-  .booking-help {
-    margin-top: 16px;
+  .booking-help-notice {
+    display: grid;
+    gap: 16px;
   }
-  .booking-help p:not(:empty) {
-    margin-top: 8px;
+  .booking-help-content > p {
+    margin: 0;
+  }
+  .booking-help-content > ul {
+    list-style: disc;
+    padding-inline-start: 1.25em;
+    margin: 8px 0 0;
+  }
+  .booking-help {
+    display: grid;
+    justify-items: start;
+    gap: 8px;
+    margin: 0;
+  }
+  .booking-help > p {
+    margin: 0;
+  }
+  .booking-help > p:empty {
+    display: none;
   }
   .calendar-recovery-notice {
     display: flex;
@@ -4185,28 +4224,17 @@
     gap: 8px 16px;
     padding: 12px 16px;
   }
-  .calendar-recovery-notice > p {
+  .calendar-recovery-notice > .booking-help-content {
     flex: 1 1 240px;
   }
   .calendar-recovery-notice > .booking-help {
-    display: contents;
+    margin-left: auto;
+    justify-items: end;
+    text-align: right;
   }
   .calendar-recovery-notice > .booking-help > .button {
     min-height: 44px;
-    margin-left: auto;
     padding: 8px 12px;
-  }
-  .calendar-recovery-notice > .booking-help > p {
-    flex: 0 0 100%;
-    margin: 0;
-    text-align: right;
-  }
-  .calendar-recovery-notice > .booking-help > p:empty {
-    position: absolute;
-  }
-  .calendar-recovery-notice > ul {
-    flex: 0 0 100%;
-    margin: 0;
   }
   .confirmation-paid-actions {
     display: flex;
@@ -4541,7 +4569,7 @@
       margin: 8px 0 16px;
     }
     .outlet-option.surface {
-      padding: 12px 14px;
+      padding: 12px 38px 12px 10px;
       gap: 10px;
     }
     .outlet-option > span {
@@ -4559,7 +4587,7 @@
     }
     .session-product.surface {
       gap: 8px 10px;
-      padding: 12px 14px;
+      padding: 12px 38px 12px 10px;
     }
     .session-product-details {
       gap: 4px;

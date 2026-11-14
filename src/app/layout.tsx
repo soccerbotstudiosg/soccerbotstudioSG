@@ -3,14 +3,14 @@ import { BookingProvider } from "@/features/booking/provider";
 import { BookingNavigation } from "@/components/booking-navigation";
 import { SiteShell } from "@/components/site-shell";
 import { sitePath } from "@/content/site-path";
-import { homeMedia } from "@/content/media";
+import { socialPreview } from "@/content/media";
 import productionTarget from "../../deployment/production.json";
 import "./globals.css";
 const shareTitle =
   "SOCCERBOTSTUDIO Singapore | Interactive Football Experience";
 const shareDescription =
   "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Play, compete and sharpen your skills in a 360° football arena.";
-const shareImage = homeMedia.studio;
+const shareImage = socialPreview;
 export const metadata: Metadata = {
   metadataBase: new URL(productionTarget.origin),
   openGraph: {
