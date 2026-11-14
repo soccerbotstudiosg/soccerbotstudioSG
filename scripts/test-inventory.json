@@ -529,7 +529,7 @@
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
-    "title": "live session preserves demo product player and inclusion presentation using provider labels"
+    "title": "live session preserves demo pricing and inline player controls using provider labels"
   },
   {
     "file": "src/features/booking/booking-parity.test.tsx",
@@ -1113,7 +1113,7 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
-    "title": "calendar back preserves outlet and session choices while explicit deselection still clears them"
+    "title": "calendar back preserves player count with the outlet session and action immediately visible"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",

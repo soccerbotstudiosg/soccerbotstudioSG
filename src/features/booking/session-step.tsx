@@ -44,7 +44,7 @@ export function SessionStep() {
   return (
     <>
       <BookingHeading lines={["Your", "session"]} />
-      <h2 className="section-title">Choose your outlet</h2>
+      <h2 className="section-title">Your outlet</h2>
       <div className="outlet-options">
         <button
           className="surface outlet-option booking-entry-action"
@@ -170,111 +170,79 @@ function SessionPresentation({
 }) {
   const { draft, update } = useBooking();
   const prices = sessionPrices(environment);
-  const playerSelection = (
-    <section
-      className="surface player-selection"
-      aria-labelledby="players-label"
-    >
-      <span className="field-label" id="players-label">
-        Players · maximum {MAX_PLAYERS}
-      </span>
-      <div className="counter">
-        <button
-          aria-label="Remove one player"
-          disabled={draft.players <= 1}
-          onClick={() => update({ players: draft.players - 1 })}
-        >
-          <Icon name="minus" />
-        </button>
-        <output aria-labelledby="players-label" aria-live="polite">
-          {draft.players} {draft.players === 1 ? "player" : "players"}
-        </output>
-        <button
-          aria-label="Add one player"
-          disabled={draft.players >= MAX_PLAYERS}
-          onClick={() => update({ players: draft.players + 1 })}
-        >
-          <Icon name="plus" />
-        </button>
-      </div>
-    </section>
-  );
   return (
     <>
       <h2 className="section-title">Select your session</h2>
       <div className="session-products">
-        <button
-          className="surface session-product booking-entry-action"
-          aria-label={`Choose ${serviceName}`}
-          aria-pressed={expanded}
-          aria-expanded={expanded}
-          onClick={toggle}
-        >
-          <span className="session-product-icon">
-            <Icon name="ball" />
-          </span>
-          <span className="session-product-details">
-            <span className="session-product-name">{serviceName}</span>
-            <span className="session-product-meta">
-              40 minutes · 1–{MAX_PLAYERS} players
+        <section className="surface session-product" aria-label={serviceName}>
+          <button
+            className="session-product-choice booking-entry-action"
+            aria-label={`Choose ${serviceName}`}
+            aria-pressed={expanded}
+            aria-expanded={expanded}
+            onClick={toggle}
+          >
+            <span className="session-product-icon">
+              <Icon name="ball" />
             </span>
-          </span>
-          <span className="session-product-prices">
-            <span>
-              <span>Weekdays</span> <strong>${prices.ordinary / 100}</strong>
+            <span className="session-product-details">
+              <span className="session-product-name">{serviceName}</span>
+              <span className="session-product-meta">
+                40 minutes · 1–{MAX_PLAYERS} players
+                <span>Trainer included</span>
+              </span>
             </span>
-            <span>
-              <span>Weekends/Public Holiday</span>{" "}
-              <strong>${prices.premium / 100}</strong>
+            <span className="session-product-prices">
+              <span>
+                <span>Weekdays</span> <strong>${prices.ordinary / 100}</strong>
+              </span>
+              <span>
+                <span>Weekends/Public Holiday</span>{" "}
+                <strong>${prices.premium / 100}</strong>
+              </span>
             </span>
-          </span>
-          <Icon name="chevron" className="selection-chevron" />
-        </button>
+            <Icon name="chevron" className="selection-chevron" />
+          </button>
+          {expanded && (
+            <div className="player-selection" aria-labelledby="players-label">
+              <span className="field-label" id="players-label">
+                Players
+              </span>
+              <div className="counter">
+                <button
+                  aria-label="Remove one player"
+                  disabled={draft.players <= 1}
+                  onClick={() => update({ players: draft.players - 1 })}
+                >
+                  <Icon name="minus" />
+                </button>
+                <output aria-labelledby="players-label" aria-live="polite">
+                  {draft.players}
+                </output>
+                <button
+                  aria-label="Add one player"
+                  disabled={draft.players >= MAX_PLAYERS}
+                  onClick={() => update({ players: draft.players + 1 })}
+                >
+                  <Icon name="plus" />
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
       {expanded && (
-        <>
-          {playerSelection}
-          <section className="session-inclusions">
-            <h2 className="section-title">Included with your session</h2>
-            <ul className="inclusion-list">
-              {[
-                [
-                  "Arena access",
-                  "Access to the arena’s 360° projection wall and interactive training system.",
-                ],
-                [
-                  "Full instructor guidance",
-                  "Your instructor introduces the activities and guides your group throughout the session.",
-                ],
-                [
-                  "Single, Team and Battle play",
-                  "Explore all three play modes during your studio session.",
-                ],
-              ].map(([title, text]) => (
-                <li key={title}>
-                  <span className="inclusion-check">
-                    <Icon name="check" />
-                  </span>
-                  <div>
-                    <h3>{title}</h3>
-                    <p>{text}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-          <BookingPrimaryAction className="actions" ready={!pending}>
-            {pending ? (
-              <button className="button" disabled>
-                <BrandLoading overlay={false} compact label="Loading times…" />
-              </button>
-            ) : (
-              <Link href="/book/time/" className="button">
-                Choose Date & Time <Icon name="chevron" />
-              </Link>
-            )}
-          </BookingPrimaryAction>
-        </>
+        <BookingPrimaryAction className="actions" ready={!pending}>
+          {pending ? (
+            <button className="button" disabled>
+              <BrandLoading overlay={false} compact label="Loading times…" />
+            </button>
+          ) : (
+            <Link href="/book/time/" className="button">
+              Choose Date & Time <Icon name="chevron" />
+            </Link>
+          )}
+        </BookingPrimaryAction>
       )}
     </>
   );

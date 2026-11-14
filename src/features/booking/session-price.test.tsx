@@ -14,8 +14,8 @@ vi.mock("./provider", async () => {
   return {
     useBooking: () => {
       const [sessionChoices, setSessionChoices] = useState({
-        outlet: false,
-        session: false,
+        outlet: true,
+        session: true,
       });
       return { ...context, sessionChoices, setSessionChoices };
     },
@@ -93,25 +93,18 @@ test("live session selection uses client prices while demo retains its own rates
     .spyOn(customerCatalogueService, "read")
     .mockResolvedValue(catalogue("production"));
   const view = render(<SessionStep />);
-  expect(
-    screen.queryByRole("button", { name: /Choose Kickoff Special/ }),
-  ).not.toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Your outlet" })).toBeVisible();
   expect(
     screen.queryByRole("link", { name: "Choose Date & Time" }),
   ).not.toBeInTheDocument();
-  fireEvent.click(
-    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  const session = await screen.findByRole("region", {
+    name: "Kickoff Special",
+  });
+  expect(session).toHaveTextContent(
+    "Weekdays $108Weekends/Public Holiday $128",
   );
-  expect(
-    await screen.findByRole("button", { name: "Choose Kickoff Special" }),
-  ).toHaveTextContent("Weekdays $108Weekends/Public Holiday $128");
+  expect(session).toHaveTextContent("Trainer included");
   expect(screen.queryByText(/S\$88 weekdays/)).not.toBeInTheDocument();
-  expect(
-    screen.queryByRole("button", { name: "Add one player" }),
-  ).not.toBeInTheDocument();
-  fireEvent.click(
-    screen.getByRole("button", { name: "Choose Kickoff Special" }),
-  );
   expect(screen.getByRole("button", { name: "Add one player" })).toBeVisible();
   expect(
     screen.getByRole("link", { name: "Choose Date & Time" }),
@@ -119,40 +112,36 @@ test("live session selection uses client prices while demo retains its own rates
   expect(
     screen.getByRole("link", { name: "Choose Date & Time" }).parentElement,
   ).toHaveAttribute("data-ready-animation", "true");
-  const session = screen.getByRole("button", {
-    name: "Choose Kickoff Special",
-  });
-  fireEvent.click(session);
-  expect(session).toHaveAttribute("aria-pressed", "false");
+  const choice = screen.getByRole("button", { name: "Choose Kickoff Special" });
+  fireEvent.click(choice);
+  expect(choice).toHaveAttribute("aria-pressed", "false");
   expect(
     screen.queryByRole("button", { name: "Add one player" }),
   ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("link", { name: "Choose Date & Time" }),
   ).not.toBeInTheDocument();
-  fireEvent.click(session);
-  const outlet = screen.getByRole("button", {
-    name: "Select Apex @ Henderson outlet",
-  });
-  fireEvent.click(outlet);
-  expect(outlet).toHaveAttribute("aria-pressed", "false");
+  fireEvent.click(choice);
+  expect(screen.getByRole("button", { name: "Add one player" })).toBeVisible();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
   expect(
-    screen.queryByRole("button", { name: "Choose Kickoff Special" }),
+    screen.queryByRole("region", { name: "Kickoff Special" }),
   ).not.toBeInTheDocument();
-  expect(
-    screen.queryByRole("link", { name: "Choose Date & Time" }),
-  ).not.toBeInTheDocument();
-  fireEvent.click(outlet);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  );
   expect(
     await screen.findByRole("button", { name: "Choose Kickoff Special" }),
   ).toHaveAttribute("aria-pressed", "false");
-  expect(
-    screen.queryByRole("button", { name: "Add one player" }),
-  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Choose Kickoff Special" }),
+  );
   context.bookingService.mode = "demo";
   view.rerender(<SessionStep />);
   expect(
-    screen.getByRole("button", { name: /Choose Kickoff Special/ }),
+    screen.getByRole("region", { name: /Kickoff Special/ }),
   ).toHaveTextContent("Weekdays $88Weekends/Public Holiday $108");
   read.mockRestore();
   context.bookingService.mode = "live";
