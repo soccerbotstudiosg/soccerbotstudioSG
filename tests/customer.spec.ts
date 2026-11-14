@@ -866,6 +866,35 @@ test("enquiry remains available without external submission or a mock assistant"
   page,
 }) => {
   await openSite(page, "/enquiry/");
+  const enquiryHome = page
+    .locator(".enquiry-page")
+    .getByRole("link", { name: "Home", exact: true });
+  await expect(enquiryHome).toHaveAttribute("href", sitePath("/"));
+  await expect(
+    page.getByRole("heading", { name: "Contact the studio", exact: true }),
+  ).toBeVisible();
+  for (const control of [
+    enquiryHome,
+    page.getByRole("button", { name: "Send enquiry" }),
+    page.locator(".nav-flag"),
+  ]) {
+    await expect(control).toHaveCSS("border-top-left-radius", "3px");
+    await expect(control).toHaveCSS("border-top-right-radius", "12px");
+    await expect(control).toHaveCSS("border-bottom-right-radius", "3px");
+    await expect(control).toHaveCSS("border-bottom-left-radius", "12px");
+  }
+  for (const control of [
+    page.locator(".nav-studio"),
+    page.locator(".nav-book"),
+  ]) {
+    await expect(control).toHaveCSS("font-family", /Roboto/);
+    await expect(control).toHaveCSS("font-weight", "900");
+    await expect(control).toHaveCSS("font-style", "italic");
+  }
+  await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
+  await expect(
+    page.getByText("Enter your requirements using 1–2,000 characters."),
+  ).toHaveCount(0);
   for (const selector of [
     "#enquiry-name",
     "#enquiry-email",

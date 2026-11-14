@@ -2,19 +2,17 @@
 
 ## Active outcome
 
-Publish, stage and merge the owner's four presentation changes, then hand over the deployed revision for an owner-run major edge-case round. The owner explicitly authorized staging and merge on14November2026 after local consolidation; the planned manual round follows release. No live provider operations or notification sends are authorized for the assistant.
+Stage and merge the owner's queued enquiry/header refinements after exact-head CI and actual staging health/settings. Owner explicitly authorized this follow-up on14November2026. Their physical edge-case round remains separate; no assistant live provider effects or notification sends.
 
 ## Current scope
 
-Whole-control mobile focus; consistent red borders for invalid required enquiry fields; successful enquiry replaces the route with Home and shows a thin ten-second banner; Open Graph artwork, description and alt use “Performance · Experience · Production”. Preview remains explicitly no-send. Failure input/retry identity and server delivery contracts remain unchanged.
+Enquiry top-left control says Home; remove the heading full stop and grey introduction. Remove the three grey enquiry-type/date/time hints and the red requirements helper line while preserving required-field validation, initial red outlines and neutral optional fields. Home and Send enquiry use the existing approved corner token. The Singapore flag uses the same corner shape as Book now; The studio and Book now use the existing Roboto900 italic action face. The ten-second Home acknowledgement and all server contracts remain unchanged.
 
 ## Verification and next action
 
-Working branch `fix/enquiry-presentation` incorporates merged PR75/main `55ea55d720464243e505c7f62d8c08dbe44eefa0`, including the migration0050 release-verifier and trusted staging-sender repairs. These repairs were completed upstream while the presentation slice was local; retain their original evidence in Journey/PR75.
+Branch `fix/enquiry-header-refinements` is based on merged PR77/main `8f89f89b063274b924efc0dd1e03e5a2fc06348b`. PR77 passed exact-head verification43606799136 and staging43607850907 before its authorized merge; main43608102071 was running when this follow-up started. The earlier migration0050 verifier/staging sender repairs are retained.
 
-Six focused enquiry/phone cases, TypeScript, lint, source/policy, formatting, production build and export passed locally. The prior full suite recorded371 passes and one unchanged recovery case timing out at5000ms; that case passed alone. First failure retained; no timeout/assertion/runner changes. After reconciliation, the full372-case suite across33 files and strict zero-skip/retry inventory validation passed on5f8770f. This does not diagnose the retained earlier timeout. New candidate requires exact-head CI and actual staging health/settings before the authorized merge, then independent main verification/deployment. Owner physical/provider acceptance remains separate.
-
-Next: validate the reconciled delta, publish the follow-up PR, verify required exact-head checks and actual staging, then merge and verify the release. Do not reopen PR76. Record final run/revision receipts in the PR without status-only commit loops.
+Six focused enquiry/phone cases pass. Existing component/browser cases now assert the removed copy, no dangling help references, immediate required-field state, both enquiry button shapes, flag corners and header action face. No cases/inventory counts or runner settings changed. Types, lint, source/policy, formatting and diff review passed. Publish, verify exact-head CI and actual staging, merge under the owner's instruction and confirm independent main release. Preserve earlier failures in Journey; do not reopen PR76.
 
 ## Remaining owner acceptance
 
