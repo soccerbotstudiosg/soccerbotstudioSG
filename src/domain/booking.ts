@@ -49,7 +49,7 @@ export const sessionSchema = slotSchema
       : instructorSchema.safeParse(slot.instructor).success,
   );
 export type Session = z.infer<typeof sessionSchema>;
-export const assignedSlotSchema = sessionSchema.safeExtend({
+const assignedSlotSchema = sessionSchema.safeExtend({
   studio: z.string(),
 });
 export const draftSchema = z.object({

@@ -44,7 +44,7 @@ export const organisationSchema = z
   .trim()
   .max(120)
   .regex(/^(?:\p{L}\p{M}*|\p{Nd}|[ ’'&.,()/+\-])*$/u);
-export const contactPhoneSchema = z
+const contactPhoneSchema = z
   .string()
   .trim()
   .refine(validBookingPhone)

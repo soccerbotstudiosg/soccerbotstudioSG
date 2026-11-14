@@ -253,7 +253,7 @@ export function ReviewStep({
 }
 
 /** Reuse review selections and their existing edit locks in inline and phone-panel layouts. */
-export function ReviewSessions({
+function ReviewSessions({
   part,
   verifying = false,
 }: {

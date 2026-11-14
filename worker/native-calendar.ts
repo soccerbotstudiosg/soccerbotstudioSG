@@ -13,8 +13,8 @@ import { offeredStarts } from "./prebooking";
 import { freshReceipt } from "./catalogue";
 import { parallelReads } from "./parallel-reads";
 
-export const CALENDAR_CACHE_MS = 60000;
-export const CALENDAR_RANGE_READ_LIMIT = 96;
+const CALENDAR_CACHE_MS = 60000;
+const CALENDAR_RANGE_READ_LIMIT = 96;
 const dayMs = 86400000;
 const dateMs = (date: string) => Date.parse(`${date}T00:00:00Z`);
 /** Select approved calendar dates in the requested month. */

@@ -16,7 +16,7 @@ import { useBooking } from "./provider";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { Arrival, ClientDetails } from "./review-step";
 /** Share only the visible confirmed booking summary, never payment links or credentials. */
-export function bookingConfirmationMessage(booking: Booking) {
+function bookingConfirmationMessage(booking: Booking) {
   return [
     "SOCCERBOTSTUDIO Singapore",
     "Booking confirmed · Paid",

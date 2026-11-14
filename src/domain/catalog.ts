@@ -162,7 +162,7 @@ export const providerSelectionSchema = z.strictObject({
   startMs: z.number().int().positive().safe(),
   players: z.number().int().min(1).max(MAX_PLAYERS),
 });
-export type ProviderSelection = z.infer<typeof providerSelectionSchema>;
+type ProviderSelection = z.infer<typeof providerSelectionSchema>;
 /** Resolve a selected service against the available catalogue. */
 export function catalogueSelection(
   catalogue: ProviderCatalogue,

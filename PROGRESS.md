@@ -45,6 +45,10 @@ Remove the exported Experiment page/entry, route invalid or denied confirmation 
 
 Re-audited callers before removing unused Worker confirmation/deadline helpers, service aliases, message constants, capacity constant and the unconnected catalogue adapter/review scaffold. Shared catalogue schemas and active Worker selection validation remain. Tests now exercise shared schemas directly; production catalogue freshness tests remain in customer-catalogue tests. Removed obsolete design-guard exceptions. Code comments follow TSDoc/JSDoc summaries and concise inline rationale; generated files and explanatory payment/security comments are preserved. Independent review covered all 65 handwritten Worker source files. Local verification passes: 361 tests across 33 files, seven design checks, ESLint, frontend/Worker TypeScript and source boundaries. CI/staging remain blocked by Actions minutes; no merge.
 
+## Further lean-code audit
+
+On published PR75 head e3269a45, removed the uncalled curlHealth transport helper and its import; active injected readiness checks, health parser and GET /api/health remain. Made 14 module-internal exports private and clarified two comments. This pass removes 57 net code/tooling lines; the preceding cleanup removed 191, for 248 total, excluding documentation. Configuration-loaded entry points and the Grafana/observability scaffold are preserved. Local readiness tests, lint, frontend/Worker type checks and source-boundary guards pass. Ignoring export visibility, affected TypeScript emits identical executable code. Large-module extraction remains a subsequent task.
+
 ## Next action
 
 Complete exact-head verification and actual staging health/settings checks, report PR75 and staging URL, and leave unmerged. Record immutable CI/deploy receipts in the PR without creating status-only commit loops. Before a later production release, verify native-domain CI-token permissions; staging does not prove those production permissions.

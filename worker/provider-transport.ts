@@ -167,7 +167,7 @@ const contactText = z
   .min(1)
   .max(256)
   .refine((value) => value.trim() === value && !/[\x00-\x1f\x7f]/.test(value));
-export const nativeClientSchema = z
+const nativeClientSchema = z
   .object({
     name: contactText,
     email: contactText.pipe(z.email()),
@@ -187,7 +187,7 @@ export const nativeClientSchema = z
       (value.client_id === undefined) === (value.client_sign === undefined),
   );
 // Invoice handling is a control, not a discovered custom intake answer.
-export const nativeAdditionalSchema = z
+const nativeAdditionalSchema = z
   .object({ handle_invoice: z.literal(true) })
   .strict();
 /** Build the accepted provider fields for native session creation. */

@@ -179,8 +179,7 @@ function transitioned(
   return result;
 }
 
-// Named booking boundary, not an RPC dispatcher. Validation also protects test
-// and future adapters: successful TypeScript typing alone is not wire evidence.
+// Validate adapter results at runtime; TypeScript types do not validate wire data.
 /** Wrap a booking adapter with validated inputs and result transitions. */
 export function defineBookingService(adapter: BookingService): BookingService {
   function supported(operation: keyof BookingService["operations"]) {
