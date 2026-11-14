@@ -1168,6 +1168,33 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("group", { name: "Session times" }).getByRole("button"),
   ).toHaveCount(9);
+  const timeCards = await page
+    .locator(".times > .time-choice")
+    .evaluateAll((cards) =>
+      cards.map((card) => ({
+        start: card.querySelector(".time-range")!.textContent!.slice(0, 5),
+        x: card.getBoundingClientRect().x,
+        y: card.getBoundingClientRect().y,
+      })),
+    );
+  expect(timeCards.map((card) => card.start)).toEqual(
+    timeCards.map((card) => card.start).sort(),
+  );
+  const rows =
+    page.viewportSize()!.width > 700
+      ? Math.ceil(timeCards.length / 2)
+      : timeCards.length;
+  for (let index = 1; index < timeCards.length; index += 1) {
+    const previous = timeCards[index - 1];
+    const current = timeCards[index];
+    if (index === rows) {
+      expect(current.x).toBeGreaterThan(previous.x);
+      expect(current.y).toBeCloseTo(timeCards[0].y, 0);
+    } else {
+      expect(current.x).toBeCloseTo(previous.x, 0);
+      expect(current.y).toBeGreaterThan(previous.y);
+    }
+  }
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
   await expect(crossing).toContainText("Crosses the 15:00 instructor rotation");
   await crossing.click();

@@ -3590,9 +3590,12 @@
     color: var(--color-ink);
   }
   .times {
+    --time-rows: 1;
     align-items: start;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: repeat(var(--time-rows), auto);
+    grid-auto-flow: column;
     gap: 11px;
   }
   .time {
@@ -4564,9 +4567,6 @@
     .date-placeholder {
       min-height: 29px;
     }
-    .times {
-      grid-template-columns: 1fr;
-    }
     .field-grid {
       grid-template-columns: 1fr;
     }
@@ -4880,6 +4880,8 @@
     }
     .times {
       grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      grid-auto-flow: row;
       gap: 9px;
     }
     .time {
