@@ -1,5 +1,5 @@
 // Build-time composition only. No URL, browser storage or failed request can select Preview.
-import { liveBookingService, liveCatalogueService } from "./booking";
+import { liveBookingService } from "./booking";
 import { liveCustomerIdentity } from "./identity";
 import { demoCustomerIdentity } from "./demo/identity";
 import { demoBookingService } from "./demo/booking";
@@ -15,11 +15,3 @@ export const services = {
     mode === "live" ? liveCustomerIdentity : demoCustomerIdentity,
   enquiry: demoEnquiryService,
 };
-
-// Available for an explicitly composed future live journey; never selected by a URL or failed request.
-export const bookingAdapters = {
-  demo: demoBookingService,
-  live: liveBookingService,
-} as const;
-
-export const catalogueService = liveCatalogueService;

@@ -402,8 +402,8 @@ export async function retentionPreview(
   };
 }
 
-// Internal supervised trigger only; no HTTP route, scheduler, or draining loop.
-// A trusted operator composition must bind the grant and admitted exchange.
+// Internal entry for one admitted attempt; no public route or draining loop.
+// The caller binds the operator or ongoing-recovery scope and provider exchange.
 /** Reconcile native booking evidence under the original attempt identity. */
 export async function runNativeReadback(
   env: Env,

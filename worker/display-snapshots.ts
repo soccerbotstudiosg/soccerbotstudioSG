@@ -25,8 +25,8 @@ const schemas = {
   catalogue: customerCatalogueSchema,
   calendar: publicCalendarSchema,
 };
-// Account-DO SQLite retains only public display DTOs, never customer/payment
-// authority. Provider caches retain their separate short freshness windows.
+// Display snapshots and release schedules grant no booking or payment authority.
+// Provider caches retain independent freshness windows.
 export class DisplaySnapshots {
   /** Initialize account-scoped display snapshot storage. */
   constructor(
@@ -75,7 +75,7 @@ export class DisplaySnapshots {
       );
     }
   }
-  /** Select the next retained release read, including completed tombstones only for cleanup. */
+  /** Select the next pending release probe after removing old records. */
   nextRelease() {
     this.sql.exec(
       "DELETE FROM display_release_probes WHERE scope=? AND base_ms<?",
@@ -133,7 +133,7 @@ export class DisplaySnapshots {
     kind: "catalogue",
     key: string,
   ): z.infer<typeof customerCatalogueSchema> | undefined;
-  /** Read an unexpired snapshot from the current display generation. */
+  /** Read and validate an unexpired display snapshot. */
   read(kind: keyof typeof schemas, key: string) {
     const row = this.sql
       .exec<{ payload: string }>(
@@ -320,6 +320,7 @@ export class DisplaySnapshots {
       this.generation(),
     );
   }
+  /** Expire calendar snapshots and supersede pending display builds. */
   invalidateCalendars() {
     this.sql.exec(
       "UPDATE display_refresh SET generation=generation+1,dirty=1 WHERE scope=?",

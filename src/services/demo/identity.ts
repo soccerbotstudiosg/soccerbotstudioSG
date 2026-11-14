@@ -23,6 +23,7 @@ const profilesSchema = z.record(
   z.object({ name: z.string(), phone: z.string() }),
 );
 export const DEMO_CODE = "360360";
+/** Read a validated demo profile or return an anonymous identity. */
 function read() {
   for (const persistent of [false, true]) {
     const parsed = identitySchema.safeParse(safeRead(KEY, persistent));
@@ -31,6 +32,7 @@ function read() {
   }
   return null;
 }
+/** Save validated demo contact details under the normalized email. */
 function saveContact(
   contact: Parameters<CustomerIdentityService["saveProfile"]>[0],
 ) {

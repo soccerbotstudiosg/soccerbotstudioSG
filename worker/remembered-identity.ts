@@ -52,8 +52,7 @@ export async function revokePresentedRemembered(
     .bind(now, hash, hash, env.APP_ORIGIN, env.DEPLOYMENT_ACCOUNT_ID)
     .run();
 }
-// Revoke a previously remembered browser identity only after fresh verification succeeds.
-/** Replace remembered identity without retaining superseded browser authority. */
+/** Prepare revocation of prior remembered identity after fresh verification. */
 export async function replaceRememberedIdentity(
   request: Request,
   env: Env,

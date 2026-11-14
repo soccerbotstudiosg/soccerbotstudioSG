@@ -38,8 +38,7 @@ const retainedNativeKeySchema = z.strictObject({
   hash: z.string(),
   nativeCustomerId: z.string().optional(),
 });
-// Empty policy rejects navigation; production uses only the supplied fixed shape.
-/** Construct the accepted native checkout link from validated references. */
+/** Validate and return the configured native checkout URL. */
 export function nativeCheckoutLink(raw: unknown, configured = true) {
   const parsed = z.object({ link: z.string().min(1).max(4096) }).safeParse(raw);
   if (!configured || !parsed.success || !isNativeCheckoutUrl(parsed.data.link))
@@ -547,14 +546,14 @@ export async function readNativeAttempt(options: {
     }),
   };
 }
-// Attempt03 local checkout guards; this does not establish provider TTL or cancellation.
+// Local checkout limits do not establish provider expiry or cancellation.
 export type NativeCheckoutTiming = {
   invoiceId: string;
   dueDatetime: unknown;
   supervisionDeadlineMs: number;
   handoffAtMs: number;
 };
-/** Derive checkout expiry from the original provider booking time. */
+/** Bound checkout expiry by invoice due time, handoff window and supervision deadline. */
 export function nativeCheckoutDeadline(
   timing: NativeCheckoutTiming,
   now: number,
@@ -805,7 +804,7 @@ async function retainNativeBookingKey(
     throw new ApiError(409, "native_key_not_retained");
   return fence !== undefined && result.at(-1)!.results.length === 1;
 }
-/** Read the retained signature for an associated native booking. */
+/** Sign an associated booking with its retained provider key. */
 export async function storedNativeSignature(
   db: D1Database,
   attemptId: string,
@@ -1304,7 +1303,7 @@ export async function compensateNativeAttempt(options: {
     if (saved.meta.changes !== 1)
       throw new ApiError(409, "native_cleanup_fence_lost");
   }
-  // A missing reply can still conceal another booking. Never call that clean.
+  // Unanswered session effects can conceal bookings, so cleanup remains incomplete.
   const uncertain = effects.some(
     (effect) =>
       /^session:\d+$/.test(effect.step) &&
@@ -1317,7 +1316,7 @@ export async function compensateNativeAttempt(options: {
 }
 
 // One request-local snapshot only; opaque recovery keys never enter responses or logs.
-/** Extract validated native signatures from retained snapshot evidence. */
+/** Generate booking signatures from validated snapshot keys. */
 export async function nativeSignaturesFromSnapshot(
   rows: { step: string; reference_id: string }[],
   association: unknown,

@@ -1,53 +1,9 @@
 import { unpaidExpiry } from "./checkout-expiry-policy";
 import { retainedInvoiceNumber } from "./invoice-document";
 import { authenticate } from "./access";
-import { ApiError, digest } from "./policy";
+import { ApiError } from "./policy";
 import { receiptSchema } from "../src/domain/native-checkout";
 import { assertPaymentScope, paymentScopeSchema } from "./hitpay-contract";
-import { receiptData } from "./receipt-data";
-import type { HitpayRow } from "./hitpay-journal";
-
-// Customer success requires current booking and paid invoice readback.
-// Historical snapshots from the early-payment design are not sufficient.
-/** Retain validated customer confirmation without renewing its original timestamp. */
-export async function retainCustomerConfirmation(
-  env: Env,
-  payment: HitpayRow,
-  now: number,
-) {
-  const row = await env.STATE.withSession("first-primary")
-    .prepare(
-      "SELECT CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,a.id,a.created_ms,a.intent_json,a.association_json,a.observation_json,a.intent_hash,h.expires_ms,(SELECT availability_json FROM native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM completed_native_checkout_grants WHERE attempt_id=a.id UNION ALL SELECT availability_json FROM expired_native_checkout_grants WHERE attempt_id=a.id) AS availability_json FROM attempts a LEFT JOIN invoice_documents d ON d.attempt_id=a.id AND d.association_json=a.association_json JOIN hitpay_holds h ON h.attempt_id=a.id JOIN checkout_progress c ON c.attempt_id=a.id WHERE a.id=? AND a.state='observed' AND a.intent_hash=h.intent_hash AND a.association_json=h.association_json",
-    )
-    .bind(payment.attempt_id)
-    .first<{
-      invoice_document_json: string | null;
-      id: string;
-      created_ms: number;
-      intent_json: string;
-      association_json: string;
-      observation_json: string | null;
-      intent_hash: string;
-      expires_ms: number;
-      availability_json: string | null;
-    }>();
-  if (!row) return;
-  const scope = paymentScopeSchema.parse(JSON.parse(payment.scope_json));
-  await assertPaymentScope(env, scope);
-  if (
-    scope.intentHash !== row.intent_hash ||
-    scope.associationJson !== row.association_json ||
-    (await digest(row.intent_json)) !== row.intent_hash
-  )
-    throw new ApiError(409, "hitpay_scope_mismatch");
-  const receipt = await receiptData(env, row, now);
-  if (receipt.sessions.some((s) => s.startMs <= Date.now())) return;
-  await env.STATE.prepare(
-    "UPDATE checkout_progress SET confirmation_json=? WHERE attempt_id=? AND confirmation_json IS NULL AND EXISTS(SELECT 1 FROM hitpay_payments p WHERE p.attempt_id=checkout_progress.attempt_id AND p.state='claimed' AND p.generation=? AND p.paid_ms IS NOT NULL AND p.payment_id IS NOT NULL AND p.external_state='observed')",
-  )
-    .bind(JSON.stringify(receipt), row.id, payment.generation)
-    .run();
-}
 
 /** Read the retained confirmation for the authorized attempt. */
 export async function customerConfirmation(
@@ -91,29 +47,6 @@ export async function customerConfirmation(
     else delete receipt.providerReferences.invoiceNumber;
   }
   return receipt;
-}
-
-/** Derive the checking deadline from retained checkout timing. */
-export async function checkoutCheckingDeadline(
-  env: Env,
-  id: string,
-  fallback: number,
-) {
-  const progress = await env.STATE.withSession("first-primary")
-    .prepare(
-      "SELECT booking_created_ms,payment_window_ms,checking_buffer_ms FROM checkout_progress WHERE attempt_id=?",
-    )
-    .bind(id)
-    .first<{
-      booking_created_ms: number;
-      payment_window_ms: number;
-      checking_buffer_ms: number;
-    }>();
-  return progress
-    ? progress.booking_created_ms +
-        progress.payment_window_ms +
-        progress.checking_buffer_ms
-    : fallback;
 }
 
 /** Determine expiry from the attempt's original checkout deadline. */

@@ -25,7 +25,7 @@ import {
 
 // Fixed identity endpoints share the physical transport owner. Their durable
 // admission is owned by identity-delivery, separately from SimplyBook accounting.
-/** DNS checks have a fixed resolver and disclose only the domain. */
+/** Query the fixed DNS resolver without sending mailbox details. */
 export function emailDnsRequest(
   domain: string,
   type: "MX" | "A" | "AAAA",

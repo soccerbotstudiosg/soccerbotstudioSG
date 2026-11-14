@@ -196,7 +196,7 @@ try {
       (await db.prepare(`SELECT * FROM "${table}" ORDER BY rowid`).all())
         .results,
     );
-  // Retain additive-upgrade coverage even though these migrations are now applied.
+  // Exercise additive upgrades against previously migrated data.
   for (const name of names.slice(14, 16)) await migrate(name);
   assert.equal(
     (await db.prepare("SELECT COUNT(*) n FROM native_checkout_grants").first())
@@ -230,7 +230,7 @@ try {
     ).results,
     retainedNative,
   );
-  // The new schema admits only the reviewed ceiling and preserves retained fields.
+  // Enforce the capacity ceiling while preserving retained fields.
   await db.prepare("UPDATE native_checkout_grants SET maximum_used=176").run();
   await assert.rejects(
     db.prepare("UPDATE native_checkout_grants SET maximum_used=177").run(),
@@ -322,7 +322,7 @@ try {
       (await db.prepare(`SELECT count(*) n FROM "${table}"`).first()).n,
       0,
     );
-  // The new scope table must preserve the already applied capture history.
+  // Preserve capture history when adding scope records.
   const legacyWindow = crypto.randomUUID();
   await db
     .prepare(

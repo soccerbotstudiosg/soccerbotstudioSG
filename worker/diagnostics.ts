@@ -17,7 +17,7 @@ type Trace = {
   d1Execution: { statements: number; sqlDurationMs: number; colos: string[] };
 };
 const context = new AsyncLocalStorage<Trace>();
-/** Read the active asynchronous trace correlation ID. */
+/** Read the active correlation ID or create one outside a trace. */
 export function traceId() {
   return context.getStore()?.correlationId || crypto.randomUUID();
 }
@@ -135,9 +135,9 @@ export async function traced<T>(
     }
   });
 }
-// Preserve native receivers and promise identities. Only terminal D1 calls are
-// timed; prepare/bind/session chaining never logs SQL or values.
-/** Wrap storage operations to measure D1 calls without logging row data. */
+// Preserve native receivers and promise identities across storage wrappers.
+// Time terminal calls without logging statements or bound values.
+/** Measure terminal storage calls without logging statements or values. */
 export function instrumentStorage<T extends object>(
   target: T,
   span: "storage" | "d1" = "storage",

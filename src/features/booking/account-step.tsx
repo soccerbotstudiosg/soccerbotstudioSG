@@ -311,6 +311,7 @@ export function AccountStep({
       startNavigation(() => router.push("/book/session/"));
     }
   }
+  /** Validate the email and request a code after the resend cooldown. */
   function request() {
     if (Date.now() < resendAfter) return;
     const normalizedEmail = email.trim();

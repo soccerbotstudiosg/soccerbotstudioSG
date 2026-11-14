@@ -1321,19 +1321,11 @@
   },
   {
     "file": "src/services/catalogue.test.ts",
-    "title": "catalogue additions and response order do not change approved identity"
+    "title": "shared catalogue schema accepts stable provider IDs without preview aliases"
   },
   {
     "file": "src/services/catalogue.test.ts",
-    "title": "catalogue review reports rename price and relationship changes while preserving selection"
-  },
-  {
-    "file": "src/services/catalogue.test.ts",
-    "title": "live catalogue boundary accepts stable provider IDs without preview aliases"
-  },
-  {
-    "file": "src/services/catalogue.test.ts",
-    "title": "live catalogue boundary rejects stale incomplete foreign and unavailable data"
+    "title": "shared catalogue schema rejects incomplete data and duplicate provider identities"
   },
   {
     "file": "src/services/confirmation.test.ts",

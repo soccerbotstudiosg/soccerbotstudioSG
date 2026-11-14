@@ -45,6 +45,7 @@ export type IdentityDelivery = {
 function denied() {
   return new ApiError(400, "verification_unavailable");
 }
+/** Generate a uniformly distributed six-digit verification code. */
 function randomCode() {
   const value = new Uint32Array(1);
   do {
@@ -477,9 +478,8 @@ export async function readVerifiedIdentity(
   return row ? { ...row, remember: row.remember === 1 } : null;
 }
 
-// An authenticated email never authorizes a directory listing. Missing/shared
-// matches return no prefill. A future provider mapper supplies only exact matches.
-/** Resolve contact details only under current verified identity. */
+// Verified email permits exact matching only, never a directory listing.
+/** Return contact details only for one exact email match. */
 export function verifiedContact(email: string, matches: unknown) {
   const parsed = z
     .array(

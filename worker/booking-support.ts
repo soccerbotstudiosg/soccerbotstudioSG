@@ -5,7 +5,7 @@ import { identityRequest } from "./provider-transport";
 import { z } from "zod";
 import { dateLabel, endTime, money } from "../src/domain/dates";
 
-/** One staff report for an owned unresolved attempt; customer input cannot supply recipients or report content. */
+/** Send one staff report for an owned unresolved booking attempt. */
 export async function requestBookingHelp(
   request: Request,
   env: Env,
@@ -84,6 +84,7 @@ export async function requestBookingHelp(
     .first();
   if (!claim) throw new ApiError(429, "support_retry_later", undefined, 30);
   const contact = intent.contact;
+  // Build report content from retained evidence; callers cannot choose recipients.
   const text = [
     "Customer requested booking help",
     "",

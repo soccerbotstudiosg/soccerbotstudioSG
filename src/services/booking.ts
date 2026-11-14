@@ -11,12 +11,8 @@ import { checkoutRecoveryDeadline } from "./storage";
 import {
   CATALOGUE_MAX_AGE_MS,
   displayDeadline,
-  catalogueSchema,
-  catalogueBindingSchema,
-  type CatalogueBinding,
   providerIdentifier,
 } from "@/domain/catalog";
-import type { CatalogueService } from "./contracts";
 import { z } from "zod";
 import {
   attemptSchema,
@@ -78,8 +74,8 @@ const invalidResponse = () =>
     "We couldn’t check this information. Please try again.",
   );
 
-// Abort ends the UI wait even for a non-cooperative adapter. It does not undo an
-// effect already dispatched. Callers must also correlate their input revision.
+// Callers must correlate input revisions because abort cannot undo dispatched effects.
+/** Bound the caller wait by its abort signal without undoing dispatched effects. */
 async function complete<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
   if (!signal) return work;
   if (signal.aborted) throw cancelled();
@@ -91,6 +87,7 @@ async function complete<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
       .finally(() => signal.removeEventListener("abort", abort));
   });
 }
+/** Validate request or response data and map schema failures to service errors. */
 function decode<T>(schema: z.ZodType<T>, value: unknown, input = false): T {
   const parsed = schema.safeParse(value);
   if (!parsed.success)
@@ -924,31 +921,3 @@ export const liveBookingService: BookingService = defineBookingService({
   check: unavailable,
   resolve: unavailable,
 });
-
-// Separate live DTO boundary: no preview enum, price, timetable or identity cast.
-// A deployed route is intentionally unavailable until its read authority is bound.
-/** Wrap catalogue reads with input and response validation. */
-export function defineCatalogueService(
-  binding: CatalogueBinding,
-  adapter: CatalogueService,
-): CatalogueService {
-  const expected = catalogueBindingSchema.parse(binding);
-  return {
-    read(input) {
-      return invoke(input.signal, async () => {
-        const result = decode(catalogueSchema, await adapter.read(input));
-        const now = Date.now();
-        if (
-          result.binding.accountId !== expected.accountId ||
-          result.binding.environmentId !== expected.environmentId ||
-          result.binding.companyLogin !== expected.companyLogin ||
-          result.observedAtMs > now ||
-          now - result.observedAtMs >= CATALOGUE_MAX_AGE_MS
-        )
-          throw invalidResponse();
-        return result;
-      });
-    },
-  };
-}
-export const liveCatalogueService: CatalogueService = { read: unavailable };

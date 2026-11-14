@@ -105,6 +105,7 @@ export function checkWorker(root) {
   }
   const visited = new Set(),
     visiting = new Set();
+  /** Traverse Worker imports and report dependency cycles. */
   function dfs(name) {
     if (visiting.has(name)) {
       errors.push(`Worker cycle: ${name}`);

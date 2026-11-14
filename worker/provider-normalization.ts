@@ -52,7 +52,7 @@ function invoiceStatus(value: unknown) {
     ? value
     : "unknown";
 }
-// Fixed historical23 diagnostics. Never constructs confirmation input/intent.
+// Historical diagnostics only; this projection cannot authorize confirmation.
 /** Compare retained provider evidence under the historical comparison contract. */
 export function historicalComparison(
   bookingValue: unknown,

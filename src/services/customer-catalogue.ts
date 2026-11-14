@@ -67,6 +67,7 @@ export function createCustomerCatalogueService(): CustomerCatalogueService & {
 } {
   let retained: CustomerCatalogue | undefined;
   let pending: Promise<CustomerCatalogue> | undefined;
+  /** Return the retained catalogue only while its display deadline is valid. */
   function peek() {
     if (
       retained &&

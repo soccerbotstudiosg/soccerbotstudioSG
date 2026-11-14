@@ -162,6 +162,7 @@ export function DetailsStep({
     },
     [c.email, draft.mode],
   );
+  /** Check guest email routing and ignore results for an edited address. */
   async function confirmEmail() {
     if (currentErrors.email || emailWork.current) return;
     if (bookingService.mode !== "live") {
@@ -255,6 +256,7 @@ export function DetailsStep({
       }
     }
   }
+  /** Update a contact field and invalidate any superseded save or email check. */
   function change<K extends keyof ContactDetails>(
     key: K,
     value: ContactDetails[K],

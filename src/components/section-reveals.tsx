@@ -61,6 +61,7 @@ export function SectionReveals() {
         if (!section.querySelector("section")) observeVisual(section);
       }
     }
+    /** Remove reveal effects when reduced motion is enabled. */
     function clearMotion() {
       for (const target of pending)
         target.classList.remove("section-reveal-pending");
@@ -69,6 +70,7 @@ export function SectionReveals() {
       revealed.clear();
       if (motion.matches) observer.disconnect();
     }
+    /** Reveal focused content immediately and stop observing it. */
     function focus(event: FocusEvent) {
       if (!(event.target instanceof Element)) return;
       const target = event.target.closest(

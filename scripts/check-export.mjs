@@ -15,6 +15,7 @@ import { siteBasePath } from "../src/content/site-path.ts";
 /** Fingerprint the files in a static export for artifact verification. */
 export function exportInventory(directory) {
   const result = {};
+  /** Fingerprint export files while rejecting symbolic links. */
   function visit(folder) {
     for (const entry of readdirSync(folder, { withFileTypes: true }).sort(
       (a, b) => a.name.localeCompare(b.name),

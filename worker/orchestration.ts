@@ -49,8 +49,7 @@ const finalizedInvoice = z.strictObject({
   bookingIds: z.array(reference).min(1).max(12),
 });
 
-// The native adapter supplies this contract only through finite server-owned
-// admission. It does not establish provider acceptance or production readiness.
+// Native operations require server-owned admission; this interface grants no authority.
 export type BookingOperations = {
   validationMode?: "per-session";
   // The native transport owns the atomic claim at its write boundary.
@@ -243,11 +242,8 @@ export async function orchestrateBooking(
     for (const [sessionIndex, session] of intent.sessions.entries()) {
       failedSessionIndex = sessionIndex;
       const context = { attemptId: id, sessionIndex };
-      // The eventual live adapter must verify identity, eligible instructor,
-      // timetable, shared slot, exact price/tax. Player information is a non-blocking annotation.
-      // A single session was just fully validated above, with no intervening
-      // provider operation. Do not repeat the same provider reads. The intent,
-      // time, access, dispatch fence and durable effect guards still apply.
+      // The first session was validated before dispatch. Revalidate later sessions
+      // without repeating those reads; intent, time, access and dispatch fences still apply.
       const fresh =
         intent.sessions.length === 1 ||
         (operations.validationMode === "per-session" && sessionIndex === 0)
@@ -341,8 +337,7 @@ export async function orchestrateBooking(
       association_json: JSON.stringify(associationSchema.parse(association)),
       version,
     });
-    // Native checkout/return contract is separately unavailable. Association is
-    // not payment, confirmation, a provider settlement or permission to retry.
+    // Association records booking references; payment and confirmation require separate verification.
     return { state: "associated", paymentAvailable: false };
   } catch (error) {
     if (operations.stagedDispatchClaim?.claimed?.() !== false)

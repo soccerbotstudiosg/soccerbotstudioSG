@@ -86,7 +86,7 @@ const headers = {
   "Referrer-Policy": "no-referrer",
 };
 export default {
-  /** Run due recovery and configured display warming from the scheduler. */
+  /** Run scheduled recovery, booking annotations and display warming. */
   async scheduled(event: ScheduledController, env: Env) {
     event.noRetry();
     try {
@@ -323,7 +323,6 @@ export default {
             201,
           );
         }
-        // These initial named operations accept no payload at all.
         const hitpayPayment = /^\/api\/booking\/hitpay\/([a-f0-9-]{36})$/.exec(
           url.pathname,
         );
@@ -349,6 +348,7 @@ export default {
             ),
           );
         }
+        // Remaining operations reject request bodies.
         if (request.body !== null) {
           const reader = request.body.getReader();
           let timer: ReturnType<typeof setTimeout> | undefined;

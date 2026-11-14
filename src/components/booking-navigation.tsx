@@ -134,6 +134,7 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
     });
     if (!arena) router.push(to);
   }
+  /** Complete the current entry transition once navigation and identity are ready. */
   function finish() {
     if (!entry || entry.generation !== generation.current || !active.current)
       return;

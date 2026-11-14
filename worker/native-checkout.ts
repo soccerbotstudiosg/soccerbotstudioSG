@@ -293,6 +293,7 @@ export async function executeNativeCheckout(options: {
     )
       throw new ApiError(503, "native_write_window_closed");
   };
+  /** Recheck durable checkout authority and claim the next write when required. */
   const assertGranted = async (claimEffect = false) => {
     assertWindow();
     if (consolidated && claimEffect && !cleanupMode) {
@@ -456,6 +457,7 @@ export async function executeNativeCheckout(options: {
     if (stage === "cleanup") cleanupDiagnostic ??= failure;
     else diagnostic ??= failure;
   };
+  /** Dispatch authorized provider operations and retain bounded hold evidence. */
   const exchange: NativeExchange = async (operation, signal) => {
     lastOperation = operation.kind;
     representation = undefined;
@@ -1350,8 +1352,7 @@ export async function prepareCustomerNative(
     try {
       await prepareProvider?.();
     } catch (error) {
-      // Preserve the existing explicit failed-warmup evidence and safe rollover.
-      // This failure path is deliberately outside the successful-path budget.
+      // Persist the grant before recording warmup failure through the standard path.
       await env.STATE.batch(retainedGrant.preparation);
       return prepareCustomerNative(
         request,
@@ -1421,6 +1422,7 @@ export async function prepareCustomerNative(
   // All customer/selection checks above precede speculative provider reads.
   // Persist the immutable attempt while warming provider identity; both must
   // settle before execution inspects active admissions or creates a booking.
+  /** Persist the immutable attempt and bind it to the current checkout grant. */
   const persist = async () => {
     let snapshot: PreparedCheckout | undefined;
     const bindingStatement = (id: string, intentHash: string) =>

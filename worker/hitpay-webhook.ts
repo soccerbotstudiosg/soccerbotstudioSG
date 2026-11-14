@@ -45,8 +45,8 @@ async function rawBody(request: Request) {
     void reader.cancel().catch(() => {});
   }
 }
-// Separate event-webhook contract. No legacy payload HMAC, timestamp assumption,
-// or trusted payment status. Authenticated identity only schedules a server read.
+// Authenticate the raw-body HMAC without assuming an event timestamp.
+// Only a server read can establish payment status.
 /** Authenticate and retain webhook evidence before scheduling payment recovery. */
 export async function receiveHitpayWebhook(request: Request, env: Env) {
   if (request.method !== "POST")

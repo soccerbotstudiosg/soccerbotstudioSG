@@ -191,12 +191,6 @@ export interface ProtectedCheckoutService {
   }): Promise<CheckoutContext>;
 }
 
-export interface CatalogueService {
-  read(
-    input: BookingRequest,
-  ): Promise<import("@/domain/catalog").ProviderCatalogue>;
-}
-
 export type CustomerChallenge = {
   email: string;
   expiresAt: number;

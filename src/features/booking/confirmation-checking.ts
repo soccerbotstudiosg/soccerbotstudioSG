@@ -357,6 +357,7 @@ export function useConfirmationChecking(
         }
       }
     }
+    /** Pause hidden-tab reads and resume protected checks on return. */
     function visibility() {
       if (document.hidden) {
         generation++;

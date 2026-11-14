@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 export function resetNextTypes(root) {
   const base = realpathSync(root);
   const targets = [".next/types", ".next/dev/types"];
+  /** Validate generated type paths before removing their directories. */
   function inspect(file, directory = false) {
     const stat = lstatSync(file, { throwIfNoEntry: false });
     if (!stat) return;

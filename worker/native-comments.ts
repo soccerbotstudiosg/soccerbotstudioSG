@@ -5,9 +5,8 @@ import { nativeBookingComment } from "./prebooking";
 import { providerSecrets } from "./provider-transport";
 import type { ProviderSession, ProviderControl } from "./provider-session";
 
-// Durable annotation intent is saved before association. Dispatch is claimed
-// separately after confirmed payment, under the same account admission limits. A missing
-// response remains unknown; neither cron nor another request resends it.
+// Paid-booking annotations require retained intent and a separate dispatch claim.
+// Account admission still applies; unknown responses are never resent.
 /** Annotate eligible pending bookings using retained effect accounting. */
 export async function annotatePendingBooking(
   env: Env,

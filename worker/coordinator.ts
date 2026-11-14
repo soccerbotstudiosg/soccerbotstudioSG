@@ -95,13 +95,14 @@ import {
   liveCustomerAccess,
 } from "./policy";
 import { ProviderSession, type ProviderControl } from "./provider-session";
-// One instance per actual provider account. No booking or customer data here.
+/** Coordinate provider admission, checkout work and display refreshes per account. */
 export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   private readonly instanceId = crypto.randomUUID();
   private provider: ProviderSession;
   private calendarReads = new NativeCalendarReads();
   private providerQueue = new ProviderQueue();
   private admissionTurn: Promise<void> = Promise.resolve();
+  /** Serialize admission reservations while allowing admitted transports to overlap. */
   private async reserveInOrder<T>(reserve: () => Promise<T>): Promise<T> {
     const previous = this.admissionTurn;
     let release!: () => void;
@@ -118,7 +119,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   private get sql() {
     return instrumentStorage(this.ctx.storage.sql);
   }
-  /** Initialize durable account coordination and recover interrupted transport accounting. */
+  /** Initialize account coordination and transport accounting storage. */
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.provider = new ProviderSession(this.sql);
@@ -450,8 +451,6 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       }
     });
   }
-  // A one-use operator grant owns this read-only calendar range. Customer
-  // grants still admit only their two exact dates after operator selection.
   /** Coordinate a scoped provider webhook-subscription operation. */
   async webhookSubscription(
     capabilityHash: string,
@@ -672,7 +671,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       }
     });
   }
-  /** Read the customer catalogue through the serialized provider queue. */
+  /** Read the customer catalogue within its retained admission limits. */
   async customerCatalogue(
     scope: { startingUsed: number; maxCalls: number; expiresMs: number },
     correlationId: string,
@@ -1102,6 +1101,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     });
   }
 
+  /** Try cached display data before queueing provider reads. */
   private async displayRead<T>(
     read: (cacheOnly: boolean) => Promise<T>,
   ): Promise<T> {
@@ -1223,6 +1223,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       ),
     );
   }
+  /** Archive an eligible expired checkout and refresh its display dates. */
   async expireCheckout(scope: { attemptId: string; cookie: string }) {
     return rpcOutcome(() =>
       this.providerQueue.run("foreground", async () => {
@@ -1636,6 +1637,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
   }
   // Authenticated account-bound webhook ingress and payment creation persist
   // the wake-up before acknowledging; the minute cron remains the fallback.
+  /** Retain a payment recovery wakeup and schedule the account alarm. */
   async wakeHitpayRecovery(attemptId: string, correlationId: string) {
     z.string().uuid().parse(attemptId);
     z.string().uuid().parse(correlationId);
@@ -1997,7 +1999,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       });
     });
   }
-  // Retain the earlier RPC during rolling deployment; it grants no authority.
+  // Preserve the legacy discovery RPC for callers; it grants no provider authority.
   discoveryAccounting() {
     policy(this.env);
     return this.providerAccounting();
@@ -2118,6 +2120,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
       return { granted: true, claim };
     });
   }
+  /** Complete a refresh only while its claim and generation remain current. */
   completeRefresh(key: string, claim: string, generation: number) {
     const now = Date.now();
     this.sql.exec(

@@ -94,7 +94,7 @@ function invoice(value: unknown) {
 }
 // Private observational evidence only. Persist before strict normalization; never
 // feed these fields into booking authority or expose them in customer responses.
-/** Prepare storage of raw hold evidence and provider references. */
+/** Prepare bounded diagnostic hold evidence for persistence. */
 export function holdEvidenceStatement(
   db: D1Database,
   attemptId: string,

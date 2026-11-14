@@ -6,6 +6,7 @@ export function BookingHelp({ attemptId }: { attemptId: string }) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">(
     "idle",
   );
+  /** Submit one support request and acknowledge only an accepted response. */
   async function send() {
     if (state === "sending" || state === "sent") return;
     setState("sending");

@@ -515,6 +515,7 @@ export class ProviderSession {
     return { body, receivedAtMs: Date.now() };
   }
 
+  /** Handle authentication rejection without invalidating a newer token generation. */
   private async rejectAuthentication(
     env: Env,
     error: unknown,

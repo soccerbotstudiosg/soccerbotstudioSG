@@ -110,7 +110,7 @@ export function clearAccessCookie() {
 
 // Internal HTTP-to-coordinator context. SQL write fences still recheck access
 // after token warming and before either provider effect.
-/** Authenticate checkout ownership before exposing attempt state. */
+/** Authenticate checkout access and verify the environment foundation. */
 export async function authenticateCheckout(
   request: Request,
   env: Env,

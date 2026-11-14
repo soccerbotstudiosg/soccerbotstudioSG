@@ -17,7 +17,7 @@ export const CALENDAR_CACHE_MS = 60000;
 export const CALENDAR_RANGE_READ_LIMIT = 96;
 const dayMs = 86400000;
 const dateMs = (date: string) => Date.parse(`${date}T00:00:00Z`);
-/** Enumerate the dates covered by the requested calendar range. */
+/** Select approved calendar dates in the requested month. */
 export function calendarDates(month: string, approved: string[]) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))
     throw new ApiError(400, "calendar_month_invalid");
@@ -25,8 +25,7 @@ export function calendarDates(month: string, approved: string[]) {
     .filter((date) => date.startsWith(month + "-"))
     .sort();
 }
-// Do not bridge unapproved gaps; each request is at most the existing 15-day
-// transport bound. Months therefore use bounded ranges rather than individual daily reads.
+// Keep ranges contiguous and within the provider's 15-day transport limit.
 /** Partition calendar dates into supported provider query ranges. */
 export function calendarRanges(dates: string[]) {
   const ranges: { from: string; to: string; dates: string[] }[] = [];
@@ -46,8 +45,7 @@ export function calendarRanges(dates: string[]) {
   return ranges;
 }
 type Calendar = z.infer<typeof nativeCalendarSchema>;
-// One instance belongs to the existing account coordinator. No process-global
-// customer cache, new database or silent stale fallback. No personal data.
+/** Cache calendar reads within one account coordinator and enforce freshness. */
 export class NativeCalendarReads {
   private entries = new Map<
     string,
@@ -125,8 +123,7 @@ export class NativeCalendarReads {
       if (!instructors.length)
         throw new ApiError(503, "native_instructors_unavailable");
       const ranges = calendarRanges(dates);
-      // Refuse oversized work before availability dispatch, never truncate
-      // the roster. Provider admission and the original freshness bound apply.
+      // Reject oversized reads instead of truncating the instructor roster.
       if (instructors.length * ranges.length > CALENDAR_RANGE_READ_LIMIT)
         throw new ApiError(503, "calendar_read_budget_exceeded");
       const offers = new Map<string, z.infer<typeof nativeOfferSchema>[]>(

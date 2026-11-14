@@ -74,9 +74,8 @@ async function windowFor(env: Env, now: number, reserve = false) {
     throw unavailable();
   return window;
 }
-// Once provisioned, the proof lifetime also bounds identity reads/restoration.
-// This is developer test authority, separate from the immutable 90-day expiry.
-/** Require a currently open identity-proof window. */
+// A provisioned finite-test proof also bounds identity reads and restoration.
+/** Enforce the configured identity-proof window for reads and restoration. */
 export async function assertIdentityProofOpen(env: Env) {
   const mode: unknown = Reflect.get(env, "IDENTITY_DELIVERY");
   if (mode === "ongoing") {
