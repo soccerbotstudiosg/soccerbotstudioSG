@@ -2,21 +2,19 @@
 
 ## Active outcome
 
-Fix the current PR75 CI failures, verify and stage the approved candidate, and leave it unmerged. PR76 is closed and must not be reopened. Native soccerbotsg.com configuration remains included; staging retains its separate hostname. No production release is authorized.
+Publish, stage and merge the owner's four presentation changes, then hand over the deployed revision for an owner-run major edge-case round. The owner explicitly authorized staging and merge on14November2026 after local consolidation; the planned manual round follows release. No live provider operations or notification sends are authorized for the assistant.
 
 ## Current scope
 
-PR75 includes branded Open Graph/domain configuration, compact navy mobile popup, booking button typography/shapes/motion, navy selected cards, faded unavailable dates, confirmation spacing/copy controls and balanced recovery notices. Entry choices share one panel and are narrower only on desktop. Required booking fields show initial guidance; untouched optional saved-contact fields do not. Calendar continuation shares the existing action. Loading labels identify security, code, email, save and enquiry work. Confirmation without usable identity returns Home; valid confirmation survives idle and optional invoice failures.
+Whole-control mobile focus; consistent red borders for invalid required enquiry fields; successful enquiry replaces the route with Home and shows a thin ten-second banner; Open Graph artwork, description and alt use “Performance · Experience · Production”. Preview remains explicitly no-send. Failure input/retry identity and server delivery contracts remain unchanged.
 
-Enquiry delivery now targets contact@soccerbotsg.com and glenna@soccerbotsg.com with customer Reply-To, background Turnstile, bounded waiting and durable duplicate-send protection. Migration0050 and the explicit existing staging sender accompany it. GA/GSC, Grafana, major-module refactoring and the older local blue Request Help acknowledgement remain excluded. SimplyBook hiding was not applied.
+## Verification and next action
 
-## Verification and immediate next action
+Working branch `fix/enquiry-presentation` incorporates merged PR75/main `55ea55d720464243e505c7f62d8c08dbe44eefa0`, including the migration0050 release-verifier and trusted staging-sender repairs. These repairs were completed upstream while the presentation slice was local; retain their original evidence in Journey/PR75.
 
-Run43599033268 on16d7209 passed every required gate, including both final release checks; CodeQL passed. Staging deployment43600064352 then stopped before mutation because the candidate's new staging sender field differed from the trusted-main target.
+Six focused enquiry/phone cases, TypeScript, lint, source/policy, formatting, production build and export passed locally. The prior full suite recorded371 passes and one unchanged recovery case timing out at5000ms; that case passed alone. First failure retained; no timeout/assertion/runner changes. After reconciliation, the full372-case suite across33 files and strict zero-skip/retry inventory validation passed on5f8770f. This does not diagnose the retained earlier timeout. New candidate requires exact-head CI and actual staging health/settings before the authorized merge, then independent main verification/deployment. Owner physical/provider acceptance remains separate.
 
-The configuration-only repair moves the same public developer sender into closed Wrangler vars and restores staging.json byte-for-byte to main. Effective live staging configuration is proven identical. Closed delivery remains disabled; production explicitly overrides the sender or disables delivery when unconfigured. No runtime or migration change, no bypass of exact artifact/target validation. Twelve deployment tests and11 target tests, both typechecks, source/Worker guards and independent review passed.
-
-Publish the configuration repair, verify fresh exact-head CI and actual staging health/settings, then leave PR75 unmerged. The packaged0050 upgrade repair remains included and passed against both retained CI artifacts with zero provider requests/remote operations. Record final CI/deployment receipts in PR75 without status-only commit loops; detailed evidence remains in [Journey](docs/journey.md).
+Next: validate the reconciled delta, publish the follow-up PR, verify required exact-head checks and actual staging, then merge and verify the release. Do not reopen PR76. Record final run/revision receipts in the PR without status-only commit loops.
 
 ## Remaining owner acceptance
 

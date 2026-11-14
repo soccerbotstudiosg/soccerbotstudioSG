@@ -4,11 +4,24 @@ import { renderToString } from "react-dom/server";
 import { expect, test, vi } from "vitest";
 import { services } from "@/services";
 import { EnquiryPage } from "./enquiry-page";
+import { EnquiryNoticeProvider, useEnquiryNotice } from "./enquiry-notice";
+const navigation = vi.hoisted(() => ({ replace: vi.fn(), pathname: "/" }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => navigation,
+  usePathname: () => navigation.pathname,
+}));
+function Enquiry() {
+  return (
+    <EnquiryNoticeProvider>
+      <EnquiryPage />
+    </EnquiryNoticeProvider>
+  );
+}
 
 test("enquiry waits for hydration then preserves entered details through submission", async () => {
   const container = document.createElement("div");
   const markup = new DOMParser().parseFromString(
-    renderToString(<EnquiryPage />),
+    renderToString(<Enquiry />),
     "text/html",
   );
   container.append(...markup.body.childNodes);
@@ -22,7 +35,7 @@ test("enquiry waits for hydration then preserves entered details through submiss
 
   const hydrationErrors: unknown[] = [];
   await act(async () => {
-    render(<EnquiryPage />, {
+    render(<Enquiry />, {
       container,
       hydrate: true,
       onRecoverableError: (error) => hydrationErrors.push(error),
@@ -72,10 +85,8 @@ test("enquiry waits for hydration then preserves entered details through submiss
   await user.click(screen.getByRole("button", { name: "Send enquiry" }));
   expect(retry.mock.calls[0][1]?.key).toBe(failedKey);
   expect(await screen.findByText("Preview · No enquiry sent.")).toBeVisible();
-  expect(screen.getByText("demo@example.com")).toBeVisible();
-  await user.click(
-    screen.getByRole("button", { name: "Send another enquiry" }),
-  );
+  expect(navigation.replace).toHaveBeenLastCalledWith("/");
+  expect(screen.queryByText("demo@example.com")).toBeNull();
   expect(screen.getByLabelText("Full name", { exact: false })).toHaveValue("");
   expect(screen.getByRole("button", { name: "Send enquiry" })).toBeEnabled();
   for (const [label, text] of [
@@ -99,8 +110,24 @@ test("enquiry waits for hydration then preserves entered details through submiss
 });
 
 test("enquiry validates edits immediately and blocks invalid service submission", () => {
-  render(<EnquiryPage />);
+  render(<Enquiry />);
   const submit = vi.spyOn(services.enquiry, "submit");
+  for (const label of [
+    "Full name",
+    "Email address",
+    "Mobile number",
+    "Enquiry type",
+    "Your requirements",
+  ]) {
+    expect(screen.getByLabelText(label, { exact: false })).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+  }
+  expect(screen.getByLabelText(/Academy, school/)).toHaveAttribute(
+    "aria-invalid",
+    "false",
+  );
   const name = screen.getByLabelText("Full name", { exact: false });
   expect(name).toHaveAttribute("aria-invalid", "true");
   fireEvent.change(name, { target: { value: "John★" } });
@@ -120,4 +147,47 @@ test("enquiry validates edits immediately and blocks invalid service submission"
   );
   expect(submit).not.toHaveBeenCalled();
   submit.mockRestore();
+});
+
+function Acknowledge() {
+  const notify = useEnquiryNotice();
+  return <button onClick={() => notify(true)}>Acknowledge delivery</button>;
+}
+test("enquiry acknowledgement routes Home and expires after ten seconds without replay", () => {
+  vi.useFakeTimers();
+  try {
+    navigation.pathname = "/enquiry/";
+    const view = render(
+      <EnquiryNoticeProvider>
+        <Acknowledge />
+      </EnquiryNoticeProvider>,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Acknowledge delivery" }),
+    );
+    expect(navigation.replace).toHaveBeenLastCalledWith("/");
+    expect(screen.queryByRole("status")).toBeNull();
+    navigation.pathname = "/";
+    view.rerender(
+      <EnquiryNoticeProvider>
+        <Acknowledge />
+      </EnquiryNoticeProvider>,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Your enquiry has been sent successfully.",
+    );
+    act(() => vi.advanceTimersByTime(9999));
+    expect(screen.getByRole("status")).toBeVisible();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.queryByRole("status")).toBeNull();
+    view.rerender(
+      <EnquiryNoticeProvider>
+        <Acknowledge />
+      </EnquiryNoticeProvider>,
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+  } finally {
+    navigation.pathname = "/";
+    vi.useRealTimers();
+  }
 });

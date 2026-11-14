@@ -555,3 +555,7 @@ The Player App popup uses the main-header navy with white text/icons. On phones 
 ### Home fallback acceptance
 
 On staging, open confirmation without an attempt ID and with a malformed ID: expect Home, no standalone error or permanent loader. Open a valid but inaccessible attempt: expect Home without details. Simulate inaccessible creation context with no matching local attempt: after the existing30-second budget expect Home; verify no cancellation/reset/write was triggered. Retest accessible unpaid continuation, expired Calendar return and delayed paid confirmation to prove they keep their established destinations. `/experiment/` should be unavailable and no preview entry should remain. On phone, verify compact popup padding12px/max-width420px/header alignment now take effect. CI/device acceptance remains pending.
+
+## Local enquiry presentation acceptance — pending
+
+On desktop and phone, focus the mobile number and country selector: one outline surrounds the entire compound control. Verify consistent red borders on every invalid required enquiry field and neutral optional empty fields. Submit an owner-authorized enquiry: Home replaces the form and a thin success banner disappears after ten seconds; a failed response retains the form and entered values. Preview must say “Preview · No enquiry sent.”, never real delivery. Confirm a new visit does not replay an expired banner. Inspect shared-link artwork and description for “Performance · Experience · Production”. Browser/provider/physical acceptance remains pending.

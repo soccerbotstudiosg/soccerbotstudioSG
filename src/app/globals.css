@@ -3707,6 +3707,7 @@
       box-shadow 0.18s;
     min-height: var(--control-height);
   }
+  .field-control:focus,
   .field input:focus,
   .field textarea:focus,
   .field select:focus {
@@ -3724,6 +3725,7 @@
     resize: vertical;
     min-height: 90px;
   }
+  .field-control[aria-invalid="true"],
   .field input[aria-invalid="true"],
   .field select[aria-invalid="true"],
   .field textarea[aria-invalid="true"] {
@@ -3748,6 +3750,8 @@
     min-height: var(--control-height);
   }
   .phone-control:focus-within {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 4px;
     border-color: var(--color-action-border);
     box-shadow: var(--shadow-focus);
   }
@@ -3775,6 +3779,20 @@
     border: 0;
     background: transparent;
     box-shadow: none;
+  }
+  .phone-control > :is(input, button):focus-visible {
+    outline: none;
+  }
+  .enquiry-notice {
+    position: fixed;
+    top: 0;
+    inset-inline: 0;
+    z-index: 100;
+    padding: 8px 16px;
+    text-align: center;
+    font-size: var(--text-label);
+    color: var(--color-success);
+    background: var(--color-success-soft);
   }
   .phone-country-menu {
     position: absolute;
@@ -4495,10 +4513,6 @@
     width: 22px;
     height: 22px;
     flex-shrink: 0;
-  }
-  .field-control:focus {
-    border-color: var(--color-action-border);
-    box-shadow: var(--shadow-focus);
   }
   .series-list .rotation-notice,
   .basket-list .rotation-notice {

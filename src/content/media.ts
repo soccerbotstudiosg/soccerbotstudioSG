@@ -101,5 +101,5 @@ export const socialPreview = {
   src: sitePath("/assets/soccerbot-social-preview.jpg"),
   width: 1734,
   height: 907,
-  alt: "SOCCERBOTSTUDIO Singapore — Interactive Football. Play. Compete. Improve. Two players in the interactive football arena.",
+  alt: "SOCCERBOTSTUDIO Singapore — Interactive Football. Performance · Experience · Production. Two players in the interactive football arena.",
 };
