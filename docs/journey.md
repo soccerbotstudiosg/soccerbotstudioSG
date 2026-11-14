@@ -6354,7 +6354,6 @@ The extended exit audit also found expiry denial stopping work without leaving i
 
 A deferred-success regression proved a late expiry acknowledgement could navigate away after rejected Calendar handoff selected Home. Guarded that callback against the selected Home fallback; original financial state remains retained. The delayed-response test fails before the guard and passes afterward.
 
-
 ### 2026-11-14 — Local booking controls consolidation
 
 Guest/email entry now uses one outlined panel with two stacked actions and an “or” divider. Removed duplicated explanatory headings/copy and both decorative icons; verified identity and its account actions remain available. Booking primary, Back/Home and outlet/session controls reuse the header corner token; the three account actions and two profile actions retain their existing shapes. The existing bounded halo keyframes also apply to entry actions, outlet/session cards and Continue payment, with reduced motion respected. No auth, checkout or recovery handler changed. Updated the existing account lifecycle and browser presentation assertions for the shared panel. Independent review caught and corrected surface-radius precedence and Payment/confirmation action scope. Browser rendering remains owner/CI verification; no claim of cross-device antialiasing proof. Push/CI remains held at the owner's request.
