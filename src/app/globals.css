@@ -70,6 +70,7 @@
   --text-label: 0.875rem;
   --text-meta: 0.875rem;
   --text-caption: 0.75rem;
+  --text-app-prompt-mobile: clamp(8px, 2.6vw, 10.5px);
   --text-amount: 1.5rem;
   --text-payment-amount: 2rem;
   --text-payment-status: 1.4875rem;
@@ -86,7 +87,7 @@
   --space-field: 20px;
   --control-height: 52px;
   --icon-control-size: 44px;
-  --shadow-panel: 0 6px 24px rgb(5 10 47 / 4%);
+  --shadow-panel: 0 8px 24px rgb(5 10 47 / 10%);
   --shadow-action: 0 6px 20px rgb(5 10 47 / 12%);
   --shadow-focus: 0 0 0 3px rgb(86 102 168 / 18%);
 }
@@ -2847,6 +2848,8 @@
     margin: 20px 0 28px;
   }
   .outlet-option {
+    position: relative;
+    padding: 24px 42px 24px 18px;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -2873,6 +2876,8 @@
     gap: 20px;
   }
   .session-product {
+    position: relative;
+    padding: 24px 42px 24px 18px;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: flex-start;
@@ -2895,6 +2900,15 @@
         var(--color-surface)
       );
     }
+  }
+  .selection-chevron {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
   }
   .session-product-details {
     display: grid;
@@ -2928,13 +2942,22 @@
   .outlet-option[aria-pressed="true"],
   .session-product[aria-pressed="true"],
   .time[aria-pressed="true"] {
-    border-color: var(--color-identity);
-    background: color-mix(
-      in srgb,
-      var(--color-identity) 12%,
-      var(--color-surface)
-    );
-    box-shadow: inset 0 0 0 1px var(--color-identity);
+    border-color: var(--color-navy);
+    background: var(--color-navy);
+    color: var(--color-on-brand);
+    box-shadow: var(--shadow-panel);
+  }
+  .outlet-option[aria-pressed="true"] > span > span,
+  .session-product[aria-pressed="true"]
+    :is(
+      .session-product-name,
+      .session-product-meta,
+      .session-product-prices,
+      .session-product-prices strong
+    ),
+  .time[aria-pressed="true"]
+    :is(.time-instructor, .time-rate, .time-rate strong, .rotation-notice) {
+    color: var(--color-on-brand);
   }
   .session-product-icon {
     display: grid;
@@ -3293,6 +3316,7 @@
     align-self: start;
   }
   .calendar-panel {
+    box-shadow: var(--shadow-panel);
     position: relative;
     padding: 11px;
     border: 1px solid var(--color-line);
@@ -3375,10 +3399,11 @@
     padding: 3px 0;
   }
   .date {
+    color: var(--color-ink);
     position: relative;
     min-width: 0;
     min-height: 29px;
-    border: 1px solid transparent;
+    border: 1px solid var(--color-control-border);
     border-radius: 6px;
     padding: 2px;
     display: flex;
@@ -3401,14 +3426,17 @@
     background: var(--color-brand-soft);
   }
   .date:disabled {
+    border-color: transparent;
     color: var(--color-muted);
     background: var(--color-disabled);
   }
-  .date.selected {
-    border-color: var(--color-focus);
-    background: var(--color-brand-soft);
+  .date.selected:not(:disabled) {
+    border-color: var(--color-navy);
+    background: var(--color-navy);
+    color: var(--color-on-brand);
   }
   .date.in-booking strong {
+    outline: 1px solid var(--color-on-brand);
     background: var(--color-navy);
     color: var(--color-on-brand);
   }
@@ -3493,6 +3521,7 @@
     gap: 16px;
   }
   .time-choice {
+    box-shadow: var(--shadow-panel);
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -3738,8 +3767,14 @@
     background: var(--color-brand-soft);
   }
   .phone-country-options li[aria-selected="true"] {
-    background: var(--color-brand-soft);
+    background: var(--color-navy);
+    color: var(--color-on-brand);
     font-weight: 600;
+  }
+  .phone-country-options
+    li[aria-selected="true"]
+    :is(.phone-country-code, .phone-dial-code) {
+    color: inherit;
   }
   .phone-country-code {
     color: var(--color-ink);
@@ -3937,9 +3972,9 @@
     gap: 9px;
   }
   .method.selected {
-    border: 2px solid var(--color-action);
-    color: var(--color-action);
-    background: var(--color-brand-soft);
+    border: 2px solid var(--color-navy);
+    color: var(--color-on-brand);
+    background: var(--color-navy);
   }
   .payment-demo {
     padding: 22px;
@@ -4540,8 +4575,26 @@
     .outlet-options {
       margin: 8px 0 16px;
     }
+    .player-app-dialog .dialog-title {
+      font-size: var(--text-app-prompt-mobile);
+      line-height: 1.5;
+      white-space: nowrap;
+    }
+    .player-app-dialog .app-store-links {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .player-app-dialog .app-store-link {
+      flex-direction: column;
+      min-width: 0;
+      min-height: 64px;
+      padding: 8px 4px;
+      gap: 6px;
+      font-size: var(--text-caption);
+      white-space: nowrap;
+    }
     .outlet-option.surface {
-      padding: 12px 14px;
+      padding: 12px 38px 12px 10px;
       gap: 10px;
     }
     .outlet-option > span {
@@ -4559,7 +4612,7 @@
     }
     .session-product.surface {
       gap: 8px 10px;
-      padding: 12px 14px;
+      padding: 12px 38px 12px 10px;
     }
     .session-product-details {
       gap: 4px;

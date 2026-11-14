@@ -2,13 +2,13 @@
 
 ## Active outcome
 
-Prepare Open Graph/Twitter link previews and preserve the already connected soccerbotsg.com domain through future production releases. Owner authorizes this separate PR and CI/staging; the owner will merge it. Do not merge or enable auto-merge.
+Stage the visual follow-up after the separate Open Graph/domain PR. Owner authorizes CI and staging only: do not merge either PR. This branch inherits the Open Graph/domain candidate; its new changes are selection cues, shadows and the compact mobile Player App popup.
 
 ## Current slice
 
 - Add public studio title, description and existing arena photo to static social metadata, using the reviewed production origin. Preserve existing robots/noindex and booking behavior; GA/GSC are deferred.
 - Add native same-account custom-domain target support, ownership preflight, sealed-route validation and post-deploy registration checks. Preserve original Worker, D1/coordinator and sandbox pairing. The current production domain was configured externally and owner-accepted through a complete payment and confirmation.
-- Keep selection/card/calendar/mobile-popup work in a separate follow-up PR. The older Request Help acknowledgement and local reset note remain unpublished.
+- Add right-centred outlet/session chevrons, slightly left-shifted content, stronger card shadows, main-header-colour selected controls, available-date outlines and grey unavailable dates. Make the phone Player App popup smaller with its complete heading on one line and three labelled icons in one row. The older Request Help acknowledgement and local reset note remain unpublished.
 
 ## Evidence and remaining checks
 
@@ -35,4 +35,4 @@ The queue is recorded now, before the full documentation reconciliation. These a
 
 ## Next action
 
-Publish through LimYouSheng, verify exact-head CI and actual staging health/settings, and leave the PR open for owner merge. Prepare visual follow-up separately with its dependency disclosed.
+Publish through LimYouSheng, verify exact-head CI and actual staging health/settings, and leave the PR open for owner merge. Leave the visual PR open and unmerged; identify the Open Graph/domain parent and inherited changes.

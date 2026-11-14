@@ -61,7 +61,9 @@ flowchart TD
 
 ## 4. Session choice and calendar
 
-Choose the priced session card (one-third desktop width, full mobile width) to open player count and the three included features. The compact card stays in place with a blue selected highlight. Returning from the calendar preserves outlet/session choices and player count; explicit deselection still collapses them. Clicking reveals the full-width player control and three inclusions beneath the card grid; it does not replace the card or open a dialog. Choose Date & Time continues from this view. Trainer choices share one studio and never add capacity.
+Outlet and session-type cards have a right-centred chevron, slightly left-shifted content and stronger shared card shadows. Completed selections use the current main-header colour with white text/icons. Available calendar dates have an outline; unavailable dates are grey without an outline, including a formerly selected date that becomes unavailable. A viewed available date uses the header-colour fill; the cart-date circle remains a separate marker. These are presentation states, not changes to availability or booking authority.
+
+Choose the priced session card (one-third desktop width, full mobile width) to open player count and the three included features. The compact card stays in place with the main-header-colour selected fill. Returning from the calendar preserves outlet/session choices and player count; explicit deselection still collapses them. Clicking reveals the full-width player control and three inclusions beneath the card grid; it does not replace the card or open a dialog. Choose Date & Time continues from this view. Trainer choices share one studio and never add capacity.
 
 ```mermaid
 flowchart TD
@@ -615,3 +617,5 @@ On Calendar only, the unresolved notice uses a compact row: message on the left,
 Request Help sends a fixed-recipient staff report to contact@soccerbotsg.com using retained contact/attempt details. Its pending spinner prevents duplicate clicks; success is shown only after acceptance by the mail provider, with retry feedback for failure. No report-content explanation is shown in the customer notice. One idempotent report is retained per attempt. This candidate has synthetic mail evidence only, not live delivery acceptance.
 
 The confirmed-booking copy control is an icon-only button at the top right of the confirmation card, aligned with View Full Details and outside its disclosure toggle. Paid keeps its original size and aligns directly with Order Summary. Removing the copy/status stack and the first session’s extra top padding brings the session content closer to that heading. It keeps the accessible name “Copy booking confirmation” and copies the formatted booking message. Successful copying shows a small “Copied” popup for3 seconds without moving the badge or summary; another successful copy restarts that interval. Pending/preview states never expose this paid-message action. Clipboard failure shows “Couldn’t copy. Try again.” instead of success. Leaving the confirmed booking clears the popup/timer and ignores late clipboard replies.
+
+On phones the Player App prompt is compact, its full heading fits one line with responsive smaller type, and all three labelled app icons share one row. Desktop presentation and accessible link/close behavior remain unchanged.

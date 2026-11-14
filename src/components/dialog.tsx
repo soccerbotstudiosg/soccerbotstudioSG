@@ -66,7 +66,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`fixed ${variant === "booking-panel" ? "overflow-hidden" : "overflow-auto"} rounded-2xl border border-line shadow-2xl ${variant === "booking-panel" ? "" : "m-auto max-h-[85dvh] w-[calc(100%-32px)] p-6"} ${variant === "player-app" ? "player-app-dialog max-w-2xl" : variant === "booking-panel" ? "booking-panel-dialog text-ink backdrop:bg-navy/40" : "max-w-xl text-ink backdrop:bg-navy/65"}`}
+      className={`fixed ${variant === "booking-panel" ? "overflow-hidden" : "overflow-auto"} rounded-2xl border border-line shadow-2xl ${variant === "booking-panel" ? "" : "m-auto max-h-[85dvh] w-[calc(100%-32px)]"} ${variant === "player-app" ? "player-app-dialog max-w-[360px] p-4 min-[701px]:max-w-2xl min-[701px]:p-6" : variant === "booking-panel" ? "booking-panel-dialog text-ink backdrop:bg-navy/40" : "max-w-xl p-6 text-ink backdrop:bg-navy/65"}`}
       aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(event) => {
@@ -83,7 +83,7 @@ export function Dialog({
       }}
     >
       <div
-        className={`${variant === "booking-panel" ? "booking-panel-header" : "mb-5"} flex ${variant === "player-app" ? "items-start" : "items-center"} justify-between gap-4`}
+        className={`${variant === "booking-panel" ? "booking-panel-header" : variant === "player-app" ? "mb-3 min-h-11 min-[701px]:mb-5 min-[701px]:min-h-0" : "mb-5"} flex ${variant === "player-app" ? "items-center min-[701px]:items-start" : "items-center"} justify-between gap-4`}
       >
         <h2 className="dialog-title" id={titleId}>
           {title}

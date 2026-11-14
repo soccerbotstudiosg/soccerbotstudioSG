@@ -1450,10 +1450,42 @@ test("first visit offers the Player App with only store links and dismissal pers
     "font-family",
     /Roboto/,
   );
-  await expect(prompt.locator(".dialog-title")).toHaveCSS("font-size", "24px");
+  const mobilePrompt = (page.viewportSize()?.width ?? 1280) <= 700;
+  if (mobilePrompt) {
+    const titleGeometry = await prompt
+      .locator(".dialog-title")
+      .evaluate((title) => {
+        const style = getComputedStyle(title);
+        return {
+          height: title.getBoundingClientRect().height,
+          lineHeight: parseFloat(style.lineHeight),
+          overflow: title.scrollWidth > title.clientWidth,
+        };
+      });
+    expect(titleGeometry.height).toBeCloseTo(titleGeometry.lineHeight, 0);
+    expect(titleGeometry.overflow).toBe(false);
+    const popupBox = await prompt.boundingBox();
+    expect(popupBox!.width).toBeLessThanOrEqual(360);
+    expect(popupBox!.height).toBeLessThanOrEqual(200);
+    const iconBoxes = await prompt
+      .locator(".app-store-link svg")
+      .evaluateAll((icons) =>
+        icons.map((icon) => icon.getBoundingClientRect().toJSON()),
+      );
+    expect(iconBoxes).toHaveLength(3);
+    expect(
+      Math.max(...iconBoxes.map((box) => box.y)) -
+        Math.min(...iconBoxes.map((box) => box.y)),
+    ).toBeLessThanOrEqual(1);
+  } else {
+    await expect(prompt.locator(".dialog-title")).toHaveCSS(
+      "font-size",
+      "24px",
+    );
+  }
   await expect(prompt.locator(".dialog-title")).toHaveCSS("font-weight", "400");
   for (const label of await prompt.locator(".app-store-link span").all()) {
-    await expect(label).toHaveCSS("font-size", "16px");
+    await expect(label).toHaveCSS("font-size", mobilePrompt ? "12px" : "16px");
     await expect(label).toHaveCSS("font-weight", "400");
   }
   await prompt.getByRole("heading").click();
@@ -1746,6 +1778,29 @@ test("header blue and the typography hierarchy stay consistent across every book
     ".session-product-name, .session-inclusions h2",
     (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
   );
+  for (const card of [
+    page.locator(".outlet-option"),
+    page.locator(".session-product"),
+  ]) {
+    await expect(card).toHaveCSS("background-color", brand);
+    await expect(card).toHaveCSS("color", "rgb(255, 255, 255)");
+    const chevron = card.locator(".selection-chevron");
+    await expect(chevron).toBeVisible();
+    const cardBox = await card.boundingBox();
+    const chevronBox = await chevron.boundingBox();
+    expect(
+      Math.abs(
+        chevronBox!.y +
+          chevronBox!.height / 2 -
+          (cardBox!.y + cardBox!.height / 2),
+      ),
+    ).toBeLessThanOrEqual(1);
+    expect(chevronBox!.x).toBeGreaterThan(cardBox!.x + cardBox!.width / 2);
+  }
+  await expect(page.locator(".session-product-name")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
+  );
   const selectedCardBackground = await page
     .locator('.session-product[aria-pressed="true"]')
     .evaluate((element) => getComputedStyle(element).backgroundColor);
@@ -1797,9 +1852,14 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".calendar-legend")).toHaveCount(0);
   await expect(page.locator(".date .dot")).toHaveCount(0);
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
+  await expect(page.locator(".date.selected")).toHaveCSS("border-color", brand);
   await expect(page.locator(".date.selected")).toHaveCSS(
-    "border-color",
-    "rgb(86, 102, 168)",
+    "background-color",
+    brand,
+  );
+  await expect(page.locator(".date.selected")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
   );
   await expect(page.locator(".date.selected strong")).toHaveCSS(
     "background-color",
@@ -1859,6 +1919,10 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(crossing.locator(".rotation-notice")).toHaveCSS(
     "font-size",
     "14px",
+  );
+  await expect(crossing.locator(".rotation-notice")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
   );
   await openBookingPanel(page, "trainers");
   await expect(page.locator(".trainer-toggle")).toHaveAttribute(

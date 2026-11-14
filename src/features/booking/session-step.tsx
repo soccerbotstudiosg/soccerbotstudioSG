@@ -64,6 +64,7 @@ export function SessionStep() {
             <span>{LOCATION.street}</span>
             <span>{LOCATION.unit}</span>
           </span>
+          <Icon name="chevron" className="selection-chevron" />
         </button>
       </div>
       <div id="outlet-sessions" ref={sessions} hidden={!outletSelected}>
@@ -227,6 +228,7 @@ function SessionPresentation({
               <strong>${prices.premium / 100}</strong>
             </span>
           </span>
+          <Icon name="chevron" className="selection-chevron" />
         </button>
       </div>
       {expanded && (
