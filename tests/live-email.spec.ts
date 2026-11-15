@@ -2689,7 +2689,7 @@ test("real API revoked access at checkout returns to fresh entry and denies prot
     const response = await checkoutHoldResponse(page, undefined, true);
     expect(response.status()).toBe(401);
     await expect(page).toHaveURL(sitePath("/book/account/"));
-    await expect(page.getByRole("alert")).toHaveText(
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
       "Your session expired. Continue as a guest or sign in to start again.",
     );
     await expect(

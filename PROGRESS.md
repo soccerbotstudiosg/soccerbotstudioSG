@@ -2,9 +2,9 @@
 
 ## Active outcome
 
-Repair the stale revoked-checkout browser expectations on PR79 (`fix/booking-card-clarity`), inspected head `00fc1d4f689d7166e798b179d474c9a9c9fe9b3e`. CI43685423716 passed frontend (including the prior typography repair), both backend browser shards and all Worker groups/runtime. Both live-email shards failed the same revoked-access case across desktop/phone/tablet: it still expected Home and retained editable contact, while the approved recovery returns to step1 and clears the editable draft. Update that case and its strict title inventory; retain no-booking/payment and protected-access assertions.
+Repair the revoked-checkout notice locator on PR79 (`fix/booking-card-clarity`), inspected head `f6ff47748fb5473d66602970ec52a59f8d6860e0`. CI43697352560 passed frontend, both backend browser shards and all Worker groups/runtime. Both live-email shards failed the same case on all devices because the newly added unscoped alert locator also matched Next.js's route announcer. Logs show the correct step1 route and exact expiry notice. Scope the alert to main, following every other alert assertion in this suite. Application behavior and all expected outcomes remain unchanged.
 
-Application behavior is unchanged in this repair. Expired access returns to step1 at navigation/protected-request boundaries; idle time/local edits remain unrestricted and retained financial attempts keep separate authority. Local source/import/inventory, lint, types, formatting and diff checks pass, along with all4 browser-shard guard tests; browser execution remains CI/owner-only. Push the consolidated test repair; merge remains pending owner staging acceptance and explicit authorization.
+Source/import/inventory, lint, types, formatting and diff checks pass. Publish this test-only correction. Browser validation remains CI/owner-only; merge remains pending staging acceptance and explicit authorization.
 
 ## Current scope
 
@@ -42,9 +42,9 @@ Shared Continue actions reserve32px above and24px below, including24px viewport-
 
 ## Verification and next action
 
-Original failures: CI43685423716, live-email jobs132725098284 and132725098287, case in tests/live-email.spec.ts formerly titled “real API revoked access at checkout retains the draft and denies protected access without provider creation”. Actual route `/book/account/` matches the approved session-expiry behavior. The repaired case asserts that route, exact expiry notice, usable Guest/Sign in choices and cleared editable contact/selection; it retains401, zero server attempts, zero provider booking/payment and no false confirmation/help assertions. The case count/device inventory is unchanged; only its title is reconciled.
+Original failures: CI43697352560, live-email jobs132761042220 and132761042250. The revoked-checkout case reached the approved route and notice, but `getByRole("alert")` matched both the notice and `__next-route-announcer__`. Use `getByRole("main").getByRole("alert")`, preserving exact text, strict uniqueness, usable Guest/Sign in, blank editable draft,401 and zero booking/payment effects. Adjacent alert assertions already use this scope; no title/count/device inventory changes are needed.
 
-Reuse prior application/Worker evidence because this repair changes tests/documentation only. Affected static/guard checks passed; push once and verify exact-head frontend/backend/live-email gates. Staging revision/health and owner acceptance remain pending. The earlier intermittent local contact-save timeout remains documented in Journey; frontend CI on00fc1d4 passed.
+Reuse unchanged application/Worker evidence. Static checks passed; push once, then verify exact-head CI and staging source/health before owner acceptance. Prior failures and the earlier intermittent local contact-save timeout remain in Journey; frontend CI on f6ff477 passed.
 
 ## Remaining owner acceptance
 
