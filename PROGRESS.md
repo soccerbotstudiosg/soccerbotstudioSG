@@ -84,3 +84,5 @@ Unsigned booking entry now uses two equal, fully clickable photographic cards, s
 Booking-entry hover uses a small2.5% card lift/expansion, opposing background drift,4% label enlargement with inward movement, and a gently extending accent line. Motion is limited to fine-pointer hover with no reduced-motion preference; transform-only movement avoids layout reflow. Disabled cards remain static.
 
 Your Trainers now follows the compact cart hierarchy:12px uppercase tracked header in a40px row,14px bold trainer names and14px biography text on21px lines. Compact avatars are28px; biography padding is12/16px and expandable rows remain at least44px high. Existing expansion behavior and selected/hover colours are unchanged.
+
+Calendar notices now follow the complete introduction (step heading, outlet/session context and duration/changeover line), before the calendar. This is a presentation-order change only; recovery and availability behavior are unchanged.

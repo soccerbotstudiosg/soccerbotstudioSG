@@ -455,6 +455,7 @@ export function TimeStep({
           </strong>
         </p>
       )}
+      <p className="lead">40-minute sessions · 10-minute changeover.</p>
       {recoveryNotice}
       {selectionNotice && (
         <div
@@ -496,7 +497,6 @@ export function TimeStep({
           )}
         </div>
       )}
-      <p className="lead">40-minute sessions · 10-minute changeover.</p>
       <section
         ref={calendarRef}
         className="calendar-panel"

@@ -6591,3 +6591,7 @@ Owner subsequently requested creative hover movement: the entry cards lift3px an
 ## 15 November 2026 — Match trainer panel to cart typography
 
 Your Trainers now follows the compact cart hierarchy:12px uppercase tracked header in a40px row,14px bold trainer names and14px biography text on21px lines. Compact avatars are28px; biography padding is12/16px and expandable rows remain at least44px high. Existing expansion behavior and selected/hover colours are unchanged. Existing browser typography assertions now require the compact sizes and retain the minimum tap target. Visual acceptance remains owner/CI-operated.
+
+## 15 November 2026 — Keep calendar introduction together
+
+Moved the duration/changeover line before recovery and selection notices, so availability/conflict messages appear beneath the full three-part introduction instead of splitting it. No notice copy, selection guard, provider or recovery behavior changed.
