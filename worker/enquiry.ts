@@ -150,7 +150,7 @@ export async function submitEnquiry(request: Request, env: Env) {
   }
   /** Complete one reserved transport slot without refunding uncertain work. */
   async function dispatch(
-    kind: "bot" | "enquiry",
+    kind: "bot" | "enquiry" | "enquiry-acknowledgement",
     id: string,
     payload: Record<string, string>,
   ) {
@@ -197,22 +197,6 @@ export async function submitEnquiry(request: Request, env: Env) {
         .first();
       if (!stored) throw unavailable();
     }
-    const mailDispatch = crypto.randomUUID();
-    const reserved = await db
-      .prepare(
-        "INSERT INTO identity_delivery_dispatches(id,kind,access_hash,source_hash,created_ms,state,ongoing) SELECT ?,'email',?,?,?,'reserved',1 WHERE EXISTS(SELECT 1 FROM enquiry_requests WHERE request_key=? AND claim_id=? AND state='pending' AND verified_ms IS NOT NULL AND next_ms>?)",
-      )
-      .bind(
-        mailDispatch,
-        subjectHash,
-        sourceHash,
-        Date.now(),
-        key,
-        claim,
-        Date.now(),
-      )
-      .run();
-    if (reserved.meta.changes !== 1) throw unavailable();
     const text = [
       "Website enquiry",
       "",
@@ -227,14 +211,50 @@ export async function submitEnquiry(request: Request, env: Env) {
       "",
       values.message,
     ].join("\n");
-    z.object({ id: z.string().uuid() }).parse(
-      await dispatch("enquiry", mailDispatch, {
-        sender: sender.data,
-        replyTo: values.email,
-        text,
-        idempotencyKey: `enquiry/${key}`,
-      }),
-    );
+    const messages: {
+      kind: "enquiry" | "enquiry-acknowledgement";
+      payload: Record<string, string>;
+    }[] = [
+      {
+        kind: "enquiry",
+        payload: {
+          sender: sender.data,
+          replyTo: values.email,
+          text,
+          idempotencyKey: `enquiry/${key}`,
+        },
+      },
+      {
+        kind: "enquiry-acknowledgement",
+        payload: {
+          sender: sender.data,
+          recipient: values.email,
+          idempotencyKey: `enquiry-acknowledgement/${key}`,
+        },
+      },
+    ];
+    // Each physical send consumes admission; retries keep both original provider keys.
+    for (const message of messages) {
+      const mailDispatch = crypto.randomUUID();
+      const reserved = await db
+        .prepare(
+          "INSERT INTO identity_delivery_dispatches(id,kind,access_hash,source_hash,created_ms,state,ongoing) SELECT ?,'email',?,?,?,'reserved',1 WHERE EXISTS(SELECT 1 FROM enquiry_requests WHERE request_key=? AND claim_id=? AND state='pending' AND verified_ms IS NOT NULL AND next_ms>?)",
+        )
+        .bind(
+          mailDispatch,
+          subjectHash,
+          sourceHash,
+          Date.now(),
+          key,
+          claim,
+          Date.now(),
+        )
+        .run();
+      if (reserved.meta.changes !== 1) throw unavailable();
+      z.object({ id: z.string().uuid() }).parse(
+        await dispatch(message.kind, mailDispatch, message.payload),
+      );
+    }
     const sent = await db
       .prepare(
         "UPDATE enquiry_requests SET state='sent',sent_ms=? WHERE request_key=? AND claim_id=? AND state='pending' RETURNING request_key",

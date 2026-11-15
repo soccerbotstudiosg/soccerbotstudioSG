@@ -188,6 +188,8 @@ Owner authorized restoration before the next trial. Cloudflare settings PATCH an
 
 Special-contact enquiry check (3 November2026): deployed86e3cd5 uses the local preview adapter for `services.enquiry.submit`; no email is sent and no recipient binding is configured. contact@soccerbotsg.com is the published contact address, not a verified delivery destination for this form. Identity-email configuration does not activate enquiry delivery. No live email was sent during this check.
 
+Enquiry acknowledgement update (15 November2026, prepared): the existing live Resend sender/key now also sends a fixed customer receipt after the staff enquiry is accepted. Reply-To is the studio contact. Both sends use distinct stable keys and the existing shared email budget; no additional sender/domain/secret setup is introduced. Synthetic Worker tests cover transport/admission/retry behavior; owner inbox acceptance remains pending.
+
 ### 5 November 2026 — resume owner A–D production sandbox trials
 
 Restored previously authorized sandbox configuration on production source `5f179a0b379577ab2239528b6ad44a35402cc8ee`. Independent Cloudflare GET confirms customer/client sandbox access, trusted provider reads, HitPay checkout/recovery/webhook, live readback and public display warming enabled; route hitpay, external payment sandbox-reviewed, processor manual. Identity delivery and public-token refresh-ahead remain disabled. Existing eight secret bindings and resource identities were inherited; minute cron remains unchanged. This is configuration evidence, not provider booking/payment or scheduled-warming acceptance. No assistant booking, payment or notification occurred. Staging booking capacity remains exhausted; this round uses the production sandbox.

@@ -3868,17 +3868,6 @@
   .phone-control > :is(input, button):focus-visible {
     outline: none;
   }
-  .enquiry-notice {
-    position: fixed;
-    top: 0;
-    inset-inline: 0;
-    z-index: 100;
-    padding: 8px 16px;
-    text-align: center;
-    font-size: var(--text-label);
-    color: var(--color-success);
-    background: var(--color-success-soft);
-  }
   .phone-country-menu {
     position: absolute;
     top: calc(100% + 6px);

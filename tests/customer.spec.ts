@@ -915,10 +915,12 @@ test("enquiry remains available without external submission or a mock assistant"
     .getByLabel("Your requirements")
     .fill("A group session for our team.");
   await page.getByRole("button", { name: "Send enquiry" }).click();
-  await expect(page).toHaveURL(new RegExp(`${sitePath("/")}$`));
-  await expect(page.getByRole("status")).toHaveText(
-    "Preview · No enquiry sent.",
-  );
+  await expect(page).toHaveURL(new RegExp(`${sitePath("/enquiry/")}$`));
+  const acknowledgement = page.getByRole("status");
+  await expect(acknowledgement).toHaveText("Preview · No enquiry sent.");
+  await expect(acknowledgement).toBeInViewport();
+  await expect(acknowledgement).toBeFocused();
+  await expect(page.locator(".enquiry-page h1 + [role=status]")).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: /studio assistant/i }),
   ).toHaveCount(0);

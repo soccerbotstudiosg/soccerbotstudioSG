@@ -1,11 +1,10 @@
 "use client";
-import { useEnquiryNotice } from "./enquiry-notice";
 import { PhoneInput } from "@/features/booking/phone-input";
 import { EnquiryBotProof } from "@/features/booking/email-bot-proof";
 import { enquiryErrors } from "@/domain/enquiry";
 import { EMAIL_MAX_LENGTH } from "@/domain/contact";
 import Link from "next/link";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/icon";
 import { ENQUIRY_TYPES } from "@/domain/catalog";
 import { todaySG } from "@/domain/dates";
@@ -35,7 +34,13 @@ const hydratedSnapshot = () => true;
 const serverSnapshot = () => false;
 /** Validate and submit customer enquiries through the configured service. */
 export function EnquiryPage() {
-  const notify = useEnquiryNotice();
+  const [acknowledged, setAcknowledged] = useState<boolean | null>(null);
+  const acknowledgement = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (acknowledged === null) return;
+    acknowledgement.current?.focus({ preventScroll: true });
+    acknowledgement.current?.scrollIntoView({ block: "start" });
+  }, [acknowledged]);
   const ready = useSyncExternalStore(
     subscribeToHydration,
     hydratedSnapshot,
@@ -66,6 +71,7 @@ export function EnquiryPage() {
       (!/^\+?[\d ()-]*$/.test(text) || text.replace(/\D/g, "").length > 15)
     )
       return;
+    setAcknowledged(null);
     setTouched((current) => ({ ...current, [key]: true }));
     setValue((current) => ({ ...current, [key]: text }));
   };
@@ -125,6 +131,18 @@ export function EnquiryPage() {
         Home
       </Link>
       <h1 className="page-title">Contact the studio</h1>
+      {acknowledged !== null && (
+        <div
+          className="notice mt-5"
+          role="status"
+          tabIndex={-1}
+          ref={acknowledgement}
+        >
+          {acknowledged
+            ? "Enquiry sent. We’ll reach out as soon as we can."
+            : "Preview · No enquiry sent."}
+        </div>
+      )}
       <form
         className="surface mt-8 space-y-7"
         aria-busy={!ready || busy}
@@ -150,7 +168,7 @@ export function EnquiryPage() {
             submission.current = null;
             setValue(blank);
             setTouched({});
-            notify(result.delivered);
+            setAcknowledged(result.delivered);
           } catch (e) {
             setError(
               customerMessage(

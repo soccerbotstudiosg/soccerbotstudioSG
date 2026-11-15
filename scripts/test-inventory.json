@@ -1685,6 +1685,6 @@
   },
   {
     "file": "src/features/enquiry/enquiry-page.test.tsx",
-    "title": "enquiry acknowledgement routes Home and expires after ten seconds without replay"
+    "title": "enquiry acknowledgement stays beneath the heading until editing or leaving"
   }
 ]
