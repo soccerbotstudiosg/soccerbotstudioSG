@@ -1078,6 +1078,8 @@ test("native guest journey preserves players contact and one checkout across ref
       .click();
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(page.locator("main")).not.toHaveAttribute("inert");
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    await expect(page.locator(".calendar-head")).toBeVisible();
     refreshCalendar = new Promise<void>((resolve) => {
       releaseRefreshCalendar = resolve;
     });
@@ -1141,8 +1143,8 @@ test("native guest journey preserves players contact and one checkout across ref
       .selectOption({ index: 1 });
     expect(
       calls.filter((c) => c.path.startsWith("/api/calendar/")),
-    ).toHaveLength(1);
-    expect(calls.filter((c) => c.path === "/api/catalogue")).toHaveLength(1);
+    ).toHaveLength(2);
+    expect(calls.filter((c) => c.path === "/api/catalogue")).toHaveLength(2);
     expect(
       calls.filter((c) => c.path.startsWith("/api/booking/availability/")),
     ).toHaveLength(0);
@@ -3293,13 +3295,20 @@ async function failedBatch(page: Page, unknown: boolean) {
         .prepare("SELECT COUNT(*) AS n FROM hitpay_holds")
         .first(),
     ).toEqual({ n: 0 });
-    await page.reload();
     await expect(
       page.getByText(
         "Checking whether your booking was created… Please do not close or refresh.",
         { exact: true },
       ),
     ).toBeVisible();
+    await page.reload();
+    await expect(
+      page
+        .locator("#page-refresh")
+        .getByRole("status", { name: "Refreshing…" }),
+    ).toBeVisible();
+    await expect(page.locator(".page-loading")).toHaveCount(1);
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     expect(creations).toBe(2);
     expect(
       await mechanism.db
