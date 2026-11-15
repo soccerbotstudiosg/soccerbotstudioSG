@@ -648,6 +648,9 @@ export function DetailsStep({
               type="submit"
               disabled={saving || checking || !contactValid}
             >
+              {(saving || checking) && (
+                <Icon name="spinner" className="spinner" />
+              )}
               {saving ? "Saving details…" : "Review Booking"}{" "}
               <BookingActionTotal />
               {!saving && !checking && <Icon name="chevron" />}

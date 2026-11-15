@@ -215,6 +215,9 @@ export function ReviewStep({
             }
           }}
         >
+          {(checkingProof || busy || verifying) && (
+            <Icon name="spinner" className="spinner" />
+          )}
           {verifying ? (
             "Checking reservation…"
           ) : busy ? (

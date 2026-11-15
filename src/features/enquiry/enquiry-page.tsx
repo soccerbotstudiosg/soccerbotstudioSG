@@ -279,6 +279,10 @@ export function EnquiryPage() {
             className="button wide"
             disabled={!ready || busy || (live && !botToken)}
           >
+            {(busy ||
+              (live && proofPending && !Object.keys(validation).length)) && (
+              <Icon name="spinner" className="spinner" />
+            )}
             {busy ? (
               <span className="button-loading">Sending enquiry…</span>
             ) : live && proofPending && !Object.keys(validation).length ? (

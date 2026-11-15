@@ -692,6 +692,9 @@ export function AccountStep({
               busy || waitingForProof || (view === "email" && resendSeconds > 0)
             }
           >
+            {(busy || showProofLoading) && (
+              <Icon name="spinner" className="spinner" />
+            )}
             {view === "email" && (busy || showProofLoading) ? (
               <span
                 className="button-loading"

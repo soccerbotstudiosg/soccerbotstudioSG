@@ -2,9 +2,7 @@
 
 ## Active outcome
 
-Local review on PR79 (`fix/booking-card-clarity`), based on `9f33910`: restore the pre-photo Guest/Sign in buttons in one row on desktop and phone. Remove the rejected entry photos/styles. Include submitted enquiry details in the customer auto-reply and accelerate the initial loading fill, slowing near completion. Owner authorized publication of this consolidated candidate. Commit and push to the existing PR79; final-head CI and staging acceptance remain pending.
-
-Affected component tests pass (10); isolated enquiry Worker tests pass (12), including full submission-copy assertions. Browser/device and inbox acceptance remain pending. No live messages were sent.
+Restore the small spinner alongside the existing loading bar in account verification, booking details, payment review and enquiry submission buttons, based on pushed head `0889a45`. Each spinner uses the same loading condition as its bar. Existing timing, readiness, disabled controls and accessible loading labels remain unchanged. Owner authorized staging and merge after review of CI failures. Publish this consolidated follow-up and verify exact-head gates and staging before merging.
 
 ## Current scope
 
@@ -42,7 +40,7 @@ Shared Continue actions reserve32px above and24px below, including24px viewport-
 
 ## Verification and next action
 
-Publish the approved one-row entry layout with the enquiry-copy and loading changes. Existing browser typography assertions now cover the restored navy buttons, equal row geometry and absence of photos; CI/owner must execute them. Original CI failures and their repairs remain in Journey. Reuse the passing local checks; inspect the new exact-head CI after push. No staging deployment is claimed.
+All13 affected component tests, affected ESLint, application types, source/import/inventory and diff checks pass. Publish the small loader restoration and follow its exact-head CI. The previous one-row entry, enquiry-copy and faster-fill candidate was pushed as `0889a45`; its CI is separate from this local change. Browser/device acceptance remains owner/CI-operated. No test cases or inventories change for this additive visual indicator.
 
 ## Remaining owner acceptance
 
