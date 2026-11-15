@@ -196,8 +196,11 @@ async function payAttempt(page: Page, outcome = "success") {
       sessionStorage.setItem(key, JSON.stringify(stored));
     }, outcome);
     await page.reload();
+    // Playwright's installed clock clears navigation timing entries, so this
+    // fixture retains the operation label. Real reload labels are covered by
+    // the live-email tests without a mocked Performance API.
     await expect(
-      page.getByRole("status", { name: "Refreshing…" }),
+      page.getByRole("status", { name: "Processing payment", exact: true }),
     ).toBeVisible();
     await expect(page.locator(".page-loading")).toHaveCount(1);
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
