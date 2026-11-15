@@ -2871,6 +2871,7 @@
     margin: 20px 0 28px;
   }
   .outlet-option {
+    line-height: var(--leading-control);
     position: relative;
     padding: 16px 42px 16px 18px;
     display: flex;
@@ -2900,6 +2901,7 @@
     gap: 20px;
   }
   .session-product {
+    line-height: var(--leading-control);
     position: relative;
     padding: 16px 42px 16px 18px;
     display: grid;
@@ -2945,7 +2947,7 @@
   }
   .session-product-details {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.2fr);
     align-items: center;
     gap: 8px;
     min-width: 0;
