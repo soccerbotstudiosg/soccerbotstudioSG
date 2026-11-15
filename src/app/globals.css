@@ -4745,6 +4745,13 @@
     .access-options {
       gap: 14px;
     }
+    .access-options.access-choices {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+    .access-choice-divider {
+      text-align: center;
+    }
     .booking-shell .access-choices .button.booking-entry-action {
       padding: 0 6px;
       gap: 4px;

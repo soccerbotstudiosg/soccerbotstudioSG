@@ -6703,3 +6703,7 @@ Integration tests that asserted immediate overlay removal now await the intentio
 Local evidence: all 389 unit/component tests pass; a zero-minimum mutation fails three timing regressions, then the intended source was restored. Production build and the 15-route export guard pass. The profile-save focus test now waits for the initial blocking overlay to finish before submitting, matching actual user interaction. No browser was launched and no commit, push, CI restart or deployment was performed for this follow-up.
 
 The owner subsequently authorized the consolidated PR81 summary, staging and merge on 15 November 2026. Reuse the completed local evidence, push one final candidate, then require its complete CI and exact-revision staging health before merge. This authorization does not include new resources, provider actions or configuration changes.
+
+### 15 November 2026 — Phone entry choices stack
+
+During authorized staging preparation the owner requested Guest, underlined OR and Sign in stacked on phones while retaining the desktop row. Updated the existing700px responsive owner with16px gaps and centred OR; preserved standard button heights, colours, handlers and absent decorative lines. Existing browser geometry assertions now distinguish the two layouts; no test cases were removed or added. Candidate79048a0 is superseded before staging/merge.

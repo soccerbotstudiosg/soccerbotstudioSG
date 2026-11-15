@@ -2117,7 +2117,18 @@ test("header blue and the typography hierarchy stay consistent across every book
   }
   const guestBox = await guest.boundingBox();
   const signInBox = await signIn.boundingBox();
-  expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
+  const divider = page.locator(".access-choice-divider");
+  const dividerBox = await divider.boundingBox();
+  if (page.viewportSize()!.width <= 700) {
+    expect(guestBox!.x).toBeCloseTo(signInBox!.x, 0);
+    expect(guestBox!.y + guestBox!.height).toBeLessThan(dividerBox!.y);
+    expect(dividerBox!.y + dividerBox!.height).toBeLessThan(signInBox!.y);
+    await expect(divider).toHaveCSS("text-align", "center");
+  } else {
+    expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
+    expect(guestBox!.x + guestBox!.width).toBeLessThan(dividerBox!.x);
+    expect(dividerBox!.x + dividerBox!.width).toBeLessThan(signInBox!.x);
+  }
   expect(guestBox!.width).toBeCloseTo(signInBox!.width, 0);
   const actionHeight = page.viewportSize()!.width <= 700 ? 48 : 60.4;
   for (const button of [guest, signIn]) {
@@ -2127,8 +2138,6 @@ test("header blue and the typography hierarchy stay consistent across every book
       ),
     ).toBeCloseTo(actionHeight, 0);
   }
-  expect(guestBox!.x + guestBox!.width).toBeLessThan(signInBox!.x);
-  const divider = page.locator(".access-choice-divider");
   await expect(divider).toHaveCSS("font-family", /Roboto/);
   await expect(divider).toHaveCSS("font-size", "20px");
   await expect(divider).toHaveCSS("text-transform", "uppercase");
@@ -3204,9 +3213,7 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     );
     if (width <= 700) expect(geometry.fontSize).toBe("32px");
   }
-  await page
-    .getByRole("button", { name: "Guest", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Guest", exact: true }).click();
   const sessionTitle = page.getByRole("heading", {
     name: "Your session",
     exact: true,
