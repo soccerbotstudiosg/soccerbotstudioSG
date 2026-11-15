@@ -49,7 +49,7 @@ const syntheticTurnstileScript = `
       );
       const expire = () => options['expired-callback']();
       widgets.set(id, { container, complete, expire });
-      if (options.action === 'create-checkout') {
+      if (options.action === 'create-checkout' || options.action === 'send-enquiry') {
         container.addEventListener('synthetic-complete', complete);
         container.addEventListener('synthetic-expire', expire);
         queueMicrotask(() => { if (widgets.has(id)) complete(); });
@@ -89,6 +89,7 @@ async function fixture(
   let identityClockOffset = 0;
   let requestedCodes = 0;
   let codeBlockUntil = 0;
+  let pendingCode: Promise<void> | null = null;
   let pendingProfile: Promise<void> | null = null;
   let pendingIdentity: Promise<void> | null = null;
   let pendingSignOut: Promise<void> | null = null;
@@ -208,6 +209,7 @@ async function fixture(
       url.pathname === "/api/identity/challenges" &&
       method === "POST"
     ) {
+      if (pendingCode) await pendingCode;
       if (
         codeRequestLimit &&
         requestedCodes >= 3 &&
@@ -296,6 +298,13 @@ async function fixture(
     unexpected,
     closePopup,
     verifiedCodeRequest: () => verifiedCodeRequest,
+    deferNextCodeRequest() {
+      let release!: () => void;
+      pendingCode = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return release;
+    },
     deferNextSignOut() {
       let release!: () => void;
       pendingSignOut = new Promise<void>((resolve) => {
@@ -416,9 +425,32 @@ test("synthetic live verification reads server identity and keeps native booking
       exact: true,
     })
     .click();
+  const releaseCode = evidence.deferNextCodeRequest();
   await page
     .getByRole("button", { name: "Get Verification Code", exact: true })
     .click();
+  const progress = page.locator(".booking-action-progress");
+  await expect(progress).toBeVisible();
+  await expect(page.locator(".booking-action-track")).toHaveCSS(
+    "overflow",
+    "hidden",
+  );
+  await expect(page.locator(".booking-primary-action .spinner")).toBeVisible();
+  const geometry = await progress.evaluate((bar) => {
+    const button = bar
+      .closest(".booking-primary-action")!
+      .querySelector(".button")!;
+    return {
+      bottom: bar.getBoundingClientRect().bottom,
+      buttonBottom: button.getBoundingClientRect().bottom,
+      margin: getComputedStyle(bar).marginBottom,
+    };
+  });
+  expect(Math.abs(geometry.bottom - geometry.buttonBottom)).toBeLessThanOrEqual(
+    1,
+  );
+  expect(geometry.margin).toBe("0px");
+  releaseCode();
   await expect(
     page.getByRole("heading", { name: "Verify your email", exact: true }),
   ).toBeVisible();
@@ -1580,13 +1612,13 @@ test("real payment recovery confirms the browser return from verified provider s
         body.status === "confirmed"
       );
     });
+    await page.addInitScript(() =>
+      localStorage.setItem("soccerbot-player-app-prompt", "true"),
+    );
     await page.goto(`/confirmation/?attempt=${attemptId}`);
-    await page
-      .getByRole("dialog", {
-        name: "Get the Soccerbot360 Player App",
-      })
-      .getByRole("button", { name: "Close dialog", exact: true })
-      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Get the Soccerbot360 Player App" }),
+    ).toHaveCount(0);
     await accounting;
     await expect(page.getByText("Refreshing…", { exact: true })).toHaveCount(0);
     await expect(
@@ -3358,13 +3390,13 @@ test("real API exhausted browser checking window retains the original deadline a
         JSON.stringify({ deadline: Date.now() - 1, next: 0, count: 120 }),
       );
     }, attemptId);
+    await page.addInitScript(() =>
+      localStorage.setItem("soccerbot-player-app-prompt", "true"),
+    );
     await page.goto(`/confirmation/?attempt=${attemptId}`);
-    await page
-      .getByRole("dialog", {
-        name: "Get the Soccerbot360 Player App",
-      })
-      .getByRole("button", { name: "Close dialog", exact: true })
-      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Get the Soccerbot360 Player App" }),
+    ).toHaveCount(0);
     await expect(
       page.getByText(
         "Checking whether your booking was created… Please do not close or refresh.",
@@ -3686,13 +3718,13 @@ test("real API unpaid return shows the pending confirmation layout without claim
         new URL(response.url()).pathname ===
         `/api/attempts/${attemptId}/checkout`,
     );
+    await page.addInitScript(() =>
+      localStorage.setItem("soccerbot-player-app-prompt", "true"),
+    );
     await page.goto(`/confirmation/?attempt=${attemptId}`);
-    await page
-      .getByRole("dialog", {
-        name: "Get the Soccerbot360 Player App",
-      })
-      .getByRole("button", { name: "Close dialog", exact: true })
-      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Get the Soccerbot360 Player App" }),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("status", { name: "Checking booking…", exact: true }),
     ).toBeVisible();
@@ -4290,4 +4322,31 @@ test("complete multi-session then two single-booking browser journeys reset sele
 }) => {
   test.setTimeout(90000);
   await consecutivePaidJourneys(page, [2, 1, 1]);
+});
+
+test("hidden enquiry proof preserves the shared action gap", async ({
+  page,
+}) => {
+  await fixture(page, false, false, undefined, false, "/enquiry/");
+  const proof = page.locator(".enquiry-form .auth-bot-proof-background");
+  await expect(proof).toHaveCount(1);
+  await expect(proof).toHaveCSS("margin-top", "0px");
+  await expect(proof).toHaveCSS("margin-bottom", "0px");
+  await page
+    .locator(".enquiry-form .booking-action-anchor")
+    .scrollIntoViewIfNeeded();
+  await expect(
+    page.locator(".enquiry-form .booking-primary-action"),
+  ).toHaveAttribute("data-floating", "false");
+  const gap = await page.locator(".enquiry-form").evaluate((form) => {
+    const field = form
+      .querySelector("#enquiry-message")!
+      .getBoundingClientRect();
+    const button = form
+      .querySelector(".booking-primary-action .button")!
+      .getBoundingClientRect();
+    return button.top - field.bottom;
+  });
+  expect(gap).toBeGreaterThanOrEqual(32);
+  expect(gap).toBeLessThanOrEqual(38);
 });

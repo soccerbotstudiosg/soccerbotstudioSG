@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ADDRESS, BOOKING_SUPPORT, CONTACT, LOCATION } from "@/domain/catalog";
 import { siteBasePath, sitePath } from "@/content/site-path";
 import { darkLogo, logo, singaporeFlag } from "@/content/media";
+import { BookingLoading } from "@/features/booking/booking-loading";
 import { useBooking } from "@/features/booking/provider";
 import { Dialog } from "./dialog";
 import { BookingLink } from "./booking-navigation";
@@ -145,7 +146,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <main id="main" tabIndex={-1}>
-        {leavingFrom === pathname ? null : children}
+        {leavingFrom === pathname ? (
+          <BookingLoading label="Opening page" />
+        ) : (
+          children
+        )}
       </main>
       <footer className="site-footer">
         <div className="footer-contact-band">

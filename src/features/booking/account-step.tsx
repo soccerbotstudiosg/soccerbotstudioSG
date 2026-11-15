@@ -376,8 +376,8 @@ export function AccountStep({
         />
         <p className="lead">
           {verifiedIdentity
-            ? "Continue signed in to start your booking."
-            : "Continue as a guest or sign in to start your booking."}
+            ? "Continue with your signed-in email."
+            : "Continue as a guest or sign in."}
         </p>
         {profileAccessRevision > 0 && !draft.mode && !verifiedIdentity && (
           <p className="alert" role="alert">
@@ -510,14 +510,9 @@ export function AccountStep({
         lines={view === "email" ? ["Sign", "in"] : ["Verify your", "email"]}
       />
       <p className="lead">
-        {view === "email" ? (
-          "Verify your email to continue with your saved booking contact details."
-        ) : (
-          <>
-            Enter the six-digit code for{" "}
-            <strong className="auth-email-address">{challenge?.email}</strong>
-          </>
-        )}
+        {view === "email"
+          ? "Sign in with your email."
+          : "Enter the six-digit email code."}
       </p>
       {signOutNotice}
       {busy && (
@@ -602,6 +597,10 @@ export function AccountStep({
           </>
         ) : (
           <>
+            <p className="text-sm text-muted mb-4">
+              Code sent to{" "}
+              <strong className="auth-email-address">{challenge?.email}</strong>
+            </p>
             <label htmlFor="auth-code" className="field-label">
               Verification code
             </label>

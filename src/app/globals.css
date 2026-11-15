@@ -628,7 +628,9 @@
     min-width: 0;
     margin-bottom: 0;
   }
-  .enquiry-form > :not(.booking-action-anchor) + :not(.booking-action-anchor) {
+  .enquiry-form
+    > :not(.booking-action-anchor)
+    + :not(.booking-action-anchor):not(.auth-bot-proof-background) {
     margin-top: 28px;
   }
   .booking-identity-status {
@@ -2781,6 +2783,9 @@
     color: var(--color-muted);
     margin-bottom: 29px;
   }
+  .booking-shell .lead {
+    white-space: nowrap;
+  }
   .calendar-selection-context {
     margin-bottom: 8px;
     font-size: var(--text-body);
@@ -2855,7 +2860,7 @@
     min-height: 65px;
   }
   .checkout-bot-proof:not(.auth-bot-proof-background) {
-    margin-block: 24px;
+    margin-top: 24px;
   }
   .checkout-bot-proof:not(.auth-bot-proof-background) + .actions {
     margin-top: 0;
@@ -4463,6 +4468,16 @@
   .booking-primary-action > .button {
     position: relative;
   }
+  .booking-primary-action {
+    border-radius: var(--radius-booking-control);
+  }
+  .booking-action-track {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
   .booking-action-progress {
     position: absolute;
     inset: auto 0 0;
@@ -5149,7 +5164,46 @@
     translate: 0 0;
   }
 }
+@keyframes home-arrival {
+  from {
+    opacity: 0.65;
+    transform: scale(1.035);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes home-light-sweep {
+  from {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
 @media screen and (prefers-reduced-motion: no-preference) {
+  [data-home-arrival="true"] .arena-photograph img {
+    animation: home-arrival 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  [data-home-arrival="true"] .arena-booking::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      110deg,
+      transparent 30%,
+      #79c4db24 50%,
+      transparent 70%
+    );
+    animation: home-light-sweep 900ms ease-out both;
+  }
   .studio-scroll-cue svg,
   .calendar-return-cue svg {
     animation: studio-scroll-cue 1.6s ease-in-out infinite;

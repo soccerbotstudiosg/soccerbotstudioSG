@@ -57,6 +57,14 @@
   },
   {
     "file": "src/components/page-refresh.test.tsx",
+    "title": "homepage revisits retain one neutral cover through image decoding without replaying first arrival"
+  },
+  {
+    "file": "src/components/page-refresh.test.tsx",
+    "title": "initial player app prompt waits until page loading finishes"
+  },
+  {
+    "file": "src/components/page-refresh.test.tsx",
     "title": "normal and browser return navigation never say refreshing and preserve payment loader messages"
   },
   {
@@ -1644,6 +1652,10 @@
     "title": "public routes remove staff access and fit the viewport"
   },
   {
+    "file": "tests/customer.spec.ts",
+    "title": "returning home uses one ready cover without replaying the first entrance"
+  },
+  {
     "file": "tests/live-email.spec.ts",
     "title": "complete multi-session then two single-booking browser journeys reset selections and preserve old receipts"
   },
@@ -1654,6 +1666,10 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "email account actions return through booking options and sign in again with either remember choice"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "hidden enquiry proof preserves the shared action gap"
   },
   {
     "file": "tests/live-email.spec.ts",

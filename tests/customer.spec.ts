@@ -1650,6 +1650,9 @@ test("leave booking uses equal-width sentence-case actions with home left and st
     .getByRole("button", { name: "Leave booking", exact: true })
     .click();
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
+  await expect(page.locator(".page-loading")).toHaveCount(1);
+  await expect(page.locator("#page-refresh")).toHaveCount(0);
+  await expect(page.locator(".arena-booking")).toBeVisible();
   const saved = await page.evaluate(() =>
     JSON.parse(sessionStorage.getItem("soccerbot-next-demo-v2")!),
   );
@@ -1734,6 +1737,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   ).toHaveAttribute("href", sitePath("/favicon.svg"));
   const phonePrompt = (page.viewportSize()?.width ?? 1280) <= 700;
   await expect(prompt).toBeVisible();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(prompt.locator("p")).toHaveCount(0);
   await expect(prompt.getByRole("link")).toHaveCount(3);
   const storeDestinations = [
@@ -1882,13 +1886,11 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(heading).toHaveCSS("color", color);
     await expect(heading).toHaveCSS("font-weight", "900");
     const instructions: Record<string, string> = {
-      "Start your booking":
-        "Continue as a guest or sign in to start your booking.",
-      "Your session": "Confirm your outlet, session and number of players.",
-      "Select dates and times": "40-minute sessions · 10-minute changeover.",
-      "Your details": "Enter the contact details for this booking.",
-      "Review Booking":
-        "Review your booking details before proceeding to payment.",
+      "Start your booking": "Continue as a guest or sign in.",
+      "Your session": "Confirm your session and players.",
+      "Select dates and times": "40-min session · 10-min changeover.",
+      "Your details": "Enter your contact details.",
+      "Review Booking": "Review your booking before payment.",
     };
     if (instructions[name]) {
       const instruction = page.locator(".lead");
@@ -1896,6 +1898,14 @@ test("header blue and the typography hierarchy stay consistent across every book
       await expect(instruction).toHaveCSS("font-size", "16px");
       await expect(instruction).toHaveCSS("color", "rgb(88, 97, 116)");
       await expect(instruction).toHaveCSS("font-family", /Roboto/);
+      const line = await instruction.evaluate((node) => ({
+        height: node.getBoundingClientRect().height,
+        lineHeight: parseFloat(getComputedStyle(node).lineHeight),
+        width: node.clientWidth,
+        textWidth: node.scrollWidth,
+      }));
+      expect(line.height).toBeCloseTo(line.lineHeight, 0);
+      expect(line.textWidth).toBeLessThanOrEqual(line.width);
     }
 
     if (name === "Select dates and times") {
@@ -3259,4 +3269,36 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
   await page.getByRole("link", { name: "Back", exact: true }).click();
   await expect(title).toBeVisible();
   await expect(page.getByLabel("Booking identity")).toHaveCount(0);
+});
+
+test("returning home uses one ready cover without replaying the first entrance", async ({
+  page,
+}) => {
+  await openSite(page, "/");
+  await expect(page.locator("#page-refresh-content")).toHaveAttribute(
+    "data-home-arrival",
+    "true",
+  );
+  for (const destination of ["/enquiry/", "/privacy-policy/"]) {
+    await page.locator(`a[href="${sitePath(destination)}"]`).click();
+    await expect(page).toHaveURL(new RegExp(sitePath(destination) + "$"));
+    await page
+      .getByRole("link", { name: "SOCCERBOTSTUDIO Singapore home" })
+      .click();
+    await expect(page.locator("#page-refresh")).toBeVisible();
+    await expect(page.locator(".page-loading")).toHaveCount(1);
+    await expect(page.getByText("Refreshing…", { exact: true })).toHaveCount(0);
+    await expect(page.locator("#page-refresh")).toHaveCount(0);
+    await expect(page.locator(".arena-booking")).toBeVisible();
+    await expect(page.locator("#page-refresh-content")).not.toHaveAttribute(
+      "data-home-arrival",
+    );
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  }
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(sitePath("/privacy-policy/") + "$"));
+  await page.goForward();
+  await expect(page.locator("#page-refresh")).toBeVisible();
+  await expect(page.locator("#page-refresh")).toHaveCount(0);
+  await expect(page.locator(".arena-booking")).toBeVisible();
 });
