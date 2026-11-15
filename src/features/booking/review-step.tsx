@@ -120,9 +120,7 @@ export function ReviewStep({
   return (
     <>
       <BookingHeading lines={["Review", "Booking"]} />
-      <p className="lead">
-        Review your booking details before proceeding to payment.
-      </p>
+      <p className="lead">Review your booking before payment.</p>
       <section className="surface booking-document">
         <ReviewSessions part="heading" verifying={verifying} />
         <div className="review-block">

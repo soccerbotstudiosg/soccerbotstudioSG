@@ -156,11 +156,9 @@ export function BookingPrimaryAction({
       >
         {children}
         {progressVisible && (
-          <span
-            className="booking-action-progress"
-            ref={progress}
-            aria-hidden="true"
-          />
+          <div className="booking-action-track" aria-hidden="true">
+            <span className="booking-action-progress" ref={progress} />
+          </div>
         )}
       </div>
     </div>

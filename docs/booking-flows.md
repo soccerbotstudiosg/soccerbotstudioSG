@@ -677,7 +677,7 @@ Session date/time/trainer lines share equal2px vertical gaps across cart and doc
 
 Month/week day hover uses the shared pale teal fill and border. Time-slot containers use teal while choosing/selected; their outer focus ring follows keyboard focus-visible rather than lingering after mouse deselection.
 
-Each booking step has one introduction in the existing muted16px lead style. Entry asks guests to continue or sign in (verified users to continue signed in); Session asks users to confirm outlet/session/players; Details asks for booking contact details; Review asks users to review before payment. Existing sign-in/code instructions and Calendar’s “40-minute sessions · 10-minute changeover.” remain unchanged. Saved-contact editing has its matching short instruction. Compact desktop Session spacing retains initial Continue visibility.
+Each booking step has one non-wrapping introduction in the existing muted16px lead style. Concise copy asks customers to continue as a guest or sign in, confirm their session and players, enter contact details, and review before payment. Calendar uses “40-min session · 10-min changeover.” Email entry and verification helpers are short; the verification recipient appears in its form. Saved-contact editing has the same single-line treatment. Compact desktop Session spacing retains initial Continue visibility.
 
 Calendar continuation appears once outside the cart. Cart and Details summaries share top spacing and retain totals. The main next action stays visible on desktop and phone as its original document position scrolls outside view; existing selection/validation rules still decide whether it is enabled.
 
@@ -710,3 +710,7 @@ Review Booking performs local validation and navigation without a button spinner
 Full-page branded loaders remain visible for at least one second per continuous loading episode. Document entry/refresh, logo navigation and shared booking overlays use the same minimum. Slow checks add no extra second after completion, and changing the operation message does not restart the minimum. Actual refresh checks still finish inside one cover. Cancellation/unmount releases timers; button and compact inline loader timing is unchanged.
 
 Normal document entry also uses one initial cover through its checks, displaying existing operation feedback (including payment messages) instead of a simultaneous operation portal. Refresh remains the only path labelled “Refreshing…”.
+
+Homepage returns through site links or browser history reuse one neutral Loading cover with the one-second minimum and wait for the hero image to decode. Guarded booking departure covers the interval before route commit instead of exposing an empty main. Only the first normal homepage document entrance gets the image settle/light sweep; reduced motion and later returns do not replay it. The Player App popup mounts only after the cover finishes, never over initial loading.
+
+Booking-step helpers stay on one line with concise16px muted copy. The verification recipient remains visible in the code form rather than extending its helper. Hidden security proof contributes no vertical margin; a visible challenge is separated from the action by the shared32px top spacing. The6px progress fill stays clipped to the button corners, including phone layouts, without inheriting generic action-span margins.

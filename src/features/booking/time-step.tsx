@@ -455,7 +455,7 @@ export function TimeStep({
           </strong>
         </p>
       )}
-      <p className="lead">40-minute sessions · 10-minute changeover.</p>
+      <p className="lead">40-min session · 10-min changeover.</p>
       {recoveryNotice}
       {selectionNotice && (
         <div

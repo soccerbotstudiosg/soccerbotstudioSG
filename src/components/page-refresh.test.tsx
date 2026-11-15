@@ -5,9 +5,12 @@ import {
   BookingLoading,
   BookingLoadingProvider,
 } from "@/features/booking/booking-loading";
+import { PlayerAppPrompt } from "./player-app-prompt";
 import { PageRefreshBoundary } from "./page-refresh";
 
 const booking = vi.hoisted(() => ({ ready: false }));
+const route = vi.hoisted(() => ({ pathname: "/confirmation/" }));
+vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
 vi.mock("@/features/booking/provider", () => ({ useBooking: () => booking }));
 let navigation = "reload";
 const originalNavigation = Object.getOwnPropertyDescriptor(
@@ -20,6 +23,9 @@ const originalFonts = Object.getOwnPropertyDescriptor(document, "fonts");
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
   booking.ready = false;
+  route.pathname = "/confirmation/";
+  localStorage.clear();
+  sessionStorage.clear();
   navigation = "reload";
   Object.defineProperty(performance, "getEntriesByType", {
     configurable: true,
@@ -240,4 +246,76 @@ test("normal and browser return navigation never say refreshing and preserve pay
     expect(document.querySelector(".booking-flow-overlay")).toBeNull();
     view.unmount();
   }
+});
+
+test("homepage revisits retain one neutral cover through image decoding without replaying first arrival", async () => {
+  navigation = "navigate";
+  route.pathname = "/";
+  booking.ready = true;
+  let decode: () => void;
+  const image = (
+    <div className="arena-photograph">
+      <img alt="Hero" />
+    </div>
+  );
+  const view = render(<PageRefreshBoundary>{image}</PageRefreshBoundary>);
+  await act(async () => finishFonts());
+  await act(async () => vi.advanceTimersByTime(1000));
+  act(() => frame!(0));
+  expect(document.getElementById("page-refresh-content")).toHaveAttribute(
+    "data-home-arrival",
+    "true",
+  );
+  for (const from of ["/studio/", "/enquiry/", "/book/account/"]) {
+    route.pathname = from;
+    view.rerender(<PageRefreshBoundary>{content}</PageRefreshBoundary>);
+    expect(document.getElementById("page-refresh")).toBeNull();
+    frame = undefined;
+    route.pathname = "/";
+    view.rerender(<PageRefreshBoundary>{image}</PageRefreshBoundary>);
+    const hero = screen.getByAltText("Hero");
+    Object.defineProperty(hero, "decode", {
+      configurable: true,
+      value: () =>
+        new Promise<void>((resolve) => {
+          decode = resolve;
+        }),
+    });
+    expect(
+      screen.getByRole("status", { name: "Loading page" }),
+    ).toHaveTextContent("Loading...");
+    expect(hero).not.toBeVisible();
+    expect(document.getElementById("page-refresh-content")).not.toHaveAttribute(
+      "data-home-arrival",
+    );
+    await act(async () => vi.advanceTimersByTime(999));
+    expect(frame).toBeUndefined();
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(frame).toBeUndefined();
+    await act(async () => decode!());
+    act(() => frame!(0));
+    expect(hero).toBeVisible();
+    expect(screen.queryByRole("status")).toBeNull();
+  }
+});
+
+test("initial player app prompt waits until page loading finishes", async () => {
+  navigation = "navigate";
+  route.pathname = "/";
+  booking.ready = true;
+  render(
+    <PageRefreshBoundary>
+      {content}
+      <PlayerAppPrompt />
+    </PageRefreshBoundary>,
+  );
+  expect(document.querySelector("dialog")).toBeNull();
+  await act(async () => finishFonts());
+  await act(async () => vi.advanceTimersByTime(1000));
+  expect(document.querySelector("dialog")).toBeNull();
+  act(() => frame!(0));
+  expect(
+    screen.getByRole("dialog", { name: "Get the Soccerbot360 Player App" }),
+  ).toBeVisible();
+  expect(document.querySelector(".page-loading")).toBeNull();
 });

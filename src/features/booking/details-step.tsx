@@ -505,8 +505,8 @@ export function DetailsStep({
       )}
       <p className="lead">
         {profileOnly
-          ? "Update your saved contact details."
-          : "Enter the contact details for this booking."}
+          ? "Update your saved contact."
+          : "Enter your contact details."}
       </p>
       <form
         id="details-form"
