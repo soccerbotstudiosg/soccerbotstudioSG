@@ -232,7 +232,7 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
       await page.goto(sitePath(path), { waitUntil: "commit" });
       const cover = page.locator("#page-refresh");
       await expect(
-        cover.getByRole("status", { name: "Refreshing…" }),
+        cover.getByRole("status", { name: "Loading page" }),
       ).toBeVisible();
       await expect(page.locator("#page-refresh-content")).toHaveAttribute(
         "inert",
@@ -242,7 +242,7 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
       await expect(page.locator(".site-footer")).not.toBeVisible();
       await page.emulateMedia({ reducedMotion: "reduce" });
       await expect(
-        cover.getByRole("status", { name: "Refreshing…" }),
+        cover.getByRole("status", { name: "Loading page" }),
       ).toBeVisible();
       await page.emulateMedia({ reducedMotion: "no-preference" });
       const bounds = await cover.boundingBox();

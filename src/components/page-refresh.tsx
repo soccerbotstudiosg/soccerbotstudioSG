@@ -1,14 +1,42 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { useBooking } from "@/features/booking/provider";
+import { useBookingLoadingState } from "@/features/booking/booking-loading";
 import { BrandLoading } from "./brand-loading";
+
+const subscribeToNavigation = () => () => {};
+const isReload = () =>
+  (
+    performance.getEntriesByType("navigation")[0] as
+      PerformanceNavigationTiming | undefined
+  )?.type === "reload";
+const serverNavigation = () => false;
 
 /** Cover initial rendering until hydration, restored state and fonts are ready. */
 export function PageRefreshBoundary({ children }: { children: ReactNode }) {
   const { ready } = useBooking();
   const [complete, setComplete] = useState(false);
+  const reloading = useSyncExternalStore(
+    subscribeToNavigation,
+    isReload,
+    serverNavigation,
+  );
+  const loading = useBookingLoadingState();
+  const setDocumentLoading = loading?.setDocumentLoading;
+  const pending = !!loading?.label;
+  useLayoutEffect(() => {
+    if (complete || !reloading) return;
+    setDocumentLoading?.(true);
+    return () => setDocumentLoading?.(false);
+  }, [complete, reloading, setDocumentLoading]);
   useEffect(() => {
-    if (complete || !ready) return;
+    if (complete || !ready || (reloading && pending)) return;
     let active = true;
     let frame = 0;
     const reveal = () => {
@@ -22,7 +50,7 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
       active = false;
       cancelAnimationFrame(frame);
     };
-  }, [complete, ready]);
+  }, [complete, ready, reloading, pending]);
   return (
     <>
       <div
@@ -46,7 +74,10 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
             background: "#fff",
           }}
         >
-          <BrandLoading label="Refreshing…" message="Refreshing…" />
+          <BrandLoading
+            label={reloading ? "Refreshing…" : "Loading page"}
+            message={reloading ? "Refreshing…" : undefined}
+          />
         </div>
       )}
     </>

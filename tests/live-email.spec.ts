@@ -90,6 +90,7 @@ async function fixture(
   let requestedCodes = 0;
   let codeBlockUntil = 0;
   let pendingProfile: Promise<void> | null = null;
+  let pendingIdentity: Promise<void> | null = null;
   let pendingSignOut: Promise<void> | null = null;
   let verifiedCodeRequest = 0;
   const issuedCodes: {
@@ -146,6 +147,9 @@ async function fixture(
       result = { status: "valid" };
     } else if (url.pathname === "/api/identity" && method === "GET") {
       await identityReady;
+      const identityGate = pendingIdentity;
+      pendingIdentity = null;
+      await identityGate;
       status = 200;
       result = verified
         ? {
@@ -295,6 +299,13 @@ async function fixture(
     deferNextSignOut() {
       let release!: () => void;
       pendingSignOut = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return release;
+    },
+    deferNextIdentityRead() {
+      let release!: () => void;
+      pendingIdentity = new Promise<void>((resolve) => {
         release = resolve;
       });
       return release;
@@ -571,6 +582,29 @@ test("remembered live account edits and rereads contact while native booking sta
       (call) => call.path === "/api/identity" && call.method === "GET",
     ),
   ).toHaveLength(1);
+  const releaseRefreshIdentity = evidence.deferNextIdentityRead();
+  const refreshingIdentity = page.waitForRequest(
+    (request) =>
+      new URL(request.url()).pathname === "/api/identity" &&
+      request.method() === "GET",
+  );
+  try {
+    await page.reload();
+    await refreshingIdentity;
+    await expect(
+      page
+        .locator("#page-refresh")
+        .getByRole("status", { name: "Refreshing…" }),
+    ).toBeVisible();
+    await expect(page.locator(".page-loading")).toHaveCount(1);
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
+  } finally {
+    releaseRefreshIdentity();
+  }
+  await expect(
+    page.getByRole("button", { name: "Continue signed in", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
   const signedInEmail = page.locator(".signed-in-email").filter({
     hasText: "synthetic@example.test",
   });
@@ -936,7 +970,12 @@ test("native guest journey preserves players contact and one checkout across ref
     returnContextStarted = resolve;
   });
   let returningFromCheckout = false;
+  let refreshCalendar: Promise<void> | undefined;
+  let releaseRefreshCalendar = () => {};
+
   const transport = await mechanismTransport(page, mechanism, async (path) => {
+    if (refreshCalendar && path.startsWith("/api/calendar/"))
+      await refreshCalendar;
     if (path.startsWith("/api/booking/checkout/"))
       await page.evaluate((attemptId) => {
         sessionStorage.setItem(
@@ -1039,6 +1078,25 @@ test("native guest journey preserves players contact and one checkout across ref
       .click();
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(page.locator("main")).not.toHaveAttribute("inert");
+    refreshCalendar = new Promise<void>((resolve) => {
+      releaseRefreshCalendar = resolve;
+    });
+    const calendarReload = page.waitForRequest((request) =>
+      new URL(request.url()).pathname.startsWith("/api/calendar/"),
+    );
+    await page.reload();
+    await calendarReload;
+    await expect(
+      page
+        .locator("#page-refresh")
+        .getByRole("status", { name: "Refreshing…" }),
+    ).toBeVisible();
+    await expect(page.locator(".page-loading")).toHaveCount(1);
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
+    releaseRefreshCalendar();
+    await expect(page.locator(".calendar-head")).toBeVisible();
+    await expect(page.locator(".page-loading")).toHaveCount(0);
+
     if (page.viewportSize()!.width <= 700) {
       const header = page.locator(".calendar-head");
       await expect(header).toHaveCSS("display", "grid");
@@ -1347,6 +1405,7 @@ test("native guest journey preserves players contact and one checkout across ref
     ).toHaveLength(0);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
+    releaseRefreshCalendar();
     releaseReturnContext();
     try {
       // Stop polling and cache warming before draining intercepted requests.
@@ -1524,6 +1583,7 @@ test("real payment recovery confirms the browser return from verified provider s
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await accounting;
+    await expect(page.getByText("Refreshing…", { exact: true })).toHaveCount(0);
     await expect(
       page.getByRole("status", {
         name: "Payment received. Confirming booking.",
@@ -1850,8 +1910,12 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(page).toHaveURL(
       new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
     );
-    await expect(page.locator("#page-refresh")).toHaveCount(0);
-    await expect(page.locator(".page-loading")).toBeVisible();
+    const refreshLoader = page.locator("#page-refresh");
+    await expect(
+      refreshLoader.getByRole("status", { name: "Refreshing…" }),
+    ).toBeVisible();
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
+    await expect(page.locator(".page-loading")).toHaveCount(1);
     await expect(page.locator(".confirmation-card")).toHaveCount(0);
     await expect(page.locator(".confirmation-pending-status")).toHaveCount(0);
     await expect(
@@ -1861,6 +1925,7 @@ test("real payment recovery confirms the browser return from verified provider s
       page.getByRole("button", { name: "Request Help", exact: true }),
     ).toHaveCount(0);
     releaseRefreshContext();
+    await expect(refreshLoader).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();

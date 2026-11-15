@@ -17,34 +17,45 @@ import {
 import { BrandLoading } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
 const feedbackMessage = (label?: string) =>
-  label === "Refreshing…"
-    ? label
-    : [
-          "Opening checkout…",
-          "Checking whether your booking was created…",
-          "Preparing your payment link…",
-          CONFLICT_CHECKING,
-          ACTIVE_CHECKOUT_CHECKING,
-          "Checking payment…",
-          "Checking booking…",
-          "Preparing confirmation…",
-          "Payment received. Confirming booking.",
-        ].includes(label ?? "")
-      ? `${label} ${loadingMessage}`
-      : undefined;
+  [
+    "Opening checkout…",
+    "Checking whether your booking was created…",
+    "Preparing your payment link…",
+    CONFLICT_CHECKING,
+    ACTIVE_CHECKOUT_CHECKING,
+    "Checking payment…",
+    "Checking booking…",
+    "Preparing confirmation…",
+    "Payment received. Confirming booking.",
+  ].includes(label ?? "")
+    ? `${label} ${loadingMessage}`
+    : undefined;
 const subscribeToHydration = () => () => {};
 const hydratedSnapshot = () => true;
 const serverSnapshot = () => false;
-const Loading = createContext<((label: string) => () => void) | null>(null);
+type LoadingState = {
+  register: (label: string, overlay: boolean) => () => void;
+  label?: string;
+  documentLoading: boolean;
+  setDocumentLoading: (active: boolean) => void;
+};
+const Loading = createContext<LoadingState | null>(null);
+/** Expose pending page checks so a document refresh can retain its existing cover. */
+export function useBookingLoadingState() {
+  return useContext(Loading);
+}
 
 // Keep the active screen mounted: loading must not discard contact, consent,
 // provider widgets or an in-flight attempt. Multiple reads share one overlay.
 /** Share booking loading state across asynchronous operations. */
 export function BookingLoadingProvider({ children }: { children: ReactNode }) {
-  const [pending, setPending] = useState<Map<symbol, string>>(() => new Map());
-  const register = useCallback((label: string) => {
+  const [pending, setPending] = useState<
+    Map<symbol, { label: string; overlay: boolean }>
+  >(() => new Map());
+  const [documentLoading, setDocumentLoading] = useState(false);
+  const register = useCallback((label: string, overlay: boolean) => {
     const id = Symbol();
-    setPending((current) => new Map(current).set(id, label));
+    setPending((current) => new Map(current).set(id, { label, overlay }));
     return () =>
       setPending((current) => {
         const next = new Map(current);
@@ -52,7 +63,8 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
         return next;
       });
   }, []);
-  const busy = pending.size > 0;
+  const overlay = [...pending.values()].find((entry) => entry.overlay);
+  const busy = !!overlay;
   useLayoutEffect(() => {
     if (!busy) return;
     const main = document.getElementById("main");
@@ -63,20 +75,28 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
     };
   }, [busy]);
   return (
-    <Loading.Provider value={register}>
+    <Loading.Provider
+      value={{
+        register,
+        label: pending.values().next().value?.label,
+        documentLoading,
+        setDocumentLoading,
+      }}
+    >
       <div
         style={{ display: "contents" }}
-        inert={busy}
+        inert={busy && !documentLoading}
         aria-busy={busy || undefined}
       >
         {children}
       </div>
       {busy &&
+        !documentLoading &&
         createPortal(
           <div className="booking-flow-overlay">
             <BrandLoading
-              label={pending.values().next().value}
-              message={feedbackMessage(pending.values().next().value)}
+              label={overlay.label}
+              message={feedbackMessage(overlay.label)}
             />
           </div>,
           document.body,
@@ -94,7 +114,8 @@ export function BookingLoading({
   compact?: boolean;
   overlay?: boolean;
 }) {
-  const register = useContext(Loading);
+  const state = useBookingLoadingState();
+  const register = state?.register;
   const hydrated = useSyncExternalStore(
     subscribeToHydration,
     hydratedSnapshot,
@@ -103,11 +124,16 @@ export function BookingLoading({
   const entryTransition = useBookingEntryTransition();
   // Register before paint so a newly mounted loader cannot expose an intermediate screen.
   useLayoutEffect(
-    () => (overlay && !entryTransition ? register?.(label) : undefined),
-    [register, label, overlay, entryTransition],
+    () =>
+      (overlay || !compact) && !entryTransition
+        ? register?.(label, overlay)
+        : undefined,
+    [register, label, overlay, compact, entryTransition],
   );
   // Server HTML needs visible progress before layout effects can register the portal.
-  return hydrated && (entryTransition || (register && overlay)) ? (
+  return hydrated &&
+    (entryTransition ||
+      (register && (overlay || (state?.documentLoading && !compact)))) ? (
     <span className="sr-only">{label}</span>
   ) : (
     <BrandLoading

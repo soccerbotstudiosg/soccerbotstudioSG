@@ -57,11 +57,19 @@
   },
   {
     "file": "src/components/page-refresh.test.tsx",
+    "title": "normal and browser return navigation never say refreshing and preserve payment loader messages"
+  },
+  {
+    "file": "src/components/page-refresh.test.tsx",
     "title": "refresh cleanup prevents late font and frame completions from revealing an unmounted page"
   },
   {
     "file": "src/components/page-refresh.test.tsx",
     "title": "refresh cover survives server HTML and hydration until restored state fonts and a render frame are ready"
+  },
+  {
+    "file": "src/components/page-refresh.test.tsx",
+    "title": "refresh retains one cover through account calendar and confirmation checks then restores normal operation loaders"
   },
   {
     "file": "src/components/studio-hero-video.test.tsx",

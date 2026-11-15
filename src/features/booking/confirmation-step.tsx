@@ -177,7 +177,7 @@ export function ConfirmationStep() {
   const { attempt, reset } = useBooking(),
     router = useRouter(),
     booking = attempt?.booking;
-  if (!booking) return <BookingLoading label="Refreshing…" />;
+  if (!booking) return <BookingLoading label="Opening booking" />;
   return (
     <BookingConfirmation
       booking={booking}

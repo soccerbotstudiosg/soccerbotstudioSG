@@ -2991,9 +2991,9 @@ it("invalid confirmation links go home without protected requests or storage cha
     expect(fetcher).not.toHaveBeenCalled();
     expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
       "aria-label",
-      "Refreshing…",
+      "Opening booking",
     );
-    expect(page.container).toHaveTextContent(/^Refreshing…$/);
+    expect(page.container).toHaveTextContent(/^$/);
     expect(sessionStorage.getItem("retained-financial-lock")).toBe("keep");
     page.unmount();
   }
@@ -3060,9 +3060,9 @@ it("confirmation routes without live recovery go home after receipt failure or d
     );
     expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
       "aria-label",
-      "Refreshing…",
+      "Opening booking",
     );
-    expect(page.container).toHaveTextContent(/^Refreshing…$/);
+    expect(page.container).toHaveTextContent(/^$/);
     expect(fetcher.mock.calls.map(([url]) => url)).toEqual(
       denied
         ? [`/api/attempts/${first}/confirmation`]
@@ -3099,9 +3099,9 @@ it("an unavailable retained attempt goes home instead of showing payment uncerta
   );
   expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
     "aria-label",
-    "Refreshing…",
+    "Opening booking",
   );
-  expect(page.container).toHaveTextContent(/^Refreshing…$/);
+  expect(page.container).toHaveTextContent(/^$/);
   expect(fetcher).toHaveBeenCalledTimes(1);
   expect(sessionStorage.getItem("retained-financial-lock")).toBe("keep");
   expect(screen.queryByText("Pending")).toBeNull();
@@ -3201,9 +3201,9 @@ it("failed post-payment context returns home after the budget instead of renderi
     expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
     expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
       "aria-label",
-      "Refreshing…",
+      "Opening booking",
     );
-    expect(page.container).toHaveTextContent(/^Refreshing…$/);
+    expect(page.container).toHaveTextContent(/^$/);
     expect(restart).not.toHaveBeenCalled();
     expect(
       sessionStorage.getItem(`soccerbot-payment-return:${first}`),
@@ -3262,9 +3262,9 @@ it("recovery polling goes home and stops when booking identity becomes inaccessi
       expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
       expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
         "aria-label",
-        "Refreshing…",
+        "Opening booking",
       );
-      expect(page.container).toHaveTextContent(/^Refreshing…$/);
+      expect(page.container).toHaveTextContent(/^$/);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(60000);
       });
@@ -3322,9 +3322,9 @@ it("inaccessible expiry checks go home without releasing or retrying the booking
     expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
     expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
       "aria-label",
-      "Refreshing…",
+      "Opening booking",
     );
-    expect(page.container).toHaveTextContent(/^Refreshing…$/);
+    expect(page.container).toHaveTextContent(/^$/);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(60000);
     });
@@ -3389,9 +3389,9 @@ it("an expired checkout with no accepted calendar handoff returns home without c
   expect(expired).not.toHaveBeenCalled();
   expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
     "aria-label",
-    "Refreshing…",
+    "Opening booking",
   );
-  expect(page.container).toHaveTextContent(/^Refreshing…$/);
+  expect(page.container).toHaveTextContent(/^$/);
 });
 
 it("explicit receipt access denial returns home instead of retaining protected details", async () => {
@@ -3434,9 +3434,9 @@ it("explicit receipt access denial returns home instead of retaining protected d
     );
     expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
       "aria-label",
-      "Refreshing…",
+      "Opening booking",
     );
-    expect(page.container).toHaveTextContent(/^Refreshing…$/);
+    expect(page.container).toHaveTextContent(/^$/);
     page.unmount();
     sessionStorage.clear();
   }
