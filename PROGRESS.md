@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-Restore the small spinner alongside the existing loading bar in account verification, booking details, payment review and enquiry submission buttons, based on pushed head `0889a45`. Each spinner uses the same loading condition as its bar. Existing timing, readiness, disabled controls and accessible loading labels remain unchanged. Owner authorized staging and merge after review of CI failures. Publish this consolidated follow-up and verify exact-head gates and staging before merging.
+Standardize booking action height and clearance on `fix/booking-action-spacing`, based on merged PR79/main `5581538`. Guest/Sign in and signed-in/profile actions share Continue sizing: desktop18px vertical padding with52px minimum; phone48px minimum. Entry choices remain one row; OR lines flex within the row instead of stretching buttons. Wrapped phone labels retain16px type and fit within the standard height. Remove Calendar’s duplicate29px action-wrapper margin; shared primary clearance remains32px above and24px below. Entry/profile clearance uses the same spacing tokens. Owner authorized staging and merge after verification.
 
 ## Current scope
 
@@ -40,7 +40,7 @@ Shared Continue actions reserve32px above and24px below, including24px viewport-
 
 ## Verification and next action
 
-All13 affected component tests, affected ESLint, application types, source/import/inventory and diff checks pass. Publish the small loader restoration and follow its exact-head CI. The previous one-row entry, enquiry-copy and faster-fill candidate was pushed as `0889a45`; its CI is separate from this local change. Browser/device acceptance remains owner/CI-operated. No test cases or inventories change for this additive visual indicator.
+Four affected account component tests pass. Browser typography coverage now checks shared entry/primary heights,32/24px clearance and absence of the calendar wrapper; existing test titles/counts remain unchanged. Run static checks, publish one candidate, then verify exact-head CI and staging health before authorized merge. Browser/device execution remains owner/CI-operated.
 
 ## Remaining owner acceptance
 

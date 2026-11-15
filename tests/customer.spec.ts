@@ -1875,6 +1875,21 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(
       page.locator(".section-reveal, .section-reveal-pending"),
     ).toHaveCount(0);
+    const actionAnchor = page.locator(".booking-action-anchor");
+    if (await actionAnchor.count()) {
+      await expect(actionAnchor).toHaveCSS("padding-top", "32px");
+      await expect(actionAnchor).toHaveCSS("padding-bottom", "24px");
+      const actionButton = actionAnchor.locator(
+        ".booking-primary-action > .button",
+      );
+      expect(
+        await actionButton.evaluate((node) =>
+          parseFloat(getComputedStyle(node).height),
+        ),
+      ).toBeCloseTo(page.viewportSize()!.width <= 700 ? 48 : 60.4, 0);
+      if (await page.locator(".session-times-region").count())
+        await expect(actionAnchor.locator("..")).not.toHaveClass("actions");
+    }
     const headings = page.locator(selector);
     expect(await headings.count()).toBeGreaterThan(0);
     const styles = await headings.evaluateAll((nodes) =>
@@ -1937,7 +1952,14 @@ test("header blue and the typography hierarchy stay consistent across every book
   const signInBox = await signIn.boundingBox();
   expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
   expect(guestBox!.width).toBeCloseTo(signInBox!.width, 0);
-  expect(guestBox!.height).toBeGreaterThanOrEqual(62);
+  const actionHeight = page.viewportSize()!.width <= 700 ? 48 : 60.4;
+  for (const button of [guest, signIn]) {
+    expect(
+      await button.evaluate((node) =>
+        parseFloat(getComputedStyle(node).height),
+      ),
+    ).toBeCloseTo(actionHeight, 0);
+  }
   expect(guestBox!.x + guestBox!.width).toBeLessThan(signInBox!.x);
   const divider = page.locator(".access-choice-divider");
   await expect(divider).toHaveCSS("font-family", /Roboto/);
@@ -1954,10 +1976,12 @@ test("header blue and the typography hierarchy stay consistent across every book
       };
     }),
   );
-  expect(dividerLines).toEqual([
-    { width: "1px", height: "24px", content: '""' },
-    { width: "1px", height: "24px", content: '""' },
-  ]);
+  for (const line of dividerLines) {
+    expect(line.width).toBe("1px");
+    expect(line.content).toBe('""');
+    expect(parseFloat(line.height)).toBeGreaterThan(0);
+  }
+  expect(dividerLines[0].height).toBe(dividerLines[1].height);
   await expect(divider).toHaveCSS("font-weight", "900");
   await expect(divider).toHaveCSS("font-style", "italic");
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {

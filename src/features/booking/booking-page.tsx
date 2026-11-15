@@ -314,11 +314,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
                 )}
               </>
             )}
-            {!mobile && displayStep === "time" && (
-              <div className="actions">
-                <BasketContinue />
-              </div>
-            )}
+            {!mobile && displayStep === "time" && <BasketContinue />}
           </section>
           {!mobile && ["time", "details"].includes(displayStep) && (
             <Summary basket={step === "time"} />
