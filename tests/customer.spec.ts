@@ -209,13 +209,16 @@ async function payment(page: Page, outcome = "success") {
   await payAttempt(page, outcome);
 }
 /** Hold application scripts until every route proves its initial refresh cover. */
-async function checkRefreshCover(page: Page, paths: string[]) {
-  await page.addInitScript(() => {
-    localStorage.setItem("soccerbot-player-app-prompt", "true");
-  });
+async function checkRefreshCover(hostPage: Page, paths: string[]) {
   const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
   for (const path of paths) {
+    const page = await hostPage.context().newPage();
+    await page.clock.install({ time: new Date("2026-10-05T08:00:00+08:00") });
+    await page.addInitScript(() => {
+      localStorage.setItem("soccerbot-player-app-prompt", "true");
+    });
+    const recordError = (error: Error) => errors.push(error.message);
+    page.on("pageerror", recordError);
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -298,6 +301,8 @@ async function checkRefreshCover(page: Page, paths: string[]) {
     } finally {
       release();
       await page.unroute(scripts);
+      page.off("pageerror", recordError);
+      await page.close();
     }
   }
   expect(errors).toEqual([]);
