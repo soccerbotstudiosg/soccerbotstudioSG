@@ -93,7 +93,7 @@ test("live session selection uses client prices while demo retains its own rates
     .spyOn(customerCatalogueService, "read")
     .mockResolvedValue(catalogue("production"));
   const view = render(<SessionStep />);
-  expect(screen.getByRole("heading", { name: "Your outlet" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Outlet" })).toBeVisible();
   expect(
     screen.queryByRole("link", { name: "Choose Date & Time" }),
   ).not.toBeInTheDocument();

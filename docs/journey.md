@@ -6503,3 +6503,7 @@ The owner challenged the demo rotation message as unwanted customer copy. Remove
 The owner requested solid date-number circles: dates containing chosen sessions now show white numerals on navy, while their surrounding selected day retains lavender. Existing browser colour assertions follow that approved distinction.
 
 The same run’s tablet live-email concurrency case observed29 provider calls versus28 at the revoked-access boundary (job132660966753). Its retained network trace shows two calendar snapshot requests begun during account bootstrap still pending through the unauthorized write. The fixture now awaits its tracked startup requests before the competing-write phase; interception remains installed and the exact no-provider-call assertion is unchanged. Shared settlement also remains the teardown path.
+
+After reviewing staged8780169, the owner requested normal continuation-letter spacing, selected surfaces matching the pale teal card hover, and section headings shortened to Outlet/Session. Existing style owners and presentation assertions were updated; navy number circles, white unselected cards and flowing navy actions remain.
+
+The owner extended typography consistency to Review and Confirmation: regular body/contact values, bold date/action labels, shared20px heading/total/status emphasis and14px supporting text. The email entry action and heading are renamed Sign in; sign-in behavior is unchanged. Existing browser type and badge-geometry expectations follow these approved sizes.

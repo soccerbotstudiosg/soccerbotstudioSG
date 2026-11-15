@@ -451,7 +451,7 @@ export function AccountStep({
             }}
           >
             <Icon name="mail" />
-            {verifiedIdentity ? "Continue signed in" : "Continue with email"}
+            {verifiedIdentity ? "Continue signed in" : "Sign in"}
             <Icon name="chevron" />
           </button>
           {verifiedIdentity && (
@@ -502,11 +502,7 @@ export function AccountStep({
     <>
       <BookingHeading
         status={false}
-        lines={
-          view === "email"
-            ? ["Continue", "with email"]
-            : ["Verify your", "email"]
-        }
+        lines={view === "email" ? ["Sign", "in"] : ["Verify your", "email"]}
       />
       <p className="lead">
         {view === "email" ? (

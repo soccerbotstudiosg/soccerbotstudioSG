@@ -107,9 +107,7 @@ test("revoked saved-contact editor returns to guest choices without revealing th
   expect(
     await screen.findByRole("button", { name: "Continue as Guest" }),
   ).toBeEnabled();
-  expect(
-    screen.getByRole("button", { name: "Continue with email" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   expect(screen.queryByText("Welcome back")).toBeNull();
   expect(screen.queryByLabelText(/Full name/)).toBeNull();
   expect(identity.current()).toBeNull();

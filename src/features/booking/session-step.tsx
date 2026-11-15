@@ -44,7 +44,7 @@ export function SessionStep() {
   return (
     <>
       <BookingHeading lines={["Your", "session"]} />
-      <h2 className="section-title">Your outlet</h2>
+      <h2 className="section-title">Outlet</h2>
       <div className="outlet-options">
         <button
           className="surface outlet-option booking-entry-action"
@@ -171,7 +171,7 @@ function SessionPresentation({
   const prices = sessionPrices(environment);
   return (
     <>
-      <h2 className="section-title">Select your session</h2>
+      <h2 className="section-title">Session</h2>
       <div className="session-products">
         <section
           className="surface session-product booking-entry-action"
