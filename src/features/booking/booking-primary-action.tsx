@@ -16,7 +16,52 @@ export function BookingPrimaryAction({
   ready?: boolean;
   loading?: boolean;
 }) {
-  const available = !loading && ready;
+  const [progressVisible, setProgressVisible] = useState(loading);
+  if (loading && !progressVisible) setProgressVisible(true);
+  const progress = useRef<HTMLSpanElement>(null);
+  const fill = useRef<Animation | null>(null);
+  useLayoutEffect(() => {
+    const bar = progress.current;
+    if (!bar) return;
+    const current = getComputedStyle(bar).transform;
+    fill.current?.cancel();
+    const reduced = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (loading) {
+      if (!reduced && bar.animate)
+        fill.current = bar.animate(
+          [{ transform: "scaleX(0)" }, { transform: "scaleX(0.9)" }],
+          {
+            duration: 12000,
+            easing: "cubic-bezier(0.1, 0.6, 0.2, 1)",
+            fill: "forwards",
+          },
+        );
+      return;
+    }
+    let active = true;
+    const completion =
+      !reduced && bar.animate
+        ? bar.animate([{ transform: current }, { transform: "scaleX(1)" }], {
+            duration: 180,
+            easing: "ease-out",
+            fill: "forwards",
+          })
+        : null;
+    fill.current = completion;
+    void (completion?.finished ?? Promise.resolve()).then(
+      () => {
+        if (active) setProgressVisible(false);
+      },
+      () => {},
+    );
+    return () => {
+      active = false;
+    };
+  }, [loading, progressVisible]);
+  useLayoutEffect(() => () => fill.current?.cancel(), []);
+  const available = !loading && !progressVisible && ready;
   const [readiness, setReadiness] = useState({
     ready: available,
     animate: available === true,
@@ -105,6 +150,13 @@ export function BookingPrimaryAction({
         ref={action}
       >
         {children}
+        {progressVisible && (
+          <span
+            className="booking-action-progress"
+            ref={progress}
+            aria-hidden="true"
+          />
+        )}
       </div>
     </div>
   );

@@ -11,11 +11,9 @@ export const BookingHeadingStatus = createContext<ReactNode>(null);
 export function BookingHeading({
   lines,
   status: suppliedStatus,
-  required = false,
 }: {
   lines: readonly [string, string];
   status?: ReactNode;
-  required?: boolean;
 }) {
   const inheritedStatus = useContext(BookingHeadingStatus);
   const status = suppliedStatus ?? inheritedStatus;
@@ -25,18 +23,11 @@ export function BookingHeading({
       <span className="booking-title-line">{lines[1]}</span>
     </h1>
   );
-  if (!status && !required) return title;
+  if (!status) return title;
   return (
     <div className="booking-heading-row">
       {title}
-      {required ? (
-        <div className="form-heading-note">
-          {status}
-          <p className="required-fields">* Required fields</p>
-        </div>
-      ) : (
-        status
-      )}
+      {status}
     </div>
   );
 }

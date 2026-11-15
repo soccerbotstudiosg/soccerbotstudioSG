@@ -631,19 +631,6 @@
   .booking-heading-row > .required-fields {
     align-self: center;
   }
-  .form-heading-note {
-    display: flex;
-    min-width: 0;
-    flex: 1 1 0;
-    max-width: 40%;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-  }
-  .form-heading-note .booking-identity-status {
-    width: 100%;
-    max-width: 100%;
-  }
   .enquiry-form > :not(.booking-action-anchor) + :not(.booking-action-anchor) {
     margin-top: 28px;
   }
@@ -702,8 +689,7 @@
     .booking-heading-row:has(.booking-verified-status) {
       grid-template-columns: minmax(0, 1fr) fit-content(32%);
     }
-    .booking-identity-status,
-    .form-heading-note {
+    .booking-identity-status {
       max-width: 100%;
       justify-self: end;
     }
@@ -4465,28 +4451,21 @@
   .booking-primary-action > .button {
     position: relative;
   }
-  .booking-primary-action[data-loading="true"] > .button::before {
-    content: "";
+  .booking-action-progress {
     position: absolute;
     inset: auto 0 0;
     height: 6px;
     border-radius: inherit;
     pointer-events: none;
-    background: linear-gradient(
-      to right,
-      var(--color-navy),
-      var(--color-identity)
-    );
+    background: var(--color-navy);
     transform-origin: left;
     transform: scaleX(0.9);
   }
-  @keyframes booking-action-fill {
-    from {
-      transform: scaleX(0);
-    }
-    to {
-      transform: scaleX(0.9);
-    }
+  .contact-heading-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
   }
   #outlet-sessions,
   .booking-primary-action {
@@ -4514,9 +4493,6 @@
     }
   }
   @media (prefers-reduced-motion: no-preference) {
-    .booking-primary-action[data-loading="true"] > .button::before {
-      animation: booking-action-fill 12s cubic-bezier(0.1, 0.6, 0.2, 1) both;
-    }
     .booking-entry-action:not(:disabled):not([aria-disabled="true"])::after,
     .booking-primary-action[data-halo="true"]
       > .button:not(:disabled):not([aria-disabled="true"])::after {

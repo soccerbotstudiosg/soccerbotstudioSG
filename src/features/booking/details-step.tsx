@@ -493,9 +493,9 @@ export function DetailsStep({
   return (
     <>
       {profileOnly ? (
-        <BookingHeading lines={["Saved contact", "details"]} required />
+        <BookingHeading lines={["Saved contact", "details"]} />
       ) : (
-        <BookingHeading lines={["Your", "details"]} required />
+        <BookingHeading lines={["Your", "details"]} />
       )}
       <p className="lead">
         {profileOnly
@@ -549,9 +549,12 @@ export function DetailsStep({
         }}
       >
         <section className="surface">
-          <h2 className="section-title">
-            {profileOnly ? "Contact profile" : "Booking Contact"}
-          </h2>
+          <div className="contact-heading-row">
+            <h2 className="section-title">
+              {profileOnly ? "Contact profile" : "Booking Contact"}
+            </h2>
+            <p className="required-fields">* Required fields</p>
+          </div>
           <div className="field-grid">
             {field("name", "Full name")}
             {field(

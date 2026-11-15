@@ -311,6 +311,9 @@ test("verified details saves only on explicit action and ignores completion afte
     screen.getByRole("heading", { name: "Booking Contact" }),
   ).toBeVisible();
   expect(screen.getByText("* Required fields")).toBeVisible();
+  expect(screen.getByText("* Required fields").parentElement).toBe(
+    screen.getByRole("heading", { name: "Booking Contact" }).parentElement,
+  );
   await user.click(screen.getByRole("button", { name: "Review Booking" }));
   expect(saveProfile).toHaveBeenCalledTimes(1);
   expect(mocks.push).toHaveBeenCalledWith("/book/review/");
