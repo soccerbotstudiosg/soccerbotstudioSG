@@ -337,6 +337,7 @@ test("live entry access denial permits local guest selection without granting au
   ).toHaveLength(1);
   await arena.click();
   await expect(page.locator(".page-loading")).toHaveCount(1);
+  await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".page-loading")).toBeVisible();
   await expect(page.locator(".booking-loading")).toHaveCount(0);
   await expect(
@@ -548,6 +549,7 @@ test("remembered live account edits and rereads contact while native booking sta
     exact: true,
   });
   await expect(page.locator(".page-loading")).toHaveCount(1);
+  await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".page-loading")).toBeVisible();
   await expect(page.locator(".booking-loading")).toHaveCount(0);
   await expect(page.getByLabel("Booking identity")).toHaveCount(0);
@@ -639,6 +641,7 @@ test("remembered live account edits and rereads contact while native booking sta
     .click();
   await profileRequested;
   await expect(page.locator(".page-loading")).toHaveCount(1);
+  await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".page-loading")).toBeVisible();
   await expect(page.locator(".booking-loading")).toHaveCount(0);
   await expect(page.locator(".access-option")).toHaveCount(0);
@@ -1237,6 +1240,7 @@ test("native guest journey preserves players contact and one checkout across ref
     await page.goBack();
     await returning;
     await expect(page).toHaveURL(/\/book\/payment\/$/);
+    await expect(page.locator("#page-refresh")).toHaveCount(0);
     await expect(page.locator(".page-loading")).toBeVisible();
     await expect(page.locator(".confirmation-pending-status")).toHaveCount(0);
     await expect(
@@ -1846,6 +1850,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(page).toHaveURL(
       new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
     );
+    await expect(page.locator("#page-refresh")).toHaveCount(0);
     await expect(page.locator(".page-loading")).toBeVisible();
     await expect(page.locator(".confirmation-card")).toHaveCount(0);
     await expect(page.locator(".confirmation-pending-status")).toHaveCount(0);

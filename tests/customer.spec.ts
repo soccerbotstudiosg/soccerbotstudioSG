@@ -251,7 +251,8 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
               const box = node.getBoundingClientRect();
               return (
                 getComputedStyle(node).visibility === "visible" &&
-                box.width >= innerWidth - 1 &&
+                // Fixed overlays fill the layout viewport, excluding its reserved scrollbar gutter.
+                box.width >= document.documentElement.clientWidth - 1 &&
                 box.height >= innerHeight - 1
               );
             },
