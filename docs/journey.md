@@ -6511,3 +6511,5 @@ The owner extended typography consistency to Review and Confirmation: regular bo
 The owner requested the hover-matched colour immediately on opening a time slot’s trainer selector. The existing expanded state now shares the selected surface styling; browser assertions require the teal state while aria-pressed remains false, preserving selection authority.
 
 The owner requested equal session-line spacing everywhere, smaller field values, and hover-matched autofill/cart/trainer fills excluding the red remove control. The existing style owners now share2px session-line gaps and14px field text; native autofill uses a pale teal inset fill and the phone wrapper follows it. Existing cart-fit checks retain their strict viewport threshold. Owner contact-card autofill acceptance remains separate from synthetic tests.
+
+The owner requested matching month/week day hover and removal of the lingering deselected-slot outline. The calendar day owner now reuses the selected colour; the time container’s focus-within ring becomes focus-visible, retaining keyboard indication. Existing browser cases cover both calendar layouts and pointer deselection.

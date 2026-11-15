@@ -1956,6 +1956,17 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(
     page.getByRole("combobox", { name: "Calendar view" }),
   ).toHaveValue("month");
+  /** Verify the shared day hover treatment in either calendar layout. */
+  async function dayHoverColour() {
+    if (!(await page.evaluate(() => matchMedia("(hover: hover)").matches)))
+      return;
+    const day = page.locator(".date:not(:disabled):not(.selected)").first();
+    await day.hover();
+    await expect(day).toHaveCSS("background-color", selectedColour);
+    await expect(day).toHaveCSS("border-color", "rgb(23, 96, 120)");
+    await page.mouse.move(0, 0);
+  }
+  await dayHoverColour();
   await expect(page.locator(".date:disabled").first()).toHaveCSS(
     "border-top-color",
     "rgba(0, 0, 0, 0)",
@@ -1964,6 +1975,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     .getByRole("combobox", { name: "Calendar view" })
     .selectOption("week");
   await expect(page.locator(".dates .date")).toHaveCount(7);
+  await dayHoverColour();
   const monthPicker = page.getByRole("combobox", { name: "Calendar month" });
   await expect(monthPicker.locator("option:checked")).toHaveText(
     dateLabel(DEMO_TODAY, { month: "long", year: "numeric" }),
@@ -2730,6 +2742,11 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  const deselectedSlot = page.getByRole("button", { name: /12:00–12:40/ });
+  await expect(deselectedSlot).toHaveAttribute("aria-pressed", "false");
+  await expect(
+    page.locator(".time-choice").filter({ has: deselectedSlot }),
+  ).toHaveCSS("outline-style", "none");
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await noon.selectOption(`${date}|12:00|demo|faisal`);
   await openBookingPanel(page, "trainers");

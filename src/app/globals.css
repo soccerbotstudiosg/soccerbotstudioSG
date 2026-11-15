@@ -3520,8 +3520,8 @@
     line-height: 1;
   }
   .date:hover:not(:disabled):not(.selected) {
-    border-color: var(--color-focus);
-    background: var(--color-brand-soft);
+    border-color: var(--color-identity);
+    background: var(--background-selected);
   }
   .date:disabled {
     border-color: transparent;
@@ -3629,7 +3629,11 @@
     background: var(--color-surface);
     overflow: hidden;
   }
-  .time-choice:focus-within {
+  .time-choice:has(> .time:is([aria-pressed="true"], [aria-expanded="true"])) {
+    border-color: var(--color-identity);
+    background: var(--background-selected);
+  }
+  .time-choice:has(:focus-visible) {
     outline: 2px solid var(--color-action);
     outline-offset: 2px;
   }

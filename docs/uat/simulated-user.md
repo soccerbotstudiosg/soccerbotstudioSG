@@ -587,3 +587,5 @@ Review and Confirmation share Roboto with regular16px body/contact values, bold1
 A time slot also uses the pale teal selection fill and border while its trainer selector is open, before a trainer is chosen. This visual state does not add a session to the cart.
 
 Session date/time/trainer lines share equal2px vertical gaps across cart and document summaries, including the full cart. Input values use14px; labels and control heights retain their existing sizes. Native autofill uses the shared pale teal fill, including the whole phone control; focus/error cues remain. Tinted cart rows, trainer avatars and expanded/hover trainer controls use the same pale teal; red remove controls retain their danger colours. Native contact-card autofill requires owner browser acceptance.
+
+Month/week day hover uses the shared pale teal fill and border. Time-slot containers use teal while choosing/selected; their outer focus ring follows keyboard focus-visible rather than lingering after mouse deselection.
