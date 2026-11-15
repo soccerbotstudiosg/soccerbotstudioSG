@@ -44,6 +44,8 @@
     var(--color-surface)
   );
   --tracking-ui-label: 0.16em;
+  --space-action-top: 32px;
+  --space-action-bottom: 24px;
   --color-focus: #5666a8;
   --color-identity: #176078;
   --color-logo-blue: #46acdc;
@@ -2639,10 +2641,13 @@
   .booking-action-anchor {
     display: block;
     width: 100%;
-    padding: calc(24px * 0.65) 0 calc(16px * 0.65 + env(safe-area-inset-bottom));
+    padding: var(--space-action-top) 0
+      calc(var(--space-action-bottom) + env(safe-area-inset-bottom));
   }
   html:has(.booking-shell .booking-primary-action) {
-    scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    scroll-padding-bottom: calc(
+      80px + var(--space-action-bottom) + env(safe-area-inset-bottom)
+    );
   }
   .booking-shell :is(input, textarea, select, button, a, [tabindex]) {
     scroll-margin-top: 60px;
@@ -2663,7 +2668,7 @@
   .booking-shell .booking-primary-action[data-floating="true"] {
     position: fixed;
     left: var(--action-left);
-    bottom: calc(16px * 0.65 + env(safe-area-inset-bottom));
+    bottom: calc(var(--space-action-bottom) + env(safe-area-inset-bottom));
     width: var(--action-width);
   }
   .booking-shell .booking-primary-action > .button {
@@ -3655,7 +3660,7 @@
     border-color: var(--color-identity);
     background: var(--background-selected);
   }
-  .time-choice:has(:focus-visible) {
+  .time-choice:has(> .time:focus-visible) {
     outline: 2px solid var(--color-action);
     outline-offset: 2px;
   }
@@ -4680,9 +4685,6 @@
     }
     .player-selection {
       padding-top: 8px;
-    }
-    #outlet-sessions .booking-action-anchor {
-      margin-top: 16px;
     }
   }
   @media (max-width: 700px) {

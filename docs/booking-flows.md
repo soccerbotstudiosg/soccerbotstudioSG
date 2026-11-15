@@ -680,3 +680,5 @@ Month/week day hover uses the shared pale teal fill and border. Time-slot contai
 Each booking step has one introduction in the existing muted16px lead style. Entry asks guests to continue or sign in (verified users to continue signed in); Session asks users to confirm outlet/session/players; Details asks for booking contact details; Review asks users to review before payment. Existing sign-in/code instructions and Calendar’s “40-minute sessions · 10-minute changeover.” remain unchanged. Saved-contact editing has its matching short instruction. Compact desktop Session spacing retains initial Continue visibility.
 
 Calendar continuation appears once outside the cart. Cart and Details summaries share top spacing and retain totals. The main next action stays visible on desktop and phone as its original document position scrolls outside view; existing selection/validation rules still decide whether it is enabled.
+
+Continue actions have32px top and24px bottom breathing room; floating actions sit24px above the safe viewport edge. Focusing the trainer dropdown does not add a second focus outline around its session card.

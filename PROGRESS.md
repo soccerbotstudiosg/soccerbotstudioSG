@@ -36,6 +36,8 @@ Calendar cart continuation is removed; the cart retains its total and shares Det
 
 Enquiry success now stays on the form with an acknowledgement below its heading; the global Home banner/redirect/timer are removed. Live enquiry delivery sends a fixed automatic customer reply after staff acceptance, with separate stable idempotency keys and shared mail admission. No provider configuration/migration changes or historical resend. Owner inbox acceptance remains pending.
 
+Shared Continue actions reserve32px above and24px below, including24px viewport-bottom clearance when floating. Trainer-dropdown focus no longer outlines its enclosing time card; keyboard focus remains on the active control.
+
 ## Verification and next action
 
 Revision2716d9837bb5e85c80db523f1df096b2022b1235 passed all13 CI jobs in43670411973. Its earlier failures and repairs remain in Journey. The owner’s subsequent enquiry acknowledgement/automatic reply update passes5 UI/service and12 isolated Worker cases. CI43671770614 caught the dependent group-count assertion for the newly added Worker case; reconciled the strict520-case/184-contract counts. Publish the consolidated candidate, verify exact-head frontend/backend/live-email and Worker gates, then verify actual staging source/health. Merge remains pending owner staging acceptance. Browser execution and real inbox acceptance remain owner/CI-operated.

@@ -1786,7 +1786,7 @@ test("header blue and the typography hierarchy stay consistent across every book
         const barBox = await primaryBar.boundingBox();
         if (floating) {
           expect(barBox!.y + barBox!.height).toBeCloseTo(
-            page.viewportSize()!.height - 10.4,
+            page.viewportSize()!.height - 24,
             0,
           );
         }
@@ -1822,7 +1822,7 @@ test("header blue and the typography hierarchy stay consistent across every book
           await expect(primaryBar).toHaveCSS("position", "relative");
           const settledBar = await primaryBar.boundingBox();
           expect(settledBar!.width).toBeCloseTo(settledAnchor!.width, 0);
-          expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(15.6, 0);
+          expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(32, 0);
           const footer = await page.locator(".site-footer").boundingBox();
           expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
             footer!.y,
@@ -2705,6 +2705,11 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     "border-top-width",
     "1px",
   );
+  await choice.locator(".time").focus();
+  await page.keyboard.press("Tab");
+  await expect(noon).toBeFocused();
+  await expect(choice).toHaveCSS("outline-style", "none");
+  await expect(noon).toHaveCSS("outline-style", "solid");
   await noon.selectOption(`${date}|12:00|demo|daniel`);
   if (mobile) {
     const selected = page.getByRole("button", { name: /^12:00–12:40/ });
