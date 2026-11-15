@@ -2794,16 +2794,83 @@
     min-width: 0;
     padding: 32px;
   }
-  @media (min-width: 701px) {
-    .access-options:not(.access-options-verified) > .button {
-      width: 60%;
-      align-self: center;
-    }
+  .access-options.access-choices {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: clamp(8px, 2vw, 24px);
+    padding: 0;
+  }
+  .access-choices .access-choice {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-width: 0;
+    min-height: clamp(210px, 27vw, 320px);
+    margin: 0;
+    padding: clamp(16px, 3vw, 32px);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-booking-control);
+    background: var(--color-surface);
+    color: var(--color-navy);
+    font-size: var(--text-payment-amount);
+    font-weight: var(--weight-display);
+    font-style: italic;
+    line-height: var(--leading-heading);
+    letter-spacing: 0;
+    text-align: left;
+  }
+  .access-choice img {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.22;
+    filter: blur(3px);
+    transform: scale(1.06);
+    pointer-events: none;
+  }
+  .access-choices .access-choice-guest {
+    align-items: flex-start;
+    justify-content: flex-end;
+  }
+  .access-choices .access-choice-signin {
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+  .access-choice-label {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(8px, 1vw, 12px);
+    white-space: nowrap;
+  }
+  .access-choice-label::after {
+    content: "";
+    width: clamp(14px, 2vw, 28px);
+    height: 2px;
+    background: currentColor;
+  }
+  .access-choices .access-choice:hover:not(:disabled),
+  .access-choices .access-choice:focus-visible {
+    background: var(--background-selected);
+    border-color: var(--color-identity);
+    color: var(--color-navy);
+  }
+  .access-choices .access-choice:focus-visible {
+    outline: 3px solid var(--color-identity);
+    outline-offset: 4px;
+  }
+  .access-choices .access-choice:disabled {
+    opacity: 0.6;
+    cursor: wait;
   }
   .access-choice-divider {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-direction: column;
     font-size: var(--text-section);
     text-transform: uppercase;
     align-self: center;
@@ -2812,8 +2879,8 @@
   .access-choice-divider::before,
   .access-choice-divider::after {
     content: "";
-    width: 32px;
-    height: 1px;
+    width: 1px;
+    height: 24px;
     background: currentColor;
   }
   .access-option h2 {
@@ -2825,7 +2892,7 @@
     margin-bottom: 28px;
     overflow-wrap: anywhere;
   }
-  .access-option .button {
+  .access-options-verified .button {
     width: 100%;
     min-height: 56px;
     margin-top: 0;
@@ -4740,6 +4807,9 @@
     .access-options {
       gap: 14px;
     }
+    .access-choices .access-choice {
+      font-size: var(--text-dialog);
+    }
     .booking-main > .access-options {
       margin-top: 12px;
     }
@@ -4754,7 +4824,7 @@
       margin: 0;
       font-size: var(--text-meta);
     }
-    .access-option > .button {
+    .access-options-verified > .button {
       min-height: 44px;
       padding: 10px 12px;
     }

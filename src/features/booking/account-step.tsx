@@ -1,4 +1,5 @@
 "use client";
+import { bookingEntryMedia } from "@/content/media";
 import { BOOKING_SIGNED_OUT } from "@/domain/booking-messages";
 import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
@@ -406,12 +407,12 @@ export function AccountStep({
           />
         )}
         <div
-          className={`surface access-option access-options${verifiedIdentity ? " access-options-verified" : ""}`}
+          className={`access-option access-options ${verifiedIdentity ? "surface access-options-verified" : "access-choices"}`}
         >
           {!verifiedIdentity && (
             <>
               <button
-                className="button wide booking-entry-action"
+                className="button access-choice access-choice-guest"
                 aria-label="Continue as Guest"
                 disabled={busy}
                 onClick={() => {
@@ -423,9 +424,15 @@ export function AccountStep({
                   router.push("/book/session/");
                 }}
               >
-                <Icon name="users" />
-                {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
-                <Icon name="chevron" />
+                <img
+                  src={bookingEntryMedia.guest.src}
+                  width={bookingEntryMedia.guest.width}
+                  height={bookingEntryMedia.guest.height}
+                  alt=""
+                />
+                <span className="access-choice-label">
+                  {busy ? "Preparing…" : "Guest"}
+                </span>
               </button>
               <span className="access-choice-divider">or</span>
             </>
@@ -437,7 +444,11 @@ export function AccountStep({
             </>
           )}
           <button
-            className="button wide booking-entry-action"
+            className={
+              verifiedIdentity
+                ? "button wide booking-entry-action"
+                : "button access-choice access-choice-signin"
+            }
             disabled={busy}
             onClick={() => {
               if (verifiedIdentity)
@@ -455,9 +466,23 @@ export function AccountStep({
               }
             }}
           >
-            <Icon name="mail" />
-            {verifiedIdentity ? "Continue signed in" : "Sign in"}
-            <Icon name="chevron" />
+            {verifiedIdentity ? (
+              <>
+                <Icon name="mail" />
+                Continue signed in
+                <Icon name="chevron" />
+              </>
+            ) : (
+              <>
+                <img
+                  src={bookingEntryMedia.signIn.src}
+                  width={bookingEntryMedia.signIn.width}
+                  height={bookingEntryMedia.signIn.height}
+                  alt=""
+                />
+                <span className="access-choice-label">Sign in</span>
+              </>
+            )}
           </button>
           {verifiedIdentity && (
             <div className="account-actions">

@@ -1914,27 +1914,46 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".access-option")).toHaveCount(1);
   await expect(page.locator(".access-option h2")).toHaveCount(0);
   await expect(page.locator(".access-choice-divider")).toHaveText("or");
-  if ((page.viewportSize()?.width ?? 1280) <= 700) {
-    for (const card of await page.locator(".access-option").all()) {
-      await expect(card).toHaveCSS("padding-top", "14px");
-      await expect(card).toHaveCSS("padding-bottom", "14px");
-    }
-    const choices = await page.locator(".access-options").boundingBox();
-    expect(choices!.y).toBeGreaterThanOrEqual(0);
-    expect(choices!.y + choices!.height).toBeLessThanOrEqual(
-      page.viewportSize()!.height,
-    );
-  }
+  const choices = page.locator(".access-choices");
+  await expect(choices).toHaveCSS("display", "grid");
   const guest = page.getByRole("button", { name: "Continue as Guest" });
-  // Inspect the resting action, with the pointer away from the button.
+  const signIn = page.getByRole("button", { name: "Sign in", exact: true });
   await page.mouse.move(0, 0);
-  await expect(guest).toHaveCSS("background-color", brand);
-  await expect(guest).toHaveCSS("letter-spacing", "normal");
-  await expect(guest).toHaveCSS("color", "rgb(255, 255, 255)");
-  await expect(guest).toHaveCSS("text-transform", "none");
-  await expect(guest).toHaveCSS("font-weight", "900");
-  await expect(guest).toHaveCSS("font-style", "italic");
-  await expect(guest).toHaveCSS("font-size", "16px");
+  for (const card of [guest, signIn]) {
+    await expect(card).toBeInViewport({ ratio: 1 });
+    await expect(card).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(card).toHaveCSS("color", brand);
+    await expect(card).toHaveCSS("font-weight", "900");
+    await expect(card).toHaveCSS("font-style", "italic");
+    await expect(card).toHaveCSS("letter-spacing", "0px");
+    await expect(card).toHaveCSS("border-top-left-radius", "3px");
+    await expect(card).toHaveCSS("border-top-right-radius", "12px");
+    await expect(card).toHaveCSS("border-bottom-right-radius", "3px");
+    await expect(card).toHaveCSS("border-bottom-left-radius", "12px");
+    await expect(card.locator("img")).toHaveAttribute("alt", "");
+    await expect(card.locator("img")).toHaveCSS("filter", "blur(3px)");
+    await expect(card.locator("img")).toHaveCSS("opacity", "0.22");
+    await expect
+      .poll(() =>
+        card
+          .locator("img")
+          .evaluate(
+            (image: HTMLImageElement) =>
+              image.complete && image.naturalWidth > 0,
+          ),
+      )
+      .toBe(true);
+  }
+  const guestBox = await guest.boundingBox();
+  const signInBox = await signIn.boundingBox();
+  expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
+  expect(guestBox!.width).toBeCloseTo(signInBox!.width, 0);
+  expect(guestBox!.height).toBeGreaterThanOrEqual(210);
+  expect(guestBox!.x + guestBox!.width).toBeLessThan(signInBox!.x);
+  await expect(guest).toHaveCSS("align-items", "flex-start");
+  await expect(guest).toHaveCSS("justify-content", "flex-end");
+  await expect(signIn).toHaveCSS("align-items", "flex-end");
+  await expect(signIn).toHaveCSS("justify-content", "flex-start");
   const divider = page.locator(".access-choice-divider");
   await expect(divider).toHaveCSS("font-family", /Roboto/);
   await expect(divider).toHaveCSS("font-size", "20px");
@@ -1951,47 +1970,15 @@ test("header blue and the typography hierarchy stay consistent across every book
     }),
   );
   expect(dividerLines).toEqual([
-    { width: "32px", height: "1px", content: '""' },
-    { width: "32px", height: "1px", content: '""' },
+    { width: "1px", height: "24px", content: '""' },
+    { width: "1px", height: "24px", content: '""' },
   ]);
   await expect(divider).toHaveCSS("font-weight", "900");
   await expect(divider).toHaveCSS("font-style", "italic");
-  for (const action of [guest, page.getByRole("button", { name: "Sign in" })]) {
-    await expect(action.locator("svg")).toHaveCount(2);
-    for (const icon of await action.locator("svg").all()) {
-      await expect(icon).toHaveAttribute("aria-hidden", "true");
-      await expect(icon).toHaveCSS("stroke", "rgb(255, 255, 255)");
-    }
-  }
-  const entryWidth = await guest.evaluate((button) => {
-    const panel = button.parentElement!;
-    const style = getComputedStyle(panel);
-    return {
-      button: parseFloat(getComputedStyle(button).width),
-      content:
-        panel.clientWidth -
-        parseFloat(style.paddingLeft) -
-        parseFloat(style.paddingRight),
-    };
-  });
-  expect(entryWidth.button).toBeCloseTo(
-    entryWidth.content * ((page.viewportSize()?.width ?? 1280) > 700 ? 0.6 : 1),
-    0,
-  );
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
-    const card = page.locator(".access-option").filter({ has: guest });
-    const background = await card.evaluate(
-      (node) => getComputedStyle(node).backgroundColor,
-    );
-    const border = await card.evaluate(
-      (node) => getComputedStyle(node).borderColor,
-    );
-    await card.getByText("or", { exact: true }).hover();
-    await expect(card).toHaveCSS("background-color", background);
-    await expect(card).toHaveCSS("border-color", border);
     await guest.hover();
-    await expect(guest).toHaveCSS("background-color", "rgb(32, 41, 87)");
-    await expect(card).toHaveCSS("background-color", background);
+    await expect(guest).toHaveCSS("border-color", "rgb(23, 96, 120)");
+    await expect(guest).toHaveCSS("color", brand);
   }
   await guest.click();
   await pageHeading("Your session");
