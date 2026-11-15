@@ -1,6 +1,5 @@
 "use client";
 import { bookingEntryMedia } from "@/content/media";
-import { BOOKING_SIGNED_OUT } from "@/domain/booking-messages";
 import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading } from "./booking-loading";
@@ -48,6 +47,7 @@ export function AccountStep({
   const {
       now,
       profileAccessRevision,
+      profileAccessNotice,
       draft,
       update,
       resetIdentityDraft,
@@ -382,7 +382,7 @@ export function AccountStep({
         </p>
         {profileAccessRevision > 0 && !draft.mode && !verifiedIdentity && (
           <p className="alert" role="alert">
-            {BOOKING_SIGNED_OUT}
+            {profileAccessNotice}
           </p>
         )}
         {signOutNotice}

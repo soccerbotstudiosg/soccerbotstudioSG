@@ -1,11 +1,18 @@
 "use client";
-import { onProfileAccessLoss } from "@/services/profile-access";
+import {
+  onProfileAccessLoss,
+  profileAccessGeneration,
+  reportProfileAccessLoss,
+  bookingAccessExpired,
+} from "@/services/profile-access";
 import {
   clearIdentityEntry,
   identitySignOutTask,
   waitForIdentitySignOut,
 } from "@/services/identity";
 import {
+  BOOKING_SESSION_EXPIRED,
+  BOOKING_SIGNED_OUT,
   CONFLICT_NOTICE,
   CONFLICT_CHECKING,
   ACTIVE_CHECKOUT_CHECKING,
@@ -115,6 +122,7 @@ type ActionState = {
 type SessionChoices = { outlet: boolean; session: boolean };
 interface BookingContextValue extends StoredBooking {
   profileAccessRevision: number;
+  profileAccessNotice: string;
   sessionChoices: SessionChoices;
   setSessionChoices: (choices: SessionChoices) => void;
   availability: ReturnType<typeof useBookingAvailability>;
@@ -297,6 +305,8 @@ export function BookingProvider({
   identityService?: CustomerIdentityService;
 }) {
   const [profileAccessRevision, setProfileAccessRevision] = useState(0);
+  const [profileAccessNotice, setProfileAccessNotice] =
+    useState(BOOKING_SIGNED_OUT);
   const [profileSaveError, setProfileSaveError] = useState("");
   const profileSave = useRef<{
     controller: AbortController;
@@ -802,7 +812,7 @@ export function BookingProvider({
   );
   useLayoutEffect(
     () =>
-      onProfileAccessLoss(() => {
+      onProfileAccessLoss((reason) => {
         if (service.mode !== "live" || identityService.mode !== "live") return;
         identityService.invalidate?.();
         clearIdentityEntry(identityService);
@@ -812,6 +822,9 @@ export function BookingProvider({
         profileSave.current = null;
         setProfileSaveError("");
         setSessionChoices({ outlet: true, session: true });
+        setProfileAccessNotice(
+          reason === "session" ? BOOKING_SESSION_EXPIRED : BOOKING_SIGNED_OUT,
+        );
         setProfileAccessRevision((revision) => revision + 1);
         setAction({ status: "idle" });
         // Preserve original financial authority; only the editable profile/draft is reset.
@@ -828,6 +841,16 @@ export function BookingProvider({
       setAction,
     ],
   );
+  useLayoutEffect(() => {
+    if (
+      service.mode === "live" &&
+      identityService.mode === "live" &&
+      pathname?.startsWith("/book/") &&
+      !latest.current.attempt &&
+      bookingAccessExpired()
+    )
+      reportProfileAccessLoss(profileAccessGeneration(), "session");
+  }, [service.mode, identityService.mode, pathname]);
   const conflictPath = useRef(pathname);
   useEffect(() => {
     const changed = conflictPath.current !== pathname;
@@ -2294,6 +2317,7 @@ export function BookingProvider({
       value={{
         ...value,
         profileAccessRevision,
+        profileAccessNotice,
         sessionChoices,
         saveContact,
         profileSaveError,

@@ -2,7 +2,9 @@
 
 ## Active outcome
 
-The owner resumed staging on 15 November 2026. Publish the consolidated navy-action/teal-selection/icon-removal revision through PR79, preserving approved font sizes. Proceed to Payment uses the existing lock icon. Verify exact-head CI and staging; merge remains pending owner acceptance. Base is PR78/main `a7716ef91b6fa68e182b5de1a1adac499f9d970d`; branch `fix/booking-card-clarity`.
+Consolidate booking-access expiry recovery and the latest CI typography repair, then push PR79 on `fix/booking-card-clarity`. Inspected local/remote head is `5e1b726ba55ba13f2e3a1d5af6600d2179c66ac9`; main/base remains PR78 `a7716ef91b6fa68e182b5de1a1adac499f9d970d`. Latest CI43683297517 failed on the browser's `normal` letter-spacing versus the test's `0px` expectation; the precise diagnosis is retained in Journey. No merge is authorized by this push request.
+
+Expired access now returns to step1 with the agreed notice at Back/Continue/route boundaries and explicit protected-request denials. Idle time and card/player edits do not redirect. Fresh entry restores access; stale replies cannot reset it. The server exposes its existing access deadline without changing lifetime or payment authority. Retained attempts keep their separate recovery. Local checks are complete with the preserved intermittent contact-save timeout noted below; publication and owner/CI browser acceptance remain pending.
 
 ## Current scope
 
@@ -40,15 +42,11 @@ Shared Continue actions reserve32px above and24px below, including24px viewport-
 
 ## Verification and next action
 
-Revision2716d9837bb5e85c80db523f1df096b2022b1235 passed all13 CI jobs in43670411973. Its earlier failures and repairs remain in Journey. The owner’s subsequent enquiry acknowledgement/automatic reply update passes5 UI/service and12 isolated Worker cases. CI43671770614 caught the dependent group-count assertion for the newly added Worker case; reconciled the strict520-case/184-contract counts. Publish the consolidated candidate, verify exact-head frontend/backend/live-email and Worker gates, then verify actual staging source/health. Merge remains pending owner staging acceptance. Browser execution and real inbox acceptance remain owner/CI-operated.
+Latest published-head CI43683297517 (`5e1b726`) failed the same `normal` versus `0px` typography assertion in frontend and backend browser shard1. Worker groups/runtime and both live-email browser shards passed; downstream skipped gates are not separate failures. The precise failure/repair and earlier evidence are retained in [Journey](docs/journey.md).
 
-The consolidated continuation layout uses the same sticky action for enquiry and booking, with32px above and24px below. The booking required-field note sits beside Booking Contact inside the card; the enquiry note sits beside Your details inside its form card. Cart date/time/trainer lines share21px line heights and2px gaps; remove/price controls occupy a separate right column. The first-step OR is20px with short horizontal rules on both sides, without underlining.
+Local navigation/access recovery plus Details checks pass17 cases; isolated Worker access/checkout suites pass71 cases. The diagnostic full unit run passes376 cases and its strict zero-skip/retry inventory receipt passes. Source/import/inventory, Worker source/layer, policy, formatting, lint and application/Worker types pass;37 source/browser-shard guard tests pass. Two earlier full local runs had the existing explicit-profile-save case exceed5seconds (374/375 and375/376 passed). Added temporary phase diagnostics completed all stages and the full suite; diagnostics were then removed. The timing cause remains unconfirmed, not claimed repaired. No test retry, skip, timeout or assertion weakening was added.
 
-Primary-action security/submission waits replace small spinners with a6px left-to-right navy fill along the disabled grey button. The visual eases towards90% over12seconds and holds there until actual readiness; it does not expose a fabricated percentage or enable an action on a timer. When waiting ends, the fill sweeps from its current position to100% over180ms before the ready entrance/halo resumes if eligibility is true. Provider work is never delayed for animation. Reduced motion shows a static fill. Provider calls, duplicate protection, eligibility and retry authority are unchanged.
-
-Latest CI43673289113 on1881b9e passed frontend, Worker groups/runtime and both backend browser shards. The live-email browser case for remembered contact editing failed on all three devices because its required-fields locator still used the retired class. Corrected that remaining selector to the shared heading note, retaining the exact copy and all contact/persistence assertions. Final repaired-head CI and staging remain pending.
-
-Notice colours now follow existing semantic tokens: confirmed success green (enquiry acknowledgement and saved contact), caution amber (preview/no-send and unavailable security checks), failure red, and general/loading information neutral. Existing verified/paid and pending badges retain the matching palette. Final candidate CI/staging and visual acceptance remain pending.
+Push the consolidated PR79 candidate once. Final-head frontend/backend/live-email and Worker gates, actual staging source/health, and owner browser/device acceptance remain pending. No assistant browser or live provider operation is authorized/performed. Merge requires owner acceptance and explicit authorization.
 
 ## Remaining owner acceptance
 

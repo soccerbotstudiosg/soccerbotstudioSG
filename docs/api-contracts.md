@@ -69,6 +69,8 @@ Rule numbers resolve through [the stable rule index](code-owners/index.md#11-bus
 
 ## 2. Common HTTP boundary
 
+Access creation/renewal (`POST /api/access`) and authenticated checkout renewal expose `X-Booking-Access-Expires-At`, the server capability expiry in epoch milliseconds. This response metadata is only a navigation hint and grants no authority. The client uses it when moving between booking steps; confirmed `401 access_denied` on pre-payment/identity operations also returns to step1. Idle time and local card/player edits do not trigger navigation. Retained payment/confirmation recovery uses its existing independent authority.
+
 [worker/index.ts](../worker/index.ts) owns route matching, guards, response envelopes and dispatch. API requests require HTTPS and the configured `APP_ORIGIN`; a supplied Origin must match. Non-GET browser operations require the matching Origin. Signed webhook paths are dispatched before the browser mutation-Origin requirement, while retaining protocol/host and supplied-Origin checks. There is no general cross-origin API/CORS contract.
 
 Only two query forms are accepted: daily availability GET `?refresh=1` and native booking POST `?hold=1`, on their exact routes. Other query parameters produce `400 unexpected_parameters`. Route attempt patterns accept 36 lowercase hex/hyphen characters; operation schemas additionally validate UUIDs where required. Service route IDs use 1–15 decimal digits starting nonzero. Month routes use `YYYY-MM` with month 01–12.

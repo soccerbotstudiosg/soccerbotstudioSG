@@ -1,4 +1,9 @@
 import {
+  profileAccessGeneration,
+  rememberBookingAccessExpiry,
+  reportExpiredBookingAccess,
+} from "./profile-access";
+import {
   creationResolutionSchema,
   checkoutSelectionRejectionSchema,
 } from "@/domain/native-checkout";
@@ -396,6 +401,7 @@ async function nativeRequest(
   body?: unknown,
   botToken?: string,
 ) {
+  const own = profileAccessGeneration();
   const response = await fetch(path, {
     method,
     signal,
@@ -409,6 +415,23 @@ async function nativeRequest(
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
+  if (
+    own === profileAccessGeneration() &&
+    !signal?.aborted &&
+    response.headers.has("X-Booking-Access-Expires-At")
+  )
+    rememberBookingAccessExpiry(
+      response.headers.get("X-Booking-Access-Expires-At"),
+    );
+  // Current-attempt restoration and payment recovery have separate retained authority.
+  if (
+    path.startsWith("/api/booking/calendar/") ||
+    path.startsWith("/api/booking/availability/") ||
+    path === "/api/booking/prepare" ||
+    path.startsWith("/api/booking/checkout/") ||
+    path.startsWith("/api/booking/hold/")
+  )
+    await reportExpiredBookingAccess(response, own, signal);
   if (!response.ok) {
     if (response.status === 400 || response.status === 503) {
       const error = await response

@@ -53,6 +53,8 @@ The tab-local `soccerbot-expiry-reconciliation:<attemptId>` sessionStorage recor
 
 The tab-local `soccerbot-suppressed-slots` sessionStorage entry contains validated affected session display data for conflict/expiry hiding. It grants no booking/payment authority. Successful fresh availability removes released entries; failed/stale reads retain them, and browser session lifetime applies. No independent age-based purge is implemented.
 
+The tab-local `soccerbot-booking-access-expiry` sessionStorage entry contains only the server-issued access deadline in epoch milliseconds. It is overwritten on explicit access establishment/checkout renewal and cleared to null when a response supplies no deadline; in-memory fallback tolerates unavailable storage. It controls navigation presentation only, not access or payment authority. Browser session lifetime applies; it contains no customer identity or credential.
+
 ### D1 application state
 
 | ID    | Tables and identifying content / purpose                                                                                                                                                                                                                                                                                  | Current expiry, revocation or movement                                                                                                                                                                                                                                                                                        | Physical cleanup / gap                                                                                                                                                        |

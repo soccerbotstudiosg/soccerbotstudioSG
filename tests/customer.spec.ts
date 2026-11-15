@@ -1925,7 +1925,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(card).toHaveCSS("color", brand);
     await expect(card).toHaveCSS("font-weight", "900");
     await expect(card).toHaveCSS("font-style", "italic");
-    await expect(card).toHaveCSS("letter-spacing", "0px");
+    await expect(card).toHaveCSS("letter-spacing", "normal");
     await expect(card).toHaveCSS("border-top-left-radius", "3px");
     await expect(card).toHaveCSS("border-top-right-radius", "12px");
     await expect(card).toHaveCSS("border-bottom-right-radius", "3px");

@@ -233,7 +233,23 @@
   },
   {
     "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "expired guest email lookup returns to step one with session notice and usable entry choices"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
     "title": "expired local identity at Details returns to entry before any profile read"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "expired navigation redirects on forward and back steps while local edits and renewed entry remain free"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "expired protected availability and verification notify recovery but transient failures do not"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "late or aborted email denial cannot expire a newly established booking session"
   },
   {
     "file": "src/features/booking/access-recovery.test.tsx",
