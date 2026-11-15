@@ -2,9 +2,9 @@
 
 ## Active outcome
 
-Consolidate booking-access expiry recovery and the latest CI typography repair, then push PR79 on `fix/booking-card-clarity`. Inspected local/remote head is `5e1b726ba55ba13f2e3a1d5af6600d2179c66ac9`; main/base remains PR78 `a7716ef91b6fa68e182b5de1a1adac499f9d970d`. Latest CI43683297517 failed on the browser's `normal` letter-spacing versus the test's `0px` expectation; the precise diagnosis is retained in Journey. No merge is authorized by this push request.
+Repair the stale revoked-checkout browser expectations on PR79 (`fix/booking-card-clarity`), inspected head `00fc1d4f689d7166e798b179d474c9a9c9fe9b3e`. CI43685423716 passed frontend (including the prior typography repair), both backend browser shards and all Worker groups/runtime. Both live-email shards failed the same revoked-access case across desktop/phone/tablet: it still expected Home and retained editable contact, while the approved recovery returns to step1 and clears the editable draft. Update that case and its strict title inventory; retain no-booking/payment and protected-access assertions.
 
-Expired access now returns to step1 with the agreed notice at Back/Continue/route boundaries and explicit protected-request denials. Idle time and card/player edits do not redirect. Fresh entry restores access; stale replies cannot reset it. The server exposes its existing access deadline without changing lifetime or payment authority. Retained attempts keep their separate recovery. Local checks are complete with the preserved intermittent contact-save timeout noted below; publication and owner/CI browser acceptance remain pending.
+Application behavior is unchanged in this repair. Expired access returns to step1 at navigation/protected-request boundaries; idle time/local edits remain unrestricted and retained financial attempts keep separate authority. Local source/import/inventory, lint, types, formatting and diff checks pass, along with all4 browser-shard guard tests; browser execution remains CI/owner-only. Push the consolidated test repair; merge remains pending owner staging acceptance and explicit authorization.
 
 ## Current scope
 
@@ -42,11 +42,9 @@ Shared Continue actions reserve32px above and24px below, including24px viewport-
 
 ## Verification and next action
 
-Latest published-head CI43683297517 (`5e1b726`) failed the same `normal` versus `0px` typography assertion in frontend and backend browser shard1. Worker groups/runtime and both live-email browser shards passed; downstream skipped gates are not separate failures. The precise failure/repair and earlier evidence are retained in [Journey](docs/journey.md).
+Original failures: CI43685423716, live-email jobs132725098284 and132725098287, case in tests/live-email.spec.ts formerly titled “real API revoked access at checkout retains the draft and denies protected access without provider creation”. Actual route `/book/account/` matches the approved session-expiry behavior. The repaired case asserts that route, exact expiry notice, usable Guest/Sign in choices and cleared editable contact/selection; it retains401, zero server attempts, zero provider booking/payment and no false confirmation/help assertions. The case count/device inventory is unchanged; only its title is reconciled.
 
-Local navigation/access recovery plus Details checks pass17 cases; isolated Worker access/checkout suites pass71 cases. The diagnostic full unit run passes376 cases and its strict zero-skip/retry inventory receipt passes. Source/import/inventory, Worker source/layer, policy, formatting, lint and application/Worker types pass;37 source/browser-shard guard tests pass. Two earlier full local runs had the existing explicit-profile-save case exceed5seconds (374/375 and375/376 passed). Added temporary phase diagnostics completed all stages and the full suite; diagnostics were then removed. The timing cause remains unconfirmed, not claimed repaired. No test retry, skip, timeout or assertion weakening was added.
-
-Push the consolidated PR79 candidate once. Final-head frontend/backend/live-email and Worker gates, actual staging source/health, and owner browser/device acceptance remain pending. No assistant browser or live provider operation is authorized/performed. Merge requires owner acceptance and explicit authorization.
+Reuse prior application/Worker evidence because this repair changes tests/documentation only. Affected static/guard checks passed; push once and verify exact-head frontend/backend/live-email gates. Staging revision/health and owner acceptance remain pending. The earlier intermittent local contact-save timeout remains documented in Journey; frontend CI on00fc1d4 passed.
 
 ## Remaining owner acceptance
 

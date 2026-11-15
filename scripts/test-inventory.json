@@ -1669,7 +1669,7 @@
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "real API revoked access at checkout retains the draft and denies protected access without provider creation"
+    "title": "real API revoked access at checkout returns to fresh entry and denies protected access without provider creation"
   },
   {
     "file": "tests/live-email.spec.ts",

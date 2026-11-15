@@ -2672,7 +2672,7 @@ test("real API failed booking readback retains created references and blocks che
   await uncertainHolding(page, "readback");
 });
 
-test("real API revoked access at checkout retains the draft and denies protected access without provider creation", async ({
+test("real API revoked access at checkout returns to fresh entry and denies protected access without provider creation", async ({
   page,
 }) => {
   // This case checks authorization; animation behavior has dedicated coverage.
@@ -2688,7 +2688,16 @@ test("real API revoked access at checkout retains the draft and denies protected
       .run();
     const response = await checkoutHoldResponse(page, undefined, true);
     expect(response.status()).toBe(401);
-    await expect(page).toHaveURL(sitePath("/"));
+    await expect(page).toHaveURL(sitePath("/book/account/"));
+    await expect(page.getByRole("alert")).toHaveText(
+      "Your session expired. Continue as a guest or sign in to start again.",
+    );
+    await expect(
+      page.getByRole("button", { name: "Continue as Guest" }),
+    ).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Sign in", exact: true }),
+    ).toBeEnabled();
     await expect(
       page.getByRole("heading", {
         name: "Confirmation unavailable",
@@ -2703,8 +2712,11 @@ test("real API revoked access at checkout retains the draft and denies protected
         JSON.parse(sessionStorage.getItem("soccerbot-live-draft") || "null"),
       ),
     ).toMatchObject({
+      mode: null,
+      accountEmail: "",
       accepted: false,
-      contact: { name: "Synthetic Guest", academy: "Synthetic School" },
+      slots: [],
+      contact: { name: "", email: "", phone: "", academy: "" },
     });
     expect(
       await mechanism.db.prepare("SELECT COUNT(*) AS n FROM attempts").first(),
