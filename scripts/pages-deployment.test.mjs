@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -116,12 +122,13 @@ function fixture(t, basePath) {
     mkdirSync(join(path, ".."), { recursive: true });
     writeFileSync(path, value);
   };
-  const html = `<main><a class="arena-booking" href="${basePath}/book/account/">Book</a><img src="${basePath}/assets/photo.jpg"></main><script src="${basePath}/_next/app.js"></script><link rel="stylesheet" href="${basePath}/_next/app.css">`;
+  const html = `<div id="page-refresh-content" inert style="visibility:hidden"><main><a class="arena-booking" href="${basePath}/book/account/">Book</a><img src="${basePath}/assets/photo.jpg"></main></div><div id="page-refresh" style="position:fixed;inset:0"><div role="status" aria-label="Refreshing…">Refreshing…</div></div><script src="${basePath}/_next/app.js"></script><link rel="stylesheet" href="${basePath}/_next/app.css">`;
   for (const file of [
     "index.html",
     "404.html",
     "studio/index.html",
     "enquiry/index.html",
+    "confirmation/index.html",
     "terms-of-service/index.html",
     "privacy-policy/index.html",
     "refund-policy/index.html",
@@ -154,7 +161,7 @@ function fixture(t, basePath) {
 for (const basePath of ["", "/SoccerBotStudioSG"]) {
   test(`export integrity and HTTP mount at ${basePath || "root"}`, async (t) => {
     const { root } = fixture(t, basePath);
-    assert.equal(checkExport(root, basePath).routes, 14);
+    assert.equal(checkExport(root, basePath).routes, 15);
     const server = exportServer(root, basePath);
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     t.after(
@@ -245,6 +252,39 @@ for (const [name, mutate, error] of [
     "missing booking route",
     (f) => rmSync(join(f.root, "book/payment/index.html")),
     /Missing exported route/,
+  ],
+  [
+    "missing confirmation route",
+    (f) => rmSync(join(f.root, "confirmation/index.html")),
+    /Missing exported route/,
+  ],
+  [
+    "missing initial refresh cover",
+    (f) => {
+      const file = "confirmation/index.html";
+      const original = readFileSync(join(f.root, file), "utf8");
+      const broken = original.replace(
+        'id="page-refresh"',
+        'id="missing-cover"',
+      );
+      assert.notEqual(broken, original);
+      f.write(file, broken);
+    },
+    /Missing initial refresh cover/,
+  ],
+  [
+    "visible incomplete content",
+    (f) => {
+      const file = "studio/index.html";
+      const original = readFileSync(join(f.root, file), "utf8");
+      const broken = original.replace(
+        "visibility:hidden",
+        "visibility:visible",
+      );
+      assert.notEqual(broken, original);
+      f.write(file, broken);
+    },
+    /Missing initial refresh cover/,
   ],
   [
     "missing image",

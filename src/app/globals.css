@@ -1413,6 +1413,9 @@
       stroke: #050a2f;
     }
   }
+  html:has(#page-refresh) {
+    overflow: hidden;
+  }
   .page-loading {
     position: fixed;
     inset: 0;

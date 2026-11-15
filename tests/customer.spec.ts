@@ -208,6 +208,84 @@ async function payment(page: Page, outcome = "success") {
     .click();
   await payAttempt(page, outcome);
 }
+/** Hold application scripts until every route proves its initial refresh cover. */
+async function checkRefreshCover(page: Page, paths: string[]) {
+  await page.addInitScript(() => {
+    localStorage.setItem("soccerbot-player-app-prompt", "true");
+  });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  for (const path of paths) {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const scripts = /\/_next\/.*\.js(?:\?|$)/;
+    await page.route(scripts, async (route) => {
+      await gate;
+      await route.continue();
+    });
+    try {
+      await page.goto(sitePath(path), { waitUntil: "commit" });
+      const cover = page.locator("#page-refresh");
+      await expect(
+        cover.getByRole("status", { name: "Refreshing…" }),
+      ).toBeVisible();
+      await expect(page.locator("#page-refresh-content")).toHaveAttribute(
+        "inert",
+        "",
+      );
+      await expect(page.locator("#main")).not.toBeVisible();
+      await expect(page.locator(".site-footer")).not.toBeVisible();
+      const bounds = await cover.boundingBox();
+      expect(bounds).toEqual({ x: 0, y: 0, ...page.viewportSize()! });
+      release();
+      await expect(cover).toHaveCount(0);
+      await expect(page.locator("#page-refresh-content")).not.toHaveAttribute(
+        "inert",
+        "",
+      );
+      await expect(
+        page
+          .locator("#main:visible, .booking-flow-overlay .page-loading:visible")
+          .first(),
+      ).toBeVisible();
+    } finally {
+      release();
+      await page.unroute(scripts);
+    }
+  }
+  expect(errors).toEqual([]);
+}
+
+test("public routes cover incomplete rendering until hydration is ready", async ({
+  page,
+}) => {
+  await checkRefreshCover(page, [
+    "/",
+    "/studio/",
+    "/enquiry/",
+    "/terms-of-service/",
+    "/privacy-policy/",
+    "/refund-policy/",
+    "/missing-refresh-route/",
+  ]);
+});
+test("booking and confirmation routes cover incomplete rendering until hydration is ready", async ({
+  page,
+}) => {
+  await checkRefreshCover(page, [
+    "/book/account/",
+    "/book/session/",
+    "/book/time/",
+    "/book/details/",
+    "/book/review/",
+    "/book/payment/",
+    "/book/confirmation/",
+    "/confirmation/",
+  ]);
+});
+
 test("public routes remove staff access and fit the viewport", async ({
   page,
 }) => {

@@ -46,6 +46,7 @@ export function checkExport(directory, basePath) {
     "404.html",
     "studio/index.html",
     "enquiry/index.html",
+    "confirmation/index.html",
     "terms-of-service/index.html",
     "privacy-policy/index.html",
     "refund-policy/index.html",
@@ -108,6 +109,17 @@ export function checkExport(directory, basePath) {
         if (node.matches('link[rel="stylesheet"]')) styles++;
         if (node.matches("img[src]")) images++;
       }
+      const refresh = doc.querySelector("#page-refresh");
+      const content = doc.querySelector("#page-refresh-content");
+      if (
+        refresh?.style.position !== "fixed" ||
+        refresh?.style.inset !== "0px" ||
+        !refresh.querySelector('[role="status"][aria-label="Refreshing…"]') ||
+        content?.style.visibility !== "hidden" ||
+        !content.hasAttribute("inert") ||
+        !content.querySelector("main")
+      )
+        throw new Error(`Missing initial refresh cover: ${file}`);
       dom.window.close();
     } else if (file.endsWith(".css")) {
       walk(parse(readFileSync(resolve(root, file), "utf8")), (node) => {
