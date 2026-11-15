@@ -285,7 +285,7 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "failed profile saves keep the form and retry returns to booking options only after success"
+    "title": "failed profile saves keep the form and successful retry acknowledges in place until explicit Back"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",

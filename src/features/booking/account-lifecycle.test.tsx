@@ -204,6 +204,19 @@ test("signed-in customer manages saved contact on Account without entering unava
   });
   expect(saveProfile).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Save contact details" }));
+  const savedNotice = await screen.findByText("Details saved.");
+  expect(savedNotice).toHaveClass("notice", "success");
+  expect(savedNotice).toHaveFocus();
+  expect(
+    screen.getByRole("heading", { name: "Saved contact details" }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("heading", { name: "Start your booking" }),
+  ).toBeNull();
+  expect(screen.queryByRole("alert")).toBeNull();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Back to booking options" }),
+  );
   await screen.findByRole("heading", { name: "Start your booking" });
   expect(
     screen.queryByRole("heading", { name: "Saved contact details" }),
@@ -560,7 +573,7 @@ test("expired continue-signed-in state returns a usable email choice instead of 
   expect(screen.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
-test("failed profile saves keep the form and retry returns to booking options only after success", async () => {
+test("failed profile saves keep the form and successful retry acknowledges in place until explicit Back", async () => {
   const identity = {
     email: "saved@example.invalid",
     expiresAt: Date.now() + 600000,
@@ -602,6 +615,19 @@ test("failed profile saves keep the form and retry returns to booking options on
     screen.getByRole("heading", { name: "Saved contact details" }),
   ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Save contact details" }));
+  const savedNotice = await screen.findByText("Details saved.");
+  expect(savedNotice).toHaveClass("notice", "success");
+  expect(savedNotice).toHaveFocus();
+  expect(
+    screen.getByRole("heading", { name: "Saved contact details" }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("heading", { name: "Start your booking" }),
+  ).toBeNull();
+  expect(screen.queryByRole("alert")).toBeNull();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Back to booking options" }),
+  );
   await screen.findByRole("heading", { name: "Start your booking" });
   expect(saveProfile).toHaveBeenCalledTimes(2);
 });
