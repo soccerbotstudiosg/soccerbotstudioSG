@@ -6469,3 +6469,7 @@ The next staging-only slice repairs the owner-reported invisible player number (
 PR79 first candidate `fa23d9582d467d56dad7578b3e94b7cad4008e18`, CI43657259644 backend shard2, preserved a real desktop geometry failure: Choose Date & Time had viewport ratio0.878 at1280×720. Phone/tablet passed. The CI screenshot showed a three-line metadata column and body line spacing consuming the remaining bottom clearance. The existing card owners now use the shared control line-height and give metadata a slightly larger share of the top row; text sizes, half-width cards and the full-visibility/eight-pixel-clearance assertion stay unchanged.
 
 The same run’s live-email shards preserved two stale expectations across desktop/phone/tablet: remembered-account email weight700 instead of the requested900, and automatic navigation after re-verification. Their existing tests now assert 24px centred italic900 and the explicit welcome/Continue transition while retaining account, remembered-contact and sign-out behavior checks.
+
+Before staging, the owner additionally requested removal of “(Trial Price)” and keeping “Trainer included” together. The authoritative demo name and its existing assertions are reconciled; the metadata phrase now has a non-wrapping span. Provider labels, prices and IDs are unchanged.
+
+The owner then requested equal-size minus/count/plus, a bold number and slightly smaller controls. The existing counter owner now uses equal40px cells, a700-weight number and20px icons, with matching browser assertions and unchanged1–4 bounds.

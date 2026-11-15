@@ -2956,6 +2956,9 @@
     color: var(--color-ink);
     font-size: var(--text-body);
   }
+  .session-product-meta > span {
+    white-space: nowrap;
+  }
   .session-product-prices {
     grid-column: 1 / -1;
     display: grid;
@@ -3020,25 +3023,24 @@
     font-size: var(--text-body);
   }
   .counter {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 40px);
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
-    min-height: 44px;
+  }
+  .counter :is(button, output) {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    color: var(--color-ink);
   }
   .counter output {
-    color: var(--color-ink);
     font-size: var(--text-body);
-    min-width: 2ch;
+    font-weight: var(--weight-heading);
     text-align: center;
   }
   .counter button {
-    color: var(--color-ink);
-    min-width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     border-radius: 8px;
     background: var(--color-surface);
   }
@@ -3046,7 +3048,8 @@
     color: var(--color-disabled-ink);
   }
   .counter svg {
-    width: 24px;
+    width: 20px;
+    height: 20px;
   }
   .hint {
     color: var(--color-muted);

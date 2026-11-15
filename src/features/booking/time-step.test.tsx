@@ -793,9 +793,7 @@ test("calendar back preserves player count with the outlet session and action im
       <SessionStep />
     </BookingProvider>,
   );
-  expect(
-    screen.getByRole("region", { name: "Kickoff Special (Trial Price)" }),
-  ).toBeVisible();
+  expect(screen.getByRole("region", { name: "Kickoff Special" })).toBeVisible();
   expect(
     screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
@@ -811,9 +809,7 @@ test("calendar back preserves player count with the outlet session and action im
       <SessionStep />
     </BookingProvider>,
   );
-  expect(
-    screen.getByRole("region", { name: "Kickoff Special (Trial Price)" }),
-  ).toBeVisible();
+  expect(screen.getByRole("region", { name: "Kickoff Special" })).toBeVisible();
   expect(
     screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
@@ -823,7 +819,7 @@ test("calendar back preserves player count with the outlet session and action im
   expect(scroll).not.toHaveBeenCalled();
   await user.click(
     screen.getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
+      name: "Choose Kickoff Special",
     }),
   );
   expect(
@@ -834,7 +830,7 @@ test("calendar back preserves player count with the outlet session and action im
   ).not.toBeInTheDocument();
   await user.click(
     screen.getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
+      name: "Choose Kickoff Special",
     }),
   );
   expect(screen.getByRole("status", { name: "Players" })).toHaveTextContent(

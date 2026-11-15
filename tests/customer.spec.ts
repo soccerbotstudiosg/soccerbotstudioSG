@@ -1093,6 +1093,18 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
       await expect(text).toHaveCSS("color", "rgb(16, 22, 54)");
     }
   }
+  await expect(page.locator(".session-product-meta > span")).toHaveCSS(
+    "white-space",
+    "nowrap",
+  );
+  await expect(page.locator(".session-product-name")).not.toContainText(
+    "(Trial Price)",
+  );
+  for (const control of await page.locator(".counter > *").all()) {
+    await expect(control).toHaveCSS("width", "40px");
+    await expect(control).toHaveCSS("height", "40px");
+  }
+  await expect(page.locator(".counter output")).toHaveCSS("font-weight", "700");
   await expect(page.locator(".counter output")).toHaveText("1");
   const priceRows = await page
     .locator(".session-product-prices > span")
@@ -1132,7 +1144,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await page.getByRole("button", { name: "Remove one player" }).click();
   await expect(page.locator(".counter output")).toHaveText("2");
   const sessionChoice = page.getByRole("button", {
-    name: "Choose Kickoff Special (Trial Price)",
+    name: "Choose Kickoff Special",
     exact: true,
   });
   await sessionChoice.click();
@@ -1900,7 +1912,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     .locator(".session-product")
     .evaluate((element) => getComputedStyle(element).backgroundImage);
   await expect(
-    page.getByRole("dialog", { name: "Kickoff Special (Trial Price)" }),
+    page.getByRole("dialog", { name: "Kickoff Special" }),
   ).toHaveCount(0);
   await expect(page.locator(".player-selection")).toBeVisible();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
