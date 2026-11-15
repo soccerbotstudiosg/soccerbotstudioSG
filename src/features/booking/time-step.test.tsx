@@ -134,7 +134,7 @@ async function calendarScenario(mobile: boolean) {
   const continues = screen.getAllByRole("link", {
     name: /^Enter Booking Details/,
   });
-  expect(continues).toHaveLength(2);
+  expect(continues).toHaveLength(1);
   for (const control of continues)
     expect(control).toHaveAttribute("href", "/book/details");
   expect(
@@ -421,6 +421,7 @@ test("crossing sessions retain checkout behavior without scheduling notices", as
   const basket = render(
     <BookingProvider>
       <Summary basket />
+      <BasketContinue />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -439,13 +440,9 @@ test("crossing sessions retain checkout behavior without scheduling notices", as
   expect(
     within(cart).queryByText("Session no longer available."),
   ).not.toBeInTheDocument();
-  expect(cart.querySelector(".summary-total")).toBeNull();
-  expect(
-    cart
-      .querySelector(".basket-continue")!
-      .compareDocumentPosition(cart.querySelector(".basket-list")!),
-  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-  expect(cart.querySelector(".booking-primary-action")).toHaveAttribute(
+  expect(cart.querySelector(".summary-total")).toHaveTextContent("Total");
+  expect(cart.querySelector(".basket-continue")).toBeNull();
+  expect(document.querySelector(".booking-primary-action")).toHaveAttribute(
     "data-ready-animation",
     "true",
   );

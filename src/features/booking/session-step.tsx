@@ -44,6 +44,9 @@ export function SessionStep() {
   return (
     <>
       <BookingHeading lines={["Your", "session"]} />
+      <p className="lead">
+        Confirm your outlet, session and number of players.
+      </p>
       <h2 className="section-title">Outlet</h2>
       <div className="outlet-options">
         <button

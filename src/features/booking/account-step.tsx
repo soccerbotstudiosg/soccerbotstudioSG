@@ -374,6 +374,11 @@ export function AccountStep({
             )
           }
         />
+        <p className="lead">
+          {verifiedIdentity
+            ? "Continue signed in to start your booking."
+            : "Continue as a guest or sign in to start your booking."}
+        </p>
         {profileAccessRevision > 0 && !draft.mode && !verifiedIdentity && (
           <p className="alert" role="alert">
             {BOOKING_SIGNED_OUT}

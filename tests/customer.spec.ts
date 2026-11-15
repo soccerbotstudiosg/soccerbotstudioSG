@@ -1304,15 +1304,14 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     );
     await expect(page.locator(".basket-list")).toHaveCSS("max-height", "none");
     const positions = await page.locator(".aside-wrap").evaluate((element) => ({
-      continueBottom: element
-        .querySelector(".basket-continue")!
-        .getBoundingClientRect().bottom,
+      cartBottom: element.querySelector(".summary")!.getBoundingClientRect()
+        .bottom,
       instructorsTop: element
         .querySelector(".booking-instructors")!
         .getBoundingClientRect().top,
     }));
     expect(positions.instructorsTop).toBeGreaterThanOrEqual(
-      positions.continueBottom,
+      positions.cartBottom,
     );
   }
   await openBookingPanel(page, "cart");
@@ -1688,6 +1687,23 @@ test("header blue and the typography hierarchy stay consistent across every book
     ).toBeCloseTo(pageSize, 5);
     await expect(heading).toHaveCSS("color", color);
     await expect(heading).toHaveCSS("font-weight", "900");
+    const instructions: Record<string, string> = {
+      "Start your booking":
+        "Continue as a guest or sign in to start your booking.",
+      "Your session": "Confirm your outlet, session and number of players.",
+      "Select dates and times": "40-minute sessions · 10-minute changeover.",
+      "Your details": "Enter the contact details for this booking.",
+      "Review Booking":
+        "Review your booking details before proceeding to payment.",
+    };
+    if (instructions[name]) {
+      const instruction = page.locator(".lead");
+      await expect(instruction).toHaveText(instructions[name]);
+      await expect(instruction).toHaveCSS("font-size", "16px");
+      await expect(instruction).toHaveCSS("color", "rgb(88, 97, 116)");
+      await expect(instruction).toHaveCSS("font-family", /Roboto/);
+    }
+
     if (name === "Select dates and times") {
       await expect(page.locator(".calendar-selection-context")).toHaveCSS(
         "font-size",
@@ -1754,7 +1770,9 @@ test("header blue and the typography hierarchy stay consistent across every book
           .locator(".booking-action-anchor")
           .boundingBox();
         const floating =
-          anchorBox!.y + anchorBox!.height > page.viewportSize()!.height;
+          anchorBox!.y + anchorBox!.height > page.viewportSize()!.height ||
+          anchorBox!.y <
+            (await page.locator(".site-header").boundingBox())!.height;
         await expect(primaryBar).toHaveAttribute(
           "data-floating",
           String(floating),
@@ -1790,36 +1808,46 @@ test("header blue and the typography hierarchy stay consistent across every book
         expect(actionBox!.height).toBeGreaterThanOrEqual(48);
         const previousScroll = await page.evaluate(() => scrollY);
         await page.locator(".site-footer").scrollIntoViewIfNeeded();
-        await expect(primaryBar).toHaveAttribute("data-floating", "false");
-        await expect(primaryBar).toHaveCSS("position", "relative");
-        const settledBar = await primaryBar.boundingBox();
+        await expect(action).toBeInViewport({ ratio: 1 });
         const settledAnchor = await page
           .locator(".booking-action-anchor")
           .boundingBox();
-        expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(15.6, 0);
-        const shellWidth = await page
-          .locator(".booking-shell")
-          .evaluate(
-            (node) =>
-              node.clientWidth -
-              parseFloat(getComputedStyle(node).paddingLeft) -
-              parseFloat(getComputedStyle(node).paddingRight),
+        const headerBottom = await page
+          .locator(".site-header")
+          .evaluate((node) => node.getBoundingClientRect().bottom);
+        if (settledAnchor!.y >= headerBottom) {
+          await expect(primaryBar).toHaveAttribute("data-floating", "false");
+          await expect(primaryBar).toHaveCSS("position", "relative");
+          const settledBar = await primaryBar.boundingBox();
+          expect(settledBar!.width).toBeCloseTo(settledAnchor!.width, 0);
+          expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(15.6, 0);
+          const footer = await page.locator(".site-footer").boundingBox();
+          expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
+            footer!.y,
           );
-        if (
-          await page
-            .getByRole("heading", {
-              name: "Select dates and times",
-              exact: true,
-            })
-            .count()
-        )
-          expect(settledBar!.width).toBeCloseTo(shellWidth, 0);
-        const footer = await page.locator(".site-footer").boundingBox();
-        expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
-          footer!.y,
-        );
+        } else {
+          await expect(primaryBar).toHaveAttribute("data-floating", "true");
+          await expect(primaryBar).toHaveCSS("position", "fixed");
+        }
         await page.evaluate((y) => scrollTo(0, y), previousScroll);
       }
+    }
+    if (
+      page.viewportSize()!.width > 700 &&
+      (await page.locator(".booking-primary-action").count())
+    ) {
+      const primaryBar = page.locator(".booking-primary-action");
+      const action = primaryBar.locator(":scope > .button");
+      await expect(primaryBar).toHaveCount(1);
+      await expect(action).toBeInViewport({ ratio: 1 });
+      const previousScroll = await page.evaluate(() => scrollY);
+      await page.locator(".site-footer").scrollIntoViewIfNeeded();
+      await expect(action).toBeInViewport({ ratio: 1 });
+      const anchor = await page.locator(".booking-action-anchor").boundingBox();
+      const bar = await primaryBar.boundingBox();
+      expect(bar!.x).toBeCloseTo(anchor!.x, 0);
+      expect(bar!.width).toBeCloseTo(anchor!.width, 0);
+      await page.evaluate((y) => scrollTo(0, y), previousScroll);
     }
     await expect(
       page.getByRole("button", { name: "Back to top", exact: true }),
@@ -2814,11 +2842,16 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
         "44px",
       );
     }
-    await expect(cart.locator(".summary-total")).toHaveCount(0);
+    await expect(cart.locator(".summary-total")).toHaveCount(1);
+    await expect(cart.locator(".basket-continue")).toHaveCount(0);
+    await expect(cart.locator(".summary-body")).toHaveCSS(
+      "padding-top",
+      "28px",
+    );
     const layout = await cart.evaluate((element) => {
       const card = element.getBoundingClientRect();
-      const action = element
-        .querySelector(".basket-continue")!
+      const heading = element
+        .querySelector(".basket-heading")!
         .getBoundingClientRect();
       const list = element
         .querySelector(".basket-list")!
@@ -2829,17 +2862,22 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       return {
         height: card.height,
         available: window.innerHeight - header.height - 32,
-        actionBottom: action.bottom,
+        headingBottom: heading.bottom,
         listTop: list.top,
         overflowing: element.scrollWidth > element.clientWidth,
       };
     });
     expect(layout.height).toBeLessThanOrEqual(layout.available);
-    expect(layout.actionBottom).toBeLessThan(layout.listTop);
+    expect(layout.headingBottom).toBeLessThan(layout.listTop);
     expect(layout.overflowing).toBe(false);
     await page.setViewportSize({ width: 1100, height: 600 });
-    await cart.locator(".basket-continue").scrollIntoViewIfNeeded();
-    await expect(cart.locator(".basket-continue")).toBeInViewport();
+    const continuation = page.locator(
+      ".booking-primary-action .basket-continue",
+    );
+    await expect(continuation).toHaveCount(1);
+    await expect(continuation).toBeInViewport({ ratio: 1 });
+    await page.locator(".site-footer").scrollIntoViewIfNeeded();
+    await expect(continuation).toBeInViewport({ ratio: 1 });
     await expect(cart.locator(".basket-list")).toHaveCSS(
       "overflow-y",
       "visible",

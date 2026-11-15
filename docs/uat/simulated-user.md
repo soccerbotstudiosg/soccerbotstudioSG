@@ -591,3 +591,7 @@ Session date/time/trainer lines share equal2px vertical gaps across cart and doc
 Month/week day hover uses the shared pale teal fill and border. Time-slot containers use teal while choosing/selected; their outer focus ring follows keyboard focus-visible rather than lingering after mouse deselection.
 
 Owner acceptance — 15 November 2026: the four-hour cutoff test is fully accepted, including the previously pending cart/tile cutoff check. This is owner-reported acceptance; no assistant/provider trial was performed. The report did not identify a new source revision.
+
+Each booking step has one introduction in the existing muted16px lead style. Entry asks guests to continue or sign in (verified users to continue signed in); Session asks users to confirm outlet/session/players; Details asks for booking contact details; Review asks users to review before payment. Existing sign-in/code instructions and Calendar’s “40-minute sessions · 10-minute changeover.” remain unchanged. Saved-contact editing has its matching short instruction. Compact desktop Session spacing retains initial Continue visibility.
+
+Presentation follow-up: on desktop and phone, verify one main next action remains visible on Session, Calendar, Details and Review while scrolling/resizing, including disabled states. Calendar cart has no Enter Booking Details button and matches Details top spacing, with its total retained. Check full five-session cart fit and keyboard focus clearance.

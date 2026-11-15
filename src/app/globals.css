@@ -2497,7 +2497,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 12px 0 8px;
+    margin: 0 0 8px;
   }
   .basket-list li {
     display: grid;
@@ -2554,21 +2554,9 @@
   .basket-continue {
     margin-top: 0;
   }
-  .summary-cart .summary-body {
-    padding: 12px;
-  }
-  .summary-cart .basket-continue {
-    min-height: 48px;
-    padding: 10px 14px;
-  }
-  .summary-cart .booking-action-total {
-    margin-left: auto;
-    font-size: var(--text-card);
-    font-weight: var(--weight-heading);
-  }
   @media (min-width: 701px) and (max-height: 850px) {
     .summary-cart-full .basket-heading {
-      margin: 8px 0 4px;
+      margin: 0 0 4px;
     }
     .summary-cart-full .basket-list li {
       column-gap: 8px;
@@ -2646,7 +2634,40 @@
   }
 
   .booking-action-anchor {
-    display: contents;
+    display: block;
+    width: 100%;
+    padding: calc(24px * 0.65) 0 calc(16px * 0.65 + env(safe-area-inset-bottom));
+  }
+  html:has(.booking-shell .booking-primary-action) {
+    scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  .booking-shell :is(input, textarea, select, button, a, [tabindex]) {
+    scroll-margin-top: 60px;
+  }
+  .booking-shell .booking-primary-action {
+    --action-left: 0px;
+    --action-width: 100%;
+    position: relative;
+    z-index: 35;
+    display: flex;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .booking-shell .booking-primary-action[data-floating="true"] {
+    position: fixed;
+    left: var(--action-left);
+    bottom: calc(16px * 0.65 + env(safe-area-inset-bottom));
+    width: var(--action-width);
+  }
+  .booking-shell .booking-primary-action > .button {
+    width: 100%;
+    min-height: var(--control-height);
+    margin: 0;
+    padding: 18px 24px;
   }
   .booking-shell {
     max-width: 1160px;
@@ -4652,7 +4673,7 @@
       padding-top: 6px;
     }
     .booking-shell:has(.outlet-options)
-      :is(.booking-heading-row, .section-title) {
+      :is(.booking-heading-row, .section-title, .lead) {
       margin-bottom: 8px;
     }
     .outlet-options {
@@ -4797,40 +4818,13 @@
       font-weight: var(--weight-heading);
       white-space: nowrap;
     }
-    .booking-action-anchor {
-      display: block;
-      width: 100%;
-      padding: calc(24px * 0.65) 0
-        calc(16px * 0.65 + env(safe-area-inset-bottom));
-    }
-    html:has(.booking-shell .booking-primary-action) {
-      scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom));
-    }
-    .booking-shell :is(input, textarea, select, button, a, [tabindex]) {
-      scroll-margin-top: 60px;
-    }
-    .booking-shell .booking-primary-action {
-      position: relative;
-      z-index: 35;
-      display: flex;
-      width: 100%;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-    }
     .booking-shell .booking-primary-action[data-floating="true"] {
-      position: fixed;
       left: 20px;
       right: 20px;
-      bottom: calc(16px * 0.65 + env(safe-area-inset-bottom));
       width: auto;
     }
     .booking-shell .booking-primary-action > .button {
-      width: 100%;
       min-height: 48px;
-      margin: 0;
       padding: 10px 16px;
       font-size: var(--text-body);
       line-height: 1.4;

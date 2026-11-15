@@ -497,6 +497,11 @@ export function DetailsStep({
       ) : (
         <BookingHeading lines={["Your", "details"]} />
       )}
+      <p className="lead">
+        {profileOnly
+          ? "Update your saved contact details."
+          : "Enter the contact details for this booking."}
+      </p>
       <form
         id="details-form"
         noValidate

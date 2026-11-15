@@ -159,11 +159,9 @@ export function PriceSummary({ draft }: { draft: BookingDraft }) {
 /** Render the booking summary and permitted editing actions. */
 export function Summary({
   basket = false,
-  includeAction = true,
   showTrainers = true,
 }: {
   basket?: boolean;
-  includeAction?: boolean;
   showTrainers?: boolean;
 }) {
   const { draft, update, now } = useBooking();
@@ -180,7 +178,6 @@ export function Summary({
           <span className="eyebrow">Your Cart</span>
         </div>
         <div className="summary-body">
-          {basket && includeAction && <BasketContinue />}
           {draft.slots.length ? (
             <>
               <div className="basket-heading">
@@ -220,15 +217,13 @@ export function Summary({
               <p>Choose a date, then add the times that suit you.</p>
             </div>
           )}
-          {!(basket && includeAction) && (
-            <div className="summary-total">
-              <span>Total</span>
-              <strong>
-                <span className="total-currency">SGD</span>{" "}
-                {money(totalCents(draft))}
-              </strong>
-            </div>
-          )}
+          <div className="summary-total">
+            <span>Total</span>
+            <strong>
+              <span className="total-currency">SGD</span>{" "}
+              {money(totalCents(draft))}
+            </strong>
+          </div>
         </div>
       </aside>
       {showTrainers && draft.slots.length > 0 && <SelectedTrainers />}

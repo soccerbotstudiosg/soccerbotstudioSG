@@ -4,7 +4,7 @@ import { money } from "@/domain/dates";
 import { useBooking } from "./provider";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
-/** Float one existing action only until its reserved document position is reached. */
+/** Keep the single next action visible when its reserved position is offscreen. */
 export function BookingPrimaryAction({
   children,
   className = "",
@@ -56,28 +56,21 @@ export function BookingPrimaryAction({
   useLayoutEffect(() => {
     const position = anchor.current;
     const control = action.current;
-    if (
-      !position ||
-      !control ||
-      typeof window.matchMedia !== "function" ||
-      !("ResizeObserver" in window)
-    )
-      return;
-    const mobile = matchMedia("(max-width: 700px)");
+    if (!position || !control || !("ResizeObserver" in window)) return;
     let frame = 0;
     const measure = () => {
       frame = 0;
-      if (!mobile.matches) {
-        position.style.minHeight = "";
-        control.dataset.floating = "false";
-        return;
-      }
       const style = getComputedStyle(position);
       const spacing =
         parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
       position.style.minHeight = `${control.getBoundingClientRect().height + spacing}px`;
+      const bounds = position.getBoundingClientRect();
+      control.style.setProperty("--action-left", `${bounds.left}px`);
+      control.style.setProperty("--action-width", `${bounds.width}px`);
+      const header = document.querySelector(".site-header");
+      const top = header?.getBoundingClientRect().bottom ?? 0;
       control.dataset.floating = String(
-        position.getBoundingClientRect().bottom > window.innerHeight,
+        bounds.bottom > window.innerHeight || bounds.top < top,
       );
     };
     const schedule = () => {
@@ -88,14 +81,12 @@ export function BookingPrimaryAction({
     if (position.parentElement) observer.observe(position.parentElement);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
-    mobile.addEventListener("change", schedule);
     measure();
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
-      mobile.removeEventListener("change", schedule);
     };
   }, []);
   return (
