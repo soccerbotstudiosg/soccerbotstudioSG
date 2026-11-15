@@ -682,3 +682,9 @@ Each booking step has one introduction in the existing muted16px lead style. Ent
 Calendar continuation appears once outside the cart. Cart and Details summaries share top spacing and retain totals. The main next action stays visible on desktop and phone as its original document position scrolls outside view; existing selection/validation rules still decide whether it is enabled.
 
 Continue actions have32px top and24px bottom breathing room; floating actions sit24px above the safe viewport edge. Focusing the trainer dropdown does not add a second focus outline around its session card.
+
+### Consolidated continuation presentation — 15 November 2026
+
+The consolidated continuation layout uses the same sticky action for enquiry and booking, with32px above and24px below. Required-field notes sit beside the Details and enquiry headings. Cart date/time/trainer lines share21px line heights and2px gaps; remove/price controls occupy a separate right column. The first-step OR is20px with short horizontal rules on both sides, without underlining.
+
+Primary-action security/submission waits replace small spinners with a6px left-to-right navy fill along the disabled grey button. The visual eases towards90% over12seconds and holds there until actual readiness; it does not expose a fabricated percentage or enable an action on a timer. Existing ready entrance/halo animation resumes only when eligibility is true. Reduced motion shows a static fill. Provider calls, duplicate protection, eligibility and retry authority are unchanged.

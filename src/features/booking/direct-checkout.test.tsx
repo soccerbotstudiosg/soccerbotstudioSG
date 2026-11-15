@@ -249,38 +249,34 @@ async function directCase(scenario: string) {
     screen.getByRole("button", { name: /^Proceed to Payment/ }),
   ).toBeDisabled();
   expect(
-    screen
-      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
-      .querySelector(".spinner"),
-  ).toBeVisible();
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .parentElement,
+  ).toHaveAttribute("data-loading", "true");
   expect(
     screen.getByRole("button", { name: /^Proceed to Payment/ }),
   ).toHaveAttribute("aria-busy", "true");
   fireEvent.click(screen.getByRole("checkbox"));
   expect(
-    screen
-      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
-      .querySelector(".spinner"),
-  ).toBeNull();
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .parentElement,
+  ).not.toHaveAttribute("data-loading");
   expect(
     screen.getByRole("button", { name: /^Proceed to Payment/ }),
   ).toBeDisabled();
   fireEvent.click(screen.getByRole("checkbox"));
   expect(
-    screen
-      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
-      .querySelector(".spinner"),
-  ).toBeVisible();
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .parentElement,
+  ).toHaveAttribute("data-loading", "true");
   expect(checkout).not.toHaveBeenCalled();
   expect(pay).not.toHaveBeenCalled();
   fireEvent.click(
     screen.getByRole("button", { name: "Complete checkout proof" }),
   );
   expect(
-    screen
-      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
-      .querySelector(".spinner"),
-  ).toBeNull();
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .parentElement,
+  ).not.toHaveAttribute("data-loading");
   await act(async () =>
     fireEvent.click(
       screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),

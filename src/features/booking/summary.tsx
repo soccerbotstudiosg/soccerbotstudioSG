@@ -100,18 +100,16 @@ export function SessionList({
               <span>
                 {slot.start}–{endTime(slot.start)} SGT
               </span>
-              {!remove && (
-                <div className="session-trainer-row">
-                  <span className="session-instructor">
-                    Trainer: {sessionInstructorName(slot)}
-                  </span>
-                  {showPrices && (
-                    <strong className="session-item-price">
-                      {money(sessionPrice(slot))}
-                    </strong>
-                  )}
-                </div>
-              )}
+              <div className="session-trainer-row">
+                <span className="session-instructor">
+                  Trainer: {sessionInstructorName(slot)}
+                </span>
+                {!remove && showPrices && (
+                  <strong className="session-item-price">
+                    {money(sessionPrice(slot))}
+                  </strong>
+                )}
+              </div>
               {now !== undefined && isElapsed(slot, now) && (
                 <span className="field-error">
                   Session has started — remove to continue.
@@ -119,19 +117,14 @@ export function SessionList({
               )}
             </div>
             {remove && (
-              <button
-                className="basket-remove"
-                aria-label={`Remove ${slot.date} at ${slot.start}`}
-                onClick={() => remove(slot)}
-              >
-                <Icon name="close" />
-              </button>
-            )}
-            {remove && (
-              <div className="basket-price-row">
-                <span className="session-instructor">
-                  Trainer: {sessionInstructorName(slot)}
-                </span>
+              <div className="basket-actions">
+                <button
+                  className="basket-remove"
+                  aria-label={`Remove ${slot.date} at ${slot.start}`}
+                  onClick={() => remove(slot)}
+                >
+                  <Icon name="close" />
+                </button>
                 <small>{money(sessionPrice(slot))}</small>
               </div>
             )}

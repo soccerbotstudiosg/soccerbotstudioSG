@@ -881,6 +881,22 @@ test("enquiry remains available without external submission or a mock assistant"
     await expect(control).toHaveCSS("font-weight", "900");
     await expect(control).toHaveCSS("font-style", "italic");
   }
+  await expect(
+    page.locator(".enquiry-page .booking-heading-row .required-fields"),
+  ).toHaveText("* Required fields");
+  const enquiryAction = page.getByRole("button", { name: "Send enquiry" });
+  await expect(enquiryAction).toBeInViewport({ ratio: 1 });
+  await expect(
+    page.locator(".enquiry-page .booking-primary-action"),
+  ).toHaveCount(1);
+  await expect(page.locator(".enquiry-page .booking-action-anchor")).toHaveCSS(
+    "padding-top",
+    "32px",
+  );
+  await expect(page.locator(".enquiry-page .booking-action-anchor")).toHaveCSS(
+    "padding-bottom",
+    "24px",
+  );
   await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
   await expect(
     page.getByText("Enter your requirements using 1–2,000 characters."),
@@ -920,7 +936,9 @@ test("enquiry remains available without external submission or a mock assistant"
   await expect(acknowledgement).toHaveText("Preview · No enquiry sent.");
   await expect(acknowledgement).toBeInViewport();
   await expect(acknowledgement).toBeFocused();
-  await expect(page.locator(".enquiry-page h1 + [role=status]")).toHaveCount(1);
+  await expect(
+    page.locator(".enquiry-page .booking-heading-row + [role=status]"),
+  ).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: /studio assistant/i }),
   ).toHaveCount(0);
@@ -1919,7 +1937,23 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(guest).toHaveCSS("font-size", "16px");
   const divider = page.locator(".access-choice-divider");
   await expect(divider).toHaveCSS("font-family", /Roboto/);
-  await expect(divider).toHaveCSS("font-size", "16px");
+  await expect(divider).toHaveCSS("font-size", "20px");
+  await expect(divider).toHaveCSS("text-transform", "uppercase");
+  await expect(divider).toHaveCSS("text-decoration-line", "none");
+  const dividerLines = await divider.evaluate((node) =>
+    ["::before", "::after"].map((pseudo) => {
+      const style = getComputedStyle(node, pseudo);
+      return {
+        width: style.width,
+        height: style.height,
+        content: style.content,
+      };
+    }),
+  );
+  expect(dividerLines).toEqual([
+    { width: "32px", height: "1px", content: '""' },
+    { width: "32px", height: "1px", content: '""' },
+  ]);
   await expect(divider).toHaveCSS("font-weight", "900");
   await expect(divider).toHaveCSS("font-style", "italic");
   for (const action of [guest, page.getByRole("button", { name: "Sign in" })]) {
@@ -2154,9 +2188,9 @@ test("header blue and the typography hierarchy stay consistent across every book
   await pageHeading("Your details");
   await expect(page.locator("#details-form h2")).toHaveText("Booking Contact");
   await sectionType("#details-form h2");
-  await expect(page.locator(".booking-required")).toHaveText(
-    "* Required fields",
-  );
+  await expect(
+    page.locator(".booking-heading-row .required-fields"),
+  ).toHaveText("* Required fields");
   await expect(
     page.getByText("Review your selected times and details.", { exact: false }),
   ).toHaveCount(0);
@@ -2848,6 +2882,17 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
         "min-height",
         "44px",
       );
+      const lines = await row
+        .locator(":scope > div")
+        .first()
+        .evaluate((node) =>
+          Array.from(node.children)
+            .slice(0, 3)
+            .map((line) => line.getBoundingClientRect().toJSON()),
+        );
+      expect(lines[1].y - lines[0].y).toBeCloseTo(23, 1);
+      expect(lines[2].y - lines[1].y).toBeCloseTo(23, 1);
+      for (const line of lines) expect(line.height).toBeCloseTo(21, 1);
     }
     await expect(cart.locator(".summary-total")).toHaveCount(1);
     await expect(cart.locator(".basket-continue")).toHaveCount(0);

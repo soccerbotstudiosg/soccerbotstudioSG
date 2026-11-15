@@ -88,6 +88,7 @@
   --leading-heading: 1.25;
   --leading-body: 1.6;
   --leading-control: 1.4;
+  --leading-session: 1.5;
   --weight-body: 400;
   --weight-label: 500;
   --weight-heading: 700;
@@ -313,7 +314,7 @@
   .auth-demo,
   .auth-demo-code,
   .auth-demo-code span,
-  .booking-required,
+  .required-fields,
   .series-date,
   .series-date span,
   .time-heading span,
@@ -627,6 +628,25 @@
     min-width: 0;
     margin-bottom: 0;
   }
+  .booking-heading-row > .required-fields {
+    align-self: center;
+  }
+  .form-heading-note {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 0;
+    max-width: 40%;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .form-heading-note .booking-identity-status {
+    width: 100%;
+    max-width: 100%;
+  }
+  .enquiry-form > :not(.booking-action-anchor) + :not(.booking-action-anchor) {
+    margin-top: 28px;
+  }
   .booking-identity-status {
     display: flex;
     min-width: 0;
@@ -682,7 +702,8 @@
     .booking-heading-row:has(.booking-verified-status) {
       grid-template-columns: minmax(0, 1fr) fit-content(32%);
     }
-    .booking-identity-status {
+    .booking-identity-status,
+    .form-heading-note {
       max-width: 100%;
       justify-self: end;
     }
@@ -2504,7 +2525,7 @@
   .basket-list li {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
+    align-items: start;
     gap: var(--space-session-lines) 12px;
     padding: 12px;
     margin-bottom: 12px;
@@ -2518,15 +2539,13 @@
     gap: var(--space-session-lines);
     min-width: 0;
   }
-  .basket-list .basket-price-row {
-    grid-column: 1 / -1;
-    flex-direction: row;
+  .basket-list .basket-actions {
+    align-self: stretch;
+    align-items: flex-end;
     justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
   }
-  .basket-price-row small {
-    flex-shrink: 0;
+  .basket-list li :is(strong, span, small) {
+    line-height: var(--leading-session);
   }
   .basket-list li span {
     color: var(--color-muted);
@@ -2535,7 +2554,7 @@
     color: var(--color-brand);
   }
   .basket-remove {
-    align-self: start;
+    align-self: flex-end;
     display: grid;
     place-items: center;
     border: 1px solid var(--color-danger-line);
@@ -2644,15 +2663,16 @@
     padding: var(--space-action-top) 0
       calc(var(--space-action-bottom) + env(safe-area-inset-bottom));
   }
-  html:has(.booking-shell .booking-primary-action) {
+  html:has(:is(.booking-shell, .enquiry-page) .booking-primary-action) {
     scroll-padding-bottom: calc(
       80px + var(--space-action-bottom) + env(safe-area-inset-bottom)
     );
   }
-  .booking-shell :is(input, textarea, select, button, a, [tabindex]) {
+  :is(.booking-shell, .enquiry-page)
+    :is(input, textarea, select, button, a, [tabindex]) {
     scroll-margin-top: 60px;
   }
-  .booking-shell .booking-primary-action {
+  :is(.booking-shell, .enquiry-page) .booking-primary-action {
     --action-left: 0px;
     --action-width: 100%;
     position: relative;
@@ -2665,13 +2685,14 @@
     background: transparent;
     box-shadow: none;
   }
-  .booking-shell .booking-primary-action[data-floating="true"] {
+  :is(.booking-shell, .enquiry-page)
+    .booking-primary-action[data-floating="true"] {
     position: fixed;
     left: var(--action-left);
     bottom: calc(var(--space-action-bottom) + env(safe-area-inset-bottom));
     width: var(--action-width);
   }
-  .booking-shell .booking-primary-action > .button {
+  :is(.booking-shell, .enquiry-page) .booking-primary-action > .button {
     width: 100%;
     min-height: var(--control-height);
     margin: 0;
@@ -2787,8 +2808,20 @@
     }
   }
   .access-choice-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: var(--text-section);
+    text-transform: uppercase;
     align-self: center;
     color: var(--color-muted);
+  }
+  .access-choice-divider::before,
+  .access-choice-divider::after {
+    content: "";
+    width: 32px;
+    height: 1px;
+    background: currentColor;
   }
   .access-option h2 {
     margin: 21px 0 12px;
@@ -3138,8 +3171,10 @@
   .booking-main > .access-options {
     margin-top: 24px;
   }
-  .booking-required {
-    margin: 0 0 20px;
+  .required-fields {
+    margin: 0;
+    text-align: right;
+    flex-shrink: 0;
     color: var(--color-muted);
   }
   .field-grid .full {
@@ -4430,6 +4465,29 @@
   .booking-primary-action > .button {
     position: relative;
   }
+  .booking-primary-action[data-loading="true"] > .button::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 6px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      var(--color-navy),
+      var(--color-identity)
+    );
+    transform-origin: left;
+    transform: scaleX(0.9);
+  }
+  @keyframes booking-action-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(0.9);
+    }
+  }
   #outlet-sessions,
   .booking-primary-action {
     scroll-margin-block: 32px;
@@ -4456,6 +4514,9 @@
     }
   }
   @media (prefers-reduced-motion: no-preference) {
+    .booking-primary-action[data-loading="true"] > .button::before {
+      animation: booking-action-fill 12s cubic-bezier(0.1, 0.6, 0.2, 1) both;
+    }
     .booking-entry-action:not(:disabled):not([aria-disabled="true"])::after,
     .booking-primary-action[data-halo="true"]
       > .button:not(:disabled):not([aria-disabled="true"])::after {
@@ -4810,12 +4871,13 @@
       font-weight: var(--weight-heading);
       white-space: nowrap;
     }
-    .booking-shell .booking-primary-action[data-floating="true"] {
+    :is(.booking-shell, .enquiry-page)
+      .booking-primary-action[data-floating="true"] {
       left: 20px;
       right: 20px;
       width: auto;
     }
-    .booking-shell .booking-primary-action > .button {
+    :is(.booking-shell, .enquiry-page) .booking-primary-action > .button {
       min-height: 48px;
       padding: 10px 16px;
       font-size: var(--text-body);

@@ -9,25 +9,28 @@ export function BookingPrimaryAction({
   children,
   className = "",
   ready,
+  loading = false,
 }: {
   children: ReactNode;
   className?: string;
   ready?: boolean;
+  loading?: boolean;
 }) {
+  const available = !loading && ready;
   const [readiness, setReadiness] = useState({
-    ready,
-    animate: ready === true,
+    ready: available,
+    animate: available === true,
   });
-  if (readiness.ready !== ready)
+  if (readiness.ready !== available)
     setReadiness({
-      ready,
-      animate: readiness.ready === false && ready === true,
+      ready: available,
+      animate: readiness.ready === false && available === true,
     });
   const anchor = useRef<HTMLDivElement>(null);
   const action = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const control = action.current;
-    if (!control || !ready || !("IntersectionObserver" in window)) return;
+    if (!control || !available || !("IntersectionObserver" in window)) return;
     const button = control.querySelector<HTMLElement>(".button");
     if (!button) return;
     let active = true;
@@ -52,7 +55,7 @@ export function BookingPrimaryAction({
       observer.disconnect();
       delete control.dataset.halo;
     };
-  }, [ready]);
+  }, [available]);
   useLayoutEffect(() => {
     const position = anchor.current;
     const control = action.current;
@@ -95,6 +98,8 @@ export function BookingPrimaryAction({
     <div className="booking-action-anchor" ref={anchor}>
       <div
         className={`booking-primary-action ${className}`.trim()}
+        data-loading={loading ? "true" : undefined}
+        aria-busy={loading || undefined}
         data-floating="false"
         data-ready-animation={readiness.animate ? "true" : undefined}
         ref={action}

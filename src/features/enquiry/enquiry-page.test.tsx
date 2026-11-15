@@ -191,8 +191,8 @@ test("enquiry acknowledgement stays beneath the heading until editing or leaving
   );
   expect(notice).toHaveFocus();
   expect(
-    screen.getByRole("heading", { name: "Contact the studio" })
-      .nextElementSibling,
+    screen.getByRole("heading", { name: "Contact the studio" }).parentElement
+      ?.nextElementSibling,
   ).toBe(notice);
   expect(navigation.replace).not.toHaveBeenCalled();
   vi.useFakeTimers();

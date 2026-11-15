@@ -164,7 +164,7 @@ export function AccountStep({
   const [proofPending, setProofPending] = useState(false);
   const waitingForProof =
     view === "email" && identityService.mode === "live" && !botToken;
-  const showProofSpinner = waitingForProof && proofPending && validEmail(email);
+  const showProofLoading = waitingForProof && proofPending && validEmail(email);
   const [botGeneration, setBotGeneration] = useState(0);
   const receiveBotToken = useCallback((token: string) => {
     setBotToken(token);
@@ -676,6 +676,7 @@ export function AccountStep({
           />
         )}
         <BookingPrimaryAction
+          loading={busy || showProofLoading}
           className="actions"
           ready={
             !busy &&
@@ -691,7 +692,7 @@ export function AccountStep({
               busy || waitingForProof || (view === "email" && resendSeconds > 0)
             }
           >
-            {view === "email" && (busy || showProofSpinner) ? (
+            {view === "email" && (busy || showProofLoading) ? (
               <span
                 className="button-loading"
                 role="status"
@@ -699,7 +700,6 @@ export function AccountStep({
                   busy ? "Requesting verification code" : "Checking security"
                 }
               >
-                <Icon name="spinner" className="spinner" />
                 {busy ? "Sending code…" : "Checking security…"}
               </span>
             ) : (

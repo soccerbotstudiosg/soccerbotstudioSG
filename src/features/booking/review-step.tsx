@@ -186,7 +186,11 @@ export function ReviewStep({
           onPendingChange={setProofPending}
         />
       )}
-      <BookingPrimaryAction className="actions" ready={canProceed}>
+      <BookingPrimaryAction
+        className="actions"
+        ready={canProceed}
+        loading={checkingProof || busy || verifying}
+      >
         <button
           className="button"
           disabled={!canProceed}
@@ -224,13 +228,7 @@ export function ReviewStep({
             "Proceed to Payment"
           )}{" "}
           <BookingActionTotal />
-          {checkingProof ? (
-            <span aria-hidden="true">
-              <Icon name="spinner" className="spinner" />
-            </span>
-          ) : !busy ? (
-            <Icon name="lock" />
-          ) : null}
+          {!checkingProof && !busy ? <Icon name="lock" /> : null}
         </button>
       </BookingPrimaryAction>
       {verifying && (

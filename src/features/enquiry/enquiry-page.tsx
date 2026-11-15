@@ -1,4 +1,5 @@
 "use client";
+import { BookingPrimaryAction } from "@/features/booking/booking-primary-action";
 import { PhoneInput } from "@/features/booking/phone-input";
 import { EnquiryBotProof } from "@/features/booking/email-bot-proof";
 import { enquiryErrors } from "@/domain/enquiry";
@@ -130,7 +131,10 @@ export function EnquiryPage() {
         <Icon name="back" />
         Home
       </Link>
-      <h1 className="page-title">Contact the studio</h1>
+      <div className="booking-heading-row">
+        <h1 className="page-title">Contact the studio</h1>
+        <p className="required-fields">* Required fields</p>
+      </div>
       {acknowledged !== null && (
         <div
           className="notice mt-5"
@@ -144,7 +148,7 @@ export function EnquiryPage() {
         </div>
       )}
       <form
-        className="surface mt-8 space-y-7"
+        className="surface mt-8 enquiry-form"
         aria-busy={!ready || busy}
         noValidate
         onSubmit={async (event) => {
@@ -184,7 +188,6 @@ export function EnquiryPage() {
           }
         }}
       >
-        <p className="text-xs text-muted">* Required fields</p>
         <fieldset disabled={!ready}>
           <legend className="mb-5 text-xl font-bold">Your details</legend>
           <div className="grid gap-5 sm:grid-cols-2">
@@ -262,26 +265,29 @@ export function EnquiryPage() {
             onPendingChange={setProofPending}
           />
         )}
-        <button
-          className="button wide booking-entry-action"
-          disabled={!ready || busy || (live && !botToken)}
+        <BookingPrimaryAction
+          ready={ready && !busy && (!live || !!botToken)}
+          loading={
+            busy || (live && proofPending && !Object.keys(validation).length)
+          }
         >
-          {busy ? (
-            <span className="button-loading">
-              <Icon name="spinner" className="spinner" />
-              Sending enquiry…
-            </span>
-          ) : live && proofPending && !Object.keys(validation).length ? (
-            "Checking security…"
-          ) : (
-            "Send enquiry"
-          )}
-          {live && proofPending && !Object.keys(validation).length && !busy ? (
-            <Icon name="spinner" className="spinner" />
-          ) : !busy ? (
-            <Icon name="chevron" />
-          ) : null}
-        </button>
+          <button
+            className="button wide"
+            disabled={!ready || busy || (live && !botToken)}
+          >
+            {busy ? (
+              <span className="button-loading">Sending enquiry…</span>
+            ) : live && proofPending && !Object.keys(validation).length ? (
+              "Checking security…"
+            ) : (
+              "Send enquiry"
+            )}
+            {!busy &&
+              !(live && proofPending && !Object.keys(validation).length) && (
+                <Icon name="chevron" />
+              )}
+          </button>
+        </BookingPrimaryAction>
       </form>
     </div>
   );
