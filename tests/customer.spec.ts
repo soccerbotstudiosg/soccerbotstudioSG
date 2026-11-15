@@ -1116,6 +1116,8 @@ test("hero entry restores the arena scene and click-to-skip without a logo overl
   page,
 }) => {
   await openSite(page, "/");
+  // Finish initial document loading before freezing the animation clock.
+  await expect(page.locator("#page-refresh")).toHaveCount(0);
   // Keep automatic navigation from winning while this case checks click-to-skip.
   // Natural completion has its own advancing-clock case below.
   await page.clock.pauseAt(new Date("2026-10-05T08:01:00+08:00"));
@@ -2605,6 +2607,10 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await expect(
     page.getByRole("heading", { name: "Select dates and times" }),
   ).toBeVisible();
+  // The expiry boundary above remains exact; finish the new Calendar cover
+  // before interacting with its cart while the clock remains controlled.
+  await page.clock.runFor(1000);
+  await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   await openBookingPanel(page, "cart");
   const basket = page.getByRole("complementary", {
     name: "Your booking summary",

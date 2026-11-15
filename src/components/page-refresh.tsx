@@ -7,7 +7,10 @@ import {
   type ReactNode,
 } from "react";
 import { useBooking } from "@/features/booking/provider";
-import { useBookingLoadingState } from "@/features/booking/booking-loading";
+import {
+  loadingFeedbackMessage,
+  useBookingLoadingState,
+} from "@/features/booking/booking-loading";
 import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
 
 const subscribeToNavigation = () => () => {};
@@ -39,12 +42,12 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
   const setDocumentLoading = loading?.setDocumentLoading;
   const pending = !!loading?.label;
   useLayoutEffect(() => {
-    if (complete || !reloading) return;
+    if (complete) return;
     setDocumentLoading?.(true);
     return () => setDocumentLoading?.(false);
-  }, [complete, reloading, setDocumentLoading]);
+  }, [complete, setDocumentLoading]);
   useEffect(() => {
-    if (complete || !minimumElapsed || !ready || (reloading && pending)) return;
+    if (complete || !minimumElapsed || !ready || pending) return;
     let active = true;
     let frame = 0;
     const reveal = () => {
@@ -83,8 +86,12 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
           }}
         >
           <BrandLoading
-            label={reloading ? "Refreshing…" : "Loading page"}
-            message={reloading ? "Refreshing…" : undefined}
+            label={
+              reloading ? "Refreshing…" : (loading?.label ?? "Loading page")
+            }
+            message={
+              reloading ? "Refreshing…" : loadingFeedbackMessage(loading?.label)
+            }
           />
         </div>
       )}

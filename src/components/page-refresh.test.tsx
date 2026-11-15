@@ -199,35 +199,45 @@ test("normal and browser return navigation never say refreshing and preserve pay
   booking.ready = true;
   for (const type of ["navigate", "back_forward"]) {
     navigation = type;
-    const view = render(
-      <BookingLoadingProvider>
-        <PageRefreshBoundary>
-          <main>
-            <BookingLoading label="Payment received. Confirming booking." />
-          </main>
-        </PageRefreshBoundary>
-      </BookingLoadingProvider>,
-    );
+    function Page({ pending = true }: { pending?: boolean }) {
+      return (
+        <BookingLoadingProvider>
+          <PageRefreshBoundary>
+            <main>
+              {pending ? (
+                <BookingLoading label="Payment received. Confirming booking." />
+              ) : (
+                <h1>Ready page</h1>
+              )}
+            </main>
+          </PageRefreshBoundary>
+        </BookingLoadingProvider>
+      );
+    }
+    const view = render(<Page />);
+    const cover = screen.getByRole("status", {
+      name: "Payment received. Confirming booking.",
+    });
     expect(document.querySelector("#page-refresh")?.textContent).not.toContain(
       "Refreshing",
     );
-    expect(document.querySelector("#page-refresh")).toHaveTextContent(
-      "Loading...",
-    );
+    expect(document.querySelectorAll(".page-loading")).toHaveLength(1);
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull();
     await act(async () => finishFonts());
     await act(async () => vi.advanceTimersByTime(1000));
-    act(() => frame!(0));
-    expect(document.querySelector("#page-refresh")).toBeNull();
-    expect(
-      screen.getByRole("status", {
-        name: "Payment received. Confirming booking.",
-      }),
-    ).toBeVisible();
+    expect(screen.getByRole("status")).toBe(cover);
     expect(
       screen.getByText(
         "Payment received. Confirming booking. Please do not close or refresh.",
       ),
     ).toBeVisible();
+    expect(screen.queryByText("Refreshing…")).toBeNull();
+    view.rerender(<Page pending={false} />);
+    await act(async () => {});
+    act(() => frame!(0));
+    expect(document.querySelector("#page-refresh")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Ready page" })).toBeVisible();
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull();
     view.unmount();
   }
 });

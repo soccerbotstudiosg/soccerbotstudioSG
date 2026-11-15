@@ -16,7 +16,8 @@ import {
 } from "@/domain/booking-messages";
 import { BrandLoading, useMinimumLoading } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
-const feedbackMessage = (label?: string) =>
+/** Preserve approved operation feedback within any full-page loading cover. */
+export const loadingFeedbackMessage = (label?: string) =>
   [
     "Opening checkout…",
     "Checking whether your booking was created…",
@@ -99,7 +100,7 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
           <div className="booking-flow-overlay">
             <BrandLoading
               label={visibleLabel}
-              message={feedbackMessage(visibleLabel)}
+              message={loadingFeedbackMessage(visibleLabel)}
             />
           </div>,
           document.body,
@@ -143,7 +144,7 @@ export function BookingLoading({
       compact={compact}
       overlay={overlay}
       label={label}
-      message={overlay ? feedbackMessage(label) : undefined}
+      message={overlay ? loadingFeedbackMessage(label) : undefined}
     />
   );
 }

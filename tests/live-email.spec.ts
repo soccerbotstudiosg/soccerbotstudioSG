@@ -2193,9 +2193,7 @@ async function guestDetails(
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
   }
-  await page
-    .getByRole("button", { name: "Guest", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Guest", exact: true }).click();
   await page
     .getByRole("link", { name: "Choose Date & Time", exact: true })
     .click();
@@ -2764,9 +2762,7 @@ test("real API revoked access at checkout returns to fresh entry and denies prot
     await expect(page.getByRole("main").getByRole("alert")).toHaveText(
       "Your session expired. Continue as a guest or sign in to start again.",
     );
-    await expect(
-      page.getByRole("button", { name: "Guest" }),
-    ).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Guest" })).toBeEnabled();
     await expect(
       page.getByRole("button", { name: "Sign in", exact: true }),
     ).toBeEnabled();
@@ -3136,9 +3132,7 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
-    await page
-      .getByRole("button", { name: "Guest", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Guest", exact: true }).click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
     await expect(
       page.getByText("Unable to Load.", {
