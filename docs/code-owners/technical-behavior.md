@@ -581,7 +581,7 @@ Desktop card-width refinement: both cards stay vertically stacked, each no wider
 
 The approved card arrangement uses a plain football icon and a vertical divider between the desktop session title and metadata. “Trainer included” occupies its own unbroken line. Narrow phones stack the metadata without the divider. Outlet name and single-line address remain aligned beside the location icon. White/pale-teal selection colours and the absence of selection ticks/plus icons are retained.
 
-At five sessions on short desktop viewports, the full-cart heading margins compact with the existing row spacing so the session list and total fit without shrinking fonts or controls.
+At five sessions on short desktop viewports, the full-cart heading margins and bottom padding compact with the existing row spacing so the session list and total fit without shrinking fonts or controls.
 
 Customer-facing trainer-rotation notices are removed from calendar, cart, review and confirmation. Demo boundary metadata and trainer/session assignment behavior remain unchanged.
 

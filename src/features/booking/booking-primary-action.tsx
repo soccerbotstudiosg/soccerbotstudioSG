@@ -60,6 +60,8 @@ export function BookingPrimaryAction({
     let frame = 0;
     const measure = () => {
       frame = 0;
+      // Reserve the in-flow size: a wider floating button can have fewer lines.
+      control.dataset.floating = "false";
       const style = getComputedStyle(position);
       const spacing =
         parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);

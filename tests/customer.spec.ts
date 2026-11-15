@@ -2848,6 +2848,10 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       "padding-top",
       "28px",
     );
+    await expect(cart.locator(".summary-body")).toHaveCSS(
+      "padding-bottom",
+      "12px",
+    );
     const layout = await cart.evaluate((element) => {
       const card = element.getBoundingClientRect();
       const heading = element
