@@ -64,7 +64,10 @@ export function SessionStep() {
               {LOCATION.street}, {LOCATION.unit}
             </span>
           </span>
-          <Icon name="chevron" className="selection-chevron" />
+          <Icon
+            name={outletSelected ? "check" : "plus"}
+            className="selection-indicator"
+          />
         </button>
       </div>
       <div id="outlet-sessions" ref={sessions} hidden={!outletSelected}>
@@ -204,7 +207,10 @@ function SessionPresentation({
                 <strong>${prices.premium / 100}</strong>
               </span>
             </span>
-            <Icon name="chevron" className="selection-chevron" />
+            <Icon
+              name={expanded ? "check" : "plus"}
+              className="selection-indicator"
+            />
           </button>
           {expanded && (
             <div className="player-selection" aria-labelledby="players-label">

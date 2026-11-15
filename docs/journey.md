@@ -6473,3 +6473,5 @@ The same run’s live-email shards preserved two stale expectations across deskt
 Before staging, the owner additionally requested removal of “(Trial Price)” and keeping “Trainer included” together. The authoritative demo name and its existing assertions are reconciled; the metadata phrase now has a non-wrapping span. Provider labels, prices and IDs are unchanged.
 
 The owner then requested equal-size minus/count/plus, a bold number and slightly smaller controls. The existing counter owner now uses equal40px cells, a700-weight number and20px icons, with matching browser assertions and unchanged1–4 bounds.
+
+The owner’s final selection-indicator correction replaces outlet/session chevrons with the existing check/plus icons at the same top-right placement and18px size as time cards. Existing toggle tests now verify the indicator changes with selection.

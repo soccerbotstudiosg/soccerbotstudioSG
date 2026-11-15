@@ -1147,8 +1147,22 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     name: "Choose Kickoff Special",
     exact: true,
   });
+  const selectedIndicator = await sessionChoice
+    .locator(".selection-indicator")
+    .innerHTML();
+  await expect(sessionChoice.locator(".selection-indicator")).toHaveCSS(
+    "top",
+    "13px",
+  );
+  await expect(sessionChoice.locator(".selection-indicator")).toHaveCSS(
+    "right",
+    "15px",
+  );
   await sessionChoice.click();
   await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
+  expect(
+    await sessionChoice.locator(".selection-indicator").innerHTML(),
+  ).not.toBe(selectedIndicator);
   await expect(page.locator(".player-selection")).toHaveCount(0);
   await expect(next).toHaveCount(0);
   await sessionChoice.click();
@@ -1157,7 +1171,13 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     name: "Select Apex @ Henderson outlet",
     exact: true,
   });
+  expect(await outletChoice.locator(".selection-indicator").innerHTML()).toBe(
+    selectedIndicator,
+  );
   await outletChoice.click();
+  expect(
+    await outletChoice.locator(".selection-indicator").innerHTML(),
+  ).not.toBe(selectedIndicator);
   await expect(page.locator(".session-products")).toHaveCount(0);
   await outletChoice.click();
   await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
@@ -1906,7 +1926,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(card).toHaveCSS("background-image", selectedGradient);
     await expect(card).toHaveCSS("color", "rgb(16, 22, 54)");
     await expect(card).toHaveCSS("border-radius", "3px 12px");
-    await expect(card.locator(".selection-chevron")).toBeVisible();
+    await expect(card.locator(".selection-indicator")).toBeVisible();
   }
   const selectedCardBackground = await page
     .locator(".session-product")
