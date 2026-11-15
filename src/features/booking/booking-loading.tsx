@@ -5,6 +5,7 @@ import {
   useContext,
   useLayoutEffect,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -29,6 +30,9 @@ const feedbackMessage = (label?: string) =>
   ].includes(label ?? "")
     ? `${label} ${loadingMessage}`
     : undefined;
+const subscribeToHydration = () => () => {};
+const hydratedSnapshot = () => true;
+const serverSnapshot = () => false;
 const Loading = createContext<((label: string) => () => void) | null>(null);
 
 // Keep the active screen mounted: loading must not discard contact, consent,
@@ -89,14 +93,19 @@ export function BookingLoading({
   overlay?: boolean;
 }) {
   const register = useContext(Loading);
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    hydratedSnapshot,
+    serverSnapshot,
+  );
   const entryTransition = useBookingEntryTransition();
   // Register before paint so a newly mounted loader cannot expose an intermediate screen.
   useLayoutEffect(
     () => (overlay && !entryTransition ? register?.(label) : undefined),
     [register, label, overlay, entryTransition],
   );
-  // A standalone screen can still render the same loading presentation.
-  return entryTransition || (register && overlay) ? (
+  // Server HTML needs visible progress before layout effects can register the portal.
+  return hydrated && (entryTransition || (register && overlay)) ? (
     <span className="sr-only">{label}</span>
   ) : (
     <BrandLoading

@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-Standardize booking action height and clearance on `fix/booking-action-spacing`, based on merged PR79/main `5581538`. Guest/Sign in and signed-in/profile actions share Continue sizing: desktop18px vertical padding with52px minimum; phone48px minimum. Entry choices remain one row; OR lines flex within the row instead of stretching buttons. Wrapped phone labels retain16px type and fit within the standard height. Remove Calendar’s duplicate29px action-wrapper margin; shared primary clearance remains32px above and24px below. Entry/profile clearance uses the same spacing tokens. Owner authorized staging and merge after verification.
+Standardize booking action height and clearance on `fix/booking-action-spacing`, based on merged PR79/main `5581538`. Guest/Sign in and signed-in/profile actions share Continue sizing: desktop18px vertical padding with52px minimum; phone48px minimum. Entry choices remain one row; OR lines flex within the row instead of stretching buttons. Wrapped phone labels retain16px type and fit within the standard height. Remove Calendar’s duplicate29px action-wrapper margin; shared primary clearance remains32px above and24px below. Entry/profile clearance uses the same spacing tokens. Owner authorized staging and merge after verification. Also fix the confirmation-refresh footer flash: the shared loader now renders visible server HTML before hydration transfers it to the existing overlay portal.
 
 ## Current scope
 
@@ -40,7 +40,7 @@ Shared Continue actions reserve32px above and24px below, including24px viewport-
 
 ## Verification and next action
 
-Four affected account component tests pass. Browser typography coverage now checks shared entry/primary heights,32/24px clearance and absence of the calendar wrapper; existing test titles/counts remain unchanged. Static checks passed. PR80 run43706149204/backend job132787908880 found a new divider assertion comparing fractional CSS heights as exact strings: Chromium allocated8.1875px and8.20312px (1/64px difference). Phone passed. Compare numeric heights to one decimal place while preserving line width/content, positive height, button geometry and all flow assertions. Publish this test-only correction, then verify exact-head CI and staging health before authorized merge. Browser/device execution remains owner/CI-operated.
+Four affected account component tests pass. The confirmation SSR regression failed before repair (zero visible loaders), then45 loader/protected-confirmation cases passed with the repair. Browser typography coverage now checks shared entry/primary heights,32/24px clearance and absence of the calendar wrapper; existing test titles/counts remain unchanged. Static checks passed. PR80 run43706149204/backend job132787908880 found a new divider assertion comparing fractional CSS heights as exact strings: Chromium allocated8.1875px and8.20312px (1/64px difference). Phone passed. Compare numeric heights to one decimal place while preserving line width/content, positive height, button geometry and all flow assertions. Publish this test-only correction, then verify exact-head CI and staging health before authorized merge. Browser/device execution remains owner/CI-operated.
 
 ## Remaining owner acceptance
 
