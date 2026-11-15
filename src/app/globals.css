@@ -4515,7 +4515,9 @@
       animation-delay: 240ms;
     }
     .booking-entry-action:not(:disabled):not([aria-disabled="true"]),
-    .booking-primary-action[data-ready-animation="true"] > .button {
+    .booking-primary-action[data-ready-animation="true"] > .button,
+    .notice,
+    .alert {
       animation: booking-action-ready 240ms ease-out;
     }
     .email-confirm-control[aria-pressed="true"] .icon,

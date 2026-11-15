@@ -6571,3 +6571,7 @@ Owner requested consistent notice colours after the enquiry acknowledgement appe
 Explicit saved-contact submission stays on the editor with entered values intact. The card heading is Booking Contact; a green “Details saved.” notice appears directly beneath it, receives focus and scrolls into view. Editing clears the notice through the existing contact-key guard. Only the explicit Back control closes the editor. Ordinary booking-details submission still advances to Review with its existing background-save behavior.
 
 Existing component coverage now proves no close on save, retained values, notice placement/focus, clearing on edit and explicit Back. The live-email browser journey checks the acknowledgement before navigating back and rereading persisted details. All6 Details component cases, affected lint and source integrity passed; final-head CI, staging and visual acceptance remain pending.
+
+## 15 November 2026 — Shared notice entrance animation
+
+After cancelling CI during review, owner requested the Continue entrance animation for all notices. Shared `.notice` and `.alert` selectors now use the existing240ms action-ready keyframes within the existing no-reduced-motion media query. No new animation owner, JavaScript delay, repeated pulse, message or provider behavior was introduced. Kept the change local during review; owner subsequently authorized publication. Source integrity, formatting and diff checks passed; fresh exact-head CI/staging remain pending.

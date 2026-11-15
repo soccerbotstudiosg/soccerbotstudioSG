@@ -454,7 +454,7 @@ The consolidated continuation layout uses the same sticky action for enquiry and
 
 Primary-action security/submission waits replace small spinners with a6px left-to-right navy fill along the disabled grey button. The visual eases towards90% over12seconds and holds there until actual readiness; it does not expose a fabricated percentage or enable an action on a timer. When waiting ends, the fill sweeps from its current position to100% over180ms before the ready entrance/halo resumes if eligibility is true. Provider work is never delayed for animation. Reduced motion shows a static fill. Provider calls, duplicate protection, eligibility and retry authority are unchanged.
 
-Shared `.notice` remains neutral for information/loading; `.notice.success` uses the same green tokens as verified/paid badges, `.notice.warning` uses the amber pending/caution tokens, and `.alert` retains red error tokens. Enquiry delivery success and saved-contact success are green; no-send preview and unavailable security checks are amber. Colour does not change message text, live-region roles or operation authority.
+Shared `.notice` remains neutral for information/loading; `.notice.success` uses the same green tokens as verified/paid badges, `.notice.warning` uses the amber pending/caution tokens, and `.alert` retains red error tokens. Enquiry delivery success and saved-contact success are green; no-send preview and unavailable security checks are amber. All shared notice and alert boxes use the existing240ms action-ready pop when they appear, only when reduced motion is not requested. Colour and animation do not change message text, live-region roles or operation authority.
 
 ## Public homepage and Studio presentation
 
