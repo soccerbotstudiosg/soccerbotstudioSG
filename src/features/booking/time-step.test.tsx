@@ -129,7 +129,7 @@ async function calendarScenario(mobile: boolean) {
   const crossing = times().getByRole("button", { name: /14:30–15:10/ });
   expect(crossing).toHaveAttribute("aria-pressed", "true");
   expect(crossing).toHaveTextContent("Faisal Shahril");
-  expect(crossing).toHaveTextContent("Crosses the 15:00 instructor rotation");
+  expect(crossing).not.toHaveTextContent("instructor rotation");
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   const continues = screen.getAllByRole("link", {
     name: /^Enter Booking Details/,
@@ -417,7 +417,7 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   calendarScenario(false));
 test("mobile calendar selection drawers and responsive scroll preserve restored availability", () =>
   calendarScenario(true));
-test("crossing notices persist in the basket and review before payment", async () => {
+test("crossing sessions retain checkout behavior without scheduling notices", async () => {
   const basket = render(
     <BookingProvider>
       <Summary basket />
@@ -425,8 +425,8 @@ test("crossing notices persist in the basket and review before payment", async (
   );
   await act(async () => {});
   expect(
-    within(screen.getByRole("complementary")).getByText(/Crosses the 15:00/),
-  ).toHaveTextContent("stays for the full session");
+    within(screen.getByRole("complementary")).queryByText(/Crosses the 15:00/),
+  ).not.toBeInTheDocument();
   expect(
     screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
@@ -455,9 +455,7 @@ test("crossing notices persist in the basket and review before payment", async (
       <ReviewStep />
     </BookingProvider>,
   );
-  expect(screen.getByText(/Crosses the 15:00/)).toHaveTextContent(
-    "stays for the full session",
-  );
+  expect(screen.queryByText(/Crosses the 15:00/)).not.toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   ).toBeDisabled();
@@ -554,8 +552,8 @@ test("confirmation places three retained actions above a compact summary and dis
     screen.getAllByText("Trainer: Daniel Tan", { exact: true }),
   ).toHaveLength(1);
   expect(
-    screen.getByText(/Crosses the 15:00 instructor rotation/),
-  ).toBeVisible();
+    screen.queryByText(/Crosses the 15:00 instructor rotation/),
+  ).not.toBeInTheDocument();
 });
 
 test("an open booking page expires a selected slot at its start and keeps it removable", async () => {

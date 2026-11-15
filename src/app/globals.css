@@ -264,7 +264,6 @@
   .booking-document .arrival-information p,
   .booking-document .price-breakdown .line-item small,
   .booking-document .reference,
-  .booking-document .rotation-notice,
   .booking-document .payment-foot,
   .booking-document .text-link,
   .lead,
@@ -322,8 +321,7 @@
   .trainer-identity > span,
   .trainer-bio,
   .trainer-choice,
-  .time-instructor,
-  .rotation-notice {
+  .time-instructor {
     font-size: var(--text-meta);
     line-height: var(--leading-body);
   }
@@ -2563,6 +2561,9 @@
     font-weight: var(--weight-heading);
   }
   @media (min-width: 701px) and (max-height: 850px) {
+    .summary-cart-full .basket-heading {
+      margin: 8px 0 4px;
+    }
     .summary-cart-full .basket-list li {
       gap: 0 8px;
       padding: 8px;
@@ -3534,9 +3535,8 @@
     box-shadow: none;
   }
   .date.in-booking:not(:disabled) strong {
-    background: var(--background-selected);
-    color: var(--color-ink);
-    box-shadow: inset 0 0 0 1px var(--color-focus);
+    background: var(--color-navy);
+    color: var(--color-on-brand);
   }
   .date-placeholder {
     min-height: 29px;
@@ -4160,9 +4160,6 @@
   .confirmation-disclaimers {
     grid-column: 1 / -1;
   }
-  .confirmation-section .rotation-notice {
-    margin-bottom: 12px;
-  }
   .confirmation-section .arrival-information {
     margin-top: 0;
   }
@@ -4550,11 +4547,6 @@
     height: 22px;
     flex-shrink: 0;
   }
-  .series-list .rotation-notice,
-  .basket-list .rotation-notice {
-    margin-top: 5px;
-    color: var(--color-warning);
-  }
   @keyframes spin {
     to {
       transform: rotate(360deg);
@@ -4572,14 +4564,6 @@
       border-color 0.18s,
       box-shadow 0.18s;
     min-height: var(--control-height);
-  }
-  .rotation-notice {
-    display: block;
-    font-weight: 400;
-  }
-  .time .rotation-notice {
-    grid-column: 1 / -1;
-    color: var(--color-warning);
   }
 
   @media (max-width: 1200px) {

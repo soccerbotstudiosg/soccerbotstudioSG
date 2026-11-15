@@ -839,12 +839,6 @@ export function TimeStep({
                                     .join(" / ")}`
                                 : "No instructor available"}
                           </span>
-                          {slot.available && slot.rotationAt && (
-                            <span className="rotation-notice">
-                              Crosses the {slot.rotationAt} instructor rotation.
-                              Your chosen instructor stays for the full session.
-                            </span>
-                          )}
                         </span>
                       </button>
                       {!selected && choosing === key && (

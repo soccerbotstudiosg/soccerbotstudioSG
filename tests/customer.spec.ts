@@ -1002,7 +1002,7 @@ test("hero completes naturally and reduced motion bypasses both transition surfa
   await expect(page).toHaveURL(/\/book\/account\/$/);
   await expect(page.locator(".pitch-entry, .page-loading")).toHaveCount(0);
 });
-test("oracle booking sizing and rotation disclaimers persist through checkout", async ({
+test("oracle booking sizing and crossing sessions persist through checkout", async ({
   page,
 }) => {
   async function fullWidth(selector: string, parent: string) {
@@ -1265,7 +1265,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     }
   }
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
-  await expect(crossing).toContainText("Crosses the 15:00 instructor rotation");
+  await expect(crossing).not.toContainText("instructor rotation");
   await crossing.click();
   await page
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
@@ -1316,9 +1316,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     );
   }
   await openBookingPanel(page, "cart");
-  await expect(page.locator(".summary .rotation-notice")).toContainText(
-    "stays for the full session",
-  );
+  await expect(page.locator(".summary .rotation-notice")).toHaveCount(0);
   await closeBookingPanel(page);
   await page
     .getByRole("link", {
@@ -1335,9 +1333,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
   await details(page);
   await fullWidth(".actions .button", ".actions");
-  await expect(page.locator(".series-list .rotation-notice")).toContainText(
-    "Crosses the 15:00 instructor rotation",
-  );
+  await expect(page.locator(".series-list .rotation-notice")).toHaveCount(0);
   await payment(page);
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
@@ -1369,9 +1365,9 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     confirmationLayout.summaryTop,
   );
   await page.getByText("View Full Details", { exact: true }).click();
-  await expect(
-    page.locator(".confirmation-card .rotation-notice"),
-  ).toContainText("stays for the full session");
+  await expect(page.locator(".confirmation-card .rotation-notice")).toHaveCount(
+    0,
+  );
   await expect(page.locator("main details[open]")).toHaveCount(1);
   await expect(page.locator(".confirmation-section > h2")).toHaveText([
     "Booking Contact",
@@ -2072,8 +2068,12 @@ test("header blue and the typography hierarchy stay consistent across every book
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
     .selectOption({ index: 1 });
   await expect(page.locator(".date.in-booking strong")).toHaveCSS(
-    "background-image",
-    selectedGradient,
+    "background-color",
+    "rgb(5, 10, 47)",
+  );
+  await expect(page.locator(".date.in-booking strong")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
   );
   await expect(page.locator(".date.in-booking strong")).toHaveCSS(
     "border-radius",
@@ -2085,10 +2085,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     "16px",
   );
   await expect(crossing.locator(".time-instructor")).toBeVisible();
-  await expect(crossing.locator(".rotation-notice")).toHaveCSS(
-    "font-size",
-    "14px",
-  );
+  await expect(crossing.locator(".rotation-notice")).toHaveCount(0);
   await openBookingPanel(page, "trainers");
   await expect(page.locator(".trainer-toggle")).toHaveAttribute(
     "aria-expanded",
@@ -2198,10 +2195,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(detail).toHaveCSS("color", "rgb(88, 97, 116)");
     await expect(detail).toHaveCSS("font-weight", "400");
   }
-  await expect(page.locator(".review-block .rotation-notice")).toHaveCSS(
-    "color",
-    "rgb(118, 83, 13)",
-  );
+  await expect(page.locator(".review-block .rotation-notice")).toHaveCount(0);
   await page
     .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
     .click();

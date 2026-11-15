@@ -6495,3 +6495,11 @@ The owner subsequently approved the mockup’s internal outlet/session card arra
 The owner requested a flowing gradient on continuation actions and removed the player-count helper. The existing primary action style owner now provides a subtle navy gradient with reduced-motion and disabled-state handling. The helper component, timer and styles were removed; existing selection tests retain player-count and toggle coverage and now verify no helper, without reducing test inventory.
 
 Geometry checks still await layout transitions but exclude only the named continuous background-gradient animation, whose animation name and reduced-motion behavior are asserted separately. No layout thresholds, cases or inventories were relaxed.
+
+CI43664423296 on367c537 failed the existing five-session cart fit assertion in Chromium and WebKit:648.734375px versus648px available. The retained CI screenshot shows the wider approved action tracking wrapping Enter Booking Details into two lines. The existing short-desktop full-cart owner now compacts its heading margins from12/8px to8/4px, retaining type sizes, row controls, all five sessions and unchanged viewport assertions. Original job132660966728 and local cart-failure image/trace retain the failure.
+
+The owner challenged the demo rotation message as unwanted customer copy. Removed its renderers and unused presentation props/styles across calendar, summary and confirmation; updated existing UI assertions to require its absence while retaining crossing-session checkout and domain-boundary coverage.
+
+The owner requested solid date-number circles: dates containing chosen sessions now show white numerals on navy, while their surrounding selected day retains lavender. Existing browser colour assertions follow that approved distinction.
+
+The same run’s tablet live-email concurrency case observed29 provider calls versus28 at the revoked-access boundary (job132660966753). Its retained network trace shows two calendar snapshot requests begun during account bootstrap still pending through the unauthorized write. The fixture now awaits its tracked startup requests before the competing-write phase; interception remains installed and the exact no-provider-call assertion is unchanged. Shared settlement also remains the teardown path.

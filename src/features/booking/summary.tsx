@@ -77,13 +77,11 @@ export function SessionSummaryHeading({
 export function SessionList({
   slots,
   remove,
-  showRotation = true,
   showPrices = false,
   now,
 }: {
   slots: Session[];
   now?: number;
-  showRotation?: boolean;
   showPrices?: boolean;
   remove?: (slot: Session) => void;
 }) {
@@ -113,12 +111,6 @@ export function SessionList({
                     </strong>
                   )}
                 </div>
-              )}
-              {showRotation && slot.rotationAt && (
-                <span className="rotation-notice">
-                  Crosses the {slot.rotationAt} instructor rotation. Your
-                  assigned instructor stays for the full session.
-                </span>
               )}
               {now !== undefined && isElapsed(slot, now) && (
                 <span className="field-error">

@@ -344,11 +344,7 @@ export function BookingConfirmation({
             <SessionSummaryHeading
               draft={{ ...booking.draft, slots: booking.slots }}
             />
-            <SessionList
-              slots={booking.slots}
-              showRotation={false}
-              showPrices
-            />
+            <SessionList slots={booking.slots} showPrices />
             <div className="summary-total">
               <span>Total</span>
               <strong>
@@ -404,19 +400,6 @@ export function BookingConfirmation({
                   <h2 className="section-title" id="confirmation-disclaimers">
                     Before Your Session
                   </h2>
-                  {booking.slots
-                    .filter((slot) => slot.rotationAt)
-                    .map((slot) => (
-                      <p
-                        className="rotation-notice"
-                        key={`${slot.date}|${slot.start}`}
-                      >
-                        {dateLabel(slot.date)}, {slot.start}–
-                        {endTime(slot.start)}: Crosses the {slot.rotationAt}{" "}
-                        instructor rotation. Your assigned instructor stays for
-                        the full session.
-                      </p>
-                    ))}
                   <Arrival compact />
                   {preview && (
                     <p className="payment-foot">
@@ -454,11 +437,7 @@ export function BookingConfirmation({
                   </span>
                 ))}
             </div>
-            <SessionList
-              slots={booking.slots}
-              showRotation={false}
-              showPrices
-            />
+            <SessionList slots={booking.slots} showPrices />
             <div className="price-breakdown">
               <div className="line-item total confirmation-total">
                 <span>

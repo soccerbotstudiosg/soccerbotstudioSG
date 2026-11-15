@@ -886,9 +886,14 @@ async function mechanismTransport(
     pending.add(work);
     return work.finally(() => pending.delete(work));
   });
+  /** Finish dispatched fixture requests without removing interception. */
+  async function settle() {
+    while (pending.size) await Promise.all([...pending]);
+  }
   return {
     calls,
     unexpected,
+    settle,
     attemptId: () => attemptId,
     json(response: BrowserResponse) {
       const captured = responses.get(response.request());
@@ -901,7 +906,7 @@ async function mechanismTransport(
       // removing interception: Playwright may continue in-flight routes when
       // their handler is removed, racing our eventual fulfill/abort.
       // Await our own work, not internal handled promises for canceled requests.
-      while (pending.size) await Promise.all([...pending]);
+      await settle();
       if (!page.isClosed()) await page.unrouteAll();
     },
   };
@@ -2006,6 +2011,9 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
         }
       }),
     );
+    // Account bootstrap also starts calendar warming. Finish its real Worker
+    // reads before attributing provider calls to competing or rejected writes.
+    await Promise.all([transport.settle(), secondTransport.settle()]);
     const submit = (tab: Page, path: string, body?: unknown) =>
       tab.evaluate(
         async ({ path, body }) => {

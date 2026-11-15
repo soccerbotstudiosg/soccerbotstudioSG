@@ -1121,7 +1121,7 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
-    "title": "crossing notices persist in the basket and review before payment"
+    "title": "crossing sessions retain checkout behavior without scheduling notices"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
@@ -1549,7 +1549,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "oracle booking sizing and rotation disclaimers persist through checkout"
+    "title": "oracle booking sizing and crossing sessions persist through checkout"
   },
   {
     "file": "tests/customer.spec.ts",
