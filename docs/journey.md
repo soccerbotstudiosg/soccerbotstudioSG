@@ -6485,3 +6485,7 @@ PR79 revision438d86f passed all13 jobs in CI43661175369 and deployed to staging 
 The owner then explicitly restored the Booking Contact form heading. It remains above the fields alongside “* Required fields”; the removed explanatory paragraphs and Review introduction stay removed.
 
 Copy-cleanup CI43662499693 preserved one stale Details component assertion requiring the removed shared-email paragraph (371/372 cases passed). The existing save-behavior case now asserts that paragraph absent and the restored Booking Contact/required-fields labels present; explicit-save and late-completion checks remain unchanged.
+
+The owner paused publication and retained the font-size standardisation while requesting original white unselected cards, lavender selection, removal of card selection plus/tick icons, original header-navy Continue actions and Your Cart’s0.16em letter spacing on primary buttons. PR79 was returned to draft to block automatic staging; these follow-up changes remain local. Player-count controls and six-second helper remain. This supersedes the prior blue/neutral-grey palette for the pending design; the A/B mockups remain proposals.
+
+On 15 November 2026 the owner resumed PR79 staging for the consolidated navy-action/lavender-selection revision and requested the existing lock icon instead of the Proceed to Payment chevron. Payment behavior and busy/security states are unchanged. Exact-head CI and deployment receipts belong in PR79; merge still requires owner acceptance.

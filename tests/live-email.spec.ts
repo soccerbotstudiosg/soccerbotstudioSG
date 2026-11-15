@@ -689,7 +689,8 @@ test("remembered live account edits and rereads contact while native booking sta
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
-  await expect(saveAction).toHaveCSS("background-color", "rgb(70, 172, 220)");
+  await expect(saveAction).toHaveCSS("background-color", "rgb(5, 10, 47)");
+  await expect(saveAction).toHaveCSS("letter-spacing", "2.56px");
   await expect(saveAction).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(saveAction).toHaveCSS("font-weight", "900");
   await expect(saveAction).toHaveCSS("font-style", "italic");

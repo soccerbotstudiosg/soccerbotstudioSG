@@ -846,7 +846,6 @@ export function TimeStep({
                             </span>
                           )}
                         </span>
-                        <Icon name={selected ? "check" : "plus"} />
                       </button>
                       {!selected && choosing === key && (
                         <div className="trainer-choice">

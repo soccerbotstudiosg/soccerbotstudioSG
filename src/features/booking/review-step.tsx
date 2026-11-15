@@ -226,7 +226,7 @@ export function ReviewStep({
               <Icon name="spinner" className="spinner" />
             </span>
           ) : !busy ? (
-            <Icon name="chevron" />
+            <Icon name="lock" />
           ) : null}
         </button>
       </BookingPrimaryAction>

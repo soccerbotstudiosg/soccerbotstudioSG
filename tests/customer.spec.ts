@@ -1048,7 +1048,8 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     ),
   ).toBe(true);
   const next = page.getByRole("link", { name: "Choose Date & Time" });
-  await expect(next).toHaveCSS("background-color", "rgb(70, 172, 220)");
+  await expect(next).toHaveCSS("background-color", "rgb(5, 10, 47)");
+  await expect(next).toHaveCSS("letter-spacing", "2.56px");
   await expect(next).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(next).toBeInViewport({ ratio: 1 });
   const nextBox = await next.boundingBox();
@@ -1156,22 +1157,10 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     name: "Choose Kickoff Special",
     exact: true,
   });
-  const selectedIndicator = await sessionChoice
-    .locator(".selection-indicator")
-    .innerHTML();
-  await expect(sessionChoice.locator(".selection-indicator")).toHaveCSS(
-    "top",
-    "13px",
-  );
-  await expect(sessionChoice.locator(".selection-indicator")).toHaveCSS(
-    "right",
-    "15px",
-  );
+  await expect(sessionChoice.locator(":scope > svg")).toHaveCount(0);
   await sessionChoice.click();
   await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
-  expect(
-    await sessionChoice.locator(".selection-indicator").innerHTML(),
-  ).not.toBe(selectedIndicator);
+  await expect(sessionChoice.locator(":scope > svg")).toHaveCount(0);
   await expect(page.locator(".player-selection")).toHaveCount(0);
   await expect(next).toHaveCount(0);
   await sessionChoice.click();
@@ -1180,13 +1169,9 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     name: "Select Apex @ Henderson outlet",
     exact: true,
   });
-  expect(await outletChoice.locator(".selection-indicator").innerHTML()).toBe(
-    selectedIndicator,
-  );
+  await expect(outletChoice.locator(":scope > svg")).toHaveCount(1);
   await outletChoice.click();
-  expect(
-    await outletChoice.locator(".selection-indicator").innerHTML(),
-  ).not.toBe(selectedIndicator);
+  await expect(outletChoice.locator(":scope > svg")).toHaveCount(1);
   await expect(page.locator(".session-products")).toHaveCount(0);
   await outletChoice.click();
   await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
@@ -1866,7 +1851,8 @@ test("header blue and the typography hierarchy stay consistent across every book
   const guest = page.getByRole("button", { name: "Continue as Guest" });
   // Inspect the resting action, with the pointer away from the button.
   await page.mouse.move(0, 0);
-  await expect(guest).toHaveCSS("background-color", "rgb(70, 172, 220)");
+  await expect(guest).toHaveCSS("background-color", brand);
+  await expect(guest).toHaveCSS("letter-spacing", "2.56px");
   await expect(guest).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(guest).toHaveCSS("text-transform", "none");
   await expect(guest).toHaveCSS("font-weight", "900");
@@ -1914,14 +1900,14 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(card).toHaveCSS("background-color", background);
     await expect(card).toHaveCSS("border-color", border);
     await guest.hover();
-    await expect(guest).toHaveCSS("background-color", "rgb(63, 155, 198)");
+    await expect(guest).toHaveCSS("background-color", "rgb(32, 41, 87)");
     await expect(card).toHaveCSS("background-color", background);
   }
   await guest.click();
   await pageHeading("Your session");
   await sectionType(".session-product-name", 20, "rgb(16, 22, 54)");
   const selectedGradient =
-    "linear-gradient(135deg, rgb(232, 232, 232), rgb(217, 217, 217))";
+    "linear-gradient(135deg, rgb(238, 240, 247), rgb(220, 225, 241))";
   for (const card of [
     page.locator(".outlet-option"),
     page.locator(".session-product"),
@@ -1929,7 +1915,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(card).toHaveCSS("background-image", selectedGradient);
     await expect(card).toHaveCSS("color", "rgb(16, 22, 54)");
     await expect(card).toHaveCSS("border-radius", "3px 12px");
-    await expect(card.locator(".selection-indicator")).toBeVisible();
+    await expect(card.locator(".selection-indicator")).toHaveCount(0);
   }
   const selectedCardBackground = await page
     .locator(".session-product")
@@ -1992,7 +1978,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
   await expect(page.locator(".date.selected")).toHaveCSS(
     "border-color",
-    "rgb(133, 133, 133)",
+    "rgb(86, 102, 168)",
   );
   await expect(page.locator(".date.selected")).toHaveCSS(
     "background-image",
@@ -2019,18 +2005,13 @@ test("header blue and the typography hierarchy stay consistent across every book
   const slotPlacement = await crossing.evaluate((node) => {
     const range = node.querySelector(".time-range")!.getBoundingClientRect();
     const price = node.querySelector(".time-rate")!.getBoundingClientRect();
-    const add = node.querySelector(":scope > svg")!.getBoundingClientRect();
     return {
       rangeBottom: range.bottom,
       priceTop: price.top,
-      addTop: add.top,
-      rangeTop: range.top,
     };
   });
   expect(slotPlacement.priceTop).toBeGreaterThan(slotPlacement.rangeBottom);
-  expect(Math.abs(slotPlacement.addTop - slotPlacement.rangeTop)).toBeLessThan(
-    4,
-  );
+  await expect(crossing.locator(":scope > svg")).toHaveCount(0);
   if (page.viewportSize()!.width <= 700) {
     await expect(
       page.getByText("Select to view trainers available", { exact: true }),
@@ -2195,7 +2176,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await sectionType(".payment-layout .section-title");
   await expect(page.locator(".method.selected")).toHaveCSS(
     "border-top-color",
-    "rgb(133, 133, 133)",
+    "rgb(86, 102, 168)",
   );
   await payAttempt(page);
   // Confirmation retains its original accent; booking-step headings use logo BOT blue.
