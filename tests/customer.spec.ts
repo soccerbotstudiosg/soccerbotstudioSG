@@ -802,6 +802,20 @@ test("email verification rejects an incorrect code and continues after correctio
   ).toHaveValue("360360");
   await page.getByRole("button", { name: "Verify and continue" }).click();
   await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/book\/account\/$/);
+  for (const label of [
+    page.getByRole("heading", { name: "Welcome back" }),
+    page.locator(".signed-in-email"),
+  ]) {
+    await expect(label).toHaveCSS("font-size", "24px");
+    await expect(label).toHaveCSS("font-weight", "900");
+    await expect(label).toHaveCSS("font-style", "italic");
+    await expect(label).toHaveCSS("text-align", "center");
+  }
+  await page.getByRole("button", { name: "Continue signed in" }).click();
+  await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
   const verified = page.locator(".booking-verified-status");
@@ -1065,11 +1079,21 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   const addressLines = await page
     .locator(".outlet-option > span > span")
     .allTextContents();
-  expect(addressLines).toEqual([
-    "Our flagship studio",
-    "201 Henderson Road",
-    "#05-01",
-  ]);
+  expect(addressLines).toEqual(["201 Henderson Road, #05-01"]);
+  for (const selector of [
+    ".outlet-option > span > span",
+    ".session-product-meta",
+    ".session-product-prices > span > span",
+    ".session-product-prices strong",
+    ".player-selection .field-label",
+    ".counter output",
+  ]) {
+    for (const text of await page.locator(selector).all()) {
+      await expect(text).toHaveCSS("font-size", "16px");
+      await expect(text).toHaveCSS("color", "rgb(16, 22, 54)");
+    }
+  }
+  await expect(page.locator(".counter output")).toHaveText("1");
   const priceRows = await page
     .locator(".session-product-prices > span")
     .evaluateAll((rows) =>
@@ -1859,20 +1883,22 @@ test("header blue and the typography hierarchy stay consistent across every book
   await sectionType(
     ".session-product-name",
     (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
-    "rgb(255, 255, 255)",
+    "rgb(16, 22, 54)",
   );
+  const selectedGradient =
+    "linear-gradient(135deg, rgb(238, 240, 247), rgb(220, 225, 241))";
   for (const card of [
     page.locator(".outlet-option"),
     page.locator(".session-product"),
   ]) {
-    await expect(card).toHaveCSS("background-color", brand);
-    await expect(card).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(card).toHaveCSS("background-image", selectedGradient);
+    await expect(card).toHaveCSS("color", "rgb(16, 22, 54)");
     await expect(card).toHaveCSS("border-radius", "3px 12px");
     await expect(card.locator(".selection-chevron")).toBeVisible();
   }
   const selectedCardBackground = await page
     .locator(".session-product")
-    .evaluate((element) => getComputedStyle(element).backgroundColor);
+    .evaluate((element) => getComputedStyle(element).backgroundImage);
   await expect(
     page.getByRole("dialog", { name: "Kickoff Special (Trial Price)" }),
   ).toHaveCount(0);
@@ -1929,14 +1955,17 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".calendar-legend")).toHaveCount(0);
   await expect(page.locator(".date .dot")).toHaveCount(0);
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
-  await expect(page.locator(".date.selected")).toHaveCSS("border-color", brand);
   await expect(page.locator(".date.selected")).toHaveCSS(
-    "background-color",
-    brand,
+    "border-color",
+    "rgb(86, 102, 168)",
+  );
+  await expect(page.locator(".date.selected")).toHaveCSS(
+    "background-image",
+    selectedGradient,
   );
   await expect(page.locator(".date.selected")).toHaveCSS(
     "color",
-    "rgb(255, 255, 255)",
+    "rgb(16, 22, 54)",
   );
   await expect(page.locator(".date.selected strong")).toHaveCSS(
     "background-color",
@@ -1985,14 +2014,14 @@ test("header blue and the typography hierarchy stay consistent across every book
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
     .selectOption({ index: 1 });
   await expect(page.locator(".date.in-booking strong")).toHaveCSS(
-    "background-color",
-    "rgb(5, 10, 47)",
+    "background-image",
+    selectedGradient,
   );
   await expect(page.locator(".date.in-booking strong")).toHaveCSS(
     "border-radius",
     "50%",
   );
-  await expect(crossing).toHaveCSS("background-color", selectedCardBackground);
+  await expect(crossing).toHaveCSS("background-image", selectedCardBackground);
   await expect(crossing.locator(".time-instructor")).toHaveCSS(
     "font-size",
     "18px",

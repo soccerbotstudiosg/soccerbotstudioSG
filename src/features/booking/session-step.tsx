@@ -60,9 +60,9 @@ export function SessionStep() {
           <Icon name="location" />
           <span>
             <strong>{LOCATION.building}</strong>
-            <span>Our flagship studio</span>
-            <span>{LOCATION.street}</span>
-            <span>{LOCATION.unit}</span>
+            <span>
+              {LOCATION.street}, {LOCATION.unit}
+            </span>
           </span>
           <Icon name="chevron" className="selection-chevron" />
         </button>
@@ -191,8 +191,7 @@ function SessionPresentation({
               </span>
               <span className="session-product-name">{serviceName}</span>
               <span className="session-product-meta">
-                40 minutes · 1–{MAX_PLAYERS} players
-                <span>Trainer included</span>
+                40 minutes · 1–{MAX_PLAYERS} players · Trainer included
               </span>
             </span>
             <span className="session-product-prices">

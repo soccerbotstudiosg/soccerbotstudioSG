@@ -58,6 +58,10 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   await user.clear(screen.getByLabelText("Verification code"));
   await user.type(screen.getByLabelText("Verification code"), "360360");
   await user.click(screen.getByRole("button", { name: "Verify and continue" }));
+  expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  expect(mocks.push).not.toHaveBeenCalled();
+  expect(mocks.update).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Continue signed in" }));
   expect(mocks.update).toHaveBeenCalledWith(
     expect.objectContaining({
       mode: "member",

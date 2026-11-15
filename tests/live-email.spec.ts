@@ -484,6 +484,11 @@ test("synthetic live verification reads server identity and keeps native booking
   await page
     .getByRole("button", { name: "Verify and continue", exact: true })
     .click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/book\/account\/$/);
+  await page.getByRole("button", { name: "Continue signed in" }).click();
   await expect(page).toHaveURL(/\/book\/session\/$/);
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Unable to Load.",

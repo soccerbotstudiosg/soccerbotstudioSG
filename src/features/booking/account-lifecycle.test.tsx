@@ -472,16 +472,16 @@ test("switching email clears the old account and supports back guest and fresh r
       .getByRole("button", { name: "Verify and continue" })
       .closest("form")!,
   );
-  await waitFor(() =>
-    expect(navigation.push).toHaveBeenCalledWith("/book/session/"),
-  );
+  expect(
+    await screen.findByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  expect(navigation.push).not.toHaveBeenCalled();
   expect(verify).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({ email: "new@example.invalid" }),
     "123456",
     true,
     expect.any(AbortSignal),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Back" }));
   expect(
     within(screen.getByLabelText("Booking identity")).getByText(
       "new@example.invalid",
@@ -522,7 +522,6 @@ test("switching email clears the old account and supports back guest and fresh r
     false,
     expect.any(AbortSignal),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Back" }));
   expect(
     within(screen.getByLabelText("Booking identity")).getByText(
       "new@example.invalid",
@@ -1203,7 +1202,6 @@ test("fresh security proof clears only stale security feedback and reentry start
     );
   });
   expect(verify).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole("button", { name: "Back" }));
   expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
   expect(
     screen.queryByRole("button", { name: "Manage saved contact" }),

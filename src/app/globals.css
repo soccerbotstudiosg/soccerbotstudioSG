@@ -37,6 +37,11 @@
   --color-action-border: var(--color-navy);
   --color-brand-soft: #eef0f7;
   --color-brand-tint: #dce1f1;
+  --background-selected: linear-gradient(
+    135deg,
+    var(--color-brand-soft),
+    var(--color-brand-tint)
+  );
   --color-focus: #5666a8;
   --color-identity: #176078;
   --color-logo-blue: #46acdc;
@@ -2792,12 +2797,16 @@
   .auth-code-feedback .text-link {
     min-height: 44px;
   }
+  .access-options-verified :is(h2, .signed-in-email) {
+    font-size: var(--text-dialog);
+    font-weight: var(--weight-display);
+    font-style: italic;
+    text-align: center;
+    line-height: var(--leading-heading);
+  }
   .access-option .signed-in-email {
     color: var(--color-identity);
-    font-size: var(--text-section);
-    font-weight: var(--weight-heading);
-    line-height: var(--leading-body);
-    min-height: calc(3 * var(--text-body) * var(--leading-body));
+    min-height: 0;
     overflow-wrap: anywhere;
   }
   .account-actions {
@@ -2873,18 +2882,16 @@
   }
   .outlet-option > span {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto auto;
-    grid-auto-flow: column;
+    grid-template-columns: minmax(0, 1fr);
     flex: 1;
-    gap: 6px 12px;
+    gap: 6px;
   }
   .outlet-option strong {
-    font-size: var(--text-card);
+    font-size: var(--text-section);
   }
   .outlet-option > span > span {
-    color: var(--color-muted);
-    font-size: var(--text-meta);
+    color: var(--color-ink);
+    font-size: var(--text-body);
   }
   .outlet-options,
   .session-products {
@@ -2920,7 +2927,7 @@
   }
   .session-product-choice {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-column: 1 / -1;
     align-items: start;
     gap: 14px;
@@ -2938,24 +2945,21 @@
   }
   .session-product-details {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;
     gap: 8px;
     min-width: 0;
   }
-  .session-product-meta > span {
-    display: block;
-  }
   .session-product-meta {
-    grid-column: 1 / -1;
-    color: var(--color-muted);
-    font-size: var(--text-meta);
+    color: var(--color-ink);
+    font-size: var(--text-body);
   }
   .session-product-prices {
+    grid-column: 1 / -1;
     display: grid;
     gap: 4px;
     margin-top: 0;
-    font-size: var(--text-meta);
+    font-size: var(--text-body);
     color: var(--color-ink);
   }
   .session-product-prices > span {
@@ -2965,25 +2969,26 @@
     gap: 8px;
   }
   .session-product-prices strong {
-    font-size: var(--text-section);
+    font-size: var(--text-body);
     color: var(--color-brand);
     white-space: nowrap;
     text-align: right;
   }
   .outlet-option[aria-pressed="true"],
   .session-product:has(> .session-product-choice[aria-pressed="true"]),
-  .time[aria-pressed="true"] {
-    border-color: var(--color-navy);
-    background: var(--color-navy);
-    color: var(--color-on-brand);
-    box-shadow: inset 0 0 0 1px var(--color-navy);
+  .time[aria-pressed="true"],
+  .date.selected:not(:disabled) {
+    border-color: var(--color-focus);
+    background: var(--background-selected);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1px var(--color-focus);
   }
   .outlet-option[aria-pressed="true"] :is(span, strong, svg),
   .session-product:has(> .session-product-choice[aria-pressed="true"])
-    :is(span, strong),
+    :is(span:not(.session-product-icon), strong),
   .time[aria-pressed="true"] :is(span, strong, svg),
   .time.selected .time-instructor {
-    color: var(--color-on-brand);
+    color: var(--color-ink);
   }
   .session-product-icon {
     display: grid;
@@ -3010,6 +3015,7 @@
   }
   .player-selection .field-label {
     margin: 0;
+    font-size: var(--text-body);
   }
   .counter {
     display: flex;
@@ -3017,6 +3023,12 @@
     justify-content: space-between;
     gap: 8px;
     min-height: 44px;
+  }
+  .counter output {
+    color: var(--color-ink);
+    font-size: var(--text-body);
+    min-width: 2ch;
+    text-align: center;
   }
   .counter button {
     color: var(--color-ink);
@@ -3454,7 +3466,7 @@
     border-radius: 50%;
     line-height: 1;
   }
-  .date:hover:not(:disabled) {
+  .date:hover:not(:disabled):not(.selected) {
     border-color: var(--color-focus);
     background: var(--color-brand-soft);
   }
@@ -3468,14 +3480,10 @@
     );
     box-shadow: none;
   }
-  .date.selected:not(:disabled) {
-    border-color: var(--color-navy);
-    background: var(--color-navy);
-    color: var(--color-on-brand);
-  }
   .date.in-booking:not(:disabled) strong {
-    background: var(--color-navy);
-    color: var(--color-on-brand);
+    background: var(--background-selected);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1px var(--color-focus);
   }
   .date-placeholder {
     min-height: 29px;
@@ -4678,9 +4686,6 @@
     .session-shell :is(.outlet-option strong, .session-product-name) {
       font-size: var(--text-body);
     }
-    .session-shell .session-product-prices strong {
-      font-size: var(--text-card);
-    }
     .session-product.surface {
       gap: 8px 10px;
       padding: 12px 38px 12px 10px;
@@ -4690,7 +4695,11 @@
       gap: 8px 10px;
     }
     .session-product-details {
+      grid-template-columns: auto minmax(0, 1fr);
       gap: 4px;
+    }
+    .session-product-meta {
+      grid-column: 1 / -1;
     }
     .session-product-prices {
       margin-top: 0;

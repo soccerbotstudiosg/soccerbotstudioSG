@@ -541,8 +541,11 @@ export function AccountStep({
                 signal,
               );
               if (signal.aborted) return;
+              resetIdentityDraft();
               setIdentity(signedIn);
-              await proceed(signal, signedIn.email);
+              setChallenge(null);
+              setCode("");
+              setView("choice");
             });
         }}
       >

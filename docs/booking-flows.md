@@ -1,5 +1,9 @@
 # Booking scenarios and messages
 
+The outlet shows its building name above one address line, “201 Henderson Road, #05-01”. The session title and duration/player-range/trainer metadata share the desktop top row; two full-width price rows align their amounts right. Phone metadata stacks below the title. Card body text, price amounts and the visible player count use 16px. Selected outlet, session, time and calendar-day surfaces share a pale brand gradient with dark ink; cart-day numeral circles retain an outline. Card widths, vertical ordering, toggle behavior and initial Continue visibility are retained.
+
+Successful email verification returns to the verified Welcome back card on Account. Welcome back and the email use centred 24px, 900-weight italic action typography. Only explicit Continue signed in advances to Session; verification, remembered identity and revocation remain server-authoritative.
+
 Source reconciled 8 November 2026 against the current local `fix/consistent-conflict-notice` working tree; [Progress](../PROGRESS.md) owns deployment/test status, this document owns scenario messages and copy decisions, and [contracts](api-contracts.md) own proof and recovery rules. Diagrams and the current copy table below describe implemented behavior. The historical copy-review snapshot is preserved in Journey. The current customer error catalogue below is the source-reviewed inventory. HitPay/bank screens are provider-owned; their return paths remain physical UAT.
 
 [Current error-message catalogue](#current-customer-error-catalogue--local-repair-8-november-2026) lists exact wording, triggers and permitted actions.
@@ -36,7 +40,8 @@ When email verification is configured and enabled, verify email before loading s
 flowchart TD
   A["Get Verification Code"] -->|Booking access ready; code sent| B["Enter the six-digit code for email"]
   B --> C["Verify and continue"]
-  C -->|Valid| D["Your session"]
+  C -->|Valid| D["Welcome back"]
+  D -->|Continue signed in| I["Your session"]
   C -->|Invalid code| E["Check your code or request a new one."]
   A -->|Email code request rate-limited| F["Too many code requests. Try again later."]
   A -->|Email verification unavailable| G["Email verification unavailable. Please continue as a guest."]
@@ -61,7 +66,7 @@ flowchart TD
 
 ## 4. Session choice and calendar
 
-The sole outlet and session start selected, with the existing outlet-above-session arrangement and address lines retained; each desktop card is at most half the section width and phone cards use its full width. Both cards remain toggleable. The session card includes duration, player range, prices and “Trainer included”; its bottom row contains the compact minus/count/plus control, bounded to1–4 players. The three inclusion descriptions and separate large player panel are removed. Deselecting a session hides its player row and Choose Date & Time; reselection preserves the count. Outlet deselection hides/resets the nested session disclosure. Calendar Back preserves choices/count. Initial entry does not auto-scroll; explicit reselection retains existing desktop scrolling. Desktop acceptance requires the full Continue action visible on arrival with breathing room; phones retain the existing sticky action. Loading/failure and multiple-service selection remain governed by the live catalogue.
+The sole outlet and session start selected, with the existing outlet-above-session arrangement and the address beneath its building name; each desktop card is at most half the section width and phone cards use its full width. Both cards remain toggleable. The session card includes duration, player range, prices and “Trainer included”; its bottom row contains the compact minus/count/plus control, bounded to1–4 players. The three inclusion descriptions and separate large player panel are removed. Deselecting a session hides its player row and Choose Date & Time; reselection preserves the count. Outlet deselection hides/resets the nested session disclosure. Calendar Back preserves choices/count. Initial entry does not auto-scroll; explicit reselection retains existing desktop scrolling. Desktop acceptance requires the full Continue action visible on arrival with breathing room; phones retain the existing sticky action. Loading/failure and multiple-service selection remain governed by the live catalogue.
 
 ```mermaid
 flowchart TD
@@ -82,7 +87,7 @@ Calendar month/navigation remain on one row; there is no permanent Refresh butto
 - On phones, Time, Details and Review expose cart/trainer icons on the right of the persistent top row, with the step count centred; select either to open a right-aligned popup with a fixed header/close control and independently scrolling body.
 - The cart badge counts selected sessions; the trainer badge counts distinct selected trainers. Both pop when their count changes, except under reduced motion. Zero counts have no badge.
 - Time/Details session and instructor summaries move into those popups; Review retains all session, contact and order details in the main body. Its cart shows the same summary as Details. Next-step actions, contact fields and consent stay on the main page. The next-step action is a full-width naked button without a white wrapper, separated from preceding content and stopping at its original position before the footer. Desktop keeps inline sections.
-- Calendar has no visible legend or availability dots. The currently displayed date uses a blue outline and soft background. Only dates with cart-selected sessions use navy circles with white numerals; unavailable dates use a darker grey surface. Cart membership remains available to screen readers. Mobile live controls keep the full month name and previous/next arrows in one row; there is no Refresh button. The selector and enabled arrows have hover feedback.
+- Calendar has no visible legend or availability dots. The currently displayed date uses a blue outline and soft background. Only dates with cart-selected sessions use outlined pale-gradient circles with dark numerals; unavailable dates use a darker grey surface. Cart membership remains available to screen readers. Mobile live controls keep the full month name and previous/next arrows in one row; there is no Refresh button. The selector and enabled arrows have hover feedback.
 - Time cards: single-line time and add/check above; price below right. Desktop retains all trainer names below left. Mobile has one circled information mark beside the muted hint above all slots; individual cards have no information icon: “Select to view trainers available”.
 - For the current owned live attempt, authenticated expiry or the original checking deadline without payment evidence permits a calendar handoff with the expired cart cleared and the unresolved attempt lock retained. After server-confirmed unpaid release, check affected dates and preserve any new selections made during recovery. Name removed dates/time ranges above the calendar. Failed background reads retain the red notice and hidden affected slots without extra status text; preserve contact and require renewed consent. Unknown provider creation and payment remain protected; scenario12 covers attempts without an eligible calendar handoff.
 - Enter Booking Details, Review Booking and Proceed to Payment show the selected-session total before the chevron, using the existing price owner.
