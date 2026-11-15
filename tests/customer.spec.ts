@@ -1040,6 +1040,13 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("button", { name: "Add one player" }),
   ).toBeVisible();
+  const playerHint = page.getByRole("note");
+  await expect(playerHint).toHaveText("Please choose the number of players.");
+  expect(
+    await playerHint.evaluate(
+      (node) => node.closest(".session-product") === null,
+    ),
+  ).toBe(true);
   const next = page.getByRole("link", { name: "Choose Date & Time" });
   await expect(next).toBeInViewport({ ratio: 1 });
   const nextBox = await next.boundingBox();

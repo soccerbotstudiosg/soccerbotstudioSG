@@ -6475,3 +6475,5 @@ Before staging, the owner additionally requested removal of “(Trial Price)” 
 The owner then requested equal-size minus/count/plus, a bold number and slightly smaller controls. The existing counter owner now uses equal40px cells, a700-weight number and20px icons, with matching browser assertions and unchanged1–4 bounds.
 
 The owner’s final selection-indicator correction replaces outlet/session chevrons with the existing check/plus icons at the same top-right placement and18px size as time cards. Existing toggle tests now verify the indicator changes with selection.
+
+The owner added a six-second pulsing player-count hint outside the card, then selected a theme-matched circle-and-line connector instead of an arrow. Its component owns mount/unmount cleanup and reappears when the player row is shown again; reduced-motion users receive the same six-second static guidance. Existing lifecycle and browser cases cover expiry/re-entry and outside-card placement.

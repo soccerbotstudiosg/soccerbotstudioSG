@@ -3,7 +3,7 @@ import { BookingHeading } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LOCATION, type CustomerCatalogue } from "@/domain/catalog";
 import { Icon } from "@/components/icon";
 import { MAX_PLAYERS } from "@/domain/booking-policy";
@@ -239,6 +239,7 @@ function SessionPresentation({
             </div>
           )}
         </section>
+        {expanded && <PlayerCountHint />}
       </div>
       {expanded && (
         <BookingPrimaryAction className="actions" ready={!pending}>
@@ -255,4 +256,18 @@ function SessionPresentation({
       )}
     </>
   );
+}
+
+/** Briefly point out player selection each time its card is shown. */
+function PlayerCountHint() {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(false), 6000);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return visible ? (
+    <div className="player-count-hint" role="note">
+      Please choose the number of players.
+    </div>
+  ) : null;
 }
