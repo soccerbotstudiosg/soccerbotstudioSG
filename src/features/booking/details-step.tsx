@@ -617,7 +617,7 @@ export function DetailsStep({
         )}
         {saveMessage && (
           <p
-            className={saveState.failed ? "alert" : "notice"}
+            className={saveState.failed ? "alert" : "notice success"}
             role={saveState.failed ? "alert" : "status"}
           >
             {saveMessage}

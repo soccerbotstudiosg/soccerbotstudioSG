@@ -48,6 +48,8 @@ Primary-action security/submission waits replace small spinners with a6px left-t
 
 Latest CI43673289113 on1881b9e passed frontend, Worker groups/runtime and both backend browser shards. The live-email browser case for remembered contact editing failed on all three devices because its required-fields locator still used the retired class. Corrected that remaining selector to the shared heading note, retaining the exact copy and all contact/persistence assertions. Final repaired-head CI and staging remain pending.
 
+Notice colours now follow existing semantic tokens: confirmed success green (enquiry acknowledgement and saved contact), caution amber (preview/no-send and unavailable security checks), failure red, and general/loading information neutral. Existing verified/paid and pending badges retain the matching palette. Final candidate CI/staging and visual acceptance remain pending.
+
 ## Remaining owner acceptance
 
 See [simulated-user UAT](docs/uat/simulated-user.md) for confirmation refresh/Back, immediate post-payment close/reopen, isolated unresolved recovery and final presentation/messenger checks. Owner accepted normal and consecutive booking, conflict, active checkout, expiry-return and last-minute payment on the preceding release. The owner reported the four-hour cutoff test fully accepted on 15 November 2026. Domain access and a complete sandbox payment were owner-confirmed; changed source still needs candidate acceptance. Before production release, verify native-domain CI-token permissions; staging does not prove them.

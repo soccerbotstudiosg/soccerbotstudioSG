@@ -136,7 +136,7 @@ export function EnquiryPage() {
       </div>
       {acknowledged !== null && (
         <div
-          className="notice mt-5"
+          className={`notice ${acknowledged ? "success" : "warning"} mt-5`}
           role="status"
           tabIndex={-1}
           ref={acknowledgement}

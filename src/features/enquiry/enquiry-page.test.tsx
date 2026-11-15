@@ -186,6 +186,7 @@ test("enquiry acknowledgement stays beneath the heading until editing or leaving
     ),
   );
   const notice = screen.getByRole("status");
+  expect(notice).toHaveClass("notice", "success");
   expect(notice).toHaveTextContent(
     "Enquiry sent. We’ll reach out as soon as we can.",
   );

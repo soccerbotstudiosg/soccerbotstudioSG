@@ -740,6 +740,16 @@
     background: var(--color-surface);
     color: var(--color-ink);
   }
+  .notice.success {
+    border-color: color-mix(in srgb, var(--color-success) 35%, white);
+    background: var(--color-success-soft);
+    color: var(--color-success);
+  }
+  .notice.warning {
+    border-color: color-mix(in srgb, var(--color-warning) 35%, white);
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
+  }
   .alert > ul {
     list-style: disc;
     padding-inline-start: 1.25em;
