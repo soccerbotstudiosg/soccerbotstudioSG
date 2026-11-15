@@ -5,7 +5,7 @@ export function BrandLoading({
   leaving = false,
   overlay = true,
   label = "Opening booking",
-  message,
+  message = "Loading...",
 }: {
   compact?: boolean;
   leaving?: boolean;

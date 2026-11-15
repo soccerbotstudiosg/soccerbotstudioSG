@@ -30,6 +30,7 @@ test("overlapping booking reads share one full-page loader and preserve the moun
   fireEvent.change(input, { target: { value: "Retained name" } });
   view.rerender(<Screen first second={false} />);
   expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveTextContent("Loading...");
   view.rerender(<Screen first={false} second />);
   expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
   expect(
@@ -81,6 +82,7 @@ test("display loading leaves navigation interactive while payment loading still 
   expect(button.closest("[inert]")).toBeNull();
   expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(screen.getByRole("status")).toHaveClass("booking-loading-inline");
+  expect(screen.getByRole("status")).toHaveTextContent("Loading...");
   view.rerender(
     <BookingLoadingProvider>
       <button>Continue as Guest</button>

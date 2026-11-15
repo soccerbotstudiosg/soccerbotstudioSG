@@ -6685,3 +6685,7 @@ PR81 run43717315436/7c3e114: frontend, backend browser shards and all Worker gro
 ### 15 November 2026 — Underlined booking entry separator
 
 At the owner's request, removed both decorative pseudo-element lines around the first-step OR and underlined its existing text. Retained the button row, size and typography. Updated the existing browser presentation case to assert an underline and absent pseudo-element content; case inventory and booking handlers are unchanged. Source and formatting checks are run locally; browser appearance remains CI/owner verified. The owner cancelled the prior workflow and requested a new push.
+
+### 15 November 2026 — Visible fallback loading message
+
+The owner requested “Loading...” on empty loaders. Added the fallback in the shared branded presentation for full-page and compact instances; explicit operation messages remain authoritative. Updated normal-navigation, server-rendered cover, shared overlay, compact and protected-confirmation assertions. No loading lifecycle, API or provider behavior changes.

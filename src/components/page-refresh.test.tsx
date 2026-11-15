@@ -68,6 +68,7 @@ test("refresh cover survives server HTML and hydration until restored state font
   );
   document.body.append(container);
   const cover = container.querySelector<HTMLElement>("#page-refresh")!;
+  expect(cover).toHaveTextContent("Loading...");
   expect(cover.style.position).toBe("fixed");
   expect(cover.style.inset).toBe("0px");
   expect(container.querySelector("#page-refresh-content")).toHaveAttribute(
@@ -200,6 +201,9 @@ test("normal and browser return navigation never say refreshing and preserve pay
     );
     expect(document.querySelector("#page-refresh")?.textContent).not.toContain(
       "Refreshing",
+    );
+    expect(document.querySelector("#page-refresh")).toHaveTextContent(
+      "Loading...",
     );
     await act(async () => finishFonts());
     act(() => frame!(0));
