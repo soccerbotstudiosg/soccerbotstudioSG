@@ -213,6 +213,12 @@ export function DetailsStep({
   const contactKey = JSON.stringify([draft.mode, draft.accountEmail, c]);
   const saving = saveState.key === contactKey && saveState.saving;
   const saveMessage = saveState.key === contactKey ? saveState.message : "";
+  const saveNotice = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (!profileOnly || !saveMessage) return;
+    saveNotice.current?.focus({ preventScroll: true });
+    saveNotice.current?.scrollIntoView({ block: "start" });
+  }, [profileOnly, saveMessage]);
   useEffect(
     () => () => {
       activeSave.current?.abort();
@@ -497,15 +503,18 @@ export function DetailsStep({
       ) : (
         <BookingHeading lines={["Your", "details"]} />
       )}
+      <p className="lead">
+        {profileOnly
+          ? "Update your saved contact details."
+          : "Enter the contact details for this booking."}
+      </p>
       <form
         id="details-form"
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
           if (profileOnly) {
-            void save().then((saved) => {
-              if (saved && mounted.current) onClose?.();
-            });
+            void save();
             return;
           }
           const next = contactErrors(
@@ -543,22 +552,19 @@ export function DetailsStep({
           }
         }}
       >
-        {!profileOnly && bookingService.mode === "live" && (
-          <p>
-            Review your selected times and details. Your booking is created when
-            you continue to payment.
-          </p>
-        )}
-        <p className="booking-required">* Required fields</p>
         <section className="surface">
-          <h2 className="section-title">
-            {profileOnly ? "Contact profile" : "Booking Contact"}
-          </h2>
-          {draft.mode === "member" && (
-            <p className="section-description">
-              {remember
-                ? "Your name and phone will be saved when you submit this form. Anyone using this verified email shares these saved contact details. Previous bookings stay unchanged."
-                : "Review your contact details for this booking. Changes will not be saved for your next visit."}
+          <div className="contact-heading-row">
+            <h2 className="section-title">Booking Contact</h2>
+            <p className="required-fields">* Required fields</p>
+          </div>
+          {saveMessage && (
+            <p
+              className={saveState.failed ? "alert" : "notice success"}
+              role={saveState.failed ? "alert" : "status"}
+              ref={saveNotice}
+              tabIndex={-1}
+            >
+              {saveMessage}
             </p>
           )}
           <div className="field-grid">
@@ -621,14 +627,6 @@ export function DetailsStep({
             </button>
           </div>
         )}
-        {saveMessage && (
-          <p
-            className={saveState.failed ? "alert" : "notice"}
-            role={saveState.failed ? "alert" : "status"}
-          >
-            {saveMessage}
-          </p>
-        )}
         {!profileOnly && selectionNotice && (
           <p className="notice" role="status">
             {selectionNotice}
@@ -641,6 +639,7 @@ export function DetailsStep({
         )}
         {!profileOnly && (
           <BookingPrimaryAction
+            loading={saving || checking}
             className="actions"
             ready={contactValid && !saving && !checking}
           >
@@ -649,6 +648,9 @@ export function DetailsStep({
               type="submit"
               disabled={saving || checking || !contactValid}
             >
+              {(saving || checking) && (
+                <Icon name="spinner" className="spinner" />
+              )}
               {saving ? "Saving details…" : "Review Booking"}{" "}
               <BookingActionTotal />
               {!saving && !checking && <Icon name="chevron" />}

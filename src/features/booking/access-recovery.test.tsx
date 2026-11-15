@@ -17,10 +17,12 @@ import {
   establishedProfileAccess,
   onProfileAccessLoss,
   reportProfileAccessLoss,
+  rememberBookingAccessExpiry,
 } from "@/services/profile-access";
 import { blankDraft } from "@/domain/booking";
 import { saveLiveDraft } from "@/services/storage";
-import { BOOKING_SIGNED_OUT } from "@/domain/booking-messages";
+import { checkEmailDomain } from "@/services/email-domain";
+import { BOOKING_SESSION_EXPIRED } from "@/domain/booking-messages";
 const navigation = vi.hoisted(() => ({
   path: "/book/account/",
   push: vi.fn(),
@@ -66,9 +68,13 @@ async function identityWith(fetcher: ReturnType<typeof vi.fn<typeof fetch>>) {
 }
 /** Inspect the retained identity/draft without granting access through the fixture. */
 function Probe() {
-  const { draft, profileAccessRevision, checkout, action } = useBooking();
+  const { draft, profileAccessRevision, checkout, action, update } =
+    useBooking();
   return (
     <>
+      <button onClick={() => update({ players: 2 })}>
+        Change players locally
+      </button>
       <button onClick={() => void checkout("synthetic-proof")}>
         Attempt checkout
       </button>
@@ -103,13 +109,11 @@ test("revoked saved-contact editor returns to guest choices without revealing th
   fireEvent.click(
     await screen.findByRole("button", { name: "Manage saved contact" }),
   );
-  expect(await screen.findByText(BOOKING_SIGNED_OUT)).toBeVisible();
+  expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
   expect(
     await screen.findByRole("button", { name: "Continue as Guest" }),
   ).toBeEnabled();
-  expect(
-    screen.getByRole("button", { name: "Continue with email" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   expect(screen.queryByText("Welcome back")).toBeNull();
   expect(screen.queryByLabelText(/Full name/)).toBeNull();
   expect(identity.current()).toBeNull();
@@ -400,4 +404,202 @@ test("saved-profile timeout offers retry without exposing fields or restarting b
   );
   expect(screen.getByDisplayValue("Retried Person")).toBeVisible();
   expect(screen.queryByDisplayValue("Obsolete Person")).toBeNull();
+});
+
+test("expired guest email lookup returns to step one with session notice and usable entry choices", async () => {
+  navigation.path = "/book/details/";
+  const fetcher = vi.fn<typeof fetch>(async (input) => {
+    if (String(input) === "/api/identity/email-domain")
+      return Response.json({ error: "access_denied" }, { status: 401 });
+    if (String(input) === "/api/access")
+      return Response.json({ access: "guest" });
+    return Response.json(null);
+  });
+  const identity = await identityWith(fetcher);
+  saveLiveDraft({
+    ...blankDraft(),
+    mode: "guest",
+    contact: {
+      ...blankDraft().contact,
+      email: "guest@example.com",
+      name: "Old Guest",
+    },
+  });
+  const view = render(
+    <BookingProvider bookingService={service} identityService={identity}>
+      <BookingPage step="details" />
+      <Probe />
+    </BookingProvider>,
+  );
+  await act(async () => {
+    await checkEmailDomain("guest@example.com", new AbortController().signal);
+  });
+  expect(navigation.replace).toHaveBeenCalledWith("/book/account/");
+  navigation.path = "/book/account/";
+  view.rerender(
+    <BookingProvider bookingService={service} identityService={identity}>
+      <BookingPage step="account" />
+      <Probe />
+    </BookingProvider>,
+  );
+  expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Continue as Guest" }),
+  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+  expect(screen.getByTestId("recovery")).not.toHaveTextContent("Old Guest");
+});
+
+test("expired protected availability and verification notify recovery but transient failures do not", async () => {
+  const lost = vi.fn();
+  const stop = onProfileAccessLoss(lost);
+  const fetcher = vi.fn<typeof fetch>();
+  vi.stubGlobal("fetch", fetcher);
+  try {
+    fetcher.mockResolvedValue(
+      Response.json({ error: "access_denied" }, { status: 401 }),
+    );
+    await expect(
+      liveBookingService.availability!({
+        date: "2026-11-20",
+        players: 1,
+        serviceId: "2",
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toThrow();
+    expect(lost).toHaveBeenCalledWith("session");
+    establishedProfileAccess();
+    lost.mockClear();
+    await expect(
+      createLiveIdentityService().verify(
+        {
+          challengeId: "00000000-0000-4000-8000-000000000001",
+          email: "guest@example.com",
+          expiresAt: Date.now() + 60000,
+          resendAfter: 0,
+        },
+        "123456",
+        false,
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow();
+    expect(lost).toHaveBeenCalledWith("session");
+    establishedProfileAccess();
+    lost.mockClear();
+    fetcher.mockResolvedValue(
+      Response.json({ status: "unavailable" }, { status: 503 }),
+    );
+    expect(
+      await checkEmailDomain("guest@example.com", new AbortController().signal),
+    ).toBe("unavailable");
+    expect(lost).not.toHaveBeenCalled();
+    fetcher.mockResolvedValue(
+      Response.json({ error: "identity_unavailable" }, { status: 401 }),
+    );
+    await checkEmailDomain("guest@example.com", new AbortController().signal);
+    expect(lost).not.toHaveBeenCalled();
+  } finally {
+    stop();
+  }
+});
+
+test("late or aborted email denial cannot expire a newly established booking session", async () => {
+  let finish!: (response: Response) => void;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+    ),
+  );
+  const lost = vi.fn();
+  const stop = onProfileAccessLoss(lost);
+  try {
+    const old = checkEmailDomain(
+      "guest@example.com",
+      new AbortController().signal,
+    );
+    establishedProfileAccess();
+    finish(Response.json({ error: "access_denied" }, { status: 401 }));
+    await old;
+    expect(lost).not.toHaveBeenCalled();
+    const controller = new AbortController();
+    const aborted = checkEmailDomain("guest@example.com", controller.signal);
+    controller.abort();
+    finish(Response.json({ error: "access_denied" }, { status: 401 }));
+    await aborted;
+    expect(lost).not.toHaveBeenCalled();
+  } finally {
+    stop();
+  }
+});
+
+test("expired navigation redirects on forward and back steps while local edits and renewed entry remain free", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  const start = Date.now();
+  const fetcher = vi.fn<typeof fetch>(async (input) =>
+    String(input) === "/api/access"
+      ? Response.json(
+          { access: "guest" },
+          {
+            headers: {
+              "X-Booking-Access-Expires-At": String(Date.now() + 1800000),
+            },
+          },
+        )
+      : Response.json(null),
+  );
+  const identity = await identityWith(fetcher);
+  for (const destination of ["/book/time/", "/book/session/"]) {
+    navigation.replace.mockClear();
+    navigation.path =
+      destination === "/book/time/" ? "/book/session/" : "/book/time/";
+    vi.setSystemTime(start);
+    establishedProfileAccess(String(start + 1800000));
+    const view = render(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+      </BookingProvider>,
+    );
+    await act(async () => {});
+    expect(navigation.replace).not.toHaveBeenCalled();
+    vi.setSystemTime(start + 1800001);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Change players locally" }),
+    );
+    expect(screen.getByTestId("recovery")).toHaveTextContent('"players":2');
+    expect(navigation.replace).not.toHaveBeenCalled();
+    navigation.path = destination;
+    view.rerender(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+      </BookingProvider>,
+    );
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+      "/book/account/",
+    );
+    navigation.path = "/book/account/";
+    view.rerender(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <BookingPage step="account" />
+        <Probe />
+      </BookingProvider>,
+    );
+    expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
+    await act(async () => {
+      await identity.guest(new AbortController().signal);
+    });
+    navigation.replace.mockClear();
+    navigation.path = "/book/session/";
+    view.rerender(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+      </BookingProvider>,
+    );
+    expect(navigation.replace).not.toHaveBeenCalled();
+    view.unmount();
+  }
+  rememberBookingAccessExpiry(null);
 });

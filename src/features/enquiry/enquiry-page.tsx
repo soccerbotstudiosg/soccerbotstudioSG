@@ -1,11 +1,11 @@
 "use client";
-import { useEnquiryNotice } from "./enquiry-notice";
+import { BookingPrimaryAction } from "@/features/booking/booking-primary-action";
 import { PhoneInput } from "@/features/booking/phone-input";
 import { EnquiryBotProof } from "@/features/booking/email-bot-proof";
 import { enquiryErrors } from "@/domain/enquiry";
 import { EMAIL_MAX_LENGTH } from "@/domain/contact";
 import Link from "next/link";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/icon";
 import { ENQUIRY_TYPES } from "@/domain/catalog";
 import { todaySG } from "@/domain/dates";
@@ -35,7 +35,13 @@ const hydratedSnapshot = () => true;
 const serverSnapshot = () => false;
 /** Validate and submit customer enquiries through the configured service. */
 export function EnquiryPage() {
-  const notify = useEnquiryNotice();
+  const [acknowledged, setAcknowledged] = useState<boolean | null>(null);
+  const acknowledgement = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (acknowledged === null) return;
+    acknowledgement.current?.focus({ preventScroll: true });
+    acknowledgement.current?.scrollIntoView({ block: "start" });
+  }, [acknowledged]);
   const ready = useSyncExternalStore(
     subscribeToHydration,
     hydratedSnapshot,
@@ -66,6 +72,7 @@ export function EnquiryPage() {
       (!/^\+?[\d ()-]*$/.test(text) || text.replace(/\D/g, "").length > 15)
     )
       return;
+    setAcknowledged(null);
     setTouched((current) => ({ ...current, [key]: true }));
     setValue((current) => ({ ...current, [key]: text }));
   };
@@ -124,9 +131,23 @@ export function EnquiryPage() {
         <Icon name="back" />
         Home
       </Link>
-      <h1 className="page-title">Contact the studio</h1>
+      <div className="booking-heading-row">
+        <h1 className="page-title">Contact the studio</h1>
+      </div>
+      {acknowledged !== null && (
+        <div
+          className={`notice ${acknowledged ? "success" : "warning"} mt-5`}
+          role="status"
+          tabIndex={-1}
+          ref={acknowledgement}
+        >
+          {acknowledged
+            ? "Enquiry sent. We’ll reach out as soon as we can."
+            : "Preview · No enquiry sent."}
+        </div>
+      )}
       <form
-        className="surface mt-8 space-y-7"
+        className="surface mt-8 enquiry-form"
         aria-busy={!ready || busy}
         noValidate
         onSubmit={async (event) => {
@@ -150,7 +171,7 @@ export function EnquiryPage() {
             submission.current = null;
             setValue(blank);
             setTouched({});
-            notify(result.delivered);
+            setAcknowledged(result.delivered);
           } catch (e) {
             setError(
               customerMessage(
@@ -166,9 +187,13 @@ export function EnquiryPage() {
           }
         }}
       >
-        <p className="text-xs text-muted">* Required fields</p>
         <fieldset disabled={!ready}>
-          <legend className="mb-5 text-xl font-bold">Your details</legend>
+          <legend className="mb-5 w-full">
+            <span className="contact-heading-row">
+              <span className="text-xl font-bold">Your details</span>
+              <span className="required-fields">* Required fields</span>
+            </span>
+          </legend>
           <div className="grid gap-5 sm:grid-cols-2">
             {field("name", "Full name", "text", true)}
             {field("email", "Email address", "email", true)}
@@ -244,26 +269,33 @@ export function EnquiryPage() {
             onPendingChange={setProofPending}
           />
         )}
-        <button
-          className="button wide booking-entry-action"
-          disabled={!ready || busy || (live && !botToken)}
+        <BookingPrimaryAction
+          ready={ready && !busy && (!live || !!botToken)}
+          loading={
+            busy || (live && proofPending && !Object.keys(validation).length)
+          }
         >
-          {busy ? (
-            <span className="button-loading">
+          <button
+            className="button wide"
+            disabled={!ready || busy || (live && !botToken)}
+          >
+            {(busy ||
+              (live && proofPending && !Object.keys(validation).length)) && (
               <Icon name="spinner" className="spinner" />
-              Sending enquiry…
-            </span>
-          ) : live && proofPending && !Object.keys(validation).length ? (
-            "Checking security…"
-          ) : (
-            "Send enquiry"
-          )}
-          {live && proofPending && !Object.keys(validation).length && !busy ? (
-            <Icon name="spinner" className="spinner" />
-          ) : !busy ? (
-            <Icon name="chevron" />
-          ) : null}
-        </button>
+            )}
+            {busy ? (
+              <span className="button-loading">Sending enquiry…</span>
+            ) : live && proofPending && !Object.keys(validation).length ? (
+              "Checking security…"
+            ) : (
+              "Send enquiry"
+            )}
+            {!busy &&
+              !(live && proofPending && !Object.keys(validation).length) && (
+                <Icon name="chevron" />
+              )}
+          </button>
+        </BookingPrimaryAction>
       </form>
     </div>
   );

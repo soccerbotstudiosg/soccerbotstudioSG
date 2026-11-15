@@ -103,8 +103,12 @@ test("Pages service binding reaches the actual Worker with guest cookie continui
       /__Host-soccerbot-access=[a-f0-9]{64}; Path=\/; Secure; HttpOnly; SameSite=Strict/,
     );
     const originalAccess = await db
-      .prepare("SELECT owner_id,capability_hash FROM guest_access")
+      .prepare("SELECT owner_id,capability_hash,expires_ms FROM guest_access")
       .first();
+    assert.equal(
+      Number(guest.headers.get("X-Booking-Access-Expires-At")),
+      originalAccess.expires_ms,
+    );
     await db
       .prepare("UPDATE guest_access SET expires_ms=?")
       .bind(Date.now() + 60000)
@@ -120,6 +124,10 @@ test("Pages service binding reaches the actual Worker with guest cookie continui
       setCookie.split(";")[0],
     );
     const renewed = await db.prepare("SELECT * FROM guest_access").first();
+    assert.equal(
+      Number(again.headers.get("X-Booking-Access-Expires-At")),
+      renewed.expires_ms,
+    );
     assert.equal(renewed.owner_id, originalAccess.owner_id);
     assert.equal(renewed.capability_hash, originalAccess.capability_hash);
     assert.ok(

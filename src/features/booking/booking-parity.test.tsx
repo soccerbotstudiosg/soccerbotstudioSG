@@ -213,6 +213,7 @@ test("live calendar removes selections rejected at checkout and retains contact 
       <Seed />
       <TimeStep />
       <Summary basket />
+      <BasketContinue />
       <DetailsStep />
     </BookingProvider>,
   );
@@ -524,6 +525,7 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
       <Players />
       <TimeStep />
       <Summary basket />
+      <BasketContinue />
       <DetailsStep />
     </BookingProvider>,
   );

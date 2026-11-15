@@ -249,38 +249,34 @@ async function directCase(scenario: string) {
     screen.getByRole("button", { name: /^Proceed to Payment/ }),
   ).toBeDisabled();
   expect(
-    screen
-      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
-      .querySelector(".spinner"),
-  ).toBeVisible();
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .parentElement,
+  ).toHaveAttribute("data-loading", "true");
   expect(
     screen.getByRole("button", { name: /^Proceed to Payment/ }),
   ).toHaveAttribute("aria-busy", "true");
   fireEvent.click(screen.getByRole("checkbox"));
   expect(
-    screen
-      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
-      .querySelector(".spinner"),
-  ).toBeNull();
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .parentElement,
+  ).not.toHaveAttribute("data-loading");
   expect(
     screen.getByRole("button", { name: /^Proceed to Payment/ }),
   ).toBeDisabled();
   fireEvent.click(screen.getByRole("checkbox"));
   expect(
-    screen
-      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
-      .querySelector(".spinner"),
-  ).toBeVisible();
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .parentElement,
+  ).toHaveAttribute("data-loading", "true");
   expect(checkout).not.toHaveBeenCalled();
   expect(pay).not.toHaveBeenCalled();
   fireEvent.click(
     screen.getByRole("button", { name: "Complete checkout proof" }),
   );
   expect(
-    screen
-      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
-      .querySelector(".spinner"),
-  ).toBeNull();
+    screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .parentElement,
+  ).not.toHaveAttribute("data-loading");
   await act(async () =>
     fireEvent.click(
       screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
@@ -2534,9 +2530,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   // state. A later calendar visit must not resurrect it from the foreign checkout.
   refreshed.rerender(tree("details"));
   expect(
-    await screen.findByRole("heading", {
-      name: "Booking Contact",
-    }),
+    await screen.findByRole("textbox", { name: /Full name/ }),
   ).toBeInTheDocument();
   expect(screen.getByTestId("conflict-refresh-notice")).toBeEmptyDOMElement();
   expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();

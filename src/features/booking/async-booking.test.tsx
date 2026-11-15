@@ -28,7 +28,7 @@ import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
 import { PAYMENT_WINDOW_ENDED } from "@/domain/booking-messages";
 import { TimeStep } from "./time-step";
-import { Summary } from "./summary";
+import { BasketContinue, Summary } from "./summary";
 import { ReviewStep } from "./review-step";
 import { protectedCheckoutService } from "@/services/confirmation";
 import { PaymentStep } from "./payment-step";
@@ -418,6 +418,7 @@ test("calendar and basket share delayed availability once and preserve selection
     <BookingProvider bookingService={service}>
       <Calendar />
       <Summary basket />
+      <BasketContinue />
       <Probe />
     </BookingProvider>,
   );
@@ -447,6 +448,7 @@ test("calendar and basket share delayed availability once and preserve selection
     <BookingProvider bookingService={service}>
       <Calendar />
       <Summary basket />
+      <BasketContinue />
       <Probe />
     </BookingProvider>,
   );
@@ -464,6 +466,7 @@ test("availability failure is not no slots and an explicit retry retains the bas
     <BookingProvider bookingService={{ ...demoBookingService, availability }}>
       <Calendar />
       <Summary basket />
+      <BasketContinue />
     </BookingProvider>,
   );
   await act(async () => {
@@ -850,6 +853,7 @@ test("a changed booking session invalidates availability even if the old date re
     <BookingProvider bookingService={{ ...demoBookingService, availability }}>
       <Calendar />
       <Summary basket />
+      <BasketContinue />
       <Probe />
     </BookingProvider>,
   );
@@ -986,6 +990,7 @@ test("server render performs no availability or booking operation", () => {
     >
       <TimeStep />
       <Summary basket />
+      <BasketContinue />
     </BookingProvider>,
   );
   expect(availability).not.toHaveBeenCalled();
@@ -1003,6 +1008,7 @@ test("replacing an adapter with the same mode invalidates its completed availabi
     <BookingProvider bookingService={oldService}>
       <Calendar />
       <Summary basket />
+      <BasketContinue />
     </BookingProvider>,
   );
   await act(async () => {});
@@ -1015,6 +1021,7 @@ test("replacing an adapter with the same mode invalidates its completed availabi
     <BookingProvider bookingService={newService}>
       <Calendar />
       <Summary basket />
+      <BasketContinue />
     </BookingProvider>,
   );
   expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
@@ -1099,6 +1106,7 @@ test("a checkout capacity conflict invalidates shared availability before return
     <BookingProvider bookingService={service}>
       <Calendar />
       <Summary basket />
+      <BasketContinue />
       <Probe />
     </BookingProvider>,
   );

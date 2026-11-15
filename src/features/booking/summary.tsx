@@ -77,13 +77,11 @@ export function SessionSummaryHeading({
 export function SessionList({
   slots,
   remove,
-  showRotation = true,
   showPrices = false,
   now,
 }: {
   slots: Session[];
   now?: number;
-  showRotation?: boolean;
   showPrices?: boolean;
   remove?: (slot: Session) => void;
 }) {
@@ -102,24 +100,16 @@ export function SessionList({
               <span>
                 {slot.start}–{endTime(slot.start)} SGT
               </span>
-              {!remove && (
-                <div className="session-trainer-row">
-                  <span className="session-instructor">
-                    Trainer: {sessionInstructorName(slot)}
-                  </span>
-                  {showPrices && (
-                    <strong className="session-item-price">
-                      {money(sessionPrice(slot))}
-                    </strong>
-                  )}
-                </div>
-              )}
-              {showRotation && slot.rotationAt && (
-                <span className="rotation-notice">
-                  Crosses the {slot.rotationAt} instructor rotation. Your
-                  assigned instructor stays for the full session.
+              <div className="session-trainer-row">
+                <span className="session-instructor">
+                  Trainer: {sessionInstructorName(slot)}
                 </span>
-              )}
+                {!remove && showPrices && (
+                  <strong className="session-item-price">
+                    {money(sessionPrice(slot))}
+                  </strong>
+                )}
+              </div>
               {now !== undefined && isElapsed(slot, now) && (
                 <span className="field-error">
                   Session has started — remove to continue.
@@ -127,19 +117,14 @@ export function SessionList({
               )}
             </div>
             {remove && (
-              <button
-                className="basket-remove"
-                aria-label={`Remove ${slot.date} at ${slot.start}`}
-                onClick={() => remove(slot)}
-              >
-                <Icon name="close" />
-              </button>
-            )}
-            {remove && (
-              <div className="basket-price-row">
-                <span className="session-instructor">
-                  Trainer: {sessionInstructorName(slot)}
-                </span>
+              <div className="basket-actions">
+                <button
+                  className="basket-remove"
+                  aria-label={`Remove ${slot.date} at ${slot.start}`}
+                  onClick={() => remove(slot)}
+                >
+                  <Icon name="close" />
+                </button>
                 <small>{money(sessionPrice(slot))}</small>
               </div>
             )}
@@ -167,11 +152,9 @@ export function PriceSummary({ draft }: { draft: BookingDraft }) {
 /** Render the booking summary and permitted editing actions. */
 export function Summary({
   basket = false,
-  includeAction = true,
   showTrainers = true,
 }: {
   basket?: boolean;
-  includeAction?: boolean;
   showTrainers?: boolean;
 }) {
   const { draft, update, now } = useBooking();
@@ -182,13 +165,12 @@ export function Summary({
         aria-label="Your booking summary"
       >
         <div
-          className="summary-cover"
+          className="summary-cover booking-panel-cover"
           style={{ backgroundImage: `url("${bookingCover}")` }}
         >
           <span className="eyebrow">Your Cart</span>
         </div>
         <div className="summary-body">
-          {basket && includeAction && <BasketContinue />}
           {draft.slots.length ? (
             <>
               <div className="basket-heading">
@@ -228,15 +210,13 @@ export function Summary({
               <p>Choose a date, then add the times that suit you.</p>
             </div>
           )}
-          {!(basket && includeAction) && (
-            <div className="summary-total">
-              <span>Total</span>
-              <strong>
-                <span className="total-currency">SGD</span>{" "}
-                {money(totalCents(draft))}
-              </strong>
-            </div>
-          )}
+          <div className="summary-total">
+            <span>Total</span>
+            <strong>
+              <span className="total-currency">SGD</span>{" "}
+              {money(totalCents(draft))}
+            </strong>
+          </div>
         </div>
       </aside>
       {showTrainers && draft.slots.length > 0 && <SelectedTrainers />}
@@ -308,8 +288,14 @@ export function SelectedTrainers() {
           aria-label="Your instructors"
           aria-describedby={headingId}
         >
-          <h2 id={headingId}>
-            Your Trainers <span>· {instructors.length}</span>
+          <h2
+            id={headingId}
+            className="booking-panel-cover"
+            style={{ backgroundImage: `url("${bookingCover}")` }}
+          >
+            <span className="eyebrow">
+              Your Trainers · {instructors.length}
+            </span>
           </h2>
           {instructors.map((slot) => (
             <InstructorProfile

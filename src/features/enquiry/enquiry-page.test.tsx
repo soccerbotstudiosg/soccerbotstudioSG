@@ -4,24 +4,16 @@ import { renderToString } from "react-dom/server";
 import { expect, test, vi } from "vitest";
 import { services } from "@/services";
 import { EnquiryPage } from "./enquiry-page";
-import { EnquiryNoticeProvider, useEnquiryNotice } from "./enquiry-notice";
 const navigation = vi.hoisted(() => ({ replace: vi.fn(), pathname: "/" }));
 vi.mock("next/navigation", () => ({
   useRouter: () => navigation,
   usePathname: () => navigation.pathname,
 }));
-function Enquiry() {
-  return (
-    <EnquiryNoticeProvider>
-      <EnquiryPage />
-    </EnquiryNoticeProvider>
-  );
-}
 
 test("enquiry waits for hydration then preserves entered details through submission", async () => {
   const container = document.createElement("div");
   const markup = new DOMParser().parseFromString(
-    renderToString(<Enquiry />),
+    renderToString(<EnquiryPage />),
     "text/html",
   );
   container.append(...markup.body.childNodes);
@@ -35,7 +27,7 @@ test("enquiry waits for hydration then preserves entered details through submiss
 
   const hydrationErrors: unknown[] = [];
   await act(async () => {
-    render(<Enquiry />, {
+    render(<EnquiryPage />, {
       container,
       hydrate: true,
       onRecoverableError: (error) => hydrationErrors.push(error),
@@ -85,7 +77,7 @@ test("enquiry waits for hydration then preserves entered details through submiss
   await user.click(screen.getByRole("button", { name: "Send enquiry" }));
   expect(retry.mock.calls[0][1]?.key).toBe(failedKey);
   expect(await screen.findByText("Preview · No enquiry sent.")).toBeVisible();
-  expect(navigation.replace).toHaveBeenLastCalledWith("/");
+  expect(navigation.replace).not.toHaveBeenCalled();
   expect(screen.queryByText("demo@example.com")).toBeNull();
   expect(screen.getByLabelText("Full name", { exact: false })).toHaveValue("");
   expect(screen.getByRole("button", { name: "Send enquiry" })).toBeEnabled();
@@ -110,7 +102,7 @@ test("enquiry waits for hydration then preserves entered details through submiss
 });
 
 test("enquiry validates edits immediately and blocks invalid service submission", () => {
-  render(<Enquiry />);
+  render(<EnquiryPage />);
   const submit = vi.spyOn(services.enquiry, "submit");
   expect(screen.getByRole("link", { name: /^Home$/ })).toHaveAttribute(
     "href",
@@ -173,45 +165,50 @@ test("enquiry validates edits immediately and blocks invalid service submission"
   submit.mockRestore();
 });
 
-function Acknowledge() {
-  const notify = useEnquiryNotice();
-  return <button onClick={() => notify(true)}>Acknowledge delivery</button>;
-}
-test("enquiry acknowledgement routes Home and expires after ten seconds without replay", () => {
+test("enquiry acknowledgement stays beneath the heading until editing or leaving", async () => {
+  const submit = vi
+    .spyOn(services.enquiry, "submit")
+    .mockResolvedValue({ email: "demo@example.com", delivered: true });
+  const view = render(<EnquiryPage />);
+  for (const [label, value] of [
+    ["Full name", "Demo Customer"],
+    ["Email address", "demo@example.com"],
+    ["Mobile number", "+65 8123 4567"],
+    ["Enquiry type", "Corporate booking"],
+    ["Your requirements", "A group session for our team."],
+  ])
+    fireEvent.change(screen.getByLabelText(label, { exact: false }), {
+      target: { value },
+    });
+  await act(async () =>
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Send enquiry" }).closest("form")!,
+    ),
+  );
+  const notice = screen.getByRole("status");
+  expect(notice).toHaveClass("notice", "success");
+  expect(notice).toHaveTextContent(
+    "Enquiry sent. We’ll reach out as soon as we can.",
+  );
+  expect(notice).toHaveFocus();
+  expect(
+    screen.getByRole("heading", { name: "Contact the studio" }).parentElement
+      ?.nextElementSibling,
+  ).toBe(notice);
+  expect(navigation.replace).not.toHaveBeenCalled();
   vi.useFakeTimers();
   try {
-    navigation.pathname = "/enquiry/";
-    const view = render(
-      <EnquiryNoticeProvider>
-        <Acknowledge />
-      </EnquiryNoticeProvider>,
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Acknowledge delivery" }),
-    );
-    expect(navigation.replace).toHaveBeenLastCalledWith("/");
-    expect(screen.queryByRole("status")).toBeNull();
-    navigation.pathname = "/";
-    view.rerender(
-      <EnquiryNoticeProvider>
-        <Acknowledge />
-      </EnquiryNoticeProvider>,
-    );
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Your enquiry has been sent successfully.",
-    );
-    act(() => vi.advanceTimersByTime(9999));
-    expect(screen.getByRole("status")).toBeVisible();
-    act(() => vi.advanceTimersByTime(1));
-    expect(screen.queryByRole("status")).toBeNull();
-    view.rerender(
-      <EnquiryNoticeProvider>
-        <Acknowledge />
-      </EnquiryNoticeProvider>,
-    );
-    expect(screen.queryByRole("status")).toBeNull();
+    act(() => vi.advanceTimersByTime(10000));
+    expect(notice).toBeVisible();
   } finally {
-    navigation.pathname = "/";
     vi.useRealTimers();
   }
+  fireEvent.change(screen.getByLabelText("Full name", { exact: false }), {
+    target: { value: "Another Enquiry" },
+  });
+  expect(screen.queryByRole("status")).toBeNull();
+  view.unmount();
+  render(<EnquiryPage />);
+  expect(screen.queryByRole("status")).toBeNull();
+  submit.mockRestore();
 });

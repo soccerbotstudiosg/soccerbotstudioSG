@@ -120,7 +120,9 @@ export function ReviewStep({
   return (
     <>
       <BookingHeading lines={["Review", "Booking"]} />
-      <p className="lead">Check your details before payment.</p>
+      <p className="lead">
+        Review your booking details before proceeding to payment.
+      </p>
       <section className="surface booking-document">
         <ReviewSessions part="heading" verifying={verifying} />
         <div className="review-block">
@@ -184,7 +186,11 @@ export function ReviewStep({
           onPendingChange={setProofPending}
         />
       )}
-      <BookingPrimaryAction className="actions" ready={canProceed}>
+      <BookingPrimaryAction
+        className="actions"
+        ready={canProceed}
+        loading={checkingProof || busy || verifying}
+      >
         <button
           className="button"
           disabled={!canProceed}
@@ -209,6 +215,9 @@ export function ReviewStep({
             }
           }}
         >
+          {(checkingProof || busy || verifying) && (
+            <Icon name="spinner" className="spinner" />
+          )}
           {verifying ? (
             "Checking reservation…"
           ) : busy ? (
@@ -222,13 +231,7 @@ export function ReviewStep({
             "Proceed to Payment"
           )}{" "}
           <BookingActionTotal />
-          {checkingProof ? (
-            <span aria-hidden="true">
-              <Icon name="spinner" className="spinner" />
-            </span>
-          ) : !busy ? (
-            <Icon name="chevron" />
-          ) : null}
+          {!checkingProof && !busy ? <Icon name="lock" /> : null}
         </button>
       </BookingPrimaryAction>
       {verifying && (

@@ -35,6 +35,11 @@ const paths: Record<string, ReactNode> = {
       <path d="M12 7v5l3 2" />
     </>
   ),
+  coach: (
+    <>
+      <path d="M7 8V7a5 5 0 0 1 10 0v1H7Zm0 0h13M8 9v2a4 4 0 0 0 8 0V9M4 22v-2a8 8 0 0 1 16 0v2M9 17l3 3 3-3" />
+    </>
+  ),
   users: (
     <>
       <circle cx="9" cy="7" r="3" />

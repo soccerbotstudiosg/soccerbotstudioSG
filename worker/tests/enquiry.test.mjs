@@ -173,7 +173,7 @@ test("public enquiry sends fixed staff recipients and customer reply-to without 
   assert.equal(response.headers.has("Set-Cookie"), false);
   assert.deepEqual(
     calls.map(({ kind }) => kind),
-    ["bot", "email"],
+    ["bot", "email", "email"],
   );
   const mail = calls[1];
   assert.equal(mail.body.from, sender);
@@ -187,6 +187,23 @@ test("public enquiry sends fixed staff recipients and customer reply-to without 
   assert.match(mail.body.text, /Synthetic School/);
   assert.ok(mail.body.text.includes(input.values.message));
   assert.equal(mail.headers.get("Idempotency-Key"), `enquiry/${input.key}`);
+  const acknowledgement = calls[2];
+  assert.equal(acknowledgement.body.from, sender);
+  assert.deepEqual(acknowledgement.body.to, [input.values.email]);
+  assert.equal(acknowledgement.body.reply_to, "contact@soccerbotsg.com");
+  assert.equal(
+    acknowledgement.body.subject,
+    "We’ve received your SoccerBotStudio enquiry",
+  );
+  assert.equal(acknowledgement.body.html, undefined);
+  assert.match(acknowledgement.body.text, /will reach out as soon as we can/);
+  assert.ok(acknowledgement.body.text.includes(mail.body.text));
+  for (const value of Object.values(input.values))
+    if (value) assert.ok(acknowledgement.body.text.includes(value));
+  assert.equal(
+    acknowledgement.headers.get("Idempotency-Key"),
+    `enquiry-acknowledgement/${input.key}`,
+  );
   for (const table of [
     "guest_access",
     "attempts",
@@ -213,7 +230,7 @@ test("public enquiry sends fixed staff recipients and customer reply-to without 
     .all();
   assert.deepEqual(
     admissions.results.map(({ kind }) => kind),
-    ["bot", "email"],
+    ["bot", "email", "email"],
   );
   const expectedSource = createHmac("sha256", pepper)
     .update(JSON.stringify(["delivery-source", source]))
@@ -296,7 +313,7 @@ test("public enquiry deduplicates completed keys and rejects changed enquiry con
   assert.deepEqual(await changed.json(), { error: "enquiry_changed" });
   assert.deepEqual(
     calls.map(({ kind }) => kind),
-    ["bot", "email"],
+    ["bot", "email", "email"],
   );
   assert.equal(await count("enquiry_requests"), 1);
 });
@@ -310,10 +327,10 @@ test("public enquiry rejects a bot token already bound to another submission", a
     error: "enquiry_verification_required",
   });
   assert.equal(calls.filter(({ kind }) => kind === "bot").length, 2);
-  assert.equal(calls.filter(({ kind }) => kind === "email").length, 1);
+  assert.equal(calls.filter(({ kind }) => kind === "email").length, 2);
 });
 
-test("public enquiry concurrent submissions reserve one physical email dispatch", async () => {
+test("public enquiry concurrent submissions reserve one staff and acknowledgement pair", async () => {
   const entered = gate(),
     release = gate();
   mailResult = async () => {
@@ -344,7 +361,7 @@ test("public enquiry concurrent submissions reserve one physical email dispatch"
   }
   assert.equal((await first).status, 200);
   assert.equal((await submit(input)).status, 200);
-  assert.equal(calls.filter(({ kind }) => kind === "email").length, 1);
+  assert.equal(calls.filter(({ kind }) => kind === "email").length, 2);
 });
 
 test("public enquiry retains uncertain sends and retries with the original email idempotency key", async () => {
@@ -375,10 +392,14 @@ test("public enquiry retains uncertain sends and retries with the original email
   assert.equal(retried.status, 200);
   assert.deepEqual(await retried.json(), { status: "sent" });
   const sends = calls.filter(({ kind }) => kind === "email");
-  assert.equal(sends.length, 2);
+  assert.equal(sends.length, 3);
   assert.deepEqual(sends[0].body, sends[1].body);
-  for (const send of sends)
+  for (const send of sends.slice(0, 2))
     assert.equal(send.headers.get("Idempotency-Key"), `enquiry/${input.key}`);
+  assert.equal(
+    sends[2].headers.get("Idempotency-Key"),
+    `enquiry-acknowledgement/${input.key}`,
+  );
   assert.equal(calls.filter(({ kind }) => kind === "bot").length, 1);
   const admissions = await db
     .prepare(
@@ -387,8 +408,52 @@ test("public enquiry retains uncertain sends and retries with the original email
     .all();
   assert.deepEqual(admissions.results.map(({ state }) => state).sort(), [
     "responded",
+    "responded",
     "unknown",
   ]);
+});
+
+test("public enquiry retries a failed acknowledgement with both original mail keys before reporting success", async () => {
+  const input = enquiry();
+  mailResult = (call) =>
+    call.headers.get("Idempotency-Key").startsWith("enquiry-acknowledgement/")
+      ? new Response(null, { status: 503 })
+      : Response.json({ id: crypto.randomUUID() });
+  const response = await submit(input);
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: "enquiry_unavailable" });
+  assert.equal(
+    (
+      await db
+        .prepare("SELECT state FROM enquiry_requests WHERE request_key=?")
+        .bind(input.key)
+        .first()
+    ).state,
+    "pending",
+  );
+  assert.equal((await submit(input)).status, 429);
+  assert.equal(calls.length, 3);
+  await db
+    .prepare("UPDATE enquiry_requests SET next_ms=0 WHERE request_key=?")
+    .bind(input.key)
+    .run();
+  mailResult = null;
+  assert.equal((await submit(input)).status, 200);
+  const sends = calls.filter(({ kind }) => kind === "email");
+  assert.deepEqual(
+    sends.map((call) => call.headers.get("Idempotency-Key")),
+    [
+      `enquiry/${input.key}`,
+      `enquiry-acknowledgement/${input.key}`,
+      `enquiry/${input.key}`,
+      `enquiry-acknowledgement/${input.key}`,
+    ],
+  );
+  assert.deepEqual(sends[0].body, sends[2].body);
+  assert.deepEqual(sends[1].body, sends[3].body);
+  assert.equal((await submit(input)).status, 200);
+  assert.equal(calls.length, 5);
+  assert.equal(calls.filter(({ kind }) => kind === "bot").length, 1);
 });
 
 test("public enquiry stops uncertain retries before the provider idempotency window ends", async () => {

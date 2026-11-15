@@ -1,5 +1,4 @@
 "use client";
-import { BOOKING_SIGNED_OUT } from "@/domain/booking-messages";
 import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading } from "./booking-loading";
@@ -47,6 +46,7 @@ export function AccountStep({
   const {
       now,
       profileAccessRevision,
+      profileAccessNotice,
       draft,
       update,
       resetIdentityDraft,
@@ -164,7 +164,7 @@ export function AccountStep({
   const [proofPending, setProofPending] = useState(false);
   const waitingForProof =
     view === "email" && identityService.mode === "live" && !botToken;
-  const showProofSpinner = waitingForProof && proofPending && validEmail(email);
+  const showProofLoading = waitingForProof && proofPending && validEmail(email);
   const [botGeneration, setBotGeneration] = useState(0);
   const receiveBotToken = useCallback((token: string) => {
     setBotToken(token);
@@ -374,9 +374,14 @@ export function AccountStep({
             )
           }
         />
+        <p className="lead">
+          {verifiedIdentity
+            ? "Continue signed in to start your booking."
+            : "Continue as a guest or sign in to start your booking."}
+        </p>
         {profileAccessRevision > 0 && !draft.mode && !verifiedIdentity && (
           <p className="alert" role="alert">
-            {BOOKING_SIGNED_OUT}
+            {profileAccessNotice}
           </p>
         )}
         {signOutNotice}
@@ -401,12 +406,12 @@ export function AccountStep({
           />
         )}
         <div
-          className={`surface access-option access-options${verifiedIdentity ? " access-options-verified" : ""}`}
+          className={`access-option access-options ${verifiedIdentity ? "surface access-options-verified" : "access-choices"}`}
         >
           {!verifiedIdentity && (
             <>
               <button
-                className="button wide booking-entry-action"
+                className="button booking-entry-action"
                 aria-label="Continue as Guest"
                 disabled={busy}
                 onClick={() => {
@@ -419,7 +424,7 @@ export function AccountStep({
                 }}
               >
                 <Icon name="users" />
-                {busy ? "Preparing booking…" : "Continue as Guest"}{" "}
+                <span>{busy ? "Preparing…" : "Continue as Guest"}</span>
                 <Icon name="chevron" />
               </button>
               <span className="access-choice-divider">or</span>
@@ -451,7 +456,7 @@ export function AccountStep({
             }}
           >
             <Icon name="mail" />
-            {verifiedIdentity ? "Continue signed in" : "Continue with email"}
+            <span>{verifiedIdentity ? "Continue signed in" : "Sign in"}</span>
             <Icon name="chevron" />
           </button>
           {verifiedIdentity && (
@@ -502,11 +507,7 @@ export function AccountStep({
     <>
       <BookingHeading
         status={false}
-        lines={
-          view === "email"
-            ? ["Continue", "with email"]
-            : ["Verify your", "email"]
-        }
+        lines={view === "email" ? ["Sign", "in"] : ["Verify your", "email"]}
       />
       <p className="lead">
         {view === "email" ? (
@@ -541,8 +542,11 @@ export function AccountStep({
                 signal,
               );
               if (signal.aborted) return;
+              resetIdentityDraft();
               setIdentity(signedIn);
-              await proceed(signal, signedIn.email);
+              setChallenge(null);
+              setCode("");
+              setView("choice");
             });
         }}
       >
@@ -672,6 +676,7 @@ export function AccountStep({
           />
         )}
         <BookingPrimaryAction
+          loading={busy || showProofLoading}
           className="actions"
           ready={
             !busy &&
@@ -687,7 +692,10 @@ export function AccountStep({
               busy || waitingForProof || (view === "email" && resendSeconds > 0)
             }
           >
-            {view === "email" && (busy || showProofSpinner) ? (
+            {(busy || showProofLoading) && (
+              <Icon name="spinner" className="spinner" />
+            )}
+            {view === "email" && (busy || showProofLoading) ? (
               <span
                 className="button-loading"
                 role="status"
@@ -695,7 +703,6 @@ export function AccountStep({
                   busy ? "Requesting verification code" : "Checking security"
                 }
               >
-                <Icon name="spinner" className="spinner" />
                 {busy ? "Sending code…" : "Checking security…"}
               </span>
             ) : (

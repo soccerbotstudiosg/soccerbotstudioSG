@@ -481,11 +481,15 @@
   },
   {
     "file": "worker/tests/enquiry.test.mjs",
-    "title": "public enquiry concurrent submissions reserve one physical email dispatch"
+    "title": "public enquiry concurrent submissions reserve one staff and acknowledgement pair"
   },
   {
     "file": "worker/tests/enquiry.test.mjs",
     "title": "public enquiry retains uncertain sends and retries with the original email idempotency key"
+  },
+  {
+    "file": "worker/tests/enquiry.test.mjs",
+    "title": "public enquiry retries a failed acknowledgement with both original mail keys before reporting success"
   },
   {
     "file": "worker/tests/enquiry.test.mjs",

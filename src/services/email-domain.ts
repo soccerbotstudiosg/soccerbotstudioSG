@@ -1,8 +1,13 @@
+import {
+  profileAccessGeneration,
+  reportExpiredBookingAccess,
+} from "./profile-access";
 /** Confirm domain mail routing without claiming that a mailbox exists. */
 export async function checkEmailDomain(
   email: string,
   signal: AbortSignal,
 ): Promise<"valid" | "invalid" | "unavailable"> {
+  const own = profileAccessGeneration();
   try {
     const response = await fetch("/api/identity/email-domain", {
       method: "POST",
@@ -16,6 +21,7 @@ export async function checkEmailDomain(
       body: JSON.stringify({ email }),
       signal,
     });
+    await reportExpiredBookingAccess(response, own, signal);
     if (!response.ok) return "unavailable";
     const value: unknown = await response.json();
     return value &&

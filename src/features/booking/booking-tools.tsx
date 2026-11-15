@@ -71,11 +71,7 @@ export function BookingTools({ basket = false }: { basket?: boolean }) {
           onClose={() => setPanel(null)}
         >
           {panel === "cart" ? (
-            <Summary
-              basket={basket}
-              includeAction={false}
-              showTrainers={false}
-            />
+            <Summary basket={basket} showTrainers={false} />
           ) : (
             <SelectedTrainers />
           )}

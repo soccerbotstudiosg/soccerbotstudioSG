@@ -1,4 +1,3 @@
-import { EnquiryNoticeProvider } from "@/features/enquiry/enquiry-notice";
 import type { Metadata, Viewport } from "next";
 import { BookingProvider } from "@/features/booking/provider";
 import { BookingNavigation } from "@/components/booking-navigation";
@@ -61,9 +60,7 @@ export default function RootLayout({
       <body>
         <BookingProvider>
           <BookingNavigation>
-            <EnquiryNoticeProvider>
-              <SiteShell>{children}</SiteShell>
-            </EnquiryNoticeProvider>
+            <SiteShell>{children}</SiteShell>
           </BookingNavigation>
         </BookingProvider>
       </body>

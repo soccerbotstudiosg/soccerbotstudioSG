@@ -44,7 +44,10 @@ export function SessionStep() {
   return (
     <>
       <BookingHeading lines={["Your", "session"]} />
-      <h2 className="section-title">Your outlet</h2>
+      <p className="lead">
+        Confirm your outlet, session and number of players.
+      </p>
+      <h2 className="section-title">Outlet</h2>
       <div className="outlet-options">
         <button
           className="surface outlet-option booking-entry-action"
@@ -60,11 +63,10 @@ export function SessionStep() {
           <Icon name="location" />
           <span>
             <strong>{LOCATION.building}</strong>
-            <span>Our flagship studio</span>
-            <span>{LOCATION.street}</span>
-            <span>{LOCATION.unit}</span>
+            <span>
+              {LOCATION.street}, {LOCATION.unit}
+            </span>
           </span>
-          <Icon name="chevron" className="selection-chevron" />
         </button>
       </div>
       <div id="outlet-sessions" ref={sessions} hidden={!outletSelected}>
@@ -172,7 +174,7 @@ function SessionPresentation({
   const prices = sessionPrices(environment);
   return (
     <>
-      <h2 className="section-title">Select your session</h2>
+      <h2 className="section-title">Session</h2>
       <div className="session-products">
         <section
           className="surface session-product booking-entry-action"
@@ -204,7 +206,6 @@ function SessionPresentation({
                 <strong>${prices.premium / 100}</strong>
               </span>
             </span>
-            <Icon name="chevron" className="selection-chevron" />
           </button>
           {expanded && (
             <div className="player-selection" aria-labelledby="players-label">

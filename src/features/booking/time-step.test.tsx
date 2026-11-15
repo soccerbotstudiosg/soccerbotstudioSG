@@ -129,12 +129,12 @@ async function calendarScenario(mobile: boolean) {
   const crossing = times().getByRole("button", { name: /14:30–15:10/ });
   expect(crossing).toHaveAttribute("aria-pressed", "true");
   expect(crossing).toHaveTextContent("Faisal Shahril");
-  expect(crossing).toHaveTextContent("Crosses the 15:00 instructor rotation");
+  expect(crossing).not.toHaveTextContent("instructor rotation");
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   const continues = screen.getAllByRole("link", {
     name: /^Enter Booking Details/,
   });
-  expect(continues).toHaveLength(2);
+  expect(continues).toHaveLength(1);
   for (const control of continues)
     expect(control).toHaveAttribute("href", "/book/details");
   expect(
@@ -417,16 +417,17 @@ test("booking page restores a future Tuesday on Wednesday before selecting and r
   calendarScenario(false));
 test("mobile calendar selection drawers and responsive scroll preserve restored availability", () =>
   calendarScenario(true));
-test("crossing notices persist in the basket and review before payment", async () => {
+test("crossing sessions retain checkout behavior without scheduling notices", async () => {
   const basket = render(
     <BookingProvider>
       <Summary basket />
+      <BasketContinue />
     </BookingProvider>,
   );
   await act(async () => {});
   expect(
-    within(screen.getByRole("complementary")).getByText(/Crosses the 15:00/),
-  ).toHaveTextContent("stays for the full session");
+    within(screen.getByRole("complementary")).queryByText(/Crosses the 15:00/),
+  ).not.toBeInTheDocument();
   expect(
     screen.getAllByRole("link", {
       name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
@@ -439,13 +440,9 @@ test("crossing notices persist in the basket and review before payment", async (
   expect(
     within(cart).queryByText("Session no longer available."),
   ).not.toBeInTheDocument();
-  expect(cart.querySelector(".summary-total")).toBeNull();
-  expect(
-    cart
-      .querySelector(".basket-continue")!
-      .compareDocumentPosition(cart.querySelector(".basket-list")!),
-  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-  expect(cart.querySelector(".booking-primary-action")).toHaveAttribute(
+  expect(cart.querySelector(".summary-total")).toHaveTextContent("Total");
+  expect(cart.querySelector(".basket-continue")).toBeNull();
+  expect(document.querySelector(".booking-primary-action")).toHaveAttribute(
     "data-ready-animation",
     "true",
   );
@@ -455,9 +452,7 @@ test("crossing notices persist in the basket and review before payment", async (
       <ReviewStep />
     </BookingProvider>,
   );
-  expect(screen.getByText(/Crosses the 15:00/)).toHaveTextContent(
-    "stays for the full session",
-  );
+  expect(screen.queryByText(/Crosses the 15:00/)).not.toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ }),
   ).toBeDisabled();
@@ -554,8 +549,8 @@ test("confirmation places three retained actions above a compact summary and dis
     screen.getAllByText("Trainer: Daniel Tan", { exact: true }),
   ).toHaveLength(1);
   expect(
-    screen.getByText(/Crosses the 15:00 instructor rotation/),
-  ).toBeVisible();
+    screen.queryByText(/Crosses the 15:00 instructor rotation/),
+  ).not.toBeInTheDocument();
 });
 
 test("an open booking page expires a selected slot at its start and keeps it removable", async () => {
@@ -793,9 +788,7 @@ test("calendar back preserves player count with the outlet session and action im
       <SessionStep />
     </BookingProvider>,
   );
-  expect(
-    screen.getByRole("region", { name: "Kickoff Special (Trial Price)" }),
-  ).toBeVisible();
+  expect(screen.getByRole("region", { name: "Kickoff Special" })).toBeVisible();
   expect(
     screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
@@ -811,9 +804,7 @@ test("calendar back preserves player count with the outlet session and action im
       <SessionStep />
     </BookingProvider>,
   );
-  expect(
-    screen.getByRole("region", { name: "Kickoff Special (Trial Price)" }),
-  ).toBeVisible();
+  expect(screen.getByRole("region", { name: "Kickoff Special" })).toBeVisible();
   expect(
     screen.getByRole("link", { name: "Choose Date & Time" }),
   ).toBeVisible();
@@ -823,7 +814,7 @@ test("calendar back preserves player count with the outlet session and action im
   expect(scroll).not.toHaveBeenCalled();
   await user.click(
     screen.getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
+      name: "Choose Kickoff Special",
     }),
   );
   expect(
@@ -834,12 +825,13 @@ test("calendar back preserves player count with the outlet session and action im
   ).not.toBeInTheDocument();
   await user.click(
     screen.getByRole("button", {
-      name: "Choose Kickoff Special (Trial Price)",
+      name: "Choose Kickoff Special",
     }),
   );
   expect(screen.getByRole("status", { name: "Players" })).toHaveTextContent(
     "2",
   );
+  expect(screen.queryByRole("note")).not.toBeInTheDocument();
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 

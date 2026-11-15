@@ -765,7 +765,7 @@ test("email verification rejects an incorrect code and continues after correctio
   page,
 }) => {
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Continue with email" }).click();
+  await page.getByRole("button", { name: "Sign in" }).click();
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("name@domain");
@@ -801,6 +801,20 @@ test("email verification rejects an incorrect code and continues after correctio
     page.getByLabel("Verification code", { exact: true }),
   ).toHaveValue("360360");
   await page.getByRole("button", { name: "Verify and continue" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/book\/account\/$/);
+  for (const label of [
+    page.getByRole("heading", { name: "Welcome back" }),
+    page.locator(".signed-in-email"),
+  ]) {
+    await expect(label).toHaveCSS("font-size", "24px");
+    await expect(label).toHaveCSS("font-weight", "900");
+    await expect(label).toHaveCSS("font-style", "italic");
+    await expect(label).toHaveCSS("text-align", "center");
+  }
+  await page.getByRole("button", { name: "Continue signed in" }).click();
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
@@ -849,10 +863,10 @@ test("enquiry remains available without external submission or a mock assistant"
   await expect(
     page.getByRole("heading", { name: "Contact the studio", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".nav-flag")).toHaveCSS("border-radius", "1px 3px");
   for (const control of [
     enquiryHome,
     page.getByRole("button", { name: "Send enquiry" }),
-    page.locator(".nav-flag"),
   ]) {
     await expect(control).toHaveCSS("border-top-left-radius", "3px");
     await expect(control).toHaveCSS("border-top-right-radius", "12px");
@@ -867,6 +881,22 @@ test("enquiry remains available without external submission or a mock assistant"
     await expect(control).toHaveCSS("font-weight", "900");
     await expect(control).toHaveCSS("font-style", "italic");
   }
+  await expect(
+    page.locator(".enquiry-form legend .required-fields"),
+  ).toHaveText("* Required fields");
+  const enquiryAction = page.getByRole("button", { name: "Send enquiry" });
+  await expect(enquiryAction).toBeInViewport({ ratio: 1 });
+  await expect(
+    page.locator(".enquiry-page .booking-primary-action"),
+  ).toHaveCount(1);
+  await expect(page.locator(".enquiry-page .booking-action-anchor")).toHaveCSS(
+    "padding-top",
+    "32px",
+  );
+  await expect(page.locator(".enquiry-page .booking-action-anchor")).toHaveCSS(
+    "padding-bottom",
+    "24px",
+  );
   await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
   await expect(
     page.getByText("Enter your requirements using 1–2,000 characters."),
@@ -901,10 +931,14 @@ test("enquiry remains available without external submission or a mock assistant"
     .getByLabel("Your requirements")
     .fill("A group session for our team.");
   await page.getByRole("button", { name: "Send enquiry" }).click();
-  await expect(page).toHaveURL(new RegExp(`${sitePath("/")}$`));
-  await expect(page.getByRole("status")).toHaveText(
-    "Preview · No enquiry sent.",
-  );
+  await expect(page).toHaveURL(new RegExp(`${sitePath("/enquiry/")}$`));
+  const acknowledgement = page.getByRole("status");
+  await expect(acknowledgement).toHaveText("Preview · No enquiry sent.");
+  await expect(acknowledgement).toBeInViewport();
+  await expect(acknowledgement).toBeFocused();
+  await expect(
+    page.locator(".enquiry-page .booking-heading-row + [role=status]"),
+  ).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: /studio assistant/i }),
   ).toHaveCount(0);
@@ -988,14 +1022,23 @@ test("hero completes naturally and reduced motion bypasses both transition surfa
   await expect(page).toHaveURL(/\/book\/account\/$/);
   await expect(page.locator(".pitch-entry, .page-loading")).toHaveCount(0);
 });
-test("oracle booking sizing and rotation disclaimers persist through checkout", async ({
+test("oracle booking sizing and crossing sessions persist through checkout", async ({
   page,
 }) => {
   async function fullWidth(selector: string, parent: string) {
     await expect(page.locator(selector)).toBeVisible();
     const width = await page.locator(selector).evaluate(async (element) => {
       await Promise.all(
-        element.getAnimations().map((animation) => animation.finished),
+        element
+          .getAnimations()
+          .filter(
+            (animation) =>
+              !(
+                animation instanceof CSSAnimation &&
+                animation.animationName === "booking-action-flow"
+              ),
+          )
+          .map((animation) => animation.finished),
       );
       return element.getBoundingClientRect().width;
     });
@@ -1026,7 +1069,20 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("button", { name: "Add one player" }),
   ).toBeVisible();
+  await expect(page.getByRole("note")).toHaveCount(0);
   const next = page.getByRole("link", { name: "Choose Date & Time" });
+  await expect(next).toHaveCSS("background-color", "rgb(5, 10, 47)");
+  await expect(next).toHaveCSS("letter-spacing", "normal");
+  const gradient = await next.evaluate((element) => ({
+    image: getComputedStyle(element, "::before").backgroundImage,
+    animation: getComputedStyle(element, "::before").animationName,
+    reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
+  }));
+  expect(gradient.image).toContain("linear-gradient");
+  expect(gradient.animation).toBe(
+    gradient.reduced ? "none" : "booking-action-flow",
+  );
+  await expect(next).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(next).toBeInViewport({ ratio: 1 });
   const nextBox = await next.boundingBox();
   expect(nextBox!.y).toBeGreaterThanOrEqual(0);
@@ -1065,11 +1121,45 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   const addressLines = await page
     .locator(".outlet-option > span > span")
     .allTextContents();
-  expect(addressLines).toEqual([
-    "Our flagship studio",
-    "201 Henderson Road",
-    "#05-01",
-  ]);
+  expect(addressLines).toEqual(["201 Henderson Road, #05-01"]);
+  for (const selector of [
+    ".outlet-option > span > span",
+    ".session-product-meta",
+    ".session-product-prices > span > span",
+    ".session-product-prices strong",
+    ".player-selection .field-label",
+    ".counter output",
+  ]) {
+    for (const text of await page.locator(selector).all()) {
+      await expect(text).toHaveCSS("font-size", "16px");
+      await expect(text).toHaveCSS("color", "rgb(16, 22, 54)");
+    }
+  }
+  await expect(page.locator(".session-product-meta > span")).toHaveCSS(
+    "white-space",
+    "nowrap",
+  );
+  await expect(page.locator(".session-product-meta > span")).toHaveCSS(
+    "display",
+    "block",
+  );
+  await expect(page.locator(".session-product-meta")).toHaveCSS(
+    "border-left-width",
+    cardWidths.mobile ? "0px" : "1px",
+  );
+  await expect(page.locator(".session-product-icon")).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+  await expect(page.locator(".session-product-name")).not.toContainText(
+    "(Trial Price)",
+  );
+  for (const control of await page.locator(".counter > *").all()) {
+    await expect(control).toHaveCSS("width", "40px");
+    await expect(control).toHaveCSS("height", "40px");
+  }
+  await expect(page.locator(".counter output")).toHaveCSS("font-weight", "700");
+  await expect(page.locator(".counter output")).toHaveText("1");
   const priceRows = await page
     .locator(".session-product-prices > span")
     .evaluateAll((rows) =>
@@ -1108,11 +1198,13 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await page.getByRole("button", { name: "Remove one player" }).click();
   await expect(page.locator(".counter output")).toHaveText("2");
   const sessionChoice = page.getByRole("button", {
-    name: "Choose Kickoff Special (Trial Price)",
+    name: "Choose Kickoff Special",
     exact: true,
   });
+  await expect(sessionChoice.locator(":scope > svg")).toHaveCount(0);
   await sessionChoice.click();
   await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
+  await expect(sessionChoice.locator(":scope > svg")).toHaveCount(0);
   await expect(page.locator(".player-selection")).toHaveCount(0);
   await expect(next).toHaveCount(0);
   await sessionChoice.click();
@@ -1121,7 +1213,9 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     name: "Select Apex @ Henderson outlet",
     exact: true,
   });
+  await expect(outletChoice.locator(":scope > svg")).toHaveCount(1);
   await outletChoice.click();
+  await expect(outletChoice.locator(":scope > svg")).toHaveCount(1);
   await expect(page.locator(".session-products")).toHaveCount(0);
   await outletChoice.click();
   await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
@@ -1131,11 +1225,8 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   const productFontSize = await page
     .locator(".session-product-name")
     .evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
-  expect(productFontSize).toBeCloseTo(
-    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
-    5,
-  );
-  for (const name of ["Your outlet", "Select your session"]) {
+  expect(productFontSize).toBeCloseTo(20, 5);
+  for (const name of ["Outlet", "Session"]) {
     await expect(page.getByRole("heading", { name, exact: true })).toHaveCSS(
       "font-style",
       "normal",
@@ -1194,7 +1285,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     }
   }
   const crossing = page.getByRole("button", { name: /14:30–15:10/ });
-  await expect(crossing).toContainText("Crosses the 15:00 instructor rotation");
+  await expect(crossing).not.toContainText("instructor rotation");
   await crossing.click();
   await page
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
@@ -1233,21 +1324,18 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     );
     await expect(page.locator(".basket-list")).toHaveCSS("max-height", "none");
     const positions = await page.locator(".aside-wrap").evaluate((element) => ({
-      continueBottom: element
-        .querySelector(".basket-continue")!
-        .getBoundingClientRect().bottom,
+      cartBottom: element.querySelector(".summary")!.getBoundingClientRect()
+        .bottom,
       instructorsTop: element
         .querySelector(".booking-instructors")!
         .getBoundingClientRect().top,
     }));
     expect(positions.instructorsTop).toBeGreaterThanOrEqual(
-      positions.continueBottom,
+      positions.cartBottom,
     );
   }
   await openBookingPanel(page, "cart");
-  await expect(page.locator(".summary .rotation-notice")).toContainText(
-    "stays for the full session",
-  );
+  await expect(page.locator(".summary .rotation-notice")).toHaveCount(0);
   await closeBookingPanel(page);
   await page
     .getByRole("link", {
@@ -1264,9 +1352,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
   await details(page);
   await fullWidth(".actions .button", ".actions");
-  await expect(page.locator(".series-list .rotation-notice")).toContainText(
-    "Crosses the 15:00 instructor rotation",
-  );
+  await expect(page.locator(".series-list .rotation-notice")).toHaveCount(0);
   await payment(page);
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
@@ -1298,9 +1384,9 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     confirmationLayout.summaryTop,
   );
   await page.getByText("View Full Details", { exact: true }).click();
-  await expect(
-    page.locator(".confirmation-card .rotation-notice"),
-  ).toContainText("stays for the full session");
+  await expect(page.locator(".confirmation-card .rotation-notice")).toHaveCount(
+    0,
+  );
   await expect(page.locator("main details[open]")).toHaveCount(1);
   await expect(page.locator(".confirmation-section > h2")).toHaveText([
     "Booking Contact",
@@ -1621,10 +1707,27 @@ test("header blue and the typography hierarchy stay consistent across every book
     ).toBeCloseTo(pageSize, 5);
     await expect(heading).toHaveCSS("color", color);
     await expect(heading).toHaveCSS("font-weight", "900");
+    const instructions: Record<string, string> = {
+      "Start your booking":
+        "Continue as a guest or sign in to start your booking.",
+      "Your session": "Confirm your outlet, session and number of players.",
+      "Select dates and times": "40-minute sessions · 10-minute changeover.",
+      "Your details": "Enter the contact details for this booking.",
+      "Review Booking":
+        "Review your booking details before proceeding to payment.",
+    };
+    if (instructions[name]) {
+      const instruction = page.locator(".lead");
+      await expect(instruction).toHaveText(instructions[name]);
+      await expect(instruction).toHaveCSS("font-size", "16px");
+      await expect(instruction).toHaveCSS("color", "rgb(88, 97, 116)");
+      await expect(instruction).toHaveCSS("font-family", /Roboto/);
+    }
+
     if (name === "Select dates and times") {
       await expect(page.locator(".calendar-selection-context")).toHaveCSS(
         "font-size",
-        "18px",
+        "16px",
       );
       await expect(page.locator(".lead")).toHaveCSS("font-size", "16px");
       await expect(
@@ -1671,14 +1774,25 @@ test("header blue and the typography hierarchy stay consistent across every book
         await expect(action).toHaveCount(1);
         await action.evaluate(async (element) => {
           await Promise.all(
-            element.getAnimations().map((animation) => animation.finished),
+            element
+              .getAnimations()
+              .filter(
+                (animation) =>
+                  !(
+                    animation instanceof CSSAnimation &&
+                    animation.animationName === "booking-action-flow"
+                  ),
+              )
+              .map((animation) => animation.finished),
           );
         });
         const anchorBox = await page
           .locator(".booking-action-anchor")
           .boundingBox();
         const floating =
-          anchorBox!.y + anchorBox!.height > page.viewportSize()!.height;
+          anchorBox!.y + anchorBox!.height > page.viewportSize()!.height ||
+          anchorBox!.y <
+            (await page.locator(".site-header").boundingBox())!.height;
         await expect(primaryBar).toHaveAttribute(
           "data-floating",
           String(floating),
@@ -1690,7 +1804,7 @@ test("header blue and the typography hierarchy stay consistent across every book
         const barBox = await primaryBar.boundingBox();
         if (floating) {
           expect(barBox!.y + barBox!.height).toBeCloseTo(
-            page.viewportSize()!.height - 10.4,
+            page.viewportSize()!.height - 24,
             0,
           );
         }
@@ -1714,36 +1828,46 @@ test("header blue and the typography hierarchy stay consistent across every book
         expect(actionBox!.height).toBeGreaterThanOrEqual(48);
         const previousScroll = await page.evaluate(() => scrollY);
         await page.locator(".site-footer").scrollIntoViewIfNeeded();
-        await expect(primaryBar).toHaveAttribute("data-floating", "false");
-        await expect(primaryBar).toHaveCSS("position", "relative");
-        const settledBar = await primaryBar.boundingBox();
+        await expect(action).toBeInViewport({ ratio: 1 });
         const settledAnchor = await page
           .locator(".booking-action-anchor")
           .boundingBox();
-        expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(15.6, 0);
-        const shellWidth = await page
-          .locator(".booking-shell")
-          .evaluate(
-            (node) =>
-              node.clientWidth -
-              parseFloat(getComputedStyle(node).paddingLeft) -
-              parseFloat(getComputedStyle(node).paddingRight),
+        const headerBottom = await page
+          .locator(".site-header")
+          .evaluate((node) => node.getBoundingClientRect().bottom);
+        if (settledAnchor!.y >= headerBottom) {
+          await expect(primaryBar).toHaveAttribute("data-floating", "false");
+          await expect(primaryBar).toHaveCSS("position", "relative");
+          const settledBar = await primaryBar.boundingBox();
+          expect(settledBar!.width).toBeCloseTo(settledAnchor!.width, 0);
+          expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(32, 0);
+          const footer = await page.locator(".site-footer").boundingBox();
+          expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
+            footer!.y,
           );
-        if (
-          await page
-            .getByRole("heading", {
-              name: "Select dates and times",
-              exact: true,
-            })
-            .count()
-        )
-          expect(settledBar!.width).toBeCloseTo(shellWidth, 0);
-        const footer = await page.locator(".site-footer").boundingBox();
-        expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
-          footer!.y,
-        );
+        } else {
+          await expect(primaryBar).toHaveAttribute("data-floating", "true");
+          await expect(primaryBar).toHaveCSS("position", "fixed");
+        }
         await page.evaluate((y) => scrollTo(0, y), previousScroll);
       }
+    }
+    if (
+      page.viewportSize()!.width > 700 &&
+      (await page.locator(".booking-primary-action").count())
+    ) {
+      const primaryBar = page.locator(".booking-primary-action");
+      const action = primaryBar.locator(":scope > .button");
+      await expect(primaryBar).toHaveCount(1);
+      await expect(action).toBeInViewport({ ratio: 1 });
+      const previousScroll = await page.evaluate(() => scrollY);
+      await page.locator(".site-footer").scrollIntoViewIfNeeded();
+      await expect(action).toBeInViewport({ ratio: 1 });
+      const anchor = await page.locator(".booking-action-anchor").boundingBox();
+      const bar = await primaryBar.boundingBox();
+      expect(bar!.x).toBeCloseTo(anchor!.x, 0);
+      expect(bar!.width).toBeCloseTo(anchor!.width, 0);
+      await page.evaluate((y) => scrollTo(0, y), previousScroll);
     }
     await expect(
       page.getByRole("button", { name: "Back to top", exact: true }),
@@ -1790,91 +1914,76 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".access-option")).toHaveCount(1);
   await expect(page.locator(".access-option h2")).toHaveCount(0);
   await expect(page.locator(".access-choice-divider")).toHaveText("or");
-  if ((page.viewportSize()?.width ?? 1280) <= 700) {
-    for (const card of await page.locator(".access-option").all()) {
-      await expect(card).toHaveCSS("padding-top", "14px");
-      await expect(card).toHaveCSS("padding-bottom", "14px");
-    }
-    const choices = await page.locator(".access-options").boundingBox();
-    expect(choices!.y).toBeGreaterThanOrEqual(0);
-    expect(choices!.y + choices!.height).toBeLessThanOrEqual(
-      page.viewportSize()!.height,
-    );
-  }
+  const choices = page.locator(".access-choices");
+  await expect(choices).toHaveCSS("display", "grid");
   const guest = page.getByRole("button", { name: "Continue as Guest" });
-  // Inspect the resting action, with the pointer away from the button.
+  const signIn = page.getByRole("button", { name: "Sign in", exact: true });
   await page.mouse.move(0, 0);
-  await expect(guest).toHaveCSS("background-color", brand);
-  await expect(guest).toHaveCSS("text-transform", "none");
-  await expect(guest).toHaveCSS("font-weight", "900");
-  await expect(guest).toHaveCSS("font-style", "italic");
-  await expect(guest).toHaveCSS("font-size", "16px");
+  for (const button of [guest, signIn]) {
+    await expect(button).toBeInViewport({ ratio: 1 });
+    await expect(button).toHaveCSS("background-color", brand);
+    await expect(button).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(button).toHaveCSS("font-size", "16px");
+    await expect(button).toHaveCSS("font-weight", "900");
+    await expect(button).toHaveCSS("font-style", "italic");
+    await expect(button).toHaveCSS("letter-spacing", "normal");
+    await expect(button).toHaveCSS("border-radius", "3px 12px");
+    await expect(button.locator("img")).toHaveCount(0);
+    await expect(button.locator("svg")).toHaveCount(2);
+    await expect(button).toHaveCSS("align-items", "center");
+    await expect(button).toHaveCSS("justify-content", "center");
+  }
+  const guestBox = await guest.boundingBox();
+  const signInBox = await signIn.boundingBox();
+  expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
+  expect(guestBox!.width).toBeCloseTo(signInBox!.width, 0);
+  expect(guestBox!.height).toBeGreaterThanOrEqual(62);
+  expect(guestBox!.x + guestBox!.width).toBeLessThan(signInBox!.x);
   const divider = page.locator(".access-choice-divider");
   await expect(divider).toHaveCSS("font-family", /Roboto/);
-  await expect(divider).toHaveCSS("font-size", "16px");
+  await expect(divider).toHaveCSS("font-size", "20px");
+  await expect(divider).toHaveCSS("text-transform", "uppercase");
+  await expect(divider).toHaveCSS("text-decoration-line", "none");
+  const dividerLines = await divider.evaluate((node) =>
+    ["::before", "::after"].map((pseudo) => {
+      const style = getComputedStyle(node, pseudo);
+      return {
+        width: style.width,
+        height: style.height,
+        content: style.content,
+      };
+    }),
+  );
+  expect(dividerLines).toEqual([
+    { width: "1px", height: "24px", content: '""' },
+    { width: "1px", height: "24px", content: '""' },
+  ]);
   await expect(divider).toHaveCSS("font-weight", "900");
   await expect(divider).toHaveCSS("font-style", "italic");
-  for (const action of [
-    guest,
-    page.getByRole("button", { name: "Continue with email" }),
-  ]) {
-    await expect(action.locator("svg")).toHaveCount(2);
-    for (const icon of await action.locator("svg").all()) {
-      await expect(icon).toHaveAttribute("aria-hidden", "true");
-      await expect(icon).toHaveCSS("stroke", "rgb(255, 255, 255)");
-    }
-  }
-  const entryWidth = await guest.evaluate((button) => {
-    const panel = button.parentElement!;
-    const style = getComputedStyle(panel);
-    return {
-      button: parseFloat(getComputedStyle(button).width),
-      content:
-        panel.clientWidth -
-        parseFloat(style.paddingLeft) -
-        parseFloat(style.paddingRight),
-    };
-  });
-  expect(entryWidth.button).toBeCloseTo(
-    entryWidth.content * ((page.viewportSize()?.width ?? 1280) > 700 ? 0.6 : 1),
-    0,
-  );
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
-    const card = page.locator(".access-option").filter({ has: guest });
-    const background = await card.evaluate(
-      (node) => getComputedStyle(node).backgroundColor,
-    );
-    const border = await card.evaluate(
-      (node) => getComputedStyle(node).borderColor,
-    );
-    await card.getByText("or", { exact: true }).hover();
-    await expect(card).toHaveCSS("background-color", background);
-    await expect(card).toHaveCSS("border-color", border);
     await guest.hover();
-    await expect(guest).toHaveCSS("background-color", "rgb(32, 41, 87)");
-    await expect(card).toHaveCSS("background-color", background);
+    await expect(guest).toHaveCSS("color", "rgb(255, 255, 255)");
   }
   await guest.click();
   await pageHeading("Your session");
-  await sectionType(
-    ".session-product-name",
-    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
-    "rgb(255, 255, 255)",
-  );
+  await sectionType(".session-product-name", 20, "rgb(16, 22, 54)");
+  const selectedColour = /color\(srgb 0\.9272\d* 0\.9501\d* 0\.9576\d*\)/;
   for (const card of [
     page.locator(".outlet-option"),
     page.locator(".session-product"),
   ]) {
-    await expect(card).toHaveCSS("background-color", brand);
-    await expect(card).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(card).toHaveCSS("background-color", selectedColour);
+    await expect(card).toHaveCSS("background-image", "none");
+    await expect(card).toHaveCSS("border-color", "rgb(23, 96, 120)");
+    await expect(card).toHaveCSS("color", "rgb(16, 22, 54)");
     await expect(card).toHaveCSS("border-radius", "3px 12px");
-    await expect(card.locator(".selection-chevron")).toBeVisible();
+    await expect(card.locator(".selection-indicator")).toHaveCount(0);
   }
   const selectedCardBackground = await page
     .locator(".session-product")
     .evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(
-    page.getByRole("dialog", { name: "Kickoff Special (Trial Price)" }),
+    page.getByRole("dialog", { name: "Kickoff Special" }),
   ).toHaveCount(0);
   await expect(page.locator(".player-selection")).toBeVisible();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
@@ -1882,6 +1991,17 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(
     page.getByRole("combobox", { name: "Calendar view" }),
   ).toHaveValue("month");
+  /** Verify the shared day hover treatment in either calendar layout. */
+  async function dayHoverColour() {
+    if (!(await page.evaluate(() => matchMedia("(hover: hover)").matches)))
+      return;
+    const day = page.locator(".date:not(:disabled):not(.selected)").first();
+    await day.hover();
+    await expect(day).toHaveCSS("background-color", selectedColour);
+    await expect(day).toHaveCSS("border-color", "rgb(23, 96, 120)");
+    await page.mouse.move(0, 0);
+  }
+  await dayHoverColour();
   await expect(page.locator(".date:disabled").first()).toHaveCSS(
     "border-top-color",
     "rgba(0, 0, 0, 0)",
@@ -1890,6 +2010,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     .getByRole("combobox", { name: "Calendar view" })
     .selectOption("week");
   await expect(page.locator(".dates .date")).toHaveCount(7);
+  await dayHoverColour();
   const monthPicker = page.getByRole("combobox", { name: "Calendar month" });
   await expect(monthPicker.locator("option:checked")).toHaveText(
     dateLabel(DEMO_TODAY, { month: "long", year: "numeric" }),
@@ -1929,14 +2050,17 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".calendar-legend")).toHaveCount(0);
   await expect(page.locator(".date .dot")).toHaveCount(0);
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
-  await expect(page.locator(".date.selected")).toHaveCSS("border-color", brand);
+  await expect(page.locator(".date.selected")).toHaveCSS(
+    "border-color",
+    "rgb(23, 96, 120)",
+  );
   await expect(page.locator(".date.selected")).toHaveCSS(
     "background-color",
-    brand,
+    selectedColour,
   );
   await expect(page.locator(".date.selected")).toHaveCSS(
     "color",
-    "rgb(255, 255, 255)",
+    "rgb(16, 22, 54)",
   );
   await expect(page.locator(".date.selected strong")).toHaveCSS(
     "background-color",
@@ -1947,26 +2071,21 @@ test("header blue and the typography hierarchy stay consistent across every book
     "white-space",
     "nowrap",
   );
-  await expect(crossing.locator(".time-range")).toHaveCSS("font-size", "18px");
+  await expect(crossing.locator(".time-range")).toHaveCSS("font-size", "16px");
   await expect(crossing.locator(".time-rate strong")).toHaveCSS(
     "font-size",
-    "18px",
+    "16px",
   );
   const slotPlacement = await crossing.evaluate((node) => {
     const range = node.querySelector(".time-range")!.getBoundingClientRect();
     const price = node.querySelector(".time-rate")!.getBoundingClientRect();
-    const add = node.querySelector(":scope > svg")!.getBoundingClientRect();
     return {
       rangeBottom: range.bottom,
       priceTop: price.top,
-      addTop: add.top,
-      rangeTop: range.top,
     };
   });
   expect(slotPlacement.priceTop).toBeGreaterThan(slotPlacement.rangeBottom);
-  expect(Math.abs(slotPlacement.addTop - slotPlacement.rangeTop)).toBeLessThan(
-    4,
-  );
+  await expect(crossing.locator(":scope > svg")).toHaveCount(0);
   if (page.viewportSize()!.width <= 700) {
     await expect(
       page.getByText("Select to view trainers available", { exact: true }),
@@ -1980,7 +2099,20 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(crossing.locator(".time-instructor")).toBeVisible();
   }
 
+  await expect(crossing.locator(".time-instructor")).toHaveCSS(
+    "font-size",
+    "16px",
+  );
+  for (const control of await page
+    .locator(".month-picker select, .calendar-nav select")
+    .all()) {
+    await expect(control).toHaveCSS("font-size", "16px");
+  }
   await crossing.click();
+  await expect(crossing).toHaveAttribute("aria-expanded", "true");
+  await expect(crossing).toHaveAttribute("aria-pressed", "false");
+  await expect(crossing).toHaveCSS("background-color", selectedColour);
+  await expect(crossing).toHaveCSS("border-color", "rgb(23, 96, 120)");
   await page
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
     .selectOption({ index: 1 });
@@ -1989,19 +2121,20 @@ test("header blue and the typography hierarchy stay consistent across every book
     "rgb(5, 10, 47)",
   );
   await expect(page.locator(".date.in-booking strong")).toHaveCSS(
+    "color",
+    "rgb(255, 255, 255)",
+  );
+  await expect(page.locator(".date.in-booking strong")).toHaveCSS(
     "border-radius",
     "50%",
   );
   await expect(crossing).toHaveCSS("background-color", selectedCardBackground);
   await expect(crossing.locator(".time-instructor")).toHaveCSS(
     "font-size",
-    "18px",
+    "16px",
   );
   await expect(crossing.locator(".time-instructor")).toBeVisible();
-  await expect(crossing.locator(".rotation-notice")).toHaveCSS(
-    "font-size",
-    "14px",
-  );
+  await expect(crossing.locator(".rotation-notice")).toHaveCount(0);
   await openBookingPanel(page, "trainers");
   await expect(page.locator(".trainer-toggle")).toHaveAttribute(
     "aria-expanded",
@@ -2014,7 +2147,39 @@ test("header blue and the typography hierarchy stay consistent across every book
   );
   await expect(page.locator(".trainer-bio")).toBeVisible();
   await expect(page.locator(".trainer-bio")).toHaveCSS("font-size", "14px");
-  await expect(page.locator(".trainer-name")).toHaveCSS("font-size", "18px");
+  await expect(page.locator(".trainer-name")).toHaveCSS("font-size", "14px");
+  await expect(
+    page.locator(".booking-instructors .booking-panel-cover .eyebrow"),
+  ).toHaveCSS("font-size", "12px");
+  await expect(
+    page.locator(".booking-instructors .booking-panel-cover .eyebrow"),
+  ).toHaveCSS("text-transform", "uppercase");
+  const trainerHeader = page.locator(
+    ".booking-instructors .booking-panel-cover",
+  );
+  await expect(trainerHeader).toHaveCSS("height", "40px");
+  await expect(trainerHeader).toHaveCSS("padding", "10px 16px");
+  await expect(trainerHeader).toHaveCSS("background-position", "50% 57%");
+  await expect(trainerHeader).toHaveCSS(
+    "background-image",
+    /68b1a1790591\.jpg/,
+  );
+  if (page.viewportSize()!.width > 700) {
+    expect(
+      await trainerHeader.evaluate(
+        (node) => getComputedStyle(node).backgroundImage,
+      ),
+    ).toBe(
+      await page
+        .locator(".summary-cover")
+        .evaluate((node) => getComputedStyle(node).backgroundImage),
+    );
+  }
+  await expect(page.locator(".trainer-avatar svg")).toHaveCount(1);
+  await expect(page.locator(".trainer-avatar")).toHaveText("");
+  await expect(page.locator(".trainer-bio")).toHaveCSS("line-height", "21px");
+  const trainerToggle = await page.locator(".trainer-toggle").boundingBox();
+  expect(trainerToggle!.height).toBeGreaterThanOrEqual(44);
   await closeBookingPanel(page);
   await page
     .getByRole("link", {
@@ -2024,7 +2189,17 @@ test("header blue and the typography hierarchy stay consistent across every book
     .first()
     .click();
   await pageHeading("Your details");
+  await expect(page.locator("#details-form h2")).toHaveText("Booking Contact");
   await sectionType("#details-form h2");
+  await expect(
+    page.locator(".contact-heading-row .required-fields"),
+  ).toHaveText("* Required fields");
+  await expect(
+    page.getByText("Review your selected times and details.", { exact: false }),
+  ).toHaveCount(0);
+  await expect(page.locator("#details-form .section-description")).toHaveCount(
+    0,
+  );
   if ((page.viewportSize()?.width ?? 1280) > 700) {
     const row = page.locator(".summary .series-list li").first();
     await expect(row).toHaveCSS("padding-top", "18px");
@@ -2035,12 +2210,12 @@ test("header blue and the typography hierarchy stay consistent across every book
     "font-size",
     "14px",
   );
-  await expect(page.locator("#name")).toHaveCSS("font-size", "16px");
+  await expect(page.locator("#name")).toHaveCSS("font-size", "14px");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
   async function bookingDocumentBody() {
     const styles = await page
       .locator(
-        ".booking-document p, .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
+        ".booking-document p:not(.payment-foot), .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
       )
       .evaluateAll((nodes) =>
         nodes.map((node) => {
@@ -2051,6 +2226,7 @@ test("header blue and the typography hierarchy stay consistent across every book
             element: node.outerHTML,
             total: node.matches(".line-item.total"),
             amount: node.matches(".confirmation-total strong"),
+            supporting: node.matches("small"),
           };
         }),
       );
@@ -2059,15 +2235,22 @@ test("header blue and the typography hierarchy stay consistent across every book
       styles.filter(
         (style) =>
           style.size !==
-            (style.amount ? "24px" : style.total ? "20px" : "16px") ||
+            (style.supporting
+              ? "14px"
+              : style.amount || style.total
+                ? "20px"
+                : "16px") ||
           style.family !== styles[0].family ||
           !style.family.includes("Roboto"),
       ),
-      "Booking body uses 16px Roboto; total labels use 20px and amounts use 24px",
+      "Booking body uses 16px Roboto; total labels and amounts use 20px",
     ).toEqual([]);
   }
   await details(page);
   await pageHeading("Review Booking");
+  await expect(
+    page.getByText("Check your details before payment.", { exact: true }),
+  ).toHaveCount(0);
   await bookingDocumentBody();
 
   await sectionType(".review-head h2, .review-block > h2");
@@ -2079,16 +2262,16 @@ test("header blue and the typography hierarchy stay consistent across every book
   for (const value of await page.locator(".client-details dd").all()) {
     await expect(value).toHaveCSS("color", "rgb(16, 22, 54)");
     await expect(value).toHaveCSS("font-size", "16px");
-    await expect(value).toHaveCSS("font-weight", "700");
+    await expect(value).toHaveCSS("font-weight", "400");
   }
 
   const reviewTotal = page.locator(".line-item.total strong");
-  await expect(reviewTotal).toHaveCSS("font-size", "24px");
+  await expect(reviewTotal).toHaveCSS("font-size", "20px");
   await expect(reviewTotal).toHaveCSS("font-family", /Roboto/);
   for (const date of await page
     .locator(".review-block .series-date > strong")
     .all()) {
-    await expect(date).toHaveCSS("font-weight", "500");
+    await expect(date).toHaveCSS("font-weight", "700");
   }
   for (const detail of await page
     .locator(
@@ -2098,10 +2281,18 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(detail).toHaveCSS("color", "rgb(88, 97, 116)");
     await expect(detail).toHaveCSS("font-weight", "400");
   }
-  await expect(page.locator(".review-block .rotation-notice")).toHaveCSS(
-    "color",
-    "rgb(118, 83, 13)",
-  );
+  for (const session of await page
+    .locator(".booking-document .series-date")
+    .all()) {
+    const gaps = await session.evaluate((node) => {
+      const rows = Array.from(node.children)
+        .slice(0, 3)
+        .map((child) => child.getBoundingClientRect());
+      return rows.slice(1).map((row, index) => row.top - rows[index].bottom);
+    });
+    for (const gap of gaps) expect(gap).toBeCloseTo(2, 1);
+  }
+  await expect(page.locator(".review-block .rotation-notice")).toHaveCount(0);
   await page
     .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
     .click();
@@ -2109,7 +2300,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await sectionType(".payment-layout .section-title");
   await expect(page.locator(".method.selected")).toHaveCSS(
     "border-top-color",
-    brand,
+    "rgb(23, 96, 120)",
   );
   await payAttempt(page);
   // Confirmation retains its original accent; booking-step headings use logo BOT blue.
@@ -2183,7 +2374,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   }
   await expect(
     page.locator(".confirmation-card .confirmation-total strong"),
-  ).toHaveCSS("font-size", "24px");
+  ).toHaveCSS("font-size", "20px");
   await expect(
     page.locator(".confirmation-card .confirmation-total"),
   ).toHaveCSS("flex-wrap", "nowrap");
@@ -2551,6 +2742,11 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     "border-top-width",
     "1px",
   );
+  await choice.locator(".time").focus();
+  await page.keyboard.press("Tab");
+  await expect(noon).toBeFocused();
+  await expect(choice).toHaveCSS("outline-style", "none");
+  await expect(noon).toHaveCSS("outline-style", "solid");
   await noon.selectOption(`${date}|12:00|demo|daniel`);
   if (mobile) {
     const selected = page.getByRole("button", { name: /^12:00–12:40/ });
@@ -2566,7 +2762,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     expect(trainer!.y).toBeCloseTo(price!.y, 0);
     await expect(selected.locator(".time-instructor")).toHaveCSS(
       "font-size",
-      "18px",
+      "16px",
     );
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
@@ -2618,6 +2814,11 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  const deselectedSlot = page.getByRole("button", { name: /12:00–12:40/ });
+  await expect(deselectedSlot).toHaveAttribute("aria-pressed", "false");
+  await expect(
+    page.locator(".time-choice").filter({ has: deselectedSlot }),
+  ).toHaveCSS("outline-style", "none");
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
   await noon.selectOption(`${date}|12:00|demo|faisal`);
   await openBookingPanel(page, "trainers");
@@ -2678,18 +2879,38 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     for (const row of await cartRows.all()) {
       await expect(row).toHaveCSS("padding", "8px");
       await expect(row).toHaveCSS("margin-bottom", "6px");
-      await expect(row).toHaveCSS("row-gap", "0px");
-      await expect(row.locator(":scope > div").first()).toHaveCSS("gap", "0px");
+      await expect(row).toHaveCSS("row-gap", "2px");
+      await expect(row.locator(":scope > div").first()).toHaveCSS("gap", "2px");
       await expect(row.locator(".basket-remove")).toHaveCSS(
         "min-height",
         "44px",
       );
+      const lines = await row
+        .locator(":scope > div")
+        .first()
+        .evaluate((node) =>
+          Array.from(node.children)
+            .slice(0, 3)
+            .map((line) => line.getBoundingClientRect().toJSON()),
+        );
+      expect(lines[1].y - lines[0].y).toBeCloseTo(23, 1);
+      expect(lines[2].y - lines[1].y).toBeCloseTo(23, 1);
+      for (const line of lines) expect(line.height).toBeCloseTo(21, 1);
     }
-    await expect(cart.locator(".summary-total")).toHaveCount(0);
+    await expect(cart.locator(".summary-total")).toHaveCount(1);
+    await expect(cart.locator(".basket-continue")).toHaveCount(0);
+    await expect(cart.locator(".summary-body")).toHaveCSS(
+      "padding-top",
+      "28px",
+    );
+    await expect(cart.locator(".summary-body")).toHaveCSS(
+      "padding-bottom",
+      "12px",
+    );
     const layout = await cart.evaluate((element) => {
       const card = element.getBoundingClientRect();
-      const action = element
-        .querySelector(".basket-continue")!
+      const heading = element
+        .querySelector(".basket-heading")!
         .getBoundingClientRect();
       const list = element
         .querySelector(".basket-list")!
@@ -2700,17 +2921,22 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
       return {
         height: card.height,
         available: window.innerHeight - header.height - 32,
-        actionBottom: action.bottom,
+        headingBottom: heading.bottom,
         listTop: list.top,
         overflowing: element.scrollWidth > element.clientWidth,
       };
     });
     expect(layout.height).toBeLessThanOrEqual(layout.available);
-    expect(layout.actionBottom).toBeLessThan(layout.listTop);
+    expect(layout.headingBottom).toBeLessThan(layout.listTop);
     expect(layout.overflowing).toBe(false);
     await page.setViewportSize({ width: 1100, height: 600 });
-    await cart.locator(".basket-continue").scrollIntoViewIfNeeded();
-    await expect(cart.locator(".basket-continue")).toBeInViewport();
+    const continuation = page.locator(
+      ".booking-primary-action .basket-continue",
+    );
+    await expect(continuation).toHaveCount(1);
+    await expect(continuation).toBeInViewport({ ratio: 1 });
+    await page.locator(".site-footer").scrollIntoViewIfNeeded();
+    await expect(continuation).toBeInViewport({ ratio: 1 });
     await expect(cart.locator(".basket-list")).toHaveCSS(
       "overflow-y",
       "visible",
@@ -2720,7 +2946,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     for (const row of await cartRows.all()) {
       await expect(row).toHaveCSS("padding", "12px");
       await expect(row).toHaveCSS("margin-bottom", "12px");
-      await expect(row).toHaveCSS("row-gap", "5px");
+      await expect(row).toHaveCSS("row-gap", "2px");
     }
   }
 });

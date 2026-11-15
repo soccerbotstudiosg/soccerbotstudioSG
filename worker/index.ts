@@ -287,6 +287,9 @@ export default {
             );
             checkoutAccess.expires_ms = renewed.expiresMs;
             checkingHeaders["Set-Cookie"] = renewed.cookie;
+            checkingHeaders["X-Booking-Access-Expires-At"] = String(
+              renewed.expiresMs,
+            );
           }
           const outcome = await coordinatorStub(env).holdCustomer(
             {
@@ -604,9 +607,10 @@ export default {
           ) {
             try {
               const access = await authenticate(request, env, now);
+              const renewed = await renewAccess(request, env, access, now);
               return json({ access: "guest" }, 200, {
-                "Set-Cookie": (await renewAccess(request, env, access, now))
-                  .cookie,
+                "Set-Cookie": renewed.cookie,
+                "X-Booking-Access-Expires-At": String(renewed.expiresMs),
               });
             } catch (error) {
               if (!(error instanceof ApiError) || error.status !== 401)
@@ -616,6 +620,9 @@ export default {
           }
           return json({ access: "guest" }, 201, {
             "Set-Cookie": await createAccess(env, now),
+            "X-Booking-Access-Expires-At": String(
+              now + configuration.ACCESS_LIFETIME_MS,
+            ),
           });
         }
         if (url.pathname === "/api/access" && request.method === "DELETE") {

@@ -1,5 +1,6 @@
 import {
   profileAccessGeneration,
+  reportExpiredBookingAccess,
   establishedProfileAccess,
   reportProfileAccessLoss,
 } from "./profile-access";
@@ -182,6 +183,12 @@ async function identityRequest(
     throw error;
   });
   if (
+    !startingBooking &&
+    path !== "/api/access" &&
+    path !== "/api/identity/all-devices"
+  )
+    await reportExpiredBookingAccess(response, accessGeneration, signal);
+  if (
     response.status === 401 &&
     !signal.aborted &&
     path === "/api/identity/contact"
@@ -196,7 +203,10 @@ async function identityRequest(
         throw new ProfileAccessRevokedError();
     }
   }
-  if (response.ok && startingBooking) establishedProfileAccess();
+  if (response.ok && startingBooking)
+    establishedProfileAccess(
+      response.headers.get("X-Booking-Access-Expires-At"),
+    );
   if (!response.ok) {
     if (startingBooking) {
       if (response.status === 429)

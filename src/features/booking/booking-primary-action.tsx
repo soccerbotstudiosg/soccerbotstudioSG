@@ -4,30 +4,83 @@ import { money } from "@/domain/dates";
 import { useBooking } from "./provider";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
-/** Float one existing action only until its reserved document position is reached. */
+/** Keep the single next action visible when its reserved position is offscreen. */
 export function BookingPrimaryAction({
   children,
   className = "",
   ready,
+  loading = false,
 }: {
   children: ReactNode;
   className?: string;
   ready?: boolean;
+  loading?: boolean;
 }) {
+  const [progressVisible, setProgressVisible] = useState(loading);
+  if (loading && !progressVisible) setProgressVisible(true);
+  const progress = useRef<HTMLSpanElement>(null);
+  const fill = useRef<Animation | null>(null);
+  useLayoutEffect(() => {
+    const bar = progress.current;
+    if (!bar) return;
+    const current = getComputedStyle(bar).transform;
+    fill.current?.cancel();
+    const reduced = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (loading) {
+      if (!reduced && bar.animate)
+        fill.current = bar.animate(
+          [
+            { transform: "scaleX(0)", offset: 0 },
+            { transform: "scaleX(0.8)", offset: 0.12 },
+            { transform: "scaleX(0.94)", offset: 0.4 },
+            { transform: "scaleX(0.98)", offset: 1 },
+          ],
+          {
+            duration: 5000,
+            easing: "linear",
+            fill: "forwards",
+          },
+        );
+      return;
+    }
+    let active = true;
+    const completion =
+      !reduced && bar.animate
+        ? bar.animate([{ transform: current }, { transform: "scaleX(1)" }], {
+            duration: 180,
+            easing: "ease-out",
+            fill: "forwards",
+          })
+        : null;
+    fill.current = completion;
+    void (completion?.finished ?? Promise.resolve()).then(
+      () => {
+        if (active) setProgressVisible(false);
+      },
+      () => {},
+    );
+    return () => {
+      active = false;
+    };
+  }, [loading, progressVisible]);
+  useLayoutEffect(() => () => fill.current?.cancel(), []);
+  const available = !loading && !progressVisible && ready;
   const [readiness, setReadiness] = useState({
-    ready,
-    animate: ready === true,
+    ready: available,
+    animate: available === true,
   });
-  if (readiness.ready !== ready)
+  if (readiness.ready !== available)
     setReadiness({
-      ready,
-      animate: readiness.ready === false && ready === true,
+      ready: available,
+      animate: readiness.ready === false && available === true,
     });
   const anchor = useRef<HTMLDivElement>(null);
   const action = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const control = action.current;
-    if (!control || !ready || !("IntersectionObserver" in window)) return;
+    if (!control || !available || !("IntersectionObserver" in window)) return;
     const button = control.querySelector<HTMLElement>(".button");
     if (!button) return;
     let active = true;
@@ -52,32 +105,27 @@ export function BookingPrimaryAction({
       observer.disconnect();
       delete control.dataset.halo;
     };
-  }, [ready]);
+  }, [available]);
   useLayoutEffect(() => {
     const position = anchor.current;
     const control = action.current;
-    if (
-      !position ||
-      !control ||
-      typeof window.matchMedia !== "function" ||
-      !("ResizeObserver" in window)
-    )
-      return;
-    const mobile = matchMedia("(max-width: 700px)");
+    if (!position || !control || !("ResizeObserver" in window)) return;
     let frame = 0;
     const measure = () => {
       frame = 0;
-      if (!mobile.matches) {
-        position.style.minHeight = "";
-        control.dataset.floating = "false";
-        return;
-      }
+      // Reserve the in-flow size: a wider floating button can have fewer lines.
+      control.dataset.floating = "false";
       const style = getComputedStyle(position);
       const spacing =
         parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
       position.style.minHeight = `${control.getBoundingClientRect().height + spacing}px`;
+      const bounds = position.getBoundingClientRect();
+      control.style.setProperty("--action-left", `${bounds.left}px`);
+      control.style.setProperty("--action-width", `${bounds.width}px`);
+      const header = document.querySelector(".site-header");
+      const top = header?.getBoundingClientRect().bottom ?? 0;
       control.dataset.floating = String(
-        position.getBoundingClientRect().bottom > window.innerHeight,
+        bounds.bottom > window.innerHeight || bounds.top < top,
       );
     };
     const schedule = () => {
@@ -88,25 +136,32 @@ export function BookingPrimaryAction({
     if (position.parentElement) observer.observe(position.parentElement);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
-    mobile.addEventListener("change", schedule);
     measure();
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
-      mobile.removeEventListener("change", schedule);
     };
   }, []);
   return (
     <div className="booking-action-anchor" ref={anchor}>
       <div
         className={`booking-primary-action ${className}`.trim()}
+        data-loading={loading ? "true" : undefined}
+        aria-busy={loading || undefined}
         data-floating="false"
         data-ready-animation={readiness.animate ? "true" : undefined}
         ref={action}
       >
         {children}
+        {progressVisible && (
+          <span
+            className="booking-action-progress"
+            ref={progress}
+            aria-hidden="true"
+          />
+        )}
       </div>
     </div>
   );

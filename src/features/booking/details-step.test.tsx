@@ -292,7 +292,7 @@ test("verified details saves only on explicit action and ignores completion afte
       </button>
     );
   }
-  render(
+  const view = render(
     <BookingProvider identityService={identity}>
       <ChooseMember />
       <DetailsStep />
@@ -305,8 +305,15 @@ test("verified details saves only on explicit action and ignores completion afte
   );
   expect(saveProfile).not.toHaveBeenCalled();
   expect(
-    screen.getByText(/Anyone using this verified email shares/),
-  ).toBeInTheDocument();
+    screen.queryByText(/Anyone using this verified email shares/),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: "Booking Contact" }),
+  ).toBeVisible();
+  expect(screen.getByText("* Required fields")).toBeVisible();
+  expect(screen.getByText("* Required fields").parentElement).toBe(
+    screen.getByRole("heading", { name: "Booking Contact" }).parentElement,
+  );
   await user.click(screen.getByRole("button", { name: "Review Booking" }));
   expect(saveProfile).toHaveBeenCalledTimes(1);
   expect(mocks.push).toHaveBeenCalledWith("/book/review/");
@@ -323,6 +330,33 @@ test("verified details saves only on explicit action and ignores completion afte
     "First Contact Edited",
   );
   expect(mocks.push).toHaveBeenCalledExactlyOnceWith("/book/review/");
+  const onClose = vi.fn();
+  view.rerender(
+    <BookingProvider identityService={identity}>
+      <ChooseMember />
+      <DetailsStep profileOnly onClose={onClose} />
+    </BookingProvider>,
+  );
+  await user.click(
+    screen.getByRole("button", { name: "Save contact details" }),
+  );
+  await act(async () => finish());
+  const notice = screen.getByText("Details saved.");
+  expect(notice).toHaveClass("notice", "success");
+  expect(notice).toHaveFocus();
+  expect(notice.previousElementSibling).toContainElement(
+    screen.getByRole("heading", { name: "Booking Contact" }),
+  );
+  expect(onClose).not.toHaveBeenCalled();
+  expect(screen.getByLabelText(/Full name/)).toHaveValue(
+    "First Contact Edited",
+  );
+  await user.type(screen.getByLabelText(/Full name/), " again");
+  expect(screen.queryByText("Details saved.")).not.toBeInTheDocument();
+  await user.click(
+    screen.getByRole("button", { name: "Back to booking options" }),
+  );
+  expect(onClose).toHaveBeenCalledTimes(1);
 });
 test("verified details advances immediately and reports background save failure on review", async () => {
   const user = userEvent.setup();

@@ -15,6 +15,8 @@ test("instructor profile renders supplied display data without a fixed roster lo
   expect(
     screen.getByRole("heading", { name: "New Trainer" }),
   ).toBeInTheDocument();
+  expect(screen.queryByText("NT")).not.toBeInTheDocument();
+  expect(document.querySelector(".trainer-avatar svg")).toBeInTheDocument();
   rerender(
     <InstructorProfile
       profile={{

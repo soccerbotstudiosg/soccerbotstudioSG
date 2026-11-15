@@ -455,6 +455,7 @@ export function TimeStep({
           </strong>
         </p>
       )}
+      <p className="lead">40-minute sessions · 10-minute changeover.</p>
       {recoveryNotice}
       {selectionNotice && (
         <div
@@ -496,7 +497,6 @@ export function TimeStep({
           )}
         </div>
       )}
-      <p className="lead">40-minute sessions · 10-minute changeover.</p>
       <section
         ref={calendarRef}
         className="calendar-panel"
@@ -839,14 +839,7 @@ export function TimeStep({
                                     .join(" / ")}`
                                 : "No instructor available"}
                           </span>
-                          {slot.available && slot.rotationAt && (
-                            <span className="rotation-notice">
-                              Crosses the {slot.rotationAt} instructor rotation.
-                              Your chosen instructor stays for the full session.
-                            </span>
-                          )}
                         </span>
-                        <Icon name={selected ? "check" : "plus"} />
                       </button>
                       {!selected && choosing === key && (
                         <div className="trainer-choice">

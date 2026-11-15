@@ -1,3 +1,5 @@
+export const BOOKING_SESSION_EXPIRED =
+  "Your session expired. Continue as a guest or sign in to start again.";
 export const BOOKING_SIGNED_OUT =
   "You’ve been signed out. Continue as a guest or verify your email again.";
 // Customer copy for distinct availability outcomes; never payment authority.

@@ -363,9 +363,7 @@ test("live email requires the supplied widget proof before protected requests", 
   page,
 }) => {
   const evidence = await fixture(page);
-  await page
-    .getByRole("button", { name: "Continue with email", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("synthetic@example.test");
@@ -396,9 +394,7 @@ test("synthetic live verification reads server identity and keeps native booking
 }) => {
   await page.clock.install({ time: new Date() });
   const evidence = await fixture(page, true, false, undefined, true);
-  await page
-    .getByRole("button", { name: "Continue with email", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("synthetic@example.test");
@@ -484,6 +480,11 @@ test("synthetic live verification reads server identity and keeps native booking
   await page
     .getByRole("button", { name: "Verify and continue", exact: true })
     .click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/book\/account\/$/);
+  await page.getByRole("button", { name: "Continue signed in" }).click();
   await expect(page).toHaveURL(/\/book\/session\/$/);
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Unable to Load.",
@@ -552,7 +553,7 @@ test("remembered live account edits and rereads contact while native booking sta
   await expect(page.getByLabel("Booking identity")).toHaveCount(0);
   await expect(guest).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Continue with email", exact: true }),
+    page.getByRole("button", { name: "Sign in", exact: true }),
   ).toHaveCount(0);
   restoreIdentity();
   await expect(page.locator(".page-loading")).toHaveCount(0);
@@ -571,7 +572,10 @@ test("remembered live account edits and rereads contact while native booking sta
   const signedInEmail = page.locator(".signed-in-email").filter({
     hasText: "synthetic@example.test",
   });
-  await expect(signedInEmail).toHaveCSS("font-weight", "700");
+  await expect(signedInEmail).toHaveCSS("font-weight", "900");
+  await expect(signedInEmail).toHaveCSS("font-style", "italic");
+  await expect(signedInEmail).toHaveCSS("font-size", "24px");
+  await expect(signedInEmail).toHaveCSS("text-align", "center");
   await expect(signedInEmail).toHaveCSS("color", "rgb(23, 96, 120)");
   expect(
     await signedInEmail.evaluate((node) =>
@@ -646,6 +650,16 @@ test("remembered live account edits and rereads contact while native booking sta
     page.getByRole("heading", { name: "Saved contact details", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
+  await expect(page.locator("#details-form .section-description")).toHaveCount(
+    0,
+  );
+  await expect(
+    page.locator(".contact-heading-row .required-fields"),
+  ).toHaveText("* Required fields");
+  const saveAction = page.getByRole("button", {
+    name: "Save contact details",
+    exact: true,
+  });
   const saveButton = await page
     .getByRole("button", { name: "Save contact details", exact: true })
     .boundingBox();
@@ -671,12 +685,29 @@ test("remembered live account edits and rereads contact while native booking sta
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
+  await expect(saveAction).toHaveCSS("background-color", "rgb(5, 10, 47)");
+  await expect(saveAction).toHaveCSS("letter-spacing", "normal");
+  await expect(saveAction).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(saveAction).toHaveCSS("font-weight", "900");
+  await expect(saveAction).toHaveCSS("font-style", "italic");
   await page
     .getByRole("button", { name: "Save contact details", exact: true })
     .click();
   await expect(
     page.getByRole("status", { name: "Saving details…", exact: true }),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Saved contact details", exact: true }),
+  ).toBeVisible();
+  const savedNotice = page.locator("#details-form .surface .notice.success");
+  await expect(savedNotice).toHaveText("Details saved.");
+  await expect(savedNotice).toBeFocused();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Back to booking options", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Start your booking", exact: true }),
   ).toBeVisible();
@@ -863,9 +894,14 @@ async function mechanismTransport(
     pending.add(work);
     return work.finally(() => pending.delete(work));
   });
+  /** Finish dispatched fixture requests without removing interception. */
+  async function settle() {
+    while (pending.size) await Promise.all([...pending]);
+  }
   return {
     calls,
     unexpected,
+    settle,
     attemptId: () => attemptId,
     json(response: BrowserResponse) {
       const captured = responses.get(response.request());
@@ -878,7 +914,7 @@ async function mechanismTransport(
       // removing interception: Playwright may continue in-flight routes when
       // their handler is removed, racing our eventual fulfill/abort.
       // Await our own work, not internal handled promises for canceled requests.
-      while (pending.size) await Promise.all([...pending]);
+      await settle();
       if (!page.isClosed()) await page.unrouteAll();
     },
   };
@@ -943,7 +979,7 @@ test("native guest journey preserves players contact and one checkout across ref
       exact: true,
     });
     const email = page.getByRole("button", {
-      name: "Continue with email",
+      name: "Sign in",
       exact: true,
     });
     await expect(guest).toBeVisible();
@@ -1582,7 +1618,7 @@ test("real payment recovery confirms the browser return from verified provider s
     );
     const paidBadge = page.locator(".review-head > .confirmation-paid-status");
     await expect(paidBadge).toHaveText("Paid");
-    // WebKit serializes fractional CSS pixels as 23.799999px/15.299999px.
+    // WebKit can serialize fractional padding as 15.299999px.
     // Check the requested dimensions numerically, retaining subpixel precision.
     const paidMetrics = await paidBadge.evaluate((node) => {
       const style = getComputedStyle(node);
@@ -1595,8 +1631,8 @@ test("real payment recovery confirms the browser return from verified provider s
         paddingLeft: parseFloat(style.paddingLeft),
       };
     });
-    expect(paidMetrics.fontSize).toBeCloseTo(23.8, 5);
-    expect(paidMetrics.lineHeight).toBeCloseTo(28.56, 5);
+    expect(paidMetrics.fontSize).toBeCloseTo(20, 5);
+    expect(paidMetrics.lineHeight).toBeCloseTo(24, 5);
     expect(paidMetrics.paddingTop).toBeCloseTo(3.6, 5);
     expect(paidMetrics.paddingRight).toBeCloseTo(15.3, 5);
     expect(paidMetrics.paddingBottom).toBeCloseTo(3.6, 5);
@@ -1634,9 +1670,9 @@ test("real payment recovery confirms the browser return from verified provider s
     expect(orderBox).not.toBeNull();
     expect(orderHeadBox).not.toBeNull();
     expect(firstSessionBox).not.toBeNull();
-    // The accepted badge is 23.8px text at 1.2 line-height plus 7.2px padding.
+    // The standardized badge is 20px text at 1.2 line-height plus 7.2px padding.
     // Assert its rendered height independently of its computed CSS values.
-    expect(Math.abs(paidBox!.height - 35.76)).toBeLessThan(0.1);
+    expect(Math.abs(paidBox!.height - 31.2)).toBeLessThan(0.1);
     expect(copyBox!.y).toBeCloseTo(detailsSummaryBox!.y, 1);
     expect(copyBox!.y + copyBox!.height).toBeCloseTo(
       detailsSummaryBox!.y + detailsSummaryBox!.height,
@@ -1983,6 +2019,9 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
         }
       }),
     );
+    // Account bootstrap also starts calendar warming. Finish its real Worker
+    // reads before attributing provider calls to competing or rejected writes.
+    await Promise.all([transport.settle(), secondTransport.settle()]);
     const submit = (tab: Page, path: string, body?: unknown) =>
       tab.evaluate(
         async ({ path, body }) => {
@@ -2633,7 +2672,7 @@ test("real API failed booking readback retains created references and blocks che
   await uncertainHolding(page, "readback");
 });
 
-test("real API revoked access at checkout retains the draft and denies protected access without provider creation", async ({
+test("real API revoked access at checkout returns to fresh entry and denies protected access without provider creation", async ({
   page,
 }) => {
   // This case checks authorization; animation behavior has dedicated coverage.
@@ -2649,7 +2688,16 @@ test("real API revoked access at checkout retains the draft and denies protected
       .run();
     const response = await checkoutHoldResponse(page, undefined, true);
     expect(response.status()).toBe(401);
-    await expect(page).toHaveURL(sitePath("/"));
+    await expect(page).toHaveURL(sitePath("/book/account/"));
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+      "Your session expired. Continue as a guest or sign in to start again.",
+    );
+    await expect(
+      page.getByRole("button", { name: "Continue as Guest" }),
+    ).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Sign in", exact: true }),
+    ).toBeEnabled();
     await expect(
       page.getByRole("heading", {
         name: "Confirmation unavailable",
@@ -2664,8 +2712,11 @@ test("real API revoked access at checkout retains the draft and denies protected
         JSON.parse(sessionStorage.getItem("soccerbot-live-draft") || "null"),
       ),
     ).toMatchObject({
+      mode: null,
+      accountEmail: "",
       accepted: false,
-      contact: { name: "Synthetic Guest", academy: "Synthetic School" },
+      slots: [],
+      contact: { name: "", email: "", phone: "", academy: "" },
     });
     expect(
       await mechanism.db.prepare("SELECT COUNT(*) AS n FROM attempts").first(),
@@ -3921,9 +3972,7 @@ test("email account actions return through booking options and sign in again wit
   ).not.toBeChecked();
   await page.getByRole("button", { name: "Back", exact: true }).click();
   for (const remember of [true, false]) {
-    await page
-      .getByRole("button", { name: "Continue with email", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
       .getByRole("textbox", { name: /^Email address/ })
@@ -3947,6 +3996,13 @@ test("email account actions return through booking options and sign in again wit
     await page
       .getByRole("button", { name: "Verify and continue", exact: true })
       .click();
+    await expect(page).toHaveURL(/\/book\/account\/$/);
+    await expect(
+      page.getByRole("heading", { name: "Welcome back" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Continue signed in", exact: true })
+      .click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
     await page.goBack();
     await expect(
@@ -3969,7 +4025,7 @@ test("email account actions return through booking options and sign in again wit
       .getByRole("button", { name: "Sign out all devices", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "Continue with email", exact: true }),
+      page.getByRole("button", { name: "Sign in", exact: true }),
     ).toBeVisible();
   }
   expect(

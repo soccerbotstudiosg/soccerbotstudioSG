@@ -36,7 +36,7 @@ test("guest selection creates a guest contact and continues to the session", asy
 test("email form rejects a wrong verification code and accepts the corrected code", async () => {
   const user = userEvent.setup();
   render(<AccountStep />);
-  await user.click(screen.getByRole("button", { name: "Continue with email" }));
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
   expect(screen.getByLabelText("Email address")).toHaveAttribute(
     "maxlength",
     "254",
@@ -58,6 +58,10 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   await user.clear(screen.getByLabelText("Verification code"));
   await user.type(screen.getByLabelText("Verification code"), "360360");
   await user.click(screen.getByRole("button", { name: "Verify and continue" }));
+  expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  expect(mocks.push).not.toHaveBeenCalled();
+  expect(mocks.update).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Continue signed in" }));
   expect(mocks.update).toHaveBeenCalledWith(
     expect.objectContaining({
       mode: "member",
@@ -69,7 +73,7 @@ test("email form rejects a wrong verification code and accepts the corrected cod
 test("remember me is explicit default off and opted in preview expiry stays ninety days from verification", async () => {
   const user = userEvent.setup();
   render(<AccountStep />);
-  await user.click(screen.getByRole("button", { name: "Continue with email" }));
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
   const remember = screen.getByRole("checkbox", {
     name: "Remember me",
   });

@@ -1356,6 +1356,10 @@ test("combined batch checkout retains one payment effect and exact booking assoc
     assert.ok(renewedAccess.expires_ms > payment.expires_ms);
     assert.ok(renewedAccess.expires_ms > accessDeadline);
     assert.equal(
+      Number(response.headers.get("X-Booking-Access-Expires-At")),
+      renewedAccess.expires_ms,
+    );
+    assert.equal(
       response.headers.get("set-cookie").split(";")[0],
       c.headers.cookie,
     );

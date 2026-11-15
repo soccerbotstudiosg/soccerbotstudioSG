@@ -233,7 +233,23 @@
   },
   {
     "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "expired guest email lookup returns to step one with session notice and usable entry choices"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
     "title": "expired local identity at Details returns to entry before any profile read"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "expired navigation redirects on forward and back steps while local edits and renewed entry remain free"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "expired protected availability and verification notify recovery but transient failures do not"
+  },
+  {
+    "file": "src/features/booking/access-recovery.test.tsx",
+    "title": "late or aborted email denial cannot expire a newly established booking session"
   },
   {
     "file": "src/features/booking/access-recovery.test.tsx",
@@ -285,7 +301,7 @@
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
-    "title": "failed profile saves keep the form and retry returns to booking options only after success"
+    "title": "failed profile saves keep the form and successful retry acknowledges in place until explicit Back"
   },
   {
     "file": "src/features/booking/account-lifecycle.test.tsx",
@@ -1121,7 +1137,7 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
-    "title": "crossing notices persist in the basket and review before payment"
+    "title": "crossing sessions retain checkout behavior without scheduling notices"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
@@ -1549,7 +1565,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "oracle booking sizing and rotation disclaimers persist through checkout"
+    "title": "oracle booking sizing and crossing sessions persist through checkout"
   },
   {
     "file": "tests/customer.spec.ts",
@@ -1653,7 +1669,7 @@
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "real API revoked access at checkout retains the draft and denies protected access without provider creation"
+    "title": "real API revoked access at checkout returns to fresh entry and denies protected access without provider creation"
   },
   {
     "file": "tests/live-email.spec.ts",
@@ -1685,6 +1701,6 @@
   },
   {
     "file": "src/features/enquiry/enquiry-page.test.tsx",
-    "title": "enquiry acknowledgement routes Home and expires after ten seconds without replay"
+    "title": "enquiry acknowledgement stays beneath the heading until editing or leaving"
   }
 ]

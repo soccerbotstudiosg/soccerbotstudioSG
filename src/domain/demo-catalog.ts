@@ -12,7 +12,7 @@ export {
 import { z } from "zod";
 // Explicit Preview fixtures; never a live catalogue or fallback.
 export const PRICE_CENTS = 8800;
-export const SERVICE_NAME = "Kickoff Special (Trial Price)";
+export const SERVICE_NAME = "Kickoff Special";
 export { OPENING_MINUTE, CLOSING_MINUTE } from "./booking-policy";
 export const SESSION_STARTS = Array.from(
   {
