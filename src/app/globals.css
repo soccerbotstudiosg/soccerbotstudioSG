@@ -28,6 +28,7 @@
 
 @theme {
   --radius-booking-control: 3px 12px 3px 12px;
+  --radius-nav-flag: 1px 3px 1px 3px;
   --color-player-app: #242424;
   --color-player-app-backdrop: rgb(0 0 0 / 65%);
   --color-brand: #050a2f;
@@ -371,7 +372,7 @@
     align-self: center;
     margin: 0 8px 0 0;
     object-fit: contain;
-    border-radius: var(--radius-booking-control);
+    border-radius: var(--radius-nav-flag);
   }
   .nav-links > a {
     font-size: var(--text-label);

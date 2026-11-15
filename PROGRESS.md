@@ -28,6 +28,8 @@ Session date/time/trainer lines share equal2px vertical gaps across cart and doc
 
 Month/week day hover uses the shared pale teal fill and border. Time-slot containers use teal while choosing/selected; their outer focus ring follows keyboard focus-visible rather than lingering after mouse deselection.
 
+The header flag uses subtle1/3px asymmetric corners scaled to its small size.
+
 ## Verification and next action
 
 Revision8780169 passed all13 CI jobs and deployed to staging, with the source/health receipt recorded in PR79. The owner’s next refinement restores normal action-letter spacing, uses the card hover’s pale teal for selection, shortens the section headings to Outlet/Session, renames email entry to Sign in, and standardizes Review/Confirmation typography. CI43667704581 exposed a computed-style expectation mismatch (normal versus0px tracking); corrected the exact browser expectation. Verify affected presentation assertions and stage the consolidated revision; owner acceptance and merge remain pending. No dependency, API, Worker, migration or provider configuration changes. Preserve existing browser inventories and geometry thresholds; CI owns browser execution.

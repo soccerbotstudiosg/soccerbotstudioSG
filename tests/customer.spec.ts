@@ -863,10 +863,10 @@ test("enquiry remains available without external submission or a mock assistant"
   await expect(
     page.getByRole("heading", { name: "Contact the studio", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".nav-flag")).toHaveCSS("border-radius", "1px 3px");
   for (const control of [
     enquiryHome,
     page.getByRole("button", { name: "Send enquiry" }),
-    page.locator(".nav-flag"),
   ]) {
     await expect(control).toHaveCSS("border-top-left-radius", "3px");
     await expect(control).toHaveCSS("border-top-right-radius", "12px");
