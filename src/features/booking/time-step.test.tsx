@@ -836,40 +836,7 @@ test("calendar back preserves player count with the outlet session and action im
   expect(screen.getByRole("status", { name: "Players" })).toHaveTextContent(
     "2",
   );
-  vi.useFakeTimers();
-  try {
-    view.rerender(
-      <BookingProvider>
-        <BookingPage step="time" />
-      </BookingProvider>,
-    );
-    view.rerender(
-      <BookingProvider>
-        <SessionStep />
-      </BookingProvider>,
-    );
-    expect(screen.getByRole("note")).toHaveTextContent(
-      "Please choose the number of players.",
-    );
-    act(() => vi.advanceTimersByTime(5999));
-    expect(screen.getByRole("note")).toBeVisible();
-    act(() => vi.advanceTimersByTime(1));
-    expect(screen.queryByRole("note")).not.toBeInTheDocument();
-    view.rerender(
-      <BookingProvider>
-        <BookingPage step="time" />
-      </BookingProvider>,
-    );
-    view.rerender(
-      <BookingProvider>
-        <SessionStep />
-      </BookingProvider>,
-    );
-    expect(screen.getByRole("note")).toBeVisible();
-    view.unmount();
-  } finally {
-    vi.useRealTimers();
-  }
+  expect(screen.queryByRole("note")).not.toBeInTheDocument();
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 

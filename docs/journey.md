@@ -6491,3 +6491,7 @@ The owner paused publication and retained the font-size standardisation while re
 On 15 November 2026 the owner resumed PR79 staging for the consolidated navy-action/lavender-selection revision and requested the existing lock icon instead of the Proceed to Payment chevron. Payment behavior and busy/security states are unchanged. Exact-head CI and deployment receipts belong in PR79; merge still requires owner acceptance.
 
 The owner subsequently approved the mockup’s internal outlet/session card arrangement: plain football icon, vertical desktop metadata divider and a separate Trainer included line, retaining white/lavender cards, navy actions and no selection ticks/plus icons. The owner cancelled the queued superseded verification run; consolidate this layout before the next staging candidate.
+
+The owner requested a flowing gradient on continuation actions and removed the player-count helper. The existing primary action style owner now provides a subtle navy gradient with reduced-motion and disabled-state handling. The helper component, timer and styles were removed; existing selection tests retain player-count and toggle coverage and now verify no helper, without reducing test inventory.
+
+Geometry checks still await layout transitions but exclude only the named continuous background-gradient animation, whose animation name and reduced-motion behavior are asserted separately. No layout thresholds, cases or inventories were relaxed.

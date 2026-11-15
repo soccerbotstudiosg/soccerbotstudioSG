@@ -1009,7 +1009,16 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     await expect(page.locator(selector)).toBeVisible();
     const width = await page.locator(selector).evaluate(async (element) => {
       await Promise.all(
-        element.getAnimations().map((animation) => animation.finished),
+        element
+          .getAnimations()
+          .filter(
+            (animation) =>
+              !(
+                animation instanceof CSSAnimation &&
+                animation.animationName === "booking-action-flow"
+              ),
+          )
+          .map((animation) => animation.finished),
       );
       return element.getBoundingClientRect().width;
     });
@@ -1040,16 +1049,19 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   await expect(
     page.getByRole("button", { name: "Add one player" }),
   ).toBeVisible();
-  const playerHint = page.getByRole("note");
-  await expect(playerHint).toHaveText("Please choose the number of players.");
-  expect(
-    await playerHint.evaluate(
-      (node) => node.closest(".session-product") === null,
-    ),
-  ).toBe(true);
+  await expect(page.getByRole("note")).toHaveCount(0);
   const next = page.getByRole("link", { name: "Choose Date & Time" });
   await expect(next).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(next).toHaveCSS("letter-spacing", "2.56px");
+  const gradient = await next.evaluate((element) => ({
+    image: getComputedStyle(element, "::before").backgroundImage,
+    animation: getComputedStyle(element, "::before").animationName,
+    reduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
+  }));
+  expect(gradient.image).toContain("linear-gradient");
+  expect(gradient.animation).toBe(
+    gradient.reduced ? "none" : "booking-action-flow",
+  );
   await expect(next).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(next).toBeInViewport({ ratio: 1 });
   const nextBox = await next.boundingBox();
@@ -1730,7 +1742,16 @@ test("header blue and the typography hierarchy stay consistent across every book
         await expect(action).toHaveCount(1);
         await action.evaluate(async (element) => {
           await Promise.all(
-            element.getAnimations().map((animation) => animation.finished),
+            element
+              .getAnimations()
+              .filter(
+                (animation) =>
+                  !(
+                    animation instanceof CSSAnimation &&
+                    animation.animationName === "booking-action-flow"
+                  ),
+              )
+              .map((animation) => animation.finished),
           );
         });
         const anchorBox = await page
