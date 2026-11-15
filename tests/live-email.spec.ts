@@ -653,9 +653,9 @@ test("remembered live account edits and rereads contact while native booking sta
   await expect(page.locator("#details-form .section-description")).toHaveCount(
     0,
   );
-  await expect(page.locator(".booking-required")).toHaveText(
-    "* Required fields",
-  );
+  await expect(
+    page.locator(".booking-heading-row .required-fields"),
+  ).toHaveText("* Required fields");
   const saveAction = page.getByRole("button", {
     name: "Save contact details",
     exact: true,
