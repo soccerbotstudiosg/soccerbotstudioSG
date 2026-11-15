@@ -1052,7 +1052,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await expect(page.getByRole("note")).toHaveCount(0);
   const next = page.getByRole("link", { name: "Choose Date & Time" });
   await expect(next).toHaveCSS("background-color", "rgb(5, 10, 47)");
-  await expect(next).toHaveCSS("letter-spacing", "0px");
+  await expect(next).toHaveCSS("letter-spacing", "normal");
   const gradient = await next.evaluate((element) => ({
     image: getComputedStyle(element, "::before").backgroundImage,
     animation: getComputedStyle(element, "::before").animationName,
@@ -1881,7 +1881,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   // Inspect the resting action, with the pointer away from the button.
   await page.mouse.move(0, 0);
   await expect(guest).toHaveCSS("background-color", brand);
-  await expect(guest).toHaveCSS("letter-spacing", "0px");
+  await expect(guest).toHaveCSS("letter-spacing", "normal");
   await expect(guest).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(guest).toHaveCSS("text-transform", "none");
   await expect(guest).toHaveCSS("font-weight", "900");
