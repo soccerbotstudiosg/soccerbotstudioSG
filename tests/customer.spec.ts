@@ -2062,6 +2062,10 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(control).toHaveCSS("font-size", "16px");
   }
   await crossing.click();
+  await expect(crossing).toHaveAttribute("aria-expanded", "true");
+  await expect(crossing).toHaveAttribute("aria-pressed", "false");
+  await expect(crossing).toHaveCSS("background-color", selectedColour);
+  await expect(crossing).toHaveCSS("border-color", "rgb(23, 96, 120)");
   await page
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
     .selectOption({ index: 1 });
@@ -2127,7 +2131,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     "font-size",
     "14px",
   );
-  await expect(page.locator("#name")).toHaveCSS("font-size", "16px");
+  await expect(page.locator("#name")).toHaveCSS("font-size", "14px");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
   async function bookingDocumentBody() {
     const styles = await page
@@ -2197,6 +2201,17 @@ test("header blue and the typography hierarchy stay consistent across every book
     .all()) {
     await expect(detail).toHaveCSS("color", "rgb(88, 97, 116)");
     await expect(detail).toHaveCSS("font-weight", "400");
+  }
+  for (const session of await page
+    .locator(".booking-document .series-date")
+    .all()) {
+    const gaps = await session.evaluate((node) => {
+      const rows = Array.from(node.children)
+        .slice(0, 3)
+        .map((child) => child.getBoundingClientRect());
+      return rows.slice(1).map((row, index) => row.top - rows[index].bottom);
+    });
+    for (const gap of gaps) expect(gap).toBeCloseTo(2, 1);
   }
   await expect(page.locator(".review-block .rotation-notice")).toHaveCount(0);
   await page
@@ -2775,8 +2790,8 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     for (const row of await cartRows.all()) {
       await expect(row).toHaveCSS("padding", "8px");
       await expect(row).toHaveCSS("margin-bottom", "6px");
-      await expect(row).toHaveCSS("row-gap", "0px");
-      await expect(row.locator(":scope > div").first()).toHaveCSS("gap", "0px");
+      await expect(row).toHaveCSS("row-gap", "2px");
+      await expect(row.locator(":scope > div").first()).toHaveCSS("gap", "2px");
       await expect(row.locator(".basket-remove")).toHaveCSS(
         "min-height",
         "44px",
@@ -2817,7 +2832,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     for (const row of await cartRows.all()) {
       await expect(row).toHaveCSS("padding", "12px");
       await expect(row).toHaveCSS("margin-bottom", "12px");
-      await expect(row).toHaveCSS("row-gap", "5px");
+      await expect(row).toHaveCSS("row-gap", "2px");
     }
   }
 });

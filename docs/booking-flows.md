@@ -670,3 +670,7 @@ Customer-facing trainer-rotation notices are removed from calendar, cart, review
 Session-step section headings are simply “Outlet” and “Session”.
 
 Review and Confirmation share Roboto with regular16px body/contact values, bold16px dates and edit links,20px section headings/totals/status emphasis, and14px supporting references/currency text. The email entry action and heading read “Sign in”; verified continuation remains “Continue signed in”.
+
+A time slot also uses the pale teal selection fill and border while its trainer selector is open, before a trainer is chosen. This visual state does not add a session to the cart.
+
+Session date/time/trainer lines share equal2px vertical gaps across cart and document summaries, including the full cart. Input values use14px; labels and control heights retain their existing sizes. Native autofill uses the shared pale teal fill, including the whole phone control; focus/error cues remain. Tinted cart rows, trainer avatars and expanded/hover trainer controls use the same pale teal; red remove controls retain their danger colours. Native contact-card autofill requires owner browser acceptance.

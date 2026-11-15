@@ -6507,3 +6507,7 @@ The same run’s tablet live-email concurrency case observed29 provider calls ve
 After reviewing staged8780169, the owner requested normal continuation-letter spacing, selected surfaces matching the pale teal card hover, and section headings shortened to Outlet/Session. Existing style owners and presentation assertions were updated; navy number circles, white unselected cards and flowing navy actions remain.
 
 The owner extended typography consistency to Review and Confirmation: regular body/contact values, bold date/action labels, shared20px heading/total/status emphasis and14px supporting text. The email entry action and heading are renamed Sign in; sign-in behavior is unchanged. Existing browser type and badge-geometry expectations follow these approved sizes.
+
+The owner requested the hover-matched colour immediately on opening a time slot’s trainer selector. The existing expanded state now shares the selected surface styling; browser assertions require the teal state while aria-pressed remains false, preserving selection authority.
+
+The owner requested equal session-line spacing everywhere, smaller field values, and hover-matched autofill/cart/trainer fills excluding the red remove control. The existing style owners now share2px session-line gaps and14px field text; native autofill uses a pale teal inset fill and the phone wrapper follows it. Existing cart-fit checks retain their strict viewport threshold. Owner contact-card autofill acceptance remains separate from synthetic tests.
