@@ -6565,3 +6565,9 @@ The owner subsequently requested the matching enquiry placement: its required-fi
 ## 15 November 2026 — Standardize notice meanings
 
 Owner requested consistent notice colours after the enquiry acknowledgement appeared as a white information box. Reused existing palette tokens through shared success/warning notice variants: confirmed enquiry delivery and saved contact use green; preview/no-send and security-check unavailability use amber; errors stay red and loading/general information stay neutral. Existing paid/verified/pending badges already use these colour families. No copy, provider behavior or notification effects changed. Visual acceptance and final-head CI/staging remain pending.
+
+## 15 November 2026 — Keep saved-contact acknowledgement in the editor
+
+Explicit saved-contact submission stays on the editor with entered values intact. The card heading is Booking Contact; a green “Details saved.” notice appears directly beneath it, receives focus and scrolls into view. Editing clears the notice through the existing contact-key guard. Only the explicit Back control closes the editor. Ordinary booking-details submission still advances to Review with its existing background-save behavior.
+
+Existing component coverage now proves no close on save, retained values, notice placement/focus, clearing on edit and explicit Back. The live-email browser journey checks the acknowledgement before navigating back and rereading persisted details. All6 Details component cases, affected lint and source integrity passed; final-head CI, staging and visual acceptance remain pending.

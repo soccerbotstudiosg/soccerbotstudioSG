@@ -697,6 +697,18 @@ test("remembered live account edits and rereads contact while native booking sta
     page.getByRole("status", { name: "Saving details…", exact: true }),
   ).toHaveCount(0);
   await expect(
+    page.getByRole("heading", { name: "Saved contact details", exact: true }),
+  ).toBeVisible();
+  const savedNotice = page.locator("#details-form .surface .notice.success");
+  await expect(savedNotice).toHaveText("Details saved.");
+  await expect(savedNotice).toBeFocused();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Back to booking options", exact: true })
+    .click();
+  await expect(
     page.getByRole("heading", { name: "Start your booking", exact: true }),
   ).toBeVisible();
   await expect(page.locator("#details-form")).toHaveCount(0);

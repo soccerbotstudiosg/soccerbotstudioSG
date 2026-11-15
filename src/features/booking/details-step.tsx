@@ -213,6 +213,12 @@ export function DetailsStep({
   const contactKey = JSON.stringify([draft.mode, draft.accountEmail, c]);
   const saving = saveState.key === contactKey && saveState.saving;
   const saveMessage = saveState.key === contactKey ? saveState.message : "";
+  const saveNotice = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (!profileOnly || !saveMessage) return;
+    saveNotice.current?.focus({ preventScroll: true });
+    saveNotice.current?.scrollIntoView({ block: "start" });
+  }, [profileOnly, saveMessage]);
   useEffect(
     () => () => {
       activeSave.current?.abort();
@@ -508,9 +514,7 @@ export function DetailsStep({
         onSubmit={(event) => {
           event.preventDefault();
           if (profileOnly) {
-            void save().then((saved) => {
-              if (saved && mounted.current) onClose?.();
-            });
+            void save();
             return;
           }
           const next = contactErrors(
@@ -550,11 +554,19 @@ export function DetailsStep({
       >
         <section className="surface">
           <div className="contact-heading-row">
-            <h2 className="section-title">
-              {profileOnly ? "Contact profile" : "Booking Contact"}
-            </h2>
+            <h2 className="section-title">Booking Contact</h2>
             <p className="required-fields">* Required fields</p>
           </div>
+          {saveMessage && (
+            <p
+              className={saveState.failed ? "alert" : "notice success"}
+              role={saveState.failed ? "alert" : "status"}
+              ref={saveNotice}
+              tabIndex={-1}
+            >
+              {saveMessage}
+            </p>
+          )}
           <div className="field-grid">
             {field("name", "Full name")}
             {field(
@@ -614,14 +626,6 @@ export function DetailsStep({
               Back to booking options
             </button>
           </div>
-        )}
-        {saveMessage && (
-          <p
-            className={saveState.failed ? "alert" : "notice success"}
-            role={saveState.failed ? "alert" : "status"}
-          >
-            {saveMessage}
-          </p>
         )}
         {!profileOnly && selectionNotice && (
           <p className="notice" role="status">
