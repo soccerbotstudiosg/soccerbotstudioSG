@@ -2163,7 +2163,18 @@ test("header blue and the typography hierarchy stay consistent across every book
   );
   await expect(page.locator(".trainer-bio")).toBeVisible();
   await expect(page.locator(".trainer-bio")).toHaveCSS("font-size", "14px");
-  await expect(page.locator(".trainer-name")).toHaveCSS("font-size", "20px");
+  await expect(page.locator(".trainer-name")).toHaveCSS("font-size", "14px");
+  await expect(page.locator(".booking-instructors > h2")).toHaveCSS(
+    "font-size",
+    "12px",
+  );
+  await expect(page.locator(".booking-instructors > h2")).toHaveCSS(
+    "text-transform",
+    "uppercase",
+  );
+  await expect(page.locator(".trainer-bio")).toHaveCSS("line-height", "21px");
+  const trainerToggle = await page.locator(".trainer-toggle").boundingBox();
+  expect(trainerToggle!.height).toBeGreaterThanOrEqual(44);
   await closeBookingPanel(page);
   await page
     .getByRole("link", {

@@ -4347,9 +4347,17 @@
     overflow: hidden;
   }
   .booking-instructors > h2 {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 40px;
     margin: 0;
-    padding: 14px 16px;
-    font-size: var(--text-card);
+    padding: 10px 16px;
+    font-size: var(--text-caption);
+    font-weight: var(--weight-heading);
+    line-height: var(--leading-control);
+    letter-spacing: var(--tracking-ui-label);
+    text-transform: uppercase;
     border-bottom: 1px solid var(--color-line);
   }
   .booking-instructors .trainer-card {
@@ -4359,6 +4367,10 @@
   }
   .booking-instructors .trainer-card + .trainer-card {
     border-top: 1px solid var(--color-line);
+  }
+  .booking-instructors .trainer-bio {
+    padding: 12px 16px;
+    line-height: var(--leading-session);
   }
   .trainer-toggle {
     display: flex;
@@ -4375,16 +4387,16 @@
     background: var(--background-selected);
   }
   .trainer-toggle .trainer-avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     color: var(--color-brand);
     border-color: var(--color-line);
     background: var(--background-selected);
   }
   .trainer-toggle .trainer-name {
     color: inherit;
-    font-size: var(--text-section);
-    line-height: var(--leading-control);
+    font-size: var(--text-label);
+    line-height: var(--leading-session);
     font-weight: var(--weight-heading);
   }
   .trainer-toggle > svg {
