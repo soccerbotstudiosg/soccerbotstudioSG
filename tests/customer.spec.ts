@@ -251,14 +251,18 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
         const check = (source: string) => {
           if (document.getElementById("page-refresh")) return;
           const main = document.getElementById("main");
+          const root = document.documentElement.getBoundingClientRect();
           const loading = [...document.querySelectorAll(".page-loading")].some(
             (node) => {
               const box = node.getBoundingClientRect();
               return (
                 getComputedStyle(node).visibility === "visible" &&
-                // Fixed overlays fill the layout viewport, excluding its reserved scrollbar gutter.
-                box.width >= document.documentElement.clientWidth - 1 &&
-                box.height >= innerHeight - 1
+                // Chromium clientWidth includes the stable gutter even when the
+                // root and fixed overlay both exclude it. Compare actual bounds.
+                box.left <= root.left + 1 &&
+                box.right >= root.right - 1 &&
+                box.top <= 1 &&
+                box.bottom >= innerHeight - 1
               );
             },
           );
