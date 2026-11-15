@@ -543,24 +543,9 @@ export function DetailsStep({
           }
         }}
       >
-        {!profileOnly && bookingService.mode === "live" && (
-          <p>
-            Review your selected times and details. Your booking is created when
-            you continue to payment.
-          </p>
-        )}
         <p className="booking-required">* Required fields</p>
         <section className="surface">
-          <h2 className="section-title">
-            {profileOnly ? "Contact profile" : "Booking Contact"}
-          </h2>
-          {draft.mode === "member" && (
-            <p className="section-description">
-              {remember
-                ? "Your name and phone will be saved when you submit this form. Anyone using this verified email shares these saved contact details. Previous bookings stay unchanged."
-                : "Review your contact details for this booking. Changes will not be saved for your next visit."}
-            </p>
-          )}
+          {profileOnly && <h2 className="section-title">Contact profile</h2>}
           <div className="field-grid">
             {field("name", "Full name")}
             {field(

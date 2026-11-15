@@ -2097,7 +2097,16 @@ test("header blue and the typography hierarchy stay consistent across every book
     .first()
     .click();
   await pageHeading("Your details");
-  await sectionType("#details-form h2");
+  await expect(page.locator("#details-form h2")).toHaveCount(0);
+  await expect(page.locator(".booking-required")).toHaveText(
+    "* Required fields",
+  );
+  await expect(
+    page.getByText("Review your selected times and details.", { exact: false }),
+  ).toHaveCount(0);
+  await expect(page.locator("#details-form .section-description")).toHaveCount(
+    0,
+  );
   if ((page.viewportSize()?.width ?? 1280) > 700) {
     const row = page.locator(".summary .series-list li").first();
     await expect(row).toHaveCSS("padding-top", "18px");
@@ -2141,6 +2150,9 @@ test("header blue and the typography hierarchy stay consistent across every book
   }
   await details(page);
   await pageHeading("Review Booking");
+  await expect(
+    page.getByText("Check your details before payment.", { exact: true }),
+  ).toHaveCount(0);
   await bookingDocumentBody();
 
   await sectionType(".review-head h2, .review-block > h2");

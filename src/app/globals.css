@@ -271,8 +271,7 @@
   .status-heading p,
   .booking-facts,
   .line-item,
-  .check-label,
-  .section-description {
+  .check-label {
     font-size: var(--text-body);
     line-height: var(--leading-body);
   }
@@ -3120,10 +3119,6 @@
   .booking-required {
     margin: 0 0 20px;
     color: var(--color-muted);
-  }
-  .section-description {
-    color: var(--color-muted);
-    margin: -5px 0 20px;
   }
   .field-grid .full {
     grid-column: 1/-1;

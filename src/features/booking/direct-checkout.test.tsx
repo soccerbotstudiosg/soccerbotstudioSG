@@ -2534,9 +2534,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   // state. A later calendar visit must not resurrect it from the foreign checkout.
   refreshed.rerender(tree("details"));
   expect(
-    await screen.findByRole("heading", {
-      name: "Booking Contact",
-    }),
+    await screen.findByRole("textbox", { name: /Full name/ }),
   ).toBeInTheDocument();
   expect(screen.getByTestId("conflict-refresh-notice")).toBeEmptyDOMElement();
   expect(sessionStorage.getItem("soccerbot-conflict-notice")).toBeNull();
