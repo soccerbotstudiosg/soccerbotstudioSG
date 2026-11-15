@@ -6515,3 +6515,5 @@ The owner requested equal session-line spacing everywhere, smaller field values,
 The owner requested matching month/week day hover and removal of the lingering deselected-slot outline. The calendar day owner now reuses the selected colour; the time container’s focus-within ring becomes focus-visible, retaining keyboard indication. Existing browser cases cover both calendar layouts and pointer deselection.
 
 CI43667704581 retained browser failures for normal action tracking: Chromium and WebKit serialize the restored zero-spacing style as normal, while revised assertions expected0px. Corrected those three exact presentation expectations to normal; application styling and all geometry assertions are unchanged. Original jobs132671015178/132671015180 retain the failure evidence.
+
+On 15 November 2026 the owner explicitly reported the four-hour test fully accepted. CUS-012 and the remaining-work list now reflect that acceptance; it does not imply acceptance of unrelated presentation or recovery cases.

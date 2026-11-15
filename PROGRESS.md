@@ -34,7 +34,7 @@ Revision8780169 passed all13 CI jobs and deployed to staging, with the source/he
 
 ## Remaining owner acceptance
 
-See [simulated-user UAT](docs/uat/simulated-user.md) for four-hour cutoff, confirmation refresh/Back, immediate post-payment close/reopen, isolated unresolved recovery and final presentation/messenger checks. Owner accepted normal and consecutive booking, conflict, active checkout, expiry-return and last-minute payment on the preceding release. Domain access and a complete sandbox payment were owner-confirmed; changed source still needs candidate acceptance. Before production release, verify native-domain CI-token permissions; staging does not prove them.
+See [simulated-user UAT](docs/uat/simulated-user.md) for confirmation refresh/Back, immediate post-payment close/reopen, isolated unresolved recovery and final presentation/messenger checks. Owner accepted normal and consecutive booking, conflict, active checkout, expiry-return and last-minute payment on the preceding release. The owner reported the four-hour cutoff test fully accepted on 15 November 2026. Domain access and a complete sandbox payment were owner-confirmed; changed source still needs candidate acceptance. Before production release, verify native-domain CI-token permissions; staging does not prove them.
 
 ## Ordered work after this slice
 
