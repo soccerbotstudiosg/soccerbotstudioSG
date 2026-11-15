@@ -576,7 +576,10 @@ test("remembered live account edits and rereads contact while native booking sta
   const signedInEmail = page.locator(".signed-in-email").filter({
     hasText: "synthetic@example.test",
   });
-  await expect(signedInEmail).toHaveCSS("font-weight", "700");
+  await expect(signedInEmail).toHaveCSS("font-weight", "900");
+  await expect(signedInEmail).toHaveCSS("font-style", "italic");
+  await expect(signedInEmail).toHaveCSS("font-size", "24px");
+  await expect(signedInEmail).toHaveCSS("text-align", "center");
   await expect(signedInEmail).toHaveCSS("color", "rgb(23, 96, 120)");
   expect(
     await signedInEmail.evaluate((node) =>
@@ -3951,6 +3954,13 @@ test("email account actions return through booking options and sign in again wit
     await page.getByLabel("Verification code", { exact: true }).fill("123456");
     await page
       .getByRole("button", { name: "Verify and continue", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/book\/account\/$/);
+    await expect(
+      page.getByRole("heading", { name: "Welcome back" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Continue signed in", exact: true })
       .click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
     await page.goBack();
