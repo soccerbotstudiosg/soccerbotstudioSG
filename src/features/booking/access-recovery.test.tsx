@@ -110,9 +110,7 @@ test("revoked saved-contact editor returns to guest choices without revealing th
     await screen.findByRole("button", { name: "Manage saved contact" }),
   );
   expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
-  expect(
-    await screen.findByRole("button", { name: "Guest" }),
-  ).toBeEnabled();
+  expect(await screen.findByRole("button", { name: "Guest" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   expect(screen.queryByText("Welcome back")).toBeNull();
   expect(screen.queryByLabelText(/Full name/)).toBeNull();
@@ -159,7 +157,11 @@ test("saved booking details stay behind the full loader until the protected prof
   );
   expect(await screen.findByDisplayValue("Saved Person")).toBeVisible();
   expect(screen.getByDisplayValue("81234567")).toBeVisible();
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   fireEvent.change(screen.getByDisplayValue("Saved Person"), {
     target: { value: "Edited Person" },
   });
@@ -443,9 +445,7 @@ test("expired guest email lookup returns to step one with session notice and usa
     </BookingProvider>,
   );
   expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
-  expect(
-    screen.getByRole("button", { name: "Guest" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   expect(screen.getByTestId("recovery")).not.toHaveTextContent("Old Guest");
 });

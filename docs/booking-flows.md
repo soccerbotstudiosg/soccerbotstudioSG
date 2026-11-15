@@ -706,3 +706,5 @@ Initial HTML has a neutral full-page loader. Only an actual browser reload shows
 Branded loaders without a supplied visible message show “Loading...” by default, including normal entry, route fallbacks and compact loaders. Explicit refresh and payment/recovery messages take precedence; loading timing and navigation behavior are unchanged.
 
 Review Booking performs local validation and navigation without a button spinner or progress fill. Submission/navigation guards still prevent duplicate actions; actual profile saves retain their loading feedback.
+
+Full-page branded loaders remain visible for at least one second per continuous loading episode. Document entry/refresh, logo navigation and shared booking overlays use the same minimum. Slow checks add no extra second after completion, and changing the operation message does not restart the minimum. Actual refresh checks still finish inside one cover. Cancellation/unmount releases timers; button and compact inline loader timing is unchanged.

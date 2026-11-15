@@ -668,7 +668,11 @@ it("reopening an expired paid booking shows the saved full confirmation without 
   );
   fireEvent.click(screen.getByRole("link", { name: "Back to home" }));
   expect(navigation.push).toHaveBeenCalledWith("/");
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   expect(fetch.mock.calls.at(-1)?.[0]).toBe(`/api/attempts/${first}/dismiss`);
 });
 
@@ -2636,6 +2640,8 @@ it("late unpaid-release acknowledgement cannot override newer payment evidence a
     const remount = render(tree());
     await act(async () => {});
     expect(awaiting).toHaveBeenCalledWith(first);
+    if (vi.isFakeTimers())
+      await act(async () => vi.advanceTimersByTimeAsync(1000));
     expect(document.querySelector(".booking-flow-overlay")).toBeNull();
     remount.unmount();
     awaiting.mockClear();

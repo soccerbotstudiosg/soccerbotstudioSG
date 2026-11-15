@@ -18,6 +18,7 @@ let finishFonts: () => void;
 let frame: FrameRequestCallback | undefined;
 const originalFonts = Object.getOwnPropertyDescriptor(document, "fonts");
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
   booking.ready = false;
   navigation = "reload";
   Object.defineProperty(performance, "getEntriesByType", {
@@ -51,6 +52,7 @@ afterEach(() => {
     Object.defineProperty(performance, "getEntriesByType", originalNavigation);
   else Reflect.deleteProperty(performance, "getEntriesByType");
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 const content = (
   <>
@@ -89,6 +91,10 @@ test("refresh cover survives server HTML and hydration until restored state font
   expect(screen.getByRole("status")).toBeVisible();
   expect(requestAnimationFrame).not.toHaveBeenCalled();
   await act(async () => finishFonts());
+  await act(async () => vi.advanceTimersByTime(999));
+  expect(frame).toBeUndefined();
+  expect(screen.getByRole("status")).toBeVisible();
+  await act(async () => vi.advanceTimersByTime(1));
   expect(frame).toBeDefined();
   expect(screen.getByRole("status")).toBeVisible();
   act(() => frame!(0));
@@ -116,9 +122,11 @@ test("refresh cleanup prevents late font and frame completions from revealing an
   const first = render(<PageRefreshBoundary>{content}</PageRefreshBoundary>);
   first.unmount();
   await act(async () => finishFonts());
+  await act(async () => vi.advanceTimersByTime(1000));
   expect(requestAnimationFrame).not.toHaveBeenCalled();
   const second = render(<PageRefreshBoundary>{content}</PageRefreshBoundary>);
   await act(async () => {});
+  await act(async () => vi.advanceTimersByTime(1000));
   expect(frame).toBeDefined();
   second.unmount();
   expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
@@ -152,6 +160,7 @@ test("refresh retains one cover through account calendar and confirmation checks
   const view = render(<Page label="Opening booking" />);
   const cover = screen.getByRole("status", { name: "Refreshing…" });
   await act(async () => finishFonts());
+  await act(async () => vi.advanceTimersByTime(1000));
   expect(requestAnimationFrame).not.toHaveBeenCalled();
   for (const label of [
     "Checking dates…",
@@ -206,6 +215,7 @@ test("normal and browser return navigation never say refreshing and preserve pay
       "Loading...",
     );
     await act(async () => finishFonts());
+    await act(async () => vi.advanceTimersByTime(1000));
     act(() => frame!(0));
     expect(document.querySelector("#page-refresh")).toBeNull();
     expect(

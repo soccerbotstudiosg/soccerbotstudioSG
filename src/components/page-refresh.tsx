@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useBooking } from "@/features/booking/provider";
 import { useBookingLoadingState } from "@/features/booking/booking-loading";
-import { BrandLoading } from "./brand-loading";
+import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
 
 const subscribeToNavigation = () => () => {};
 const isReload = () =>
@@ -22,6 +22,14 @@ const serverNavigation = () => false;
 export function PageRefreshBoundary({ children }: { children: ReactNode }) {
   const { ready } = useBooking();
   const [complete, setComplete] = useState(false);
+  const [minimumElapsed, setMinimumElapsed] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setMinimumElapsed(true),
+      FULL_PAGE_LOADING_MIN_MS,
+    );
+    return () => clearTimeout(timer);
+  }, []);
   const reloading = useSyncExternalStore(
     subscribeToNavigation,
     isReload,
@@ -36,7 +44,7 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     return () => setDocumentLoading?.(false);
   }, [complete, reloading, setDocumentLoading]);
   useEffect(() => {
-    if (complete || !ready || (reloading && pending)) return;
+    if (complete || !minimumElapsed || !ready || (reloading && pending)) return;
     let active = true;
     let frame = 0;
     const reveal = () => {
@@ -50,7 +58,7 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
       active = false;
       cancelAnimationFrame(frame);
     };
-  }, [complete, ready, reloading, pending]);
+  }, [complete, minimumElapsed, ready, reloading, pending]);
   return (
     <>
       <div

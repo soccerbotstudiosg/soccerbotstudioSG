@@ -6693,3 +6693,13 @@ The owner requested “Loading...” on empty loaders. Added the fallback in the
 ### 15 November 2026 — Immediate review transition and Guest label
 
 Renamed the unsigned entry action to Guest, including accessible labels and existing test locators. Removed Review Booking spinner/progress feedback for its local validation/navigation while preserving duplicate-submission guards and real profile-save feedback. Existing account and details coverage remains; browser locators follow the approved label.
+
+### 15 November 2026 — Minimum full-page loading visibility (local only)
+
+The owner observed a quick loading flash on homepage revisits and requested a one-second minimum for full-page loaders only. Added the shared duration and retained-overlay lifecycle; document covers wait for both the minimum and readiness, while navigation logos count their own visible interval. Compact/button loaders, provider requests and cancellation authority are unchanged. Existing timing tests assert the 999ms boundary, completion at one second, one overlay across message changes, slow-operation completion without extra delay, restored interactivity and cleanup. Initial focused checks exposed two test microtask synchronization assumptions after the minimum timer; fixed those with asynchronous fake-clock act, without changing timeouts or coverage. The owner explicitly requires local-only work until another push request.
+
+Integration tests that asserted immediate overlay removal now await the intentional minimum before checking interactivity. Two multi-scenario loops were split into eleven isolated cases with their original assertions and real timer semantics; this adds nine inventory entries without extending test deadlines. Timer-only fakes had altered unrelated recovery scheduling, so they were not retained for those scenarios. Focused timing tests still use controlled clocks to prove the minimum itself.
+
+Local evidence: all 389 unit/component tests pass; a zero-minimum mutation fails three timing regressions, then the intended source was restored. Production build and the 15-route export guard pass. The profile-save focus test now waits for the initial blocking overlay to finish before submitting, matching actual user interaction. No browser was launched and no commit, push, CI restart or deployment was performed for this follow-up.
+
+The owner subsequently authorized the consolidated PR81 summary, staging and merge on 15 November 2026. Reuse the completed local evidence, push one final candidate, then require its complete CI and exact-revision staging health before merge. This authorization does not include new resources, provider actions or configuration changes.

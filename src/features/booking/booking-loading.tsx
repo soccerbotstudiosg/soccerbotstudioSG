@@ -14,7 +14,7 @@ import {
   CONFLICT_CHECKING,
   ACTIVE_CHECKOUT_CHECKING,
 } from "@/domain/booking-messages";
-import { BrandLoading } from "@/components/brand-loading";
+import { BrandLoading, useMinimumLoading } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
 const feedbackMessage = (label?: string) =>
   [
@@ -64,7 +64,10 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
       });
   }, []);
   const overlay = [...pending.values()].find((entry) => entry.overlay);
-  const busy = !!overlay;
+  const visibleLabel = useMinimumLoading(
+    documentLoading ? undefined : overlay?.label,
+  );
+  const busy = !!visibleLabel;
   useLayoutEffect(() => {
     if (!busy) return;
     const main = document.getElementById("main");
@@ -95,8 +98,8 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
         createPortal(
           <div className="booking-flow-overlay">
             <BrandLoading
-              label={overlay.label}
-              message={feedbackMessage(overlay.label)}
+              label={visibleLabel}
+              message={feedbackMessage(visibleLabel)}
             />
           </div>,
           document.body,

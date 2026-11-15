@@ -89,7 +89,7 @@ test("shows the logo on booking entry even when the destination is already prefe
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/account/");
   navigation.path = "/book/account/";
   view.rerender(<App />);
-  act(() => vi.advanceTimersByTime(479));
+  act(() => vi.advanceTimersByTime(999));
   expect(screen.getByRole("status")).toBeInTheDocument();
   act(() => vi.advanceTimersByTime(181));
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -199,7 +199,7 @@ test("studio navigation uses the same branded loader and restores focus after ar
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/studio/");
   navigation.path = "/studio/";
   view.rerender(<StudioLink />);
-  act(() => vi.advanceTimersByTime(660));
+  act(() => vi.advanceTimersByTime(1180));
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(screen.getByRole("main")).toHaveFocus();
 });
@@ -225,7 +225,7 @@ test("live entry prepares identity during hero and hands off once after skip", a
   ).toBeInTheDocument();
   navigation.path = "/book/account/";
   view.rerender(<App arena />);
-  act(() => vi.advanceTimersByTime(660));
+  act(() => vi.advanceTimersByTime(1180));
   expect(screen.getAllByRole("status")).toHaveLength(1);
   expect(screen.queryByText("Please do not close or refresh.")).toBeNull();
   const prep = takeIdentityEntry(
@@ -248,7 +248,7 @@ test("live reduced motion keeps the functional full loader and same-route links 
   await act(async () => {});
   navigation.path = "/book/account";
   view.rerender(<App />);
-  act(() => vi.advanceTimersByTime(660));
+  act(() => vi.advanceTimersByTime(1180));
   fireEvent.click(screen.getByRole("link", { name: "Book now" }));
   expect(identity.refresh).toHaveBeenCalledTimes(1);
   expect(screen.queryByRole("status")).toBeNull();
