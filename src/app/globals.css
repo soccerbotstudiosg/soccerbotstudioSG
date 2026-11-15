@@ -2417,9 +2417,6 @@
       opacity: 0 !important;
       visibility: hidden !important;
     }
-    .page-loading {
-      display: none !important;
-    }
     .pitch-entry {
       display: none !important;
     }

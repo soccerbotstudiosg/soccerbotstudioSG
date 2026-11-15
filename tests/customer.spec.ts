@@ -240,10 +240,15 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
       );
       await expect(page.locator("#main")).not.toBeVisible();
       await expect(page.locator(".site-footer")).not.toBeVisible();
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await expect(
+        cover.getByRole("status", { name: "Refreshing…" }),
+      ).toBeVisible();
+      await page.emulateMedia({ reducedMotion: "no-preference" });
       const bounds = await cover.boundingBox();
       expect(bounds).toEqual({ x: 0, y: 0, ...page.viewportSize()! });
       await page.evaluate(() => {
-        const check = () => {
+        const check = (source: string) => {
           if (document.getElementById("page-refresh")) return;
           const main = document.getElementById("main");
           const loading = [...document.querySelectorAll(".page-loading")].some(
@@ -257,10 +262,33 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
               );
             },
           );
-          if (main && main.getBoundingClientRect().height <= 1 && !loading)
+          if (main && main.getBoundingClientRect().height <= 1 && !loading) {
             document.documentElement.dataset.refreshGap = "true";
+            document.documentElement.dataset[
+              source === "frame" ? "refreshFrameGap" : "refreshMutationGap"
+            ] = "true";
+            if (!document.documentElement.dataset.refreshGapDetail)
+              document.documentElement.dataset.refreshGapDetail =
+                JSON.stringify({
+                  source,
+                  path: location.pathname,
+                  viewport: [innerWidth, innerHeight],
+                  clientWidth: document.documentElement.clientWidth,
+                  root: document.documentElement
+                    .getBoundingClientRect()
+                    .toJSON(),
+                  main: main.innerHTML.slice(0, 1000),
+                  loaders: [...document.querySelectorAll(".page-loading")].map(
+                    (node) => ({
+                      box: node.getBoundingClientRect().toJSON(),
+                      visibility: getComputedStyle(node).visibility,
+                      label: node.getAttribute("aria-label"),
+                    }),
+                  ),
+                });
+          }
         };
-        const observer = new MutationObserver(check);
+        const observer = new MutationObserver(() => check("mutation"));
         observer.observe(document.body, {
           childList: true,
           subtree: true,
@@ -268,7 +296,7 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
         });
         let frame = 0;
         const sample = () => {
-          check();
+          check("frame");
           frame = requestAnimationFrame(sample);
         };
         frame = requestAnimationFrame(sample);
@@ -290,10 +318,16 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
           .locator("#main:visible, .booking-flow-overlay .page-loading:visible")
           .first(),
       ).toBeVisible();
-      await expect(page.locator("html")).not.toHaveAttribute(
-        "data-refresh-gap",
-        "true",
-      );
+      await expect(
+        page.locator("html"),
+        JSON.stringify(
+          await page.locator("html").evaluate((node) => ({
+            detail: node.getAttribute("data-refresh-gap-detail"),
+            frame: node.getAttribute("data-refresh-frame-gap"),
+            mutation: node.getAttribute("data-refresh-mutation-gap"),
+          })),
+        ),
+      ).not.toHaveAttribute("data-refresh-gap", "true");
       await page.evaluate(() =>
         (
           window as unknown as { stopRefreshAudit: () => void }
