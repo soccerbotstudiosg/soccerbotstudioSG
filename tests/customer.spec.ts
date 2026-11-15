@@ -1981,7 +1981,11 @@ test("header blue and the typography hierarchy stay consistent across every book
     expect(line.content).toBe('""');
     expect(parseFloat(line.height)).toBeGreaterThan(0);
   }
-  expect(dividerLines[0].height).toBe(dividerLines[1].height);
+  // Flex layout can allocate its remaining 1/64px to only one divider line.
+  expect(parseFloat(dividerLines[0].height)).toBeCloseTo(
+    parseFloat(dividerLines[1].height),
+    1,
+  );
   await expect(divider).toHaveCSS("font-weight", "900");
   await expect(divider).toHaveCSS("font-style", "italic");
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {

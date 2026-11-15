@@ -40,7 +40,7 @@ Shared Continue actions reserve32px above and24px below, including24px viewport-
 
 ## Verification and next action
 
-Four affected account component tests pass. Browser typography coverage now checks shared entry/primary heights,32/24px clearance and absence of the calendar wrapper; existing test titles/counts remain unchanged. Run static checks, publish one candidate, then verify exact-head CI and staging health before authorized merge. Browser/device execution remains owner/CI-operated.
+Four affected account component tests pass. Browser typography coverage now checks shared entry/primary heights,32/24px clearance and absence of the calendar wrapper; existing test titles/counts remain unchanged. Static checks passed. PR80 run43706149204/backend job132787908880 found a new divider assertion comparing fractional CSS heights as exact strings: Chromium allocated8.1875px and8.20312px (1/64px difference). Phone passed. Compare numeric heights to one decimal place while preserving line width/content, positive height, button geometry and all flow assertions. Publish this test-only correction, then verify exact-head CI and staging health before authorized merge. Browser/device execution remains owner/CI-operated.
 
 ## Remaining owner acceptance
 
