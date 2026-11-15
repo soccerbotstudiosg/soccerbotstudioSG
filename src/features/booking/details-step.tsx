@@ -545,7 +545,9 @@ export function DetailsStep({
       >
         <p className="booking-required">* Required fields</p>
         <section className="surface">
-          {profileOnly && <h2 className="section-title">Contact profile</h2>}
+          <h2 className="section-title">
+            {profileOnly ? "Contact profile" : "Booking Contact"}
+          </h2>
           <div className="field-grid">
             {field("name", "Full name")}
             {field(

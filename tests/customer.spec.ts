@@ -2097,7 +2097,8 @@ test("header blue and the typography hierarchy stay consistent across every book
     .first()
     .click();
   await pageHeading("Your details");
-  await expect(page.locator("#details-form h2")).toHaveCount(0);
+  await expect(page.locator("#details-form h2")).toHaveText("Booking Contact");
+  await sectionType("#details-form h2");
   await expect(page.locator(".booking-required")).toHaveText(
     "* Required fields",
   );

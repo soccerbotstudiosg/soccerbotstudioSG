@@ -305,8 +305,12 @@ test("verified details saves only on explicit action and ignores completion afte
   );
   expect(saveProfile).not.toHaveBeenCalled();
   expect(
-    screen.getByText(/Anyone using this verified email shares/),
-  ).toBeInTheDocument();
+    screen.queryByText(/Anyone using this verified email shares/),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: "Booking Contact" }),
+  ).toBeVisible();
+  expect(screen.getByText("* Required fields")).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Review Booking" }));
   expect(saveProfile).toHaveBeenCalledTimes(1);
   expect(mocks.push).toHaveBeenCalledWith("/book/review/");
