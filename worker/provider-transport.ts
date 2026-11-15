@@ -72,7 +72,7 @@ export async function identityRequest(
               to: [z.email().max(254).parse(payload.recipient)],
               reply_to: CONTACT.email,
               subject: "We’ve received your SoccerBotStudio enquiry",
-              text: "Thank you for contacting SoccerBotStudio Singapore.\n\nWe’ve received your enquiry and will reach out as soon as we can.\n\nSoccerBotStudio Singapore",
+              text: `Thank you for contacting SoccerBotStudio Singapore.\n\nWe’ve received your enquiry and will reach out as soon as we can.\n\nA copy of your submitted enquiry:\n\n${z.string().min(1).max(8192).parse(payload.text)}\n\nSoccerBotStudio Singapore`,
             })
           : kind === "support"
             ? JSON.stringify({

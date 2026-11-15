@@ -197,7 +197,9 @@ test("public enquiry sends fixed staff recipients and customer reply-to without 
   );
   assert.equal(acknowledgement.body.html, undefined);
   assert.match(acknowledgement.body.text, /will reach out as soon as we can/);
-  assert.equal(acknowledgement.body.text.includes(input.values.message), false);
+  assert.ok(acknowledgement.body.text.includes(mail.body.text));
+  for (const value of Object.values(input.values))
+    if (value) assert.ok(acknowledgement.body.text.includes(value));
   assert.equal(
     acknowledgement.headers.get("Idempotency-Key"),
     `enquiry-acknowledgement/${input.key}`,

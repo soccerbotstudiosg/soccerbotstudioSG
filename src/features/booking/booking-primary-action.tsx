@@ -31,10 +31,15 @@ export function BookingPrimaryAction({
     if (loading) {
       if (!reduced && bar.animate)
         fill.current = bar.animate(
-          [{ transform: "scaleX(0)" }, { transform: "scaleX(0.9)" }],
+          [
+            { transform: "scaleX(0)", offset: 0 },
+            { transform: "scaleX(0.8)", offset: 0.12 },
+            { transform: "scaleX(0.94)", offset: 0.4 },
+            { transform: "scaleX(0.98)", offset: 1 },
+          ],
           {
-            duration: 12000,
-            easing: "cubic-bezier(0.1, 0.6, 0.2, 1)",
+            duration: 5000,
+            easing: "linear",
             fill: "forwards",
           },
         );

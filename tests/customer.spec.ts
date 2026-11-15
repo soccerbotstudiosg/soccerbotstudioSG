@@ -1919,41 +1919,26 @@ test("header blue and the typography hierarchy stay consistent across every book
   const guest = page.getByRole("button", { name: "Continue as Guest" });
   const signIn = page.getByRole("button", { name: "Sign in", exact: true });
   await page.mouse.move(0, 0);
-  for (const card of [guest, signIn]) {
-    await expect(card).toBeInViewport({ ratio: 1 });
-    await expect(card).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await expect(card).toHaveCSS("color", brand);
-    await expect(card).toHaveCSS("font-weight", "900");
-    await expect(card).toHaveCSS("font-style", "italic");
-    await expect(card).toHaveCSS("letter-spacing", "normal");
-    await expect(card).toHaveCSS("border-top-left-radius", "3px");
-    await expect(card).toHaveCSS("border-top-right-radius", "12px");
-    await expect(card).toHaveCSS("border-bottom-right-radius", "3px");
-    await expect(card).toHaveCSS("border-bottom-left-radius", "12px");
-    await expect(card.locator("img")).toHaveAttribute("alt", "");
-    await expect(card.locator("img")).toHaveCSS("filter", "blur(3px)");
-    await expect(card.locator("img")).toHaveCSS("opacity", "0.22");
-    await expect
-      .poll(() =>
-        card
-          .locator("img")
-          .evaluate(
-            (image: HTMLImageElement) =>
-              image.complete && image.naturalWidth > 0,
-          ),
-      )
-      .toBe(true);
+  for (const button of [guest, signIn]) {
+    await expect(button).toBeInViewport({ ratio: 1 });
+    await expect(button).toHaveCSS("background-color", brand);
+    await expect(button).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(button).toHaveCSS("font-size", "16px");
+    await expect(button).toHaveCSS("font-weight", "900");
+    await expect(button).toHaveCSS("font-style", "italic");
+    await expect(button).toHaveCSS("letter-spacing", "normal");
+    await expect(button).toHaveCSS("border-radius", "3px 12px");
+    await expect(button.locator("img")).toHaveCount(0);
+    await expect(button.locator("svg")).toHaveCount(2);
+    await expect(button).toHaveCSS("align-items", "center");
+    await expect(button).toHaveCSS("justify-content", "center");
   }
   const guestBox = await guest.boundingBox();
   const signInBox = await signIn.boundingBox();
   expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
   expect(guestBox!.width).toBeCloseTo(signInBox!.width, 0);
-  expect(guestBox!.height).toBeGreaterThanOrEqual(210);
+  expect(guestBox!.height).toBeGreaterThanOrEqual(62);
   expect(guestBox!.x + guestBox!.width).toBeLessThan(signInBox!.x);
-  await expect(guest).toHaveCSS("align-items", "flex-start");
-  await expect(guest).toHaveCSS("justify-content", "flex-end");
-  await expect(signIn).toHaveCSS("align-items", "flex-end");
-  await expect(signIn).toHaveCSS("justify-content", "flex-start");
   const divider = page.locator(".access-choice-divider");
   await expect(divider).toHaveCSS("font-family", /Roboto/);
   await expect(divider).toHaveCSS("font-size", "20px");
@@ -1977,8 +1962,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(divider).toHaveCSS("font-style", "italic");
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
     await guest.hover();
-    await expect(guest).toHaveCSS("border-color", "rgb(23, 96, 120)");
-    await expect(guest).toHaveCSS("color", brand);
+    await expect(guest).toHaveCSS("color", "rgb(255, 255, 255)");
   }
   await guest.click();
   await pageHeading("Your session");

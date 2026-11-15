@@ -1,5 +1,4 @@
 "use client";
-import { bookingEntryMedia } from "@/content/media";
 import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading } from "./booking-loading";
@@ -412,7 +411,7 @@ export function AccountStep({
           {!verifiedIdentity && (
             <>
               <button
-                className="button access-choice access-choice-guest"
+                className="button booking-entry-action"
                 aria-label="Continue as Guest"
                 disabled={busy}
                 onClick={() => {
@@ -424,15 +423,9 @@ export function AccountStep({
                   router.push("/book/session/");
                 }}
               >
-                <img
-                  src={bookingEntryMedia.guest.src}
-                  width={bookingEntryMedia.guest.width}
-                  height={bookingEntryMedia.guest.height}
-                  alt=""
-                />
-                <span className="access-choice-label">
-                  {busy ? "Preparing…" : "Guest"}
-                </span>
+                <Icon name="users" />
+                <span>{busy ? "Preparing…" : "Continue as Guest"}</span>
+                <Icon name="chevron" />
               </button>
               <span className="access-choice-divider">or</span>
             </>
@@ -444,11 +437,7 @@ export function AccountStep({
             </>
           )}
           <button
-            className={
-              verifiedIdentity
-                ? "button wide booking-entry-action"
-                : "button access-choice access-choice-signin"
-            }
+            className="button wide booking-entry-action"
             disabled={busy}
             onClick={() => {
               if (verifiedIdentity)
@@ -466,23 +455,9 @@ export function AccountStep({
               }
             }}
           >
-            {verifiedIdentity ? (
-              <>
-                <Icon name="mail" />
-                Continue signed in
-                <Icon name="chevron" />
-              </>
-            ) : (
-              <>
-                <img
-                  src={bookingEntryMedia.signIn.src}
-                  width={bookingEntryMedia.signIn.width}
-                  height={bookingEntryMedia.signIn.height}
-                  alt=""
-                />
-                <span className="access-choice-label">Sign in</span>
-              </>
-            )}
+            <Icon name="mail" />
+            <span>{verifiedIdentity ? "Continue signed in" : "Sign in"}</span>
+            <Icon name="chevron" />
           </button>
           {verifiedIdentity && (
             <div className="account-actions">

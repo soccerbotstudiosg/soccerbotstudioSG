@@ -229,6 +229,7 @@ export async function submitEnquiry(request: Request, env: Env) {
         payload: {
           sender: sender.data,
           recipient: values.email,
+          text,
           idempotencyKey: `enquiry-acknowledgement/${key}`,
         },
       },

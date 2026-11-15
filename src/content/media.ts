@@ -103,20 +103,3 @@ export const socialPreview = {
   height: 907,
   alt: "SOCCERBOTSTUDIO Singapore — Interactive Football. Performance · Experience · Production. Two players in the interactive football arena.",
 };
-
-export const bookingEntryMedia = {
-  guest: {
-    src: sitePath("/assets/cb9cfb34cf10.jpg"),
-    source: "https://soccerbot360.com/en/anwendungen",
-    sourceAsset: "https://soccerbot360.com/features/benchmark.jpg",
-    width: 1080,
-    height: 675,
-  },
-  signIn: {
-    src: sitePath("/assets/8386512b73b3.jpg"),
-    source: "https://soccerbot360.com/en/studio",
-    sourceAsset: "https://soccerbot360.com/studio/schulen.jpg",
-    width: 1080,
-    height: 810,
-  },
-};

@@ -2,9 +2,9 @@
 
 ## Active outcome
 
-Repair the revoked-checkout notice locator on PR79 (`fix/booking-card-clarity`), inspected head `f6ff47748fb5473d66602970ec52a59f8d6860e0`. CI43697352560 passed frontend, both backend browser shards and all Worker groups/runtime. Both live-email shards failed the same case on all devices because the newly added unscoped alert locator also matched Next.js's route announcer. Logs show the correct step1 route and exact expiry notice. Scope the alert to main, following every other alert assertion in this suite. Application behavior and all expected outcomes remain unchanged.
+Local review on PR79 (`fix/booking-card-clarity`), based on `9f33910`: restore the pre-photo Guest/Sign in buttons in one row on desktop and phone. Remove the rejected entry photos/styles. Include submitted enquiry details in the customer auto-reply and accelerate the initial loading fill, slowing near completion. Owner authorized publication of this consolidated candidate. Commit and push to the existing PR79; final-head CI and staging acceptance remain pending.
 
-Source/import/inventory, lint, types, formatting and diff checks pass. Publish this test-only correction. Browser validation remains CI/owner-only; merge remains pending staging acceptance and explicit authorization.
+Affected component tests pass (10); isolated enquiry Worker tests pass (12), including full submission-copy assertions. Browser/device and inbox acceptance remain pending. No live messages were sent.
 
 ## Current scope
 
@@ -36,15 +36,13 @@ Each booking step has one introduction in the existing muted16px lead style. Ent
 
 Calendar cart continuation is removed; the cart retains its total and shares Details top spacing. Shared next actions now float on desktop as well as phones whenever their normal position is outside the visible content area, aligned to the desktop content column. Existing eligibility guards remain unchanged.
 
-Enquiry success now stays on the form with an acknowledgement below its heading; the global Home banner/redirect/timer are removed. Live enquiry delivery sends a fixed automatic customer reply after staff acceptance, with separate stable idempotency keys and shared mail admission. No provider configuration/migration changes or historical resend. Owner inbox acceptance remains pending.
+Enquiry success now stays on the form with an acknowledgement below its heading; the global Home banner/redirect/timer are removed. Live enquiry delivery sends an automatic customer reply containing the submitted enquiry after staff acceptance, with separate stable idempotency keys and shared mail admission. No provider configuration/migration changes or historical resend. Owner inbox acceptance remains pending.
 
 Shared Continue actions reserve32px above and24px below, including24px viewport-bottom clearance when floating. Trainer-dropdown focus no longer outlines its enclosing time card; keyboard focus remains on the active control.
 
 ## Verification and next action
 
-Original failures: CI43697352560, live-email jobs132761042220 and132761042250. The revoked-checkout case reached the approved route and notice, but `getByRole("alert")` matched both the notice and `__next-route-announcer__`. Use `getByRole("main").getByRole("alert")`, preserving exact text, strict uniqueness, usable Guest/Sign in, blank editable draft,401 and zero booking/payment effects. Adjacent alert assertions already use this scope; no title/count/device inventory changes are needed.
-
-Reuse unchanged application/Worker evidence. Static checks passed; push once, then verify exact-head CI and staging source/health before owner acceptance. Prior failures and the earlier intermittent local contact-save timeout remain in Journey; frontend CI on f6ff477 passed.
+Publish the approved one-row entry layout with the enquiry-copy and loading changes. Existing browser typography assertions now cover the restored navy buttons, equal row geometry and absence of photos; CI/owner must execute them. Original CI failures and their repairs remain in Journey. Reuse the passing local checks; inspect the new exact-head CI after push. No staging deployment is claimed.
 
 ## Remaining owner acceptance
 
