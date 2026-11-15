@@ -560,7 +560,9 @@ test("remembered live account edits and rereads contact while native booking sta
     exact: true,
   });
   await expect(page.locator(".page-loading")).toHaveCount(1);
-  await expect(page.locator("#page-refresh")).toHaveCount(0);
+  await expect(page.locator("#page-refresh")).toHaveCount(1);
+  await expect(page.getByText("Refreshing…", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   await expect(page.locator(".page-loading")).toBeVisible();
   await expect(page.locator(".booking-loading")).toHaveCount(0);
   await expect(page.getByLabel("Booking identity")).toHaveCount(0);
@@ -1300,7 +1302,8 @@ test("native guest journey preserves players contact and one checkout across ref
     await page.goBack();
     await returning;
     await expect(page).toHaveURL(/\/book\/payment\/$/);
-    await expect(page.locator("#page-refresh")).toHaveCount(0);
+    await expect(page.getByText("Refreshing…", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".page-loading")).toHaveCount(1);
     await expect(page.locator(".page-loading")).toBeVisible();
     await expect(page.locator(".confirmation-pending-status")).toHaveCount(0);
     await expect(

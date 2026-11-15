@@ -197,8 +197,10 @@ async function payAttempt(page: Page, outcome = "success") {
     }, outcome);
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Processing payment", exact: true }),
+      page.getByRole("status", { name: "Refreshing…" }),
     ).toBeVisible();
+    await expect(page.locator(".page-loading")).toHaveCount(1);
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   }
   await page.clock.runFor(5000);
 }
