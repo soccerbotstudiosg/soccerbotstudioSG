@@ -17,19 +17,21 @@ import {
 import { BrandLoading } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
 const feedbackMessage = (label?: string) =>
-  [
-    "Opening checkout…",
-    "Checking whether your booking was created…",
-    "Preparing your payment link…",
-    CONFLICT_CHECKING,
-    ACTIVE_CHECKOUT_CHECKING,
-    "Checking payment…",
-    "Checking booking…",
-    "Preparing confirmation…",
-    "Payment received. Confirming booking.",
-  ].includes(label ?? "")
-    ? `${label} ${loadingMessage}`
-    : undefined;
+  label === "Refreshing…"
+    ? label
+    : [
+          "Opening checkout…",
+          "Checking whether your booking was created…",
+          "Preparing your payment link…",
+          CONFLICT_CHECKING,
+          ACTIVE_CHECKOUT_CHECKING,
+          "Checking payment…",
+          "Checking booking…",
+          "Preparing confirmation…",
+          "Payment received. Confirming booking.",
+        ].includes(label ?? "")
+      ? `${label} ${loadingMessage}`
+      : undefined;
 const subscribeToHydration = () => () => {};
 const hydratedSnapshot = () => true;
 const serverSnapshot = () => false;

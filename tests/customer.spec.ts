@@ -239,6 +239,42 @@ async function checkRefreshCover(page: Page, paths: string[]) {
       await expect(page.locator(".site-footer")).not.toBeVisible();
       const bounds = await cover.boundingBox();
       expect(bounds).toEqual({ x: 0, y: 0, ...page.viewportSize()! });
+      await page.evaluate(() => {
+        const check = () => {
+          if (document.getElementById("page-refresh")) return;
+          const main = document.getElementById("main");
+          const loading = [...document.querySelectorAll(".page-loading")].some(
+            (node) => {
+              const box = node.getBoundingClientRect();
+              return (
+                getComputedStyle(node).visibility === "visible" &&
+                box.width >= innerWidth - 1 &&
+                box.height >= innerHeight - 1
+              );
+            },
+          );
+          if (main && main.getBoundingClientRect().height <= 1 && !loading)
+            document.documentElement.dataset.refreshGap = "true";
+        };
+        const observer = new MutationObserver(check);
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+        });
+        let frame = 0;
+        const sample = () => {
+          check();
+          frame = requestAnimationFrame(sample);
+        };
+        frame = requestAnimationFrame(sample);
+        (
+          window as unknown as { stopRefreshAudit: () => void }
+        ).stopRefreshAudit = () => {
+          observer.disconnect();
+          cancelAnimationFrame(frame);
+        };
+      });
       release();
       await expect(cover).toHaveCount(0);
       await expect(page.locator("#page-refresh-content")).not.toHaveAttribute(
@@ -250,6 +286,15 @@ async function checkRefreshCover(page: Page, paths: string[]) {
           .locator("#main:visible, .booking-flow-overlay .page-loading:visible")
           .first(),
       ).toBeVisible();
+      await expect(page.locator("html")).not.toHaveAttribute(
+        "data-refresh-gap",
+        "true",
+      );
+      await page.evaluate(() =>
+        (
+          window as unknown as { stopRefreshAudit: () => void }
+        ).stopRefreshAudit(),
+      );
     } finally {
       release();
       await page.unroute(scripts);
