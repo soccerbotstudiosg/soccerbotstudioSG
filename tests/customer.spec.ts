@@ -882,7 +882,7 @@ test("enquiry remains available without external submission or a mock assistant"
     await expect(control).toHaveCSS("font-style", "italic");
   }
   await expect(
-    page.locator(".enquiry-page .booking-heading-row .required-fields"),
+    page.locator(".enquiry-form legend .required-fields"),
   ).toHaveText("* Required fields");
   const enquiryAction = page.getByRole("button", { name: "Send enquiry" });
   await expect(enquiryAction).toBeInViewport({ ratio: 1 });

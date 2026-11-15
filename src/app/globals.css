@@ -628,9 +628,6 @@
     min-width: 0;
     margin-bottom: 0;
   }
-  .booking-heading-row > .required-fields {
-    align-self: center;
-  }
   .enquiry-form > :not(.booking-action-anchor) + :not(.booking-action-anchor) {
     margin-top: 28px;
   }

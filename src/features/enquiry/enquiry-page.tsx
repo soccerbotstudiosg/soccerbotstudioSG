@@ -133,7 +133,6 @@ export function EnquiryPage() {
       </Link>
       <div className="booking-heading-row">
         <h1 className="page-title">Contact the studio</h1>
-        <p className="required-fields">* Required fields</p>
       </div>
       {acknowledged !== null && (
         <div
@@ -189,7 +188,12 @@ export function EnquiryPage() {
         }}
       >
         <fieldset disabled={!ready}>
-          <legend className="mb-5 text-xl font-bold">Your details</legend>
+          <legend className="mb-5 w-full">
+            <span className="contact-heading-row">
+              <span className="text-xl font-bold">Your details</span>
+              <span className="required-fields">* Required fields</span>
+            </span>
+          </legend>
           <div className="grid gap-5 sm:grid-cols-2">
             {field("name", "Full name", "text", true)}
             {field("email", "Email address", "email", true)}

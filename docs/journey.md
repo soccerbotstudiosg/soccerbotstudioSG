@@ -6559,3 +6559,5 @@ CI43673289113 at1881b9e failed in live-email jobs132688162368 and132688162386: t
 ## 15 November 2026 — Contact-card required note and complete loading sweep
 
 Owner clarified that the booking required-fields note belongs on the right of Booking Contact inside the card. Moved the saved-contact equivalent alongside Contact profile and retired the unused main-heading note wrapper. Enquiry placement is unchanged. The primary-action fill now retains its current interpolated position when loading ends and finishes to100% over180ms before enabling the existing readiness animation; reduced motion completes without movement. Cancellation/unmount clears the animation, and provider requests/eligibility are not delayed. Updated existing label-location assertions and retained browser coverage. Final visual/CI acceptance remains pending.
+
+The owner subsequently requested the matching enquiry placement: its required-fields note now sits beside Your details within the first fieldset legend inside the form card. The acknowledgement remains beneath the blue page heading. Updated the existing browser locator; delivery and validation logic are unchanged.
