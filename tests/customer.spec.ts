@@ -208,6 +208,173 @@ async function payment(page: Page, outcome = "success") {
     .click();
   await payAttempt(page, outcome);
 }
+/** Hold application scripts until every route proves its initial refresh cover. */
+async function checkRefreshCover(hostPage: Page, paths: string[]) {
+  const errors: string[] = [];
+  for (const path of paths) {
+    const page = await hostPage.context().newPage();
+    await page.clock.install({ time: new Date("2026-10-05T08:00:00+08:00") });
+    await page.addInitScript(() => {
+      localStorage.setItem("soccerbot-player-app-prompt", "true");
+    });
+    const recordError = (error: Error) => errors.push(error.message);
+    page.on("pageerror", recordError);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const scripts = /\/_next\/.*\.js(?:\?|$)/;
+    await page.route(scripts, async (route) => {
+      await gate;
+      await route.continue();
+    });
+    try {
+      await page.goto(sitePath(path), { waitUntil: "commit" });
+      const cover = page.locator("#page-refresh");
+      await expect(
+        cover.getByRole("status", { name: "Refreshing…" }),
+      ).toBeVisible();
+      await expect(page.locator("#page-refresh-content")).toHaveAttribute(
+        "inert",
+        "",
+      );
+      await expect(page.locator("#main")).not.toBeVisible();
+      await expect(page.locator(".site-footer")).not.toBeVisible();
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await expect(
+        cover.getByRole("status", { name: "Refreshing…" }),
+      ).toBeVisible();
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      const bounds = await cover.boundingBox();
+      expect(bounds).toEqual({ x: 0, y: 0, ...page.viewportSize()! });
+      await page.evaluate(() => {
+        const check = (source: string) => {
+          if (document.getElementById("page-refresh")) return;
+          const main = document.getElementById("main");
+          const root = document.documentElement.getBoundingClientRect();
+          const loading = [...document.querySelectorAll(".page-loading")].some(
+            (node) => {
+              const box = node.getBoundingClientRect();
+              return (
+                getComputedStyle(node).visibility === "visible" &&
+                // Chromium clientWidth includes the stable gutter even when the
+                // root and fixed overlay both exclude it. Compare actual bounds.
+                box.left <= root.left + 1 &&
+                box.right >= root.right - 1 &&
+                box.top <= 1 &&
+                box.bottom >= innerHeight - 1
+              );
+            },
+          );
+          if (main && main.getBoundingClientRect().height <= 1 && !loading) {
+            document.documentElement.dataset.refreshGap = "true";
+            document.documentElement.dataset[
+              source === "frame" ? "refreshFrameGap" : "refreshMutationGap"
+            ] = "true";
+            if (!document.documentElement.dataset.refreshGapDetail)
+              document.documentElement.dataset.refreshGapDetail =
+                JSON.stringify({
+                  source,
+                  path: location.pathname,
+                  viewport: [innerWidth, innerHeight],
+                  clientWidth: document.documentElement.clientWidth,
+                  root: document.documentElement
+                    .getBoundingClientRect()
+                    .toJSON(),
+                  main: main.innerHTML.slice(0, 1000),
+                  loaders: [...document.querySelectorAll(".page-loading")].map(
+                    (node) => ({
+                      box: node.getBoundingClientRect().toJSON(),
+                      visibility: getComputedStyle(node).visibility,
+                      label: node.getAttribute("aria-label"),
+                    }),
+                  ),
+                });
+          }
+        };
+        const observer = new MutationObserver(() => check("mutation"));
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+        });
+        let frame = 0;
+        const sample = () => {
+          check("frame");
+          frame = requestAnimationFrame(sample);
+        };
+        frame = requestAnimationFrame(sample);
+        (
+          window as unknown as { stopRefreshAudit: () => void }
+        ).stopRefreshAudit = () => {
+          observer.disconnect();
+          cancelAnimationFrame(frame);
+        };
+      });
+      release();
+      await expect(cover).toHaveCount(0);
+      await expect(page.locator("#page-refresh-content")).not.toHaveAttribute(
+        "inert",
+        "",
+      );
+      await expect(
+        page
+          .locator("#main:visible, .booking-flow-overlay .page-loading:visible")
+          .first(),
+      ).toBeVisible();
+      await expect(
+        page.locator("html"),
+        JSON.stringify(
+          await page.locator("html").evaluate((node) => ({
+            detail: node.getAttribute("data-refresh-gap-detail"),
+            frame: node.getAttribute("data-refresh-frame-gap"),
+            mutation: node.getAttribute("data-refresh-mutation-gap"),
+          })),
+        ),
+      ).not.toHaveAttribute("data-refresh-gap", "true");
+      await page.evaluate(() =>
+        (
+          window as unknown as { stopRefreshAudit: () => void }
+        ).stopRefreshAudit(),
+      );
+    } finally {
+      release();
+      await page.unroute(scripts);
+      page.off("pageerror", recordError);
+      await page.close();
+    }
+  }
+  expect(errors).toEqual([]);
+}
+
+test("public routes cover incomplete rendering until hydration is ready", async ({
+  page,
+}) => {
+  await checkRefreshCover(page, [
+    "/",
+    "/studio/",
+    "/enquiry/",
+    "/terms-of-service/",
+    "/privacy-policy/",
+    "/refund-policy/",
+    "/missing-refresh-route/",
+  ]);
+});
+test("booking and confirmation routes cover incomplete rendering until hydration is ready", async ({
+  page,
+}) => {
+  await checkRefreshCover(page, [
+    "/book/account/",
+    "/book/session/",
+    "/book/time/",
+    "/book/details/",
+    "/book/review/",
+    "/book/payment/",
+    "/book/confirmation/",
+    "/confirmation/",
+  ]);
+});
+
 test("public routes remove staff access and fit the viewport", async ({
   page,
 }) => {
@@ -1875,6 +2042,21 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(
       page.locator(".section-reveal, .section-reveal-pending"),
     ).toHaveCount(0);
+    const actionAnchor = page.locator(".booking-action-anchor");
+    if (await actionAnchor.count()) {
+      await expect(actionAnchor).toHaveCSS("padding-top", "32px");
+      await expect(actionAnchor).toHaveCSS("padding-bottom", "24px");
+      const actionButton = actionAnchor.locator(
+        ".booking-primary-action > .button",
+      );
+      expect(
+        await actionButton.evaluate((node) =>
+          parseFloat(getComputedStyle(node).height),
+        ),
+      ).toBeCloseTo(page.viewportSize()!.width <= 700 ? 48 : 60.4, 0);
+      if (await page.locator(".session-times-region").count())
+        await expect(actionAnchor.locator("..")).not.toHaveClass("actions");
+    }
     const headings = page.locator(selector);
     expect(await headings.count()).toBeGreaterThan(0);
     const styles = await headings.evaluateAll((nodes) =>
@@ -1937,7 +2119,14 @@ test("header blue and the typography hierarchy stay consistent across every book
   const signInBox = await signIn.boundingBox();
   expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
   expect(guestBox!.width).toBeCloseTo(signInBox!.width, 0);
-  expect(guestBox!.height).toBeGreaterThanOrEqual(62);
+  const actionHeight = page.viewportSize()!.width <= 700 ? 48 : 60.4;
+  for (const button of [guest, signIn]) {
+    expect(
+      await button.evaluate((node) =>
+        parseFloat(getComputedStyle(node).height),
+      ),
+    ).toBeCloseTo(actionHeight, 0);
+  }
   expect(guestBox!.x + guestBox!.width).toBeLessThan(signInBox!.x);
   const divider = page.locator(".access-choice-divider");
   await expect(divider).toHaveCSS("font-family", /Roboto/);
@@ -1954,10 +2143,16 @@ test("header blue and the typography hierarchy stay consistent across every book
       };
     }),
   );
-  expect(dividerLines).toEqual([
-    { width: "1px", height: "24px", content: '""' },
-    { width: "1px", height: "24px", content: '""' },
-  ]);
+  for (const line of dividerLines) {
+    expect(line.width).toBe("1px");
+    expect(line.content).toBe('""');
+    expect(parseFloat(line.height)).toBeGreaterThan(0);
+  }
+  // Flex layout can allocate its remaining 1/64px to only one divider line.
+  expect(parseFloat(dividerLines[0].height)).toBeCloseTo(
+    parseFloat(dividerLines[1].height),
+    1,
+  );
   await expect(divider).toHaveCSS("font-weight", "900");
   await expect(divider).toHaveCSS("font-style", "italic");
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {

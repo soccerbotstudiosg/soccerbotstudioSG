@@ -3220,6 +3220,7 @@ test("batch transport claims recheck revocation at each creation boundary withou
 test("single and batch recovery retain verified evidence with bounded read overlap and measured D1 work", async () => {
   for (const count of [1, 2, 4, 5]) {
     const logs = [];
+    const firstReadPair = Promise.withResolvers();
     let measuring = false,
       active = 0,
       maximum = 0;
@@ -3239,7 +3240,11 @@ test("single and batch recovery retain verified evidence with bounded read overl
         ) {
           active++;
           maximum = Math.max(maximum, active);
+          if (active === 2) firstReadPair.resolve();
           try {
+            // Hold the first read until its independent sibling enters; runner
+            // scheduling and authentication must not determine overlap evidence.
+            await firstReadPair.promise;
             await new Promise((resolve) => setTimeout(resolve, 400));
           } finally {
             active--;
@@ -3302,6 +3307,7 @@ test("single and batch recovery retain verified evidence with bounded read overl
       );
       assert.deepEqual(m.unexpected, []);
     } finally {
+      firstReadPair.resolve();
       await m.close();
     }
   }

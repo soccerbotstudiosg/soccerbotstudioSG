@@ -206,7 +206,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
     returningToConfirmation ||
     (actual !== step && !retainingReview)
   )
-    return <BrandLoading overlay={false} />;
+    return <BrandLoading />;
   const Screen = screens[step];
   if (step === "payment" || step === "confirmation") return <Screen />;
   const recoveryNotice = action.calendarRecovery && attempt && (
@@ -314,11 +314,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
                 )}
               </>
             )}
-            {!mobile && displayStep === "time" && (
-              <div className="actions">
-                <BasketContinue />
-              </div>
-            )}
+            {!mobile && displayStep === "time" && <BasketContinue />}
           </section>
           {!mobile && ["time", "details"].includes(displayStep) && (
             <Summary basket={step === "time"} />

@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
+import { renderToString } from "react-dom/server";
+import { PendingConfirmation } from "./confirmation-step";
 import { BookingLoading, BookingLoadingProvider } from "./booking-loading";
 
 test("overlapping booking reads share one full-page loader and preserve the mounted form", () => {
@@ -12,6 +14,17 @@ test("overlapping booking reads share one full-page loader and preserve the moun
       </BookingLoadingProvider>
     );
   }
+  const initialHtml = document.createElement("div");
+  initialHtml.innerHTML = renderToString(
+    <BookingLoadingProvider>
+      <PendingConfirmation />
+    </BookingLoadingProvider>,
+  );
+  expect(initialHtml.querySelectorAll(".page-loading")).toHaveLength(1);
+  expect(initialHtml.querySelector('[role="status"]')).toHaveAttribute(
+    "aria-label",
+    "Checking booking…",
+  );
   const view = render(<Screen first={false} second={false} />);
   const input = screen.getByLabelText("Contact name");
   fireEvent.change(input, { target: { value: "Retained name" } });

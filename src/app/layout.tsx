@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { BookingProvider } from "@/features/booking/provider";
 import { BookingNavigation } from "@/components/booking-navigation";
+import { PageRefreshBoundary } from "@/components/page-refresh";
 import { SiteShell } from "@/components/site-shell";
 import { sitePath } from "@/content/site-path";
 import { socialPreview } from "@/content/media";
@@ -60,7 +61,9 @@ export default function RootLayout({
       <body>
         <BookingProvider>
           <BookingNavigation>
-            <SiteShell>{children}</SiteShell>
+            <PageRefreshBoundary>
+              <SiteShell>{children}</SiteShell>
+            </PageRefreshBoundary>
           </BookingNavigation>
         </BookingProvider>
       </body>

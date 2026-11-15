@@ -56,6 +56,14 @@
     "title": "unmount cleans the animation timers and preserves the previous scroll style"
   },
   {
+    "file": "src/components/page-refresh.test.tsx",
+    "title": "refresh cleanup prevents late font and frame completions from revealing an unmounted page"
+  },
+  {
+    "file": "src/components/page-refresh.test.tsx",
+    "title": "refresh cover survives server HTML and hydration until restored state fonts and a render frame are ready"
+  },
+  {
     "file": "src/components/studio-hero-video.test.tsx",
     "title": "mobile studio video shows a scroll cue only after playback ends"
   },
@@ -1509,6 +1517,10 @@
   },
   {
     "file": "tests/customer.spec.ts",
+    "title": "booking and confirmation routes cover incomplete rendering until hydration is ready"
+  },
+  {
+    "file": "tests/customer.spec.ts",
     "title": "booking titles keep deliberate phone line breaks and desktop inline layout"
   },
   {
@@ -1574,6 +1586,10 @@
   {
     "file": "tests/customer.spec.ts",
     "title": "protected confirmation waits for server evidence and rejects a tampered return"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "public routes cover incomplete rendering until hydration is ready"
   },
   {
     "file": "tests/customer.spec.ts",
