@@ -74,18 +74,18 @@ test("unmounting a pending booking screen releases the overlay and existing page
 test("display loading leaves navigation interactive while payment loading still locks the page", () => {
   const view = render(
     <BookingLoadingProvider>
-      <button>Continue as Guest</button>
+      <button>Guest</button>
       <BookingLoading compact overlay={false} label="Reading calendar" />
     </BookingLoadingProvider>,
   );
-  const button = screen.getByRole("button", { name: "Continue as Guest" });
+  const button = screen.getByRole("button", { name: "Guest" });
   expect(button.closest("[inert]")).toBeNull();
   expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(screen.getByRole("status")).toHaveClass("booking-loading-inline");
   expect(screen.getByRole("status")).toHaveTextContent("Loading...");
   view.rerender(
     <BookingLoadingProvider>
-      <button>Continue as Guest</button>
+      <button>Guest</button>
       <BookingLoading compact overlay={false} label="Reading calendar" />
       <BookingLoading compact label="Opening checkout…" />
     </BookingLoadingProvider>,

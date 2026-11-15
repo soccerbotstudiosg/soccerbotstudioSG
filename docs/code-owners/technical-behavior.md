@@ -605,7 +605,7 @@ Each booking step has one introduction in the existing muted16px lead style. Ent
 
 Explicit saved-contact submission stays on the editor with entered values intact. The card heading is Booking Contact; a green “Details saved.” notice appears directly beneath it, receives focus and scrolls into view. Editing clears the notice through the existing contact-key guard. Only the explicit Back control closes the editor. Ordinary booking-details submission still advances to Review with its existing background-save behavior.
 
-Unsigned booking entry uses the original navy buttons with white icons and 16px heavy-italic labels: “Continue as Guest” and “Sign in”. Both share one equal-width row on desktop and phone, separated by underlined OR without decorative lines, with the existing asymmetric header-button corners. Photos and their unused assets are removed. Guest/sign-in handlers, disabled states and the verified Welcome back presentation are unchanged.
+Unsigned booking entry uses the original navy buttons with white icons and 16px heavy-italic labels: “Guest” and “Sign in”. Both share one equal-width row on desktop and phone, separated by underlined OR without decorative lines, with the existing asymmetric header-button corners. Photos and their unused assets are removed. Guest/sign-in handlers, disabled states and the verified Welcome back presentation are unchanged.
 
 Booking-entry hover uses a small2.5% card lift/expansion, opposing background drift,4% label enlargement with inward movement, and a gently extending accent line. Motion is limited to fine-pointer hover with no reduced-motion preference; transform-only movement avoids layout reflow. Disabled cards remain static.
 

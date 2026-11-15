@@ -111,7 +111,7 @@ test("revoked saved-contact editor returns to guest choices without revealing th
   );
   expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
   expect(
-    await screen.findByRole("button", { name: "Continue as Guest" }),
+    await screen.findByRole("button", { name: "Guest" }),
   ).toBeEnabled();
   expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   expect(screen.queryByText("Welcome back")).toBeNull();
@@ -444,7 +444,7 @@ test("expired guest email lookup returns to step one with session notice and usa
   );
   expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
   expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
+    screen.getByRole("button", { name: "Guest" }),
   ).toBeEnabled();
   expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   expect(screen.getByTestId("recovery")).not.toHaveTextContent("Old Guest");

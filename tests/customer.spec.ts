@@ -75,7 +75,7 @@ async function closeBookingPanel(page: Page) {
 }
 async function chooseSlots(page: Page, multiple = false) {
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Continue as Guest" }).click();
+  await page.getByRole("button", { name: "Guest" }).click();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   await page
     .getByRole("button", {
@@ -1228,7 +1228,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     "src",
     sitePath("/assets/c275ccd87afb.svg"),
   );
-  await page.getByRole("button", { name: "Continue as Guest" }).click();
+  await page.getByRole("button", { name: "Guest" }).click();
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
@@ -2098,7 +2098,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".access-choice-divider")).toHaveText("or");
   const choices = page.locator(".access-choices");
   await expect(choices).toHaveCSS("display", "grid");
-  const guest = page.getByRole("button", { name: "Continue as Guest" });
+  const guest = page.getByRole("button", { name: "Guest" });
   const signIn = page.getByRole("button", { name: "Sign in", exact: true });
   await page.mouse.move(0, 0);
   for (const button of [guest, signIn]) {
@@ -2836,7 +2836,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   page,
 }) => {
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Continue as Guest" }).click();
+  await page.getByRole("button", { name: "Guest" }).click();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   const date = addDays(DEMO_TODAY, 1);
   const mobile = page.viewportSize()!.width <= 700;
@@ -3205,7 +3205,7 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     if (width <= 700) expect(geometry.fontSize).toBe("32px");
   }
   await page
-    .getByRole("button", { name: "Continue as Guest", exact: true })
+    .getByRole("button", { name: "Guest", exact: true })
     .click();
   const sessionTitle = page.getByRole("heading", {
     name: "Your session",

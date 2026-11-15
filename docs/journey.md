@@ -6689,3 +6689,7 @@ At the owner's request, removed both decorative pseudo-element lines around the 
 ### 15 November 2026 — Visible fallback loading message
 
 The owner requested “Loading...” on empty loaders. Added the fallback in the shared branded presentation for full-page and compact instances; explicit operation messages remain authoritative. Updated normal-navigation, server-rendered cover, shared overlay, compact and protected-confirmation assertions. No loading lifecycle, API or provider behavior changes.
+
+### 15 November 2026 — Immediate review transition and Guest label
+
+Renamed the unsigned entry action to Guest, including accessible labels and existing test locators. Removed Review Booking spinner/progress feedback for its local validation/navigation while preserving duplicate-submission guards and real profile-save feedback. Existing account and details coverage remains; browser locators follow the approved label.

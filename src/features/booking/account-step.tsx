@@ -412,7 +412,7 @@ export function AccountStep({
             <>
               <button
                 className="button booking-entry-action"
-                aria-label="Continue as Guest"
+                aria-label="Guest"
                 disabled={busy}
                 onClick={() => {
                   update({
@@ -424,7 +424,7 @@ export function AccountStep({
                 }}
               >
                 <Icon name="users" />
-                <span>{busy ? "Preparing…" : "Continue as Guest"}</span>
+                <span>{busy ? "Preparing…" : "Guest"}</span>
                 <Icon name="chevron" />
               </button>
               <span className="access-choice-divider">or</span>
