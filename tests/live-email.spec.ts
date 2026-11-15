@@ -4348,5 +4348,5 @@ test("hidden enquiry proof preserves the shared action gap", async ({
     return button.top - field.bottom;
   });
   expect(gap).toBeGreaterThanOrEqual(32);
-  expect(gap).toBeLessThanOrEqual(38);
+  expect(gap).toBeLessThanOrEqual(33);
 });

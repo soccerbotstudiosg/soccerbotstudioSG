@@ -2746,7 +2746,11 @@ test("protected confirmation waits for server evidence and rejects a tampered re
       body: JSON.stringify({ error: "receipt_unavailable" }),
     }),
   );
-  await openSite(page, `/confirmation/?attempt=${attempt}&paid=true`);
+  await page.goto(sitePath(`/confirmation/?attempt=${attempt}&paid=true`));
+  const prompt = page.getByRole("dialog", {
+    name: "Get the Soccerbot360 Player App",
+  });
+  await expect(prompt).toHaveCount(0);
   await expect(
     page.getByRole("status", { name: "Checking payment…" }),
   ).toBeVisible();
@@ -2755,6 +2759,11 @@ test("protected confirmation waits for server evidence and rejects a tampered re
   ).toHaveCount(0);
   release();
   await expect(page).toHaveURL(sitePath("/"));
+  await expect(prompt).toBeVisible();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
+  await prompt
+    .getByRole("button", { name: "Close dialog", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
