@@ -610,3 +610,7 @@ Unsigned booking entry now uses two equal, fully clickable photographic cards, s
 Booking-entry hover uses a small2.5% card lift/expansion, opposing background drift,4% label enlargement with inward movement, and a gently extending accent line. Motion is limited to fine-pointer hover with no reduced-motion preference; transform-only movement avoids layout reflow. Disabled cards remain static.
 
 Your Trainers now follows the compact cart hierarchy:12px uppercase tracked header in a40px row,14px bold trainer names and14px biography text on21px lines. Compact avatars are28px; biography padding is12/16px and expandable rows remain at least44px high. Existing expansion behavior and selected/hover colours are unchanged.
+
+Your Trainers and Your Cart now share one booking-panel-cover style and the same bookingCover image/crop,40px height,10/16px padding, dark image overlay and white12px eyebrow typography. The trainer count stays beside the label. Compact trainer body styles and cart mobile drawer behavior are unchanged.
+
+Trainer identity avatars now show the shared capped-coach icon instead of initials. Names remain the accessible identity; the icon is decorative.

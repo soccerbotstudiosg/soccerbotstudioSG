@@ -22,7 +22,7 @@ export function InstructorIdentity(
   return (
     <>
       <span className="trainer-avatar" aria-hidden="true">
-        {instructor.initials}
+        <Icon name="coach" />
       </span>
       <IdentityContainer className="trainer-identity">
         {props.compact ? (

@@ -2164,14 +2164,35 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".trainer-bio")).toBeVisible();
   await expect(page.locator(".trainer-bio")).toHaveCSS("font-size", "14px");
   await expect(page.locator(".trainer-name")).toHaveCSS("font-size", "14px");
-  await expect(page.locator(".booking-instructors > h2")).toHaveCSS(
-    "font-size",
-    "12px",
+  await expect(
+    page.locator(".booking-instructors .booking-panel-cover .eyebrow"),
+  ).toHaveCSS("font-size", "12px");
+  await expect(
+    page.locator(".booking-instructors .booking-panel-cover .eyebrow"),
+  ).toHaveCSS("text-transform", "uppercase");
+  const trainerHeader = page.locator(
+    ".booking-instructors .booking-panel-cover",
   );
-  await expect(page.locator(".booking-instructors > h2")).toHaveCSS(
-    "text-transform",
-    "uppercase",
+  await expect(trainerHeader).toHaveCSS("height", "40px");
+  await expect(trainerHeader).toHaveCSS("padding", "10px 16px");
+  await expect(trainerHeader).toHaveCSS("background-position", "50% 57%");
+  await expect(trainerHeader).toHaveCSS(
+    "background-image",
+    /68b1a1790591\.jpg/,
   );
+  if (page.viewportSize()!.width > 700) {
+    expect(
+      await trainerHeader.evaluate(
+        (node) => getComputedStyle(node).backgroundImage,
+      ),
+    ).toBe(
+      await page
+        .locator(".summary-cover")
+        .evaluate((node) => getComputedStyle(node).backgroundImage),
+    );
+  }
+  await expect(page.locator(".trainer-avatar svg")).toHaveCount(1);
+  await expect(page.locator(".trainer-avatar")).toHaveText("");
   await expect(page.locator(".trainer-bio")).toHaveCSS("line-height", "21px");
   const trainerToggle = await page.locator(".trainer-toggle").boundingBox();
   expect(trainerToggle!.height).toBeGreaterThanOrEqual(44);

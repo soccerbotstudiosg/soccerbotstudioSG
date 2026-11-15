@@ -165,7 +165,7 @@ export function Summary({
         aria-label="Your booking summary"
       >
         <div
-          className="summary-cover"
+          className="summary-cover booking-panel-cover"
           style={{ backgroundImage: `url("${bookingCover}")` }}
         >
           <span className="eyebrow">Your Cart</span>
@@ -288,8 +288,14 @@ export function SelectedTrainers() {
           aria-label="Your instructors"
           aria-describedby={headingId}
         >
-          <h2 id={headingId}>
-            Your Trainers <span>· {instructors.length}</span>
+          <h2
+            id={headingId}
+            className="booking-panel-cover"
+            style={{ backgroundImage: `url("${bookingCover}")` }}
+          >
+            <span className="eyebrow">
+              Your Trainers · {instructors.length}
+            </span>
           </h2>
           {instructors.map((slot) => (
             <InstructorProfile

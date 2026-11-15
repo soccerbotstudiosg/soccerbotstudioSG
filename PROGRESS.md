@@ -86,3 +86,7 @@ Booking-entry hover uses a small2.5% card lift/expansion, opposing background dr
 Your Trainers now follows the compact cart hierarchy:12px uppercase tracked header in a40px row,14px bold trainer names and14px biography text on21px lines. Compact avatars are28px; biography padding is12/16px and expandable rows remain at least44px high. Existing expansion behavior and selected/hover colours are unchanged.
 
 Calendar notices now follow the complete introduction (step heading, outlet/session context and duration/changeover line), before the calendar. This is a presentation-order change only; recovery and availability behavior are unchanged.
+
+Your Trainers and Your Cart now share one booking-panel-cover style and the same bookingCover image/crop,40px height,10/16px padding, dark image overlay and white12px eyebrow typography. The trainer count stays beside the label. Compact trainer body styles and cart mobile drawer behavior are unchanged.
+
+Trainer identity avatars now show the shared capped-coach icon instead of initials. Names remain the accessible identity; the icon is decorative.

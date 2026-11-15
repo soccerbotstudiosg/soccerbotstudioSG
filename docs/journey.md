@@ -6595,3 +6595,9 @@ Your Trainers now follows the compact cart hierarchy:12px uppercase tracked head
 ## 15 November 2026 — Keep calendar introduction together
 
 Moved the duration/changeover line before recovery and selection notices, so availability/conflict messages appear beneath the full three-part introduction instead of splitting it. No notice copy, selection guard, provider or recovery behavior changed.
+
+## 15 November 2026 — Share cart and trainer cover headers
+
+Your Trainers and Your Cart now share one booking-panel-cover style and the same bookingCover image/crop,40px height,10/16px padding, dark image overlay and white12px eyebrow typography. The trainer count stays beside the label. Compact trainer body styles and cart mobile drawer behavior are unchanged. Removed the separate trainer-heading sizing block. Existing browser coverage checks shared image/crop, dimensions and padding alongside the compact typography.
+
+Owner also replaced trainer initials with a shared human-in-cap coach icon. Retained visible names and decorative avatar semantics; existing instructor rendering and browser assertions check icon presence without initials.

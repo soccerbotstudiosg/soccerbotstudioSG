@@ -333,7 +333,7 @@
   .progress li,
   .progress li .step-number,
   .booking-top .eyebrow,
-  .summary-cover .eyebrow,
+  .booking-panel-cover .eyebrow,
   .calendar-weekdays span,
   .series-index {
     font-size: var(--text-caption);
@@ -3319,7 +3319,9 @@
     overflow: hidden;
     box-shadow: var(--shadow-panel);
   }
-  .summary-cover {
+  .booking-panel-cover {
+    margin: 0;
+    font-size: var(--text-caption);
     height: 40px;
     background-size: cover;
     background-position: center 57%;
@@ -3331,7 +3333,7 @@
     position: relative;
     isolation: isolate;
   }
-  .summary-cover::before {
+  .booking-panel-cover::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -4345,20 +4347,6 @@
     border-radius: 12px;
     background: var(--color-surface);
     overflow: hidden;
-  }
-  .booking-instructors > h2 {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-height: 40px;
-    margin: 0;
-    padding: 10px 16px;
-    font-size: var(--text-caption);
-    font-weight: var(--weight-heading);
-    line-height: var(--leading-control);
-    letter-spacing: var(--tracking-ui-label);
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--color-line);
   }
   .booking-instructors .trainer-card {
     border: 0;
