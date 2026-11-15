@@ -37,14 +37,12 @@
   --color-action-border: var(--color-navy);
   --color-brand-soft: #eef0f7;
   --color-brand-tint: #dce1f1;
-  --background-selected: linear-gradient(
-    135deg,
-    var(--color-brand-soft),
-    var(--color-brand-tint)
-  );
+  --background-selected: linear-gradient(135deg, #e8e8e8, #d9d9d9);
+  --color-selected-border: #858585;
   --color-focus: #5666a8;
   --color-identity: #176078;
   --color-logo-blue: #46acdc;
+  --color-booking-action-hover: #3f9bc6;
   --color-on-brand: #ffffff;
   --color-on-brand-muted: #dce1f1;
   --color-ink: #101636;
@@ -295,7 +293,7 @@
   .method {
     font-size: var(--text-body);
     line-height: var(--leading-control);
-    font-weight: var(--weight-label);
+    font-weight: var(--weight-body);
   }
   .small,
   .hint,
@@ -420,6 +418,19 @@
     border: 1px solid var(--color-line);
     border-radius: 8px;
     background: var(--color-surface);
+  }
+  .booking-shell
+    :is(
+      .booking-primary-action > .button,
+      .button.booking-entry-action,
+      .profile-actions > .button:not(.secondary)
+    ),
+  .payment-continuation > .button {
+    --color-action: var(--color-logo-blue);
+    --color-action-border: var(--color-logo-blue);
+    --color-action-hover: var(--color-booking-action-hover);
+    font-weight: var(--weight-display);
+    font-style: italic;
   }
   .button {
     display: inline-flex;
@@ -2539,7 +2550,7 @@
     min-width: 0;
   }
   .time-range {
-    font-size: var(--text-card);
+    font-size: var(--text-body);
     grid-column: 1 / -1;
     padding-right: 24px;
     white-space: nowrap;
@@ -2559,18 +2570,18 @@
     grid-column: 1;
     grid-row: 2;
     align-self: center;
-    font-size: var(--text-meta);
+    font-size: var(--text-body);
     font-weight: var(--weight-body);
     color: var(--color-muted);
   }
   .time.selected .time-instructor {
     display: block;
-    font-size: var(--text-card);
     line-height: var(--leading-control);
     color: var(--color-brand);
   }
   .time-rate strong {
-    font-size: var(--text-card);
+    font-weight: var(--weight-heading);
+    font-size: var(--text-body);
     color: var(--color-brand);
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -2676,7 +2687,7 @@
   }
   .calendar-selection-context {
     margin-bottom: 8px;
-    font-size: var(--text-card);
+    font-size: var(--text-body);
     color: var(--color-ink);
   }
   .section-title {
@@ -2981,11 +2992,12 @@
   .outlet-option[aria-pressed="true"],
   .session-product:has(> .session-product-choice[aria-pressed="true"]),
   .time[aria-pressed="true"],
-  .date.selected:not(:disabled) {
-    border-color: var(--color-focus);
+  .date.selected:not(:disabled),
+  .method.selected {
+    border-color: var(--color-selected-border);
     background: var(--background-selected);
     color: var(--color-ink);
-    box-shadow: inset 0 0 0 1px var(--color-focus);
+    box-shadow: inset 0 0 0 1px var(--color-selected-border);
   }
   .outlet-option[aria-pressed="true"] :is(span, strong, svg),
   .session-product:has(> .session-product-choice[aria-pressed="true"])
@@ -3447,6 +3459,7 @@
     border: 1px solid var(--color-line);
     border-radius: 7px;
     font: inherit;
+    font-size: var(--text-body);
     padding: 4px 28px 4px 11px;
     height: var(--calendar-control-height);
     min-height: var(--calendar-control-height);
@@ -3508,6 +3521,7 @@
     background: var(--color-surface);
   }
   .date strong {
+    font-weight: var(--weight-heading);
     display: grid;
     place-items: center;
     width: 23px;
@@ -3532,7 +3546,7 @@
   .date.in-booking:not(:disabled) strong {
     background: var(--background-selected);
     color: var(--color-ink);
-    box-shadow: inset 0 0 0 1px var(--color-focus);
+    box-shadow: inset 0 0 0 1px var(--color-selected-border);
   }
   .date-placeholder {
     min-height: 29px;
@@ -3633,6 +3647,7 @@
     border-radius: 0;
   }
   .trainer-choice {
+    font-size: var(--text-body);
     display: grid;
     gap: 0.5rem;
     padding: 12px;
@@ -4083,11 +4098,6 @@
     justify-content: center;
     gap: 9px;
   }
-  .method.selected {
-    border: 2px solid var(--color-navy);
-    color: var(--color-on-brand);
-    background: var(--color-navy);
-  }
   .payment-demo {
     padding: 22px;
     border: 1px solid var(--color-line);
@@ -4220,7 +4230,7 @@
   }
   .trainer-toggle .trainer-name {
     color: inherit;
-    font-size: var(--text-card);
+    font-size: var(--text-section);
     line-height: var(--leading-control);
     font-weight: var(--weight-heading);
   }
@@ -4730,10 +4740,6 @@
     }
     .session-shell .section-title {
       margin-bottom: 8px;
-      font-size: var(--text-body);
-    }
-    .session-shell :is(.outlet-option strong, .session-product-name) {
-      font-size: var(--text-body);
     }
     .session-product.surface {
       gap: 8px 10px;

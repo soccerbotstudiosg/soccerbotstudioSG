@@ -1048,6 +1048,8 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     ),
   ).toBe(true);
   const next = page.getByRole("link", { name: "Choose Date & Time" });
+  await expect(next).toHaveCSS("background-color", "rgb(70, 172, 220)");
+  await expect(next).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(next).toBeInViewport({ ratio: 1 });
   const nextBox = await next.boundingBox();
   expect(nextBox!.y).toBeGreaterThanOrEqual(0);
@@ -1194,10 +1196,7 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
   const productFontSize = await page
     .locator(".session-product-name")
     .evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
-  expect(productFontSize).toBeCloseTo(
-    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
-    5,
-  );
+  expect(productFontSize).toBeCloseTo(20, 5);
   for (const name of ["Your outlet", "Select your session"]) {
     await expect(page.getByRole("heading", { name, exact: true })).toHaveCSS(
       "font-style",
@@ -1687,7 +1686,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     if (name === "Select dates and times") {
       await expect(page.locator(".calendar-selection-context")).toHaveCSS(
         "font-size",
-        "18px",
+        "16px",
       );
       await expect(page.locator(".lead")).toHaveCSS("font-size", "16px");
       await expect(
@@ -1867,7 +1866,8 @@ test("header blue and the typography hierarchy stay consistent across every book
   const guest = page.getByRole("button", { name: "Continue as Guest" });
   // Inspect the resting action, with the pointer away from the button.
   await page.mouse.move(0, 0);
-  await expect(guest).toHaveCSS("background-color", brand);
+  await expect(guest).toHaveCSS("background-color", "rgb(70, 172, 220)");
+  await expect(guest).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(guest).toHaveCSS("text-transform", "none");
   await expect(guest).toHaveCSS("font-weight", "900");
   await expect(guest).toHaveCSS("font-style", "italic");
@@ -1914,18 +1914,14 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(card).toHaveCSS("background-color", background);
     await expect(card).toHaveCSS("border-color", border);
     await guest.hover();
-    await expect(guest).toHaveCSS("background-color", "rgb(32, 41, 87)");
+    await expect(guest).toHaveCSS("background-color", "rgb(63, 155, 198)");
     await expect(card).toHaveCSS("background-color", background);
   }
   await guest.click();
   await pageHeading("Your session");
-  await sectionType(
-    ".session-product-name",
-    (page.viewportSize()?.width ?? 1280) <= 700 ? 16 : 20,
-    "rgb(16, 22, 54)",
-  );
+  await sectionType(".session-product-name", 20, "rgb(16, 22, 54)");
   const selectedGradient =
-    "linear-gradient(135deg, rgb(238, 240, 247), rgb(220, 225, 241))";
+    "linear-gradient(135deg, rgb(232, 232, 232), rgb(217, 217, 217))";
   for (const card of [
     page.locator(".outlet-option"),
     page.locator(".session-product"),
@@ -1996,7 +1992,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".date.selected")).not.toHaveClass(/in-booking/);
   await expect(page.locator(".date.selected")).toHaveCSS(
     "border-color",
-    "rgb(86, 102, 168)",
+    "rgb(133, 133, 133)",
   );
   await expect(page.locator(".date.selected")).toHaveCSS(
     "background-image",
@@ -2015,10 +2011,10 @@ test("header blue and the typography hierarchy stay consistent across every book
     "white-space",
     "nowrap",
   );
-  await expect(crossing.locator(".time-range")).toHaveCSS("font-size", "18px");
+  await expect(crossing.locator(".time-range")).toHaveCSS("font-size", "16px");
   await expect(crossing.locator(".time-rate strong")).toHaveCSS(
     "font-size",
-    "18px",
+    "16px",
   );
   const slotPlacement = await crossing.evaluate((node) => {
     const range = node.querySelector(".time-range")!.getBoundingClientRect();
@@ -2048,6 +2044,15 @@ test("header blue and the typography hierarchy stay consistent across every book
     await expect(crossing.locator(".time-instructor")).toBeVisible();
   }
 
+  await expect(crossing.locator(".time-instructor")).toHaveCSS(
+    "font-size",
+    "16px",
+  );
+  for (const control of await page
+    .locator(".month-picker select, .calendar-nav select")
+    .all()) {
+    await expect(control).toHaveCSS("font-size", "16px");
+  }
   await crossing.click();
   await page
     .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
@@ -2063,7 +2068,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(crossing).toHaveCSS("background-image", selectedCardBackground);
   await expect(crossing.locator(".time-instructor")).toHaveCSS(
     "font-size",
-    "18px",
+    "16px",
   );
   await expect(crossing.locator(".time-instructor")).toBeVisible();
   await expect(crossing.locator(".rotation-notice")).toHaveCSS(
@@ -2082,7 +2087,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   );
   await expect(page.locator(".trainer-bio")).toBeVisible();
   await expect(page.locator(".trainer-bio")).toHaveCSS("font-size", "14px");
-  await expect(page.locator(".trainer-name")).toHaveCSS("font-size", "18px");
+  await expect(page.locator(".trainer-name")).toHaveCSS("font-size", "20px");
   await closeBookingPanel(page);
   await page
     .getByRole("link", {
@@ -2177,7 +2182,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await sectionType(".payment-layout .section-title");
   await expect(page.locator(".method.selected")).toHaveCSS(
     "border-top-color",
-    brand,
+    "rgb(133, 133, 133)",
   );
   await payAttempt(page);
   // Confirmation retains its original accent; booking-step headings use logo BOT blue.
@@ -2634,7 +2639,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     expect(trainer!.y).toBeCloseTo(price!.y, 0);
     await expect(selected.locator(".time-instructor")).toHaveCSS(
       "font-size",
-      "18px",
+      "16px",
     );
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }

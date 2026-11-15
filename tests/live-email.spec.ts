@@ -654,6 +654,10 @@ test("remembered live account edits and rereads contact while native booking sta
     page.getByRole("heading", { name: "Saved contact details", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
+  const saveAction = page.getByRole("button", {
+    name: "Save contact details",
+    exact: true,
+  });
   const saveButton = await page
     .getByRole("button", { name: "Save contact details", exact: true })
     .boundingBox();
@@ -679,6 +683,10 @@ test("remembered live account edits and rereads contact while native booking sta
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
+  await expect(saveAction).toHaveCSS("background-color", "rgb(70, 172, 220)");
+  await expect(saveAction).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(saveAction).toHaveCSS("font-weight", "900");
+  await expect(saveAction).toHaveCSS("font-style", "italic");
   await page
     .getByRole("button", { name: "Save contact details", exact: true })
     .click();
