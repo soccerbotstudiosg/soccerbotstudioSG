@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { ArenaEntry } from "./arena-entry";
-import { BrandLoading } from "./brand-loading";
+import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
 import { services } from "@/services";
 import {
   prepareIdentityEntry,
@@ -145,7 +145,13 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
     if (arrived && identityReady) {
       setEntry(null);
       active.current = false;
-    } else setEntry({ ...entry, kind: "logo", skip: true });
+    } else
+      setEntry({
+        ...entry,
+        kind: "logo",
+        started: performance.now(),
+        skip: true,
+      });
   }
   useEffect(() => {
     if (!entry) return;
@@ -161,13 +167,19 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
     };
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const reduce = () => {
+      if (entry.kind === "logo") return;
       if (motion.matches) {
         if (!committed.current) {
           committed.current = true;
           router.replace(entry.to);
         }
         if (preparation.current && !arrived)
-          setEntry({ ...entry, kind: "logo", skip: true });
+          setEntry({
+            ...entry,
+            kind: "logo",
+            started: performance.now(),
+            skip: true,
+          });
         else cancel();
       }
     };
@@ -195,11 +207,15 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
   }, [entry, router]);
   useEffect(() => {
     if (!entry || !arrived || !identityReady) return;
-    const delay = entry.skip
-      ? 0
-      : entry.kind === "arena"
-        ? PITCH_REVEAL_MS
-        : Math.max(0, 480 - (performance.now() - entry.started));
+    const delay =
+      entry.kind === "logo"
+        ? Math.max(
+            0,
+            FULL_PAGE_LOADING_MIN_MS - (performance.now() - entry.started),
+          )
+        : entry.skip
+          ? 0
+          : PITCH_REVEAL_MS;
     let fade: ReturnType<typeof setTimeout> | undefined;
     const complete = () => {
       // Account may mount after route arrival while booking readiness settles.

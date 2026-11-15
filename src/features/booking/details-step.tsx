@@ -639,21 +639,19 @@ export function DetailsStep({
         )}
         {!profileOnly && (
           <BookingPrimaryAction
-            loading={saving || checking}
+            loading={saving}
             className="actions"
-            ready={contactValid && !saving && !checking}
+            ready={contactValid && !saving}
           >
             <button
               className="button"
               type="submit"
               disabled={saving || checking || !contactValid}
             >
-              {(saving || checking) && (
-                <Icon name="spinner" className="spinner" />
-              )}
+              {saving && <Icon name="spinner" className="spinner" />}
               {saving ? "Saving details…" : "Review Booking"}{" "}
               <BookingActionTotal />
-              {!saving && !checking && <Icon name="chevron" />}
+              {!saving && <Icon name="chevron" />}
             </button>
           </BookingPrimaryAction>
         )}

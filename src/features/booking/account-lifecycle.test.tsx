@@ -44,22 +44,31 @@ test("guest selection advances locally without repeating access or showing prepa
   );
   const { rerender } = render(view("account"));
   await act(async () => {});
-  fireEvent.click(screen.getByRole("button", { name: "Continue as Guest" }));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Guest" }));
   expect(navigation.push).toHaveBeenCalledWith("/book/session/");
   expect(guest).not.toHaveBeenCalled();
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   expect(screen.queryByText("Preparing booking…")).toBeNull();
-  expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   rerender(view("session"));
   expect(screen.getByRole("heading", { name: "Your session" })).toBeVisible();
   expect(screen.getByLabelText("Booking identity")).toHaveTextContent("Guest");
   rerender(view("account"));
-  fireEvent.click(screen.getByRole("button", { name: "Continue as Guest" }));
+  fireEvent.click(screen.getByRole("button", { name: "Guest" }));
   expect(guest).not.toHaveBeenCalled();
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
 });
 test("account leaving email challenge ignores delayed completion and live mode never displays demo code", async () => {
   let finish!: (value: CustomerChallenge) => void;
@@ -176,9 +185,7 @@ test("signed-in customer manages saved contact on Account without entering unava
   expect(
     screen.getByRole("status", { name: "Opening booking" }),
   ).toBeInTheDocument();
-  expect(
-    screen.queryByRole("button", { name: "Continue as Guest" }),
-  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
   expect(screen.queryByText("Welcome back")).toBeNull();
   await act(async () => releaseProfile());
   expect(
@@ -312,7 +319,9 @@ test("leaving saved-contact form discards delayed save acknowledgement", async (
   );
   expect(saveProfile.mock.calls[0][1].aborted).toBe(true);
   await act(async () => finish());
-  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.queryByRole("status")).not.toBeInTheDocument(),
+  );
   expect(
     screen.getByRole("heading", { name: "Start your booking" }),
   ).toBeInTheDocument();
@@ -360,22 +369,24 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
   ).toBeNull();
   expect(screen.getByRole("alert")).toHaveClass("alert");
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
-  expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
-  ).toBeEnabled();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
+  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   await act(async () => finishSignOut());
   await waitFor(() =>
-    expect(
-      screen.getByRole("button", { name: "Continue as Guest" }),
-    ).toBeEnabled(),
+    expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled(),
   );
   expect(screen.queryByText(identity.email)).not.toBeInTheDocument();
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(signOut).toHaveBeenCalledTimes(2);
   expect(signOut).toHaveBeenLastCalledWith(expect.any(AbortSignal), true);
@@ -431,10 +442,12 @@ test("switching email clears the old account and supports back guest and fresh r
   );
   await act(async () => {});
   fireEvent.click(screen.getByRole("button", { name: "Use another email" }));
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
-  expect(
-    screen.queryByRole("button", { name: "Continue as Guest" }),
-  ).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
+  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
   expect(
     screen.queryByRole("button", { name: "Continue signed in" }),
   ).toBeNull();
@@ -450,7 +463,11 @@ test("switching email clears the old account and supports back guest and fresh r
   ).toBeEnabled();
   await act(async () => finishSignOut());
   await screen.findByRole("heading", { name: "Sign in" });
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   expect(signOut).toHaveBeenCalledExactlyOnceWith(
     expect.any(AbortSignal),
     false,
@@ -458,9 +475,7 @@ test("switching email clears the old account and supports back guest and fresh r
   expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.getByLabelText("Remember me")).not.toBeChecked();
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
-  expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   expect(screen.queryByText("old@example.invalid")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
   fireEvent.change(screen.getByLabelText("Email address"), {
@@ -605,6 +620,9 @@ test("failed profile saves keep the form and successful retry acknowledges in pl
   await act(async () => {});
   fireEvent.click(screen.getByRole("button", { name: "Manage saved contact" }));
   await screen.findByRole("heading", { name: "Saved contact details" });
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   fireEvent.click(screen.getByRole("button", { name: "Save contact details" }));
   await waitFor(() =>
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -685,9 +703,7 @@ test("invalid code can return to guest options without carrying an old error", a
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
   expect(
     screen.getByRole("button", { name: "Get Verification Code" }),
@@ -735,17 +751,13 @@ test("remembered identity restoration shows only the full-width welcome card wit
   expect(
     screen.queryByRole("heading", { name: "Start your booking" }),
   ).toBeNull();
-  expect(
-    screen.queryByRole("button", { name: "Continue as Guest" }),
-  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
   await act(async () => finish());
   expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
   expect(document.querySelector(".access-options-verified")).not.toBeNull();
   expect(document.querySelectorAll(".access-option")).toHaveLength(1);
-  expect(
-    screen.queryByRole("button", { name: "Continue as Guest" }),
-  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
   expect(
     screen.queryByRole("button", { name: "Try signing out again" }),
@@ -755,9 +767,7 @@ test("remembered identity restoration shows only the full-width welcome card wit
   ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
   await waitFor(() =>
-    expect(
-      screen.getByRole("button", { name: "Continue as Guest" }),
-    ).toBeEnabled(),
+    expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled(),
   );
   expect(document.querySelectorAll(".access-option")).toHaveLength(1);
   expect(screen.getByText("or")).toBeVisible();
@@ -796,22 +806,16 @@ test("remembered identity restoration shows only the full-width welcome card wit
     expect(
       screen.getByRole("status", { name: "Opening booking" }),
     ).toBeVisible();
-    expect(
-      screen.queryByRole("button", { name: "Continue as Guest" }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(9999);
     });
-    expect(
-      screen.queryByRole("button", { name: "Continue as Guest" }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     expect(signal?.aborted).toBe(true);
-    expect(
-      screen.getByRole("button", { name: "Continue as Guest" }),
-    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
     expect(
       screen.queryByRole("status", { name: "Opening booking" }),
     ).toBeNull();
@@ -888,7 +892,7 @@ test("guest identity is shown only after choosing guest and stays hidden on retu
   const { rerender } = render(view("account"));
   await act(async () => {});
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Continue as Guest" }));
+  fireEvent.click(screen.getByRole("button", { name: "Guest" }));
   await waitFor(() =>
     expect(navigation.push).toHaveBeenCalledWith("/book/session/"),
   );
@@ -899,16 +903,18 @@ test("guest identity is shown only after choosing guest and stays hidden on retu
     "/book/account",
   );
   rerender(view("account"));
-  expect(screen.queryByRole("status", { name: "Opening booking" })).toBeNull();
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("status", { name: "Opening booking" }),
+    ).toBeNull(),
+  );
   await act(async () => {});
   expect(refresh).toHaveBeenCalledTimes(1);
   expect(
     screen.getByRole("heading", { name: "Start your booking" }),
   ).toBeVisible();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  expect(
-    screen.getByRole("button", { name: "Continue as Guest" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
   expect(screen.getByLabelText("Email address")).toBeVisible();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
@@ -1218,9 +1224,7 @@ test("fresh security proof clears only stale security feedback and reentry start
   expect(
     screen.queryByRole("button", { name: "Manage saved contact" }),
   ).toBeNull();
-  expect(
-    screen.queryByRole("button", { name: "Continue as Guest" }),
-  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
   await waitFor(() =>
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
@@ -1271,7 +1275,11 @@ test("email requests wait for background signout while the replacement form open
   );
   await act(async () => {});
   fireEvent.click(screen.getByRole("button", { name: "Use another email" }));
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "new@example.invalid" },
   });
@@ -1280,7 +1288,11 @@ test("email requests wait for background signout while the replacement form open
       .getByRole("button", { name: "Get Verification Code" })
       .closest("form")!,
   );
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   expect(
     screen.getByRole("status", { name: "Requesting verification code" }),
   ).toBeVisible();
@@ -1288,7 +1300,11 @@ test("email requests wait for background signout while the replacement form open
   await act(async () => finish());
   expect(await screen.findByLabelText("Verification code")).toBeEnabled();
   expect(challenge).toHaveBeenCalledTimes(1);
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
 });
 
 test("switching identity clears selected session and cart without repeating entry preparation", async () => {
@@ -1341,6 +1357,10 @@ test("switching identity clears selected session and cart without repeating entr
   expect(screen.getByTestId("selection")).not.toHaveTextContent("old-service");
   expect(screen.getByTestId("selection")).toHaveTextContent('"players":1');
   expect(screen.getByTestId("selection")).toHaveTextContent('"session":true');
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  if (vi.isFakeTimers())
+    await act(async () => vi.advanceTimersByTimeAsync(1000));
+  await waitFor(() =>
+    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
+  );
   await act(async () => {});
 });

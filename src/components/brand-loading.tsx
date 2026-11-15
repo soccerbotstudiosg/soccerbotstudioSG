@@ -1,11 +1,43 @@
+"use client";
+import { useLayoutEffect, useState } from "react";
 import { darkLogo } from "@/content/media";
+export const FULL_PAGE_LOADING_MIN_MS = 1000;
+
+/** Retain one visible full-page loading episode until its minimum duration ends. */
+export function useMinimumLoading(label: string | undefined) {
+  const [state, setState] = useState({
+    input: label,
+    label,
+    episode: label === undefined ? 0 : 1,
+    elapsed: label === undefined,
+  });
+  if (state.input !== label) {
+    const restarting =
+      label !== undefined && state.input === undefined && state.elapsed;
+    setState({
+      input: label,
+      label: label ?? state.label,
+      episode: state.episode + (restarting ? 1 : 0),
+      elapsed: restarting ? false : state.elapsed,
+    });
+  }
+  useLayoutEffect(() => {
+    if (!state.episode) return;
+    const timer = setTimeout(() => {
+      setState((current) => ({ ...current, elapsed: true }));
+    }, FULL_PAGE_LOADING_MIN_MS);
+    return () => clearTimeout(timer);
+  }, [state.episode]);
+  return label ?? (state.elapsed ? undefined : state.label);
+}
+
 /** Render the branded loading indicator and status message. */
 export function BrandLoading({
   compact = false,
   leaving = false,
   overlay = true,
   label = "Opening booking",
-  message,
+  message = "Loading...",
 }: {
   compact?: boolean;
   leaving?: boolean;

@@ -95,7 +95,7 @@ function ConfirmationHome() {
   useEffect(() => {
     router.replace("/");
   }, [router]);
-  return <BrandLoading label="Refreshing…" />;
+  return <BrandLoading label="Opening booking" />;
 }
 /** Reject invalid links before mounting any protected reads or recovery timers. */
 export function ProtectedConfirmation(
@@ -997,7 +997,7 @@ function ProtectedConfirmationBody({
     return silent ? null : <ConfirmationHome />;
   if (homeDeparture) return homeDeparture;
   if (silent) return null;
-  if (repeatedProviderReturn) return <BrandLoading label="Refreshing…" />;
+  if (repeatedProviderReturn) return <BrandLoading label="Opening booking" />;
   if (reconcilingExpiry) return <BrandLoading label="Checking payment…" />;
   if (rejectionState && !hasPaymentEvidence)
     return <BrandLoading compact label={CONFLICT_CHECKING} />;
@@ -1245,7 +1245,7 @@ function ProtectedConfirmationBody({
   if (checkoutMode !== "synthetic" && confirmationRoute) {
     // A successful handoff already owns navigation; never race it with Home.
     if (recoveryTimedOut === attemptId)
-      return <BrandLoading label="Refreshing…" />;
+      return <BrandLoading label="Opening booking" />;
     return <ConfirmationHome />;
   }
   return (

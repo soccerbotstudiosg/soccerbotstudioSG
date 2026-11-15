@@ -122,7 +122,7 @@ function fixture(t, basePath) {
     mkdirSync(join(path, ".."), { recursive: true });
     writeFileSync(path, value);
   };
-  const html = `<div id="page-refresh-content" inert style="visibility:hidden"><main><a class="arena-booking" href="${basePath}/book/account/">Book</a><img src="${basePath}/assets/photo.jpg"></main></div><div id="page-refresh" style="position:fixed;inset:0"><div role="status" aria-label="Refreshing…">Refreshing…</div></div><script src="${basePath}/_next/app.js"></script><link rel="stylesheet" href="${basePath}/_next/app.css">`;
+  const html = `<div id="page-refresh-content" inert style="visibility:hidden"><main><a class="arena-booking" href="${basePath}/book/account/">Book</a><img src="${basePath}/assets/photo.jpg"></main></div><div id="page-refresh" style="position:fixed;inset:0"><div role="status" aria-label="Loading page"></div></div><script src="${basePath}/_next/app.js"></script><link rel="stylesheet" href="${basePath}/_next/app.css">`;
   for (const file of [
     "index.html",
     "404.html",

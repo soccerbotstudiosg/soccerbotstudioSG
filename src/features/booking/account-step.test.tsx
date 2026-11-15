@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { Suspense, use, useState } from "react";
 import { BookingLoadingProvider } from "./booking-loading";
 import userEvent from "@testing-library/user-event";
@@ -27,7 +33,7 @@ beforeEach(() => {
 test("guest selection creates a guest contact and continues to the session", async () => {
   const user = userEvent.setup();
   render(<AccountStep />);
-  await user.click(screen.getByRole("button", { name: "Continue as Guest" }));
+  await user.click(screen.getByRole("button", { name: "Guest" }));
   expect(mocks.update).toHaveBeenCalledWith(
     expect.objectContaining({ mode: "guest", accountEmail: "" }),
   );
@@ -143,7 +149,9 @@ test("signed-in loading remains until the destination commits without exposing t
   expect(
     await screen.findByRole("heading", { name: "Choose your session" }),
   ).toBeInTheDocument();
-  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.queryByRole("status")).not.toBeInTheDocument(),
+  );
   expect(
     screen.queryByRole("button", { name: "Continue signed in" }),
   ).not.toBeInTheDocument();

@@ -1337,110 +1337,130 @@ test("cold calendar entry and refresh select an available day while retaining a 
   ).not.toBeInTheDocument();
 });
 
-test("initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation", async () => {
+/** Verify one isolated scenario with its real foreground loading lifecycle. */
+async function verifyInitialCalendarDiscovery(
+  scenario: "available" | "empty" | "failure" | "manual",
+) {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-31T02:00:00Z"));
-  for (const scenario of ["available", "empty", "failure", "manual"] as const) {
-    localStorage.clear();
-    sessionStorage.clear();
-    const gates = new Map<string, () => void>();
-    let fail = scenario === "failure";
-    const publicCalendar = vi.fn(async ({ month }: { month: string }) => {
-      await new Promise<void>((resolve) => gates.set(month, resolve));
-      if (fail && month === "2026-11")
-        throw new Error("synthetic calendar failure");
-      return {
-        month,
-        serviceId: "2",
+
+  localStorage.clear();
+  sessionStorage.clear();
+  const gates = new Map<string, () => void>();
+  let fail = scenario === "failure";
+  const publicCalendar = vi.fn(async ({ month }: { month: string }) => {
+    await new Promise<void>((resolve) => gates.set(month, resolve));
+    if (fail && month === "2026-11")
+      throw new Error("synthetic calendar failure");
+    return {
+      month,
+      serviceId: "2",
+      observedAtMs: Date.now(),
+      displayExpiresAtMs: Date.now() + 60000,
+      monthCoverage: ["2026-10", "2026-11", "2026-12"].map((value) => ({
+        month: value,
+        state:
+          value === "2026-10" || scenario === "empty"
+            ? ("empty" as const)
+            : ("available" as const),
         observedAtMs: Date.now(),
         displayExpiresAtMs: Date.now() + 60000,
-        monthCoverage: ["2026-10", "2026-11", "2026-12"].map((value) => ({
-          month: value,
-          state:
-            value === "2026-10" || scenario === "empty"
-              ? ("empty" as const)
-              : ("available" as const),
-          observedAtMs: Date.now(),
-          displayExpiresAtMs: Date.now() + 60000,
-        })),
-        dates:
-          month !== "2026-10" && scenario !== "empty"
-            ? [{ date: `${month}-03`, available: true }]
-            : verifiedEmptyDates(month),
-      };
-    });
-    const service: BookingService = {
-      ...demoBookingService,
-      mode: "live",
-      operations: { ...demoBookingService.operations, availability: "live" },
-      publicCalendar,
+      })),
+      dates:
+        month !== "2026-10" && scenario !== "empty"
+          ? [{ date: `${month}-03`, available: true }]
+          : verifiedEmptyDates(month),
     };
-    const view = render(
-      <BookingProvider bookingService={service}>
-        <TimeStep />
-      </BookingProvider>,
-    );
-    await waitFor(() => expect(gates.has("2026-10")).toBe(true));
-    expect(
-      screen.getByRole("status", { name: "Checking dates…" }),
-    ).toBeInTheDocument();
+  });
+  const service: BookingService = {
+    ...demoBookingService,
+    mode: "live",
+    operations: { ...demoBookingService.operations, availability: "live" },
+    publicCalendar,
+  };
+  const view = render(
+    <BookingProvider bookingService={service}>
+      <TimeStep />
+    </BookingProvider>,
+  );
+  await waitFor(() => expect(gates.has("2026-10")).toBe(true));
+  expect(
+    screen.getByRole("status", { name: "Checking dates…" }),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Booking calendar" })).toBeNull();
+  await act(async () => gates.get("2026-10")!());
+  if (scenario !== "empty") {
+    await waitFor(() => expect(gates.has("2026-12")).toBe(true));
+    await act(async () => gates.get("2026-11")!());
+    // The first usable month is insufficient: the later available month must be ready too.
     expect(
       screen.queryByRole("region", { name: "Booking calendar" }),
     ).toBeNull();
-    await act(async () => gates.get("2026-10")!());
-    if (scenario !== "empty") {
-      await waitFor(() => expect(gates.has("2026-12")).toBe(true));
-      await act(async () => gates.get("2026-11")!());
-      // The first usable month is insufficient: the later available month must be ready too.
-      expect(
-        screen.queryByRole("region", { name: "Booking calendar" }),
-      ).toBeNull();
-      if (scenario === "failure") {
-        expect(await screen.findByRole("alert")).toHaveTextContent(
-          "Unable to Load.",
-        );
+    if (scenario === "failure") {
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Unable to Load.",
+      );
+      await waitFor(() =>
         expect(
           screen.queryByRole("status", { name: "Checking dates…" }),
-        ).toBeNull();
-      }
-      await act(async () => gates.get("2026-12")!());
-      if (scenario === "failure") {
-        fail = false;
-        fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-        await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(4));
-        await act(async () => gates.get("2026-11")!());
-      }
+        ).toBeNull(),
+      );
     }
-    const region = await screen.findByRole("region", {
-      name: "Booking calendar",
-    });
-    expect(region).toHaveAttribute("aria-busy", "false");
+    await act(async () => gates.get("2026-12")!());
+    if (scenario === "failure") {
+      fail = false;
+      fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+      await waitFor(() => expect(publicCalendar).toHaveBeenCalledTimes(4));
+      await act(async () => gates.get("2026-11")!());
+    }
+  }
+  const region = await screen.findByRole("region", {
+    name: "Booking calendar",
+  });
+  expect(region).toHaveAttribute("aria-busy", "false");
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("status", { name: "Checking dates…" }),
+    ).toBeNull(),
+  );
+  const picker = screen.getByRole("combobox", { name: "Calendar month" });
+  expect(picker).toHaveValue(scenario === "empty" ? "0" : "1");
+  if (scenario !== "empty") {
+    const reads = publicCalendar.mock.calls.length;
+    fireEvent.change(picker, { target: { value: "2" } });
+    expect(
+      within(region).getByRole("button", { name: dateLabel("2026-12-03") }),
+    ).toHaveAttribute("aria-pressed", "true");
+    fireEvent.change(picker, { target: { value: "0" } });
+    expect(picker).toHaveValue("0");
     expect(
       screen.queryByRole("status", { name: "Checking dates…" }),
     ).toBeNull();
-    const picker = screen.getByRole("combobox", { name: "Calendar month" });
-    expect(picker).toHaveValue(scenario === "empty" ? "0" : "1");
-    if (scenario !== "empty") {
-      const reads = publicCalendar.mock.calls.length;
-      fireEvent.change(picker, { target: { value: "2" } });
-      expect(
-        within(region).getByRole("button", { name: dateLabel("2026-12-03") }),
-      ).toHaveAttribute("aria-pressed", "true");
-      fireEvent.change(picker, { target: { value: "0" } });
-      expect(picker).toHaveValue("0");
-      expect(
-        screen.queryByRole("status", { name: "Checking dates…" }),
-      ).toBeNull();
-      expect(publicCalendar).toHaveBeenCalledTimes(reads);
-    } else {
-      expect(publicCalendar).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
-    }
-    expect(
-      publicCalendar.mock.calls.some(([input]) => input.month > "2026-12"),
-    ).toBe(false);
-    view.unmount();
+    expect(publicCalendar).toHaveBeenCalledTimes(reads);
+  } else {
+    expect(publicCalendar).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   }
+  expect(
+    publicCalendar.mock.calls.some(([input]) => input.month > "2026-12"),
+  ).toBe(false);
+  view.unmount();
+}
+
+test("initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation", async () => {
+  await verifyInitialCalendarDiscovery("available");
+});
+
+test("initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation (empty)", async () => {
+  await verifyInitialCalendarDiscovery("empty");
+});
+
+test("initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation (failure)", async () => {
+  await verifyInitialCalendarDiscovery("failure");
+});
+
+test("initial calendar discovery hides unresolved dates searches bounded months and respects manual navigation (manual)", async () => {
+  await verifyInitialCalendarDiscovery("manual");
 });
 
 test("home calendar warming defers sibling preparation until booking entry", async () => {
@@ -1948,6 +1968,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     screen.getByRole("group", { name: "Session times" }),
   ).toBeInTheDocument();
   expect(day()).toBeEnabled();
+  await act(async () => vi.advanceTimersByTimeAsync(1000));
   expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1001);

@@ -75,7 +75,7 @@ async function closeBookingPanel(page: Page) {
 }
 async function chooseSlots(page: Page, multiple = false) {
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Continue as Guest" }).click();
+  await page.getByRole("button", { name: "Guest" }).click();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   await page
     .getByRole("button", {
@@ -196,9 +196,14 @@ async function payAttempt(page: Page, outcome = "success") {
       sessionStorage.setItem(key, JSON.stringify(stored));
     }, outcome);
     await page.reload();
+    // Playwright's installed clock clears navigation timing entries, so this
+    // fixture retains the operation label. Real reload labels are covered by
+    // the live-email tests without a mocked Performance API.
     await expect(
-      page.getByRole("heading", { name: "Processing payment", exact: true }),
+      page.getByRole("status", { name: "Processing payment", exact: true }),
     ).toBeVisible();
+    await expect(page.locator(".page-loading")).toHaveCount(1);
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   }
   await page.clock.runFor(5000);
 }
@@ -232,7 +237,7 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
       await page.goto(sitePath(path), { waitUntil: "commit" });
       const cover = page.locator("#page-refresh");
       await expect(
-        cover.getByRole("status", { name: "Refreshing…" }),
+        cover.getByRole("status", { name: "Loading page" }),
       ).toBeVisible();
       await expect(page.locator("#page-refresh-content")).toHaveAttribute(
         "inert",
@@ -242,7 +247,7 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
       await expect(page.locator(".site-footer")).not.toBeVisible();
       await page.emulateMedia({ reducedMotion: "reduce" });
       await expect(
-        cover.getByRole("status", { name: "Refreshing…" }),
+        cover.getByRole("status", { name: "Loading page" }),
       ).toBeVisible();
       await page.emulateMedia({ reducedMotion: "no-preference" });
       const bounds = await cover.boundingBox();
@@ -1116,6 +1121,8 @@ test("hero entry restores the arena scene and click-to-skip without a logo overl
   page,
 }) => {
   await openSite(page, "/");
+  // Finish initial document loading before freezing the animation clock.
+  await expect(page.locator("#page-refresh")).toHaveCount(0);
   // Keep automatic navigation from winning while this case checks click-to-skip.
   // Natural completion has its own advancing-clock case below.
   await page.clock.pauseAt(new Date("2026-10-05T08:01:00+08:00"));
@@ -1228,7 +1235,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     "src",
     sitePath("/assets/c275ccd87afb.svg"),
   );
-  await page.getByRole("button", { name: "Continue as Guest" }).click();
+  await page.getByRole("button", { name: "Guest" }).click();
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
@@ -2098,7 +2105,7 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(page.locator(".access-choice-divider")).toHaveText("or");
   const choices = page.locator(".access-choices");
   await expect(choices).toHaveCSS("display", "grid");
-  const guest = page.getByRole("button", { name: "Continue as Guest" });
+  const guest = page.getByRole("button", { name: "Guest" });
   const signIn = page.getByRole("button", { name: "Sign in", exact: true });
   await page.mouse.move(0, 0);
   for (const button of [guest, signIn]) {
@@ -2117,7 +2124,18 @@ test("header blue and the typography hierarchy stay consistent across every book
   }
   const guestBox = await guest.boundingBox();
   const signInBox = await signIn.boundingBox();
-  expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
+  const divider = page.locator(".access-choice-divider");
+  const dividerBox = await divider.boundingBox();
+  if (page.viewportSize()!.width <= 700) {
+    expect(guestBox!.x).toBeCloseTo(signInBox!.x, 0);
+    expect(guestBox!.y + guestBox!.height).toBeLessThan(dividerBox!.y);
+    expect(dividerBox!.y + dividerBox!.height).toBeLessThan(signInBox!.y);
+    await expect(divider).toHaveCSS("text-align", "center");
+  } else {
+    expect(guestBox!.y).toBeCloseTo(signInBox!.y, 0);
+    expect(guestBox!.x + guestBox!.width).toBeLessThan(dividerBox!.x);
+    expect(dividerBox!.x + dividerBox!.width).toBeLessThan(signInBox!.x);
+  }
   expect(guestBox!.width).toBeCloseTo(signInBox!.width, 0);
   const actionHeight = page.viewportSize()!.width <= 700 ? 48 : 60.4;
   for (const button of [guest, signIn]) {
@@ -2127,32 +2145,16 @@ test("header blue and the typography hierarchy stay consistent across every book
       ),
     ).toBeCloseTo(actionHeight, 0);
   }
-  expect(guestBox!.x + guestBox!.width).toBeLessThan(signInBox!.x);
-  const divider = page.locator(".access-choice-divider");
   await expect(divider).toHaveCSS("font-family", /Roboto/);
   await expect(divider).toHaveCSS("font-size", "20px");
   await expect(divider).toHaveCSS("text-transform", "uppercase");
-  await expect(divider).toHaveCSS("text-decoration-line", "none");
+  await expect(divider).toHaveCSS("text-decoration-line", "underline");
   const dividerLines = await divider.evaluate((node) =>
-    ["::before", "::after"].map((pseudo) => {
-      const style = getComputedStyle(node, pseudo);
-      return {
-        width: style.width,
-        height: style.height,
-        content: style.content,
-      };
-    }),
+    ["::before", "::after"].map(
+      (pseudo) => getComputedStyle(node, pseudo).content,
+    ),
   );
-  for (const line of dividerLines) {
-    expect(line.width).toBe("1px");
-    expect(line.content).toBe('""');
-    expect(parseFloat(line.height)).toBeGreaterThan(0);
-  }
-  // Flex layout can allocate its remaining 1/64px to only one divider line.
-  expect(parseFloat(dividerLines[0].height)).toBeCloseTo(
-    parseFloat(dividerLines[1].height),
-    1,
-  );
+  expect(dividerLines).toEqual(["none", "none"]);
   await expect(divider).toHaveCSS("font-weight", "900");
   await expect(divider).toHaveCSS("font-style", "italic");
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
@@ -2610,6 +2612,10 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await expect(
     page.getByRole("heading", { name: "Select dates and times" }),
   ).toBeVisible();
+  // The expiry boundary above remains exact; finish the new Calendar cover
+  // before interacting with its cart while the clock remains controlled.
+  await page.clock.runFor(1000);
+  await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   await openBookingPanel(page, "cart");
   const basket = page.getByRole("complementary", {
     name: "Your booking summary",
@@ -2850,7 +2856,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   page,
 }) => {
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Continue as Guest" }).click();
+  await page.getByRole("button", { name: "Guest" }).click();
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   const date = addDays(DEMO_TODAY, 1);
   const mobile = page.viewportSize()!.width <= 700;
@@ -3218,9 +3224,7 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     );
     if (width <= 700) expect(geometry.fontSize).toBe("32px");
   }
-  await page
-    .getByRole("button", { name: "Continue as Guest", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Guest", exact: true }).click();
   const sessionTitle = page.getByRole("heading", {
     name: "Your session",
     exact: true,

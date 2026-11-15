@@ -56,7 +56,7 @@ export function PaymentStep() {
       document.removeEventListener("visibilitychange", refresh);
     };
   }, [bookingService.mode, attempt, busy, error, check, resolve]);
-  if (!attempt) return <BrandLoading label="Refreshing…" />;
+  if (!attempt) return <BrandLoading label="Opening booking" />;
   if (bookingService.mode === "live") {
     if (attempt.status !== "ready")
       return (

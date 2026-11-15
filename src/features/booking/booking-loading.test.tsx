@@ -1,8 +1,22 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { expect, test } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { renderToString } from "react-dom/server";
 import { PendingConfirmation } from "./confirmation-step";
 import { BookingLoading, BookingLoadingProvider } from "./booking-loading";
+
+beforeEach(() =>
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] }),
+);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 test("overlapping booking reads share one full-page loader and preserve the mounted form", () => {
   function Screen({ first, second }: { first: boolean; second: boolean }) {
@@ -30,6 +44,7 @@ test("overlapping booking reads share one full-page loader and preserve the moun
   fireEvent.change(input, { target: { value: "Retained name" } });
   view.rerender(<Screen first second={false} />);
   expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveTextContent("Loading...");
   view.rerender(<Screen first={false} second />);
   expect(document.querySelectorAll(".booking-flow-overlay")).toHaveLength(1);
   expect(
@@ -47,8 +62,21 @@ test("overlapping booking reads share one full-page loader and preserve the moun
   ).toBeInTheDocument();
   expect(screen.getByLabelText("Contact name")).toBe(input);
   view.rerender(<Screen first={false} second={false} />);
+  expect(document.querySelector(".page-loading")).not.toBeNull();
+  act(() => vi.advanceTimersByTime(999));
+  expect(document.querySelector(".page-loading")).not.toBeNull();
+  expect(input.parentElement).toHaveAttribute("inert");
+  act(() => vi.advanceTimersByTime(1));
   expect(document.querySelector(".page-loading")).toBeNull();
   expect(input).toHaveValue("Retained name");
+  expect(input.parentElement).not.toHaveAttribute("inert");
+  // A new episode gets its own minimum; slow work adds no extra delay.
+  view.rerender(<Screen first second={false} />);
+  act(() => vi.advanceTimersByTime(1500));
+  expect(document.querySelector(".page-loading")).not.toBeNull();
+  view.rerender(<Screen first={false} second={false} />);
+  act(() => vi.advanceTimersByTime(0));
+  expect(document.querySelector(".page-loading")).toBeNull();
   expect(input.parentElement).not.toHaveAttribute("inert");
 });
 
@@ -73,17 +101,18 @@ test("unmounting a pending booking screen releases the overlay and existing page
 test("display loading leaves navigation interactive while payment loading still locks the page", () => {
   const view = render(
     <BookingLoadingProvider>
-      <button>Continue as Guest</button>
+      <button>Guest</button>
       <BookingLoading compact overlay={false} label="Reading calendar" />
     </BookingLoadingProvider>,
   );
-  const button = screen.getByRole("button", { name: "Continue as Guest" });
+  const button = screen.getByRole("button", { name: "Guest" });
   expect(button.closest("[inert]")).toBeNull();
   expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(screen.getByRole("status")).toHaveClass("booking-loading-inline");
+  expect(screen.getByRole("status")).toHaveTextContent("Loading...");
   view.rerender(
     <BookingLoadingProvider>
-      <button>Continue as Guest</button>
+      <button>Guest</button>
       <BookingLoading compact overlay={false} label="Reading calendar" />
       <BookingLoading compact label="Opening checkout…" />
     </BookingLoadingProvider>,

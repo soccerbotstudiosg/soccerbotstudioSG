@@ -114,7 +114,7 @@ export function checkExport(directory, basePath) {
       if (
         refresh?.style.position !== "fixed" ||
         refresh?.style.inset !== "0px" ||
-        !refresh.querySelector('[role="status"][aria-label="Refreshing…"]') ||
+        !refresh.querySelector('[role="status"][aria-label="Loading page"]') ||
         content?.style.visibility !== "hidden" ||
         !content.hasAttribute("inert") ||
         !content.querySelector("main")

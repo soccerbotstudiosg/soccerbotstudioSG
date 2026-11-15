@@ -2177,9 +2177,11 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   ).toHaveTextContent("Tue, 20 Oct 2026, 12:00–12:40.");
   expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
   expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
-  expect(
-    document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
-  ).toBeNull();
+  await waitFor(() =>
+    expect(
+      document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
+    ).toBeNull(),
+  );
   expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
   const assertBackgroundOnly = () => {
     expect(
@@ -2198,6 +2200,7 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   view.unmount();
   view = render(tree("time"));
   await act(async () => {});
+  await act(async () => vi.advanceTimersByTimeAsync(1000));
   assertBackgroundOnly();
   const statusBefore = requests.filter((request) =>
     request.path.endsWith("/confirmation"),
@@ -2474,9 +2477,11 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   expect(saved.contact).toEqual(draft.contact);
   expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
   expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
-  expect(
-    document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
-  ).toBeNull();
+  await waitFor(() =>
+    expect(
+      document.querySelector(".booking-flow-overlay, .payment-check-feedback"),
+    ).toBeNull(),
+  );
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(
     fetch.mock.calls.every(
@@ -2562,291 +2567,321 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   ).toBe(false);
 });
 
-it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes", async () => {
+/** Verify one isolated scenario with its real foreground loading lifecycle. */
+async function verifyNoCreationRecovery(
+  route:
+    | "recovery"
+    | "confirmation"
+    | "status"
+    | "refresh"
+    | "home"
+    | "home-refresh"
+    | "immediate",
+) {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const notice =
     "Nothing was booked or charged. Your details are saved; please choose your sessions again.";
-  for (const route of [
-    "recovery",
-    "confirmation",
-    "status",
-    "refresh",
-    "home",
-    "home-refresh",
-    "immediate",
-  ] as const) {
-    cleanup();
-    sessionStorage.clear();
-    localStorage.clear();
-    navigation.replace.mockClear();
-    let resolved = route === "status" || route === "immediate";
-    let refreshed = false;
-    let freshAvailable = false;
-    const retained: Attempt = {
-      id,
-      draft,
-      status: "checking",
-      outcome: "pending",
-      checkUntil: 0,
-      booking: null,
-    };
-    const fetcher = vi.fn<typeof globalThis.fetch>(async (input) => {
-      const path = String(input);
-      if (path === `/api/booking/checkout/${id}`)
-        return Response.json({
-          attemptId: id,
-          state: "recovery_required",
-          paymentAvailable: false,
-          creationResolution: { state: "not_created" },
-        });
-      if (path === `/api/attempts/${id}/checkout`)
-        return Response.json({
-          attemptId: id,
-          mode: "live",
-          checkout: { state: "unavailable" },
-          ...(route === "status"
-            ? {}
-            : resolved
-              ? { creationResolution: { state: "not_created" } }
-              : { bookingIssue: "incomplete" }),
-          summary: {
-            players: draft.players,
-            totalMinor: 8800,
-            currency: "SGD",
-            sessions: [
-              {
-                startMs: Date.parse("2026-10-20T12:00:00+08:00"),
-                players: draft.players,
-              },
-            ],
-          },
-          checking: {
-            deadlineMs: Date.now() + 600000,
-            nextCheckMs: 0,
-            pollAfterMs: 5000,
-          },
-        });
-      if (path === `/api/attempts/${id}/confirmation`)
-        return Response.json(
-          resolved
-            ? {
-                status: "invalid",
-                reason: "booking_not_created",
-                creationResolution: { state: "not_created" },
-              }
-            : { status: "pending", reason: "payment_verification_pending" },
-        );
-      return new Response(null, { status: 503 });
-    });
-    vi.stubGlobal("fetch", fetcher);
-    const service: BookingService = {
-      ...liveBookingService,
-      checkout: async () => ({ ...retained, status: "ready" }),
-      restore: async () =>
-        route === "immediate" || refreshed ? null : retained,
-      publicCalendar: undefined,
-      calendar: async ({ month }) => ({
-        month,
-        observedAtMs: Date.now(),
-        dates: [{ date: draft.slots[0].date, available: true }],
-      }),
-      availability: vi.fn(async ({ fresh }) => {
-        if (fresh && !freshAvailable)
-          throw new Error("Synthetic fresh availability outage");
-        return [
-          ...draft.slots.map((slot) => ({ ...slot, available: true })),
-          {
-            ...draft.slots[0],
-            instructor: "5",
-            native: {
-              ...draft.slots[0].native,
-              instructorName: "Other instructor",
+
+  cleanup();
+  sessionStorage.clear();
+  localStorage.clear();
+  navigation.replace.mockClear();
+  let resolved = route === "status" || route === "immediate";
+  let refreshed = false;
+  let freshAvailable = false;
+  const retained: Attempt = {
+    id,
+    draft,
+    status: "checking",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  };
+  const fetcher = vi.fn<typeof globalThis.fetch>(async (input) => {
+    const path = String(input);
+    if (path === `/api/booking/checkout/${id}`)
+      return Response.json({
+        attemptId: id,
+        state: "recovery_required",
+        paymentAvailable: false,
+        creationResolution: { state: "not_created" },
+      });
+    if (path === `/api/attempts/${id}/checkout`)
+      return Response.json({
+        attemptId: id,
+        mode: "live",
+        checkout: { state: "unavailable" },
+        ...(route === "status"
+          ? {}
+          : resolved
+            ? { creationResolution: { state: "not_created" } }
+            : { bookingIssue: "incomplete" }),
+        summary: {
+          players: draft.players,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [
+            {
+              startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+              players: draft.players,
             },
-            available: true,
-          },
-        ];
-      }),
-    };
-    const identity = { ...demoCustomerIdentity, mode: "live" as const };
-    function Probe() {
-      const state = useBooking();
-      return (
-        <>
-          <output data-testid="creation-attempt">
-            {state.attempt?.id ?? "none"}
-          </output>
-          <output data-testid="creation-draft">
-            {JSON.stringify(state.draft)}
-          </output>
-          <output data-testid="creation-suppressed">
-            {JSON.stringify(state.suppressedSlots)}
-          </output>
-          <button onClick={state.leave}>Leave uncertain booking</button>
-          <button
-            onClick={() =>
-              state.resolveUncreatedBooking(
-                "00000000-0000-4000-8000-000000000099",
-              )
+          ],
+        },
+        checking: {
+          deadlineMs: Date.now() + 600000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    if (path === `/api/attempts/${id}/confirmation`)
+      return Response.json(
+        resolved
+          ? {
+              status: "invalid",
+              reason: "booking_not_created",
+              creationResolution: { state: "not_created" },
             }
-          >
-            Foreign proof
-          </button>
-          <button onClick={() => state.update({ ...draft, accepted: true })}>
-            Accept original
-          </button>
-          <button onClick={() => void state.checkout()}>Create original</button>
-        </>
+          : { status: "pending", reason: "payment_verification_pending" },
       );
-    }
-    const tree = (
-      step: "payment" | "time" | "account" | "review" | "confirmation" | null,
-    ) => (
-      <BookingProvider bookingService={service} identityService={identity}>
-        <Probe />
-        {step === "confirmation" ? (
-          <ConfirmationPage />
-        ) : (
-          step && <BookingPage step={step} />
-        )}
-      </BookingProvider>
+    return new Response(null, { status: 503 });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const service: BookingService = {
+    ...liveBookingService,
+    checkout: async () => ({ ...retained, status: "ready" }),
+    restore: async () => (route === "immediate" || refreshed ? null : retained),
+    publicCalendar: undefined,
+    calendar: async ({ month }) => ({
+      month,
+      observedAtMs: Date.now(),
+      dates: [{ date: draft.slots[0].date, available: true }],
+    }),
+    availability: vi.fn(async ({ fresh }) => {
+      if (fresh && !freshAvailable)
+        throw new Error("Synthetic fresh availability outage");
+      return [
+        ...draft.slots.map((slot) => ({ ...slot, available: true })),
+        {
+          ...draft.slots[0],
+          instructor: "5",
+          native: {
+            ...draft.slots[0].native,
+            instructorName: "Other instructor",
+          },
+          available: true,
+        },
+      ];
+    }),
+  };
+  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  function Probe() {
+    const state = useBooking();
+    return (
+      <>
+        <output data-testid="creation-attempt">
+          {state.attempt?.id ?? "none"}
+        </output>
+        <output data-testid="creation-draft">
+          {JSON.stringify(state.draft)}
+        </output>
+        <output data-testid="creation-suppressed">
+          {JSON.stringify(state.suppressedSlots)}
+        </output>
+        <button onClick={state.leave}>Leave uncertain booking</button>
+        <button
+          onClick={() =>
+            state.resolveUncreatedBooking(
+              "00000000-0000-4000-8000-000000000099",
+            )
+          }
+        >
+          Foreign proof
+        </button>
+        <button onClick={() => state.update({ ...draft, accepted: true })}>
+          Accept original
+        </button>
+        <button onClick={() => void state.checkout()}>Create original</button>
+      </>
     );
-    navigation.path =
+  }
+  const tree = (
+    step: "payment" | "time" | "account" | "review" | "confirmation" | null,
+  ) => (
+    <BookingProvider bookingService={service} identityService={identity}>
+      <Probe />
+      {step === "confirmation" ? (
+        <ConfirmationPage />
+      ) : (
+        step && <BookingPage step={step} />
+      )}
+    </BookingProvider>
+  );
+  navigation.path =
+    route === "immediate"
+      ? "/book/review/"
+      : route === "confirmation"
+        ? "/confirmation/"
+        : "/book/payment/";
+  saveLiveDraft(draft, true, route === "immediate" ? undefined : id);
+  let view = render(
+    tree(
       route === "immediate"
-        ? "/book/review/"
+        ? "review"
         : route === "confirmation"
-          ? "/confirmation/"
-          : "/book/payment/";
-    saveLiveDraft(draft, true, route === "immediate" ? undefined : id);
-    let view = render(
-      tree(
-        route === "immediate"
-          ? "review"
-          : route === "confirmation"
-            ? "confirmation"
-            : "payment",
+          ? "confirmation"
+          : "payment",
+    ),
+  );
+  if (route === "immediate") {
+    await act(async () => {});
+    fireEvent.click(screen.getByText("Accept original"));
+    fireEvent.click(screen.getByText("Create original"));
+  } else if (route !== "status") {
+    await screen.findByRole("status", {
+      name: "Checking whether your booking was created…",
+    });
+    fireEvent.click(screen.getByText("Foreign proof"));
+    expect(screen.getByTestId("creation-attempt")).toHaveTextContent(id);
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    expect(
+      JSON.parse(screen.getByTestId("creation-draft").textContent!).slots,
+    ).toEqual(draft.slots);
+    if (route === "home" || route === "home-refresh") {
+      fireEvent.click(screen.getByText("Leave uncertain booking"));
+      navigation.path = "/";
+      view.rerender(tree(null));
+      resolved = true;
+      navigation.replace.mockClear();
+      navigation.path = "/book/account/";
+      if (route === "home-refresh") {
+        view.unmount();
+        refreshed = true;
+        view = render(tree("account"));
+      } else view.rerender(tree("account"));
+    } else if (route === "refresh") {
+      view.unmount();
+      resolved = true;
+      refreshed = true;
+      view = render(tree("payment"));
+    } else {
+      resolved = true;
+      vi.setSystemTime(Date.now() + 5001);
+      fireEvent.focus(window);
+    }
+  }
+  await waitFor(() =>
+    expect(screen.getByTestId("creation-attempt")).toHaveTextContent("none"),
+  );
+  await waitFor(() =>
+    expect(
+      JSON.parse(screen.getByTestId("creation-draft").textContent!).slots,
+      route,
+    ).toEqual([]),
+  );
+  const cleared = JSON.parse(screen.getByTestId("creation-draft").textContent!);
+  expect(cleared.slots).toEqual([]);
+  expect(cleared.accepted).toBe(false);
+  expect(
+    JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
+  ).toEqual(draft.slots);
+  expect(
+    JSON.parse(sessionStorage.getItem("soccerbot-live-draft")!)
+      .checkoutAttemptId,
+  ).toBeUndefined();
+  if (route === "home" || route === "home-refresh") {
+    await screen.findByRole("heading", { name: "Start your booking" });
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/payment/");
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    expect(cleared.mode).toBeNull();
+  } else {
+    expect(cleared.contact).toEqual(draft.contact);
+    expect(cleared.nativeServiceId).toBe(draft.nativeServiceId);
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
+    );
+    navigation.path = "/book/time/";
+    view.rerender(tree("time"));
+    expect(await screen.findByRole("alert")).toHaveTextContent(notice);
+    await waitFor(() =>
+      expect(
+        document.querySelector(
+          ".booking-flow-overlay, .payment-check-feedback",
+        ),
+      ).toBeNull(),
+    );
+    expect(
+      screen.queryByRole("status", {
+        name: "Checking whether your booking was created…",
+      }),
+    ).toBeNull();
+    const originalDate = await screen.findByRole("button", {
+      name: dateLabel(draft.slots[0].date),
+    });
+    await waitFor(() => expect(originalDate).toBeEnabled());
+    fireEvent.click(originalDate);
+    await waitFor(() =>
+      expect(service.availability).toHaveBeenCalledWith(
+        expect.objectContaining({ fresh: true }),
       ),
     );
-    if (route === "immediate") {
-      await act(async () => {});
-      fireEvent.click(screen.getByText("Accept original"));
-      fireEvent.click(screen.getByText("Create original"));
-    } else if (route !== "status") {
-      await screen.findByRole("status", {
-        name: "Checking whether your booking was created…",
-      });
-      fireEvent.click(screen.getByText("Foreign proof"));
-      expect(screen.getByTestId("creation-attempt")).toHaveTextContent(id);
-      expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
-      expect(
-        JSON.parse(screen.getByTestId("creation-draft").textContent!).slots,
-      ).toEqual(draft.slots);
-      if (route === "home" || route === "home-refresh") {
-        fireEvent.click(screen.getByText("Leave uncertain booking"));
-        navigation.path = "/";
-        view.rerender(tree(null));
-        resolved = true;
-        navigation.replace.mockClear();
-        navigation.path = "/book/account/";
-        if (route === "home-refresh") {
-          view.unmount();
-          refreshed = true;
-          view = render(tree("account"));
-        } else view.rerender(tree("account"));
-      } else if (route === "refresh") {
-        view.unmount();
-        resolved = true;
-        refreshed = true;
-        view = render(tree("payment"));
-      } else {
-        resolved = true;
-        vi.setSystemTime(Date.now() + 5001);
-        fireEvent.focus(window);
-      }
-    }
-    await waitFor(() =>
-      expect(screen.getByTestId("creation-attempt")).toHaveTextContent("none"),
-    );
-    await waitFor(() =>
-      expect(
-        JSON.parse(screen.getByTestId("creation-draft").textContent!).slots,
-        route,
-      ).toEqual([]),
-    );
-    const cleared = JSON.parse(
-      screen.getByTestId("creation-draft").textContent!,
-    );
-    expect(cleared.slots).toEqual([]);
-    expect(cleared.accepted).toBe(false);
+    // Warm offers for both trainers must stay hidden through a failed fresh read.
+    expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
     expect(
       JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
     ).toEqual(draft.slots);
-    expect(
-      JSON.parse(sessionStorage.getItem("soccerbot-live-draft")!)
-        .checkoutAttemptId,
-    ).toBeUndefined();
-    if (route === "home" || route === "home-refresh") {
-      await screen.findByRole("heading", { name: "Start your booking" });
-      expect(navigation.replace).not.toHaveBeenCalledWith("/book/payment/");
-      expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
-      expect(cleared.mode).toBeNull();
-    } else {
-      expect(cleared.contact).toEqual(draft.contact);
-      expect(cleared.nativeServiceId).toBe(draft.nativeServiceId);
-      await waitFor(() =>
-        expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
-      );
-      navigation.path = "/book/time/";
-      view.rerender(tree("time"));
-      expect(await screen.findByRole("alert")).toHaveTextContent(notice);
+    await waitFor(() =>
       expect(
         document.querySelector(
           ".booking-flow-overlay, .payment-check-feedback",
         ),
-      ).toBeNull();
-      expect(
-        screen.queryByRole("status", {
-          name: "Checking whether your booking was created…",
-        }),
-      ).toBeNull();
-      const originalDate = await screen.findByRole("button", {
-        name: dateLabel(draft.slots[0].date),
-      });
-      await waitFor(() => expect(originalDate).toBeEnabled());
-      fireEvent.click(originalDate);
-      await waitFor(() =>
-        expect(service.availability).toHaveBeenCalledWith(
-          expect.objectContaining({ fresh: true }),
-        ),
-      );
-      // Warm offers for both trainers must stay hidden through a failed fresh read.
-      expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+      ).toBeNull(),
+    );
+    freshAvailable = true;
+    vi.setSystemTime(Date.now() + 60001);
+    fireEvent.focus(window);
+    await waitFor(() =>
       expect(
         JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
-      ).toEqual(draft.slots);
-      expect(
-        document.querySelector(
-          ".booking-flow-overlay, .payment-check-feedback",
-        ),
-      ).toBeNull();
-      freshAvailable = true;
-      vi.setSystemTime(Date.now() + 60001);
-      fireEvent.focus(window);
-      await waitFor(() =>
-        expect(
-          JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
-        ).toEqual([]),
-      );
-      expect(
-        await screen.findByRole("button", { name: /12:00–12:40/ }),
-      ).toBeEnabled();
-    }
-    const writes = fetcher.mock.calls.filter(
-      ([, options]) => options?.method === "POST",
+      ).toEqual([]),
     );
-    expect(writes).toHaveLength(route === "immediate" ? 1 : 0);
-    view.unmount();
+    expect(
+      await screen.findByRole("button", { name: /12:00–12:40/ }),
+    ).toBeEnabled();
   }
+  const writes = fetcher.mock.calls.filter(
+    ([, options]) => options?.method === "POST",
+  );
+  expect(writes).toHaveLength(route === "immediate" ? 1 : 0);
+  view.unmount();
+}
+
+it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes", async () => {
+  await verifyNoCreationRecovery("recovery");
+});
+
+it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes (confirmation)", async () => {
+  await verifyNoCreationRecovery("confirmation");
+});
+
+it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes (status)", async () => {
+  await verifyNoCreationRecovery("status");
+});
+
+it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes (refresh)", async () => {
+  await verifyNoCreationRecovery("refresh");
+});
+
+it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes (home)", async () => {
+  await verifyNoCreationRecovery("home");
+});
+
+it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes (home-refresh)", async () => {
+  await verifyNoCreationRecovery("home-refresh");
+});
+
+it("confirmed no-creation proof clears only its original attempt through recovery refresh home and immediate checkout routes (immediate)", async () => {
+  await verifyNoCreationRecovery("immediate");
 });
 
 /** Expose observable handoff state without coupling the regression to private helpers. */
