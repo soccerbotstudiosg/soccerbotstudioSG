@@ -685,13 +685,13 @@ Continue actions have32px top and24px bottom breathing room; floating actions si
 
 ### Consolidated continuation presentation — 15 November 2026
 
-The consolidated continuation layout uses the same sticky action for enquiry and booking, with32px above and24px below. The booking required-field note sits beside Booking Contact inside the card; the enquiry note sits beside Your details inside its form card. Cart date/time/trainer lines share21px line heights and2px gaps; remove/price controls occupy a separate right column. The first-step OR is20px with short horizontal rules on both sides, without underlining.
+The consolidated continuation layout uses the same sticky action for enquiry and booking, with32px above and24px below. The booking required-field note sits beside Booking Contact inside the card; the enquiry note sits beside Your details inside its form card. Cart date/time/trainer lines share21px line heights and2px gaps; remove/price controls occupy a separate right column. The first-step OR is20px and underlined, without decorative lines.
 
 Primary-action security/submission waits show a small spinner beside the button label together with a6px left-to-right navy fill along the disabled grey button. The spinner follows the actual loading state and disappears when the wait ends. The visual reaches80% at0.6seconds,94% at2seconds and98% at5seconds, then holds until actual readiness; it does not expose a fabricated percentage or enable an action on a timer. When waiting ends, the fill sweeps from its current position to100% over180ms before the ready entrance/halo resumes if eligibility is true. Provider work is never delayed for animation. Reduced motion shows a static fill. Provider calls, duplicate protection, eligibility and retry authority are unchanged.
 
 Explicit saved-contact submission stays on the editor with entered values intact. The card heading is Booking Contact; a green “Details saved.” notice appears directly beneath it, receives focus and scrolls into view. Editing clears the notice through the existing contact-key guard. Only the explicit Back control closes the editor. Ordinary booking-details submission still advances to Review with its existing background-save behavior.
 
-Unsigned booking entry uses the original navy buttons with white icons and 16px heavy-italic labels: “Continue as Guest” and “Sign in”. Both share one equal-width row on desktop and phone, separated by OR and vertical divider lines, with the existing asymmetric header-button corners. Photos and their unused assets are removed. Guest/sign-in handlers, disabled states and the verified Welcome back presentation are unchanged.
+Unsigned booking entry uses the original navy buttons with white icons and 16px heavy-italic labels: “Continue as Guest” and “Sign in”. Both share one equal-width row on desktop and phone, separated by underlined OR without decorative lines, with the existing asymmetric header-button corners. Photos and their unused assets are removed. Guest/sign-in handlers, disabled states and the verified Welcome back presentation are unchanged.
 
 ### Booking access expiry at navigation boundaries
 

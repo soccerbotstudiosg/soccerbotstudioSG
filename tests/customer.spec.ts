@@ -2132,27 +2132,13 @@ test("header blue and the typography hierarchy stay consistent across every book
   await expect(divider).toHaveCSS("font-family", /Roboto/);
   await expect(divider).toHaveCSS("font-size", "20px");
   await expect(divider).toHaveCSS("text-transform", "uppercase");
-  await expect(divider).toHaveCSS("text-decoration-line", "none");
+  await expect(divider).toHaveCSS("text-decoration-line", "underline");
   const dividerLines = await divider.evaluate((node) =>
-    ["::before", "::after"].map((pseudo) => {
-      const style = getComputedStyle(node, pseudo);
-      return {
-        width: style.width,
-        height: style.height,
-        content: style.content,
-      };
-    }),
+    ["::before", "::after"].map(
+      (pseudo) => getComputedStyle(node, pseudo).content,
+    ),
   );
-  for (const line of dividerLines) {
-    expect(line.width).toBe("1px");
-    expect(line.content).toBe('""');
-    expect(parseFloat(line.height)).toBeGreaterThan(0);
-  }
-  // Flex layout can allocate its remaining 1/64px to only one divider line.
-  expect(parseFloat(dividerLines[0].height)).toBeCloseTo(
-    parseFloat(dividerLines[1].height),
-    1,
-  );
+  expect(dividerLines).toEqual(["none", "none"]);
   await expect(divider).toHaveCSS("font-weight", "900");
   await expect(divider).toHaveCSS("font-style", "italic");
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
