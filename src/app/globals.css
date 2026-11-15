@@ -2866,6 +2866,44 @@
     opacity: 0.6;
     cursor: wait;
   }
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    .access-choices .access-choice {
+      transition:
+        transform 240ms ease-out,
+        background-color 240ms ease-out,
+        border-color 240ms ease-out,
+        box-shadow 240ms ease-out;
+    }
+    .access-choice img,
+    .access-choice-label,
+    .access-choice-label::after {
+      transition: transform 320ms ease-out;
+    }
+    .access-choice-guest .access-choice-label {
+      transform-origin: top right;
+    }
+    .access-choice-signin .access-choice-label {
+      transform-origin: bottom left;
+    }
+    .access-choices .access-choice:hover:not(:disabled) {
+      transform: translateY(-3px) scale(1.025);
+    }
+    .access-choice-guest:hover:not(:disabled) img {
+      transform: translate(-4px, 3px) scale(1.1);
+    }
+    .access-choice-signin:hover:not(:disabled) img {
+      transform: translate(4px, -3px) scale(1.1);
+    }
+    .access-choice-guest:hover:not(:disabled) .access-choice-label {
+      transform: translate(-4px, 4px) scale(1.04);
+    }
+    .access-choice-signin:hover:not(:disabled) .access-choice-label {
+      transform: translate(4px, -4px) scale(1.04);
+    }
+    .access-choice:hover:not(:disabled) .access-choice-label::after {
+      transform: scaleX(1.2);
+    }
+  }
   .access-choice-divider {
     display: flex;
     align-items: center;
