@@ -2954,10 +2954,13 @@
     min-width: 0;
   }
   .session-product-meta {
+    border-left: 1px solid var(--color-control-border);
+    padding-left: 12px;
     color: var(--color-ink);
     font-size: var(--text-body);
   }
   .session-product-meta > span {
+    display: block;
     white-space: nowrap;
   }
   .session-product-prices {
@@ -3001,11 +3004,9 @@
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    width: 46px;
-    height: 46px;
-    border-radius: 5px 13px 5px 13px;
-    background: var(--color-navy);
-    color: var(--color-on-brand);
+    width: 24px;
+    height: 24px;
+    color: var(--color-ink);
   }
   .session-product-icon svg {
     width: 24px;
@@ -4655,14 +4656,6 @@
     .session-product-choice {
       gap: 8px;
     }
-    .session-product-icon {
-      width: 32px;
-      height: 32px;
-    }
-    .session-product-icon svg {
-      width: 20px;
-      height: 20px;
-    }
     .player-selection {
       padding-top: 8px;
     }
@@ -4753,18 +4746,12 @@
     }
     .session-product-meta {
       grid-column: 1 / -1;
+      border-left: 0;
+      padding-left: 0;
     }
     .session-product-prices {
       margin-top: 0;
       gap: 2px;
-    }
-    .session-product-icon {
-      width: 36px;
-      height: 36px;
-    }
-    .session-product-icon svg {
-      width: 20px;
-      height: 20px;
     }
     .booking-shell {
       padding: 0 20px 38px;

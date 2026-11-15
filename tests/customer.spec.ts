@@ -1107,6 +1107,18 @@ test("oracle booking sizing and rotation disclaimers persist through checkout", 
     "white-space",
     "nowrap",
   );
+  await expect(page.locator(".session-product-meta > span")).toHaveCSS(
+    "display",
+    "block",
+  );
+  await expect(page.locator(".session-product-meta")).toHaveCSS(
+    "border-left-width",
+    cardWidths.mobile ? "0px" : "1px",
+  );
+  await expect(page.locator(".session-product-icon")).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
   await expect(page.locator(".session-product-name")).not.toContainText(
     "(Trial Price)",
   );
