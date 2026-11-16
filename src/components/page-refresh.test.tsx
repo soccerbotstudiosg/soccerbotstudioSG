@@ -207,16 +207,18 @@ test("normal and browser return navigation never say refreshing and preserve pay
   booking.ready = true;
   for (const type of ["navigate", "back_forward"]) {
     navigation = type;
-    function Page({ pending = true }: { pending?: boolean }) {
+    function Page({
+      pending = true,
+      label = "Payment received. Confirming booking.",
+    }: {
+      pending?: boolean;
+      label?: string;
+    }) {
       return (
         <BookingLoadingProvider>
           <PageRefreshBoundary>
             <main>
-              {pending ? (
-                <BookingLoading label="Payment received. Confirming booking." />
-              ) : (
-                <h1>Ready page</h1>
-              )}
+              {pending ? <BookingLoading label={label} /> : <h1>Ready page</h1>}
             </main>
           </PageRefreshBoundary>
         </BookingLoadingProvider>
@@ -227,6 +229,11 @@ test("normal and browser return navigation never say refreshing and preserve pay
       "Checking booking… Please do not close or refresh.",
     );
     expect(screen.queryByText("Loading...", { exact: true })).toBeNull();
+    view.rerender(<Page label="Processing payment" />);
+    expect(
+      screen.getByRole("status", { name: "Processing payment" }),
+    ).toBeVisible();
+    expect(document.querySelectorAll(".page-loading")).toHaveLength(1);
     view.rerender(<Page />);
     const cover = screen.getByRole("status", {
       name: "Payment received. Confirming booking.",

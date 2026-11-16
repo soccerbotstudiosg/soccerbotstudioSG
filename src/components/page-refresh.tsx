@@ -75,9 +75,9 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     (operationLabel && operationLabel !== feedback.label)
   )
     setFeedback({ pathname, label: operationLabel });
-  // Keep the operation's message through fonts/frame completion and route fallbacks.
+  // Active operations take precedence; retain meaningful feedback after they finish.
   const feedbackLabel =
-    operationLabel ??
+    loading?.label ??
     (feedback.pathname === pathname ? feedback.label : undefined) ??
     checkoutRouteLoadingLabel(pathname);
   const setDocumentLoading = loading?.setDocumentLoading;
