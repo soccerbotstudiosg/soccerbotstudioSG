@@ -932,7 +932,7 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
       name: /^Proceed to Payment \$[\d,.]+$/,
     });
     const natural = await proceed.evaluate(naturalActionBounds);
-    await page.evaluate(({ top }) => {
+    await page.evaluate(async ({ top }) => {
       const header = document
         .querySelector(".site-header")!
         .getBoundingClientRect();
@@ -940,6 +940,9 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
         top: Math.max(0, scrollY + top - header.bottom - 24),
         behavior: "instant",
       });
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
     }, natural);
     // The hint may cross the header; the visible click target must stay put.
     await expect(page.locator(".booking-primary-action")).toHaveAttribute(
