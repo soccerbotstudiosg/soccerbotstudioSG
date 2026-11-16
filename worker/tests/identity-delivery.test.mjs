@@ -1271,7 +1271,7 @@ test("client email delivery fails closed for missing sender or production bot se
   assert.equal(calls.length, 0);
 });
 
-test("customer booking help is owned deduplicated and sends only a fixed staff report with retry-safe content", async () => {
+test("customer booking help is owned deduplicated and sends staff and customer acknowledgements with retry-safe content", async () => {
   await mf.dispose();
   rmSync(root, { recursive: true, force: true });
   root = mkdtempSync(path.join(tmpdir(), "soccerbot-support-"));
@@ -1289,6 +1289,7 @@ test("customer booking help is owned deduplicated and sends only a fixed staff r
   const foreign = await guest();
   const id = crypto.randomUUID(),
     retryId = crypto.randomUUID(),
+    partialId = crypto.randomUUID(),
     now = Date.now();
   const intent = {
     accountId: bindings.DEPLOYMENT_ACCOUNT_ID,
@@ -1316,7 +1317,7 @@ test("customer booking help is owned deduplicated and sends only a fixed staff r
       },
     ],
   };
-  for (const attemptId of [id, retryId])
+  for (const attemptId of [id, retryId, partialId])
     await db
       .prepare(
         "INSERT INTO attempts(id,owner_id,idempotency_key,intent_json,intent_hash,created_ms,deadline_ms,state) VALUES(?,?,?,?,?,?,?,'recovery_required')",
@@ -1346,7 +1347,7 @@ test("customer booking help is owned deduplicated and sends only a fixed staff r
   const first = await send();
   assert.equal(first.status, 200);
   assert.deepEqual(await first.json(), { status: "sent" });
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   assert.deepEqual(calls[0].body.to, ["contact@soccerbotsg.com"]);
   assert.match(calls[0].body.text, /Synthetic Customer/);
   assert.match(calls[0].body.text, /booking_unconfirmed/);
@@ -1355,22 +1356,37 @@ test("customer booking help is owned deduplicated and sends only a fixed staff r
     calls[0].headers.get("Idempotency-Key"),
     `booking-support/${id}`,
   );
+  assert.deepEqual(calls[1].body.to, ["synthetic@example.com"]);
+  assert.equal(calls[1].body.reply_to, "contact@soccerbotsg.com");
+  assert.equal(
+    calls[1].headers.get("Idempotency-Key"),
+    `booking-support-acknowledgement/${id}`,
+  );
+  assert.match(
+    calls[1].body.text,
+    /Help has been requested. We will get back as soon as we can./,
+  );
+  assert.match(calls[1].body.text, /Singapore time/);
+  assert.match(calls[1].body.text, /SGD \$108.00/);
+  assert.match(calls[1].body.text, /not a confirmed booking/);
+  assert.match(calls[1].body.text, /do not pay again/);
+  assert.doesNotMatch(calls[1].body.text, /Attempt:|service 3|trainer 2/);
   assert.equal((await send()).status, 200);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   mailResult = () => new Response(null, { status: 503 });
   assert.equal((await send(retryId)).status, 503);
-  const originalPayload = calls[1].body;
+  const originalPayload = calls[2].body;
   assert.equal((await send(retryId)).status, 429);
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 3);
   await db
     .prepare("UPDATE booking_support_reports SET next_ms=0 WHERE attempt_id=?")
     .bind(retryId)
     .run();
   mailResult = null;
   assert.equal((await send(retryId)).status, 200);
-  assert.deepEqual(calls[2].body, originalPayload);
+  assert.deepEqual(calls[3].body, originalPayload);
   assert.equal(
-    calls[2].headers.get("Idempotency-Key"),
+    calls[3].headers.get("Idempotency-Key"),
     `booking-support/${retryId}`,
   );
   assert.equal(
@@ -1378,6 +1394,48 @@ test("customer booking help is owned deduplicated and sends only a fixed staff r
       .state,
     "recovery_required",
   );
+  // An accepted staff message with an uncertain acknowledgement never claims completion.
+  const partialStart = calls.length;
+  mailResult = () =>
+    calls
+      .at(-1)
+      .headers.get("Idempotency-Key")
+      .startsWith("booking-support-acknowledgement/")
+      ? new Response(null, { status: 503 })
+      : Response.json({ id: crypto.randomUUID() });
+  assert.equal((await send(partialId)).status, 503);
+  assert.equal(
+    (
+      await db
+        .prepare("SELECT state FROM booking_support_reports WHERE attempt_id=?")
+        .bind(partialId)
+        .first()
+    ).state,
+    "pending",
+  );
+  assert.equal((await send(partialId)).status, 429);
+  const partialPayloads = calls.slice(partialStart).map((call) => call.body);
+  await db
+    .prepare("UPDATE booking_support_reports SET next_ms=0 WHERE attempt_id=?")
+    .bind(partialId)
+    .run();
+  mailResult = null;
+  assert.equal((await send(partialId)).status, 200);
+  assert.deepEqual(
+    calls.slice(partialStart + 2).map((call) => call.body),
+    partialPayloads,
+  );
+  assert.equal(
+    calls[partialStart].headers.get("Idempotency-Key"),
+    calls[partialStart + 2].headers.get("Idempotency-Key"),
+  );
+  assert.equal(
+    calls[partialStart + 1].headers.get("Idempotency-Key"),
+    calls[partialStart + 3].headers.get("Idempotency-Key"),
+  );
+  const afterPartial = calls.length;
+  assert.equal((await send(partialId)).status, 200);
+  assert.equal(calls.length, afterPartial);
   const paidId = crypto.randomUUID();
   await db
     .prepare(
@@ -1400,7 +1458,8 @@ test("customer booking help is owned deduplicated and sends only a fixed staff r
     .bind(paidId, paidId, now + 60000, now - 60000, now + 600000, now, now)
     .run();
   assert.equal((await send(paidId)).status, 200);
-  assert.match(calls.at(-1).body.text, /payment_confirmation_pending/);
+  assert.match(calls.at(-2).body.text, /payment_confirmation_pending/);
+  assert.deepEqual(calls.at(-1).body.to, ["synthetic@example.com"]);
   assert.equal(
     (
       await db

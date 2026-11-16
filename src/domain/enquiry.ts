@@ -32,7 +32,7 @@ export function enquiryErrors(
     errors.organisation =
       value.organisation.trim().length > 120
         ? "Use no more than 120 characters."
-        : "Remove invalid characters from the organisation name.";
+        : "Remove invalid characters.";
   if (!ENQUIRY_TYPES.includes(value.purpose))
     errors.purpose = "Choose an enquiry type.";
   if (
@@ -45,8 +45,8 @@ export function enquiryErrors(
   if (value.time && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.time))
     errors.time = "Enter a valid time.";
   if (!value.message.trim() || value.message.length > 2000)
-    errors.message = "Enter your requirements using 1–2,000 characters.";
+    errors.message = "Enter 1–2,000 characters.";
   else if (/[\p{Cc}\p{Cf}]/u.test(value.message.replace(/[\r\n\t]/g, "")))
-    errors.message = "Remove invalid characters from your requirements.";
+    errors.message = "Remove invalid characters.";
   return errors;
 }

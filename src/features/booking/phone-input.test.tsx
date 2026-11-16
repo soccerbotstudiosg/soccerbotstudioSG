@@ -31,9 +31,7 @@ test("phone input blocks invalid Singapore edits and retains a correctable exist
   render(<Field initial="00000000" />);
   const input = screen.getByLabelText(/Mobile number/);
   expect(input).toHaveAttribute("placeholder", "9123 4567");
-  expect(
-    screen.getByText("Enter an 8-digit mobile number starting with 8 or 9."),
-  ).toBeVisible();
+  expect(screen.getByText("Use 8 digits, starting with 8 or 9.")).toBeVisible();
   fireEvent.change(input, { target: { value: "0000000" } });
   expect(input).toHaveValue("0000000");
   fireEvent.change(input, { target: { value: "" } });

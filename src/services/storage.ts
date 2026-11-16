@@ -266,7 +266,9 @@ export function saveCalendarRecovery(attemptId: string, unresolved = false) {
       ...stored,
       calendarRecovery: true,
       unresolvedCheckout: unresolved,
-      calendarNoticeDismissed: false,
+      calendarNoticeDismissed:
+        stored.calendarRecovery === true &&
+        stored.calendarNoticeDismissed === true,
     });
 }
 /** Leave calendar recovery only for the matching tab's original financial attempt. */
@@ -314,7 +316,7 @@ const noticeSlotsSchema = z.array(slotSchema).max(MAX_BOOKING_SESSIONS);
 export type NoticeSlot = z.infer<typeof noticeSlotsSchema>[number];
 /** Read validated display-only affected slots; an empty array retains generic conflict copy. */
 export function loadConflictNotice(
-  kind: "conflict" | "cutoff" = "conflict",
+  kind: "conflict" | "cutoff" | "no-creation" | "expiry" = "conflict",
 ): NoticeSlot[] | null {
   const parsed = noticeSlotsSchema.safeParse(
     safeRead(`soccerbot-${kind}-notice`),
@@ -324,10 +326,37 @@ export function loadConflictNotice(
 /** Retain availability copy across refresh without persisting booking authority. */
 export function saveConflictNotice(
   slots: NoticeSlot[] | null,
-  kind: "conflict" | "cutoff" = "conflict",
+  kind: "conflict" | "cutoff" | "no-creation" | "expiry" = "conflict",
 ) {
   if (slots !== null) safeWrite(`soccerbot-${kind}-notice`, slots);
   else safeRemove(`soccerbot-${kind}-notice`);
+}
+
+const helpNoticeSchema = z.object({
+  attemptId: z.uuid(),
+  pathname: z.string(),
+  state: z.enum(["open", "sent", "dismissed"]),
+});
+/** Retain only same-page notice presentation, never payment or booking authority. */
+export function bookingHelpNotice(
+  attemptId: string,
+  pathname: string,
+  state?: "open" | "sent",
+) {
+  if (state) safeWrite("soccerbot-help-notice", { attemptId, pathname, state });
+  const saved = helpNoticeSchema.safeParse(safeRead("soccerbot-help-notice"));
+  return saved.success &&
+    saved.data.attemptId === attemptId &&
+    saved.data.pathname === pathname
+    ? saved.data.state
+    : undefined;
+}
+/** Dismiss red or green help presentation on navigation without reviving it on Back. */
+export function clearDepartedBookingHelpNotice(pathname: string) {
+  const saved = helpNoticeSchema.safeParse(safeRead("soccerbot-help-notice"));
+  if (!saved.success) safeRemove("soccerbot-help-notice");
+  else if (saved.data.pathname !== pathname && saved.data.state !== "dismissed")
+    safeWrite("soccerbot-help-notice", { ...saved.data, state: "dismissed" });
 }
 
 // Pending conflict data is a tab-local display snapshot, never server authority.
@@ -406,8 +435,9 @@ export function hasSeenConfirmation(attemptId: string) {
     return false;
   }
 }
-/** Remember the last displayed confirmation for repeat provider-return navigation only. */
+/** Remember displayed confirmation only to suppress repayment during protected recovery. */
 export function markConfirmationSeen(attemptId: string) {
+  completedPaymentReturn(attemptId, true);
   try {
     localStorage.setItem(SEEN_CONFIRMATION_KEY, attemptId);
   } catch {

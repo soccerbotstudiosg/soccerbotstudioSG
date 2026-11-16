@@ -242,6 +242,16 @@ async function directCase(scenario: string) {
     </BookingProvider>,
   );
   fireEvent.click(screen.getByText("Seed"));
+  const paymentButton = screen.getByRole("button", {
+    name: /^Proceed to Payment/,
+  });
+  expect(paymentButton.querySelector(".checkout-redirect")).toHaveTextContent(
+    "You’ll be redirected to to complete your payment.",
+  );
+  expect(paymentButton).toHaveAccessibleDescription(
+    "You’ll be redirected to HitPay to complete your payment.",
+  );
+  expect(paymentButton.querySelector(".checkout-redirect a")).toBeNull();
   fireEvent.click(
     screen.getByRole("button", { name: "Expire checkout proof" }),
   );
@@ -1679,13 +1689,22 @@ it("keeps booking UI unready until protected restoration finishes", async () => 
   expect(screen.getByTestId("restoration-ready")).toHaveTextContent("true");
 });
 
-it("editing a new selection clears the previous unpaid reservation notice", async () => {
+it("editing a new selection retains the unpaid reservation notice until navigation", async () => {
   function State() {
-    const { restartAfterExpiry, update, selectionNotice } = useBooking();
+    const { restartAfterExpiry, update, selectionNotice, visitBookingStep } =
+      useBooking();
     return (
       <>
         <button onClick={() => restartAfterExpiry(id)}>Released</button>
         <button onClick={() => update({ players: 2 })}>New selection</button>
+        <button
+          onClick={() => {
+            visitBookingStep("time");
+            visitBookingStep("session");
+          }}
+        >
+          Leave calendar
+        </button>
         {selectionNotice && <p role="status">{selectionNotice}</p>}
       </>
     );
@@ -1699,13 +1718,16 @@ it("editing a new selection clears the previous unpaid reservation notice", asyn
   fireEvent.click(screen.getByText("Released"));
   expect(screen.getByRole("status")).toHaveTextContent(PAYMENT_WINDOW_ENDED);
   fireEvent.click(screen.getByText("New selection"));
-  expect(screen.queryByText(PAYMENT_WINDOW_ENDED)).not.toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(PAYMENT_WINDOW_ENDED);
+  fireEvent.click(screen.getByText("Leave calendar"));
+  expect(screen.queryByText(PAYMENT_WINDOW_ENDED)).toBeNull();
 });
 
 /** Exercise the shared expiry guard with an explicit reviewed case. */
 async function verifyExpiryRetention(multi: boolean) {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  navigation.path = "/book/time/";
   const other = { ...draft.slots[0], start: "12:50" };
   const availability = vi.fn<BookingService["availability"]>(async () => [
     { ...draft.slots[0], available: false },
@@ -1720,11 +1742,15 @@ async function verifyExpiryRetention(multi: boolean) {
       draft: current,
       restartAfterExpiry,
       selectionNotice,
+      selectionNoticeSlots,
       suppressedSlots,
     } = useBooking();
     return (
       <>
         <button onClick={() => restartAfterExpiry(id)}>Released</button>
+        <output data-testid="notice-slots">
+          {JSON.stringify(selectionNoticeSlots)}
+        </output>
         <output data-testid="cart">{JSON.stringify(current)}</output>
         <output data-testid="suppressed">
           {JSON.stringify(suppressedSlots)}
@@ -1735,7 +1761,7 @@ async function verifyExpiryRetention(multi: boolean) {
       </>
     );
   }
-  render(
+  const tree = (
     <BookingProvider
       bookingService={{
         ...liveBookingService,
@@ -1744,8 +1770,9 @@ async function verifyExpiryRetention(multi: boolean) {
       }}
     >
       <Probe />
-    </BookingProvider>,
+    </BookingProvider>
   );
+  let view = render(tree);
   fireEvent.click(screen.getByText("Released"));
   fireEvent.click(screen.getByText("Released"));
   expect(JSON.parse(screen.getByTestId("cart").textContent!).slots).toEqual([]);
@@ -1770,6 +1797,30 @@ async function verifyExpiryRetention(multi: boolean) {
       serviceId: "2",
     }),
   );
+  const expectedSlots = (multi ? [draft.slots[0], other] : draft.slots).map(
+    ({ date, start }) => ({ date, start }),
+  );
+  view.unmount();
+  view = render(tree);
+  await act(async () => {});
+  expect(
+    screen.getByRole("status", { name: "Expiry notice" }),
+  ).toHaveTextContent(PAYMENT_WINDOW_ENDED);
+  expect(JSON.parse(screen.getByTestId("notice-slots").textContent!)).toEqual(
+    expectedSlots,
+  );
+  navigation.path = "/";
+  view.rerender(tree);
+  view.unmount();
+  view = render(tree);
+  view.unmount();
+  navigation.path = "/book/time/";
+  view = render(tree);
+  await act(async () => {});
+  expect(
+    screen.getByRole("status", { name: "Expiry notice" }),
+  ).toHaveTextContent(/^$/);
+  view.unmount();
 }
 it("unpaid expiry keeps the cart empty and checks affected sessions (multi=false)", async () => {
   await verifyExpiryRetention(false);
@@ -1871,7 +1922,7 @@ async function verifyExpiryStaleRead(outcome: string) {
     expect(current.players).toBe(2);
     expect(
       screen.getByRole("status", { name: "Expiry notice" }),
-    ).toBeEmptyDOMElement();
+    ).toHaveTextContent(PAYMENT_WINDOW_ENDED);
     expect(availability.mock.calls[0][0].signal?.aborted).toBe(true);
   } else {
     expect(
@@ -2113,7 +2164,16 @@ async function verifyMockPaymentExpiry(expired: boolean) {
       </>
     );
   }
-  const tree = (step: "payment" | "time" | "confirmation") => {
+  const tree = (
+    step:
+      | "account"
+      | "session"
+      | "time"
+      | "details"
+      | "review"
+      | "payment"
+      | "confirmation",
+  ) => {
     navigation.path =
       step === "confirmation" ? "/confirmation/" : `/book/${step}/`;
     return (
@@ -2290,6 +2350,24 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   expect(isCalendarRecovery(id)).toBe(false);
   expect(completedPaymentReturn(id)).toBe(true);
   view.unmount();
+  for (const previousStep of [
+    "account",
+    "session",
+    "time",
+    "details",
+    "review",
+    "payment",
+  ] as const) {
+    navigation.replace.mockClear();
+    const oldPage = render(tree(previousStep));
+    await act(async () => {});
+    expect(navigation.replace).toHaveBeenCalledWith(
+      `/confirmation/?attempt=${id}`,
+    );
+    expect(document.querySelector(".booking-shell")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+    oldPage.unmount();
+  }
   navigation.replace.mockClear();
   await act(async () => {
     render(tree("time"));
@@ -2581,7 +2659,7 @@ async function verifyNoCreationRecovery(
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const notice =
-    "Nothing was booked or charged. Your details are saved; please choose your sessions again.";
+    "Some sessions may no longer be available. Please check again.";
 
   cleanup();
   sessionStorage.clear();
@@ -2706,7 +2784,14 @@ async function verifyNoCreationRecovery(
     );
   }
   const tree = (
-    step: "payment" | "time" | "account" | "review" | "confirmation" | null,
+    step:
+      | "payment"
+      | "time"
+      | "account"
+      | "session"
+      | "review"
+      | "confirmation"
+      | null,
   ) => (
     <BookingProvider bookingService={service} identityService={identity}>
       <Probe />
@@ -2760,6 +2845,9 @@ async function verifyNoCreationRecovery(
         view = render(tree("account"));
       } else view.rerender(tree("account"));
     } else if (route === "refresh") {
+      // Calendar recovery clears the editable cart before terminal proof arrives.
+      saveLiveDraft({ ...draft, slots: [] }, true, id);
+      saveSuppressedSlots(draft.slots);
       view.unmount();
       resolved = true;
       refreshed = true;
@@ -2802,7 +2890,12 @@ async function verifyNoCreationRecovery(
     );
     navigation.path = "/book/time/";
     view.rerender(tree("time"));
-    expect(await screen.findByRole("alert")).toHaveTextContent(notice);
+    const recoveryNotice = await screen.findByRole("alert");
+    expect(recoveryNotice).toHaveTextContent(notice);
+    expect(within(recoveryNotice).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(recoveryNotice).getByRole("listitem")).toHaveTextContent(
+      "Tue, 20 Oct 2026, 12:00–12:40.",
+    );
     await waitFor(() =>
       expect(
         document.querySelector(
@@ -2848,6 +2941,28 @@ async function verifyNoCreationRecovery(
     expect(
       await screen.findByRole("button", { name: /12:00–12:40/ }),
     ).toBeEnabled();
+    // A resolved notice is display-only state, retained across document reloads.
+    view.unmount();
+    refreshed = true;
+    view = render(tree("time"));
+    const reloadedNotice = await screen.findByRole("alert");
+    expect(reloadedNotice).toHaveTextContent(notice);
+    expect(within(reloadedNotice).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(reloadedNotice).getByRole("listitem")).toHaveTextContent(
+      "Tue, 20 Oct 2026, 12:00–12:40.",
+    );
+    await act(async () => {});
+    fireEvent.click(screen.getByText("Accept original"));
+    expect(screen.getByText(notice)).toBeVisible();
+    navigation.path = "/book/session/";
+    view.rerender(tree("session"));
+    navigation.path = "/book/time/";
+    view.rerender(tree("time"));
+    expect(screen.queryByText(notice)).toBeNull();
+    view.unmount();
+    view = render(tree("time"));
+    await act(async () => {});
+    expect(screen.queryByText(notice)).toBeNull();
   }
   const writes = fetcher.mock.calls.filter(
     ([, options]) => options?.method === "POST",
@@ -4193,10 +4308,8 @@ async function expectRecoveryReleaseNavigation(
       navigation.path = "/book/time/";
       view.rerender(tree("time"));
       await act(async () => {});
-      expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
-      expect(
-        screen.getByRole("button", { name: "Request Help" }),
-      ).toBeVisible();
+      expect(screen.queryByRole("alert")).toBeNull();
+      expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
     }
     unavailableStorage.mockRestore();
     navigation.path = "/book/session/";
@@ -4206,8 +4319,8 @@ async function expectRecoveryReleaseNavigation(
     navigation.path = "/book/time/";
     view.rerender(tree("time"));
     await act(async () => {});
-    expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
-    expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
     navigation.path = "/book/session/";
     view.rerender(tree("session"));
     await act(async () => {});
@@ -4219,13 +4332,13 @@ async function expectRecoveryReleaseNavigation(
     navigation.path = "/book/time/";
     view.rerender(tree("time"));
     await act(async () => {});
-    expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
-    expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
     view.unmount();
     view = render(tree("time"));
     await act(async () => {});
-    expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
-    expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
     expect(
       JSON.parse(screen.getByTestId("original-recovery-draft").textContent!),
     ).toEqual(draft);

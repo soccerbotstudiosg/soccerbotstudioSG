@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Icon } from "@/components/icon";
+import { hitpayLogo } from "@/content/media";
 import { Dialog } from "@/components/dialog";
 import { money } from "@/domain/dates";
 import { totalCents, selectionErrors } from "@/domain/booking";
@@ -190,7 +191,8 @@ export function ReviewStep({
         loading={checkingProof || busy || verifying}
       >
         <button
-          className="button"
+          className="button checkout-payment-button"
+          aria-describedby="checkout-redirect"
           disabled={!canProceed}
           aria-busy={checkingProof || undefined}
           aria-label={
@@ -213,23 +215,44 @@ export function ReviewStep({
             }
           }}
         >
-          {(checkingProof || busy || verifying) && (
-            <Icon name="spinner" className="spinner" />
-          )}
-          {verifying ? (
-            "Checking reservation…"
-          ) : busy ? (
-            <BrandLoading
-              compact
-              label={conflictLoadingLabel ?? "Opening checkout…"}
+          <span className="checkout-primary-line">
+            {(checkingProof || busy || verifying) && (
+              <Icon name="spinner" className="spinner" />
+            )}
+            {verifying ? (
+              "Checking reservation…"
+            ) : busy ? (
+              <BrandLoading
+                compact
+                label={conflictLoadingLabel ?? "Opening checkout…"}
+              />
+            ) : checkingProof ? (
+              "Checking security…"
+            ) : (
+              "Proceed to Payment"
+            )}{" "}
+            <BookingActionTotal />
+            {!checkingProof && !busy ? (
+              <Icon name="lock" className="checkout-lock" />
+            ) : null}
+            <img
+              className="checkout-button-logo"
+              src={hitpayLogo}
+              width={108}
+              height={28}
+              alt=""
+              aria-hidden="true"
             />
-          ) : checkingProof ? (
-            "Checking security…"
-          ) : (
-            "Proceed to Payment"
-          )}{" "}
-          <BookingActionTotal />
-          {!checkingProof && !busy ? <Icon name="lock" /> : null}
+          </span>
+          <span
+            id="checkout-redirect"
+            className="checkout-redirect"
+            aria-hidden="true"
+          >
+            You’ll be redirected to{" "}
+            <img src={hitpayLogo} width={108} height={28} alt="HitPay" /> to
+            complete your payment.
+          </span>
         </button>
       </BookingPrimaryAction>
       {verifying && (

@@ -2,6 +2,23 @@ import { sitePath } from "../src/content/site-path";
 import { expect, test, type Page } from "@playwright/test";
 import { addDays, dateLabel } from "../src/domain/dates";
 const DEMO_TODAY = "2026-10-05";
+/** Read the button's reserved position without changing its floating state. */
+function naturalActionBounds(button: HTMLElement) {
+  const control = button.parentElement!;
+  const anchor = control.parentElement!;
+  const style = getComputedStyle(anchor);
+  const top =
+    anchor.getBoundingClientRect().top +
+    parseFloat(style.paddingTop) +
+    button.offsetTop;
+  return {
+    top,
+    bottom:
+      top +
+      button.getBoundingClientRect().height +
+      parseFloat(style.paddingBottom),
+  };
+}
 test.beforeEach(async ({ page }) => {
   // Payment deadlines need Date.now() to advance alongside the timers.
   await page.clock.install({ time: new Date("2026-10-05T08:00:00+08:00") });
@@ -236,8 +253,17 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
     try {
       await page.goto(sitePath(path), { waitUntil: "commit" });
       const cover = page.locator("#page-refresh");
+      const initialLabel = [
+        "/book/payment/",
+        "/book/confirmation/",
+        "/confirmation/",
+      ].includes(path)
+        ? "Checking payment…"
+        : path === "/book/review/"
+          ? "Checking booking…"
+          : "Loading page";
       await expect(
-        cover.getByRole("status", { name: "Loading page" }),
+        cover.getByRole("status", { name: initialLabel, exact: true }),
       ).toBeVisible();
       await expect(page.locator("#page-refresh-content")).toHaveAttribute(
         "inert",
@@ -247,7 +273,7 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
       await expect(page.locator(".site-footer")).not.toBeVisible();
       await page.emulateMedia({ reducedMotion: "reduce" });
       await expect(
-        cover.getByRole("status", { name: "Loading page" }),
+        cover.getByRole("status", { name: initialLabel, exact: true }),
       ).toBeVisible();
       await page.emulateMedia({ reducedMotion: "no-preference" });
       const bounds = await cover.boundingBox();
@@ -344,7 +370,7 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
       );
     } finally {
       release();
-      await page.unroute(scripts);
+      await page.unrouteAll({ behavior: "wait" });
       page.off("pageerror", recordError);
       await page.close();
     }
@@ -551,19 +577,29 @@ test("public routes remove staff access and fit the viewport", async ({
     (await page.locator("body").boundingBox())!.width / 2,
     0,
   );
+  const appCenters = await page
+    .locator(
+      ".footer-apps .footer-contact-heading, .footer-app-links, .footer-brand",
+    )
+    .evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const bounds = node.getBoundingClientRect();
+        return bounds.x + bounds.width / 2;
+      }),
+    );
+  expect(appCenters).toHaveLength(3);
+  for (const center of appCenters) expect(center).toBeCloseTo(appCenters[0], 0);
   if (page.viewportSize()!.width > 1100) {
     const appsBox = await page.locator(".footer-apps").boundingBox();
-    const logoBox = await page.locator(".footer-brand").boundingBox();
     const edge = footerBandBox!.x + footerBandBox!.width;
     expect(appsBox!.x + appsBox!.width).toBeCloseTo(edge, 0);
-    expect(logoBox!.x + logoBox!.width).toBeCloseTo(edge, 0);
     await expect(page.locator(".footer-contact-grid")).toHaveCSS(
       "column-gap",
       "36px",
     );
     await expect(
       page.locator(".footer-apps .footer-contact-heading"),
-    ).toHaveCSS("text-align", "right");
+    ).toHaveCSS("text-align", "center");
   }
   if (page.viewportSize()!.width > 700 && page.viewportSize()!.width <= 1100) {
     const groups = await page
@@ -575,11 +611,9 @@ test("public routes remove staff access and fit the viewport", async ({
     expect(groups[1].x).toBeCloseTo(groups[3].x, 0);
     expect(groups[0].y).toBeCloseTo(groups[1].y, 0);
     expect(groups[2].y).toBeCloseTo(groups[3].y, 0);
-    const logo = await page.locator(".footer-brand").boundingBox();
-    expect(logo!.x).toBeCloseTo(groups[3].x, 0);
     await expect(
       page.locator(".footer-apps .footer-contact-heading"),
-    ).toHaveCSS("text-align", "left");
+    ).toHaveCSS("text-align", "center");
     await expect(page.locator(".footer-contact-grid")).toHaveCSS(
       "row-gap",
       "24px",
@@ -858,8 +892,21 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   );
   await page.getByLabel("Full name", { exact: false }).focus();
   await expect(page.locator("#phone-error")).toHaveText(
-    "Enter an 8-digit mobile number starting with 8 or 9.",
+    "Use 8 digits, starting with 8 or 9.",
   );
+  if (page.viewportSize()!.width <= 700) {
+    const hint = await page.locator("#phone-error").evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        height: node.getBoundingClientRect().height,
+        line: parseFloat(style.lineHeight),
+        width: node.clientWidth,
+        content: node.scrollWidth,
+      };
+    });
+    expect(hint.height).toBeLessThanOrEqual(hint.line + 1);
+    expect(hint.content).toBeLessThanOrEqual(hint.width);
+  }
   await expect(
     page.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   ).toBeDisabled();
@@ -910,6 +957,30 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
       JSON.stringify([`Studio 1|${slot.date}|${slot.start}`]),
     );
   });
+  if (page.viewportSize()!.width <= 700) {
+    const proceed = page.getByRole("button", {
+      name: /^Proceed to Payment \$[\d,.]+$/,
+    });
+    const natural = await proceed.evaluate(naturalActionBounds);
+    await page.evaluate(async ({ top }) => {
+      const header = document
+        .querySelector(".site-header")!
+        .getBoundingClientRect();
+      scrollTo({
+        top: Math.max(0, scrollY + top - header.bottom - 24),
+        behavior: "instant",
+      });
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    }, natural);
+    // The hint may cross the header; the visible click target must stay put.
+    await expect(page.locator(".booking-primary-action")).toHaveAttribute(
+      "data-floating",
+      "false",
+    );
+    await expect(proceed).toBeInViewport({ ratio: 1 });
+  }
   await page
     .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
     .click();
@@ -1070,9 +1141,7 @@ test("enquiry remains available without external submission or a mock assistant"
     "24px",
   );
   await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
-  await expect(
-    page.getByText("Enter your requirements using 1–2,000 characters."),
-  ).toHaveCount(0);
+  await expect(page.getByText("Enter 1–2,000 characters.")).toHaveCount(0);
   for (const selector of [
     "#enquiry-name",
     "#enquiry-email",
@@ -1713,9 +1782,33 @@ test("first visit offers the Player App with only store links and dismissal pers
   const prompt = page.getByRole("dialog", {
     name: "Get the Soccerbot360 Player App",
   });
+  await expect(page).toHaveTitle(
+    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+  );
+  await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
+    "content",
+    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    "content",
+    new URL(sitePath("/"), "https://soccerbotsg.com").href,
+  );
+  const crawlerPage = await page.request.get(sitePath("/"));
+  expect(crawlerPage.ok()).toBe(true);
+  const initialHead = (await crawlerPage.text()).split("</head>")[0];
+  expect(initialHead).toContain(
+    "<title>Interactive Football Experience | SOCCERBOTSTUDIO Singapore</title>",
+  );
+  expect(initialHead).toContain('property="og:title"');
+  expect(initialHead).toContain('name="twitter:title"');
+  const previewImage = await page.request.get(
+    sitePath("/assets/soccerbot-social-preview.jpg"),
+  );
+  expect(previewImage.ok()).toBe(true);
+  expect(previewImage.headers()["content-type"]).toContain("image/jpeg");
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     "content",
-    "SOCCERBOTSTUDIO Singapore | Interactive Football Experience",
+    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
@@ -1970,12 +2063,10 @@ test("header blue and the typography hierarchy stay consistent across every book
               .map((animation) => animation.finished),
           );
         });
-        const anchorBox = await page
-          .locator(".booking-action-anchor")
-          .boundingBox();
+        const natural = await action.evaluate(naturalActionBounds);
         const floating =
-          anchorBox!.y + anchorBox!.height > page.viewportSize()!.height ||
-          anchorBox!.y <
+          natural.bottom > page.viewportSize()!.height ||
+          natural.top <
             (await page.locator(".site-header").boundingBox())!.height;
         await expect(primaryBar).toHaveAttribute(
           "data-floating",
@@ -1992,12 +2083,50 @@ test("header blue and the typography hierarchy stay consistent across every book
             0,
           );
         }
-        expect(barBox!.height).toBeLessThanOrEqual(72);
         if (floating) {
-          expect(barBox!.x).toBeCloseTo(20, 0);
-          expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width - 40, 0);
+          const reservedBox = await page
+            .locator(".booking-action-anchor")
+            .boundingBox();
+          expect(barBox!.x).toBeCloseTo(reservedBox!.x, 0);
+          expect(barBox!.width).toBeCloseTo(reservedBox!.width, 0);
         }
         const actionBox = await action.boundingBox();
+        expect(actionBox!.height).toBeLessThanOrEqual(72);
+        const redirect = primaryBar.locator(".checkout-redirect");
+        if ((await redirect.count()) && page.viewportSize()!.width <= 559) {
+          await expect(redirect).toBeHidden();
+          const logo = action.locator(".checkout-button-logo");
+          await expect(logo).toBeVisible();
+          const logoBox = await logo.boundingBox();
+          expect(logoBox!.x).toBeGreaterThan(
+            actionBox!.x + actionBox!.width / 2,
+          );
+          expect(logoBox!.x + logoBox!.width).toBeLessThanOrEqual(
+            actionBox!.x + actionBox!.width,
+          );
+          expect(barBox!.height).toBeLessThanOrEqual(72);
+        } else if (await redirect.count()) {
+          const logo = redirect.locator("img");
+          await expect(logo).toBeVisible();
+          expect(
+            await logo.evaluate(
+              (node) => (node as HTMLImageElement).naturalWidth,
+            ),
+          ).toBeGreaterThan(0);
+          const hint = await redirect.boundingBox();
+          const primary = await action
+            .locator(".checkout-primary-line")
+            .boundingBox();
+          expect(hint!.y).toBeGreaterThanOrEqual(primary!.y + primary!.height);
+          expect(hint!.y + hint!.height).toBeLessThanOrEqual(
+            actionBox!.y + actionBox!.height,
+          );
+          expect(hint!.x).toBeGreaterThanOrEqual(actionBox!.x);
+          expect(hint!.x + hint!.width).toBeLessThanOrEqual(
+            actionBox!.x + actionBox!.width,
+          );
+          expect(barBox!.height).toBeLessThanOrEqual(72);
+        } else expect(barBox!.height).toBeLessThanOrEqual(72);
         await expect(primaryBar).toHaveCSS(
           "background-color",
           "rgba(0, 0, 0, 0)",
@@ -2019,7 +2148,8 @@ test("header blue and the typography hierarchy stay consistent across every book
         const headerBottom = await page
           .locator(".site-header")
           .evaluate((node) => node.getBoundingClientRect().bottom);
-        if (settledAnchor!.y >= headerBottom) {
+        const settledNatural = await action.evaluate(naturalActionBounds);
+        if (settledNatural.top >= headerBottom) {
           await expect(primaryBar).toHaveAttribute("data-floating", "false");
           await expect(primaryBar).toHaveCSS("position", "relative");
           const settledBar = await primaryBar.boundingBox();
@@ -2061,6 +2191,52 @@ test("header blue and the typography hierarchy stay consistent across every book
     ).toHaveCount(0);
     const actionAnchor = page.locator(".booking-action-anchor");
     if (await actionAnchor.count()) {
+      const primary = actionAnchor.locator(".booking-primary-action");
+      if (await page.evaluate(() => CSS.supports("overflow-anchor", "none"))) {
+        await expect(primary).toHaveCSS("overflow-anchor", "none");
+        await expect(actionAnchor).toHaveCSS("overflow-anchor", "none");
+      }
+      // Cross both floating/resting boundaries in both directions. Moving the
+      // action must not pull the document into its footer or change its height.
+      const geometry = await actionAnchor.evaluate((node) => ({
+        top: node.getBoundingClientRect().top + scrollY,
+        bottom: node.getBoundingClientRect().bottom + scrollY,
+        header: document.querySelector(".site-header")!.getBoundingClientRect()
+          .bottom,
+        height: document.documentElement.scrollHeight,
+        viewport: innerHeight,
+        original: scrollY,
+      }));
+      const buttonPosition = await primary
+        .locator(":scope > .button")
+        .evaluate(naturalActionBounds);
+      const naturalTop = buttonPosition.top + geometry.original;
+      const stops = [
+        geometry.bottom - geometry.viewport - 2,
+        geometry.bottom - geometry.viewport + 2,
+        naturalTop - geometry.header - 2,
+        naturalTop - geometry.header + 2,
+        geometry.height - geometry.viewport,
+      ].map((y) =>
+        Math.round(
+          Math.max(0, Math.min(y, geometry.height - geometry.viewport)),
+        ),
+      );
+      for (const target of [...stops, ...stops.toReversed()]) {
+        const settled = await page.evaluate(async (y) => {
+          scrollTo({ top: y, behavior: "instant" });
+          await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          );
+          return { y: scrollY, height: document.documentElement.scrollHeight };
+        }, target);
+        expect(Math.abs(settled.y - target)).toBeLessThanOrEqual(1);
+        expect(settled.height).toBe(geometry.height);
+      }
+      await page.evaluate(
+        (y) => scrollTo({ top: y, behavior: "instant" }),
+        geometry.original,
+      );
       await expect(actionAnchor).toHaveCSS("padding-top", "32px");
       await expect(actionAnchor).toHaveCSS("padding-bottom", "24px");
       const actionButton = actionAnchor.locator(
@@ -2315,6 +2491,28 @@ test("header blue and the typography hierarchy stay consistent across every book
     .all()) {
     await expect(control).toHaveCSS("font-size", "16px");
   }
+  const monthFit = await page
+    .locator("#calendar-month")
+    .evaluate((node: HTMLSelectElement) => {
+      const style = getComputedStyle(node);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d")!;
+      context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const longest = Math.max(
+        ...Array.from(
+          node.options,
+          (option) => context.measureText(option.text).width,
+        ),
+      );
+      return {
+        required:
+          longest +
+          parseFloat(style.paddingLeft) +
+          parseFloat(style.paddingRight),
+        width: node.clientWidth,
+      };
+    });
+  expect(monthFit.width).toBeGreaterThanOrEqual(monthFit.required);
   await crossing.click();
   await expect(crossing).toHaveAttribute("aria-expanded", "true");
   await expect(crossing).toHaveAttribute("aria-pressed", "false");

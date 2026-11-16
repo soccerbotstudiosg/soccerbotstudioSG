@@ -2,6 +2,8 @@ import { sitePath } from "./site-path";
 export const bookingCover = sitePath("/assets/68b1a1790591.jpg");
 export const darkLogo = sitePath("/assets/7a29f38b3c34.webp");
 export const singaporeFlag = sitePath("/assets/singapore-flag.svg");
+// Official horizontal artwork: hit-pay/orchid@2881280, public/icons/orchidui/hitPay.svg.
+export const hitpayLogo = sitePath("/assets/hitpay-horizontal.svg");
 export const logo = sitePath("/assets/c275ccd87afb.svg");
 export const studioMedia = [
   {
@@ -98,6 +100,9 @@ export const studioHero = {
 };
 
 export const socialPreview = {
+  title: "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+  description:
+    "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.",
   src: sitePath("/assets/soccerbot-social-preview.jpg"),
   width: 1734,
   height: 907,

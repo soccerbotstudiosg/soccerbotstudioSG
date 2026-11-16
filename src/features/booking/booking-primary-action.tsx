@@ -113,19 +113,26 @@ export function BookingPrimaryAction({
     let frame = 0;
     const measure = () => {
       frame = 0;
-      // Reserve the in-flow size: a wider floating button can have fewer lines.
-      control.dataset.floating = "false";
+      // Read untransformed dimensions without moving the fixed control into flow.
       const style = getComputedStyle(position);
       const spacing =
         parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-      position.style.minHeight = `${control.getBoundingClientRect().height + spacing}px`;
+      position.style.minHeight = `${parseFloat(getComputedStyle(control).height) + spacing}px`;
       const bounds = position.getBoundingClientRect();
       control.style.setProperty("--action-left", `${bounds.left}px`);
       control.style.setProperty("--action-width", `${bounds.width}px`);
       const header = document.querySelector(".site-header");
       const top = header?.getBoundingClientRect().bottom ?? 0;
+      // Browser focus/click scrolling targets the button, not its surrounding
+      // spacing or hint. Do not move a visible button out from under that click.
+      const button = control.querySelector<HTMLElement>(".button");
+      const buttonTop =
+        bounds.top + parseFloat(style.paddingTop) + (button?.offsetTop ?? 0);
+      const buttonBottom =
+        buttonTop + (button?.offsetHeight ?? control.offsetHeight);
       control.dataset.floating = String(
-        bounds.bottom > window.innerHeight || bounds.top < top,
+        buttonBottom + parseFloat(style.paddingBottom) > window.innerHeight ||
+          buttonTop < top,
       );
     };
     const schedule = () => {

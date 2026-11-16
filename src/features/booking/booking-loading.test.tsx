@@ -78,6 +78,41 @@ test("overlapping booking reads share one full-page loader and preserve the moun
   act(() => vi.advanceTimersByTime(0));
   expect(document.querySelector(".page-loading")).toBeNull();
   expect(input.parentElement).not.toHaveAttribute("inert");
+  // Recovery feedback survives the calendar handoff, but not a new episode.
+  for (const label of [
+    "Checking payment…",
+    "Some sessions may no longer be available.",
+  ]) {
+    view.rerender(
+      <BookingLoadingProvider>
+        <BookingLoading label="Reading calendar" />
+        <BookingLoading label={label} />
+      </BookingLoadingProvider>,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      `${label} Please do not close or refresh.`,
+    );
+    view.rerender(
+      <BookingLoadingProvider>
+        <BookingLoading label="Reading calendar" />
+      </BookingLoadingProvider>,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      `${label} Please do not close or refresh.`,
+    );
+    expect(screen.queryByText("Loading...")).toBeNull();
+    view.rerender(<BookingLoadingProvider>{null}</BookingLoadingProvider>);
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.queryByRole("status")).toBeNull();
+    view.rerender(
+      <BookingLoadingProvider>
+        <BookingLoading label="Reading calendar" />
+      </BookingLoadingProvider>,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Loading...");
+    view.rerender(<BookingLoadingProvider>{null}</BookingLoadingProvider>);
+    act(() => vi.advanceTimersByTime(1000));
+  }
 });
 
 test("unmounting a pending booking screen releases the overlay and existing page inert state", () => {

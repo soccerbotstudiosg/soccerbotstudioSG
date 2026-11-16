@@ -88,7 +88,7 @@ export function contactErrors(
   if (c.academy.length > 120)
     errors.academy = "Use no more than 120 characters.";
   else if (!organisationSchema.safeParse(c.academy).success)
-    errors.academy = "Remove invalid characters from the organisation name.";
+    errors.academy = "Remove invalid characters.";
   return errors;
 }
 

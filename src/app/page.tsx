@@ -1,9 +1,15 @@
 import Link from "next/link";
+import { sitePath } from "@/content/site-path";
 import { Arena } from "@/components/arena";
 import { BookingLink } from "@/components/booking-navigation";
 import { Icon } from "@/components/icon";
-import { homeMedia } from "@/content/media";
+import { homeMedia, socialPreview } from "@/content/media";
 import { SessionPrice } from "@/features/booking/session-price";
+export const metadata = {
+  title: { absolute: socialPreview.title },
+  description: socialPreview.description,
+  alternates: { canonical: sitePath("/") },
+};
 /** Present the studio introduction and booking entry points. */
 export default function Home() {
   return (

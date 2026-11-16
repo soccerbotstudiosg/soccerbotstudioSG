@@ -138,11 +138,7 @@ test("details contains only the five contact fields and validates them before re
   for (const [label, value, message] of [
     [/Full name/, " ", "Enter the booking contact’s full name."],
     [/Email address/, "name@domain", "Enter a valid email address."],
-    [
-      /Mobile number/,
-      "abc",
-      "Enter an 8-digit mobile number starting with 8 or 9.",
-    ],
+    [/Mobile number/, "abc", "Use 8 digits, starting with 8 or 9."],
   ] as const) {
     const input = screen.getByLabelText(label);
     fireEvent.change(input, { target: { value } });

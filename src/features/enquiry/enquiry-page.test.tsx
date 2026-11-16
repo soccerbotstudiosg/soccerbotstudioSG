@@ -116,7 +116,7 @@ test("enquiry validates edits immediately and blocks invalid service submission"
     "Choose the option that best describes your enquiry.",
     "Your preferred date, subject to availability.",
     "Your preferred time in Singapore time (SGT).",
-    "Enter your requirements using 1–2,000 characters.",
+    "Enter 1–2,000 characters.",
   ])
     expect(screen.queryByText(removed)).toBeNull();
   expect(

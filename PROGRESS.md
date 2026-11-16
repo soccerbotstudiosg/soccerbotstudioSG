@@ -1,60 +1,12 @@
 # Current checkpoint
 
-## Dependency maintenance checkpoint
+## Active outcome
 
-16 November 2026: PR84 proposes the six routine updates in its manifest/lockfile. Owner requested regeneration of the stale version inventory. `node scripts/versions.mjs check` fails before regeneration and passes after; `docs/versions.md` now reflects the candidate lockfile. The dependency assessment is recorded in PR84, including unchanged host/peer requirements and graceful-fs ISC→BlueOak-1.0.0 license change. No application or test-inventory changes are needed for this generated-document repair. Full candidate CI and staging remain pending; no merge is authorized. PR83 booking repairs remain separate.
-
-## Previous application checkpoint
-
-16 November 2026: resolve homepage revisit flashes, enquiry action spacing, mobile progress-strip geometry, initial popup timing and single-line booking instructions on `fix/revisit-and-mobile-loading`, based on merged PR81/main3ea444f. Owner additionally requested a first-load homepage reveal and explicitly authorized push, staging, merge and monitoring to completion. No provider actions or configuration changes are in scope.
-
-Existing document readiness now covers homepage route returns before paint and waits for hero decoding; guarded booking departure shows loading instead of an empty main. The initial hero image settles with a light sweep; it does not replay on return or under reduced motion. Player App prompt waits for the cover to finish. Hidden enquiry proof no longer adds section spacing, visible proof has one gap before the shared action, and progress gets a clipped track outside generic mobile span margins. Step helpers retain16px muted text with shorter single-line copy; the verification recipient remains inside its form.
-
-Focused lifecycle checks and all391 unit/component tests pass; mutation of homepage reset and popup readiness fails both new regressions. Local source/quality/shard guards, build/export, lint/types/formatting passed. CI43756127944 on359d335 passed homepage-return, guarded-departure, helper typography and mobile progress geometry on all devices; all Worker checks passed. Its two failures are now diagnosed: one protected-confirmation fixture still tried to dismiss the deliberately deferred popup, and the new enquiry gap test measured an extra7–8px textarea inline baseline. Update that fixture to assert popup ordering, make the textarea block-level and tighten the gap assertion to32–33px. Frontend job132940498027 confirms the same popup-only failure; corrected build/export and affected checks pass. Publish this consolidated correction, then require its exact-head gates and actual staging health before authorized merge.
-
-Prior release: PR81 merged as3ea444f after CI43730512341 and staging43731704062 confirmed e45cb36. New changes require their own verification; physical-device presentation remains owner acceptance.
-
-## Current scope
-
-The outlet shows its building name above one address line, “201 Henderson Road, #05-01”. The session title and duration/player-range/trainer metadata share the desktop top row; two full-width price rows align their amounts right. Phone metadata stacks below the title. “Trainer included” stays together on one line; the demo name is “Kickoff Special” without the old trial-price suffix. Card body text, price amounts and the visible player count use 16px. Minus, count and plus occupy equal 40px squares; the count is bold and the icons are 20px. Unselected cards remain white; selected outlet, session, time, payment-method and calendar-day surfaces use the same pale teal fill and teal border as card hover, with dark ink; cart-day numeral circles use solid navy with white numbers. Outlet, session and time cards have no selection plus/tick icons; player-count minus/plus controls remain. The outside-card player helper, circle, line and pulse are removed. Primary Continue/Save actions have a subtle flowing navy gradient, static under reduced motion and absent on disabled controls. Cards remain vertically stacked, at most half the desktop section width and full width on phones. Toggle behavior, initial Continue visibility and sticky actions at every viewport are retained.
-
-Booking primary Continue/Save actions use the original header navy with white heavy-italic labels and normal letter spacing. Secondary and disabled states retain their existing treatment. Selected cards and calendar days use the pale teal hover colour, with unselected white surfaces unchanged. Calendar content and controls use16px, supporting details14px, section/card headings20px, and weekday/progress labels12px. Main headings retain40px desktop/32px phone heavy italic. Trainer labels remain16px before and after selection; state changes do not resize the text.
-
-Details retains “* Required fields” and the Booking Contact heading above the inputs, and removes the booking-timing introduction and saved-contact explanatory paragraph. Review removes “Check your details before payment.” Field labels, validation, consent, profile saving and review/confirmation summary headings are unchanged.
-
-Successful email verification returns to the verified Welcome back card on Account. Welcome back and the email use centred 24px, 900-weight italic action typography. Only explicit Continue signed in advances to Session; verification, remembered identity and revocation remain server-authoritative.
-
-The approved card arrangement uses a plain football icon and a vertical divider between the desktop session title and metadata. “Trainer included” occupies its own unbroken line. Narrow phones stack the metadata without the divider. Outlet name and single-line address remain aligned beside the location icon. White/pale-teal selection colours and the absence of selection ticks/plus icons are retained.
-
-Customer-facing trainer-rotation notices are removed from calendar, cart, review and confirmation. Demo boundary metadata and trainer/session assignment behavior remain unchanged.
-
-Session-step section headings are simply “Outlet” and “Session”.
-
-Review and Confirmation share Roboto with regular16px body/contact values, bold16px dates and edit links,20px section headings/totals/status emphasis, and14px supporting references/currency text. The email entry action and heading read “Sign in”; verified continuation remains “Continue signed in”.
-
-A time slot also uses the pale teal selection fill and border while its trainer selector is open, before a trainer is chosen. This visual state does not add a session to the cart.
-
-Session date/time/trainer lines share equal2px vertical gaps across cart and document summaries, including the full cart. Input values use14px; labels and control heights retain their existing sizes. Native autofill uses the shared pale teal fill, including the whole phone control; focus/error cues remain. Tinted cart rows, trainer avatars and expanded/hover trainer controls use the same pale teal; red remove controls retain their danger colours. Native contact-card autofill requires owner browser acceptance.
-
-Month/week day hover uses the shared pale teal fill and border. Time-slot containers use teal while choosing/selected; their outer focus ring follows keyboard focus-visible rather than lingering after mouse deselection.
-
-The header flag uses subtle1/3px asymmetric corners scaled to its small size.
-
-Each booking step has one introduction in the existing muted16px lead style. Entry asks guests to continue or sign in (verified users to continue signed in); Session asks users to confirm outlet/session/players; Details asks for booking contact details; Review asks users to review before payment. Existing sign-in/code instructions and Calendar’s “40-minute sessions · 10-minute changeover.” remain unchanged. Saved-contact editing has its matching short instruction. Compact desktop Session spacing retains initial Continue visibility.
-
-Calendar cart continuation is removed; the cart retains its total and shares Details top spacing. Shared next actions now float on desktop as well as phones whenever their normal position is outside the visible content area, aligned to the desktop content column. Existing eligibility guards remain unchanged.
-
-Enquiry success now stays on the form with an acknowledgement below its heading; the global Home banner/redirect/timer are removed. Live enquiry delivery sends an automatic customer reply containing the submitted enquiry after staff acceptance, with separate stable idempotency keys and shared mail admission. No provider configuration/migration changes or historical resend. Owner inbox acceptance remains pending.
-
-Shared Continue actions reserve32px above and24px below, including24px viewport-bottom clearance when floating. Trainer-dropdown focus no longer outlines its enclosing time card; keyboard focus remains on the active control.
+16 November2026: reconcile dependency PR84 after owner-accepted staging and merge of PR86 as6d78b11. Preserve the six reviewed dependency updates and merge current main without changing application behavior.
 
 ## Verification and next action
 
-Focused49 loader/refresh/protected-confirmation cases pass. Original boundary failed both new lifecycle regressions; original log retained. Initial focused run caught eight stale hard-coded Refreshing expectations, updated to neutral opening labels without changing no-effect assertions. All380 unit/component cases and the strict zero-skip/retry receipt pass. The41 affected export/inventory/shard/profile/result tooling cases pass. Production build/export verifies all15 routes. ESLint/types/source/format/diff checks pass. Initial run43717315436 on7c3e114 passed frontend, both backend browser shards and all Worker groups. Live-email failures were test-contract issues: Calendar reload ran before Time navigation committed on desktop, extra reload counts still expected one public read, and incomplete-batch tests expected the old message after reload. The retained trace confirms Session was reloaded, not Calendar. Wait for the actual Time URL and calendar before reloading; assert two reads for two documents; retain the native recovery-message assertion before reload and assert one Refreshing loader after it. Source/lint/types checks pass; final-head CI remains pending. Preserve all final-head gates and staging/merge evidence separately; prior PR80 was merged after green CI and exact staging health.
-
-## Remaining owner acceptance
-
-See [simulated-user UAT](docs/uat/simulated-user.md) for confirmation refresh/Back, immediate post-payment close/reopen, isolated unresolved recovery and final presentation/messenger checks. Owner accepted normal and consecutive booking, conflict, active checkout, expiry-return and last-minute payment on the preceding release. The owner reported the four-hour cutoff test fully accepted on 15 November 2026. Domain access and a complete sandbox payment were owner-confirmed; changed source still needs candidate acceptance. Before production release, verify native-domain CI-token permissions; staging does not prove them.
+PR86 passed exact-head CI43820416474 and staging43822079127 attempt2; independent health matched edc842c. PR84 previously passed CI43786617090 atc09812c. The only merge conflict was concurrent historical entries in Journey; both are preserved. Local dependency integration found and repaired a real-clock race in the account loader test with exact fake-clock boundary assertions; all four account cases pass. Full non-browser verification now passes:393 unit/component tests,205 tooling cases,58 installer tests, formatting, lint, types, dependency audit and15-route production export. Fresh exact-head CI and staging acceptance remain required before merge. No browser/provider operations or automatic merge of PR84 are authorized by this checkpoint. Dependency research and compatibility/license assessment remain in PR84.
 
 ## Ordered work after this slice
 
@@ -74,3 +26,5 @@ The queue is recorded now, before the full documentation reconciliation. These a
 | 10    | Launch readiness                    | Verify production/test separation, configuration, test-data disposition, spending alerts, customer support and responsibility coverage. Owners: [provider settings](docs/external-providers-config.md), [admin UAT](docs/uat/admin.md).                                                                                                                                                                                                                      |
 | 11    | Runbook and drills                  | Exercise payment uncertainty, provider outage, delayed release, notification failure and deployment rollback, incorporating backup/reconciliation procedures. Owner: [runbook](docs/runbook.md); preserve drill evidence in role UAT/Journey.                                                                                                                                                                                                                |
 | 12    | Operations manual                   | Produce a separate daily-use manual covering SimplyBook bookings, schedules, customers and cancellations plus HitPay payment lookup, reconciliation, refunds and payouts; specify cross-system order and escalation. Keep technical recovery in the runbook and link it from the manual.                                                                                                                                                                     |
+
+Review history returns also use Checking payment from static first paint and throughout hydration; ordinary Review entry retains Checking booking. The exported Review page must contain both navigation-specific messages.

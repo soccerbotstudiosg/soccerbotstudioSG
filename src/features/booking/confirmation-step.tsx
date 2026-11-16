@@ -111,7 +111,7 @@ function PendingConfirmationHeading({
 }) {
   return (
     <>
-      <InlineLoading compact label={label} />
+      <InlineLoading compact label={label} message="" />
       <p className="text-sm text-muted">{label}</p>
       <p className="text-sm text-muted">{message ?? loadingMessage}</p>
     </>
@@ -152,9 +152,6 @@ export function PendingConfirmation({
               <span className="pill confirmation-pending-status confirmation-paid-status">
                 Pending
               </span>
-              {label !== "Pending" && (
-                <p className="text-sm text-muted">{label}</p>
-              )}
             </div>
           </div>
         )}
@@ -427,9 +424,6 @@ export function BookingConfirmation({
                     <span className="pill confirmation-pending-status confirmation-paid-status">
                       Pending
                     </span>
-                    {pendingLabel !== "Pending" && (
-                      <p className="text-sm text-muted">{pendingLabel}</p>
-                    )}
                   </div>
                 ) : (
                   <span className="pill success confirmation-paid-status">

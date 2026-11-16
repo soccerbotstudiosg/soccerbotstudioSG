@@ -901,7 +901,7 @@
   },
   {
     "file": "worker/tests/identity-delivery.test.mjs",
-    "title": "customer booking help is owned deduplicated and sends only a fixed staff report with retry-safe content"
+    "title": "customer booking help is owned deduplicated and sends staff and customer acknowledgements with retry-safe content"
   },
   {
     "file": "worker/tests/identity-delivery.test.mjs",

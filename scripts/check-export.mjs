@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { JSDOM } from "jsdom";
 import { parse, walk } from "css-tree";
 import { siteBasePath } from "../src/content/site-path.ts";
+import { documentNavigationScript } from "../src/components/document-navigation.ts";
 
 /** Fingerprint the files in a static export for artifact verification. */
 export function exportInventory(directory) {
@@ -111,15 +112,43 @@ export function checkExport(directory, basePath) {
       }
       const refresh = doc.querySelector("#page-refresh");
       const content = doc.querySelector("#page-refresh-content");
+      const loadingLabel = [
+        "book/payment/index.html",
+        "book/confirmation/index.html",
+        "confirmation/index.html",
+      ].includes(file)
+        ? "Checking payment…"
+        : file === "book/review/index.html"
+          ? "Checking booking…"
+          : "Loading page";
       if (
         refresh?.style.position !== "fixed" ||
         refresh?.style.inset !== "0px" ||
-        !refresh.querySelector('[role="status"][aria-label="Loading page"]') ||
+        !refresh.querySelector(
+          `[role="status"][aria-label="${loadingLabel}"]`,
+        ) ||
         content?.style.visibility !== "hidden" ||
         !content.hasAttribute("inert") ||
         !content.querySelector("main")
       )
         throw new Error(`Missing initial refresh cover: ${file}`);
+      if (
+        ![...doc.head.querySelectorAll("script")].some(
+          (script) =>
+            script.textContent === documentNavigationScript &&
+            !script.hasAttribute("async") &&
+            !script.hasAttribute("defer") &&
+            !script.hasAttribute("type"),
+        ) ||
+        refresh.querySelector(".document-reload-message")?.textContent !==
+          "Refreshing…" ||
+        !refresh.querySelector(".document-navigation-message")?.textContent ||
+        (file === "book/review/index.html" &&
+          (!refresh.querySelector(".document-review-entry")?.textContent ||
+            refresh.querySelector(".document-review-return")?.textContent !==
+              "Checking payment… Please do not close or refresh."))
+      )
+        throw new Error(`Missing pre-hydration navigation feedback: ${file}`);
       dom.window.close();
     } else if (file.endsWith(".css")) {
       walk(parse(readFileSync(resolve(root, file), "utf8")), (node) => {

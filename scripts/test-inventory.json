@@ -661,6 +661,10 @@
   },
   {
     "file": "src/features/booking/confirmation-copy.test.tsx",
+    "title": "payment continuation shows only its intended status and instruction beside the spinner"
+  },
+  {
+    "file": "src/features/booking/confirmation-copy.test.tsx",
     "title": "unresolved post-payment confirmation keeps the receipt layout with a pending badge rather than a pending page"
   },
   {
@@ -785,7 +789,7 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "editing a new selection clears the previous unpaid reservation notice"
+    "title": "editing a new selection retains the unpaid reservation notice until navigation"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -1121,7 +1125,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "repeat provider return goes home only after server confirmation while direct revisits remain visible"
+    "title": "repeat provider returns and direct revisits retain verified confirmation without leaving the booking"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1162,6 +1166,10 @@
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "verified payment shows confirmation before reconciliation without export actions"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "confirmed history suppresses an old unpaid handoff and failed recovery replaces it with Home"
   },
   {
     "file": "src/features/booking/session-price.test.tsx",

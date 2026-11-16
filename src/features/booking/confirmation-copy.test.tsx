@@ -36,6 +36,44 @@ const booking: Booking = {
     },
   ],
 };
+test("payment continuation shows only its intended status and instruction beside the spinner", () => {
+  const message = "Continue to pay. If already paid, please wait...";
+  const continuation = <a href="https://example.test/pay">Continue payment</a>;
+  const view = render(
+    <PendingConfirmation
+      label="Checking payment…"
+      message={message}
+      showSummary
+    >
+      {continuation}
+    </PendingConfirmation>,
+  );
+  const check = () => {
+    expect(
+      screen.getByText("Checking payment…", { exact: true }),
+    ).toBeVisible();
+    expect(screen.getByText(message, { exact: true })).toBeVisible();
+    expect(screen.queryByText("Loading...", { exact: true })).toBeNull();
+    expect(
+      screen.getByRole("status", { name: "Checking payment…" }).textContent,
+    ).toBe("");
+    expect(
+      screen.getByRole("link", { name: "Continue payment" }),
+    ).toBeVisible();
+  };
+  check();
+  view.rerender(
+    <BookingConfirmation
+      booking={booking}
+      pending
+      pendingLabel="Checking payment…"
+      pendingMessage={message}
+      pendingAction={continuation}
+      onAgain={() => {}}
+    />,
+  );
+  check();
+});
 test("confirmed booking copies a formatted paid summary and reports clipboard failures honestly", async () => {
   vi.useFakeTimers();
   const writeText = vi.fn().mockResolvedValue(undefined);
@@ -227,8 +265,8 @@ test("unresolved post-payment confirmation keeps the receipt layout with a pendi
     "confirmation-pending-status",
   );
   expect(
-    screen.getByText("Payment received; booking confirmation pending").tagName,
-  ).toBe("P");
+    screen.queryByText("Payment received; booking confirmation pending"),
+  ).toBeNull();
   expect(screen.getByRole("heading", { name: "Order Summary" })).toBeVisible();
   view.rerender(
     <PendingConfirmation
