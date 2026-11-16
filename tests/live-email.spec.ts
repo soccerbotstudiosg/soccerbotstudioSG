@@ -4497,9 +4497,9 @@ test("hidden enquiry proof preserves the shared action gap", async ({
   await expect(proof).toHaveCount(1);
   await expect(proof).toHaveCSS("margin-top", "0px");
   await expect(proof).toHaveCSS("margin-bottom", "0px");
-  await page
-    .locator(".enquiry-form .booking-action-anchor")
-    .scrollIntoViewIfNeeded();
+  // The sticky action is already visible before its natural position. Scroll
+  // the footer into view to measure the real resting gap below the textarea.
+  await page.locator(".site-footer").scrollIntoViewIfNeeded();
   await expect(page.locator(".enquiry-form .booking-action-anchor")).toHaveCSS(
     "position",
     "sticky",
