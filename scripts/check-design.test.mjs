@@ -98,6 +98,11 @@ test("design policy rejects local booking colour and type overrides", () => {
 test("design policy rejects invented variable font ranges and undersized controls", () => {
   assert.ok(
     designAudit(
+      css.replace('font-family: "404 Rajdhani";', "font-family: Unknown;"),
+    ).errors.some((e) => e.includes("static font")),
+  );
+  assert.ok(
+    designAudit(
       css.replace("font-weight: 500;", "font-weight: 500 600;"),
     ).errors.some((e) => e.includes("static font")),
   );

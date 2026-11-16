@@ -143,6 +143,45 @@ test("live session selection uses client prices while demo retains its own rates
   expect(
     screen.getByRole("region", { name: /Kickoff Special/ }),
   ).toHaveTextContent("Weekdays $88Weekends/Public Holiday $108");
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === "(max-width: 700px)",
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  view.rerender(<SessionStep />);
+  const outlet = screen.getByRole("button", {
+    name: "Select Apex @ Henderson outlet",
+  });
+  expect(outlet).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(outlet);
+  const outletSelect = screen.getByRole("combobox", { name: "Outlet" });
+  expect(outletSelect).toHaveDisplayValue("Choose outlet");
+  expect(
+    screen.queryByRole("region", { name: "Kickoff Special" }),
+  ).not.toBeInTheDocument();
+  fireEvent.change(outletSelect, { target: { value: "Apex @ Henderson" } });
+  expect(
+    screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
+  ).toHaveTextContent("201 Henderson Road, #05-01");
+  const sessionSelect = screen.getByRole("combobox", { name: "Session" });
+  expect(sessionSelect).toHaveDisplayValue("Choose session");
+  expect(
+    screen.getByRole("option", { name: "Kickoff Special" }),
+  ).toHaveTextContent(/^Kickoff Special$/);
+  fireEvent.change(sessionSelect, { target: { value: "Kickoff Special" } });
+  expect(
+    screen.getByRole("region", { name: "Kickoff Special" }),
+  ).toHaveTextContent("Trainer included");
+  expect(screen.getByRole("button", { name: "Add one player" })).toBeVisible();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Choose Kickoff Special" }),
+  );
+  expect(screen.getByRole("combobox", { name: "Session" })).toHaveDisplayValue(
+    "Choose session",
+  );
+  expect(
+    screen.queryByRole("link", { name: "Choose Date & Time" }),
+  ).not.toBeInTheDocument();
   read.mockRestore();
   context.bookingService.mode = "live";
 });

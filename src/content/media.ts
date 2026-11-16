@@ -108,3 +108,8 @@ export const socialPreview = {
   height: 907,
   alt: "SOCCERBOTSTUDIO Singapore — Interactive Football. Performance · Experience · Production. Two players in the interactive football arena.",
 };
+
+// Original generated concept artwork, 16 November 2026; not an official mascot file.
+export const notFoundAstronaut = sitePath(
+  "/assets/app404-astronaut-concept.png",
+);

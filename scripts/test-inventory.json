@@ -1,5 +1,9 @@
 [
   {
+    "file": "src/app/not-found.test.tsx",
+    "title": "404 tiles scatter with pointer travel settle back and respect reduced motion while Home stays accessible"
+  },
+  {
     "file": "src/components/arena-geometry.test.ts",
     "title": "arena geometry stays finite through desktop phone and tablet entry frames"
   },
