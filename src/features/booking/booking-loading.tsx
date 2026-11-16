@@ -72,9 +72,20 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
         return next;
       });
   }, []);
-  const overlay = [...pending.values()].find((entry) => entry.overlay);
+  const entries = [...pending.values()].reverse();
+  const label =
+    entries.find((entry) => loadingFeedbackMessage(entry.label))?.label ??
+    entries[0]?.label;
+  const overlays = entries.filter((entry) => entry.overlay);
+  const overlay =
+    overlays.find((entry) => loadingFeedbackMessage(entry.label)) ??
+    overlays[0];
   const visibleLabel = useMinimumLoading(
     documentLoading ? undefined : overlay?.label,
+    (previous, next) =>
+      !!loadingFeedbackMessage(previous) &&
+      next !== "Opening booking" &&
+      !loadingFeedbackMessage(next),
   );
   const busy = !!visibleLabel;
   useLayoutEffect(() => {
@@ -90,7 +101,7 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
     <Loading.Provider
       value={{
         register,
-        label: pending.values().next().value?.label,
+        label,
         documentLoading,
         setDocumentLoading,
       }}

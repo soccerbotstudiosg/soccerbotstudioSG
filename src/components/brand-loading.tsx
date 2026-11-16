@@ -4,7 +4,10 @@ import { darkLogo } from "@/content/media";
 export const FULL_PAGE_LOADING_MIN_MS = 1000;
 
 /** Retain one visible full-page loading episode until its minimum duration ends. */
-export function useMinimumLoading(label: string | undefined) {
+export function useMinimumLoading(
+  label: string | undefined,
+  retain?: (previous: string | undefined, next: string | undefined) => boolean,
+) {
   const [state, setState] = useState({
     input: label,
     label,
@@ -16,7 +19,10 @@ export function useMinimumLoading(label: string | undefined) {
       label !== undefined && state.input === undefined && state.elapsed;
     setState({
       input: label,
-      label: label ?? state.label,
+      label:
+        !restarting && retain?.(state.label, label)
+          ? state.label
+          : (label ?? state.label),
       episode: state.episode + (restarting ? 1 : 0),
       elapsed: restarting ? false : state.elapsed,
     });
@@ -28,7 +34,7 @@ export function useMinimumLoading(label: string | undefined) {
     }, FULL_PAGE_LOADING_MIN_MS);
     return () => clearTimeout(timer);
   }, [state.episode]);
-  return label ?? (state.elapsed ? undefined : state.label);
+  return label !== undefined || !state.elapsed ? state.label : undefined;
 }
 
 /** Render the branded loading indicator and status message. */

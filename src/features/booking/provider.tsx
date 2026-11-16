@@ -88,6 +88,7 @@ import {
   loadDepartureSlots,
   isBookingDeparture,
   loadConflictNotice,
+  clearDepartedBookingHelpNotice,
   type NoticeSlot,
   saveConflictNotice,
   loadBooking,
@@ -341,6 +342,12 @@ export function BookingProvider({
         ? loadConflictNotice("cutoff")
         : null;
     if (cutoff !== null) return { message: SESSION_UNAVAILABLE, slots: cutoff };
+    const expiry =
+      bookingService.mode === "live" && /\/book\/time\/?$/.test(pathname ?? "")
+        ? loadConflictNotice("expiry")
+        : null;
+    if (expiry !== null)
+      return { message: PAYMENT_WINDOW_ENDED, slots: expiry };
     const noCreation =
       bookingService.mode === "live" && /\/book\/time\/?$/.test(pathname ?? "")
         ? loadConflictNotice("no-creation")
@@ -411,6 +418,12 @@ export function BookingProvider({
           : null,
         "no-creation",
       );
+      saveConflictNotice(
+        bookingService.mode === "live" && notice === PAYMENT_WINDOW_ENDED
+          ? slots
+          : null,
+        "expiry",
+      );
       if (!notice || noticeCurrent.current.message !== notice)
         noticeShownOnCalendar.current = false;
       noticeCurrent.current = { message: notice, slots };
@@ -474,6 +487,7 @@ export function BookingProvider({
         if (
           action.calendarRecovery &&
           value.attempt &&
+          !calendarRecoveryNoticeDismissed(value.attempt.id) &&
           (action.unresolvedCheckout ||
             isUnresolvedCheckout(value.attempt.id)) &&
           noticeCurrent.current.message !== CHECKOUT_UNRESOLVED
@@ -573,9 +587,15 @@ export function BookingProvider({
     setProtectedConflictRedirect(null);
   const previousNoticePath = useRef(pathname);
   const noticeRoute = useEffectEvent(() => {
+    if (pathname) clearDepartedBookingHelpNotice(pathname);
     // A full-document departure must dismiss persisted display state too.
-    if (pathname && !/\/book\/time\/?$/.test(pathname))
+    if (pathname && !/\/book\/time\/?$/.test(pathname)) {
       saveConflictNotice(null, "no-creation");
+      saveConflictNotice(null, "expiry");
+      const retained = liveCheckoutAttemptId();
+      if (retained && isCalendarRecovery(retained))
+        dismissCalendarRecoveryNotice(retained);
+    }
     const changed = previousNoticePath.current !== pathname;
     previousNoticePath.current = pathname;
     if (
@@ -2426,10 +2446,11 @@ export function BookingProvider({
             freshChecks.current.delete(service);
           pauseCalendar(false);
           if (action.calendarRecovery && unresolved) {
-            setSelectionNotice(
-              CHECKOUT_UNRESOLVED,
-              current.attempt.draft.slots,
-            );
+            if (!calendarRecoveryNoticeDismissed(id))
+              setSelectionNotice(
+                CHECKOUT_UNRESOLVED,
+                current.attempt.draft.slots,
+              );
             if (service.mode === "live") saveCalendarRecovery(id, true);
             setAction({
               status: "idle",
@@ -2569,6 +2590,7 @@ export function BookingProvider({
           if (
             selectionNotice !== CONFLICT_NOTICE &&
             selectionNotice !== BOOKING_NOT_CREATED &&
+            selectionNotice !== PAYMENT_WINDOW_ENDED &&
             selectionNotice !== SESSION_UNAVAILABLE
           )
             setSelectionNotice(null);

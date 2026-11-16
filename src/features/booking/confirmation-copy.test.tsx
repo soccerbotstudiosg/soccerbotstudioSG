@@ -265,8 +265,8 @@ test("unresolved post-payment confirmation keeps the receipt layout with a pendi
     "confirmation-pending-status",
   );
   expect(
-    screen.getByText("Payment received; booking confirmation pending").tagName,
-  ).toBe("P");
+    screen.queryByText("Payment received; booking confirmation pending"),
+  ).toBeNull();
   expect(screen.getByRole("heading", { name: "Order Summary" })).toBeVisible();
   view.rerender(
     <PendingConfirmation

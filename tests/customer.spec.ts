@@ -892,8 +892,21 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   );
   await page.getByLabel("Full name", { exact: false }).focus();
   await expect(page.locator("#phone-error")).toHaveText(
-    "Enter an 8-digit mobile number starting with 8 or 9.",
+    "Use 8 digits, starting with 8 or 9.",
   );
+  if (page.viewportSize()!.width <= 700) {
+    const hint = await page.locator("#phone-error").evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        height: node.getBoundingClientRect().height,
+        line: parseFloat(style.lineHeight),
+        width: node.clientWidth,
+        content: node.scrollWidth,
+      };
+    });
+    expect(hint.height).toBeLessThanOrEqual(hint.line + 1);
+    expect(hint.content).toBeLessThanOrEqual(hint.width);
+  }
   await expect(
     page.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
   ).toBeDisabled();
@@ -1128,9 +1141,7 @@ test("enquiry remains available without external submission or a mock assistant"
     "24px",
   );
   await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
-  await expect(
-    page.getByText("Enter your requirements using 1–2,000 characters."),
-  ).toHaveCount(0);
+  await expect(page.getByText("Enter 1–2,000 characters.")).toHaveCount(0);
   for (const selector of [
     "#enquiry-name",
     "#enquiry-email",
@@ -2073,8 +2084,11 @@ test("header blue and the typography hierarchy stay consistent across every book
           );
         }
         if (floating) {
-          expect(barBox!.x).toBeCloseTo(20, 0);
-          expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width - 40, 0);
+          const reservedBox = await page
+            .locator(".booking-action-anchor")
+            .boundingBox();
+          expect(barBox!.x).toBeCloseTo(reservedBox!.x, 0);
+          expect(barBox!.width).toBeCloseTo(reservedBox!.width, 0);
         }
         const actionBox = await action.boundingBox();
         expect(actionBox!.height).toBeLessThanOrEqual(72);
@@ -2178,8 +2192,10 @@ test("header blue and the typography hierarchy stay consistent across every book
     const actionAnchor = page.locator(".booking-action-anchor");
     if (await actionAnchor.count()) {
       const primary = actionAnchor.locator(".booking-primary-action");
-      if (await page.evaluate(() => CSS.supports("overflow-anchor", "none")))
+      if (await page.evaluate(() => CSS.supports("overflow-anchor", "none"))) {
         await expect(primary).toHaveCSS("overflow-anchor", "none");
+        await expect(actionAnchor).toHaveCSS("overflow-anchor", "none");
+      }
       // Cross both floating/resting boundaries in both directions. Moving the
       // action must not pull the document into its footer or change its height.
       const geometry = await actionAnchor.evaluate((node) => ({
@@ -2475,6 +2491,28 @@ test("header blue and the typography hierarchy stay consistent across every book
     .all()) {
     await expect(control).toHaveCSS("font-size", "16px");
   }
+  const monthFit = await page
+    .locator("#calendar-month")
+    .evaluate((node: HTMLSelectElement) => {
+      const style = getComputedStyle(node);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d")!;
+      context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const longest = Math.max(
+        ...Array.from(
+          node.options,
+          (option) => context.measureText(option.text).width,
+        ),
+      );
+      return {
+        required:
+          longest +
+          parseFloat(style.paddingLeft) +
+          parseFloat(style.paddingRight),
+        width: node.clientWidth,
+      };
+    });
+  expect(monthFit.width).toBeGreaterThanOrEqual(monthFit.required);
   await crossing.click();
   await expect(crossing).toHaveAttribute("aria-expanded", "true");
   await expect(crossing).toHaveAttribute("aria-pressed", "false");

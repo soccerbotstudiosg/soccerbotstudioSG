@@ -141,7 +141,7 @@ it("a late reply from a previous attempt cannot confirm the current attempt", as
   view.rerender(<ProtectedConfirmation attemptId={second} />);
   expect(
     await screen.findByText(
-      "Payment received. Contact us about your booking. Do not pay again.",
+      "Payment received. We are still confirming your booking. Please contact us and do not pay again.",
     ),
   ).toBeInTheDocument();
   finishFirst(Response.json({ status: "confirmed", reason: "verified" }));
@@ -528,7 +528,9 @@ it("expired checking shows authenticated recorded payment without confirming or 
     </BookingProvider>,
   );
   expect(
-    await screen.findByText("Payment received; booking confirmation pending"),
+    await screen.findByText(
+      "Payment received. We are still confirming your booking. Please contact us and do not pay again.",
+    ),
   ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
   expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
@@ -1171,7 +1173,7 @@ it("manual review supersedes an earlier customer confirmation without exposing d
     name: "Payment received; booking confirmation pending",
   });
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "Payment received. Contact us about your booking. Do not pay again.",
+    "Payment received. We are still confirming your booking. Please contact us and do not pay again.",
   );
   expect(screen.queryByText(/We’re still checking your payment/)).toBeNull();
   expect(
@@ -2542,6 +2544,16 @@ it("expiry reconciliation exits early for unpaid proof and preserves payment evi
         expect(
           screen.getByRole("heading", { name: "Booking Confirmed" }),
         ).toBeVisible();
+      else {
+        expect(screen.getByRole("status")).toHaveTextContent(
+          "Payment received. Confirming booking. Please do not close or refresh.",
+        );
+        expect(screen.queryByText("Loading...")).toBeNull();
+      }
+      expect(
+        screen.queryByRole("link", { name: "Continue payment" }),
+      ).toBeNull();
+      expect(screen.queryByText(/Your payment window has ended/)).toBeNull();
       await act(async () => {
         await vi.advanceTimersByTimeAsync(5000);
       });
@@ -2901,8 +2913,15 @@ it("payment return stops foreground waiting at thirty seconds retains Pending ac
     await vi.advanceTimersByTimeAsync(10000);
   });
   expect(
-    screen.getByText("Payment received; booking confirmation pending"),
-  ).toBeVisible();
+    screen.queryByText("Payment received; booking confirmation pending"),
+  ).toBeNull();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Payment received. We are still confirming your booking. Please contact us and do not pay again.",
+  );
+  expect(
+    screen.queryByText("We couldn’t confirm your booking status."),
+  ).toBeNull();
+  expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
   confirmed = true;
   await act(async () => {
     await vi.advanceTimersByTimeAsync(10000);

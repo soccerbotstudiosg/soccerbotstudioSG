@@ -2655,6 +2655,7 @@
   }
 
   .booking-action-anchor {
+    overflow-anchor: none;
     display: block;
     width: 100%;
     padding: var(--space-action-top) 0
@@ -3534,8 +3535,17 @@
   .checkout-button-logo {
     display: none;
   }
+  .continuation-provider-logo {
+    width: 62px;
+    height: auto;
+    flex-shrink: 0;
+  }
   .checkout-payment-button:not(:disabled)
-    :is(.checkout-redirect img, .checkout-button-logo) {
+    :is(
+      .checkout-redirect img,
+      .checkout-button-logo,
+      .continuation-provider-logo
+    ) {
     filter: brightness(0) invert(1);
   }
   @media (max-width: 700px) {
@@ -3545,9 +3555,16 @@
     }
   }
   @media (max-width: 559px) {
-    .checkout-redirect,
-    .checkout-primary-line > .checkout-lock {
+    .checkout-redirect {
       display: none;
+    }
+    .checkout-primary-line {
+      gap: 6px;
+    }
+    .checkout-primary-line > .checkout-lock {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
     }
     .checkout-button-logo {
       display: block;
@@ -4965,12 +4982,6 @@
       font-weight: var(--weight-heading);
       white-space: nowrap;
     }
-    :is(.booking-shell, .enquiry-page)
-      .booking-primary-action[data-floating="true"] {
-      left: 20px;
-      right: 20px;
-      width: auto;
-    }
     :is(.booking-shell, .enquiry-page) .booking-primary-action > .button,
     .booking-shell .button.booking-entry-action,
     .booking-shell .profile-actions > .button {
@@ -5073,6 +5084,7 @@
       margin: 0 0 8px;
     }
     .month-picker {
+      min-width: 148px;
       max-width: none;
     }
     .month-picker select,
@@ -5080,7 +5092,7 @@
       height: var(--calendar-control-height);
     }
     .month-picker select {
-      padding: 4px 20px 4px 8px;
+      padding: 4px 18px 4px 6px;
     }
     .calendar-nav {
       gap: 4px;
@@ -5090,7 +5102,8 @@
       min-width: 32px;
     }
     .calendar-nav select {
-      padding: 4px 18px 4px 5px;
+      width: auto;
+      padding: 4px 16px 4px 4px;
     }
     .calendar-weekdays,
     .dates {
@@ -5198,6 +5211,21 @@
     .confirmation-actions .button svg {
       width: 20px;
       height: 20px;
+    }
+  }
+  @media (max-width: 350px) {
+    .calendar-head {
+      grid-template-columns: 1fr;
+    }
+    .calendar-nav {
+      justify-content: flex-end;
+    }
+    .checkout-primary-line {
+      font-size: var(--text-meta);
+      gap: 4px;
+    }
+    .checkout-button-logo {
+      width: 48px;
     }
   }
   @media (max-width: 370px) {
