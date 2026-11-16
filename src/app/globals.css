@@ -3500,10 +3500,12 @@
     gap: 12px;
     margin-bottom: 8px;
   }
-  .booking-shell .booking-primary-action > .checkout-payment-button {
+  .booking-shell .booking-primary-action > .button.checkout-payment-button {
     flex-direction: column;
     gap: 2px;
-    padding: 10px 24px;
+    /* Match the shared action's line height, 18px padding and 1px borders. */
+    min-height: calc(1em * var(--leading-control) + 38px);
+    padding: 8px 24px;
   }
   .checkout-primary-line {
     display: flex;
@@ -3513,6 +3515,10 @@
     width: 100%;
   }
   .checkout-redirect {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
     color: inherit;
     font-size: var(--text-meta);
     font-weight: var(--weight-body);
@@ -3521,8 +3527,7 @@
     white-space: nowrap;
   }
   .checkout-redirect img {
-    display: inline-block;
-    vertical-align: middle;
+    display: block;
     width: 62px;
     height: auto;
   }
@@ -3532,6 +3537,12 @@
   .checkout-payment-button:not(:disabled)
     :is(.checkout-redirect img, .checkout-button-logo) {
     filter: brightness(0) invert(1);
+  }
+  @media (max-width: 700px) {
+    .booking-shell .booking-primary-action > .button.checkout-payment-button {
+      min-height: 48px;
+      padding: 2px 16px;
+    }
   }
   @media (max-width: 559px) {
     .checkout-redirect,
