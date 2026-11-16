@@ -825,6 +825,18 @@ test("public routes remove staff access and fit the viewport", async ({
   await home.press("Enter");
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".site-header")).toBeVisible();
+  const nestedResponse = await page.goto(sitePath("/book/session/yes"));
+  expect(nestedResponse?.status()).toBe(404);
+  await expect(page.locator(".not-found-grid-art")).toHaveAttribute(
+    "data-ready",
+    "true",
+  );
+  await expect(page.locator(".player-app-dialog")).toHaveCount(0);
+  await page.getByRole("link", { name: "Back to home", exact: true }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Leave this booking?" }),
+  ).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   expect(errors).toEqual([]);
 });
 test("guest multi-date booking survives reload without retired export actions", async ({
@@ -3547,6 +3559,57 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     const action = await proceed.boundingBox();
     expect(action!.y - players!.y - players!.height).toBeGreaterThanOrEqual(16);
     await expect(sessionTitle).toHaveCSS("font-size", "28px");
+    const sessionName = await page
+      .locator(".session-product-name")
+      .boundingBox();
+    for (const selector of [
+      ".session-product-details .booking-choice-label",
+      ".session-product-meta",
+      ".session-product-prices",
+      ".player-selection",
+    ]) {
+      const bounds = await page.locator(selector).boundingBox();
+      expect(bounds!.x).toBeCloseTo(sessionName!.x, 0);
+    }
+    for (const selector of [
+      ".session-product-icon svg",
+      ".outlet-option > svg",
+    ]) {
+      await expect(page.locator(selector)).toHaveCSS("width", "20px");
+      await expect(page.locator(selector)).toHaveCSS("height", "20px");
+    }
+  }
+  const selectedFill = await page
+    .locator(".outlet-option")
+    .evaluate((node) => getComputedStyle(node).backgroundColor);
+  await page
+    .getByRole("button", { name: "Select Apex @ Henderson outlet" })
+    .click();
+  for (const [name, option, parent] of [
+    ["Outlet", "Apex @ Henderson", ".outlet-options"],
+    ["Session", "Kickoff Special", ".session-products"],
+  ]) {
+    const picker = page.getByRole("combobox", { name, exact: true });
+    await expect(page.getByRole("heading", { name, exact: true })).toHaveCount(
+      0,
+    );
+    await expect(picker).toHaveCSS("font-size", "16px");
+    await expect(picker).toHaveCSS("border-top-left-radius", "3px");
+    await expect(picker).toHaveCSS("border-top-right-radius", "12px");
+    await expect(picker).toHaveCSS("border-bottom-right-radius", "3px");
+    await expect(picker).toHaveCSS("border-bottom-left-radius", "12px");
+    const bounds = await picker.boundingBox();
+    const container = await page.locator(parent).boundingBox();
+    expect(bounds!.width).toBeCloseTo(container!.width, 0);
+    expect(bounds!.height).toBeGreaterThanOrEqual(54);
+    if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
+      await picker.hover();
+      await expect(picker).toHaveCSS("background-color", selectedFill);
+      await expect(picker).toHaveCSS("border-color", "rgb(23, 96, 120)");
+      const hovered = await picker.boundingBox();
+      expect(hovered).toEqual(bounds);
+    }
+    await picker.selectOption({ label: option });
   }
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
