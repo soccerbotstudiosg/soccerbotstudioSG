@@ -2,6 +2,23 @@ import { sitePath } from "../src/content/site-path";
 import { expect, test, type Page } from "@playwright/test";
 import { addDays, dateLabel } from "../src/domain/dates";
 const DEMO_TODAY = "2026-10-05";
+/** Read the button's reserved position without changing its floating state. */
+function naturalActionBounds(button: HTMLElement) {
+  const control = button.parentElement!;
+  const anchor = control.parentElement!;
+  const style = getComputedStyle(anchor);
+  const top =
+    anchor.getBoundingClientRect().top +
+    parseFloat(style.paddingTop) +
+    button.offsetTop;
+  return {
+    top,
+    bottom:
+      top +
+      button.getBoundingClientRect().height +
+      parseFloat(style.paddingBottom),
+  };
+}
 test.beforeEach(async ({ page }) => {
   // Payment deadlines need Date.now() to advance alongside the timers.
   await page.clock.install({ time: new Date("2026-10-05T08:00:00+08:00") });
@@ -910,6 +927,27 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
       JSON.stringify([`Studio 1|${slot.date}|${slot.start}`]),
     );
   });
+  if (page.viewportSize()!.width <= 700) {
+    const proceed = page.getByRole("button", {
+      name: /^Proceed to Payment \$[\d,.]+$/,
+    });
+    const natural = await proceed.evaluate(naturalActionBounds);
+    await page.evaluate(({ top }) => {
+      const header = document
+        .querySelector(".site-header")!
+        .getBoundingClientRect();
+      scrollTo({
+        top: Math.max(0, scrollY + top - header.bottom - 24),
+        behavior: "instant",
+      });
+    }, natural);
+    // The hint may cross the header; the visible click target must stay put.
+    await expect(page.locator(".booking-primary-action")).toHaveAttribute(
+      "data-floating",
+      "false",
+    );
+    await expect(proceed).toBeInViewport({ ratio: 1 });
+  }
   await page
     .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
     .click();
@@ -1970,12 +2008,10 @@ test("header blue and the typography hierarchy stay consistent across every book
               .map((animation) => animation.finished),
           );
         });
-        const anchorBox = await page
-          .locator(".booking-action-anchor")
-          .boundingBox();
+        const natural = await action.evaluate(naturalActionBounds);
         const floating =
-          anchorBox!.y + anchorBox!.height > page.viewportSize()!.height ||
-          anchorBox!.y <
+          natural.bottom > page.viewportSize()!.height ||
+          natural.top <
             (await page.locator(".site-header").boundingBox())!.height;
         await expect(primaryBar).toHaveAttribute(
           "data-floating",
@@ -2035,7 +2071,8 @@ test("header blue and the typography hierarchy stay consistent across every book
         const headerBottom = await page
           .locator(".site-header")
           .evaluate((node) => node.getBoundingClientRect().bottom);
-        if (settledAnchor!.y >= headerBottom) {
+        const settledNatural = await action.evaluate(naturalActionBounds);
+        if (settledNatural.top >= headerBottom) {
           await expect(primaryBar).toHaveAttribute("data-floating", "false");
           await expect(primaryBar).toHaveCSS("position", "relative");
           const settledBar = await primaryBar.boundingBox();
@@ -2091,11 +2128,15 @@ test("header blue and the typography hierarchy stay consistent across every book
         viewport: innerHeight,
         original: scrollY,
       }));
+      const buttonPosition = await primary
+        .locator(":scope > .button")
+        .evaluate(naturalActionBounds);
+      const naturalTop = buttonPosition.top + geometry.original;
       const stops = [
         geometry.bottom - geometry.viewport - 2,
         geometry.bottom - geometry.viewport + 2,
-        geometry.top - geometry.header - 2,
-        geometry.top - geometry.header + 2,
+        naturalTop - geometry.header - 2,
+        naturalTop - geometry.header + 2,
         geometry.height - geometry.viewport,
       ].map((y) =>
         Math.round(

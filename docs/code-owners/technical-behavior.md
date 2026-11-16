@@ -640,3 +640,5 @@ Review’s shared sticky action includes “You’ll be redirected to [HitPay lo
 Checkout route/bootstrap covers use “Checking booking…” until protected work supplies its actual status. The document cover retains the latest operation message through generic route fallbacks and fonts/frame completion rather than flashing “Loading...” between checks and ready content. A real document reload still says “Refreshing…”. Non-checkout routes retain their normal generic loading copy; status changes never imply paid/confirmed evidence.
 
 Shared Open Graph and Twitter metadata use “Interactive Football Experience | SOCCERBOTSTUDIO Singapore”; the route-specific browser document titles remain owned by their existing metadata.
+
+Primary-action floating thresholds use the actual button bounds, retaining the shared bottom clearance. Surrounding hints or padding crossing the header must not move an otherwise-visible button during browser focus/click scrolling. The reserved anchor still owns layout height and the moving subtree stays excluded from scroll anchoring.
