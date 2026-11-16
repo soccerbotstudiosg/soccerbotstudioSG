@@ -2060,9 +2060,8 @@ test("first visit offers the Player App with only store links and dismissal pers
   ).toBeLessThanOrEqual(1);
 });
 
-test("header blue and the typography hierarchy stay consistent across every booking step", async ({
-  page,
-}) => {
+/** Share presentation assertions without coupling every booking phase to one timeout. */
+function bookingTypography(page: Page) {
   const brand = "rgb(5, 10, 47)";
   const pageSize = page.viewportSize()!.width <= 700 ? 32 : 40;
   async function pageHeading(name: string, color = "rgb(70, 172, 220)") {
@@ -2131,6 +2130,7 @@ test("header blue and the typography hierarchy stay consistent across every book
     expectedSize = 20,
     expectedColor = brand,
   ) {
+    await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     const compactSession =
       page.viewportSize()!.width <= 700 &&
       page.viewportSize()!.height <= 850 &&
@@ -2464,6 +2464,47 @@ test("header blue and the typography hierarchy stay consistent across every book
       expect(style.color).toBe(expectedColor);
     }
   }
+  async function bookingDocumentBody() {
+    const styles = await page
+      .locator(
+        ".booking-document p:not(.payment-foot), .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
+      )
+      .evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const style = getComputedStyle(node);
+          return {
+            size: style.fontSize,
+            family: style.fontFamily,
+            element: node.outerHTML,
+            total: node.matches(".line-item.total"),
+            amount: node.matches(".confirmation-total strong"),
+            supporting: node.matches("small"),
+          };
+        }),
+      );
+    expect(styles.length).toBeGreaterThan(0);
+    expect(
+      styles.filter(
+        (style) =>
+          style.size !==
+            (style.supporting
+              ? "14px"
+              : style.amount || style.total
+                ? "20px"
+                : "16px") ||
+          style.family !== styles[0].family ||
+          !style.family.includes("Roboto"),
+      ),
+      "Booking body uses 16px Roboto; total labels and amounts use 20px",
+    ).toEqual([]);
+  }
+  return { brand, pageHeading, sectionType, bookingDocumentBody };
+}
+
+test("header blue and typography stay consistent through booking selection and contact", async ({
+  page,
+}) => {
+  const { brand, pageHeading, sectionType } = bookingTypography(page);
   await openSite(page, "/book/account/");
   await pageHeading("Start your booking");
   await expect(page.locator(".site-header")).toHaveCSS(
@@ -2811,40 +2852,32 @@ test("header blue and the typography hierarchy stay consistent across every book
   );
   await expect(page.locator("#name")).toHaveCSS("font-size", "14px");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
-  async function bookingDocumentBody() {
-    const styles = await page
-      .locator(
-        ".booking-document p:not(.payment-foot), .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
-      )
-      .evaluateAll((nodes) =>
-        nodes.map((node) => {
-          const style = getComputedStyle(node);
-          return {
-            size: style.fontSize,
-            family: style.fontFamily,
-            element: node.outerHTML,
-            total: node.matches(".line-item.total"),
-            amount: node.matches(".confirmation-total strong"),
-            supporting: node.matches("small"),
-          };
-        }),
-      );
-    expect(styles.length).toBeGreaterThan(0);
-    expect(
-      styles.filter(
-        (style) =>
-          style.size !==
-            (style.supporting
-              ? "14px"
-              : style.amount || style.total
-                ? "20px"
-                : "16px") ||
-          style.family !== styles[0].family ||
-          !style.family.includes("Roboto"),
-      ),
-      "Booking body uses 16px Roboto; total labels and amounts use 20px",
-    ).toEqual([]);
-  }
+});
+
+test("review payment and confirmation retain typography and continuous sticky geometry", async ({
+  page,
+}) => {
+  const { brand, pageHeading, sectionType, bookingDocumentBody } =
+    bookingTypography(page);
+  await openSite(page, "/book/account/");
+  await page.getByRole("button", { name: "Guest" }).click();
+  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await page
+    .getByRole("button", {
+      name: dateLabel(addDays(DEMO_TODAY, 1)),
+      exact: true,
+    })
+    .click();
+  await page.getByRole("button", { name: /14:30–15:10/ }).click();
+  await page
+    .getByRole("combobox", { name: /Trainer for .* at 14:30/ })
+    .selectOption({ index: 1 });
+  await page
+    .getByRole("link", {
+      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      exact: true,
+    })
+    .click();
   await details(page);
   await pageHeading("Review Booking");
   await expect(
