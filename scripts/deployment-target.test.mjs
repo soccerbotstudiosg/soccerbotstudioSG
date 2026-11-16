@@ -755,11 +755,13 @@ test("packaged developer sender preserves staging target and production delivery
   assert.equal(base.vars.IDENTITY_SENDER, developerSender);
   assert.equal(staging.identitySender, undefined);
   const staged = releaseConfig(targetConfig(base, staging), staging);
+  assert.equal(staged.assets.not_found_handling, "404-page");
   assert.equal(staged.vars.IDENTITY_SENDER, developerSender);
   assert.equal(staged.vars.IDENTITY_DELIVERY, "ongoing");
   const client = loadTarget("production");
   const clientBase = targetConfig(base, client);
   const active = releaseConfig(clientBase, client);
+  assert.equal(active.assets.not_found_handling, "404-page");
   assert.equal(active.vars.IDENTITY_SENDER, client.identitySender);
   assert.notEqual(active.vars.IDENTITY_SENDER, developerSender);
   const { identitySender, ...unconfigured } = client;

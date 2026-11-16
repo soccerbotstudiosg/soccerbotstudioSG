@@ -4,7 +4,7 @@ The outlet shows its building name above one address line, “201 Henderson Road
 
 Shared primary actions remain sticky, but their moving subtree is excluded from browser scroll anchoring to prevent automatic scroll displacement at the resting/floating transition. Manual footer scrolling remains available.
 
-Booking primary Continue/Save actions use the original header navy with white heavy-italic labels and normal letter spacing. Secondary and disabled states retain their existing treatment. Selected cards and calendar days use the pale teal hover colour, with unselected white surfaces unchanged. Calendar content and controls use16px, supporting details14px, section/card headings20px, and weekday/progress labels12px. Main headings retain40px desktop/32px phone heavy italic. Trainer labels remain16px before and after selection; state changes do not resize the text.
+Booking primary Continue/Save actions use the original header navy with white heavy-italic labels and normal letter spacing. Secondary and disabled states retain their existing treatment. Selected cards and calendar days use the pale teal hover colour, with unselected white surfaces unchanged. Calendar content and controls use16px, supporting details14px, section/card headings20px, and weekday/progress labels12px. Main headings use40px desktop/32px phone heavy italic, except the short-phone Session step uses a compact28px single-line heading. Trainer labels remain16px before and after selection; state changes do not resize the text.
 
 Details retains “* Required fields” and the Booking Contact heading above the inputs, and removes the booking-timing introduction and saved-contact explanatory paragraph. Review removes “Check your details before payment.” Field labels, validation, consent, profile saving and review/confirmation summary headings are unchanged.
 
@@ -19,7 +19,7 @@ Source reconciled 8 November 2026 against the current local `fix/consistent-conf
 
 The calendar displays the selected outlet and catalogue session name in a bold16px row above the16px duration note, below its main heading and above the duration note. The home hero address uses smaller white text with a subtle shadow on mobile; desktop styling is unchanged.
 
-Booking headings use shared deliberate two-line text at widths up to700px, with the existing32px mobile type size. Desktop keeps the same wording inline; the status column yields space to the full heading instead of reserving40% for a short badge. Mobile title and identity occupy separate grid columns; initial guest choices have no status column. Examples: “Start your / booking”, “Your / session”, “Select dates / and times”, “Your / details”, and “Review / Booking”.
+Booking headings use shared deliberate two-line text at widths up to700px, with32px mobile type; Session uses a single28px line when viewport height is at most850px. Desktop keeps the same wording inline; the status column yields space to the full heading instead of reserving40% for a short badge. Mobile title and identity occupy separate grid columns; initial guest choices have no status column. Examples: “Start your / booking”, “Your / session”, “Select dates / and times”, “Your / details”, and “Review / Booking”.
 
 ## 1. Guest entry
 
@@ -595,7 +595,7 @@ Once contact details have been displayed/entered, remote email sign-out does not
 
 Turnstile begins on Review entry. The disabled payment button replaces its arrow with the existing small spinner only after the review checkbox is selected and background verification is pending. Its label and total remain visible. Unchecking, successful verification, a visible interaction request or failure stops the spinner; existing error/interaction guidance remains. No automatic payment action is introduced.
 
-An authoritative `checkout_already_active` rejection uses: “You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.” This approved copy replaces the availability warning only for that cause; unrelated availability/recovery-window rejections keep their existing classification.
+An authoritative `checkout_already_active` rejection uses: “You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.” This approved copy replaces the availability warning only for that cause; unrelated availability/recovery-window rejections keep their existing classification. The complete notice persists across Calendar refresh and selection edits, and dismisses on navigation like the other resolved Calendar notices.
 
 ### Approved rejection loading copy — 13 November 2026
 
@@ -687,11 +687,11 @@ Each booking step has one non-wrapping introduction in the existing muted16px le
 
 Calendar continuation appears once outside the cart. Cart and Details summaries share top spacing and retain totals. The main next action stays visible on desktop and phone as its original document position scrolls outside view; existing selection/validation rules still decide whether it is enabled.
 
-Continue actions have32px top and24px bottom breathing room; floating actions sit24px above the safe viewport edge. Focusing the trainer dropdown does not add a second focus outline around its session card.
+Continue actions normally have32px top and24px bottom breathing room; the short-phone Session step uses24px top/16px bottom. Floating actions use the corresponding bottom spacing above the safe viewport edge. Focusing the trainer dropdown does not add a second focus outline around its session card.
 
 ### Consolidated continuation presentation — 15 November 2026
 
-The consolidated continuation layout uses the same sticky action for enquiry and booking, with32px above and24px below. The booking required-field note sits beside Booking Contact inside the card; the enquiry note sits beside Your details inside its form card. Cart date/time/trainer lines share21px line heights and2px gaps; remove/price controls occupy a separate right column. The first-step OR is20px and underlined, without decorative lines.
+The consolidated continuation layout uses the same sticky action for enquiry and booking, with32px above and24px below (24px/16px on the compact short-phone Session step). The booking required-field note sits beside Booking Contact inside the card; the enquiry note sits beside Your details inside its form card. Cart date/time/trainer lines share21px line heights and2px gaps; remove/price controls occupy a separate right column. The first-step OR is20px and underlined, without decorative lines.
 
 Primary-action security/submission waits show a small spinner beside the button label together with a6px left-to-right navy fill along the disabled grey button. The spinner follows the actual loading state and disappears when the wait ends. The visual reaches80% at0.6seconds,94% at2seconds and98% at5seconds, then holds until actual readiness; it does not expose a fabricated percentage or enable an action on a timer. When waiting ends, the fill sweeps from its current position to100% over180ms before the ready entrance/halo resumes if eligibility is true. Provider work is never delayed for animation. Reduced motion shows a static fill. Provider calls, duplicate protection, eligibility and retry authority are unchanged.
 
@@ -728,3 +728,7 @@ Approved payment guidance: inside Review’s Proceed to Payment button, show “
 Review bootstrap uses “Checking booking…”; payment and confirmation bootstrap use “Checking payment…” until protected work supplies its actual status. A small head script selects reload copy before static HTML paints, so actual reloads never first paint the normal-navigation message. The document cover retains the latest operation message through generic route fallbacks and fonts/frame completion rather than flashing “Loading...” between checks and ready content. A real document reload still says “Refreshing…”. Non-checkout routes retain their normal generic loading copy; status changes never imply paid/confirmed evidence.
 
 Review history returns also use Checking payment from static first paint and throughout hydration; ordinary Review entry retains Checking booking. The exported Review page must contain both navigation-specific messages.
+
+### Compact phone Session choices
+
+The one available outlet/session stays preselected. Tap the selected outlet card → unselect outlet/session and show Choose outlet → select the studio name → restore name/full address and show Choose session → select a session name → restore its details, player controls and Continue. Tapping only the selected session returns to Choose session. Dropdown options show names only; existing player count is retained. Short mobile screens use compact spacing to keep the standard cards and Continue visible. Desktop behaviour is unchanged.

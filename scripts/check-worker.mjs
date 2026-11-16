@@ -174,7 +174,8 @@ export function checkWorker(root) {
   if (
     JSON.stringify(config.assets?.run_worker_first) !==
       JSON.stringify(["/api", "/api/*"]) ||
-    config.assets?.directory !== "./out"
+    config.assets?.directory !== "./out" ||
+    config.assets?.not_found_handling !== "404-page"
   )
     errors.push("API/static routing boundary changed");
   const telemetry = ts.parseConfigFileTextToJson(

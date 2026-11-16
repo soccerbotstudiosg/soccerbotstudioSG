@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-16 November2026: reconcile dependency PR84 after owner-accepted staging and merge of PR86 as6d78b11. Preserve the six reviewed dependency updates and merge current main without changing application behavior.
+16 November2026: PR88 merged as2684703 after complete CI43848915172 at e46dd9f and successful staging43850974673 with independently matching health. Mobile compact preselected cards, dropdown unselection, 404 artwork and desktop sticky navigation are merged. Main verification/production are separate and being monitored.
 
-## Verification and next action
+## Next actions
 
-PR86 passed exact-head CI43820416474 and staging43822079127 attempt2; independent health matched edc842c. PR84 previously passed CI43786617090 atc09812c. The only merge conflict was concurrent historical entries in Journey; both are preserved. Local dependency integration found and repaired a real-clock race in the account loader test with exact fake-clock boundary assertions; all four account cases pass. Full non-browser verification now passes:393 unit/component tests,205 tooling cases,58 installer tests, formatting, lint, types, dependency audit and15-route production export. Fresh exact-head CI and staging acceptance remain required before merge. No browser/provider operations or automatic merge of PR84 are authorized by this checkpoint. Dependency research and compatibility/license assessment remain in PR84.
+Existing Dependabot84 is reconciled onto main2684703; preserve the six reviewed dependency updates and both histories. No additional application changes are needed. Full local code verification passed394 component/service,205 tooling,58 installer cases plus format/lint/types/audit/build/export on the reconciled source. Push this existing branch and verify all final-head gates. Bot-author staging requires the trusted manual path in Runbook section6; current connector capabilities lack workflow dispatch/repository-variable writes. Prepare the exact verified candidate and dispatch inputs before requesting any owner UI action. Do not claim PR84 staged or merged from its green PR checks. Owner authorized continuing the dependency release sequence.
 
 ## Ordered work after this slice
 

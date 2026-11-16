@@ -1,4 +1,5 @@
 "use client";
+import { useMobileBooking } from "./booking-tools";
 import { BookingHeading } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -15,6 +16,7 @@ import { useBooking } from "./provider";
 export function SessionStep() {
   const { bookingService, sessionChoices, setSessionChoices } = useBooking();
   const outletSelected = sessionChoices.outlet;
+  const mobile = useMobileBooking();
   const sessions = useRef<HTMLDivElement>(null);
   const scrollTarget = useRef<"session" | "action" | null>(null);
   useEffect(() => {
@@ -45,27 +47,56 @@ export function SessionStep() {
     <>
       <BookingHeading lines={["Your", "session"]} />
       <p className="lead">Confirm your session and players.</p>
-      <h2 className="section-title">Outlet</h2>
+      {!mobile && <h2 className="section-title">Outlet</h2>}
       <div className="outlet-options">
-        <button
-          className="surface outlet-option booking-entry-action"
-          aria-label={`Select ${LOCATION.building} outlet`}
-          aria-pressed={outletSelected}
-          aria-expanded={outletSelected}
-          aria-controls="outlet-sessions"
-          onClick={() => {
-            scrollTarget.current = outletSelected ? null : "session";
-            setSessionChoices({ outlet: !outletSelected, session: false });
-          }}
-        >
-          <Icon name="location" />
-          <span>
-            <strong>{LOCATION.building}</strong>
+        {mobile && !outletSelected ? (
+          <label className="surface booking-choice-selector">
+            <span className="field-label">Outlet</span>
+            <select
+              value=""
+              onChange={(event) => {
+                if (event.target.value)
+                  setSessionChoices({ outlet: true, session: false });
+              }}
+            >
+              <option value="" disabled>
+                Choose outlet
+              </option>
+              <option value={LOCATION.building}>{LOCATION.building}</option>
+            </select>
+          </label>
+        ) : (
+          <button
+            className="surface outlet-option booking-entry-action"
+            aria-label={`Select ${LOCATION.building} outlet`}
+            aria-pressed={outletSelected}
+            aria-expanded={outletSelected}
+            aria-controls="outlet-sessions"
+            onClick={() => {
+              scrollTarget.current = outletSelected ? null : "session";
+              setSessionChoices({ outlet: !outletSelected, session: false });
+            }}
+          >
+            <Icon name="location" />
             <span>
-              {LOCATION.street}, {LOCATION.unit}
+              <strong>
+                {mobile && (
+                  <span
+                    className="booking-choice-label"
+                    role="heading"
+                    aria-level={2}
+                  >
+                    Outlet
+                  </span>
+                )}
+                {LOCATION.building}
+              </strong>
+              <span>
+                {LOCATION.street}, {LOCATION.unit}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        )}
       </div>
       <div id="outlet-sessions" ref={sessions} hidden={!outletSelected}>
         {outletSelected &&
@@ -90,6 +121,7 @@ function LiveSession({
   toggle: () => void;
 }) {
   const { draft, update } = useBooking();
+  const mobile = useMobileBooking();
   const eligible = data.services.filter(
     (service) =>
       service.active &&
@@ -127,27 +159,67 @@ function LiveSession({
               ? "Choose your session."
               : "No sessions are currently available."}
           </p>
-          {eligible.map((service) => (
-            <button
-              key={service.id}
-              className="button"
-              onClick={() =>
-                update({
-                  nativeServiceId: service.id,
-                  nativeServiceName: service.name,
-                  slots: [],
-                })
-              }
-            >
-              {service.name}
-            </button>
-          ))}
+          {mobile && eligible.length > 0 ? (
+            <label className="booking-choice-selector">
+              <span className="field-label">Session</span>
+              <select
+                value=""
+                onChange={(event) => {
+                  const service = eligible.find(
+                    (item) => item.id === event.target.value,
+                  );
+                  if (!service) return;
+                  update({
+                    nativeServiceId: service.id,
+                    nativeServiceName: service.name,
+                    slots: [],
+                  });
+                  if (!presentation.expanded) presentation.toggle();
+                }}
+              >
+                <option value="" disabled>
+                  Choose session
+                </option>
+                {eligible.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            eligible.map((service) => (
+              <button
+                key={service.id}
+                className="button"
+                onClick={() =>
+                  update({
+                    nativeServiceId: service.id,
+                    nativeServiceName: service.name,
+                    slots: [],
+                  })
+                }
+              >
+                {service.name}
+              </button>
+            ))
+          )}
         </section>
       </>
     );
   return (
     <SessionPresentation
       {...presentation}
+      choices={eligible.map(({ id, name }) => ({ id, name }))}
+      onChoose={(id) => {
+        const service = eligible.find((item) => item.id === id);
+        if (service && service.id !== draft.nativeServiceId)
+          update({
+            nativeServiceId: service.id,
+            nativeServiceName: service.name,
+            slots: [],
+          });
+      }}
       serviceName={selected.name}
       environment={data.environment}
       pending={draft.nativeServiceId !== selected.id}
@@ -159,25 +231,67 @@ function SessionPresentation({
   serviceName = SERVICE_NAME,
   environment = "developer",
   pending = false,
+  choices,
+  onChoose,
   expanded,
   toggle,
 }: {
   expanded: boolean;
   toggle: () => void;
   serviceName?: string;
+  choices?: { id: string; name: string }[];
+  onChoose?: (id: string) => void;
   environment?: "developer" | "production";
   pending?: boolean;
 }) {
   const { draft, update } = useBooking();
   const prices = sessionPrices(environment);
+  const mobile = useMobileBooking();
+  if (mobile && !expanded)
+    return (
+      <div className="session-products">
+        <label className="surface booking-choice-selector">
+          <span className="field-label">Session</span>
+          <select
+            value=""
+            onChange={(event) => {
+              if (event.target.value) {
+                onChoose?.(event.target.value);
+                toggle();
+              }
+            }}
+          >
+            <option value="" disabled>
+              Choose session
+            </option>
+            {(choices ?? [{ id: serviceName, name: serviceName }]).map(
+              (choice) => (
+                <option key={choice.id} value={choice.id}>
+                  {choice.name}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+      </div>
+    );
   return (
     <>
-      <h2 className="section-title">Session</h2>
+      {!mobile && <h2 className="section-title">Session</h2>}
       <div className="session-products">
         <section
           className="surface session-product booking-entry-action"
           aria-label={serviceName}
         >
+          {mobile && (
+            <span
+              className="booking-choice-label"
+              role="heading"
+              aria-level={2}
+            >
+              Session
+            </span>
+          )}
           <button
             className="session-product-choice"
             aria-label={`Choose ${serviceName}`}

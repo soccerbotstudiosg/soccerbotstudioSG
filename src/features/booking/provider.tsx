@@ -348,6 +348,12 @@ export function BookingProvider({
         : null;
     if (expiry !== null)
       return { message: PAYMENT_WINDOW_ENDED, slots: expiry };
+    const activeCheckout =
+      bookingService.mode === "live" && /\/book\/time\/?$/.test(pathname ?? "")
+        ? loadConflictNotice("active-checkout")
+        : null;
+    if (activeCheckout !== null)
+      return { message: ACTIVE_CHECKOUT_NOTICE, slots: activeCheckout };
     const noCreation =
       bookingService.mode === "live" && /\/book\/time\/?$/.test(pathname ?? "")
         ? loadConflictNotice("no-creation")
@@ -423,6 +429,12 @@ export function BookingProvider({
           ? slots
           : null,
         "expiry",
+      );
+      saveConflictNotice(
+        bookingService.mode === "live" && notice === ACTIVE_CHECKOUT_NOTICE
+          ? slots
+          : null,
+        "active-checkout",
       );
       if (!notice || noticeCurrent.current.message !== notice)
         noticeShownOnCalendar.current = false;
@@ -592,6 +604,7 @@ export function BookingProvider({
     if (pathname && !/\/book\/time\/?$/.test(pathname)) {
       saveConflictNotice(null, "no-creation");
       saveConflictNotice(null, "expiry");
+      saveConflictNotice(null, "active-checkout");
       const retained = liveCheckoutAttemptId();
       if (retained && isCalendarRecovery(retained))
         dismissCalendarRecoveryNotice(retained);
@@ -2591,6 +2604,7 @@ export function BookingProvider({
             selectionNotice !== CONFLICT_NOTICE &&
             selectionNotice !== BOOKING_NOT_CREATED &&
             selectionNotice !== PAYMENT_WINDOW_ENDED &&
+            selectionNotice !== ACTIVE_CHECKOUT_NOTICE &&
             selectionNotice !== SESSION_UNAVAILABLE
           )
             setSelectionNotice(null);
