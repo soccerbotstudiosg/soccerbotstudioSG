@@ -426,6 +426,8 @@ Refresh retains this tab’s recovery state and never automatically opens anothe
 
 This is the rendered live booking-flow inventory for the local repair, not a deployment receipt. `{sessions}` means Singapore dates and time ranges. Conflict and expiry notices list affected sessions as separate bullets below the fixed message, for example “Mon, 9 Nov 2026, 12:00–12:40.” Conflict bullets include only verified affected sessions and persist with the notice through refresh until the first calendar departure. Internal provider reasons that share a customer message are grouped. Preview-only simulation errors and unreachable legacy copy are excluded. No customer-facing Check Status or Check payment status button is retained; automatic recovery keeps its original attempt, timing and financial safeguards. “Try again” for availability and “Load booking details” for a verified receipt are different operations.
 
+The verified no-creation red notice also retains its full message and session bullets through Calendar reload and local interactions. Navigating away clears it; returning to Calendar does not revive it.
+
 Verified no-creation also temporarily hides the original affected time windows across trainers. Background fresh availability alone restores them; failed or stale reads leave them hidden. The cart is cleared, and other available sessions remain selectable.
 
 ### Conflict, expiry and payment

@@ -1887,6 +1887,10 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
   ] as const) {
     const rejected = vi.fn(async () => true);
     const resolved = vi.fn(() => true);
+    const sessions = [1, 2, 3].map((day) => ({
+      startMs: Date.parse("2026-11-20T12:00:00+08:00") + day * 86400000,
+      players: 2,
+    }));
     const background = source.startsWith("background-");
     const onAwaitingExpiry = vi.fn(() => true);
     const fetch = vi.fn(async (url: string) => {
@@ -1909,10 +1913,7 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
             players: 2,
             totalMinor: 8800,
             currency: "SGD",
-            sessions: [1, 2, 3].map((day) => ({
-              startMs: Date.now() + day * 86400000,
-              players: 2,
-            })),
+            sessions,
           },
           checking: {
             deadlineMs: Date.now() + (source === "context" ? -1 : 600000),
@@ -1952,7 +1953,7 @@ it("routes only authenticated no-effect selection rejections to the calendar", a
           rejection,
           expect.any(AbortSignal),
         );
-      else expect(resolved).toHaveBeenCalledWith(first);
+      else expect(resolved).toHaveBeenCalledWith(first, sessions);
       expect(navigation.replace).not.toHaveBeenCalled();
       expect(view.container).toBeEmptyDOMElement();
     } else if (source === "context" || source === "status") {

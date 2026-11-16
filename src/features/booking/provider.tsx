@@ -67,7 +67,10 @@ import {
   type BookingDraft,
   type Outcome,
 } from "@/domain/booking";
-import type { CustomerIdentityService } from "@/services/contracts";
+import type {
+  CheckoutContext,
+  CustomerIdentityService,
+} from "@/services/contracts";
 import { services } from "@/services";
 import { customerCatalogueService } from "@/services/customer-catalogue";
 import { defineBookingService } from "@/services/booking";
@@ -130,7 +133,10 @@ interface BookingContextValue extends StoredBooking {
   calendar: ReturnType<typeof useCalendarAvailability>;
   showMonth: (month: string, through?: string) => void;
   setCalendarBrowsing: (active: boolean) => void;
-  resolveUncreatedBooking: (id: string) => boolean;
+  resolveUncreatedBooking: (
+    id: string,
+    sessions?: CheckoutContext["summary"]["sessions"],
+  ) => boolean;
   conflictLoadingLabel: string | null;
   selectionNotice: string | null;
   selectionNoticeSlots: NoticeSlot[];
@@ -335,6 +341,12 @@ export function BookingProvider({
         ? loadConflictNotice("cutoff")
         : null;
     if (cutoff !== null) return { message: SESSION_UNAVAILABLE, slots: cutoff };
+    const noCreation =
+      bookingService.mode === "live" && /\/book\/time\/?$/.test(pathname ?? "")
+        ? loadConflictNotice("no-creation")
+        : null;
+    if (noCreation !== null)
+      return { message: BOOKING_NOT_CREATED, slots: noCreation };
     const slots =
       bookingService.mode === "live" && !initialHomeConflict
         ? loadConflictNotice()
@@ -392,6 +404,12 @@ export function BookingProvider({
           ? slots
           : null,
         "cutoff",
+      );
+      saveConflictNotice(
+        bookingService.mode === "live" && notice === BOOKING_NOT_CREATED
+          ? slots
+          : null,
+        "no-creation",
       );
       if (!notice || noticeCurrent.current.message !== notice)
         noticeShownOnCalendar.current = false;
@@ -555,6 +573,9 @@ export function BookingProvider({
     setProtectedConflictRedirect(null);
   const previousNoticePath = useRef(pathname);
   const noticeRoute = useEffectEvent(() => {
+    // A full-document departure must dismiss persisted display state too.
+    if (pathname && !/\/book\/time\/?$/.test(pathname))
+      saveConflictNotice(null, "no-creation");
     const changed = previousNoticePath.current !== pathname;
     previousNoticePath.current = pathname;
     if (
@@ -1147,7 +1168,7 @@ export function BookingProvider({
   );
   /** Clear only the owned attempt after authenticated terminal no-creation proof. */
   const resolveUncreatedBooking = useCallback(
-    (id: string) => {
+    (id: string, sessions?: CheckoutContext["summary"]["sessions"]) => {
       const current = latest.current;
       if (
         service.mode !== "live" ||
@@ -1206,7 +1227,21 @@ export function BookingProvider({
         left || (action.calendarRecovery && !noticeShownOnCalendar.current)
           ? null
           : BOOKING_NOT_CREATED;
-      setSelectionNotice(notice, notice ? originalSlots : []);
+      const noticeSlots = sessions
+        ? sessions.map(({ startMs }) => {
+            const instant = new Date(startMs);
+            return {
+              date: todaySG(instant),
+              start: new Intl.DateTimeFormat("en-GB", {
+                timeZone: "Asia/Singapore",
+                hour: "2-digit",
+                minute: "2-digit",
+                hourCycle: "h23",
+              }).format(instant),
+            };
+          })
+        : originalSlots;
+      setSelectionNotice(notice, notice ? noticeSlots : []);
       pauseCalendar(false);
       return true;
     },
@@ -1237,7 +1272,7 @@ export function BookingProvider({
       .context({ attemptId: id, mode: "live", signal: controller.signal })
       .then((context) => {
         if (!controller.signal.aborted && context.creationResolution)
-          resolveUncreatedBooking(id);
+          resolveUncreatedBooking(id, context.summary.sessions);
       })
       .catch(() => {
         /* Unknown reads retain the original attempt and financial lock. */
@@ -1317,7 +1352,10 @@ export function BookingProvider({
             )
               return false;
             if (context.creationResolution)
-              return resolveUncreatedBooking(pending.attemptId);
+              return resolveUncreatedBooking(
+                pending.attemptId,
+                context.summary.sessions,
+              );
             if (context.selectionRejection) {
               const sameSnapshot =
                 context.summary.sessions.length ===
@@ -1374,7 +1412,8 @@ export function BookingProvider({
           (context.selectionRejection || context.creationResolution) &&
           liveCheckoutAttemptId() === id
         )
-          if (context.creationResolution) resolveUncreatedBooking(id);
+          if (context.creationResolution)
+            resolveUncreatedBooking(id, context.summary.sessions);
           else if (context.selectionRejection) {
             const original =
               latest.current.attempt?.id === id
@@ -2027,7 +2066,7 @@ export function BookingProvider({
           ]).finally(() => clearTimeout(contextTimer));
           if (!isCurrent()) return false;
           if (context.creationResolution) {
-            resolveUncreatedBooking(attempt.id);
+            resolveUncreatedBooking(attempt.id, context.summary.sessions);
             return false;
           }
           if (
@@ -2526,6 +2565,7 @@ export function BookingProvider({
           if (action.returnToCalendar) setAction({ status: "idle" });
           if (
             selectionNotice !== CONFLICT_NOTICE &&
+            selectionNotice !== BOOKING_NOT_CREATED &&
             selectionNotice !== SESSION_UNAVAILABLE
           )
             setSelectionNotice(null);

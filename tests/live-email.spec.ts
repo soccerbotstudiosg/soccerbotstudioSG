@@ -2746,8 +2746,13 @@ async function uncertainHolding(
         contact: { name: "Synthetic Guest" },
       });
       expect(restoredDraft.checkoutAttemptId).toBeUndefined();
+      const noticeContents = await page.getByRole("alert").innerText();
       await page.reload();
       await expect(page).toHaveURL(/\/book\/time\/$/);
+      await expect(page.getByRole("alert")).toHaveText(noticeContents);
+      await expect(page.getByRole("alert").getByRole("listitem")).toHaveCount(
+        1,
+      );
       await expect(
         page.getByRole("status", {
           name: "Checking whether your booking was created…",
@@ -2758,6 +2763,23 @@ async function uncertainHolding(
         mechanism.calls.filter((call) => call.body?.method === "book"),
       ).toHaveLength(1);
       await assertNoPaymentOrConfirmation(page, mechanism);
+      await page.goto("/book/session/");
+      await expect(
+        page.getByRole("heading", { name: "Outlet", exact: true }),
+      ).toBeVisible();
+      await page.goto("/book/time/");
+      await expect(
+        page.getByRole("heading", {
+          name: "Select dates and times",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(
+          "Some sessions may no longer be available. Please check again.",
+          { exact: true },
+        ),
+      ).toHaveCount(0);
     }
   } finally {
     await stopMechanism(page, mechanism, transport);

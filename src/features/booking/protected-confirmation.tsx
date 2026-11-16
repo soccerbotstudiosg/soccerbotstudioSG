@@ -141,7 +141,10 @@ function ProtectedConfirmationBody({
   /** Continue protected recovery without rendering status on other draft steps. */
   silent?: boolean;
   onPaymentDetected?: (attemptId: string) => void;
-  onCreationResolved?: (attemptId: string) => boolean;
+  onCreationResolved?: (
+    attemptId: string,
+    sessions?: CheckoutContext["summary"]["sessions"],
+  ) => boolean;
   onSelectionRejected?: (
     attemptId: string,
     rejection: CheckoutSelectionRejection,
@@ -793,7 +796,10 @@ function ProtectedConfirmationBody({
       (contextMatches ? context.value.creationResolution : undefined)
     );
   const finishCreationResolution = useEffectEvent((id: string) =>
-    onCreationResolved?.(id),
+    onCreationResolved?.(
+      id,
+      contextMatches ? context.value.summary.sessions : undefined,
+    ),
   );
   useEffect(() => {
     if (
