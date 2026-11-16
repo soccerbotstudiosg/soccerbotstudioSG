@@ -705,10 +705,12 @@
   }
   .not-found-home {
     position: absolute;
-    left: 8%;
-    top: 7%;
+    /* Anchor the sphere above the palm even when its touch target stops shrinking. */
+    left: 18%;
+    bottom: 66%;
     width: 26%;
-    min-width: 52px;
+    min-width: 44px;
+    transform: translateX(-50%);
     display: block;
     border-radius: 50%;
     pointer-events: auto;
@@ -724,7 +726,7 @@
   }
   .not-found-home:hover,
   .not-found-home:focus-visible {
-    transform: translateY(-3px) scale(1.06);
+    transform: translateX(-50%) translateY(-3px) scale(1.06);
     filter: drop-shadow(0 0 10px #46acdc80);
     outline: 1px solid #79dce9;
     outline-offset: 3px;
@@ -792,7 +794,7 @@
       transition: none;
     }
     .not-found-home:is(:hover, :focus-visible) {
-      transform: none;
+      transform: translateX(-50%);
     }
   }
 

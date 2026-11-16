@@ -820,6 +820,20 @@ test("public routes remove staff access and fit the viewport", async ({
   }
   const home = page.getByRole("link", { name: "Back to home", exact: true });
   await expect(home).toBeVisible();
+  const astronaut = await page.locator(".not-found-astronaut").boundingBox();
+  const sphere = await home.boundingBox();
+  // The source artwork's open palm is centred at18% across and34% down.
+  expect(sphere!.width).toBeGreaterThanOrEqual(44);
+  expect(
+    Math.abs(
+      (sphere!.x + sphere!.width / 2 - astronaut!.x) / astronaut!.width - 0.18,
+    ),
+  ).toBeLessThan(0.015);
+  expect(
+    Math.abs(
+      (sphere!.y + sphere!.height - astronaut!.y) / astronaut!.height - 0.34,
+    ),
+  ).toBeLessThan(0.015);
   await home.focus();
   await expect(home).toBeFocused();
   await home.press("Enter");
