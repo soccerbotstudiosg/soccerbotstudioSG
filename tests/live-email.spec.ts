@@ -3845,7 +3845,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       page.getByRole("dialog", { name: "Get the Soccerbot360 Player App" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("status", { name: "Checking booking…", exact: true }),
+      page.getByRole("status", { name: "Checking payment…", exact: true }),
     ).toBeVisible();
     await expect(
       page.locator(".page-loading .page-loading-orbit"),
