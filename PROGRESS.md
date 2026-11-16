@@ -1,12 +1,12 @@
-# Current checkpoint
+# Progress
 
 ## Active outcome
 
-16 November2026: PR88 is merged/deployed as2684703 after full PR/main CI and staging. Follow-up branch fix/404-booking-leave-guard repairs the Leave this booking modal on unknown nested /book/ routes. A new shell integration test reproduced the interception before repair and passes afterward; valid booking warnings remain covered. Existing browser404 journey now includes /book/session/yes. Owner also approved the mobile selector/card mockup; consolidated source now implements plain card-shaped native selects, standard hover and aligned selected content. Full local code verification pending.
+16 November 2026: PR89 merged as f4a0015 after passing CI and verified staging. Owner reported the404 Home football overlapping the hand on mobile. Follow-up anchors its bottom to the palm while preserving a44px target and hover/reduced-motion alignment. Existing browser geometry coverage is extended.
 
 ## Next actions
 
-Complete local verification of the consolidated404 and approved mobile-card fixes, publish a draft, then follow the authorized ready/staging/merge sequence and reconcile Dependabot84 again. Dependency head9bb0ed2 passed CI43851864412 but manual staging remains unexecuted; current tools cannot dispatch workflows or update repository variables. No live booking/payment/provider actions.
+Verify and publish the palm-position fix, then complete the authorized staging/merge sequence. Dependabot84 at0be42be is reconciled with PR89 and passed local code verification; CI43869282052 is running. Its trusted manual staging requires workflow dispatch and repository-variable writes unavailable through current tools. Main CI43868802566 is independently running. No live provider actions.
 
 ## Ordered work after this slice
 
