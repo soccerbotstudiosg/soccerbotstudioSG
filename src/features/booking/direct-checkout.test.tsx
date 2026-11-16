@@ -242,6 +242,16 @@ async function directCase(scenario: string) {
     </BookingProvider>,
   );
   fireEvent.click(screen.getByText("Seed"));
+  const paymentButton = screen.getByRole("button", {
+    name: /^Proceed to Payment/,
+  });
+  expect(paymentButton.querySelector(".checkout-redirect")).toHaveTextContent(
+    "You’ll be redirected to to complete your payment.",
+  );
+  expect(paymentButton).toHaveAccessibleDescription(
+    "You’ll be redirected to HitPay to complete your payment.",
+  );
+  expect(paymentButton.querySelector(".checkout-redirect a")).toBeNull();
   fireEvent.click(
     screen.getByRole("button", { name: "Expire checkout proof" }),
   );

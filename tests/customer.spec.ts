@@ -1771,6 +1771,30 @@ test("first visit offers the Player App with only store links and dismissal pers
   const prompt = page.getByRole("dialog", {
     name: "Get the Soccerbot360 Player App",
   });
+  await expect(page).toHaveTitle(
+    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+  );
+  await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
+    "content",
+    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    "content",
+    new URL(sitePath("/"), "https://soccerbotsg.com").href,
+  );
+  const crawlerPage = await page.request.get(sitePath("/"));
+  expect(crawlerPage.ok()).toBe(true);
+  const initialHead = (await crawlerPage.text()).split("</head>")[0];
+  expect(initialHead).toContain(
+    "<title>Interactive Football Experience | SOCCERBOTSTUDIO Singapore</title>",
+  );
+  expect(initialHead).toContain('property="og:title"');
+  expect(initialHead).toContain('name="twitter:title"');
+  const previewImage = await page.request.get(
+    sitePath("/assets/soccerbot-social-preview.jpg"),
+  );
+  expect(previewImage.ok()).toBe(true);
+  expect(previewImage.headers()["content-type"]).toContain("image/jpeg");
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     "content",
     "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
@@ -2055,7 +2079,7 @@ test("header blue and the typography hierarchy stay consistent across every book
         const actionBox = await action.boundingBox();
         expect(actionBox!.height).toBeLessThanOrEqual(72);
         const redirect = primaryBar.locator(".checkout-redirect");
-        if ((await redirect.count()) && page.viewportSize()!.width <= 640) {
+        if ((await redirect.count()) && page.viewportSize()!.width <= 559) {
           await expect(redirect).toBeHidden();
           const logo = action.locator(".checkout-button-logo");
           await expect(logo).toBeVisible();
@@ -2068,7 +2092,7 @@ test("header blue and the typography hierarchy stay consistent across every book
           );
           expect(barBox!.height).toBeLessThanOrEqual(72);
         } else if (await redirect.count()) {
-          const logo = redirect.getByRole("img", { name: "HitPay" });
+          const logo = redirect.locator("img");
           await expect(logo).toBeVisible();
           expect(
             await logo.evaluate(
@@ -2076,11 +2100,18 @@ test("header blue and the typography hierarchy stay consistent across every book
             ),
           ).toBeGreaterThan(0);
           const hint = await redirect.boundingBox();
-          expect(hint!.y + hint!.height).toBeLessThanOrEqual(actionBox!.y);
-          expect(barBox!.height - actionBox!.height - hint!.height).toBeCloseTo(
-            13,
-            0,
+          const primary = await action
+            .locator(".checkout-primary-line")
+            .boundingBox();
+          expect(hint!.y).toBeGreaterThanOrEqual(primary!.y + primary!.height);
+          expect(hint!.y + hint!.height).toBeLessThanOrEqual(
+            actionBox!.y + actionBox!.height,
           );
+          expect(hint!.x).toBeGreaterThanOrEqual(actionBox!.x);
+          expect(hint!.x + hint!.width).toBeLessThanOrEqual(
+            actionBox!.x + actionBox!.width,
+          );
+          expect(barBox!.height).toBeLessThanOrEqual(72);
         } else expect(barBox!.height).toBeLessThanOrEqual(72);
         await expect(primaryBar).toHaveCSS(
           "background-color",

@@ -8,15 +8,14 @@ import { sitePath } from "@/content/site-path";
 import { socialPreview } from "@/content/media";
 import productionTarget from "../../deployment/production.json";
 import "./globals.css";
-const shareTitle =
-  "Interactive Football Experience | SOCCERBOTSTUDIO Singapore";
-const shareDescription =
-  "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.";
+const shareTitle = socialPreview.title;
+const shareDescription = socialPreview.description;
 const shareImage = socialPreview;
 export const metadata: Metadata = {
   metadataBase: new URL(productionTarget.origin),
   openGraph: {
     type: "website",
+    url: new URL(sitePath("/"), productionTarget.origin).href,
     locale: "en_SG",
     siteName: "SOCCERBOTSTUDIO Singapore",
     title: shareTitle,
@@ -24,6 +23,7 @@ export const metadata: Metadata = {
     images: [
       {
         url: shareImage.src,
+        type: "image/jpeg",
         width: shareImage.width,
         height: shareImage.height,
         alt: shareImage.alt,

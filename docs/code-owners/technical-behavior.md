@@ -639,7 +639,7 @@ Review’s shared sticky action includes “You’ll be redirected to [HitPay lo
 
 Checkout route/bootstrap covers use “Checking booking…” until protected work supplies its actual status. Active registered operations always supply the cover’s status label, including demo payment processing. After they finish, the document cover retains the latest approved feedback through fonts/frame completion rather than flashing “Loading...” between checks and ready content. A real document reload still says “Refreshing…”. Non-checkout routes retain their normal generic loading copy; status changes never imply paid/confirmed evidence.
 
-Shared Open Graph and Twitter metadata use “Interactive Football Experience | SOCCERBOTSTUDIO Singapore”; the route-specific browser document titles remain owned by their existing metadata.
+Shared Open Graph, Twitter and homepage fallback title/description use the same `socialPreview` content: “Interactive Football Experience | SOCCERBOTSTUDIO Singapore”. Open Graph declares the public homepage URL and JPEG image type. Initial exported HTML contains the metadata before hydration; the image is a public static asset. Other route-specific browser titles remain unchanged. Messenger caches, crops and layout are controlled by each app.
 
 Primary-action floating thresholds use the actual button bounds, retaining the shared bottom clearance. Surrounding hints or padding crossing the header must not move an otherwise-visible button during browser focus/click scrolling. The reserved anchor still owns layout height and the moving subtree stays excluded from scroll anchoring.
 

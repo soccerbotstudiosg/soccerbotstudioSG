@@ -633,7 +633,7 @@ The confirmed-booking copy control is an icon-only button at the top right of th
 
 Enabled Continue/Save buttons use the header navy with white labels and normal letter spacing. Outlet, session and time cards omit selection plus/tick icons. Available calendar dates are outlined; unavailable dates have no visible outline and a lighter grey fill. Confirmation status badges use20px bold text and the copy-icon button is20% narrower, retaining the existing alignment and content. Recovery notices group the message and session bullets together, with Request Help centred against that group, equal top/bottom padding and safe mobile wrapping. Report sending and recovery logic are unchanged.
 
-Social metadata uses one branded logo-and-arena image and studio-wide wording across Open Graph and Twitter cards. Messenger-controlled cropping, layout and cached previews can differ. No booking, validation, payment, expiry, recovery or authorization transition is changed.
+Social metadata uses one branded logo-and-arena image and studio-wide wording across Open Graph, Twitter cards and homepage title/description fallback. Messenger-controlled cropping, layout and cached previews can differ. No booking, validation, payment, expiry, recovery or authorization transition is changed.
 
 ### Compact Player App prompt
 
@@ -721,7 +721,7 @@ Booking-step helpers stay on one line with concise16px muted copy. The verificat
 
 Payment continuation retains its intended checking message and “Continue to pay. If already paid, please wait...” instruction. Its compact spinner does not add a separate generic “Loading...” line.
 
-Approved payment guidance: on desktop, above Review’s Proceed to Payment, show “You’ll be redirected to [horizontal colour HitPay logo] to complete your payment.” On phones, omit that separate redirect line and place the horizontal HitPay logo on the right inside Proceed to Payment (white on the active navy button). Below Continue payment, show the countdown beside “Your selected sessions are held until the timer ends.” Keep the existing protected deadline and expiry behavior; the text does not extend a hold.
+Approved payment guidance: inside Review’s Proceed to Payment button, show “You’ll be redirected to [horizontal HitPay logo] to complete your payment.” as a compact second line beneath the primary action. Keep the full instruction at the standard14px hint size where it fits; below560px viewport width, retain only the horizontal HitPay logo at the right of the main action. Active buttons use white text/logo, disabled buttons retain muted text and the colour logo. The instruction remains the button’s accessible description; there is no separate grey strip or nested link. Below Continue payment, show the countdown beside “Your selected sessions are held until the timer ends.” Keep the existing protected deadline and expiry behavior; the text does not extend a hold.
 
 Review bootstrap uses “Checking booking…”; payment and confirmation bootstrap use “Checking payment…” until protected work supplies its actual status. A small head script selects reload copy before static HTML paints, so actual reloads never first paint the normal-navigation message. The document cover retains the latest operation message through generic route fallbacks and fonts/frame completion rather than flashing “Loading...” between checks and ready content. A real document reload still says “Refreshing…”. Non-checkout routes retain their normal generic loading copy; status changes never imply paid/confirmed evidence.
 
