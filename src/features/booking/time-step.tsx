@@ -425,6 +425,36 @@ export function TimeStep({
       );
     return <BrandLoading label="Checking dates…" />;
   }
+  const selectionNoticeContent = (
+    <div className="booking-help-content">
+      <p>
+        {selectionNotice === CHECKOUT_UNRESOLVED ? (
+          <strong>{selectionNotice}</strong>
+        ) : selectionNotice === BOOKING_NOT_CREATED ? (
+          CONFLICT_NOTICE
+        ) : (
+          selectionNotice
+        )}
+      </p>
+      {selectionNoticeSlots.length > 0 && (
+        <ul>
+          {selectionNoticeSlots.map((slot) => (
+            <li key={`${slot.date}|${slot.start}`}>
+              {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}.
+            </li>
+          ))}
+        </ul>
+      )}
+      {action.resumeAttemptId && (
+        <Link
+          className="text-link"
+          href={`/confirmation/?attempt=${encodeURIComponent(action.resumeAttemptId)}`}
+        >
+          View existing checkout
+        </Link>
+      )}
+    </div>
+  );
   return (
     <>
       <BookingHeading lines={["Select dates", "and times"]} />
@@ -461,48 +491,20 @@ export function TimeStep({
       )}
       <p className="lead">40-min session · 10-min changeover.</p>
       {recoveryNotice}
-      {selectionNotice && (
-        <div
-          className={
-            selectionNotice === CHECKOUT_UNRESOLVED && attempt
-              ? "alert calendar-recovery-notice"
-              : "alert"
-          }
-          role="alert"
-        >
-          <div className="booking-help-content">
-            <p>
-              {selectionNotice === CHECKOUT_UNRESOLVED ? (
-                <strong>{selectionNotice}</strong>
-              ) : selectionNotice === BOOKING_NOT_CREATED ? (
-                CONFLICT_NOTICE
-              ) : (
-                selectionNotice
-              )}
-            </p>
-            {selectionNoticeSlots.length > 0 && (
-              <ul>
-                {selectionNoticeSlots.map((slot) => (
-                  <li key={`${slot.date}|${slot.start}`}>
-                    {dateLabel(slot.date)}, {slot.start}–{endTime(slot.start)}.
-                  </li>
-                ))}
-              </ul>
-            )}
-            {action.resumeAttemptId && (
-              <Link
-                className="text-link"
-                href={`/confirmation/?attempt=${encodeURIComponent(action.resumeAttemptId)}`}
-              >
-                View existing checkout
-              </Link>
-            )}
+      {selectionNotice &&
+        (selectionNotice === CHECKOUT_UNRESOLVED && attempt ? (
+          <BookingHelp
+            key={attempt.id}
+            attemptId={attempt.id}
+            className="calendar-recovery-notice"
+          >
+            {selectionNoticeContent}
+          </BookingHelp>
+        ) : (
+          <div className="alert" role="alert">
+            {selectionNoticeContent}
           </div>
-          {selectionNotice === CHECKOUT_UNRESOLVED && attempt && (
-            <BookingHelp key={attempt.id} attemptId={attempt.id} />
-          )}
-        </div>
-      )}
+        ))}
       <section
         ref={calendarRef}
         className="calendar-panel"

@@ -789,7 +789,7 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
-    "title": "editing a new selection clears the previous unpaid reservation notice"
+    "title": "editing a new selection retains the unpaid reservation notice until navigation"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",

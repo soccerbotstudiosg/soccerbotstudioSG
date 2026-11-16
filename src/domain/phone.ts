@@ -5,10 +5,8 @@ import {
   type CountryCode,
 } from "libphonenumber-js/min";
 export { getCountries, getCountryCallingCode, type CountryCode };
-export const SINGAPORE_PHONE_ERROR =
-  "Enter an 8-digit mobile number starting with 8 or 9.";
-export const INTERNATIONAL_PHONE_ERROR =
-  "Enter a valid mobile number for the selected country.";
+export const SINGAPORE_PHONE_ERROR = "Use 8 digits, starting with 8 or 9.";
+export const INTERNATIONAL_PHONE_ERROR = "Check the number and country code.";
 const cleanCharacters = (value: string) => /^\+?[\d ()-]+$/.test(value);
 /** Parse an explicitly international number, or a Singapore national number. */
 function bookingPhone(value: string) {

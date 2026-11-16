@@ -5,7 +5,7 @@ import { identityRequest } from "./provider-transport";
 import { z } from "zod";
 import { dateLabel, endTime, money } from "../src/domain/dates";
 
-/** Send one staff report for an owned unresolved booking attempt. */
+/** Send one staff report and customer acknowledgement for an owned unresolved attempt. */
 export async function requestBookingHelp(
   request: Request,
   env: Env,
@@ -106,6 +106,25 @@ export async function requestBookingHelp(
     `Booking amount: SGD ${money(intent.totalMinor)}`,
     "Check the original attempt and provider records before making changes. This report does not prove failure or nonpayment.",
   ].join("\n");
+  const acknowledgement = [
+    `Hi ${contact.name},`,
+    "",
+    "Help has been requested. We will get back as soon as we can.",
+    "",
+    "Your selected sessions (Singapore time):",
+    ...intent.sessions.map((session) => {
+      const wall = new Date(session.startMs + 8 * 3600000).toISOString();
+      const time = wall.slice(11, 16);
+      return `${dateLabel(wall.slice(0, 10))}, ${time}–${endTime(time)} SGT; ${session.players} player(s)`;
+    }),
+    "",
+    `Booking amount: SGD ${money(intent.totalMinor)}`,
+    "",
+    "This email acknowledges your help request, not a confirmed booking. Please do not pay again while we check your original booking and payment status.",
+    "You can reply to this email to contact the studio.",
+    "",
+    "SoccerBotStudio Singapore",
+  ].join("\n");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
@@ -117,6 +136,21 @@ export async function requestBookingHelp(
           sender: sender.data,
           text,
           idempotencyKey: `booking-support/${attemptId}`,
+        },
+        controller.signal,
+      ),
+    );
+    // Both messages keep distinct stable keys. A partial/uncertain send retries
+    // the original payloads within the existing bounded idempotency window.
+    z.object({ id: z.string().uuid() }).parse(
+      await identityRequest(
+        "support-acknowledgement",
+        key,
+        {
+          sender: sender.data,
+          recipient: contact.email,
+          text: acknowledgement,
+          idempotencyKey: `booking-support-acknowledgement/${attemptId}`,
         },
         controller.signal,
       ),

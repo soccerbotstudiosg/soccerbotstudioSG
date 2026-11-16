@@ -2661,6 +2661,37 @@ async function uncertainHolding(
         expect(noticeGeometry.help.top).toBeGreaterThanOrEqual(
           noticeGeometry.message.bottom + 8,
         );
+      // Presentation-only acknowledgement interception; Worker tests prove both real mail dispatches.
+      let completeHelp: (() => Promise<void>) | undefined;
+      await page.route("**/api/attempts/*/support", (route) => {
+        completeHelp = () => route.fulfill({ json: { status: "sent" } });
+      });
+      await page
+        .getByRole("button", { name: "Request Help", exact: true })
+        .click();
+      const sendingHelp = page.getByRole("button", {
+        name: "Sending help request",
+      });
+      await expect(sendingHelp).toBeDisabled();
+      await expect(sendingHelp.locator(".spinner")).toBeVisible();
+      await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
+      await expect.poll(() => !!completeHelp).toBe(true);
+      await completeHelp!();
+      await expect(recoveryNotice).toHaveClass(/notice success/);
+      await expect(recoveryNotice).toHaveText(
+        "Help has been requested. We will get back as soon as we can.",
+      );
+      await expect(recoveryNotice).toHaveCSS(
+        "background-color",
+        "rgb(232, 244, 237)",
+      );
+      await page.reload();
+      await expect(recoveryNotice).toHaveText(
+        "Help has been requested. We will get back as soon as we can.",
+      );
+      await expect(
+        page.getByRole("button", { name: "Request Help", exact: true }),
+      ).toHaveCount(0);
       // Direct/back navigation must not expose an editable-looking Review
       // while the original unknown write still owns its financial lock.
       await page.addInitScript(() => {
@@ -2683,6 +2714,7 @@ async function uncertainHolding(
         await page.goto(`/book/${step}/`);
         await expect(page).toHaveURL(/\/book\/time\/$/);
         await expect(page.getByRole("checkbox")).toHaveCount(0);
+        await expect(page.locator(".calendar-recovery-notice")).toHaveCount(0);
         await expect(
           page.getByRole("heading", { name: "Review Booking", exact: true }),
         ).toHaveCount(0);

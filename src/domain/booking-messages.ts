@@ -23,3 +23,9 @@ export const ACTIVE_CHECKOUT_NOTICE =
 export const CONFLICT_CHECKING = "Some sessions may no longer be available.";
 export const ACTIVE_CHECKOUT_CHECKING =
   "You may already have an active checkout.";
+
+export const PAYMENT_RECEIVED_UNCONFIRMED =
+  "Payment received. We are still confirming your booking. Please contact us and do not pay again.";
+
+export const BOOKING_HELP_REQUESTED =
+  "Help has been requested. We will get back as soon as we can.";

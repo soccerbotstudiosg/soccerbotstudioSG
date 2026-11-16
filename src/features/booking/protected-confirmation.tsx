@@ -4,6 +4,7 @@ import {
   PAYMENT_WINDOW_ENDED,
   CONFLICT_CHECKING,
   CHECKOUT_UNRESOLVED,
+  PAYMENT_RECEIVED_UNCONFIRMED,
 } from "@/domain/booking-messages";
 import {
   isHitpayCheckoutUrl,
@@ -30,6 +31,8 @@ import { flushSync } from "react-dom";
 import { BookingHelp } from "./booking-help";
 import { BookingConfirmation, PendingConfirmation } from "./confirmation-step";
 type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
+import { Icon } from "@/components/icon";
+import { hitpayLogo } from "@/content/media";
 import { sitePath } from "@/content/site-path";
 import {
   checkoutNow,
@@ -98,7 +101,7 @@ function PaymentContinuation({
   return (
     <div className="payment-continuation">
       <a
-        className="button wide booking-entry-action"
+        className="button wide booking-entry-action checkout-payment-button"
         href={url}
         data-booking-continuation
         referrerPolicy="no-referrer"
@@ -110,6 +113,15 @@ function PaymentContinuation({
         }}
       >
         Continue payment
+        <Icon name="lock" />
+        <img
+          className="continuation-provider-logo"
+          src={hitpayLogo}
+          width={108}
+          height={28}
+          alt=""
+          aria-hidden="true"
+        />
       </a>
       <div className="payment-continuation-details">
         <p role="timer" aria-live="off">
@@ -1151,14 +1163,17 @@ function ProtectedConfirmationBody({
   ) {
     if (!current) return <ConfirmationHome />;
     const notice = (
-      <div className="alert booking-help-notice" role="alert">
+      <BookingHelp key={attemptId} attemptId={attemptId}>
         <div className="booking-help-content">
           <p>
-            <strong>{CHECKOUT_UNRESOLVED}</strong>
+            <strong>
+              {paymentReceived || recordedPayment
+                ? PAYMENT_RECEIVED_UNCONFIRMED
+                : CHECKOUT_UNRESOLVED}
+            </strong>
           </p>
         </div>
-        <BookingHelp key={attemptId} attemptId={attemptId} />
-      </div>
+      </BookingHelp>
     );
     const label =
       paymentReceived || recordedPayment || view === "confirmed"
@@ -1350,7 +1365,7 @@ function ProtectedConfirmationBody({
           )}
           <p>
             {historicalPayment
-              ? "Payment received. Contact us about your booking. Do not pay again."
+              ? PAYMENT_RECEIVED_UNCONFIRMED
               : view === "confirmed"
                 ? "Your booking is confirmed."
                 : view === "denied"
@@ -1358,7 +1373,7 @@ function ProtectedConfirmationBody({
                   : view === "checking"
                     ? "Checking booking."
                     : paymentReceived
-                      ? "Payment received. Contact us about your booking. Do not pay again."
+                      ? PAYMENT_RECEIVED_UNCONFIRMED
                       : view === "unavailable"
                         ? "Payment status is temporarily unavailable. We’ll check again automatically."
                         : "Payment is still unconfirmed. Contact the studio before booking or paying again."}
