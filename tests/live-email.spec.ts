@@ -3608,6 +3608,14 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       await expect(continuation).toHaveAttribute("href", mechanism.checkoutUrl);
       await expect(continuation).not.toHaveAttribute("target", "_blank");
       await expect(page.getByRole("timer")).toBeVisible();
+      await expect(page.getByText("Loading...", { exact: true })).toHaveCount(
+        0,
+      );
+      await expect(
+        page.getByText("Continue to pay. If already paid, please wait...", {
+          exact: true,
+        }),
+      ).toBeVisible();
       await continuation.click();
       await expect(page).toHaveURL(mechanism.checkoutUrl);
       expect(page.context().pages()).toHaveLength(pagesBefore);

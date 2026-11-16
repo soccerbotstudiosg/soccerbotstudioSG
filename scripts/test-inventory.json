@@ -661,6 +661,10 @@
   },
   {
     "file": "src/features/booking/confirmation-copy.test.tsx",
+    "title": "payment continuation shows only its intended status and instruction beside the spinner"
+  },
+  {
+    "file": "src/features/booking/confirmation-copy.test.tsx",
     "title": "unresolved post-payment confirmation keeps the receipt layout with a pending badge rather than a pending page"
   },
   {

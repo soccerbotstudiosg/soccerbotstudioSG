@@ -2,11 +2,13 @@
 
 ## Active outcome
 
-16 November 2026: repair the mobile booking bottom-scroll jump on `fix/mobile-booking-viewport`, based on merged PR82/main996d069. Owner clarified that scrolling down jumps past the action’s resting position into the footer; scrolling back up works, and explicitly authorized fix, staging and merge.
+16 November 2026: repair the mobile booking bottom-scroll jump on `fix/mobile-booking-viewport`, based on merged PR82/main996d069. Owner clarified that scrolling down jumps past the action’s resting position into the footer; scrolling back up works, and initially authorized fix, staging and merge. The owner subsequently paused merge and added removal of generic “Loading...” mixed into checkout/payment status messages. Merge remains on hold.
 
 The shared action changes between normal flow and a fixed viewport position. Exclude that moving subtree from browser scroll-anchor selection with `overflow-anchor: none`; keep its reserved height, sticky thresholds, footer access, spacing and booking guards unchanged. The existing every-step browser case now crosses both placement boundaries in both directions and checks scroll position/document height, plus the computed exclusion where supported. Browser/device execution remains CI/owner-owned; physical mobile confirmation remains pending.
 
-Local source, lint and type checks pass; final CI/staging are pending. Prior PR82 exact-head CI43757556352 and staging43758873875 passed before merge996d069; merged-main CI43759060624 and production deployment43760352549 also passed. No provider or account changes are in scope.
+The payment continuation heading also rendered the compact spinner’s default “Loading...” beside its actual status/instruction. Suppress only that redundant spinner text; keep the accessible status label, spinner, intended copy and payment controls. The regression covers both pending-summary layouts and fails with the original spinner. Existing same-tab Back/Continue payment browser coverage now asserts no generic copy.
+
+Local scroll-change source, lint and type checks pass; CI43779612196 on bf2dd4e is running. The added loader fix passes12 focused component cases; source inventory now includes its one added case. Final combined CI/staging are pending. Prior PR82 exact-head CI43757556352 and staging43758873875 passed before merge996d069; merged-main CI43759060624 and production deployment43760352549 also passed. No provider or account changes are in scope.
 
 ## Current scope
 
@@ -44,7 +46,7 @@ Shared Continue actions reserve32px above and24px below, including24px viewport-
 
 ## Verification and next action
 
-Source integrity, lint and TypeScript checks pass. The existing every-step browser regression is extended without changing case inventory or fixture authority. CI must execute its scroll-position, document-height and scroll-anchor checks on desktop and both phone engines; owner physical-device validation remains distinct. Next: publish the consolidated candidate, verify all exact-head gates, deploy/health-check staging, then merge under the owner’s explicit authorization. Retain any failed receipt and diagnose before repair.
+Source integrity, lint and TypeScript checks pass. The existing every-step browser regression is extended without changing case inventory or fixture authority. CI must execute its scroll-position, document-height and scroll-anchor checks on desktop and both phone engines; owner physical-device validation remains distinct. Next: publish the consolidated candidate, verify all exact-head gates, deploy/health-check staging, hold merge until the owner resumes it. Retain any failed receipt and diagnose before repair.
 
 ## Remaining owner acceptance
 
