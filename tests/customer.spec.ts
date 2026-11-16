@@ -1715,7 +1715,7 @@ test("first visit offers the Player App with only store links and dismissal pers
   });
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     "content",
-    "SOCCERBOTSTUDIO Singapore | Interactive Football Experience",
+    "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
