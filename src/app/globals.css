@@ -2010,7 +2010,7 @@
     display: flex;
     align-items: center;
     align-self: end;
-    justify-self: end;
+    justify-self: center;
     width: 148px;
     min-width: 0;
     margin: 24px 0 0;
@@ -2051,13 +2051,13 @@
   }
   .footer-apps .footer-contact-heading {
     white-space: nowrap;
-    text-align: right;
+    text-align: center;
   }
   .footer-apps .footer-contact-copy {
     display: grid;
     grid-template-rows: auto auto 1fr;
     align-items: start;
-    justify-items: end;
+    justify-items: center;
   }
   .footer-contact-copy {
     display: block;
@@ -2068,9 +2068,11 @@
   .footer-contact-heading {
     display: block;
     min-width: 0;
-    font-size: 1rem;
-    font-weight: 400;
-    letter-spacing: -0.015em;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    font-weight: var(--weight-heading);
+    line-height: var(--leading-heading);
+    letter-spacing: -0.02em;
     color: var(--color-brand);
   }
   .footer-contact-detail {
@@ -2180,15 +2182,10 @@
       justify-self: start;
       align-self: start;
     }
-    .footer-apps .footer-contact-heading {
-      text-align: left;
-    }
     .footer-apps .footer-contact-copy {
       grid-template-rows: auto auto auto;
-      justify-items: start;
     }
     .footer-brand {
-      justify-self: start;
       margin-top: 16px;
     }
     .footer-contact-grid {
@@ -2355,12 +2352,6 @@
     .footer-direct-links .footer-contact-link {
       gap: 6px;
     }
-    .footer-apps .footer-contact-heading {
-      text-align: center;
-    }
-    .footer-apps .footer-contact-copy {
-      justify-items: center;
-    }
     .footer-contact-row:nth-child(-n + 2) .footer-contact-heading {
       min-height: 24px;
     }
@@ -2374,9 +2365,6 @@
     }
     .footer-app-links {
       justify-content: center;
-    }
-    .footer-brand {
-      justify-self: center;
     }
   }
   @media (max-width: 370px) {
@@ -5211,14 +5199,15 @@
   }
 }
 @keyframes home-light-sweep {
-  from {
+  0% {
     transform: translateX(-120%);
     opacity: 0;
   }
-  25% {
+  4.5% {
     opacity: 1;
   }
-  to {
+  18%,
+  100% {
     transform: translateX(120%);
     opacity: 0;
   }
@@ -5238,7 +5227,7 @@
       #79c4db24 50%,
       transparent 70%
     );
-    animation: home-light-sweep 900ms ease-out both;
+    animation: home-light-sweep 5s ease-out infinite;
   }
   .studio-scroll-cue svg,
   .calendar-return-cue svg {

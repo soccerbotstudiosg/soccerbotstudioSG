@@ -2719,6 +2719,10 @@ async function uncertainHolding(
       expect(await resolved.json()).toMatchObject({ state: "complete" });
       // A normal reload observes the operator's new authority immediately;
       // it does not renew the expired foreground wait or replay the write.
+      const resolvedNotice = page.getByRole("alert").filter({
+        hasText:
+          "Some sessions may no longer be available. Please check again.",
+      });
       await page.reload();
       await observedResolution;
       await expect(page).toHaveURL(/\/book\/time\/$/);
@@ -2728,9 +2732,7 @@ async function uncertainHolding(
           { exact: true },
         ),
       ).toBeVisible();
-      await expect(page.getByRole("alert").getByRole("listitem")).toHaveCount(
-        1,
-      );
+      await expect(resolvedNotice.getByRole("listitem")).toHaveCount(1);
       await expect(
         page.getByRole("status", {
           name: "Checking whether your booking was created…",
@@ -2746,13 +2748,11 @@ async function uncertainHolding(
         contact: { name: "Synthetic Guest" },
       });
       expect(restoredDraft.checkoutAttemptId).toBeUndefined();
-      const noticeContents = await page.getByRole("alert").innerText();
+      const noticeContents = await resolvedNotice.innerText();
       await page.reload();
       await expect(page).toHaveURL(/\/book\/time\/$/);
-      await expect(page.getByRole("alert")).toHaveText(noticeContents);
-      await expect(page.getByRole("alert").getByRole("listitem")).toHaveCount(
-        1,
-      );
+      await expect(resolvedNotice).toHaveText(noticeContents);
+      await expect(resolvedNotice.getByRole("listitem")).toHaveCount(1);
       await expect(
         page.getByRole("status", {
           name: "Checking whether your booking was created…",

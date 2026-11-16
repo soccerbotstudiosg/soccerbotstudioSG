@@ -576,19 +576,29 @@ test("public routes remove staff access and fit the viewport", async ({
     (await page.locator("body").boundingBox())!.width / 2,
     0,
   );
+  const appCenters = await page
+    .locator(
+      ".footer-apps .footer-contact-heading, .footer-app-links, .footer-brand",
+    )
+    .evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const bounds = node.getBoundingClientRect();
+        return bounds.x + bounds.width / 2;
+      }),
+    );
+  expect(appCenters).toHaveLength(3);
+  for (const center of appCenters) expect(center).toBeCloseTo(appCenters[0], 0);
   if (page.viewportSize()!.width > 1100) {
     const appsBox = await page.locator(".footer-apps").boundingBox();
-    const logoBox = await page.locator(".footer-brand").boundingBox();
     const edge = footerBandBox!.x + footerBandBox!.width;
     expect(appsBox!.x + appsBox!.width).toBeCloseTo(edge, 0);
-    expect(logoBox!.x + logoBox!.width).toBeCloseTo(edge, 0);
     await expect(page.locator(".footer-contact-grid")).toHaveCSS(
       "column-gap",
       "36px",
     );
     await expect(
       page.locator(".footer-apps .footer-contact-heading"),
-    ).toHaveCSS("text-align", "right");
+    ).toHaveCSS("text-align", "center");
   }
   if (page.viewportSize()!.width > 700 && page.viewportSize()!.width <= 1100) {
     const groups = await page
@@ -600,11 +610,9 @@ test("public routes remove staff access and fit the viewport", async ({
     expect(groups[1].x).toBeCloseTo(groups[3].x, 0);
     expect(groups[0].y).toBeCloseTo(groups[1].y, 0);
     expect(groups[2].y).toBeCloseTo(groups[3].y, 0);
-    const logo = await page.locator(".footer-brand").boundingBox();
-    expect(logo!.x).toBeCloseTo(groups[3].x, 0);
     await expect(
       page.locator(".footer-apps .footer-contact-heading"),
-    ).toHaveCSS("text-align", "left");
+    ).toHaveCSS("text-align", "center");
     await expect(page.locator(".footer-contact-grid")).toHaveCSS(
       "row-gap",
       "24px",
