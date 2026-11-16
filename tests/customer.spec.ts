@@ -2557,7 +2557,7 @@ function bookingTypography(page: Page) {
   return { brand, pageHeading, sectionType, bookingDocumentBody };
 }
 
-test("header blue and typography stay consistent through booking selection and contact", async ({
+test("header blue and typography stay consistent through account and session selection", async ({
   page,
 }) => {
   const { brand, pageHeading, sectionType } = bookingTypography(page);
@@ -2653,13 +2653,23 @@ test("header blue and typography stay consistent through booking selection and c
     await expect(card).toHaveCSS("border-radius", "3px 12px");
     await expect(card.locator(".selection-indicator")).toHaveCount(0);
   }
-  const selectedCardBackground = await page
-    .locator(".session-product")
-    .evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(
     page.getByRole("dialog", { name: "Kickoff Special" }),
   ).toHaveCount(0);
   await expect(page.locator(".player-selection")).toBeVisible();
+});
+
+test("calendar and contact retain typography and continuous sticky geometry", async ({
+  page,
+}) => {
+  const { pageHeading, sectionType } = bookingTypography(page);
+  await openSite(page, "/book/account/");
+  await page.getByRole("button", { name: "Guest" }).click();
+  await expect(page.locator(".session-product")).toBeVisible();
+  const selectedColour = /color\(srgb 0\.9272\d* 0\.9501\d* 0\.9576\d*\)/;
+  const selectedCardBackground = await page
+    .locator(".session-product")
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   await pageHeading("Select dates and times");
   await expect(

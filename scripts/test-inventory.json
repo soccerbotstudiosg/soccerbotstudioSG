@@ -1641,7 +1641,11 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "header blue and typography stay consistent through booking selection and contact"
+    "title": "header blue and typography stay consistent through account and session selection"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "calendar and contact retain typography and continuous sticky geometry"
   },
   {
     "file": "tests/customer.spec.ts",
