@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import { useBooking } from "@/features/booking/provider";
 import {
   loadingFeedbackMessage,
+  checkoutRouteLoadingLabel,
   useBookingLoadingState,
 } from "@/features/booking/booking-loading";
 import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
@@ -65,6 +66,20 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
   );
   const reloading = visit.episode === 0 && navigationReload;
   const loading = useBookingLoadingState();
+  const operationLabel = loadingFeedbackMessage(loading?.label)
+    ? loading?.label
+    : undefined;
+  const [feedback, setFeedback] = useState({ pathname, label: operationLabel });
+  if (
+    feedback.pathname !== pathname ||
+    (operationLabel && operationLabel !== feedback.label)
+  )
+    setFeedback({ pathname, label: operationLabel });
+  // Keep the operation's message through fonts/frame completion and route fallbacks.
+  const feedbackLabel =
+    operationLabel ??
+    (feedback.pathname === pathname ? feedback.label : undefined) ??
+    checkoutRouteLoadingLabel(pathname);
   const setDocumentLoading = loading?.setDocumentLoading;
   const pending = !!loading?.label;
   useLayoutEffect(() => {
@@ -134,10 +149,12 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
         >
           <BrandLoading
             label={
-              reloading ? "Refreshing…" : (loading?.label ?? "Loading page")
+              reloading
+                ? "Refreshing…"
+                : (feedbackLabel ?? loading?.label ?? "Loading page")
             }
             message={
-              reloading ? "Refreshing…" : loadingFeedbackMessage(loading?.label)
+              reloading ? "Refreshing…" : loadingFeedbackMessage(feedbackLabel)
             }
           />
         </div>

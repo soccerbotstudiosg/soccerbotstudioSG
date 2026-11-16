@@ -13,7 +13,10 @@ import { useCallback, useEffect, useState } from "react";
 import { BookingHeadingStatus, VerifiedEmailStatus } from "./booking-heading";
 import { guardedStep, type BookingStep } from "@/domain/booking";
 import { Icon } from "@/components/icon";
-import { BookingLoading as BrandLoading } from "./booking-loading";
+import {
+  BookingLoading as BrandLoading,
+  checkoutRouteLoadingLabel,
+} from "./booking-loading";
 import { useBooking } from "./provider";
 import { AccountStep } from "./account-step";
 import { SessionStep } from "./session-step";
@@ -206,7 +209,14 @@ export function BookingPage({ step }: { step: BookingStep }) {
     returningToConfirmation ||
     (actual !== step && !retainingReview)
   )
-    return <BrandLoading />;
+    return (
+      <BrandLoading
+        label={
+          checkoutRouteLoadingLabel(`/book/${actual}/`) ??
+          checkoutRouteLoadingLabel(`/book/${step}/`)
+        }
+      />
+    );
   const Screen = screens[step];
   if (step === "payment" || step === "confirmation") return <Screen />;
   const recoveryNotice = action.calendarRecovery && attempt && (

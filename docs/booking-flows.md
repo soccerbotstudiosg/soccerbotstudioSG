@@ -720,3 +720,5 @@ Booking-step helpers stay on one line with concise16px muted copy. The verificat
 Payment continuation retains its intended checking message and “Continue to pay. If already paid, please wait...” instruction. Its compact spinner does not add a separate generic “Loading...” line.
 
 Approved payment guidance: above Review’s Proceed to Payment, show “You’ll be redirected to [horizontal colour HitPay logo] to complete your payment.” Below Continue payment, show the countdown beside “Your selected sessions are held until the timer ends.” Keep the existing protected deadline and expiry behavior; the text does not extend a hold.
+
+Checkout route/bootstrap covers use “Checking booking…” until protected work supplies its actual status. The document cover retains the latest operation message through generic route fallbacks and fonts/frame completion rather than flashing “Loading...” between checks and ready content. A real document reload still says “Refreshing…”. Non-checkout routes retain their normal generic loading copy; status changes never imply paid/confirmed evidence.
