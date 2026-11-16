@@ -1,6 +1,10 @@
 # Current checkpoint
 
-## Active outcome
+## Dependency maintenance checkpoint
+
+16 November 2026: PR84 proposes the six routine updates in its manifest/lockfile. Owner requested regeneration of the stale version inventory. `node scripts/versions.mjs check` fails before regeneration and passes after; `docs/versions.md` now reflects the candidate lockfile. The dependency assessment is recorded in PR84, including unchanged host/peer requirements and graceful-fs ISC→BlueOak-1.0.0 license change. No application or test-inventory changes are needed for this generated-document repair. Full candidate CI and staging remain pending; no merge is authorized. PR83 booking repairs remain separate.
+
+## Previous application checkpoint
 
 16 November 2026: resolve homepage revisit flashes, enquiry action spacing, mobile progress-strip geometry, initial popup timing and single-line booking instructions on `fix/revisit-and-mobile-loading`, based on merged PR81/main3ea444f. Owner additionally requested a first-load homepage reveal and explicitly authorized push, staging, merge and monitoring to completion. No provider actions or configuration changes are in scope.
 
