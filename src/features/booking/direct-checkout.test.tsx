@@ -2581,7 +2581,7 @@ async function verifyNoCreationRecovery(
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const notice =
-    "Nothing was booked or charged. Your details are saved; please choose your sessions again.";
+    "Some sessions may no longer be available. Please check again.";
 
   cleanup();
   sessionStorage.clear();
@@ -2706,7 +2706,14 @@ async function verifyNoCreationRecovery(
     );
   }
   const tree = (
-    step: "payment" | "time" | "account" | "review" | "confirmation" | null,
+    step:
+      | "payment"
+      | "time"
+      | "account"
+      | "session"
+      | "review"
+      | "confirmation"
+      | null,
   ) => (
     <BookingProvider bookingService={service} identityService={identity}>
       <Probe />
@@ -2760,6 +2767,9 @@ async function verifyNoCreationRecovery(
         view = render(tree("account"));
       } else view.rerender(tree("account"));
     } else if (route === "refresh") {
+      // Calendar recovery clears the editable cart before terminal proof arrives.
+      saveLiveDraft({ ...draft, slots: [] }, true, id);
+      saveSuppressedSlots(draft.slots);
       view.unmount();
       resolved = true;
       refreshed = true;
@@ -2802,7 +2812,12 @@ async function verifyNoCreationRecovery(
     );
     navigation.path = "/book/time/";
     view.rerender(tree("time"));
-    expect(await screen.findByRole("alert")).toHaveTextContent(notice);
+    const recoveryNotice = await screen.findByRole("alert");
+    expect(recoveryNotice).toHaveTextContent(notice);
+    expect(within(recoveryNotice).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(recoveryNotice).getByRole("listitem")).toHaveTextContent(
+      "Tue, 20 Oct 2026, 12:00–12:40.",
+    );
     await waitFor(() =>
       expect(
         document.querySelector(
@@ -2848,6 +2863,28 @@ async function verifyNoCreationRecovery(
     expect(
       await screen.findByRole("button", { name: /12:00–12:40/ }),
     ).toBeEnabled();
+    // A resolved notice is display-only state, retained across document reloads.
+    view.unmount();
+    refreshed = true;
+    view = render(tree("time"));
+    const reloadedNotice = await screen.findByRole("alert");
+    expect(reloadedNotice).toHaveTextContent(notice);
+    expect(within(reloadedNotice).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(reloadedNotice).getByRole("listitem")).toHaveTextContent(
+      "Tue, 20 Oct 2026, 12:00–12:40.",
+    );
+    await act(async () => {});
+    fireEvent.click(screen.getByText("Accept original"));
+    expect(screen.getByText(notice)).toBeVisible();
+    navigation.path = "/book/session/";
+    view.rerender(tree("session"));
+    navigation.path = "/book/time/";
+    view.rerender(tree("time"));
+    expect(screen.queryByText(notice)).toBeNull();
+    view.unmount();
+    view = render(tree("time"));
+    await act(async () => {});
+    expect(screen.queryByText(notice)).toBeNull();
   }
   const writes = fetcher.mock.calls.filter(
     ([, options]) => options?.method === "POST",

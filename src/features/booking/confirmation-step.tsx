@@ -111,7 +111,7 @@ function PendingConfirmationHeading({
 }) {
   return (
     <>
-      <InlineLoading compact label={label} />
+      <InlineLoading compact label={label} message="" />
       <p className="text-sm text-muted">{label}</p>
       <p className="text-sm text-muted">{message ?? loadingMessage}</p>
     </>

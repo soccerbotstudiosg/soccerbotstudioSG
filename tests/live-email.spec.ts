@@ -2719,15 +2719,20 @@ async function uncertainHolding(
       expect(await resolved.json()).toMatchObject({ state: "complete" });
       // A normal reload observes the operator's new authority immediately;
       // it does not renew the expired foreground wait or replay the write.
+      const resolvedNotice = page.getByRole("alert").filter({
+        hasText:
+          "Some sessions may no longer be available. Please check again.",
+      });
       await page.reload();
       await observedResolution;
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
         page.getByText(
-          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
+          "Some sessions may no longer be available. Please check again.",
           { exact: true },
         ),
       ).toBeVisible();
+      await expect(resolvedNotice.getByRole("listitem")).toHaveCount(1);
       await expect(
         page.getByRole("status", {
           name: "Checking whether your booking was created…",
@@ -2743,8 +2748,13 @@ async function uncertainHolding(
         contact: { name: "Synthetic Guest" },
       });
       expect(restoredDraft.checkoutAttemptId).toBeUndefined();
+      const noticeContents = await resolvedNotice.innerText();
       await page.reload();
       await expect(page).toHaveURL(/\/book\/time\/$/);
+      await expect(resolvedNotice).toHaveText(noticeContents, {
+        useInnerText: true,
+      });
+      await expect(resolvedNotice.getByRole("listitem")).toHaveCount(1);
       await expect(
         page.getByRole("status", {
           name: "Checking whether your booking was created…",
@@ -2755,6 +2765,23 @@ async function uncertainHolding(
         mechanism.calls.filter((call) => call.body?.method === "book"),
       ).toHaveLength(1);
       await assertNoPaymentOrConfirmation(page, mechanism);
+      await page.goto("/book/session/");
+      await expect(
+        page.getByRole("heading", { name: "Outlet", exact: true }),
+      ).toBeVisible();
+      await page.goto("/book/time/");
+      await expect(
+        page.getByRole("heading", {
+          name: "Select dates and times",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(
+          "Some sessions may no longer be available. Please check again.",
+          { exact: true },
+        ),
+      ).toHaveCount(0);
     }
   } finally {
     await stopMechanism(page, mechanism, transport);
@@ -3608,6 +3635,25 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       await expect(continuation).toHaveAttribute("href", mechanism.checkoutUrl);
       await expect(continuation).not.toHaveAttribute("target", "_blank");
       await expect(page.getByRole("timer")).toBeVisible();
+      await expect(
+        page.getByText(
+          "Your selected sessions are held until the timer ends.",
+          { exact: true },
+        ),
+      ).toBeVisible();
+      const continuationBox = await continuation.boundingBox();
+      const timerBox = await page.getByRole("timer").boundingBox();
+      expect(timerBox!.y).toBeGreaterThanOrEqual(
+        continuationBox!.y + continuationBox!.height,
+      );
+      await expect(page.getByText("Loading...", { exact: true })).toHaveCount(
+        0,
+      );
+      await expect(
+        page.getByText("Continue to pay. If already paid, please wait...", {
+          exact: true,
+        }),
+      ).toBeVisible();
       await continuation.click();
       await expect(page).toHaveURL(mechanism.checkoutUrl);
       expect(page.context().pages()).toHaveLength(pagesBefore);

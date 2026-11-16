@@ -124,8 +124,13 @@ export function BookingPrimaryAction({
       control.style.setProperty("--action-width", `${bounds.width}px`);
       const header = document.querySelector(".site-header");
       const top = header?.getBoundingClientRect().bottom ?? 0;
+      // Browser focus/click scrolling targets the button, not its surrounding
+      // spacing or hint. Do not move a visible button out from under that click.
+      const button = control.querySelector<HTMLElement>(".button");
+      const buttonBounds = button?.getBoundingClientRect() ?? bounds;
       control.dataset.floating = String(
-        bounds.bottom > window.innerHeight || bounds.top < top,
+        buttonBounds.bottom + parseFloat(style.paddingBottom) >
+          window.innerHeight || buttonBounds.top < top,
       );
     };
     const schedule = () => {

@@ -1,6 +1,10 @@
 "use client";
 import { BookingHelp } from "./booking-help";
-import { CHECKOUT_UNRESOLVED } from "@/domain/booking-messages";
+import {
+  BOOKING_NOT_CREATED,
+  CHECKOUT_UNRESOLVED,
+  CONFLICT_NOTICE,
+} from "@/domain/booking-messages";
 import { BookingHeading } from "./booking-heading";
 import Link from "next/link";
 import {
@@ -470,6 +474,8 @@ export function TimeStep({
             <p>
               {selectionNotice === CHECKOUT_UNRESOLVED ? (
                 <strong>{selectionNotice}</strong>
+              ) : selectionNotice === BOOKING_NOT_CREATED ? (
+                CONFLICT_NOTICE
               ) : (
                 selectionNotice
               )}

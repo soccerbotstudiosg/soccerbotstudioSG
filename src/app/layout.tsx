@@ -8,7 +8,7 @@ import { socialPreview } from "@/content/media";
 import productionTarget from "../../deployment/production.json";
 import "./globals.css";
 const shareTitle =
-  "SOCCERBOTSTUDIO Singapore | Interactive Football Experience";
+  "Interactive Football Experience | SOCCERBOTSTUDIO Singapore";
 const shareDescription =
   "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.";
 const shareImage = socialPreview;
