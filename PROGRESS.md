@@ -1,12 +1,12 @@
-# Progress
+# Current checkpoint
 
 ## Active outcome
 
-16 November 2026: PR89 is merged as f4a0015 after complete CI43866124139 and successful staging43868223076 with independently matching health at1209517. Approved mobile dropdown/card alignment and nested404 departure guard are merged. Main verification and production remain separate.
+16 November 2026: PR89 mobile cards/404 guard and PR90 mobile football palm alignment are merged. PR90 merged as e280d49 after full CI43870738905 and staging43872786460 with exact public-health verification at5567bfc. Main independently verifies the merged revision.
 
 ## Next actions
 
-Existing Dependabot84 is reconciled onto main f4a0015, preserving the reviewed dependency updates. Complete full local code verification, publish the existing branch and check final-head CI. Bot-author staging requires the trusted manual path in Runbook section6; current connector capabilities lack workflow dispatch/repository-variable writes. Prepare the exact verified candidate and dispatch inputs before requesting owner UI execution. Do not claim PR84 staged or merged from green PR checks. Owner authorized continuing the dependency release sequence.
+Dependabot84 is reconciled onto e280d49, preserving reviewed dependencies and both histories. Verify this combined candidate, publish and monitor final-head CI. Actual bot-author staging remains required under Runbook section6; connected tools cannot dispatch workflows or set STAGING_RESERVED_REVISION. Prepare exact successful candidate and owner UI inputs before handoff. No provider/financial actions.
 
 ## Ordered work after this slice
 

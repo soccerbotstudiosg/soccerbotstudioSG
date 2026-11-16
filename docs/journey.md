@@ -6871,3 +6871,11 @@ The first consolidated local wrapper completed its checks but correctly refused 
 ### 16 November 2026 — PR89 delivery and dependency reconciliation
 
 PR89 head1209517bf1482466bd9b218b9b2c67cf413a0865 passed all gates in CI43866124139 and staging43868223076. Independent staging health matched that revision and version b9581c98-00ff-4bbc-b49c-c0898d31bdb4. Authorized merge produced f4a001582ee6e43a567e4baa7dd71fe047dbf373. Existing Dependabot84 is reconciled onto this main without additional application changes. Preserve both histories; repeat full code verification for the combined dependency and approved UI candidate, then exact-head CI and trusted manual staging.
+
+### 16 November 2026 — mobile404 football palm anchor
+
+Owner screenshot showed the Home football covering the hand/forearm on iPhone. The fixed52px minimum width outgrew the mobile astronaut while the top remained percentage-positioned. Anchor the bottom edge to the source artwork palm instead, centre it over the palm, and retain a44px minimum target; preserve that anchor during hover/focus and reduced motion. Existing public-route browser case now checks source-image-relative palm placement and minimum target size on configured desktop/mobile profiles. Browser execution remains CI/owner-owned.
+
+### 16 November 2026 — palm alignment delivery and dependency refresh
+
+PR90 head5567bfce03e3559cf1650990c11d99319ed33a96 passed all CI43870738905 gates and staging43872786460; independent public health matched that source and version b7ff8e8b-83db-44f4-aecd-ff4d12a081a5. Authorized merge produced e280d4900cf3dc10e4abfc0861fdad8fe45769c0. Reconcile existing Dependabot84 onto that correction, preserving both histories and reviewed dependency assessment. Previous dependency head0be42be passed every gate in43869282052; the combined final head requires fresh CI and trusted manual staging.
