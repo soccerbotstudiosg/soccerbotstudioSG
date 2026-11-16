@@ -1,9 +1,8 @@
-import { BookingLink } from "@/components/booking-navigation";
 import { studioMedia } from "@/content/media";
-import { Icon } from "@/components/icon";
 import { StudioHeroVideo } from "@/components/studio-hero-video";
+import { PromotionPanel } from "@/components/promotion-panel";
 export const metadata = { title: "The studio" };
-/** Present the studio facilities using the approved media catalogue. */
+/** Present informational studio cards followed by one full-banner booking destination. */
 export default function Studio() {
   return (
     <>
@@ -15,69 +14,39 @@ export default function Studio() {
           <StudioHeroVideo />
         </figure>
       </div>
-      <section className="studio-showcase" aria-labelledby="studio-title">
+      <section
+        className="studio-showcase promotion-stack"
+        aria-labelledby="studio-title"
+      >
         <h1 className="sr-only" id="studio-title">
           SOCCERBOTSTUDIO Singapore
         </h1>
-        <svg
-          className="promotion-edge promotion-edge--top"
-          viewBox="0 0 1440 40"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M0 0H1440V23Q720 57 0 23Z" />
-        </svg>
         {studioMedia.map((photo, index) => (
-          <section
+          <PromotionPanel
             key={photo.src}
+            id={`studio-section-${index + 1}`}
             className={`studio-row${index % 2 ? " reverse" : ""}`}
-            aria-labelledby={`studio-section-${index + 1}`}
-          >
-            <div className="studio-copy">
-              <h2 id={`studio-section-${index + 1}`}>{photo.title}</h2>
-              <p className="studio-description">{photo.description}</p>
-            </div>
-            <figure
-              className="studio-photo"
-              style={{ "--photo-zoom": photo.zoom || 1 } as React.CSSProperties}
-            >
-              <img
-                src={photo.src}
-                alt={photo.alt}
-                width={photo.width}
-                height={photo.height}
-                loading="lazy"
-                decoding="async"
-              />
-            </figure>
-          </section>
+            index={index}
+            eyebrow={photo.eyebrow}
+            title={photo.titleLines}
+            activeTitle={photo.activeTitle}
+            teaser={photo.teaser}
+            description={photo.description}
+            photo={photo}
+          />
         ))}
-        <svg
-          className="promotion-edge promotion-edge--bottom"
-          viewBox="0 0 1440 40"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M0 0H1440V23Q720 57 0 23Z" />
-        </svg>
-      </section>
-      <section
-        className="studio-bottom abstract-promotion"
-        aria-labelledby="studio-book-title"
-      >
-        <div className="abstract-promotion-heading">
-          <span className="promotion-eyebrow">Step into the arena</span>
-          <h2 id="studio-book-title">Your move.</h2>
-        </div>
-        <p>
-          Single, Team and Battle play, with full instructor guidance for your
-          group.
-        </p>
-        <BookingLink className="button promotion-cta" href="/book/account/">
-          Book now <Icon name="chevron" />
-        </BookingLink>
+        <PromotionPanel
+          id="studio-book-title"
+          className="studio-bottom abstract-promotion"
+          index={5}
+          eyebrow="Step into the arena"
+          title={["Your", "move."]}
+          activeTitle={["Ready for", "kickoff?"]}
+          teaser="Bring your game into 360°."
+          description="Single, Team and Battle play, with full instructor guidance for your group. Choose your session and step into the arena."
+          href="/book/account/"
+          actionLabel="Book now"
+        />
       </section>
     </>
   );

@@ -291,7 +291,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
       <SectionReveals />
-      <BackToTop />
+      {!standalone && <BackToTop />}
       {!standalone && <PlayerAppPrompt />}
       {!standalone && dialog && (
         <Dialog title="Leave this booking?" onClose={() => setDialog(null)}>

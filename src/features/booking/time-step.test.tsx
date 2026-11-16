@@ -63,7 +63,6 @@ async function calendarScenario(mobile: boolean) {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   }));
-  let calendarBottom = 600;
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
     function (this: HTMLElement) {
       return {
@@ -76,9 +75,7 @@ async function calendarScenario(mobile: boolean) {
             : 0,
         left: 0,
         right: 400,
-        bottom: this.classList.contains("calendar-panel")
-          ? calendarBottom
-          : 600,
+        bottom: 600,
         width: 400,
         height: this.classList.contains("session-times-region")
           ? 600
@@ -99,14 +96,7 @@ async function calendarScenario(mobile: boolean) {
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel(restoredDate) }),
   );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 336, behavior: "smooth" });
-  calendarBottom = -1000;
-  fireEvent.scroll(window);
-  expect(screen.getByRole("button", { name: "Back to calendar" })).toHaveStyle({
-    top: "8px",
-  });
-  calendarBottom = 600;
-  fireEvent.scroll(window);
+  expect(scroll).toHaveBeenLastCalledWith({ top: 396, behavior: "smooth" });
   scroll.mockClear();
   expect(todaySG()).toBe("2026-10-07");
   expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
@@ -227,7 +217,7 @@ async function calendarScenario(mobile: boolean) {
     fireEvent.click(
       screen.getByRole("button", { name: dateLabel(restoredDate) }),
     );
-    expect(scroll).toHaveBeenLastCalledWith({ top: 336, behavior: "smooth" });
+    expect(scroll).toHaveBeenLastCalledWith({ top: 396, behavior: "smooth" });
     return;
   }
   await user.click(screen.getByRole("button", { name: "Clear all" }));
@@ -377,7 +367,7 @@ async function calendarScenario(mobile: boolean) {
     view.container.querySelector(".session-times-region"),
   ).not.toHaveAttribute("aria-busy", "true");
   expect(scroll).toHaveBeenCalledExactlyOnceWith({
-    top: 280,
+    top: 340,
     behavior: "instant",
   });
   await act(async () => {});
@@ -390,28 +380,8 @@ async function calendarScenario(mobile: boolean) {
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel("2026-10-14") }),
   );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 280, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 340, behavior: "smooth" });
   expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
-  calendarBottom = 0;
-  fireEvent.scroll(window);
-  const returnCue = screen.getByRole("button", { name: "Back to calendar" });
-  expect(returnCue.querySelector("svg path")).not.toBeNull();
-  expect(returnCue).toHaveStyle({ top: "64px" });
-  calendarBottom = 600;
-  fireEvent.scroll(window);
-  expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
-  calendarBottom = 0;
-  fireEvent.scroll(window);
-  await user.click(screen.getByRole("button", { name: "Back to calendar" }));
-  expect(scroll).toHaveBeenLastCalledWith({ top: 121, behavior: "smooth" });
-  expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
-  calendarBottom = 600;
-  fireEvent.scroll(window);
-  calendarBottom = -1000;
-  fireEvent.scroll(window);
-  expect(
-    screen.getByRole("button", { name: "Back to calendar" }),
-  ).toBeInTheDocument();
 }
 test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", () =>
   calendarScenario(false));

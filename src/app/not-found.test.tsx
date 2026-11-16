@@ -21,11 +21,11 @@ test("404 tiles scatter with pointer travel settle back and respect reduced moti
       positions = [];
       bright = [];
     },
-    save: vi.fn(),
-    restore: vi.fn(),
+    save: () => {},
+    restore: () => {},
     translate: (x: number, y: number) => positions.push([x, y]),
-    rotate: vi.fn(),
-    scale: vi.fn(),
+    rotate: () => {},
+    scale: () => {},
     globalAlpha: 1,
     fillRect: (_x: number, _y: number, width: number, height: number) => {
       if (context.globalAlpha >= 0.7 && height > 1)
@@ -65,6 +65,8 @@ test("404 tiles scatter with pointer travel settle back and respect reduced moti
   vi.stubGlobal("matchMedia", () => media);
   const interval = vi.spyOn(window, "setInterval");
   const clearInterval = vi.spyOn(window, "clearInterval");
+  let time = 100;
+  vi.spyOn(performance, "now").mockImplementation(() => time);
   const view = render(<NotFound />);
   const canvas = view.container.querySelector("canvas")!;
   expect(canvas.dataset.ready).toBe("true");
@@ -80,7 +82,6 @@ test("404 tiles scatter with pointer travel settle back and respect reduced moti
     new MouseEvent("pointermove", { clientX: x - 7, clientY: y }),
   );
   fireEvent(canvas, new MouseEvent("pointermove", { clientX: x, clientY: y }));
-  let time = performance.now();
   const tick = () => {
     const pending = [...frames.values()];
     frames.clear();
@@ -97,14 +98,14 @@ test("404 tiles scatter with pointer travel settle back and respect reduced moti
   ).toBe(true);
   fireEvent.pointerLeave(canvas);
   for (let index = 0; index < 240 && frames.size; index++) act(tick);
-  expect(frames.size).toBe(0);
+  expect(frames.size).toBe(1);
   const moved = () =>
     positions.filter(
       (point, index) =>
         Math.hypot(
           point[0] - original[index][0],
           point[1] - original[index][1],
-        ) > 0.1,
+        ) > 12,
     ).length;
   // Sweep the scene so eligible fragments move while the anchored majority returns.
   for (const [px, py] of original.filter((_, index) => index % 8 === 0)) {
@@ -119,17 +120,24 @@ test("404 tiles scatter with pointer travel settle back and respect reduced moti
   }
   fireEvent.pointerLeave(canvas);
   for (let index = 0; index < 240 && frames.size; index++) act(tick);
-  expect(frames.size).toBe(0);
+  expect(frames.size).toBe(1);
   expect(moved()).toBeGreaterThan(0);
   expect(moved()).toBeLessThan(original.length / 3);
   const settled = positions.map((point) => [...point]);
   act(tick);
-  expect(positions).toEqual(settled);
+  expect(positions).not.toEqual(settled);
+  expect(
+    Math.max(
+      ...positions.map((point, index) =>
+        Math.hypot(point[0] - settled[index][0], point[1] - settled[index][1]),
+      ),
+    ),
+  ).toBeLessThan(1);
   const displacedBeforeRegroup = moved();
   expect(interval).toHaveBeenCalledWith(expect.any(Function), 7000);
   act(() => (interval.mock.calls[0][0] as () => void)());
   for (let index = 0; index < 240 && frames.size; index++) act(tick);
-  expect(frames.size).toBe(0);
+  expect(frames.size).toBe(1);
   expect(moved()).toBeLessThan(displacedBeforeRegroup);
   expect(moved()).toBeGreaterThan(0);
 
@@ -162,6 +170,59 @@ test("404 tiles scatter with pointer travel settle back and respect reduced moti
   expect(Math.max(...bright.map(([, py, size]) => py + size / 2))).toBeLessThan(
     390,
   );
+  const phoneOrigin = positions.map((point) => [...point]);
+  const target = bright[20];
+  const targetIndex = positions.findIndex(
+    ([px, py]) => px === target[0] && py === target[1],
+  );
+  const event = new MouseEvent("pointerdown", {
+    clientX: target[0],
+    clientY: target[1],
+  });
+  Object.defineProperty(event, "pointerType", { value: "touch" });
+  const tappedAt = time;
+  fireEvent(canvas, event);
+  for (let index = 0; index < 180; index++) act(tick);
+  const distanceFromOrigin = () =>
+    Math.hypot(
+      positions[targetIndex][0] - phoneOrigin[targetIndex][0],
+      positions[targetIndex][1] - phoneOrigin[targetIndex][1],
+    );
+  expect(distanceFromOrigin()).toBeGreaterThan(40);
+  // The global digit regroup must not shorten a touch tile's own seven-second hold.
+  act(() => (interval.mock.calls[0][0] as () => void)());
+  time = tappedAt + 6900;
+  act(tick);
+  expect(distanceFromOrigin()).toBeGreaterThan(40);
+  time = tappedAt + 7000;
+  for (let index = 0; index < 180; index++) act(tick);
+  expect(distanceFromOrigin()).toBeLessThan(8);
+  expect(
+    Math.max(
+      ...positions.map((point, index) =>
+        Math.hypot(
+          point[0] - phoneOrigin[index][0],
+          point[1] - phoneOrigin[index][1],
+        ),
+      ),
+    ),
+  ).toBeLessThan(10);
+  expect(frames.size).toBe(1);
+  const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+  fireEvent(document, new Event("visibilitychange"));
+  expect(frames.size).toBe(0);
+  hidden.mockReturnValue(false);
+  fireEvent(document, new Event("visibilitychange"));
+  expect(frames.size).toBe(1);
+  act(() => {
+    media.matches = true;
+    change();
+  });
+  const staticPositions = positions.map((point) => [...point]);
+  fireEvent(canvas, event);
+  act(tick);
+  expect(positions).toEqual(staticPositions);
+  expect(frames.size).toBe(0);
   view.unmount();
   expect(frames.size).toBe(0);
   expect(disconnect).toHaveBeenCalled();

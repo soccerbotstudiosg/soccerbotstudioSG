@@ -453,10 +453,9 @@ test("public routes remove staff access and fit the viewport", async ({
     await expect(promotion.locator("img")).toHaveAttribute("alt", /.+/);
     await expect(promotion).toHaveCSS("background-color", "rgb(245, 246, 250)");
     await expect(promotion).toHaveCSS("color", "rgb(16, 22, 54)");
-    await expect(promotion.locator(".promotion-cta")).toHaveCSS(
-      "background-color",
-      "rgb(5, 10, 47)",
-    );
+    await expect(promotion.locator(".promotion-cta")).toHaveCount(0);
+    await expect(promotion.locator("a.feature-copy")).toHaveCount(1);
+    await expect(promotion).toHaveCSS("position", "sticky");
   }
   const contactBanner = page.locator(".abstract-promotion");
   await expect(contactBanner).toHaveCount(1);
@@ -465,10 +464,7 @@ test("public routes remove staff access and fit the viewport", async ({
   const contactGradient = await contactBanner.evaluate(
     (node) => getComputedStyle(node).backgroundImage,
   );
-  await expect(contactBanner.locator(".promotion-cta")).toHaveCSS(
-    "background-color",
-    "rgb(255, 255, 255)",
-  );
+  await expect(contactBanner.locator(".promotion-cta")).toHaveCount(0);
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
   const contactBox = await contactBanner.boundingBox();
@@ -697,7 +693,7 @@ test("public routes remove staff access and fit the viewport", async ({
     await expect(studioHero.locator("video")).toHaveCSS("object-fit", "cover");
   }
   await expect(page.locator(".studio-showcase > .promotion-edge")).toHaveCount(
-    2,
+    0,
   );
   await expect(page.locator(".studio-row")).toHaveCount(5);
   const firstPhotoBox = await page
@@ -706,15 +702,21 @@ test("public routes remove staff access and fit the viewport", async ({
     .boundingBox();
   expect(firstPhotoBox).not.toBeNull();
   expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y, 0);
-  let precedingRowBottom: number | undefined;
   for (const row of await page.locator(".studio-row").all()) {
-    await expect(row).toHaveCSS("background-color", "rgb(245, 246, 250)");
-    await expect(row).toHaveCSS("color", "rgb(16, 22, 54)");
-    const rowBox = await row.boundingBox();
-    expect(rowBox).not.toBeNull();
-    if (precedingRowBottom !== undefined)
-      expect(rowBox!.y).toBeCloseTo(precedingRowBottom, 0);
-    precedingRowBottom = rowBox!.y + rowBox!.height;
+    await expect(row).toHaveCSS("position", "sticky");
+    await expect(row.locator("a, button")).toHaveCount(0);
+    await expect(row).toHaveAttribute("tabindex", "0");
+    const reversed = /\breverse\b/.test(
+      (await row.getAttribute("class")) || "",
+    );
+    await expect(row.locator(".feature-title-initial")).toHaveCSS(
+      "justify-self",
+      page.viewportSize()!.width > 700 && reversed ? "end" : "start",
+    );
+    await expect(row.locator(".feature-title-expanded")).toHaveCSS(
+      "justify-self",
+      page.viewportSize()!.width > 700 && reversed ? "start" : "end",
+    );
   }
   const studioBanner = page.locator(".studio-bottom.abstract-promotion");
   await expect(studioBanner).toBeAttached();
@@ -729,13 +731,8 @@ test("public routes remove staff access and fit the viewport", async ({
   const studioFooterBox = await page.locator(".site-footer").boundingBox();
   expect(studioBannerBox).not.toBeNull();
   expect(studioFooterBox).not.toBeNull();
-  expect(studioBannerBox!.y - (contentBox!.y + contentBox!.height)).toBeCloseTo(
-    0,
-    0,
-  );
-  expect(studioFooterBox!.y).toBeCloseTo(
-    studioBannerBox!.y + studioBannerBox!.height,
-    0,
+  expect(studioFooterBox!.y).toBeGreaterThanOrEqual(
+    studioBannerBox!.y + studioBannerBox!.height - 1,
   );
   await expect(
     studioBanner.getByRole("link", { name: "Book now", exact: true }),
@@ -746,16 +743,29 @@ test("public routes remove staff access and fit the viewport", async ({
     ),
   ).toBeLessThanOrEqual(1);
   const lastStudioRow = page.locator(".studio-row").last();
-  await expect(lastStudioRow).toHaveClass(/section-reveal-pending/);
-  await expect(lastStudioRow).toHaveCSS("opacity", "0");
   await lastStudioRow.scrollIntoViewIfNeeded();
-  await expect(lastStudioRow).toHaveClass(/section-reveal/);
-  await lastStudioRow.evaluate(async (element) => {
-    await Promise.all(
-      element.getAnimations().map((animation) => animation.finished),
-    );
-  });
-  await expect(lastStudioRow).toHaveCSS("opacity", "1");
+  await lastStudioRow.focus();
+  await expect(lastStudioRow).toHaveAttribute("data-active", "true");
+  await expect(lastStudioRow.locator(".feature-full")).toHaveCSS(
+    "opacity",
+    "1",
+  );
+  await expect(lastStudioRow.locator(".feature-copy")).toHaveCSS(
+    "background-color",
+    "rgb(5, 10, 47)",
+  );
+  await expect(
+    lastStudioRow.locator(".feature-title-expanded > span"),
+  ).toHaveCSS("color", "rgb(70, 172, 220)");
+  await expect(
+    lastStudioRow.locator(".section-reveal, .section-reveal-pending"),
+  ).toHaveCount(0);
+  const previousCard = page.locator(".studio-row").nth(3);
+  const previousBox = await previousCard.boundingBox();
+  const lastBox = await lastStudioRow.boundingBox();
+  expect(previousBox!.y + previousBox!.height).toBeGreaterThan(lastBox!.y);
+  await page.keyboard.press("Escape");
+  await expect(lastStudioRow).toHaveAttribute("data-active", "false");
   const backToTop = page.getByRole("button", {
     name: "Back to top",
     exact: true,
@@ -839,6 +849,27 @@ test("public routes remove staff access and fit the viewport", async ({
   await home.press("Enter");
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".site-header")).toBeVisible();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect
+    .poll(() =>
+      page.locator(".arena-booking").evaluate((node) => {
+        const shine = getComputedStyle(node, "::after");
+        return [
+          shine.animationName,
+          shine.animationDuration,
+          shine.animationIterationCount,
+        ].join("/");
+      }),
+    )
+    .toBe("home-light-sweep/5s/infinite");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect
+    .poll(() =>
+      page
+        .locator(".arena-booking")
+        .evaluate((node) => getComputedStyle(node, "::after").animationName),
+    )
+    .toBe("none");
   const nestedResponse = await page.goto(sitePath("/book/session/yes"));
   expect(nestedResponse?.status()).toBe(404);
   await expect(page.locator(".not-found-grid-art")).toHaveAttribute(
@@ -1269,8 +1300,8 @@ test("home navigation offer and studio booking buttons display the branded loade
   await openSite(page, "/");
   for (const [route, selector] of [
     ["/", ".nav-book"],
-    ["/", ".home-promotion--booking .promotion-cta"],
-    ["/studio/", ".studio-bottom .button"],
+    ["/", ".home-promotion--booking a.feature-copy"],
+    ["/studio/", ".studio-bottom a.feature-copy"],
   ]) {
     await page.goto(sitePath(route));
     await expect(
@@ -2177,6 +2208,16 @@ test("header blue and the typography hierarchy stay consistent across every book
           );
         }
         if (floating) {
+          const topControl = page.getByRole("button", {
+            name: "Back to top",
+            exact: true,
+          });
+          if (await topControl.count()) {
+            const topBox = await topControl.boundingBox();
+            expect(topBox!.y + topBox!.height).toBeLessThanOrEqual(
+              barBox!.y - 12,
+            );
+          }
           const reservedBox = await page
             .locator(".booking-action-anchor")
             .boundingBox();
@@ -2269,9 +2310,25 @@ test("header blue and the typography hierarchy stay consistent across every book
       expect(bar!.width).toBeCloseTo(anchor!.width, 0);
       await page.evaluate((y) => scrollTo(0, y), previousScroll);
     }
-    await expect(
-      page.getByRole("button", { name: "Back to top", exact: true }),
-    ).toHaveCount(0);
+    const scrollTop = page.getByRole("button", {
+      name: "Back to top",
+      exact: true,
+    });
+    const savedScroll = await page.evaluate(() => scrollY);
+    await page.evaluate(() =>
+      scrollTo(0, document.documentElement.scrollHeight),
+    );
+    await expect(scrollTop).toBeVisible();
+    await expect(scrollTop).toHaveCSS("border-radius", "50%");
+    await expect(scrollTop.locator("svg path")).toHaveCount(1);
+    await expect(scrollTop.locator("svg path")).toHaveAttribute(
+      "d",
+      "m9 6 6 6-6 6",
+    );
+    await scrollTop.click();
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+    await expect(scrollTop).toHaveCount(0);
+    await page.evaluate((y) => scrollTo(0, y), savedScroll);
     await expect(
       page.locator(".section-reveal, .section-reveal-pending"),
     ).toHaveCount(0);
@@ -3189,42 +3246,27 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
           .locator(".booking-navigation")
           .boundingBox();
         const stickyBottom = navigation!.y + navigation!.height;
-        return Math.abs(heading!.y - stickyBottom - 84);
+        return Math.abs(heading!.y - stickyBottom - 24);
       })
       .toBeLessThanOrEqual(1);
     const returnCue = page.getByRole("button", {
-      name: "Back to calendar",
+      name: "Back to top",
       exact: true,
     });
     await expect(returnCue).toBeVisible();
     await expect(returnCue).toHaveCSS("position", "fixed");
-    const cueBox = await returnCue.boundingBox();
-    const stickyBar = await page.locator(".booking-navigation").boundingBox();
-    expect(
-      Math.abs(cueBox!.y - stickyBar!.y - stickyBar!.height - 8),
-    ).toBeLessThanOrEqual(1);
-    expect(
-      Math.abs(cueBox!.x + cueBox!.width / 2 - page.viewportSize()!.width / 2),
-    ).toBeLessThanOrEqual(1);
+    await expect(returnCue).toHaveCSS("border-radius", "50%");
     await expect(returnCue.locator("svg")).toHaveCSS("animation-name", "none");
     await returnCue.click();
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
     await expect(returnCue).toHaveCount(0);
-    const calendarBox = await page.locator(".calendar-panel").boundingBox();
-    const returnedHeader = await page
-      .locator(".booking-navigation")
-      .boundingBox();
-    expect(
-      calendarBox!.y - returnedHeader!.y - returnedHeader!.height,
-    ).toBeCloseTo(24, 0);
     await page.evaluate(() =>
       window.scrollTo(0, document.documentElement.scrollHeight),
     );
     await expect(returnCue).toBeInViewport();
     await returnCue.click();
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
     await expect(returnCue).toHaveCount(0);
-    await expect(
-      page.getByRole("button", { name: dateLabel(date), exact: true }),
-    ).toBeInViewport();
     await page
       .getByRole("button", { name: dateLabel(date), exact: true })
       .click();

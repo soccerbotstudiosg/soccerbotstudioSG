@@ -84,6 +84,14 @@
     "title": "refresh retains one cover through account calendar and confirmation checks then restores normal operation loaders"
   },
   {
+    "file": "src/components/promotion-panel.test.tsx",
+    "title": "promotion cards reveal on pointer focus and touch without inventing studio actions and preserve full-panel destinations"
+  },
+  {
+    "file": "src/components/section-reveals.test.tsx",
+    "title": "all routes share one chevron and the 200px threshold with focus and reduced-motion scrolling"
+  },
+  {
     "file": "src/components/site-shell.test.tsx",
     "title": "nested booking 404 bypasses departure prompts and restores the guard only on valid booking pages"
   },

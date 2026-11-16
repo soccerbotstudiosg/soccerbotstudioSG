@@ -49,7 +49,6 @@ import {
 } from "@/domain/dates";
 import type { AvailableSlot } from "@/services/contracts";
 import { useBooking } from "./provider";
-import { useMobileBooking } from "./booking-tools";
 
 /** Hide native offers at the strict lead-time boundary, including retained display data. */
 function pastSelectionCutoff(slot: AvailableSlot, now = Date.now()) {
@@ -72,7 +71,7 @@ function stickyBookingHeight() {
   );
 }
 /** Reveal a booking section below both sticky navigation surfaces. */
-function revealBookingSection(heading: HTMLElement | null, cueSpace = 0) {
+function revealBookingSection(heading: HTMLElement | null) {
   if (!heading) return;
   window.scrollTo({
     // Give integer-scroll engines the nearest target rather than letting them truncate.
@@ -82,7 +81,6 @@ function revealBookingSection(heading: HTMLElement | null, cueSpace = 0) {
         window.scrollY +
           heading.getBoundingClientRect().top -
           stickyBookingHeight() -
-          cueSpace -
           24,
       ),
     ),
@@ -95,27 +93,8 @@ function revealBookingSection(heading: HTMLElement | null, cueSpace = 0) {
 export function TimeStep({
   recoveryNotice,
 }: { recoveryNotice?: ReactNode } = {}) {
-  const mobile = useMobileBooking();
   const headingRef = useRef<HTMLDivElement>(null);
-  const calendarRef = useRef<HTMLElement>(null);
-  const [calendarAbove, setCalendarAbove] = useState(false);
-  const [cueTop, setCueTop] = useState(0);
   const pendingScroll = useRef<string | null>(null);
-  useEffect(() => {
-    const updateCue = () => {
-      const bottom = calendarRef.current?.getBoundingClientRect().bottom;
-      const stickyHeight = stickyBookingHeight();
-      setCueTop(stickyHeight + 8);
-      setCalendarAbove(bottom !== undefined && bottom <= stickyHeight + 60);
-    };
-    updateCue();
-    window.addEventListener("scroll", updateCue, { passive: true });
-    window.addEventListener("resize", updateCue);
-    return () => {
-      window.removeEventListener("scroll", updateCue);
-      window.removeEventListener("resize", updateCue);
-    };
-  }, [mobile]);
   const {
     selectionNotice,
     selectionNoticeSlots,
@@ -325,7 +304,7 @@ export function TimeStep({
     }
     if (!result || calendarBusy) return;
     pendingScroll.current = null;
-    revealBookingSection(headingRef.current, 60);
+    revealBookingSection(headingRef.current);
   }, [date, result, calendarBusy]);
   const [timesHeight, setTimesHeight] = useState(0);
   useLayoutEffect(() => {
@@ -506,7 +485,6 @@ export function TimeStep({
           </div>
         ))}
       <section
-        ref={calendarRef}
         className="calendar-panel"
         aria-label="Booking calendar"
         aria-busy={
@@ -647,7 +625,7 @@ export function TimeStep({
                         pendingScroll.current = value;
                         if (value === date && result && !calendarBusy) {
                           pendingScroll.current = null;
-                          revealBookingSection(headingRef.current, 60);
+                          revealBookingSection(headingRef.current);
                         }
                         setDate(value);
                       }}
@@ -697,28 +675,6 @@ export function TimeStep({
         <>
           <div className="time-heading" ref={headingRef}>
             <h2>{dateLabel(date)}</h2>
-            {calendarAbove && (
-              <button
-                type="button"
-                className="calendar-return-cue"
-                style={{ top: cueTop }}
-                aria-label="Back to calendar"
-                onClick={() => {
-                  setCalendarAbove(false);
-                  revealBookingSection(calendarRef.current);
-                }}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="m6 12 6-6 6 6M6 18l6-6 6 6" />
-                </svg>
-              </button>
-            )}
           </div>
           <div
             ref={timesRef}

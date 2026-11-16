@@ -38,6 +38,7 @@ export function SectionReveals() {
       const controls =
         "a, button, input, select, textarea, [tabindex], [role='button']";
       if (
+        target.closest(".interactive-promotion") ||
         target.matches(controls) ||
         target instanceof SVGElement ||
         target.closest("form, [aria-live], [role='alert'], [role='status']")
@@ -98,7 +99,7 @@ export function SectionReveals() {
   return null;
 }
 
-/** Subscribe only the public-page control to passive scroll updates. */
+/** Subscribe the shared page control to passive scroll updates. */
 function subscribeScroll(notify: () => void) {
   window.addEventListener("scroll", notify, { passive: true });
   return () => window.removeEventListener("scroll", notify);
@@ -136,8 +137,7 @@ function ScrollTopControl() {
     </button>
   );
 }
-/** Keep the floating scroll control entirely outside transactional routes. */
+/** Share the same scroll threshold and control across public and booking routes. */
 export function BackToTop() {
-  const pathname = usePathname();
-  return isBookingFlow(pathname) ? null : <ScrollTopControl />;
+  return <ScrollTopControl />;
 }

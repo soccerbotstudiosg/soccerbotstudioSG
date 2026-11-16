@@ -1,12 +1,12 @@
-# Progress
+# Current checkpoint
 
 ## Active outcome
 
-16 November 2026: PR89 merged as f4a0015 after passing CI and verified staging. Owner reported the404 Home football overlapping the hand on mobile. Follow-up anchors its bottom to the palm while preserving a44px target and hover/reduced-motion alignment. Existing browser geometry coverage is extended.
+16 November 2026: consolidated public interaction candidate includes shared circular back-to-top controls,404 ambient drift/mobile seven-second scatter recovery, progressive homepage/Studio cards and full banners, overlapping-card scrolling and restored five-second hero shine. Owner approved all tests/guards, staging and merge.
 
 ## Next actions
 
-Verify and publish the palm-position fix, then complete the authorized staging/merge sequence. Dependabot84 at0be42be is reconciled with PR89 and passed local code verification; CI43869282052 is running. Its trusted manual staging requires workflow dispatch and repository-variable writes unavailable through current tools. Main CI43868802566 is independently running. No live provider actions.
+Complete local fixed-snapshot verification, publish one candidate, inspect exact-head CI, verify actual staging revision/health, then merge under existing authorization. Preserve original lint/fixture failures. Dependabot84 at91a3612 previously passed all CI but its trusted manual staging remains outstanding; reconcile after the new feature merge and do not bypass bot staging eligibility.
 
 ## Ordered work after this slice
 
