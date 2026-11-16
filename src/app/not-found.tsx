@@ -25,9 +25,11 @@ type Tile = {
   formsCode: boolean;
   originX: number;
   originY: number;
+  phase: number;
+  returnAt: number;
 };
 
-/** Scatter tiles with pointer momentum, letting a small subset settle in new positions. */
+/** Drift the grid gently and scatter touched tiles without losing the404 silhouette. */
 function FragmentedCode() {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -41,7 +43,7 @@ function FragmentedCode() {
       width = 0,
       height = 0;
     let pointer: { x: number; y: number; time: number } | null = null;
-    /** Paint one bounded spring step and stop drawing once every tile settles. */
+    /** Paint bounded spring motion with subtle drift and seven-second touch recovery. */
     function draw(time: number) {
       frame = 0;
       const step = Math.min(
@@ -50,25 +52,25 @@ function FragmentedCode() {
       );
       previousFrame = time;
       context!.clearRect(0, 0, width, height);
-      let moving = false;
       for (const tile of tiles) {
+        if (tile.returnAt && time >= tile.returnAt) {
+          tile.homeX = tile.originX;
+          tile.homeY = tile.originY;
+          tile.returnAt = 0;
+        }
+        const amplitude = motion.matches ? 0 : tile.formsCode ? 2.5 : 6;
+        const driftX = Math.sin(time / 4200 + tile.phase) * amplitude;
+        const driftY = Math.cos(time / 5300 + tile.phase) * amplitude;
         tile.vx =
-          (tile.vx + (tile.homeX - tile.x) * 0.035 * step) *
+          (tile.vx + (tile.homeX + driftX - tile.x) * 0.035 * step) *
           Math.pow(0.83, step);
         tile.vy =
-          (tile.vy + (tile.homeY - tile.y) * 0.035 * step) *
+          (tile.vy + (tile.homeY + driftY - tile.y) * 0.035 * step) *
           Math.pow(0.83, step);
         tile.x += tile.vx * step;
         tile.y += tile.vy * step;
         tile.turn *= Math.pow(0.88, step);
         tile.pop *= Math.pow(0.88, step);
-        const unsettled =
-          Math.abs(tile.vx) +
-          Math.abs(tile.vy) +
-          Math.abs(tile.homeX - tile.x) +
-          Math.abs(tile.homeY - tile.y) +
-          tile.pop;
-        moving ||= unsettled > 0.04;
         context!.save();
         context!.translate(tile.x, tile.y);
         context!.rotate(tile.turn);
@@ -98,7 +100,8 @@ function FragmentedCode() {
         }
         context!.restore();
       }
-      if (moving && !motion.matches) frame = requestAnimationFrame(draw);
+      if (!motion.matches && !document.hidden)
+        frame = requestAnimationFrame(draw);
       else previousFrame = 0;
     }
     /** Fit the grid to the viewport while retaining the three-digit silhouette. */
@@ -183,6 +186,8 @@ function FragmentedCode() {
               : neutrals[seed % neutrals.length]
             : accents[seed % accents.length];
           tiles.push({
+            phase: seed * 0.37,
+            returnAt: 0,
             canDrift: filled ? seed % 5 === 0 : seed % 4 === 0,
             formsCode: filled,
             originX: homeX,
@@ -249,7 +254,42 @@ function FragmentedCode() {
           tile.pop = 1;
         }
       pointer = { x, y, time: event.timeStamp };
-      if (!frame) frame = requestAnimationFrame(draw);
+      if (!frame && !document.hidden) frame = requestAnimationFrame(draw);
+    }
+    /** Throw a finger-sized cluster outward and restore it seven seconds after the tap. */
+    function tap(event: PointerEvent) {
+      if (motion.matches || event.pointerType !== "touch") return;
+      const bounds = element!.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const y = event.clientY - bounds.top;
+      for (const tile of tiles) {
+        if (Math.hypot(tile.x - x, tile.y - y) > Math.max(36, tile.size))
+          continue;
+        const angle = Math.atan2(tile.y - y, tile.x - x) + tile.phase * 0.1;
+        const distance = 90 + (Math.sin(tile.phase) + 1) * 35;
+        const margin = tile.size / 2;
+        tile.homeX = Math.max(
+          margin,
+          Math.min(width - margin, tile.x + Math.cos(angle) * distance),
+        );
+        tile.homeY = Math.max(
+          margin,
+          Math.min(height - margin, tile.y + Math.sin(angle) * distance),
+        );
+        tile.vx = Math.cos(angle) * 12;
+        tile.vy = Math.sin(angle) * 12;
+        tile.turn = Math.sin(angle) * 0.4;
+        tile.pop = 1;
+        tile.returnAt = performance.now() + 7000;
+      }
+      if (!frame && !document.hidden) frame = requestAnimationFrame(draw);
+    }
+    /** Suspend offscreen animation and resume from the current recovery deadlines. */
+    function visibility() {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      previousFrame = 0;
+      if (!document.hidden) draw(performance.now());
     }
     /** Forget pointer velocity when leaving the artwork. */
     function leave() {
@@ -258,6 +298,8 @@ function FragmentedCode() {
     const observer = new ResizeObserver(resize);
     observer.observe(element);
     element.addEventListener("pointermove", move);
+    element.addEventListener("pointerdown", tap);
+    document.addEventListener("visibilitychange", visibility);
     element.addEventListener("pointerleave", leave);
     motion.addEventListener("change", resize);
     resize();
@@ -265,19 +307,22 @@ function FragmentedCode() {
       if (motion.matches) return;
       let displaced = false;
       for (const tile of tiles) {
-        if (!tile.formsCode) continue;
+        if (!tile.formsCode || tile.returnAt) continue;
         displaced ||=
           tile.homeX !== tile.originX || tile.homeY !== tile.originY;
         tile.homeX = tile.originX;
         tile.homeY = tile.originY;
       }
-      if (displaced && !frame) frame = requestAnimationFrame(draw);
+      if (displaced && !frame && !document.hidden)
+        frame = requestAnimationFrame(draw);
     }, 7000);
     return () => {
       window.clearInterval(regroup);
       cancelAnimationFrame(frame);
       observer.disconnect();
       element.removeEventListener("pointermove", move);
+      element.removeEventListener("pointerdown", tap);
+      document.removeEventListener("visibilitychange", visibility);
       element.removeEventListener("pointerleave", leave);
       motion.removeEventListener("change", resize);
     };

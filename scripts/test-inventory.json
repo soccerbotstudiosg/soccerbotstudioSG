@@ -84,6 +84,14 @@
     "title": "refresh retains one cover through account calendar and confirmation checks then restores normal operation loaders"
   },
   {
+    "file": "src/components/promotion-panel.test.tsx",
+    "title": "promotion cards reveal on pointer focus and touch without inventing studio actions and preserve full-panel destinations"
+  },
+  {
+    "file": "src/components/section-reveals.test.tsx",
+    "title": "all routes show one chevron on scroll and hide after three idle seconds with focus and reduced motion"
+  },
+  {
     "file": "src/components/site-shell.test.tsx",
     "title": "nested booking 404 bypasses departure prompts and restores the guard only on valid booking pages"
   },
@@ -1621,7 +1629,11 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "header blue and the typography hierarchy stay consistent across every booking step"
+    "title": "header blue and typography stay consistent through booking selection and contact"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "review payment and confirmation retain typography and continuous sticky geometry"
   },
   {
     "file": "tests/customer.spec.ts",

@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { sitePath } from "@/content/site-path";
 import { Arena } from "@/components/arena";
-import { BookingLink } from "@/components/booking-navigation";
-import { Icon } from "@/components/icon";
+import { PromotionPanel } from "@/components/promotion-panel";
 import { homeMedia, socialPreview } from "@/content/media";
 import { SessionPrice } from "@/features/booking/session-price";
 export const metadata = {
@@ -10,106 +8,58 @@ export const metadata = {
   description: socialPreview.description,
   alternates: { canonical: sitePath("/") },
 };
-/** Present the studio introduction and booking entry points. */
+/** Present compact introductions that reveal detail before following existing destinations. */
 export default function Home() {
   return (
     <>
       <Arena />
-      <section
-        className="home-promotion home-promotion--studio"
-        aria-labelledby="home-studio-title"
-      >
-        <svg
-          className="promotion-edge promotion-edge--top"
-          viewBox="0 0 1440 40"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          focusable="false"
+      <div className="promotion-stack">
+        <PromotionPanel
+          id="home-studio-title"
+          className="home-promotion home-promotion--studio"
+          index={0}
+          eyebrow="The experience"
+          title={["Inside the", "studio"]}
+          activeTitle={["Step inside", "360°"]}
+          teaser="Football. Immersed in 360°."
+          description="Interactive projections surround the turf, bringing targets and football scenarios into the arena. Every session includes full instructor guidance for your group."
+          photo={homeMedia.studio}
+          href="/studio/"
+          actionLabel="Explore the studio"
+        />
+        <PromotionPanel
+          id="home-session-title"
+          className="home-promotion home-promotion--booking"
+          index={1}
+          eyebrow="Your next session"
+          title={["Kickoff", "Special"]}
+          activeTitle={["Ready for", "kickoff?"]}
+          teaser="Your game. A whole new dimension."
+          description="A 40-minute studio session for up to four players. Explore Single, Team and Battle play in the immersive arena, with an instructor guiding your group throughout."
+          photo={homeMedia.kickoff}
+          href="/book/account/"
+          actionLabel="Book now"
         >
-          <path d="M0 0H1440V23Q720 57 0 23Z" />
-        </svg>
-        <figure className="promotion-image">
-          <img
-            src={homeMedia.studio.src}
-            alt={homeMedia.studio.alt}
-            width={homeMedia.studio.width}
-            height={homeMedia.studio.height}
-            loading="lazy"
-            decoding="async"
-          />
-        </figure>
-        <div className="promotion-copy">
-          <span className="promotion-eyebrow">The experience</span>
-          <h2 id="home-studio-title">Inside the studio</h2>
-          <p>
-            Interactive projections surround the turf, bringing targets and
-            football scenarios into the arena. Every session includes full
-            instructor guidance for your group.
-          </p>
-          <BookingLink className="button promotion-cta" href="/studio/">
-            Explore the studio <Icon name="chevron" />
-          </BookingLink>
-        </div>
-        <svg
-          className="promotion-edge promotion-edge--bottom"
-          viewBox="0 0 1440 40"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M0 0H1440V23Q720 57 0 23Z" />
-        </svg>
-      </section>
-      <section
-        className="home-promotion home-promotion--booking"
-        id="sessions"
-        aria-labelledby="home-session-title"
-      >
-        <figure className="promotion-image">
-          <img
-            src={homeMedia.kickoff.src}
-            alt={homeMedia.kickoff.alt}
-            width={homeMedia.kickoff.width}
-            height={homeMedia.kickoff.height}
-            loading="lazy"
-            decoding="async"
-          />
-        </figure>
-        <div className="promotion-copy">
-          <span className="promotion-eyebrow">Your next session</span>
-          <h2 id="home-session-title">Kickoff Special</h2>
-          <p>
-            A 40-minute studio session for up to four players. Explore Single,
-            Team and Battle play in the immersive arena, with an instructor
-            guiding your group throughout.
-          </p>
           <div className="promotion-details">
             <span>40 minutes · 1–4 players</span>
             <strong>
               <SessionPrice />
             </strong>
           </div>
-          <BookingLink className="button promotion-cta" href="/book/account/">
-            Book now <Icon name="chevron" />
-          </BookingLink>
-        </div>
-      </section>
-      <section
-        className="home-promotion--contact abstract-promotion"
-        aria-labelledby="home-contact-title"
-      >
-        <div className="abstract-promotion-heading">
-          <span className="promotion-eyebrow">Bring your group</span>
-          <h2 id="home-contact-title">Contact us</h2>
-        </div>
-        <p>
-          For Multi-Session Bundles, Membership, Academy, Corporate and
-          Sponsorship Rates
-        </p>
-        <Link href="/enquiry/" className="button promotion-cta">
-          Contact us <Icon name="chevron" />
-        </Link>
-      </section>
+        </PromotionPanel>
+        <PromotionPanel
+          id="home-contact-title"
+          className="home-promotion--contact abstract-promotion"
+          index={2}
+          eyebrow="Start a conversation"
+          title={["Contact", "us"]}
+          activeTitle={["Tell us", "your plans."]}
+          teaser="An idea, an event, a question."
+          description="Have a question, an event in mind or a partnership to discuss? Tell us what you’re planning."
+          href="/enquiry/"
+          actionLabel="Contact us"
+        />
+      </div>
     </>
   );
 }

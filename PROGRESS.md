@@ -1,12 +1,12 @@
-# Progress
+# Current checkpoint
 
 ## Active outcome
 
-16 November 2026: PR89 merged as f4a0015 after passing CI and verified staging. Owner reported the404 Home football overlapping the hand on mobile. Follow-up anchors its bottom to the palm while preserving a44px target and hover/reduced-motion alignment. Existing browser geometry coverage is extended.
+16 November 2026: consolidated public interaction candidate includes shared circular back-to-top controls,404 ambient drift/mobile seven-second scatter recovery, progressive homepage/Studio cards and full banners, overlapping-card scrolling and restored five-second hero shine. Owner approved all tests/guards, staging and merge.
 
 ## Next actions
 
-Verify and publish the palm-position fix, then complete the authorized staging/merge sequence. Dependabot84 at0be42be is reconciled with PR89 and passed local code verification; CI43869282052 is running. Its trusted manual staging requires workflow dispatch and repository-variable writes unavailable through current tools. Main CI43868802566 is independently running. No live provider actions.
+PR91 atd9a7770 passed all13 CI jobs in43889196005. Before merge the owner superseded the scroll rule: no distance threshold, show on movement, hide after3 idle seconds; top for booking/confirmation and bottom for other normal pages, retaining gentle chevron motion. Owner also reports Continue/payment jumping in Edge while Chrome is fine. The next candidate replaces JS fixed/relative switching with native sticky containment and adds continuous-frame geometry assertions; actual Edge acceptance remains owner-run. Full local verification passed onaceddb9. CI43893810878 passed both backend browser shards and all Worker checks, but the live-email enquiry-gap test scrolled an already-visible sticky action instead of reaching its resting position. The preserved screenshot confirms the form was still near its top. Its setup now scrolls the footer into view and retains the32–33px measured gap assertion. The corrected enquiry case passed all engines in43896573477; frontend alone timed out in the monolithic all-step typography journey. The trace shows continuous successful assertions through Review and arrival at Payment near the30-second limit, where the checkout cover still intercepted the circle. Split selection/contact from review/payment/confirmation with shared assertion helpers and unchanged cases/assertions, and explicitly await the existing cover lifecycle before interactive checks. Reconcile the added case inventory, run affected checks, repush, verify exact-head CI/staging and merge under existing authorization. Dependabot84 at91a3612 previously passed all CI but its trusted manual staging remains outstanding; reconcile after the new feature merge and do not bypass bot staging eligibility.
 
 ## Ordered work after this slice
 
