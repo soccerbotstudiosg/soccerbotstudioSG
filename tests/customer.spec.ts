@@ -798,6 +798,26 @@ test("public routes remove staff access and fit the viewport", async ({
   ).toBeVisible();
   const response = await page.goto(sitePath("/admin/"));
   expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole("heading", { name: "404 — Page not found" }),
+  ).toHaveCount(1);
+  await expect(page.locator(".not-found-grid-art")).toHaveAttribute(
+    "data-ready",
+    "true",
+  );
+  await expect(page.locator(".site-header")).toBeHidden();
+  await expect(page.locator(".site-footer")).toBeHidden();
+  await expect(
+    page.getByRole("img", { name: "SOCCERBOTSTUDIO Singapore", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".player-app-dialog")).toHaveCount(0);
+  const home = page.getByRole("link", { name: "Back to home", exact: true });
+  await expect(home).toBeVisible();
+  await home.focus();
+  await expect(home).toBeFocused();
+  await home.press("Enter");
+  await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
+  await expect(page.locator(".site-header")).toBeVisible();
   expect(errors).toEqual([]);
 });
 test("guest multi-date booking survives reload without retired export actions", async ({
@@ -2022,6 +2042,16 @@ test("header blue and the typography hierarchy stay consistent across every book
     expectedSize = 20,
     expectedColor = brand,
   ) {
+    if (await page.locator(".booking-navigation").count()) {
+      await expect(page.locator(".booking-navigation")).toHaveCSS(
+        "position",
+        "sticky",
+      );
+      if (page.viewportSize()!.width > 700)
+        await expect(
+          page.locator(".booking-navigation .progress"),
+        ).toBeVisible();
+    }
     if (
       page.viewportSize()!.width <= 700 &&
       (await page.locator(".booking-navigation").count())
@@ -3085,13 +3115,10 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect
       .poll(async () => {
         const heading = await page.locator(".time-heading").boundingBox();
-        const header = await page.locator(".site-header").boundingBox();
         const navigation = await page
           .locator(".booking-navigation")
           .boundingBox();
-        const stickyBottom = mobile
-          ? navigation!.y + navigation!.height
-          : header!.y + header!.height;
+        const stickyBottom = navigation!.y + navigation!.height;
         return Math.abs(heading!.y - stickyBottom - 84);
       })
       .toBeLessThanOrEqual(1);
@@ -3102,9 +3129,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(returnCue).toBeVisible();
     await expect(returnCue).toHaveCSS("position", "fixed");
     const cueBox = await returnCue.boundingBox();
-    const stickyBar = await page
-      .locator(mobile ? ".booking-navigation" : ".site-header")
-      .boundingBox();
+    const stickyBar = await page.locator(".booking-navigation").boundingBox();
     expect(
       Math.abs(cueBox!.y - stickyBar!.y - stickyBar!.height - 8),
     ).toBeLessThanOrEqual(1);
@@ -3116,7 +3141,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(returnCue).toHaveCount(0);
     const calendarBox = await page.locator(".calendar-panel").boundingBox();
     const returnedHeader = await page
-      .locator(mobile ? ".booking-navigation" : ".site-header")
+      .locator(".booking-navigation")
       .boundingBox();
     expect(
       calendarBox!.y - returnedHeader!.y - returnedHeader!.height,

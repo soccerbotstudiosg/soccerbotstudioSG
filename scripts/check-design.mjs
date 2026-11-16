@@ -117,11 +117,17 @@ export function designAudit(text) {
     const face = Object.fromEntries(
       rule.nodes.filter((n) => n.type === "decl").map((n) => [n.prop, n.value]),
     );
-    faces.push(`${face["font-weight"]}:${face["font-style"] ?? "normal"}`);
+    const family = face["font-family"].replace(/[\"']/g, "");
+    faces.push(
+      `${family}:${face["font-weight"]}:${face["font-style"] ?? "normal"}`,
+    );
   });
-  if (faces.sort().join(",") !== "400:normal,500:normal,700:normal,900:italic")
+  if (
+    faces.sort().join(",") !==
+    "404 Rajdhani:500:normal,Roboto:400:normal,Roboto:500:normal,Roboto:700:normal,Roboto:900:italic"
+  )
     errors.push(
-      "Roboto static font weights/styles must match the supplied files",
+      "Roboto and 404 Rajdhani static font weights/styles must match the supplied files",
     );
   css.walkRules((rule) => {
     if (!artwork.test(rule.selector))

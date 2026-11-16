@@ -2,7 +2,11 @@
 
 ## Active outcome
 
-16 November2026: follow up on active-checkout notice persistence and mobile action placement at the footer, on fix/active-checkout-notice-footer based on merged PR86/main6d78b11. Owner clarified the button must remain in its normal position above the footer, floating again only in booking content.
+16 November2026: `feat/404-grid-artwork` reconciled onto merged PR87 main3854460. Owner approved the interactive404 direction and requested customer logo bottom-right, sticky desktop Back/Home plus progress, consolidation, CI and staging. Source, asset fallback guards, component regression, existing browser assertions and technical behavior docs updated. Full local code verification and exact-head CI/staging pending; no merge authorization for this candidate.
+
+## Next actions
+
+Run the fail-fast code wrapper; fix actual failures, push one consolidated draft, monitor all required gates, mark ready for authorized staging, then verify exact deployment health. Owner/CI executes browsers; no live provider actions. Dependabot84 remains pending reconciliation and trusted manual staging.
 
 ## Verification and next action
 

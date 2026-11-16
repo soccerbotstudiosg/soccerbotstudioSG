@@ -195,6 +195,19 @@ test("rejects extra resource and API static-routing changes", () => {
       writeFileSync(p, JSON.stringify(c));
     }).some((e) => e.includes("routing boundary")),
   );
+  for (const handling of [undefined, "none", "single-page-application"]) {
+    assert.ok(
+      fixture((root) => {
+        const p = path.join(root, "wrangler.jsonc");
+        const c = ts.parseConfigFileTextToJson(
+          p,
+          readFileSync(p, "utf8"),
+        ).config;
+        c.assets.not_found_handling = handling;
+        writeFileSync(p, JSON.stringify(c));
+      }).some((e) => e.includes("routing boundary")),
+    );
+  }
 });
 
 test("requires backend runtime and root browser checks without deployment permission", async () => {

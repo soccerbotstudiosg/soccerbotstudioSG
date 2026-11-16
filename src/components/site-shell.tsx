@@ -1,7 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { ADDRESS, BOOKING_SUPPORT, CONTACT, LOCATION } from "@/domain/catalog";
 import { siteBasePath, sitePath } from "@/content/site-path";
 import { darkLogo, logo, singaporeFlag } from "@/content/media";
@@ -13,11 +20,21 @@ import { PlayerAppLinks } from "./player-app-links";
 import { PlayerAppPrompt } from "./player-app-prompt";
 import { BackToTop, SectionReveals } from "./section-reveals";
 import { Icon } from "./icon";
+const StandalonePage = createContext<(active: boolean) => void>(() => {});
+/** Suspend optional site chrome and prompts while a full-screen artwork is mounted. */
+export function useStandalonePage() {
+  const setStandalone = useContext(StandalonePage);
+  useLayoutEffect(() => {
+    setStandalone(true);
+    return () => setStandalone(false);
+  }, [setStandalone]);
+}
 /** Render shared navigation, footer and customer support controls. */
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname(),
     router = useRouter(),
     booking = useBooking();
+  const [standalone, setStandalone] = useState(false);
   const [dialog, setDialog] = useState<{
     href: string;
     local: boolean;
@@ -102,7 +119,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
     };
   }, [pathname, booking.attempt?.status]);
   return (
-    <>
+    <StandalonePage.Provider value={setStandalone}>
       <a
         href="#main"
         className="fixed -top-20 left-4 z-50 rounded bg-white p-4 text-ink focus:top-3"
@@ -270,7 +287,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       </footer>
       <SectionReveals />
       <BackToTop />
-      <PlayerAppPrompt />
+      {!standalone && <PlayerAppPrompt />}
       {dialog && (
         <Dialog title="Leave this booking?" onClose={() => setDialog(null)}>
           <p className="mb-5 text-muted">
@@ -319,6 +336,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
         </Dialog>
       )}
-    </>
+    </StandalonePage.Provider>
   );
 }

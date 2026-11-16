@@ -616,6 +616,175 @@
     margin-bottom: 12px;
   }
 
+  @font-face {
+    font-family: "404 Rajdhani";
+    src: url("../../public/assets/404-rajdhani-500.woff2") format("woff2");
+    font-weight: 500;
+    font-display: swap;
+  }
+  /* The error artwork is a standalone scene, including its initial server HTML. */
+  body:has(.not-found-art) :is(.site-header, .site-footer) {
+    display: none;
+  }
+  .not-found-art {
+    position: relative;
+    width: 100%;
+    min-height: 100svh;
+    height: 100dvh;
+    overflow: hidden;
+    isolation: isolate;
+    background:
+      radial-gradient(ellipse at 75% 60%, #087f9426, transparent 50%),
+      radial-gradient(ellipse at 20% 25%, #5434b321, transparent 55%),
+      linear-gradient(135deg, #02071f, #07102e 55%, #101336);
+  }
+  .not-found-grid-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .not-found-static-code {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--color-navy);
+    opacity: 0.65;
+    font-size: clamp(100px, 30vw, 500px);
+    font-weight: 900;
+    letter-spacing: -0.08em;
+  }
+  .not-found-art:has(canvas[data-ready="true"]) .not-found-static-code {
+    visibility: hidden;
+  }
+  .not-found-message {
+    position: absolute;
+    left: 50%;
+    bottom: max(13vh, 72px);
+    transform: translateX(-50%);
+    width: max-content;
+    text-align: center;
+    font-family: "404 Rajdhani", "Courier New", monospace;
+    letter-spacing: 0.09em;
+    margin: 0;
+    max-width: calc(100% - 48px);
+    color: #e1e8f2;
+    font-size: clamp(16px, 2vw, 23px);
+    line-height: 1.5;
+    font-weight: 500;
+    pointer-events: none;
+  }
+  .not-found-message span {
+    display: block;
+    color: #a9bbd1;
+    font-size: 0.8em;
+    font-weight: 400;
+  }
+  .not-found-brand {
+    position: absolute;
+    right: max(4vw, 20px);
+    bottom: max(3vh, 20px);
+    width: clamp(120px, 15vw, 190px);
+    height: auto;
+    mix-blend-mode: screen;
+  }
+  .not-found-explorer {
+    position: absolute;
+    right: max(4vw, 20px);
+    bottom: max(16vh, 120px);
+    width: clamp(180px, 20vw, 280px);
+    pointer-events: none;
+    filter: drop-shadow(0 16px 18px #050a2f18);
+  }
+  .not-found-astronaut {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .not-found-home {
+    position: absolute;
+    left: 8%;
+    top: 7%;
+    width: 26%;
+    min-width: 52px;
+    display: block;
+    border-radius: 50%;
+    pointer-events: auto;
+    filter: drop-shadow(0 4px 9px #050a2f80);
+    transition:
+      transform 0.25s ease,
+      filter 0.25s ease;
+  }
+  .not-found-home > svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .not-found-home:hover,
+  .not-found-home:focus-visible {
+    transform: translateY(-3px) scale(1.06);
+    filter: drop-shadow(0 0 10px #46acdc80);
+    outline: 1px solid #79dce9;
+    outline-offset: 3px;
+  }
+  .not-found-home:focus-visible {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 6px;
+  }
+  .not-found-home-hole {
+    filter: drop-shadow(0 0 3px #46acdc);
+  }
+  .not-found-home-label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: var(--color-navy);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .not-found-home:is(:hover, :focus-visible) .not-found-home-label {
+    opacity: 1;
+  }
+  .not-found-home:is(:hover, :focus-visible) .not-found-home-shine {
+    animation: not-found-shine 1s ease-out both;
+  }
+  @keyframes not-found-shine {
+    0%,
+    20% {
+      transform: translateX(0);
+    }
+    70%,
+    100% {
+      transform: translateX(200px);
+    }
+  }
+  @media (max-width: 600px) {
+    .not-found-explorer {
+      width: 180px;
+      right: 16px;
+      bottom: max(130px, env(safe-area-inset-bottom));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .not-found-home:is(:hover, :focus-visible) .not-found-home-shine {
+      animation: none;
+    }
+    .not-found-home {
+      transition: none;
+    }
+    .not-found-home:is(:hover, :focus-visible) {
+      transform: none;
+    }
+  }
+
   /* Identity follows the step title without covering long mobile headings. */
   .booking-heading-row {
     display: flex;
@@ -2715,6 +2884,19 @@
   }
   .booking-current-step {
     display: none;
+  }
+  .booking-navigation {
+    position: sticky;
+    top: var(--site-header-height, 88px);
+    z-index: 35;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    margin-bottom: 25px;
+    background: var(--color-paper);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .booking-navigation .progress {
+    margin-bottom: 0;
   }
   .booking-top {
     display: flex;

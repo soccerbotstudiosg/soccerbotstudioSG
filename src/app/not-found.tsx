@@ -1,15 +1,379 @@
+"use client";
 import Link from "next/link";
-/** Offer a navigation path when the requested route does not exist. */
-export default function NotFound() {
+import { useEffect, useRef } from "react";
+import { useStandalonePage } from "@/components/site-shell";
+import { logo, notFoundAstronaut } from "@/content/media";
+
+const digits = [
+  ["10010", "10010", "10010", "11111", "00010", "00010", "00010"],
+  ["01110", "11011", "10001", "10001", "10001", "11011", "01110"],
+  ["10010", "10010", "10010", "11111", "00010", "00010", "00010"],
+];
+type Tile = {
+  x: number;
+  y: number;
+  homeX: number;
+  homeY: number;
+  vx: number;
+  vy: number;
+  turn: number;
+  pop: number;
+  colour: string;
+  opacity: number;
+  size: number;
+  canDrift: boolean;
+  formsCode: boolean;
+  originX: number;
+  originY: number;
+};
+
+/** Scatter tiles with pointer momentum, letting a small subset settle in new positions. */
+function FragmentedCode() {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const element = canvas.current;
+    const context = element?.getContext("2d");
+    if (!element || !context) return;
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    let tiles: Tile[] = [];
+    let frame = 0,
+      previousFrame = 0,
+      width = 0,
+      height = 0;
+    let pointer: { x: number; y: number; time: number } | null = null;
+    /** Paint one bounded spring step and stop drawing once every tile settles. */
+    function draw(time: number) {
+      frame = 0;
+      const step = Math.min(
+        2,
+        previousFrame ? (time - previousFrame) / (1000 / 60) : 1,
+      );
+      previousFrame = time;
+      context!.clearRect(0, 0, width, height);
+      let moving = false;
+      for (const tile of tiles) {
+        tile.vx =
+          (tile.vx + (tile.homeX - tile.x) * 0.035 * step) *
+          Math.pow(0.83, step);
+        tile.vy =
+          (tile.vy + (tile.homeY - tile.y) * 0.035 * step) *
+          Math.pow(0.83, step);
+        tile.x += tile.vx * step;
+        tile.y += tile.vy * step;
+        tile.turn *= Math.pow(0.88, step);
+        tile.pop *= Math.pow(0.88, step);
+        const unsettled =
+          Math.abs(tile.vx) +
+          Math.abs(tile.vy) +
+          Math.abs(tile.homeX - tile.x) +
+          Math.abs(tile.homeY - tile.y) +
+          tile.pop;
+        moving ||= unsettled > 0.04;
+        context!.save();
+        context!.translate(tile.x, tile.y);
+        context!.rotate(tile.turn);
+        context!.scale(1 + tile.pop * 0.4, 1 + tile.pop * 0.4);
+        context!.globalAlpha = tile.opacity;
+        context!.fillStyle = tile.colour;
+        if (tile.pop > 0.05) {
+          context!.shadowColor = "#46acdc";
+          context!.shadowBlur = tile.pop * 14;
+        }
+        context!.fillRect(-tile.size / 2, -tile.size / 2, tile.size, tile.size);
+        if (tile.size > 12) {
+          context!.globalAlpha = tile.opacity * 0.65;
+          context!.fillStyle = "#c3f8ff";
+          context!.fillRect(
+            -tile.size / 2,
+            -tile.size / 2,
+            tile.size * 0.55,
+            0.8,
+          );
+          context!.fillRect(
+            -tile.size / 2,
+            -tile.size / 2,
+            0.8,
+            tile.size * 0.3,
+          );
+        }
+        context!.restore();
+      }
+      if (moving && !motion.matches) frame = requestAnimationFrame(draw);
+      else previousFrame = 0;
+    }
+    /** Fit the grid to the viewport while retaining the three-digit silhouette. */
+    function resize() {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      const bounds = element!.getBoundingClientRect();
+      width = bounds.width;
+      height = bounds.height;
+      const ratio = Math.min(devicePixelRatio || 1, 2);
+      element!.width = Math.round(width * ratio);
+      element!.height = Math.round(height * ratio);
+      context!.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const cell = Math.max(8, Math.min(22, width / 64));
+      const columns = Math.ceil(width / cell),
+        rows = Math.ceil(height / cell);
+      const scale = Math.max(1, Math.floor(Math.min(columns / 28, rows / 12)));
+      const left = Math.floor((columns - 17 * scale) / 2),
+        top = Math.floor((rows - 7 * scale) / 2);
+      tiles = [];
+      for (let row = 0; row < rows; row++)
+        for (let col = 0; col < columns; col++) {
+          const gx = Math.floor((col - left) / scale),
+            gy = Math.floor((row - top) / scale);
+          const digit = Math.floor(gx / 6),
+            localX = gx % 6;
+          const filled =
+            digit >= 0 &&
+            digit < 3 &&
+            gy >= 0 &&
+            gy < 7 &&
+            localX >= 0 &&
+            localX < 5 &&
+            digits[digit][gy][localX] === "1";
+          const seed = col * 37 + row * 71;
+          const radius = Math.hypot(
+            (col / columns - 0.5) / 0.55,
+            (row / rows - 0.48) / 0.5,
+          );
+          const density = Math.max(0.025, 1 - radius ** 1.6);
+          if (!filled && (seed % 101) / 101 > density) continue;
+          const scattered = !filled && seed % 3 === 0;
+          let homeX =
+            (col + 0.5) * cell +
+            (scattered
+              ? ((seed % 7) - 3) * cell * 0.35
+              : filled
+                ? ((seed % 5) - 2) * cell * 0.1
+                : 0);
+          let homeY =
+            (row + 0.5) * cell +
+            (scattered
+              ? ((seed % 9) - 4) * cell * 0.25
+              : filled
+                ? ((seed % 5) - 2) * cell * 0.075
+                : 0);
+          if (filled) {
+            homeX = width / 2 + (homeX - width / 2) * 0.65;
+            homeY = height / 2 + (homeY - height / 2) * 0.65;
+          }
+          const accents = [
+            "#41c5f1",
+            "#28d8c2",
+            "#7a70f5",
+            "#3585ea",
+            "#47accf",
+            "#a5b8d5",
+          ];
+          const neutrals = [
+            "#c6d0df",
+            "#a3b2c6",
+            "#8093ae",
+            "#d6dee8",
+            "#92a1b8",
+          ];
+          const colour = filled
+            ? seed % 5 === 0
+              ? accents[seed % accents.length]
+              : neutrals[seed % neutrals.length]
+            : accents[seed % accents.length];
+          tiles.push({
+            canDrift: filled ? seed % 5 === 0 : seed % 4 === 0,
+            formsCode: filled,
+            originX: homeX,
+            originY: homeY,
+            x: homeX,
+            y: homeY,
+            homeX,
+            homeY,
+            vx: 0,
+            vy: 0,
+            turn: scattered ? 0.12 : 0,
+            pop: 0,
+            colour,
+            opacity: filled
+              ? 0.7 + (seed % 4) * 0.09
+              : (0.06 + (seed % 7) * 0.025) * density,
+            size:
+              cell *
+              (filled ? 0.65 : 1) *
+              (filled
+                ? [0.5, 0.7, 0.85, 1, 1.2, 1.45][seed % 6]
+                : [0.3, 0.6, 1, 1.5, 2.1, 2.9][seed % 6]),
+          });
+        }
+      tiles.sort((a, b) => Number(a.formsCode) - Number(b.formsCode));
+      pointer = null;
+      draw(performance.now());
+      element!.dataset.ready = "true";
+    }
+    /** Throw only the touched tiles in the direction of pointer travel. */
+    function move(event: PointerEvent) {
+      if (motion.matches || event.pointerType === "touch") return;
+      const bounds = element!.getBoundingClientRect();
+      const x = event.clientX - bounds.left,
+        y = event.clientY - bounds.top;
+      const elapsed = pointer
+        ? Math.max(8, event.timeStamp - pointer.time)
+        : 16;
+      const dx = pointer
+        ? Math.max(-18, Math.min(18, ((x - pointer.x) / elapsed) * 12))
+        : 0;
+      const dy = pointer
+        ? Math.max(-18, Math.min(18, ((y - pointer.y) / elapsed) * 12))
+        : -3;
+      for (const tile of tiles)
+        if (
+          Math.abs(tile.x - x) < tile.size &&
+          Math.abs(tile.y - y) < tile.size
+        ) {
+          if (tile.canDrift && Math.hypot(dx, dy) > 4) {
+            const margin = tile.size / 2;
+            tile.homeX = Math.max(
+              margin,
+              Math.min(width - margin, tile.x + dx * 12),
+            );
+            tile.homeY = Math.max(
+              margin,
+              Math.min(height - margin, tile.y + dy * 12),
+            );
+          }
+          tile.vx = dx;
+          tile.vy = dy - 2;
+          tile.turn = dx * 0.025;
+          tile.pop = 1;
+        }
+      pointer = { x, y, time: event.timeStamp };
+      if (!frame) frame = requestAnimationFrame(draw);
+    }
+    /** Forget pointer velocity when leaving the artwork. */
+    function leave() {
+      pointer = null;
+    }
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+    element.addEventListener("pointermove", move);
+    element.addEventListener("pointerleave", leave);
+    motion.addEventListener("change", resize);
+    resize();
+    const regroup = window.setInterval(() => {
+      if (motion.matches) return;
+      let displaced = false;
+      for (const tile of tiles) {
+        if (!tile.formsCode) continue;
+        displaced ||=
+          tile.homeX !== tile.originX || tile.homeY !== tile.originY;
+        tile.homeX = tile.originX;
+        tile.homeY = tile.originY;
+      }
+      if (displaced && !frame) frame = requestAnimationFrame(draw);
+    }, 7000);
+    return () => {
+      window.clearInterval(regroup);
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      element.removeEventListener("pointermove", move);
+      element.removeEventListener("pointerleave", leave);
+      motion.removeEventListener("change", resize);
+    };
+  }, []);
   return (
-    <div className="mx-auto min-h-[55vh] max-w-xl px-6 py-20 text-center">
-      <h1 className="page-title">Page not found</h1>
-      <p className="my-6 text-muted">
-        The page you’re looking for isn’t available.
+    <canvas ref={canvas} className="not-found-grid-art" aria-hidden="true" />
+  );
+}
+
+/** Offer an accessible way home inside a full-screen, fragmented error artwork. */
+export default function NotFound() {
+  useStandalonePage();
+  return (
+    <section className="not-found-art" aria-labelledby="not-found-title">
+      <h1 id="not-found-title" className="sr-only">
+        404 — Page not found
+      </h1>
+      <div className="not-found-static-code" aria-hidden="true">
+        404
+      </div>
+      <FragmentedCode />
+      <p className="not-found-message">
+        Oops, this page drifted off course.
+        <span>Let the ball take you home.</span>
       </p>
-      <Link href="/" className="button">
-        Back to home
-      </Link>
-    </div>
+      <img
+        src={logo}
+        alt="SOCCERBOTSTUDIO Singapore"
+        width="565"
+        height="190"
+        className="not-found-brand"
+      />
+      <div className="not-found-explorer">
+        <img
+          src={notFoundAstronaut}
+          width="1280"
+          height="1280"
+          alt=""
+          className="not-found-astronaut"
+          fetchPriority="high"
+        />
+        <Link href="/" className="not-found-home" aria-label="Back to home">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <radialGradient id="home-chrome" cx="32%" cy="22%" r="80%">
+                <stop stopColor="#cad5e4" />
+                <stop offset=".26" stopColor="#76859b" />
+                <stop offset=".43" stopColor="#263449" />
+                <stop offset=".54" stopColor="#8494a8" />
+                <stop offset=".7" stopColor="#26334b" />
+                <stop offset="1" stopColor="#0a1235" />
+              </radialGradient>
+              <radialGradient id="home-depth">
+                <stop stopColor="#050a2f" />
+                <stop offset=".8" stopColor="#132c4c" />
+                <stop offset="1" stopColor="#46acdc" />
+              </radialGradient>
+              <clipPath id="home-sphere">
+                <circle cx="60" cy="60" r="52" />
+              </clipPath>
+            </defs>
+            <circle cx="60" cy="60" r="54" fill="#46acdc" opacity=".25" />
+            <circle
+              cx="60"
+              cy="60"
+              r="52"
+              fill="url(#home-chrome)"
+              stroke="#d7ecff"
+            />
+            <g
+              clipPath="url(#home-sphere)"
+              fill="none"
+              stroke="#111d3c"
+              strokeWidth=".65"
+              opacity=".65"
+            >
+              <path d="M30 13 42 29 25 49 8 43M90 13 78 29 95 49 112 43M8 77 25 75 39 97 32 113M112 77 95 75 81 97 88 113M42 29H78M25 49V75M95 49V75M39 97H81M42 29 39 10M78 29 81 10" />
+            </g>
+            <path
+              className="not-found-home-hole"
+              transform="translate(18 18) scale(.7)"
+              d="M31 57 60 33 89 57H81V85H65V68H55V85H39V57Z"
+              fill="url(#home-depth)"
+              stroke="#86cbd6"
+              strokeWidth="1.2"
+              strokeLinejoin="round"
+            />
+            <g clipPath="url(#home-sphere)">
+              <path
+                className="not-found-home-shine"
+                d="M-50 0H-35L25 120H10Z"
+                fill="white"
+                opacity=".65"
+              />
+            </g>
+          </svg>
+          <span className="not-found-home-label">Home</span>
+        </Link>
+      </div>
+    </section>
   );
 }
