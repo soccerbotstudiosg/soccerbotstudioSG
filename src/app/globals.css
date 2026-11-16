@@ -2672,6 +2672,8 @@
     --action-width: 100%;
     position: relative;
     z-index: 35;
+    /* Moving between flow and viewport must never move the document scroll anchor. */
+    overflow-anchor: none;
     display: flex;
     width: 100%;
     margin: 0;

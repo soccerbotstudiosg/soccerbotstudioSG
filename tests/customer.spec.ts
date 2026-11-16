@@ -2061,6 +2061,46 @@ test("header blue and the typography hierarchy stay consistent across every book
     ).toHaveCount(0);
     const actionAnchor = page.locator(".booking-action-anchor");
     if (await actionAnchor.count()) {
+      const primary = actionAnchor.locator(".booking-primary-action");
+      if (await page.evaluate(() => CSS.supports("overflow-anchor", "none")))
+        await expect(primary).toHaveCSS("overflow-anchor", "none");
+      // Cross both floating/resting boundaries in both directions. Moving the
+      // action must not pull the document into its footer or change its height.
+      const geometry = await actionAnchor.evaluate((node) => ({
+        top: node.getBoundingClientRect().top + scrollY,
+        bottom: node.getBoundingClientRect().bottom + scrollY,
+        header: document.querySelector(".site-header")!.getBoundingClientRect()
+          .bottom,
+        height: document.documentElement.scrollHeight,
+        viewport: innerHeight,
+        original: scrollY,
+      }));
+      const stops = [
+        geometry.bottom - geometry.viewport - 2,
+        geometry.bottom - geometry.viewport + 2,
+        geometry.top - geometry.header - 2,
+        geometry.top - geometry.header + 2,
+        geometry.height - geometry.viewport,
+      ].map((y) =>
+        Math.round(
+          Math.max(0, Math.min(y, geometry.height - geometry.viewport)),
+        ),
+      );
+      for (const target of [...stops, ...stops.toReversed()]) {
+        const settled = await page.evaluate(async (y) => {
+          scrollTo({ top: y, behavior: "instant" });
+          await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          );
+          return { y: scrollY, height: document.documentElement.scrollHeight };
+        }, target);
+        expect(Math.abs(settled.y - target)).toBeLessThanOrEqual(1);
+        expect(settled.height).toBe(geometry.height);
+      }
+      await page.evaluate(
+        (y) => scrollTo({ top: y, behavior: "instant" }),
+        geometry.original,
+      );
       await expect(actionAnchor).toHaveCSS("padding-top", "32px");
       await expect(actionAnchor).toHaveCSS("padding-bottom", "24px");
       const actionButton = actionAnchor.locator(
