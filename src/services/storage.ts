@@ -406,8 +406,9 @@ export function hasSeenConfirmation(attemptId: string) {
     return false;
   }
 }
-/** Remember the last displayed confirmation for repeat provider-return navigation only. */
+/** Remember displayed confirmation only to suppress repayment during protected recovery. */
 export function markConfirmationSeen(attemptId: string) {
+  completedPaymentReturn(attemptId, true);
   try {
     localStorage.setItem(SEEN_CONFIRMATION_KEY, attemptId);
   } catch {

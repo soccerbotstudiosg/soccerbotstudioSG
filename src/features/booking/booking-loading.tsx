@@ -26,6 +26,7 @@ export const checkoutRouteLoadingLabel = (pathname: string) =>
 /** Preserve approved operation feedback within any full-page loading cover. */
 export const loadingFeedbackMessage = (label?: string) =>
   [
+    "Processing payment",
     "Opening checkout…",
     "Checking whether your booking was created…",
     "Preparing your payment link…",

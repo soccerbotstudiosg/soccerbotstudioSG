@@ -2113,7 +2113,16 @@ async function verifyMockPaymentExpiry(expired: boolean) {
       </>
     );
   }
-  const tree = (step: "payment" | "time" | "confirmation") => {
+  const tree = (
+    step:
+      | "account"
+      | "session"
+      | "time"
+      | "details"
+      | "review"
+      | "payment"
+      | "confirmation",
+  ) => {
     navigation.path =
       step === "confirmation" ? "/confirmation/" : `/book/${step}/`;
     return (
@@ -2290,6 +2299,24 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   expect(isCalendarRecovery(id)).toBe(false);
   expect(completedPaymentReturn(id)).toBe(true);
   view.unmount();
+  for (const previousStep of [
+    "account",
+    "session",
+    "time",
+    "details",
+    "review",
+    "payment",
+  ] as const) {
+    navigation.replace.mockClear();
+    const oldPage = render(tree(previousStep));
+    await act(async () => {});
+    expect(navigation.replace).toHaveBeenCalledWith(
+      `/confirmation/?attempt=${id}`,
+    );
+    expect(document.querySelector(".booking-shell")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+    oldPage.unmount();
+  }
   navigation.replace.mockClear();
   await act(async () => {
     render(tree("time"));

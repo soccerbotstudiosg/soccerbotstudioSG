@@ -3750,6 +3750,20 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         page.getByRole("link", { name: "Continue payment", exact: true }),
       ).toHaveCount(0);
       expect(page.context().pages()).toHaveLength(pagesBefore);
+      // Revisit the original editable route after confirmation: only the protected receipt may render.
+      await page.goto("/book/review/");
+      await expect(page).toHaveURL(
+        new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
+      );
+      await expect(
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("heading", { name: "Review Booking", exact: true }),
+      ).toHaveCount(0);
       // Chain a fresh journey and revisit the old receipt without resetting the
       // browser or isolated provider. Paid capacity must not return to the grid.
       const nextCalendar = page.waitForResponse(

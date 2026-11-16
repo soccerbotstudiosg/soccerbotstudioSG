@@ -250,9 +250,13 @@ test("normal and browser return navigation never say refreshing and preserve pay
       "Checking payment… Please do not close or refresh.",
     );
     expect(screen.queryByText("Loading...", { exact: true })).toBeNull();
-    view.rerender(<Page label="Processing payment" />);
+    view.rerender(<Page label="Preparing booking…" />);
     expect(
       screen.getByRole("status", { name: "Checking payment…" }),
+    ).toBeVisible();
+    view.rerender(<Page label="Processing payment" />);
+    expect(
+      screen.getByRole("status", { name: "Processing payment" }),
     ).toBeVisible();
     expect(document.querySelectorAll(".page-loading")).toHaveLength(1);
     view.rerender(<Page label="Opening checkout…" />);

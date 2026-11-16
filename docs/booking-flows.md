@@ -581,7 +581,7 @@ Get Verification Code immediately replaces its label with a compact spinner in t
 
 Visible Review Turnstile has equal vertical spacing, including its visible success frame; the hidden widget reserves no gap. Full confirmation checking/preparation loaders say “Please do not close or refresh.” Back to home from confirmation navigates immediately while cleanup continues.
 
-Provider return query hints are removed from the address after arrival. A repeat provider return goes Home only when this browser has displayed that attempt's confirmation before and the server again supplies confirmed booking evidence. First returns and direct confirmation revisits/refreshes retain protected confirmation and recovery. Storage unavailable or an unrecognized previous confirmation falls back to protected confirmation, never an assumed payment. The external HitPay page remains provider-controlled.
+Provider return query hints are removed from the address after arrival. After this browser has displayed confirmation, old checkout entries suppress repayment and editable steps while protected recovery restores confirmation; failed confirmed-history recovery goes Home. The marker never proves payment. First returns and direct confirmation revisits/refreshes retain protected confirmation and recovery. Storage unavailable or an unrecognized previous confirmation falls back to protected confirmation, never an assumed payment. The external HitPay page remains provider-controlled.
 
 ## Revoked-session entry and saved-contact boundary — 12 November 2026
 

@@ -6,6 +6,7 @@ import { BookingLoadingProvider } from "./booking-loading";
 import {
   saveLiveDraft,
   expiryReconciliationDeadline,
+  markConfirmationSeen,
 } from "@/services/storage";
 import { liveBookingService } from "@/services/booking";
 import { demoCustomerIdentity } from "@/services/demo/identity";
@@ -2650,7 +2651,7 @@ it("late unpaid-release acknowledgement cannot override newer payment evidence a
   write.mockRestore();
 });
 
-it("repeat provider return goes home only after server confirmation while direct revisits remain visible", async () => {
+it("repeat provider returns and direct revisits retain verified confirmation without leaving the booking", async () => {
   const now = Date.now();
   const restart = vi.fn(async () => {});
   const fetch = vi.fn(async (url: string) =>
@@ -2705,9 +2706,10 @@ it("repeat provider return goes home only after server confirmation while direct
       onRestart={restart}
     />,
   );
-  await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
+  await screen.findByRole("heading", { name: "Booking Confirmed" });
+  expect(navigation.replace).not.toHaveBeenCalledWith("/");
   expect(screen.queryByText("Confirmation unavailable")).toBeNull();
-  expect(restart).toHaveBeenCalledExactlyOnceWith(first);
+  expect(restart).not.toHaveBeenCalled();
 });
 
 it("expiry waits for the first paced post-expiry status response without extending recovery indefinitely", async () => {
@@ -3446,5 +3448,111 @@ it("explicit receipt access denial returns home instead of retaining protected d
     expect(page.container).toHaveTextContent(/^Loading\.\.\.$/);
     page.unmount();
     sessionStorage.clear();
+  }
+});
+
+it("confirmed history suppresses an old unpaid handoff and failed recovery replaces it with Home", async () => {
+  for (const restored of [false, true]) {
+    localStorage.clear();
+    sessionStorage.clear();
+    navigation.replace.mockClear();
+    const context = {
+      attemptId: first,
+      mode: "live",
+      checkout: {
+        state: "available",
+        url: "https://checkout.sandbox.hit-pay.com/payment-request/@test/00000000-0000-4000-8000-000000000001/checkout",
+        expiresAtMs: Date.now() + 600000,
+      },
+      summary: {
+        players: 2,
+        totalMinor: 8800,
+        currency: "SGD",
+        sessions: [{ startMs: Date.now() + 86400000, players: 2 }],
+      },
+      checking: {
+        deadlineMs: Date.now() + 600000,
+        nextCheckMs: 0,
+        pollAfterMs: 5000,
+      },
+    };
+    let finishContext!: (response: Response) => void;
+    const delayedContext = new Promise<Response>((resolve) => {
+      finishContext = resolve;
+    });
+    let rereading = !restored;
+    const fetcher = vi.fn((url: string) =>
+      url.endsWith("/checkout")
+        ? rereading
+          ? delayedContext
+          : Promise.resolve(
+              Response.json(context, {
+                headers: { Date: new Date().toUTCString() },
+              }),
+            )
+        : Promise.resolve(
+            Response.json({
+              status: "pending",
+              reason: "payment_verification_pending",
+            }),
+          ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    if (!restored) markConfirmationSeen(first);
+    const page = render(
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        confirmationRoute
+        allowPaymentContinuation
+      />,
+    );
+    if (restored) {
+      await screen.findByRole("link", { name: "Continue payment" });
+      act(() =>
+        window.dispatchEvent(
+          new PageTransitionEvent("pagehide", { persisted: true }),
+        ),
+      );
+      expect(
+        screen.queryByRole("link", { name: "Continue payment" }),
+      ).toBeNull();
+      act(() =>
+        window.dispatchEvent(
+          new PageTransitionEvent("pageshow", { persisted: true }),
+        ),
+      );
+      expect(
+        screen.getByRole("link", { name: "Continue payment" }),
+      ).toBeVisible();
+      act(() =>
+        window.dispatchEvent(
+          new PageTransitionEvent("pagehide", { persisted: true }),
+        ),
+      );
+      rereading = true;
+      markConfirmationSeen(first);
+      act(() =>
+        window.dispatchEvent(
+          new PageTransitionEvent("pageshow", { persisted: true }),
+        ),
+      );
+    }
+    expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Booking Confirmed" }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("status", { name: "Checking payment…" }),
+    ).toBeVisible();
+    await act(async () => finishContext(new Response(null, { status: 503 })));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
+    expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+    expect(
+      fetcher.mock.calls.every(
+        ([url]) => url.endsWith("/checkout") || url.endsWith("/confirmation"),
+      ),
+    ).toBe(true);
+    page.unmount();
   }
 });

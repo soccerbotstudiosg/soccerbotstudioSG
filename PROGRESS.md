@@ -6,11 +6,15 @@
 
 ## Current scope
 
+Owner added completed-history protection before merge: no Continue payment or editable step from the original confirmed attempt may reappear. Preserve normal unpaid Back and explicitly new bookings; failed completed-history recovery goes Home without financial effects. Reconcile tests and inventory before the next candidate.
+
 Select reload presentation before static HTML paints; retain meaningful checkout feedback over generic registrations; align payment/confirmation bootstrap and initial protected context copy. Keep Review checkout handoff and existing pageshow/retained-attempt replay guards. On mobile, replace the redirect line with the horizontal HitPay logo inside the action. No native resubmission prompt is installed: browsers control that prompt and it does not reliably protect SPA history.
 
 ## Verification and next action
 
-Local verification passes:121 affected component cases across the focused suites (48 final protected/refresh cases and73 unchanged passing cases),44 deployment/export checks, typecheck, changed-file ESLint, source integrity, production build and all15 exported routes. Built HTML confirms the synchronous head bootstrap precedes body content. Restoring generic-label precedence causes the intended navigation assertion to fail; restoring the fix passes all6 refresh cases. Browser tests now hold application scripts before confirmation hydration and audit rendered refresh messages, hold checkout-context reads on native Back, and check mobile branding. Those browser cases remain unexecuted locally under AGENTS and require CI/owner acceptance. Original local failure receipts remain in /tmp; caught non-live loader regression was fixed. Publication is now authorized; verify the exact candidate CI and staging deployment before merge. No provider writes or browser execution.
+Current confirmed-history delta passes116 protected/direct/refresh component cases, source integrity, types and changed-file ESLint. The demo Processing payment preservation repair passes all6 refresh cases. Earlier unchanged export/bootstrap coverage passes44 deployment/export tests. CI43801992949 on6a1f7ef failed backend demo refresh copy assertions; both live-email browser shards and Worker groups passed. Preserve those receipts and consolidate this repair with the new confirmed-history guard before replacement CI. Final build and15-route export validation pass; exact-head CI/staging/merge remain pending. Browser execution stays owner/CI-owned; no provider writes.
+
+Owner briefly reported a missing WhatsApp Open Graph preview, then confirmed it reappeared. The deployed source retains the approved swapped title and preview image; no metadata change is justified by that transient report.
 
 ## Remaining owner acceptance
 
