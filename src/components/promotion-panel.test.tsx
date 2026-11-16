@@ -55,6 +55,14 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     "--initial-travel": "160px",
     "--expanded-travel": "160px",
   });
+  expect(panel.querySelector(".feature-chevron")).toHaveAttribute(
+    "d",
+    "m8 5 7 7-7 7",
+  );
+  expect(panel.querySelector(".feature-arrow")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
   expect(screen.queryByRole("link")).toBeNull();
   expect(screen.queryByRole("button")).toBeNull();
   expect(screen.getByText(props.description)).toHaveAttribute(
@@ -68,25 +76,21 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     "false",
   );
   fireEvent.pointerLeave(panel);
-  expect(panel).toHaveAttribute("data-active", "true");
-  const following = document.createElement("section");
-  panel.after(following);
-  let followingTop = 400;
-  Object.defineProperty(following, "getBoundingClientRect", {
-    value: () => ({ top: followingTop }) as DOMRect,
-  });
+  expect(panel).toHaveAttribute("data-active", "false");
   vi.stubGlobal("scrollY", 1000);
   fireEvent.scroll(window);
-  vi.stubGlobal("scrollY", 900);
-  fireEvent.scroll(window);
-  expect(panel).toHaveAttribute("data-active", "true");
-  followingTop = 700;
+  expect(panel).toHaveAttribute("data-active", "false");
+  fireEvent.pointerEnter(panel);
   vi.stubGlobal("scrollY", 800);
   fireEvent.scroll(window);
+  expect(panel).toHaveAttribute("data-active", "true");
+  fireEvent.pointerLeave(panel);
   expect(panel).toHaveAttribute("data-active", "false");
-  following.remove();
   act(() => panel.focus());
   expect(panel).toHaveAttribute("data-active", "true");
+  fireEvent.blur(panel);
+  expect(panel).toHaveAttribute("data-active", "false");
+  fireEvent.focus(panel);
   fireEvent.keyDown(panel, { key: "Escape" });
   expect(panel).toHaveAttribute("data-active", "false");
   const touch = new Event("pointerdown", { bubbles: true });
@@ -111,8 +115,24 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     expect(panel).not.toHaveAttribute("tabindex");
     expect(screen.queryByRole("button")).toBeNull();
   }
+  const removeMediaListener = vi.fn();
+  vi.stubGlobal("matchMedia", () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: removeMediaListener,
+  }));
+  const phone = render(
+    <PromotionPanel {...props} id="phone-panel" title={["Mobile", "arena"]} />,
+  );
+  const phonePanel = screen.getByRole("region", { name: "Mobile arena" });
+  expect(phonePanel).toHaveAttribute("data-active", "true");
+  fireEvent.pointerLeave(phonePanel);
+  fireEvent.keyDown(phonePanel, { key: "Escape" });
+  expect(phonePanel).toHaveAttribute("data-active", "true");
+  phone.unmount();
+  expect(removeMediaListener).toHaveBeenCalledOnce();
   view.unmount();
-  expect(disconnect).toHaveBeenCalledOnce();
+  expect(disconnect).toHaveBeenCalledTimes(2);
 });
 
 test("compact closing banners group the arrow with their action and expose one full-banner link", () => {

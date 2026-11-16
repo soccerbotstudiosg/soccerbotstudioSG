@@ -3,12 +3,21 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type ReactNode,
 } from "react";
 import Link from "next/link";
 import { BookingLink } from "./booking-navigation";
-import { Icon } from "./icon";
+
+const mobileQuery = "(max-width: 700px)";
+/** Keep mobile detail disclosure synchronized with the responsive layout. */
+function subscribeMobile(notify: () => void) {
+  const media = window.matchMedia(mobileQuery);
+  media.addEventListener("change", notify);
+  return () => media.removeEventListener("change", notify);
+}
+const mobileSnapshot = () => window.matchMedia(mobileQuery).matches;
 
 type Props = {
   id: string;
@@ -47,7 +56,13 @@ export function PromotionPanel({
   children,
 }: Props) {
   const panel = useRef<HTMLElement>(null);
-  const [active, setActive] = useState(false);
+  const [engaged, setActive] = useState(false);
+  const mobile = useSyncExternalStore(
+    subscribeMobile,
+    mobileSnapshot,
+    () => false,
+  );
+  const active = mobile || engaged;
   useEffect(() => {
     const element = panel.current;
     if (!element || typeof ResizeObserver === "undefined") return;
@@ -64,7 +79,7 @@ export function PromotionPanel({
         )!;
         element!.style.setProperty(
           `--${variant}-travel`,
-          `${Math.max(0, heading.clientWidth - words.offsetWidth)}px`,
+          `${Math.max(0, heading.clientWidth - (parseFloat(getComputedStyle(heading).paddingRight) || 0) - words.offsetWidth)}px`,
         );
       }
     }
@@ -75,30 +90,6 @@ export function PromotionPanel({
       observer.observe(words);
     measure();
     return () => observer.disconnect();
-  }, []);
-  useEffect(() => {
-    const element = panel.current;
-    if (!element) return;
-    let previousScroll = window.scrollY;
-    /** Release the engaged style only when scrolling upward fully uncovers this card. */
-    function revealAgain() {
-      const current = window.scrollY;
-      if (current < previousScroll) {
-        const bounds = element!.getBoundingClientRect();
-        const following =
-          element!.nextElementSibling ??
-          element!.parentElement?.nextElementSibling;
-        if (
-          bounds.top >= 0 &&
-          (!following ||
-            following.getBoundingClientRect().top >= bounds.bottom - 1)
-        )
-          setActive(false);
-      }
-      previousScroll = current;
-    }
-    window.addEventListener("scroll", revealAgain, { passive: true });
-    return () => window.removeEventListener("scroll", revealAgain);
   }, []);
   const content = (
     <div className="promotion-copy-content">
@@ -112,6 +103,17 @@ export function PromotionPanel({
           {activeTitle[0]}
           <span>{activeTitle[1]}</span>
         </span>
+        <span className="feature-arrow" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path className="feature-corner" d="M5 19V5h14" />
+            <path className="feature-chevron" d="m8 5 7 7-7 7" />
+          </svg>
+        </span>
       </h2>
       <p className="feature-description">
         <span className="feature-teaser" aria-hidden={active}>
@@ -122,11 +124,6 @@ export function PromotionPanel({
         </span>
       </p>
       {children}
-      {href && (
-        <span className="feature-arrow" aria-hidden="true">
-          <Icon name="chevron" />
-        </span>
-      )}
     </div>
   );
   const copyClass = `${className.includes("studio-row") ? "studio-copy" : "promotion-copy"} feature-copy`;
@@ -140,6 +137,11 @@ export function PromotionPanel({
       tabIndex={href ? undefined : 0}
       onPointerEnter={(event) => {
         if (event.pointerType !== "touch") setActive(true);
+      }}
+      onPointerLeave={() => setActive(false)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setActive(false);
       }}
       onPointerDown={(event) => {
         if (event.pointerType === "touch") setActive(true);

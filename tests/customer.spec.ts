@@ -451,7 +451,12 @@ test("public routes remove staff access and fit the viewport", async ({
     expect(box!.x).toBeCloseTo(0, 0);
     expect(box!.width).toBeCloseTo(page.viewportSize()!.width, 0);
     await expect(promotion.locator("img")).toHaveAttribute("alt", /.+/);
-    await expect(promotion).toHaveCSS("background-color", "rgb(245, 246, 250)");
+    await expect(promotion).toHaveCSS(
+      "background-color",
+      (await promotion.locator(".promotion-edge").count())
+        ? "rgb(255, 255, 255)"
+        : "rgb(245, 246, 250)",
+    );
     await expect(promotion).toHaveCSS("color", "rgb(16, 22, 54)");
     await expect(promotion.locator(".promotion-cta")).toHaveCount(0);
     await expect(promotion.locator("a.feature-copy")).toHaveCount(1);
@@ -467,10 +472,29 @@ test("public routes remove staff access and fit the viewport", async ({
   const initialBookingCopy = page.locator(
     ".home-promotion--booking .promotion-copy-content",
   );
-  await expect(initialBookingCopy).toHaveCSS(
-    "text-align",
-    page.viewportSize()!.width > 700 ? "right" : "left",
+  await expect(initialBookingCopy).toHaveCSS("text-align", "right");
+  await expect(page.locator(".promotion-journey")).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
   );
+  await expect(page.locator(".promotion-journey > :first-child")).toHaveCSS(
+    "position",
+    "sticky",
+  );
+  const firstPanel = promotions.first();
+  const curveBox = await firstPanel.locator(".promotion-edge").boundingBox();
+  const copyHeadingBox = await firstPanel
+    .locator(".feature-heading")
+    .boundingBox();
+  expect(copyHeadingBox!.y).toBeGreaterThanOrEqual(
+    curveBox!.y + curveBox!.height,
+  );
+  if (page.viewportSize()!.width <= 700) {
+    for (const panel of await promotions.all()) {
+      await expect(panel).toHaveAttribute("data-active", "true");
+      await expect(panel.locator(".feature-full")).toHaveCSS("opacity", "1");
+    }
+  }
   const prominentPrice = page.locator(
     ".home-promotion--booking .promotion-details strong",
   );
@@ -507,6 +531,25 @@ test("public routes remove staff access and fit the viewport", async ({
   );
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
+  if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
+    await bannerLink.scrollIntoViewIfNeeded();
+    const restingHeight = (await bannerLink.boundingBox())!.height;
+    await bannerLink.hover();
+    await expect(contactBanner).toHaveCSS("transform", "none");
+    await expect(bannerLink.locator("h2")).toHaveCSS(
+      "font-size",
+      bannerHeadingSize,
+    );
+    await expect(bannerLink.locator(".abstract-promotion-action")).toHaveCSS(
+      "font-size",
+      bannerHeadingSize,
+    );
+    expect((await bannerLink.boundingBox())!.height).toBeCloseTo(
+      restingHeight,
+      0,
+    );
+    await page.mouse.move(0, 0);
+  }
   const contactBox = await contactBanner.boundingBox();
   expect(contactBox).not.toBeNull();
   expect(contactBox!.x).toBeCloseTo(0, 0);
@@ -741,7 +784,7 @@ test("public routes remove staff access and fit the viewport", async ({
     .first()
     .boundingBox();
   expect(firstPhotoBox).not.toBeNull();
-  expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y, 0);
+  expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y + 40, 0);
   await expect(
     page.locator(".studio-row").first().locator(".promotion-edge--top"),
   ).toHaveCount(1);
@@ -763,6 +806,7 @@ test("public routes remove staff access and fit the viewport", async ({
   }
   const studioBanner = page.locator(".studio-bottom.abstract-promotion");
   await expect(studioBanner).toBeAttached();
+  await expect(studioBanner).toHaveCSS("margin-top", "24px");
   await expect(studioBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(studioBanner).toHaveCSS("background-image", contactGradient);
   await expect(studioBanner.locator("img")).toHaveCount(0);
@@ -789,6 +833,13 @@ test("public routes remove staff access and fit the viewport", async ({
   await lastStudioRow.scrollIntoViewIfNeeded();
   await lastStudioRow.focus();
   await expect(lastStudioRow).toHaveAttribute("data-active", "true");
+  const chevron = lastStudioRow.locator(".feature-arrow svg");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(chevron).toHaveCSS("animation-name", "feature-chevron-nudge");
+  await expect(chevron).toHaveCSS("animation-iteration-count", "infinite");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(chevron).toHaveCSS("animation-name", "none");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await expect(lastStudioRow.locator(".feature-full")).toHaveCSS(
     "opacity",
     "1",
@@ -808,7 +859,10 @@ test("public routes remove staff access and fit the viewport", async ({
   const lastBox = await lastStudioRow.boundingBox();
   expect(previousBox!.y + previousBox!.height).toBeGreaterThan(lastBox!.y);
   await page.keyboard.press("Escape");
-  await expect(lastStudioRow).toHaveAttribute("data-active", "false");
+  await expect(lastStudioRow).toHaveAttribute(
+    "data-active",
+    page.viewportSize()!.width <= 700 ? "true" : "false",
+  );
   const backToTop = page.getByRole("button", {
     name: "Back to top",
     exact: true,

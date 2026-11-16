@@ -2,13 +2,11 @@
 
 ## Active outcome
 
-17 November 2026: repair stale access-expiry notices on re-entry and Guest navigation flicker; restore compact full-link banners; improve404 legibility, gentle nudges and shared idle regrouping. Working branch `fix/booking-reentry-session` starts from merged PR91 (`579d682`). Preserve the untracked node_modules symlink. No live provider actions or assistant browser execution.
+17 November 2026: PR92 merged as d3856e0 after all13 checks and exact-revision staging. New branch `fix/promotion-hover-layout` addresses the owner's following presentation corrections. Preserve node_modules; no provider operations or assistant browser execution.
 
 ## Next actions
 
-The HAR records a fresh30-minute access cookie. The reproduced client defect was a retained recovery revision after leaving booking, plus hiding its notice as soon as Guest changed draft mode. Fixes clear recovery on departure/arrival while preserving outgoing layout. Focused tests reproduce both original failures and pass after repair. All four entry-surface preparation paths are covered, including repeated entry. Banners restore the prior compact layout with three centred groups and an arrow inside the unboxed action group.404 digit drift is coherent, mobile contrast/stroke lengths are clearer, and small nudges return together seven seconds after the last interaction. Focused canvas tests compare recovery against an untouched reference.
-
-PR92 initial89fa4e8 passed all13 CI jobs. Candidate f9c39e0 adds measured sticky-cart clearance and normal404 header/footer; local code verification passed400 component,205 tooling,58 installer tests and export. CI43962899124 passed12/13 jobs; frontend tablet-WebKit typography case exhausted30 seconds while successfully checking Contact sticky geometry. Preserved artifact14276305696/trace confirms no failed API assertions and longest completed action1.143seconds. Split independent account/session presentation from calendar/contact presentation, retaining all assertions and default deadlines; update exact ordered inventory. Run affected guards/type/lint/format, push samePR, monitor exact-head CI, verify actual staging revision and merge under explicit owner authorization. Dependabot84 remains separate.
+Banners retain font sizes and height while their outer groups spread horizontally on hover; both have24px white top spacing. Hero/video now share the sticky journey with subsequent cards. Desktop panel engagement is hover/focus only and resets on departure; mobile remains expanded. Align all three text groups in the reveal direction, centre the content vertically without empty body reserves, and move the corner graphic beside heading line two with a small-to-large right-chevron reveal and gentle right/back loop (static with reduced motion). Reserve curve clearance to prevent mobile heading clipping. Component tests and existing browser geometry/style expectations are updated. Run code verification and review; browser/physical visual acceptance remains pending. No publication for this follow-up yet.
 
 ## Ordered work after this slice
 
