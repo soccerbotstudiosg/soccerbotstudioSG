@@ -3577,7 +3577,10 @@ it("active checkout rejection keeps its own notice instead of an availability wa
   };
   let state!: ReturnType<typeof useBooking>;
   function NoticeProbe() {
-    state = useBooking();
+    const current = useBooking();
+    useEffect(() => {
+      state = current;
+    }, [current]);
     return <ConflictHandoffProbe />;
   }
   const tree = () => (
