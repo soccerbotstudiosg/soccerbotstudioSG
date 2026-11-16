@@ -15,25 +15,30 @@ afterEach(() => {
 });
 test("404 tiles scatter with pointer travel settle back and respect reduced motion while Home stays accessible", () => {
   let positions: number[][] = [];
+  let bright: number[][] = [];
   const context = {
     clearRect: () => {
       positions = [];
+      bright = [];
     },
     save: vi.fn(),
     restore: vi.fn(),
     translate: (x: number, y: number) => positions.push([x, y]),
     rotate: vi.fn(),
     scale: vi.fn(),
-    fillRect: vi.fn(),
+    globalAlpha: 1,
+    fillRect: (_x: number, _y: number, width: number, height: number) => {
+      if (context.globalAlpha >= 0.7 && height > 1)
+        bright.push([...positions[positions.length - 1], width]);
+    },
     setTransform: vi.fn(),
   };
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
     context as unknown as CanvasRenderingContext2D,
   );
-  vi.spyOn(
-    HTMLCanvasElement.prototype,
-    "getBoundingClientRect",
-  ).mockReturnValue({ width: 1000, height: 700, left: 0, top: 0 } as DOMRect);
+  const bounds = vi
+    .spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect")
+    .mockReturnValue({ width: 1000, height: 700, left: 0, top: 0 } as DOMRect);
   let sequence = 0;
   const frames = new Map<number, FrameRequestCallback>();
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
@@ -139,6 +144,24 @@ test("404 tiles scatter with pointer travel settle back and respect reduced moti
     change();
   });
   fireEvent(canvas, new MouseEvent("pointermove", { clientX: x, clientY: y }));
+  bounds.mockReturnValue({
+    width: 390,
+    height: 844,
+    left: 0,
+    top: 0,
+  } as DOMRect);
+  act(change);
+  // The two fours have14 tiles each; the zero has20 at the phone resolution.
+  expect(bright).toHaveLength(48);
+  const minX = Math.min(...bright.map(([px, , size]) => px - size / 2));
+  const maxX = Math.max(...bright.map(([px, , size]) => px + size / 2));
+  expect(maxX - minX).toBeGreaterThan(240);
+  expect(maxX - minX).toBeLessThan(300);
+  expect(minX).toBeGreaterThan(20);
+  expect(maxX).toBeLessThan(370);
+  expect(Math.max(...bright.map(([, py, size]) => py + size / 2))).toBeLessThan(
+    390,
+  );
   view.unmount();
   expect(frames.size).toBe(0);
   expect(disconnect).toHaveBeenCalled();

@@ -767,10 +767,20 @@
     }
   }
   @media (max-width: 600px) {
+    .not-found-message {
+      bottom: 14vh;
+      width: calc(100% - 40px);
+      max-width: 340px;
+    }
+    .not-found-brand {
+      right: 20px;
+      bottom: max(24px, env(safe-area-inset-bottom));
+      width: 130px;
+    }
     .not-found-explorer {
-      width: 180px;
-      right: 16px;
-      bottom: max(130px, env(safe-area-inset-bottom));
+      width: clamp(120px, 34vw, 150px);
+      right: max(7vw, 20px);
+      bottom: calc(14vh + 88px);
     }
   }
   @media (prefers-reduced-motion: reduce) {

@@ -811,6 +811,13 @@ test("public routes remove staff access and fit the viewport", async ({
     page.getByRole("img", { name: "SOCCERBOTSTUDIO Singapore", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".player-app-dialog")).toHaveCount(0);
+  if (page.viewportSize()!.width <= 600) {
+    const message = await page.locator(".not-found-message").boundingBox();
+    const explorer = await page.locator(".not-found-explorer").boundingBox();
+    const brand = await page.locator(".not-found-brand").boundingBox();
+    expect(explorer!.y + explorer!.height).toBeLessThan(message!.y);
+    expect(message!.y + message!.height).toBeLessThan(brand!.y);
+  }
   const home = page.getByRole("link", { name: "Back to home", exact: true });
   await expect(home).toBeVisible();
   await home.focus();

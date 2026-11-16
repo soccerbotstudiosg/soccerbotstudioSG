@@ -116,6 +116,9 @@ function FragmentedCode() {
       const columns = Math.ceil(width / cell),
         rows = Math.ceil(height / cell);
       const scale = Math.max(1, Math.floor(Math.min(columns / 28, rows / 12)));
+      const compact = width <= 600;
+      const codeScale = compact ? (width * 0.68) / (17 * scale * cell) : 0.65;
+      const codeCenterY = height * (compact ? 0.36 : 0.5);
       const left = Math.floor((columns - 17 * scale) / 2),
         top = Math.floor((rows - 7 * scale) / 2);
       tiles = [];
@@ -136,7 +139,7 @@ function FragmentedCode() {
           const seed = col * 37 + row * 71;
           const radius = Math.hypot(
             (col / columns - 0.5) / 0.55,
-            (row / rows - 0.48) / 0.5,
+            (row / rows - (compact ? 0.37 : 0.48)) / (compact ? 0.39 : 0.5),
           );
           const density = Math.max(0.025, 1 - radius ** 1.6);
           if (!filled && (seed % 101) / 101 > density) continue;
@@ -156,8 +159,8 @@ function FragmentedCode() {
                 ? ((seed % 5) - 2) * cell * 0.075
                 : 0);
           if (filled) {
-            homeX = width / 2 + (homeX - width / 2) * 0.65;
-            homeY = height / 2 + (homeY - height / 2) * 0.65;
+            homeX = width / 2 + (homeX - width / 2) * codeScale;
+            homeY = codeCenterY + (homeY - height / 2) * codeScale;
           }
           const accents = [
             "#41c5f1",
@@ -198,7 +201,7 @@ function FragmentedCode() {
               : (0.06 + (seed % 7) * 0.025) * density,
             size:
               cell *
-              (filled ? 0.65 : 1) *
+              (filled ? codeScale : 1) *
               (filled
                 ? [0.5, 0.7, 0.85, 1, 1.2, 1.45][seed % 6]
                 : [0.3, 0.6, 1, 1.5, 2.1, 2.9][seed % 6]),

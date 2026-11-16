@@ -2,17 +2,11 @@
 
 ## Active outcome
 
-16 November2026: `feat/404-grid-artwork` reconciled onto merged PR87 main3854460. Owner approved the interactive404 direction and requested customer logo bottom-right, sticky desktop Back/Home plus progress, consolidation, CI and staging. Source, asset fallback guards, component regression, existing browser assertions and technical behavior docs updated. Full local code verification and exact-head CI/staging pending; no merge authorization for this candidate.
+16 November2026: `feat/404-grid-artwork` reconciled onto merged PR87 main3854460. Owner approved the interactive404 direction and requested customer logo bottom-right, sticky desktop Back/Home plus progress, consolidation, CI and staging. Source, asset fallback guards, component regression, existing browser assertions and technical behavior docs updated. Initial head638d739 passed full local code verification and all CI gates in run43837957058. Owner mobile feedback now enlarges phone404 to roughly68% width, lifts the cloud and separates astronaut/message/logo. Revised local checks and final-head CI/staging pending; owner now authorizes stage, verify, merge, then reconcile Dependabot84.
 
 ## Next actions
 
 Run the fail-fast code wrapper; fix actual failures, push one consolidated draft, monitor all required gates, mark ready for authorized staging, then verify exact deployment health. Owner/CI executes browsers; no live provider actions. Dependabot84 remains pending reconciliation and trusted manual staging.
-
-## Verification and next action
-
-Active-checkout notice now persists across refresh and same-page edits and clears on departure. The enhanced existing regression failed before repair; all67 direct-checkout cases pass afterward. Shared action geometry suppresses floating while the footer is visible; existing every-step browser assertions now cover this contract while preserving scroll-height/position checks. Owner now authorizes push, CI monitoring and staging for phone acceptance before merge. Reuse the validated account-loader clock repair from PR84 to avoid its known one-second wait race without changing product timing. PR87 CI43827910340 failed frontend lint: the new test probe wrote an external observer during render. Its earlier local lint failure was masked by shell sequencing; correct the pass claim. Observation now occurs in an effect; the full fail-fast code wrapper now passes393 unit/component tests, formatting, lint, types, tooling/installer checks, audit, build and15-route export. All four original browser shards and all Worker groups passed; publish the consolidated correction and obtain fresh exact-head gates before staging. Browser/physical-phone acceptance remains pending. No payment/booking authority, dependency, workflow, schema or test-inventory change in this slice.
-
-PR84 was reconciled and passed full CI43824108069 at909eae7. Owner requested staging; its bot author is excluded by automatic deployment, requiring the reserved manual staging path in the runbook. Current tools lack workflow dispatch and repository-variable writes; do not claim staged or merge84.
 
 ## Ordered work after this slice
 
