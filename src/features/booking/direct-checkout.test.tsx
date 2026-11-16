@@ -242,6 +242,16 @@ async function directCase(scenario: string) {
     </BookingProvider>,
   );
   fireEvent.click(screen.getByText("Seed"));
+  const paymentButton = screen.getByRole("button", {
+    name: /^Proceed to Payment/,
+  });
+  expect(paymentButton.querySelector(".checkout-redirect")).toHaveTextContent(
+    "You’ll be redirected to to complete your payment.",
+  );
+  expect(paymentButton).toHaveAccessibleDescription(
+    "You’ll be redirected to HitPay to complete your payment.",
+  );
+  expect(paymentButton.querySelector(".checkout-redirect a")).toBeNull();
   fireEvent.click(
     screen.getByRole("button", { name: "Expire checkout proof" }),
   );
@@ -2113,7 +2123,16 @@ async function verifyMockPaymentExpiry(expired: boolean) {
       </>
     );
   }
-  const tree = (step: "payment" | "time" | "confirmation") => {
+  const tree = (
+    step:
+      | "account"
+      | "session"
+      | "time"
+      | "details"
+      | "review"
+      | "payment"
+      | "confirmation",
+  ) => {
     navigation.path =
       step === "confirmation" ? "/confirmation/" : `/book/${step}/`;
     return (
@@ -2290,6 +2309,24 @@ async function verifyMockPaymentExpiry(expired: boolean) {
   expect(isCalendarRecovery(id)).toBe(false);
   expect(completedPaymentReturn(id)).toBe(true);
   view.unmount();
+  for (const previousStep of [
+    "account",
+    "session",
+    "time",
+    "details",
+    "review",
+    "payment",
+  ] as const) {
+    navigation.replace.mockClear();
+    const oldPage = render(tree(previousStep));
+    await act(async () => {});
+    expect(navigation.replace).toHaveBeenCalledWith(
+      `/confirmation/?attempt=${id}`,
+    );
+    expect(document.querySelector(".booking-shell")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+    oldPage.unmount();
+  }
   navigation.replace.mockClear();
   await act(async () => {
     render(tree("time"));

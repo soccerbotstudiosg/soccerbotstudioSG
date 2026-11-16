@@ -1571,6 +1571,7 @@ test("real payment recovery confirms the browser return from verified provider s
   const receiptRead = new Promise<void>((resolve) => {
     receiptStarted = resolve;
   });
+  let releaseRefreshScripts = () => {};
   let refreshContext: Promise<void> | undefined;
   let releaseRefreshContext = () => {};
   let refreshContextStarted = () => {};
@@ -1923,6 +1924,20 @@ test("real payment recovery confirms the browser return from verified provider s
     // Record transient regressions as well as the final page. A later verified
     // response must not hide a Pending/error flash before fresh reads settle.
     await page.addInitScript(() => {
+      let seenCover = false;
+      const auditRefreshMessage = () => {
+        const cover = document.getElementById("page-refresh");
+        if (!cover && seenCover) return;
+        if (cover) {
+          seenCover = true;
+          const message = cover.querySelector<HTMLElement>(".text-muted");
+          if (message?.innerText.trim() !== "Refreshing…")
+            document.documentElement.dataset.unexpectedRefreshMessage =
+              message?.innerText ?? "missing";
+        }
+        requestAnimationFrame(auditRefreshMessage);
+      };
+      requestAnimationFrame(auditRefreshMessage);
       new MutationObserver(() => {
         if (
           document.querySelector(".confirmation-pending-status") ||
@@ -1942,8 +1957,26 @@ test("real payment recovery confirms the browser return from verified provider s
         characterData: true,
       });
     });
-    await page.reload();
+    const refreshScripts = /\/_next\/.*\.js(?:\?|$)/;
+    const scriptGate = new Promise<void>((resolve) => {
+      releaseRefreshScripts = resolve;
+    });
+    await page.route(refreshScripts, async (route) => {
+      await scriptGate;
+      await route.continue();
+    });
+    await page.reload({ waitUntil: "commit" });
+    const staticCover = page.locator("#page-refresh");
+    await expect(staticCover.locator(".document-reload-message")).toBeVisible();
+    await expect(staticCover.locator(".document-reload-message")).toHaveText(
+      "Refreshing…",
+    );
+    await expect(
+      staticCover.locator(".document-navigation-message"),
+    ).toBeHidden();
+    releaseRefreshScripts();
     await refreshing;
+    await page.unroute(refreshScripts);
     await expect(page).toHaveURL(
       new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
     );
@@ -1963,6 +1996,9 @@ test("real payment recovery confirms the browser return from verified provider s
     ).toHaveCount(0);
     releaseRefreshContext();
     await expect(refreshLoader).toHaveCount(0);
+    await expect(page.locator("html")).not.toHaveAttribute(
+      "data-unexpected-refresh-message",
+    );
     await expect(
       page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
@@ -2063,6 +2099,7 @@ test("real payment recovery confirms the browser return from verified provider s
     ).toHaveLength(1);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
+    releaseRefreshScripts();
     releaseRefreshContext();
     releaseReceipt();
     releaseAccounting();
@@ -3485,7 +3522,16 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       return undefined;
     },
   });
-  const transport = await mechanismTransport(page, mechanism);
+  const returnGate = Promise.withResolvers<void>();
+  const returnStarted = Promise.withResolvers<void>();
+  let checkingReturn = false;
+  const transport = await mechanismTransport(page, mechanism, (path) => {
+    if (checkingReturn && path.endsWith("/checkout")) {
+      returnStarted.resolve();
+      return returnGate.promise;
+    }
+    return Promise.resolve();
+  });
   try {
     await guestDetails(page, mechanism);
     await reviewResponse(page);
@@ -3537,6 +3583,12 @@ async function optimisticHold(page: Page, failReadback: boolean) {
     ).toEqual({ n: 0 });
     bookGate.resolve();
     await readStarted.promise;
+    await expect(
+      page.getByText("Opening checkout… Please do not close or refresh.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Loading...", { exact: true })).toHaveCount(0);
     await assertNoPaymentOrConfirmation(page, mechanism);
     readGate.resolve();
     if (failReadback) {
@@ -3625,7 +3677,27 @@ async function optimisticHold(page: Page, failReadback: boolean) {
           new URL(response.url()).pathname ===
             `/api/attempts/${attemptId}/checkout` && response.status() === 200,
       );
+      checkingReturn = true;
       await page.goBack();
+      await returnStarted.promise;
+      await expect(
+        page.getByText("Checking payment… Please do not close or refresh.", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(page.getByText("Loading...", { exact: true })).toHaveCount(
+        0,
+      );
+      await expect(
+        page.getByText("Checking booking… Please do not close or refresh.", {
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      await expect(page.getByText("Refreshing…", { exact: true })).toHaveCount(
+        0,
+      );
+      returnGate.resolve();
+      checkingReturn = false;
       const resumedHeaders = await (await resumedContext).allHeaders();
       expect(Number.isFinite(Date.parse(resumedHeaders.date))).toBe(true);
       const continuation = page.getByRole("link", {
@@ -3678,6 +3750,20 @@ async function optimisticHold(page: Page, failReadback: boolean) {
         page.getByRole("link", { name: "Continue payment", exact: true }),
       ).toHaveCount(0);
       expect(page.context().pages()).toHaveLength(pagesBefore);
+      // Revisit the original editable route after confirmation: only the protected receipt may render.
+      await page.goto("/book/review/");
+      await expect(page).toHaveURL(
+        new RegExp(`/confirmation/\\?attempt=${attemptId}$`),
+      );
+      await expect(
+        page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Continue payment", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("heading", { name: "Review Booking", exact: true }),
+      ).toHaveCount(0);
       // Chain a fresh journey and revisit the old receipt without resetting the
       // browser or isolated provider. Paid capacity must not return to the grid.
       const nextCalendar = page.waitForResponse(
@@ -3727,6 +3813,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       mechanism.calls.filter((call) => call.body?.method === "book"),
     ).toHaveLength(1);
   } finally {
+    returnGate.resolve();
     bookGate.resolve();
     readGate.resolve();
     checkoutGate.resolve();
@@ -3772,7 +3859,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
       page.getByRole("dialog", { name: "Get the Soccerbot360 Player App" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("status", { name: "Checking booking…", exact: true }),
+      page.getByRole("status", { name: "Checking payment…", exact: true }),
     ).toBeVisible();
     await expect(
       page.locator(".page-loading .page-loading-orbit"),

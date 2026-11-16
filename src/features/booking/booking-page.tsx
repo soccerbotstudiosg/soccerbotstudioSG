@@ -3,10 +3,9 @@ import Link from "next/link";
 import { hasIdentityEntry, takeIdentityEntry } from "@/services/identity";
 import { sitePath } from "@/content/site-path";
 import {
-  completedPaymentReturn,
   isBookingDeparture,
   isUnresolvedCheckout,
-  mayRestoreLiveCheckout,
+  liveCheckoutAttemptId,
 } from "@/services/storage";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -20,7 +19,10 @@ import {
 import { useBooking } from "./provider";
 import { AccountStep } from "./account-step";
 import { SessionStep } from "./session-step";
-import { ProtectedConfirmation } from "./protected-confirmation";
+import {
+  ProtectedConfirmation,
+  useRepaymentSuppression,
+} from "./protected-confirmation";
 import { TimeStep } from "./time-step";
 import { DetailsStep } from "./details-step";
 import { ReviewStep } from "./review-step";
@@ -159,19 +161,21 @@ export function BookingPage({ step }: { step: BookingStep }) {
     step === "details" &&
     actual === "review" &&
     attempt?.held === true;
+  const retainedAttemptId = attempt?.id ?? liveCheckoutAttemptId();
+  const suppressRepayment = useRepaymentSuppression(
+    retainedAttemptId ?? undefined,
+  );
   const returningToConfirmation =
-    bookingService.mode === "live" &&
-    !!attempt &&
-    mayRestoreLiveCheckout(attempt.id) &&
-    !isBookingDeparture(attempt.id) &&
-    completedPaymentReturn(attempt.id);
+    bookingService.mode === "live" && !!retainedAttemptId && suppressRepayment;
   const returningFromUnresolvedCreation =
     unresolvedCreation &&
     ["details", "review", "payment", "confirmation"].includes(step);
   useEffect(() => {
-    if (ready && returningToConfirmation && attempt) {
+    if (ready && returningToConfirmation && retainedAttemptId) {
       router.replace(
-        `/confirmation/?attempt=${encodeURIComponent(attempt.id)}`,
+        isBookingDeparture(retainedAttemptId)
+          ? "/"
+          : `/confirmation/?attempt=${encodeURIComponent(retainedAttemptId)}`,
       );
       return;
     }
@@ -190,6 +194,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
     router,
     retainingReview,
     returningToConfirmation,
+    retainedAttemptId,
     attempt,
     returningFromUnresolvedCreation,
     action.returnToCalendar,
@@ -212,8 +217,10 @@ export function BookingPage({ step }: { step: BookingStep }) {
     return (
       <BrandLoading
         label={
-          checkoutRouteLoadingLabel(`/book/${actual}/`) ??
-          checkoutRouteLoadingLabel(`/book/${step}/`)
+          returningToConfirmation
+            ? "Checking payment…"
+            : (checkoutRouteLoadingLabel(`/book/${actual}/`) ??
+              checkoutRouteLoadingLabel(`/book/${step}/`))
         }
       />
     );

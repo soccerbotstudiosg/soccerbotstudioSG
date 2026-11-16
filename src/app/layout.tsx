@@ -2,20 +2,20 @@ import type { Metadata, Viewport } from "next";
 import { BookingProvider } from "@/features/booking/provider";
 import { BookingNavigation } from "@/components/booking-navigation";
 import { PageRefreshBoundary } from "@/components/page-refresh";
+import { documentNavigationScript } from "@/components/document-navigation";
 import { SiteShell } from "@/components/site-shell";
 import { sitePath } from "@/content/site-path";
 import { socialPreview } from "@/content/media";
 import productionTarget from "../../deployment/production.json";
 import "./globals.css";
-const shareTitle =
-  "Interactive Football Experience | SOCCERBOTSTUDIO Singapore";
-const shareDescription =
-  "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.";
+const shareTitle = socialPreview.title;
+const shareDescription = socialPreview.description;
 const shareImage = socialPreview;
 export const metadata: Metadata = {
   metadataBase: new URL(productionTarget.origin),
   openGraph: {
     type: "website",
+    url: new URL(sitePath("/"), productionTarget.origin).href,
     locale: "en_SG",
     siteName: "SOCCERBOTSTUDIO Singapore",
     title: shareTitle,
@@ -23,6 +23,7 @@ export const metadata: Metadata = {
     images: [
       {
         url: shareImage.src,
+        type: "image/jpeg",
         width: shareImage.width,
         height: shareImage.height,
         alt: shareImage.alt,
@@ -57,7 +58,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en-SG">
+    <html lang="en-SG" suppressHydrationWarning>
+      <head>
+        <script>{documentNavigationScript}</script>
+      </head>
       <body>
         <BookingProvider>
           <BookingNavigation>

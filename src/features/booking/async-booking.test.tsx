@@ -23,7 +23,13 @@ import {
 } from "@/services/demo/identity";
 import { liveBookingService } from "@/services/booking";
 import type { AvailableSlot, BookingService } from "@/services/contracts";
-import { loadBooking, saveBooking, saveLiveDraft } from "@/services/storage";
+import {
+  loadBooking,
+  saveBooking,
+  saveLiveDraft,
+  liveCheckoutAttemptId,
+  markConfirmationSeen,
+} from "@/services/storage";
 import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
 import { PAYMENT_WINDOW_ENDED } from "@/domain/booking-messages";
@@ -212,7 +218,10 @@ test("rebooking clears the view immediately but gates new checkout on background
       <RebookingProbe />
     </BookingProvider>,
   );
+  saveLiveDraft(blankDraft(), true, completedId);
+  markConfirmationSeen(completedId);
   fireEvent.click(screen.getByRole("button", { name: "Restart completed" }));
+  expect(liveCheckoutAttemptId()).toBeNull();
   expect(screen.getByTestId("restored-attempt")).toHaveTextContent("none");
   expect(sessionStorage.getItem("soccerbot.completed-exit")).toBe(completedId);
   fireEvent.click(screen.getByRole("button", { name: "Review new booking" }));

@@ -2512,6 +2512,9 @@ export function BookingProvider({
           setRestoredOwner({ service, identityService });
           setSessionChoices({ outlet: true, session: true });
           commit({ version: 2, draft: blankDraft(), attempt: null });
+          // Explicit rebooking starts a new navigation journey; completion hints
+          // remain keyed to the old attempt for protected receipt/history reads.
+          if (service.mode === "live") saveLiveDraft(blankDraft(), false, null);
         },
         /** Apply draft changes while preserving the booking state constraints. */
         update(change) {

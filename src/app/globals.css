@@ -1418,6 +1418,20 @@
   html:has(#page-refresh) {
     overflow: hidden;
   }
+  .document-reload-message,
+  html[data-document-navigation="reload"] .document-navigation-message {
+    display: none;
+  }
+  html[data-document-navigation="reload"] .document-reload-message {
+    display: inline;
+  }
+  .document-review-return,
+  html[data-document-navigation="back_forward"] .document-review-entry {
+    display: none;
+  }
+  html[data-document-navigation="back_forward"] .document-review-return {
+    display: inline;
+  }
   .page-loading {
     position: fixed;
     inset: 0;
@@ -3486,20 +3500,62 @@
     gap: 12px;
     margin-bottom: 8px;
   }
-  .checkout-redirect {
-    margin: 0;
-    background: var(--color-paper);
-    color: var(--color-muted);
-    font-size: var(--text-meta);
-    text-align: center;
+  .booking-shell .booking-primary-action > .button.checkout-payment-button {
+    flex-direction: column;
+    gap: 2px;
+    /* Match the shared action's line height, 18px padding and 1px borders. */
+    min-height: calc(1em * var(--leading-control) + 38px);
+    padding: 8px 24px;
   }
-  .checkout-redirect a {
-    display: inline-block;
-    vertical-align: middle;
+  .checkout-primary-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    width: 100%;
+  }
+  .checkout-redirect {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: inherit;
+    font-size: var(--text-meta);
+    font-weight: var(--weight-body);
+    font-style: normal;
+    line-height: 1.25;
+    white-space: nowrap;
   }
   .checkout-redirect img {
+    display: block;
     width: 62px;
     height: auto;
+  }
+  .checkout-button-logo {
+    display: none;
+  }
+  .checkout-payment-button:not(:disabled)
+    :is(.checkout-redirect img, .checkout-button-logo) {
+    filter: brightness(0) invert(1);
+  }
+  @media (max-width: 700px) {
+    .booking-shell .booking-primary-action > .button.checkout-payment-button {
+      min-height: 48px;
+      padding: 2px 16px;
+    }
+  }
+  @media (max-width: 559px) {
+    .checkout-redirect,
+    .checkout-primary-line > .checkout-lock {
+      display: none;
+    }
+    .checkout-button-logo {
+      display: block;
+      width: 62px;
+      height: auto;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
   }
   .payment-continuation-details {
     display: flex;

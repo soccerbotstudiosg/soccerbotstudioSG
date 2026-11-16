@@ -13,6 +13,7 @@ import {
   expiryReconciliationDeadline,
   checkoutRecoveryDeadline,
   completedPaymentReturn,
+  liveCheckoutAttemptId,
 } from "@/services/storage";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -21,9 +22,11 @@ import {
   useEffectEvent,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { flushSync } from "react-dom";
 import { BookingHelp } from "./booking-help";
 import { BookingConfirmation, PendingConfirmation } from "./confirmation-step";
 type BookingReceipt = Awaited<ReturnType<typeof readBookingReceipt>>;
@@ -42,6 +45,32 @@ import type { CheckoutContext } from "@/services/contracts";
 import { money, dateLabel, endTime } from "@/domain/dates";
 import { useConfirmationRenderTrace } from "./confirmation-render-trace";
 import { useConfirmationChecking } from "./confirmation-checking";
+/** Re-read repayment-suppression hints when a suspended history document resumes. */
+function subscribeToPaymentReturn(notify: () => void) {
+  window.addEventListener("pageshow", notify);
+  window.addEventListener("focus", notify);
+  window.addEventListener("storage", notify);
+  return () => {
+    window.removeEventListener("pageshow", notify);
+    window.removeEventListener("focus", notify);
+    window.removeEventListener("storage", notify);
+  };
+}
+/** Suppress repayment after a completed return without treating storage as payment proof. */
+export function useRepaymentSuppression(attemptId?: string) {
+  return useSyncExternalStore(
+    subscribeToPaymentReturn,
+    () => {
+      const currentAttemptId = attemptId ?? liveCheckoutAttemptId();
+      return (
+        !!currentAttemptId &&
+        (hasSeenConfirmation(currentAttemptId) ||
+          completedPaymentReturn(currentAttemptId))
+      );
+    },
+    () => false,
+  );
+}
 /** Reopen only the retained handoff within its original payment deadline. */
 function PaymentContinuation({
   url,
@@ -155,8 +184,19 @@ function ProtectedConfirmationBody({
   const router = useRouter();
   const [homeFallback, setHomeFallback] = useState<string | null>(null);
   const [homeDeparture, setHomeDeparture] = useState<ReactNode>(null);
-  const [seenConfirmation] = useState(() => hasSeenConfirmation(attemptId));
-  const returnedHome = useRef<string | null>(null);
+  const [historySuspended, setHistorySuspended] = useState(false);
+  useEffect(() => {
+    // Cache a covered document, not an actionable unpaid checkout snapshot.
+    const hide = () => flushSync(() => setHistorySuspended(true));
+    const show = () => setHistorySuspended(false);
+    window.addEventListener("pagehide", hide);
+    window.addEventListener("pageshow", show);
+    return () => {
+      window.removeEventListener("pagehide", hide);
+      window.removeEventListener("pageshow", show);
+    };
+  }, []);
+  const suppressRepayment = useRepaymentSuppression(attemptId);
   const [context, setContext] = useState<{
     value: CheckoutContext;
     revision: number;
@@ -466,12 +506,24 @@ function ProtectedConfirmationBody({
     const resume = () => {
       if (!document.hidden) void read();
     };
+    const restore = (event: PageTransitionEvent) => {
+      if (
+        event.persisted &&
+        (hasSeenConfirmation(attemptId) || completedPaymentReturn(attemptId))
+      ) {
+        finished = false;
+        nextReadMs = 0;
+        resume();
+      }
+    };
+    window.addEventListener("pageshow", restore);
     window.addEventListener("focus", resume);
     document.addEventListener("visibilitychange", resume);
     return () => {
       active = false;
       controller?.abort();
       clearTimeout(timer);
+      window.removeEventListener("pageshow", restore);
       window.removeEventListener("focus", resume);
       document.removeEventListener("visibilitychange", resume);
     };
@@ -645,7 +697,7 @@ function ProtectedConfirmationBody({
     confirmationRoute &&
     (hasPaymentEvidence ||
       (providerReturn && !allowPaymentContinuation) ||
-      completedPaymentReturn(attemptId));
+      suppressRepayment);
   useEffect(() => {
     if (confirmationRoute && providerReturn && !allowPaymentContinuation)
       completedPaymentReturn(attemptId, true);
@@ -859,6 +911,7 @@ function ProtectedConfirmationBody({
   const historicalPayment =
     !!recordedPayment && ["unresolved", "unavailable"].includes(view);
   const showLink =
+    !suppressRepayment &&
     !recordedPayment &&
     !paymentReceived &&
     current?.checkout.state === "available" &&
@@ -952,23 +1005,19 @@ function ProtectedConfirmationBody({
     receipt?.value.attemptId === attemptId &&
     receipt.revision === sessionRevision;
   const confirmedCard = !!displayedReceipt;
-  const repeatedProviderReturn =
-    providerReturn && seenConfirmation && !!saved && view !== "denied";
+  const confirmedReturnFailed =
+    suppressRepayment &&
+    hasSeenConfirmation(attemptId) &&
+    !confirmedCard &&
+    (contextFailure?.id === attemptId ||
+      receiptUnavailable ||
+      view === "unavailable" ||
+      (confirmationTimedOut === attemptId &&
+        contextSettled &&
+        (confirmationReadSettled || incomplete || linkRecovering)));
   useEffect(() => {
-    if (repeatedProviderReturn) {
-      if (returnedHome.current === attemptId) return;
-      returnedHome.current = attemptId;
-      router.replace("/");
-      if (onRestart) void Promise.resolve(onRestart(attemptId)).catch(() => {});
-    } else if (confirmedCard && !silent) markConfirmationSeen(attemptId);
-  }, [
-    repeatedProviderReturn,
-    confirmedCard,
-    silent,
-    attemptId,
-    router,
-    onRestart,
-  ]);
+    if (confirmedCard && !silent) markConfirmationSeen(attemptId);
+  }, [confirmedCard, silent, attemptId]);
   useConfirmationRenderTrace({
     attemptId,
     revision: sessionRevision,
@@ -1001,12 +1050,13 @@ function ProtectedConfirmationBody({
   });
   if (
     homeFallback === attemptId ||
+    confirmedReturnFailed ||
     (checkoutMode === "live" && view === "denied")
   )
     return silent ? null : <ConfirmationHome />;
   if (homeDeparture) return homeDeparture;
   if (silent) return null;
-  if (repeatedProviderReturn) return <BrandLoading label="Opening booking" />;
+  if (historySuspended) return <BrandLoading label="Checking payment…" />;
   if (reconcilingExpiry) return <BrandLoading label="Checking payment…" />;
   if (rejectionState && !hasPaymentEvidence)
     return <BrandLoading compact label={CONFLICT_CHECKING} />;
@@ -1145,6 +1195,8 @@ function ProtectedConfirmationBody({
     );
   if (creationResolved && !hasPaymentEvidence)
     return <BrandLoading label="Checking booking…" />;
+  if (checkoutMode === "live" && confirmationRoute && !contextSettled)
+    return <BrandLoading label="Checking payment…" />;
   if (recoveryTimedOut === attemptId && awaitingCreation)
     return <BrandLoading label="Checking booking…" />;
   if (awaitingCreation && !contextMatches)
@@ -1195,7 +1247,7 @@ function ProtectedConfirmationBody({
     const pendingLabel =
       view === "confirmed"
         ? "Preparing confirmation…"
-        : checkoutMode && preparation === "loading"
+        : checkoutMode && preparation === "loading" && !confirmationRoute
           ? "Checking booking…"
           : paymentReceived
             ? "Payment received. Confirming booking."

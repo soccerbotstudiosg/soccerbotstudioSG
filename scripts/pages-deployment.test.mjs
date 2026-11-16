@@ -122,7 +122,7 @@ function fixture(t, basePath) {
     mkdirSync(join(path, ".."), { recursive: true });
     writeFileSync(path, value);
   };
-  const html = `<div id="page-refresh-content" inert style="visibility:hidden"><main><a class="arena-booking" href="${basePath}/book/account/">Book</a><img src="${basePath}/assets/photo.jpg"></main></div><div id="page-refresh" style="position:fixed;inset:0"><div role="status" aria-label="Loading page"></div></div><script src="${basePath}/_next/app.js"></script><link rel="stylesheet" href="${basePath}/_next/app.css">`;
+  const html = `<head><script>document.documentElement.dataset.documentNavigation=performance.getEntriesByType("navigation")[0]?.type||"navigate";</script></head><body><div id="page-refresh-content" inert style="visibility:hidden"><main><a class="arena-booking" href="${basePath}/book/account/">Book</a><img src="${basePath}/assets/photo.jpg"></main></div><div id="page-refresh" style="position:fixed;inset:0"><div role="status" aria-label="Loading page"><span class="document-reload-message">Refreshing…</span><span class="document-navigation-message">Loading...</span></div></div><script src="${basePath}/_next/app.js"></script><link rel="stylesheet" href="${basePath}/_next/app.css">`;
   for (const file of [
     "index.html",
     "404.html",
@@ -151,10 +151,17 @@ function fixture(t, basePath) {
   ])
     write(
       file,
-      html.replace(
-        'aria-label="Loading page"',
-        'aria-label="Checking booking…"',
-      ),
+      html
+        .replace(
+          "Loading...</span>",
+          '<span class="document-review-entry">Checking booking… Please do not close or refresh.</span><span class="document-review-return">Checking payment… Please do not close or refresh.</span></span>',
+        )
+        .replace(
+          'aria-label="Loading page"',
+          file === "book/review/index.html"
+            ? 'aria-label="Checking booking…"'
+            : 'aria-label="Checking payment…"',
+        ),
     );
   write("_next/app.js", "export {};");
   write("assets/photo.jpg", "synthetic image");
@@ -285,6 +292,32 @@ for (const [name, mutate, error] of [
     },
     /Missing initial refresh cover/,
   ],
+  ...[
+    "documentNavigation",
+    "document-reload-message",
+    "document-navigation-message",
+  ].map((part) => [
+    `missing pre-hydration feedback ${part}`,
+    (f) => {
+      const file = "confirmation/index.html";
+      const original = readFileSync(join(f.root, file), "utf8");
+      const broken = original.replace(part, "missing-feedback");
+      assert.notEqual(broken, original);
+      f.write(file, broken);
+    },
+    /Missing pre-hydration navigation feedback/,
+  ]),
+  ...["document-review-entry", "document-review-return"].map((part) => [
+    `missing Review history feedback ${part}`,
+    (f) => {
+      const file = "book/review/index.html";
+      const original = readFileSync(join(f.root, file), "utf8");
+      const broken = original.replace(part, "missing-feedback");
+      assert.notEqual(broken, original);
+      f.write(file, broken);
+    },
+    /Missing pre-hydration navigation feedback/,
+  ]),
   [
     "visible incomplete content",
     (f) => {
@@ -306,7 +339,9 @@ for (const [name, mutate, error] of [
         const file = `${route}/index.html`;
         const original = readFileSync(join(f.root, file), "utf8");
         const broken = original.replace(
-          'aria-label="Checking booking…"',
+          route === "book/review"
+            ? 'aria-label="Checking booking…"'
+            : 'aria-label="Checking payment…"',
           'aria-label="Loading page"',
         );
         assert.notEqual(broken, original);

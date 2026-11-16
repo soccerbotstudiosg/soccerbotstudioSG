@@ -100,6 +100,9 @@ export const studioHero = {
 };
 
 export const socialPreview = {
+  title: "Interactive Football Experience | SOCCERBOTSTUDIO Singapore",
+  description:
+    "Discover immersive football games and interactive training at SOCCERBOTSTUDIO Singapore. Performance · Experience · Production.",
   src: sitePath("/assets/soccerbot-social-preview.jpg"),
   width: 1734,
   height: 907,
