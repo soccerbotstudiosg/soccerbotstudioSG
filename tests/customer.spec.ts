@@ -2215,7 +2215,10 @@ test("header blue and the typography hierarchy stay consistent across every book
           .boundingBox();
         const settledBar = await primaryBar.boundingBox();
         expect(settledBar!.width).toBeCloseTo(settledAnchor!.width, 0);
-        expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(32, 0);
+        expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(
+          compactSession ? 24 : 32,
+          0,
+        );
         const footer = await page.locator(".site-footer").boundingBox();
         expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
           footer!.y,
