@@ -328,3 +328,5 @@ These are deployment configurations of one codebase, not separate application fo
 ### Optional CSS compiler fallback host support
 
 Tailwind4.3.4’s optional oxide WASM fallback declares Node `^20.19.0 || ^22.13.0 || >=23.5.0`, increased from `>=14.0.0` in4.3.3. The configured Node24.19.0 satisfies this range; native oxide retains Node>=20. Linux native CI does not establish execution of the optional WASM fallback or native macOS/Windows acceptance. These are build-host requirements, not new customer-browser restrictions; exact package metadata is retained in package-lock.json.
+
+The static export check requires the initial fixed cover and hidden/inert main content on every route. Checkout Review/payment/confirmation exports use the initial “Checking booking…” status; other routes use “Loading page”. The deployment tests reject a wrong route-specific label as well as missing covers and visible unfinished content.

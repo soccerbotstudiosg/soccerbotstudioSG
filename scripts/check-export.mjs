@@ -111,10 +111,20 @@ export function checkExport(directory, basePath) {
       }
       const refresh = doc.querySelector("#page-refresh");
       const content = doc.querySelector("#page-refresh-content");
+      const loadingLabel = [
+        "book/review/index.html",
+        "book/payment/index.html",
+        "book/confirmation/index.html",
+        "confirmation/index.html",
+      ].includes(file)
+        ? "Checking booking…"
+        : "Loading page";
       if (
         refresh?.style.position !== "fixed" ||
         refresh?.style.inset !== "0px" ||
-        !refresh.querySelector('[role="status"][aria-label="Loading page"]') ||
+        !refresh.querySelector(
+          `[role="status"][aria-label="${loadingLabel}"]`,
+        ) ||
         content?.style.visibility !== "hidden" ||
         !content.hasAttribute("inert") ||
         !content.querySelector("main")

@@ -143,6 +143,19 @@ function fixture(t, basePath) {
     ].map((s) => `book/${s}/index.html`),
   ])
     write(file, html);
+  for (const file of [
+    "book/review/index.html",
+    "book/payment/index.html",
+    "book/confirmation/index.html",
+    "confirmation/index.html",
+  ])
+    write(
+      file,
+      html.replace(
+        'aria-label="Loading page"',
+        'aria-label="Checking booking…"',
+      ),
+    );
   write("_next/app.js", "export {};");
   write("assets/photo.jpg", "synthetic image");
   write(
@@ -283,6 +296,37 @@ for (const [name, mutate, error] of [
       );
       assert.notEqual(broken, original);
       f.write(file, broken);
+    },
+    /Missing initial refresh cover/,
+  ],
+  ...["book/review", "book/payment", "book/confirmation", "confirmation"].map(
+    (route) => [
+      `generic checkout cover at ${route}`,
+      (f) => {
+        const file = `${route}/index.html`;
+        const original = readFileSync(join(f.root, file), "utf8");
+        const broken = original.replace(
+          'aria-label="Checking booking…"',
+          'aria-label="Loading page"',
+        );
+        assert.notEqual(broken, original);
+        f.write(file, broken);
+      },
+      /Missing initial refresh cover/,
+    ],
+  ),
+  [
+    "checkout message on a public page",
+    (f) => {
+      const file = "studio/index.html";
+      const original = readFileSync(join(f.root, file), "utf8");
+      f.write(
+        file,
+        original.replace(
+          'aria-label="Loading page"',
+          'aria-label="Checking booking…"',
+        ),
+      );
     },
     /Missing initial refresh cover/,
   ],
