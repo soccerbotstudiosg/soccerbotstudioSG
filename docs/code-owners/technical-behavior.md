@@ -642,3 +642,7 @@ Checkout route/bootstrap covers use “Checking booking…” until protected wo
 Shared Open Graph and Twitter metadata use “Interactive Football Experience | SOCCERBOTSTUDIO Singapore”; the route-specific browser document titles remain owned by their existing metadata.
 
 Primary-action floating thresholds use the actual button bounds, retaining the shared bottom clearance. Surrounding hints or padding crossing the header must not move an otherwise-visible button during browser focus/click scrolling. The reserved anchor still owns layout height and the moving subtree stays excluded from scroll anchoring.
+
+Verified no-creation recovery uses the same visible calendar wording as `CONFLICT_NOTICE`. `TimeStep` maps the distinct `BOOKING_NOT_CREATED` state to that shared copy only when rendering; it does not turn the recovery outcome into a persisted availability conflict. Existing clearance on selection edits/refresh, saved contact, attempt cleanup and payment authority remain unchanged.
+
+The standardized no-creation notice also lists the original affected session dates and time ranges using the existing conflict bullet layout. Capture these display details before clearing the attempt/cart; keep the notice nonpersistent and preserve the existing Home/departure suppression.

@@ -2724,10 +2724,13 @@ async function uncertainHolding(
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
         page.getByText(
-          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
+          "Some sessions may no longer be available. Please check again.",
           { exact: true },
         ),
       ).toBeVisible();
+      await expect(page.getByRole("alert").getByRole("listitem")).toHaveCount(
+        1,
+      );
       await expect(
         page.getByRole("status", {
           name: "Checking whether your booking was created…",

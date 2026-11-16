@@ -1202,11 +1202,11 @@ export function BookingProvider({
         status: "idle",
         returnToCalendar: !left && !action.calendarRecovery,
       });
-      setSelectionNotice(
+      const notice =
         left || (action.calendarRecovery && !noticeShownOnCalendar.current)
           ? null
-          : BOOKING_NOT_CREATED,
-      );
+          : BOOKING_NOT_CREATED;
+      setSelectionNotice(notice, notice ? originalSlots : []);
       pauseCalendar(false);
       return true;
     },
