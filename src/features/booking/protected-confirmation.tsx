@@ -13,6 +13,7 @@ import {
   expiryReconciliationDeadline,
   checkoutRecoveryDeadline,
   completedPaymentReturn,
+  liveCheckoutAttemptId,
 } from "@/services/storage";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -59,9 +60,14 @@ function subscribeToPaymentReturn(notify: () => void) {
 export function useRepaymentSuppression(attemptId?: string) {
   return useSyncExternalStore(
     subscribeToPaymentReturn,
-    () =>
-      !!attemptId &&
-      (hasSeenConfirmation(attemptId) || completedPaymentReturn(attemptId)),
+    () => {
+      const currentAttemptId = attemptId ?? liveCheckoutAttemptId();
+      return (
+        !!currentAttemptId &&
+        (hasSeenConfirmation(currentAttemptId) ||
+          completedPaymentReturn(currentAttemptId))
+      );
+    },
     () => false,
   );
 }

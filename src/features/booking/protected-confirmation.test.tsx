@@ -20,7 +20,10 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { ProtectedConfirmation } from "./protected-confirmation";
+import {
+  ProtectedConfirmation,
+  useRepaymentSuppression,
+} from "./protected-confirmation";
 const first = "00000000-0000-4000-8000-000000000001",
   second = "00000000-0000-4000-8000-000000000002";
 const receiptFixture = (now = Date.now()) => ({
@@ -3555,4 +3558,26 @@ it("confirmed history suppresses an old unpaid handoff and failed recovery repla
     ).toBe(true);
     page.unmount();
   }
+  localStorage.clear();
+  sessionStorage.clear();
+  function OldHistoryPage({ attemptId }: { attemptId?: string }) {
+    return (
+      <output>
+        {useRepaymentSuppression(attemptId) ? "covered" : "available"}
+      </output>
+    );
+  }
+  const oldPage = render(<OldHistoryPage />);
+  expect(screen.getByText("available")).toBeVisible();
+  saveLiveDraft(blankDraft(), true, first);
+  markConfirmationSeen(first);
+  act(() =>
+    window.dispatchEvent(
+      new PageTransitionEvent("pageshow", { persisted: true }),
+    ),
+  );
+  expect(screen.getByText("covered")).toBeVisible();
+  oldPage.rerender(<OldHistoryPage attemptId={second} />);
+  expect(screen.getByText("available")).toBeVisible();
+  oldPage.unmount();
 });
