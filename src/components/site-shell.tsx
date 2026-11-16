@@ -42,6 +42,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   } | null>(null);
   const [leavingFrom, setLeavingFrom] = useState<string | null>(null);
   if (leavingFrom && pathname !== leavingFrom) setLeavingFrom(null);
+  if (standalone && dialog) setDialog(null);
   useEffect(() => {
     const header = document.querySelector(".site-header");
     if (!header) return;
@@ -68,7 +69,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
     };
   }, []);
   useEffect(() => {
-    if (!pathname.startsWith("/book/") || booking.attempt?.status === "paid")
+    if (
+      standalone ||
+      !pathname.startsWith("/book/") ||
+      booking.attempt?.status === "paid"
+    )
       return;
     /** Confirm site-link departures before Link or booking-entry handlers run. */
     function leaveLink(event: MouseEvent) {
@@ -117,7 +122,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       document.removeEventListener("click", leaveLink, true);
       document.removeEventListener("auxclick", leaveLink, true);
     };
-  }, [pathname, booking.attempt?.status]);
+  }, [pathname, booking.attempt?.status, standalone]);
   return (
     <StandalonePage.Provider value={setStandalone}>
       <a
@@ -288,7 +293,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <SectionReveals />
       <BackToTop />
       {!standalone && <PlayerAppPrompt />}
-      {dialog && (
+      {!standalone && dialog && (
         <Dialog title="Leave this booking?" onClose={() => setDialog(null)}>
           <p className="mb-5 text-muted">
             Your selections and changes will not be saved.
