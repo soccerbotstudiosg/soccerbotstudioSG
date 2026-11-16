@@ -76,7 +76,6 @@ export function BookingPrimaryAction({
       ready: available,
       animate: readiness.ready === false && available === true,
     });
-  const anchor = useRef<HTMLDivElement>(null);
   const action = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const control = action.current;
@@ -107,9 +106,8 @@ export function BookingPrimaryAction({
     };
   }, [available]);
   useLayoutEffect(() => {
-    const position = anchor.current;
     const control = action.current;
-    if (!position || !control || !("ResizeObserver" in window)) return;
+    if (!control || !("ResizeObserver" in window)) return;
     let frame = 0;
     const rootStyle = document.documentElement.style;
     const priorClearance = rootStyle.getPropertyValue(
@@ -117,36 +115,7 @@ export function BookingPrimaryAction({
     );
     const measure = () => {
       frame = 0;
-      // Read untransformed dimensions without moving the fixed control into flow.
-      const style = getComputedStyle(position);
-      const spacing =
-        parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-      position.style.minHeight = `${parseFloat(getComputedStyle(control).height) + spacing}px`;
-      const bounds = position.getBoundingClientRect();
-      control.style.setProperty("--action-left", `${bounds.left}px`);
-      control.style.setProperty("--action-width", `${bounds.width}px`);
-      const header = document.querySelector(".site-header");
-      const top = header?.getBoundingClientRect().bottom ?? 0;
-      // Browser focus/click scrolling targets the button, not its surrounding
-      // spacing or hint. Do not move a visible button out from under that click.
       const button = control.querySelector<HTMLElement>(".button");
-      const buttonTop =
-        bounds.top + parseFloat(style.paddingTop) + (button?.offsetTop ?? 0);
-      const buttonBottom =
-        buttonTop + (button?.offsetHeight ?? control.offsetHeight);
-      // The action belongs to the booking content, not the footer. Keep its
-      // reserved position when the footer enters view, including tall phone footers.
-      const footerTop = document
-        .querySelector(".site-footer")
-        ?.getBoundingClientRect().top;
-      const withinContent =
-        footerTop === undefined || footerTop >= window.innerHeight;
-      control.dataset.floating = String(
-        withinContent &&
-          (buttonBottom + parseFloat(style.paddingBottom) >
-            window.innerHeight ||
-            buttonTop < top),
-      );
       // Compare the baseline circle with the actual action, including its resting
       // position. Reset before measuring so previous lifts cannot feed back.
       rootStyle.removeProperty("--back-to-top-clearance");
@@ -172,7 +141,7 @@ export function BookingPrimaryAction({
     };
     const observer = new ResizeObserver(schedule);
     observer.observe(control);
-    if (position.parentElement) observer.observe(position.parentElement);
+    if (control.parentElement) observer.observe(control.parentElement);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     measure();
@@ -187,23 +156,25 @@ export function BookingPrimaryAction({
     };
   }, []);
   return (
-    <div className="booking-action-anchor" ref={anchor}>
-      <div
-        className={`booking-primary-action ${className}`.trim()}
-        data-loading={loading ? "true" : undefined}
-        aria-busy={loading || undefined}
-        data-floating="false"
-        data-ready-animation={readiness.animate ? "true" : undefined}
-        ref={action}
-      >
-        {children}
-        {progressVisible && (
-          <div className="booking-action-track" aria-hidden="true">
-            <span className="booking-action-progress" ref={progress} />
-          </div>
-        )}
+    <>
+      <div className="booking-action-position" aria-hidden="true" />
+      <div className="booking-action-anchor">
+        <div
+          className={`booking-primary-action ${className}`.trim()}
+          data-loading={loading ? "true" : undefined}
+          aria-busy={loading || undefined}
+          data-ready-animation={readiness.animate ? "true" : undefined}
+          ref={action}
+        >
+          {children}
+          {progressVisible && (
+            <div className="booking-action-track" aria-hidden="true">
+              <span className="booking-action-progress" ref={progress} />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

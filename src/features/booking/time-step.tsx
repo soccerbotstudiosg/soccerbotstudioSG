@@ -81,7 +81,7 @@ function revealBookingSection(heading: HTMLElement | null) {
         window.scrollY +
           heading.getBoundingClientRect().top -
           stickyBookingHeight() -
-          24,
+          72,
       ),
     ),
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches

@@ -811,8 +811,10 @@
     margin-bottom: 0;
   }
   .enquiry-form
-    > :not(.booking-action-anchor)
-    + :not(.booking-action-anchor):not(.auth-bot-proof-background) {
+    > :not(.booking-action-anchor):not(.booking-action-position)
+    + :not(.booking-action-anchor):not(.booking-action-position):not(
+      .auth-bot-proof-background
+    ) {
     margin-top: 28px;
   }
   .booking-identity-status {
@@ -991,13 +993,18 @@
     color: var(--color-brand);
     box-shadow: var(--shadow-action);
   }
-  body:has(.booking-primary-action) .back-to-top {
+  body:has(.enquiry-page .booking-primary-action) .back-to-top {
     bottom: max(
       calc(
         80px + var(--space-action-bottom) + 12px + env(safe-area-inset-bottom)
       ),
       var(--back-to-top-clearance, 0px)
     );
+  }
+  .back-to-top.booking-back-to-top {
+    top: var(--back-to-top-top, 0px);
+    bottom: auto;
+    z-index: 36;
   }
   .back-to-top:hover {
     background: var(--color-paper);
@@ -2794,7 +2801,14 @@
     margin-left: 4px;
   }
 
+  .booking-action-position {
+    height: 0;
+    overflow-anchor: none;
+  }
   .booking-action-anchor {
+    position: sticky;
+    bottom: 0;
+    z-index: 35;
     overflow-anchor: none;
     display: block;
     width: 100%;
@@ -2811,11 +2825,9 @@
     scroll-margin-top: 60px;
   }
   :is(.booking-shell, .enquiry-page) .booking-primary-action {
-    --action-left: 0px;
-    --action-width: 100%;
     position: relative;
     z-index: 35;
-    /* Moving between flow and viewport must never move the document scroll anchor. */
+    /* Keep native sticky scrolling independent from the document scroll anchor. */
     overflow-anchor: none;
     display: flex;
     width: 100%;
@@ -2824,13 +2836,6 @@
     border: 0;
     background: transparent;
     box-shadow: none;
-  }
-  :is(.booking-shell, .enquiry-page)
-    .booking-primary-action[data-floating="true"] {
-    position: fixed;
-    left: var(--action-left);
-    bottom: calc(var(--space-action-bottom) + env(safe-area-inset-bottom));
-    width: var(--action-width);
   }
   :is(.booking-shell, .enquiry-page) .booking-primary-action > .button {
     width: 100%;

@@ -6,11 +6,13 @@ import { BackToTop } from "./section-reveals";
 const route = vi.hoisted(() => ({ pathname: "/" }));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-test("all routes share one chevron and the 200px threshold with focus and reduced-motion scrolling", () => {
+test("all routes show one chevron on scroll and hide after three idle seconds with focus and reduced motion", () => {
+  vi.useFakeTimers();
   let position = 0;
   let reduced = false;
   vi.spyOn(window, "scrollY", "get").mockImplementation(() => position);
@@ -28,6 +30,8 @@ test("all routes share one chevron and the 200px threshold with focus and reduce
   );
   for (const pathname of [
     "/",
+    "/studio/",
+    "/enquiry/",
     "/book/account/",
     "/book/session/",
     "/book/time/",
@@ -37,7 +41,7 @@ test("all routes share one chevron and the 200px threshold with focus and reduce
     "/confirmation/",
   ]) {
     route.pathname = pathname;
-    position = 200;
+    position = 0;
     view.rerender(
       <>
         <header className="site-header">
@@ -51,7 +55,7 @@ test("all routes share one chevron and the 200px threshold with focus and reduce
     fireEvent.scroll(window);
     expect(screen.queryByRole("button", { name: "Back to top" })).toBeNull();
     act(() => {
-      position = 201;
+      position = 1;
       fireEvent.scroll(window);
     });
     const button = screen.getByRole("button", { name: "Back to top" });
@@ -61,7 +65,18 @@ test("all routes share one chevron and the 200px threshold with focus and reduce
       "d",
       "m9 6 6 6-6 6",
     );
-    fireEvent.click(button);
+    expect(button.classList.contains("booking-back-to-top")).toBe(
+      pathname.startsWith("/book/") || pathname === "/confirmation/",
+    );
+    act(() => vi.advanceTimersByTime(2999));
+    expect(screen.getByRole("button", { name: "Back to top" })).toBeVisible();
+    fireEvent.scroll(window);
+    act(() => vi.advanceTimersByTime(2999));
+    expect(screen.getByRole("button", { name: "Back to top" })).toBeVisible();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.queryByRole("button", { name: "Back to top" })).toBeNull();
+    fireEvent.scroll(window);
+    fireEvent.click(screen.getByRole("button", { name: "Back to top" }));
     expect(scroll).toHaveBeenLastCalledWith({
       top: 0,
       behavior: reduced ? "auto" : "smooth",

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "./icon";
 
@@ -99,25 +99,42 @@ export function SectionReveals() {
   return null;
 }
 
-/** Subscribe the shared page control to passive scroll updates. */
-function subscribeScroll(notify: () => void) {
-  window.addEventListener("scroll", notify, { passive: true });
-  return () => window.removeEventListener("scroll", notify);
-}
-const scrolledSnapshot = () => window.scrollY > 200;
-const topSnapshot = () => false;
-/** Restore top navigation focus and scroll without motion when requested. */
-function ScrollTopControl() {
-  const visible = useSyncExternalStore(
-    subscribeScroll,
-    scrolledSnapshot,
-    topSnapshot,
-  );
-  if (!visible) return null;
+/** Show one scroll control during movement and for three seconds afterwards. */
+function ScrollTopControl({ booking }: { booking: boolean }) {
+  const [activity, setActivity] = useState({ visible: false, top: 0 });
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const update = () => {
+      clearTimeout(timer);
+      const navigation = document.querySelector(".booking-navigation");
+      const header = document.querySelector(".site-header");
+      const top =
+        Math.max(
+          navigation?.getBoundingClientRect().bottom ?? 0,
+          header?.getBoundingClientRect().bottom ?? 0,
+        ) + 8;
+      setActivity({ visible: window.scrollY > 0, top });
+      timer = setTimeout(
+        () => setActivity((current) => ({ ...current, visible: false })),
+        3000,
+      );
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", update);
+    };
+  }, []);
+  if (!activity.visible) return null;
   return (
     <button
       type="button"
-      className="back-to-top"
+      className={`back-to-top${booking ? " booking-back-to-top" : ""}`}
+      style={
+        booking
+          ? ({ "--back-to-top-top": `${activity.top}px` } as CSSProperties)
+          : undefined
+      }
       aria-label="Back to top"
       title="Back to top"
       onClick={() => {
@@ -137,7 +154,8 @@ function ScrollTopControl() {
     </button>
   );
 }
-/** Share the same scroll threshold and control across public and booking routes. */
+/** Share the scrolling lifecycle while placing booking controls below navigation. */
 export function BackToTop() {
-  return <ScrollTopControl />;
+  const pathname = usePathname();
+  return <ScrollTopControl key={pathname} booking={isBookingFlow(pathname)} />;
 }

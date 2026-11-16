@@ -8,7 +8,7 @@ function naturalActionBounds(button: HTMLElement) {
   const anchor = control.parentElement!;
   const style = getComputedStyle(anchor);
   const top =
-    anchor.getBoundingClientRect().top +
+    anchor.previousElementSibling!.getBoundingClientRect().top +
     parseFloat(style.paddingTop) +
     button.offsetTop;
   return {
@@ -770,6 +770,7 @@ test("public routes remove staff access and fit the viewport", async ({
     name: "Back to top",
     exact: true,
   });
+  await page.evaluate(() => scrollBy(0, -1));
   await expect(backToTop).toBeVisible();
   const backToTopBox = await backToTop.boundingBox();
   expect(backToTopBox!.x + backToTopBox!.width / 2).toBeCloseTo(
@@ -1059,9 +1060,9 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
       );
     }, natural);
     // The hint may cross the header; the visible click target must stay put.
-    await expect(page.locator(".booking-primary-action")).toHaveAttribute(
-      "data-floating",
-      "false",
+    await expect(page.locator(".booking-action-anchor")).toHaveCSS(
+      "position",
+      "sticky",
     );
     await expect(proceed).toBeInViewport({ ratio: 1 });
   }
@@ -2186,20 +2187,12 @@ test("header blue and the typography hierarchy stay consistent across every book
           );
         });
         const natural = await action.evaluate(naturalActionBounds);
-        const floating =
-          (await page.locator(".site-footer").boundingBox())!.y >=
-            page.viewportSize()!.height &&
-          (natural.bottom > page.viewportSize()!.height ||
-            natural.top <
-              (await page.locator(".site-header").boundingBox())!.height);
-        await expect(primaryBar).toHaveAttribute(
-          "data-floating",
-          String(floating),
-        );
-        await expect(primaryBar).toHaveCSS(
+        const floating = natural.bottom > page.viewportSize()!.height;
+        await expect(page.locator(".booking-action-anchor")).toHaveCSS(
           "position",
-          floating ? "fixed" : "relative",
+          "sticky",
         );
+        await expect(primaryBar).toHaveCSS("position", "relative");
         const barBox = await primaryBar.boundingBox();
         if (floating) {
           expect(barBox!.y + barBox!.height).toBeCloseTo(
@@ -2207,23 +2200,11 @@ test("header blue and the typography hierarchy stay consistent across every book
             0,
           );
         }
-        if (floating) {
-          const topControl = page.getByRole("button", {
-            name: "Back to top",
-            exact: true,
-          });
-          if (await topControl.count()) {
-            const topBox = await topControl.boundingBox();
-            expect(topBox!.y + topBox!.height).toBeLessThanOrEqual(
-              barBox!.y - 12,
-            );
-          }
-          const reservedBox = await page
-            .locator(".booking-action-anchor")
-            .boundingBox();
-          expect(barBox!.x).toBeCloseTo(reservedBox!.x, 0);
-          expect(barBox!.width).toBeCloseTo(reservedBox!.width, 0);
-        }
+        const reservedBox = await page
+          .locator(".booking-action-anchor")
+          .boundingBox();
+        expect(barBox!.x).toBeCloseTo(reservedBox!.x, 0);
+        expect(barBox!.width).toBeCloseTo(reservedBox!.width, 0);
         const actionBox = await action.boundingBox();
         expect(actionBox!.height).toBeLessThanOrEqual(72);
         const redirect = primaryBar.locator(".checkout-redirect");
@@ -2275,7 +2256,10 @@ test("header blue and the typography hierarchy stay consistent across every book
         expect(actionBox!.height).toBeGreaterThanOrEqual(48);
         const previousScroll = await page.evaluate(() => scrollY);
         await page.locator(".site-footer").scrollIntoViewIfNeeded();
-        await expect(primaryBar).toHaveAttribute("data-floating", "false");
+        await expect(page.locator(".booking-action-anchor")).toHaveCSS(
+          "position",
+          "sticky",
+        );
         await expect(primaryBar).toHaveCSS("position", "relative");
         const settledAnchor = await page
           .locator(".booking-action-anchor")
@@ -2303,7 +2287,10 @@ test("header blue and the typography hierarchy stay consistent across every book
       await expect(action).toBeInViewport({ ratio: 1 });
       const previousScroll = await page.evaluate(() => scrollY);
       await page.locator(".site-footer").scrollIntoViewIfNeeded();
-      await expect(primaryBar).toHaveAttribute("data-floating", "false");
+      await expect(page.locator(".booking-action-anchor")).toHaveCSS(
+        "position",
+        "sticky",
+      );
       const anchor = await page.locator(".booking-action-anchor").boundingBox();
       const bar = await primaryBar.boundingBox();
       expect(bar!.x).toBeCloseTo(anchor!.x, 0);
@@ -2321,10 +2308,8 @@ test("header blue and the typography hierarchy stay consistent across every book
     const scrollable = await page.evaluate(
       () => document.documentElement.scrollHeight - innerHeight,
     );
-    if (scrollable > 200) {
-      await expect
-        .poll(() => page.evaluate(() => scrollY))
-        .toBeGreaterThan(200);
+    if (scrollable > 0) {
+      await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
       await expect(scrollTop).toBeVisible();
       await expect(scrollTop).toHaveCSS("border-radius", "50%");
       await expect(scrollTop.locator("svg path")).toHaveCount(1);
@@ -2336,7 +2321,7 @@ test("header blue and the typography hierarchy stay consistent across every book
       await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
       await expect(scrollTop).toHaveCount(0);
     } else {
-      expect(await page.evaluate(() => scrollY)).toBeLessThanOrEqual(200);
+      expect(await page.evaluate(() => scrollY)).toBe(0);
       await expect(scrollTop).toHaveCount(0);
     }
     await page.evaluate((y) => scrollTo(0, y), savedScroll);
@@ -2353,8 +2338,11 @@ test("header blue and the typography hierarchy stay consistent across every book
       // Cross both floating/resting boundaries in both directions. Moving the
       // action must not pull the document into its footer or change its height.
       const geometry = await actionAnchor.evaluate((node) => ({
-        top: node.getBoundingClientRect().top + scrollY,
-        bottom: node.getBoundingClientRect().bottom + scrollY,
+        top: node.previousElementSibling!.getBoundingClientRect().top + scrollY,
+        bottom:
+          node.previousElementSibling!.getBoundingClientRect().top +
+          scrollY +
+          node.getBoundingClientRect().height,
         header: document.querySelector(".site-header")!.getBoundingClientRect()
           .bottom,
         height: document.documentElement.scrollHeight,
@@ -2376,6 +2364,37 @@ test("header blue and the typography hierarchy stay consistent across every book
           Math.max(0, Math.min(y, geometry.height - geometry.viewport)),
         ),
       );
+      // Sample every rendered frame through the resting boundary in both
+      // directions: native sticky must never teleport or change document height.
+      const frames = await page.evaluate(async (centre) => {
+        const values: { scroll: number; top: number; height: number }[] = [];
+        const positions = Array.from(
+          { length: 9 },
+          (_, i) => centre - 64 + i * 16,
+        );
+        for (const y of [...positions, ...positions.toReversed()]) {
+          scrollTo({ top: Math.max(0, y), behavior: "instant" });
+          await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => resolve()),
+          );
+          values.push({
+            scroll: scrollY,
+            top: document
+              .querySelector(".booking-primary-action")!
+              .getBoundingClientRect().top,
+            height: document.documentElement.scrollHeight,
+          });
+        }
+        return values;
+      }, geometry.bottom - geometry.viewport);
+      for (let index = 1; index < frames.length; index++) {
+        expect(frames[index].height).toBe(geometry.height);
+        expect(
+          Math.abs(frames[index].top - frames[index - 1].top),
+        ).toBeLessThanOrEqual(
+          Math.abs(frames[index].scroll - frames[index - 1].scroll) + 1,
+        );
+      }
       for (const target of [...stops, ...stops.toReversed()]) {
         const settled = await page.evaluate(async (y) => {
           scrollTo({ top: y, behavior: "instant" });
@@ -2386,11 +2405,18 @@ test("header blue and the typography hierarchy stay consistent across every book
         }, target);
         expect(Math.abs(settled.y - target)).toBeLessThanOrEqual(1);
         expect(settled.height).toBe(geometry.height);
+        await expect(actionAnchor).toHaveCSS("position", "sticky");
+        await expect(primary).toHaveCSS("position", "relative");
+        const natural = await primary
+          .locator(":scope > .button")
+          .evaluate(naturalActionBounds);
+        const actual = await primary.locator(":scope > .button").boundingBox();
+        expect(actual!.y).toBeLessThanOrEqual(natural.top + 1);
         const footerTop = await page
           .locator(".site-footer")
           .evaluate((node) => node.getBoundingClientRect().top);
         if (footerTop < geometry.viewport) {
-          await expect(primary).toHaveAttribute("data-floating", "false");
+          await expect(actionAnchor).toHaveCSS("position", "sticky");
           const bounds = await primary.boundingBox();
           expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(footerTop);
         }
@@ -3257,7 +3283,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
           .locator(".booking-navigation")
           .boundingBox();
         const stickyBottom = navigation!.y + navigation!.height;
-        return Math.abs(heading!.y - stickyBottom - 24);
+        return Math.abs(heading!.y - stickyBottom - 72);
       })
       .toBeLessThanOrEqual(1);
     const returnCue = page.getByRole("button", {
@@ -3267,6 +3293,13 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(returnCue).toBeVisible();
     await expect(returnCue).toHaveCSS("position", "fixed");
     await expect(returnCue).toHaveCSS("border-radius", "50%");
+    const cueBox = await returnCue.boundingBox();
+    const navBox = await page.locator(".booking-navigation").boundingBox();
+    expect(cueBox!.y).toBeCloseTo(navBox!.y + navBox!.height + 8, 0);
+    await page.clock.runFor(3000);
+    await expect(returnCue).toHaveCount(0);
+    await page.evaluate(() => scrollBy(0, 1));
+    await expect(returnCue).toBeVisible();
     await expect(returnCue.locator("svg")).toHaveCSS("animation-name", "none");
     await expect
       .poll(async () => {

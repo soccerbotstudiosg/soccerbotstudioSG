@@ -4500,9 +4500,10 @@ test("hidden enquiry proof preserves the shared action gap", async ({
   await page
     .locator(".enquiry-form .booking-action-anchor")
     .scrollIntoViewIfNeeded();
-  await expect(
-    page.locator(".enquiry-form .booking-primary-action"),
-  ).toHaveAttribute("data-floating", "false");
+  await expect(page.locator(".enquiry-form .booking-action-anchor")).toHaveCSS(
+    "position",
+    "sticky",
+  );
   const gap = await page.locator(".enquiry-form").evaluate((form) => {
     const field = form
       .querySelector("#enquiry-message")!

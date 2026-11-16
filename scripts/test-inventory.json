@@ -89,7 +89,7 @@
   },
   {
     "file": "src/components/section-reveals.test.tsx",
-    "title": "all routes share one chevron and the 200px threshold with focus and reduced-motion scrolling"
+    "title": "all routes show one chevron on scroll and hide after three idle seconds with focus and reduced motion"
   },
   {
     "file": "src/components/site-shell.test.tsx",

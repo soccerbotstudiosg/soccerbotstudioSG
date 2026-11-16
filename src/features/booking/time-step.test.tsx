@@ -96,7 +96,7 @@ async function calendarScenario(mobile: boolean) {
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel(restoredDate) }),
   );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 396, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 348, behavior: "smooth" });
   scroll.mockClear();
   expect(todaySG()).toBe("2026-10-07");
   expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
@@ -217,7 +217,7 @@ async function calendarScenario(mobile: boolean) {
     fireEvent.click(
       screen.getByRole("button", { name: dateLabel(restoredDate) }),
     );
-    expect(scroll).toHaveBeenLastCalledWith({ top: 396, behavior: "smooth" });
+    expect(scroll).toHaveBeenLastCalledWith({ top: 348, behavior: "smooth" });
     return;
   }
   await user.click(screen.getByRole("button", { name: "Clear all" }));
@@ -367,7 +367,7 @@ async function calendarScenario(mobile: boolean) {
     view.container.querySelector(".session-times-region"),
   ).not.toHaveAttribute("aria-busy", "true");
   expect(scroll).toHaveBeenCalledExactlyOnceWith({
-    top: 340,
+    top: 292,
     behavior: "instant",
   });
   await act(async () => {});
@@ -380,7 +380,7 @@ async function calendarScenario(mobile: boolean) {
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel("2026-10-14") }),
   );
-  expect(scroll).toHaveBeenLastCalledWith({ top: 340, behavior: "smooth" });
+  expect(scroll).toHaveBeenLastCalledWith({ top: 292, behavior: "smooth" });
   expect(screen.queryByRole("button", { name: "Back to calendar" })).toBeNull();
 }
 test("booking page restores a future Tuesday on Wednesday before selecting and removing sessions, accumulating unique instructors and enabling Continue", () =>

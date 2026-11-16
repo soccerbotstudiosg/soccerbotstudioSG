@@ -6,7 +6,7 @@
 
 ## Next actions
 
-PR91 at0436bfdf failed CI43885375072 on two tablet cases: a short Payment page incorrectly expected Back to top, and the resting Continue action covered that circle. The correction checks available scroll range and measures actual action/circle collision without changing action anchoring. Run consolidated local verification, push the repair, inspect all final-head gates, verify staging revision/health, then merge under existing authorization. Preserve the original CI screenshots/traces and lint/fixture failures. Dependabot84 at91a3612 previously passed all CI but its trusted manual staging remains outstanding; reconcile after the new feature merge and do not bypass bot staging eligibility.
+PR91 atd9a7770 passed all13 CI jobs in43889196005. Before merge the owner superseded the scroll rule: no distance threshold, show on movement, hide after3 idle seconds; top for booking/confirmation and bottom for other normal pages, retaining gentle chevron motion. Owner also reports Continue/payment jumping in Edge while Chrome is fine. The next candidate replaces JS fixed/relative switching with native sticky containment and adds continuous-frame geometry assertions; actual Edge acceptance remains owner-run. Run local verification, push consolidated source/tests/docs, verify exact-head CI and staging, then merge under existing authorization. Dependabot84 at91a3612 previously passed all CI but its trusted manual staging remains outstanding; reconcile after the new feature merge and do not bypass bot staging eligibility.
 
 ## Ordered work after this slice
 
