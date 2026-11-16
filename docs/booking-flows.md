@@ -595,7 +595,7 @@ Once contact details have been displayed/entered, remote email sign-out does not
 
 Turnstile begins on Review entry. The disabled payment button replaces its arrow with the existing small spinner only after the review checkbox is selected and background verification is pending. Its label and total remain visible. Unchecking, successful verification, a visible interaction request or failure stops the spinner; existing error/interaction guidance remains. No automatic payment action is introduced.
 
-An authoritative `checkout_already_active` rejection uses: “You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.” This approved copy replaces the availability warning only for that cause; unrelated availability/recovery-window rejections keep their existing classification.
+An authoritative `checkout_already_active` rejection uses: “You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.” This approved copy replaces the availability warning only for that cause; unrelated availability/recovery-window rejections keep their existing classification. The complete notice persists across Calendar refresh and selection edits, and dismisses on navigation like the other resolved Calendar notices.
 
 ### Approved rejection loading copy — 13 November 2026
 
