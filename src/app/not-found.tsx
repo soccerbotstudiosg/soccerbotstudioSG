@@ -1,13 +1,43 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { useStandalonePage } from "@/components/site-shell";
-import { logo, notFoundAstronaut } from "@/content/media";
+import { useErrorPage } from "@/components/site-shell";
+import { notFoundAstronaut } from "@/content/media";
 
 const digits = [
-  ["10010", "10010", "10010", "11111", "00010", "00010", "00010"],
-  ["01110", "11011", "10001", "10001", "10001", "11011", "01110"],
-  ["10010", "10010", "10010", "11111", "00010", "00010", "00010"],
+  [
+    "10000",
+    "10010",
+    "10010",
+    "10010",
+    "11111",
+    "00010",
+    "00010",
+    "00010",
+    "00000",
+  ],
+  [
+    "00000",
+    "01110",
+    "11011",
+    "10001",
+    "10001",
+    "10001",
+    "11011",
+    "01110",
+    "00000",
+  ],
+  [
+    "00010",
+    "10010",
+    "10010",
+    "10010",
+    "11111",
+    "00010",
+    "00010",
+    "00010",
+    "00010",
+  ],
 ];
 type Tile = {
   x: number;
@@ -21,15 +51,13 @@ type Tile = {
   colour: string;
   opacity: number;
   size: number;
-  canDrift: boolean;
   formsCode: boolean;
   originX: number;
   originY: number;
   phase: number;
-  returnAt: number;
 };
 
-/** Drift the grid gently and scatter touched tiles without losing the404 silhouette. */
+/** Drift the grid gently and nudge touched tiles without losing the404 silhouette. */
 function FragmentedCode() {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -40,6 +68,7 @@ function FragmentedCode() {
     let tiles: Tile[] = [];
     let frame = 0,
       previousFrame = 0,
+      resetAt = 0,
       width = 0,
       height = 0;
     let pointer: { x: number; y: number; time: number } | null = null;
@@ -52,15 +81,24 @@ function FragmentedCode() {
       );
       previousFrame = time;
       context!.clearRect(0, 0, width, height);
-      for (const tile of tiles) {
-        if (tile.returnAt && time >= tile.returnAt) {
+      if (resetAt && time >= resetAt) {
+        for (const tile of tiles) {
           tile.homeX = tile.originX;
           tile.homeY = tile.originY;
-          tile.returnAt = 0;
         }
-        const amplitude = motion.matches ? 0 : tile.formsCode ? 2.5 : 6;
-        const driftX = Math.sin(time / 4200 + tile.phase) * amplitude;
-        const driftY = Math.cos(time / 5300 + tile.phase) * amplitude;
+        resetAt = 0;
+      }
+      for (const tile of tiles) {
+        // Move the numeral mostly together so ambient motion cannot dissolve its outline.
+        const amplitude = motion.matches ? 0 : 6;
+        const phase = tile.formsCode ? 0 : tile.phase;
+        const detail = motion.matches || !tile.formsCode ? 0 : 1;
+        const driftX =
+          Math.sin(time / 4200 + phase) * amplitude +
+          Math.sin(time / 4200 + tile.phase) * detail;
+        const driftY =
+          Math.cos(time / 5300 + phase) * amplitude +
+          Math.cos(time / 5300 + tile.phase) * detail;
         tile.vx =
           (tile.vx + (tile.homeX + driftX - tile.x) * 0.035 * step) *
           Math.pow(0.83, step);
@@ -123,7 +161,7 @@ function FragmentedCode() {
       const codeScale = compact ? (width * 0.68) / (17 * scale * cell) : 0.65;
       const codeCenterY = height * (compact ? 0.36 : 0.5);
       const left = Math.floor((columns - 17 * scale) / 2),
-        top = Math.floor((rows - 7 * scale) / 2);
+        top = Math.floor((rows - digits[0].length * scale) / 2);
       tiles = [];
       for (let row = 0; row < rows; row++)
         for (let col = 0; col < columns; col++) {
@@ -135,7 +173,7 @@ function FragmentedCode() {
             digit >= 0 &&
             digit < 3 &&
             gy >= 0 &&
-            gy < 7 &&
+            gy < digits[digit].length &&
             localX >= 0 &&
             localX < 5 &&
             digits[digit][gy][localX] === "1";
@@ -187,8 +225,6 @@ function FragmentedCode() {
             : accents[seed % accents.length];
           tiles.push({
             phase: seed * 0.37,
-            returnAt: 0,
-            canDrift: filled ? seed % 5 === 0 : seed % 4 === 0,
             formsCode: filled,
             originX: homeX,
             originY: homeY,
@@ -202,22 +238,33 @@ function FragmentedCode() {
             pop: 0,
             colour,
             opacity: filled
-              ? 0.7 + (seed % 4) * 0.09
-              : (0.06 + (seed % 7) * 0.025) * density,
+              ? compact
+                ? 0.88 + (seed % 4) * 0.04
+                : 0.7 + (seed % 4) * 0.09
+              : (0.06 + (seed % 7) * 0.025) *
+                density *
+                (compact &&
+                Math.abs(homeX - width / 2) < width * 0.38 &&
+                Math.abs(homeY - codeCenterY) < width * 0.18
+                  ? 0.25
+                  : 1),
             size:
               cell *
               (filled ? codeScale : 1) *
               (filled
-                ? [0.5, 0.7, 0.85, 1, 1.2, 1.45][seed % 6]
+                ? compact
+                  ? [0.9, 1, 1.05, 1.15][seed % 4]
+                  : [0.5, 0.7, 0.85, 1, 1.2, 1.45][seed % 6]
                 : [0.3, 0.6, 1, 1.5, 2.1, 2.9][seed % 6]),
           });
         }
       tiles.sort((a, b) => Number(a.formsCode) - Number(b.formsCode));
       pointer = null;
+      resetAt = 0;
       draw(performance.now());
       element!.dataset.ready = "true";
     }
-    /** Throw only the touched tiles in the direction of pointer travel. */
+    /** Nudge only the touched tiles in the direction of pointer travel. */
     function move(event: PointerEvent) {
       if (motion.matches || event.pointerType === "touch") return;
       const bounds = element!.getBoundingClientRect();
@@ -227,36 +274,37 @@ function FragmentedCode() {
         ? Math.max(8, event.timeStamp - pointer.time)
         : 16;
       const dx = pointer
-        ? Math.max(-18, Math.min(18, ((x - pointer.x) / elapsed) * 12))
+        ? Math.max(-2, Math.min(2, ((x - pointer.x) / elapsed) * 12))
         : 0;
       const dy = pointer
-        ? Math.max(-18, Math.min(18, ((y - pointer.y) / elapsed) * 12))
-        : -3;
+        ? Math.max(-2, Math.min(2, ((y - pointer.y) / elapsed) * 12))
+        : -0.5;
       for (const tile of tiles)
         if (
           Math.abs(tile.x - x) < tile.size &&
           Math.abs(tile.y - y) < tile.size
         ) {
-          if (tile.canDrift && Math.hypot(dx, dy) > 4) {
+          if (Math.hypot(dx, dy) > 1) {
             const margin = tile.size / 2;
             tile.homeX = Math.max(
               margin,
-              Math.min(width - margin, tile.x + dx * 12),
+              Math.min(width - margin, tile.originX + dx * 3),
             );
             tile.homeY = Math.max(
               margin,
-              Math.min(height - margin, tile.y + dy * 12),
+              Math.min(height - margin, tile.originY + dy * 3),
             );
           }
+          resetAt = performance.now() + 7000;
           tile.vx = dx;
-          tile.vy = dy - 2;
-          tile.turn = dx * 0.025;
-          tile.pop = 1;
+          tile.vy = dy - 0.25;
+          tile.turn = dx * 0.02;
+          tile.pop = 0.2;
         }
       pointer = { x, y, time: event.timeStamp };
       if (!frame && !document.hidden) frame = requestAnimationFrame(draw);
     }
-    /** Throw a finger-sized cluster outward and restore it seven seconds after the tap. */
+    /** Nudge a finger-sized cluster and restart the shared idle regroup deadline. */
     function tap(event: PointerEvent) {
       if (motion.matches || event.pointerType !== "touch") return;
       const bounds = element!.getBoundingClientRect();
@@ -266,21 +314,21 @@ function FragmentedCode() {
         if (Math.hypot(tile.x - x, tile.y - y) > Math.max(36, tile.size))
           continue;
         const angle = Math.atan2(tile.y - y, tile.x - x) + tile.phase * 0.1;
-        const distance = 90 + (Math.sin(tile.phase) + 1) * 35;
+        const distance = 8 + (Math.sin(tile.phase) + 1) * 2;
         const margin = tile.size / 2;
         tile.homeX = Math.max(
           margin,
-          Math.min(width - margin, tile.x + Math.cos(angle) * distance),
+          Math.min(width - margin, tile.originX + Math.cos(angle) * distance),
         );
         tile.homeY = Math.max(
           margin,
-          Math.min(height - margin, tile.y + Math.sin(angle) * distance),
+          Math.min(height - margin, tile.originY + Math.sin(angle) * distance),
         );
-        tile.vx = Math.cos(angle) * 12;
-        tile.vy = Math.sin(angle) * 12;
-        tile.turn = Math.sin(angle) * 0.4;
-        tile.pop = 1;
-        tile.returnAt = performance.now() + 7000;
+        tile.vx = Math.cos(angle) * 0.7;
+        tile.vy = Math.sin(angle) * 0.7;
+        tile.turn = Math.sin(angle) * 0.06;
+        tile.pop = 0.2;
+        resetAt = performance.now() + 7000;
       }
       if (!frame && !document.hidden) frame = requestAnimationFrame(draw);
     }
@@ -303,21 +351,7 @@ function FragmentedCode() {
     element.addEventListener("pointerleave", leave);
     motion.addEventListener("change", resize);
     resize();
-    const regroup = window.setInterval(() => {
-      if (motion.matches) return;
-      let displaced = false;
-      for (const tile of tiles) {
-        if (!tile.formsCode || tile.returnAt) continue;
-        displaced ||=
-          tile.homeX !== tile.originX || tile.homeY !== tile.originY;
-        tile.homeX = tile.originX;
-        tile.homeY = tile.originY;
-      }
-      if (displaced && !frame && !document.hidden)
-        frame = requestAnimationFrame(draw);
-    }, 7000);
     return () => {
-      window.clearInterval(regroup);
       cancelAnimationFrame(frame);
       observer.disconnect();
       element.removeEventListener("pointermove", move);
@@ -332,9 +366,9 @@ function FragmentedCode() {
   );
 }
 
-/** Offer an accessible way home inside a full-screen, fragmented error artwork. */
+/** Offer an accessible way home inside the shared site header and footer. */
 export default function NotFound() {
-  useStandalonePage();
+  useErrorPage();
   return (
     <section className="not-found-art" aria-labelledby="not-found-title">
       <h1 id="not-found-title" className="sr-only">
@@ -348,13 +382,6 @@ export default function NotFound() {
         Oops, this page drifted off course.
         <span>Let the ball take you home.</span>
       </p>
-      <img
-        src={logo}
-        alt="SOCCERBOTSTUDIO Singapore"
-        width="565"
-        height="190"
-        className="not-found-brand"
-      />
       <div className="not-found-explorer">
         <img
           src={notFoundAstronaut}

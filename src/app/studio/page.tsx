@@ -1,6 +1,6 @@
 import { studioMedia } from "@/content/media";
 import { StudioHeroVideo } from "@/components/studio-hero-video";
-import { PromotionPanel } from "@/components/promotion-panel";
+import { PromotionPanel, PromotionBanner } from "@/components/promotion-panel";
 export const metadata = { title: "The studio" };
 /** Present informational studio cards followed by one full-banner booking destination. */
 export default function Studio() {
@@ -35,19 +35,16 @@ export default function Studio() {
             photo={photo}
           />
         ))}
-        <PromotionPanel
-          id="studio-book-title"
-          className="studio-bottom abstract-promotion"
-          index={5}
-          eyebrow="Step into the arena"
-          title={["Your", "move."]}
-          activeTitle={["Ready for", "kickoff?"]}
-          teaser="Bring your game into 360°."
-          description="Single, Team and Battle play, with full instructor guidance for your group. Choose your session and step into the arena."
-          href="/book/account/"
-          actionLabel="Book now"
-        />
       </section>
+      <PromotionBanner
+        id="studio-book-title"
+        className="studio-bottom"
+        eyebrow="Step into the arena"
+        title="Your move."
+        description="Single, Team and Battle play, with full instructor guidance for your group."
+        href="/book/account/"
+        actionLabel="Book now"
+      />
     </>
   );
 }

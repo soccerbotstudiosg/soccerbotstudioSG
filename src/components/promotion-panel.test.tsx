@@ -6,7 +6,7 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
-import { PromotionPanel } from "./promotion-panel";
+import { PromotionPanel, PromotionBanner } from "./promotion-panel";
 vi.mock("./booking-navigation", async () => {
   const { default: Link } = await import("next/link");
   return { BookingLink: Link };
@@ -31,6 +31,8 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
   );
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
     height: 600,
+    top: 100,
+    bottom: 700,
   } as DOMRect);
   vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(400);
   vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(240);
@@ -66,7 +68,23 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     "false",
   );
   fireEvent.pointerLeave(panel);
+  expect(panel).toHaveAttribute("data-active", "true");
+  const following = document.createElement("section");
+  panel.after(following);
+  let followingTop = 400;
+  Object.defineProperty(following, "getBoundingClientRect", {
+    value: () => ({ top: followingTop }) as DOMRect,
+  });
+  vi.stubGlobal("scrollY", 1000);
+  fireEvent.scroll(window);
+  vi.stubGlobal("scrollY", 900);
+  fireEvent.scroll(window);
+  expect(panel).toHaveAttribute("data-active", "true");
+  followingTop = 700;
+  vi.stubGlobal("scrollY", 800);
+  fireEvent.scroll(window);
   expect(panel).toHaveAttribute("data-active", "false");
+  following.remove();
   act(() => panel.focus());
   expect(panel).toHaveAttribute("data-active", "true");
   fireEvent.keyDown(panel, { key: "Escape" });
@@ -95,4 +113,33 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
   }
   view.unmount();
   expect(disconnect).toHaveBeenCalledOnce();
+});
+
+test("compact closing banners group the arrow with their action and expose one full-banner link", () => {
+  for (const [href, actionLabel] of [
+    ["/enquiry/", "Contact us"],
+    ["/book/account/", "Book now"],
+  ]) {
+    const view = render(
+      <PromotionBanner
+        id="banner-title"
+        className="studio-bottom"
+        eyebrow="Step into the arena"
+        title="Your move."
+        description="Full instructor guidance for your group."
+        href={href}
+        actionLabel={actionLabel}
+      />,
+    );
+    const link = screen.getByRole("link", { name: actionLabel });
+    expect(link).toHaveAttribute("href", href.slice(0, -1));
+    expect(link.children).toHaveLength(3);
+    expect(link).toContainElement(
+      screen.getByRole("heading", { name: "Your move." }),
+    );
+    expect(link.querySelector(".abstract-promotion-action svg")).not.toBeNull();
+    expect(link.querySelector(".button")).toBeNull();
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    view.unmount();
+  }
 });

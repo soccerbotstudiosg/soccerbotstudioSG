@@ -456,7 +456,29 @@ test("public routes remove staff access and fit the viewport", async ({
     await expect(promotion.locator(".promotion-cta")).toHaveCount(0);
     await expect(promotion.locator("a.feature-copy")).toHaveCount(1);
     await expect(promotion).toHaveCSS("position", "sticky");
+    await expect(promotion.locator(".feature-heading")).toHaveCSS(
+      "margin-bottom",
+      page.viewportSize()!.width <= 700 ? "32px" : "40px",
+    );
   }
+  await expect(
+    page.locator(".home-promotion--studio .promotion-edge--top"),
+  ).toHaveCount(1);
+  const initialBookingCopy = page.locator(
+    ".home-promotion--booking .promotion-copy-content",
+  );
+  await expect(initialBookingCopy).toHaveCSS(
+    "text-align",
+    page.viewportSize()!.width > 700 ? "right" : "left",
+  );
+  const prominentPrice = page.locator(
+    ".home-promotion--booking .promotion-details strong",
+  );
+  expect(
+    await prominentPrice.evaluate((node) =>
+      parseFloat(getComputedStyle(node).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(18);
   const contactBanner = page.locator(".abstract-promotion");
   await expect(contactBanner).toHaveCount(1);
   await expect(contactBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
@@ -465,6 +487,24 @@ test("public routes remove staff access and fit the viewport", async ({
     (node) => getComputedStyle(node).backgroundImage,
   );
   await expect(contactBanner.locator(".promotion-cta")).toHaveCount(0);
+  const bannerLink = contactBanner.getByRole("link", {
+    name: "Contact us",
+    exact: true,
+  });
+  await expect(bannerLink).toHaveClass("abstract-promotion-link");
+  await expect(bannerLink.locator(":scope > *")).toHaveCount(3);
+  await expect(
+    bannerLink.locator(".abstract-promotion-action svg"),
+  ).toHaveCount(1);
+  await expect(bannerLink).toHaveCSS("min-height", "107px");
+  await expect(contactBanner).toHaveCSS("margin-top", "24px");
+  const bannerHeadingSize = await contactBanner
+    .locator("h2")
+    .evaluate((node) => getComputedStyle(node).fontSize);
+  await expect(bannerLink.locator(".abstract-promotion-action")).toHaveCSS(
+    "font-size",
+    bannerHeadingSize,
+  );
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
   const contactBox = await contactBanner.boundingBox();
@@ -675,7 +715,7 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(heroBox).not.toBeNull();
   expect(contentBox).not.toBeNull();
   expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
-  expect(contentBox!.y).toBeCloseTo(heroBox!.y + heroBox!.height, 0);
+  expect(contentBox!.y).toBeCloseTo(heroBox!.y + heroBox!.height + 12, 0);
   const signatureBox = await page.locator(".studio-signature").boundingBox();
   const studioHeaderBox = await page.locator(".site-header").boundingBox();
   expect(signatureBox).not.toBeNull();
@@ -702,6 +742,9 @@ test("public routes remove staff access and fit the viewport", async ({
     .boundingBox();
   expect(firstPhotoBox).not.toBeNull();
   expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y, 0);
+  await expect(
+    page.locator(".studio-row").first().locator(".promotion-edge--top"),
+  ).toHaveCount(1);
   for (const row of await page.locator(".studio-row").all()) {
     await expect(row).toHaveCSS("position", "sticky");
     await expect(row.locator("a, button")).toHaveCount(0);
@@ -816,18 +859,21 @@ test("public routes remove staff access and fit the viewport", async ({
     "data-ready",
     "true",
   );
-  await expect(page.locator(".site-header")).toBeHidden();
-  await expect(page.locator(".site-footer")).toBeHidden();
+  await expect(page.locator(".site-header")).toBeVisible();
+  await expect(page.locator(".site-footer")).toBeVisible();
   await expect(
-    page.getByRole("img", { name: "SOCCERBOTSTUDIO Singapore", exact: true }),
+    page
+      .locator(".site-header")
+      .getByRole("img", { name: "SOCCERBOTSTUDIO Singapore", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".not-found-brand")).toHaveCount(0);
   await expect(page.locator(".player-app-dialog")).toHaveCount(0);
   if (page.viewportSize()!.width <= 600) {
     const message = await page.locator(".not-found-message").boundingBox();
     const explorer = await page.locator(".not-found-explorer").boundingBox();
-    const brand = await page.locator(".not-found-brand").boundingBox();
+    const art = await page.locator(".not-found-art").boundingBox();
     expect(explorer!.y + explorer!.height).toBeLessThan(message!.y);
-    expect(message!.y + message!.height).toBeLessThan(brand!.y);
+    expect(message!.y + message!.height).toBeLessThan(art!.y + art!.height);
   }
   const home = page.getByRole("link", { name: "Back to home", exact: true });
   await expect(home).toBeVisible();
@@ -1302,7 +1348,7 @@ test("home navigation offer and studio booking buttons display the branded loade
   for (const [route, selector] of [
     ["/", ".nav-book"],
     ["/", ".home-promotion--booking a.feature-copy"],
-    ["/studio/", ".studio-bottom a.feature-copy"],
+    ["/studio/", ".studio-bottom a.abstract-promotion-link"],
   ]) {
     await page.goto(sitePath(route));
     await expect(
@@ -1668,6 +1714,16 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
       "visible",
     );
     await expect(page.locator(".basket-list")).toHaveCSS("max-height", "none");
+    await page.locator(".calendar-selection-context").scrollIntoViewIfNeeded();
+    const cartClearance = await page
+      .locator(".aside-wrap")
+      .evaluate((element) => {
+        const nav = document
+          .querySelector(".booking-navigation")!
+          .getBoundingClientRect();
+        return element.getBoundingClientRect().top - nav.bottom;
+      });
+    expect(cartClearance).toBeGreaterThanOrEqual(15);
     const positions = await page.locator(".aside-wrap").evaluate((element) => ({
       cartBottom: element.querySelector(".summary")!.getBoundingClientRect()
         .bottom,
@@ -2501,7 +2557,7 @@ function bookingTypography(page: Page) {
   return { brand, pageHeading, sectionType, bookingDocumentBody };
 }
 
-test("header blue and typography stay consistent through booking selection and contact", async ({
+test("header blue and typography stay consistent through account and session selection", async ({
   page,
 }) => {
   const { brand, pageHeading, sectionType } = bookingTypography(page);
@@ -2597,13 +2653,23 @@ test("header blue and typography stay consistent through booking selection and c
     await expect(card).toHaveCSS("border-radius", "3px 12px");
     await expect(card.locator(".selection-indicator")).toHaveCount(0);
   }
-  const selectedCardBackground = await page
-    .locator(".session-product")
-    .evaluate((element) => getComputedStyle(element).backgroundColor);
   await expect(
     page.getByRole("dialog", { name: "Kickoff Special" }),
   ).toHaveCount(0);
   await expect(page.locator(".player-selection")).toBeVisible();
+});
+
+test("calendar and contact retain typography and continuous sticky geometry", async ({
+  page,
+}) => {
+  const { pageHeading, sectionType } = bookingTypography(page);
+  await openSite(page, "/book/account/");
+  await page.getByRole("button", { name: "Guest" }).click();
+  await expect(page.locator(".session-product")).toBeVisible();
+  const selectedColour = /color\(srgb 0\.9272\d* 0\.9501\d* 0\.9576\d*\)/;
+  const selectedCardBackground = await page
+    .locator(".session-product")
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
   await page.getByRole("link", { name: "Choose Date & Time" }).click();
   await pageHeading("Select dates and times");
   await expect(

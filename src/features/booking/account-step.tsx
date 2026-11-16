@@ -47,7 +47,6 @@ export function AccountStep({
       now,
       profileAccessRevision,
       profileAccessNotice,
-      draft,
       update,
       resetIdentityDraft,
       identityService,
@@ -379,7 +378,7 @@ export function AccountStep({
             ? "Continue with your signed-in email."
             : "Continue as a guest or sign in."}
         </p>
-        {profileAccessRevision > 0 && !draft.mode && !verifiedIdentity && (
+        {profileAccessRevision > 0 && !verifiedIdentity && (
           <p className="alert" role="alert">
             {profileAccessNotice}
           </p>

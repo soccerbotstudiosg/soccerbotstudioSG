@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { SiteShell, useStandalonePage } from "./site-shell";
+import { SiteShell, useErrorPage } from "./site-shell";
 const navigation = vi.hoisted(() => ({
   path: "/book/session/yes",
   push: vi.fn(),
@@ -30,9 +30,9 @@ vi.mock("./section-reveals", () => ({
 vi.mock("./player-app-prompt", () => ({
   PlayerAppPrompt: () => <span>Player app prompt</span>,
 }));
-/** Exercise the real standalone lifecycle independently of canvas animation. */
+/** Exercise the real errorPage lifecycle independently of canvas animation. */
 function Standalone({ children }: { children: ReactNode }) {
-  useStandalonePage();
+  useErrorPage();
   return children;
 }
 test("nested booking 404 bypasses departure prompts and restores the guard only on valid booking pages", () => {

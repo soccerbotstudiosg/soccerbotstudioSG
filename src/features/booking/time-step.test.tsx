@@ -11,7 +11,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { blankDraft } from "@/domain/booking";
 import { dateLabel, todaySG } from "@/domain/dates";
 import { SessionStep } from "./session-step";
-import { BookingPage } from "./booking-page";
+import { BookingPage, BookingProgressHeader } from "./booking-page";
 import { BasketContinue, Summary } from "./summary";
 import { ReviewStep } from "./review-step";
 import { BookingProvider, useBooking } from "./provider";
@@ -1132,4 +1132,40 @@ test("expiry recovery hides affected studio times across trainers while other se
   expect(
     JSON.parse(screen.getByTestId("recovery-suppressed").textContent!),
   ).toEqual([]);
+});
+
+test("sticky cart clearance tracks the progress header height and releases measurements on unmount", () => {
+  let height = 146;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    () => ({ height }) as DOMRect,
+  );
+  let resize!: () => void;
+  const disconnect = vi.fn();
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      constructor(callback: () => void) {
+        resize = callback;
+      }
+      observe() {}
+      disconnect = disconnect;
+    },
+  );
+  const view = render(
+    <div className="booking-shell">
+      <BookingProgressHeader>Back and progress</BookingProgressHeader>
+    </div>,
+  );
+  const shell = view.container.querySelector<HTMLElement>(".booking-shell")!;
+  expect(shell.style.getPropertyValue("--booking-navigation-height")).toBe(
+    "146px",
+  );
+  height = 174;
+  act(resize);
+  expect(shell.style.getPropertyValue("--booking-navigation-height")).toBe(
+    "174px",
+  );
+  view.unmount();
+  expect(disconnect).toHaveBeenCalledOnce();
+  expect(shell.style.getPropertyValue("--booking-navigation-height")).toBe("");
 });

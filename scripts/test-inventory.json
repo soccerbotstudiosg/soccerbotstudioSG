@@ -1,7 +1,7 @@
 [
   {
     "file": "src/app/not-found.test.tsx",
-    "title": "404 tiles scatter with pointer travel settle back and respect reduced motion while Home stays accessible"
+    "title": "404 tiles drift coherently nudge gently and regroup together after idle while Home stays accessible"
   },
   {
     "file": "src/components/arena-geometry.test.ts",
@@ -60,6 +60,10 @@
     "title": "unmount cleans the animation timers and preserves the previous scroll style"
   },
   {
+    "file": "src/components/booking-navigation.test.tsx",
+    "title": "all four booking entry surfaces prepare fresh access on each return from home"
+  },
+  {
     "file": "src/components/page-refresh.test.tsx",
     "title": "homepage revisits retain one neutral cover through image decoding without replaying first arrival"
   },
@@ -86,6 +90,10 @@
   {
     "file": "src/components/promotion-panel.test.tsx",
     "title": "promotion cards reveal on pointer focus and touch without inventing studio actions and preserve full-panel destinations"
+  },
+  {
+    "file": "src/components/promotion-panel.test.tsx",
+    "title": "compact closing banners group the arrow with their action and expose one full-banner link"
   },
   {
     "file": "src/components/section-reveals.test.tsx",
@@ -1248,6 +1256,10 @@
     "title": "selection rechecks time before dispatch and refreshes after a suspended tab resumes"
   },
   {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "sticky cart clearance tracks the progress header height and releases measurements on unmount"
+  },
+  {
     "file": "src/features/enquiry/enquiry-page.test.tsx",
     "title": "enquiry acknowledgement stays beneath the heading until editing or leaving"
   },
@@ -1629,7 +1641,11 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "header blue and typography stay consistent through booking selection and contact"
+    "title": "header blue and typography stay consistent through account and session selection"
+  },
+  {
+    "file": "tests/customer.spec.ts",
+    "title": "calendar and contact retain typography and continuous sticky geometry"
   },
   {
     "file": "tests/customer.spec.ts",
