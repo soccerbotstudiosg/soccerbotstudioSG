@@ -1474,11 +1474,13 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await expect(sessionChoice.locator(":scope > svg")).toHaveCount(0);
   await sessionChoice.click();
   if (cardWidths.mobile) {
-    await expect(page.getByLabel("Session", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Session", exact: true }),
+    ).toBeVisible();
     await expect(page.locator(".player-selection")).toHaveCount(0);
     await expect(next).toHaveCount(0);
     await page
-      .getByLabel("Session", { exact: true })
+      .getByRole("combobox", { name: "Session", exact: true })
       .selectOption({ label: "Kickoff Special" });
   } else {
     await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
@@ -1495,10 +1497,10 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await expect(page.locator(".session-products")).toHaveCount(0);
   if (cardWidths.mobile) {
     await page
-      .getByLabel("Outlet", { exact: true })
+      .getByRole("combobox", { name: "Outlet", exact: true })
       .selectOption({ label: "Apex @ Henderson" });
     await page
-      .getByLabel("Session", { exact: true })
+      .getByRole("combobox", { name: "Session", exact: true })
       .selectOption({ label: "Kickoff Special" });
   } else {
     await outletChoice.click();
@@ -2071,6 +2073,10 @@ test("header blue and the typography hierarchy stay consistent across every book
     expectedSize = 20,
     expectedColor = brand,
   ) {
+    const compactSession =
+      page.viewportSize()!.width <= 700 &&
+      page.viewportSize()!.height <= 850 &&
+      (await page.locator(".outlet-options").count()) > 0;
     if (await page.locator(".booking-navigation").count()) {
       await expect(page.locator(".booking-navigation")).toHaveCSS(
         "position",
@@ -2140,7 +2146,7 @@ test("header blue and the typography hierarchy stay consistent across every book
         const barBox = await primaryBar.boundingBox();
         if (floating) {
           expect(barBox!.y + barBox!.height).toBeCloseTo(
-            page.viewportSize()!.height - 24,
+            page.viewportSize()!.height - (compactSession ? 16 : 24),
             0,
           );
         }
@@ -2296,10 +2302,6 @@ test("header blue and the typography hierarchy stay consistent across every book
         (y) => scrollTo({ top: y, behavior: "instant" }),
         geometry.original,
       );
-      const compactSession =
-        page.viewportSize()!.width <= 700 &&
-        page.viewportSize()!.height <= 850 &&
-        (await page.locator(".outlet-options").count()) > 0;
       await expect(actionAnchor).toHaveCSS(
         "padding-top",
         compactSession ? "24px" : "32px",
