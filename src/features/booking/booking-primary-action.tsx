@@ -130,9 +130,18 @@ export function BookingPrimaryAction({
         bounds.top + parseFloat(style.paddingTop) + (button?.offsetTop ?? 0);
       const buttonBottom =
         buttonTop + (button?.offsetHeight ?? control.offsetHeight);
+      // The action belongs to the booking content, not the footer. Keep its
+      // reserved position when the footer enters view, including tall phone footers.
+      const footerTop = document
+        .querySelector(".site-footer")
+        ?.getBoundingClientRect().top;
+      const withinContent =
+        footerTop === undefined || footerTop >= window.innerHeight;
       control.dataset.floating = String(
-        buttonBottom + parseFloat(style.paddingBottom) > window.innerHeight ||
-          buttonTop < top,
+        withinContent &&
+          (buttonBottom + parseFloat(style.paddingBottom) >
+            window.innerHeight ||
+            buttonTop < top),
       );
     };
     const schedule = () => {

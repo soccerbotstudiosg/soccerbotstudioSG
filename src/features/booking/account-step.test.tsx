@@ -1,14 +1,8 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { Suspense, use, useState } from "react";
 import { BookingLoadingProvider } from "./booking-loading";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { AccountStep } from "./account-step";
 const mocks = vi.hoisted(() => ({ update: vi.fn(), push: vi.fn() }));
@@ -24,6 +18,7 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useRouter: () => ({ push: mocks.push }),
 }));
+afterEach(() => vi.useRealTimers());
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
@@ -103,6 +98,7 @@ test("remember me is explicit default off and opted in preview expiry stays nine
 });
 
 test("signed-in loading remains until the destination commits without exposing the previous form", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const identity = {
     email: "signed-in@example.invalid",
     expiresAt: Date.now() + 600000,
@@ -135,9 +131,10 @@ test("signed-in loading remains until the destination commits without exposing t
       </BookingLoadingProvider>
     );
   }
-  const user = userEvent.setup();
   render(<Router />);
-  await user.click(screen.getByRole("button", { name: "Continue signed in" }));
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Continue signed in" }));
+  });
   expect(
     screen.getByRole("status", { name: "Opening booking" }),
   ).toBeInTheDocument();
@@ -147,11 +144,14 @@ test("signed-in loading remains until the destination commits without exposing t
   expect(screen.queryByText("Please do not close or refresh.")).toBeNull();
   await act(async () => finish());
   expect(
-    await screen.findByRole("heading", { name: "Choose your session" }),
+    screen.getByRole("heading", { name: "Choose your session" }),
   ).toBeInTheDocument();
-  await waitFor(() =>
-    expect(screen.queryByRole("status")).not.toBeInTheDocument(),
-  );
+  act(() => vi.advanceTimersByTime(999));
+  expect(
+    screen.getByRole("status", { name: "Opening booking" }),
+  ).toBeInTheDocument();
+  act(() => vi.advanceTimersByTime(1));
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: "Continue signed in" }),
   ).not.toBeInTheDocument();

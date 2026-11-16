@@ -316,7 +316,12 @@ const noticeSlotsSchema = z.array(slotSchema).max(MAX_BOOKING_SESSIONS);
 export type NoticeSlot = z.infer<typeof noticeSlotsSchema>[number];
 /** Read validated display-only affected slots; an empty array retains generic conflict copy. */
 export function loadConflictNotice(
-  kind: "conflict" | "cutoff" | "no-creation" | "expiry" = "conflict",
+  kind:
+    | "conflict"
+    | "cutoff"
+    | "no-creation"
+    | "expiry"
+    | "active-checkout" = "conflict",
 ): NoticeSlot[] | null {
   const parsed = noticeSlotsSchema.safeParse(
     safeRead(`soccerbot-${kind}-notice`),
@@ -326,7 +331,12 @@ export function loadConflictNotice(
 /** Retain availability copy across refresh without persisting booking authority. */
 export function saveConflictNotice(
   slots: NoticeSlot[] | null,
-  kind: "conflict" | "cutoff" | "no-creation" | "expiry" = "conflict",
+  kind:
+    | "conflict"
+    | "cutoff"
+    | "no-creation"
+    | "expiry"
+    | "active-checkout" = "conflict",
 ) {
   if (slots !== null) safeWrite(`soccerbot-${kind}-notice`, slots);
   else safeRemove(`soccerbot-${kind}-notice`);

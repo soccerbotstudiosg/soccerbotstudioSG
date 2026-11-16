@@ -3568,19 +3568,27 @@ it("active checkout rejection keeps its own notice instead of an availability wa
         finishAvailability = resolve;
       }),
   );
-  render(
-    <BookingProvider
-      bookingService={{
-        ...liveBookingService,
-        restore: undefined,
-        calendar: undefined,
-        publicCalendar: undefined,
-        availability,
-      }}
-    >
-      <ConflictHandoffProbe />
-    </BookingProvider>,
+  const service: BookingService = {
+    ...liveBookingService,
+    restore: undefined,
+    calendar: undefined,
+    publicCalendar: undefined,
+    availability,
+  };
+  let state!: ReturnType<typeof useBooking>;
+  function NoticeProbe() {
+    const current = useBooking();
+    useEffect(() => {
+      state = current;
+    }, [current]);
+    return <ConflictHandoffProbe />;
+  }
+  const tree = () => (
+    <BookingProvider bookingService={service}>
+      <NoticeProbe />
+    </BookingProvider>
   );
+  let view = render(tree());
   fireEvent.click(screen.getByText("Seed handoff"));
   await act(async () => fireEvent.click(screen.getByText("Submit handoff")));
   expect(screen.getByTestId("handoff-loading")).toHaveTextContent(
@@ -3603,6 +3611,21 @@ it("active checkout rejection keeps its own notice instead of an availability wa
   expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
     draft.slots,
   );
+  const notice = screen.getByTestId("handoff-message").textContent;
+  navigation.path = "/book/time/";
+  view.rerender(tree());
+  act(() => state.visitBookingStep("time"));
+  act(() => state.update({ players: 2 }));
+  expect(screen.getByTestId("handoff-message")).toHaveTextContent(notice!);
+  view.unmount();
+  view = render(tree());
+  expect(screen.getByTestId("handoff-message")).toHaveTextContent(notice!);
+  act(() => state.visitBookingStep("time"));
+  act(() => state.visitBookingStep("details"));
+  expect(screen.getByTestId("handoff-message")).toBeEmptyDOMElement();
+  view.unmount();
+  view = render(tree());
+  expect(screen.getByTestId("handoff-message")).toBeEmptyDOMElement();
   expect(fetcher).toHaveBeenCalledTimes(1);
   expect(String(fetcher.mock.calls[0][0])).toContain("/api/booking/checkout/");
 });

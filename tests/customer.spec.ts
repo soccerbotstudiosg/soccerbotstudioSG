@@ -2065,9 +2065,11 @@ test("header blue and the typography hierarchy stay consistent across every book
         });
         const natural = await action.evaluate(naturalActionBounds);
         const floating =
-          natural.bottom > page.viewportSize()!.height ||
-          natural.top <
-            (await page.locator(".site-header").boundingBox())!.height;
+          (await page.locator(".site-footer").boundingBox())!.y >=
+            page.viewportSize()!.height &&
+          (natural.bottom > page.viewportSize()!.height ||
+            natural.top <
+              (await page.locator(".site-header").boundingBox())!.height);
         await expect(primaryBar).toHaveAttribute(
           "data-floating",
           String(floating),
@@ -2141,28 +2143,18 @@ test("header blue and the typography hierarchy stay consistent across every book
         expect(actionBox!.height).toBeGreaterThanOrEqual(48);
         const previousScroll = await page.evaluate(() => scrollY);
         await page.locator(".site-footer").scrollIntoViewIfNeeded();
-        await expect(action).toBeInViewport({ ratio: 1 });
+        await expect(primaryBar).toHaveAttribute("data-floating", "false");
+        await expect(primaryBar).toHaveCSS("position", "relative");
         const settledAnchor = await page
           .locator(".booking-action-anchor")
           .boundingBox();
-        const headerBottom = await page
-          .locator(".site-header")
-          .evaluate((node) => node.getBoundingClientRect().bottom);
-        const settledNatural = await action.evaluate(naturalActionBounds);
-        if (settledNatural.top >= headerBottom) {
-          await expect(primaryBar).toHaveAttribute("data-floating", "false");
-          await expect(primaryBar).toHaveCSS("position", "relative");
-          const settledBar = await primaryBar.boundingBox();
-          expect(settledBar!.width).toBeCloseTo(settledAnchor!.width, 0);
-          expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(32, 0);
-          const footer = await page.locator(".site-footer").boundingBox();
-          expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
-            footer!.y,
-          );
-        } else {
-          await expect(primaryBar).toHaveAttribute("data-floating", "true");
-          await expect(primaryBar).toHaveCSS("position", "fixed");
-        }
+        const settledBar = await primaryBar.boundingBox();
+        expect(settledBar!.width).toBeCloseTo(settledAnchor!.width, 0);
+        expect(settledBar!.y - settledAnchor!.y).toBeCloseTo(32, 0);
+        const footer = await page.locator(".site-footer").boundingBox();
+        expect(settledBar!.y + settledBar!.height).toBeLessThanOrEqual(
+          footer!.y,
+        );
         await page.evaluate((y) => scrollTo(0, y), previousScroll);
       }
     }
@@ -2176,7 +2168,7 @@ test("header blue and the typography hierarchy stay consistent across every book
       await expect(action).toBeInViewport({ ratio: 1 });
       const previousScroll = await page.evaluate(() => scrollY);
       await page.locator(".site-footer").scrollIntoViewIfNeeded();
-      await expect(action).toBeInViewport({ ratio: 1 });
+      await expect(primaryBar).toHaveAttribute("data-floating", "false");
       const anchor = await page.locator(".booking-action-anchor").boundingBox();
       const bar = await primaryBar.boundingBox();
       expect(bar!.x).toBeCloseTo(anchor!.x, 0);
@@ -2232,6 +2224,14 @@ test("header blue and the typography hierarchy stay consistent across every book
         }, target);
         expect(Math.abs(settled.y - target)).toBeLessThanOrEqual(1);
         expect(settled.height).toBe(geometry.height);
+        const footerTop = await page
+          .locator(".site-footer")
+          .evaluate((node) => node.getBoundingClientRect().top);
+        if (footerTop < geometry.viewport) {
+          await expect(primary).toHaveAttribute("data-floating", "false");
+          const bounds = await primary.boundingBox();
+          expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(footerTop);
+        }
       }
       await page.evaluate(
         (y) => scrollTo({ top: y, behavior: "instant" }),
