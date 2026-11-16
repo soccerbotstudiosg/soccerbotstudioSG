@@ -6,7 +6,7 @@
 
 ## Next actions
 
-Complete local fixed-snapshot verification, publish one candidate, inspect exact-head CI, verify actual staging revision/health, then merge under existing authorization. Preserve original lint/fixture failures. Dependabot84 at91a3612 previously passed all CI but its trusted manual staging remains outstanding; reconcile after the new feature merge and do not bypass bot staging eligibility.
+PR91 at0436bfdf failed CI43885375072 on two tablet cases: a short Payment page incorrectly expected Back to top, and the resting Continue action covered that circle. The correction checks available scroll range and measures actual action/circle collision without changing action anchoring. Run consolidated local verification, push the repair, inspect all final-head gates, verify staging revision/health, then merge under existing authorization. Preserve the original CI screenshots/traces and lint/fixture failures. Dependabot84 at91a3612 previously passed all CI but its trusted manual staging remains outstanding; reconcile after the new feature merge and do not bypass bot staging eligibility.
 
 ## Ordered work after this slice
 

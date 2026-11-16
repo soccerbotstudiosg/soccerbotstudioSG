@@ -2318,16 +2318,27 @@ test("header blue and the typography hierarchy stay consistent across every book
     await page.evaluate(() =>
       scrollTo(0, document.documentElement.scrollHeight),
     );
-    await expect(scrollTop).toBeVisible();
-    await expect(scrollTop).toHaveCSS("border-radius", "50%");
-    await expect(scrollTop.locator("svg path")).toHaveCount(1);
-    await expect(scrollTop.locator("svg path")).toHaveAttribute(
-      "d",
-      "m9 6 6 6-6 6",
+    const scrollable = await page.evaluate(
+      () => document.documentElement.scrollHeight - innerHeight,
     );
-    await scrollTop.click();
-    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
-    await expect(scrollTop).toHaveCount(0);
+    if (scrollable > 200) {
+      await expect
+        .poll(() => page.evaluate(() => scrollY))
+        .toBeGreaterThan(200);
+      await expect(scrollTop).toBeVisible();
+      await expect(scrollTop).toHaveCSS("border-radius", "50%");
+      await expect(scrollTop.locator("svg path")).toHaveCount(1);
+      await expect(scrollTop.locator("svg path")).toHaveAttribute(
+        "d",
+        "m9 6 6 6-6 6",
+      );
+      await scrollTop.click();
+      await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+      await expect(scrollTop).toHaveCount(0);
+    } else {
+      expect(await page.evaluate(() => scrollY)).toBeLessThanOrEqual(200);
+      await expect(scrollTop).toHaveCount(0);
+    }
     await page.evaluate((y) => scrollTo(0, y), savedScroll);
     await expect(
       page.locator(".section-reveal, .section-reveal-pending"),
@@ -3257,6 +3268,21 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(returnCue).toHaveCSS("position", "fixed");
     await expect(returnCue).toHaveCSS("border-radius", "50%");
     await expect(returnCue.locator("svg")).toHaveCSS("animation-name", "none");
+    await expect
+      .poll(async () => {
+        const circle = await returnCue.boundingBox();
+        const action = await page
+          .locator(".booking-primary-action > .button")
+          .boundingBox();
+        if (!circle || !action) return false;
+        return (
+          circle.x + circle.width <= action.x ||
+          circle.x >= action.x + action.width ||
+          circle.y + circle.height + 12 <= action.y ||
+          circle.y >= action.y + action.height + 12
+        );
+      })
+      .toBe(true);
     await returnCue.click();
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
     await expect(returnCue).toHaveCount(0);

@@ -111,6 +111,10 @@ export function BookingPrimaryAction({
     const control = action.current;
     if (!position || !control || !("ResizeObserver" in window)) return;
     let frame = 0;
+    const rootStyle = document.documentElement.style;
+    const priorClearance = rootStyle.getPropertyValue(
+      "--back-to-top-clearance",
+    );
     const measure = () => {
       frame = 0;
       // Read untransformed dimensions without moving the fixed control into flow.
@@ -143,6 +147,25 @@ export function BookingPrimaryAction({
             window.innerHeight ||
             buttonTop < top),
       );
+      // Compare the baseline circle with the actual action, including its resting
+      // position. Reset before measuring so previous lifts cannot feed back.
+      rootStyle.removeProperty("--back-to-top-clearance");
+      const circle = document
+        .querySelector(".back-to-top")
+        ?.getBoundingClientRect();
+      const actionBounds = button?.getBoundingClientRect();
+      if (
+        circle &&
+        actionBounds &&
+        circle.right > actionBounds.left &&
+        circle.left < actionBounds.right &&
+        circle.bottom + 12 > actionBounds.top &&
+        circle.top < actionBounds.bottom + 12
+      )
+        rootStyle.setProperty(
+          "--back-to-top-clearance",
+          `${window.innerHeight - actionBounds.top + 12}px`,
+        );
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure);
@@ -155,6 +178,9 @@ export function BookingPrimaryAction({
     measure();
     return () => {
       cancelAnimationFrame(frame);
+      if (priorClearance)
+        rootStyle.setProperty("--back-to-top-clearance", priorClearance);
+      else rootStyle.removeProperty("--back-to-top-clearance");
       observer.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);

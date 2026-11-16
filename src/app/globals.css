@@ -992,8 +992,11 @@
     box-shadow: var(--shadow-action);
   }
   body:has(.booking-primary-action) .back-to-top {
-    bottom: calc(
-      80px + var(--space-action-bottom) + 12px + env(safe-area-inset-bottom)
+    bottom: max(
+      calc(
+        80px + var(--space-action-bottom) + 12px + env(safe-area-inset-bottom)
+      ),
+      var(--back-to-top-clearance, 0px)
     );
   }
   .back-to-top:hover {
