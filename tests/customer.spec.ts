@@ -859,18 +859,21 @@ test("public routes remove staff access and fit the viewport", async ({
     "data-ready",
     "true",
   );
-  await expect(page.locator(".site-header")).toBeHidden();
-  await expect(page.locator(".site-footer")).toBeHidden();
+  await expect(page.locator(".site-header")).toBeVisible();
+  await expect(page.locator(".site-footer")).toBeVisible();
   await expect(
-    page.getByRole("img", { name: "SOCCERBOTSTUDIO Singapore", exact: true }),
+    page
+      .locator(".site-header")
+      .getByRole("img", { name: "SOCCERBOTSTUDIO Singapore", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".not-found-brand")).toHaveCount(0);
   await expect(page.locator(".player-app-dialog")).toHaveCount(0);
   if (page.viewportSize()!.width <= 600) {
     const message = await page.locator(".not-found-message").boundingBox();
     const explorer = await page.locator(".not-found-explorer").boundingBox();
-    const brand = await page.locator(".not-found-brand").boundingBox();
+    const art = await page.locator(".not-found-art").boundingBox();
     expect(explorer!.y + explorer!.height).toBeLessThan(message!.y);
-    expect(message!.y + message!.height).toBeLessThan(brand!.y);
+    expect(message!.y + message!.height).toBeLessThan(art!.y + art!.height);
   }
   const home = page.getByRole("link", { name: "Back to home", exact: true });
   await expect(home).toBeVisible();
@@ -1711,6 +1714,16 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
       "visible",
     );
     await expect(page.locator(".basket-list")).toHaveCSS("max-height", "none");
+    await page.locator(".calendar-selection-context").scrollIntoViewIfNeeded();
+    const cartClearance = await page
+      .locator(".aside-wrap")
+      .evaluate((element) => {
+        const nav = document
+          .querySelector(".booking-navigation")!
+          .getBoundingClientRect();
+        return element.getBoundingClientRect().top - nav.bottom;
+      });
+    expect(cartClearance).toBeGreaterThanOrEqual(15);
     const positions = await page.locator(".aside-wrap").evaluate((element) => ({
       cartBottom: element.querySelector(".summary")!.getBoundingClientRect()
         .bottom,

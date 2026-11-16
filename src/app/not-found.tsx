@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { useStandalonePage } from "@/components/site-shell";
-import { logo, notFoundAstronaut } from "@/content/media";
+import { useErrorPage } from "@/components/site-shell";
+import { notFoundAstronaut } from "@/content/media";
 
 const digits = [
   [
@@ -366,9 +366,9 @@ function FragmentedCode() {
   );
 }
 
-/** Offer an accessible way home inside a full-screen, fragmented error artwork. */
+/** Offer an accessible way home inside the shared site header and footer. */
 export default function NotFound() {
-  useStandalonePage();
+  useErrorPage();
   return (
     <section className="not-found-art" aria-labelledby="not-found-title">
       <h1 id="not-found-title" className="sr-only">
@@ -382,13 +382,6 @@ export default function NotFound() {
         Oops, this page drifted off course.
         <span>Let the ball take you home.</span>
       </p>
-      <img
-        src={logo}
-        alt="SOCCERBOTSTUDIO Singapore"
-        width="565"
-        height="190"
-        className="not-found-brand"
-      />
       <div className="not-found-explorer">
         <img
           src={notFoundAstronaut}

@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import NotFound from "./not-found";
-vi.mock("@/components/site-shell", () => ({ useStandalonePage: vi.fn() }));
+vi.mock("@/components/site-shell", () => ({ useErrorPage: vi.fn() }));
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();

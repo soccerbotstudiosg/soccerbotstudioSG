@@ -623,15 +623,11 @@
     font-weight: 500;
     font-display: swap;
   }
-  /* The error artwork is a standalone scene, including its initial server HTML. */
-  body:has(.not-found-art) :is(.site-header, .site-footer) {
-    display: none;
-  }
   .not-found-art {
     position: relative;
     width: 100%;
-    min-height: 100svh;
-    height: 100dvh;
+    min-height: 600px;
+    height: calc(100svh - var(--site-header-height, 148px));
     overflow: hidden;
     isolation: isolate;
     background:
@@ -681,14 +677,6 @@
     color: #a9bbd1;
     font-size: 0.8em;
     font-weight: 400;
-  }
-  .not-found-brand {
-    position: absolute;
-    right: max(4vw, 20px);
-    bottom: max(3vh, 20px);
-    width: clamp(120px, 15vw, 190px);
-    height: auto;
-    mix-blend-mode: screen;
   }
   .not-found-explorer {
     position: absolute;
@@ -774,11 +762,6 @@
       bottom: 14vh;
       width: calc(100% - 40px);
       max-width: 340px;
-    }
-    .not-found-brand {
-      right: 20px;
-      bottom: max(24px, env(safe-area-inset-bottom));
-      width: 130px;
     }
     .not-found-explorer {
       width: clamp(120px, 34vw, 150px);
@@ -3852,7 +3835,10 @@
   }
   .booking-layout > .aside-wrap {
     position: sticky;
-    top: calc(var(--site-header-height, 76px) + 16px);
+    top: calc(
+      var(--site-header-height, 76px) + var(--booking-navigation-height, 0px) +
+        16px
+    );
     align-self: start;
   }
   .calendar-panel {

@@ -8,7 +8,14 @@ import {
   liveCheckoutAttemptId,
 } from "@/services/storage";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { BookingHeadingStatus, VerifiedEmailStatus } from "./booking-heading";
 import { guardedStep, type BookingStep } from "@/domain/booking";
 import { Icon } from "@/components/icon";
@@ -30,6 +37,36 @@ import { PaymentStep } from "./payment-step";
 import { ConfirmationStep } from "./confirmation-step";
 import { Summary, BasketContinue } from "./summary";
 import { BookingTools, useMobileBooking } from "./booking-tools";
+/** Publish the actual pinned progress height to its sibling sticky cart. */
+export function BookingProgressHeader({ children }: { children: ReactNode }) {
+  const header = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = header.current;
+    const shell = element?.closest<HTMLElement>(".booking-shell");
+    if (!element || !shell) return;
+    const measure = () =>
+      shell.style.setProperty(
+        "--booking-navigation-height",
+        `${element.getBoundingClientRect().height}px`,
+      );
+    measure();
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(measure);
+    observer?.observe(element);
+    return () => {
+      observer?.disconnect();
+      shell.style.removeProperty("--booking-navigation-height");
+    };
+  }, []);
+  return (
+    <div ref={header} className="booking-navigation">
+      {children}
+    </div>
+  );
+}
+
 const progress: Array<[BookingStep, string]> = [
   ["account", "Booking"],
   ["session", "Session"],
@@ -245,7 +282,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
         className={`booking-shell ${["account", "session", "review"].includes(displayStep) ? "session-shell" : ""}`}
       >
         {current >= 0 && (
-          <div className="booking-navigation">
+          <BookingProgressHeader>
             <div className="booking-top">
               {step === "account" && accountBack ? (
                 <button type="button" className="back" onClick={accountBack}>
@@ -305,7 +342,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
                 </li>
               ))}
             </ol>
-          </div>
+          </BookingProgressHeader>
         )}
         <div
           className={

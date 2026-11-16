@@ -1256,6 +1256,10 @@
     "title": "selection rechecks time before dispatch and refreshes after a suspended tab resumes"
   },
   {
+    "file": "src/features/booking/time-step.test.tsx",
+    "title": "sticky cart clearance tracks the progress header height and releases measurements on unmount"
+  },
+  {
     "file": "src/features/enquiry/enquiry-page.test.tsx",
     "title": "enquiry acknowledgement stays beneath the heading until editing or leaving"
   },
