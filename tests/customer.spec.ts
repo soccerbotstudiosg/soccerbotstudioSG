@@ -1473,24 +1473,39 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   });
   await expect(sessionChoice.locator(":scope > svg")).toHaveCount(0);
   await sessionChoice.click();
-  await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
-  await expect(sessionChoice.locator(":scope > svg")).toHaveCount(0);
-  await expect(page.locator(".player-selection")).toHaveCount(0);
-  await expect(next).toHaveCount(0);
-  await sessionChoice.click();
+  if (cardWidths.mobile) {
+    await expect(page.getByLabel("Session", { exact: true })).toBeVisible();
+    await expect(page.locator(".player-selection")).toHaveCount(0);
+    await expect(next).toHaveCount(0);
+    await page
+      .getByLabel("Session", { exact: true })
+      .selectOption({ label: "Kickoff Special" });
+  } else {
+    await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".player-selection")).toHaveCount(0);
+    await expect(next).toHaveCount(0);
+    await sessionChoice.click();
+  }
   await expect(page.locator(".counter output")).toHaveText("2");
   const outletChoice = page.getByRole("button", {
     name: "Select Apex @ Henderson outlet",
     exact: true,
   });
-  await expect(outletChoice.locator(":scope > svg")).toHaveCount(1);
   await outletChoice.click();
-  await expect(outletChoice.locator(":scope > svg")).toHaveCount(1);
   await expect(page.locator(".session-products")).toHaveCount(0);
-  await outletChoice.click();
-  await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
-  await expect(page.locator(".player-selection")).toHaveCount(0);
-  await sessionChoice.click();
+  if (cardWidths.mobile) {
+    await page
+      .getByLabel("Outlet", { exact: true })
+      .selectOption({ label: "Apex @ Henderson" });
+    await page
+      .getByLabel("Session", { exact: true })
+      .selectOption({ label: "Kickoff Special" });
+  } else {
+    await outletChoice.click();
+    await expect(sessionChoice).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".player-selection")).toHaveCount(0);
+    await sessionChoice.click();
+  }
   await expect(page.locator(".counter output")).toHaveText("2");
   const productFontSize = await page
     .locator(".session-product-name")
@@ -2002,7 +2017,14 @@ test("header blue and the typography hierarchy stay consistent across every book
       await heading.evaluate((node) =>
         parseFloat(getComputedStyle(node).fontSize),
       ),
-    ).toBeCloseTo(pageSize, 5);
+    ).toBeCloseTo(
+      name === "Your session" &&
+        page.viewportSize()!.width <= 700 &&
+        page.viewportSize()!.height <= 850
+        ? 28
+        : pageSize,
+      5,
+    );
     await expect(heading).toHaveCSS("color", color);
     await expect(heading).toHaveCSS("font-weight", "900");
     const instructions: Record<string, string> = {
@@ -2274,8 +2296,18 @@ test("header blue and the typography hierarchy stay consistent across every book
         (y) => scrollTo({ top: y, behavior: "instant" }),
         geometry.original,
       );
-      await expect(actionAnchor).toHaveCSS("padding-top", "32px");
-      await expect(actionAnchor).toHaveCSS("padding-bottom", "24px");
+      const compactSession =
+        page.viewportSize()!.width <= 700 &&
+        page.viewportSize()!.height <= 850 &&
+        (await page.locator(".outlet-options").count()) > 0;
+      await expect(actionAnchor).toHaveCSS(
+        "padding-top",
+        compactSession ? "24px" : "32px",
+      );
+      await expect(actionAnchor).toHaveCSS(
+        "padding-bottom",
+        compactSession ? "16px" : "24px",
+      );
       const actionButton = actionAnchor.locator(
         ".booking-primary-action > .button",
       );
@@ -3494,6 +3526,22 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
       headingBox!.x + headingBox!.width,
     );
     expect(badgeBox!.x + badgeBox!.width).toBeLessThanOrEqual(width);
+  }
+  for (const viewport of [
+    { width: 375, height: 740 },
+    { width: 390, height: 700 },
+    { width: 430, height: 780 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator(".outlet-option")).toBeInViewport({ ratio: 1 });
+    await expect(page.locator(".session-product")).toBeInViewport({ ratio: 1 });
+    const proceed = page.getByRole("link", { name: "Choose Date & Time" });
+    await expect(proceed).toBeInViewport({ ratio: 1 });
+    const players = await page.locator(".player-selection").boundingBox();
+    const action = await proceed.boundingBox();
+    expect(action!.y - players!.y - players!.height).toBeGreaterThanOrEqual(16);
+    await expect(sessionTitle).toHaveCSS("font-size", "28px");
   }
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("link", { name: "Choose Date & Time" }).click();

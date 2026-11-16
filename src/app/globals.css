@@ -74,6 +74,7 @@
   --color-confirmation-heading: #176078;
   --font-sans: Roboto, Arial, sans-serif;
   --text-page: 2.5rem;
+  --text-session-compact: 1.75rem;
   --text-dialog: 1.5rem;
   --text-section: 1.25rem;
   --text-card: 1.125rem;
@@ -3242,6 +3243,22 @@
       background: var(--background-selected);
     }
   }
+  .booking-choice-label {
+    display: block;
+    grid-column: 1 / -1;
+    font-size: var(--text-body);
+    font-weight: var(--weight-heading);
+    color: var(--color-muted);
+    margin-bottom: 2px;
+  }
+  .booking-choice-selector {
+    border-radius: var(--radius-booking-control);
+    display: block;
+    padding: 12px 10px;
+  }
+  .booking-choice-selector select {
+    width: 100%;
+  }
   .session-product-choice {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -5403,6 +5420,35 @@
     .confirmation-actions .button svg {
       width: 20px;
       height: 20px;
+    }
+  }
+  @media (max-width: 700px) and (max-height: 850px) {
+    .booking-shell:has(.outlet-options) {
+      --space-action-top: 24px;
+      --space-action-bottom: 16px;
+    }
+    .booking-shell:has(.outlet-options) .booking-navigation {
+      margin-bottom: 12px;
+    }
+    .booking-shell:has(.outlet-options) .booking-title {
+      font-size: var(--text-session-compact);
+    }
+    .booking-shell:has(.outlet-options) .booking-title-line {
+      display: inline;
+    }
+    .booking-shell:has(.outlet-options) :is(.booking-heading-row, .lead) {
+      margin-bottom: 8px;
+    }
+    .booking-shell:has(.outlet-options) .outlet-options {
+      margin: 8px 0 12px;
+    }
+    .booking-shell:has(.outlet-options)
+      :is(.outlet-option.surface, .session-product.surface) {
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .booking-shell:has(.outlet-options) .player-selection {
+      padding-top: 8px;
     }
   }
   @media (max-width: 350px) {

@@ -6,7 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { BookingPage } from "./booking-page";
 import { blankDraft } from "@/domain/booking";
 import { saveBooking } from "@/services/storage";
@@ -21,6 +21,7 @@ import type {
   CustomerIdentityService,
   CustomerChallenge,
 } from "@/services/contracts";
+afterEach(() => vi.useRealTimers());
 const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
@@ -328,6 +329,7 @@ test("leaving saved-contact form discards delayed save acknowledgement", async (
 });
 
 test("all-device signout shows failure, permits retry and clears the signed-in email on success", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const identity = {
     email: "signout@example.invalid",
     expiresAt: Date.now() + 600000,
@@ -358,11 +360,13 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
     </BookingProvider>,
   );
   await act(async () => {});
-  fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
-  await waitFor(() =>
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Could not finish signing out. Please try again.",
+  await act(async () =>
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sign out all devices" }),
     ),
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Could not finish signing out. Please try again.",
   );
   expect(
     screen.queryByText(/SQLITE_FULL|private provider diagnostic/),
@@ -370,23 +374,19 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
   expect(screen.getByRole("alert")).toHaveClass("alert");
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
   expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
-  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await act(async () =>
+    fireEvent.click(screen.getByRole("button", { name: "Try again" })),
+  );
   if (vi.isFakeTimers())
     await act(async () => vi.advanceTimersByTimeAsync(1000));
-  await waitFor(() =>
-    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
-  );
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   await act(async () => finishSignOut());
-  await waitFor(() =>
-    expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled(),
-  );
+  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
   expect(screen.queryByText(identity.email)).not.toBeInTheDocument();
   if (vi.isFakeTimers())
     await act(async () => vi.advanceTimersByTimeAsync(1000));
-  await waitFor(() =>
-    expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
-  );
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(signOut).toHaveBeenCalledTimes(2);
   expect(signOut).toHaveBeenLastCalledWith(expect.any(AbortSignal), true);
