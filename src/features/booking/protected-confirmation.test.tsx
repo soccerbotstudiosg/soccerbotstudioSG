@@ -3501,7 +3501,14 @@ it("confirmed history suppresses an old unpaid handoff and failed recovery repla
           ),
     );
     vi.stubGlobal("fetch", fetcher);
-    if (!restored) markConfirmationSeen(first);
+    if (!restored) {
+      vi.useFakeTimers();
+      markConfirmationSeen(first);
+      sessionStorage.setItem(
+        `soccerbot-confirmation-wait:${first}`,
+        JSON.stringify({ deadline: Date.now() - 1000 }),
+      );
+    }
     const page = render(
       <ProtectedConfirmation
         attemptId={first}
@@ -3510,6 +3517,12 @@ it("confirmed history suppresses an old unpaid handoff and failed recovery repla
         allowPaymentContinuation
       />,
     );
+    if (!restored) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(navigation.replace).not.toHaveBeenCalled();
+    }
     if (restored) {
       await screen.findByRole("link", { name: "Continue payment" });
       act(() =>
@@ -3549,7 +3562,7 @@ it("confirmed history suppresses an old unpaid handoff and failed recovery repla
       screen.getByRole("status", { name: "Checking payment…" }),
     ).toBeVisible();
     await act(async () => finishContext(new Response(null, { status: 503 })));
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/"));
+    expect(navigation.replace).toHaveBeenCalledWith("/");
     expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
     expect(
       fetcher.mock.calls.every(
@@ -3557,6 +3570,7 @@ it("confirmed history suppresses an old unpaid handoff and failed recovery repla
       ),
     ).toBe(true);
     page.unmount();
+    vi.useRealTimers();
   }
   localStorage.clear();
   sessionStorage.clear();

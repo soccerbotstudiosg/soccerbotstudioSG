@@ -1012,7 +1012,9 @@ function ProtectedConfirmationBody({
     (contextFailure?.id === attemptId ||
       receiptUnavailable ||
       view === "unavailable" ||
-      confirmationTimedOut === attemptId);
+      (confirmationTimedOut === attemptId &&
+        contextSettled &&
+        (confirmationReadSettled || incomplete || linkRecovering)));
   useEffect(() => {
     if (confirmedCard && !silent) markConfirmationSeen(attemptId);
   }, [confirmedCard, silent, attemptId]);
