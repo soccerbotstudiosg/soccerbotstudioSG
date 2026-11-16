@@ -1545,11 +1545,14 @@ it("shows payment received feedback with details while current booking evidence 
     summary.compareDocumentPosition(timer) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
   expect(
-    timer.compareDocumentPosition(continuation) &
+    continuation.compareDocumentPosition(timer) &
       Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
   expect(continuation).not.toHaveAttribute("target");
-  expect(continuation.nextElementSibling).toBeNull();
+  expect(continuation.nextElementSibling).toBe(timer.parentElement);
+  expect(timer.parentElement).toHaveTextContent(
+    "Your selected sessions are held until the timer ends.",
+  );
   expect(continuation.parentElement?.nextElementSibling).toBeNull();
   expect(screen.queryByText("View Full Details")).toBeNull();
   expect(

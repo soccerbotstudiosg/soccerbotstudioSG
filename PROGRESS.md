@@ -8,7 +8,7 @@ The shared action changes between normal flow and a fixed viewport position. Exc
 
 The payment continuation heading also rendered the compact spinner’s default “Loading...” beside its actual status/instruction. Suppress only that redundant spinner text; keep the accessible status label, spinner, intended copy and payment controls. The regression covers both pending-summary layouts and fails with the original spinner. Existing same-tab Back/Continue payment browser coverage now asserts no generic copy.
 
-Local scroll-change source, lint and type checks pass; CI43779612196 on bf2dd4e is running. The added loader fix passes12 focused component cases; source inventory now includes its one added case. Final combined CI/staging are pending. Prior PR82 exact-head CI43757556352 and staging43758873875 passed before merge996d069; merged-main CI43759060624 and production deployment43760352549 also passed. No provider or account changes are in scope.
+Local scroll-change source, lint and type checks pass; CI43779612196 on bf2dd4e is running. The added loader fix passes12 focused component cases; source inventory now includes its one added case. Owner additionally requested the horizontal colour HitPay logo within a redirect instruction above Review’s button, plus the hold reminder beside the countdown below Continue payment. These presentation changes pass48 focused component tests and source checks; payment authority is unchanged. Final combined CI/staging are pending. Prior PR82 exact-head CI43757556352 and staging43758873875 passed before merge996d069; merged-main CI43759060624 and production deployment43760352549 also passed. No provider or account changes are in scope.
 
 ## Current scope
 

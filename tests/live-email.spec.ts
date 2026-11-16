@@ -3608,6 +3608,17 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       await expect(continuation).toHaveAttribute("href", mechanism.checkoutUrl);
       await expect(continuation).not.toHaveAttribute("target", "_blank");
       await expect(page.getByRole("timer")).toBeVisible();
+      await expect(
+        page.getByText(
+          "Your selected sessions are held until the timer ends.",
+          { exact: true },
+        ),
+      ).toBeVisible();
+      const continuationBox = await continuation.boundingBox();
+      const timerBox = await page.getByRole("timer").boundingBox();
+      expect(timerBox!.y).toBeGreaterThanOrEqual(
+        continuationBox!.y + continuationBox!.height,
+      );
       await expect(page.getByText("Loading...", { exact: true })).toHaveCount(
         0,
       );

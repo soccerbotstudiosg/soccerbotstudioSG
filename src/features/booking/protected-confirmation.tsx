@@ -68,10 +68,6 @@ function PaymentContinuation({
   if (!seconds) return null;
   return (
     <div className="payment-continuation">
-      <p role="timer" aria-live="off">
-        Time left to pay: {String(Math.floor(seconds / 60)).padStart(2, "0")}:
-        {String(seconds % 60).padStart(2, "0")}
-      </p>
       <a
         className="button wide booking-entry-action"
         href={url}
@@ -86,6 +82,13 @@ function PaymentContinuation({
       >
         Continue payment
       </a>
+      <div className="payment-continuation-details">
+        <p role="timer" aria-live="off">
+          Time left to pay: {String(Math.floor(seconds / 60)).padStart(2, "0")}:
+          {String(seconds % 60).padStart(2, "0")}
+        </p>
+        <p>Your selected sessions are held until the timer ends.</p>
+      </div>
     </div>
   );
 }

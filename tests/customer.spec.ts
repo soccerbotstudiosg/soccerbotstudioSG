@@ -1992,12 +1992,28 @@ test("header blue and the typography hierarchy stay consistent across every book
             0,
           );
         }
-        expect(barBox!.height).toBeLessThanOrEqual(72);
         if (floating) {
           expect(barBox!.x).toBeCloseTo(20, 0);
           expect(barBox!.width).toBeCloseTo(page.viewportSize()!.width - 40, 0);
         }
         const actionBox = await action.boundingBox();
+        expect(actionBox!.height).toBeLessThanOrEqual(72);
+        const redirect = primaryBar.locator(".checkout-redirect");
+        if (await redirect.count()) {
+          const logo = redirect.getByRole("img", { name: "HitPay" });
+          await expect(logo).toBeVisible();
+          expect(
+            await logo.evaluate(
+              (node) => (node as HTMLImageElement).naturalWidth,
+            ),
+          ).toBeGreaterThan(0);
+          const hint = await redirect.boundingBox();
+          expect(hint!.y + hint!.height).toBeLessThanOrEqual(actionBox!.y);
+          expect(barBox!.height - actionBox!.height - hint!.height).toBeCloseTo(
+            13,
+            0,
+          );
+        } else expect(barBox!.height).toBeLessThanOrEqual(72);
         await expect(primaryBar).toHaveCSS(
           "background-color",
           "rgba(0, 0, 0, 0)",

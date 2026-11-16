@@ -718,3 +718,5 @@ Homepage returns through site links or browser history reuse one neutral Loading
 Booking-step helpers stay on one line with concise16px muted copy. The verification recipient remains visible in the code form rather than extending its helper. Hidden security proof contributes no vertical margin; a visible challenge is separated from the action by the shared32px top spacing. The6px progress fill stays clipped to the button corners, including phone layouts, without inheriting generic action-span margins.
 
 Payment continuation retains its intended checking message and “Continue to pay. If already paid, please wait...” instruction. Its compact spinner does not add a separate generic “Loading...” line.
+
+Approved payment guidance: above Review’s Proceed to Payment, show “You’ll be redirected to [horizontal colour HitPay logo] to complete your payment.” Below Continue payment, show the countdown beside “Your selected sessions are held until the timer ends.” Keep the existing protected deadline and expiry behavior; the text does not extend a hold.

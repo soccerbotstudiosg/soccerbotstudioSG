@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Icon } from "@/components/icon";
+import { hitpayLogo } from "@/content/media";
 import { Dialog } from "@/components/dialog";
 import { money } from "@/domain/dates";
 import { totalCents, selectionErrors } from "@/domain/booking";
@@ -189,6 +190,17 @@ export function ReviewStep({
         ready={canProceed}
         loading={checkingProof || busy || verifying}
       >
+        <p className="checkout-redirect">
+          You’ll be redirected to{" "}
+          <a
+            href="https://hitpayapp.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img src={hitpayLogo} width={108} height={28} alt="HitPay" />
+          </a>{" "}
+          to complete your payment.
+        </p>
         <button
           className="button"
           disabled={!canProceed}

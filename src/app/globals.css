@@ -3498,7 +3498,38 @@
     gap: 12px;
     margin-bottom: 8px;
   }
-  .payment-continuation [role="timer"],
+  .checkout-redirect {
+    margin: 0;
+    background: var(--color-paper);
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    text-align: center;
+  }
+  .checkout-redirect a {
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .checkout-redirect img {
+    width: 62px;
+    height: auto;
+  }
+  .payment-continuation-details {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px 16px;
+    margin-top: 12px;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+  }
+  .payment-continuation-details p {
+    margin: 0;
+  }
+  .payment-continuation-details [role="timer"] {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
   .auth-code-feedback [role="timer"] {
     margin: 12px 0 8px;
     text-align: center;
