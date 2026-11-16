@@ -495,6 +495,7 @@ export function BookingProvider({
   );
   const visitBookingStep = useCallback(
     (step: string) => {
+      if (step !== "account") setProfileAccessRevision(0);
       if (step === "time") {
         if (
           action.calendarRecovery &&
@@ -2623,6 +2624,9 @@ export function BookingProvider({
         resolve: () => run("resolve"),
         leave() {
           setEntryChecked(null);
+          // Access recovery belongs to the departed journey, not the next entry.
+          setProfileAccessRevision(0);
+          setProfileAccessNotice(BOOKING_SIGNED_OUT);
           // Discard editable data without erasing a dispatched attempt or its
           // server-owned payment recovery. Cancellation invalidates late UI replies.
           cancel();

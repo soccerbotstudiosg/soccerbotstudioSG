@@ -4,6 +4,7 @@ import { BookingLink, BookingNavigation } from "./booking-navigation";
 import { takeIdentityEntry } from "@/services/identity";
 import type { CustomerIdentityService } from "@/services/contracts";
 import { Arena } from "./arena";
+import { PromotionPanel, PromotionBanner } from "./promotion-panel";
 const navigation = vi.hoisted(() => ({
   path: "/",
   push: vi.fn(),
@@ -265,4 +266,79 @@ test("cancelled entry aborts its identity preparation and a new entry does not r
   expect(identity.refresh).toHaveBeenCalledTimes(2);
   await act(async () => vi.advanceTimersByTime(10000));
   expect(identity.refresh.mock.calls[1][0].aborted).toBe(true);
+});
+
+test("all four booking entry surfaces prepare fresh access on each return from home", async () => {
+  identity.mode = "live";
+  reduced = true;
+  const entries = [
+    <Arena key="hero" />,
+    <BookingLink key="header" href="/book/account/" className="nav-book">
+      Book now
+    </BookingLink>,
+    <PromotionPanel
+      key="section"
+      id="entry-section"
+      className="home-promotion--booking"
+      index={1}
+      eyebrow="Your next session"
+      title={["Kickoff", "Special"]}
+      activeTitle={["Ready for", "kickoff?"]}
+      teaser="Your game."
+      description="A studio session."
+      photo={{ src: "/photo.jpg", alt: "Studio", width: 800, height: 600 }}
+      href="/book/account/"
+      actionLabel="Book now"
+    />,
+    <PromotionBanner
+      key="banner"
+      id="entry-banner"
+      className="studio-bottom"
+      eyebrow="Step into the arena"
+      title="Your move."
+      description="Full instructor guidance."
+      href="/book/account/"
+      actionLabel="Book now"
+    />,
+  ];
+  for (const entry of entries) {
+    const view = render(
+      <BookingNavigation>
+        <main id="main" tabIndex={-1}>
+          {entry}
+        </main>
+      </BookingNavigation>,
+    );
+    for (let visit = 0; visit < 2; visit++) {
+      navigation.path = "/";
+      view.rerender(
+        <BookingNavigation>
+          <main id="main" tabIndex={-1}>
+            {entry}
+          </main>
+        </BookingNavigation>,
+      );
+      const before = identity.refresh.mock.calls.length;
+      fireEvent.click(screen.getByRole("link", { name: /^Book now/ }));
+      expect(identity.refresh).toHaveBeenCalledTimes(before + 1);
+      const preparation = takeIdentityEntry(
+        identity as unknown as CustomerIdentityService,
+      );
+      await act(async () => {
+        await preparation.promise;
+      });
+      expect(identity.refresh).toHaveBeenCalledTimes(before + 1);
+      navigation.path = "/book/account/";
+      view.rerender(
+        <BookingNavigation>
+          <main id="main" tabIndex={-1}>
+            {entry}
+          </main>
+        </BookingNavigation>,
+      );
+      act(() => vi.advanceTimersByTime(1180));
+      expect(screen.queryByRole("status")).toBeNull();
+    }
+    view.unmount();
+  }
 });

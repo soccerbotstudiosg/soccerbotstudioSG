@@ -10,7 +10,10 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
 import { DetailsStep } from "./details-step";
-import { createLiveIdentityService } from "@/services/identity";
+import {
+  createLiveIdentityService,
+  prepareIdentityEntry,
+} from "@/services/identity";
 import { liveBookingService } from "@/services/booking";
 import {
   profileAccessGeneration,
@@ -68,10 +71,11 @@ async function identityWith(fetcher: ReturnType<typeof vi.fn<typeof fetch>>) {
 }
 /** Inspect the retained identity/draft without granting access through the fixture. */
 function Probe() {
-  const { draft, profileAccessRevision, checkout, action, update } =
+  const { draft, profileAccessRevision, checkout, action, update, leave } =
     useBooking();
   return (
     <>
+      <button onClick={leave}>Leave for home</button>
       <button onClick={() => update({ players: 2 })}>
         Change players locally
       </button>
@@ -588,9 +592,9 @@ test("expired navigation redirects on forward and back steps while local edits a
       </BookingProvider>,
     );
     expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
-    await act(async () => {
-      await identity.guest(new AbortController().signal);
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Guest" }));
+    expect(navigation.push).toHaveBeenCalledWith("/book/session/");
+    expect(screen.getByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
     navigation.replace.mockClear();
     navigation.path = "/book/session/";
     view.rerender(
@@ -598,6 +602,33 @@ test("expired navigation redirects on forward and back steps while local edits a
         <Probe />
       </BookingProvider>,
     );
+    expect(navigation.replace).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Leave for home" }));
+    navigation.path = "/";
+    view.rerender(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Probe />
+      </BookingProvider>,
+    );
+    const accessCalls = () =>
+      fetcher.mock.calls.filter(([path]) => path === "/api/access").length;
+    const beforeEntry = accessCalls();
+    await act(async () => {
+      await prepareIdentityEntry(identity).promise;
+    });
+    expect(accessCalls()).toBe(beforeEntry + 1);
+    navigation.path = "/book/account/";
+    view.rerender(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <BookingPage step="account" />
+        <Probe />
+      </BookingProvider>,
+    );
+    expect(await screen.findByRole("button", { name: "Guest" })).toBeEnabled();
+    expect(screen.queryByText(BOOKING_SESSION_EXPIRED)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Guest" }));
+    expect(navigation.push).toHaveBeenCalledWith("/book/session/");
+    expect(accessCalls()).toBe(beforeEntry + 1);
     expect(navigation.replace).not.toHaveBeenCalled();
     view.unmount();
   }

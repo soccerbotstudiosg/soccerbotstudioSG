@@ -1,6 +1,6 @@
 import { sitePath } from "@/content/site-path";
 import { Arena } from "@/components/arena";
-import { PromotionPanel } from "@/components/promotion-panel";
+import { PromotionPanel, PromotionBanner } from "@/components/promotion-panel";
 import { homeMedia, socialPreview } from "@/content/media";
 import { SessionPrice } from "@/features/booking/session-price";
 export const metadata = {
@@ -47,19 +47,16 @@ export default function Home() {
             </strong>
           </div>
         </PromotionPanel>
-        <PromotionPanel
-          id="home-contact-title"
-          className="home-promotion--contact abstract-promotion"
-          index={2}
-          eyebrow="Start a conversation"
-          title={["Contact", "us"]}
-          activeTitle={["Tell us", "your plans."]}
-          teaser="An idea, an event, a question."
-          description="Have a question, an event in mind or a partnership to discuss? Tell us what you’re planning."
-          href="/enquiry/"
-          actionLabel="Contact us"
-        />
       </div>
+      <PromotionBanner
+        id="home-contact-title"
+        className="home-promotion--contact"
+        eyebrow="Bring your group"
+        title="Contact us"
+        description="For Multi-Session Bundles, Membership, Academy, Corporate and Sponsorship Rates"
+        href="/enquiry/"
+        actionLabel="Contact us"
+      />
     </>
   );
 }

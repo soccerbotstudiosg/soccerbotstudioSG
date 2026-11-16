@@ -58,6 +58,8 @@ Review Booking prepares checkout-specific Turnstile proof. Missing/expired serve
 
 ## 3. Expired or revoked access
 
+The recovery notice remains in place after Guest is clicked until navigation completes, avoiding a button jump. Arriving at another booking step or leaving for Home clears that journey’s notice. A fresh Book now entry prepares access again through the shared entry owner; the previous notice does not reappear merely because the new draft has no mode. Protected access failures still trigger the genuine expiry recovery.
+
 Identity and confirmation access use different messages; neither reveals a server revocation reason. Explicit access entry and checkout renew only a valid unexpired capability, preserving its owner. Expired/revoked access is not revived; payment, hold and checking deadlines remain independent.
 
 ```mermaid
@@ -370,7 +372,7 @@ Public shell follow-up: the header remains visible while scrolling, with measure
 
 Connect With Us uses icons instead of visible platform labels for WhatsApp, email and Instagram, retaining readable contact values and accessible platform names. The footer has no Enquire link; WhatsApp, email and Instagram remain.
 
-Latest visual corrections: stage offscreen sections transparently before a clear650ms/32px entrance, with immediate reveal for focus/reduced motion and cleanup. Closing-banner content shares a centred left-aligned column; its heading moves right and supporting detail appears on engagement. The whole banner is the action. Phone header flag and two navigation buttons align together at the right.
+Latest visual corrections: stage offscreen sections transparently before a clear650ms/32px entrance, with immediate reveal for focus/reduced motion and cleanup. Closing banners retain the original compact height/spacing and three centred groups: heading, description, and large unboxed action with its diagonal arrow. The whole banner is clickable, with subtle hover/focus scale and content movement. Engaged homepage/Studio cards keep their blue state until an upward scroll fully uncovers them; their first card has the restored curved top and12px leading gap. White text halves retain short copy with pale cyan accents and a faint corner grid. Phone header flag and two navigation buttons align together at the right.
 
 Booking routes, confirmation and experiment checkout are excluded from scroll reveals; their components remain static, retaining existing confirmation/invoice popup behavior. On phones the Studio tagline/video intro fills the first viewport below the measured sticky header, with cover video and a single playback control; gallery begins below the fold.
 

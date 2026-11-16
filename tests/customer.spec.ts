@@ -456,7 +456,29 @@ test("public routes remove staff access and fit the viewport", async ({
     await expect(promotion.locator(".promotion-cta")).toHaveCount(0);
     await expect(promotion.locator("a.feature-copy")).toHaveCount(1);
     await expect(promotion).toHaveCSS("position", "sticky");
+    await expect(promotion.locator(".feature-heading")).toHaveCSS(
+      "margin-bottom",
+      page.viewportSize()!.width <= 700 ? "32px" : "40px",
+    );
   }
+  await expect(
+    page.locator(".home-promotion--studio .promotion-edge--top"),
+  ).toHaveCount(1);
+  const initialBookingCopy = page.locator(
+    ".home-promotion--booking .promotion-copy-content",
+  );
+  await expect(initialBookingCopy).toHaveCSS(
+    "text-align",
+    page.viewportSize()!.width > 700 ? "right" : "left",
+  );
+  const prominentPrice = page.locator(
+    ".home-promotion--booking .promotion-details strong",
+  );
+  expect(
+    await prominentPrice.evaluate((node) =>
+      parseFloat(getComputedStyle(node).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(18);
   const contactBanner = page.locator(".abstract-promotion");
   await expect(contactBanner).toHaveCount(1);
   await expect(contactBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
@@ -465,6 +487,24 @@ test("public routes remove staff access and fit the viewport", async ({
     (node) => getComputedStyle(node).backgroundImage,
   );
   await expect(contactBanner.locator(".promotion-cta")).toHaveCount(0);
+  const bannerLink = contactBanner.getByRole("link", {
+    name: "Contact us",
+    exact: true,
+  });
+  await expect(bannerLink).toHaveClass("abstract-promotion-link");
+  await expect(bannerLink.locator(":scope > *")).toHaveCount(3);
+  await expect(
+    bannerLink.locator(".abstract-promotion-action svg"),
+  ).toHaveCount(1);
+  await expect(bannerLink).toHaveCSS("min-height", "107px");
+  await expect(contactBanner).toHaveCSS("margin-top", "24px");
+  const bannerHeadingSize = await contactBanner
+    .locator("h2")
+    .evaluate((node) => getComputedStyle(node).fontSize);
+  await expect(bannerLink.locator(".abstract-promotion-action")).toHaveCSS(
+    "font-size",
+    bannerHeadingSize,
+  );
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
   const contactBox = await contactBanner.boundingBox();
@@ -675,7 +715,7 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(heroBox).not.toBeNull();
   expect(contentBox).not.toBeNull();
   expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
-  expect(contentBox!.y).toBeCloseTo(heroBox!.y + heroBox!.height, 0);
+  expect(contentBox!.y).toBeCloseTo(heroBox!.y + heroBox!.height + 12, 0);
   const signatureBox = await page.locator(".studio-signature").boundingBox();
   const studioHeaderBox = await page.locator(".site-header").boundingBox();
   expect(signatureBox).not.toBeNull();
@@ -702,6 +742,9 @@ test("public routes remove staff access and fit the viewport", async ({
     .boundingBox();
   expect(firstPhotoBox).not.toBeNull();
   expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y, 0);
+  await expect(
+    page.locator(".studio-row").first().locator(".promotion-edge--top"),
+  ).toHaveCount(1);
   for (const row of await page.locator(".studio-row").all()) {
     await expect(row).toHaveCSS("position", "sticky");
     await expect(row.locator("a, button")).toHaveCount(0);
@@ -1302,7 +1345,7 @@ test("home navigation offer and studio booking buttons display the branded loade
   for (const [route, selector] of [
     ["/", ".nav-book"],
     ["/", ".home-promotion--booking a.feature-copy"],
-    ["/studio/", ".studio-bottom a.feature-copy"],
+    ["/studio/", ".studio-bottom a.abstract-promotion-link"],
   ]) {
     await page.goto(sitePath(route));
     await expect(
