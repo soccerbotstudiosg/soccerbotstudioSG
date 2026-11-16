@@ -50,21 +50,20 @@ export function SessionStep() {
       {!mobile && <h2 className="section-title">Outlet</h2>}
       <div className="outlet-options">
         {mobile && !outletSelected ? (
-          <label className="surface booking-choice-selector">
-            <span className="field-label">Outlet</span>
-            <select
-              value=""
-              onChange={(event) => {
-                if (event.target.value)
-                  setSessionChoices({ outlet: true, session: false });
-              }}
-            >
-              <option value="" disabled>
-                Choose outlet
-              </option>
-              <option value={LOCATION.building}>{LOCATION.building}</option>
-            </select>
-          </label>
+          <select
+            className="booking-choice-selector"
+            aria-label="Outlet"
+            value=""
+            onChange={(event) => {
+              if (event.target.value)
+                setSessionChoices({ outlet: true, session: false });
+            }}
+          >
+            <option value="" disabled>
+              Choose outlet
+            </option>
+            <option value={LOCATION.building}>{LOCATION.building}</option>
+          </select>
         ) : (
           <button
             className="surface outlet-option booking-entry-action"
@@ -153,40 +152,41 @@ function LiveSession({
   if (!selected)
     return (
       <>
-        <section className="surface">
-          <p>
-            {eligible.length
-              ? "Choose your session."
-              : "No sessions are currently available."}
-          </p>
+        <section className={mobile && eligible.length ? undefined : "surface"}>
+          {(!mobile || !eligible.length) && (
+            <p>
+              {eligible.length
+                ? "Choose your session."
+                : "No sessions are currently available."}
+            </p>
+          )}
           {mobile && eligible.length > 0 ? (
-            <label className="booking-choice-selector">
-              <span className="field-label">Session</span>
-              <select
-                value=""
-                onChange={(event) => {
-                  const service = eligible.find(
-                    (item) => item.id === event.target.value,
-                  );
-                  if (!service) return;
-                  update({
-                    nativeServiceId: service.id,
-                    nativeServiceName: service.name,
-                    slots: [],
-                  });
-                  if (!presentation.expanded) presentation.toggle();
-                }}
-              >
-                <option value="" disabled>
-                  Choose session
+            <select
+              className="booking-choice-selector"
+              aria-label="Session"
+              value=""
+              onChange={(event) => {
+                const service = eligible.find(
+                  (item) => item.id === event.target.value,
+                );
+                if (!service) return;
+                update({
+                  nativeServiceId: service.id,
+                  nativeServiceName: service.name,
+                  slots: [],
+                });
+                if (!presentation.expanded) presentation.toggle();
+              }}
+            >
+              <option value="" disabled>
+                Choose session
+              </option>
+              {eligible.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {service.name}
                 </option>
-                {eligible.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              ))}
+            </select>
           ) : (
             eligible.map((service) => (
               <button
@@ -250,29 +250,28 @@ function SessionPresentation({
   if (mobile && !expanded)
     return (
       <div className="session-products">
-        <label className="surface booking-choice-selector">
-          <span className="field-label">Session</span>
-          <select
-            value=""
-            onChange={(event) => {
-              if (event.target.value) {
-                onChoose?.(event.target.value);
-                toggle();
-              }
-            }}
-          >
-            <option value="" disabled>
-              Choose session
-            </option>
-            {(choices ?? [{ id: serviceName, name: serviceName }]).map(
-              (choice) => (
-                <option key={choice.id} value={choice.id}>
-                  {choice.name}
-                </option>
-              ),
-            )}
-          </select>
-        </label>
+        <select
+          className="booking-choice-selector"
+          aria-label="Session"
+          value=""
+          onChange={(event) => {
+            if (event.target.value) {
+              onChoose?.(event.target.value);
+              toggle();
+            }
+          }}
+        >
+          <option value="" disabled>
+            Choose session
+          </option>
+          {(choices ?? [{ id: serviceName, name: serviceName }]).map(
+            (choice) => (
+              <option key={choice.id} value={choice.id}>
+                {choice.name}
+              </option>
+            ),
+          )}
+        </select>
       </div>
     );
   return (
@@ -283,15 +282,6 @@ function SessionPresentation({
           className="surface session-product booking-entry-action"
           aria-label={serviceName}
         >
-          {mobile && (
-            <span
-              className="booking-choice-label"
-              role="heading"
-              aria-level={2}
-            >
-              Session
-            </span>
-          )}
           <button
             className="session-product-choice"
             aria-label={`Choose ${serviceName}`}
@@ -300,6 +290,16 @@ function SessionPresentation({
             onClick={toggle}
           >
             <span className="session-product-details">
+              {mobile && (
+                <span
+                  className="booking-choice-label"
+                  role="heading"
+                  aria-level={2}
+                >
+                  Session
+                </span>
+              )}
+
               <span className="session-product-icon">
                 <Icon name="ball" />
               </span>

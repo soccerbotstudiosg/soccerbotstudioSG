@@ -1,12 +1,12 @@
-# Current checkpoint
+# Progress
 
 ## Active outcome
 
-16 November2026: PR88 merged as2684703 after complete CI43848915172 at e46dd9f and successful staging43850974673 with independently matching health. Mobile compact preselected cards, dropdown unselection, 404 artwork and desktop sticky navigation are merged. Main verification/production are separate and being monitored.
+16 November 2026: PR89 is merged as f4a0015 after complete CI43866124139 and successful staging43868223076 with independently matching health at1209517. Approved mobile dropdown/card alignment and nested404 departure guard are merged. Main verification and production remain separate.
 
 ## Next actions
 
-Existing Dependabot84 is reconciled onto main2684703; preserve the six reviewed dependency updates and both histories. No additional application changes are needed. Full local code verification passed394 component/service,205 tooling,58 installer cases plus format/lint/types/audit/build/export on the reconciled source. Push this existing branch and verify all final-head gates. Bot-author staging requires the trusted manual path in Runbook section6; current connector capabilities lack workflow dispatch/repository-variable writes. Prepare the exact verified candidate and dispatch inputs before requesting any owner UI action. Do not claim PR84 staged or merged from its green PR checks. Owner authorized continuing the dependency release sequence.
+Existing Dependabot84 is reconciled onto main f4a0015, preserving the reviewed dependency updates. Complete full local code verification, publish the existing branch and check final-head CI. Bot-author staging requires the trusted manual path in Runbook section6; current connector capabilities lack workflow dispatch/repository-variable writes. Prepare the exact verified candidate and dispatch inputs before requesting owner UI execution. Do not claim PR84 staged or merged from green PR checks. Owner authorized continuing the dependency release sequence.
 
 ## Ordered work after this slice
 

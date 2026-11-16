@@ -3252,12 +3252,23 @@
     margin-bottom: 2px;
   }
   .booking-choice-selector {
-    border-radius: var(--radius-booking-control);
     display: block;
-    padding: 12px 10px;
-  }
-  .booking-choice-selector select {
     width: 100%;
+    min-width: 0;
+    min-height: 54px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-control-border);
+    border-radius: var(--radius-booking-control);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: var(--text-body);
+    line-height: var(--leading-control);
+  }
+  @media (hover: hover) {
+    .booking-choice-selector:not(:disabled):hover {
+      border-color: var(--color-identity);
+      background: var(--background-selected);
+    }
   }
   .session-product-choice {
     display: grid;
@@ -5108,8 +5119,13 @@
       margin: 8px 0 16px;
     }
     .outlet-option.surface {
-      padding: 12px 10px;
-      gap: 10px;
+      padding: 12px;
+      gap: 12px;
+    }
+    .outlet-option > svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
     }
     .outlet-option > span {
       grid-template-columns: 1fr;
@@ -5121,25 +5137,46 @@
       margin-bottom: 8px;
     }
     .session-product.surface {
-      gap: 8px 10px;
-      padding: 12px 10px;
+      gap: 8px 12px;
+      padding: 12px;
     }
     .session-product-choice {
       grid-template-columns: 1fr;
       gap: 8px 10px;
     }
     .session-product-details {
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 4px;
+      grid-template-columns: 20px minmax(0, 1fr);
+      gap: 2px 12px;
+    }
+    .session-product-details .booking-choice-label {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .session-product-icon {
+      grid-column: 1;
+      grid-row: 2;
+      width: 20px;
+      height: 20px;
+    }
+    .session-product-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    .session-product-name {
+      grid-column: 2;
+      grid-row: 2;
     }
     .session-product-meta {
-      grid-column: 1 / -1;
+      grid-column: 2;
       border-left: 0;
       padding-left: 0;
     }
     .session-product-prices {
-      margin-top: 0;
+      margin: 0 0 0 32px;
       gap: 2px;
+    }
+    .session-product .player-selection {
+      margin-left: 32px;
     }
     .booking-shell {
       padding: 0 20px 38px;

@@ -156,6 +156,11 @@ test("live session selection uses client prices while demo retains its own rates
   fireEvent.click(outlet);
   const outletSelect = screen.getByRole("combobox", { name: "Outlet" });
   expect(outletSelect).toHaveDisplayValue("Choose outlet");
+  expect(outletSelect).toHaveClass("booking-choice-selector");
+  expect(
+    screen.queryByRole("heading", { name: "Outlet" }),
+  ).not.toBeInTheDocument();
+  expect(outletSelect.closest("label, .surface")).toBeNull();
   expect(
     screen.queryByRole("region", { name: "Kickoff Special" }),
   ).not.toBeInTheDocument();
@@ -165,6 +170,11 @@ test("live session selection uses client prices while demo retains its own rates
   ).toHaveTextContent("201 Henderson Road, #05-01");
   const sessionSelect = screen.getByRole("combobox", { name: "Session" });
   expect(sessionSelect).toHaveDisplayValue("Choose session");
+  expect(sessionSelect).toHaveClass("booking-choice-selector");
+  expect(
+    screen.queryByRole("heading", { name: "Session" }),
+  ).not.toBeInTheDocument();
+  expect(sessionSelect.closest("label, .surface")).toBeNull();
   expect(
     screen.getByRole("option", { name: "Kickoff Special" }),
   ).toHaveTextContent(/^Kickoff Special$/);
