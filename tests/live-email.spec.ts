@@ -2751,7 +2751,9 @@ async function uncertainHolding(
       const noticeContents = await resolvedNotice.innerText();
       await page.reload();
       await expect(page).toHaveURL(/\/book\/time\/$/);
-      await expect(resolvedNotice).toHaveText(noticeContents);
+      await expect(resolvedNotice).toHaveText(noticeContents, {
+        useInnerText: true,
+      });
       await expect(resolvedNotice.getByRole("listitem")).toHaveCount(1);
       await expect(
         page.getByRole("status", {
