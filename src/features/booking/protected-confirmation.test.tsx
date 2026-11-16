@@ -760,10 +760,7 @@ it("an expired confirmation wait cannot replace fresh reads on refresh or native
     });
     expect(
       screen.getByRole("status", {
-        name:
-          outcome !== "unpaid" && outcome !== "revisit"
-            ? "Checking payment…"
-            : "Checking booking…",
+        name: "Checking payment…",
       }),
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();

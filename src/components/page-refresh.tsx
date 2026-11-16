@@ -30,6 +30,7 @@ const isReload = () =>
       PerformanceNavigationTiming | undefined
   )?.type === "reload";
 const serverNavigation = () => false;
+const hydratedNavigation = () => true;
 
 /** Cover initial rendering until hydration, restored state and fonts are ready. */
 export function PageRefreshBoundary({ children }: { children: ReactNode }) {
@@ -64,6 +65,11 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     isReload,
     serverNavigation,
   );
+  const hydrated = useSyncExternalStore(
+    subscribeToNavigation,
+    hydratedNavigation,
+    serverNavigation,
+  );
   const reloading = visit.episode === 0 && navigationReload;
   const loading = useBookingLoadingState();
   const operationLabel = loadingFeedbackMessage(loading?.label)
@@ -77,9 +83,10 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     setFeedback({ pathname, label: operationLabel });
   // Active operations take precedence; retain meaningful feedback after they finish.
   const feedbackLabel =
-    loading?.label ??
+    operationLabel ??
     (feedback.pathname === pathname ? feedback.label : undefined) ??
-    checkoutRouteLoadingLabel(pathname);
+    checkoutRouteLoadingLabel(pathname) ??
+    loading?.label;
   const setDocumentLoading = loading?.setDocumentLoading;
   const pending = !!loading?.label;
   useLayoutEffect(() => {
@@ -154,7 +161,18 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
                 : (feedbackLabel ?? loading?.label ?? "Loading page")
             }
             message={
-              reloading ? "Refreshing…" : loadingFeedbackMessage(feedbackLabel)
+              !hydrated ? (
+                <>
+                  <span className="document-reload-message">Refreshing…</span>
+                  <span className="document-navigation-message">
+                    {loadingFeedbackMessage(feedbackLabel) ?? "Loading..."}
+                  </span>
+                </>
+              ) : reloading ? (
+                "Refreshing…"
+              ) : (
+                loadingFeedbackMessage(feedbackLabel)
+              )
             }
           />
         </div>

@@ -1145,6 +1145,8 @@ function ProtectedConfirmationBody({
     );
   if (creationResolved && !hasPaymentEvidence)
     return <BrandLoading label="Checking booking…" />;
+  if (checkoutMode === "live" && confirmationRoute && !contextSettled)
+    return <BrandLoading label="Checking payment…" />;
   if (recoveryTimedOut === attemptId && awaitingCreation)
     return <BrandLoading label="Checking booking…" />;
   if (awaitingCreation && !contextMatches)
@@ -1195,7 +1197,7 @@ function ProtectedConfirmationBody({
     const pendingLabel =
       view === "confirmed"
         ? "Preparing confirmation…"
-        : checkoutMode && preparation === "loading"
+        : checkoutMode && preparation === "loading" && !confirmationRoute
           ? "Checking booking…"
           : paymentReceived
             ? "Payment received. Confirming booking."

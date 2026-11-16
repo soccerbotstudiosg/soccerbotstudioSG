@@ -18,9 +18,11 @@ import { BrandLoading, useMinimumLoading } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
 /** Identify checkout routes before restored payment checks can supply their status. */
 export const checkoutRouteLoadingLabel = (pathname: string) =>
-  /^\/(?:book\/(?:review|payment|confirmation)|confirmation)\/?$/.test(pathname)
-    ? "Checking booking…"
-    : undefined;
+  /^\/(?:book\/(?:payment|confirmation)|confirmation)\/?$/.test(pathname)
+    ? "Checking payment…"
+    : /^\/book\/review\/?$/.test(pathname)
+      ? "Checking booking…"
+      : undefined;
 /** Preserve approved operation feedback within any full-page loading cover. */
 export const loadingFeedbackMessage = (label?: string) =>
   [

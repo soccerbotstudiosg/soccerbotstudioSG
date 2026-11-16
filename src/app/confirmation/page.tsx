@@ -51,7 +51,7 @@ function ConfirmationRoute() {
 /** Render the confirmation route with a loading boundary. */
 export default function ConfirmationPage() {
   return (
-    <Suspense fallback={<PendingConfirmation />}>
+    <Suspense fallback={<PendingConfirmation label="Checking payment…" />}>
       <ConfirmationRoute />
     </Suspense>
   );

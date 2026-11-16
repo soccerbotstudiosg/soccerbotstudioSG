@@ -202,7 +202,7 @@ export function ReviewStep({
           to complete your payment.
         </p>
         <button
-          className="button"
+          className="button checkout-payment-button"
           disabled={!canProceed}
           aria-busy={checkingProof || undefined}
           aria-label={
@@ -241,7 +241,17 @@ export function ReviewStep({
             "Proceed to Payment"
           )}{" "}
           <BookingActionTotal />
-          {!checkingProof && !busy ? <Icon name="lock" /> : null}
+          {!checkingProof && !busy ? (
+            <Icon name="lock" className="checkout-lock" />
+          ) : null}
+          <img
+            className="checkout-button-logo"
+            src={hitpayLogo}
+            width={108}
+            height={28}
+            alt=""
+            aria-hidden="true"
+          />
         </button>
       </BookingPrimaryAction>
       {verifying && (

@@ -1,5 +1,5 @@
 "use client";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState, type ReactNode } from "react";
 import { darkLogo } from "@/content/media";
 export const FULL_PAGE_LOADING_MIN_MS = 1000;
 
@@ -43,7 +43,7 @@ export function BrandLoading({
   leaving?: boolean;
   overlay?: boolean;
   label?: string;
-  message?: string;
+  message?: ReactNode;
 }) {
   const Container = compact ? "span" : "div";
   return (

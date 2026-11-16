@@ -254,13 +254,14 @@ async function checkRefreshCover(hostPage: Page, paths: string[]) {
       await page.goto(sitePath(path), { waitUntil: "commit" });
       const cover = page.locator("#page-refresh");
       const initialLabel = [
-        "/book/review/",
         "/book/payment/",
         "/book/confirmation/",
         "/confirmation/",
       ].includes(path)
-        ? "Checking booking…"
-        : "Loading page";
+        ? "Checking payment…"
+        : path === "/book/review/"
+          ? "Checking booking…"
+          : "Loading page";
       await expect(
         cover.getByRole("status", { name: initialLabel, exact: true }),
       ).toBeVisible();
@@ -2054,7 +2055,19 @@ test("header blue and the typography hierarchy stay consistent across every book
         const actionBox = await action.boundingBox();
         expect(actionBox!.height).toBeLessThanOrEqual(72);
         const redirect = primaryBar.locator(".checkout-redirect");
-        if (await redirect.count()) {
+        if ((await redirect.count()) && page.viewportSize()!.width <= 640) {
+          await expect(redirect).toBeHidden();
+          const logo = action.locator(".checkout-button-logo");
+          await expect(logo).toBeVisible();
+          const logoBox = await logo.boundingBox();
+          expect(logoBox!.x).toBeGreaterThan(
+            actionBox!.x + actionBox!.width / 2,
+          );
+          expect(logoBox!.x + logoBox!.width).toBeLessThanOrEqual(
+            actionBox!.x + actionBox!.width,
+          );
+          expect(barBox!.height).toBeLessThanOrEqual(72);
+        } else if (await redirect.count()) {
           const logo = redirect.getByRole("img", { name: "HitPay" });
           await expect(logo).toBeVisible();
           expect(

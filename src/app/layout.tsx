@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { BookingProvider } from "@/features/booking/provider";
 import { BookingNavigation } from "@/components/booking-navigation";
 import { PageRefreshBoundary } from "@/components/page-refresh";
+import { documentNavigationScript } from "@/components/document-navigation";
 import { SiteShell } from "@/components/site-shell";
 import { sitePath } from "@/content/site-path";
 import { socialPreview } from "@/content/media";
@@ -57,7 +58,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en-SG">
+    <html lang="en-SG" suppressHydrationWarning>
+      <head>
+        <script>{documentNavigationScript}</script>
+      </head>
       <body>
         <BookingProvider>
           <BookingNavigation>

@@ -1418,6 +1418,13 @@
   html:has(#page-refresh) {
     overflow: hidden;
   }
+  .document-reload-message,
+  html[data-document-navigation="reload"] .document-navigation-message {
+    display: none;
+  }
+  html[data-document-navigation="reload"] .document-reload-message {
+    display: inline;
+  }
   .page-loading {
     position: fixed;
     inset: 0;
@@ -3500,6 +3507,25 @@
   .checkout-redirect img {
     width: 62px;
     height: auto;
+  }
+  .checkout-button-logo {
+    display: none;
+  }
+  @media (max-width: 640px) {
+    .checkout-redirect,
+    .checkout-payment-button > .checkout-lock {
+      display: none;
+    }
+    .checkout-button-logo {
+      display: block;
+      width: 62px;
+      height: auto;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    .checkout-payment-button:not(:disabled) .checkout-button-logo {
+      filter: brightness(0) invert(1);
+    }
   }
   .payment-continuation-details {
     display: flex;

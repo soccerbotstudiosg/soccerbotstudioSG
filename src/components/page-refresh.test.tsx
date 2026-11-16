@@ -1,4 +1,6 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
+import { runInNewContext } from "node:vm";
+import { documentNavigationScript } from "./document-navigation";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import {
@@ -77,7 +79,21 @@ test("refresh cover survives server HTML and hydration until restored state font
   document.body.append(container);
   const cover = container.querySelector<HTMLElement>("#page-refresh")!;
   expect(cover).toHaveTextContent(
-    "Checking booking… Please do not close or refresh.",
+    "Checking payment… Please do not close or refresh.",
+  );
+  for (const type of ["reload", "navigate", "back_forward"]) {
+    const root = { dataset: {} as Record<string, string> };
+    runInNewContext(documentNavigationScript, {
+      document: { documentElement: root },
+      performance: { getEntriesByType: () => [{ type }] },
+    });
+    expect(root.dataset.documentNavigation).toBe(type);
+  }
+  expect(cover.querySelector(".document-reload-message")).toHaveTextContent(
+    "Refreshing…",
+  );
+  expect(cover.querySelector(".document-navigation-message")).toHaveTextContent(
+    "Checking payment…",
   );
   expect(cover.style.position).toBe("fixed");
   expect(cover.style.inset).toBe("0px");
@@ -226,14 +242,20 @@ test("normal and browser return navigation never say refreshing and preserve pay
     }
     const view = render(<Page pending={false} />);
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Checking booking… Please do not close or refresh.",
+      "Checking payment… Please do not close or refresh.",
     );
     expect(screen.queryByText("Loading...", { exact: true })).toBeNull();
     view.rerender(<Page label="Processing payment" />);
     expect(
-      screen.getByRole("status", { name: "Processing payment" }),
+      screen.getByRole("status", { name: "Checking payment…" }),
     ).toBeVisible();
     expect(document.querySelectorAll(".page-loading")).toHaveLength(1);
+    view.rerender(<Page label="Opening checkout…" />);
+    view.rerender(<Page label="Preparing booking…" />);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Opening checkout… Please do not close or refresh.",
+    );
+    expect(screen.queryByText("Loading...", { exact: true })).toBeNull();
     view.rerender(<Page />);
     const cover = screen.getByRole("status", {
       name: "Payment received. Confirming booking.",
