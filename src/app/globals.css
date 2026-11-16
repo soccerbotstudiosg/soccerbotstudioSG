@@ -1425,6 +1425,13 @@
   html[data-document-navigation="reload"] .document-reload-message {
     display: inline;
   }
+  .document-review-return,
+  html[data-document-navigation="back_forward"] .document-review-entry {
+    display: none;
+  }
+  html[data-document-navigation="back_forward"] .document-review-return {
+    display: inline;
+  }
   .page-loading {
     position: fixed;
     inset: 0;

@@ -221,8 +221,13 @@ test("refresh retains one cover through account calendar and confirmation checks
 
 test("normal and browser return navigation never say refreshing and preserve payment loader messages", async () => {
   booking.ready = true;
-  for (const type of ["navigate", "back_forward"]) {
+  for (const [type, pathname] of [
+    ["navigate", "/confirmation/"],
+    ["back_forward", "/confirmation/"],
+    ["back_forward", "/book/review/"],
+  ]) {
     navigation = type;
+    route.pathname = pathname;
     function Page({
       pending = true,
       label = "Payment received. Confirming booking.",

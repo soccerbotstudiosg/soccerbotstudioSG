@@ -151,12 +151,17 @@ function fixture(t, basePath) {
   ])
     write(
       file,
-      html.replace(
-        'aria-label="Loading page"',
-        file === "book/review/index.html"
-          ? 'aria-label="Checking booking…"'
-          : 'aria-label="Checking payment…"',
-      ),
+      html
+        .replace(
+          "Loading...</span>",
+          '<span class="document-review-entry">Checking booking… Please do not close or refresh.</span><span class="document-review-return">Checking payment… Please do not close or refresh.</span></span>',
+        )
+        .replace(
+          'aria-label="Loading page"',
+          file === "book/review/index.html"
+            ? 'aria-label="Checking booking…"'
+            : 'aria-label="Checking payment…"',
+        ),
     );
   write("_next/app.js", "export {};");
   write("assets/photo.jpg", "synthetic image");
@@ -295,6 +300,17 @@ for (const [name, mutate, error] of [
     `missing pre-hydration feedback ${part}`,
     (f) => {
       const file = "confirmation/index.html";
+      const original = readFileSync(join(f.root, file), "utf8");
+      const broken = original.replace(part, "missing-feedback");
+      assert.notEqual(broken, original);
+      f.write(file, broken);
+    },
+    /Missing pre-hydration navigation feedback/,
+  ]),
+  ...["document-review-entry", "document-review-return"].map((part) => [
+    `missing Review history feedback ${part}`,
+    (f) => {
+      const file = "book/review/index.html";
       const original = readFileSync(join(f.root, file), "utf8");
       const broken = original.replace(part, "missing-feedback");
       assert.notEqual(broken, original);

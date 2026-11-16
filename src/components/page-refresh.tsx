@@ -31,6 +31,11 @@ const isReload = () =>
   )?.type === "reload";
 const serverNavigation = () => false;
 const hydratedNavigation = () => true;
+const isHistoryReturn = () =>
+  (
+    performance.getEntriesByType("navigation")[0] as
+      PerformanceNavigationTiming | undefined
+  )?.type === "back_forward";
 
 /** Cover initial rendering until hydration, restored state and fonts are ready. */
 export function PageRefreshBoundary({ children }: { children: ReactNode }) {
@@ -70,6 +75,12 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     hydratedNavigation,
     serverNavigation,
   );
+  const historyReturn = useSyncExternalStore(
+    subscribeToNavigation,
+    isHistoryReturn,
+    serverNavigation,
+  );
+  const reviewRoute = /^\/book\/review\/?$/.test(pathname);
   const reloading = visit.episode === 0 && navigationReload;
   const loading = useBookingLoadingState();
   const operationLabel = loadingFeedbackMessage(loading?.label)
@@ -82,11 +93,15 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
   )
     setFeedback({ pathname, label: operationLabel });
   // Active operations take precedence; retain meaningful feedback after they finish.
-  const feedbackLabel =
+  const activeFeedback =
     operationLabel ??
     (feedback.pathname === pathname ? feedback.label : undefined) ??
     checkoutRouteLoadingLabel(pathname) ??
     loading?.label;
+  const feedbackLabel =
+    historyReturn && reviewRoute && activeFeedback === "Checking booking…"
+      ? "Checking payment…"
+      : activeFeedback;
   const setDocumentLoading = loading?.setDocumentLoading;
   const pending = !!loading?.label;
   useLayoutEffect(() => {
@@ -165,7 +180,18 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
                 <>
                   <span className="document-reload-message">Refreshing…</span>
                   <span className="document-navigation-message">
-                    {loadingFeedbackMessage(feedbackLabel) ?? "Loading..."}
+                    {reviewRoute ? (
+                      <>
+                        <span className="document-review-entry">
+                          {loadingFeedbackMessage(feedbackLabel)}
+                        </span>
+                        <span className="document-review-return">
+                          {loadingFeedbackMessage("Checking payment…")}
+                        </span>
+                      </>
+                    ) : (
+                      (loadingFeedbackMessage(feedbackLabel) ?? "Loading...")
+                    )}
                   </span>
                 </>
               ) : reloading ? (

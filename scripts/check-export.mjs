@@ -142,7 +142,11 @@ export function checkExport(directory, basePath) {
         ) ||
         refresh.querySelector(".document-reload-message")?.textContent !==
           "Refreshing…" ||
-        !refresh.querySelector(".document-navigation-message")?.textContent
+        !refresh.querySelector(".document-navigation-message")?.textContent ||
+        (file === "book/review/index.html" &&
+          (!refresh.querySelector(".document-review-entry")?.textContent ||
+            refresh.querySelector(".document-review-return")?.textContent !==
+              "Checking payment… Please do not close or refresh."))
       )
         throw new Error(`Missing pre-hydration navigation feedback: ${file}`);
       dom.window.close();
