@@ -2,13 +2,11 @@
 
 ## Active outcome
 
-17 November 2026: repair stale access-expiry notices on re-entry and Guest navigation flicker; restore compact full-link banners; improve404 legibility, gentle nudges and shared idle regrouping. Working branch `fix/booking-reentry-session` starts from merged PR91 (`579d682`). Preserve the untracked node_modules symlink. No live provider actions or assistant browser execution.
+17 November2026: PR93 54defcf passes the enquiry guard, but CI44031490315 exposed a real phone-WebKit click interception: the Back-to-top circle overlaps Choose Date & Time near the footer (artifact14305094674). The shared control now measures collisions before paint and shifts below the primary action; existing component/browser guards cover collision and normal placement. Focused regression/mutation, types/lint/source/policy and build/export pass; full local unit runs retain calendar timeouts (398/400 in a one-worker diagnostic), so full local success is not claimed. Push the owning repair and require complete exact-head CI/staging health. PR remains unmerged; physical Edge acceptance is pending.
 
 ## Next actions
 
-The HAR records a fresh30-minute access cookie. The reproduced client defect was a retained recovery revision after leaving booking, plus hiding its notice as soon as Guest changed draft mode. Fixes clear recovery on departure/arrival while preserving outgoing layout. Focused tests reproduce both original failures and pass after repair. All four entry-surface preparation paths are covered, including repeated entry. Banners restore the prior compact layout with three centred groups and an arrow inside the unboxed action group.404 digit drift is coherent, mobile contrast/stroke lengths are clearer, and small nudges return together seven seconds after the last interaction. Focused canvas tests compare recovery against an untouched reference.
-
-PR92 initial89fa4e8 passed all13 CI jobs. Candidate f9c39e0 adds measured sticky-cart clearance and normal404 header/footer; local code verification passed400 component,205 tooling,58 installer tests and export. CI43962899124 passed12/13 jobs; frontend tablet-WebKit typography case exhausted30 seconds while successfully checking Contact sticky geometry. Preserved artifact14276305696/trace confirms no failed API assertions and longest completed action1.143seconds. Split independent account/session presentation from calendar/contact presentation, retaining all assertions and default deadlines; update exact ordered inventory. Run affected guards/type/lint/format, push samePR, monitor exact-head CI, verify actual staging revision and merge under explicit owner authorization. Dependabot84 remains separate.
+Consolidate tests/guards/docs, run local code verification, push existing PR, monitor exact-head CI and deploy staging under the owner's standing request. Do not merge. No provider actions or assistant browsers.
 
 ## Ordered work after this slice
 

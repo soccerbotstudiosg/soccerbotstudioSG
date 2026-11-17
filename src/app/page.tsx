@@ -11,7 +11,7 @@ export const metadata = {
 /** Present compact introductions that reveal detail before following existing destinations. */
 export default function Home() {
   return (
-    <>
+    <div className="promotion-journey">
       <Arena />
       <div className="promotion-stack">
         <PromotionPanel
@@ -55,8 +55,8 @@ export default function Home() {
         title="Contact us"
         description="For Multi-Session Bundles, Membership, Academy, Corporate and Sponsorship Rates"
         href="/enquiry/"
-        actionLabel="Contact us"
+        actionLabel="Enquire"
       />
-    </>
+    </div>
   );
 }

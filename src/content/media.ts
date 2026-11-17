@@ -52,6 +52,7 @@ export const studioMedia = [
   },
   {
     src: sitePath("/assets/ba35618aca17.jpg"),
+    zoom: 1.34,
     source: "https://soccerbot360.com/en/produkt",
     sourceAsset:
       "https://assets.soccerbot360.com/assets/videos/product-hero.mp4",
@@ -66,10 +67,10 @@ export const studioMedia = [
       "Six projectors create a continuous 3D environment around the arena\u2019s circular rebound walls. Games and targets appear around the player, combining physical ball work with scanning, reaction and decision-making. The surrounding projections make the whole space part of each activity.",
     width: 1920,
     height: 1080,
-    zoom: 1.34,
   },
   {
     src: sitePath("/assets/fe13b3c27b10.jpg"),
+    zoom: 1.34,
     source: "https://soccerbot360.com/en/produkt",
     sourceAsset:
       "https://assets.soccerbot360.com/assets/videos/product-hero.mp4",
@@ -84,12 +85,12 @@ export const studioMedia = [
       "High-speed camera tracking captures reaction time and passing accuracy as players interact with the games. These measurements provide structured feedback on performance, giving coaches a basis for discussing technique and decisions. Physical practice and cognitive training come together in the same activity.",
     width: 1920,
     height: 1080,
-    zoom: 1.34,
   },
 ];
 export const homeMedia = {
   studio: {
     src: sitePath("/assets/91d938ee515c.jpg"),
+    position: "50% 80%",
     width: 1080,
     height: 608,
     alt: "Two adult footballers in matching training kit practising with footballs inside a bright SOCCERBOT360 arena, surrounded by red, white and blue projections.",
@@ -98,12 +99,12 @@ export const homeMedia = {
   },
   kickoff: {
     src: sitePath("/assets/2be37f98cb23.jpg"),
+    zoom: 1.1,
     width: 1920,
     height: 890,
     alt: "A player in a SOCCERBOT360 shirt, seen from behind, approaching illuminated targets in an arena.",
     source: "https://soccerbot360.com/en/anwendungen",
     sourceAsset: "https://soccerbot360.com/videos/kognitiv-poster.jpg",
-    zoom: 1.13,
   },
 };
 

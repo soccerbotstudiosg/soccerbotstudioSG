@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useErrorPage } from "@/components/site-shell";
+import { Icon } from "@/components/icon";
+import { CONTACT } from "@/domain/catalog";
 import { notFoundAstronaut } from "@/content/media";
 
 const digits = [
@@ -90,15 +92,15 @@ function FragmentedCode() {
       }
       for (const tile of tiles) {
         // Move the numeral mostly together so ambient motion cannot dissolve its outline.
-        const amplitude = motion.matches ? 0 : 6;
+        const amplitude = motion.matches ? 0 : 8;
         const phase = tile.formsCode ? 0 : tile.phase;
-        const detail = motion.matches || !tile.formsCode ? 0 : 1;
+        const detail = motion.matches || !tile.formsCode ? 0 : 2;
         const driftX =
-          Math.sin(time / 4200 + phase) * amplitude +
-          Math.sin(time / 4200 + tile.phase) * detail;
+          Math.sin(time / 2200 + phase) * amplitude +
+          Math.sin(time / 2200 + tile.phase) * detail;
         const driftY =
-          Math.cos(time / 5300 + phase) * amplitude +
-          Math.cos(time / 5300 + tile.phase) * detail;
+          Math.cos(time / 3000 + phase) * amplitude +
+          Math.cos(time / 3000 + tile.phase) * detail;
         tile.vx =
           (tile.vx + (tile.homeX + driftX - tile.x) * 0.035 * step) *
           Math.pow(0.83, step);
@@ -156,8 +158,11 @@ function FragmentedCode() {
       const cell = Math.max(8, Math.min(22, width / 64));
       const columns = Math.ceil(width / cell),
         rows = Math.ceil(height / cell);
-      const scale = Math.max(1, Math.floor(Math.min(columns / 28, rows / 12)));
       const compact = width <= 600;
+      const scale = Math.max(
+        compact ? 2 : 1,
+        Math.floor(Math.min(columns / 28, rows / 12)),
+      );
       const codeScale = compact ? (width * 0.68) / (17 * scale * cell) : 0.65;
       const codeCenterY = height * (compact ? 0.36 : 0.5);
       const left = Math.floor((columns - 17 * scale) / 2),
@@ -253,7 +258,7 @@ function FragmentedCode() {
               (filled ? codeScale : 1) *
               (filled
                 ? compact
-                  ? [0.9, 1, 1.05, 1.15][seed % 4]
+                  ? [0.65, 0.85, 1, 1.2, 1.4][seed % 5]
                   : [0.5, 0.7, 0.85, 1, 1.2, 1.45][seed % 6]
                 : [0.3, 0.6, 1, 1.5, 2.1, 2.9][seed % 6]),
           });
@@ -274,10 +279,10 @@ function FragmentedCode() {
         ? Math.max(8, event.timeStamp - pointer.time)
         : 16;
       const dx = pointer
-        ? Math.max(-2, Math.min(2, ((x - pointer.x) / elapsed) * 12))
+        ? Math.max(-4, Math.min(4, ((x - pointer.x) / elapsed) * 12))
         : 0;
       const dy = pointer
-        ? Math.max(-2, Math.min(2, ((y - pointer.y) / elapsed) * 12))
+        ? Math.max(-4, Math.min(4, ((y - pointer.y) / elapsed) * 12))
         : -0.5;
       for (const tile of tiles)
         if (
@@ -288,11 +293,11 @@ function FragmentedCode() {
             const margin = tile.size / 2;
             tile.homeX = Math.max(
               margin,
-              Math.min(width - margin, tile.originX + dx * 3),
+              Math.min(width - margin, tile.originX + dx * 5),
             );
             tile.homeY = Math.max(
               margin,
-              Math.min(height - margin, tile.originY + dy * 3),
+              Math.min(height - margin, tile.originY + dy * 5),
             );
           }
           resetAt = performance.now() + 7000;
@@ -378,6 +383,15 @@ export default function NotFound() {
         404
       </div>
       <FragmentedCode />
+      <a
+        className="not-found-instagram"
+        href={CONTACT.instagram}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Instagram: @soccerbotstudiosg"
+      >
+        <Icon name="instagram" />
+      </a>
       <p className="not-found-message">
         Oops, this page drifted off course.
         <span>Let the ball take you home.</span>
@@ -437,16 +451,7 @@ export default function NotFound() {
               strokeWidth="1.2"
               strokeLinejoin="round"
             />
-            <g clipPath="url(#home-sphere)">
-              <path
-                className="not-found-home-shine"
-                d="M-50 0H-35L25 120H10Z"
-                fill="white"
-                opacity=".65"
-              />
-            </g>
           </svg>
-          <span className="not-found-home-label">Home</span>
         </Link>
       </div>
     </section>

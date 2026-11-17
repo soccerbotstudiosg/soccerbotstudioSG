@@ -3,12 +3,22 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type ReactNode,
 } from "react";
 import Link from "next/link";
 import { BookingLink } from "./booking-navigation";
-import { Icon } from "./icon";
+import { subscribePromotionHover } from "./promotion-hover";
+
+const mobileQuery = "(max-width: 700px)";
+/** Keep mobile detail disclosure synchronized with the responsive layout. */
+function subscribeMobile(notify: () => void) {
+  const media = window.matchMedia(mobileQuery);
+  media.addEventListener("change", notify);
+  return () => media.removeEventListener("change", notify);
+}
+const mobileSnapshot = () => window.matchMedia(mobileQuery).matches;
 
 type Props = {
   id: string;
@@ -25,6 +35,7 @@ type Props = {
     width: number;
     height: number;
     zoom?: number;
+    position?: string;
   };
   href?: string;
   actionLabel?: string;
@@ -47,24 +58,37 @@ export function PromotionPanel({
   children,
 }: Props) {
   const panel = useRef<HTMLElement>(null);
-  const [active, setActive] = useState(false);
+  const [engaged, setActive] = useState(false);
+  const mobile = useSyncExternalStore(
+    subscribeMobile,
+    mobileSnapshot,
+    () => false,
+  );
+  const active = mobile || engaged;
+  useEffect(() => {
+    const element = panel.current;
+    if (!element) return;
+    return subscribePromotionHover(element, (hovered) => {
+      setActive(hovered || element.contains(document.activeElement));
+    });
+  }, []);
   useEffect(() => {
     const element = panel.current;
     if (!element || typeof ResizeObserver === "undefined") return;
     /** Keep tall cards readable and align both heading variants against their shared column. */
     function measure() {
-      const heading = element!.querySelector<HTMLElement>(".feature-heading")!;
       element!.style.setProperty(
         "--panel-height",
         `${element!.getBoundingClientRect().height}px`,
       );
+      const heading = element!.querySelector<HTMLElement>(".feature-heading")!;
       for (const variant of ["initial", "expanded"]) {
         const words = heading.querySelector<HTMLElement>(
           `.feature-title-${variant}`,
         )!;
         element!.style.setProperty(
           `--${variant}-travel`,
-          `${Math.max(0, heading.clientWidth - words.offsetWidth)}px`,
+          `${Math.max(0, heading.clientWidth - (parseFloat(getComputedStyle(heading).paddingRight) || 0) - words.offsetWidth)}px`,
         );
       }
     }
@@ -75,30 +99,6 @@ export function PromotionPanel({
       observer.observe(words);
     measure();
     return () => observer.disconnect();
-  }, []);
-  useEffect(() => {
-    const element = panel.current;
-    if (!element) return;
-    let previousScroll = window.scrollY;
-    /** Release the engaged style only when scrolling upward fully uncovers this card. */
-    function revealAgain() {
-      const current = window.scrollY;
-      if (current < previousScroll) {
-        const bounds = element!.getBoundingClientRect();
-        const following =
-          element!.nextElementSibling ??
-          element!.parentElement?.nextElementSibling;
-        if (
-          bounds.top >= 0 &&
-          (!following ||
-            following.getBoundingClientRect().top >= bounds.bottom - 1)
-        )
-          setActive(false);
-      }
-      previousScroll = current;
-    }
-    window.addEventListener("scroll", revealAgain, { passive: true });
-    return () => window.removeEventListener("scroll", revealAgain);
   }, []);
   const content = (
     <div className="promotion-copy-content">
@@ -112,6 +112,22 @@ export function PromotionPanel({
           {activeTitle[0]}
           <span>{activeTitle[1]}</span>
         </span>
+        {href && (
+          <span className="feature-arrow" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path className="feature-corner" d="M5 19V5h14" />
+              <g className="feature-chevron">
+                <path d="m4 5 7 7-7 7" />
+                <path d="m12 5 7 7-7 7" />
+              </g>
+            </svg>
+          </span>
+        )}
       </h2>
       <p className="feature-description">
         <span className="feature-teaser" aria-hidden={active}>
@@ -122,10 +138,40 @@ export function PromotionPanel({
         </span>
       </p>
       {children}
-      {href && (
-        <span className="feature-arrow" aria-hidden="true">
-          <Icon name="chevron" />
-        </span>
+      {!href && (
+        <svg
+          className="feature-circuits"
+          viewBox="0 0 100 70"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle
+            cx="50"
+            cy="35"
+            r="28"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeDasharray="72 10 20 10"
+          />
+          <circle
+            cx="50"
+            cy="35"
+            r="20"
+            stroke="currentColor"
+            strokeWidth="1"
+          />
+          <circle
+            cx="50"
+            cy="35"
+            r="9"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeDasharray="18 6"
+          />
+          <path d="M3 35h17m60 0h17M50 1v10m0 48v10" stroke="currentColor" />
+          <circle cx="22" cy="35" r="3" fill="currentColor" />
+          <circle cx="78" cy="35" r="3" fill="currentColor" />
+        </svg>
       )}
     </div>
   );
@@ -141,6 +187,11 @@ export function PromotionPanel({
       onPointerEnter={(event) => {
         if (event.pointerType !== "touch") setActive(true);
       }}
+      onPointerLeave={() => setActive(false)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setActive(false);
+      }}
       onPointerDown={(event) => {
         if (event.pointerType === "touch") setActive(true);
       }}
@@ -153,17 +204,6 @@ export function PromotionPanel({
         }
       }}
     >
-      {index === 0 && (
-        <svg
-          className="promotion-edge promotion-edge--top"
-          viewBox="0 0 1440 40"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M0 0H1440V23Q720 57 0 23Z" />
-        </svg>
-      )}
       {photo && (
         <figure
           className={
@@ -171,7 +211,12 @@ export function PromotionPanel({
               ? "studio-photo"
               : "promotion-image"
           }
-          style={{ "--photo-zoom": photo.zoom || 1 } as CSSProperties}
+          style={
+            {
+              "--photo-zoom": photo.zoom || 1,
+              "--photo-position": photo.position || "50% 50%",
+            } as CSSProperties
+          }
         >
           <img
             src={photo.src}
@@ -222,30 +267,42 @@ export function PromotionBanner({
   href: string;
   actionLabel: string;
 }) {
-  const content = (
+  const mobile = useSyncExternalStore(
+    subscribeMobile,
+    mobileSnapshot,
+    () => false,
+  );
+  const introduction = (
     <>
       <div className="abstract-promotion-heading">
         <span className="promotion-eyebrow">{eyebrow}</span>
         <h2 id={id}>{title}</h2>
       </div>
       <p>{description}</p>
-      <span className="abstract-promotion-action">
-        {actionLabel}
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <path d="M5 19 19 5M5 5h14v14" />
-        </svg>
-      </span>
+    </>
+  );
+  const content = (
+    <>
+      {introduction}
+      <span className="abstract-promotion-action">{actionLabel}</span>
     </>
   );
   return (
     <section className={`${className} abstract-promotion`} aria-labelledby={id}>
-      {href === "/enquiry/" ? (
+      {mobile ? (
+        <div className="abstract-promotion-mobile">
+          {introduction}
+          {href === "/enquiry/" ? (
+            <Link href={href} className="button promotion-cta">
+              {actionLabel}
+            </Link>
+          ) : (
+            <BookingLink href={href} className="button promotion-cta">
+              {actionLabel}
+            </BookingLink>
+          )}
+        </div>
+      ) : href === "/enquiry/" ? (
         <Link
           href={href}
           className="abstract-promotion-link"

@@ -5,7 +5,7 @@ export const metadata = { title: "The studio" };
 /** Present informational studio cards followed by one full-banner booking destination. */
 export default function Studio() {
   return (
-    <>
+    <div className="promotion-journey">
       <div className="studio-intro">
         <p className="studio-signature">
           Performance · Experience · Production
@@ -45,6 +45,6 @@ export default function Studio() {
         href="/book/account/"
         actionLabel="Book now"
       />
-    </>
+    </div>
   );
 }
