@@ -4052,18 +4052,36 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     const action = await proceed.boundingBox();
     expect(action!.y - players!.y - players!.height).toBeGreaterThanOrEqual(16);
     await expect(sessionTitle).toHaveCSS("font-size", "28px");
-    const sessionName = await page
-      .locator(".session-product-name")
-      .boundingBox();
-    for (const selector of [
-      ".session-product-details .booking-choice-label",
-      ".session-product-meta",
-      ".session-product-prices",
-      ".player-selection",
-    ]) {
-      const bounds = await page.locator(selector).boundingBox();
-      expect(bounds!.x).toBeCloseTo(sessionName!.x, 0);
-    }
+    const alignment = await page
+      .locator(".session-product")
+      .evaluate(async (card) => {
+        await Promise.all(
+          card
+            .getAnimations()
+            .filter(
+              (animation) =>
+                animation instanceof CSSAnimation &&
+                animation.animationName === "booking-action-ready",
+            )
+            .map((animation) => animation.finished),
+        );
+        // Compare one settled frame, rather than different moments in the card's entrance scale.
+        return {
+          name: card
+            .querySelector(".session-product-name")!
+            .getBoundingClientRect().x,
+          aligned: [
+            ".session-product-details .booking-choice-label",
+            ".session-product-meta",
+            ".session-product-prices",
+            ".player-selection",
+          ].map(
+            (selector) =>
+              card.querySelector(selector)!.getBoundingClientRect().x,
+          ),
+        };
+      });
+    for (const x of alignment.aligned) expect(x).toBeCloseTo(alignment.name, 0);
     for (const selector of [
       ".session-product-icon svg",
       ".outlet-option > svg",
