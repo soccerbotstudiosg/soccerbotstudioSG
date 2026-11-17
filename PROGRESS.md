@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-17 November2026: PR93 baseline ef7619a passed all13 CI jobs and staging deploy44004607846 attempt2; independent health matched. The first deploy health read failed with ECONNRESET after upload and succeeded on the failed-job retry. Latest owner review requests compact shared homepage/Studio framing without empty photo bands, fixed half-section geometry on hover, coherent mobile banner reveals and hover-only Instagram colour. Source/test/document changes are consolidated. Local source/policy guards, lint, production build/type checking, export and3 focused component cases pass. The banner regression rejects the old split reveal and passes the corrected group. Existing browser titles/inventories are preserved; exact-head CI/staging is next. No merge or production change.
+17 November2026: PR93 baseline ef7619a passed all13 CI jobs and staging deploy44004607846 attempt2; independent health matched. The first deploy health read failed with ECONNRESET after upload and succeeded on the failed-job retry. Latest owner review requests compact shared homepage/Studio framing without empty photo bands, fixed half-section geometry on hover, coherent mobile banner reveals and hover-only Instagram colour. Source/test/document changes are consolidated. Local source/policy guards, lint, production build/type checking, export and3 focused component cases pass. The banner regression rejects the old split reveal and passes the corrected group. CI44006651290 exposed a stale exact banner class expectation; the repair permits only the existing reveal lifecycle classes. Existing browser titles/inventories and layout/destination checks are preserved; new-head CI/staging is next. No merge or production change.
 
 ## Next actions
 

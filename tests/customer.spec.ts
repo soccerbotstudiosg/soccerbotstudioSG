@@ -591,7 +591,9 @@ test("public routes remove staff access and fit the viewport", async ({
     exact: true,
   });
   await expect(bannerLink).toHaveClass(
-    mobileBanner ? "button promotion-cta" : "abstract-promotion-link",
+    mobileBanner
+      ? "button promotion-cta"
+      : /^abstract-promotion-link(?: section-reveal(?:-pending)?)?$/,
   );
   const bannerLayout = contactBanner.locator(
     mobileBanner ? ".abstract-promotion-mobile" : ".abstract-promotion-link",
