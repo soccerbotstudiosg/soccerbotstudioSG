@@ -7,6 +7,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { PromotionPanel, PromotionBanner } from "./promotion-panel";
+import { SectionReveals } from "./section-reveals";
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 vi.mock("./booking-navigation", async () => {
   const { default: Link } = await import("next/link");
   return { BookingLink: Link };
@@ -140,9 +142,26 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
 });
 
 test("compact closing banners group the arrow with their action and expose one full-banner link", () => {
+  let reveal!: IntersectionObserverCallback;
+  const observe = vi.fn();
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      constructor(callback: IntersectionObserverCallback) {
+        reveal = callback;
+      }
+      observe = observe;
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+    top: window.innerHeight + 100,
+    height: 120,
+  } as DOMRect);
   for (const mobile of [false, true]) {
-    vi.stubGlobal("matchMedia", () => ({
-      matches: mobile,
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("max-width") && mobile,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     }));
@@ -150,16 +169,20 @@ test("compact closing banners group the arrow with their action and expose one f
       ["/enquiry/", "Enquire"],
       ["/book/account/", "Book now"],
     ]) {
+      observe.mockClear();
       const view = render(
-        <PromotionBanner
-          id="banner-title"
-          className="studio-bottom"
-          eyebrow="Step into the arena"
-          title="Your move."
-          description="Full instructor guidance for your group."
-          href={href}
-          actionLabel={actionLabel}
-        />,
+        <main id="main">
+          <PromotionBanner
+            id="banner-title"
+            className="studio-bottom"
+            eyebrow="Step into the arena"
+            title="Your move."
+            description="Full instructor guidance for your group."
+            href={href}
+            actionLabel={actionLabel}
+          />
+          <SectionReveals />
+        </main>,
       );
       const link = screen.getByRole("link", { name: actionLabel });
       expect(link).toHaveAttribute("href", href.slice(0, -1));
@@ -181,6 +204,32 @@ test("compact closing banners group the arrow with their action and expose one f
         expect(link.querySelector(".button")).toBeNull();
       }
       expect(screen.getAllByRole("link")).toHaveLength(1);
+      const banner = link.closest("section")!;
+      expect(observe).toHaveBeenCalledExactlyOnceWith(banner);
+      expect(banner).toHaveClass("section-reveal-pending");
+      expect(banner.querySelector(".section-reveal-pending")).toBeNull();
+      act(() =>
+        reveal(
+          [
+            {
+              target: banner,
+              isIntersecting: true,
+              intersectionRatio: 1,
+              boundingClientRect: banner.getBoundingClientRect(),
+              intersectionRect: banner.getBoundingClientRect(),
+              rootBounds: null,
+              time: 0,
+            },
+          ],
+          {} as IntersectionObserver,
+        ),
+      );
+      expect(banner).toHaveClass("section-reveal");
+      fireEvent.focusIn(link);
+      expect(banner).not.toHaveClass(
+        "section-reveal",
+        "section-reveal-pending",
+      );
       view.unmount();
     }
   }

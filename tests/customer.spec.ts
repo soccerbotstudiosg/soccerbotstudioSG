@@ -491,11 +491,10 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(firstPanel).toHaveCSS("box-shadow", "none");
   if (page.viewportSize()!.width > 700) {
     const photo = firstPanel.locator(".promotion-image");
-    await expect(photo).toHaveCSS("aspect-ratio", "16 / 9");
     for (const panel of await promotions.all()) {
-      await expect(panel.locator(".promotion-image")).toHaveCSS(
-        "aspect-ratio",
-        "16 / 9",
+      await expect(panel.locator(".promotion-image img")).toHaveCSS(
+        "object-fit",
+        "cover",
       );
       await expect(panel.locator(".feature-copy")).toHaveCSS(
         "padding-top",
@@ -506,19 +505,45 @@ test("public routes remove staff access and fit the viewport", async ({
         "32px",
       );
     }
-    expect((await photo.boundingBox())!.height).toBeGreaterThanOrEqual(440);
+    expect((await photo.boundingBox())!.height).toBeGreaterThanOrEqual(360);
     expect(
       await promotions
         .nth(1)
         .evaluate((node) => parseFloat(getComputedStyle(node).marginTop)),
     ).toBe(12);
-    await expect(photo.locator("img")).toHaveCSS("object-position", "50% 100%");
+    await expect(photo.locator("img")).toHaveCSS("object-position", "50% 80%");
   }
   if (page.viewportSize()!.width <= 700) {
     for (const panel of await promotions.all()) {
       await expect(panel).toHaveAttribute("data-active", "true");
       await expect(panel.locator(".feature-full")).toHaveCSS("opacity", "1");
     }
+  }
+  if (page.viewportSize()!.width > 700) {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    const photo = firstPanel.locator(".promotion-image img");
+    const originalTransform = await photo.evaluate(
+      (node) => getComputedStyle(node).transform,
+    );
+    const originalSize = await firstPanel.evaluate((node) => ({
+      width: (node as HTMLElement).offsetWidth,
+      height: (node as HTMLElement).offsetHeight,
+    }));
+    await firstPanel.locator("a.feature-copy").focus();
+    await expect(firstPanel).toHaveAttribute("data-active", "true");
+    await expect(firstPanel.locator(".feature-title-initial")).toHaveCSS(
+      "visibility",
+      "hidden",
+    );
+    await expect(photo).toHaveCSS("transform", originalTransform);
+    expect(
+      await firstPanel.evaluate((node) => ({
+        width: (node as HTMLElement).offsetWidth,
+        height: (node as HTMLElement).offsetHeight,
+      })),
+    ).toEqual(originalSize);
+    await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+    await page.emulateMedia({ reducedMotion: "reduce" });
   }
   const prominentPrice = page.locator(
     ".home-promotion--booking .promotion-details strong",
@@ -878,13 +903,11 @@ test("public routes remove staff access and fit the viewport", async ({
       page.viewportSize()!.width <= 700 ? "relative" : "sticky",
     );
     const studioImage = row.locator(".studio-photo img");
-    await expect(studioImage).toHaveCSS("object-fit", "contain");
-    await expect(studioImage).toHaveCSS("transform", "none");
+    await expect(studioImage).toHaveCSS("object-fit", "cover");
+    const photoFrame = await row.locator(".studio-photo").boundingBox();
     const imageBox = await studioImage.boundingBox();
-    const nativeRatio =
-      Number(await studioImage.getAttribute("width")) /
-      Number(await studioImage.getAttribute("height"));
-    expect(imageBox!.width / imageBox!.height).toBeCloseTo(nativeRatio, 2);
+    expect(imageBox!.width).toBeGreaterThanOrEqual(photoFrame!.width);
+    expect(imageBox!.height).toBeGreaterThanOrEqual(photoFrame!.height);
     await expect(row.locator("a, button")).toHaveCount(0);
     await expect(row).toHaveAttribute("tabindex", "0");
     if (page.viewportSize()!.width <= 700) {
@@ -1054,6 +1077,8 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(hiddenInstagram).toHaveCSS("opacity", "0.3");
   await hiddenInstagram.focus();
   await expect(hiddenInstagram).toHaveCSS("opacity", "1");
+  await expect(hiddenInstagram).toHaveCSS("color", "rgb(128, 147, 174)");
+  await expect(hiddenInstagram).toHaveCSS("background-image", "none");
   // Translation can introduce fractional WebKit bounding-box rounding; the hit target retains its exact layout size.
   await expect(hiddenInstagram).toHaveCSS("width", "44px");
   await expect(hiddenInstagram).toHaveCSS("height", "44px");

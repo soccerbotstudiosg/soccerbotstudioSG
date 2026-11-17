@@ -34,6 +34,7 @@ type Props = {
     width: number;
     height: number;
     zoom?: number;
+    position?: string;
   };
   href?: string;
   actionLabel?: string;
@@ -202,7 +203,12 @@ export function PromotionPanel({
               ? "studio-photo"
               : "promotion-image"
           }
-          style={{ "--photo-zoom": photo.zoom || 1 } as CSSProperties}
+          style={
+            {
+              "--photo-zoom": photo.zoom || 1,
+              "--photo-position": photo.position || "50% 50%",
+            } as CSSProperties
+          }
         >
           <img
             src={photo.src}

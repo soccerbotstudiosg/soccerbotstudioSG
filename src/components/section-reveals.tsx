@@ -44,7 +44,11 @@ export function SectionReveals() {
         target.closest("form, [aria-live], [role='alert'], [role='status']")
       )
         return;
-      if (target.querySelector(controls)) {
+      // Banners fade as one group; opacity never moves their controls.
+      if (
+        !target.matches(".abstract-promotion") &&
+        target.querySelector(controls)
+      ) {
         for (const child of target.children) observeVisual(child);
         return;
       }
