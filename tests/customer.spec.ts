@@ -537,17 +537,30 @@ test("public routes remove staff access and fit the viewport", async ({
   const contactGradient = await contactBanner.evaluate(
     (node) => getComputedStyle(node).backgroundImage,
   );
-  await expect(contactBanner.locator(".promotion-cta")).toHaveCount(0);
+  const mobileBanner = page.viewportSize()!.width <= 700;
+  await expect(contactBanner.locator(".promotion-cta")).toHaveCount(
+    mobileBanner ? 1 : 0,
+  );
   const bannerLink = contactBanner.getByRole("link", {
     name: "Enquire",
     exact: true,
   });
-  await expect(bannerLink).toHaveClass("abstract-promotion-link");
-  await expect(bannerLink.locator(":scope > *")).toHaveCount(3);
+  await expect(bannerLink).toHaveClass(
+    mobileBanner ? "button promotion-cta" : "abstract-promotion-link",
+  );
+  const bannerLayout = contactBanner.locator(
+    mobileBanner ? ".abstract-promotion-mobile" : ".abstract-promotion-link",
+  );
+  await expect(bannerLayout.locator(":scope > *")).toHaveCount(3);
+  if (mobileBanner) {
+    await expect(bannerLink.locator("svg")).toHaveCount(0);
+    await expect(bannerLink).toHaveCSS("border-radius", "3px 12px");
+    await expect(bannerLink).toHaveCSS("min-height", "48px");
+  }
   await expect(
     bannerLink.locator(".abstract-promotion-action svg"),
-  ).toHaveCount(1);
-  await expect(bannerLink).toHaveCSS("min-height", "107px");
+  ).toHaveCount(mobileBanner ? 0 : 1);
+  await expect(bannerLayout).toHaveCSS("min-height", "107px");
   await expect(contactBanner).toHaveCSS("margin-top", "24px");
   expect(
     await contactBanner.evaluate((node) => ({
@@ -558,13 +571,18 @@ test("public routes remove staff access and fit the viewport", async ({
   const bannerHeadingSize = await contactBanner
     .locator("h2")
     .evaluate((node) => getComputedStyle(node).fontSize);
-  await expect(bannerLink.locator(".abstract-promotion-action")).toHaveCSS(
-    "font-size",
-    bannerHeadingSize,
-  );
+  if (!mobileBanner) {
+    await expect(bannerLink.locator(".abstract-promotion-action")).toHaveCSS(
+      "font-size",
+      bannerHeadingSize,
+    );
+  }
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
-  if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
+  if (
+    !mobileBanner &&
+    (await page.evaluate(() => matchMedia("(hover: hover)").matches))
+  ) {
     await bannerLink.scrollIntoViewIfNeeded();
     const restingHeight = (await bannerLink.boundingBox())!.height;
     await bannerLink.hover();
@@ -1475,7 +1493,7 @@ test("home navigation offer and studio booking buttons display the branded loade
   for (const [route, selector] of [
     ["/", ".nav-book"],
     ["/", ".home-promotion--booking a.feature-copy"],
-    ["/studio/", ".studio-bottom a.abstract-promotion-link"],
+    ["/studio/", ".studio-bottom a"],
   ]) {
     await page.goto(sitePath(route));
     await expect(

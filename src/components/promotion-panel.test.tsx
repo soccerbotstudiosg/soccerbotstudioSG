@@ -140,30 +140,48 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
 });
 
 test("compact closing banners group the arrow with their action and expose one full-banner link", () => {
-  for (const [href, actionLabel] of [
-    ["/enquiry/", "Contact us"],
-    ["/book/account/", "Book now"],
-  ]) {
-    const view = render(
-      <PromotionBanner
-        id="banner-title"
-        className="studio-bottom"
-        eyebrow="Step into the arena"
-        title="Your move."
-        description="Full instructor guidance for your group."
-        href={href}
-        actionLabel={actionLabel}
-      />,
-    );
-    const link = screen.getByRole("link", { name: actionLabel });
-    expect(link).toHaveAttribute("href", href.slice(0, -1));
-    expect(link.children).toHaveLength(3);
-    expect(link).toContainElement(
-      screen.getByRole("heading", { name: "Your move." }),
-    );
-    expect(link.querySelector(".abstract-promotion-action svg")).not.toBeNull();
-    expect(link.querySelector(".button")).toBeNull();
-    expect(screen.getAllByRole("link")).toHaveLength(1);
-    view.unmount();
+  for (const mobile of [false, true]) {
+    vi.stubGlobal("matchMedia", () => ({
+      matches: mobile,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    for (const [href, actionLabel] of [
+      ["/enquiry/", "Enquire"],
+      ["/book/account/", "Book now"],
+    ]) {
+      const view = render(
+        <PromotionBanner
+          id="banner-title"
+          className="studio-bottom"
+          eyebrow="Step into the arena"
+          title="Your move."
+          description="Full instructor guidance for your group."
+          href={href}
+          actionLabel={actionLabel}
+        />,
+      );
+      const link = screen.getByRole("link", { name: actionLabel });
+      expect(link).toHaveAttribute("href", href.slice(0, -1));
+      if (mobile) {
+        expect(link).toHaveClass("button", "promotion-cta");
+        expect(link.querySelector("svg")).toBeNull();
+        expect(link).not.toContainElement(
+          screen.getByRole("heading", { name: "Your move." }),
+        );
+        expect(link.parentElement?.children).toHaveLength(3);
+      } else {
+        expect(link.children).toHaveLength(3);
+        expect(link).toContainElement(
+          screen.getByRole("heading", { name: "Your move." }),
+        );
+        expect(
+          link.querySelector(".abstract-promotion-action svg"),
+        ).not.toBeNull();
+        expect(link.querySelector(".button")).toBeNull();
+      }
+      expect(screen.getAllByRole("link")).toHaveLength(1);
+      view.unmount();
+    }
   }
 });

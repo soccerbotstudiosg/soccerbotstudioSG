@@ -738,3 +738,5 @@ The one available outlet/session stays preselected. Tap the selected outlet card
 ### Nested 404 departures
 
 An unknown URL such as /book/session/yes shows the404 artwork inside the normal site header and footer, without a duplicate artwork logo. Its Home link navigates directly without the Leave this booking warning or player-app prompt. This does not cancel a reservation or payment. Valid booking pages retain their existing departure confirmation.
+
+Closing Contact us/Book now banners retain their full-banner links, diagonal arrows and hover motion on desktop. On mobile (700px and below), headings and descriptions are plain content with a separate original-shaped white rectangular action: Enquire or Book now, without the diagonal arrow. Booking uses the same BookingLink preparation and loader; destination and entry guards do not change.

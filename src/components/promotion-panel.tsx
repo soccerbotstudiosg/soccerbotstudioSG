@@ -253,13 +253,23 @@ export function PromotionBanner({
   href: string;
   actionLabel: string;
 }) {
-  const content = (
+  const mobile = useSyncExternalStore(
+    subscribeMobile,
+    mobileSnapshot,
+    () => false,
+  );
+  const introduction = (
     <>
       <div className="abstract-promotion-heading">
         <span className="promotion-eyebrow">{eyebrow}</span>
         <h2 id={id}>{title}</h2>
       </div>
       <p>{description}</p>
+    </>
+  );
+  const content = (
+    <>
+      {introduction}
       <span className="abstract-promotion-action">
         {actionLabel}
         <svg
@@ -276,7 +286,20 @@ export function PromotionBanner({
   );
   return (
     <section className={`${className} abstract-promotion`} aria-labelledby={id}>
-      {href === "/enquiry/" ? (
+      {mobile ? (
+        <div className="abstract-promotion-mobile">
+          {introduction}
+          {href === "/enquiry/" ? (
+            <Link href={href} className="button promotion-cta">
+              {actionLabel}
+            </Link>
+          ) : (
+            <BookingLink href={href} className="button promotion-cta">
+              {actionLabel}
+            </BookingLink>
+          )}
+        </div>
+      ) : href === "/enquiry/" ? (
         <Link
           href={href}
           className="abstract-promotion-link"

@@ -2266,7 +2266,7 @@
   .studio-bottom {
     margin: 24px 0 0;
   }
-  .abstract-promotion-link > p {
+  :is(.abstract-promotion-link, .abstract-promotion-mobile) > p {
     margin: 0;
     font-size: var(--text-meta);
     line-height: var(--leading-body);
@@ -2280,7 +2280,8 @@
     display: block;
     margin-bottom: 6px;
   }
-  .abstract-promotion-link {
+  .abstract-promotion-link,
+  .abstract-promotion-mobile {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
@@ -2369,6 +2370,29 @@
     white-space: nowrap;
     min-height: 48px;
   }
+  .abstract-promotion .promotion-cta {
+    border-radius: var(--radius-booking-control);
+    min-height: 48px;
+    padding: 10px 24px;
+    font-size: var(--text-card);
+    font-weight: var(--weight-display);
+    font-style: italic;
+    letter-spacing: -0.015em;
+    justify-self: center;
+    width: auto;
+    white-space: nowrap;
+    background: var(--color-on-brand);
+    border-color: var(--color-on-brand);
+    color: var(--color-brand);
+  }
+  .abstract-promotion .promotion-cta:hover {
+    background: var(--color-brand-tint);
+    border-color: var(--color-brand-tint);
+  }
+  .abstract-promotion .promotion-cta:focus-visible {
+    outline-color: var(--color-on-brand);
+    outline-offset: 5px;
+  }
   .abstract-promotion-action svg {
     width: 0.8em;
     height: 0.8em;
@@ -2406,13 +2430,15 @@
     }
   }
   @media (max-width: 900px) {
-    .abstract-promotion-link {
+    .abstract-promotion-link,
+    .abstract-promotion-mobile {
       gap: 24px;
       padding-inline: 24px;
     }
   }
   @media (max-width: 700px) {
-    .abstract-promotion-link {
+    .abstract-promotion-link,
+    .abstract-promotion-mobile {
       grid-template-columns: minmax(0, 1fr);
       gap: 16px;
     }
