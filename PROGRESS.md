@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-17 November2026: PR93 cd90170 passed full local code verification and was pushed. CI44025883438 exposed a banner assertion serialization defect: optimized zero-percent background position computes as zero pixels. The test now accepts only those equivalent exact-zero forms, with all other assertions intact; original job133846533488/artifact14304050100 retained. Review remaining jobs, validate this focused guard repair, repush the same PR and verify actual staging/health. PR remains unmerged; physical Edge acceptance is pending.
+17 November2026: PR93 9f4282b fixed the banner serialization assertion; frontend, both backend shards and Worker gates passed CI44027749286. Live-email shard2 exposed an enquiry resting-gap measurement inside the existing readiness animation (artifact14304740492). The focused test now awaits that named animation with the original32–33px requirement unchanged. Validate and repush this repair, then verify complete CI and actual staging health. PR remains unmerged; physical Edge acceptance is pending.
 
 ## Next actions
 
