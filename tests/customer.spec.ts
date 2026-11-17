@@ -1001,9 +1001,9 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(hiddenInstagram).toHaveCSS("opacity", "0.3");
   await hiddenInstagram.focus();
   await expect(hiddenInstagram).toHaveCSS("opacity", "1");
-  expect((await hiddenInstagram.boundingBox())!.width).toBeGreaterThanOrEqual(
-    44,
-  );
+  // Translation can introduce fractional WebKit bounding-box rounding; the hit target retains its exact layout size.
+  await expect(hiddenInstagram).toHaveCSS("width", "44px");
+  await expect(hiddenInstagram).toHaveCSS("height", "44px");
   await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
   const home = page.getByRole("link", { name: "Back to home", exact: true });
   await expect(home).toBeVisible();

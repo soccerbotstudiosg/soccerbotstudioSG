@@ -6933,3 +6933,7 @@ Candidate e62143d run43992608024 failed the public-route browser case in fronten
 ### 17 November 2026 — Mobile closing-banner buttons restored
 
 While0c710c7 CI was running, owner requested the original-shaped banner actions on mobile only. Enquire replaces Contact us on its button, while Book now remains. Mobile removes the oversized text/diagonal-arrow action and limits navigation to the rectangular button; desktop whole-banner hover/click behavior is retained. Both variants use the existing canonical navigation components.15/15 focused promotion/navigation component tests passed; browser assertions now distinguish phone buttons from desktop full-banner links, and staging awaits the final combined revision.
+
+### 17 November 2026 — PR93 WebKit translated target measurement
+
+Latest18af3a3 run43995371826 backend shard1 job133747024354 failed only tablet-webkit public-route coverage at the new Instagram hit-target assertion: translated getBoundingClientRect width43.999969482421875 versus44. The source defines44px width/height with translation-only drift. Replace transformed width arithmetic with exact computed44px width and height checks, retaining the target requirement and adding vertical coverage. Backend shard2 passed, including the earlier reduced-motion failure cases and desktop/mobile card layout; remaining jobs were still running at diagnosis. No application changes, arbitrary tolerance, timeout changes, retries or skipped cases. Original trace/screenshots remain attached to the failed run.
