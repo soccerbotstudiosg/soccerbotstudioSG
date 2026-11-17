@@ -66,7 +66,6 @@ export const studioMedia = [
       "Six projectors create a continuous 3D environment around the arena\u2019s circular rebound walls. Games and targets appear around the player, combining physical ball work with scanning, reaction and decision-making. The surrounding projections make the whole space part of each activity.",
     width: 1920,
     height: 1080,
-    zoom: 1.34,
   },
   {
     src: sitePath("/assets/fe13b3c27b10.jpg"),
@@ -84,7 +83,6 @@ export const studioMedia = [
       "High-speed camera tracking captures reaction time and passing accuracy as players interact with the games. These measurements provide structured feedback on performance, giving coaches a basis for discussing technique and decisions. Physical practice and cognitive training come together in the same activity.",
     width: 1920,
     height: 1080,
-    zoom: 1.34,
   },
 ];
 export const homeMedia = {

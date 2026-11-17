@@ -877,6 +877,14 @@ test("public routes remove staff access and fit the viewport", async ({
       "position",
       page.viewportSize()!.width <= 700 ? "relative" : "sticky",
     );
+    const studioImage = row.locator(".studio-photo img");
+    await expect(studioImage).toHaveCSS("object-fit", "contain");
+    await expect(studioImage).toHaveCSS("transform", "none");
+    const imageBox = await studioImage.boundingBox();
+    const nativeRatio =
+      Number(await studioImage.getAttribute("width")) /
+      Number(await studioImage.getAttribute("height"));
+    expect(imageBox!.width / imageBox!.height).toBeCloseTo(nativeRatio, 2);
     await expect(row.locator("a, button")).toHaveCount(0);
     await expect(row).toHaveAttribute("tabindex", "0");
     if (page.viewportSize()!.width <= 700) {
@@ -1590,6 +1598,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   page,
 }) => {
   async function fullWidth(selector: string, parent: string) {
+    await page.mouse.move(0, 0);
     await expect(page.locator(selector)).toBeVisible();
     const width = await page.locator(selector).evaluate(async (element) => {
       await Promise.all(
