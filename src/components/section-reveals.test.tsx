@@ -89,4 +89,51 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
     expect(screen.queryByRole("button", { name: "Back to top" })).toBeNull();
     reduced = !reduced;
   }
+  route.pathname = "/book/session/";
+  let actionTop = 150;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    function (this: HTMLElement) {
+      if (this.classList.contains("booking-navigation"))
+        return { bottom: 140 } as DOMRect;
+      if (this.classList.contains("booking-back-to-top")) {
+        const top = Number.parseFloat(
+          this.style.getPropertyValue("--back-to-top-top"),
+        );
+        return { left: 171, right: 219, top, bottom: top + 48 } as DOMRect;
+      }
+      if (this.classList.contains("button"))
+        return {
+          left: 20,
+          right: 370,
+          top: actionTop,
+          bottom: actionTop + 58,
+        } as DOMRect;
+      return { bottom: 0 } as DOMRect;
+    },
+  );
+  view.rerender(
+    <>
+      <div className="booking-navigation" />
+      <div className="booking-primary-action">
+        <Link className="button" href="/book/time/">
+          Choose Date &amp; Time
+        </Link>
+      </div>
+      <BackToTop />
+    </>,
+  );
+  position = 100;
+  fireEvent.scroll(window);
+  expect(
+    screen
+      .getByRole("button", { name: "Back to top" })
+      .style.getPropertyValue("--back-to-top-top"),
+  ).toBe("216px");
+  actionTop = 300;
+  fireEvent.scroll(window);
+  expect(
+    screen
+      .getByRole("button", { name: "Back to top" })
+      .style.getPropertyValue("--back-to-top-top"),
+  ).toBe("148px");
 });

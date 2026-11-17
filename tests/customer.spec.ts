@@ -2688,7 +2688,24 @@ function bookingTypography(page: Page) {
     if (scrollable > 0) {
       await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
       await expect(scrollTop).toBeVisible();
+      expect(
+        await scrollTop.evaluate((circle) => {
+          const action = document.querySelector(
+            ".booking-primary-action > .button",
+          );
+          if (!action) return false;
+          const cue = circle.getBoundingClientRect();
+          const button = action.getBoundingClientRect();
+          return (
+            cue.left < button.right &&
+            cue.right > button.left &&
+            cue.top < button.bottom &&
+            cue.bottom > button.top
+          );
+        }),
+      ).toBe(false);
       await expect(scrollTop).toHaveCSS("border-radius", "50%");
+      await expect(scrollTop).toHaveCSS("z-index", "36");
       await expect(scrollTop.locator("svg path")).toHaveCount(1);
       await expect(scrollTop.locator("svg path")).toHaveAttribute(
         "d",

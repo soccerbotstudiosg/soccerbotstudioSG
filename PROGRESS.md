@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-17 November2026: PR93 76c6a69 again failed enquiry resting-gap CI44029673048 after the readiness wait. Retained trace/screenshot14304977554 establishes the missing cause: the app-dialog close left the mouse over Send enquiry after scroll, activating intended desktop hover scale. The fixture now clears the mouse and requires unhovered normal scale before the existing settled32–33px measurement. Validate this corrected fixture, finish remaining-job review, repush and verify complete CI/staging health. PR remains unmerged; physical Edge acceptance is pending.
+17 November2026: PR93 54defcf passes the enquiry guard, but CI44031490315 exposed a real phone-WebKit click interception: the Back-to-top circle overlaps Choose Date & Time near the footer (artifact14305094674). The shared control now measures collisions before paint and shifts below the primary action; existing component/browser guards cover collision and normal placement. Focused regression/mutation, types/lint/source/policy and build/export pass; full local unit runs retain calendar timeouts (398/400 in a one-worker diagnostic), so full local success is not claimed. Push the owning repair and require complete exact-head CI/staging health. PR remains unmerged; physical Edge acceptance is pending.
 
 ## Next actions
 

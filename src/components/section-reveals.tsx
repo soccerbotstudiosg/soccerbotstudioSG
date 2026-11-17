@@ -1,5 +1,10 @@
 "use client";
-import { useEffect, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  type CSSProperties,
+} from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "./icon";
 
@@ -129,6 +134,23 @@ function ScrollTopControl({ booking }: { booking: boolean }) {
       window.removeEventListener("scroll", update);
     };
   }, []);
+  useLayoutEffect(() => {
+    if (!booking || !activity.visible) return;
+    const circle = document.querySelector<HTMLElement>(".booking-back-to-top");
+    const action = document.querySelector(".booking-primary-action > .button");
+    if (!circle || !action) return;
+    circle.style.setProperty("--back-to-top-top", `${activity.top}px`);
+    const cue = circle.getBoundingClientRect();
+    const button = action.getBoundingClientRect();
+    if (
+      cue.left < button.right &&
+      cue.right > button.left &&
+      cue.top < button.bottom &&
+      cue.bottom > button.top
+    )
+      // Keep both controls usable when the primary action reaches its resting position.
+      circle.style.setProperty("--back-to-top-top", `${button.bottom + 8}px`);
+  }, [activity, booking]);
   if (!activity.visible) return null;
   return (
     <button
