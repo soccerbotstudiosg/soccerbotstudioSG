@@ -51,15 +51,11 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
   const panel = screen.getByRole("region", { name: "Inside the arena." });
   expect(panel).toHaveAttribute("data-active", "false");
   expect(panel).toHaveStyle({
-    "--panel-height": "600px",
     "--initial-travel": "160px",
     "--expanded-travel": "160px",
   });
-  expect(panel.querySelector(".feature-chevron")).toHaveAttribute(
-    "d",
-    "m8 5 7 7-7 7",
-  );
-  expect(panel.querySelector(".feature-arrow")).toHaveAttribute(
+  expect(panel.querySelector(".feature-chevron")).toBeNull();
+  expect(panel.querySelector(".feature-circuits")).toHaveAttribute(
     "aria-hidden",
     "true",
   );
@@ -109,6 +105,11 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     const link = screen.getByRole("link", { name: actionLabel });
     expect(link).toHaveAttribute("href", href.slice(0, -1));
     expect(link).toHaveClass("feature-copy");
+    expect(panel.querySelector(".feature-chevron")).toHaveAttribute(
+      "d",
+      "m8 5 7 7-7 7",
+    );
+    expect(panel.querySelector(".feature-circuits")).toBeNull();
     expect(link).toContainElement(
       screen.getByRole("heading", { name: "Inside the arena." }),
     );

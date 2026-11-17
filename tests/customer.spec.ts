@@ -451,16 +451,11 @@ test("public routes remove staff access and fit the viewport", async ({
     expect(box!.x).toBeCloseTo(0, 0);
     expect(box!.width).toBeCloseTo(page.viewportSize()!.width, 0);
     await expect(promotion.locator("img")).toHaveAttribute("alt", /.+/);
-    await expect(promotion).toHaveCSS(
-      "background-color",
-      (await promotion.locator(".promotion-edge").count())
-        ? "rgb(255, 255, 255)"
-        : "rgb(245, 246, 250)",
-    );
+    await expect(promotion).toHaveCSS("background-color", "rgb(245, 246, 250)");
     await expect(promotion).toHaveCSS("color", "rgb(16, 22, 54)");
     await expect(promotion.locator(".promotion-cta")).toHaveCount(0);
     await expect(promotion.locator("a.feature-copy")).toHaveCount(1);
-    await expect(promotion).toHaveCSS("position", "sticky");
+    await expect(promotion).toHaveCSS("position", "relative");
     await expect(promotion.locator(".feature-heading")).toHaveCSS(
       "margin-bottom",
       page.viewportSize()!.width <= 700 ? "32px" : "40px",
@@ -477,18 +472,24 @@ test("public routes remove staff access and fit the viewport", async ({
     "background-color",
     "rgb(255, 255, 255)",
   );
-  await expect(page.locator(".promotion-journey > :first-child")).toHaveCSS(
+  await expect(page.locator(".promotion-journey > :first-child")).not.toHaveCSS(
     "position",
     "sticky",
   );
   const firstPanel = promotions.first();
-  const curveBox = await firstPanel.locator(".promotion-edge").boundingBox();
-  const copyHeadingBox = await firstPanel
-    .locator(".feature-heading")
-    .boundingBox();
-  expect(copyHeadingBox!.y).toBeGreaterThanOrEqual(
-    curveBox!.y + curveBox!.height,
-  );
+  const curve = firstPanel.locator(".promotion-edge");
+  await expect(firstPanel).toHaveCSS("border-radius", "0px");
+  await expect(firstPanel).toHaveCSS("box-shadow", "none");
+  if (page.viewportSize()!.width <= 700) {
+    await expect(curve).toBeHidden();
+  } else {
+    await expect(curve).toBeVisible();
+    const curveBox = (await curve.boundingBox())!;
+    const headingBox = (await firstPanel
+      .locator(".feature-heading")
+      .boundingBox())!;
+    expect(headingBox.y).toBeGreaterThanOrEqual(curveBox.y + curveBox.height);
+  }
   if (page.viewportSize()!.width <= 700) {
     for (const panel of await promotions.all()) {
       await expect(panel).toHaveAttribute("data-active", "true");
@@ -503,6 +504,15 @@ test("public routes remove staff access and fit the viewport", async ({
       parseFloat(getComputedStyle(node).fontSize),
     ),
   ).toBeGreaterThanOrEqual(18);
+  await firstPanel.locator("a.feature-copy").focus();
+  const chevron = firstPanel.locator(".feature-arrow svg");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(chevron).toHaveCSS("animation-name", "feature-chevron-nudge");
+  await expect(chevron).toHaveCSS("animation-iteration-count", "infinite");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(chevron).toHaveCSS("animation-name", "none");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
   const contactBanner = page.locator(".abstract-promotion");
   await expect(contactBanner).toHaveCount(1);
   await expect(contactBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
@@ -512,7 +522,7 @@ test("public routes remove staff access and fit the viewport", async ({
   );
   await expect(contactBanner.locator(".promotion-cta")).toHaveCount(0);
   const bannerLink = contactBanner.getByRole("link", {
-    name: "Contact us",
+    name: "Enquire",
     exact: true,
   });
   await expect(bannerLink).toHaveClass("abstract-promotion-link");
@@ -724,7 +734,7 @@ test("public routes remove staff access and fit the viewport", async ({
   }
 
   await expect(
-    contactBanner.getByRole("link", { name: "Contact us", exact: true }),
+    contactBanner.getByRole("link", { name: "Enquire", exact: true }),
   ).toHaveAttribute("href", sitePath("/enquiry/"));
   await expect(
     page.getByRole("button", { name: /studio assistant/i }),
@@ -784,12 +794,12 @@ test("public routes remove staff access and fit the viewport", async ({
     .first()
     .boundingBox();
   expect(firstPhotoBox).not.toBeNull();
-  expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y + 40, 0);
+  expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y, 0);
   await expect(
     page.locator(".studio-row").first().locator(".promotion-edge--top"),
   ).toHaveCount(1);
   for (const row of await page.locator(".studio-row").all()) {
-    await expect(row).toHaveCSS("position", "sticky");
+    await expect(row).toHaveCSS("position", "relative");
     await expect(row.locator("a, button")).toHaveCount(0);
     await expect(row).toHaveAttribute("tabindex", "0");
     const reversed = /\breverse\b/.test(
@@ -833,13 +843,8 @@ test("public routes remove staff access and fit the viewport", async ({
   await lastStudioRow.scrollIntoViewIfNeeded();
   await lastStudioRow.focus();
   await expect(lastStudioRow).toHaveAttribute("data-active", "true");
-  const chevron = lastStudioRow.locator(".feature-arrow svg");
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await expect(chevron).toHaveCSS("animation-name", "feature-chevron-nudge");
-  await expect(chevron).toHaveCSS("animation-iteration-count", "infinite");
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(chevron).toHaveCSS("animation-name", "none");
-  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(lastStudioRow.locator(".feature-arrow")).toHaveCount(0);
+  await expect(lastStudioRow.locator(".feature-circuits")).toBeVisible();
   await expect(lastStudioRow.locator(".feature-full")).toHaveCSS(
     "opacity",
     "1",
@@ -857,7 +862,9 @@ test("public routes remove staff access and fit the viewport", async ({
   const previousCard = page.locator(".studio-row").nth(3);
   const previousBox = await previousCard.boundingBox();
   const lastBox = await lastStudioRow.boundingBox();
-  expect(previousBox!.y + previousBox!.height).toBeGreaterThan(lastBox!.y);
+  expect(previousBox!.y + previousBox!.height).toBeLessThanOrEqual(
+    lastBox!.y + 1,
+  );
   await page.keyboard.press("Escape");
   await expect(lastStudioRow).toHaveAttribute(
     "data-active",

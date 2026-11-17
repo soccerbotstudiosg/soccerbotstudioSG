@@ -55,7 +55,7 @@ export default function Home() {
         title="Contact us"
         description="For Multi-Session Bundles, Membership, Academy, Corporate and Sponsorship Rates"
         href="/enquiry/"
-        actionLabel="Contact us"
+        actionLabel="Enquire"
       />
     </div>
   );

@@ -69,10 +69,6 @@ export function PromotionPanel({
     /** Keep tall cards readable and align both heading variants against their shared column. */
     function measure() {
       const heading = element!.querySelector<HTMLElement>(".feature-heading")!;
-      element!.style.setProperty(
-        "--panel-height",
-        `${element!.getBoundingClientRect().height}px`,
-      );
       for (const variant of ["initial", "expanded"]) {
         const words = heading.querySelector<HTMLElement>(
           `.feature-title-${variant}`,
@@ -103,17 +99,19 @@ export function PromotionPanel({
           {activeTitle[0]}
           <span>{activeTitle[1]}</span>
         </span>
-        <span className="feature-arrow" aria-hidden="true">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <path className="feature-corner" d="M5 19V5h14" />
-            <path className="feature-chevron" d="m8 5 7 7-7 7" />
-          </svg>
-        </span>
+        {href && (
+          <span className="feature-arrow" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path className="feature-corner" d="M5 19V5h14" />
+              <path className="feature-chevron" d="m8 5 7 7-7 7" />
+            </svg>
+          </span>
+        )}
       </h2>
       <p className="feature-description">
         <span className="feature-teaser" aria-hidden={active}>
@@ -124,6 +122,41 @@ export function PromotionPanel({
         </span>
       </p>
       {children}
+      {!href && (
+        <svg
+          className="feature-circuits"
+          viewBox="0 0 100 70"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle
+            cx="50"
+            cy="35"
+            r="28"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeDasharray="72 10 20 10"
+          />
+          <circle
+            cx="50"
+            cy="35"
+            r="20"
+            stroke="currentColor"
+            strokeWidth="1"
+          />
+          <circle
+            cx="50"
+            cy="35"
+            r="9"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeDasharray="18 6"
+          />
+          <path d="M3 35h17m60 0h17M50 1v10m0 48v10" stroke="currentColor" />
+          <circle cx="22" cy="35" r="3" fill="currentColor" />
+          <circle cx="78" cy="35" r="3" fill="currentColor" />
+        </svg>
+      )}
     </div>
   );
   const copyClass = `${className.includes("studio-row") ? "studio-copy" : "promotion-copy"} feature-copy`;
@@ -133,7 +166,6 @@ export function PromotionPanel({
       className={`${className} interactive-promotion`}
       aria-labelledby={id}
       data-active={active ? "true" : "false"}
-      style={{ "--stack-index": index } as CSSProperties}
       tabIndex={href ? undefined : 0}
       onPointerEnter={(event) => {
         if (event.pointerType !== "touch") setActive(true);

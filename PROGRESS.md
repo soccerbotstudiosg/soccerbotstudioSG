@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-17 November 2026: PR92 merged as d3856e0 after all13 checks and exact-revision staging. New branch `fix/promotion-hover-layout` addresses the owner's following presentation corrections. Preserve node_modules; no provider operations or assistant browser execution.
+17 November 2026: PR93 at866c54d passed all13 CI gates and deployed to staging (run43982291462; health confirmed exact revision). Owner then requested desktop-only top curves, removal of all overlapping scroll and rounded edges, pure-white gaps, Studio corner circles replacing chevrons, and Enquire as the Contact banner action. These follow-up changes are on the same branch with component/browser regressions reconciled; final local verification pending. No booking authority/provider changes; preserve node_modules. PR remains unmerged.
 
 ## Next actions
 
-Banners retain font sizes and height while their outer groups spread horizontally on hover; both have24px white top spacing. Hero/video now share the sticky journey with subsequent cards. Desktop panel engagement is hover/focus only and resets on departure; mobile remains expanded. Align all three text groups in the reveal direction, centre the content vertically without empty body reserves, and move the corner graphic beside heading line two with a small-to-large right-chevron reveal and gentle right/back loop (static with reduced motion). Reserve curve clearance to prevent mobile heading clipping. Component tests and existing browser geometry/style expectations are updated. Run code verification and review; browser/physical visual acceptance remains pending. No publication for this follow-up yet.
+Verify updated code, guards, inventory and responsive expectations. Existing staged866c54d does not include this follow-up until a new publication/deployment is verified. Owner/CI operates browsers and physical visual acceptance.
 
 ## Ordered work after this slice
 
