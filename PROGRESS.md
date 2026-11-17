@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-17 November 2026: PR93 remains unmerged. While candidate bae6fa8 CI43987396405 ran, owner superseded its all-flat design: desktop restores overlapping rounded cards with longer approach distance; mobile stays square/non-overlapping and expanded. Remove curve artwork entirely. Taller homepage images retain legs; banner gap is opaque white. Homepage cues become animated alternating-brightness double chevrons; both banner edges gain hover lights. Studio circles and Enquire remain.404 idle drift is clearer and mobile digits have204 fragments with broader size variance; desktop sweeps are stronger while touch stays gentle. The home ball loses its text badge/shine and gains a5-second capped glow. Hidden Instagram reveal and Step2 shared/optically matched icon sizes are included. Same branch, latest verification/publication pending; earlier CI/staging is not evidence for these new edits.
+17 November 2026: PR93 remains unmerged on fix/promotion-hover-layout. Candidate e62143d CI43992608024 failed only the newly added reduced-motion ball duration expectation (0s versus the global0.01ms rule), in frontend and both backend shards; live-email browser shards and Worker groups passed. Repair preserves the exact duration with numeric comparison across engines. The owner’s desktop Step2 correction adds three right-aligned metadata lines and outlet-matching icon/title spacing; mobile compact formatting remains. Previously consolidated desktop overlapping rounded cards, square mobile sections, banner cues/gaps, 404 drift/Instagram/ball glow and icon sizing remain included. Fresh exact-head CI and staging are pending; historical staging does not prove this revision.
 
 ## Next actions
 

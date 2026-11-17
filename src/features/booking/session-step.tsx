@@ -305,7 +305,14 @@ function SessionPresentation({
               </span>
               <span className="session-product-name">{serviceName}</span>
               <span className="session-product-meta">
-                40 minutes · 1–{MAX_PLAYERS} players
+                {mobile ? (
+                  <>40 minutes · 1–{MAX_PLAYERS} players</>
+                ) : (
+                  <>
+                    <span>40 minutes</span>
+                    <span>1–{MAX_PLAYERS} players</span>
+                  </>
+                )}
                 <span>Trainer included</span>
               </span>
             </span>

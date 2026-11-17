@@ -3592,12 +3592,13 @@
 
   .session-product-details {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: auto minmax(0, 1fr) max-content;
     align-items: center;
-    gap: 8px;
+    gap: 16px;
     min-width: 0;
   }
   .session-product-meta {
+    text-align: right;
     border-left: 1px solid var(--color-control-border);
     padding-left: 12px;
     color: var(--color-ink);
@@ -5471,6 +5472,7 @@
       grid-row: 2;
     }
     .session-product-meta {
+      text-align: left;
       grid-column: 2;
       border-left: 0;
       padding-left: 0;

@@ -1011,7 +1011,15 @@ test("public routes remove staff access and fit the viewport", async ({
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await expect(home).toHaveCSS("transition-duration", "0.25s, 5s");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(home).toHaveCSS("transition-duration", "0s");
+  await expect
+    .poll(() =>
+      home.evaluate((element) =>
+        getComputedStyle(element)
+          .transitionDuration.split(",")
+          .map((duration) => Number.parseFloat(duration)),
+      ),
+    )
+    .toEqual([0.00001]);
   await home.press("Enter");
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".site-header")).toBeVisible();
@@ -1628,14 +1636,29 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
       await expect(text).toHaveCSS("color", "rgb(16, 22, 54)");
     }
   }
-  await expect(page.locator(".session-product-meta > span")).toHaveCSS(
-    "white-space",
-    "nowrap",
+  const sessionMeta = page.locator(".session-product-meta");
+  for (const line of await sessionMeta.locator(":scope > span").all()) {
+    await expect(line).toHaveCSS("white-space", "nowrap");
+    await expect(line).toHaveCSS("display", "block");
+  }
+  await expect(sessionMeta).toHaveCSS(
+    "text-align",
+    cardWidths.mobile ? "left" : "right",
   );
-  await expect(page.locator(".session-product-meta > span")).toHaveCSS(
-    "display",
-    "block",
-  );
+  if (!cardWidths.mobile) {
+    await expect(sessionMeta.locator(":scope > span")).toHaveText([
+      "40 minutes",
+      "1–4 players",
+      "Trainer included",
+    ]);
+    const outletTitle = await page
+      .locator(".outlet-option strong")
+      .boundingBox();
+    const sessionTitle = await page
+      .locator(".session-product-name")
+      .boundingBox();
+    expect(Math.abs(outletTitle!.x - sessionTitle!.x)).toBeLessThanOrEqual(1);
+  }
   await expect(page.locator(".session-product-meta")).toHaveCSS(
     "border-left-width",
     cardWidths.mobile ? "0px" : "1px",
