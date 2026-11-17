@@ -500,7 +500,8 @@
       background 0.18s,
       border-color 0.18s,
       box-shadow 0.18s,
-      transform 0.18s;
+      transform 0.18s,
+      scale 0.18s;
     min-height: var(--control-height);
   }
   .booking-shell
@@ -529,6 +530,19 @@
     background: var(--color-action-hover);
     border-color: var(--color-action-hover);
     box-shadow: var(--shadow-action);
+  }
+  @media (min-width: 701px) and (hover: hover) and (pointer: fine) {
+    :is(
+        .booking-primary-action > .button,
+        .booking-shell .button.booking-entry-action,
+        .booking-shell .profile-actions > .button:not(.secondary),
+        .payment-continuation > .button
+      ):not(:disabled):not([aria-disabled="true"]):hover {
+      scale: 1.025;
+      box-shadow:
+        0 0 0 2px var(--color-logo-blue),
+        var(--shadow-action);
+    }
   }
   .button:active {
     transform: translateY(1px);
@@ -1939,6 +1953,9 @@
       filter 650ms ease;
   }
   @media (min-width: 701px) {
+    .promotion-stack {
+      background: transparent;
+    }
     .promotion-journey > :first-child {
       position: sticky;
       top: var(--site-header-height, 148px);
@@ -1953,12 +1970,12 @@
       z-index: calc(var(--stack-index) + 1);
       border-radius: 18px 18px 0 0;
     }
-    .promotion-stack > .interactive-promotion + .interactive-promotion {
-      margin-top: clamp(96px, 18vh, 180px);
-    }
     .home-promotion .promotion-image {
       min-height: 440px;
-      aspect-ratio: 3 / 2;
+      aspect-ratio: 16 / 9;
+    }
+    .home-promotion .feature-copy {
+      padding-block: 32px;
     }
     .home-promotion .promotion-image img {
       object-position: 50% 100%;
@@ -2012,13 +2029,15 @@
     vertical-align: middle;
     background: var(--color-logo-blue);
   }
-  .home-promotion--booking .promotion-image,
-  .studio-row.reverse .studio-photo {
-    grid-column: 2;
-  }
-  .home-promotion--booking .promotion-copy,
-  .studio-row.reverse .studio-copy {
-    grid-column: 1;
+  @media (min-width: 701px) {
+    .home-promotion--booking .promotion-image,
+    .studio-row.reverse .studio-photo {
+      grid-column: 2;
+    }
+    .home-promotion--booking .promotion-copy,
+    .studio-row.reverse .studio-copy {
+      grid-column: 1;
+    }
   }
   .promotion-copy-content {
     width: 100%;
@@ -2493,6 +2512,14 @@
     }
   }
   @media (max-width: 700px) {
+    .interactive-promotion + .interactive-promotion,
+    .abstract-promotion {
+      margin-top: 12px;
+    }
+    .abstract-promotion::before {
+      top: -12px;
+      height: 12px;
+    }
     .home-promotion,
     .home-promotion--booking,
     .studio-row,

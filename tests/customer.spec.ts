@@ -473,6 +473,12 @@ test("public routes remove staff access and fit the viewport", async ({
     "background-color",
     "rgb(255, 255, 255)",
   );
+  await expect(page.locator(".promotion-stack")).toHaveCSS(
+    "background-color",
+    page.viewportSize()!.width <= 700
+      ? "rgb(255, 255, 255)"
+      : "rgba(0, 0, 0, 0)",
+  );
   await expect(page.locator(".promotion-journey > :first-child")).toHaveCSS(
     "position",
     page.viewportSize()!.width <= 700 ? "static" : "sticky",
@@ -485,13 +491,27 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(firstPanel).toHaveCSS("box-shadow", "none");
   if (page.viewportSize()!.width > 700) {
     const photo = firstPanel.locator(".promotion-image");
-    await expect(photo).toHaveCSS("aspect-ratio", "3 / 2");
+    await expect(photo).toHaveCSS("aspect-ratio", "16 / 9");
+    for (const panel of await promotions.all()) {
+      await expect(panel.locator(".promotion-image")).toHaveCSS(
+        "aspect-ratio",
+        "16 / 9",
+      );
+      await expect(panel.locator(".feature-copy")).toHaveCSS(
+        "padding-top",
+        "32px",
+      );
+      await expect(panel.locator(".feature-copy")).toHaveCSS(
+        "padding-bottom",
+        "32px",
+      );
+    }
     expect((await photo.boundingBox())!.height).toBeGreaterThanOrEqual(440);
     expect(
       await promotions
         .nth(1)
         .evaluate((node) => parseFloat(getComputedStyle(node).marginTop)),
-    ).toBeGreaterThanOrEqual(96);
+    ).toBe(12);
     await expect(photo.locator("img")).toHaveCSS("object-position", "50% 100%");
   }
   if (page.viewportSize()!.width <= 700) {
@@ -561,13 +581,19 @@ test("public routes remove staff access and fit the viewport", async ({
     bannerLink.locator(".abstract-promotion-action svg"),
   ).toHaveCount(mobileBanner ? 0 : 1);
   await expect(bannerLayout).toHaveCSS("min-height", "107px");
-  await expect(contactBanner).toHaveCSS("margin-top", "24px");
+  await expect(contactBanner).toHaveCSS(
+    "margin-top",
+    mobileBanner ? "12px" : "24px",
+  );
   expect(
     await contactBanner.evaluate((node) => ({
       color: getComputedStyle(node, "::before").backgroundColor,
       height: getComputedStyle(node, "::before").height,
     })),
-  ).toEqual({ color: "rgb(255, 255, 255)", height: "24px" });
+  ).toEqual({
+    color: "rgb(255, 255, 255)",
+    height: mobileBanner ? "12px" : "24px",
+  });
   const bannerHeadingSize = await contactBanner
     .locator("h2")
     .evaluate((node) => getComputedStyle(node).fontSize);
@@ -853,6 +879,16 @@ test("public routes remove staff access and fit the viewport", async ({
     );
     await expect(row.locator("a, button")).toHaveCount(0);
     await expect(row).toHaveAttribute("tabindex", "0");
+    if (page.viewportSize()!.width <= 700) {
+      const photo = row.locator(".studio-photo");
+      const copy = row.locator(".studio-copy");
+      await expect(photo).toHaveCSS("grid-column-start", "1");
+      await expect(copy).toHaveCSS("grid-column-start", "1");
+      const photoBox = await photo.boundingBox();
+      const copyBox = await copy.boundingBox();
+      expect(copyBox!.y).toBeCloseTo(photoBox!.y + photoBox!.height, 0);
+      expect(copyBox!.width).toBeCloseTo(photoBox!.width, 0);
+    }
     const reversed = /\breverse\b/.test(
       (await row.getAttribute("class")) || "",
     );
@@ -865,9 +901,18 @@ test("public routes remove staff access and fit the viewport", async ({
       page.viewportSize()!.width > 700 && reversed ? "start" : "end",
     );
   }
+  await expect(page.locator(".promotion-stack")).toHaveCSS(
+    "background-color",
+    page.viewportSize()!.width <= 700
+      ? "rgb(255, 255, 255)"
+      : "rgba(0, 0, 0, 0)",
+  );
   const studioBanner = page.locator(".studio-bottom.abstract-promotion");
   await expect(studioBanner).toBeAttached();
-  await expect(studioBanner).toHaveCSS("margin-top", "24px");
+  await expect(studioBanner).toHaveCSS(
+    "margin-top",
+    mobileBanner ? "12px" : "24px",
+  );
   await expect(studioBanner).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(studioBanner).toHaveCSS("background-image", contactGradient);
   await expect(studioBanner.locator("img")).toHaveCount(0);
@@ -1726,6 +1771,27 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   for (const row of priceRows)
     expect(row.amount.right).toBeLessThanOrEqual(row.box.right + 1);
 
+  if (
+    await page.evaluate(
+      () =>
+        matchMedia("(min-width: 701px) and (hover: hover) and (pointer: fine)")
+          .matches,
+    )
+  ) {
+    const continueButton = page.locator(".actions .button");
+    const slotHeight = await continueButton.evaluate(
+      (element) => element.parentElement!.offsetHeight,
+    );
+    await continueButton.hover();
+    await expect(continueButton).toHaveCSS("scale", "1.025");
+    expect(
+      await continueButton.evaluate(
+        (element) => element.parentElement!.offsetHeight,
+      ),
+    ).toBe(slotHeight);
+    await page.mouse.move(0, 0);
+    await expect(continueButton).toHaveCSS("scale", "none");
+  }
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator(".session-product")).toContainText("40 minutes");
   await expect(page.locator(".session-product")).toContainText(
