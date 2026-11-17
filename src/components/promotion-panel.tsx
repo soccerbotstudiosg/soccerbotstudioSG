@@ -68,6 +68,10 @@ export function PromotionPanel({
     if (!element || typeof ResizeObserver === "undefined") return;
     /** Keep tall cards readable and align both heading variants against their shared column. */
     function measure() {
+      element!.style.setProperty(
+        "--panel-height",
+        `${element!.getBoundingClientRect().height}px`,
+      );
       const heading = element!.querySelector<HTMLElement>(".feature-heading")!;
       for (const variant of ["initial", "expanded"]) {
         const words = heading.querySelector<HTMLElement>(
@@ -108,7 +112,10 @@ export function PromotionPanel({
               strokeWidth="1.8"
             >
               <path className="feature-corner" d="M5 19V5h14" />
-              <path className="feature-chevron" d="m8 5 7 7-7 7" />
+              <g className="feature-chevron">
+                <path d="m4 5 7 7-7 7" />
+                <path d="m12 5 7 7-7 7" />
+              </g>
             </svg>
           </span>
         )}
@@ -166,6 +173,7 @@ export function PromotionPanel({
       className={`${className} interactive-promotion`}
       aria-labelledby={id}
       data-active={active ? "true" : "false"}
+      style={{ "--stack-index": index } as CSSProperties}
       tabIndex={href ? undefined : 0}
       onPointerEnter={(event) => {
         if (event.pointerType !== "touch") setActive(true);
@@ -187,17 +195,6 @@ export function PromotionPanel({
         }
       }}
     >
-      {index === 0 && (
-        <svg
-          className="promotion-edge promotion-edge--top"
-          viewBox="0 0 1440 40"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M0 0H1440V23Q720 57 0 23Z" />
-        </svg>
-      )}
       {photo && (
         <figure
           className={

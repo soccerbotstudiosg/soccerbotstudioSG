@@ -50,7 +50,9 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
   const view = render(<PromotionPanel {...props} />);
   const panel = screen.getByRole("region", { name: "Inside the arena." });
   expect(panel).toHaveAttribute("data-active", "false");
+  expect(panel.querySelector(".promotion-edge")).toBeNull();
   expect(panel).toHaveStyle({
+    "--panel-height": "600px",
     "--initial-travel": "160px",
     "--expanded-travel": "160px",
   });
@@ -105,10 +107,11 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     const link = screen.getByRole("link", { name: actionLabel });
     expect(link).toHaveAttribute("href", href.slice(0, -1));
     expect(link).toHaveClass("feature-copy");
-    expect(panel.querySelector(".feature-chevron")).toHaveAttribute(
-      "d",
-      "m8 5 7 7-7 7",
-    );
+    expect(
+      Array.from(panel.querySelectorAll(".feature-chevron path"), (path) =>
+        path.getAttribute("d"),
+      ),
+    ).toEqual(["m4 5 7 7-7 7", "m12 5 7 7-7 7"]);
     expect(panel.querySelector(".feature-circuits")).toBeNull();
     expect(link).toContainElement(
       screen.getByRole("heading", { name: "Inside the arena." }),

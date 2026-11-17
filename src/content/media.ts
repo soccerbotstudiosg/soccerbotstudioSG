@@ -103,7 +103,6 @@ export const homeMedia = {
     alt: "A player in a SOCCERBOT360 shirt, seen from behind, approaching illuminated targets in an arena.",
     source: "https://soccerbot360.com/en/anwendungen",
     sourceAsset: "https://soccerbot360.com/videos/kognitiv-poster.jpg",
-    zoom: 1.13,
   },
 };
 

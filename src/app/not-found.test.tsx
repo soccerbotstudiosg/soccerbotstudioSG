@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import NotFound from "./not-found";
+import { CONTACT } from "@/domain/catalog";
 vi.mock("@/components/site-shell", () => ({ useErrorPage: vi.fn() }));
 afterEach(() => {
   cleanup();
@@ -76,8 +77,16 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
   expect(canvas.dataset.ready).toBe("true");
   expect(positions.length).toBeGreaterThan(100);
   const original = positions.map((point) => [...point]);
+  const instagram = screen.getByRole("link", {
+    name: "Instagram: @soccerbotstudiosg",
+  });
+  expect(instagram).toHaveAttribute("href", CONTACT.instagram);
+  expect(instagram).toHaveAttribute("rel", "noreferrer");
   const home = screen.getByRole("link", { name: "Back to home" });
   expect(home).toHaveAttribute("href", "/");
+  expect(
+    home.querySelector(".not-found-home-label, .not-found-home-shine"),
+  ).toBeNull();
   home.focus();
   expect(home).toHaveFocus();
   const idleDigits = bright.map((point) => [...point]);
@@ -93,7 +102,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
   const idleTravel = bright.map(([px, py], index) =>
     Math.hypot(px - idleDigits[index][0], py - idleDigits[index][1]),
   );
-  expect(Math.max(...idleTravel)).toBeGreaterThan(5);
+  expect(Math.max(...idleTravel)).toBeGreaterThan(7);
   expect(Math.max(...idleTravel)).toBeLessThan(14);
   const [x, y] = original[300];
   fireEvent(
@@ -126,7 +135,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
           point[1] - original[index][1],
         ) > 12,
     ).length;
-  // Even a fast sweep may only nudge fragments within the small ambient envelope.
+  // Desktop sweeps have a stronger but bounded displacement; touch remains separately gentle.
   for (const [px, py] of original.filter((_, index) => index % 8 === 0)) {
     fireEvent(
       canvas,
@@ -141,7 +150,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
   for (let index = 0; index < 240 && frames.size; index++) act(tick);
   expect(frames.size).toBe(1);
   expect(moved()).toBeGreaterThan(0);
-  expect(moved()).toBeLessThan(original.length / 3);
+  expect(moved()).toBeLessThan(original.length);
   const settled = positions.map((point) => [...point]);
   act(tick);
   expect(positions).not.toEqual(settled);
@@ -161,7 +170,8 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
         ),
       ),
     );
-  expect(maximumTravel()).toBeLessThan(25);
+  expect(maximumTravel()).toBeGreaterThan(25);
+  expect(maximumTravel()).toBeLessThan(45);
   time += 7000;
   for (let index = 0; index < 240 && frames.size; index++) act(tick);
   expect(frames.size).toBe(1);
@@ -185,8 +195,8 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
     top: 0,
   } as DOMRect);
   act(change);
-  // Staggered four endpoints have15 and16 tiles; the zero retains20.
-  expect(bright).toHaveLength(51);
+  // Each phone digit cell now contains four fragments, keeping the same overall silhouette.
+  expect(bright).toHaveLength(204);
   const minX = Math.min(...bright.map(([px, , size]) => px - size / 2));
   const maxX = Math.max(...bright.map(([px, , size]) => px + size / 2));
   expect(maxX - minX).toBeGreaterThan(240);
@@ -199,7 +209,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
   expect(
     Math.max(...bright.map(([, , size]) => size)) /
       Math.min(...bright.map(([, , size]) => size)),
-  ).toBeLessThan(1.3);
+  ).toBeGreaterThan(2);
   const phoneOrigin = positions.map((point) => [...point]);
   const target = bright[20];
   const targetIndex = positions.findIndex(

@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-17 November 2026: PR93 at866c54d passed all13 CI gates and deployed to staging (run43982291462; health confirmed exact revision). Owner then requested desktop-only top curves, removal of all overlapping scroll and rounded edges, pure-white gaps, Studio corner circles replacing chevrons, and Enquire as the Contact banner action. These follow-up changes are on the same branch with component/browser regressions reconciled; final local verification pending. No booking authority/provider changes; preserve node_modules. PR remains unmerged.
+17 November 2026: PR93 remains unmerged. While candidate bae6fa8 CI43987396405 ran, owner superseded its all-flat design: desktop restores overlapping rounded cards with longer approach distance; mobile stays square/non-overlapping and expanded. Remove curve artwork entirely. Taller homepage images retain legs; banner gap is opaque white. Homepage cues become animated alternating-brightness double chevrons; both banner edges gain hover lights. Studio circles and Enquire remain.404 idle drift is clearer and mobile digits have204 fragments with broader size variance; desktop sweeps are stronger while touch stays gentle. The home ball loses its text badge/shine and gains a5-second capped glow. Hidden Instagram reveal and Step2 shared/optically matched icon sizes are included. Same branch, latest verification/publication pending; earlier CI/staging is not evidence for these new edits.
 
 ## Next actions
 
-Verify updated code, guards, inventory and responsive expectations. Existing staged866c54d does not include this follow-up until a new publication/deployment is verified. Owner/CI operates browsers and physical visual acceptance.
+Consolidate tests/guards/docs, run local code verification, push existing PR, monitor exact-head CI and deploy staging under the owner's standing request. Do not merge. No provider actions or assistant browsers.
 
 ## Ordered work after this slice
 

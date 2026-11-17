@@ -455,15 +455,16 @@ test("public routes remove staff access and fit the viewport", async ({
     await expect(promotion).toHaveCSS("color", "rgb(16, 22, 54)");
     await expect(promotion.locator(".promotion-cta")).toHaveCount(0);
     await expect(promotion.locator("a.feature-copy")).toHaveCount(1);
-    await expect(promotion).toHaveCSS("position", "relative");
+    await expect(promotion).toHaveCSS(
+      "position",
+      page.viewportSize()!.width <= 700 ? "relative" : "sticky",
+    );
     await expect(promotion.locator(".feature-heading")).toHaveCSS(
       "margin-bottom",
       page.viewportSize()!.width <= 700 ? "32px" : "40px",
     );
   }
-  await expect(
-    page.locator(".home-promotion--studio .promotion-edge--top"),
-  ).toHaveCount(1);
+  await expect(page.locator(".promotion-edge")).toHaveCount(0);
   const initialBookingCopy = page.locator(
     ".home-promotion--booking .promotion-copy-content",
   );
@@ -472,23 +473,26 @@ test("public routes remove staff access and fit the viewport", async ({
     "background-color",
     "rgb(255, 255, 255)",
   );
-  await expect(page.locator(".promotion-journey > :first-child")).not.toHaveCSS(
+  await expect(page.locator(".promotion-journey > :first-child")).toHaveCSS(
     "position",
-    "sticky",
+    page.viewportSize()!.width <= 700 ? "static" : "sticky",
   );
   const firstPanel = promotions.first();
-  const curve = firstPanel.locator(".promotion-edge");
-  await expect(firstPanel).toHaveCSS("border-radius", "0px");
+  await expect(firstPanel).toHaveCSS(
+    "border-radius",
+    page.viewportSize()!.width <= 700 ? "0px" : "18px 18px 0px 0px",
+  );
   await expect(firstPanel).toHaveCSS("box-shadow", "none");
-  if (page.viewportSize()!.width <= 700) {
-    await expect(curve).toBeHidden();
-  } else {
-    await expect(curve).toBeVisible();
-    const curveBox = (await curve.boundingBox())!;
-    const headingBox = (await firstPanel
-      .locator(".feature-heading")
-      .boundingBox())!;
-    expect(headingBox.y).toBeGreaterThanOrEqual(curveBox.y + curveBox.height);
+  if (page.viewportSize()!.width > 700) {
+    const photo = firstPanel.locator(".promotion-image");
+    await expect(photo).toHaveCSS("aspect-ratio", "3 / 2");
+    expect((await photo.boundingBox())!.height).toBeGreaterThanOrEqual(440);
+    expect(
+      await promotions
+        .nth(1)
+        .evaluate((node) => parseFloat(getComputedStyle(node).marginTop)),
+    ).toBeGreaterThanOrEqual(96);
+    await expect(photo.locator("img")).toHaveCSS("object-position", "50% 100%");
   }
   if (page.viewportSize()!.width <= 700) {
     for (const panel of await promotions.all()) {
@@ -509,8 +513,21 @@ test("public routes remove staff access and fit the viewport", async ({
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await expect(chevron).toHaveCSS("animation-name", "feature-chevron-nudge");
   await expect(chevron).toHaveCSS("animation-iteration-count", "infinite");
+  await expect(chevron.locator(".feature-chevron path")).toHaveCount(2);
+  await expect(chevron.locator(".feature-chevron path").first()).toHaveCSS(
+    "animation-name",
+    "feature-chevron-light",
+  );
+  await expect(chevron.locator(".feature-chevron path").last()).toHaveCSS(
+    "animation-delay",
+    "-0.9s",
+  );
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(chevron).toHaveCSS("animation-name", "none");
+  await expect(chevron.locator(".feature-chevron path").first()).toHaveCSS(
+    "animation-name",
+    "none",
+  );
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
   const contactBanner = page.locator(".abstract-promotion");
@@ -532,6 +549,12 @@ test("public routes remove staff access and fit the viewport", async ({
   ).toHaveCount(1);
   await expect(bannerLink).toHaveCSS("min-height", "107px");
   await expect(contactBanner).toHaveCSS("margin-top", "24px");
+  expect(
+    await contactBanner.evaluate((node) => ({
+      color: getComputedStyle(node, "::before").backgroundColor,
+      height: getComputedStyle(node, "::before").height,
+    })),
+  ).toEqual({ color: "rgb(255, 255, 255)", height: "24px" });
   const bannerHeadingSize = await contactBanner
     .locator("h2")
     .evaluate((node) => getComputedStyle(node).fontSize);
@@ -546,6 +569,13 @@ test("public routes remove staff access and fit the viewport", async ({
     const restingHeight = (await bannerLink.boundingBox())!.height;
     await bannerLink.hover();
     await expect(contactBanner).toHaveCSS("transform", "none");
+    expect(
+      await bannerLink.evaluate((node) =>
+        ["::before", "::after"].map(
+          (pseudo) => getComputedStyle(node, pseudo).animationName,
+        ),
+      ),
+    ).toEqual(["banner-light", "banner-light"]);
     await expect(bannerLink.locator("h2")).toHaveCSS(
       "font-size",
       bannerHeadingSize,
@@ -797,9 +827,12 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(firstPhotoBox!.y).toBeCloseTo(contentBox!.y, 0);
   await expect(
     page.locator(".studio-row").first().locator(".promotion-edge--top"),
-  ).toHaveCount(1);
+  ).toHaveCount(0);
   for (const row of await page.locator(".studio-row").all()) {
-    await expect(row).toHaveCSS("position", "relative");
+    await expect(row).toHaveCSS(
+      "position",
+      page.viewportSize()!.width <= 700 ? "relative" : "sticky",
+    );
     await expect(row.locator("a, button")).toHaveCount(0);
     await expect(row).toHaveAttribute("tabindex", "0");
     const reversed = /\breverse\b/.test(
@@ -859,12 +892,22 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(
     lastStudioRow.locator(".section-reveal, .section-reveal-pending"),
   ).toHaveCount(0);
+  if (page.viewportSize()!.width > 700) {
+    await lastStudioRow.evaluate(async (node) => {
+      node.scrollIntoView({ block: "start", behavior: "instant" });
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    });
+  }
   const previousCard = page.locator(".studio-row").nth(3);
   const previousBox = await previousCard.boundingBox();
   const lastBox = await lastStudioRow.boundingBox();
-  expect(previousBox!.y + previousBox!.height).toBeLessThanOrEqual(
-    lastBox!.y + 1,
-  );
+  if (page.viewportSize()!.width <= 700)
+    expect(previousBox!.y + previousBox!.height).toBeLessThanOrEqual(
+      lastBox!.y + 1,
+    );
+  else expect(previousBox!.y + previousBox!.height).toBeGreaterThan(lastBox!.y);
   await page.keyboard.press("Escape");
   await expect(lastStudioRow).toHaveAttribute(
     "data-active",
@@ -936,8 +979,19 @@ test("public routes remove staff access and fit the viewport", async ({
     expect(explorer!.y + explorer!.height).toBeLessThan(message!.y);
     expect(message!.y + message!.height).toBeLessThan(art!.y + art!.height);
   }
+  const hiddenInstagram = page.locator(".not-found-instagram");
+  await expect(hiddenInstagram).toHaveCSS("opacity", "0.3");
+  await hiddenInstagram.focus();
+  await expect(hiddenInstagram).toHaveCSS("opacity", "1");
+  expect((await hiddenInstagram.boundingBox())!.width).toBeGreaterThanOrEqual(
+    44,
+  );
+  await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
   const home = page.getByRole("link", { name: "Back to home", exact: true });
   await expect(home).toBeVisible();
+  await expect(
+    home.locator(".not-found-home-label, .not-found-home-shine"),
+  ).toHaveCount(0);
   const astronaut = await page.locator(".not-found-astronaut").boundingBox();
   const sphere = await home.boundingBox();
   // The source artwork's open palm is centred at18% across and34% down.
@@ -954,6 +1008,10 @@ test("public routes remove staff access and fit the viewport", async ({
   ).toBeLessThan(0.015);
   await home.focus();
   await expect(home).toBeFocused();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(home).toHaveCSS("transition-duration", "0.25s, 5s");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(home).toHaveCSS("transition-duration", "0s");
   await home.press("Enter");
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".site-header")).toBeVisible();
@@ -1585,6 +1643,23 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await expect(page.locator(".session-product-icon")).toHaveCSS(
     "background-color",
     "rgba(0, 0, 0, 0)",
+  );
+  for (const selector of [
+    ".outlet-option > svg",
+    ".session-product-icon svg",
+  ]) {
+    await expect(page.locator(selector)).toHaveCSS(
+      "width",
+      cardWidths.mobile ? "20px" : "24px",
+    );
+    await expect(page.locator(selector)).toHaveCSS(
+      "height",
+      cardWidths.mobile ? "20px" : "24px",
+    );
+  }
+  await expect(page.locator(".session-product-icon svg")).toHaveCSS(
+    "padding-top",
+    cardWidths.mobile ? "1px" : "1.2px",
   );
   await expect(page.locator(".session-product-name")).not.toContainText(
     "(Trial Price)",

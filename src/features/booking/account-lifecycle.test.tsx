@@ -393,6 +393,7 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
 });
 
 test("switching email clears the old account and supports back guest and fresh remembered sign-in paths", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   navigation.push.mockClear();
   let current: ReturnType<CustomerIdentityService["current"]> = {
     email: "old@example.invalid",
@@ -1244,6 +1245,7 @@ test("fresh security proof clears only stale security feedback and reentry start
 });
 
 test("email requests wait for background signout while the replacement form opens immediately", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   let finish!: () => void;
   let current: ReturnType<CustomerIdentityService["current"]> = {
     email: "old@example.invalid",
@@ -1308,6 +1310,7 @@ test("email requests wait for background signout while the replacement form open
 });
 
 test("switching identity clears selected session and cart without repeating entry preparation", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   let current: ReturnType<CustomerIdentityService["current"]> = {
     email: "old@example.invalid",
     expiresAt: Date.now() + 600000,
