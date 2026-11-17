@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-17 November2026: PR93 9f4282b fixed the banner serialization assertion; frontend, both backend shards and Worker gates passed CI44027749286. Live-email shard2 exposed an enquiry resting-gap measurement inside the existing readiness animation (artifact14304740492). The focused test now awaits that named animation with the original32–33px requirement unchanged. Validate and repush this repair, then verify complete CI and actual staging health. PR remains unmerged; physical Edge acceptance is pending.
+17 November2026: PR93 76c6a69 again failed enquiry resting-gap CI44029673048 after the readiness wait. Retained trace/screenshot14304977554 establishes the missing cause: the app-dialog close left the mouse over Send enquiry after scroll, activating intended desktop hover scale. The fixture now clears the mouse and requires unhovered normal scale before the existing settled32–33px measurement. Validate this corrected fixture, finish remaining-job review, repush and verify complete CI/staging health. PR remains unmerged; physical Edge acceptance is pending.
 
 ## Next actions
 

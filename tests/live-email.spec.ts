@@ -4497,9 +4497,19 @@ test("hidden enquiry proof preserves the shared action gap", async ({
   await expect(proof).toHaveCount(1);
   await expect(proof).toHaveCSS("margin-top", "0px");
   await expect(proof).toHaveCSS("margin-bottom", "0px");
+  // Dismissing the app prompt leaves the mouse above this button after scrolling.
+  // Keep the resting-gap measurement separate from its intentional hover scale.
+  await page.mouse.move(0, 0);
   // The sticky action is already visible before its natural position. Scroll
   // the footer into view to measure the real resting gap below the textarea.
   await page.locator(".site-footer").scrollIntoViewIfNeeded();
+  const actionButton = page.locator(
+    ".enquiry-form .booking-primary-action .button",
+  );
+  expect(
+    await actionButton.evaluate((button) => button.matches(":hover")),
+  ).toBe(false);
+  await expect(actionButton).toHaveCSS("scale", "none");
   await expect(page.locator(".enquiry-form .booking-action-anchor")).toHaveCSS(
     "position",
     "sticky",
