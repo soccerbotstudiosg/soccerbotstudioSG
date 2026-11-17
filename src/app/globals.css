@@ -1919,6 +1919,7 @@
   }
   .interactive-promotion {
     --stack-index: 0;
+    --promotion-photo-width: min(50vw, 924px);
     position: relative;
     width: 100%;
     overflow: clip;
@@ -1929,7 +1930,17 @@
   .home-promotion,
   .studio-row {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, var(--promotion-photo-width)) minmax(
+        0,
+        1fr
+      );
+  }
+  .home-promotion--booking,
+  .studio-row.reverse {
+    grid-template-columns: minmax(0, 1fr) minmax(
+        0,
+        var(--promotion-photo-width)
+      );
   }
   .promotion-image,
   .studio-photo {

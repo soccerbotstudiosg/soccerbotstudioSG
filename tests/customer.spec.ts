@@ -506,6 +506,7 @@ test("public routes remove staff access and fit the viewport", async ({
       );
     }
     expect((await photo.boundingBox())!.height).toBeGreaterThanOrEqual(360);
+    expect((await photo.boundingBox())!.width).toBeLessThanOrEqual(924);
     expect(
       await promotions
         .nth(1)
