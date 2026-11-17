@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-17 November2026: PR93 revision d13f996 passed all13 jobs in CI44012104915 and staging44014468140; independent health matched. Owner follow-ups request Bot blue arrow-free desktop banner actions, stronger banner hover/background feedback, alternating mobile alignment, and prompt Edge activation while scrolling beneath a stationary cursor. Shared CSS and existing browser assertions are updated locally; the full `npm run verify:code` wrapper passes, including checks, tests, production build and export validation. Browser assertions are updated for the next CI run; these follow-ups are not yet pushed or staged. PR remains unmerged.
+17 November2026: PR93 cd90170 passed full local code verification and was pushed. CI44025883438 exposed a banner assertion serialization defect: optimized zero-percent background position computes as zero pixels. The test now accepts only those equivalent exact-zero forms, with all other assertions intact; original job133846533488/artifact14304050100 retained. Review remaining jobs, validate this focused guard repair, repush the same PR and verify actual staging/health. PR remains unmerged; physical Edge acceptance is pending.
 
 ## Next actions
 

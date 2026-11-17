@@ -657,7 +657,8 @@ test("public routes remove staff access and fit the viewport", async ({
     const restingHeight = (await bannerLink.boundingBox())!.height;
     await bannerLink.hover();
     await expect(contactBanner).toHaveCSS("transform", "none");
-    await expect(bannerLink).toHaveCSS("background-position-x", "0%");
+    // Production CSS normalizes zero percentages to unitless zero (computed as px).
+    await expect(bannerLink).toHaveCSS("background-position-x", /^0(?:%|px)$/);
     await expect(bannerLink).toHaveCSS("box-shadow", /inset/);
     expect(
       await bannerLink.evaluate((node) =>
