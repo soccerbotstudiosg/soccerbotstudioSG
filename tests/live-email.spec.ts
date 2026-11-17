@@ -3740,11 +3740,28 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       await expect(continuation).not.toHaveAttribute("target", "_blank");
       await expect(page.getByRole("timer")).toBeVisible();
       await expect(
-        page.getByText(
-          "Your selected sessions are held until the timer ends.",
-          { exact: true },
-        ),
+        page.getByText("Sessions held until the timer ends.", { exact: true }),
       ).toBeVisible();
+      if (page.viewportSize()!.width <= 700) {
+        const guidance = page.locator(".payment-continuation-details");
+        await expect(guidance).toHaveCSS("flex-direction", "column");
+        await expect(guidance).toHaveCSS("align-items", "center");
+        for (const line of await guidance.locator("p").all()) {
+          await expect(line).toHaveCSS("white-space", "nowrap");
+          const layout = await line.evaluate((node) => {
+            const parent = node.parentElement!.getBoundingClientRect();
+            const box = node.getBoundingClientRect();
+            return {
+              centreOffset: Math.abs(
+                box.left + box.width / 2 - parent.left - parent.width / 2,
+              ),
+              fits: box.width <= parent.width,
+            };
+          });
+          expect(layout.centreOffset).toBeLessThanOrEqual(0.5);
+          expect(layout.fits).toBe(true);
+        }
+      }
       const continuationBox = await continuation.boundingBox();
       const timerBox = await page.getByRole("timer").boundingBox();
       expect(timerBox!.y).toBeGreaterThanOrEqual(

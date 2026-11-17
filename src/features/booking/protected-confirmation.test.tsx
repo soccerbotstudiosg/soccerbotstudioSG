@@ -1554,7 +1554,7 @@ it("shows payment received feedback with details while current booking evidence 
   expect(continuation).not.toHaveAttribute("target");
   expect(continuation.nextElementSibling).toBe(timer.parentElement);
   expect(timer.parentElement).toHaveTextContent(
-    "Your selected sessions are held until the timer ends.",
+    "Sessions held until the timer ends.",
   );
   expect(continuation.parentElement?.nextElementSibling).toBeNull();
   expect(screen.queryByText("View Full Details")).toBeNull();

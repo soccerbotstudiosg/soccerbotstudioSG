@@ -7007,3 +7007,13 @@ The owner revised the layer preference to keep the booking circle above primary 
 Local evidence: collision component case passes and fails when displacement is removed; types/lint pass after correcting the initial effect-state pattern and fixture typing. An initial full code run timed out in unrelated calendar/payment component cases; logs are retained. The calendar baseline and candidate both pass the same isolated case, so that failure is not established as caused by the scroll-control change. Final consolidated full-code verification is pending; timeouts and suite inventory remain unchanged.
 
 Final local outcome for the collision repair: focused regression/mutation proof, source/policy, types, lint, formatting, production build and15-route export pass. Normal full runs retain component timeouts (21 then5 failed cases); a resource-contention experiment running all400 cases with one worker retains two calendar timeouts while398 pass. Baseline/candidate isolated first-calendar cases both pass. This does not establish the timeout cause or a full local pass. No timeout, retry, inventory or CI configuration was changed; exact-head complete CI remains required.
+
+### 17 November2026 — mobile payment countdown alignment
+
+After PR93 merged as b95e991, the owner requested a centred mobile Continue payment timer and strictly single-line reminder beneath it. The existing continuation-details owner stacks/centres its two lines at widths up to700px; the reminder is shortened to “Sessions held until the timer ends.” without reducing its font size. Existing browser coverage checks alignment, non-wrapping and fit. Desktop layout and payment authority/deadline behavior remain unchanged. This follow-up is local and not yet staged.
+
+The owner also requested the email-entry Sign in heading on one mobile line. BookingHeading accepts a single-line title without an empty second span; AccountStep uses it only for Sign in. Existing component/browser cases assert one rendered heading line.
+
+Validation: source/policy, TypeScript, affected-file lint/formatting and 59 focused payment/sign-in component tests pass. Existing browser assertions are updated without inventory/count changes; owner/CI browser validation remains pending. No push or staging deployment performed for this follow-up.
+
+Owner authorized staging for this follow-up. Reuse the unchanged focused checks, publish one candidate and verify exact-head CI plus actual staging deployment/health; merge and physical-device acceptance remain pending.

@@ -1407,6 +1407,16 @@ test("email verification rejects an incorrect code and continues after correctio
 }) => {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Sign in" }).click();
+  const emailHeading = page.getByRole("heading", {
+    name: "Sign in",
+    exact: true,
+  });
+  await expect(emailHeading.locator(".booking-title-line")).toHaveCount(1);
+  const headingLines = await emailHeading.evaluate((heading) => ({
+    height: heading.getBoundingClientRect().height,
+    lineHeight: Number.parseFloat(getComputedStyle(heading).lineHeight),
+  }));
+  expect(headingLines.height).toBeCloseTo(headingLines.lineHeight, 0);
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("name@domain");

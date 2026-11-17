@@ -38,6 +38,11 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   const user = userEvent.setup();
   render(<AccountStep />);
   await user.click(screen.getByRole("button", { name: "Sign in" }));
+  expect(
+    screen
+      .getByRole("heading", { name: "Sign in" })
+      .querySelectorAll(".booking-title-line"),
+  ).toHaveLength(1);
   expect(screen.getByLabelText("Email address")).toHaveAttribute(
     "maxlength",
     "254",

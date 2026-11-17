@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-17 November2026: PR93 54defcf passes the enquiry guard, but CI44031490315 exposed a real phone-WebKit click interception: the Back-to-top circle overlaps Choose Date & Time near the footer (artifact14305094674). The shared control now measures collisions before paint and shifts below the primary action; existing component/browser guards cover collision and normal placement. Focused regression/mutation, types/lint/source/policy and build/export pass; full local unit runs retain calendar timeouts (398/400 in a one-worker diagnostic), so full local success is not claimed. Push the owning repair and require complete exact-head CI/staging health. PR remains unmerged; physical Edge acceptance is pending.
+17 November 2026: PR93 merged as b95e991 after all 13 gates and verified staging. New branch fix/mobile-payment-countdown centres the mobile Continue payment countdown above a shortened single-line hold reminder. The email-entry Sign in heading also stays on one line. Existing browser/component coverage checks single-line titles, centred payment guidance, no wrapping and fit. Payment deadlines, polling and continuation authority are unchanged. Source/policy guards, TypeScript, affected-file lint/formatting and 59 focused component tests pass. Browser layout assertions are updated but not executed locally. Owner has authorized staging; publication, exact-head CI and staging health verification are next.
 
 ## Next actions
 
-Consolidate tests/guards/docs, run local code verification, push existing PR, monitor exact-head CI and deploy staging under the owner's standing request. Do not merge. No provider actions or assistant browsers.
+Publish the reviewed candidate, mark ready for authorized staging, and verify all exact-head gates and the deployed staging revision. Browser/device acceptance remains owner/CI-run. No provider actions or assistant browsers.
 
 ## Ordered work after this slice
 

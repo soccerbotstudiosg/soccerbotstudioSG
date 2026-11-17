@@ -128,7 +128,7 @@ function PaymentContinuation({
           Time left to pay: {String(Math.floor(seconds / 60)).padStart(2, "0")}:
           {String(seconds % 60).padStart(2, "0")}
         </p>
-        <p>Your selected sessions are held until the timer ends.</p>
+        <p>Sessions held until the timer ends.</p>
       </div>
     </div>
   );

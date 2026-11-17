@@ -506,7 +506,7 @@ export function AccountStep({
     <>
       <BookingHeading
         status={false}
-        lines={view === "email" ? ["Sign", "in"] : ["Verify your", "email"]}
+        lines={view === "email" ? ["Sign in"] : ["Verify your", "email"]}
       />
       <p className="lead">
         {view === "email"
