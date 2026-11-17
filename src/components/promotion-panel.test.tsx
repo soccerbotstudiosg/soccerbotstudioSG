@@ -204,8 +204,11 @@ test("compact closing banners group the arrow with their action and expose one f
         expect(link.querySelector(".button")).toBeNull();
       }
       expect(screen.getAllByRole("link")).toHaveLength(1);
-      const banner = link.closest("section")!;
+      const banner = link.closest(
+        ".abstract-promotion-mobile, .abstract-promotion-link",
+      )!;
       expect(observe).toHaveBeenCalledExactlyOnceWith(banner);
+      expect(link.closest("section")).not.toHaveClass("section-reveal-pending");
       expect(banner).toHaveClass("section-reveal-pending");
       expect(banner.querySelector(".section-reveal-pending")).toBeNull();
       act(() =>

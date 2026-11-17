@@ -37,18 +37,18 @@ export function SectionReveals() {
     function observeVisual(target: Element) {
       const controls =
         "a, button, input, select, textarea, [tabindex], [role='button']";
+      const bannerContent = target.matches(
+        ".abstract-promotion-mobile, .abstract-promotion-link",
+      );
       if (
         target.closest(".interactive-promotion") ||
-        target.matches(controls) ||
+        (target.matches(controls) && !bannerContent) ||
         target instanceof SVGElement ||
         target.closest("form, [aria-live], [role='alert'], [role='status']")
       )
         return;
-      // Banners fade as one group; opacity never moves their controls.
-      if (
-        !target.matches(".abstract-promotion") &&
-        target.querySelector(controls)
-      ) {
+      // Fade banner contents together, keeping the white separator opaque.
+      if (!bannerContent && target.querySelector(controls)) {
         for (const child of target.children) observeVisual(child);
         return;
       }

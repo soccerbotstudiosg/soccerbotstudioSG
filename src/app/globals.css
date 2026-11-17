@@ -5960,7 +5960,7 @@
   .section-reveal-pending {
     opacity: 0;
   }
-  .abstract-promotion.section-reveal {
+  .abstract-promotion .section-reveal {
     animation: banner-arrival 650ms ease;
   }
   .section-reveal {
