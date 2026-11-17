@@ -518,6 +518,18 @@ test("public routes remove staff access and fit the viewport", async ({
     for (const panel of await promotions.all()) {
       await expect(panel).toHaveAttribute("data-active", "true");
       await expect(panel.locator(".feature-full")).toHaveCSS("opacity", "1");
+      const rightAligned = (await panel.getAttribute("class"))!.includes(
+        "home-promotion--booking",
+      );
+      for (const selector of [
+        ".promotion-copy-content",
+        ".feature-title-expanded",
+        ".feature-description",
+      ])
+        await expect(panel.locator(selector)).toHaveCSS(
+          "text-align",
+          rightAligned ? "right" : "left",
+        );
     }
   }
   if (page.viewportSize()!.width > 700) {
@@ -607,7 +619,7 @@ test("public routes remove staff access and fit the viewport", async ({
   }
   await expect(
     bannerLink.locator(".abstract-promotion-action svg"),
-  ).toHaveCount(mobileBanner ? 0 : 1);
+  ).toHaveCount(0);
   await expect(bannerLayout).toHaveCSS("min-height", "107px");
   await expect(contactBanner).toHaveCSS(
     "margin-top",
@@ -630,6 +642,10 @@ test("public routes remove staff access and fit the viewport", async ({
       "font-size",
       bannerHeadingSize,
     );
+    await expect(bannerLink.locator(".abstract-promotion-action")).toHaveCSS(
+      "color",
+      "rgb(70, 172, 220)",
+    );
   }
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
@@ -641,6 +657,8 @@ test("public routes remove staff access and fit the viewport", async ({
     const restingHeight = (await bannerLink.boundingBox())!.height;
     await bannerLink.hover();
     await expect(contactBanner).toHaveCSS("transform", "none");
+    await expect(bannerLink).toHaveCSS("background-position-x", "0%");
+    await expect(bannerLink).toHaveCSS("box-shadow", /inset/);
     expect(
       await bannerLink.evaluate((node) =>
         ["::before", "::after"].map(
@@ -932,8 +950,25 @@ test("public routes remove staff access and fit the viewport", async ({
     );
     await expect(row.locator(".feature-title-expanded")).toHaveCSS(
       "justify-self",
-      page.viewportSize()!.width > 700 && reversed ? "start" : "end",
+      page.viewportSize()!.width <= 700
+        ? reversed
+          ? "end"
+          : "start"
+        : reversed
+          ? "start"
+          : "end",
     );
+    if (page.viewportSize()!.width <= 700) {
+      for (const selector of [
+        ".promotion-copy-content",
+        ".feature-title-expanded",
+        ".feature-description",
+      ])
+        await expect(row.locator(selector)).toHaveCSS(
+          "text-align",
+          reversed ? "right" : "left",
+        );
+    }
   }
   await expect(page.locator(".promotion-stack")).toHaveCSS(
     "background-color",
@@ -954,6 +989,11 @@ test("public routes remove staff access and fit the viewport", async ({
     "background-image",
     /linear-gradient.*rgb\(23, 96, 120\)/,
   );
+  if (!mobileBanner)
+    await expect(studioBanner.locator(".abstract-promotion-action")).toHaveCSS(
+      "color",
+      "rgb(70, 172, 220)",
+    );
   const studioBannerBox = await studioBanner.boundingBox();
   const studioFooterBox = await page.locator(".site-footer").boundingBox();
   expect(studioBannerBox).not.toBeNull();

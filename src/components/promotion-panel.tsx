@@ -9,6 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { BookingLink } from "./booking-navigation";
+import { subscribePromotionHover } from "./promotion-hover";
 
 const mobileQuery = "(max-width: 700px)";
 /** Keep mobile detail disclosure synchronized with the responsive layout. */
@@ -64,6 +65,13 @@ export function PromotionPanel({
     () => false,
   );
   const active = mobile || engaged;
+  useEffect(() => {
+    const element = panel.current;
+    if (!element) return;
+    return subscribePromotionHover(element, (hovered) => {
+      setActive(hovered || element.contains(document.activeElement));
+    });
+  }, []);
   useEffect(() => {
     const element = panel.current;
     if (!element || typeof ResizeObserver === "undefined") return;
@@ -276,18 +284,7 @@ export function PromotionBanner({
   const content = (
     <>
       {introduction}
-      <span className="abstract-promotion-action">
-        {actionLabel}
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
-        >
-          <path d="M5 19 19 5M5 5h14v14" />
-        </svg>
-      </span>
+      <span className="abstract-promotion-action">{actionLabel}</span>
     </>
   );
   return (

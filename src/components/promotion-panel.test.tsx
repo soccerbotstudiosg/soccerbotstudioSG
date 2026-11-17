@@ -13,8 +13,15 @@ vi.mock("./booking-navigation", async () => {
   const { default: Link } = await import("next/link");
   return { BookingLink: Link };
 });
+const originalHitTest = Object.getOwnPropertyDescriptor(
+  document,
+  "elementFromPoint",
+);
 afterEach(() => {
   cleanup();
+  if (originalHitTest)
+    Object.defineProperty(document, "elementFromPoint", originalHitTest);
+  else Reflect.deleteProperty(document, "elementFromPoint");
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -86,6 +93,40 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
   expect(panel).toHaveAttribute("data-active", "true");
   fireEvent.pointerLeave(panel);
   expect(panel).toHaveAttribute("data-active", "false");
+  let frame!: FrameRequestCallback;
+  const requestFrame = vi.fn((callback: FrameRequestCallback) => {
+    frame = callback;
+    return 1;
+  });
+  vi.stubGlobal("requestAnimationFrame", requestFrame);
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  const hitTest = vi.fn().mockReturnValue(panel);
+  Object.defineProperty(document, "elementFromPoint", {
+    configurable: true,
+    value: hitTest,
+  });
+  const move = new MouseEvent("pointermove", { clientX: 100, clientY: 150 });
+  Object.defineProperty(move, "pointerType", { value: "mouse" });
+  fireEvent(window, move);
+  fireEvent.scroll(window);
+  fireEvent.scroll(window);
+  expect(requestFrame).toHaveBeenCalledOnce();
+  act(() => frame(0));
+  expect(hitTest).toHaveBeenCalledExactlyOnceWith(100, 150);
+  expect(panel).toHaveAttribute("data-active", "true");
+  // Scroll under a stationary cursor, without any enter/leave event from Edge.
+  hitTest.mockReturnValue(document.body);
+  fireEvent.scroll(window);
+  expect(requestFrame).toHaveBeenCalledTimes(2);
+  act(() => frame(16));
+  expect(panel).toHaveAttribute("data-active", "false");
+  hitTest.mockReturnValue(panel);
+  fireEvent.scroll(window);
+  expect(requestFrame).toHaveBeenCalledTimes(3);
+  act(() => frame(32));
+  expect(panel).toHaveAttribute("data-active", "true");
+  fireEvent(window, new Event("blur"));
+  expect(panel).toHaveAttribute("data-active", "false");
   act(() => panel.focus());
   expect(panel).toHaveAttribute("data-active", "true");
   fireEvent.blur(panel);
@@ -96,6 +137,9 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
   const touch = new Event("pointerdown", { bubbles: true });
   Object.defineProperty(touch, "pointerType", { value: "touch" });
   fireEvent(panel, touch);
+  const framesBeforeTouchScroll = requestFrame.mock.calls.length;
+  fireEvent.scroll(window);
+  expect(requestFrame).toHaveBeenCalledTimes(framesBeforeTouchScroll);
   expect(panel).toHaveAttribute("data-active", "true");
   act(measure);
   for (const [href, actionLabel] of [
@@ -137,11 +181,13 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
   expect(phonePanel).toHaveAttribute("data-active", "true");
   phone.unmount();
   expect(removeMediaListener).toHaveBeenCalledOnce();
+  fireEvent(window, move);
   view.unmount();
+  expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
   expect(disconnect).toHaveBeenCalledTimes(2);
 });
 
-test("compact closing banners group the arrow with their action and expose one full-banner link", () => {
+test("compact closing banners group their content and expose one action per viewport", () => {
   let reveal!: IntersectionObserverCallback;
   const observe = vi.fn();
   vi.stubGlobal(
@@ -198,9 +244,7 @@ test("compact closing banners group the arrow with their action and expose one f
         expect(link).toContainElement(
           screen.getByRole("heading", { name: "Your move." }),
         );
-        expect(
-          link.querySelector(".abstract-promotion-action svg"),
-        ).not.toBeNull();
+        expect(link.querySelector(".abstract-promotion-action svg")).toBeNull();
         expect(link.querySelector(".button")).toBeNull();
       }
       expect(screen.getAllByRole("link")).toHaveLength(1);

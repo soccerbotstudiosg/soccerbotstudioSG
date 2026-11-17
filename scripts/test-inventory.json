@@ -93,7 +93,7 @@
   },
   {
     "file": "src/components/promotion-panel.test.tsx",
-    "title": "compact closing banners group the arrow with their action and expose one full-banner link"
+    "title": "compact closing banners group their content and expose one action per viewport"
   },
   {
     "file": "src/components/section-reveals.test.tsx",

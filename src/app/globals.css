@@ -1961,7 +1961,6 @@
     object-fit: cover;
     object-position: var(--photo-position, 50% 50%);
     transform: scale(var(--photo-zoom, 1));
-    transition: filter 650ms ease;
   }
   @media (min-width: 701px) {
     .promotion-stack {
@@ -2009,8 +2008,8 @@
       var(--color-paper) 55%
     );
     transition:
-      background 550ms ease,
-      color 400ms ease;
+      background-color 200ms ease,
+      color 180ms ease;
     outline-offset: -4px;
   }
   .feature-copy::before {
@@ -2076,8 +2075,8 @@
     max-width: 100%;
     width: max-content;
     transition:
-      transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 400ms ease;
+      transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 160ms ease;
   }
   .feature-heading > span > span {
     display: block;
@@ -2103,8 +2102,8 @@
   .feature-description > span {
     grid-area: 1 / 1;
     transition:
-      opacity 350ms ease,
-      transform 550ms ease;
+      opacity 160ms ease,
+      transform 240ms ease;
   }
   .feature-full {
     opacity: 0;
@@ -2152,7 +2151,7 @@
     width: 22px;
     height: 22px;
     transform-origin: center;
-    transition: transform 500ms ease;
+    transition: transform 220ms ease;
   }
   .feature-arrow svg {
     display: block;
@@ -2160,7 +2159,7 @@
     height: 100%;
   }
   .feature-arrow path {
-    transition: opacity 400ms ease;
+    transition: opacity 180ms ease;
   }
   .feature-chevron {
     opacity: 0;
@@ -2174,11 +2173,6 @@
   .interactive-promotion[data-active="true"] .feature-copy {
     background: var(--color-navy);
     color: var(--color-on-brand);
-  }
-  .interactive-promotion[data-active="true"]
-    :is(.promotion-image, .studio-photo)
-    img {
-    filter: saturate(1.12);
   }
   .interactive-promotion[data-active="true"] .feature-title-initial {
     visibility: hidden;
@@ -2325,6 +2319,27 @@
     text-decoration: none;
     outline-offset: -4px;
   }
+  .abstract-promotion-link {
+    background-image: linear-gradient(
+      110deg,
+      transparent 35%,
+      color-mix(in srgb, var(--color-logo-blue) 19%, transparent) 50%,
+      transparent 65%
+    );
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    transition:
+      background-position 1100ms ease,
+      box-shadow 320ms ease;
+  }
+  .abstract-promotion-link:focus-visible {
+    background-position: 0% 0;
+    box-shadow: inset 0 0 100px
+      color-mix(in srgb, var(--color-logo-blue) 14%, transparent);
+  }
+  .abstract-promotion-link:focus-visible > p {
+    transform: translateX(3px);
+  }
   .abstract-promotion-link::before,
   .abstract-promotion-link::after {
     content: "";
@@ -2392,6 +2407,7 @@
     line-height: 1.02;
   }
   .abstract-promotion-action {
+    color: var(--color-logo-blue);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2422,33 +2438,32 @@
     outline-color: var(--color-on-brand);
     outline-offset: 5px;
   }
-  .abstract-promotion-action svg {
-    width: 0.8em;
-    height: 0.8em;
-    flex: none;
-    transition: transform 240ms ease;
-  }
   .abstract-promotion:focus-within {
     box-shadow: 0 4px 18px rgb(5 10 47 / 18%);
   }
   .abstract-promotion-link:focus-visible > :first-child {
-    transform: translateX(-8px);
+    transform: translateX(-14px);
   }
   .abstract-promotion-link:focus-visible > :last-child {
-    transform: translateX(8px);
+    transform: translateX(14px);
   }
   @media (hover: hover) {
+    .abstract-promotion-link:hover {
+      background-position: 0% 0;
+      box-shadow: inset 0 0 100px
+        color-mix(in srgb, var(--color-logo-blue) 14%, transparent);
+    }
+    .abstract-promotion-link:hover > p {
+      transform: translateX(3px);
+    }
     .abstract-promotion:hover {
       box-shadow: 0 4px 18px rgb(5 10 47 / 18%);
     }
     .abstract-promotion-link:hover > :first-child {
-      transform: translateX(-8px);
+      transform: translateX(-14px);
     }
     .abstract-promotion-link:hover > :last-child {
-      transform: translateX(8px);
-    }
-    .abstract-promotion-link:hover .abstract-promotion-action svg {
-      transform: translate(3px, -3px);
+      transform: translateX(14px);
     }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -2552,6 +2567,19 @@
     .feature-heading {
       margin-bottom: 32px;
       font-size: 2.375rem;
+    }
+    .interactive-promotion:not(.reverse):not(.home-promotion--booking)
+      :is(.promotion-copy-content, .feature-title-expanded) {
+      text-align: left;
+    }
+    .interactive-promotion:not(.reverse):not(.home-promotion--booking)
+      .feature-title-expanded {
+      justify-self: start;
+    }
+    .interactive-promotion:not(.reverse):not(.home-promotion--booking)
+      .feature-description {
+      margin-left: 0;
+      margin-right: auto;
     }
   }
   @media (prefers-reduced-motion: reduce) {
