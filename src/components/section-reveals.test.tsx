@@ -93,14 +93,23 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
   }
   route.pathname = "/book/session/";
   let actionTop = window.innerHeight - 80;
+  let paintedBottom = window.innerHeight - 24;
+  const computedStyle = window.getComputedStyle.bind(window);
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) => {
+    const style = computedStyle(element, pseudo);
+    if (element.classList.contains("back-to-top"))
+      Object.defineProperty(style, "bottom", { value: "24px" });
+    return style;
+  });
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
     function (this: HTMLElement) {
       if (this.classList.contains("back-to-top"))
         return {
           left: 300,
           right: 348,
-          top: window.innerHeight - 72,
-          bottom: window.innerHeight - 24,
+          top: paintedBottom - 48,
+          bottom: paintedBottom,
+          height: 48,
         } as DOMRect;
       if (this.classList.contains("button"))
         return {
@@ -116,7 +125,7 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
     <>
       <div className="booking-primary-action">
         <Link className="button" href="/book/time/">
-          Choose Date &amp; Time
+          Choose sessions
         </Link>
       </div>
       <BackToTop />
@@ -132,6 +141,23 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
       .getByRole("button", { name: "Back to top" })
       .style.getPropertyValue("--back-to-top-clearance"),
   ).toBe("92px");
+  // A later measurement can see the previously painted lifted rectangle.
+  paintedBottom = window.innerHeight - 92;
+  fireEvent.resize(window);
+  expect(
+    screen
+      .getByRole("button", { name: "Back to top" })
+      .style.getPropertyValue("--back-to-top-clearance"),
+  ).toBe("92px");
+  actionTop = window.innerHeight - 80.25;
+  fireEvent.resize(window);
+  expect(
+    Number.parseFloat(
+      screen
+        .getByRole("button", { name: "Back to top" })
+        .style.getPropertyValue("--back-to-top-clearance"),
+    ),
+  ).toBeGreaterThanOrEqual(92.25);
   actionTop = 200;
   fireEvent.scroll(window);
   expect(

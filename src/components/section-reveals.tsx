@@ -132,17 +132,21 @@ function ScrollTopControl() {
       if (!circle) return;
       circle.style.removeProperty("--back-to-top-clearance");
       const cue = circle.getBoundingClientRect();
+      // WebKit can retain the previously painted fixed rect after removing the
+      // lift. Derive baseline vertical bounds from CSS instead of that rect.
+      const baselineBottom =
+        window.innerHeight - Number.parseFloat(getComputedStyle(circle).bottom);
       const button = action?.getBoundingClientRect();
       if (
         button &&
         cue.left < button.right &&
         cue.right > button.left &&
-        cue.bottom + 12 > button.top &&
-        cue.top < button.bottom + 12
+        baselineBottom + 12 > button.top &&
+        baselineBottom - cue.height < button.bottom + 12
       ) {
         circle.style.setProperty(
           "--back-to-top-clearance",
-          `${window.innerHeight - button.top + 12}px`,
+          `${Math.ceil(window.innerHeight - button.top + 12)}px`,
         );
       }
     }
