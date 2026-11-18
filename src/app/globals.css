@@ -3191,6 +3191,10 @@
     font-size: var(--text-body);
     line-height: var(--leading-body);
   }
+  .arrival-points > li {
+    display: list-item;
+    list-style-type: disc;
+  }
   .basket-empty {
     display: flex;
     flex-direction: column;

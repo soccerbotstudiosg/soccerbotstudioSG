@@ -13,7 +13,7 @@ import { dateLabel, todaySG } from "@/domain/dates";
 import { SessionStep } from "./session-step";
 import { BookingPage, BookingProgressHeader } from "./booking-page";
 import { BasketContinue, Summary } from "./summary";
-import { ReviewStep } from "./review-step";
+import { Arrival, ReviewStep } from "./review-step";
 import { BookingProvider, useBooking } from "./provider";
 import { demoSession } from "@/services/demo/schedule";
 import { ConfirmationStep } from "./confirmation-step";
@@ -532,6 +532,14 @@ test("confirmation places three retained actions below the summary with complete
   expect(
     screen.queryByText(/Crosses the 15:00 instructor rotation/),
   ).not.toBeInTheDocument();
+  const reviewGuidance = render(<Arrival />);
+  expect(
+    within(reviewGuidance.container).getAllByRole("listitem"),
+  ).toHaveLength(4);
+  expect(
+    reviewGuidance.container.querySelector(".arrival-time")?.closest("li"),
+  ).toBeNull();
+  reviewGuidance.unmount();
 });
 
 test("an open booking page expires a selected slot at its start and keeps it removable", async () => {

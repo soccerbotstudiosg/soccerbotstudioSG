@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-18 November 2026: fix/unified-back-to-top from merged PR96/main b92e0dc. Consolidate one bottom-right scroll circle across all routes and retain the Step1 access-expiry notice across refresh. Owner confirmed Samsung Internet supplies the second circle. PR97 also shortens the blue-circle email helper and checks one-line mobile rendering. Email designs remain local mockups, not integrated or sent.
+18 November 2026: fix/unified-back-to-top from merged PR96/main b92e0dc. Consolidate one bottom-right scroll circle across all routes and retain the Step1 access-expiry notice across refresh. Owner confirmed Samsung Internet supplies the second circle. PR97 also shortens the blue-circle email helper, checks one-line mobile rendering and shares four arrival bullets between Review and Confirmation. Email designs remain local mockups, not integrated or sent.
 
 ## Next actions
 

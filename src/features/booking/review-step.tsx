@@ -60,19 +60,12 @@ export function Arrival({ compact = false }: { compact?: boolean } = {}) {
             : "Latecomers may not be given extra time."}
         </span>
       </p>
-      {compact ? (
-        <ul className="arrival-points">
-          <li>Wear training gear or activewear.</li>
-          <li>Soccer boots preferred; sports shoes are suitable.</li>
-          <li>Bring your own towel.</li>
-          <li>Follow your instructor’s safety guidance.</li>
-        </ul>
-      ) : (
-        <p>
-          Wear training gear or activewear. Soccer boots are preferred; sports
-          shoes are also suitable. Bring your own towel.
-        </p>
-      )}
+      <ul className="arrival-points">
+        <li>Wear training gear or activewear.</li>
+        <li>Soccer boots preferred; sports shoes are suitable.</li>
+        <li>Bring your own towel.</li>
+        <li>Follow your instructor’s safety guidance.</li>
+      </ul>
     </section>
   );
 }

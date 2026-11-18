@@ -2190,6 +2190,10 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     ".confirmation-disclaimers .arrival-points li",
   );
   await expect(guidancePoints).toHaveCount(4);
+  for (const point of await guidancePoints.all()) {
+    await expect(point).toHaveCSS("display", "list-item");
+    await expect(point).toHaveCSS("list-style-type", "disc");
+  }
   const pointBoxes = await guidancePoints.evaluateAll((points) =>
     points.map((point) => {
       const { x, y } = point.getBoundingClientRect();
