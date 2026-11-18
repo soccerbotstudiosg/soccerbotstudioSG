@@ -2093,9 +2093,6 @@
       padding-block: 32px;
     }
   }
-  .home-promotion + .home-promotion {
-    margin-top: 12px;
-  }
   .feature-copy {
     position: relative;
     isolation: isolate;
@@ -2660,7 +2657,6 @@
     }
   }
   @media (max-width: 700px) {
-    .interactive-promotion + .interactive-promotion,
     .abstract-promotion {
       margin-top: 12px;
     }
@@ -3315,6 +3311,7 @@
     min-width: 0;
   }
   .time-range {
+    min-height: 30px;
     font-size: var(--text-body);
     grid-column: 1 / -1;
     white-space: nowrap;
@@ -4565,7 +4562,6 @@
     border-radius: 0;
   }
   .time-choice > .time.selected .time-range {
-    min-height: 30px;
     padding-right: 36px;
   }
   .time-remove {

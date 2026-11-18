@@ -6,7 +6,7 @@
 
 ## Next actions
 
-Focused component checks passed16/16. Complete verify:code passed400 component/service tests,213 tooling tests,58 installer tests, source/policy/inventory/audit/format/lint/types checks, production build and15-route export. Existing browser cases now cover bottom-right cue geometry, reduced motion, the44px transparent remove control and price placement; CI/owner execution remains pending. No publication, staging or merge is claimed for this slice. PR94 passed13 CI jobs and exact-revision staging before authorized merge; PR84 updates were included and the duplicate closed. The post-merge description-format failure was corrected to the required MERGE keyword and its replacement check passed. The temporary picomatch exception still expires25 November00:00 SGT.
+Focused component checks passed16/16. Complete verify:code passed400 component/service tests,213 tooling tests,58 installer tests, source/policy/inventory/audit/format/lint/types checks, production build and15-route export. Existing browser cases now cover bottom-right cue geometry, reduced motion, the44px transparent remove control and price placement; CI/owner execution remains pending. PR95 is published. First CI found a mobile selected/unselected time-card height mismatch; shared first-row clearance repairs the owning CSS while retaining the equal-height assertion. Updated-head CI and staging remain pending; no merge. PR94 passed13 CI jobs and exact-revision staging before authorized merge; PR84 updates were included and the duplicate closed. The post-merge description-format failure was corrected to the required MERGE keyword and its replacement check passed. The temporary picomatch exception still expires25 November00:00 SGT.
 
 ## Ordered work after this slice
 

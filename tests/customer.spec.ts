@@ -472,6 +472,7 @@ test("public routes remove staff access and fit the viewport", async ({
   const promotions = page.locator(".home-promotion");
   await expect(promotions).toHaveCount(2);
   for (const promotion of await promotions.all()) {
+    await expect(promotion).toHaveCSS("margin-top", "0px");
     const box = await promotion.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.x).toBeCloseTo(0, 0);
@@ -537,7 +538,7 @@ test("public routes remove staff access and fit the viewport", async ({
       await promotions
         .nth(1)
         .evaluate((node) => parseFloat(getComputedStyle(node).marginTop)),
-    ).toBe(12);
+    ).toBe(0);
     await expect(photo.locator("img")).toHaveCSS("object-position", "50% 80%");
   }
   if (page.viewportSize()!.width <= 700) {
@@ -969,6 +970,7 @@ test("public routes remove staff access and fit the viewport", async ({
     const imageBox = await studioImage.boundingBox();
     expect(imageBox!.width).toBeGreaterThanOrEqual(photoFrame!.width);
     expect(imageBox!.height).toBeGreaterThanOrEqual(photoFrame!.height);
+    await expect(row).toHaveCSS("margin-top", "0px");
     await expect(row.locator("a, button")).toHaveCount(0);
     await expect(row).toHaveAttribute("tabindex", "0");
     if (page.viewportSize()!.width <= 700) {
