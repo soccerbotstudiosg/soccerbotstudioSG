@@ -182,7 +182,7 @@ test("details contains only the five contact fields and validates them before re
     name: "Confirm email address is correct",
   });
   expect(document.getElementById("email-check-help")).toHaveTextContent(
-    "Select the envelope to confirm your email address.",
+    "Select the email icon to confirm your email address.",
   );
   expect(
     confirmEmail.querySelectorAll(".email-check-icon circle"),

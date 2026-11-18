@@ -197,9 +197,19 @@ async function details(page: Page) {
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
-  await page
-    .getByRole("button", { name: "Confirm email address is correct" })
-    .click();
+  const emailControl = page.getByRole("button", {
+    name: "Confirm email address is correct",
+  });
+  const emailInput = page.getByRole("textbox", { name: /^Email address/ });
+  await expect(emailControl).toHaveCSS("top", "1px");
+  await expect(emailControl).toHaveCSS("bottom", "1px");
+  await expect(emailControl).toHaveCSS("right", "1px");
+  await expect(emailControl).toHaveCSS("border-left-width", "1px");
+  const emailBox = await emailInput.boundingBox();
+  const controlBox = await emailControl.boundingBox();
+  expect(controlBox!.height).toBeCloseTo(emailBox!.height - 2, 0);
+  await expect(page.locator("#email-check-help .icon")).toBeVisible();
+  await emailControl.click();
   await page
     .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
     .click();

@@ -425,11 +425,17 @@ export function DetailsStep({
               id="email-check-help"
               aria-live="polite"
             >
-              {emailChecking
-                ? "Checking email…"
-                : emailChecked
-                  ? "You’ve checked your email address."
-                  : "Select the envelope to confirm your email address."}
+              {emailChecking ? (
+                "Checking email…"
+              ) : emailChecked ? (
+                "You’ve checked your email address."
+              ) : (
+                <>
+                  Select the <Icon name="mail" />
+                  <span className="sr-only">email icon</span> to confirm your
+                  email address.
+                </>
+              )}
             </p>
           )}
         {errors[key] && (
