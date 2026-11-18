@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-18 November2026: PR97 is staged and merged as22b98e097dea53f8d3a891728cf328ddde0aa694. All consolidated wording, confirmation, expiry and email-template changes passed PR CI44282704763 and staging44284854739. Fresh-main CI44285376012 exposed a phone-WebKit circle/primary-action clearance defect; production has not advanced. Continue authorized repairs through staging and merge.
+18 November2026: PR97 and repair PR98 are staged, merged and deployed as69a7960043b94a9f30a4bc286f2765973f6dcc47. Main CI44290707904 and production44292882238 passed, including exact revision health. Current branch fix/mobile-expiry-trainer addresses mobile field focus zoom, retained-checkout expiry navigation and keeping the trainer dropdown visible after selection.
 
 ## Next actions
 
-Branch fix/scroll-control-clearance contains the owning measurement repair: use resolved CSS baseline vertical geometry instead of a previously painted lifted rectangle, and round lift upward to preserve12px minimum separation. The added repeated-measurement regression failed before repair and passed after; existing route/idle/focus assertions and browser spacing requirements remain intact. Two complete code rounds passed400/400 unit cases each plus213 tooling cases, installer/format/lint/types/build/export guards at fingerprint8b598cc2ee7310115fcb2ed72df231481696cf60525cc7696c1752c45464ff64. Follow-up PR CI, staging health and merge are next. Worker code is unchanged and retains two520/520 local rounds and green main server groups. No browser execution or live notification sends by the assistant. Exact failure and prior release evidence are in Journey.
+Mobile field text now uses16px through the shared token. Trainer selection retains its dropdown. The expiry regression was reproduced with an earlier checkout retained for Calendar recovery: the blanket attempt exemption prevented navigation to Account. The narrowed exemption preserves active payment handling and original financial records, but applies expiry to editable recovery/departed journeys. Focused access recovery and time-step tests pass, including retained recovery and departure cases. Two full verify:code rounds passed400/400 unit cases,213 tooling cases and installer/format/lint/types/build/export guards at fingerprint79352e850d60db59830a05035988e8cce4a334196e7483bf3919d7d508f4ca1f. Publication and exact-head CI are next; physical-device behavior remains owner acceptance. No browser execution or live notifications by the assistant. Email OTP is already an uninterrupted text node; email clients control double-tap selection and copying. Owner was asked whether expiry was natural or manually changed; that distinction is not yet answered.
 
 ## Ordered work after this slice
 

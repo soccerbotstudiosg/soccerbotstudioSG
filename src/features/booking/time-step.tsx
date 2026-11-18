@@ -383,7 +383,6 @@ export function TimeStep({
         slot,
       ],
     });
-    setChoosing(null);
   }
   if (
     publicCalendarReady &&

@@ -710,11 +710,11 @@ test("each time requires an independent trainer choice and changing it preserves
     loadBooking().draft.slots.find((slot) => slot.start === "12:00")
       ?.instructor,
   ).toBe("daniel");
-  expect(picker).not.toBeInTheDocument();
+  expect(picker).toBeVisible();
+  expect(picker).toHaveValue(`${restoredDate}|12:00|demo|daniel`);
   const selected = screen.getByRole("button", { name: /12:00–12:40/ });
   expect(selected).toHaveTextContent("Trainer: Daniel Tan");
-  expect(selected).toHaveAttribute("aria-expanded", "false");
-  await user.click(selected);
+  expect(selected).toHaveAttribute("aria-expanded", "true");
   expect(
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
   ).toHaveValue(`${restoredDate}|12:00|demo|daniel`);

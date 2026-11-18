@@ -24,7 +24,11 @@ import {
   rememberBookingAccessExpiry,
 } from "@/services/profile-access";
 import { blankDraft } from "@/domain/booking";
-import { saveLiveDraft } from "@/services/storage";
+import {
+  saveLiveDraft,
+  saveCalendarRecovery,
+  markBookingDeparture,
+} from "@/services/storage";
 import { checkEmailDomain } from "@/services/email-domain";
 import { BOOKING_SESSION_EXPIRED } from "@/domain/booking-messages";
 const navigation = vi.hoisted(() => ({
@@ -80,6 +84,7 @@ function Probe({ visiting }: { visiting?: string } = {}) {
     update,
     leave,
     visitBookingStep,
+    attempt,
   } = useBooking();
   useEffect(() => {
     if (visiting) visitBookingStep(visiting);
@@ -95,7 +100,11 @@ function Probe({ visiting }: { visiting?: string } = {}) {
       </button>
       <span>{action.error}</span>
       <output data-testid="recovery">
-        {JSON.stringify({ draft, profileAccessRevision })}
+        {JSON.stringify({
+          draft,
+          profileAccessRevision,
+          attemptId: attempt?.id,
+        })}
       </output>
     </>
   );
@@ -594,6 +603,7 @@ test("expired navigation redirects on forward and back steps while local edits a
     navigation.path = origin;
     vi.setSystemTime(start);
     establishedProfileAccess(String(start + 1800000));
+    saveLiveDraft({ ...blankDraft(), mode: "guest" });
     let view = render(
       <BookingProvider bookingService={service} identityService={identity}>
         <Probe />
@@ -674,6 +684,68 @@ test("expired navigation redirects on forward and back steps while local edits a
     expect(accessCalls()).toBe(beforeEntry + 1);
     expect(navigation.replace).not.toHaveBeenCalled();
     view.unmount();
+  }
+  // Calendar recovery can retain a previous financial attempt while the visitor
+  // edits a new journey. Its evidence must survive, without bypassing expiry.
+  for (const [destination, recovery] of [
+    ["/book/session/", true],
+    ["/book/details/", true],
+    ["/book/session/", false],
+    ["/book/details/", false],
+  ] as const) {
+    vi.setSystemTime(start);
+    establishedProfileAccess(String(start + 1800000));
+    navigation.path = "/book/time/";
+    navigation.replace.mockClear();
+    const draft = { ...blankDraft(), mode: "guest" as const };
+    const retained = {
+      id: "00000000-0000-4000-8000-000000000001",
+      status: "checking" as const,
+      draft,
+      outcome: "pending" as const,
+      checkUntil: start + 600000,
+      booking: null,
+    };
+    saveLiveDraft(draft, true, retained.id);
+    if (recovery) saveCalendarRecovery(retained.id);
+    else markBookingDeparture(retained.id, []);
+    const recoveringService = { ...service, restore: async () => retained };
+    const recovering = render(
+      <BookingProvider
+        bookingService={recoveringService}
+        identityService={identity}
+      >
+        <Probe />
+      </BookingProvider>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("recovery")).toHaveTextContent(retained.id),
+    );
+    vi.setSystemTime(start + 1800001);
+    navigation.path = destination;
+    recovering.rerender(
+      <BookingProvider
+        bookingService={recoveringService}
+        identityService={identity}
+      >
+        <Probe visiting={destination.split("/")[2]} />
+      </BookingProvider>,
+    );
+    expect(navigation.replace).toHaveBeenCalledWith("/book/account/");
+    expect(screen.getByTestId("recovery")).toHaveTextContent(retained.id);
+    navigation.path = "/book/account/";
+    recovering.rerender(
+      <BookingProvider
+        bookingService={recoveringService}
+        identityService={identity}
+      >
+        <BookingPage step="account" />
+        <Probe />
+      </BookingProvider>,
+    );
+    expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
+    recovering.unmount();
+    sessionStorage.clear();
   }
   // Remembered sign-in can be restored after booking access expires.
   // That must not hide the reason the visitor was returned to Step 1.

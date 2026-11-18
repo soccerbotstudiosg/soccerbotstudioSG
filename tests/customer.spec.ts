@@ -3382,7 +3382,10 @@ test("calendar and contact retain typography and continuous sticky geometry", as
     "font-size",
     "14px",
   );
-  await expect(page.locator("#name")).toHaveCSS("font-size", "14px");
+  await expect(page.locator("#name")).toHaveCSS(
+    "font-size",
+    page.viewportSize()!.width <= 700 ? "16px" : "14px",
+  );
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
 });
 
@@ -3938,6 +3941,8 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(choice).toHaveCSS("outline-style", "none");
   await expect(noon).toHaveCSS("outline-style", "solid");
   await noon.selectOption(`${date}|12:00|demo|daniel`);
+  await expect(noon).toBeVisible();
+  await expect(noon).toHaveValue(`${date}|12:00|demo|daniel`);
   if (mobile) {
     const selected = page.getByRole("button", { name: /^12:00–12:40/ });
     const next = page.getByRole("button", { name: /^12:50–13:30/ });
