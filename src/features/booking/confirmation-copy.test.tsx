@@ -86,15 +86,16 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
   });
   expect(button.textContent).toBe("");
   expect(button.querySelector("svg rect")).not.toBeNull();
-  const details = screen.getByText("View Full Details");
+  const details = document.querySelector(".confirmation-full-details")!;
   expect(button.closest("summary")).toBeNull();
   expect(button.closest(".confirmation-details-row")).toBe(
-    details.parentElement?.parentElement,
+    details.parentElement,
   );
   expect(screen.getByText("Paid").parentElement).toBe(
     screen.getByRole("heading", { name: "Order Summary" }).parentElement,
   );
-  expect(details.parentElement).not.toHaveAttribute("open");
+  expect(details.tagName).toBe("DIV");
+  expect(screen.getByText("Booking Contact")).toBeVisible();
   expect(
     button.compareDocumentPosition(screen.getByText("Paid")) &
       Node.DOCUMENT_POSITION_FOLLOWING,
@@ -103,7 +104,8 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
     fireEvent.click(button);
   });
   expect(screen.getByRole("status")).toHaveTextContent("Copied");
-  expect(details.parentElement).not.toHaveAttribute("open");
+  expect(details.tagName).toBe("DIV");
+  expect(screen.getByText("Booking Contact")).toBeVisible();
   const message = writeText.mock.calls[0][0];
   expect(message).toContain("Booking confirmed · Paid\n");
   expect(message).toContain(
@@ -241,7 +243,7 @@ test("unresolved post-payment confirmation keeps the receipt layout with a pendi
   expect(screen.getByText("Pending")).toHaveClass(
     "confirmation-pending-status",
   );
-  expect(screen.getByText("View Full Details")).toBeVisible();
+  expect(screen.getByText("Booking Contact")).toBeVisible();
   expect(screen.getByRole("heading", { name: "Order Summary" })).toBeVisible();
   expect(screen.getByText("15:20–16:00 SGT")).toBeVisible();
   expect(screen.getByText("Total")).toBeVisible();

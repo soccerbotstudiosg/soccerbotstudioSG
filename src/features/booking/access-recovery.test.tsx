@@ -9,7 +9,6 @@ import {
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
-import { FULL_PAGE_LOADING_MIN_MS } from "@/components/brand-loading";
 import { DetailsStep } from "./details-step";
 import {
   createLiveIdentityService,
@@ -112,11 +111,11 @@ test("revoked saved-contact editor returns to guest choices without revealing th
       <Probe />
     </BookingProvider>,
   );
-  await act(async () => vi.advanceTimersByTimeAsync(FULL_PAGE_LOADING_MIN_MS));
+  await act(async () => vi.advanceTimersByTimeAsync(0));
   fireEvent.click(
     await screen.findByRole("button", { name: "Manage saved contact" }),
   );
-  await act(async () => vi.advanceTimersByTimeAsync(FULL_PAGE_LOADING_MIN_MS));
+  await act(async () => vi.advanceTimersByTimeAsync(0));
   expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
   expect(await screen.findByRole("button", { name: "Guest" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();

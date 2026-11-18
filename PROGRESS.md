@@ -2,11 +2,13 @@
 
 ## Active outcome
 
-17 November 2026: PR93 merged as b95e991 after all 13 gates and verified staging. New branch fix/mobile-payment-countdown centres the mobile Continue payment countdown above a shortened single-line hold reminder. The email-entry Sign in heading also stays on one line. Existing browser/component coverage checks single-line titles, centred payment guidance, no wrapping and fit. Payment deadlines, polling and continuation authority are unchanged. Source/policy guards, TypeScript, affected-file lint/formatting and 59 focused component tests pass. Browser layout assertions are updated but not executed locally. Owner has authorized staging; publication, exact-head CI and staging health verification are next.
+18 November 2026: extending PR94's branch with the approved hero offer and connected-dot email designs, homepage photo destinations, validation-driven enquiry colour, always-expanded confirmation/actions below summary and compact arrival guidance. Removed forced one-second loaders while preserving actual readiness and operation guards. PR94's earlier 8afdcd3 candidate passed all13 verification jobs and is serving on staging; its deployment health window failed before later independent exact-revision health succeeded. That acceptance does not cover these new changes.
 
 ## Next actions
 
-Publish the reviewed candidate, mark ready for authorized staging, and verify all exact-head gates and the deployed staging revision. Browser/device acceptance remains owner/CI-run. No provider actions or assistant browsers.
+Round one: 96 focused tests and source/policy guards passed after fixture/contract corrections. The added selected-session card × and retained-trainer dropdown pass all14 calendar tests. Round two: source/policy,205 tooling tests, installer suites, formatting, lint, TypeScript, production build and export checks passed independently. Full unit run found one ambiguous time locator now matching both card and new remove button (399 passed/1 failed); corrected to the session’s full time range. Final full run:400/400 tests across38 files passed, with strict unit receipt validation.
+
+Owner approved the bounded picomatch exception on18 November. Complete verify:code now passes with raw audit findings retained and expiry25 November00:00 SGT. The unchanged dependencies still contain the vulnerability; see the security assessment. Next consolidate PR84’s reviewed package/lock updates into PR94 in an isolated checkout, regenerate version inventory and verify the combined candidate before push/CI/staging. This avoids leaving two competing staging candidates; close PR84 only after its exact changes are covered and verified. No merge or production release in this slice.
 
 ## Ordered work after this slice
 

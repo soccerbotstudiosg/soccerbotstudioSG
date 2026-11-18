@@ -296,41 +296,6 @@ export function BookingConfirmation({
           )}
         </div>
       )}
-      {!pending && (
-        <div className="confirmation-actions" aria-label="Booking actions">
-          <button
-            className="button secondary"
-            disabled={leaving}
-            onClick={() => void leave(onAgain)}
-          >
-            <Icon name="plus" />
-            <span>Make another booking</span>
-          </button>
-          <a
-            className="button secondary"
-            href={BOOKING_SUPPORT.whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Icon name="phone" />
-            <span>WhatsApp Enquiry</span>
-          </a>
-          <Link
-            href="/"
-            className="button secondary confirmation-home"
-            onClick={
-              onHome
-                ? (event) => {
-                    event.preventDefault();
-                    void leave(onHome);
-                  }
-                : undefined
-            }
-          >
-            Back to home
-          </Link>
-        </div>
-      )}
       {pendingNotice}
       <section className="surface confirmation-card booking-document">
         {pending && !pendingNotice && (
@@ -356,8 +321,7 @@ export function BookingConfirmation({
           <div
             className={`confirmation-details-row${!pending && !preview ? " has-copy" : ""}`}
           >
-            <details className="confirmation-full-details">
-              <summary>View Full Details</summary>
+            <div className="confirmation-full-details">
               <div className="confirmation-details-grid">
                 <section className="review-block">
                   <SessionSummaryHeading
@@ -405,7 +369,7 @@ export function BookingConfirmation({
                   )}
                 </section>
               </div>
-            </details>
+            </div>
             {!pending && !preview && (
               <ConfirmationCopy key={booking.reference} booking={booking} />
             )}
@@ -450,6 +414,41 @@ export function BookingConfirmation({
         )}
       </section>
 
+      {!pending && (
+        <div className="confirmation-actions" aria-label="Booking actions">
+          <button
+            className="button secondary"
+            disabled={leaving}
+            onClick={() => void leave(onAgain)}
+          >
+            <Icon name="plus" />
+            <span>Make another booking</span>
+          </button>
+          <a
+            className="button secondary"
+            href={BOOKING_SUPPORT.whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="phone" />
+            <span>WhatsApp Enquiry</span>
+          </a>
+          <Link
+            href="/"
+            className="button secondary confirmation-home"
+            onClick={
+              onHome
+                ? (event) => {
+                    event.preventDefault();
+                    void leave(onHome);
+                  }
+                : undefined
+            }
+          >
+            Back to home
+          </Link>
+        </div>
+      )}
       {error && (
         <p className="alert mt-4" role="alert">
           {error}

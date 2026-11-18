@@ -68,6 +68,8 @@ test("guest email checks show progress reject invalid domains and ignore stale r
   });
   fireEvent.click(control);
   expect(control).toHaveAttribute("aria-busy", "true");
+  expect(control.querySelectorAll(".email-check-icon circle")).toHaveLength(3);
+  expect(control.querySelector(".spinner")).toBeNull();
   expect(control).toBeDisabled();
   expect(fetcher).toHaveBeenCalledTimes(1);
   fireEvent.change(email, { target: { value: "second@example.com" } });
@@ -118,7 +120,7 @@ test("details contains only the five contact fields and validates them before re
   for (const label of [/Full name/, /Email address/, /Mobile number/])
     expect(screen.getByLabelText(label)).toHaveAttribute(
       "aria-invalid",
-      "true",
+      "false",
     );
   expect(screen.getAllByRole("textbox")).toHaveLength(4);
   expect(screen.getAllByRole("combobox")).toHaveLength(1);
@@ -180,9 +182,11 @@ test("details contains only the five contact fields and validates them before re
     name: "Confirm email address is correct",
   });
   expect(document.getElementById("email-check-help")).toHaveTextContent(
-    "Select ! to confirm email address.",
+    "Select the envelope to confirm your email address.",
   );
-  expect(screen.getByRole("img", { name: "exclamation mark" })).toBeVisible();
+  expect(
+    confirmEmail.querySelectorAll(".email-check-icon circle"),
+  ).toHaveLength(3);
   expect(reviewButton).toBeDisabled();
   fireEvent.submit(document.getElementById("details-form")!);
   expect(mocks.push).not.toHaveBeenCalled();
@@ -512,7 +516,7 @@ test("invalid saved contacts remain editable in booking details and contact mana
     fireEvent.click(screen.getByText("Open saved contact"));
     const name = screen.getByLabelText(/Full name/);
     expect(name).not.toBeDisabled();
-    expect(name).toHaveAttribute("aria-invalid", String(!profileOnly));
+    expect(name).toHaveAttribute("aria-invalid", "false");
     expect(screen.queryByRole("textbox", { name: /Email address/ })).toBeNull();
     fireEvent.submit(document.getElementById("details-form")!);
     expect(name).toHaveFocus();

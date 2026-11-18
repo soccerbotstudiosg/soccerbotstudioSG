@@ -61,10 +61,7 @@ export function EnquiryPage() {
   const live = services.enquiry.mode === "live";
   const validation = enquiryErrors(value);
   const errorFor = (key: keyof Enquiry) =>
-    touched[key] ||
-    ["name", "email", "phone", "purpose", "message"].includes(key)
-      ? validation[key]
-      : undefined;
+    touched[key] ? validation[key] : undefined;
   const change = (key: keyof Enquiry, text: string) => {
     if (key === "guests" && !/^\d{0,3}$/.test(text)) return;
     if (
@@ -73,7 +70,6 @@ export function EnquiryPage() {
     )
       return;
     setAcknowledged(null);
-    setTouched((current) => ({ ...current, [key]: true }));
     setValue((current) => ({ ...current, [key]: text }));
   };
   const feedback = (key: keyof Enquiry) =>
@@ -152,11 +148,11 @@ export function EnquiryPage() {
         noValidate
         onSubmit={async (event) => {
           event.preventDefault();
-          if (!ready || sending.current || (live && !botToken)) return;
+          if (!ready || sending.current) return;
           setTouched(
             Object.fromEntries(Object.keys(blank).map((key) => [key, true])),
           );
-          if (Object.keys(validation).length) return;
+          if (Object.keys(validation).length || (live && !botToken)) return;
           sending.current = true;
           setBusy(true);
           setError("");
@@ -225,6 +221,9 @@ export function EnquiryPage() {
                 required
                 value={value.purpose}
                 onChange={(e) => change("purpose", e.target.value)}
+                onBlur={() =>
+                  setTouched((current) => ({ ...current, purpose: true }))
+                }
               >
                 <option value="">Select an arrangement</option>
                 {ENQUIRY_TYPES.map((type) => (
@@ -243,6 +242,9 @@ export function EnquiryPage() {
               <textarea
                 id="enquiry-message"
                 aria-invalid={!!errorFor("message")}
+                aria-describedby={
+                  errorFor("message") ? "enquiry-message-error" : undefined
+                }
                 placeholder={placeholders.message}
                 rows={5}
                 className="field-control"
@@ -254,6 +256,7 @@ export function EnquiryPage() {
                   setTouched((current) => ({ ...current, message: true }))
                 }
               />
+              {feedback("message")}
             </div>
           </div>
         </fieldset>
@@ -277,6 +280,9 @@ export function EnquiryPage() {
         >
           <button
             className="button wide"
+            data-valid={
+              ready && !Object.keys(validation).length ? "true" : "false"
+            }
             disabled={!ready || busy || (live && !botToken)}
           >
             {(busy ||

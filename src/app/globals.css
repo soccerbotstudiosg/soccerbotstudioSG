@@ -554,6 +554,25 @@
     box-shadow: none;
     transform: none;
   }
+  .enquiry-page .booking-primary-action > .button[data-valid="false"] {
+    background: var(--color-disabled);
+    border-color: var(--color-disabled);
+    color: var(--color-disabled-ink);
+    box-shadow: none;
+  }
+  .enquiry-page .booking-primary-action > .button[data-valid="false"]::before {
+    display: none;
+  }
+  .enquiry-page
+    .booking-primary-action
+    > .button[data-valid="true"]:not(:disabled) {
+    background: var(--color-logo-blue);
+    border-color: var(--color-logo-blue);
+    color: var(--color-navy);
+  }
+  .enquiry-page .booking-primary-action > .button[data-valid="true"]::before {
+    display: none;
+  }
   .button.secondary {
     color: var(--color-action);
     background: var(--color-surface);
@@ -1259,22 +1278,10 @@
     top: 0;
     bottom: 0;
     left: 50%;
-    width: min(1160px, 92%);
+    width: 104%;
     pointer-events: none;
     opacity: 0.9;
     transform: translate3d(calc(-50% + var(--look-x)), var(--look-y), 0);
-    -webkit-mask-image: radial-gradient(
-      ellipse 65% 62% at 50% 51%,
-      #000 20%,
-      #000e 43%,
-      transparent 79%
-    );
-    mask-image: radial-gradient(
-      ellipse 65% 62% at 50% 51%,
-      #000 20%,
-      #000e 43%,
-      transparent 79%
-    );
     transition:
       opacity 0.9s ease,
       transform 0.25s ease-out;
@@ -1474,6 +1481,8 @@
     margin-top: 0.08em;
   }
   .arena-bottomline {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     border-top: 1px solid #8bb6da2b;
     padding-top: 21px;
     max-width: 1160px;
@@ -1482,10 +1491,101 @@
   }
   .arena-cue strong {
     display: block;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    color: #e4f2fc;
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    color: var(--color-logo-blue);
+  }
+  .arena-offer-prices {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 24px;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    color: #d0daed;
+  }
+  .arena-offer-prices strong {
+    margin-left: 6px;
+    font-size: 1.1rem;
+    color: #fff;
+  }
+  .arena-session-entry {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 18px;
+  }
+  .arena-session-meta {
+    text-align: right;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    color: #e0e8f6;
+  }
+  .arena-mobile-cue {
+    display: none;
+  }
+  @keyframes arena-cue-inward {
+    to {
+      translate: var(--cue-travel) 0;
+      opacity: 0.55;
+    }
+  }
+  @media (min-width: 701px) and (max-width: 1100px) {
+    .arena-bottomline {
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+    }
+    .arena-offer-prices {
+      grid-column: 1;
+      justify-content: flex-start;
+    }
+    .arena-session-entry {
+      grid-column: 2;
+      grid-row: 1 / 3;
+    }
+  }
+  @media (max-width: 700px) {
+    .arena-bottomline {
+      grid-template-columns: minmax(0, 1fr);
+      text-align: center;
+    }
+    .arena-offer-prices {
+      gap: 14px;
+      font-size: 11px;
+    }
+    .arena-offer-prices strong {
+      font-size: 12px;
+      margin-left: 4px;
+    }
+    .arena-session-entry {
+      justify-content: center;
+      gap: 22px;
+      min-height: 44px;
+    }
+    .arena-session-meta {
+      text-align: center;
+      line-height: 1.25;
+    }
+    .arena-session-entry .arena-entry-arrow {
+      display: none;
+    }
+    .arena-mobile-cue {
+      display: block;
+      color: var(--color-logo-blue);
+      font-size: 30px;
+      --cue-travel: 3px;
+    }
+    .arena-mobile-cue:nth-child(3) {
+      --cue-travel: -3px;
+    }
+  }
+  @media (max-width: 700px) and (prefers-reduced-motion: no-preference) {
+    .arena-mobile-cue {
+      animation: arena-cue-inward 1.2s ease-in-out infinite alternate;
+    }
   }
   .arena-entry-arrow {
     display: grid;
@@ -1941,6 +2041,11 @@
         0,
         var(--promotion-photo-width)
       );
+  }
+  .promotion-photo-link {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
   .promotion-image,
   .studio-photo {
@@ -2819,19 +2924,7 @@
       width: 145px;
     }
     .arena-photograph {
-      width: 140%;
-      -webkit-mask-image: radial-gradient(
-        ellipse 64% 62% at 50% 52%,
-        #000 22%,
-        #000e 42%,
-        transparent 78%
-      );
-      mask-image: radial-gradient(
-        ellipse 64% 62% at 50% 52%,
-        #000 22%,
-        #000e 42%,
-        transparent 78%
-      );
+      width: 104%;
     }
     .arena-photograph img {
       object-position: 53% 42%;
@@ -2868,10 +2961,10 @@
       padding: 20.4px 0 29.75px;
     }
     .arena-cue strong {
-      font-size: 0.875rem;
+      font-size: 1.35rem;
     }
     .arena-bottomline {
-      gap: 14px;
+      gap: 6px;
       padding-top: 18px;
     }
     .arena-entry-arrow {
@@ -4413,6 +4506,7 @@
     gap: 16px;
   }
   .time-choice {
+    position: relative;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -4433,6 +4527,14 @@
     width: 100%;
     border: 0;
     border-radius: 0;
+  }
+  .time-choice > .time.selected {
+    padding-right: 64px;
+  }
+  .time-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
   }
   .trainer-choice {
     font-size: var(--text-body);
@@ -4712,8 +4814,8 @@
     border: 0;
     border-left: 1px solid currentColor;
     border-radius: 0 6px 6px 0;
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
+    background: var(--color-brand-soft);
+    color: var(--color-brand);
     font-weight: 700;
     text-decoration: none;
   }
@@ -4725,16 +4827,34 @@
     color: var(--color-muted);
     background: var(--color-brand-soft);
   }
-  .email-hint-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    border: 1px solid currentColor;
-    border-radius: 3px;
-    font-weight: var(--weight-heading);
-    line-height: 1;
+  .email-confirm-control .email-check-icon {
+    width: 28px;
+    height: 30px;
+  }
+  .email-check-icon circle {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  @keyframes email-check-dot {
+    0%,
+    65%,
+    100% {
+      scale: 1;
+    }
+    30% {
+      scale: 1.8;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .email-confirm-control[aria-busy="true"] circle {
+      animation: email-check-dot 900ms ease-in-out infinite;
+    }
+    .email-confirm-control[aria-busy="true"] circle:nth-child(2) {
+      animation-delay: 150ms;
+    }
+    .email-confirm-control[aria-busy="true"] circle:nth-child(3) {
+      animation-delay: 300ms;
+    }
   }
   .email-check-help {
     color: var(--color-hint);
@@ -5324,7 +5444,9 @@
     top: 0;
     right: 0;
   }
-  .confirmation-details-row.has-copy > .confirmation-full-details > summary {
+  .confirmation-details-row.has-copy
+    .confirmation-details-grid
+    > .review-block:first-child {
     padding-right: 56px;
   }
   .confirmation-card .review-head + .series-list > li:first-child {
@@ -5335,23 +5457,11 @@
     margin: 0;
     padding: 0;
   }
-  .confirmation-full-details > summary {
-    cursor: pointer;
-    text-align: left;
-    min-height: 44px;
-    align-content: center;
-    color: var(--color-action);
-    font-size: var(--text-body);
-    font-weight: var(--weight-heading);
-  }
-  .confirmation-full-details[open] > summary {
-    margin-bottom: 12px;
-  }
   .confirmation-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    margin-bottom: 16px;
+    margin-top: 16px;
   }
   .confirmation-actions .button {
     min-width: 0;
@@ -5483,7 +5593,23 @@
   }
   @media (max-width: 700px) {
     .arrival-information {
-      padding: 18px;
+      padding: 9px;
+      margin-top: 12px;
+    }
+    .booking-document .arrival-information p,
+    .booking-document .arrival-information .arrival-time strong {
+      font-size: var(--text-caption);
+      line-height: 1.3;
+    }
+    .arrival-information p + p {
+      margin-top: 4px;
+    }
+    .arrival-information .arrival-time strong,
+    .arrival-time span {
+      display: inline;
+    }
+    .arrival-time span::before {
+      content: " ";
     }
     .access-options {
       gap: 14px;

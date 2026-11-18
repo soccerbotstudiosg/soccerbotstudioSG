@@ -59,6 +59,10 @@ test("enquiry waits for hydration then preserves entered details through submiss
       target: { value: "A group session for our team." },
     },
   );
+  expect(screen.getByRole("button", { name: "Send enquiry" })).toHaveAttribute(
+    "data-valid",
+    "true",
+  );
   const submit = vi
     .spyOn(services.enquiry, "submit")
     .mockRejectedValueOnce(
@@ -101,8 +105,12 @@ test("enquiry waits for hydration then preserves entered details through submiss
   retry.mockRestore();
 });
 
-test("enquiry validates edits immediately and blocks invalid service submission", () => {
+test("enquiry reveals errors after blur or submission and blocks invalid service submission", () => {
   render(<EnquiryPage />);
+  expect(screen.getByRole("button", { name: "Send enquiry" })).toHaveAttribute(
+    "data-valid",
+    "false",
+  );
   const submit = vi.spyOn(services.enquiry, "submit");
   expect(screen.getByRole("link", { name: /^Home$/ })).toHaveAttribute(
     "href",
@@ -137,7 +145,7 @@ test("enquiry validates edits immediately and blocks invalid service submission"
   ]) {
     expect(screen.getByLabelText(label, { exact: false })).toHaveAttribute(
       "aria-invalid",
-      "true",
+      "false",
     );
   }
   expect(screen.getByLabelText(/Academy, school/)).toHaveAttribute(
@@ -145,8 +153,10 @@ test("enquiry validates edits immediately and blocks invalid service submission"
     "false",
   );
   const name = screen.getByLabelText("Full name", { exact: false });
-  expect(name).toHaveAttribute("aria-invalid", "true");
+  expect(name).toHaveAttribute("aria-invalid", "false");
   fireEvent.change(name, { target: { value: "John★" } });
+  expect(name).toHaveAttribute("aria-invalid", "false");
+  fireEvent.blur(name);
   expect(name).toHaveAttribute("aria-invalid", "true");
   expect(screen.getByText("Enter your full name.")).toBeVisible();
   fireEvent.change(name, { target: { value: "John Doe" } });
@@ -157,11 +167,23 @@ test("enquiry validates edits immediately and blocks invalid service submission"
     "International Sports School",
   );
   fireEvent.change(organisation, { target: { value: "School★" } });
+  expect(organisation).toHaveAttribute("aria-invalid", "false");
+  fireEvent.blur(organisation);
   expect(organisation).toHaveAttribute("aria-invalid", "true");
   fireEvent.submit(
     screen.getByRole("button", { name: "Send enquiry" }).closest("form")!,
   );
   expect(submit).not.toHaveBeenCalled();
+  expect(screen.getByText("Please tell us what you need.")).toBeVisible();
+  const requirements = screen.getByLabelText("Your requirements", {
+    exact: false,
+  });
+  expect(requirements).toHaveAttribute(
+    "aria-describedby",
+    "enquiry-message-error",
+  );
+  fireEvent.change(requirements, { target: { value: "A group session." } });
+  expect(screen.queryByText("Please tell us what you need.")).toBeNull();
   submit.mockRestore();
 });
 

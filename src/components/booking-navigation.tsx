@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { ArenaEntry } from "./arena-entry";
-import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
+import { BrandLoading } from "./brand-loading";
 import { services } from "@/services";
 import {
   prepareIdentityEntry,
@@ -207,15 +207,7 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
   }, [entry, router]);
   useEffect(() => {
     if (!entry || !arrived || !identityReady) return;
-    const delay =
-      entry.kind === "logo"
-        ? Math.max(
-            0,
-            FULL_PAGE_LOADING_MIN_MS - (performance.now() - entry.started),
-          )
-        : entry.skip
-          ? 0
-          : PITCH_REVEAL_MS;
+    const delay = entry.kind === "logo" ? 0 : entry.skip ? 0 : PITCH_REVEAL_MS;
     let fade: ReturnType<typeof setTimeout> | undefined;
     const complete = () => {
       // Account may mount after route arrival while booking readiness settles.

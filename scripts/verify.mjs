@@ -36,7 +36,7 @@ const commands =
     : [
         ["source", "npm", "run", "check:source"],
         ["policy", "npm", "run", "check:policy"],
-        ["dependency-audit", "npm", "audit", "--audit-level=high"],
+        ["dependency-audit", "node", "scripts/dependency-audit.mjs"],
         ["tooling", "npm", "run", "check:tooling"],
         ["installer", "npm", "run", "check:installer"],
         ["format", "npm", "run", "format:check"],

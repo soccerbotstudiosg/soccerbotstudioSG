@@ -115,10 +115,6 @@ test("refresh cover survives server HTML and hydration until restored state font
   expect(screen.getByRole("status")).toBeVisible();
   expect(requestAnimationFrame).not.toHaveBeenCalled();
   await act(async () => finishFonts());
-  await act(async () => vi.advanceTimersByTime(999));
-  expect(frame).toBeUndefined();
-  expect(screen.getByRole("status")).toBeVisible();
-  await act(async () => vi.advanceTimersByTime(1));
   expect(frame).toBeDefined();
   expect(screen.getByRole("status")).toBeVisible();
   act(() => frame!(0));
@@ -302,9 +298,24 @@ test("homepage revisits retain one neutral cover through image decoding without 
   route.pathname = "/";
   booking.ready = true;
   let decode: () => void;
+  let deferDecode = false;
   const image = (
     <div className="arena-photograph">
-      <img alt="Hero" />
+      <img
+        alt="Hero"
+        ref={(node) => {
+          if (node)
+            Object.defineProperty(node, "decode", {
+              configurable: true,
+              value: () =>
+                deferDecode
+                  ? new Promise<void>((resolve) => {
+                      decode = resolve;
+                    })
+                  : Promise.resolve(),
+            });
+        }}
+      />
     </div>
   );
   const view = render(<PageRefreshBoundary>{image}</PageRefreshBoundary>);
@@ -321,15 +332,9 @@ test("homepage revisits retain one neutral cover through image decoding without 
     expect(document.getElementById("page-refresh")).toBeNull();
     frame = undefined;
     route.pathname = "/";
+    deferDecode = true;
     view.rerender(<PageRefreshBoundary>{image}</PageRefreshBoundary>);
     const hero = screen.getByAltText("Hero");
-    Object.defineProperty(hero, "decode", {
-      configurable: true,
-      value: () =>
-        new Promise<void>((resolve) => {
-          decode = resolve;
-        }),
-    });
     expect(
       screen.getByRole("status", { name: "Loading page" }),
     ).toHaveTextContent("Loading...");

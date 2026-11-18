@@ -80,6 +80,16 @@ test("homepage prices follow the catalogue environment without a live preview fa
       "S$88 weekdays · S$108 weekends and Singapore public holidays",
     ),
   ).toBeInTheDocument();
+  view.rerender(
+    <SessionPrice
+      offer
+      service={{ read: vi.fn().mockResolvedValue(catalogue("production")) }}
+    />,
+  );
+  await act(async () => {});
+  expect(document.querySelector(".arena-offer-prices")).toHaveTextContent(
+    "Weekdays S$108Weekends & SG public holidays S$128",
+  );
   const demoRead = vi.fn();
   context.bookingService.mode = "demo";
   view.rerender(<SessionPrice service={{ read: demoRead }} />);

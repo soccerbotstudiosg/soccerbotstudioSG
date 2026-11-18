@@ -864,7 +864,6 @@ test("public routes remove staff access and fit the viewport", async ({
     .getByRole("navigation", { name: "Main navigation" })
     .getByRole("link", { name: "The studio", exact: true })
     .click();
-  await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Inside the arena." }),
@@ -1087,7 +1086,6 @@ test("public routes remove staff access and fit the viewport", async ({
   await page
     .getByRole("link", { name: "Explore the studio", exact: true })
     .click();
-  await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Inside the arena." }),
@@ -1217,7 +1215,9 @@ test("guest multi-date booking survives reload without retired export actions", 
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
-  await page.getByText("View Full Details", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("Studio 1", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
@@ -1550,18 +1550,15 @@ test("enquiry remains available without external submission or a mock assistant"
   );
   await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
   await expect(page.getByText("Enter 1–2,000 characters.")).toHaveCount(0);
-  for (const selector of [
-    "#enquiry-name",
-    "#enquiry-email",
-    ".phone-control",
-    "#enquiry-purpose",
-    "#enquiry-message",
-  ]) {
-    await expect(page.locator(selector)).toHaveCSS(
-      "border-top-color",
-      "rgb(168, 34, 53)",
-    );
-  }
+  await expect(page.locator('.enquiry-form [aria-invalid="true"]')).toHaveCount(
+    0,
+  );
+  await expect(enquiryAction).toHaveAttribute("data-valid", "false");
+  await page.getByLabel("Your requirements").focus();
+  await page.getByLabel("Your requirements").blur();
+  await expect(page.locator("#enquiry-message-error")).toHaveText(
+    "Please tell us what you need.",
+  );
   const phone = page.getByLabel("Mobile number");
   await phone.focus();
   await expect(page.locator(".phone-control")).toHaveCSS(
@@ -1579,6 +1576,8 @@ test("enquiry remains available without external submission or a mock assistant"
   await page
     .getByLabel("Your requirements")
     .fill("A group session for our team.");
+  await expect(enquiryAction).toHaveAttribute("data-valid", "true");
+  await expect(page.locator("#enquiry-message-error")).toHaveCount(0);
   await page.getByRole("button", { name: "Send enquiry" }).click();
   await expect(page).toHaveURL(new RegExp(`${sitePath("/enquiry/")}$`));
   const acknowledgement = page.getByRole("status");
@@ -1618,7 +1617,7 @@ test("hero entry restores the arena scene and click-to-skip without a logo overl
     page.getByRole("heading", { name: "Start your booking" }),
   ).toBeVisible();
 });
-test("home navigation offer and studio booking buttons display the branded loader", async ({
+test("home navigation offer and studio booking buttons reveal ready destinations without a minimum wait", async ({
   page,
 }) => {
   await openSite(page, "/");
@@ -1635,7 +1634,6 @@ test("home navigation offer and studio booking buttons display the branded loade
     await expect(link).toHaveCount(1);
     await expect(link).toHaveAttribute("href", sitePath("/book/account/"));
     await link.click();
-    await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
     await expect(page).toHaveURL(/\/book\/account\/$/);
     await expect(page.locator(".page-loading")).toHaveCount(0);
     await expect(
@@ -2099,27 +2097,31 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await expect(page.getByText(/^Total Paid(?: · Preview)?$/)).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Before Your Session", exact: true }),
-  ).toBeHidden();
+  ).toBeVisible();
   const confirmationLayout = await page
     .locator(".confirmation-shell")
     .evaluate((shell) => ({
-      actionsBottom: shell
+      actionsTop: shell
         .querySelector(".confirmation-actions")!
-        .getBoundingClientRect().bottom,
-      summaryTop: shell
-        .querySelector(".confirmation-card")!
         .getBoundingClientRect().top,
+      summaryBottom: shell
+        .querySelector(".confirmation-card")!
+        .getBoundingClientRect().bottom,
       actions: shell.querySelectorAll(".confirmation-actions .button").length,
     }));
   expect(confirmationLayout.actions).toBe(3);
-  expect(confirmationLayout.actionsBottom).toBeLessThanOrEqual(
-    confirmationLayout.summaryTop,
+  expect(confirmationLayout.actionsTop).toBeGreaterThanOrEqual(
+    confirmationLayout.summaryBottom,
   );
-  await page.getByText("View Full Details", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
   await expect(page.locator(".confirmation-card .rotation-notice")).toHaveCount(
     0,
   );
-  await expect(page.locator("main details[open]")).toHaveCount(1);
+  await expect(page.locator(".confirmation-full-details summary")).toHaveCount(
+    0,
+  );
   await expect(page.locator(".confirmation-section > h2")).toHaveText([
     "Booking Contact",
     "Location",
@@ -2437,7 +2439,6 @@ test("first visit offers the Player App with only store links and dismissal pers
     .getByRole("navigation", { name: "Main navigation" })
     .getByRole("link", { name: "The studio", exact: true })
     .click();
-  await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(prompt).toHaveCount(0);
   expect(
@@ -3366,7 +3367,9 @@ test("review payment and confirmation retain typography and continuous sticky ge
   await expect(
     page.getByRole("link", { name: "WhatsApp Enquiry", exact: true }),
   ).toHaveAttribute("href", "https://wa.me/6590143819");
-  await page.getByText("View Full Details", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
   await sectionType(".confirmation-card h2");
   await bookingDocumentBody();
   await expect(page.locator(".confirmation-full-details")).toHaveCSS(
@@ -3445,7 +3448,9 @@ test("review payment and confirmation retain typography and continuous sticky ge
   await expect(
     page.locator(".confirmation-card .confirmation-total strong"),
   ).toHaveCSS("color", brand);
-  await expect(page.locator("main details[open]")).toHaveCount(1);
+  await expect(page.locator(".confirmation-full-details summary")).toHaveCount(
+    0,
+  );
 });
 
 test("elapsed selections block checkout on an open page and remain removable before a future multi-session payment", async ({
@@ -3534,7 +3539,9 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
-  await page.getByText("View Full Details", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("list", { name: "Selected sessions" }).getByRole("listitem"),
   ).toHaveCount(2);
@@ -3875,6 +3882,17 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await expect(noon).toHaveValue(`${date}|12:00|demo|daniel`);
+  await expect(
+    page.getByRole("button", { name: /12:00–12:40/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page
+    .getByRole("button", {
+      name: `Remove selected session ${date} at 12:00`,
+      exact: true,
+    })
+    .click();
+  await expect(noon).toHaveCount(0);
   const deselectedSlot = page.getByRole("button", { name: /12:00–12:40/ });
   await expect(deselectedSlot).toHaveAttribute("aria-pressed", "false");
   await expect(

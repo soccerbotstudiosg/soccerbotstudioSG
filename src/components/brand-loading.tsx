@@ -1,40 +1,22 @@
 "use client";
-import { useLayoutEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { darkLogo } from "@/content/media";
-export const FULL_PAGE_LOADING_MIN_MS = 1000;
-
-/** Retain one visible full-page loading episode until its minimum duration ends. */
-export function useMinimumLoading(
+/** Preserve meaningful feedback while work is pending, without a minimum display delay. */
+export function useLoadingFeedback(
   label: string | undefined,
   retain?: (previous: string | undefined, next: string | undefined) => boolean,
 ) {
-  const [state, setState] = useState({
-    input: label,
-    label,
-    episode: label === undefined ? 0 : 1,
-    elapsed: label === undefined,
-  });
+  const [state, setState] = useState({ input: label, label });
   if (state.input !== label) {
-    const restarting =
-      label !== undefined && state.input === undefined && state.elapsed;
     setState({
       input: label,
       label:
-        !restarting && retain?.(state.label, label)
+        label !== undefined && retain?.(state.label, label)
           ? state.label
-          : (label ?? state.label),
-      episode: state.episode + (restarting ? 1 : 0),
-      elapsed: restarting ? false : state.elapsed,
+          : label,
     });
   }
-  useLayoutEffect(() => {
-    if (!state.episode) return;
-    const timer = setTimeout(() => {
-      setState((current) => ({ ...current, elapsed: true }));
-    }, FULL_PAGE_LOADING_MIN_MS);
-    return () => clearTimeout(timer);
-  }, [state.episode]);
-  return label !== undefined || !state.elapsed ? state.label : undefined;
+  return label === undefined ? undefined : state.label;
 }
 
 /** Render the branded loading indicator and status message. */

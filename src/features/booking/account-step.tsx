@@ -567,15 +567,17 @@ export function AccountStep({
                   )
                 ) {
                   event.preventDefault();
-                  setError("Enter a valid email address.");
+                  setError((previous) =>
+                    previous ? "Enter a valid email address." : "",
+                  );
                 }
               }}
               onChange={(e) => {
                 setEmail(e.target.value);
-                setError(
-                  validEmail(e.target.value)
-                    ? ""
-                    : "Enter a valid email address.",
+                setError((previous) =>
+                  previous && !validEmail(e.target.value)
+                    ? "Enter a valid email address."
+                    : "",
                 );
               }}
               onBlur={() => {
