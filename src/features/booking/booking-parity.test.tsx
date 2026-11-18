@@ -233,7 +233,7 @@ test("live calendar removes selections rejected at checkout and retains contact 
   ).toBeDisabled();
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toHaveAttribute("href", "/book/details");
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
@@ -321,7 +321,7 @@ test("live session preserves demo pricing and inline player controls using provi
   expect(card).toHaveTextContent("Trainer included");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(
-    await screen.findByRole("link", { name: "Choose Date & Time" }),
+    await screen.findByRole("link", { name: "Choose sessions" }),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: "Remove one player" }),
@@ -551,7 +551,7 @@ test("preloaded browser slots survive edits and checkout rejects changed availab
   expect(publicCalendar).toHaveBeenCalledTimes(1);
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toHaveAttribute("href", "/book/details");
   expect(availability.mock.calls.some(([input]) => input.fresh === true)).toBe(
@@ -742,7 +742,7 @@ test("Details opens local Review without waiting for unavailable providers", asy
   fireEvent.click(screen.getByRole("button", { name: "Choose test session" }));
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toHaveAttribute("href", "/book/details");
   expect(availability).not.toHaveBeenCalled();
@@ -1943,7 +1943,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     within(region).getByRole("button", { name: dateLabel(slot.date) });
   expect(day()).toBeEnabled();
   expect(
-    screen.getAllByRole("link", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("link", { name: /^Enter contact details/ })[0],
   ).toBeInTheDocument();
   expect(JSON.parse(screen.getByTestId("strict-cache").textContent!)).toEqual({
     entry: true,
@@ -1962,7 +1962,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     displayOffers: false,
   });
   expect(
-    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
   ).toBeDisabled();
   expect(
     screen.getByRole("group", { name: "Session times" }),
@@ -1986,7 +1986,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     displayOffers: false,
   });
   expect(
-    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
   ).toBeDisabled();
   expect(checkout).not.toHaveBeenCalled();
   for (let tick = 0; tick < 2; tick += 1) {
@@ -1998,7 +1998,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     ).toBeInTheDocument();
     expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
     expect(
-      screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
+      screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
     ).toBeDisabled();
   }
   await act(async () =>
@@ -2034,7 +2034,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   ).toBeInTheDocument();
   expect(view.container.querySelector(".loading-logo, [inert]")).toBeNull();
   expect(
-    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
   ).toBeDisabled();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(500);
@@ -2050,7 +2050,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   fireEvent.click(within(region).getByRole("button", { name: "Try again" }));
   expect(screen.queryByText("Unable to Load.")).toBeNull();
   expect(
-    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
   ).toBeDisabled();
   await act(async () => pending[3].resolve(snapshot()));
   expect(day()).toBeEnabled();
@@ -2062,7 +2062,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
     displayOffers: false,
   });
   expect(
-    screen.getAllByRole("link", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("link", { name: /^Enter contact details/ })[0],
   ).toBeInTheDocument();
   expect(checkout).not.toHaveBeenCalled();
   await act(async () => {
@@ -2081,7 +2081,7 @@ test("expired calendar refresh retains dates and sessions without branded loadin
   expect(screen.queryByRole("group", { name: "Session times" })).toBeNull();
   expect(day()).toBeDisabled();
   expect(
-    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
   ).toBeDisabled();
   expect(checkout).not.toHaveBeenCalled();
 });

@@ -361,14 +361,14 @@ test("live entry access denial permits local guest selection without granting au
   await expect(page.locator(".page-loading")).toBeVisible();
   await expect(page.locator(".booking-loading")).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Guest", exact: true }),
+    page.getByRole("button", { name: "Continue as guest", exact: true }),
   ).toHaveCount(0);
   releaseIdentity();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   expect(
     evidence.calls.filter((call) => call.path === "/api/access"),
   ).toHaveLength(1);
-  await page.getByRole("button", { name: "Guest" }).click();
+  await page.getByRole("button", { name: "Continue as guest" }).click();
   await expect(page).toHaveURL(/\/book\/session\/$/);
   await expect(
     page.getByRole("heading", { name: "Your session" }),
@@ -384,7 +384,9 @@ test("live email requires the supplied widget proof before protected requests", 
   page,
 }) => {
   const evidence = await fixture(page);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Continue with email", exact: true })
+    .click();
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("synthetic@example.test");
@@ -401,7 +403,7 @@ test("live email requires the supplied widget proof before protected requests", 
     page.getByText("Email sign-in preview", { exact: false }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Get Verification Code", exact: true }),
+    page.getByRole("button", { name: "Email me a code", exact: true }),
   ).toBeDisabled();
   await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
@@ -415,7 +417,9 @@ test("synthetic live verification reads server identity and keeps native booking
 }) => {
   await page.clock.install({ time: new Date() });
   const evidence = await fixture(page, true, false, undefined, true);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Continue with email", exact: true })
+    .click();
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("synthetic@example.test");
@@ -427,7 +431,7 @@ test("synthetic live verification reads server identity and keeps native booking
     .click();
   const releaseCode = evidence.deferNextCodeRequest();
   await page
-    .getByRole("button", { name: "Get Verification Code", exact: true })
+    .getByRole("button", { name: "Email me a code", exact: true })
     .click();
   const progress = page.locator(".booking-action-progress");
   await expect(progress).toBeVisible();
@@ -533,9 +537,9 @@ test("synthetic live verification reads server identity and keeps native booking
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Unable to Load.",
   );
-  await expect(
-    page.getByRole("link", { name: "Choose Date & Time" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Choose sessions" })).toHaveCount(
+    0,
+  );
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
     { path: "/api/access", method: "POST", body: null },
     { path: "/api/identity/restore", method: "POST", body: null },
@@ -588,7 +592,7 @@ test("remembered live account edits and rereads contact while native booking sta
   });
   const evidence = await fixture(page, true, true, identityReady);
   const guest = page.getByRole("button", {
-    name: "Guest",
+    name: "Continue as guest",
     exact: true,
   });
   await expect(page.locator(".page-loading")).toHaveCount(1);
@@ -600,7 +604,7 @@ test("remembered live account edits and rereads contact while native booking sta
   await expect(page.getByLabel("Booking identity")).toHaveCount(0);
   await expect(guest).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Sign in", exact: true }),
+    page.getByRole("button", { name: "Continue with email", exact: true }),
   ).toHaveCount(0);
   restoreIdentity();
   await expect(page.locator(".page-loading")).toHaveCount(0);
@@ -815,7 +819,7 @@ test("remembered live account edits and rereads contact while native booking sta
     page.getByRole("heading", { name: "Saved contact details", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Guest", exact: true }),
+    page.getByRole("button", { name: "Continue as guest", exact: true }),
   ).toHaveCount(0);
   await page
     .getByRole("button", { name: "Continue signed in", exact: true })
@@ -1051,11 +1055,11 @@ test("native guest journey preserves players contact and one checkout across ref
       .getByRole("link", { name: "Book now", exact: true })
       .click();
     const guest = page.getByRole("button", {
-      name: "Guest",
+      name: "Continue as guest",
       exact: true,
     });
     const email = page.getByRole("button", {
-      name: "Sign in",
+      name: "Continue with email",
       exact: true,
     });
     await expect(guest).toBeVisible();
@@ -1108,7 +1112,7 @@ test("native guest journey preserves players contact and one checkout across ref
       .getByRole("button", { name: "Add one player", exact: true })
       .click();
     await page
-      .getByRole("link", { name: "Choose Date & Time", exact: true })
+      .getByRole("link", { name: "Choose sessions", exact: true })
       .click();
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(page.locator("main")).not.toHaveAttribute("inert");
@@ -1184,7 +1188,7 @@ test("native guest journey preserves players contact and one checkout across ref
     ).toHaveLength(0);
     await page
       .getByRole("link", {
-        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        name: /^Enter contact details(?: \$[\d,.]+)?$/,
         exact: true,
       })
       .first()
@@ -1344,7 +1348,10 @@ test("native guest journey preserves players contact and one checkout across ref
       }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Request Help", exact: true }),
+      page.getByRole("button", {
+        name: "Ask the studio to contact me",
+        exact: true,
+      }),
     ).toHaveCount(0);
     releaseReturnContext();
     const continuation = page.getByRole("link", {
@@ -1371,7 +1378,10 @@ test("native guest journey preserves players contact and one checkout across ref
       }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Request Help", exact: true }),
+      page.getByRole("button", {
+        name: "Ask the studio to contact me",
+        exact: true,
+      }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Open checkout", exact: true }),
@@ -1716,9 +1726,11 @@ test("real payment recovery confirms the browser return from verified provider s
       page.getByLabel("Checkout security check", { exact: true }),
     ).toHaveCount(0);
     await expect(page.locator(".status-heading h1 + p")).toHaveText(
-      "Your booking confirmation will be emailed to you.",
+      "We’ll email your confirmation.",
     );
-    const paidBadge = page.locator(".review-head > .confirmation-paid-status");
+    const paidBadge = page.locator(
+      ".confirmation-paid-actions > .confirmation-paid-status",
+    );
     await expect(paidBadge).toHaveText("Paid");
     // WebKit can serialize fractional padding as 15.299999px.
     // Check the requested dimensions numerically, retaining subpixel precision.
@@ -1781,25 +1793,21 @@ test("real payment recovery confirms the browser return from verified provider s
     // Assert its rendered height independently of its computed CSS values.
     expect(Math.abs(paidBox!.height - 31.2)).toBeLessThan(0.1);
     expect(copyBox!.y).toBeCloseTo(detailsSummaryBox!.y, 1);
-    expect(copyBox!.x).toBeGreaterThanOrEqual(detailsSummaryBox!.x);
-    await expect(
-      details.getByRole("heading", { name: "Location", exact: true }),
-    ).toBeVisible();
-    expect(copyBox!.x + copyBox!.width).toBeCloseTo(
-      paidBox!.x + paidBox!.width,
-      0,
+    expect(copyBox!.y + copyBox!.height / 2).toBeCloseTo(
+      paidBox!.y + paidBox!.height / 2,
+      1,
     );
+    expect(copyBox!.x).toBeGreaterThanOrEqual(detailsSummaryBox!.x);
+    await expect(details.locator(".confirmation-location")).toBeVisible();
+    expect(copyBox!.x).toBeCloseTo(paidBox!.x + paidBox!.width + 12, 1);
     expect(copyBox!.x + copyBox!.width).toBeCloseTo(
       orderBox!.x + orderBox!.width,
       0,
     );
-    expect(paidBox!.y).toBeGreaterThanOrEqual(orderHeadBox!.y);
-    expect(paidBox!.y + paidBox!.height).toBeLessThanOrEqual(
-      orderHeadBox!.y + orderHeadBox!.height,
-    );
+    expect(copyBox!.y + copyBox!.height).toBeLessThan(orderHeadBox!.y);
     expect(
       firstSessionBox!.y - (orderHeadBox!.y + orderHeadBox!.height),
-    ).toBeCloseTo(10, 1);
+    ).toBeCloseTo(28, 1);
     // Keep clipboard acceptance deterministic across Chromium and WebKit;
     // the actual receipt formatter and click handler still execute.
     await page.evaluate(() => {
@@ -1840,7 +1848,10 @@ test("real payment recovery confirms the browser return from verified provider s
       page.getByRole("heading", { name: "Pending", exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Request Help", exact: true }),
+      page.getByRole("button", {
+        name: "Ask the studio to contact me",
+        exact: true,
+      }),
     ).toHaveCount(0);
     await expect(page.locator(".page-loading")).toHaveCount(0);
     releaseReceipt();
@@ -2002,7 +2013,10 @@ test("real payment recovery confirms the browser return from verified provider s
       page.getByRole("heading", { name: "Pending", exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Request Help", exact: true }),
+      page.getByRole("button", {
+        name: "Ask the studio to contact me",
+        exact: true,
+      }),
     ).toHaveCount(0);
     releaseRefreshContext();
     await expect(refreshLoader).toHaveCount(0);
@@ -2050,10 +2064,10 @@ test("real payment recovery confirms the browser return from verified provider s
       mechanism.calls.filter((call) => call.url.endsWith("/accept-payment")),
     ).toHaveLength(1);
     expect(mechanism.unexpected).toEqual([]);
-    await page.getByRole("button", { name: "Make another booking" }).click();
+    await page.getByRole("button", { name: "Book another session" }).click();
     await expect(page).toHaveURL(/\/book\/account\/$/);
     await expect(
-      page.getByRole("button", { name: "Guest", exact: true }),
+      page.getByRole("button", { name: "Continue as guest", exact: true }),
     ).toBeVisible();
     // Navigation must finish while the real dismiss request is still blocked.
     const dismissed = page.waitForResponse(
@@ -2065,7 +2079,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await dismissed;
     await page.reload();
     await expect(
-      page.getByRole("button", { name: "Guest", exact: true }),
+      page.getByRole("button", { name: "Continue as guest", exact: true }),
     ).toBeVisible();
     await expect(page).toHaveURL(/\/book\/account\/$/);
     // Explicit exit releases routing, but the protected old receipt remains.
@@ -2106,7 +2120,7 @@ test("real payment recovery confirms the browser return from verified provider s
     await homeDismissed;
     await page.goto("/book/account/");
     await expect(
-      page.getByRole("button", { name: "Guest", exact: true }),
+      page.getByRole("button", { name: "Continue as guest", exact: true }),
     ).toBeVisible();
     expect(
       mechanism.calls.filter((call) => call.url.endsWith("/accept-payment")),
@@ -2279,9 +2293,11 @@ async function guestDetails(
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
   }
-  await page.getByRole("button", { name: "Guest", exact: true }).click();
   await page
-    .getByRole("link", { name: "Choose Date & Time", exact: true })
+    .getByRole("button", { name: "Continue as guest", exact: true })
+    .click();
+  await page
+    .getByRole("link", { name: "Choose sessions", exact: true })
     .click();
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Singapore",
@@ -2320,7 +2336,7 @@ async function guestDetails(
   }
   await page
     .getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
       exact: true,
     })
     .first()
@@ -2617,7 +2633,10 @@ async function uncertainHolding(
         }),
       ).toBeVisible();
       await expect(
-        page.getByRole("button", { name: "Request Help", exact: true }),
+        page.getByRole("button", {
+          name: "Ask the studio to contact me",
+          exact: true,
+        }),
       ).toBeVisible();
       const recoveryNotice = page.locator(".calendar-recovery-notice");
       await expect(recoveryNotice).toHaveCount(1);
@@ -2681,7 +2700,10 @@ async function uncertainHolding(
         completeHelp = () => route.fulfill({ json: { status: "sent" } });
       });
       await page
-        .getByRole("button", { name: "Request Help", exact: true })
+        .getByRole("button", {
+          name: "Ask the studio to contact me",
+          exact: true,
+        })
         .click();
       const sendingHelp = page.getByRole("button", {
         name: "Sending help request",
@@ -2704,7 +2726,10 @@ async function uncertainHolding(
         "Help has been requested. We will get back as soon as we can.",
       );
       await expect(
-        page.getByRole("button", { name: "Request Help", exact: true }),
+        page.getByRole("button", {
+          name: "Ask the studio to contact me",
+          exact: true,
+        }),
       ).toHaveCount(0);
       // Direct/back navigation must not expose an editable-looking Review
       // while the original unknown write still owns its financial lock.
@@ -2733,7 +2758,7 @@ async function uncertainHolding(
           page.getByRole("heading", { name: "Review Booking", exact: true }),
         ).toHaveCount(0);
         await expect(
-          page.getByRole("button", { name: /^Enter Booking Details/ }).first(),
+          page.getByRole("button", { name: /^Enter contact details/ }).first(),
         ).toBeDisabled();
         await expect(page.locator("html")).not.toHaveAttribute(
           "data-unexpected-review",
@@ -2907,9 +2932,11 @@ test("real API revoked access at checkout returns to fresh entry and denies prot
     await expect(page.getByRole("main").getByRole("alert")).toHaveText(
       "Your session expired. Continue as a guest or sign in to start again.",
     );
-    await expect(page.getByRole("button", { name: "Guest" })).toBeEnabled();
     await expect(
-      page.getByRole("button", { name: "Sign in", exact: true }),
+      page.getByRole("button", { name: "Continue as guest" }),
+    ).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Continue with email", exact: true }),
     ).toBeEnabled();
     await expect(
       page.getByRole("heading", {
@@ -2918,7 +2945,7 @@ test("real API revoked access at checkout returns to fresh entry and denies prot
       }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Request Help" }),
+      page.getByRole("button", { name: "Ask the studio to contact me" }),
     ).toHaveCount(0);
     expect(
       await page.evaluate(() =>
@@ -3206,11 +3233,11 @@ test("real API failed completed dismissal opens the first step and explicit retr
       page.getByRole("heading", { name: "Booking Contact", exact: true }),
     ).toBeVisible();
     await page
-      .getByRole("button", { name: "Make another booking", exact: true })
+      .getByRole("button", { name: "Book another session", exact: true })
       .click();
     await expect(page).toHaveURL(/\/book\/account\/$/);
     await expect(
-      page.getByRole("button", { name: "Guest", exact: true }),
+      page.getByRole("button", { name: "Continue as guest", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
       "Unable to start a new booking. Please try again. Your confirmed booking is unchanged.",
@@ -3281,7 +3308,9 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
       })
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
-    await page.getByRole("button", { name: "Guest", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Continue as guest", exact: true })
+      .click();
     await expect(page).toHaveURL(/\/book\/session\/$/);
     await expect(
       page.getByText("Unable to Load.", {
@@ -3303,7 +3332,7 @@ test("real API catalogue outage exposes retry without inventing sessions or rene
     ).toBeVisible();
     expect(mechanism.calls).toHaveLength(before);
     await expect(
-      page.getByRole("link", { name: "Choose Date & Time", exact: true }),
+      page.getByRole("link", { name: "Choose sessions", exact: true }),
     ).toHaveCount(0);
     await assertNoPaymentOrConfirmation(page, mechanism);
   } finally {
@@ -3844,7 +3873,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
             `/api/attempts/${attemptId}/dismiss` && response.status() === 200,
       );
       await page
-        .getByRole("button", { name: "Make another booking", exact: true })
+        .getByRole("button", { name: "Book another session", exact: true })
         .click();
       await expect(page).toHaveURL(/\/book\/account\/$/);
       const refreshed = await (await nextCalendar).json();
@@ -3856,7 +3885,7 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       await dismissed;
       await page.reload();
       await expect(
-        page.getByRole("button", { name: "Guest", exact: true }),
+        page.getByRole("button", { name: "Continue as guest", exact: true }),
       ).toBeVisible();
       await page.goto(`/confirmation/?attempt=${attemptId}`);
       await expect(
@@ -3955,7 +3984,7 @@ test("real API unpaid return shows the pending confirmation layout without claim
     await expect(
       page.getByText("View Full Details", { exact: true }),
     ).toHaveCount(0);
-    for (const name of ["Booking Contact", "Location", "Before Your Session"])
+    for (const name of ["Booking Contact", "Location", "Before your session"])
       await expect(
         page.getByRole("heading", { name, exact: true }),
       ).toHaveCount(0);
@@ -4260,7 +4289,7 @@ test("email account actions return through booking options and sign in again wit
       .click();
     await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Guest", exact: true }),
+      page.getByRole("button", { name: "Continue as guest", exact: true }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Continue signed in", exact: true }),
@@ -4280,14 +4309,16 @@ test("email account actions return through booking options and sign in again wit
   ).not.toBeChecked();
   await page.getByRole("button", { name: "Back", exact: true }).click();
   for (const remember of [true, false]) {
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Continue with email", exact: true })
+      .click();
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
       .getByRole("textbox", { name: /^Email address/ })
       .fill("synthetic@example.test");
     await page.getByLabel("Remember me", { exact: true }).setChecked(remember);
     await expect(
-      page.getByRole("button", { name: "Get Verification Code", exact: true }),
+      page.getByRole("button", { name: "Email me a code", exact: true }),
     ).toBeDisabled();
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
@@ -4298,7 +4329,7 @@ test("email account actions return through booking options and sign in again wit
       .click();
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await page
-      .getByRole("button", { name: "Get Verification Code", exact: true })
+      .getByRole("button", { name: "Email me a code", exact: true })
       .click();
     await page.getByLabel("Verification code", { exact: true }).fill("123456");
     await page
@@ -4320,7 +4351,7 @@ test("email account actions return through booking options and sign in again wit
       page.getByRole("button", { name: "Manage saved contact", exact: true }),
     ).toHaveCount(remember ? 1 : 0);
     await expect(
-      page.getByRole("button", { name: "Guest", exact: true }),
+      page.getByRole("button", { name: "Continue as guest", exact: true }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Sign out", exact: true }),
@@ -4333,7 +4364,7 @@ test("email account actions return through booking options and sign in again wit
       .getByRole("button", { name: "Sign out all devices", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "Sign in", exact: true }),
+      page.getByRole("button", { name: "Continue with email", exact: true }),
     ).toBeVisible();
   }
   expect(
@@ -4473,7 +4504,7 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
               `/api/attempts/${attemptId}/dismiss` && r.status() === 200,
         );
         await page
-          .getByRole("button", { name: "Make another booking", exact: true })
+          .getByRole("button", { name: "Book another session", exact: true })
           .click();
         await expect(page).toHaveURL(/\/book\/account\/$/);
         await dismissed;

@@ -4,6 +4,9 @@ import {
   profileAccessGeneration,
   reportProfileAccessLoss,
   bookingAccessExpired,
+  bookingAccessNotice,
+  rememberBookingAccessNotice,
+  clearBookingAccessNotice,
 } from "@/services/profile-access";
 import {
   clearIdentityEntry,
@@ -311,9 +314,14 @@ export function BookingProvider({
   bookingService?: BookingService;
   identityService?: CustomerIdentityService;
 }) {
-  const [profileAccessRevision, setProfileAccessRevision] = useState(0);
-  const [profileAccessNotice, setProfileAccessNotice] =
-    useState(BOOKING_SIGNED_OUT);
+  const [profileAccessRevision, setProfileAccessRevision] = useState(() =>
+    bookingAccessNotice() ? 1 : 0,
+  );
+  const [profileAccessNotice, setProfileAccessNotice] = useState(() =>
+    bookingAccessNotice() === "session"
+      ? BOOKING_SESSION_EXPIRED
+      : BOOKING_SIGNED_OUT,
+  );
   const [profileSaveError, setProfileSaveError] = useState("");
   const profileSave = useRef<{
     controller: AbortController;
@@ -482,6 +490,7 @@ export function BookingProvider({
       confirmationRevision: 0,
     },
   );
+  const latest = useRef(value);
   const [actionState, dispatchAction] = useState<
     ActionState & { owner: BookingService }
   >({ status: "idle", owner: service });
@@ -495,7 +504,14 @@ export function BookingProvider({
   );
   const visitBookingStep = useCallback(
     (step: string) => {
-      if (step !== "account") setProfileAccessRevision(0);
+      if (
+        step !== "account" &&
+        latest.current.draft.mode &&
+        !bookingAccessExpired()
+      ) {
+        clearBookingAccessNotice();
+        setProfileAccessRevision(0);
+      }
       if (step === "time") {
         if (
           action.calendarRecovery &&
@@ -722,7 +738,6 @@ export function BookingProvider({
       document.removeEventListener("visibilitychange", refresh);
     };
   }, []);
-  const latest = useRef(value);
   const hydrationOwner = useRef({ service, identityService });
   const commit = useCallback(
     (
@@ -872,6 +887,7 @@ export function BookingProvider({
         identityService.invalidate?.();
         clearIdentityEntry(identityService);
         if (!pathname || !/\/(?:book\/|confirmation)/.test(pathname)) return;
+        rememberBookingAccessNotice(reason);
         cancel(false);
         profileSave.current?.controller.abort();
         profileSave.current = null;
@@ -2625,6 +2641,7 @@ export function BookingProvider({
         leave() {
           setEntryChecked(null);
           // Access recovery belongs to the departed journey, not the next entry.
+          clearBookingAccessNotice();
           setProfileAccessRevision(0);
           setProfileAccessNotice(BOOKING_SIGNED_OUT);
           // Discard editable data without erasing a dispatched attempt or its

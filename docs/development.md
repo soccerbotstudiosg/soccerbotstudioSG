@@ -332,3 +332,5 @@ Tailwind4.3.4’s optional oxide WASM fallback declares Node `^20.19.0 || ^22.13
 The static export check requires the initial fixed cover and hidden/inert main content on every route. Checkout Review/payment/confirmation exports use the initial “Checking booking…” status; other routes use “Loading page”. The deployment tests reject a wrong route-specific label as well as missing covers and visible unfinished content.
 
 Dependency verification runs `node scripts/dependency-audit.mjs`; it preserves raw npm findings and enforces the high/critical gate with only the [dated owner-approved exception](security/false-positives.md#temporary-picomatch-risk-acceptance-18-november-2026). `npm audit --json` remains the unfiltered diagnostic view.
+
+The unit/component runner caps larger hosts at two concurrent workers, retaining one worker on one/two-CPU machines. This leaves headroom for DOM work, transforms and supervision; all declared cases still run with zero retries and their normal deadlines. The browser and Worker schedules are unchanged.

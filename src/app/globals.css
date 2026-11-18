@@ -1028,10 +1028,13 @@
 @layer components {
   .back-to-top {
     position: fixed;
-    z-index: 30;
-    left: 50%;
-    bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
-    transform: translateX(-50%);
+    z-index: 36;
+    right: max(20px, env(safe-area-inset-right));
+    bottom: max(
+      24px,
+      calc(env(safe-area-inset-bottom) + 12px),
+      var(--back-to-top-clearance, 0px)
+    );
     display: grid;
     place-items: center;
     width: 48px;
@@ -1041,19 +1044,6 @@
     background: var(--color-surface);
     color: var(--color-brand);
     box-shadow: var(--shadow-action);
-  }
-  body:has(.enquiry-page .booking-primary-action) .back-to-top {
-    bottom: max(
-      calc(
-        80px + var(--space-action-bottom) + 12px + env(safe-area-inset-bottom)
-      ),
-      var(--back-to-top-clearance, 0px)
-    );
-  }
-  .back-to-top.booking-back-to-top {
-    top: var(--back-to-top-top, 0px);
-    bottom: auto;
-    z-index: 36;
   }
   .back-to-top:hover {
     background: var(--color-paper);
@@ -3177,18 +3167,8 @@
     color: var(--color-brand);
     margin-bottom: 3px;
   }
-  .arrival-time span {
-    display: block;
-  }
-  .arrival-information p + p {
-    margin-top: 8px;
-  }
-  .arrival-compact .arrival-time strong,
-  .arrival-compact .arrival-time span {
-    display: inline;
-  }
-  .arrival-compact .arrival-time span::before {
-    content: " ";
+  .arrival-time {
+    padding-left: 18px;
   }
   .arrival-points {
     display: grid;
@@ -3200,6 +3180,10 @@
     color: var(--color-muted);
     font-size: var(--text-body);
     line-height: var(--leading-body);
+  }
+  .arrival-points > li {
+    display: list-item;
+    list-style-type: disc;
   }
   .basket-empty {
     display: flex;
@@ -3528,9 +3512,18 @@
   .access-options.access-choices {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: center;
+    align-items: start;
     gap: clamp(8px, 2vw, 24px);
     padding: 0 0 var(--space-action-bottom);
+  }
+  .access-choice {
+    min-width: 0;
+  }
+  .access-option .access-choice-description {
+    margin: 10px 0 0;
+    min-height: 0;
+    font-size: var(--text-body);
+    text-align: center;
   }
   .access-choices .button {
     width: 100%;
@@ -3542,6 +3535,7 @@
     white-space: normal;
   }
   .access-choice-divider {
+    padding: 18px 0;
     font-size: var(--text-section);
     text-transform: uppercase;
     text-decoration: underline;
@@ -5207,9 +5201,6 @@
   .confirmation-details-grid .confirmation-section {
     min-width: 0;
   }
-  .confirmation-details-grid .section-title {
-    margin-bottom: 10px;
-  }
   .confirmation-disclaimers {
     grid-column: 1 / -1;
   }
@@ -5338,6 +5329,7 @@
     color: var(--color-warning);
   }
   .confirmation-copy-control {
+    display: flex;
     position: relative;
   }
   .confirmation-copy {
@@ -5383,6 +5375,11 @@
     gap: 8px;
     margin: 0;
   }
+  .booking-help > .button {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
   .booking-help > p {
     margin: 0;
   }
@@ -5408,12 +5405,8 @@
     min-height: 44px;
     padding: 8px 12px;
   }
-  .confirmation-paid-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    max-width: 240px;
+  .confirmation-card .session-summary-heading .review-head {
+    align-items: flex-start;
   }
   .confirmation-total strong {
     display: inline-flex;
@@ -5433,11 +5426,43 @@
     text-align: center;
   }
   .confirmation-shell .status-icon {
+    position: relative;
+    overflow: hidden;
     width: 80px;
     height: 80px;
     margin-bottom: 16px;
     background: var(--color-confirmation);
     color: var(--color-on-brand);
+  }
+  .confirmation-shell .status-icon::after {
+    content: "";
+    position: absolute;
+    inset: -25%;
+    background: linear-gradient(
+      110deg,
+      transparent 35%,
+      color-mix(in srgb, var(--color-on-brand) 65%, transparent) 50%,
+      transparent 65%
+    );
+    transform: translateX(-140%);
+    animation: confirmation-shine 5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes confirmation-shine {
+    0%,
+    72% {
+      transform: translateX(-140%);
+    }
+    92%,
+    100% {
+      transform: translateX(140%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .confirmation-shell .status-icon::after {
+      animation: none;
+      display: none;
+    }
   }
   .booking-primary-action > .button {
     position: relative;
@@ -5552,9 +5577,6 @@
   .confirmation-shell .status-heading h1 {
     color: var(--color-confirmation-heading);
   }
-  .confirmation-shell .confirmation-card {
-    padding: 24px;
-  }
   .confirmation-summary {
     display: grid;
     gap: 12px;
@@ -5564,21 +5586,11 @@
   .confirmation-summary p {
     margin: 0;
   }
-  .confirmation-details-row {
-    position: relative;
-  }
-  .confirmation-details-row > .confirmation-copy-control {
-    position: absolute;
-    top: 0;
-    right: 0;
-  }
-  .confirmation-details-row.has-copy
-    .confirmation-details-grid
-    > .review-block:first-child {
-    padding-right: 56px;
-  }
-  .confirmation-card .review-head + .series-list > li:first-child {
-    padding-top: 0;
+  .confirmation-paid-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
   }
   .confirmation-full-details {
     text-align: left;
@@ -5738,12 +5750,8 @@
     .arrival-information p + p {
       margin-top: 4px;
     }
-    .arrival-information .arrival-time strong,
-    .arrival-time span {
-      display: inline;
-    }
-    .arrival-time span::before {
-      content: " ";
+    .arrival-time {
+      padding-left: 14px;
     }
     .access-options {
       gap: 14px;
@@ -5753,6 +5761,7 @@
       gap: 16px;
     }
     .access-choice-divider {
+      padding: 0;
       text-align: center;
     }
     .booking-shell .access-choices .button.booking-entry-action {
@@ -6105,9 +6114,6 @@
     .confirmation-shell {
       padding-top: 16px;
       padding-bottom: 20px;
-    }
-    .confirmation-shell .confirmation-card {
-      padding: 20px;
     }
     .confirmation-actions {
       grid-template-columns: repeat(2, minmax(0, 1fr));

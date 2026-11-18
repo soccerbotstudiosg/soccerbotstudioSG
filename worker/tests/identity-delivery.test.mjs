@@ -215,6 +215,10 @@ test("delivery public routes use fixed sender recipient idempotency and single-u
     `verification/${c.challengeId}`,
   );
   const code = sent.body.text.match(/code is (\d{6})/)[1];
+  assert.match(sent.body.html, /Hello human,/);
+  assert.ok(sent.body.html.includes(code));
+  assert.match(sent.body.html, /Your verification code/);
+  assert.equal(sent.body.attachments, undefined);
   assert.equal(JSON.stringify(c).includes(code), false);
   const verify = () =>
     request(cookie, { challengeId: c.challengeId, code }, "verify");
@@ -948,6 +952,10 @@ test("ongoing delivery preserves closed proofs and restores consented identity a
   );
   assert.deepEqual(sent.body.to, [recipient]);
   const code = sent.body.text.match(/code is (\d{6})/)[1];
+  assert.match(sent.body.html, /Hello human,/);
+  assert.ok(sent.body.html.includes(code));
+  assert.match(sent.body.html, /Your verification code/);
+  assert.equal(sent.body.attachments, undefined);
   const verified = await request(
     cookie,
     { email: recipient, challengeId: c.challengeId, code, remember: true },
@@ -1006,6 +1014,10 @@ test("ongoing verified contact reads and consented saves ignore closed historica
     (call) => call.url === "https://api.resend.com/emails",
   );
   const code = sent.body.text.match(/code is (\d{6})/)[1];
+  assert.match(sent.body.html, /Hello human,/);
+  assert.ok(sent.body.html.includes(code));
+  assert.match(sent.body.html, /Your verification code/);
+  assert.equal(sent.body.attachments, undefined);
   assert.equal(
     (
       await request(
@@ -1188,6 +1200,10 @@ test("client email verification uses its configured sender and production bot se
   assert.doesNotMatch(sent.body.text, /cancel|reschedule|manage booking/i);
   assert.match(sent.body.text, /expires within 2 minutes/);
   const code = sent.body.text.match(/code is (\d{6})/)[1];
+  assert.match(sent.body.html, /Hello human,/);
+  assert.ok(sent.body.html.includes(code));
+  assert.match(sent.body.html, /Your verification code/);
+  assert.equal(sent.body.attachments, undefined);
   const verified = await request(
     cookie,
     { email: recipient, challengeId: proof.challengeId, code, remember: false },
@@ -1350,6 +1366,10 @@ test("customer booking help is owned deduplicated and sends staff and customer a
   assert.equal(calls.length, 2);
   assert.deepEqual(calls[0].body.to, ["contact@soccerbotsg.com"]);
   assert.match(calls[0].body.text, /Synthetic Customer/);
+  assert.match(calls[0].body.html, /Booking help requested/);
+  assert.match(calls[1].body.html, /Hello Synthetic Customer,/);
+  assert.match(calls[1].body.html, /Get help on WhatsApp/);
+  assert.doesNotMatch(calls[1].body.html, /Internal attempt/);
   assert.match(calls[0].body.text, /booking_unconfirmed/);
   assert.match(calls[0].body.text, /synthetic@example.com/);
   assert.equal(
@@ -1459,7 +1479,60 @@ test("customer booking help is owned deduplicated and sends staff and customer a
     .run();
   assert.equal((await send(paidId)).status, 200);
   assert.match(calls.at(-2).body.text, /payment_confirmation_pending/);
+  assert.match(calls.at(-2).body.html, /Payment received/);
   assert.deepEqual(calls.at(-1).body.to, ["synthetic@example.com"]);
+  assert.match(calls.at(-1).body.html, /Payment received/);
+  const legacyId = crypto.randomUUID();
+  await db
+    .prepare(
+      "INSERT INTO attempts(id,owner_id,idempotency_key,intent_json,intent_hash,created_ms,deadline_ms,state) VALUES(?,?,?,?,?,?,?,'observed')",
+    )
+    .bind(
+      legacyId,
+      owner,
+      legacyId,
+      JSON.stringify(intent),
+      "d".repeat(64),
+      now - 60000,
+      now + 600000,
+    )
+    .run();
+  await db
+    .prepare(
+      "INSERT INTO booking_support_reports(attempt_id,created_ms,category,state,next_ms) VALUES(?,?,'booking_unconfirmed','pending',0)",
+    )
+    .bind(legacyId, now - 1000)
+    .run();
+  assert.equal((await send(legacyId)).status, 200);
+  assert.equal(calls.at(-2).body.html, undefined);
+  assert.equal(calls.at(-1).body.html, undefined);
+  assert.match(calls.at(-1).body.text, /^Hi Synthetic Customer,/);
+  const checkoutId = crypto.randomUUID();
+  await db
+    .prepare(
+      "INSERT INTO attempts(id,owner_id,idempotency_key,intent_json,intent_hash,association_json,created_ms,deadline_ms,state) VALUES(?,?,?,?,?,'{}',?,?,'observed')",
+    )
+    .bind(
+      checkoutId,
+      owner,
+      checkoutId,
+      JSON.stringify(intent),
+      "c".repeat(64),
+      now - 60000,
+      now + 600000,
+    )
+    .run();
+  assert.equal((await send(checkoutId)).status, 200);
+  assert.match(
+    calls.at(-2).body.html,
+    /could not confirm your checkout status/,
+  );
+  assert.match(
+    calls.at(-1).body.html,
+    /could not confirm your checkout status/,
+  );
+  assert.doesNotMatch(calls.at(-1).body.html, /Payment received/);
+
   assert.equal(
     (
       await db

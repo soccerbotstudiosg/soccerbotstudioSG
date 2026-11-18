@@ -105,7 +105,7 @@ test("live session selection uses client prices while demo retains its own rates
   const view = render(<SessionStep />);
   expect(screen.getByRole("heading", { name: "Outlet" })).toBeVisible();
   expect(
-    screen.queryByRole("link", { name: "Choose Date & Time" }),
+    screen.queryByRole("link", { name: "Choose sessions" }),
   ).not.toBeInTheDocument();
   const session = await screen.findByRole("region", {
     name: "Kickoff Special",
@@ -116,11 +116,9 @@ test("live session selection uses client prices while demo retains its own rates
   expect(session).toHaveTextContent("Trainer included");
   expect(screen.queryByText(/S\$88 weekdays/)).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Add one player" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Choose sessions" })).toBeVisible();
   expect(
-    screen.getByRole("link", { name: "Choose Date & Time" }),
-  ).toBeVisible();
-  expect(
-    screen.getByRole("link", { name: "Choose Date & Time" }).parentElement,
+    screen.getByRole("link", { name: "Choose sessions" }).parentElement,
   ).toHaveAttribute("data-ready-animation", "true");
   const choice = screen.getByRole("button", { name: "Choose Kickoff Special" });
   fireEvent.click(choice);
@@ -129,7 +127,7 @@ test("live session selection uses client prices while demo retains its own rates
     screen.queryByRole("button", { name: "Add one player" }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("link", { name: "Choose Date & Time" }),
+    screen.queryByRole("link", { name: "Choose sessions" }),
   ).not.toBeInTheDocument();
   fireEvent.click(choice);
   expect(screen.getByRole("button", { name: "Add one player" })).toBeVisible();
@@ -200,7 +198,7 @@ test("live session selection uses client prices while demo retains its own rates
     "Choose session",
   );
   expect(
-    screen.queryByRole("link", { name: "Choose Date & Time" }),
+    screen.queryByRole("link", { name: "Choose sessions" }),
   ).not.toBeInTheDocument();
   read.mockRestore();
   context.bookingService.mode = "live";

@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-18 November 2026: final UI follow-up on fix/session-remove-hover from merged PR95/main0e0bd88. Add a rounded hover/focus background to the selected session × and change the email helper to “Select the blue circle to check your email address.” Owner authorized implementation, checks, staging then merge.
+18 November 2026: PR97 / fix/unified-back-to-top consolidates bottom-right scroll control, persistent guest expiry notices, Review-style confirmation with Location and horizontal Paid/Copy, success shine, and nine app notification HTML variants. Verification uses “Hello human,”; enquiry/help use known customer names. Step1 now reads Continue as guest / No account needed and Continue with email / New or returning? We’ll email you a verification code, with accessible descriptions. Actions now read Choose sessions, Email me a code, Enter contact details, Ask the studio to contact me and Book another session. Actual SimplyBook notifications are unchanged. User authorizes continued fixes through staging and merge, with two thorough verification rounds first.
 
 ## Next actions
 
-Affected checks: Details6/6 and isolated TimeStep14/14 passed; combined run retained one calendar timeout (see Journey). Source/policy and ESLint passed. Publish the consolidated candidate, verify exact-head CI and staging health, then merge under the current authorization. Preserve the44px remove target, black icon, price placement and mobile resting state. Browser execution stays owner/CI-only. Full documentation reconciliation and notification-template setup follow this UI slice. The temporary picomatch exception expires25 November00:00 SGT.
+Final local verification passed: two complete code wrappers at fingerprint cef7738cdae81cc32bdb9fbbc8e38c9c01ab745bd458c76f788fb561ccd6014f, each with400/400 unit cases,213 tooling cases, installer guards, format/lint/types, production build and export checks. Two complete unchanged-Worker rounds passed520/520 each; the earlier round precedes only the saved-contact test synchronization/docs correction. First failures and diagnostics remain in Journey. Publication changes after verification are documentation only. PR97’s previous head5586287/run44263198319 was cancelled; the consolidated commit is ready for push, exact-head CI, staging health and authorized merge. Owner/CI operates browsers. No live notification sends. The temporary picomatch exception expires25 November00:00 SGT.
 
 ## Ordered work after this slice
 

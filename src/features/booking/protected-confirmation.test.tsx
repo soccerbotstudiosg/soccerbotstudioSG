@@ -297,11 +297,11 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   expect(
     screen.getByRole("heading", { name: "Booking Confirmed" })
       .nextElementSibling,
-  ).toHaveTextContent("Your booking confirmation will be emailed to you.");
+  ).toHaveTextContent("We’ll email your confirmation.");
   expect(orderSummary.closest("details")).toBeNull();
   expect(
     screen
-      .getByRole("heading", { name: "Before Your Session" })
+      .getByRole("heading", { name: "Before your session" })
       .closest(".confirmation-full-details"),
   ).toBeVisible();
   expect(orderSummary.querySelector(".series-list")).not.toHaveTextContent(
@@ -311,24 +311,20 @@ it("verified live receipt shows provider invoice number without internal IDs or 
     orderSummary.querySelector(".confirmation-paid-amount"),
   ).toHaveTextContent("SGD $88.00");
   expect(
-    orderSummary.querySelector(".review-head .confirmation-paid-status"),
+    document.querySelector(
+      ".session-summary-heading .confirmation-paid-status",
+    ),
   ).toHaveTextContent("Paid");
   expect(await screen.findByText("Booking Contact")).toBeVisible();
   expect(
     Array.from(document.querySelectorAll(".confirmation-card h2")).map(
       (node) => node.textContent,
     ),
-  ).toEqual([
-    "Your Sessions",
-    "Booking Contact",
-    "Location",
-    "Before Your Session",
-    "Order Summary",
-  ]);
+  ).toEqual(["Your booking", "Location", "Booking Contact", "Order Summary"]);
   expect(
     await screen.findByRole("heading", { name: "Booking Contact" }),
   ).toBeInTheDocument();
-  for (const name of ["Location", "Before Your Session"])
+  for (const name of ["Before your session"])
     expect(screen.getByRole("heading", { name })).toBeInTheDocument();
   expect(
     screen.getByRole("region", { name: "Order Summary" }),
@@ -340,10 +336,10 @@ it("verified live receipt shows provider invoice number without internal IDs or 
     screen.queryByRole("region", { name: "Session Details" }),
   ).not.toBeInTheDocument();
   expect(
-    screen.getByRole("region", { name: "Before Your Session" }),
+    screen.getByRole("region", { name: "Before your session" }),
   ).toHaveClass("confirmation-disclaimers");
   expect(
-    screen.getByRole("region", { name: "Before Your Session" }),
+    screen.getByRole("region", { name: "Before your session" }),
   ).toHaveTextContent("Bring your own towel.");
   expect(screen.getByText("Trainer: Native Trainer")).toBeInTheDocument();
   expect(screen.queryByText("701")).not.toBeInTheDocument();
@@ -532,7 +528,9 @@ it("expired checking shows authenticated recorded payment without confirming or 
       "Payment received. We are still confirming your booking. Please contact us and do not pay again.",
     ),
   ).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Ask the studio to contact me" }),
+  ).toBeVisible();
   expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
   expect(screen.getByText("Trainer: Native Trainer")).toBeVisible();
   expect(screen.getByRole("region", { name: "Order Summary" })).toBeVisible();
@@ -652,7 +650,7 @@ it("reopening an expired paid booking shows the saved full confirmation without 
       },
     }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Make another booking" }));
+  fireEvent.click(screen.getByRole("button", { name: "Book another session" }));
   await waitFor(() =>
     expect(fetch.mock.calls.at(-1)?.[0]).toBe(`/api/attempts/${first}/dismiss`),
   );
@@ -663,7 +661,7 @@ it("reopening an expired paid booking shows the saved full confirmation without 
   fetch.mockImplementationOnce(() =>
     Promise.resolve(Response.json({ dismissed: true })),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Make another booking" }));
+  fireEvent.click(screen.getByRole("button", { name: "Book another session" }));
   await waitFor(() =>
     expect(assign).toHaveBeenCalledWith(
       expect.stringContaining("/book/account/"),
@@ -769,7 +767,9 @@ it("an expired confirmation wait cannot replace fresh reads on refresh or native
         name: "Checking payment…",
       }),
     ).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
     expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
     expect(awaiting).not.toHaveBeenCalled();
@@ -821,7 +821,9 @@ it("an expired confirmation wait cannot replace fresh reads on refresh or native
           name: "Payment received. Confirming booking.",
         }),
       ).toBeVisible();
-      expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+      ).toBeNull();
       expect(screen.queryByRole("alert")).toBeNull();
       await act(async () => {
         finishStatus(
@@ -857,7 +859,9 @@ it("an expired confirmation wait cannot replace fresh reads on refresh or native
         true,
       );
     }
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
     expect(awaiting).not.toHaveBeenCalled();
     cleanup();
@@ -978,7 +982,7 @@ it("pending confirmation uses the full checkout loader until verified confirmati
     document.querySelector(".page-loading .page-loading-orbit"),
   ).not.toBeNull();
   expect(document.querySelector(".booking-loading-inline")).toBeNull();
-  for (const name of ["Booking Contact", "Location", "Before Your Session"])
+  for (const name of ["Booking Contact", "Before your session"])
     expect(screen.queryByRole("heading", { name })).toBeNull();
   expect(screen.queryByText("Synthetic Customer")).toBeNull();
   expect(
@@ -1559,7 +1563,7 @@ it("shows payment received feedback with details while current booking evidence 
   expect(continuation.parentElement?.nextElementSibling).toBeNull();
   expect(screen.queryByText("View Full Details")).toBeNull();
   expect(
-    screen.queryByRole("heading", { name: "Before Your Session" }),
+    screen.queryByRole("heading", { name: "Before your session" }),
   ).toBeNull();
   expect(screen.queryByText(/SimplyBook booking ID/)).toBeNull();
   navigation.status = "completed";
@@ -1773,7 +1777,9 @@ it("incomplete provider booking shows reservation recovery without a payment spi
     }),
   ).toBeVisible();
   expect(screen.queryByRole("link", { name: /payment|checkout/i })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+  ).toBeNull();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(29999);
   });
@@ -2882,7 +2888,9 @@ it("payment return stops foreground waiting at thirty seconds retains Pending ac
   await act(async () => {
     await vi.advanceTimersByTimeAsync(29999);
   });
-  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+  ).toBeNull();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1);
   });
@@ -2891,7 +2899,9 @@ it("payment return stops foreground waiting at thirty seconds retains Pending ac
   ).toBeVisible();
   expect(screen.getByRole("heading", { name: "Order Summary" })).toBeVisible();
   expect(screen.queryByRole("heading", { name: "Pending" })).toBeNull();
-  expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Ask the studio to contact me" }),
+  ).toBeVisible();
   expect(screen.getByRole("alert")).toHaveTextContent(
     "We couldn’t confirm your booking status.",
   );
@@ -2929,7 +2939,9 @@ it("payment return stops foreground waiting at thirty seconds retains Pending ac
   expect(
     screen.getByRole("heading", { name: "Booking Confirmed" }),
   ).toBeVisible();
-  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+  ).toBeNull();
   expect(fetch.mock.calls.every(([url]) => String(url).includes(first))).toBe(
     true,
   );
@@ -2981,14 +2993,18 @@ it("completed return recovery remains bounded while checkout context is still re
     expect(
       screen.getByRole("status", { name: "Checking payment…" }),
     ).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     expect(screen.getByRole("alert")).toHaveTextContent(
       "We couldn’t confirm your booking status.",
     );
-    expect(screen.getByRole("button", { name: "Request Help" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeVisible();
     expect(
       screen.getByText("Pending", { selector: ".confirmation-pending-status" }),
     ).toBeVisible();
@@ -3136,7 +3152,9 @@ it("an unavailable retained attempt goes home instead of showing payment uncerta
   expect(fetcher).toHaveBeenCalledTimes(1);
   expect(sessionStorage.getItem("retained-financial-lock")).toBe("keep");
   expect(screen.queryByText("Pending")).toBeNull();
-  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+  ).toBeNull();
 });
 
 it("idling and failed invoice enrichment retain an already verified confirmation", async () => {
@@ -3186,7 +3204,9 @@ it("idling and failed invoice enrichment retain an already verified confirmation
   expect(
     screen.getByRole("heading", { name: "Booking Confirmed" }),
   ).toBeVisible();
-  expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+  ).toBeNull();
   expect(screen.queryByText("Pending")).toBeNull();
   expect(navigation.replace).not.toHaveBeenCalled();
   expect(
@@ -3225,7 +3245,9 @@ it("failed post-payment context returns home after the budget instead of renderi
       await vi.advanceTimersByTimeAsync(29999);
     });
     expect(navigation.replace).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });

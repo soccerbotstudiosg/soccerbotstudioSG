@@ -1,3 +1,5 @@
+import { ADDRESS, CONTACT_METHODS } from "../src/domain/catalog";
+import { bookingHelpHtml } from "./notification-template";
 import { authenticate } from "./access";
 import { ApiError, identitySenderSchema, liveCustomerAccess } from "./policy";
 import { intentSchema } from "./journal";
@@ -48,7 +50,7 @@ export async function requestBookingHelp(
     throw new ApiError(503, "support_unavailable");
   await db
     .prepare(
-      "INSERT OR IGNORE INTO booking_support_reports(attempt_id,created_ms,category,state,next_ms) VALUES(?,?,?,'pending',0)",
+      "INSERT OR IGNORE INTO booking_support_reports(attempt_id,created_ms,category,state,next_ms,notification_version) VALUES(?,?,?,'pending',0,1)",
     )
     .bind(
       attemptId,
@@ -62,12 +64,13 @@ export async function requestBookingHelp(
     .run();
   const report = await db
     .prepare(
-      "SELECT created_ms,category,state,next_ms FROM booking_support_reports WHERE attempt_id=?",
+      "SELECT created_ms,category,state,next_ms,notification_version FROM booking_support_reports WHERE attempt_id=?",
     )
     .bind(attemptId)
     .first<{
       created_ms: number;
       category: string;
+      notification_version: number;
       state: string;
       next_ms: number;
     }>();
@@ -107,7 +110,7 @@ export async function requestBookingHelp(
     "Check the original attempt and provider records before making changes. This report does not prove failure or nonpayment.",
   ].join("\n");
   const acknowledgement = [
-    `Hi ${contact.name},`,
+    `${report.notification_version === 1 ? "Hello" : "Hi"} ${contact.name},`,
     "",
     "Help has been requested. We will get back as soon as we can.",
     "",
@@ -125,6 +128,36 @@ export async function requestBookingHelp(
     "",
     "SoccerBotStudio Singapore",
   ].join("\n");
+  const fields: [string, string][] = [
+    [
+      "Help requested",
+      new Date(report.created_ms).toLocaleString("en-SG", {
+        timeZone: "Asia/Singapore",
+        hour12: false,
+      }) + " SGT",
+    ],
+    ["Full name", contact.name],
+    ["Email address", contact.email],
+    ["Mobile number", contact.phone],
+    [
+      "Preferred contact",
+      Object.entries(CONTACT_METHODS).find(
+        ([method]) => method === contact.contactMethod,
+      )?.[1] ?? contact.contactMethod,
+    ],
+    ["Location", ADDRESS],
+    [
+      "Selected sessions (SGT)",
+      intent.sessions
+        .map((session) => {
+          const wall = new Date(session.startMs + 8 * 3600000).toISOString();
+          const time = wall.slice(11, 16);
+          return `${dateLabel(wall.slice(0, 10))}, ${time}–${endTime(time)}; ${session.players} player(s)`;
+        })
+        .join("\n"),
+    ],
+    ["Booking amount", `SGD ${money(intent.totalMinor)}`],
+  ];
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
@@ -135,6 +168,17 @@ export async function requestBookingHelp(
         {
           sender: sender.data,
           text,
+          ...(report.notification_version === 1
+            ? {
+                html: bookingHelpHtml(
+                  env.APP_ORIGIN,
+                  report.category,
+                  contact.name,
+                  [...fields, ["Internal attempt", attemptId]],
+                  true,
+                ),
+              }
+            : {}),
           idempotencyKey: `booking-support/${attemptId}`,
         },
         controller.signal,
@@ -150,6 +194,17 @@ export async function requestBookingHelp(
           sender: sender.data,
           recipient: contact.email,
           text: acknowledgement,
+          ...(report.notification_version === 1
+            ? {
+                html: bookingHelpHtml(
+                  env.APP_ORIGIN,
+                  report.category,
+                  contact.name,
+                  fields,
+                  false,
+                ),
+              }
+            : {}),
           idempotencyKey: `booking-support-acknowledgement/${attemptId}`,
         },
         controller.signal,

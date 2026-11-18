@@ -88,17 +88,15 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
   expect(button.querySelector("svg rect")).not.toBeNull();
   const details = document.querySelector(".confirmation-full-details")!;
   expect(button.closest("summary")).toBeNull();
-  expect(button.closest(".confirmation-details-row")).toBe(
-    details.parentElement,
-  );
-  expect(screen.getByText("Paid").parentElement).toBe(
-    screen.getByRole("heading", { name: "Order Summary" }).parentElement,
+  const paid = screen.getByText("Paid");
+  expect(button.closest(".confirmation-paid-actions")).toBe(paid.parentElement);
+  expect(paid.closest(".review-head")).toBe(
+    screen.getByRole("heading", { name: "Your booking" }).parentElement,
   );
   expect(details.tagName).toBe("DIV");
   expect(screen.getByText("Booking Contact")).toBeVisible();
   expect(
-    button.compareDocumentPosition(screen.getByText("Paid")) &
-      Node.DOCUMENT_POSITION_FOLLOWING,
+    paid.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
   await act(async () => {
     fireEvent.click(button);

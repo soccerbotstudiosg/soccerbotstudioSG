@@ -362,7 +362,7 @@ function SessionPresentation({
             </button>
           ) : (
             <Link href="/book/time/" className="button">
-              Choose Date & Time <Icon name="chevron" />
+              Choose sessions <Icon name="chevron" />
             </Link>
           )}
         </BookingPrimaryAction>

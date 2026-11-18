@@ -291,6 +291,7 @@ export async function identityDelivery(
         message.idempotencyKey,
         {
           recipient: message.email,
+          origin: window.origin,
           sender: window.sender,
           code: message.code,
           idempotencyKey: message.idempotencyKey,

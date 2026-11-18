@@ -1,6 +1,6 @@
 # Database schema
 
-Source inventory:41 application D1 tables from migrations0001–0049 in the local candidate (0049 adds booking_support_reports; earlier inventory verified through isolated SQLite and D1 upgrade checks), and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
+Source inventory:42 application D1 tables from migrations0001–0051 in the local candidate (0049 adds booking_support_reports; earlier inventory verified through isolated SQLite and D1 upgrade checks), and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
 - Migration0039 adds reservation source/expiry records. Migration0040 adds nullable `hitpay_payments.checkout_expires_ms`; apply it before the candidate Worker. Existing rows remain unknown until authenticated provider recovery supplies the hosted-link deadline; no financial window is backfilled or extended.
 - Migration0041 adds immutable no-creation proof and extends the existing operator-operation constraint through a preserving table rebuild. Apply it before code using terminal creation resolution. It does not resolve or backfill historical uncertainty.
@@ -353,3 +353,5 @@ The archive tables are still used: completed/expired availability snapshots reco
 ## Customer help reports (migration0049)
 
 `booking_support_reports` has one row per `attempt_id` (primary key and foreign key to attempts), immutable-by-application first-request time/category, pending/sent state, next retry admission and sent timestamp. Categories distinguish booking, checkout and paid-confirmation uncertainty. Contact data is not duplicated; report and auto-reply text derive from the retained original intent. For new sends, sent means both the staff report and customer acknowledgement were accepted; partial failure retains pending and the original two provider idempotency keys. Existing sent rows are not backfilled. Apply0049 before the candidate Worker. No automatic expiry/deletion or new financial authority is introduced.
+
+`enquiry_requests` (0050) retains request/input hashes, creation/proof timing, pending/sent state, a bounded dispatch claim and sent time; submitted contact/message values are not stored. Migration0051 adds immutable `notification_version` to this table and `booking_support_reports`. Existing rows default to0 (original plain-text payload); new requests explicitly select1 (branded HTML plus text). No historical messages are replayed and financial records are unchanged.

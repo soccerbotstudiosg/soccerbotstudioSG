@@ -249,9 +249,7 @@ export function BookingConfirmation({
                 <Icon name="check" />
               </span>
               <h1>Booking Confirmed</h1>
-              {!preview && (
-                <p>Your booking confirmation will be emailed to you.</p>
-              )}
+              {!preview && <p>We’ll email your confirmation.</p>}
             </>
           )}
           {!pending && verifiedAtMs !== undefined && (
@@ -304,6 +302,7 @@ export function BookingConfirmation({
             aria-label="Booking summary"
           >
             <SessionSummaryHeading
+              title="Your booking"
               draft={{ ...booking.draft, slots: booking.slots }}
             />
             <SessionList slots={booking.slots} showPrices />
@@ -318,99 +317,88 @@ export function BookingConfirmation({
         )}
         {pending && pendingAction}
         {showReceipt && (
-          <div
-            className={`confirmation-details-row${!pending && !preview ? " has-copy" : ""}`}
-          >
-            <div className="confirmation-full-details">
-              <div className="confirmation-details-grid">
-                <section className="review-block">
-                  <SessionSummaryHeading
-                    draft={{ ...booking.draft, slots: booking.slots }}
-                  />
-                </section>
-                <section
-                  className="confirmation-section review-block"
-                  aria-labelledby="confirmation-client"
-                >
-                  <h2 className="section-title" id="confirmation-client">
-                    Booking Contact
-                  </h2>
-                  <ClientDetails contact={booking.draft.contact} />
-                </section>
-                <section
-                  className="confirmation-section review-block"
-                  aria-labelledby="confirmation-location"
-                >
-                  <h2 className="section-title" id="confirmation-location">
-                    Location
-                  </h2>
-                  <p>
-                    <strong>
-                      {[
-                        ...new Set(booking.slots.map((slot) => slot.studio)),
-                      ].join(", ")}
-                    </strong>
-                    <br />
-                    {ADDRESS}
-                  </p>
-                </section>
-                <section
-                  className="confirmation-section confirmation-disclaimers review-block"
-                  aria-labelledby="confirmation-disclaimers"
-                >
-                  <h2 className="section-title" id="confirmation-disclaimers">
-                    Before Your Session
-                  </h2>
-                  <Arrival compact />
-                  {preview && (
-                    <p className="payment-foot">
-                      Payment preview · No money was charged.
-                    </p>
-                  )}
-                </section>
-              </div>
-            </div>
-            {!pending && !preview && (
-              <ConfirmationCopy key={booking.reference} booking={booking} />
-            )}
-          </div>
-        )}
-        {showReceipt && (
-          <section
-            className="confirmation-section review-block"
-            aria-labelledby="confirmation-order"
-          >
-            <div className="review-head">
-              <h2 id="confirmation-order">Order Summary</h2>
-              {!preview &&
-                (pending ? (
-                  <div className="confirmation-paid-actions">
-                    <span className="pill confirmation-pending-status confirmation-paid-status">
-                      Pending
+          <div className="confirmation-full-details">
+            <div className="confirmation-details-grid">
+              <section className="review-block">
+                <SessionSummaryHeading
+                  title="Your booking"
+                  draft={{ ...booking.draft, slots: booking.slots }}
+                  action={
+                    !preview && (
+                      <div className="confirmation-paid-actions">
+                        <span
+                          className={`pill confirmation-paid-status ${pending ? "confirmation-pending-status" : "success"}`}
+                        >
+                          {pending ? "Pending" : "Paid"}
+                        </span>
+                        {!pending && (
+                          <ConfirmationCopy
+                            key={booking.reference}
+                            booking={booking}
+                          />
+                        )}
+                      </div>
+                    )
+                  }
+                />
+              </section>
+              <section
+                className="confirmation-section review-block"
+                aria-labelledby="confirmation-location"
+              >
+                <div className="review-head">
+                  <h2 id="confirmation-location">Location</h2>
+                </div>
+                <p className="confirmation-location">
+                  <strong>
+                    {[
+                      ...new Set(booking.slots.map((slot) => slot.studio)),
+                    ].join(", ")}
+                  </strong>
+                  <br />
+                  {ADDRESS}
+                </p>
+              </section>
+              <section
+                className="confirmation-section review-block"
+                aria-labelledby="confirmation-client"
+              >
+                <div className="review-head">
+                  <h2 id="confirmation-client">Booking Contact</h2>
+                </div>
+                <ClientDetails contact={booking.draft.contact} />
+              </section>
+              <section
+                className="confirmation-section review-block"
+                aria-labelledby="confirmation-order"
+              >
+                <div className="review-head">
+                  <h2 id="confirmation-order">Order Summary</h2>
+                </div>
+                <SessionList slots={booking.slots} showPrices />
+                <div className="price-breakdown">
+                  <div className="line-item total confirmation-total">
+                    <span>
+                      {pending ? "Total" : "Total Paid"}
+                      {preview ? " · Preview" : ""}
+                    </span>
+                    <span className="confirmation-paid-amount">
+                      <strong>
+                        <span className="total-currency">SGD</span>{" "}
+                        {money(booking.totalCents)}
+                      </strong>
                     </span>
                   </div>
-                ) : (
-                  <span className="pill success confirmation-paid-status">
-                    Paid
-                  </span>
-                ))}
+                </div>
+              </section>
+              <Arrival className="confirmation-disclaimers" />
+              {preview && (
+                <p className="payment-foot">
+                  Payment preview · No money was charged.
+                </p>
+              )}
             </div>
-            <SessionList slots={booking.slots} showPrices />
-            <div className="price-breakdown">
-              <div className="line-item total confirmation-total">
-                <span>
-                  {pending ? "Total" : "Total Paid"}
-                  {preview ? " · Preview" : ""}
-                </span>
-                <span className="confirmation-paid-amount">
-                  <strong>
-                    <span className="total-currency">SGD</span>{" "}
-                    {money(booking.totalCents)}
-                  </strong>
-                </span>
-              </div>
-            </div>
-          </section>
+          </div>
         )}
       </section>
 
@@ -422,7 +410,7 @@ export function BookingConfirmation({
             onClick={() => void leave(onAgain)}
           >
             <Icon name="plus" />
-            <span>Make another booking</span>
+            <span>Book another session</span>
           </button>
           <a
             className="button secondary"

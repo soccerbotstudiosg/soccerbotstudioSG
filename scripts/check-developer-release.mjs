@@ -856,6 +856,29 @@ try {
     paymentsBeforeSupport,
     "Enquiry upgrade must not rewrite financial evidence",
   );
+  const enquiryBeforePresentation = (
+    await db
+      .prepare("SELECT * FROM enquiry_requests ORDER BY request_key")
+      .all()
+  ).results;
+  await migrate("0051_notification_presentation.sql");
+  for (const [table, order, before] of [
+    ["enquiry_requests", "request_key", enquiryBeforePresentation],
+    ["booking_support_reports", "attempt_id", supportBeforeEnquiry],
+  ]) {
+    const after = (
+      await db.prepare(`SELECT * FROM ${table} ORDER BY ${order}`).all()
+    ).results;
+    assert.deepEqual(
+      after,
+      before.map((row) => ({ ...row, notification_version: 0 })),
+      "Existing notification payloads retain version zero",
+    );
+    await assert.rejects(
+      db.prepare(`UPDATE ${table} SET notification_version=1`).run(),
+      /notification_version_immutable/,
+    );
+  }
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,

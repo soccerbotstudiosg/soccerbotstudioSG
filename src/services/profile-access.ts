@@ -1,5 +1,6 @@
 import { safeRead, safeWrite } from "./storage";
 // Coordinate booking/profile access loss; this state never grants server authority.
+const noticeKey = "soccerbot-booking-access-notice";
 const expiryKey = "soccerbot-booking-access-expiry";
 let rememberedExpiry: number | null = null;
 let generation = 0;
@@ -70,4 +71,18 @@ export function bookingAccessExpired() {
     deadline > 0 &&
     deadline <= Date.now()
   );
+}
+
+/** Retain access-loss presentation only for an active booking journey. */
+export function rememberBookingAccessNotice(reason: AccessLoss) {
+  safeWrite(noticeKey, reason);
+}
+/** Restore only a display notice; this never grants or revokes booking authority. */
+export function bookingAccessNotice() {
+  const reason = safeRead(noticeKey);
+  return reason === "session" || reason === "profile" ? reason : null;
+}
+/** Dismiss the departed journey's notice after renewed navigation or explicit exit. */
+export function clearBookingAccessNotice() {
+  safeWrite(noticeKey, null);
 }

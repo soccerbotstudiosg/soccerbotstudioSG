@@ -48,7 +48,7 @@ test("guest selection advances locally without repeating access or showing prepa
   await waitFor(() =>
     expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Guest" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
   expect(navigation.push).toHaveBeenCalledWith("/book/session/");
   expect(guest).not.toHaveBeenCalled();
   if (vi.isFakeTimers())
@@ -57,13 +57,17 @@ test("guest selection advances locally without repeating access or showing prepa
     expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
   );
   expect(screen.queryByText("Preparing booking…")).toBeNull();
-  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
-  expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue with email" }),
+  ).toBeEnabled();
   rerender(view("session"));
   expect(screen.getByRole("heading", { name: "Your session" })).toBeVisible();
   expect(screen.getByLabelText("Booking identity")).toHaveTextContent("Guest");
   rerender(view("account"));
-  fireEvent.click(screen.getByRole("button", { name: "Guest" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
   expect(guest).not.toHaveBeenCalled();
   if (vi.isFakeTimers())
     await act(async () => vi.advanceTimersByTimeAsync(1000));
@@ -86,7 +90,9 @@ test("account leaving email challenge ignores delayed completion and live mode n
       <BookingPage step="account" />
     </BookingProvider>,
   );
-  fireEvent.click(await screen.findByRole("button", { name: /Sign in/ }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Continue with email" }),
+  );
   for (const invalid of [
     "",
     "missing-at.example.com",
@@ -101,9 +107,7 @@ test("account leaving email challenge ignores delayed completion and live mode n
       "Enter a valid email address.",
     );
     fireEvent.submit(
-      screen
-        .getByRole("button", { name: "Get Verification Code" })
-        .closest("form")!,
+      screen.getByRole("button", { name: "Email me a code" }).closest("form")!,
     );
     expect(challenge).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Email address")).toHaveAttribute(
@@ -115,9 +119,7 @@ test("account leaving email challenge ignores delayed completion and live mode n
     target: { value: "synthetic@example.invalid" },
   });
   fireEvent.submit(
-    screen
-      .getByRole("button", { name: "Get Verification Code" })
-      .closest("form")!,
+    screen.getByRole("button", { name: "Email me a code" }).closest("form")!,
   );
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
   await act(async () =>
@@ -186,7 +188,9 @@ test("signed-in customer manages saved contact on Account without entering unava
   expect(
     screen.getByRole("status", { name: "Opening booking" }),
   ).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue as guest" }),
+  ).toBeNull();
   expect(screen.queryByText("Welcome back")).toBeNull();
   await act(async () => releaseProfile());
   expect(
@@ -214,7 +218,7 @@ test("signed-in customer manages saved contact on Account without entering unava
   fireEvent.click(screen.getByRole("button", { name: "Save contact details" }));
   const savedNotice = await screen.findByText("Details saved.");
   expect(savedNotice).toHaveClass("notice", "success");
-  expect(savedNotice).toHaveFocus();
+  await waitFor(() => expect(savedNotice).toHaveFocus());
   expect(
     screen.getByRole("heading", { name: "Saved contact details" }),
   ).toBeVisible();
@@ -373,16 +377,22 @@ test("all-device signout shows failure, permits retry and clears the signed-in e
   ).toBeNull();
   expect(screen.getByRole("alert")).toHaveClass("alert");
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
   await act(async () =>
     fireEvent.click(screen.getByRole("button", { name: "Try again" })),
   );
   if (vi.isFakeTimers())
     await act(async () => vi.advanceTimersByTimeAsync(1000));
   expect(document.querySelector(".booking-flow-overlay")).toBeNull();
-  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
   await act(async () => finishSignOut());
-  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
   expect(screen.queryByText(identity.email)).not.toBeInTheDocument();
   if (vi.isFakeTimers())
     await act(async () => vi.advanceTimersByTimeAsync(1000));
@@ -448,20 +458,20 @@ test("switching email clears the old account and supports back guest and fresh r
   await waitFor(() =>
     expect(document.querySelector(".booking-flow-overlay")).toBeNull(),
   );
-  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue as guest" }),
+  ).toBeNull();
   expect(
     screen.queryByRole("button", { name: "Continue signed in" }),
   ).toBeNull();
   expect(screen.getByLabelText("Email address")).toBeEnabled();
   expect(
-    screen.getByRole("button", { name: "Get Verification Code" }),
+    screen.getByRole("button", { name: "Email me a code" }),
   ).toBeDisabled();
   fireEvent.click(
     screen.getByRole("button", { name: "Complete synthetic security check" }),
   );
-  expect(
-    screen.getByRole("button", { name: "Get Verification Code" }),
-  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Email me a code" })).toBeEnabled();
   await act(async () => finishSignOut());
   await screen.findByRole("heading", { name: "Sign in" });
   if (vi.isFakeTimers())
@@ -476,17 +486,17 @@ test("switching email clears the old account and supports back guest and fresh r
   expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.getByLabelText("Remember me")).not.toBeChecked();
   fireEvent.click(screen.getByRole("button", { name: "Back" }));
-  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
   expect(screen.queryByText("old@example.invalid")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "new@example.invalid" },
   });
   fireEvent.click(screen.getByLabelText("Remember me"));
   fireEvent.submit(
-    screen
-      .getByRole("button", { name: "Get Verification Code" })
-      .closest("form")!,
+    screen.getByRole("button", { name: "Email me a code" }).closest("form")!,
   );
   await screen.findByLabelText("Verification code");
   fireEvent.change(screen.getByLabelText("Verification code"), {
@@ -520,16 +530,14 @@ test("switching email clears the old account and supports back guest and fresh r
     expect(screen.queryByText("new@example.invalid")).not.toBeInTheDocument(),
   );
   expect(signOut).toHaveBeenLastCalledWith(expect.any(AbortSignal), true);
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.getByLabelText("Remember me")).not.toBeChecked();
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "new@example.invalid" },
   });
   fireEvent.submit(
-    screen
-      .getByRole("button", { name: "Get Verification Code" })
-      .closest("form")!,
+    screen.getByRole("button", { name: "Email me a code" }).closest("form")!,
   );
   await screen.findByLabelText("Verification code");
   fireEvent.change(screen.getByLabelText("Verification code"), {
@@ -585,7 +593,7 @@ test("expired continue-signed-in state returns a usable email choice instead of 
   expect(
     screen.queryByRole("button", { name: "Continue signed in" }),
   ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(screen.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
@@ -636,7 +644,7 @@ test("failed profile saves keep the form and successful retry acknowledges in pl
   fireEvent.click(screen.getByRole("button", { name: "Save contact details" }));
   const savedNotice = await screen.findByText("Details saved.");
   expect(savedNotice).toHaveClass("notice", "success");
-  expect(savedNotice).toHaveFocus();
+  await waitFor(() => expect(savedNotice).toHaveFocus());
   expect(
     screen.getByRole("heading", { name: "Saved contact details" }),
   ).toBeVisible();
@@ -676,15 +684,13 @@ test("invalid code can return to guest options without carrying an old error", a
     </BookingProvider>,
   );
   await act(async () => {});
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "synthetic@example.invalid" },
   });
   fireEvent.submit(
-    screen
-      .getByRole("button", { name: "Get Verification Code" })
-      .closest("form")!,
+    screen.getByRole("button", { name: "Email me a code" }).closest("form")!,
   );
   await screen.findByLabelText("Verification code");
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
@@ -704,11 +710,11 @@ test("invalid code can return to guest options without carrying an old error", a
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
   expect(
-    screen.getByRole("button", { name: "Get Verification Code" }),
+    screen.getByRole("button", { name: "Continue as guest" }),
   ).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
+  expect(screen.getByRole("button", { name: "Email me a code" })).toBeEnabled();
 });
 
 test("remembered identity restoration shows only the full-width welcome card without a guest flash", async () => {
@@ -752,13 +758,19 @@ test("remembered identity restoration shows only the full-width welcome card wit
   expect(
     screen.queryByRole("heading", { name: "Start your booking" }),
   ).toBeNull();
-  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue as guest" }),
+  ).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue with email" }),
+  ).toBeNull();
   await act(async () => finish());
   expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
   expect(document.querySelector(".access-options-verified")).not.toBeNull();
   expect(document.querySelectorAll(".access-option")).toHaveLength(1);
-  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue as guest" }),
+  ).toBeNull();
   expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
   expect(
     screen.queryByRole("button", { name: "Try signing out again" }),
@@ -768,7 +780,9 @@ test("remembered identity restoration shows only the full-width welcome card wit
   ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled(),
+    expect(
+      screen.getByRole("button", { name: "Continue as guest" }),
+    ).toBeEnabled(),
   );
   expect(document.querySelectorAll(".access-option")).toHaveLength(1);
   expect(screen.getByText("or")).toBeVisible();
@@ -807,16 +821,22 @@ test("remembered identity restoration shows only the full-width welcome card wit
     expect(
       screen.getByRole("status", { name: "Opening booking" }),
     ).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Continue as guest" }),
+    ).toBeNull();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(9999);
     });
-    expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Continue as guest" }),
+    ).toBeNull();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     expect(signal?.aborted).toBe(true);
-    expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Continue as guest" }),
+    ).toBeEnabled();
     expect(
       screen.queryByRole("status", { name: "Opening booking" }),
     ).toBeNull();
@@ -893,7 +913,7 @@ test("guest identity is shown only after choosing guest and stays hidden on retu
   const { rerender } = render(view("account"));
   await act(async () => {});
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Guest" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
   await waitFor(() =>
     expect(navigation.push).toHaveBeenCalledWith("/book/session/"),
   );
@@ -915,8 +935,10 @@ test("guest identity is shown only after choosing guest and stays hidden on retu
     screen.getByRole("heading", { name: "Start your booking" }),
   ).toBeVisible();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
-  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  expect(
+    screen.getByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(screen.getByLabelText("Email address")).toBeVisible();
   expect(screen.queryByLabelText("Booking identity")).toBeNull();
   expect(guest).not.toHaveBeenCalled();
@@ -958,14 +980,16 @@ test("email resend follows server deadlines and third-request cooldown without a
         </BookingProvider>,
       ));
     });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue with email" }),
+    );
     fireEvent.change(screen.getByLabelText("Email address"), {
       target: { value: "timer@example.invalid" },
     });
     await act(async () => {
       fireEvent.submit(
         screen
-          .getByRole("button", { name: "Get Verification Code" })
+          .getByRole("button", { name: "Email me a code" })
           .closest("form")!,
       );
     });
@@ -1094,31 +1118,31 @@ test("email request throttling displays server retry time without automatic or p
         </BookingProvider>,
       ));
     });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue with email" }),
+    );
     fireEvent.change(screen.getByLabelText("Email address"), {
       target: { value: "limit@example.invalid" },
     });
     await act(async () => {
       fireEvent.submit(
         screen
-          .getByRole("button", { name: "Get Verification Code" })
+          .getByRole("button", { name: "Email me a code" })
           .closest("form")!,
       );
     });
     expect(screen.getByRole("timer")).toHaveTextContent("07:00");
     expect(
-      screen.getByRole("button", { name: "Get Verification Code" }),
+      screen.getByRole("button", { name: "Email me a code" }),
     ).toBeDisabled();
     fireEvent.submit(
-      screen
-        .getByRole("button", { name: "Get Verification Code" })
-        .closest("form")!,
+      screen.getByRole("button", { name: "Email me a code" }).closest("form")!,
     );
     expect(challenge).toHaveBeenCalledTimes(1);
     vi.setSystemTime(Date.now() + 420000);
     fireEvent(window, new Event("focus"));
     expect(
-      screen.getByRole("button", { name: "Get Verification Code" }),
+      screen.getByRole("button", { name: "Email me a code" }),
     ).toBeEnabled();
     expect(
       screen.queryByText("Too many code requests. Try again later."),
@@ -1170,17 +1194,17 @@ test("fresh security proof clears only stale security feedback and reentry start
     </BookingProvider>,
   );
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+    expect(
+      screen.getByRole("button", { name: "Continue with email" }),
+    ).toBeEnabled(),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "proof@example.invalid" },
   });
   const submit = () =>
     fireEvent.submit(
-      screen
-        .getByRole("button", { name: "Get Verification Code" })
-        .closest("form")!,
+      screen.getByRole("button", { name: "Email me a code" }).closest("form")!,
     );
   await act(async () => {
     submit();
@@ -1225,12 +1249,16 @@ test("fresh security proof clears only stale security feedback and reentry start
   expect(
     screen.queryByRole("button", { name: "Manage saved contact" }),
   ).toBeNull();
-  expect(screen.queryByRole("button", { name: "Guest" })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Continue as guest" }),
+  ).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Sign out all devices" }));
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+    expect(
+      screen.getByRole("button", { name: "Continue with email" }),
+    ).toBeEnabled(),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(await screen.findByLabelText("Email address")).toHaveValue("");
   expect(screen.queryByRole("alert")).toBeNull();
   await act(async () => {
@@ -1286,9 +1314,7 @@ test("email requests wait for background signout while the replacement form open
     target: { value: "new@example.invalid" },
   });
   fireEvent.submit(
-    screen
-      .getByRole("button", { name: "Get Verification Code" })
-      .closest("form")!,
+    screen.getByRole("button", { name: "Email me a code" }).closest("form")!,
   );
   if (vi.isFakeTimers())
     await act(async () => vi.advanceTimersByTimeAsync(1000));

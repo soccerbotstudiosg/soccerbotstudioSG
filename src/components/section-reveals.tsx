@@ -1,10 +1,5 @@
 "use client";
-import {
-  useEffect,
-  useLayoutEffect,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "./icon";
 
@@ -109,20 +104,14 @@ export function SectionReveals() {
 }
 
 /** Show one scroll control during movement and for three seconds afterwards. */
-function ScrollTopControl({ booking }: { booking: boolean }) {
-  const [activity, setActivity] = useState({ visible: false, top: 0 });
+function ScrollTopControl() {
+  const control = useRef<HTMLButtonElement>(null);
+  const [activity, setActivity] = useState({ visible: false });
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = () => {
       clearTimeout(timer);
-      const navigation = document.querySelector(".booking-navigation");
-      const header = document.querySelector(".site-header");
-      const top =
-        Math.max(
-          navigation?.getBoundingClientRect().bottom ?? 0,
-          header?.getBoundingClientRect().bottom ?? 0,
-        ) + 8;
-      setActivity({ visible: window.scrollY > 0, top });
+      setActivity({ visible: window.scrollY > 0 });
       timer = setTimeout(
         () => setActivity((current) => ({ ...current, visible: false })),
         3000,
@@ -135,32 +124,44 @@ function ScrollTopControl({ booking }: { booking: boolean }) {
     };
   }, []);
   useLayoutEffect(() => {
-    if (!booking || !activity.visible) return;
-    const circle = document.querySelector<HTMLElement>(".booking-back-to-top");
+    const circle = control.current;
+    if (!activity.visible || !circle) return;
     const action = document.querySelector(".booking-primary-action > .button");
-    if (!circle || !action) return;
-    circle.style.setProperty("--back-to-top-top", `${activity.top}px`);
-    const cue = circle.getBoundingClientRect();
-    const button = action.getBoundingClientRect();
-    if (
-      cue.left < button.right &&
-      cue.right > button.left &&
-      cue.top < button.bottom &&
-      cue.bottom > button.top
-    )
-      // Keep both controls usable when the primary action reaches its resting position.
-      circle.style.setProperty("--back-to-top-top", `${button.bottom + 8}px`);
-  }, [activity, booking]);
+    /** Lift this single bottom-right control only when it overlaps the primary action. */
+    function measure() {
+      if (!circle) return;
+      circle.style.removeProperty("--back-to-top-clearance");
+      const cue = circle.getBoundingClientRect();
+      const button = action?.getBoundingClientRect();
+      if (
+        button &&
+        cue.left < button.right &&
+        cue.right > button.left &&
+        cue.bottom + 12 > button.top &&
+        cue.top < button.bottom + 12
+      ) {
+        circle.style.setProperty(
+          "--back-to-top-clearance",
+          `${window.innerHeight - button.top + 12}px`,
+        );
+      }
+    }
+    measure();
+    const observer =
+      "ResizeObserver" in window ? new ResizeObserver(measure) : null;
+    if (action) observer?.observe(action);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [activity]);
   if (!activity.visible) return null;
   return (
     <button
       type="button"
-      className={`back-to-top${booking ? " booking-back-to-top" : ""}`}
-      style={
-        booking
-          ? ({ "--back-to-top-top": `${activity.top}px` } as CSSProperties)
-          : undefined
-      }
+      ref={control}
+      className="back-to-top"
       aria-label="Back to top"
       title="Back to top"
       onClick={() => {
@@ -180,8 +181,8 @@ function ScrollTopControl({ booking }: { booking: boolean }) {
     </button>
   );
 }
-/** Share the scrolling lifecycle while placing booking controls below navigation. */
+/** Mount one bottom-right scroll control and reset activity on route changes. */
 export function BackToTop() {
   const pathname = usePathname();
-  return <ScrollTopControl key={pathname} booking={isBookingFlow(pathname)} />;
+  return <ScrollTopControl key={pathname} />;
 }

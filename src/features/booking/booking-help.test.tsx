@@ -56,7 +56,9 @@ test("booking help prevents duplicate clicks reports failures honestly and confi
       </BookingProvider>
     );
     let view = render(tree());
-    const button = screen.getByRole("button", { name: "Request Help" });
+    const button = screen.getByRole("button", {
+      name: "Ask the studio to contact me",
+    });
     fireEvent.click(button);
     fireEvent.click(button);
     expect(button).toBeDisabled();
@@ -73,7 +75,9 @@ test("booking help prevents duplicate clicks reports failures honestly and confi
     expect(button).not.toBeDisabled();
     fireEvent.click(button);
     await act(async () => finish(Response.json({ status: "sent" })));
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByRole("status")).toHaveClass("notice", "success");
@@ -95,11 +99,15 @@ test("booking help prevents duplicate clicks reports failures honestly and confi
     view.rerender(tree());
     expect(screen.queryByRole("status")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     attemptId = "00000000-0000-4000-8000-000000000002";
     view.rerender(tree());
     expect(screen.getByRole("alert")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Request Help" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ask the studio to contact me" }),
+    );
     navigation.path = "/book/session/";
     view.rerender(tree(false));
     await act(async () => finish(Response.json({ status: "sent" })));

@@ -13,7 +13,7 @@ import { dateLabel, todaySG } from "@/domain/dates";
 import { SessionStep } from "./session-step";
 import { BookingPage, BookingProgressHeader } from "./booking-page";
 import { BasketContinue, Summary } from "./summary";
-import { ReviewStep } from "./review-step";
+import { Arrival, ReviewStep } from "./review-step";
 import { BookingProvider, useBooking } from "./provider";
 import { demoSession } from "@/services/demo/schedule";
 import { ConfirmationStep } from "./confirmation-step";
@@ -122,14 +122,14 @@ async function calendarScenario(mobile: boolean) {
   expect(crossing).not.toHaveTextContent("instructor rotation");
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   const continues = screen.getAllByRole("link", {
-    name: /^Enter Booking Details/,
+    name: /^Enter contact details/,
   });
   expect(continues).toHaveLength(1);
   for (const control of continues)
     expect(control).toHaveAttribute("href", "/book/details");
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeInTheDocument();
   if (!mobile) {
@@ -214,7 +214,7 @@ async function calendarScenario(mobile: boolean) {
     ).not.toBeInTheDocument();
     expect(
       screen.getAllByRole("button", {
-        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        name: /^Enter contact details(?: \$[\d,.]+)?$/,
       })[0],
     ).toBeDisabled();
     expect(screen.queryByText("Preview controls")).not.toBeInTheDocument();
@@ -250,7 +250,7 @@ async function calendarScenario(mobile: boolean) {
     `${restoredDate}|12:00|demo|faisal`,
   );
   expect(
-    screen.getAllByRole("link", { name: /^Enter Booking Details/ }),
+    screen.getAllByRole("link", { name: /^Enter contact details/ }),
   ).toHaveLength(1);
   await user.click(times().getByRole("button", { name: /14:30–15:10/ }));
   await user.selectOptions(
@@ -324,7 +324,7 @@ async function calendarScenario(mobile: boolean) {
   expect(cartRail.style.getPropertyValue("--scroll-thumb-top")).toBe("90px");
   expect(
     within(cartPanel).queryByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     }),
   ).not.toBeInTheDocument();
   await user.click(
@@ -347,7 +347,7 @@ async function calendarScenario(mobile: boolean) {
   ).toHaveTextContent("1");
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     }),
   ).toHaveLength(1);
   expect(
@@ -404,7 +404,7 @@ test("crossing sessions retain checkout behavior without scheduling notices", as
   ).not.toBeInTheDocument();
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toHaveAttribute("href", "/book/details");
   const cart = screen.getByRole("complementary");
@@ -472,7 +472,7 @@ test("confirmation places three retained actions below the summary with complete
   expect(view.container.querySelector("details")).toBeNull();
   expect(
     disclosure?.querySelector(".session-summary-heading h2"),
-  ).toHaveTextContent("Your Sessions");
+  ).toHaveTextContent("Your booking");
   expect(
     view.container.querySelector(
       ".confirmation-summary .session-summary-heading",
@@ -484,7 +484,7 @@ test("confirmation places three retained actions below the summary with complete
       actions.querySelectorAll("button, a"),
       (action) => action.textContent,
     ),
-  ).toEqual(["Make another booking", "WhatsApp Enquiry", "Back to home"]);
+  ).toEqual(["Book another session", "WhatsApp Enquiry", "Back to home"]);
   expect(disclosure!.compareDocumentPosition(actions)).toBe(
     Node.DOCUMENT_POSITION_FOLLOWING,
   );
@@ -493,34 +493,24 @@ test("confirmation places three retained actions below the summary with complete
     screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent),
-  ).toEqual([
-    "Your Sessions",
-    "Booking Contact",
-    "Location",
-    "Before Your Session",
-    "Order Summary",
-  ]);
+  ).toEqual(["Your booking", "Location", "Booking Contact", "Order Summary"]);
   expect(disclosure).toBeVisible();
   expect(
     Array.from(disclosure!.querySelectorAll("h2"), (node) => node.textContent),
-  ).toEqual([
-    "Your Sessions",
-    "Booking Contact",
-    "Location",
-    "Before Your Session",
-  ]);
+  ).toEqual(["Your booking", "Location", "Booking Contact", "Order Summary"]);
   expect(disclosure!.querySelector(".confirmation-disclaimers")).not.toBeNull();
   const guidance = screen.getByRole("region", { name: "Before your session" });
   expect(within(guidance).getAllByRole("listitem")).toHaveLength(4);
   expect(guidance.querySelector(".arrival-time")?.closest("li")).toBeNull();
   expect(guidance.querySelector(".arrival-time")).toHaveTextContent(
-    "Arrive 10 mins early.",
+    "Please arrive 10 minutes early.",
   );
 
   expect(
     screen.getByRole("region", { name: "Order Summary" }).closest("details"),
   ).toBeNull();
-  expect(disclosure!.querySelector("button, a")).toBeNull();
+  expect(disclosure!.querySelectorAll("button")).toHaveLength(0);
+  expect(disclosure!.querySelector("a")).toBeNull();
   expect(screen.getAllByText("Demo Customer", { exact: true })).toHaveLength(1);
   expect(screen.getAllByText("Studio 1", { exact: true })).toHaveLength(1);
   expect(
@@ -532,6 +522,14 @@ test("confirmation places three retained actions below the summary with complete
   expect(
     screen.queryByText(/Crosses the 15:00 instructor rotation/),
   ).not.toBeInTheDocument();
+  const reviewGuidance = render(<Arrival />);
+  expect(
+    within(reviewGuidance.container).getAllByRole("listitem"),
+  ).toHaveLength(4);
+  expect(
+    reviewGuidance.container.querySelector(".arrival-time")?.closest("li"),
+  ).toBeNull();
+  reviewGuidance.unmount();
 });
 
 test("an open booking page expires a selected slot at its start and keeps it removable", async () => {
@@ -553,7 +551,7 @@ test("an open booking page expires a selected slot at its start and keeps it rem
   });
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeInTheDocument();
   await act(async () => {
@@ -561,7 +559,7 @@ test("an open booking page expires a selected slot at its start and keeps it rem
   });
   expect(
     screen.getAllByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeDisabled();
   await act(async () => {});
@@ -596,7 +594,7 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   expect(basket.getByText(/Session has started/)).toBeVisible();
   expect(
     screen.getAllByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeDisabled();
   expect(loadBooking().draft.slots).toEqual([stale, future]);
@@ -608,7 +606,7 @@ test("restored elapsed sessions remain labelled and removable alongside valid fu
   expect(basket.queryByText(/Session has started/)).not.toBeInTheDocument();
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeInTheDocument();
 });
@@ -663,7 +661,7 @@ test("an open calendar follows Singapore year rollover without deleting its draf
   expect(loadBooking().draft.slots).toEqual([slot]);
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeInTheDocument();
   view.unmount();
@@ -780,9 +778,7 @@ test("calendar back preserves player count with the outlet session and action im
     </BookingProvider>,
   );
   expect(screen.getByRole("region", { name: "Kickoff Special" })).toBeVisible();
-  expect(
-    screen.getByRole("link", { name: "Choose Date & Time" }),
-  ).toBeVisible();
+  expect(screen.getByRole("link", { name: "Choose sessions" })).toBeVisible();
   expect(scroll).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: "Add one player" }));
   view.rerender(
@@ -796,9 +792,7 @@ test("calendar back preserves player count with the outlet session and action im
     </BookingProvider>,
   );
   expect(screen.getByRole("region", { name: "Kickoff Special" })).toBeVisible();
-  expect(
-    screen.getByRole("link", { name: "Choose Date & Time" }),
-  ).toBeVisible();
+  expect(screen.getByRole("link", { name: "Choose sessions" })).toBeVisible();
   expect(screen.getByRole("status", { name: "Players" })).toHaveTextContent(
     "2",
   );
@@ -812,7 +806,7 @@ test("calendar back preserves player count with the outlet session and action im
     screen.queryByRole("button", { name: "Add one player" }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("link", { name: "Choose Date & Time" }),
+    screen.queryByRole("link", { name: "Choose sessions" }),
   ).not.toBeInTheDocument();
   await user.click(
     screen.getByRole("button", {
@@ -1012,7 +1006,7 @@ test("pre-checkout recovery restores fresh display times without releasing the o
     original,
   ]);
   expect(
-    screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
   ).toBeDisabled();
   await act(async () => fireEvent.click(screen.getByText("Try Review")));
   expect(reviewResult).toBe(false);
