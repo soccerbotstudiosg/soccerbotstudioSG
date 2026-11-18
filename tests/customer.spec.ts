@@ -2887,7 +2887,7 @@ function bookingTypography(page: Page) {
   async function bookingDocumentBody() {
     const styles = await page
       .locator(
-        ".booking-document p:not(.payment-foot), .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
+        ".booking-document p:not(.payment-foot), .booking-document .arrival-points li, .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
       )
       .evaluateAll((nodes) =>
         nodes.map((node) => {
@@ -2899,6 +2899,7 @@ function bookingTypography(page: Page) {
             total: node.matches(".line-item.total"),
             amount: node.matches(".confirmation-total strong"),
             supporting: node.matches("small"),
+            arrival: !!node.closest(".arrival-information"),
           };
         }),
       );
@@ -2907,15 +2908,17 @@ function bookingTypography(page: Page) {
       styles.filter(
         (style) =>
           style.size !==
-            (style.supporting
-              ? "14px"
-              : style.amount || style.total
-                ? "20px"
-                : "16px") ||
+            (style.arrival && page.viewportSize()!.width <= 700
+              ? "12px"
+              : style.supporting
+                ? "14px"
+                : style.amount || style.total
+                  ? "20px"
+                  : "16px") ||
           style.family !== styles[0].family ||
           !style.family.includes("Roboto"),
       ),
-      "Booking body uses 16px Roboto; total labels and amounts use 20px",
+      "Booking body uses 16px Roboto; mobile arrival guidance uses 12px and totals use 20px",
     ).toEqual([]);
   }
   return { brand, pageHeading, sectionType, bookingDocumentBody };
