@@ -197,9 +197,29 @@ async function details(page: Page) {
   await page
     .getByLabel("Mobile number", { exact: false })
     .fill("+65 8123 4567");
-  await page
-    .getByRole("button", { name: "Confirm email address is correct" })
-    .click();
+  const emailControl = page.getByRole("button", {
+    name: "Confirm email address is correct",
+  });
+  const emailInput = page.getByRole("textbox", { name: /^Email address/ });
+  await expect(emailControl).toHaveCSS("top", "1px");
+  await expect(emailControl).toHaveCSS("bottom", "1px");
+  await expect(emailControl).toHaveCSS("right", "1px");
+  await expect(emailControl).toHaveCSS("border-left-width", "1px");
+  const emailBox = await emailInput.boundingBox();
+  const controlBox = await emailControl.boundingBox();
+  expect(controlBox!.height).toBeCloseTo(emailBox!.height - 2, 0);
+  await expect(page.locator("#email-check-help")).toHaveText(
+    "Select the blue circle to confirm your email address.",
+  );
+  await expect(
+    emailControl.locator(".email-transfer-particles circle"),
+  ).toHaveCount(3);
+  await emailControl.click();
+  await expect(emailControl).toHaveAttribute("data-state", "valid");
+  await expect(emailControl.locator(".email-transfer-tick")).toHaveCSS(
+    "opacity",
+    "1",
+  );
   await page
     .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
     .click();
@@ -472,6 +492,7 @@ test("public routes remove staff access and fit the viewport", async ({
   const promotions = page.locator(".home-promotion");
   await expect(promotions).toHaveCount(2);
   for (const promotion of await promotions.all()) {
+    await expect(promotion).toHaveCSS("margin-top", "0px");
     const box = await promotion.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.x).toBeCloseTo(0, 0);
@@ -528,7 +549,7 @@ test("public routes remove staff access and fit the viewport", async ({
       );
       await expect(panel.locator(".feature-copy")).toHaveCSS(
         "padding-bottom",
-        "32px",
+        "80px",
       );
     }
     expect((await photo.boundingBox())!.height).toBeGreaterThanOrEqual(360);
@@ -537,7 +558,7 @@ test("public routes remove staff access and fit the viewport", async ({
       await promotions
         .nth(1)
         .evaluate((node) => parseFloat(getComputedStyle(node).marginTop)),
-    ).toBe(12);
+    ).toBe(0);
     await expect(photo.locator("img")).toHaveCSS("object-position", "50% 80%");
   }
   if (page.viewportSize()!.width <= 700) {
@@ -598,6 +619,20 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(chevron).toHaveCSS("animation-name", "feature-chevron-nudge");
   await expect(chevron).toHaveCSS("animation-iteration-count", "infinite");
   await expect(chevron.locator(".feature-chevron path")).toHaveCount(2);
+  await expect(
+    firstPanel.locator(".feature-heading .feature-arrow"),
+  ).toHaveCount(0);
+  const cueBounds = await firstPanel.locator(".feature-arrow").boundingBox();
+  const copyBounds = await firstPanel.locator(".feature-copy").boundingBox();
+  expect(cueBounds!.width).toBe(25);
+  expect(cueBounds!.height).toBe(18);
+  expect(
+    copyBounds!.y + copyBounds!.height - cueBounds!.y - cueBounds!.height,
+  ).toBeGreaterThanOrEqual(24);
+  expect(
+    copyBounds!.x + copyBounds!.width - cueBounds!.x - cueBounds!.width,
+  ).toBeGreaterThanOrEqual(24);
+
   await expect(chevron.locator(".feature-chevron path").first()).toHaveCSS(
     "animation-name",
     "feature-chevron-light",
@@ -955,6 +990,7 @@ test("public routes remove staff access and fit the viewport", async ({
     const imageBox = await studioImage.boundingBox();
     expect(imageBox!.width).toBeGreaterThanOrEqual(photoFrame!.width);
     expect(imageBox!.height).toBeGreaterThanOrEqual(photoFrame!.height);
+    await expect(row).toHaveCSS("margin-top", "0px");
     await expect(row.locator("a, button")).toHaveCount(0);
     await expect(row).toHaveAttribute("tabindex", "0");
     if (page.viewportSize()!.width <= 700) {
@@ -3985,12 +4021,27 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(
     page.getByRole("combobox", { name: `Trainer for ${date} at 15:20` }),
   ).toHaveValue(`${date}|15:20|demo|daniel`);
-  await page
-    .getByRole("button", {
-      name: `Remove selected session ${date} at 15:20`,
-      exact: true,
-    })
-    .click();
+  const removeAfternoon = page.getByRole("button", {
+    name: `Remove selected session ${date} at 15:20`,
+    exact: true,
+  });
+  await expect(removeAfternoon).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+  await expect(removeAfternoon).toHaveCSS("border-top-width", "0px");
+  await expect(removeAfternoon).toHaveCSS("color", "rgb(0, 0, 0)");
+  await expect(removeAfternoon).toHaveCSS("width", "44px");
+  await expect(removeAfternoon).toHaveCSS("height", "44px");
+  const removeBounds = await removeAfternoon.boundingBox();
+  const rateBounds = await selectedAfternoon
+    .locator(".time-rate")
+    .boundingBox();
+  expect(rateBounds!.y).toBeGreaterThanOrEqual(
+    removeBounds!.y + removeBounds!.height,
+  );
+  expect(rateBounds!.x + rateBounds!.width).toBeGreaterThan(removeBounds!.x);
+  await removeAfternoon.click();
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(1);
   await expect(

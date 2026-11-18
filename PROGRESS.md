@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-18 November2026: PR94 consolidates the approved hero offer, photo links, readiness-only loaders, blur/submission form validation, enquiry requirements feedback, animated email-check dots, full confirmation details/actions below summary,2×2 compact guidance and selected-slot ×/trainer editing. Owner approved the bounded picomatch exception until25 November00:00 SGT; this accepts documented tooling risk and is not a fix.
+18 November 2026: PR95 on fix/section-cues-slot-remove now includes the approved email transfer control alongside homepage cues, unboxed slot removal, equal tile heights and flush subsection spacing. The latest email mockup is approved for implementation and staging; no merge requested.
 
 ## Next actions
 
-Combined candidate prepared in /workspace/consolidated-release; original /workspace/404-artwork dependency symlink remains intact. Includes the reviewed package/lock changes from PR84 with regenerated versions. Two local review rounds are recorded in Journey: full original-version verification passed; updated-version full run found one stale towel-copy assertion (399/400), repaired with43 protected-confirmation tests passing. Final full code verification passed on the combined dependencies:400 component/service,213 tooling,58 installer cases, audit policy, format/lint/types, build and export. The disclaimer copy is aligned with /workspace/mockups/session-guidance-preview.html: “Arrive 10 mins early. Late arrivals may lose time.” Focused verification covers this final copy delta. PR94 is published. Run44221696665 exposed four stale browser contracts; e57d766 fixes mobile typography and the current repair controls home image readiness plus uses the selected-slot × action. Source/inventory, lint and types pass; exact-head browser CI, staging and health remain pending. Close PR84 as superseded only once its exact update is covered by verified PR94. Owner acceptance remains required before merge. No provider actions or assistant browser execution.
+Complete local verify:code passed:400 component/service tests,213 tooling tests,58 installer tests, source/policy/inventory/audit/format/lint/types, build and15-route export. A bounded mutation removing the retry success reset failed the new aria-pressed assertion as expected; original bytes and full test receipt were restored. Prior93105c4 run44233925214 passed all13 jobs. Push the consolidated animation candidate and inspect its own exact-head frontend/backend/live-email gates and staging health; no merge authorized. Browser execution remains owner/CI-only. Prior failures/cancellations remain in Journey. The temporary picomatch exception expires25 November00:00 SGT.
 
 ## Ordered work after this slice
 
