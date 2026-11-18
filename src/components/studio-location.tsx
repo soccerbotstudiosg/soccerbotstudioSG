@@ -32,8 +32,8 @@ export function StudioLocation() {
             />
           </div>
           <p className="studio-map-help">
-            Find us on level 5, unit 01. Open Google Maps to explore
-            street-level and available 3D views, or get directions.
+            Take the lift from the food court to Level 5. Turn left as you exit
+            the lift lobby.
           </p>
           <a
             className="button wide"

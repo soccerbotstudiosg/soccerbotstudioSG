@@ -978,6 +978,13 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(contentBox).not.toBeNull();
   expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
   expect(contentBox!.y).toBeCloseTo(heroBox!.y + heroBox!.height + 12, 0);
+  const studioBackAlignment = page.locator(".studio-back");
+  const backIcon = await studioBackAlignment.locator("svg").boundingBox();
+  const backLabel = await studioBackAlignment.locator("span").boundingBox();
+  expect(backIcon!.y + backIcon!.height / 2).toBeCloseTo(
+    backLabel!.y + backLabel!.height / 2,
+    0,
+  );
   const signatureBox = await page.locator(".studio-signature").boundingBox();
   const studioHeaderBox = await page.locator(".site-header").boundingBox();
   expect(signatureBox).not.toBeNull();
@@ -4442,6 +4449,21 @@ async function expectCalendarHeadingLayout(page: Page) {
         .locator(width > 700 ? ".booking-top-title" : ".booking-main")
         .getByRole("heading", { name: "Select dates and times", exact: true }),
     ).toBeVisible();
+    await expect(page.locator(".booking-top .eyebrow")).toHaveCount(0);
+    const verified = page.locator(".booking-verified-status");
+    if (await verified.count()) {
+      await expect(verified.locator("strong")).toHaveCSS(
+        "white-space",
+        "nowrap",
+      );
+      await expect(verified.locator("span")).toHaveCSS("white-space", "nowrap");
+      const fits = await verified.locator("span").evaluate((node) => {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        return range.getBoundingClientRect().width <= node.clientWidth + 1;
+      });
+      expect(fits).toBe(true);
+    }
     const geometry = await calendarTitle.evaluate((node) => {
       const title = node.getBoundingClientRect();
       const badge = document

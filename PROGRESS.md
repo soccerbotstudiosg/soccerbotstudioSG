@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-19 November2026: PR100 on `fix/confirmation-copy-layout` remains open. Candidate0201099 passed all three required gates in run44403603895 and staged successfully in run44406162259 attempt2. Main remains860cfcf6a9a6237205cd063f80066c937148836a. No merge; physical iPad acceptance remains pending.
+19 November2026: PR100 merged as4a6444ec2944293dfb75b4ac87cbf2cbea34b1b2 after all required CI passed and staging servedf5e73aa. Current local branch `fix/booking-status-alignment` starts from that merged main revision.
 
 ## Next actions
 
-The owner requested a follow-up for delayed iPad page scrolling after keyboard dismissal and date/time hints inside enquiry inputs. The shell now follows late document scroll/header resize until deliberate visitor interaction, detecting keyboard reduction against the unobscured viewport baseline. Native date/time controls retain native pickers, with inside-field empty-state hints. A pre-fix focused regression failed as expected (/tmp/ipad-before.log). Two complete non-browser rounds passed on the unchanged candidate (400 unit/component cases each, all guards and production build/export); receipts are /tmp/ipad-round-a.json and /tmp/ipad-round-b.json. Push the same PR, monitor exact-head gates and confirm actual staging health. Owner/CI owns browser execution; request physical iPad acceptance after staging, before merge. Preserve all consolidated booking/expiry/navigation rules. See Journey for prior CI and deployment evidence.
+User requested aligned Studio Back icon/text, removal of the decorative Booking label and right-aligned guest/verified identity with exactly two verified lines. Local source now removes the label, removes the180px desktop badge cap, applies complete-email fitting on all widths and explicitly aligns the Studio Back text/icon. Focused component tests33/33, source guards, types and affected lint passed. Browser assertions cover the icon/text centre and email fitting; execution remains CI-owned. The location popup now includes the approved food-court lift and left-turn directions. Owner subsequently paused publication to address phone email readability. The first full check caught a duplicate browser-test variable; that naming issue is fixed, and the subsequent run was stopped at the owner pause. Owner has now resumed staging: finish consolidated verification, publish a new PR and verify actual staging deployment. Verification email now omits hero/background spacing, uses a160px logo with12px padding and keeps the code44px on mobile; compact body spacing puts the code upfront. Focused isolated email checks passed33/33 in /tmp/email-compact-tests-fixed.log. No booking access/payment/expiry behavior changed.
 
 ## Ordered work after this slice
 

@@ -908,11 +908,14 @@
     font-size: var(--text-meta);
   }
   .booking-verified-status > strong {
+    white-space: nowrap;
     font-weight: var(--weight-heading);
   }
   .booking-verified-status > span {
+    min-width: 0;
     max-width: 100%;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow-wrap: normal;
   }
   @media (max-width: 700px) {
     .booking-title-line {
@@ -929,11 +932,6 @@
     .booking-identity-status {
       max-width: 100%;
       justify-self: end;
-    }
-    .booking-verified-status > span {
-      min-width: 0;
-      white-space: nowrap;
-      overflow-wrap: normal;
     }
   }
 
@@ -1191,6 +1189,8 @@
     align-items: center;
     gap: 4px;
     min-height: 44px;
+    line-height: 1;
+    white-space: nowrap;
     color: var(--color-on-brand);
     font-size: var(--text-label);
     letter-spacing: normal;
@@ -3457,14 +3457,11 @@
     }
     .booking-top-identity {
       min-width: 0;
-      max-width: 180px;
+      max-width: 100%;
     }
     .booking-top-identity .booking-identity-status {
       padding-top: 0;
       max-width: none;
-    }
-    .booking-top-meta > .eyebrow {
-      flex-shrink: 0;
     }
     .booking-shell .time-heading {
       display: grid;

@@ -319,9 +319,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
                     </span>
                   </Link>
                 )}
-                {mobile ? (
-                  <span className="eyebrow text-muted">Booking</span>
-                ) : (
+                {!mobile && (
                   <>
                     <div className="booking-top-title" ref={setTitleTarget} />
                     <div className="booking-top-meta">
@@ -329,7 +327,6 @@ export function BookingPage({ step }: { step: BookingStep }) {
                         className="booking-top-identity"
                         ref={setStatusTarget}
                       />
-                      <span className="eyebrow text-muted">Booking</span>
                     </div>
                   </>
                 )}
