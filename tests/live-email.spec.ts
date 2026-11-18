@@ -797,7 +797,7 @@ test("remembered live account edits and rereads contact while native booking sta
     "81234567",
   );
   await expect(
-    page.getByRole("button", { name: "Country code: Singapore +65" }),
+    page.getByLabel("Country code: Singapore +65", { exact: true }),
   ).toBeVisible();
   expect(
     evidence.calls.filter(

@@ -11,7 +11,14 @@ import { PlayerAppPrompt } from "./player-app-prompt";
 import { PageRefreshBoundary } from "./page-refresh";
 
 const booking = vi.hoisted(() => ({ ready: false }));
-const route = vi.hoisted(() => ({ pathname: "/confirmation/" }));
+const route = vi.hoisted(() => ({
+  pathname: "/confirmation/",
+  started: undefined as number | undefined,
+}));
+vi.mock("./booking-navigation", () => ({
+  useNavigationStarted: () => route.started,
+  useBookingEntryTransition: () => false,
+}));
 vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }));
 vi.mock("@/features/booking/provider", () => ({ useBooking: () => booking }));
 let navigation = "reload";
@@ -26,6 +33,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
   booking.ready = false;
   route.pathname = "/confirmation/";
+  route.started = undefined;
   localStorage.clear();
   sessionStorage.clear();
   navigation = "reload";
@@ -110,11 +118,20 @@ test("refresh cover survives server HTML and hydration until restored state font
   expect(screen.getByRole("status", { name: "Refreshing…" })).toBeVisible();
   expect(screen.getByText("Ready page")).not.toBeVisible();
   expect(requestAnimationFrame).not.toHaveBeenCalled();
+  // An initial protected-route redirect must not uncover unrestored booking state.
+  route.pathname = "/book/account/";
+  view.rerender(<PageRefreshBoundary>{content}</PageRefreshBoundary>);
+  expect(screen.getByRole("status", { name: "Refreshing…" })).toBeVisible();
+  expect(screen.getByText("Ready page")).not.toBeVisible();
   booking.ready = true;
   view.rerender(<PageRefreshBoundary>{content}</PageRefreshBoundary>);
   expect(screen.getByRole("status")).toBeVisible();
   expect(requestAnimationFrame).not.toHaveBeenCalled();
   await act(async () => finishFonts());
+  await act(async () => vi.advanceTimersByTime(999));
+  expect(frame).toBeUndefined();
+  expect(screen.getByRole("status")).toBeVisible();
+  await act(async () => vi.advanceTimersByTime(1));
   expect(frame).toBeDefined();
   expect(screen.getByRole("status")).toBeVisible();
   act(() => frame!(0));
@@ -329,6 +346,14 @@ test("homepage revisits retain one neutral cover through image decoding without 
   for (const from of ["/studio/", "/enquiry/", "/book/account/"]) {
     route.pathname = from;
     view.rerender(<PageRefreshBoundary>{content}</PageRefreshBoundary>);
+    if (from === "/studio/") {
+      frame = undefined;
+      await act(async () => vi.advanceTimersByTime(999));
+      expect(frame).toBeUndefined();
+      expect(screen.getByRole("status")).toBeVisible();
+      await act(async () => vi.advanceTimersByTime(1));
+      act(() => frame!(0));
+    }
     expect(document.getElementById("page-refresh")).toBeNull();
     frame = undefined;
     route.pathname = "/";
@@ -351,6 +376,21 @@ test("homepage revisits retain one neutral cover through image decoding without 
     expect(hero).toBeVisible();
     expect(screen.queryByRole("status")).toBeNull();
   }
+  // A cached Home shares the click clock, including time spent before arrival.
+  route.pathname = "/studio/";
+  view.rerender(<PageRefreshBoundary>{content}</PageRefreshBoundary>);
+  frame = undefined;
+  deferDecode = false;
+  route.started = performance.now() - 600;
+  route.pathname = "/";
+  view.rerender(<PageRefreshBoundary>{image}</PageRefreshBoundary>);
+  await act(async () => vi.advanceTimersByTime(399));
+  expect(frame).toBeUndefined();
+  expect(screen.getByRole("status", { name: "Loading page" })).toBeVisible();
+  await act(async () => vi.advanceTimersByTime(1));
+  expect(frame).toBeDefined();
+  act(() => frame!(0));
+  expect(screen.queryByRole("status")).toBeNull();
 });
 
 test("initial player app prompt waits until page loading finishes", async () => {

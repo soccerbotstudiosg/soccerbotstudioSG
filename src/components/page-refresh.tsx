@@ -5,6 +5,7 @@ import {
   useEffect,
   useLayoutEffect,
   useState,
+  useRef,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -15,7 +16,9 @@ import {
   checkoutRouteLoadingLabel,
   useBookingLoadingState,
 } from "@/features/booking/booking-loading";
-import { BrandLoading } from "./brand-loading";
+import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
+
+import { useNavigationStarted } from "./booking-navigation";
 
 const PageReady = createContext(true);
 /** Delay public overlays until the page cover has revealed ready content. */
@@ -41,21 +44,29 @@ const isHistoryReturn = () =>
 export function PageRefreshBoundary({ children }: { children: ReactNode }) {
   const { ready } = useBooking();
   const pathname = usePathname();
-  const [visit, setVisit] = useState({ pathname, initial: true, episode: 0 });
+  const navigationStarted = useNavigationStarted();
+  const [visit, setVisit] = useState(() => ({
+    pathname,
+    initial: true,
+    episode: 0,
+    started: undefined as number | undefined,
+  }));
   const [complete, setComplete] = useState(false);
   if (visit.pathname !== pathname) {
-    const home = pathname === "/";
+    const publicReturn = pathname === "/" || /^\/studio\/?$/.test(pathname);
     setVisit({
       pathname,
       initial: false,
-      episode: visit.episode + (home && complete ? 1 : 0),
+      episode: visit.episode + (publicReturn ? 1 : 0),
+      started: navigationStarted,
     });
-    if (home && complete) {
-      setComplete(false);
-    } else if (!visit.initial && !complete) {
-      setComplete(true);
-    }
+    if (publicReturn) setComplete(false);
+    else if (!visit.initial && !complete) setComplete(true);
   }
+  const visitClock = useRef(0);
+  useLayoutEffect(() => {
+    visitClock.current = visit.started ?? performance.now();
+  }, [visit.episode, visit.started]);
   const navigationReload = useSyncExternalStore(
     subscribeToNavigation,
     isReload,
@@ -104,6 +115,7 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     if (complete || !ready || pending) return;
     let active = true;
     let frame = 0;
+    let minimumTimer: ReturnType<typeof setTimeout>;
     const reveal = () => {
       if (active)
         frame = requestAnimationFrame(() => {
@@ -118,12 +130,27 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     void Promise.allSettled([
       Promise.resolve(document.fonts?.ready),
       hero?.decode ? hero.decode() : Promise.resolve(),
+      new Promise<void>((resolve) => {
+        const remaining =
+          FULL_PAGE_LOADING_MIN_MS - (performance.now() - visitClock.current);
+        if (remaining <= 0) resolve();
+        else minimumTimer = setTimeout(resolve, remaining);
+      }),
     ]).then(reveal);
     return () => {
       active = false;
       cancelAnimationFrame(frame);
+      clearTimeout(minimumTimer);
     };
-  }, [complete, ready, reloading, pending, pathname, visit.episode]);
+  }, [
+    complete,
+    ready,
+    reloading,
+    pending,
+    pathname,
+    visit.episode,
+    visit.started,
+  ]);
   return (
     <PageReady.Provider value={complete}>
       <div

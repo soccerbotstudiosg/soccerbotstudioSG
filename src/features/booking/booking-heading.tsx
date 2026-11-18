@@ -1,4 +1,5 @@
 "use client";
+import { createPortal } from "react-dom";
 import {
   createContext,
   useContext,
@@ -6,6 +7,10 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+export const BookingHeadingTargets = createContext<{
+  title: HTMLElement | null;
+  status: HTMLElement | null;
+} | null>(null);
 export const BookingHeadingStatus = createContext<ReactNode>(null);
 /** Keep the current identity beside each booking step's title. */
 export function BookingHeading({
@@ -15,6 +20,7 @@ export function BookingHeading({
   lines: readonly [string, string?];
   status?: ReactNode;
 }) {
+  const targets = useContext(BookingHeadingTargets);
   const inheritedStatus = useContext(BookingHeadingStatus);
   const status = suppliedStatus ?? inheritedStatus;
   const title = (
@@ -28,6 +34,13 @@ export function BookingHeading({
       )}
     </h1>
   );
+  if (targets?.title && targets.status)
+    return (
+      <>
+        {createPortal(title, targets.title)}
+        {status && createPortal(status, targets.status)}
+      </>
+    );
   if (!status) return title;
   return (
     <div className="booking-heading-row">

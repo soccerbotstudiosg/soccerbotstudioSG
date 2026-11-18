@@ -469,23 +469,26 @@ export function DetailsStep({
         <label className="field-label" htmlFor={key}>
           {label} *
         </label>
-        <select
-          id={key}
-          name={key}
+        <div className="field-select-control">
+          <select
+            id={key}
+            name={key}
 
-          value={c[key]}
-          required
-          aria-invalid={!!errors[key]}
-          aria-describedby={errors[key] ? `${key}-error` : undefined}
-          onChange={(e) => change(key, e.target.value)}
-          onBlur={() => validateField(key)}
-        >
-          {Object.entries(options).map(([value, name]) => (
-            <option key={value} value={value}>
-              {name}
-            </option>
-          ))}
-        </select>
+            value={c[key]}
+            required
+            aria-invalid={!!errors[key]}
+            aria-describedby={errors[key] ? `${key}-error` : undefined}
+            onChange={(e) => change(key, e.target.value)}
+            onBlur={() => validateField(key)}
+          >
+            {Object.entries(options).map(([value, name]) => (
+              <option key={value} value={value}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <Icon name="chevron" />
+        </div>
         {errors[key] && (
           <p className="field-error" id={`${key}-error`}>
             {errors[key]}

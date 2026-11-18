@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
-import { ADDRESS, BOOKING_SUPPORT } from "@/domain/catalog";
+import { ADDRESS, LOCATION, BOOKING_SUPPORT } from "@/domain/catalog";
 import { dateLabel, endTime, money } from "@/domain/dates";
 import {
   orderedSlots,
@@ -25,15 +25,21 @@ function bookingConfirmationMessage(booking: Booking) {
       : []),
     "",
     ...orderedSlots(booking.slots).flatMap((slot, index) => [
-      `${index + 1}. ${dateLabel(slot.date)}`,
-      `${slot.start}–${endTime(slot.start)} SGT`,
-      ...(slot.native?.serviceName ? [slot.native.serviceName] : []),
+      ...(booking.slots.length > 1 ? [`Session ${index + 1}`] : []),
+      `Date: ${dateLabel(slot.date)}`,
+      `Time: ${slot.start}–${endTime(slot.start)} SGT`,
+      ...(slot.native?.serviceName
+        ? [`Session: ${slot.native.serviceName}`]
+        : []),
       `Trainer: ${sessionInstructorName(slot)}`,
       "",
     ]),
     `Players: ${booking.draft.players}`,
-    `Location: ${[...new Set(booking.slots.map((slot) => slot.studio))].join(", ")}`,
-    ADDRESS,
+    "",
+    "Location",
+    [...new Set(booking.slots.map((slot) => slot.studio))].join(", "),
+    `${LOCATION.street}, ${LOCATION.unit}`,
+    LOCATION.postal,
     "",
     `Total paid: SGD ${money(booking.totalCents)}`,
   ].join("\n");

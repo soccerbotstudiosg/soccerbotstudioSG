@@ -93,6 +93,22 @@ async function calendarScenario(mobile: boolean) {
   );
   await act(async () => {});
   expect(scroll).not.toHaveBeenCalled();
+  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  expect(
+    view.container.querySelector(".booking-top-title h1"),
+  ).toHaveTextContent("Select dates and times");
+  expect(
+    view.container.querySelector(".booking-top-identity"),
+  ).toHaveTextContent("Guest");
+  expect(
+    view.container.querySelectorAll(".calendar-context-cards > span"),
+  ).toHaveLength(2);
+  expect(
+    view.container.querySelector(".time-heading .calendar-context-cards"),
+  ).toHaveTextContent("Apex @ Henderson");
+  expect(
+    view.container.querySelector(".calendar-panel .calendar-duration-note"),
+  ).toHaveTextContent("*40-min session · 10-min changeover.");
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel(restoredDate) }),
   );
@@ -235,6 +251,18 @@ async function calendarScenario(mobile: boolean) {
     <BookingProvider>
       <BookingPage step="time" />
     </BookingProvider>,
+  );
+  expect(view.container.querySelector(".booking-top h1")).toBeNull();
+  expect(view.container.querySelector(".booking-main h1")).toHaveTextContent(
+    "Select dates and times",
+  );
+  expect(view.container.querySelector(".calendar-context-cards")).toBeNull();
+  expect(view.container.querySelector(".calendar-duration-note")).toBeNull();
+  expect(
+    view.container.querySelector(".calendar-selection-context strong"),
+  ).toHaveTextContent("Apex @ Henderson · Kickoff Special");
+  expect(view.container.querySelector(".lead")).toHaveTextContent(
+    "40-min session · 10-min changeover.",
   );
   expect(
     screen.queryByRole("complementary", { name: "Your booking summary" }),
@@ -712,6 +740,7 @@ test("each time requires an independent trainer choice and changing it preserves
   ).toBe("daniel");
   expect(picker).toBeVisible();
   expect(picker).toHaveValue(`${restoredDate}|12:00|demo|daniel`);
+  expect(picker).not.toHaveFocus();
   const selected = screen.getByRole("button", { name: /12:00–12:40/ });
   expect(selected).toHaveTextContent("Trainer: Daniel Tan");
   expect(selected).toHaveAttribute("aria-expanded", "true");
@@ -723,6 +752,12 @@ test("each time requires an independent trainer choice and changing it preserves
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
     `${restoredDate}|12:00|demo|faisal`,
   );
+  act(() => picker.focus());
+  fireEvent.keyDown(picker, { key: "ArrowDown" });
+  fireEvent.change(picker, {
+    target: { value: `${restoredDate}|12:00|demo|faisal` },
+  });
+  expect(picker).toHaveFocus();
   expect(loadBooking().draft.slots).toHaveLength(2);
   expect(
     loadBooking().draft.slots.find((slot) => slot.start === "14:30")

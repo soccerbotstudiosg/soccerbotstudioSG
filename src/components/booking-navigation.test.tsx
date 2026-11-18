@@ -80,6 +80,8 @@ function App({ arena = false }: { arena?: boolean }) {
         ) : (
           <BookingLink href="/book/account/">Book now</BookingLink>
         )}
+        <BookingLink href="/studio/">The studio</BookingLink>
+        <BookingLink href="/">Home</BookingLink>
       </main>
     </BookingNavigation>
   );
@@ -93,9 +95,9 @@ test("shows the logo on booking entry even when the destination is already prefe
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/account/");
   navigation.path = "/book/account/";
   view.rerender(<App />);
-  act(() => vi.advanceTimersByTime(0));
+  act(() => vi.advanceTimersByTime(999));
   expect(screen.getByRole("status")).toBeInTheDocument();
-  act(() => vi.advanceTimersByTime(180));
+  act(() => vi.advanceTimersByTime(181));
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(document.documentElement.style.overflow).toBe("");
   expect(screen.getByRole("main")).toHaveFocus();
@@ -129,6 +131,8 @@ test("clicking the hero transition skips directly to booking without a delayed d
   );
   navigation.path = "/book/account/";
   view.rerender(<App arena />);
+  act(() => vi.advanceTimersByTime(0));
+  expect(screen.queryByRole("status")).toBeNull();
   act(() => vi.advanceTimersByTime(5000));
   expect(navigation.replace).toHaveBeenCalledTimes(1);
   expect(
@@ -147,7 +151,9 @@ test("reduced motion enters booking immediately without either animation", () =>
 });
 test("modifier clicks retain native link navigation without a loading overlay", () => {
   render(<App />);
-  fireEvent.click(screen.getByRole("link"), { ctrlKey: true });
+  fireEvent.click(screen.getByRole("link", { name: "Book now" }), {
+    ctrlKey: true,
+  });
   expect(navigation.push).not.toHaveBeenCalled();
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
@@ -203,7 +209,9 @@ test("studio navigation uses the same branded loader and restores focus after ar
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/studio/");
   navigation.path = "/studio/";
   view.rerender(<StudioLink />);
-  act(() => vi.advanceTimersByTime(1180));
+  act(() => vi.advanceTimersByTime(999));
+  expect(screen.getByRole("status", { name: "Opening studio" })).toBeVisible();
+  act(() => vi.advanceTimersByTime(181));
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(screen.getByRole("main")).toHaveFocus();
 });
@@ -260,11 +268,25 @@ test("live reduced motion keeps the functional full loader and same-route links 
 test("cancelled entry aborts its identity preparation and a new entry does not reuse it", async () => {
   identity.mode = "live";
   identity.refresh.mockImplementation(() => new Promise(() => {}));
-  render(<App arena />);
+  const view = render(<App arena />);
   fireEvent.click(screen.getByRole("link", { name: /^Book now/ }));
   const signal = identity.refresh.mock.calls[0][0] as AbortSignal;
   fireEvent.popState(window);
   expect(signal.aborted).toBe(true);
+  for (const [label, destination] of [
+    ["The studio", "/studio/"],
+    ["Home", "/"],
+  ]) {
+    fireEvent.click(screen.getByRole("link", { name: label }));
+    expect(navigation.push).toHaveBeenLastCalledWith(destination);
+    navigation.path = destination;
+    view.rerender(<App arena />);
+    await act(async () => vi.advanceTimersByTime(1180));
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(document.documentElement.style.overflow).toBe("");
+    expect(screen.getByRole("main").parentElement).not.toHaveAttribute("inert");
+    expect(identity.refresh).toHaveBeenCalledTimes(1);
+  }
   fireEvent.click(screen.getByRole("link", { name: /^Book now/ }));
   expect(identity.refresh).toHaveBeenCalledTimes(2);
   await act(async () => vi.advanceTimersByTime(10000));

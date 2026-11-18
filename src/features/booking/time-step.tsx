@@ -5,6 +5,7 @@ import {
   CHECKOUT_UNRESOLVED,
   CONFLICT_NOTICE,
 } from "@/domain/booking-messages";
+import { useMobileBooking } from "./booking-tools";
 import { BookingHeading } from "./booking-heading";
 import Link from "next/link";
 import {
@@ -93,6 +94,7 @@ function revealBookingSection(heading: HTMLElement | null) {
 export function TimeStep({
   recoveryNotice,
 }: { recoveryNotice?: ReactNode } = {}) {
+  const mobile = useMobileBooking();
   const headingRef = useRef<HTMLDivElement>(null);
   const pendingScroll = useRef<string | null>(null);
   const {
@@ -113,6 +115,7 @@ export function TimeStep({
     bookingService,
   } = useBooking();
   const bookingLegendId = useId();
+  const trainerPointer = useRef(false);
   const [choosing, setChoosing] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<"week" | "month">("month");
   const [weekStart, setWeekStart] = useState<string | null>(null);
@@ -433,41 +436,49 @@ export function TimeStep({
       )}
     </div>
   );
+  const contextContent = (sessionName: string) =>
+    mobile ? (
+      <p className="calendar-selection-context">
+        <strong>
+          {LOCATION.building} · {sessionName}
+        </strong>
+      </p>
+    ) : (
+      <div className="calendar-selection-context calendar-context-cards">
+        <span>{LOCATION.building}</span>
+        <span>{sessionName}</span>
+      </div>
+    );
+  const calendarContext =
+    live && bookingService.operations.availability === "live" ? (
+      <LiveCatalogue
+        renderStatus={(state) =>
+          contextContent(
+            state === "loading"
+              ? "Loading session details…"
+              : "Session details unavailable",
+          )
+        }
+        render={(data) =>
+          contextContent(
+            data.services.find(
+              (service) => service.id === draft.nativeServiceId,
+            )?.name ?? "Session details unavailable",
+          )
+        }
+      />
+    ) : (
+      contextContent(live ? "Session details unavailable" : SERVICE_NAME)
+    );
   return (
     <>
       <BookingHeading lines={["Select dates", "and times"]} />
-      {live && bookingService.operations.availability === "live" ? (
-        <LiveCatalogue
-          renderStatus={(state) => (
-            <p className="calendar-selection-context">
-              <strong>
-                {LOCATION.building} ·{" "}
-                {state === "loading"
-                  ? "Loading session details…"
-                  : "Session details unavailable"}
-              </strong>
-            </p>
-          )}
-          render={(data) => (
-            <p className="calendar-selection-context">
-              <strong>
-                {LOCATION.building} ·{" "}
-                {data.services.find(
-                  (service) => service.id === draft.nativeServiceId,
-                )?.name ?? "Session details unavailable"}
-              </strong>
-            </p>
-          )}
-        />
-      ) : (
-        <p className="calendar-selection-context">
-          <strong>
-            {LOCATION.building} ·{" "}
-            {live ? "Session details unavailable" : SERVICE_NAME}
-          </strong>
-        </p>
+      {mobile && (
+        <>
+          {calendarContext}
+          <p className="lead">40-min session · 10-min changeover.</p>
+        </>
       )}
-      <p className="lead">40-min session · 10-min changeover.</p>
       {recoveryNotice}
       {selectionNotice &&
         (selectionNotice === CHECKOUT_UNRESOLVED && attempt ? (
@@ -666,6 +677,11 @@ export function TimeStep({
             <BrandLoading overlay={false} compact label="Checking dates…" />
           </div>
         )}
+        {!mobile && (
+          <p className="calendar-duration-note">
+            *40-min session · 10-min changeover.
+          </p>
+        )}
         <span className="sr-only" id={bookingLegendId}>
           In your booking
         </span>
@@ -674,6 +690,7 @@ export function TimeStep({
         <>
           <div className="time-heading" ref={headingRef}>
             <h2>{dateLabel(date)}</h2>
+            {!mobile && calendarContext}
           </div>
           <div
             ref={timesRef}
@@ -824,12 +841,23 @@ export function TimeStep({
                               !available ||
                               result?.status !== "success"
                             }
+                            onPointerDown={() => {
+                              trainerPointer.current = true;
+                            }}
+                            onKeyDown={() => {
+                              trainerPointer.current = false;
+                            }}
+                            onBlur={() => {
+                              trainerPointer.current = false;
+                            }}
                             onChange={(event) => {
+                              const pointerSelection = trainerPointer.current;
                               const offer = offers.find(
                                 (item) =>
                                   sessionOfferKey(item) === event.target.value,
                               );
                               if (offer) select(offer);
+                              if (pointerSelection) event.currentTarget.blur();
                             }}
                           >
                             <option value="" disabled>

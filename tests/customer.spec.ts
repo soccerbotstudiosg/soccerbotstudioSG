@@ -982,7 +982,7 @@ test("public routes remove staff access and fit the viewport", async ({
   const studioHeaderBox = await page.locator(".site-header").boundingBox();
   expect(signatureBox).not.toBeNull();
   expect(studioHeaderBox).not.toBeNull();
-  expect(signatureBox!.y).toBeCloseTo(
+  expect(signatureBox!.y + signatureBox!.height).toBeCloseTo(
     studioHeaderBox!.y + studioHeaderBox!.height,
     0,
   );
@@ -1107,9 +1107,11 @@ test("public routes remove staff access and fit the viewport", async ({
     .getByRole("link", { name: "Back", exact: true });
   await expect(studioBack).toBeInViewport();
   await expect(studioBack).toHaveCount(1);
+  await expect(studioBack).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(studioBack).toHaveCSS("border-width", "0px");
   const pinnedBackBox = await studioBack.boundingBox();
   const pinnedHeaderBox = await page
-    .locator(".site-header .brand")
+    .locator(".site-header .studio-signature")
     .boundingBox();
   expect(pinnedBackBox!.y + pinnedBackBox!.height / 2).toBeCloseTo(
     pinnedHeaderBox!.y + pinnedHeaderBox!.height / 2,
@@ -1420,8 +1422,17 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   await page.getByLabel("Full name", { exact: false }).blur();
   await expect(page.locator("#name")).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#details-form input")).toHaveCount(4);
-  await expect(page.locator("#details-form select")).toHaveCount(1);
+  await expect(page.locator("#details-form select")).toHaveCount(
+    hasTouch || page.viewportSize()!.width <= 700 ? 2 : 1,
+  );
   await expect(page.locator("#details-form textarea")).toHaveCount(0);
+  const bookingFieldSize = await page.locator("#name").boundingBox();
+  const contactMethodSize = await page
+    .getByLabel("Preferred contact method", { exact: false })
+    .boundingBox();
+  expect(contactMethodSize!.height).toBeCloseTo(bookingFieldSize!.height, 0);
+  expect(contactMethodSize!.width).toBeCloseTo(bookingFieldSize!.width, 0);
+
   await expect(page.locator("#name")).toHaveAttribute(
     "placeholder",
     "John Doe",
@@ -1434,17 +1445,36 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
     "placeholder",
     "9123 4567",
   );
-  await page
-    .getByRole("button", { name: "Country code: Singapore +65" })
-    .click();
+  const touchCountry = hasTouch || page.viewportSize()!.width <= 700;
   const countrySearch = page.getByRole("combobox", {
     name: "Search country or dial code",
   });
-  const touchCountry = hasTouch || page.viewportSize()!.width <= 700;
   if (touchCountry) {
     await expect(countrySearch).toHaveCount(0);
-    await page.getByRole("option", { name: /United Kingdom/ }).click();
+    await page
+      .getByRole("combobox", { name: "Country code: Singapore +65" })
+      .selectOption("GB");
+    await expect(
+      page.getByRole("dialog", { name: "Choose country code" }),
+    ).toHaveCount(0);
   } else {
+    await page
+      .getByRole("button", { name: "Country code: Singapore +65" })
+      .click();
+    const countryLayers = await page
+      .getByRole("dialog", { name: "Choose country code" })
+      .evaluate((menu) => ({
+        menu: Number(getComputedStyle(menu).zIndex),
+        action: Number(
+          getComputedStyle(document.querySelector(".booking-action-anchor")!)
+            .zIndex,
+        ),
+        header: Number(
+          getComputedStyle(document.querySelector(".site-header")!).zIndex,
+        ),
+      }));
+    expect(countryLayers.menu).toBeGreaterThan(countryLayers.action);
+    expect(countryLayers.menu).toBeLessThan(countryLayers.header);
     await countrySearch.fill("United Kingdom");
     await countrySearch.press("Enter");
   }
@@ -1454,14 +1484,16 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   );
   await page.locator("#phone").fill("7911123456");
   await expect(page.locator("#phone")).toHaveAttribute("aria-invalid", "false");
-  await page
-    .getByRole("button", { name: "Country code: United Kingdom +44" })
-    .click();
   if (!touchCountry) {
+    await page
+      .getByRole("button", { name: "Country code: United Kingdom +44" })
+      .click();
     await countrySearch.fill("Singapore");
     await countrySearch.press("Enter");
   } else {
-    await page.getByRole("option", { name: /Singapore/ }).click();
+    await page
+      .getByRole("combobox", { name: "Country code: United Kingdom +44" })
+      .selectOption("SG");
   }
   await details(page);
   await page.evaluate(() => {
@@ -1668,6 +1700,23 @@ test("enquiry remains available without external submission or a mock assistant"
     "24px",
   );
   await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
+  const enquiryFieldSize = await page.locator("#enquiry-guests").boundingBox();
+  for (const selector of [
+    "#enquiry-purpose",
+    "#enquiry-date",
+    "#enquiry-time",
+  ]) {
+    const size = await page.locator(selector).boundingBox();
+    expect(size!.height).toBeCloseTo(enquiryFieldSize!.height, 0);
+    expect(size!.width).toBeCloseTo(enquiryFieldSize!.width, 0);
+  }
+  await expect(page.locator("#enquiry-date")).toHaveAccessibleDescription(
+    "Select a date.",
+  );
+  await expect(page.locator("#enquiry-time")).toHaveAccessibleDescription(
+    "Select a time (SGT).",
+  );
+
   await expect(page.getByText("Enter 1–2,000 characters.")).toHaveCount(0);
   await expect(page.locator('.enquiry-form [aria-invalid="true"]')).toHaveCount(
     0,
@@ -2613,12 +2662,14 @@ test("first visit offers the Player App with only store links and dismissal pers
 /** Share presentation assertions without coupling every booking phase to one timeout. */
 function bookingTypography(page: Page) {
   const brand = "rgb(5, 10, 47)";
-  const pageSize = page.viewportSize()!.width <= 700 ? 32 : 40;
+  const width = page.viewportSize()!.width;
+  const pageSize = width <= 700 ? 32 : width <= 1000 ? 24 : 28;
   async function pageHeading(name: string, color = "rgb(70, 172, 220)") {
     const heading = page
       .getByRole("main")
       .getByRole("heading", { level: 1, name, exact: true });
     await expect(heading).toBeVisible();
+    const standalone = name === "Payment" || name === "Booking Confirmed";
     await expect(
       page.getByRole("main").getByRole("heading", { level: 1 }),
     ).toHaveCount(1);
@@ -2631,7 +2682,9 @@ function bookingTypography(page: Page) {
         page.viewportSize()!.width <= 700 &&
         page.viewportSize()!.height <= 850
         ? 28
-        : pageSize,
+        : standalone && width > 700
+          ? 40
+          : pageSize,
       5,
     );
     await expect(heading).toHaveCSS("color", color);
@@ -2644,9 +2697,17 @@ function bookingTypography(page: Page) {
       "Review Booking": "Review your booking before payment.",
     };
     if (instructions[name]) {
-      const instruction = page.locator(".lead");
-      await expect(instruction).toHaveText(instructions[name]);
-      await expect(instruction).toHaveCSS("font-size", "16px");
+      const calendarNote = name === "Select dates and times" && width > 700;
+      const instruction = page.locator(
+        calendarNote ? ".calendar-duration-note" : ".lead",
+      );
+      await expect(instruction).toHaveText(
+        `${calendarNote ? "*" : ""}${instructions[name]}`,
+      );
+      await expect(instruction).toHaveCSS(
+        "font-size",
+        calendarNote ? "12px" : "16px",
+      );
       await expect(instruction).toHaveCSS("color", "rgb(88, 97, 116)");
       await expect(instruction).toHaveCSS("font-family", /Roboto/);
       const line = await instruction.evaluate((node) => ({
@@ -2659,7 +2720,7 @@ function bookingTypography(page: Page) {
       expect(line.textWidth).toBeLessThanOrEqual(line.width);
     }
 
-    if (name === "Select dates and times") {
+    if (name === "Select dates and times" && width <= 700) {
       await expect(page.locator(".calendar-selection-context")).toHaveCSS(
         "font-size",
         "16px",
@@ -2668,6 +2729,44 @@ function bookingTypography(page: Page) {
       await expect(
         page.locator(".calendar-selection-context strong"),
       ).toHaveCSS("font-weight", "700");
+    }
+    if (width > 700 && !standalone) {
+      await expect(page.locator(".booking-top h1")).toHaveText(name);
+      await expect(page.locator(".booking-main h1")).toHaveCount(0);
+      if (name === "Select dates and times") {
+        await expect(page.locator(".calendar-context-cards > span")).toHaveText(
+          ["Apex @ Henderson", "Kickoff Special"],
+        );
+        await expect(
+          page.locator(".calendar-panel .calendar-duration-note"),
+        ).toBeVisible();
+        const geometry = await page.locator(".time-heading").evaluate((row) => {
+          const date = row.querySelector("h2")!.getBoundingClientRect();
+          const cards = row
+            .querySelector(".calendar-context-cards")!
+            .getBoundingClientRect();
+          const calendar = document
+            .querySelector(".calendar-panel")!
+            .getBoundingClientRect();
+          const cart = document
+            .querySelector(".booking-layout > .aside-wrap")!
+            .getBoundingClientRect();
+          return {
+            dateBottom: date.bottom,
+            cardsBottom: cards.bottom,
+            dateRight: date.right,
+            cardsLeft: cards.left,
+            calendarTop: calendar.top,
+            cartTop: cart.top,
+          };
+        });
+        expect(geometry.dateBottom).toBeCloseTo(geometry.cardsBottom, 0);
+        expect(geometry.cardsLeft).toBeGreaterThan(geometry.dateRight);
+        expect(geometry.calendarTop).toBeCloseTo(geometry.cartTop, 0);
+      }
+    } else if (!standalone) {
+      await expect(page.locator(".booking-main h1")).toHaveText(name);
+      await expect(page.locator(".booking-top h1")).toHaveCount(0);
     }
     expect(
       await page.evaluate(
@@ -2686,6 +2785,10 @@ function bookingTypography(page: Page) {
       page.viewportSize()!.height <= 850 &&
       (await page.locator(".outlet-options").count()) > 0;
     if (await page.locator(".booking-navigation").count()) {
+      await expect(page.locator(".booking-navigation")).toHaveCSS(
+        "border-bottom-width",
+        "0px",
+      );
       await expect(page.locator(".booking-navigation")).toHaveCSS(
         "position",
         "sticky",

@@ -52,8 +52,7 @@ export function PhoneInput({
   const [active, setActive] = useState(0);
   const root = useRef<HTMLDivElement>(null),
     trigger = useRef<HTMLButtonElement>(null),
-    search = useRef<HTMLInputElement>(null),
-    list = useRef<HTMLUListElement>(null);
+    search = useRef<HTMLInputElement>(null);
   const listId = useId();
   const country =
     value.startsWith("+") &&
@@ -72,7 +71,7 @@ export function PhoneInput({
     : undefined;
   useEffect(() => {
     if (!open) return;
-    (touch ? list.current : search.current)?.focus({ preventScroll: true });
+    search.current?.focus({ preventScroll: true });
     const outside = (event: PointerEvent) => {
       if (event.target instanceof Node && !root.current?.contains(event.target))
         setOpen(false);
@@ -135,23 +134,42 @@ export function PhoneInput({
         Mobile number *
       </label>
       <div className="phone-control" data-invalid={!!message}>
-        <button
-          ref={trigger}
-          type="button"
-          className="phone-country"
-          aria-label={`Country code: ${countryLabels.get(country)} ${prefix}`}
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          onClick={() => {
-            setOpen(!open);
-            setQuery("");
-            setActive(0);
-          }}
-        >
-          <span>{country}</span>
-          <span>{prefix}</span>
-          <Icon name="chevron" />
-        </button>
+        {touch ? (
+          <div className="phone-country phone-country-native">
+            <span aria-hidden="true">{country}</span>
+            <span aria-hidden="true">{prefix}</span>
+            <Icon name="chevron" />
+            <select
+              aria-label={`Country code: ${countryLabels.get(country)} ${prefix}`}
+              value={country}
+              onChange={(event) => select(event.target.value as CountryCode)}
+            >
+              {countries.map((item) => (
+                <option key={item} value={item}>
+                  {countryLabels.get(item)} +{getCountryCallingCode(item)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <button
+            ref={trigger}
+            type="button"
+            className="phone-country"
+            aria-label={`Country code: ${countryLabels.get(country)} ${prefix}`}
+            aria-expanded={open}
+            aria-haspopup="dialog"
+            onClick={() => {
+              setOpen(!open);
+              setQuery("");
+              setActive(0);
+            }}
+          >
+            <span>{country}</span>
+            <span>{prefix}</span>
+            <Icon name="chevron" />
+          </button>
+        )}
         <input
           id="phone"
           name="phone"
@@ -188,7 +206,7 @@ export function PhoneInput({
           {message}
         </p>
       )}
-      {open && (
+      {open && !touch && (
         <div
           className="phone-country-menu"
           role="dialog"
@@ -201,34 +219,26 @@ export function PhoneInput({
             }
           }}
         >
-          {!touch && (
-            <input
-              ref={search}
-              className="phone-country-search"
-              aria-label="Search country or dial code"
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded="true"
-              aria-controls={listId}
-              aria-activedescendant={
-                options.length ? `${listId}-${active}` : undefined
-              }
-              value={query}
-              placeholder="Search country or dial code…"
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setActive(0);
-              }}
-              onKeyDown={navigateOptions}
-            />
-          )}
-          <ul
-            ref={list}
-            tabIndex={touch ? 0 : undefined}
+          <input
+            ref={search}
+            className="phone-country-search"
+            aria-label="Search country or dial code"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="true"
+            aria-controls={listId}
             aria-activedescendant={
-              touch && options.length ? `${listId}-${active}` : undefined
+              options.length ? `${listId}-${active}` : undefined
             }
-            onKeyDown={touch ? navigateOptions : undefined}
+            value={query}
+            placeholder="Search country or dial code…"
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setActive(0);
+            }}
+            onKeyDown={navigateOptions}
+          />
+          <ul
             id={listId}
             role="listbox"
             aria-label="Country calling codes"
