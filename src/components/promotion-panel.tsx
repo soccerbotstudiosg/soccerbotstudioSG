@@ -3,22 +3,13 @@ import {
   useEffect,
   useRef,
   useState,
-  useSyncExternalStore,
   type CSSProperties,
   type ReactNode,
 } from "react";
 import Link from "next/link";
 import { BookingLink } from "./booking-navigation";
+import { useTouchControls } from "./touch-controls";
 import { subscribePromotionHover } from "./promotion-hover";
-
-const mobileQuery = "(max-width: 700px)";
-/** Keep mobile detail disclosure synchronized with the responsive layout. */
-function subscribeMobile(notify: () => void) {
-  const media = window.matchMedia(mobileQuery);
-  media.addEventListener("change", notify);
-  return () => media.removeEventListener("change", notify);
-}
-const mobileSnapshot = () => window.matchMedia(mobileQuery).matches;
 
 type Props = {
   id: string;
@@ -59,11 +50,7 @@ export function PromotionPanel({
 }: Props) {
   const panel = useRef<HTMLElement>(null);
   const [engaged, setActive] = useState(false);
-  const mobile = useSyncExternalStore(
-    subscribeMobile,
-    mobileSnapshot,
-    () => false,
-  );
+  const mobile = useTouchControls();
   const active = mobile || engaged;
   useEffect(() => {
     const element = panel.current;
@@ -282,11 +269,7 @@ export function PromotionBanner({
   href: string;
   actionLabel: string;
 }) {
-  const mobile = useSyncExternalStore(
-    subscribeMobile,
-    mobileSnapshot,
-    () => false,
-  );
+  const mobile = useTouchControls();
   const introduction = (
     <>
       <div className="abstract-promotion-heading">

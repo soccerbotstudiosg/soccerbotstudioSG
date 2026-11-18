@@ -686,6 +686,9 @@ export function AccountStep({
                 ) : view === "code" ? (
                   <p>This code has expired.</p>
                 ) : null}
+                <p className="text-sm text-muted">
+                  Can’t find the email? Check Spam or Junk.
+                </p>
                 <button
                   type="button"
                   disabled={busy}

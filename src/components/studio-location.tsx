@@ -13,20 +13,12 @@ export function StudioLocation() {
     <>
       <button
         type="button"
-        className="arena-location studio-location-trigger"
+        className="studio-location-trigger"
         aria-label="View studio location"
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
         <Icon name="location" />
-        <span>
-          <strong>
-            {LOCATION.building} · {LOCATION.unit}
-          </strong>
-          <small>
-            {LOCATION.street} · {LOCATION.postal}
-          </small>
-        </span>
       </button>
       {open && (
         <Dialog title="Find the studio" onClose={() => setOpen(false)}>

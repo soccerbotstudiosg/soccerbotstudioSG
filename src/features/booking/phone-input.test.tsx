@@ -1,8 +1,9 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { PhoneInput } from "./phone-input";
 import { contactErrors } from "@/domain/contact";
+afterEach(() => vi.unstubAllGlobals());
 function Field({ initial = "" }: { initial?: string }) {
   const [value, setValue] = useState(initial);
   return (
@@ -80,6 +81,26 @@ test("phone country search supports keyboard selection and full international pa
     screen.getByRole("button", { name: "Country code: Singapore +65" }),
   );
   fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+  expect(screen.queryByRole("dialog")).toBeNull();
+  cleanup();
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query.includes("any-pointer: coarse"),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  render(<Field />);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Country code: Singapore +65" }),
+  );
+  expect(
+    screen.queryByRole("combobox", { name: "Search country or dial code" }),
+  ).toBeNull();
+  const list = screen.getByRole("listbox", { name: "Country calling codes" });
+  expect(list).toHaveFocus();
+  fireEvent.click(screen.getByRole("option", { name: /United Kingdom/ }));
+  expect(
+    screen.getByRole("button", { name: "Country code: United Kingdom +44" }),
+  ).toHaveFocus();
   expect(screen.queryByRole("dialog")).toBeNull();
 });
 

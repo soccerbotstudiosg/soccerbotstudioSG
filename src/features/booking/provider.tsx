@@ -917,7 +917,9 @@ export function BookingProvider({
       service.mode === "live" &&
       identityService.mode === "live" &&
       pathname?.startsWith("/book/") &&
-      !latest.current.attempt &&
+      (!latest.current.attempt ||
+        isCalendarRecovery(latest.current.attempt.id) ||
+        isBookingDeparture(latest.current.attempt.id)) &&
       bookingAccessExpired()
     )
       reportProfileAccessLoss(profileAccessGeneration(), "session");

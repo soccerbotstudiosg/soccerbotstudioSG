@@ -132,7 +132,19 @@ export function SiteShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <header className="site-header">
-        <nav className="nav" aria-label="Main navigation">
+        <nav
+          className={
+            pathname === "/studio/" || pathname === "/studio"
+              ? "nav nav-with-back"
+              : "nav"
+          }
+          aria-label="Main navigation"
+        >
+          {(pathname === "/studio/" || pathname === "/studio") && (
+            <Link href="/" className="back studio-back">
+              <Icon name="back" /> Back
+            </Link>
+          )}
           <Link
             href="/"
             className="brand"

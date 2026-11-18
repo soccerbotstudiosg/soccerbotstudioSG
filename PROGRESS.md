@@ -2,11 +2,13 @@
 
 ## Active outcome
 
-18 November2026: PR97 is staged and merged as22b98e097dea53f8d3a891728cf328ddde0aa694. All consolidated wording, confirmation, expiry and email-template changes passed PR CI44282704763 and staging44284854739. Fresh-main CI44285376012 exposed a phone-WebKit circle/primary-action clearance defect; production has not advanced. Continue authorized repairs through staging and merge.
+18 November2026: base PR97/98 is deployed at69a7960043b94a9f30a4bc286f2765973f6dcc47. PR99 on fix/mobile-expiry-trainer consolidates expired recovery/departed navigation, persistent trainer dropdowns, mobile/iPad field sizing, touch-first promotion/country controls, Weekly/Monthly labels, phone-only smaller email check and Studio Back to home inside the sticky header on all viewports. The hero address is now an icon-only location control with hover enlargement and mobile top-left alignment.
 
 ## Next actions
 
-Branch fix/scroll-control-clearance contains the owning measurement repair: use resolved CSS baseline vertical geometry instead of a previously painted lifted rectangle, and round lift upward to preserve12px minimum separation. The added repeated-measurement regression failed before repair and passed after; existing route/idle/focus assertions and browser spacing requirements remain intact. Two complete code rounds passed400/400 unit cases each plus213 tooling cases, installer/format/lint/types/build/export guards at fingerprint8b598cc2ee7310115fcb2ed72df231481696cf60525cc7696c1752c45464ff64. Follow-up PR CI, staging health and merge are next. Worker code is unchanged and retains two520/520 local rounds and green main server groups. No browser execution or live notification sends by the assistant. Exact failure and prior release evidence are in Journey.
+Initial PR99 head a01166e passed two full local code rounds; CI44301487753 is superseded by the expanded owner scope. PR99 remains draft while consolidating the final candidate. Earlier expanded code rounds passed at fingerprint ec85624855a80a56a4814d632c6e40029bec965c11dbb3e60af5cc3a161eaa87. Subsequent header, hero icon, blue action wording and Spam/Junk reminder changes passed focused checks. Two final complete code rounds passed at fingerprint ff56bf0ca5db9337621c891119261b2f256a54277bb87bfd6a9b1cbf711a057e (400 unit cases each, tooling/installer/format/lint/type/build/export checks). Exact-head CI and staging verification are next before the authorized merge. The owner confirmed natural expiry after more than30minutes; retained Calendar recovery and departure reproduce and cover the bypass. Original financial records remain retained.
+
+The owner clarified the iPad issue is Hide Keyboard, not Return; no Return handler or submission behavior was changed. Touch field sizing and measured sticky-navigation scroll clearance are corrected, but Safari keyboard-close behavior needs physical-device retest. No speculative viewport scrolling script or assistant browser execution. OTP remains one plain text node; email clients control double-tap/copy gestures. Updated history is in Journey.
 
 ## Ordered work after this slice
 

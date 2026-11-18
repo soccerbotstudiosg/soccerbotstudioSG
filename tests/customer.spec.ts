@@ -465,6 +465,7 @@ test("booking and confirmation routes cover incomplete rendering until hydration
 
 test("public routes remove staff access and fit the viewport", async ({
   page,
+  hasTouch,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -526,7 +527,10 @@ test("public routes remove staff access and fit the viewport", async ({
   const initialBookingCopy = page.locator(
     ".home-promotion--booking .promotion-copy-content",
   );
-  await expect(initialBookingCopy).toHaveCSS("text-align", "right");
+  await expect(initialBookingCopy).toHaveCSS(
+    "text-align",
+    hasTouch && page.viewportSize()!.width > 700 ? "left" : "right",
+  );
   await expect(page.locator(".promotion-journey")).toHaveCSS(
     "background-color",
     "rgb(255, 255, 255)",
@@ -541,6 +545,15 @@ test("public routes remove staff access and fit the viewport", async ({
     "position",
     page.viewportSize()!.width <= 700 ? "static" : "sticky",
   );
+  if (hasTouch) {
+    for (const panel of await promotions.all()) {
+      await expect(panel).toHaveAttribute("data-active", "true");
+      await expect(panel.locator(".feature-full")).toHaveAttribute(
+        "aria-hidden",
+        "false",
+      );
+    }
+  }
   const firstPanel = promotions.first();
   await expect(firstPanel).toHaveCSS(
     "border-radius",
@@ -668,23 +681,24 @@ test("public routes remove staff access and fit the viewport", async ({
     (node) => getComputedStyle(node).backgroundImage,
   );
   const mobileBanner = page.viewportSize()!.width <= 700;
+  const touchBanner = hasTouch || mobileBanner;
   await expect(contactBanner.locator(".promotion-cta")).toHaveCount(
-    mobileBanner ? 1 : 0,
+    touchBanner ? 1 : 0,
   );
   const bannerLink = contactBanner.getByRole("link", {
     name: "Enquire",
     exact: true,
   });
   await expect(bannerLink).toHaveClass(
-    mobileBanner
+    touchBanner
       ? "button promotion-cta"
       : /^abstract-promotion-link(?: section-reveal(?:-pending)?)?$/,
   );
   const bannerLayout = contactBanner.locator(
-    mobileBanner ? ".abstract-promotion-mobile" : ".abstract-promotion-link",
+    touchBanner ? ".abstract-promotion-mobile" : ".abstract-promotion-link",
   );
   await expect(bannerLayout.locator(":scope > *")).toHaveCount(3);
-  if (mobileBanner) {
+  if (touchBanner) {
     await expect(bannerLink.locator("svg")).toHaveCount(0);
     await expect(bannerLink).toHaveCSS("border-radius", "3px 12px");
     await expect(bannerLink).toHaveCSS("min-height", "48px");
@@ -709,7 +723,7 @@ test("public routes remove staff access and fit the viewport", async ({
   const bannerHeadingSize = await contactBanner
     .locator("h2")
     .evaluate((node) => getComputedStyle(node).fontSize);
-  if (!mobileBanner) {
+  if (!touchBanner) {
     await expect(bannerLink.locator(".abstract-promotion-action")).toHaveCSS(
       "font-size",
       bannerHeadingSize,
@@ -722,7 +736,7 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(contactBanner.locator("img")).toHaveCount(0);
   await expect(contactBanner.locator(".promotion-edge")).toHaveCount(0);
   if (
-    !mobileBanner &&
+    !touchBanner &&
     (await page.evaluate(() => matchMedia("(hover: hover)").matches))
   ) {
     await bannerLink.scrollIntoViewIfNeeded();
@@ -949,6 +963,9 @@ test("public routes remove staff access and fit the viewport", async ({
       ? "https://assets.soccerbot360.com/assets/videos/hero-loop.mp4"
       : "https://assets.soccerbot360.com/assets/videos/stream.mp4",
   );
+  await expect(
+    page.getByRole("link", { name: "Back", exact: true }),
+  ).toHaveAttribute("href", sitePath("/"));
   await expect(studioHero.locator("video")).not.toHaveAttribute("controls");
   await expect(studioHero.locator("video")).toHaveAttribute("autoplay", "");
   await expect(studioHero.locator("video")).not.toHaveAttribute("loop");
@@ -1004,6 +1021,7 @@ test("public routes remove staff access and fit the viewport", async ({
     await expect(row).toHaveCSS("margin-top", "0px");
     await expect(row.locator("a, button")).toHaveCount(0);
     await expect(row).toHaveAttribute("tabindex", "0");
+    if (hasTouch) await expect(row).toHaveAttribute("data-active", "true");
     if (page.viewportSize()!.width <= 700) {
       const photo = row.locator(".studio-photo");
       const copy = row.locator(".studio-copy");
@@ -1062,7 +1080,7 @@ test("public routes remove staff access and fit the viewport", async ({
     "background-image",
     /linear-gradient.*rgb\(23, 96, 120\)/,
   );
-  if (!mobileBanner)
+  if (!touchBanner)
     await expect(studioBanner.locator(".abstract-promotion-action")).toHaveCSS(
       "color",
       "rgb(70, 172, 220)",
@@ -1084,6 +1102,20 @@ test("public routes remove staff access and fit the viewport", async ({
   ).toBeLessThanOrEqual(1);
   const lastStudioRow = page.locator(".studio-row").last();
   await lastStudioRow.scrollIntoViewIfNeeded();
+  const studioBack = page
+    .locator(".site-header")
+    .getByRole("link", { name: "Back", exact: true });
+  await expect(studioBack).toBeInViewport();
+  await expect(studioBack).toHaveCount(1);
+  const pinnedBackBox = await studioBack.boundingBox();
+  const pinnedHeaderBox = await page
+    .locator(".site-header .brand")
+    .boundingBox();
+  expect(pinnedBackBox!.y + pinnedBackBox!.height / 2).toBeCloseTo(
+    pinnedHeaderBox!.y + pinnedHeaderBox!.height / 2,
+    1,
+  );
+
   await lastStudioRow.focus();
   await expect(lastStudioRow).toHaveAttribute("data-active", "true");
   await expect(lastStudioRow.locator(".feature-arrow")).toHaveCount(0);
@@ -1121,7 +1153,7 @@ test("public routes remove staff access and fit the viewport", async ({
   await page.keyboard.press("Escape");
   await expect(lastStudioRow).toHaveAttribute(
     "data-active",
-    page.viewportSize()!.width <= 700 ? "true" : "false",
+    hasTouch || page.viewportSize()!.width <= 700 ? "true" : "false",
   );
   const backToTop = page.getByRole("button", {
     name: "Back to top",
@@ -1355,6 +1387,7 @@ test("late payment has a contact path without another payment", async ({
 });
 test("50-minute cadence, chosen instructors, contact validation and final-slot conflict", async ({
   page,
+  hasTouch,
 }) => {
   await chooseSlots(page);
   await page
@@ -1407,8 +1440,14 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   const countrySearch = page.getByRole("combobox", {
     name: "Search country or dial code",
   });
-  await countrySearch.fill("United Kingdom");
-  await countrySearch.press("Enter");
+  const touchCountry = hasTouch || page.viewportSize()!.width <= 700;
+  if (touchCountry) {
+    await expect(countrySearch).toHaveCount(0);
+    await page.getByRole("option", { name: /United Kingdom/ }).click();
+  } else {
+    await countrySearch.fill("United Kingdom");
+    await countrySearch.press("Enter");
+  }
   await expect(page.locator("#phone")).toHaveAttribute(
     "placeholder",
     "07400 123456",
@@ -1418,8 +1457,12 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   await page
     .getByRole("button", { name: "Country code: United Kingdom +44" })
     .click();
-  await countrySearch.fill("Singapore");
-  await countrySearch.press("Enter");
+  if (!touchCountry) {
+    await countrySearch.fill("Singapore");
+    await countrySearch.press("Enter");
+  } else {
+    await page.getByRole("option", { name: /Singapore/ }).click();
+  }
   await details(page);
   await page.evaluate(() => {
     const stored = JSON.parse(
@@ -2156,6 +2199,23 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   ).toBeVisible();
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
+  const phoneControl = page.viewportSize()!.width <= 700;
+  await expect(page.locator(".email-confirm-control")).toHaveCSS(
+    "width",
+    phoneControl ? "56px" : "74px",
+  );
+  await expect(page.locator(".email-check-icon")).toHaveCSS(
+    "width",
+    phoneControl ? "48px" : "64px",
+  );
+  const navigationHeight = await page
+    .locator(".booking-navigation")
+    .evaluate((node) => node.getBoundingClientRect().height);
+  const fieldClearance = await page
+    .locator("#name")
+    .evaluate((node) => parseFloat(getComputedStyle(node).scrollMarginTop));
+  expect(fieldClearance).toBeGreaterThanOrEqual(navigationHeight + 16);
+
   await details(page);
   await fullWidth(".actions .button", ".actions");
   await expect(page.locator(".series-list .rotation-notice")).toHaveCount(0);
@@ -3127,6 +3187,7 @@ test("header blue and typography stay consistent through account and session sel
 
 test("calendar and contact retain typography and continuous sticky geometry", async ({
   page,
+  hasTouch,
 }) => {
   const { pageHeading, sectionType } = bookingTypography(page);
   await openSite(page, "/book/account/");
@@ -3141,6 +3202,12 @@ test("calendar and contact retain typography and continuous sticky geometry", as
   await expect(
     page.getByRole("combobox", { name: "Calendar view" }),
   ).toHaveValue("month");
+  await expect(
+    page.getByRole("option", { name: "Weekly", exact: true }),
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole("option", { name: "Monthly", exact: true }),
+  ).toHaveCount(1);
   /** Verify the shared day hover treatment in either calendar layout. */
   async function dayHoverColour() {
     if (!(await page.evaluate(() => matchMedia("(hover: hover)").matches)))
@@ -3382,8 +3449,27 @@ test("calendar and contact retain typography and continuous sticky geometry", as
     "font-size",
     "14px",
   );
-  await expect(page.locator("#name")).toHaveCSS("font-size", "14px");
+  await expect(page.locator("#name")).toHaveCSS(
+    "font-size",
+    hasTouch || page.viewportSize()!.width <= 700 ? "16px" : "14px",
+  );
   await expect(page.locator("#name")).toHaveCSS("min-height", "52px");
+  const phoneControl = page.viewportSize()!.width <= 700;
+  await expect(page.locator(".email-confirm-control")).toHaveCSS(
+    "width",
+    phoneControl ? "56px" : "74px",
+  );
+  await expect(page.locator(".email-check-icon")).toHaveCSS(
+    "width",
+    phoneControl ? "48px" : "64px",
+  );
+  const navigationHeight = await page
+    .locator(".booking-navigation")
+    .evaluate((node) => node.getBoundingClientRect().height);
+  const fieldClearance = await page
+    .locator("#name")
+    .evaluate((node) => parseFloat(getComputedStyle(node).scrollMarginTop));
+  expect(fieldClearance).toBeGreaterThanOrEqual(navigationHeight + 16);
 });
 
 test("review payment and confirmation retain typography and continuous sticky geometry", async ({
@@ -3769,20 +3855,14 @@ test("hero location opens its map only on demand without entering booking and he
     name: "View studio location",
     exact: true,
   });
-  await expect(location.locator("strong")).toHaveCSS("font-size", "18px");
-  const mobileAddress = (page.viewportSize()?.width ?? 1280) <= 700;
-  await expect(location.locator("small")).toHaveCSS(
-    "font-size",
-    mobileAddress ? "12px" : "14px",
-  );
-  await expect(location.locator("small")).toHaveCSS(
-    "color",
-    mobileAddress ? "rgb(255, 255, 255)" : "rgb(155, 180, 201)",
-  );
+  await expect(location).toHaveText("");
+  await expect(location.locator("svg")).toHaveCSS("width", "28px");
+  await expect(location).toHaveCSS("color", "rgb(255, 255, 255)");
   const target = await location.boundingBox();
-  expect(target?.height).toBeGreaterThanOrEqual(68);
-  // The padded corner must open the map rather than the underlying hero.
-  await location.click({ position: { x: 5, y: 5 } });
+  expect(target?.height).toBe(52);
+  expect(target?.width).toBe(52);
+  // Padding inside the circular target must open the map, not the hero.
+  await location.click({ position: { x: 26, y: 5 } });
   const dialog = page.getByRole("dialog", {
     name: "Find the studio",
     exact: true,
@@ -3938,6 +4018,8 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(choice).toHaveCSS("outline-style", "none");
   await expect(noon).toHaveCSS("outline-style", "solid");
   await noon.selectOption(`${date}|12:00|demo|daniel`);
+  await expect(noon).toBeVisible();
+  await expect(noon).toHaveValue(`${date}|12:00|demo|daniel`);
   if (mobile) {
     const selected = page.getByRole("button", { name: /^12:00–12:40/ });
     const next = page.getByRole("button", { name: /^12:50–13:30/ });
