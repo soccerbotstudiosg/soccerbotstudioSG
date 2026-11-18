@@ -556,8 +556,8 @@ export function TimeStep({
                   setMonth(monthAt(date, 0));
               }}
             >
-              <option value="week">Week</option>
-              <option value="month">Month</option>
+              <option value="week">Weekly</option>
+              <option value="month">Monthly</option>
             </select>
           </div>
         </div>

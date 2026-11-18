@@ -176,8 +176,8 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     expect(screen.queryByRole("button")).toBeNull();
   }
   const removeMediaListener = vi.fn();
-  vi.stubGlobal("matchMedia", () => ({
-    matches: true,
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query.includes("any-pointer: coarse"),
     addEventListener: vi.fn(),
     removeEventListener: removeMediaListener,
   }));
@@ -215,9 +215,13 @@ test("compact closing banners group their content and expose one action per view
     top: window.innerHeight + 100,
     height: 120,
   } as DOMRect);
-  for (const mobile of [false, true]) {
+  for (const mode of ["desktop", "phone", "tablet"]) {
+    const mobile = mode !== "desktop";
     vi.stubGlobal("matchMedia", (query: string) => ({
-      matches: query.includes("max-width") && mobile,
+      matches:
+        mode === "phone"
+          ? query.includes("max-width")
+          : mode === "tablet" && query.includes("any-pointer: coarse"),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     }));

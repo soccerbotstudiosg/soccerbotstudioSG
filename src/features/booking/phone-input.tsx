@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { getExampleNumber } from "libphonenumber-js/min";
 import examples from "libphonenumber-js/mobile/examples";
+import { useTouchControls } from "@/components/touch-controls";
 import { Icon } from "@/components/icon";
 import {
   acceptsPhoneEdit,
@@ -45,12 +46,14 @@ export function PhoneInput({
   const [selectedCountry, setCountry] = useState<CountryCode>(() =>
     phoneCountry(value),
   );
+  const touch = useTouchControls();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const root = useRef<HTMLDivElement>(null),
     trigger = useRef<HTMLButtonElement>(null),
-    search = useRef<HTMLInputElement>(null);
+    search = useRef<HTMLInputElement>(null),
+    list = useRef<HTMLUListElement>(null);
   const listId = useId();
   const country =
     value.startsWith("+") &&
@@ -69,23 +72,40 @@ export function PhoneInput({
     : undefined;
   useEffect(() => {
     if (!open) return;
-    search.current?.focus();
+    (touch ? list.current : search.current)?.focus({ preventScroll: true });
     const outside = (event: PointerEvent) => {
       if (event.target instanceof Node && !root.current?.contains(event.target))
         setOpen(false);
     };
     document.addEventListener("pointerdown", outside);
     return () => document.removeEventListener("pointerdown", outside);
-  }, [open]);
+  }, [open, touch]);
   const close = () => {
     setOpen(false);
-    trigger.current?.focus();
+    trigger.current?.focus({ preventScroll: true });
   };
   /** Preserve the entered national digits when changing the selected country. */
   function select(next: CountryCode) {
     setCountry(next);
     onChange(number ? `+${getCountryCallingCode(next)}${number}` : "");
     close();
+  }
+  /** Navigate the country list without opening the software keyboard. */
+  function navigateOptions(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const next = options.length
+        ? (active + (event.key === "ArrowDown" ? 1 : options.length - 1)) %
+          options.length
+        : 0;
+      setActive(next);
+      document
+        .getElementById(`${listId}-${next}`)
+        ?.scrollIntoView?.({ block: "nearest" });
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      if (options[active]) select(options[active]);
+    }
   }
   /** Ignore invalid edits silently while keeping incomplete numbers correctable. */
   function edit(raw: string) {
@@ -181,42 +201,34 @@ export function PhoneInput({
             }
           }}
         >
-          <input
-            ref={search}
-            className="phone-country-search"
-            aria-label="Search country or dial code"
-            role="combobox"
-            aria-autocomplete="list"
-            aria-expanded="true"
-            aria-controls={listId}
-            aria-activedescendant={
-              options.length ? `${listId}-${active}` : undefined
-            }
-            value={query}
-            placeholder="Search country or dial code…"
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setActive(0);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-                event.preventDefault();
-                const next = options.length
-                  ? (active +
-                      (event.key === "ArrowDown" ? 1 : options.length - 1)) %
-                    options.length
-                  : 0;
-                setActive(next);
-                document
-                  .getElementById(`${listId}-${next}`)
-                  ?.scrollIntoView?.({ block: "nearest" });
-              } else if (event.key === "Enter") {
-                event.preventDefault();
-                if (options[active]) select(options[active]);
+          {!touch && (
+            <input
+              ref={search}
+              className="phone-country-search"
+              aria-label="Search country or dial code"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="true"
+              aria-controls={listId}
+              aria-activedescendant={
+                options.length ? `${listId}-${active}` : undefined
               }
-            }}
-          />
+              value={query}
+              placeholder="Search country or dial code…"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setActive(0);
+              }}
+              onKeyDown={navigateOptions}
+            />
+          )}
           <ul
+            ref={list}
+            tabIndex={touch ? 0 : undefined}
+            aria-activedescendant={
+              touch && options.length ? `${listId}-${active}` : undefined
+            }
+            onKeyDown={touch ? navigateOptions : undefined}
             id={listId}
             role="listbox"
             aria-label="Country calling codes"
