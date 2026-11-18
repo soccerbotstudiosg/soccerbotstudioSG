@@ -332,7 +332,7 @@ async function fixture(
   };
 }
 
-test("live entry access denial permits local guest selection without granting authority", async ({
+test("live entry access denial keeps guest entry retryable without granting authority", async ({
   page,
 }) => {
   let releaseIdentity!: () => void;
@@ -369,12 +369,19 @@ test("live entry access denial permits local guest selection without granting au
     evidence.calls.filter((call) => call.path === "/api/access"),
   ).toHaveLength(1);
   await page.getByRole("button", { name: "Continue as guest" }).click();
-  await expect(page).toHaveURL(/\/book\/session\/$/);
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    "We couldn’t start your booking. Please try again.",
+  );
+  await expect(page).toHaveURL(/\/book\/account\/$/);
   await expect(
-    page.getByRole("heading", { name: "Your session" }),
+    page.getByRole("heading", { name: "Start your booking" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
   await expect(page.locator(".booking-flow-overlay")).toHaveCount(0);
   expect(evidence.calls.filter((c) => c.method === "POST")).toEqual([
+    { path: "/api/access", method: "POST", body: null },
     { path: "/api/access", method: "POST", body: null },
   ]);
   expect(evidence.unexpected).toEqual([]);
@@ -2976,7 +2983,10 @@ test("real API revoked access at checkout returns to fresh entry and denies prot
       "Your session expired. Continue as a guest or sign in to start again.",
     );
     expect(accessRequests()).toBe(beforeExpiry);
-    await guestDetails(page, mechanism, false, { starts: [0], enter: false });
+    await guestDetails(page, mechanism, false, {
+      starts: [mechanism.startMs],
+      enter: false,
+    });
     expect(accessRequests()).toBe(beforeExpiry + 1);
     await expect(
       page.getByText(

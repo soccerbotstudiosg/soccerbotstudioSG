@@ -1035,11 +1035,8 @@
     position: fixed;
     z-index: 36;
     right: max(20px, env(safe-area-inset-right));
-    bottom: max(
-      24px,
-      calc(env(safe-area-inset-bottom) + 12px),
-      var(--back-to-top-clearance, 0px)
-    );
+    bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+    margin-bottom: var(--back-to-top-clearance, 0px);
     display: grid;
     place-items: center;
     width: 48px;
