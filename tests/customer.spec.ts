@@ -3801,6 +3801,7 @@ test("Back during hero entry stays on home even when the previous page was Studi
 
 test("per-slot trainer dropdowns show unique trainer biographies and retain changed choices after reload", async ({
   page,
+  hasTouch,
 }) => {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Guest" }).click();
@@ -4034,7 +4035,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(removeAfternoon).toHaveCSS("width", "44px");
   await expect(removeAfternoon).toHaveCSS("height", "44px");
   await expect(removeAfternoon).toHaveCSS("border-radius", "8px");
-  if (!mobile) {
+  if (!hasTouch) {
     await removeAfternoon.hover();
     await expect(removeAfternoon).toHaveCSS(
       "background-color",
