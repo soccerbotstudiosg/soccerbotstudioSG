@@ -45,22 +45,34 @@ export function ClientDetails({ contact }: { contact: ContactDetails }) {
 /** Present the session arrival instructions. */
 export function Arrival({ compact = false }: { compact?: boolean } = {}) {
   return (
-    <section className="arrival-information" aria-label="Before your session">
+    <section
+      className={`arrival-information${compact ? " arrival-compact" : ""}`}
+      aria-label="Before your session"
+    >
       {!compact && <h3>Before your session</h3>}
       <p className="arrival-time">
-        <strong>Arrive 10 minutes early.</strong>
+        <strong>
+          {compact ? "Arrive 10 mins early." : "Arrive 10 minutes early."}
+        </strong>
         <span>
           {compact
-            ? "Late arrivals may not receive extra time."
+            ? "Late arrivals may lose time."
             : "Latecomers may not be given extra time."}
         </span>
       </p>
-      <p>
-        {compact
-          ? "Wear activewear and soccer boots (preferred) or sports shoes; bring a towel."
-          : "Wear training gear or activewear. Soccer boots are preferred; sports shoes are also suitable. Bring your own towel."}
-      </p>
-      {compact && <p>Follow your instructor’s safety guidance.</p>}
+      {compact ? (
+        <ul className="arrival-points">
+          <li>Wear training gear or activewear.</li>
+          <li>Soccer boots preferred; sports shoes are suitable.</li>
+          <li>Bring your own towel.</li>
+          <li>Follow your instructor’s safety guidance.</li>
+        </ul>
+      ) : (
+        <p>
+          Wear training gear or activewear. Soccer boots are preferred; sports
+          shoes are also suitable. Bring your own towel.
+        </p>
+      )}
     </section>
   );
 }

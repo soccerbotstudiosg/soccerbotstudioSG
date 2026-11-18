@@ -344,7 +344,7 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   ).toHaveClass("confirmation-disclaimers");
   expect(
     screen.getByRole("region", { name: "Before Your Session" }),
-  ).toHaveTextContent("bring a towel");
+  ).toHaveTextContent("Bring your own towel.");
   expect(screen.getByText("Trainer: Native Trainer")).toBeInTheDocument();
   expect(screen.queryByText("701")).not.toBeInTheDocument();
   expect(screen.queryByText("901")).not.toBeInTheDocument();

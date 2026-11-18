@@ -510,6 +510,13 @@ test("confirmation places three retained actions below the summary with complete
     "Before Your Session",
   ]);
   expect(disclosure!.querySelector(".confirmation-disclaimers")).not.toBeNull();
+  const guidance = screen.getByRole("region", { name: "Before your session" });
+  expect(within(guidance).getAllByRole("listitem")).toHaveLength(4);
+  expect(guidance.querySelector(".arrival-time")?.closest("li")).toBeNull();
+  expect(guidance.querySelector(".arrival-time")).toHaveTextContent(
+    "Arrive 10 mins early.",
+  );
+
   expect(
     screen.getByRole("region", { name: "Order Summary" }).closest("details"),
   ).toBeNull();

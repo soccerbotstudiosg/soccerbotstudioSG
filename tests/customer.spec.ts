@@ -2110,6 +2110,21 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
       actions: shell.querySelectorAll(".confirmation-actions .button").length,
     }));
   expect(confirmationLayout.actions).toBe(3);
+  const guidancePoints = page.locator(
+    ".confirmation-disclaimers .arrival-points li",
+  );
+  await expect(guidancePoints).toHaveCount(4);
+  const pointBoxes = await guidancePoints.evaluateAll((points) =>
+    points.map((point) => {
+      const { x, y } = point.getBoundingClientRect();
+      return { x, y };
+    }),
+  );
+  expect(pointBoxes[0].y).toBeCloseTo(pointBoxes[1].y, 0);
+  expect(pointBoxes[2].y).toBeCloseTo(pointBoxes[3].y, 0);
+  expect(pointBoxes[1].x).toBeGreaterThan(pointBoxes[0].x);
+  expect(pointBoxes[2].y).toBeGreaterThan(pointBoxes[0].y);
+
   expect(confirmationLayout.actionsTop).toBeGreaterThanOrEqual(
     confirmationLayout.summaryBottom,
   );
