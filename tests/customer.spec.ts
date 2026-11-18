@@ -34,6 +34,32 @@ async function openSite(page: Page, route: string) {
     .click();
   await expect(prompt).toHaveCount(0);
 }
+/** Hold actual hero readiness so cover assertions do not depend on a minimum timer. */
+async function holdHomeDecode(page: Page) {
+  await page.evaluate(() => {
+    const original = HTMLImageElement.prototype.decode;
+    const pending = new Promise<void>((resolve) => {
+      window.addEventListener(
+        "test-release-home-decode",
+        () => {
+          HTMLImageElement.prototype.decode = original;
+          resolve();
+        },
+        { once: true },
+      );
+    });
+    HTMLImageElement.prototype.decode = function () {
+      const decoded = original.call(this);
+      return this.closest(".arena-photograph")
+        ? Promise.all([decoded, pending]).then(() => undefined)
+        : decoded;
+    };
+  });
+  return () =>
+    page.evaluate(() => {
+      window.dispatchEvent(new Event("test-release-home-decode"));
+    });
+}
 /** Open the same information through the phone panel or retain the desktop presentation. */
 async function openBookingPanel(page: Page, panel: "cart" | "trainers") {
   if (page.viewportSize()!.width > 700) return;
@@ -2221,11 +2247,13 @@ test("leave booking uses equal-width sentence-case actions with home left and st
   await page
     .getByRole("link", { name: "SOCCERBOTSTUDIO Singapore home" })
     .click();
+  const releaseHome = await holdHomeDecode(page);
   await dialog
     .getByRole("button", { name: "Leave booking", exact: true })
     .click();
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".page-loading")).toHaveCount(1);
+  await releaseHome();
   await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".arena-booking")).toBeVisible();
   const saved = await page.evaluate(() =>
@@ -3951,7 +3979,18 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
   await closeBookingPanel(page);
-  await page.getByRole("button", { name: /15:20–16:00/ }).click();
+  const selectedAfternoon = page.getByRole("button", { name: /^15:20–16:00/ });
+  await selectedAfternoon.click();
+  await expect(selectedAfternoon).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    page.getByRole("combobox", { name: `Trainer for ${date} at 15:20` }),
+  ).toHaveValue(`${date}|15:20|demo|daniel`);
+  await page
+    .getByRole("button", {
+      name: `Remove selected session ${date} at 15:20`,
+      exact: true,
+    })
+    .click();
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(1);
   await expect(
@@ -4253,12 +4292,14 @@ test("returning home uses one ready cover without replaying the first entrance",
   for (const destination of ["/enquiry/", "/privacy-policy/"]) {
     await page.locator(`a[href="${sitePath(destination)}"]`).click();
     await expect(page).toHaveURL(new RegExp(sitePath(destination) + "$"));
+    const releaseHome = await holdHomeDecode(page);
     await page
       .getByRole("link", { name: "SOCCERBOTSTUDIO Singapore home" })
       .click();
     await expect(page.locator("#page-refresh")).toBeVisible();
     await expect(page.locator(".page-loading")).toHaveCount(1);
     await expect(page.getByText("Refreshing…", { exact: true })).toHaveCount(0);
+    await releaseHome();
     await expect(page.locator("#page-refresh")).toHaveCount(0);
     await expect(page.locator(".arena-booking")).toBeVisible();
     await expect(page.locator("#page-refresh-content")).not.toHaveAttribute(
@@ -4268,8 +4309,10 @@ test("returning home uses one ready cover without replaying the first entrance",
   }
   await page.goBack();
   await expect(page).toHaveURL(new RegExp(sitePath("/privacy-policy/") + "$"));
+  const releaseHistoryHome = await holdHomeDecode(page);
   await page.goForward();
   await expect(page.locator("#page-refresh")).toBeVisible();
+  await releaseHistoryHome();
   await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".arena-booking")).toBeVisible();
 });
