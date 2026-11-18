@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-18 November 2026: PR95 on fix/section-cues-slot-remove now includes the approved email transfer control alongside homepage cues, unboxed slot removal, equal tile heights and flush subsection spacing. The latest email mockup is approved for implementation and staging; no merge requested.
+18 November 2026: final UI follow-up on fix/session-remove-hover from merged PR95/main0e0bd88. Add a rounded hover/focus background to the selected session × and change the email helper to “Select the blue circle to check your email address.” Owner authorized implementation, checks, staging then merge.
 
 ## Next actions
 
-Complete local verify:code passed:400 component/service tests,213 tooling tests,58 installer tests, source/policy/inventory/audit/format/lint/types, build and15-route export. A bounded mutation removing the retry success reset failed the new aria-pressed assertion as expected; original bytes and full test receipt were restored. Prior93105c4 run44233925214 passed all13 jobs. Push the consolidated animation candidate and inspect its own exact-head frontend/backend/live-email gates and staging health; no merge authorized. Browser execution remains owner/CI-only. Prior failures/cancellations remain in Journey. The temporary picomatch exception expires25 November00:00 SGT.
+Affected checks: Details6/6 and isolated TimeStep14/14 passed; combined run retained one calendar timeout (see Journey). Source/policy and ESLint passed. Publish the consolidated candidate, verify exact-head CI and staging health, then merge under the current authorization. Preserve the44px remove target, black icon, price placement and mobile resting state. Browser execution stays owner/CI-only. Full documentation reconciliation and notification-template setup follow this UI slice. The temporary picomatch exception expires25 November00:00 SGT.
 
 ## Ordered work after this slice
 

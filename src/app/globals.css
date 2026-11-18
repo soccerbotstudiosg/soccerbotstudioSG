@@ -4577,9 +4577,17 @@
     height: 44px;
     padding: 0;
     border: 0;
-    border-radius: 0;
+    border-radius: 8px;
     background: transparent;
     color: var(--color-control-close);
+  }
+  .time-remove:focus-visible {
+    background: var(--color-brand-tint);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .time-remove:hover {
+      background: var(--color-brand-tint);
+    }
   }
   .time-remove svg {
     width: 14px;
