@@ -46,7 +46,9 @@ export function SessionStep() {
   return (
     <>
       <BookingHeading lines={["Your", "session"]} />
-      <p className="lead">Confirm your session and players.</p>
+      <p className="lead booking-step-instruction">
+        Confirm your session and players.
+      </p>
       {!mobile && <h2 className="section-title">Outlet</h2>}
       <div className="outlet-options">
         {mobile && !outletSelected ? (

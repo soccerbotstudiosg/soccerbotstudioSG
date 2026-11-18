@@ -1,5 +1,7 @@
 import {
   profileAccessGeneration,
+  bookingAccessExpired,
+  bookingAccessNotice,
   reportExpiredBookingAccess,
   establishedProfileAccess,
   reportProfileAccessLoss,
@@ -203,10 +205,6 @@ async function identityRequest(
         throw new ProfileAccessRevokedError();
     }
   }
-  if (response.ok && startingBooking)
-    establishedProfileAccess(
-      response.headers.get("X-Booking-Access-Expires-At"),
-    );
   if (!response.ok) {
     if (startingBooking) {
       if (response.status === 429)
@@ -260,7 +258,13 @@ async function identityRequest(
     }
     text += decoder.decode();
     const value: unknown = JSON.parse(text);
-    return startingBooking ? accessSchema.parse(value) : value;
+    if (signal.aborted) throw requestUnavailable();
+    if (!startingBooking) return value;
+    const access = accessSchema.parse(value);
+    establishedProfileAccess(
+      response.headers.get("X-Booking-Access-Expires-At"),
+    );
+    return access;
   } catch (error) {
     if (startingBooking && !signal.aborted) throw requestUnavailable();
     throw error;
@@ -445,11 +449,21 @@ export type IdentityEntryPreparation = {
   promise: Promise<VerifiedIdentity | null>;
   cancel: () => void;
 };
-const checkedEntries = new WeakSet<CustomerIdentityService>();
+const checkedEntries = new WeakMap<
+  CustomerIdentityService,
+  "display" | "prepared"
+>();
 const entryGenerations = new WeakMap<CustomerIdentityService, number>();
-/** Report whether this booking flow has already restored its identity. */
-export function hasIdentityEntry(service: CustomerIdentityService) {
-  return checkedEntries.has(service);
+/** Distinguish a display check from successful, unexpired booking preparation. */
+export function hasIdentityEntry(
+  service: CustomerIdentityService,
+  readOnly = false,
+) {
+  const checked = checkedEntries.get(service);
+  return (
+    (readOnly ? checked !== undefined : checked === "prepared") &&
+    (service.mode !== "live" || !bookingAccessExpired())
+  );
 }
 /** End the flow-local identity check without changing authenticated state. */
 export function clearIdentityEntry(service: CustomerIdentityService) {
@@ -474,14 +488,16 @@ function createIdentityEntryPreparation(
   const promise = new Promise<VerifiedIdentity | null>((complete) => {
     resolve = complete;
   });
-  const finish = (identity: VerifiedIdentity | null) => {
+  const finish = (identity: VerifiedIdentity | null, succeeded = false) => {
     if (settled) return;
     settled = true;
     if (
+      succeeded &&
       !controller.signal.aborted &&
-      generation === (entryGenerations.get(service) ?? 0)
+      generation === (entryGenerations.get(service) ?? 0) &&
+      (!readOnly || checkedEntries.get(service) !== "prepared")
     )
-      checkedEntries.add(service);
+      checkedEntries.set(service, readOnly ? "display" : "prepared");
     clearTimeout(timeout);
     resolve(identity);
   };
@@ -500,7 +516,7 @@ function createIdentityEntryPreparation(
       : read(controller.signal);
     void operation.then(
       (identity) => {
-        if (!controller.signal.aborted) finish(identity);
+        if (!controller.signal.aborted) finish(identity, true);
       },
       () => finish(null),
     );
@@ -524,7 +540,11 @@ export function takeIdentityEntry(
   const preparation = entryPreparations.get(service);
   entryPreparations.delete(service);
   if (preparation) return preparation;
-  if (hasIdentityEntry(service))
+  // Recovery is not a new booking entry. Keep its notice and expired access
+  // until the visitor explicitly chooses Guest or requests an email code.
+  if (service.mode === "live" && bookingAccessNotice() === "session")
+    return { promise: Promise.resolve(null), cancel: () => {} };
+  if (hasIdentityEntry(service, readOnly))
     return { promise: Promise.resolve(service.current()), cancel: () => {} };
   return createIdentityEntryPreparation(service, readOnly);
 }

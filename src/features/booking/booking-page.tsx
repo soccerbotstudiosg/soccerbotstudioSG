@@ -72,7 +72,6 @@ export function BookingProgressHeader({ children }: { children: ReactNode }) {
 }
 
 const progress: Array<[BookingStep, string]> = [
-  ["account", "Booking"],
   ["session", "Session"],
   ["time", "Time"],
   ["details", "Details"],
@@ -119,7 +118,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
   useEffect(() => {
     if (
       step === "account" ||
-      hasIdentityEntry(identityService) ||
+      hasIdentityEntry(identityService, true) ||
       identityService.mode !== "live"
     )
       return;
@@ -290,7 +289,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
         <div
           className={`booking-shell ${["account", "session", "review"].includes(displayStep) ? "session-shell" : ""}`}
         >
-          {current >= 0 && (
+          {(current >= 0 || displayStep === "account") && (
             <BookingProgressHeader>
               <div className="booking-top">
                 {step === "account" && accountBack ? (
@@ -307,12 +306,16 @@ export function BookingPage({ step }: { step: BookingStep }) {
                   <Link
                     className="back"
                     href={
-                      current > 0 ? `/book/${progress[current - 1][0]}/` : "/"
+                      current > 0
+                        ? `/book/${progress[current - 1][0]}/`
+                        : displayStep === "session"
+                          ? "/book/account/"
+                          : "/"
                     }
                   >
                     <Icon name="back" />
                     <span className="back-label">
-                      {current ? "Back" : "Home"}
+                      {displayStep === "account" ? "Home" : "Back"}
                     </span>
                   </Link>
                 )}
@@ -330,44 +333,48 @@ export function BookingPage({ step }: { step: BookingStep }) {
                     </div>
                   </>
                 )}
-                <span className="booking-current-step">
-                  {progress[current][1]} · {current + 1} of {progress.length}
-                </span>
+                {current >= 0 && (
+                  <span className="booking-current-step">
+                    {progress[current][1]} · {current + 1} of {progress.length}
+                  </span>
+                )}
                 {mobile &&
                   ["time", "details", "review"].includes(displayStep) && (
                     <BookingTools basket={displayStep === "time"} />
                   )}
               </div>
-              <ol className="progress" aria-label="Booking progress">
-                {progress.map(([id, label], index) => (
-                  <li
-                    key={id}
-                    aria-current={index === current ? "step" : undefined}
-                    className={
-                      index === current
-                        ? "active"
-                        : index < current
-                          ? "done"
-                          : ""
-                    }
-                  >
-                    <span className="step-number">
-                      {index < current ? (
-                        <Icon name="check" className="h-4 w-4" />
+              {current >= 0 && (
+                <ol className="progress" aria-label="Booking progress">
+                  {progress.map(([id, label], index) => (
+                    <li
+                      key={id}
+                      aria-current={index === current ? "step" : undefined}
+                      className={
+                        index === current
+                          ? "active"
+                          : index < current
+                            ? "done"
+                            : ""
+                      }
+                    >
+                      <span className="step-number">
+                        {index < current ? (
+                          <Icon name="check" className="h-4 w-4" />
+                        ) : (
+                          index + 1
+                        )}
+                      </span>
+                      {index < current && !pendingReview ? (
+                        <Link href={`/book/${id}/`} className="hover:underline">
+                          {label}
+                        </Link>
                       ) : (
-                        index + 1
+                        label
                       )}
-                    </span>
-                    {index < current && !pendingReview ? (
-                      <Link href={`/book/${id}/`} className="hover:underline">
-                        {label}
-                      </Link>
-                    ) : (
-                      label
-                    )}
-                  </li>
-                ))}
-              </ol>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </BookingProgressHeader>
           )}
           <div

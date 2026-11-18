@@ -10,6 +10,10 @@ import {
   waitForIdentitySignOut,
 } from "./identity";
 import { demoCustomerIdentity } from "./demo/identity";
+import {
+  profileAccessGeneration,
+  rememberBookingAccessExpiry,
+} from "./profile-access";
 afterEach(() => vi.unstubAllGlobals());
 const identity = {
   email: "synthetic@example.invalid",
@@ -335,11 +339,21 @@ it("identity failures distinguish throttling expired access bad codes and securi
     new Response("not-json"),
     Response.json({ access: "revoked" }),
   ]) {
+    const generation = profileAccessGeneration();
     request.mockResolvedValueOnce(response);
     await expect(createLiveIdentityService().guest(signal)).rejects.toThrow(
       "We couldn’t start your booking. Please try again.",
     );
+    expect(profileAccessGeneration()).toBe(generation);
   }
+  const aborted = new AbortController();
+  aborted.abort();
+  request.mockResolvedValueOnce(Response.json({ access: "guest" }));
+  const generation = profileAccessGeneration();
+  await expect(
+    createLiveIdentityService().guest(aborted.signal),
+  ).rejects.toThrow();
+  expect(profileAccessGeneration()).toBe(generation);
   request.mockRejectedValueOnce(new TypeError("private transport detail"));
   await expect(createLiveIdentityService().guest(signal)).rejects.toThrow(
     "We couldn’t start your booking. Please try again.",
@@ -478,6 +492,33 @@ it("booking entry reuses the latest signed-in or signed-out state until a fresh 
   clearIdentityEntry(service);
   await takeIdentityEntry(service).promise;
   expect(refresh).toHaveBeenCalledTimes(3);
+  // A badge-only read must not satisfy a subsequent booking entry.
+  clearIdentityEntry(service);
+  const readCurrent = vi.fn(async () => null);
+  const displayOnly = { ...service, readCurrent };
+  await takeIdentityEntry(displayOnly, true).promise;
+  expect(readCurrent).toHaveBeenCalledTimes(1);
+  expect(hasIdentityEntry(displayOnly)).toBe(false);
+  await takeIdentityEntry(displayOnly).promise;
+  expect(refresh).toHaveBeenCalledTimes(4);
+  // Failed preparation must remain retryable, never cached as renewed access.
+  const failed = {
+    ...service,
+    refresh: vi.fn().mockRejectedValue(new Error("offline")),
+  };
+  await takeIdentityEntry(failed).promise;
+  expect(hasIdentityEntry(failed)).toBe(false);
+  failed.refresh.mockResolvedValue(null);
+  await takeIdentityEntry(failed).promise;
+  expect(failed.refresh).toHaveBeenCalledTimes(2);
+  expect(hasIdentityEntry(failed)).toBe(true);
+  const live = { ...service, mode: "live" as const };
+  rememberBookingAccessExpiry(String(Date.now() + 1800000));
+  await takeIdentityEntry(live).promise;
+  expect(hasIdentityEntry(live)).toBe(true);
+  rememberBookingAccessExpiry(String(Date.now() - 1));
+  expect(hasIdentityEntry(live)).toBe(false);
+  rememberBookingAccessExpiry(null);
   let completeOld!: (value: typeof identity | null) => void;
   const stale = {
     ...service,

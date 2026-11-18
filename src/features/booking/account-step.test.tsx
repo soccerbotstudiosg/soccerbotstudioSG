@@ -47,7 +47,7 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   await user.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(
     screen
-      .getByRole("heading", { name: "Sign in" })
+      .getByRole("heading", { name: "Continue with email" })
       .querySelectorAll(".booking-title-line"),
   ).toHaveLength(1);
   expect(screen.getByLabelText("Email address")).toHaveAttribute(

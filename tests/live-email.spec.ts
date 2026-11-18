@@ -1142,8 +1142,8 @@ test("native guest journey preserves players contact and one checkout across ref
       await expect(header).toHaveCSS("display", "grid");
       const month = await header.locator(".month-picker").boundingBox();
       const arrows = await header.locator(".calendar-nav").boundingBox();
-      expect(arrows!.y).toBeCloseTo(month!.y, 0);
-      expect(arrows!.x).toBeGreaterThanOrEqual(month!.x + month!.width);
+      expect(arrows!.y - (month!.y + month!.height)).toBeCloseTo(8, 0);
+      expect(month!.width).toBeCloseTo((await header.boundingBox())!.width, 0);
       const headerBox = await header.boundingBox();
       expect(arrows!.x + arrows!.width).toBeCloseTo(
         headerBox!.x + headerBox!.width,
@@ -2922,6 +2922,11 @@ test("real API revoked access at checkout returns to fresh entry and denies prot
   try {
     await guestDetails(page, mechanism);
     await reviewResponse(page);
+    const accessRequests = () =>
+      transport.calls.filter(
+        (call) => call.path === "/api/access" && call.method === "POST",
+      ).length;
+    const beforeExpiry = accessRequests();
     await mechanism.db
       .prepare("UPDATE guest_access SET revoked_ms=?")
       .bind(Date.now())
@@ -2964,6 +2969,30 @@ test("real API revoked access at checkout returns to fresh entry and denies prot
     expect(
       mechanism.calls.filter((call) => call.body?.method === "book"),
     ).toHaveLength(0);
+    await assertNoPaymentOrConfirmation(page, mechanism);
+    expect(accessRequests()).toBe(beforeExpiry);
+    await page.reload();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+      "Your session expired. Continue as a guest or sign in to start again.",
+    );
+    expect(accessRequests()).toBe(beforeExpiry);
+    await guestDetails(page, mechanism, false, { starts: [0], enter: false });
+    expect(accessRequests()).toBe(beforeExpiry + 1);
+    await expect(
+      page.getByText(
+        "Your session expired. Continue as a guest or sign in to start again.",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    const emailChecked = page.waitForResponse(
+      (result) =>
+        new URL(result.url()).pathname === "/api/identity/email-domain",
+    );
+    await reviewResponse(page);
+    expect((await emailChecked).status()).toBe(200);
+    expect(
+      await mechanism.db.prepare("SELECT COUNT(*) AS n FROM attempts").first(),
+    ).toEqual({ n: 0 });
     await assertNoPaymentOrConfirmation(page, mechanism);
   } finally {
     await stopMechanism(page, mechanism, transport);

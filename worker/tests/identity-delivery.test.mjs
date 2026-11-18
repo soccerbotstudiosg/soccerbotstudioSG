@@ -216,6 +216,8 @@ test("delivery public routes use fixed sender recipient idempotency and single-u
   );
   const code = sent.body.text.match(/code is (\d{6})/)[1];
   assert.match(sent.body.html, /Hello human,/);
+  assert.match(sent.body.html, /padding:24px;background:#102741/);
+  assert.doesNotMatch(sent.body.html, /background:#173e62/);
   assert.ok(sent.body.html.includes(code));
   assert.match(sent.body.html, /Your verification code/);
   assert.equal(sent.body.attachments, undefined);

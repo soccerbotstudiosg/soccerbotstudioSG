@@ -528,7 +528,7 @@ export function DetailsStep({
       ) : (
         <BookingHeading lines={["Your", "details"]} />
       )}
-      <p className="lead">
+      <p className="lead booking-step-instruction">
         {profileOnly
           ? "Update your saved contact."
           : "Enter your contact details."}

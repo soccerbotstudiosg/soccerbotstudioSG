@@ -3439,6 +3439,9 @@
       gap: 16px;
       margin-bottom: 20px;
     }
+    .booking-step-instruction {
+      display: none;
+    }
     .booking-top > .back {
       justify-self: start;
     }
@@ -3525,7 +3528,7 @@
   }
   .progress {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     width: 100%;
     margin: 0 0 37px;
     list-style: none;
@@ -3683,6 +3686,24 @@
     min-height: 0;
     line-height: 0;
   }
+  .auth-code-recipient,
+  .auth-code-label {
+    text-align: center;
+    font-size: var(--text-body);
+  }
+  .auth-code-recipient .auth-email-address {
+    display: block;
+  }
+  .auth-code-expiry {
+    font-size: var(--text-body);
+    margin: 6px 0 0;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .auth-code-expiry[data-expired="true"] {
+    color: var(--color-danger);
+  }
   .auth-panel .auth-code {
     font-size: var(--text-dialog);
     font-variant-numeric: tabular-nums;
@@ -3692,7 +3713,7 @@
     min-height: 64px;
   }
   .auth-panel .auth-code::placeholder {
-    font-size: var(--text-label);
+    font-size: var(--text-body);
     letter-spacing: normal;
   }
   .auth-error {
@@ -3733,6 +3754,20 @@
   }
   .auth-code-feedback .text-link {
     min-height: 44px;
+  }
+  .auth-code-help {
+    margin-top: 36px;
+  }
+  .auth-code-help p,
+  .auth-code-help .text-link {
+    font-size: var(--text-body);
+  }
+  .auth-code-help .text-link {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin: 2px auto 0;
+    padding: 0 0 20px;
   }
   .access-options-verified :is(h2, .signed-in-email) {
     font-size: var(--text-dialog);

@@ -1559,10 +1559,11 @@ test("email verification rejects an incorrect code and continues after correctio
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Continue with email" }).click();
   const emailHeading = page.getByRole("heading", {
-    name: "Sign in",
+    name: "Continue with email",
     exact: true,
   });
   await expect(emailHeading.locator(".booking-title-line")).toHaveCount(1);
+  await expect(page.getByLabel("Booking progress")).toHaveCount(0);
   const headingLines = await emailHeading.evaluate((heading) => ({
     height: heading.getBoundingClientRect().height,
     lineHeight: Number.parseFloat(getComputedStyle(heading).lineHeight),
@@ -1588,8 +1589,33 @@ test("email verification rejects an incorrect code and continues after correctio
   await expect(
     page.getByRole("heading", { name: "Verify your email", exact: true }),
   ).toBeVisible();
+  await expect(page.getByLabel("Booking progress")).toHaveCount(0);
   // The code view mounts before the loading overlay releases page inertness.
   await expect(page.locator("main")).not.toHaveAttribute("inert");
+  for (const selector of [".auth-code-recipient", ".auth-code-label"]) {
+    await expect(page.locator(selector)).toHaveCSS("text-align", "center");
+  }
+  await expect(
+    page.locator(".auth-code-recipient .auth-email-address"),
+  ).toHaveCSS("display", "block");
+  const expiryGap = await page
+    .locator(".auth-code-expiry")
+    .evaluate(
+      (timer) =>
+        timer.getBoundingClientRect().top -
+        document.getElementById("auth-code")!.getBoundingClientRect().bottom,
+    );
+  expect(expiryGap).toBeCloseTo(6, 0);
+  for (const selector of [
+    ".auth-code-recipient",
+    ".auth-code-label",
+    ".auth-code-expiry",
+    ".auth-code-help p",
+    ".auth-code-help .text-link",
+  ]) {
+    await expect(page.locator(selector)).toHaveCSS("font-size", "16px");
+  }
+  await expect(page.locator(".auth-code-help")).toHaveCSS("margin-top", "36px");
   await page.getByLabel("Verification code", { exact: true }).fill("000000");
   await expect(
     page.getByLabel("Verification code", { exact: true }),
@@ -2710,14 +2736,18 @@ function bookingTypography(page: Page) {
       );
       await expect(instruction).toHaveCSS("color", "rgb(88, 97, 116)");
       await expect(instruction).toHaveCSS("font-family", /Roboto/);
-      const line = await instruction.evaluate((node) => ({
-        height: node.getBoundingClientRect().height,
-        lineHeight: parseFloat(getComputedStyle(node).lineHeight),
-        width: node.clientWidth,
-        textWidth: node.scrollWidth,
-      }));
-      expect(line.height).toBeCloseTo(line.lineHeight, 0);
-      expect(line.textWidth).toBeLessThanOrEqual(line.width);
+      if (width > 700 && !calendarNote) {
+        await expect(instruction).toBeHidden();
+      } else {
+        const line = await instruction.evaluate((node) => ({
+          height: node.getBoundingClientRect().height,
+          lineHeight: parseFloat(getComputedStyle(node).lineHeight),
+          width: node.clientWidth,
+          textWidth: node.scrollWidth,
+        }));
+        expect(line.height).toBeCloseTo(line.lineHeight, 0);
+        expect(line.textWidth).toBeLessThanOrEqual(line.width);
+      }
     }
 
     if (name === "Select dates and times" && width <= 700) {
@@ -3337,11 +3367,19 @@ test("calendar and contact retain typography and continuous sticky geometry", as
   );
   const monthBox = await monthPicker.boundingBox();
   const navBox = await page.locator(".calendar-nav").boundingBox();
-  expect(monthBox!.y + monthBox!.height / 2).toBeCloseTo(
-    navBox!.y + navBox!.height / 2,
-    0,
-  );
-  expect(monthBox!.x + monthBox!.width).toBeLessThan(navBox!.x);
+  if (page.viewportSize()!.width <= 700) {
+    expect(navBox!.y - (monthBox!.y + monthBox!.height)).toBeCloseTo(8, 0);
+    expect(navBox!.x + navBox!.width).toBeCloseTo(
+      monthBox!.x + monthBox!.width,
+      0,
+    );
+  } else {
+    expect(monthBox!.y + monthBox!.height / 2).toBeCloseTo(
+      navBox!.y + navBox!.height / 2,
+      0,
+    );
+    expect(monthBox!.x + monthBox!.width).toBeLessThan(navBox!.x);
+  }
   if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
     for (const control of [
       monthPicker,
@@ -4387,13 +4425,27 @@ async function expectCalendarHeadingLayout(page: Page) {
   });
   for (const width of [1280, 1440, 375, 430, 700]) {
     await page.setViewportSize({ width, height: 900 });
+    await expect(
+      page
+        .locator(width > 700 ? ".booking-top-title" : ".booking-main")
+        .getByRole("heading", { name: "Select dates and times", exact: true }),
+    ).toBeVisible();
     const geometry = await calendarTitle.evaluate((node) => {
       const title = node.getBoundingClientRect();
       const badge = document
         .querySelector(".booking-identity-status > span")!
         .getBoundingClientRect();
-      const row = node.parentElement!.getBoundingClientRect();
+      const row = (
+        window.innerWidth > 700
+          ? document.querySelector(".booking-top-identity")!
+          : node.parentElement!
+      ).getBoundingClientRect();
+      const top = document
+        .querySelector(".booking-top")!
+        .getBoundingClientRect();
       return {
+        titleCenter: title.left + title.width / 2,
+        topCenter: top.left + top.width / 2,
         height: title.height,
         lineHeight: parseFloat(getComputedStyle(node).lineHeight),
         titleRight: title.right,
@@ -4408,6 +4460,8 @@ async function expectCalendarHeadingLayout(page: Page) {
       geometry.lineHeight * (width <= 700 ? 2 : 1),
       0,
     );
+    if (width > 700)
+      expect(geometry.titleCenter).toBeCloseTo(geometry.topCenter, 0);
     expect(geometry.badgeLeft).toBeGreaterThanOrEqual(geometry.titleRight);
     expect(geometry.badgeRight).toBeCloseTo(geometry.rowRight, 0);
     expect(geometry.badgeTop - geometry.titleTop).toBeLessThan(
@@ -4426,6 +4480,12 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
   });
   for (const width of [375, 430, 700, 1280]) {
     await page.setViewportSize({ width, height: 900 });
+    await expect(
+      page
+        .locator(width > 700 ? ".booking-top-title" : ".booking-main")
+        .getByRole("heading", { name: "Start your booking", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Booking progress")).toHaveCount(0);
     await expect(title).toBeVisible();
     await expect(page.getByLabel("Booking identity")).toHaveCount(0);
     const geometry = await title.evaluate((node) => {
@@ -4467,6 +4527,14 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
   await expect(badge).toHaveCSS("font-weight", "700");
   for (const width of [375, 430, 700]) {
     await page.setViewportSize({ width, height: 900 });
+    await expect(
+      page
+        .locator(".booking-main")
+        .getByRole("heading", { name: "Your session", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Booking progress").locator("li")).toHaveCount(
+      4,
+    );
     const headingBox = await sessionTitle.boundingBox();
     const badgeBox = await badge.boundingBox();
     expect(badgeBox!.x).toBeGreaterThanOrEqual(
