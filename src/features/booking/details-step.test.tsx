@@ -68,25 +68,38 @@ test("guest email checks show progress reject invalid domains and ignore stale r
   });
   fireEvent.click(control);
   expect(control).toHaveAttribute("aria-busy", "true");
-  expect(control.querySelectorAll(".email-check-icon circle")).toHaveLength(3);
+  expect(control).toHaveAttribute("data-state", "checking");
+  expect(
+    control.querySelectorAll(".email-transfer-particles circle"),
+  ).toHaveLength(3);
   expect(control.querySelector(".spinner")).toBeNull();
   expect(control).toBeDisabled();
   expect(fetcher).toHaveBeenCalledTimes(1);
   fireEvent.change(email, { target: { value: "second@example.com" } });
   await act(async () => finish(Response.json({ status: "valid" })));
   expect(control).toHaveAttribute("aria-pressed", "false");
+  expect(control).toHaveAttribute("data-state", "idle");
   expect(control).not.toBeDisabled();
   fireEvent.click(control);
   await act(async () => finish(Response.json({ status: "invalid" })));
+  expect(control).toHaveAttribute("data-state", "invalid");
   expect(
     screen.getByText(/This email domain cannot receive email/),
   ).toBeVisible();
   fireEvent.click(control);
   await act(async () => finish(new Response(null, { status: 503 })));
   expect(screen.getByText(/Couldn’t check your email domain/)).toBeVisible();
+  expect(control).toHaveAttribute("data-state", "invalid");
   fireEvent.click(control);
   await act(async () => finish(Response.json({ status: "valid" })));
   expect(control).toHaveAttribute("aria-pressed", "true");
+  expect(control).toHaveAttribute("data-state", "valid");
+  fireEvent.click(control);
+  expect(control).toHaveAttribute("data-state", "checking");
+  expect(control).toHaveAttribute("aria-pressed", "false");
+  await act(async () => finish(Response.json({ status: "invalid" })));
+  expect(control).toHaveAttribute("data-state", "invalid");
+  expect(control).toHaveAttribute("aria-pressed", "false");
   const calls = fetcher.mock.calls.length;
   fireEvent.click(screen.getByText("Use verified identity"));
   expect(
@@ -182,10 +195,10 @@ test("details contains only the five contact fields and validates them before re
     name: "Confirm email address is correct",
   });
   expect(document.getElementById("email-check-help")).toHaveTextContent(
-    "Select the email icon to confirm your email address.",
+    "Select the blue circle to confirm your email address.",
   );
   expect(
-    confirmEmail.querySelectorAll(".email-check-icon circle"),
+    confirmEmail.querySelectorAll(".email-transfer-particles circle"),
   ).toHaveLength(3);
   expect(reviewButton).toBeDisabled();
   fireEvent.submit(document.getElementById("details-form")!);

@@ -208,8 +208,18 @@ async function details(page: Page) {
   const emailBox = await emailInput.boundingBox();
   const controlBox = await emailControl.boundingBox();
   expect(controlBox!.height).toBeCloseTo(emailBox!.height - 2, 0);
-  await expect(page.locator("#email-check-help .icon")).toBeVisible();
+  await expect(page.locator("#email-check-help")).toHaveText(
+    "Select the blue circle to confirm your email address.",
+  );
+  await expect(
+    emailControl.locator(".email-transfer-particles circle"),
+  ).toHaveCount(3);
   await emailControl.click();
+  await expect(emailControl).toHaveAttribute("data-state", "valid");
+  await expect(emailControl.locator(".email-transfer-tick")).toHaveCSS(
+    "opacity",
+    "1",
+  );
   await page
     .getByRole("button", { name: /^Review Booking \$[\d,.]+$/ })
     .click();

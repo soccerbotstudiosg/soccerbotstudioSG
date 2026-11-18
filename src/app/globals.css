@@ -53,6 +53,9 @@
   --color-on-brand-muted: #dce1f1;
   --color-ink: #101636;
   --color-control-close: #000;
+  --color-email-transfer: #00bfff;
+  --color-email-valid: #00bf72;
+  --color-email-invalid: #ff8a00;
   --color-muted: #586174;
   --color-hint: #767676;
   --color-placeholder: #9a9aa5;
@@ -4845,14 +4848,14 @@
     position: relative;
   }
   .email-confirm-input input {
-    padding-right: 64px;
+    padding-right: 86px;
   }
   .email-confirm-control {
     position: absolute;
     right: 1px;
     top: 1px;
     bottom: 1px;
-    width: 52px;
+    width: 74px;
     height: auto;
     min-height: 44px;
     display: grid;
@@ -4874,44 +4877,110 @@
     background: var(--color-brand-soft);
   }
   .email-confirm-control .email-check-icon {
-    width: 28px;
-    height: 30px;
+    width: 64px;
+    height: 42px;
   }
-  .email-check-icon circle {
-    transform-box: fill-box;
-    transform-origin: center;
+  .email-transfer-pipe {
+    fill: none;
+    stroke: var(--color-control-close);
+    stroke-width: 9;
+    stroke-linecap: round;
   }
-  @keyframes email-check-dot {
-    0%,
-    65%,
-    100% {
-      scale: 1;
+  .email-transfer-origin,
+  .email-transfer-destination {
+    stroke: var(--color-control-close);
+    stroke-width: 2.5;
+  }
+  .email-transfer-origin {
+    fill: var(--color-email-transfer);
+  }
+  .email-transfer-destination {
+    fill: var(--color-surface);
+  }
+  .email-transfer-particles {
+    fill: var(--color-email-transfer);
+    opacity: 0;
+  }
+  .email-transfer-tick,
+  .email-transfer-alert {
+    fill: none;
+    stroke: var(--color-on-brand);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+  }
+  .email-confirm-control:not([data-state="idle"]) .email-transfer-origin {
+    r: 12px;
+    fill: var(--color-surface);
+  }
+  .email-confirm-control[data-state="checking"] .email-transfer-particles {
+    opacity: 1;
+  }
+  .email-confirm-control[data-state="valid"] .email-transfer-destination {
+    r: 24px;
+    fill: var(--color-email-valid);
+  }
+  .email-confirm-control[data-state="invalid"] .email-transfer-destination {
+    r: 24px;
+    fill: var(--color-email-invalid);
+  }
+  .email-confirm-control[data-state="valid"] .email-transfer-tick,
+  .email-confirm-control[data-state="invalid"] .email-transfer-alert {
+    opacity: 1;
+  }
+  @keyframes email-transfer-fast {
+    from {
+      transform: translateX(0);
+      opacity: 0;
     }
-    30% {
-      scale: 1.8;
+    15%,
+    85% {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+      transform: translateX(60px);
+    }
+  }
+  @keyframes email-transfer-wait {
+    from {
+      transform: translateX(0);
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+      transform: translateX(60px);
     }
   }
   @media (prefers-reduced-motion: no-preference) {
-    .email-confirm-control[aria-busy="true"] circle {
-      animation: email-check-dot 900ms ease-in-out infinite;
+    .email-confirm-control[data-state="checking"]
+      .email-transfer-particles
+      circle {
+      cx: 90px;
+      animation:
+        email-transfer-fast 700ms linear 1,
+        email-transfer-wait 2400ms 700ms linear infinite;
     }
-    .email-confirm-control[aria-busy="true"] circle:nth-child(2) {
-      animation-delay: 150ms;
+    .email-confirm-control[data-state="checking"]
+      .email-transfer-particles
+      circle:nth-child(2) {
+      animation-delay: -230ms, 470ms;
     }
-    .email-confirm-control[aria-busy="true"] circle:nth-child(3) {
-      animation-delay: 300ms;
+    .email-confirm-control[data-state="checking"]
+      .email-transfer-particles
+      circle:nth-child(3) {
+      animation-delay: -460ms, 240ms;
     }
   }
   .email-check-help {
     color: var(--color-hint);
     font-size: var(--text-meta);
     margin-top: 7px;
-  }
-  .email-check-help .icon {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    vertical-align: -3px;
   }
   .field-error {
     color: var(--color-danger);
@@ -5437,7 +5506,6 @@
     .alert {
       animation: booking-action-ready 240ms ease-out;
     }
-    .email-confirm-control[aria-pressed="true"] .icon,
     .confirmation-shell .status-icon,
     .confirmation-invoice-value,
     .booking-cart-count {

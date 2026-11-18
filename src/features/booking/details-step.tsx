@@ -157,6 +157,7 @@ export function DetailsStep({
   const errors = touchedErrors;
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
   const [emailChecking, setEmailChecking] = useState(false);
+  const [failedEmail, setFailedEmail] = useState<string | null>(null);
   const emailWork = useRef<AbortController | null>(null);
   useEffect(
     () => () => {
@@ -168,6 +169,8 @@ export function DetailsStep({
   /** Check guest email routing and ignore results for an edited address. */
   async function confirmEmail() {
     if (currentErrors.email || emailWork.current) return;
+    setFailedEmail(null);
+    setCheckedEmail(null);
     if (bookingService.mode !== "live") {
       setCheckedEmail(c.email);
       return;
@@ -183,7 +186,8 @@ export function DetailsStep({
     emailWork.current = null;
     setEmailChecking(false);
     if (status === "valid" && !request.signal.aborted) setCheckedEmail(c.email);
-    else
+    else {
+      setFailedEmail(c.email);
       setErrors((errors) => ({
         ...errors,
         email:
@@ -191,6 +195,7 @@ export function DetailsStep({
             ? "This email domain cannot receive email. Check your email address."
             : "Couldn’t check your email domain. Please try again.",
       }));
+    }
   }
   const needsEmailCheck = !profileOnly && draft.mode !== "member";
   const emailChecked = !needsEmailCheck || checkedEmail === c.email;
@@ -278,6 +283,7 @@ export function DetailsStep({
       emailWork.current = null;
       setEmailChecking(false);
       setCheckedEmail(null);
+      setFailedEmail(null);
     }
     update({ contact: { ...c, [key]: value } });
     setErrors((current) =>
@@ -388,31 +394,43 @@ export function DetailsStep({
               aria-pressed={emailChecked}
               disabled={!!currentErrors.email || emailChecking}
               aria-busy={emailChecking}
+              data-state={
+                emailChecking
+                  ? "checking"
+                  : emailChecked
+                    ? "valid"
+                    : failedEmail === c.email
+                      ? "invalid"
+                      : "idle"
+              }
               onClick={() => void confirmEmail()}
             >
-              {emailChecked && !emailChecking ? (
-                <Icon name="check" />
-              ) : (
-                <svg
-                  className="email-check-icon"
-                  viewBox="0 0 28 30"
-                  aria-hidden="true"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 5h18" />
-                  <g fill="currentColor" stroke="none">
-                    <circle cx="5" cy="5" r="2" />
-                    <circle cx="14" cy="5" r="2" />
-                    <circle cx="23" cy="5" r="2" />
-                  </g>
-                  <rect x="3" y="13" width="22" height="14" rx="2" />
-                  <path d="m4 14 10 7 10-7" />
-                </svg>
-              )}
+              <svg
+                className="email-check-icon"
+                viewBox="42 16 156 68"
+                aria-hidden="true"
+              >
+                <path className="email-transfer-pipe" d="M76 50H164" />
+                <circle
+                  className="email-transfer-origin"
+                  cx="76"
+                  cy="50"
+                  r="24"
+                />
+                <circle
+                  className="email-transfer-destination"
+                  cx="164"
+                  cy="50"
+                  r="12"
+                />
+                <g className="email-transfer-particles">
+                  <circle cx="90" cy="50" r="3" />
+                  <circle cx="110" cy="50" r="3" />
+                  <circle cx="130" cy="50" r="3" />
+                </g>
+                <path className="email-transfer-tick" d="M154 50l7 7 13-15" />
+                <path className="email-transfer-alert" d="M164 39v13m0 9v.1" />
+              </svg>
             </button>
           )}
         </div>
@@ -425,17 +443,11 @@ export function DetailsStep({
               id="email-check-help"
               aria-live="polite"
             >
-              {emailChecking ? (
-                "Checking email…"
-              ) : emailChecked ? (
-                "You’ve checked your email address."
-              ) : (
-                <>
-                  Select the <Icon name="mail" />
-                  <span className="sr-only">email icon</span> to confirm your
-                  email address.
-                </>
-              )}
+              {emailChecking
+                ? "Checking email…"
+                : emailChecked
+                  ? "You’ve checked your email address."
+                  : "Select the blue circle to confirm your email address."}
             </p>
           )}
         {errors[key] && (
