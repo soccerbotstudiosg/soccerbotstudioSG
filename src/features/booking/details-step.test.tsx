@@ -195,7 +195,7 @@ test("details contains only the five contact fields and validates them before re
     name: "Confirm email address is correct",
   });
   expect(document.getElementById("email-check-help")).toHaveTextContent(
-    "Select the blue circle to confirm your email address.",
+    "Select the blue circle to check your email address.",
   );
   expect(
     confirmEmail.querySelectorAll(".email-transfer-particles circle"),

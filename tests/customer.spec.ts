@@ -209,7 +209,7 @@ async function details(page: Page) {
   const controlBox = await emailControl.boundingBox();
   expect(controlBox!.height).toBeCloseTo(emailBox!.height - 2, 0);
   await expect(page.locator("#email-check-help")).toHaveText(
-    "Select the blue circle to confirm your email address.",
+    "Select the blue circle to check your email address.",
   );
   await expect(
     emailControl.locator(".email-transfer-particles circle"),
@@ -4033,6 +4033,21 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(removeAfternoon).toHaveCSS("color", "rgb(0, 0, 0)");
   await expect(removeAfternoon).toHaveCSS("width", "44px");
   await expect(removeAfternoon).toHaveCSS("height", "44px");
+  await expect(removeAfternoon).toHaveCSS("border-radius", "8px");
+  if (!mobile) {
+    await removeAfternoon.hover();
+    await expect(removeAfternoon).toHaveCSS(
+      "background-color",
+      "rgb(220, 225, 241)",
+    );
+    await expect(removeAfternoon).toHaveCSS("width", "44px");
+    await expect(removeAfternoon).toHaveCSS("height", "44px");
+    await selectedAfternoon.locator(".time-range").hover();
+    await expect(removeAfternoon).toHaveCSS(
+      "background-color",
+      "rgba(0, 0, 0, 0)",
+    );
+  }
   const removeBounds = await removeAfternoon.boundingBox();
   const rateBounds = await selectedAfternoon
     .locator(".time-rate")
