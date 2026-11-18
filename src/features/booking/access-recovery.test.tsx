@@ -441,11 +441,30 @@ test("saved-profile timeout offers retry without exposing fields or restarting b
 
 test("expired guest email lookup returns to step one with session notice and usable entry choices", async () => {
   navigation.path = "/book/details/";
+  let accessAvailable = false;
+  let renewed = false;
+  let completeRenewal: (() => void) | undefined;
   const fetcher = vi.fn<typeof fetch>(async (input) => {
     if (String(input) === "/api/identity/email-domain")
-      return Response.json({ error: "access_denied" }, { status: 401 });
-    if (String(input) === "/api/access")
-      return Response.json({ access: "guest" });
+      return renewed
+        ? Response.json({ status: "valid" })
+        : Response.json({ error: "access_denied" }, { status: 401 });
+    if (String(input) === "/api/access") {
+      if (!accessAvailable)
+        return Response.json({ error: "unavailable" }, { status: 503 });
+      await new Promise<void>((resolve) => {
+        completeRenewal = resolve;
+      });
+      renewed = true;
+      return Response.json(
+        { access: "guest" },
+        {
+          headers: {
+            "X-Booking-Access-Expires-At": String(Date.now() + 1800000),
+          },
+        },
+      );
+    }
     return Response.json(null);
   });
   const identity = await identityWith(fetcher);
@@ -483,6 +502,44 @@ test("expired guest email lookup returns to step one with session notice and usa
     screen.getByRole("button", { name: "Continue with email" }),
   ).toBeEnabled();
   expect(screen.getByTestId("recovery")).not.toHaveTextContent("Old Guest");
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
+  });
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(screen.getByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
+  expect(
+    screen.getByText("We couldn’t start your booking. Please try again."),
+  ).toBeVisible();
+  accessAvailable = true;
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
+  });
+  expect(navigation.push).not.toHaveBeenCalled();
+  const requestsBeforeCompletion = fetcher.mock.calls.filter(
+    ([url]) => url === "/api/access",
+  ).length;
+  expect(completeRenewal).toBeTypeOf("function");
+  await act(async () => {
+    completeRenewal!();
+  });
+  expect(
+    fetcher.mock.calls.filter(([url]) => url === "/api/access"),
+  ).toHaveLength(requestsBeforeCompletion);
+  expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/session/");
+  navigation.replace.mockClear();
+  navigation.path = "/book/session/";
+  view.rerender(
+    <BookingProvider bookingService={service} identityService={identity}>
+      <Probe visiting="session" />
+    </BookingProvider>,
+  );
+  expect(screen.getByTestId("recovery")).toHaveTextContent(
+    '"profileAccessRevision":0',
+  );
+  await expect(
+    checkEmailDomain("guest@example.com", new AbortController().signal),
+  ).resolves.toBe("valid");
+  expect(navigation.replace).not.toHaveBeenCalled();
 });
 
 test("expired protected availability and verification notify recovery but transient failures do not", async () => {
@@ -590,6 +647,8 @@ test("expired navigation redirects on forward and back steps while local edits a
         ),
   );
   const identity = await identityWith(fetcher);
+  const accessCalls = () =>
+    fetcher.mock.calls.filter(([path]) => path === "/api/access").length;
   for (const [origin, destination] of [
     ["/book/session/", "/book/time/"],
     ["/book/time/", "/book/details/"],
@@ -600,6 +659,8 @@ test("expired navigation redirects on forward and back steps while local edits a
     ["/book/session/", "/book/account/"],
   ]) {
     navigation.replace.mockClear();
+    navigation.push.mockClear();
+    const beforeRecovery = accessCalls();
     navigation.path = origin;
     vi.setSystemTime(start);
     establishedProfileAccess(String(start + 1800000));
@@ -634,6 +695,7 @@ test("expired navigation redirects on forward and back steps while local edits a
       </BookingProvider>,
     );
     expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
+    expect(accessCalls()).toBe(beforeRecovery);
     // A refresh remounts the provider while the generation has already reported loss.
     view.unmount();
     view = render(
@@ -643,7 +705,14 @@ test("expired navigation redirects on forward and back steps while local edits a
       </BookingProvider>,
     );
     expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
+    expect(accessCalls()).toBe(beforeRecovery);
+    expect(navigation.push).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Continue as guest" }),
+      );
+    });
+    expect(accessCalls()).toBe(beforeRecovery + 1);
     expect(navigation.push).toHaveBeenCalledWith("/book/session/");
     expect(screen.getByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
     navigation.replace.mockClear();
@@ -661,8 +730,6 @@ test("expired navigation redirects on forward and back steps while local edits a
         <Probe />
       </BookingProvider>,
     );
-    const accessCalls = () =>
-      fetcher.mock.calls.filter(([path]) => path === "/api/access").length;
     const beforeEntry = accessCalls();
     await act(async () => {
       await prepareIdentityEntry(identity).promise;
@@ -747,9 +814,10 @@ test("expired navigation redirects on forward and back steps while local edits a
     recovering.unmount();
     sessionStorage.clear();
   }
-  // Remembered sign-in can be restored after booking access expires.
-  // That must not hide the reason the visitor was returned to Step 1.
+  // Recovery must not silently renew or restore remembered sign-in.
+  // Choosing email opens its form without requesting access until a code request.
   restoredMember = verified();
+  const beforeMemberRecovery = accessCalls();
   establishedProfileAccess(String(Date.now() - 1));
   navigation.path = "/book/details/";
   const restoredView = render(
@@ -765,8 +833,14 @@ test("expired navigation redirects on forward and back steps while local edits a
       <Probe />
     </BookingProvider>,
   );
-  await waitFor(() => expect(identity.current()?.email).toBe(email));
   expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
+  expect(accessCalls()).toBe(beforeMemberRecovery);
+  expect(identity.current()).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
+  expect(
+    await screen.findByRole("heading", { name: "Continue with email" }),
+  ).toBeVisible();
+  expect(accessCalls()).toBe(beforeMemberRecovery);
   restoredView.unmount();
   rememberBookingAccessExpiry(null);
 });

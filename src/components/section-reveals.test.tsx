@@ -140,7 +140,7 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
     screen
       .getByRole("button", { name: "Back to top" })
       .style.getPropertyValue("--back-to-top-clearance"),
-  ).toBe("92px");
+  ).toBe("68px");
   // A later measurement can see the previously painted lifted rectangle.
   paintedBottom = window.innerHeight - 92;
   fireEvent.resize(window);
@@ -148,7 +148,7 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
     screen
       .getByRole("button", { name: "Back to top" })
       .style.getPropertyValue("--back-to-top-clearance"),
-  ).toBe("92px");
+  ).toBe("68px");
   actionTop = window.innerHeight - 80.25;
   fireEvent.resize(window);
   expect(
@@ -157,7 +157,17 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
         .getByRole("button", { name: "Back to top" })
         .style.getPropertyValue("--back-to-top-clearance"),
     ),
-  ).toBeGreaterThanOrEqual(92.25);
+  ).toBeGreaterThanOrEqual(68.25);
+  // Consecutive scroll events retain clearance before the visitor releases.
+  for (let index = 0; index < 5; index += 1) {
+    position += 1;
+    fireEvent.scroll(window);
+    expect(
+      screen
+        .getByRole("button", { name: "Back to top" })
+        .style.getPropertyValue("--back-to-top-clearance"),
+    ).toBe("69px");
+  }
   actionTop = 200;
   fireEvent.scroll(window);
   expect(

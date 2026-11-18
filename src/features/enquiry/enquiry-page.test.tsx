@@ -132,10 +132,10 @@ test("enquiry reveals errors after blur or submission and blocks invalid service
   ).not.toHaveAttribute("aria-describedby");
   expect(
     screen.getByLabelText("Preferred date", { exact: false }),
-  ).not.toHaveAttribute("aria-describedby");
+  ).toHaveAccessibleDescription("Select a date.");
   expect(
     screen.getByLabelText("Preferred time", { exact: false }),
-  ).not.toHaveAttribute("aria-describedby");
+  ).toHaveAccessibleDescription("Select a time (SGT).");
   for (const label of [
     "Full name",
     "Email address",

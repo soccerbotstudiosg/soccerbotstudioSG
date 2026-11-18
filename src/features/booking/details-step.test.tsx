@@ -337,11 +337,11 @@ test("verified details saves only on explicit action and ignores completion afte
   expect(screen.getByLabelText(/Full name/)).toBeEnabled();
   await user.type(screen.getByLabelText(/Full name/), " Edited");
   expect(saveProfile.mock.calls[0][1].aborted).toBe(true);
-  await act(async () => {
-    const pendingSave = saveProfile.mock.results.at(-1)!.value;
-    finish();
-    await pendingSave;
-  });
+  // The aborted save must settle without scheduling any React state update.
+  // Await that request directly; the later successful save still flushes React.
+  const pendingSave = saveProfile.mock.results.at(-1)!.value;
+  finish();
+  await pendingSave;
   expect(screen.queryByText("Details saved.")).not.toBeInTheDocument();
   expect(screen.getByLabelText(/Full name/)).toHaveValue(
     "First Contact Edited",

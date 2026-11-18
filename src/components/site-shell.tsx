@@ -15,7 +15,7 @@ import { darkLogo, logo, singaporeFlag } from "@/content/media";
 import { BookingLoading } from "@/features/booking/booking-loading";
 import { useBooking } from "@/features/booking/provider";
 import { Dialog } from "./dialog";
-import { BookingLink } from "./booking-navigation";
+import { BookingLink, useBookingNavigation } from "./booking-navigation";
 import { PlayerAppLinks } from "./player-app-links";
 import { PlayerAppPrompt } from "./player-app-prompt";
 import { BackToTop, SectionReveals } from "./section-reveals";
@@ -34,6 +34,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname(),
     router = useRouter(),
     booking = useBooking();
+  const { enter } = useBookingNavigation();
   const [errorPage, setErrorPage] = useState(false);
   const [dialog, setDialog] = useState<{
     href: string;
@@ -68,6 +69,102 @@ export function SiteShell({ children }: { children: ReactNode }) {
       else root.style.removeProperty("--site-header-height");
     };
   }, []);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    let field: HTMLInputElement | HTMLTextAreaElement | null = null;
+    let keyboardOpen = false;
+    let closing = false;
+    let width = window.innerWidth;
+    let fullHeight = Math.max(viewport.height, window.innerHeight);
+    let frame = 0;
+    /** Abandon correction when the visitor intentionally scrolls or changes orientation. */
+    const cancel = () => {
+      closing = false;
+      field = null;
+      cancelAnimationFrame(frame);
+    };
+    const focus = (event: FocusEvent) => {
+      const target = event.target;
+      field =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement
+          ? target
+          : null;
+      closing = false;
+    };
+    /** Reveal only a keyboard-edited field obscured by the restored sticky navigation. */
+    const correct = () => {
+      if (!closing || !field?.isConnected || viewport.scale !== 1) return;
+      const header =
+        document.querySelector(".site-header")?.getBoundingClientRect()
+          .bottom ?? 0;
+      const progress =
+        document.querySelector(".booking-navigation")?.getBoundingClientRect()
+          .bottom ?? 0;
+      const top = Math.max(header, progress, viewport.offsetTop) + 16;
+      const bounds = field.getBoundingClientRect();
+      if (bounds.top < top)
+        window.scrollBy({ top: bounds.top - top, behavior: "instant" });
+    };
+    /** Follow late browser scrolling until the visitor resumes interacting. */
+    const schedule = () => {
+      if (!closing) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        correct();
+        frame = requestAnimationFrame(correct);
+      });
+    };
+    const interact = () => {
+      if (closing) cancel();
+    };
+    const resize = () => {
+      if (window.innerWidth !== width || viewport.scale !== 1) {
+        width = window.innerWidth;
+        fullHeight = Math.max(viewport.height, window.innerHeight);
+        keyboardOpen = false;
+        cancel();
+        return;
+      }
+      fullHeight = Math.max(fullHeight, viewport.height);
+      const reduced = viewport.height < fullHeight * 0.75;
+      if (reduced && field) keyboardOpen = true;
+      if (!reduced && keyboardOpen) {
+        keyboardOpen = false;
+        closing = true;
+      }
+      schedule();
+    };
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(schedule);
+    for (const element of document.querySelectorAll(
+      ".site-header, .booking-navigation",
+    ))
+      observer?.observe(element);
+    window.addEventListener("scroll", schedule, { passive: true });
+    document.addEventListener("pointerdown", interact);
+    document.addEventListener("keydown", interact);
+    document.addEventListener("focusin", focus);
+    document.addEventListener("touchmove", cancel, { passive: true });
+    document.addEventListener("wheel", cancel, { passive: true });
+    viewport.addEventListener("resize", resize);
+    viewport.addEventListener("scroll", resize);
+    return () => {
+      cancel();
+      observer?.disconnect();
+      window.removeEventListener("scroll", schedule);
+      document.removeEventListener("pointerdown", interact);
+      document.removeEventListener("keydown", interact);
+      document.removeEventListener("focusin", focus);
+      document.removeEventListener("touchmove", cancel);
+      document.removeEventListener("wheel", cancel);
+      viewport.removeEventListener("resize", resize);
+      viewport.removeEventListener("scroll", resize);
+    };
+  }, [pathname]);
   useEffect(() => {
     if (
       errorPage ||
@@ -132,20 +229,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <header className="site-header">
-        <nav
-          className={
-            pathname === "/studio/" || pathname === "/studio"
-              ? "nav nav-with-back"
-              : "nav"
-          }
-          aria-label="Main navigation"
-        >
-          {(pathname === "/studio/" || pathname === "/studio") && (
-            <Link href="/" className="back studio-back">
-              <Icon name="back" /> Back
-            </Link>
-          )}
-          <Link
+        <nav className="nav" aria-label="Main navigation">
+          <BookingLink
             href="/"
             className="brand"
             aria-label="SOCCERBOTSTUDIO Singapore home"
@@ -157,7 +242,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               height={190}
               className="official-logo"
             />
-          </Link>
+          </BookingLink>
           <div className="nav-links" hidden={pathname.startsWith("/book/")}>
             <img
               className="nav-flag"
@@ -178,6 +263,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </BookingLink>
           </div>
         </nav>
+        {(pathname === "/studio/" || pathname === "/studio") && (
+          <div className="studio-signature">
+            <BookingLink href="/" className="studio-back">
+              <Icon name="back" /> Back
+            </BookingLink>
+            <span>Performance · Experience · Production</span>
+          </div>
+        )}
       </header>
       <main id="main" tabIndex={-1}>
         {leavingFrom === pathname ? (
@@ -337,7 +430,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 booking.leave();
                 setDialog(null);
                 if (dialog.newTab) router.push("/");
-                else if (route) router.push(route);
+                else if (route) enter(route);
                 else {
                   if (!["http:", "https:"].includes(destination.protocol))
                     router.push("/");

@@ -2,13 +2,11 @@
 
 ## Active outcome
 
-18 November2026: base PR97/98 is deployed at69a7960043b94a9f30a4bc286f2765973f6dcc47. PR99 on fix/mobile-expiry-trainer consolidates expired recovery/departed navigation, persistent trainer dropdowns, mobile/iPad field sizing, touch-first promotion/country controls, Weekly/Monthly labels, phone-only smaller email check and Studio Back to home inside the sticky header on all viewports. The hero address is now an icon-only location control with hover enlargement and mobile top-left alignment.
+19 November2026: PR100 on `fix/confirmation-copy-layout` remains open. Candidate0201099 passed all three required gates in run44403603895 and staged successfully in run44406162259 attempt2. Main remains860cfcf6a9a6237205cd063f80066c937148836a. No merge; physical iPad acceptance remains pending.
 
 ## Next actions
 
-Initial PR99 head a01166e passed two full local code rounds; CI44301487753 is superseded by the expanded owner scope. PR99 remains draft while consolidating the final candidate. Earlier expanded code rounds passed at fingerprint ec85624855a80a56a4814d632c6e40029bec965c11dbb3e60af5cc3a161eaa87. Subsequent header, hero icon, blue action wording and Spam/Junk reminder changes passed focused checks. Two final complete code rounds passed at fingerprint ff56bf0ca5db9337621c891119261b2f256a54277bb87bfd6a9b1cbf711a057e (400 unit cases each, tooling/installer/format/lint/type/build/export checks). Exact-head CI and staging verification are next before the authorized merge. The owner confirmed natural expiry after more than30minutes; retained Calendar recovery and departure reproduce and cover the bypass. Original financial records remain retained.
-
-The owner clarified the iPad issue is Hide Keyboard, not Return; no Return handler or submission behavior was changed. Touch field sizing and measured sticky-navigation scroll clearance are corrected, but Safari keyboard-close behavior needs physical-device retest. No speculative viewport scrolling script or assistant browser execution. OTP remains one plain text node; email clients control double-tap/copy gestures. Updated history is in Journey.
+The owner requested a follow-up for delayed iPad page scrolling after keyboard dismissal and date/time hints inside enquiry inputs. The shell now follows late document scroll/header resize until deliberate visitor interaction, detecting keyboard reduction against the unobscured viewport baseline. Native date/time controls retain native pickers, with inside-field empty-state hints. A pre-fix focused regression failed as expected (/tmp/ipad-before.log). Two complete non-browser rounds passed on the unchanged candidate (400 unit/component cases each, all guards and production build/export); receipts are /tmp/ipad-round-a.json and /tmp/ipad-round-b.json. Push the same PR, monitor exact-head gates and confirm actual staging health. Owner/CI owns browser execution; request physical iPad acceptance after staging, before merge. Preserve all consolidated booking/expiry/navigation rules. See Journey for prior CI and deployment evidence.
 
 ## Ordered work after this slice
 

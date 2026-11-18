@@ -130,10 +130,9 @@ function ScrollTopControl() {
     /** Lift this single bottom-right control only when it overlaps the primary action. */
     function measure() {
       if (!circle) return;
-      circle.style.removeProperty("--back-to-top-clearance");
       const cue = circle.getBoundingClientRect();
-      // WebKit can retain the previously painted fixed rect after removing the
-      // lift. Derive baseline vertical bounds from CSS instead of that rect.
+      // Bottom remains the safe-area baseline; margin supplies the lift. Do not
+      // clear a valid lift while reading: WebKit may still paint its old rect.
       const baselineBottom =
         window.innerHeight - Number.parseFloat(getComputedStyle(circle).bottom);
       const button = action?.getBoundingClientRect();
@@ -146,9 +145,9 @@ function ScrollTopControl() {
       ) {
         circle.style.setProperty(
           "--back-to-top-clearance",
-          `${Math.ceil(window.innerHeight - button.top + 12)}px`,
+          `${Math.ceil(baselineBottom - button.top + 12)}px`,
         );
-      }
+      } else circle.style.removeProperty("--back-to-top-clearance");
     }
     measure();
     const observer =

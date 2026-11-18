@@ -105,12 +105,26 @@ test("confirmed booking copies a formatted paid summary and reports clipboard fa
   expect(details.tagName).toBe("DIV");
   expect(screen.getByText("Booking Contact")).toBeVisible();
   const message = writeText.mock.calls[0][0];
-  expect(message).toContain("Booking confirmed · Paid\n");
-  expect(message).toContain(
-    "15:20–16:00 SGT\nSynthetic session\nTrainer: Synthetic Trainer",
+  expect(message).toBe(
+    [
+      "SOCCERBOTSTUDIO Singapore",
+      "Booking confirmed · Paid",
+      "",
+      "Date: Fri, 20 Nov 2026",
+      "Time: 15:20–16:00 SGT",
+      "Session: Synthetic session",
+      "Trainer: Synthetic Trainer",
+      "",
+      "Players: 2",
+      "",
+      "Location",
+      "Apex @ Henderson",
+      "201 Henderson Road, #05-01",
+      "Singapore 159545",
+      "",
+      "Total paid: SGD $108.00",
+    ].join("\n"),
   );
-  expect(message).toContain("Players: 2");
-  expect(message).toContain("Total paid: SGD $108.00");
   expect(message).not.toContain("synthetic-confirmation");
   await act(async () => {
     vi.advanceTimersByTime(2999);

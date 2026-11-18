@@ -7,9 +7,6 @@ export default function Studio() {
   return (
     <div className="promotion-journey">
       <div className="studio-intro">
-        <p className="studio-signature">
-          Performance · Experience · Production
-        </p>
         <figure className="studio-hero">
           <StudioHeroVideo />
         </figure>

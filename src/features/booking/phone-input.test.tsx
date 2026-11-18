@@ -89,19 +89,21 @@ test("phone country search supports keyboard selection and full international pa
     removeEventListener: vi.fn(),
   }));
   render(<Field />);
-  fireEvent.click(
-    screen.getByRole("button", { name: "Country code: Singapore +65" }),
-  );
+  const native = screen.getByRole("combobox", {
+    name: "Country code: Singapore +65",
+  });
+  expect(native.tagName).toBe("SELECT");
+  expect(screen.queryByRole("dialog")).toBeNull();
   expect(
     screen.queryByRole("combobox", { name: "Search country or dial code" }),
   ).toBeNull();
-  const list = screen.getByRole("listbox", { name: "Country calling codes" });
-  expect(list).toHaveFocus();
-  fireEvent.click(screen.getByRole("option", { name: /United Kingdom/ }));
-  expect(
-    screen.getByRole("button", { name: "Country code: United Kingdom +44" }),
-  ).toHaveFocus();
-  expect(screen.queryByRole("dialog")).toBeNull();
+  fireEvent.change(native, { target: { value: "GB" } });
+  expect(native).toHaveValue("GB");
+  expect(native).toHaveAccessibleName("Country code: United Kingdom +44");
+  expect(screen.getByLabelText(/Mobile number/)).toHaveAttribute(
+    "placeholder",
+    "07400 123456",
+  );
 });
 
 test("phone input silently ignores rejected characters without changing valid international digits", () => {

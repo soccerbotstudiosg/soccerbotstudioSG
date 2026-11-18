@@ -1,6 +1,7 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import { darkLogo } from "@/content/media";
+export const FULL_PAGE_LOADING_MIN_MS = 1000;
 /** Preserve meaningful feedback while work is pending, without a minimum display delay. */
 export function useLoadingFeedback(
   label: string | undefined,

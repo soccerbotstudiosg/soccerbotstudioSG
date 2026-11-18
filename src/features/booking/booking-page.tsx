@@ -16,7 +16,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { BookingHeadingStatus, VerifiedEmailStatus } from "./booking-heading";
+import {
+  BookingHeadingStatus,
+  BookingHeadingTargets,
+  VerifiedEmailStatus,
+} from "./booking-heading";
 import { guardedStep, type BookingStep } from "@/domain/booking";
 import { Icon } from "@/components/icon";
 import {
@@ -68,7 +72,6 @@ export function BookingProgressHeader({ children }: { children: ReactNode }) {
 }
 
 const progress: Array<[BookingStep, string]> = [
-  ["account", "Booking"],
   ["session", "Session"],
   ["time", "Time"],
   ["details", "Details"],
@@ -86,6 +89,8 @@ const screens = {
 /** Render the guarded booking step and its navigation controls. */
 export function BookingPage({ step }: { step: BookingStep }) {
   const mobile = useMobileBooking();
+  const [titleTarget, setTitleTarget] = useState<HTMLDivElement | null>(null);
+  const [statusTarget, setStatusTarget] = useState<HTMLDivElement | null>(null);
   const [accountBack, setAccountBack] = useState<(() => void) | null>(null);
   const registerAccountBack = useCallback((back: (() => void) | null) => {
     setAccountBack(() => back);
@@ -113,7 +118,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
   useEffect(() => {
     if (
       step === "account" ||
-      hasIdentityEntry(identityService) ||
+      hasIdentityEntry(identityService, true) ||
       identityService.mode !== "live"
     )
       return;
@@ -278,104 +283,133 @@ export function BookingPage({ step }: { step: BookingStep }) {
   );
   return (
     <BookingHeadingStatus.Provider value={headingStatus}>
-      <div
-        className={`booking-shell ${["account", "session", "review"].includes(displayStep) ? "session-shell" : ""}`}
+      <BookingHeadingTargets.Provider
+        value={mobile ? null : { title: titleTarget, status: statusTarget }}
       >
-        {current >= 0 && (
-          <BookingProgressHeader>
-            <div className="booking-top">
-              {step === "account" && accountBack ? (
-                <button type="button" className="back" onClick={accountBack}>
-                  <Icon name="back" />
-                  <span className="back-label">Back</span>
-                </button>
-              ) : pendingReview ? (
-                <span className="back" aria-disabled="true">
-                  <Icon name="back" />
-                  Back
-                </span>
-              ) : (
-                <Link
-                  className="back"
-                  href={
-                    current > 0 ? `/book/${progress[current - 1][0]}/` : "/"
-                  }
-                >
-                  <Icon name="back" />
-                  <span className="back-label">
-                    {current ? "Back" : "Home"}
-                  </span>
-                </Link>
-              )}
-              <span className="eyebrow text-muted">Booking</span>
-              <span className="booking-current-step">
-                {progress[current][1]} · {current + 1} of {progress.length}
-              </span>
-              {mobile &&
-                ["time", "details", "review"].includes(displayStep) && (
-                  <BookingTools basket={displayStep === "time"} />
-                )}
-            </div>
-            <ol className="progress" aria-label="Booking progress">
-              {progress.map(([id, label], index) => (
-                <li
-                  key={id}
-                  aria-current={index === current ? "step" : undefined}
-                  className={
-                    index === current ? "active" : index < current ? "done" : ""
-                  }
-                >
-                  <span className="step-number">
-                    {index < current ? (
-                      <Icon name="check" className="h-4 w-4" />
-                    ) : (
-                      index + 1
-                    )}
-                  </span>
-                  {index < current && !pendingReview ? (
-                    <Link href={`/book/${id}/`} className="hover:underline">
-                      {label}
-                    </Link>
-                  ) : (
-                    label
-                  )}
-                </li>
-              ))}
-            </ol>
-          </BookingProgressHeader>
-        )}
         <div
-          className={
-            ["time", "details"].includes(displayStep)
-              ? "booking-layout"
-              : "booking-layout session-layout"
-          }
+          className={`booking-shell ${["account", "session", "review"].includes(displayStep) ? "session-shell" : ""}`}
         >
-          <section className="booking-main min-w-0">
-            {step === "time" ? (
-              <TimeStep recoveryNotice={recoveryNotice} />
-            ) : (
-              <>
-                {recoveryNotice}
-                {step === "account" ? (
-                  <AccountStep
-                    key={profileAccessRevision}
-                    onBackChange={registerAccountBack}
-                    onIdentityChange={setIdentity}
-                  />
+          {(current >= 0 || displayStep === "account") && (
+            <BookingProgressHeader>
+              <div className="booking-top">
+                {step === "account" && accountBack ? (
+                  <button type="button" className="back" onClick={accountBack}>
+                    <Icon name="back" />
+                    <span className="back-label">Back</span>
+                  </button>
+                ) : pendingReview ? (
+                  <span className="back" aria-disabled="true">
+                    <Icon name="back" />
+                    Back
+                  </span>
                 ) : (
-                  <Screen />
+                  <Link
+                    className="back"
+                    href={
+                      current > 0
+                        ? `/book/${progress[current - 1][0]}/`
+                        : displayStep === "session"
+                          ? "/book/account/"
+                          : "/"
+                    }
+                  >
+                    <Icon name="back" />
+                    <span className="back-label">
+                      {displayStep === "account" ? "Home" : "Back"}
+                    </span>
+                  </Link>
                 )}
-              </>
-            )}
-            {!mobile && displayStep === "time" && <BasketContinue />}
-          </section>
-          {!mobile && ["time", "details"].includes(displayStep) && (
-            <Summary basket={step === "time"} />
+                {mobile ? (
+                  <span className="eyebrow text-muted">Booking</span>
+                ) : (
+                  <>
+                    <div className="booking-top-title" ref={setTitleTarget} />
+                    <div className="booking-top-meta">
+                      <div
+                        className="booking-top-identity"
+                        ref={setStatusTarget}
+                      />
+                      <span className="eyebrow text-muted">Booking</span>
+                    </div>
+                  </>
+                )}
+                {current >= 0 && (
+                  <span className="booking-current-step">
+                    {progress[current][1]} · {current + 1} of {progress.length}
+                  </span>
+                )}
+                {mobile &&
+                  ["time", "details", "review"].includes(displayStep) && (
+                    <BookingTools basket={displayStep === "time"} />
+                  )}
+              </div>
+              {current >= 0 && (
+                <ol className="progress" aria-label="Booking progress">
+                  {progress.map(([id, label], index) => (
+                    <li
+                      key={id}
+                      aria-current={index === current ? "step" : undefined}
+                      className={
+                        index === current
+                          ? "active"
+                          : index < current
+                            ? "done"
+                            : ""
+                      }
+                    >
+                      <span className="step-number">
+                        {index < current ? (
+                          <Icon name="check" className="h-4 w-4" />
+                        ) : (
+                          index + 1
+                        )}
+                      </span>
+                      {index < current && !pendingReview ? (
+                        <Link href={`/book/${id}/`} className="hover:underline">
+                          {label}
+                        </Link>
+                      ) : (
+                        label
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </BookingProgressHeader>
           )}
-          {mobile && displayStep === "time" && <BasketContinue />}
+          <div
+            className={
+              ["time", "details"].includes(displayStep)
+                ? "booking-layout"
+                : "booking-layout session-layout"
+            }
+          >
+            <section className="booking-main min-w-0">
+              {step === "time" ? (
+                <TimeStep recoveryNotice={recoveryNotice} />
+              ) : (
+                <>
+                  {recoveryNotice}
+                  {step === "account" ? (
+                    <AccountStep
+                      key={profileAccessRevision}
+                      onBackChange={registerAccountBack}
+                      onIdentityChange={setIdentity}
+                    />
+                  ) : (
+                    <Screen />
+                  )}
+                </>
+              )}
+              {!mobile && displayStep === "time" && <BasketContinue />}
+            </section>
+            {!mobile && ["time", "details"].includes(displayStep) && (
+              <Summary basket={step === "time"} />
+            )}
+            {mobile && displayStep === "time" && <BasketContinue />}
+          </div>
         </div>
-      </div>
+      </BookingHeadingTargets.Provider>
     </BookingHeadingStatus.Provider>
   );
 }

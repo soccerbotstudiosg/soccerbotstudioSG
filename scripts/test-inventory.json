@@ -1721,7 +1721,7 @@
   },
   {
     "file": "tests/live-email.spec.ts",
-    "title": "live entry access denial permits local guest selection without granting authority"
+    "title": "live entry access denial keeps guest entry retryable without granting authority"
   },
   {
     "file": "tests/live-email.spec.ts",

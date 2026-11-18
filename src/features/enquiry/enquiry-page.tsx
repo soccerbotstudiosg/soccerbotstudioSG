@@ -93,31 +93,49 @@ export function EnquiryPage() {
           <span className="font-normal text-muted">Optional</span>
         )}
       </label>
-      <input
-        id={`enquiry-${key}`}
-        placeholder={
-          type === "date" || type === "time" ? undefined : placeholders[key]
-        }
-        aria-describedby={errorFor(key) ? `enquiry-${key}-error` : undefined}
-        aria-invalid={!!errorFor(key)}
-        className="field-control"
-        value={value[key]}
-        type={type}
-        required={required}
-        min={type === "date" ? todaySG() : type === "number" ? 1 : undefined}
-        max={type === "number" ? 999 : undefined}
-        maxLength={
-          key === "email"
-            ? EMAIL_MAX_LENGTH
-            : key === "name"
-              ? 80
-              : key === "organisation"
-                ? 120
-                : 160
-        }
-        onChange={(e) => change(key, e.target.value)}
-        onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
-      />
+      <div className="enquiry-input-wrap" data-empty={!value[key]}>
+        <input
+          id={`enquiry-${key}`}
+          placeholder={
+            type === "date" || type === "time" ? undefined : placeholders[key]
+          }
+          aria-describedby={
+            [
+              type === "date" || type === "time" ? `enquiry-${key}-hint` : "",
+              errorFor(key) ? `enquiry-${key}-error` : "",
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
+          aria-invalid={!!errorFor(key)}
+          className="field-control"
+          value={value[key]}
+          type={type}
+          required={required}
+          min={type === "date" ? todaySG() : type === "number" ? 1 : undefined}
+          max={type === "number" ? 999 : undefined}
+          maxLength={
+            key === "email"
+              ? EMAIL_MAX_LENGTH
+              : key === "name"
+                ? 80
+                : key === "organisation"
+                  ? 120
+                  : 160
+          }
+          onChange={(e) => change(key, e.target.value)}
+          onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
+        />
+        {(type === "date" || type === "time") && (
+          <span
+            className="native-field-hint"
+            id={`enquiry-${key}-hint`}
+            hidden={!!value[key]}
+          >
+            {type === "date" ? "Select a date." : "Select a time (SGT)."}
+          </span>
+        )}
+      </div>
       {feedback(key)}
     </div>
   );
@@ -211,25 +229,28 @@ export function EnquiryPage() {
               <label htmlFor="enquiry-purpose" className="field-label">
                 Enquiry type *
               </label>
-              <select
-                id="enquiry-purpose"
-                aria-describedby={
-                  errorFor("purpose") ? "enquiry-purpose-error" : undefined
-                }
-                aria-invalid={!!errorFor("purpose")}
-                className="field-control"
-                required
-                value={value.purpose}
-                onChange={(e) => change("purpose", e.target.value)}
-                onBlur={() =>
-                  setTouched((current) => ({ ...current, purpose: true }))
-                }
-              >
-                <option value="">Select an arrangement</option>
-                {ENQUIRY_TYPES.map((type) => (
-                  <option key={type}>{type}</option>
-                ))}
-              </select>
+              <div className="field-select-control">
+                <select
+                  id="enquiry-purpose"
+                  aria-describedby={
+                    errorFor("purpose") ? "enquiry-purpose-error" : undefined
+                  }
+                  aria-invalid={!!errorFor("purpose")}
+                  className="field-control"
+                  required
+                  value={value.purpose}
+                  onChange={(e) => change("purpose", e.target.value)}
+                  onBlur={() =>
+                    setTouched((current) => ({ ...current, purpose: true }))
+                  }
+                >
+                  <option value="">Select an arrangement</option>
+                  {ENQUIRY_TYPES.map((type) => (
+                    <option key={type}>{type}</option>
+                  ))}
+                </select>
+                <Icon name="chevron" />
+              </div>
               {feedback("purpose")}
             </div>
             {field("guests", "Number of guests", "number")}

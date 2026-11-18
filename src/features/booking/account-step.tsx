@@ -374,7 +374,7 @@ export function AccountStep({
             )
           }
         />
-        <p className="lead">
+        <p className="lead booking-step-instruction">
           {verifiedIdentity
             ? "Continue with your signed-in email."
             : "Choose how to continue."}
@@ -418,12 +418,27 @@ export function AccountStep({
                   aria-describedby="guest-choice-description"
                   disabled={busy}
                   onClick={() => {
-                    update({
-                      mode: "guest",
-                      accountEmail: "",
-                      contact: blankContact(),
-                    });
-                    router.push("/book/session/");
+                    const advance = () => {
+                      update({
+                        mode: "guest",
+                        accountEmail: "",
+                        contact: blankContact(),
+                      });
+                      router.push("/book/session/");
+                    };
+                    if (
+                      identityService.mode === "live" &&
+                      !hasIdentityEntry(identityService)
+                    ) {
+                      void perform(
+                        async (signal) => {
+                          await identityService.guest(signal);
+                          if (!signal.aborted) advance();
+                        },
+                        true,
+                        "We couldn’t start your booking. Please try again.",
+                      );
+                    } else advance();
                   }}
                 >
                   <Icon name="users" />
@@ -536,9 +551,11 @@ export function AccountStep({
     <>
       <BookingHeading
         status={false}
-        lines={view === "email" ? ["Sign in"] : ["Verify your", "email"]}
+        lines={
+          view === "email" ? ["Continue with email"] : ["Verify your", "email"]
+        }
       />
-      <p className="lead">
+      <p className="lead booking-step-instruction">
         {view === "email"
           ? "Sign in with your email."
           : "Enter the six-digit email code."}
@@ -628,17 +645,17 @@ export function AccountStep({
           </>
         ) : (
           <>
-            <p className="text-sm text-muted mb-4">
+            <p className="auth-code-recipient text-muted mb-4">
               Code sent to{" "}
               <strong className="auth-email-address">{challenge?.email}</strong>
             </p>
-            <label htmlFor="auth-code" className="field-label">
+            <label htmlFor="auth-code" className="field-label auth-code-label">
               Verification code
             </label>
             <input
               disabled={busy}
               id="auth-code"
-              placeholder="Enter the 6-digit code from your email."
+              placeholder="Enter your 6-digit code"
               aria-describedby={error ? "auth-error" : undefined}
               className="field-control auth-code"
               inputMode="numeric"
@@ -652,6 +669,24 @@ export function AccountStep({
                 setError("");
               }}
             />
+            {resendSeconds === 0 && (
+              <p
+                className="auth-code-expiry"
+                data-expired={codeSeconds === 0}
+                role={codeSeconds > 0 ? "timer" : undefined}
+                aria-live="off"
+              >
+                {codeSeconds > 0 ? (
+                  <>
+                    Code expires in:{" "}
+                    {String(Math.floor(codeSeconds / 60)).padStart(2, "0")}:
+                    {String(codeSeconds % 60).padStart(2, "0")}
+                  </>
+                ) : (
+                  "This code has expired."
+                )}
+              </p>
+            )}
             {identityService.mode === "demo" && (
               <p className="auth-demo-code">
                 Demo code <strong>{DEMO_CODE}</strong>
@@ -667,7 +702,7 @@ export function AccountStep({
         )}
         {view === "code" || resendSeconds > 0 ? (
           <div
-            className={`auth-code-feedback${requestBlockedUntil > resendNow ? " alert" : ""}`}
+            className={`auth-code-feedback${view === "code" && resendSeconds === 0 ? " auth-code-help" : ""}${requestBlockedUntil > resendNow ? " alert" : ""}`}
           >
             {requestBlockedUntil > resendNow && <p>{EMAIL_REQUEST_LIMITED}</p>}
             {resendSeconds > 0 ? (
@@ -677,16 +712,7 @@ export function AccountStep({
               </p>
             ) : (
               <>
-                {codeSeconds > 0 ? (
-                  <p role="timer" aria-live="off">
-                    Code expires in:{" "}
-                    {String(Math.floor(codeSeconds / 60)).padStart(2, "0")}:
-                    {String(codeSeconds % 60).padStart(2, "0")}
-                  </p>
-                ) : view === "code" ? (
-                  <p>This code has expired.</p>
-                ) : null}
-                <p className="text-sm text-muted">
+                <p className="text-muted">
                   Can’t find the email? Check Spam or Junk.
                 </p>
                 <button

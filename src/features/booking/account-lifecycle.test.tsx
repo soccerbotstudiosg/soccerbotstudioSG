@@ -196,6 +196,7 @@ test("signed-in customer manages saved contact on Account without entering unava
   expect(
     await screen.findByRole("heading", { name: "Saved contact details" }),
   ).toBeInTheDocument();
+  expect(screen.queryByLabelText("Booking progress")).toBeNull();
   expect(profile).toHaveBeenCalledExactlyOnceWith(
     verified.email,
     expect.any(AbortSignal),
@@ -473,7 +474,7 @@ test("switching email clears the old account and supports back guest and fresh r
   );
   expect(screen.getByRole("button", { name: "Email me a code" })).toBeEnabled();
   await act(async () => finishSignOut());
-  await screen.findByRole("heading", { name: "Sign in" });
+  await screen.findByRole("heading", { name: "Continue with email" });
   if (vi.isFakeTimers())
     await act(async () => vi.advanceTimersByTimeAsync(1000));
   await waitFor(() =>
@@ -594,7 +595,9 @@ test("expired continue-signed-in state returns a usable email choice instead of 
     screen.queryByRole("button", { name: "Continue signed in" }),
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Continue with email" }));
-  expect(screen.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  expect(
+    screen.getByRole("heading", { name: "Continue with email" }),
+  ).toBeVisible();
 });
 
 test("failed profile saves keep the form and successful retry acknowledges in place until explicit Back", async () => {

@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { ArenaEntry } from "./arena-entry";
-import { BrandLoading } from "./brand-loading";
+import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
 import { services } from "@/services";
 import {
   prepareIdentityEntry,
@@ -39,6 +39,7 @@ type Entry = {
 const Navigation = createContext<{
   entering: boolean;
   active: boolean;
+  started: number | undefined;
   enter: (href: string, arena?: HTMLElement) => void;
 } | null>(null);
 /** Read the shared booking navigation context. */
@@ -50,6 +51,10 @@ export function useBookingNavigation() {
 /** Avoid a second overlay while the global booking transition is visible. */
 export function useBookingEntryTransition() {
   return useContext(Navigation)?.active ?? false;
+}
+/** Share the navigation clock with document readiness instead of adding another delay. */
+export function useNavigationStarted() {
+  return useContext(Navigation)?.started;
 }
 /** Coordinate booking navigation with the current draft and route. */
 export function BookingNavigation({ children }: { children: ReactNode }) {
@@ -87,11 +92,13 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
       router.push(to);
       return;
     }
+    // Public navigation must not inherit an abandoned booking preflight.
+    discardPreparation();
+    setIdentityReady(true);
     if (
       /^\/book\/account\/?$/.test(to) &&
       services.customerIdentity.mode === "live"
     ) {
-      discardPreparation();
       preparation.current = prepareIdentityEntry(services.customerIdentity);
       const pending = preparation.current;
       setIdentityReady(false);
@@ -162,6 +169,7 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
       if (preparation.current)
         cancelIdentityEntry(services.customerIdentity, preparation.current);
       preparation.current = null;
+      setIdentityReady(true);
       setEntry(null);
       active.current = false;
     };
@@ -207,7 +215,15 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
   }, [entry, router]);
   useEffect(() => {
     if (!entry || !arrived || !identityReady) return;
-    const delay = entry.kind === "logo" ? 0 : entry.skip ? 0 : PITCH_REVEAL_MS;
+    const delay =
+      entry.kind === "logo" && !entry.skip
+        ? Math.max(
+            0,
+            FULL_PAGE_LOADING_MIN_MS - (performance.now() - entry.started),
+          )
+        : entry.skip
+          ? 0
+          : PITCH_REVEAL_MS;
     let fade: ReturnType<typeof setTimeout> | undefined;
     const complete = () => {
       // Account may mount after route arrival while booking readiness settles.
@@ -238,6 +254,7 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
       value={{
         entering: entry?.kind === "arena" && !arrived,
         active: !!entry,
+        started: entry?.started,
         enter,
       }}
     >
@@ -253,7 +270,13 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
       {entry?.kind === "logo" && (
         <BrandLoading
           leaving={leaving}
-          label={entry.to === "/studio/" ? "Opening studio" : "Opening booking"}
+          label={
+            entry.to === "/studio/"
+              ? "Opening studio"
+              : entry.to === "/"
+                ? "Opening home"
+                : "Opening booking"
+          }
         />
       )}
       {entry?.kind === "arena" && entry.origin && entry.viewport && (
