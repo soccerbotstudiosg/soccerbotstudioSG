@@ -34,6 +34,32 @@ async function openSite(page: Page, route: string) {
     .click();
   await expect(prompt).toHaveCount(0);
 }
+/** Hold actual hero readiness so cover assertions do not depend on a minimum timer. */
+async function holdHomeDecode(page: Page) {
+  await page.evaluate(() => {
+    const original = HTMLImageElement.prototype.decode;
+    const pending = new Promise<void>((resolve) => {
+      window.addEventListener(
+        "test-release-home-decode",
+        () => {
+          HTMLImageElement.prototype.decode = original;
+          resolve();
+        },
+        { once: true },
+      );
+    });
+    HTMLImageElement.prototype.decode = function () {
+      const decoded = original.call(this);
+      return this.closest(".arena-photograph")
+        ? Promise.all([decoded, pending]).then(() => undefined)
+        : decoded;
+    };
+  });
+  return () =>
+    page.evaluate(() => {
+      window.dispatchEvent(new Event("test-release-home-decode"));
+    });
+}
 /** Open the same information through the phone panel or retain the desktop presentation. */
 async function openBookingPanel(page: Page, panel: "cart" | "trainers") {
   if (page.viewportSize()!.width > 700) return;
@@ -864,7 +890,6 @@ test("public routes remove staff access and fit the viewport", async ({
     .getByRole("navigation", { name: "Main navigation" })
     .getByRole("link", { name: "The studio", exact: true })
     .click();
-  await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Inside the arena." }),
@@ -1087,7 +1112,6 @@ test("public routes remove staff access and fit the viewport", async ({
   await page
     .getByRole("link", { name: "Explore the studio", exact: true })
     .click();
-  await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Inside the arena." }),
@@ -1217,7 +1241,9 @@ test("guest multi-date booking survives reload without retired export actions", 
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
-  await page.getByText("View Full Details", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("Studio 1", { exact: true })).toBeVisible();
   expect(
     await page.evaluate(
@@ -1407,6 +1433,16 @@ test("email verification rejects an incorrect code and continues after correctio
 }) => {
   await openSite(page, "/book/account/");
   await page.getByRole("button", { name: "Sign in" }).click();
+  const emailHeading = page.getByRole("heading", {
+    name: "Sign in",
+    exact: true,
+  });
+  await expect(emailHeading.locator(".booking-title-line")).toHaveCount(1);
+  const headingLines = await emailHeading.evaluate((heading) => ({
+    height: heading.getBoundingClientRect().height,
+    lineHeight: Number.parseFloat(getComputedStyle(heading).lineHeight),
+  }));
+  expect(headingLines.height).toBeCloseTo(headingLines.lineHeight, 0);
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("name@domain");
@@ -1540,18 +1576,15 @@ test("enquiry remains available without external submission or a mock assistant"
   );
   await expect(page.locator(".enquiry-page .field-hint")).toHaveCount(0);
   await expect(page.getByText("Enter 1–2,000 characters.")).toHaveCount(0);
-  for (const selector of [
-    "#enquiry-name",
-    "#enquiry-email",
-    ".phone-control",
-    "#enquiry-purpose",
-    "#enquiry-message",
-  ]) {
-    await expect(page.locator(selector)).toHaveCSS(
-      "border-top-color",
-      "rgb(168, 34, 53)",
-    );
-  }
+  await expect(page.locator('.enquiry-form [aria-invalid="true"]')).toHaveCount(
+    0,
+  );
+  await expect(enquiryAction).toHaveAttribute("data-valid", "false");
+  await page.getByLabel("Your requirements").focus();
+  await page.getByLabel("Your requirements").blur();
+  await expect(page.locator("#enquiry-message-error")).toHaveText(
+    "Please tell us what you need.",
+  );
   const phone = page.getByLabel("Mobile number");
   await phone.focus();
   await expect(page.locator(".phone-control")).toHaveCSS(
@@ -1569,6 +1602,8 @@ test("enquiry remains available without external submission or a mock assistant"
   await page
     .getByLabel("Your requirements")
     .fill("A group session for our team.");
+  await expect(enquiryAction).toHaveAttribute("data-valid", "true");
+  await expect(page.locator("#enquiry-message-error")).toHaveCount(0);
   await page.getByRole("button", { name: "Send enquiry" }).click();
   await expect(page).toHaveURL(new RegExp(`${sitePath("/enquiry/")}$`));
   const acknowledgement = page.getByRole("status");
@@ -1608,7 +1643,7 @@ test("hero entry restores the arena scene and click-to-skip without a logo overl
     page.getByRole("heading", { name: "Start your booking" }),
   ).toBeVisible();
 });
-test("home navigation offer and studio booking buttons display the branded loader", async ({
+test("home navigation offer and studio booking buttons reveal ready destinations without a minimum wait", async ({
   page,
 }) => {
   await openSite(page, "/");
@@ -1625,7 +1660,6 @@ test("home navigation offer and studio booking buttons display the branded loade
     await expect(link).toHaveCount(1);
     await expect(link).toHaveAttribute("href", sitePath("/book/account/"));
     await link.click();
-    await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
     await expect(page).toHaveURL(/\/book\/account\/$/);
     await expect(page.locator(".page-loading")).toHaveCount(0);
     await expect(
@@ -2089,27 +2123,46 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await expect(page.getByText(/^Total Paid(?: · Preview)?$/)).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Before Your Session", exact: true }),
-  ).toBeHidden();
+  ).toBeVisible();
   const confirmationLayout = await page
     .locator(".confirmation-shell")
     .evaluate((shell) => ({
-      actionsBottom: shell
+      actionsTop: shell
         .querySelector(".confirmation-actions")!
-        .getBoundingClientRect().bottom,
-      summaryTop: shell
-        .querySelector(".confirmation-card")!
         .getBoundingClientRect().top,
+      summaryBottom: shell
+        .querySelector(".confirmation-card")!
+        .getBoundingClientRect().bottom,
       actions: shell.querySelectorAll(".confirmation-actions .button").length,
     }));
   expect(confirmationLayout.actions).toBe(3);
-  expect(confirmationLayout.actionsBottom).toBeLessThanOrEqual(
-    confirmationLayout.summaryTop,
+  const guidancePoints = page.locator(
+    ".confirmation-disclaimers .arrival-points li",
   );
-  await page.getByText("View Full Details", { exact: true }).click();
+  await expect(guidancePoints).toHaveCount(4);
+  const pointBoxes = await guidancePoints.evaluateAll((points) =>
+    points.map((point) => {
+      const { x, y } = point.getBoundingClientRect();
+      return { x, y };
+    }),
+  );
+  expect(pointBoxes[0].y).toBeCloseTo(pointBoxes[1].y, 0);
+  expect(pointBoxes[2].y).toBeCloseTo(pointBoxes[3].y, 0);
+  expect(pointBoxes[1].x).toBeGreaterThan(pointBoxes[0].x);
+  expect(pointBoxes[2].y).toBeGreaterThan(pointBoxes[0].y);
+
+  expect(confirmationLayout.actionsTop).toBeGreaterThanOrEqual(
+    confirmationLayout.summaryBottom,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
   await expect(page.locator(".confirmation-card .rotation-notice")).toHaveCount(
     0,
   );
-  await expect(page.locator("main details[open]")).toHaveCount(1);
+  await expect(page.locator(".confirmation-full-details summary")).toHaveCount(
+    0,
+  );
   await expect(page.locator(".confirmation-section > h2")).toHaveText([
     "Booking Contact",
     "Location",
@@ -2194,11 +2247,13 @@ test("leave booking uses equal-width sentence-case actions with home left and st
   await page
     .getByRole("link", { name: "SOCCERBOTSTUDIO Singapore home" })
     .click();
+  const releaseHome = await holdHomeDecode(page);
   await dialog
     .getByRole("button", { name: "Leave booking", exact: true })
     .click();
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".page-loading")).toHaveCount(1);
+  await releaseHome();
   await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".arena-booking")).toBeVisible();
   const saved = await page.evaluate(() =>
@@ -2427,7 +2482,6 @@ test("first visit offers the Player App with only store links and dismissal pers
     .getByRole("navigation", { name: "Main navigation" })
     .getByRole("link", { name: "The studio", exact: true })
     .click();
-  await expect(page.locator(".page-loading .loading-logo")).toBeVisible();
   await expect(page.locator(".page-loading")).toHaveCount(0);
   await expect(prompt).toHaveCount(0);
   expect(
@@ -2861,7 +2915,7 @@ function bookingTypography(page: Page) {
   async function bookingDocumentBody() {
     const styles = await page
       .locator(
-        ".booking-document p:not(.payment-foot), .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
+        ".booking-document p:not(.payment-foot), .booking-document .arrival-points li, .booking-document .series-date, .booking-document .series-date span, .booking-document .booking-facts dt, .booking-document .booking-facts dd, .booking-document .line-item, .booking-document .line-item small, .booking-document .confirmation-total strong",
       )
       .evaluateAll((nodes) =>
         nodes.map((node) => {
@@ -2873,6 +2927,7 @@ function bookingTypography(page: Page) {
             total: node.matches(".line-item.total"),
             amount: node.matches(".confirmation-total strong"),
             supporting: node.matches("small"),
+            arrival: !!node.closest(".arrival-information"),
           };
         }),
       );
@@ -2881,15 +2936,17 @@ function bookingTypography(page: Page) {
       styles.filter(
         (style) =>
           style.size !==
-            (style.supporting
-              ? "14px"
-              : style.amount || style.total
-                ? "20px"
-                : "16px") ||
+            (style.arrival && page.viewportSize()!.width <= 700
+              ? "12px"
+              : style.supporting
+                ? "14px"
+                : style.amount || style.total
+                  ? "20px"
+                  : "16px") ||
           style.family !== styles[0].family ||
           !style.family.includes("Roboto"),
       ),
-      "Booking body uses 16px Roboto; total labels and amounts use 20px",
+      "Booking body uses 16px Roboto; mobile arrival guidance uses 12px and totals use 20px",
     ).toEqual([]);
   }
   return { brand, pageHeading, sectionType, bookingDocumentBody };
@@ -3356,7 +3413,9 @@ test("review payment and confirmation retain typography and continuous sticky ge
   await expect(
     page.getByRole("link", { name: "WhatsApp Enquiry", exact: true }),
   ).toHaveAttribute("href", "https://wa.me/6590143819");
-  await page.getByText("View Full Details", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
   await sectionType(".confirmation-card h2");
   await bookingDocumentBody();
   await expect(page.locator(".confirmation-full-details")).toHaveCSS(
@@ -3435,7 +3494,9 @@ test("review payment and confirmation retain typography and continuous sticky ge
   await expect(
     page.locator(".confirmation-card .confirmation-total strong"),
   ).toHaveCSS("color", brand);
-  await expect(page.locator("main details[open]")).toHaveCount(1);
+  await expect(page.locator(".confirmation-full-details summary")).toHaveCount(
+    0,
+  );
 });
 
 test("elapsed selections block checkout on an open page and remain removable before a future multi-session payment", async ({
@@ -3524,7 +3585,9 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toBeVisible();
-  await page.getByText("View Full Details", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Booking Contact", exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("list", { name: "Selected sessions" }).getByRole("listitem"),
   ).toHaveCount(2);
@@ -3865,6 +3928,17 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await page.emulateMedia({ reducedMotion: "no-preference" });
   }
   await page.getByRole("button", { name: /12:00–12:40/ }).click();
+  await expect(noon).toHaveValue(`${date}|12:00|demo|daniel`);
+  await expect(
+    page.getByRole("button", { name: /12:00–12:40/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page
+    .getByRole("button", {
+      name: `Remove selected session ${date} at 12:00`,
+      exact: true,
+    })
+    .click();
+  await expect(noon).toHaveCount(0);
   const deselectedSlot = page.getByRole("button", { name: /12:00–12:40/ });
   await expect(deselectedSlot).toHaveAttribute("aria-pressed", "false");
   await expect(
@@ -3905,7 +3979,18 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(2);
   await closeBookingPanel(page);
-  await page.getByRole("button", { name: /15:20–16:00/ }).click();
+  const selectedAfternoon = page.getByRole("button", { name: /^15:20–16:00/ });
+  await selectedAfternoon.click();
+  await expect(selectedAfternoon).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    page.getByRole("combobox", { name: `Trainer for ${date} at 15:20` }),
+  ).toHaveValue(`${date}|15:20|demo|daniel`);
+  await page
+    .getByRole("button", {
+      name: `Remove selected session ${date} at 15:20`,
+      exact: true,
+    })
+    .click();
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(1);
   await expect(
@@ -4207,12 +4292,14 @@ test("returning home uses one ready cover without replaying the first entrance",
   for (const destination of ["/enquiry/", "/privacy-policy/"]) {
     await page.locator(`a[href="${sitePath(destination)}"]`).click();
     await expect(page).toHaveURL(new RegExp(sitePath(destination) + "$"));
+    const releaseHome = await holdHomeDecode(page);
     await page
       .getByRole("link", { name: "SOCCERBOTSTUDIO Singapore home" })
       .click();
     await expect(page.locator("#page-refresh")).toBeVisible();
     await expect(page.locator(".page-loading")).toHaveCount(1);
     await expect(page.getByText("Refreshing…", { exact: true })).toHaveCount(0);
+    await releaseHome();
     await expect(page.locator("#page-refresh")).toHaveCount(0);
     await expect(page.locator(".arena-booking")).toBeVisible();
     await expect(page.locator("#page-refresh-content")).not.toHaveAttribute(
@@ -4222,8 +4309,10 @@ test("returning home uses one ready cover without replaying the first entrance",
   }
   await page.goBack();
   await expect(page).toHaveURL(new RegExp(sitePath("/privacy-policy/") + "$"));
+  const releaseHistoryHome = await holdHomeDecode(page);
   await page.goForward();
   await expect(page.locator("#page-refresh")).toBeVisible();
+  await releaseHistoryHome();
   await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".arena-booking")).toBeVisible();
 });

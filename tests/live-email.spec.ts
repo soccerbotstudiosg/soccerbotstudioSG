@@ -1747,12 +1747,17 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(copyButton.locator("svg")).toBeVisible();
     await copyButton.scrollIntoViewIfNeeded();
     const details = page.locator(".confirmation-full-details");
-    await expect(details).toHaveJSProperty("open", false);
+    await expect(details.locator("summary")).toHaveCount(0);
+    await expect(
+      details.getByRole("heading", { name: "Booking Contact" }),
+    ).toBeVisible();
     expect(
       await copyButton.evaluate((button) => !button.closest("details")),
     ).toBe(true);
     const copyBox = await copyButton.boundingBox();
-    const detailsSummaryBox = await details.locator("summary").boundingBox();
+    const detailsSummaryBox = await details
+      .locator(".confirmation-details-grid > .review-block:first-child")
+      .boundingBox();
     const paidBox = await paidBadge.boundingBox();
     const order = page.getByRole("region", {
       name: "Order Summary",
@@ -1776,10 +1781,10 @@ test("real payment recovery confirms the browser return from verified provider s
     // Assert its rendered height independently of its computed CSS values.
     expect(Math.abs(paidBox!.height - 31.2)).toBeLessThan(0.1);
     expect(copyBox!.y).toBeCloseTo(detailsSummaryBox!.y, 1);
-    expect(copyBox!.y + copyBox!.height).toBeCloseTo(
-      detailsSummaryBox!.y + detailsSummaryBox!.height,
-      1,
-    );
+    expect(copyBox!.x).toBeGreaterThanOrEqual(detailsSummaryBox!.x);
+    await expect(
+      details.getByRole("heading", { name: "Location", exact: true }),
+    ).toBeVisible();
     expect(copyBox!.x + copyBox!.width).toBeCloseTo(
       paidBox!.x + paidBox!.width,
       0,
@@ -1811,7 +1816,10 @@ test("real payment recovery confirms the browser return from verified provider s
     const copied = page.locator(".confirmation-copy-feedback");
     await expect(copied).toHaveText("Copied");
     await expect(copied).toBeVisible();
-    await expect(details).toHaveJSProperty("open", false);
+    await expect(details.locator("summary")).toHaveCount(0);
+    await expect(
+      details.getByRole("heading", { name: "Booking Contact" }),
+    ).toBeVisible();
     await expect(copied).toHaveCSS("font-size", "12px");
     expect(
       await page.locator("html").getAttribute("data-copied-booking"),
@@ -1853,7 +1861,9 @@ test("real payment recovery confirms the browser return from verified provider s
     expect(tickBox).not.toBeNull();
     expect(tickBox!.width).toBeGreaterThanOrEqual(48);
     expect(tickBox!.height).toBeGreaterThanOrEqual(48);
-    await page.getByText("View Full Details", { exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Booking Contact", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Order Summary", exact: true }),
     ).toBeVisible();
@@ -2006,7 +2016,9 @@ test("real payment recovery confirms the browser return from verified provider s
       "data-unexpected-confirmation-state",
       "true",
     );
-    await page.getByText("View Full Details", { exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Booking Contact", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Booking Contact" }),
     ).toBeVisible();
@@ -2058,7 +2070,9 @@ test("real payment recovery confirms the browser return from verified provider s
     await expect(page).toHaveURL(/\/book\/account\/$/);
     // Explicit exit releases routing, but the protected old receipt remains.
     await page.goto(`/confirmation/?attempt=${attemptId}`);
-    await page.getByText("View Full Details", { exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Booking Contact", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Booking Contact" }),
     ).toBeVisible();
@@ -3185,7 +3199,9 @@ test("real API failed completed dismissal opens the first step and explicit retr
     await expect(
       page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
     ).toBeVisible();
-    await page.getByText("View Full Details", { exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Booking Contact", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Booking Contact", exact: true }),
     ).toBeVisible();
@@ -3221,7 +3237,9 @@ test("real API failed completed dismissal opens the first step and explicit retr
       ),
     ).toBeNull();
     await page.goto(`/confirmation/?attempt=${attemptId}`);
-    await page.getByText("View Full Details", { exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Booking Contact", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Booking Contact", exact: true }),
     ).toBeVisible();
@@ -3740,11 +3758,28 @@ async function optimisticHold(page: Page, failReadback: boolean) {
       await expect(continuation).not.toHaveAttribute("target", "_blank");
       await expect(page.getByRole("timer")).toBeVisible();
       await expect(
-        page.getByText(
-          "Your selected sessions are held until the timer ends.",
-          { exact: true },
-        ),
+        page.getByText("Sessions held until the timer ends.", { exact: true }),
       ).toBeVisible();
+      if (page.viewportSize()!.width <= 700) {
+        const guidance = page.locator(".payment-continuation-details");
+        await expect(guidance).toHaveCSS("flex-direction", "column");
+        await expect(guidance).toHaveCSS("align-items", "center");
+        for (const line of await guidance.locator("p").all()) {
+          await expect(line).toHaveCSS("white-space", "nowrap");
+          const layout = await line.evaluate((node) => {
+            const parent = node.parentElement!.getBoundingClientRect();
+            const box = node.getBoundingClientRect();
+            return {
+              centreOffset: Math.abs(
+                box.left + box.width / 2 - parent.left - parent.width / 2,
+              ),
+              fits: box.width <= parent.width,
+            };
+          });
+          expect(layout.centreOffset).toBeLessThanOrEqual(0.5);
+          expect(layout.fits).toBe(true);
+        }
+      }
       const continuationBox = await continuation.boundingBox();
       const timerBox = await page.getByRole("timer").boundingBox();
       expect(timerBox!.y).toBeGreaterThanOrEqual(
@@ -4449,7 +4484,9 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
       await expect(
         page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
       ).toBeVisible();
-      await page.getByText("View Full Details", { exact: true }).click();
+      await expect(
+        page.getByRole("heading", { name: "Booking Contact", exact: true }),
+      ).toBeVisible();
       await expect(
         page.getByText(`Sequence Guest ${index + 1}`, { exact: true }),
       ).toBeVisible();

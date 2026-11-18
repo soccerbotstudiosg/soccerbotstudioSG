@@ -4945,8 +4945,12 @@ it("idle Review removes cutoff-crossed sessions at the strict four-hour boundary
     within(screen.getByRole("alert")).getByText(/15:20–16:00/),
   ).toBeVisible();
   const times = screen.getByRole("group", { name: "Session times" });
-  expect(within(times).queryByRole("button", { name: /15:20/ })).toBeNull();
-  expect(within(times).getByRole("button", { name: /16:10/ })).toBeVisible();
+  expect(
+    within(times).queryByRole("button", { name: /^15:20–16:00/ }),
+  ).toBeNull();
+  expect(
+    within(times).getByRole("button", { name: /^16:10–16:50/ }),
+  ).toBeVisible();
   expect(await state!.review()).toBe(true);
   expect(checkout).not.toHaveBeenCalled();
 });
@@ -4982,21 +4986,26 @@ it("unselected calendar offers disappear at cutoff while a background availabili
   );
   await act(async () => {});
   const times = screen.getByRole("group", { name: "Session times" });
-  fireEvent.click(within(times).getByRole("button", { name: /15:20/ }));
-  expect(within(times).getByRole("button", { name: /15:20/ })).toHaveAttribute(
-    "aria-expanded",
-    "true",
-  );
+  fireEvent.click(within(times).getByRole("button", { name: /^15:20–16:00/ }));
+  expect(
+    within(times).getByRole("button", { name: /^15:20–16:00/ }),
+  ).toHaveAttribute("aria-expanded", "true");
   const readsBeforeCutoff = availability.mock.calls.length;
   await act(async () => {
     vi.advanceTimersByTime(1);
   });
-  expect(within(times).getByRole("button", { name: /15:20/ })).toBeVisible();
+  expect(
+    within(times).getByRole("button", { name: /^15:20–16:00/ }),
+  ).toBeVisible();
   await act(async () => {
     vi.advanceTimersByTime(1);
   });
-  expect(within(times).queryByRole("button", { name: /15:20/ })).toBeNull();
-  expect(within(times).getByRole("button", { name: /16:10/ })).toBeVisible();
+  expect(
+    within(times).queryByRole("button", { name: /^15:20–16:00/ }),
+  ).toBeNull();
+  expect(
+    within(times).getByRole("button", { name: /^16:10–16:50/ }),
+  ).toBeVisible();
   expect(screen.queryByText("Session no longer available.")).toBeNull();
   // The normal minute refresh is the only additional read; hiding is local.
   expect(availability).toHaveBeenCalledTimes(readsBeforeCutoff + 1);

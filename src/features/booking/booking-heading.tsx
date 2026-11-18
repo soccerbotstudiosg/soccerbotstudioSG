@@ -12,15 +12,20 @@ export function BookingHeading({
   lines,
   status: suppliedStatus,
 }: {
-  lines: readonly [string, string];
+  lines: readonly [string, string?];
   status?: ReactNode;
 }) {
   const inheritedStatus = useContext(BookingHeadingStatus);
   const status = suppliedStatus ?? inheritedStatus;
   const title = (
     <h1 className="page-title booking-title">
-      <span className="booking-title-line">{lines[0]}</span>{" "}
-      <span className="booking-title-line">{lines[1]}</span>
+      <span className="booking-title-line">{lines[0]}</span>
+      {lines[1] && (
+        <>
+          {" "}
+          <span className="booking-title-line">{lines[1]}</span>
+        </>
+      )}
     </h1>
   );
   if (!status) return title;

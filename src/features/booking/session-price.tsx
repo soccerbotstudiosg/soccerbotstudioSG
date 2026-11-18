@@ -16,8 +16,10 @@ function sessionPriceLabel(environment: "developer" | "production") {
 /** Resolve homepage prices from the same validated catalogue used by booking. */
 export function SessionPrice({
   service = customerCatalogueService,
+  offer = false,
 }: {
   service?: CustomerCatalogueService;
+  offer?: boolean;
 }) {
   const { bookingService } = useBooking();
   const live = bookingService.mode === "live";
@@ -44,6 +46,20 @@ export function SessionPrice({
       ? result.environment
       : undefined
     : "developer";
+  if (offer && environment) {
+    const prices = sessionPrices(environment);
+    return (
+      <span className="arena-offer-prices">
+        <span>
+          Weekdays <strong>S${prices.ordinary / 100}</strong>
+        </span>
+        <span>
+          Weekends &amp; SG public holidays{" "}
+          <strong>S${prices.premium / 100}</strong>
+        </span>
+      </span>
+    );
+  }
   return (
     <span>
       {environment ? sessionPriceLabel(environment) : "See prices when booking"}

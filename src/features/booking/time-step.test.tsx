@@ -202,7 +202,11 @@ async function calendarScenario(mobile: boolean) {
         within(instructors).getByRole("article", { name: "Daniel Tan" }),
       ).queryByRole("list"),
     ).not.toBeInTheDocument();
-    await user.click(times().getByRole("button", { name: /15:20–16:00/ }));
+    await user.click(
+      times().getByRole("button", {
+        name: `Remove selected session ${restoredDate} at 15:20`,
+      }),
+    );
     expect(within(instructors).getAllByRole("article")).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: "Clear all" }));
     expect(
@@ -437,7 +441,7 @@ test("crossing sessions retain checkout behavior without scheduling notices", as
   expect(payment.parentElement).not.toHaveAttribute("data-ready-animation");
 });
 
-test("confirmation places three retained actions above a compact summary and discloses complete details", async () => {
+test("confirmation places three retained actions below the summary with complete details visible", async () => {
   const stored = loadBooking();
   const draft = {
     ...stored.draft,
@@ -464,8 +468,8 @@ test("confirmation places three retained actions above a compact summary and dis
       <ConfirmationStep />
     </BookingProvider>,
   );
-  const disclosure = view.container.querySelector("details");
-  expect(disclosure).not.toHaveAttribute("open");
+  const disclosure = view.container.querySelector(".confirmation-full-details");
+  expect(view.container.querySelector("details")).toBeNull();
   expect(
     disclosure?.querySelector(".session-summary-heading h2"),
   ).toHaveTextContent("Your Sessions");
@@ -481,10 +485,10 @@ test("confirmation places three retained actions above a compact summary and dis
       (action) => action.textContent,
     ),
   ).toEqual(["Make another booking", "WhatsApp Enquiry", "Back to home"]);
-  expect(actions.compareDocumentPosition(disclosure!)).toBe(
+  expect(disclosure!.compareDocumentPosition(actions)).toBe(
     Node.DOCUMENT_POSITION_FOLLOWING,
   );
-  fireEvent.click(screen.getByText("View Full Details"));
+  expect(screen.getByText("Booking Contact")).toBeVisible();
   expect(
     screen
       .getAllByRole("heading", { level: 2 })
@@ -496,7 +500,7 @@ test("confirmation places three retained actions above a compact summary and dis
     "Before Your Session",
     "Order Summary",
   ]);
-  expect(disclosure).toHaveAttribute("open");
+  expect(disclosure).toBeVisible();
   expect(
     Array.from(disclosure!.querySelectorAll("h2"), (node) => node.textContent),
   ).toEqual([
@@ -506,6 +510,13 @@ test("confirmation places three retained actions above a compact summary and dis
     "Before Your Session",
   ]);
   expect(disclosure!.querySelector(".confirmation-disclaimers")).not.toBeNull();
+  const guidance = screen.getByRole("region", { name: "Before your session" });
+  expect(within(guidance).getAllByRole("listitem")).toHaveLength(4);
+  expect(guidance.querySelector(".arrival-time")?.closest("li")).toBeNull();
+  expect(guidance.querySelector(".arrival-time")).toHaveTextContent(
+    "Arrive 10 mins early.",
+  );
+
   expect(
     screen.getByRole("region", { name: "Order Summary" }).closest("details"),
   ).toBeNull();
@@ -706,7 +717,10 @@ test("each time requires an independent trainer choice and changing it preserves
   expect(selected).toHaveTextContent("Trainer: Daniel Tan");
   expect(selected).toHaveAttribute("aria-expanded", "false");
   await user.click(selected);
-  await user.click(selected);
+  expect(
+    screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
+  ).toHaveValue(`${restoredDate}|12:00|demo|daniel`);
+  expect(loadBooking().draft.slots).toHaveLength(2);
   await user.selectOptions(
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
     `${restoredDate}|12:00|demo|faisal`,
@@ -726,8 +740,15 @@ test("each time requires an independent trainer choice and changing it preserves
   expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveTextContent(
     "Trainer: Faisal Shahril",
   );
-  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
+  await user.click(
+    screen.getByRole("button", {
+      name: `Remove selected session ${restoredDate} at 12:00`,
+    }),
+  );
   expect(loadBooking().draft.slots).toHaveLength(1);
+  expect(
+    screen.queryByLabelText(`Trainer for ${restoredDate} at 12:00`),
+  ).not.toBeInTheDocument();
 });
 test("a trainer choice opened before expiry cannot add the session after its start", async () => {
   vi.setSystemTime(new Date("2026-10-13T11:59:59+08:00"));

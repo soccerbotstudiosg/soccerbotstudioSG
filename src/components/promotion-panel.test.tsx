@@ -153,6 +153,11 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     const link = screen.getByRole("link", { name: actionLabel });
     expect(link).toHaveAttribute("href", href.slice(0, -1));
     expect(link).toHaveClass("feature-copy");
+    const photoLink = screen.getByRole("link", {
+      name: `Photo — ${actionLabel}`,
+    });
+    expect(photoLink).toHaveAttribute("href", href.slice(0, -1));
+    expect(photoLink.querySelector("img")).not.toBeNull();
     expect(
       Array.from(panel.querySelectorAll(".feature-chevron path"), (path) =>
         path.getAttribute("d"),

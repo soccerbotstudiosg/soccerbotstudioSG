@@ -62,15 +62,10 @@ test("overlapping booking reads share one full-page loader and preserve the moun
   ).toBeInTheDocument();
   expect(screen.getByLabelText("Contact name")).toBe(input);
   view.rerender(<Screen first={false} second={false} />);
-  expect(document.querySelector(".page-loading")).not.toBeNull();
-  act(() => vi.advanceTimersByTime(999));
-  expect(document.querySelector(".page-loading")).not.toBeNull();
-  expect(input.parentElement).toHaveAttribute("inert");
-  act(() => vi.advanceTimersByTime(1));
   expect(document.querySelector(".page-loading")).toBeNull();
   expect(input).toHaveValue("Retained name");
   expect(input.parentElement).not.toHaveAttribute("inert");
-  // A new episode gets its own minimum; slow work adds no extra delay.
+  // New and slow operations both release immediately when their work finishes.
   view.rerender(<Screen first second={false} />);
   act(() => vi.advanceTimersByTime(1500));
   expect(document.querySelector(".page-loading")).not.toBeNull();

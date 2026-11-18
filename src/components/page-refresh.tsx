@@ -15,7 +15,7 @@ import {
   checkoutRouteLoadingLabel,
   useBookingLoadingState,
 } from "@/features/booking/booking-loading";
-import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
+import { BrandLoading } from "./brand-loading";
 
 const PageReady = createContext(true);
 /** Delay public overlays until the page cover has revealed ready content. */
@@ -43,7 +43,6 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [visit, setVisit] = useState({ pathname, initial: true, episode: 0 });
   const [complete, setComplete] = useState(false);
-  const [minimumElapsed, setMinimumElapsed] = useState(false);
   if (visit.pathname !== pathname) {
     const home = pathname === "/";
     setVisit({
@@ -53,18 +52,10 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     });
     if (home && complete) {
       setComplete(false);
-      setMinimumElapsed(false);
     } else if (!visit.initial && !complete) {
       setComplete(true);
     }
   }
-  useEffect(() => {
-    const timer = setTimeout(
-      () => setMinimumElapsed(true),
-      FULL_PAGE_LOADING_MIN_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [visit.episode]);
   const navigationReload = useSyncExternalStore(
     subscribeToNavigation,
     isReload,
@@ -110,7 +101,7 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
     return () => setDocumentLoading?.(false);
   }, [complete, setDocumentLoading]);
   useEffect(() => {
-    if (complete || !minimumElapsed || !ready || pending) return;
+    if (complete || !ready || pending) return;
     let active = true;
     let frame = 0;
     const reveal = () => {
@@ -132,15 +123,7 @@ export function PageRefreshBoundary({ children }: { children: ReactNode }) {
       active = false;
       cancelAnimationFrame(frame);
     };
-  }, [
-    complete,
-    minimumElapsed,
-    ready,
-    reloading,
-    pending,
-    pathname,
-    visit.episode,
-  ]);
+  }, [complete, ready, reloading, pending, pathname, visit.episode]);
   return (
     <PageReady.Provider value={complete}>
       <div

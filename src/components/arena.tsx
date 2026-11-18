@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRef, type PointerEvent } from "react";
 import { studioMedia } from "@/content/media";
 import { StudioLocation } from "./studio-location";
+import { SessionPrice } from "@/features/booking/session-price";
 import { Icon } from "./icon";
 import { ArenaFacility } from "./arena-facility";
 import { entryPath, PITCH_STROKES } from "./arena-geometry";
@@ -137,10 +138,24 @@ export function Arena() {
           </div>
           <div className="arena-bottomline">
             <div className="arena-cue">
-              <strong id="arena-booking-cue">Book your next session</strong>
+              <strong id="arena-booking-cue">Kickoff Special</strong>
             </div>
-            <span className="arena-entry-arrow" aria-hidden="true">
-              <Icon name="chevron" />
+            <SessionPrice offer />
+            <span className="arena-session-entry">
+              <span className="arena-mobile-cue" aria-hidden="true">
+                »
+              </span>
+              <span className="arena-session-meta">
+                40 minutes · 1–4 players
+                <br />
+                Instructor included
+              </span>
+              <span className="arena-mobile-cue" aria-hidden="true">
+                «
+              </span>
+              <span className="arena-entry-arrow" aria-hidden="true">
+                <Icon name="chevron" />
+              </span>
             </span>
           </div>
         </Link>

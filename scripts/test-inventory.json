@@ -1225,7 +1225,7 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
-    "title": "confirmation places three retained actions above a compact summary and discloses complete details"
+    "title": "confirmation places three retained actions below the summary with complete details visible"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
@@ -1265,7 +1265,7 @@
   },
   {
     "file": "src/features/enquiry/enquiry-page.test.tsx",
-    "title": "enquiry validates edits immediately and blocks invalid service submission"
+    "title": "enquiry reveals errors after blur or submission and blocks invalid service submission"
   },
   {
     "file": "src/features/enquiry/enquiry-page.test.tsx",
@@ -1665,7 +1665,7 @@
   },
   {
     "file": "tests/customer.spec.ts",
-    "title": "home navigation offer and studio booking buttons display the branded loader"
+    "title": "home navigation offer and studio booking buttons reveal ready destinations without a minimum wait"
   },
   {
     "file": "tests/customer.spec.ts",

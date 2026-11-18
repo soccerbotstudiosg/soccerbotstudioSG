@@ -38,6 +38,11 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   const user = userEvent.setup();
   render(<AccountStep />);
   await user.click(screen.getByRole("button", { name: "Sign in" }));
+  expect(
+    screen
+      .getByRole("heading", { name: "Sign in" })
+      .querySelectorAll(".booking-title-line"),
+  ).toHaveLength(1);
   expect(screen.getByLabelText("Email address")).toHaveAttribute(
     "maxlength",
     "254",
@@ -45,6 +50,10 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   fireEvent.change(screen.getByLabelText("Email address"), {
     target: { value: "a..b@example.com" },
   });
+  expect(screen.getByLabelText("Email address")).toHaveAttribute(
+    "aria-invalid",
+    "false",
+  );
   fireEvent.blur(screen.getByLabelText("Email address"));
   expect(screen.getByText("Enter a valid email address.")).toBeVisible();
   await user.clear(screen.getByLabelText("Email address"));
@@ -146,11 +155,6 @@ test("signed-in loading remains until the destination commits without exposing t
   expect(
     screen.getByRole("heading", { name: "Choose your session" }),
   ).toBeInTheDocument();
-  act(() => vi.advanceTimersByTime(999));
-  expect(
-    screen.getByRole("status", { name: "Opening booking" }),
-  ).toBeInTheDocument();
-  act(() => vi.advanceTimersByTime(1));
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: "Continue signed in" }),

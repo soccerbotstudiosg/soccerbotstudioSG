@@ -289,7 +289,7 @@ it("verified live receipt shows provider invoice number without internal IDs or 
     ),
   );
   render(<ProtectedConfirmation attemptId={first} />);
-  await screen.findByText("View Full Details");
+  await screen.findByText("Booking Contact");
   const orderSummary = await screen.findByRole("region", {
     name: "Order Summary",
   });
@@ -302,8 +302,8 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   expect(
     screen
       .getByRole("heading", { name: "Before Your Session" })
-      .closest("details"),
-  ).not.toHaveAttribute("open");
+      .closest(".confirmation-full-details"),
+  ).toBeVisible();
   expect(orderSummary.querySelector(".series-list")).not.toHaveTextContent(
     "Paid",
   );
@@ -313,7 +313,7 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   expect(
     orderSummary.querySelector(".review-head .confirmation-paid-status"),
   ).toHaveTextContent("Paid");
-  fireEvent.click(await screen.findByText("View Full Details"));
+  expect(await screen.findByText("Booking Contact")).toBeVisible();
   expect(
     Array.from(document.querySelectorAll(".confirmation-card h2")).map(
       (node) => node.textContent,
@@ -344,7 +344,7 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   ).toHaveClass("confirmation-disclaimers");
   expect(
     screen.getByRole("region", { name: "Before Your Session" }),
-  ).toHaveTextContent("bring a towel");
+  ).toHaveTextContent("Bring your own towel.");
   expect(screen.getByText("Trainer: Native Trainer")).toBeInTheDocument();
   expect(screen.queryByText("701")).not.toBeInTheDocument();
   expect(screen.queryByText("901")).not.toBeInTheDocument();
@@ -622,13 +622,13 @@ it("reopening an expired paid booking shows the saved full confirmation without 
   const page = render(
     <ProtectedConfirmation attemptId={first} checkoutMode="live" />,
   );
-  fireEvent.click(await screen.findByText("View Full Details"));
+  expect(await screen.findByText("Booking Contact")).toBeVisible();
   await screen.findByRole("heading", { name: "Booking Contact" });
   expect(screen.getByText(/Verified/)).toBeInTheDocument();
   expect(fetch).toHaveBeenCalledTimes(1);
   page.unmount();
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
-  fireEvent.click(await screen.findByText("View Full Details"));
+  expect(await screen.findByText("Booking Contact")).toBeVisible();
   await screen.findByRole("heading", { name: "Booking Contact" });
   expect(fetch).toHaveBeenCalledTimes(2);
   expect(
@@ -1091,7 +1091,7 @@ it("verified payment shows confirmation before reconciliation without export act
   vi.stubGlobal("fetch", fetch);
   render(<ProtectedConfirmation attemptId={first} checkoutMode="live" />);
   await screen.findByRole("heading", { name: "Booking Confirmed" });
-  fireEvent.click(screen.getByText("View Full Details"));
+  expect(await screen.findByText("Booking Contact")).toBeVisible();
   expect(screen.getByText("Total Paid", { exact: true })).toBeVisible();
   expect(
     screen.queryByRole("button", {
@@ -1554,7 +1554,7 @@ it("shows payment received feedback with details while current booking evidence 
   expect(continuation).not.toHaveAttribute("target");
   expect(continuation.nextElementSibling).toBe(timer.parentElement);
   expect(timer.parentElement).toHaveTextContent(
-    "Your selected sessions are held until the timer ends.",
+    "Sessions held until the timer ends.",
   );
   expect(continuation.parentElement?.nextElementSibling).toBeNull();
   expect(screen.queryByText("View Full Details")).toBeNull();

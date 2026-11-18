@@ -10,6 +10,9 @@ const navigation = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
 }));
+vi.mock("@/features/booking/provider", () => ({
+  useBooking: () => ({ bookingService: { mode: "demo" } }),
+}));
 const identity = vi.hoisted(() => ({ mode: "demo", refresh: vi.fn() }));
 vi.mock("@/services", () => ({ services: { customerIdentity: identity } }));
 vi.mock("next/navigation", () => ({
@@ -90,9 +93,9 @@ test("shows the logo on booking entry even when the destination is already prefe
   expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/account/");
   navigation.path = "/book/account/";
   view.rerender(<App />);
-  act(() => vi.advanceTimersByTime(999));
+  act(() => vi.advanceTimersByTime(0));
   expect(screen.getByRole("status")).toBeInTheDocument();
-  act(() => vi.advanceTimersByTime(181));
+  act(() => vi.advanceTimersByTime(180));
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(document.documentElement.style.overflow).toBe("");
   expect(screen.getByRole("main")).toHaveFocus();

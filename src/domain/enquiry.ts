@@ -44,8 +44,9 @@ export function enquiryErrors(
     errors.date = "Choose today or a future date.";
   if (value.time && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.time))
     errors.time = "Enter a valid time.";
-  if (!value.message.trim() || value.message.length > 2000)
-    errors.message = "Enter 1–2,000 characters.";
+  if (!value.message.trim()) errors.message = "Please tell us what you need.";
+  else if (value.message.length > 2000)
+    errors.message = "Use no more than 2,000 characters.";
   else if (/[\p{Cc}\p{Cf}]/u.test(value.message.replace(/[\r\n\t]/g, "")))
     errors.message = "Remove invalid characters.";
   return errors;

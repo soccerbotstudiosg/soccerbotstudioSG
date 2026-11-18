@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-17 November2026: PR93 54defcf passes the enquiry guard, but CI44031490315 exposed a real phone-WebKit click interception: the Back-to-top circle overlaps Choose Date & Time near the footer (artifact14305094674). The shared control now measures collisions before paint and shifts below the primary action; existing component/browser guards cover collision and normal placement. Focused regression/mutation, types/lint/source/policy and build/export pass; full local unit runs retain calendar timeouts (398/400 in a one-worker diagnostic), so full local success is not claimed. Push the owning repair and require complete exact-head CI/staging health. PR remains unmerged; physical Edge acceptance is pending.
+18 November2026: PR94 consolidates the approved hero offer, photo links, readiness-only loaders, blur/submission form validation, enquiry requirements feedback, animated email-check dots, full confirmation details/actions below summary,2×2 compact guidance and selected-slot ×/trainer editing. Owner approved the bounded picomatch exception until25 November00:00 SGT; this accepts documented tooling risk and is not a fix.
 
 ## Next actions
 
-Consolidate tests/guards/docs, run local code verification, push existing PR, monitor exact-head CI and deploy staging under the owner's standing request. Do not merge. No provider actions or assistant browsers.
+Combined candidate prepared in /workspace/consolidated-release; original /workspace/404-artwork dependency symlink remains intact. Includes the reviewed package/lock changes from PR84 with regenerated versions. Two local review rounds are recorded in Journey: full original-version verification passed; updated-version full run found one stale towel-copy assertion (399/400), repaired with43 protected-confirmation tests passing. Final full code verification passed on the combined dependencies:400 component/service,213 tooling,58 installer cases, audit policy, format/lint/types, build and export. The disclaimer copy is aligned with /workspace/mockups/session-guidance-preview.html: “Arrive 10 mins early. Late arrivals may lose time.” Focused verification covers this final copy delta. PR94 is published. Run44221696665 exposed four stale browser contracts; e57d766 fixes mobile typography and the current repair controls home image readiness plus uses the selected-slot × action. Source/inventory, lint and types pass; exact-head browser CI, staging and health remain pending. Close PR84 as superseded only once its exact update is covered by verified PR94. Owner acceptance remains required before merge. No provider actions or assistant browser execution.
 
 ## Ordered work after this slice
 

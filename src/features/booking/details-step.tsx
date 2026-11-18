@@ -109,7 +109,6 @@ export function DetailsStep({
               email,
             };
             profileTarget.current.update({ contact });
-            if (!profileOnly) setErrors(contactErrors(contact, email));
           }
           setProfileRead({ email, ready: true, error: "" });
         },
@@ -150,14 +149,7 @@ export function DetailsStep({
       cancel();
     };
   }, [cancel]);
-  const [touchedErrors, setErrors] = useState<ContactErrors>(() =>
-    profileOnly
-      ? {}
-      : contactErrors(
-          c,
-          draft.mode === "member" ? draft.accountEmail : undefined,
-        ),
-  );
+  const [touchedErrors, setErrors] = useState<ContactErrors>({});
   const currentErrors = contactErrors(
     c,
     draft.mode === "member" ? draft.accountEmail : undefined,
@@ -288,13 +280,17 @@ export function DetailsStep({
       setCheckedEmail(null);
     }
     update({ contact: { ...c, [key]: value } });
-    setErrors((current) => ({
-      ...current,
-      [key]: contactErrors(
-        { ...c, [key]: value },
-        draft.mode === "member" ? draft.accountEmail : undefined,
-      )[key],
-    }));
+    setErrors((current) =>
+      !Object.hasOwn(current, key)
+        ? current
+        : {
+            ...current,
+            [key]: contactErrors(
+              { ...c, [key]: value },
+              draft.mode === "member" ? draft.accountEmail : undefined,
+            )[key],
+          },
+    );
   }
   function validateField(key: keyof ContactDetails) {
     const next = contactErrors(
@@ -373,7 +369,11 @@ export function DetailsStep({
                 if (/[\x00-\x1f\x7f-\x9f]/.test(pasted)) {
                   event.preventDefault();
                   const next = contactErrors({ ...c, [key]: pasted });
-                  setErrors((current) => ({ ...current, [key]: next[key] }));
+                  setErrors((current) =>
+                    Object.hasOwn(current, key)
+                      ? { ...current, [key]: next[key] }
+                      : current,
+                  );
                 }
               }}
               onChange={(e) => change(key, e.target.value)}
@@ -390,12 +390,28 @@ export function DetailsStep({
               aria-busy={emailChecking}
               onClick={() => void confirmEmail()}
             >
-              {emailChecking ? (
-                <Icon name="spinner" className="spinner" />
-              ) : emailChecked ? (
+              {emailChecked && !emailChecking ? (
                 <Icon name="check" />
               ) : (
-                <span aria-hidden="true">!</span>
+                <svg
+                  className="email-check-icon"
+                  viewBox="0 0 28 30"
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 5h18" />
+                  <g fill="currentColor" stroke="none">
+                    <circle cx="5" cy="5" r="2" />
+                    <circle cx="14" cy="5" r="2" />
+                    <circle cx="23" cy="5" r="2" />
+                  </g>
+                  <rect x="3" y="13" width="22" height="14" rx="2" />
+                  <path d="m4 14 10 7 10-7" />
+                </svg>
               )}
             </button>
           )}
@@ -409,23 +425,11 @@ export function DetailsStep({
               id="email-check-help"
               aria-live="polite"
             >
-              {emailChecking ? (
-                "Checking email…"
-              ) : emailChecked ? (
-                "You’ve checked your email address."
-              ) : (
-                <>
-                  Select{" "}
-                  <span
-                    className="email-hint-mark"
-                    role="img"
-                    aria-label="exclamation mark"
-                  >
-                    !
-                  </span>{" "}
-                  to confirm email address.
-                </>
-              )}
+              {emailChecking
+                ? "Checking email…"
+                : emailChecked
+                  ? "You’ve checked your email address."
+                  : "Select the envelope to confirm your email address."}
             </p>
           )}
         {errors[key] && (

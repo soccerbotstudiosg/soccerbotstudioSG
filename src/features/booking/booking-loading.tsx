@@ -14,7 +14,7 @@ import {
   CONFLICT_CHECKING,
   ACTIVE_CHECKOUT_CHECKING,
 } from "@/domain/booking-messages";
-import { BrandLoading, useMinimumLoading } from "@/components/brand-loading";
+import { BrandLoading, useLoadingFeedback } from "@/components/brand-loading";
 export const loadingMessage = "Please do not close or refresh.";
 /** Identify checkout routes before restored payment checks can supply their status. */
 export const checkoutRouteLoadingLabel = (pathname: string) =>
@@ -80,7 +80,7 @@ export function BookingLoadingProvider({ children }: { children: ReactNode }) {
   const overlay =
     overlays.find((entry) => loadingFeedbackMessage(entry.label)) ??
     overlays[0];
-  const visibleLabel = useMinimumLoading(
+  const visibleLabel = useLoadingFeedback(
     documentLoading ? undefined : overlay?.label,
     (previous, next) =>
       !!loadingFeedbackMessage(previous) &&

@@ -747,14 +747,7 @@ export function TimeStep({
                     !selected;
                   const toggle = () => {
                     if (disabled) return;
-                    if (selected) {
-                      update({
-                        slots: draft.slots.filter(
-                          (item) => slotKey(item) !== key,
-                        ),
-                      });
-                      setChoosing(null);
-                    } else if (!pastSelectionCutoff(slot) && available) {
+                    if (selected || (!pastSelectionCutoff(slot) && available)) {
                       setChoosing(choosing === key ? null : key);
                     }
                   };
@@ -774,7 +767,7 @@ export function TimeStep({
                       <button
                         className={`time${selected ? " selected" : ""}`}
                         aria-pressed={!!selected}
-                        aria-expanded={!selected && choosing === key}
+                        aria-expanded={choosing === key}
                         disabled={disabled}
                         onClick={toggle}
                       >
@@ -805,12 +798,28 @@ export function TimeStep({
                           </span>
                         </span>
                       </button>
-                      {!selected && choosing === key && (
+                      {selected && (
+                        <button
+                          className="basket-remove time-remove"
+                          aria-label={`Remove selected session ${slot.date} at ${slot.start}`}
+                          onClick={() => {
+                            update({
+                              slots: draft.slots.filter(
+                                (item) => slotKey(item) !== key,
+                              ),
+                            });
+                            if (choosing === key) setChoosing(null);
+                          }}
+                        >
+                          <Icon name="close" />
+                        </button>
+                      )}
+                      {choosing === key && (
                         <div className="trainer-choice">
                           <span>Trainer</span>
                           <select
                             aria-label={`Trainer for ${slot.date} at ${slot.start}`}
-                            value=""
+                            value={selected ? sessionOfferKey(selected) : ""}
                             disabled={
                               elapsed ||
                               !available ||

@@ -218,14 +218,31 @@ export function PromotionPanel({
             } as CSSProperties
           }
         >
-          <img
-            src={photo.src}
-            alt={photo.alt}
-            width={photo.width}
-            height={photo.height}
-            loading="lazy"
-            decoding="async"
-          />
+          {href ? (
+            <BookingLink
+              href={href}
+              className="promotion-photo-link"
+              aria-label={`Photo — ${actionLabel}`}
+            >
+              <img
+                src={photo.src}
+                alt={photo.alt}
+                width={photo.width}
+                height={photo.height}
+                loading="lazy"
+                decoding="async"
+              />
+            </BookingLink>
+          ) : (
+            <img
+              src={photo.src}
+              alt={photo.alt}
+              width={photo.width}
+              height={photo.height}
+              loading="lazy"
+              decoding="async"
+            />
+          )}
         </figure>
       )}
       {href ? (
