@@ -1119,10 +1119,13 @@ test("public routes remove staff access and fit the viewport", async ({
   await page.evaluate(() => scrollBy(0, -1));
   await expect(backToTop).toBeVisible();
   const backToTopBox = await backToTop.boundingBox();
-  expect(backToTopBox!.x + backToTopBox!.width / 2).toBeCloseTo(
-    page.viewportSize()!.width / 2,
-    0,
-  );
+  await expect(backToTop).toHaveCount(1);
+  expect(
+    page.viewportSize()!.width - backToTopBox!.x - backToTopBox!.width,
+  ).toBeCloseTo(20, 0);
+  expect(
+    page.viewportSize()!.height - backToTopBox!.y - backToTopBox!.height,
+  ).toBeCloseTo(24, 0);
   await backToTop.click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(backToTop).toHaveCount(0);
@@ -2778,6 +2781,11 @@ function bookingTypography(page: Page) {
     if (scrollable > 0) {
       await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
       await expect(scrollTop).toBeVisible();
+      await expect(scrollTop).toHaveCount(1);
+      const cueBounds = await scrollTop.boundingBox();
+      expect(
+        page.viewportSize()!.width - cueBounds!.x - cueBounds!.width,
+      ).toBeCloseTo(20, 0);
       expect(
         await scrollTop.evaluate((circle) => {
           const action = document.querySelector(
@@ -3831,8 +3839,12 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
     await expect(returnCue).toHaveCSS("position", "fixed");
     await expect(returnCue).toHaveCSS("border-radius", "50%");
     const cueBox = await returnCue.boundingBox();
-    const navBox = await page.locator(".booking-navigation").boundingBox();
-    expect(cueBox!.y).toBeCloseTo(navBox!.y + navBox!.height + 8, 0);
+    await expect(returnCue).toHaveCount(1);
+    expect(page.viewportSize()!.width - cueBox!.x - cueBox!.width).toBeCloseTo(
+      20,
+      0,
+    );
+    expect(cueBox!.y).toBeGreaterThan(page.viewportSize()!.height / 2);
     await page.clock.runFor(3000);
     await expect(returnCue).toHaveCount(0);
     await page.evaluate(() => scrollBy(0, 1));

@@ -25,7 +25,7 @@ vi.mock("./booking-navigation", () => ({
 }));
 vi.mock("./section-reveals", () => ({
   SectionReveals: () => null,
-  BackToTop: () => null,
+  BackToTop: () => <button aria-label="Back to top" />,
 }));
 vi.mock("./player-app-prompt", () => ({
   PlayerAppPrompt: () => <span>Player app prompt</span>,
@@ -58,8 +58,14 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.queryByText("Player app prompt")).not.toBeInTheDocument();
   expect(booking.leave).not.toHaveBeenCalled();
+  expect(screen.getAllByRole("button", { name: "Back to top" })).toHaveLength(
+    1,
+  );
   navigation.path = "/book/session/";
   view.rerender(<SiteShell>{home}</SiteShell>);
+  expect(screen.getAllByRole("button", { name: "Back to top" })).toHaveLength(
+    1,
+  );
   fireEvent.click(screen.getByRole("link", { name: "Artwork Home" }));
   expect(
     screen.getByRole("dialog", { name: "Leave this booking?" }),
@@ -76,6 +82,9 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   expect(follow).toHaveBeenCalledTimes(2);
   navigation.path = "/book/session/";
   view.rerender(<SiteShell>{home}</SiteShell>);
+  expect(screen.getAllByRole("button", { name: "Back to top" })).toHaveLength(
+    1,
+  );
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("link", { name: "Artwork Home" }));
   expect(

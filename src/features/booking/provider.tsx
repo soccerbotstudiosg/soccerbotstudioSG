@@ -4,6 +4,9 @@ import {
   profileAccessGeneration,
   reportProfileAccessLoss,
   bookingAccessExpired,
+  bookingAccessNotice,
+  rememberBookingAccessNotice,
+  clearBookingAccessNotice,
 } from "@/services/profile-access";
 import {
   clearIdentityEntry,
@@ -311,9 +314,14 @@ export function BookingProvider({
   bookingService?: BookingService;
   identityService?: CustomerIdentityService;
 }) {
-  const [profileAccessRevision, setProfileAccessRevision] = useState(0);
-  const [profileAccessNotice, setProfileAccessNotice] =
-    useState(BOOKING_SIGNED_OUT);
+  const [profileAccessRevision, setProfileAccessRevision] = useState(() =>
+    bookingAccessNotice() ? 1 : 0,
+  );
+  const [profileAccessNotice, setProfileAccessNotice] = useState(() =>
+    bookingAccessNotice() === "session"
+      ? BOOKING_SESSION_EXPIRED
+      : BOOKING_SIGNED_OUT,
+  );
   const [profileSaveError, setProfileSaveError] = useState("");
   const profileSave = useRef<{
     controller: AbortController;
@@ -872,6 +880,7 @@ export function BookingProvider({
         identityService.invalidate?.();
         clearIdentityEntry(identityService);
         if (!pathname || !/\/(?:book\/|confirmation)/.test(pathname)) return;
+        rememberBookingAccessNotice(reason);
         cancel(false);
         profileSave.current?.controller.abort();
         profileSave.current = null;
@@ -906,6 +915,15 @@ export function BookingProvider({
     )
       reportProfileAccessLoss(profileAccessGeneration(), "session");
   }, [service.mode, identityService.mode, pathname]);
+  useEffect(() => {
+    if (
+      pathname?.startsWith("/book/") &&
+      pathname !== "/book/account/" &&
+      !bookingAccessExpired()
+    ) {
+      clearBookingAccessNotice();
+    }
+  }, [pathname]);
   const conflictPath = useRef(pathname);
   useEffect(() => {
     const changed = conflictPath.current !== pathname;
@@ -2625,6 +2643,7 @@ export function BookingProvider({
         leave() {
           setEntryChecked(null);
           // Access recovery belongs to the departed journey, not the next entry.
+          clearBookingAccessNotice();
           setProfileAccessRevision(0);
           setProfileAccessNotice(BOOKING_SIGNED_OUT);
           // Discard editable data without erasing a dispatched attempt or its

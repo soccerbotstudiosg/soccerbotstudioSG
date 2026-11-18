@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-18 November 2026: final UI follow-up on fix/session-remove-hover from merged PR95/main0e0bd88. Add a rounded hover/focus background to the selected session × and change the email helper to “Select the blue circle to check your email address.” Owner authorized implementation, checks, staging then merge.
+18 November 2026: fix/unified-back-to-top from merged PR96/main b92e0dc. Consolidate one bottom-right scroll circle across all routes and retain the Step1 access-expiry notice across refresh. Email designs remain local mockups, not integrated or sent.
 
 ## Next actions
 
-Affected checks: Details6/6 and isolated TimeStep14/14 passed; combined run retained one calendar timeout (see Journey). Source/policy and ESLint passed. Publish the consolidated candidate, verify exact-head CI and staging health, then merge under the current authorization. Preserve the44px remove target, black icon, price placement and mobile resting state. Browser execution stays owner/CI-only. Full documentation reconciliation and notification-template setup follow this UI slice. The temporary picomatch exception expires25 November00:00 SGT.
+The expiry refresh regression failed before the repair and passed afterwards. Focused access/scroll/shell checks passed13/13; expanded expiry coverage passed11/11 with seven forward/back paths, notice remount and renewed entry. Source/policy, types and lint passed; final CI remains pending. No changes to server access lifetime or financial recovery. Final browser evidence remains owner/CI-only. Publish a draft after checks; staging and merge are not yet accepted for this candidate. The temporary picomatch exception expires25 November00:00 SGT.
 
 ## Ordered work after this slice
 

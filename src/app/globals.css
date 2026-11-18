@@ -1028,10 +1028,13 @@
 @layer components {
   .back-to-top {
     position: fixed;
-    z-index: 30;
-    left: 50%;
-    bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
-    transform: translateX(-50%);
+    z-index: 36;
+    right: max(20px, env(safe-area-inset-right));
+    bottom: max(
+      24px,
+      calc(env(safe-area-inset-bottom) + 12px),
+      var(--back-to-top-clearance, 0px)
+    );
     display: grid;
     place-items: center;
     width: 48px;
@@ -1041,19 +1044,6 @@
     background: var(--color-surface);
     color: var(--color-brand);
     box-shadow: var(--shadow-action);
-  }
-  body:has(.enquiry-page .booking-primary-action) .back-to-top {
-    bottom: max(
-      calc(
-        80px + var(--space-action-bottom) + 12px + env(safe-area-inset-bottom)
-      ),
-      var(--back-to-top-clearance, 0px)
-    );
-  }
-  .back-to-top.booking-back-to-top {
-    top: var(--back-to-top-top, 0px);
-    bottom: auto;
-    z-index: 36;
   }
   .back-to-top:hover {
     background: var(--color-paper);

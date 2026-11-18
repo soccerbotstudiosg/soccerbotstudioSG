@@ -559,13 +559,20 @@ test("expired navigation redirects on forward and back steps while local edits a
       : Response.json(null),
   );
   const identity = await identityWith(fetcher);
-  for (const destination of ["/book/time/", "/book/session/"]) {
+  for (const [origin, destination] of [
+    ["/book/session/", "/book/time/"],
+    ["/book/time/", "/book/details/"],
+    ["/book/details/", "/book/review/"],
+    ["/book/review/", "/book/details/"],
+    ["/book/details/", "/book/time/"],
+    ["/book/time/", "/book/session/"],
+    ["/book/session/", "/book/account/"],
+  ]) {
     navigation.replace.mockClear();
-    navigation.path =
-      destination === "/book/time/" ? "/book/session/" : "/book/time/";
+    navigation.path = origin;
     vi.setSystemTime(start);
     establishedProfileAccess(String(start + 1800000));
-    const view = render(
+    let view = render(
       <BookingProvider bookingService={service} identityService={identity}>
         <Probe />
       </BookingProvider>,
@@ -589,6 +596,15 @@ test("expired navigation redirects on forward and back steps while local edits a
     );
     navigation.path = "/book/account/";
     view.rerender(
+      <BookingProvider bookingService={service} identityService={identity}>
+        <BookingPage step="account" />
+        <Probe />
+      </BookingProvider>,
+    );
+    expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
+    // A refresh remounts the provider while the generation has already reported loss.
+    view.unmount();
+    view = render(
       <BookingProvider bookingService={service} identityService={identity}>
         <BookingPage step="account" />
         <Probe />
