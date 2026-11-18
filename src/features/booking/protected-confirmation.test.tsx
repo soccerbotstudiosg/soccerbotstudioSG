@@ -297,7 +297,7 @@ it("verified live receipt shows provider invoice number without internal IDs or 
   expect(
     screen.getByRole("heading", { name: "Booking Confirmed" })
       .nextElementSibling,
-  ).toHaveTextContent("Your booking confirmation will be emailed to you.");
+  ).toHaveTextContent("We’ll email your confirmation.");
   expect(orderSummary.closest("details")).toBeNull();
   expect(
     screen

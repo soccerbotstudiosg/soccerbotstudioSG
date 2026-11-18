@@ -416,7 +416,7 @@ Approved field examples appear inside empty inputs in regular-weight light grey 
 
 Approved phone feedback: “Enter an 8-digit mobile number starting with 8 or 9.”, “Enter a valid mobile number for the selected country.” Organisation invalid-character feedback is “Remove invalid characters from the organisation name.” Name/email retain their existing generic validation messages while rejecting the same embedded invalid characters.
 
-Verified confirmation now includes “Your booking confirmation will be emailed to you.” directly below Booking Confirmed; previews and pending states do not promise email delivery. When the authenticated status confirms the current attempt and its protected booking details are already loaded, those details render immediately even if the separate receipt request is still pending. Invoice enrichment replaces them without replaying the confirmation heading. Pending payment or browser-return hints alone never enable this path.
+Verified confirmation now includes “We’ll email your confirmation.” directly below Booking Confirmed; previews and pending states do not promise email delivery. When the authenticated status confirms the current attempt and its protected booking details are already loaded, those details render immediately even if the separate receipt request is still pending. Invoice enrichment replaces them without replaying the confirmation heading. Pending payment or browser-return hints alone never enable this path.
 
 Local8 November follow-up reduces the Paid badge text and padding by15% (23.8px text;8.5px vertical and15.3px horizontal padding). Browser/device acceptance remains pending; this local slice is not deployed.
 
@@ -543,7 +543,7 @@ Guest-access failures are classified separately from email verification, includi
 
 These are not errors. Initial user-driven checkout/payment preparation may use the approved loader; background recovery must not inject a loader into an already usable calendar or stable status view.
 
-- Verified booking: “Booking Confirmed” and “Your booking confirmation will be emailed to you.”
+- Verified booking: “Booking Confirmed” and “We’ll email your confirmation.”
 - Existing valid payment: “Continue to pay. If already paid, please wait...” with “Time left to pay: {mm:ss}” and “Continue payment”.
 - Native retained link: “Complete your payment” and “Checkout opens separately. Return here to check your booking.”
 - Foreground progress labels: “Preparing booking…”, “Checking dates…”, “Checking times…”, “Checking sessions…”, “Checking reservation…”, “Opening checkout…”, “Preparing payment…”, “Checking booking…”, “Checking payment…”, “Payment received. Confirming booking.”, “Preparing confirmation…”. In the shared booking overlay, the label names the progress indicator for assistive technology. Visible text is “Please do not close or refresh.”, except “Opening checkout…” and “Checking payment…” prefix that sentence. Eligible unpaid continuation displays its progress label and guidance with the retained summary.

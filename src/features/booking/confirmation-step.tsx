@@ -250,7 +250,7 @@ export function BookingConfirmation({
               </span>
               <h1>Booking Confirmed</h1>
               {!preview && (
-                <p>Your booking confirmation will be emailed to you.</p>
+                <p>We’ll email your confirmation.</p>
               )}
             </>
           )}
