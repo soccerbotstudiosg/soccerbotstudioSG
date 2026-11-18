@@ -2606,7 +2606,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
     JSON.parse(sessionStorage.getItem("soccerbot-conflict-notice")!),
   ).toEqual([{ date: "2026-10-20", start: "12:00" }]);
   expect(
-    screen.getAllByRole("link", { name: /^Enter Booking Details/ })[0],
+    screen.getAllByRole("link", { name: /^Enter contact details/ })[0],
   ).toHaveAttribute("href", "/book/details");
 
   // Completing the first navigation away clears the notice and its persisted
@@ -4139,7 +4139,7 @@ it("completed conflict allows immediate calendar Back and Continue with retained
         );
       }
       const link = screen.getAllByRole("link", {
-        name: destination === "details" ? /^Enter Booking Details/ : "Back",
+        name: destination === "details" ? /^Enter contact details/ : "Back",
       })[0];
       expect(link.getAttribute("href")).toContain(`/book/${destination}`);
       navigation.replace.mockClear();
@@ -4313,7 +4313,7 @@ async function expectRecoveryReleaseNavigation(
         return readStorage.call(this, key);
       });
     expect(
-      screen.getAllByRole("button", { name: /^Enter Booking Details/ })[0],
+      screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
     ).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Review replacement" }));
     await act(async () => {});
@@ -4332,7 +4332,9 @@ async function expectRecoveryReleaseNavigation(
       view.rerender(tree("time"));
       await act(async () => {});
       expect(screen.queryByRole("alert")).toBeNull();
-      expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+      ).toBeNull();
     }
     unavailableStorage.mockRestore();
     navigation.path = "/book/session/";
@@ -4343,7 +4345,9 @@ async function expectRecoveryReleaseNavigation(
     view.rerender(tree("time"));
     await act(async () => {});
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     navigation.path = "/book/session/";
     view.rerender(tree("session"));
     await act(async () => {});
@@ -4356,12 +4360,16 @@ async function expectRecoveryReleaseNavigation(
     view.rerender(tree("time"));
     await act(async () => {});
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     view.unmount();
     view = render(tree("time"));
     await act(async () => {});
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     expect(
       JSON.parse(screen.getByTestId("original-recovery-draft").textContent!),
     ).toEqual(draft);
@@ -4414,7 +4422,7 @@ async function expectRecoveryReleaseNavigation(
   if (checkReviewGuard)
     expect(
       (
-        await screen.findAllByRole("link", { name: /^Enter Booking Details/ })
+        await screen.findAllByRole("link", { name: /^Enter contact details/ })
       )[0],
     ).toHaveAttribute("href", "/book/details");
   navigation.replace.mockClear();
@@ -4451,7 +4459,9 @@ async function expectRecoveryReleaseNavigation(
       screen.getByRole("button", { name: /^Proceed to Payment/ }),
     ).toBeEnabled();
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Request Help" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeNull();
     expect(checkout).not.toHaveBeenCalled();
     expect(pay).not.toHaveBeenCalled();
   }

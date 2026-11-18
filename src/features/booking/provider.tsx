@@ -490,6 +490,7 @@ export function BookingProvider({
       confirmationRevision: 0,
     },
   );
+  const latest = useRef(value);
   const [actionState, dispatchAction] = useState<
     ActionState & { owner: BookingService }
   >({ status: "idle", owner: service });
@@ -503,7 +504,14 @@ export function BookingProvider({
   );
   const visitBookingStep = useCallback(
     (step: string) => {
-      if (step !== "account") setProfileAccessRevision(0);
+      if (
+        step !== "account" &&
+        latest.current.draft.mode &&
+        !bookingAccessExpired()
+      ) {
+        clearBookingAccessNotice();
+        setProfileAccessRevision(0);
+      }
       if (step === "time") {
         if (
           action.calendarRecovery &&
@@ -730,7 +738,6 @@ export function BookingProvider({
       document.removeEventListener("visibilitychange", refresh);
     };
   }, []);
-  const latest = useRef(value);
   const hydrationOwner = useRef({ service, identityService });
   const commit = useCallback(
     (
@@ -915,15 +922,6 @@ export function BookingProvider({
     )
       reportProfileAccessLoss(profileAccessGeneration(), "session");
   }, [service.mode, identityService.mode, pathname]);
-  useEffect(() => {
-    if (
-      pathname?.startsWith("/book/") &&
-      pathname !== "/book/account/" &&
-      !bookingAccessExpired()
-    ) {
-      clearBookingAccessNotice();
-    }
-  }, [pathname]);
   const conflictPath = useRef(pathname);
   useEffect(() => {
     const changed = conflictPath.current !== pathname;

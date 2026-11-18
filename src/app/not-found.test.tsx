@@ -15,21 +15,26 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 test("404 tiles drift coherently nudge gently and regroup together after idle while Home stays accessible", () => {
+  let capture = true;
   let positions: number[][] = [];
   let bright: number[][] = [];
   const context = {
     clearRect: () => {
-      positions = [];
-      bright = [];
+      if (capture) {
+        positions = [];
+        bright = [];
+      }
     },
     save: () => {},
     restore: () => {},
-    translate: (x: number, y: number) => positions.push([x, y]),
+    translate: (x: number, y: number) => {
+      if (capture) positions.push([x, y]);
+    },
     rotate: () => {},
     scale: () => {},
     globalAlpha: 1,
     fillRect: (_x: number, _y: number, width: number, height: number) => {
-      if (context.globalAlpha >= 0.7 && height > 1)
+      if (capture && context.globalAlpha >= 0.7 && height > 1)
         bright.push([...positions[positions.length - 1], width]);
     },
     setTransform: vi.fn(),
@@ -90,14 +95,22 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
   home.focus();
   expect(home).toHaveFocus();
   const idleDigits = bright.map((point) => [...point]);
-  for (let index = 0; index < 240; index++) {
+  // Render every simulated frame; retain coordinates only at assertion boundaries.
+  // Intermediate canvas snapshots were discarded and caused millions of test-only allocations.
+  const tick = () => {
     const pending = [...frames.values()];
     frames.clear();
     time += 1000 / 60;
-    act(() => {
-      for (const callback of pending) callback(time);
-    });
-  }
+    for (const callback of pending) callback(time);
+  };
+  const advanceFrames = (count: number) => {
+    for (let index = 0; index < count && frames.size; index++) {
+      capture = index === count - 1;
+      act(tick);
+    }
+    capture = true;
+  };
+  advanceFrames(240);
   // Check the bright numeral tiles themselves, before any pointer interaction.
   const idleTravel = bright.map(([px, py], index) =>
     Math.hypot(px - idleDigits[index][0], py - idleDigits[index][1]),
@@ -110,12 +123,6 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
     new MouseEvent("pointermove", { clientX: x - 7, clientY: y }),
   );
   fireEvent(canvas, new MouseEvent("pointermove", { clientX: x, clientY: y }));
-  const tick = () => {
-    const pending = [...frames.values()];
-    frames.clear();
-    time += 1000 / 60;
-    for (const callback of pending) callback(time);
-  };
   act(tick);
   expect(
     positions.some(
@@ -125,7 +132,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
     ),
   ).toBe(true);
   fireEvent.pointerLeave(canvas);
-  for (let index = 0; index < 240 && frames.size; index++) act(tick);
+  advanceFrames(240);
   expect(frames.size).toBe(1);
   const moved = () =>
     positions.filter(
@@ -147,7 +154,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
     );
   }
   fireEvent.pointerLeave(canvas);
-  for (let index = 0; index < 240 && frames.size; index++) act(tick);
+  advanceFrames(240);
   expect(frames.size).toBe(1);
   expect(moved()).toBeGreaterThan(0);
   expect(moved()).toBeLessThan(original.length);
@@ -173,7 +180,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
   expect(maximumTravel()).toBeGreaterThan(25);
   expect(maximumTravel()).toBeLessThan(45);
   time += 7000;
-  for (let index = 0; index < 240 && frames.size; index++) act(tick);
+  advanceFrames(240);
   expect(frames.size).toBe(1);
   expect(maximumTravel()).toBeLessThan(25);
 
@@ -224,9 +231,11 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
     ...context,
     clearRect: () => {
-      reference = [];
+      if (capture) reference = [];
     },
-    translate: (px: number, py: number) => reference.push([px, py]),
+    translate: (px: number, py: number) => {
+      if (capture) reference.push([px, py]);
+    },
     fillRect: () => {},
   } as unknown as CanvasRenderingContext2D);
   const referenceView = render(<NotFound />);
@@ -238,7 +247,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
     );
   const tappedAt = time;
   fireEvent(canvas, event);
-  for (let index = 0; index < 180; index++) act(tick);
+  advanceFrames(180);
   const distanceFromOrigin = () =>
     Math.hypot(
       positions[targetIndex][0] - phoneOrigin[targetIndex][0],
@@ -254,7 +263,7 @@ test("404 tiles drift coherently nudge gently and regroup together after idle wh
   expect(distanceFromOrigin()).toBeLessThan(25);
   expect(deviation()).toBeGreaterThan(3);
   time = tappedAt + 10001;
-  for (let index = 0; index < 180; index++) act(tick);
+  advanceFrames(180);
   expect(deviation()).toBeLessThan(0.05);
   referenceView.unmount();
   expect(distanceFromOrigin()).toBeLessThan(12);

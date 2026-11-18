@@ -1,3 +1,4 @@
+import { enquiryHtml } from "./notification-template";
 import { z } from "zod";
 import { enquiryErrors } from "../src/domain/enquiry";
 import { emailSchema } from "../src/domain/contact";
@@ -40,6 +41,7 @@ type EnquiryRow = {
   created_ms: number;
   state: "pending" | "sent";
   verified_ms: number | null;
+  notification_version: number;
 };
 const unavailable = () => new ApiError(503, "enquiry_unavailable");
 const retryLater = () =>
@@ -98,7 +100,7 @@ export async function submitEnquiry(request: Request, env: Env) {
   const read = () =>
     db
       .prepare(
-        "SELECT input_hash,created_ms,state,verified_ms FROM enquiry_requests WHERE request_key=?",
+        "SELECT input_hash,created_ms,state,verified_ms,notification_version FROM enquiry_requests WHERE request_key=?",
       )
       .bind(key)
       .first<EnquiryRow>();
@@ -117,12 +119,12 @@ export async function submitEnquiry(request: Request, env: Env) {
     const results = await db.batch<EnquiryRow>([
       db
         .prepare(
-          "INSERT OR IGNORE INTO enquiry_requests(request_key,input_hash,created_ms,state) VALUES(?,?,?,'pending')",
+          "INSERT OR IGNORE INTO enquiry_requests(request_key,input_hash,created_ms,state,notification_version) VALUES(?,?,?,'pending',1)",
         )
         .bind(key, inputHash, now),
       db
         .prepare(
-          "UPDATE enquiry_requests SET claim_id=?,next_ms=? WHERE request_key=? AND input_hash=? AND state='pending' AND next_ms<=? AND created_ms>? RETURNING input_hash,created_ms,state,verified_ms",
+          "UPDATE enquiry_requests SET claim_id=?,next_ms=? WHERE request_key=? AND input_hash=? AND state='pending' AND next_ms<=? AND created_ms>? RETURNING input_hash,created_ms,state,verified_ms,notification_version",
         )
         .bind(claim, now + 30000, key, inputHash, now, now - 23 * 3600000),
       // The shared admission trigger rolls back the claim and new row if the bot budget is closed.
@@ -220,6 +222,9 @@ export async function submitEnquiry(request: Request, env: Env) {
         payload: {
           sender: sender.data,
           replyTo: values.email,
+          ...(claimed.notification_version === 1
+            ? { html: enquiryHtml(env.APP_ORIGIN, values, true) }
+            : {}),
           text,
           idempotencyKey: `enquiry/${key}`,
         },
@@ -229,6 +234,12 @@ export async function submitEnquiry(request: Request, env: Env) {
         payload: {
           sender: sender.data,
           recipient: values.email,
+          ...(claimed.notification_version === 1
+            ? {
+                name: values.name,
+                html: enquiryHtml(env.APP_ORIGIN, values, false),
+              }
+            : {}),
           text,
           idempotencyKey: `enquiry-acknowledgement/${key}`,
         },

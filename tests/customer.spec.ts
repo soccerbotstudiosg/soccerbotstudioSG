@@ -92,7 +92,7 @@ async function openBookingPanel(page: Page, panel: "cart" | "trainers") {
 
   await expect(
     dialog.getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
       exact: true,
     }),
   ).toHaveCount(0);
@@ -118,8 +118,8 @@ async function closeBookingPanel(page: Page) {
 }
 async function chooseSlots(page: Page, multiple = false) {
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Guest" }).click();
-  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page.getByRole("link", { name: "Choose sessions" }).click();
   await page
     .getByRole("button", {
       name: dateLabel(addDays(DEMO_TODAY, 1)),
@@ -173,7 +173,7 @@ async function chooseSlots(page: Page, multiple = false) {
   ).toHaveText(multiple ? "$176.00" : "$88.00");
   await page
     .getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
       exact: true,
     })
     .first()
@@ -1469,7 +1469,7 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   await expect(
     page
       .getByRole("button", {
-        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        name: /^Enter contact details(?: \$[\d,.]+)?$/,
         exact: true,
       })
       .first(),
@@ -1482,7 +1482,7 @@ test("email verification rejects an incorrect code and continues after correctio
   page,
 }) => {
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Continue with email" }).click();
   const emailHeading = page.getByRole("heading", {
     name: "Sign in",
     exact: true,
@@ -1496,7 +1496,7 @@ test("email verification rejects an incorrect code and continues after correctio
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("name@domain");
-  await page.getByRole("button", { name: "Get Verification Code" }).click();
+  await page.getByRole("button", { name: "Email me a code" }).click();
   await expect(page.locator("#auth-error")).toHaveText(
     "Enter a valid email address.",
   );
@@ -1509,7 +1509,7 @@ test("email verification rejects an incorrect code and continues after correctio
   await page
     .getByRole("textbox", { name: /^Email address/ })
     .fill("long.customer.address@example.com");
-  await page.getByRole("button", { name: "Get Verification Code" }).click();
+  await page.getByRole("button", { name: "Email me a code" }).click();
   await expect(
     page.getByRole("heading", { name: "Verify your email", exact: true }),
   ).toBeVisible();
@@ -1573,7 +1573,7 @@ test("email verification rejects an incorrect code and continues after correctio
   await expect(
     page.getByRole("button", { name: "Sign out", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await page.getByRole("link", { name: "Choose sessions" }).click();
   await expect(
     page.getByRole("heading", { name: "Select dates and times", exact: true }),
   ).toBeVisible();
@@ -1787,7 +1787,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     "src",
     sitePath("/assets/c275ccd87afb.svg"),
   );
-  await page.getByRole("button", { name: "Guest" }).click();
+  await page.getByRole("button", { name: "Continue as guest" }).click();
   await expect(
     page.getByRole("heading", { name: "Your session", exact: true }),
   ).toBeVisible();
@@ -1796,7 +1796,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     page.getByRole("button", { name: "Add one player" }),
   ).toBeVisible();
   await expect(page.getByRole("note")).toHaveCount(0);
-  const next = page.getByRole("link", { name: "Choose Date & Time" });
+  const next = page.getByRole("link", { name: "Choose sessions" });
   await expect(next).toHaveCSS("background-color", "rgb(5, 10, 47)");
   await expect(next).toHaveCSS("letter-spacing", "normal");
   const gradient = await next.evaluate((element) => ({
@@ -2028,7 +2028,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
       "normal",
     );
   }
-  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await page.getByRole("link", { name: "Choose sessions" }).click();
   await page
     .getByRole("button", {
       name: dateLabel(addDays(DEMO_TODAY, 1)),
@@ -2104,7 +2104,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await expect(
     page
       .getByRole("link", {
-        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        name: /^Enter contact details(?: \$[\d,.]+)?$/,
         exact: true,
       })
       .first(),
@@ -2145,7 +2145,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await closeBookingPanel(page);
   await page
     .getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
       exact: true,
     })
     .first()
@@ -2172,7 +2172,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   ).toBeVisible();
   await expect(page.getByText(/^Total Paid(?: · Preview)?$/)).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Before Your Session", exact: true }),
+    page.getByRole("heading", { name: "Before your session", exact: true }),
   ).toBeVisible();
   const confirmationLayout = await page
     .locator(".confirmation-shell")
@@ -2200,6 +2200,13 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
       return { x, y };
     }),
   );
+  const arrivalText = await page
+    .locator(".confirmation-disclaimers .arrival-time strong")
+    .boundingBox();
+  expect(arrivalText!.x).toBeCloseTo(pointBoxes[0].x, 0);
+  await expect(
+    page.locator(".confirmation-disclaimers .arrival-time"),
+  ).toHaveText("Please arrive 10 minutes early.");
   expect(pointBoxes[0].y).toBeCloseTo(pointBoxes[1].y, 0);
   expect(pointBoxes[2].y).toBeCloseTo(pointBoxes[3].y, 0);
   expect(pointBoxes[1].x).toBeGreaterThan(pointBoxes[0].x);
@@ -2217,11 +2224,9 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
   await expect(page.locator(".confirmation-full-details summary")).toHaveCount(
     0,
   );
-  await expect(page.locator(".confirmation-section > h2")).toHaveText([
-    "Booking Contact",
-    "Location",
-    "Before Your Session",
-  ]);
+  await expect(
+    page.locator(".confirmation-section .review-head > h2"),
+  ).toHaveText(["Location", "Booking Contact", "Order Summary"]);
   await expect(
     page
       .locator(".confirmation-card")
@@ -2572,7 +2577,7 @@ function bookingTypography(page: Page) {
     await expect(heading).toHaveCSS("color", color);
     await expect(heading).toHaveCSS("font-weight", "900");
     const instructions: Record<string, string> = {
-      "Start your booking": "Continue as a guest or sign in.",
+      "Start your booking": "Choose how to continue.",
       "Your session": "Confirm your session and players.",
       "Select dates and times": "40-min session · 10-min changeover.",
       "Your details": "Enter your contact details.",
@@ -3036,8 +3041,15 @@ test("header blue and typography stay consistent through account and session sel
   await expect(page.locator(".access-choice-divider")).toHaveText("or");
   const choices = page.locator(".access-choices");
   await expect(choices).toHaveCSS("display", "grid");
-  const guest = page.getByRole("button", { name: "Guest" });
-  const signIn = page.getByRole("button", { name: "Sign in", exact: true });
+  const guest = page.getByRole("button", { name: "Continue as guest" });
+  const signIn = page.getByRole("button", {
+    name: "Continue with email",
+    exact: true,
+  });
+  await expect(guest).toHaveAccessibleDescription("No account needed.");
+  await expect(signIn).toHaveAccessibleDescription(
+    "New or returning? We’ll email you a verification code.",
+  );
   await page.mouse.move(0, 0);
   for (const button of [guest, signIn]) {
     await expect(button).toBeInViewport({ ratio: 1 });
@@ -3118,13 +3130,13 @@ test("calendar and contact retain typography and continuous sticky geometry", as
 }) => {
   const { pageHeading, sectionType } = bookingTypography(page);
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Guest" }).click();
+  await page.getByRole("button", { name: "Continue as guest" }).click();
   await expect(page.locator(".session-product")).toBeVisible();
   const selectedColour = /color\(srgb 0\.9272\d* 0\.9501\d* 0\.9576\d*\)/;
   const selectedCardBackground = await page
     .locator(".session-product")
     .evaluate((element) => getComputedStyle(element).backgroundColor);
-  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await page.getByRole("link", { name: "Choose sessions" }).click();
   await pageHeading("Select dates and times");
   await expect(
     page.getByRole("combobox", { name: "Calendar view" }),
@@ -3343,7 +3355,7 @@ test("calendar and contact retain typography and continuous sticky geometry", as
   await closeBookingPanel(page);
   await page
     .getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
       exact: true,
     })
     .first()
@@ -3380,8 +3392,8 @@ test("review payment and confirmation retain typography and continuous sticky ge
   const { brand, pageHeading, sectionType, bookingDocumentBody } =
     bookingTypography(page);
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Guest" }).click();
-  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page.getByRole("link", { name: "Choose sessions" }).click();
   await page
     .getByRole("button", {
       name: dateLabel(addDays(DEMO_TODAY, 1)),
@@ -3394,7 +3406,7 @@ test("review payment and confirmation retain typography and continuous sticky ge
     .selectOption({ index: 1 });
   await page
     .getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
       exact: true,
     })
     .click();
@@ -3586,7 +3598,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
   await expect(
     page
       .getByRole("button", {
-        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        name: /^Enter contact details(?: \$[\d,.]+)?$/,
         exact: true,
       })
       .first(),
@@ -3634,7 +3646,7 @@ test("elapsed selections block checkout on an open page and remain removable bef
     .selectOption({ index: 1 });
   await page
     .getByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
       exact: true,
     })
     .first()
@@ -3718,9 +3730,9 @@ test("protected confirmation waits for server evidence and rejects a tampered re
   await expect(
     page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Request Help" })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("button", { name: "Ask the studio to contact me" }),
+  ).toHaveCount(0);
   await page.unroute(`**/api/attempts/${attempt}/confirmation`);
   await page.route(`**/api/attempts/${attempt}/confirmation`, (route) =>
     route.fulfill({
@@ -3827,8 +3839,8 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   hasTouch,
 }) => {
   await openSite(page, "/book/account/");
-  await page.getByRole("button", { name: "Guest" }).click();
-  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page.getByRole("link", { name: "Choose sessions" }).click();
   const date = addDays(DEMO_TODAY, 1);
   const mobile = page.viewportSize()!.width <= 700;
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -3899,7 +3911,7 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(
     page
       .getByRole("button", {
-        name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+        name: /^Enter contact details(?: \$[\d,.]+)?$/,
         exact: true,
       })
       .first(),
@@ -4253,7 +4265,9 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     );
     if (width <= 700) expect(geometry.fontSize).toBe("32px");
   }
-  await page.getByRole("button", { name: "Guest", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Continue as guest", exact: true })
+    .click();
   const sessionTitle = page.getByRole("heading", {
     name: "Your session",
     exact: true,
@@ -4284,7 +4298,7 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(page.locator(".outlet-option")).toBeInViewport({ ratio: 1 });
     await expect(page.locator(".session-product")).toBeInViewport({ ratio: 1 });
-    const proceed = page.getByRole("link", { name: "Choose Date & Time" });
+    const proceed = page.getByRole("link", { name: "Choose sessions" });
     await expect(proceed).toBeInViewport({ ratio: 1 });
     const players = await page.locator(".player-selection").boundingBox();
     const action = await proceed.boundingBox();
@@ -4361,7 +4375,7 @@ test("booking titles keep deliberate phone line breaks and desktop inline layout
     await picker.selectOption({ label: option });
   }
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.getByRole("link", { name: "Choose Date & Time" }).click();
+  await page.getByRole("link", { name: "Choose sessions" }).click();
   const calendarTitle = page.getByRole("heading", {
     name: "Select dates and times",
     exact: true,

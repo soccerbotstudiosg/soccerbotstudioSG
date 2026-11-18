@@ -34,6 +34,7 @@ export function SessionSummaryHeading({
   draft,
   action,
   selectedService = false,
+  title = "Your Sessions",
 }: {
   draft: Pick<
     BookingDraft,
@@ -41,6 +42,7 @@ export function SessionSummaryHeading({
   >;
   action?: ReactNode;
   selectedService?: boolean;
+  title?: string;
 }) {
   const serviceName =
     selectedService && draft.nativeServiceId
@@ -55,7 +57,7 @@ export function SessionSummaryHeading({
   return (
     <div className="session-summary-heading">
       <div className="review-head">
-        <h2>Your Sessions</h2>
+        <h2>{title}</h2>
         {action}
       </div>
       <p>
@@ -258,11 +260,11 @@ export function BasketContinue() {
       <BookingPrimaryAction ready={canContinue}>
         {canContinue ? (
           <Link className="button wide basket-continue" href="/book/details/">
-            Enter Booking Details <BookingActionTotal /> <Icon name="chevron" />
+            Enter contact details <BookingActionTotal /> <Icon name="chevron" />
           </Link>
         ) : (
           <button className="button wide basket-continue" disabled>
-            Enter Booking Details <BookingActionTotal /> <Icon name="chevron" />
+            Enter contact details <BookingActionTotal /> <Icon name="chevron" />
           </button>
         )}
       </BookingPrimaryAction>

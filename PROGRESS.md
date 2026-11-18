@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-18 November 2026: fix/unified-back-to-top from merged PR96/main b92e0dc. Consolidate one bottom-right scroll circle across all routes and retain the Step1 access-expiry notice across refresh. Owner confirmed Samsung Internet supplies the second circle. PR97 also shortens the blue-circle email helper, checks one-line mobile rendering and shares four arrival bullets between Review and Confirmation. Email designs remain local mockups, not integrated or sent.
+18 November 2026: PR97 / fix/unified-back-to-top consolidates bottom-right scroll control, persistent guest expiry notices, Review-style confirmation with Location and horizontal Paid/Copy, success shine, and nine app notification HTML variants. Verification uses “Hello human,”; enquiry/help use known customer names. Step1 now reads Continue as guest / No account needed and Continue with email / New or returning? We’ll email you a verification code, with accessible descriptions. Actions now read Choose sessions, Email me a code, Enter contact details, Ask the studio to contact me and Book another session. Actual SimplyBook notifications are unchanged. User authorizes continued fixes through staging and merge, with two thorough verification rounds first.
 
 ## Next actions
 
-The expiry refresh regression failed before the repair and passed afterwards. Focused access/scroll/shell checks passed13/13; expanded expiry coverage passed11/11 with seven forward/back paths, notice remount and renewed entry. Source/policy, types and lint passed; final CI remains pending. No changes to server access lifetime or financial recovery. Final browser evidence remains owner/CI-only. Publish a draft after checks; staging and merge are not yet accepted for this candidate. The temporary picomatch exception expires25 November00:00 SGT.
+Final local verification passed: two complete code wrappers at fingerprint cef7738cdae81cc32bdb9fbbc8e38c9c01ab745bd458c76f788fb561ccd6014f, each with400/400 unit cases,213 tooling cases, installer guards, format/lint/types, production build and export checks. Two complete unchanged-Worker rounds passed520/520 each; the earlier round precedes only the saved-contact test synchronization/docs correction. First failures and diagnostics remain in Journey. Publication changes after verification are documentation only. PR97’s previous head5586287/run44263198319 was cancelled; the consolidated commit is ready for push, exact-head CI, staging health and authorized merge. Owner/CI operates browsers. No live notification sends. The temporary picomatch exception expires25 November00:00 SGT.
 
 ## Ordered work after this slice
 

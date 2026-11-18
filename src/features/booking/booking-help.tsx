@@ -96,7 +96,7 @@ export function BookingHelp({
                   Sending request…
                 </span>
               ) : (
-                "Request Help"
+                "Ask the studio to contact me"
               )}
             </button>
             {state === "failed" && (

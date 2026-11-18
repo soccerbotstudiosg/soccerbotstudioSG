@@ -7,6 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { useEffect } from "react";
 import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
 import { DetailsStep } from "./details-step";
@@ -70,9 +71,19 @@ async function identityWith(fetcher: ReturnType<typeof vi.fn<typeof fetch>>) {
   return identity;
 }
 /** Inspect the retained identity/draft without granting access through the fixture. */
-function Probe() {
-  const { draft, profileAccessRevision, checkout, action, update, leave } =
-    useBooking();
+function Probe({ visiting }: { visiting?: string } = {}) {
+  const {
+    draft,
+    profileAccessRevision,
+    checkout,
+    action,
+    update,
+    leave,
+    visitBookingStep,
+  } = useBooking();
+  useEffect(() => {
+    if (visiting) visitBookingStep(visiting);
+  }, [visiting, visitBookingStep]);
   return (
     <>
       <button onClick={leave}>Leave for home</button>
@@ -117,8 +128,12 @@ test("revoked saved-contact editor returns to guest choices without revealing th
   );
   await act(async () => vi.advanceTimersByTimeAsync(0));
   expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
-  expect(await screen.findByRole("button", { name: "Guest" })).toBeEnabled();
-  expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+  expect(
+    await screen.findByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue with email" }),
+  ).toBeEnabled();
   expect(screen.queryByText("Welcome back")).toBeNull();
   expect(screen.queryByLabelText(/Full name/)).toBeNull();
   expect(identity.current()).toBeNull();
@@ -452,8 +467,12 @@ test("expired guest email lookup returns to step one with session notice and usa
     </BookingProvider>,
   );
   expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
-  expect(screen.getByRole("button", { name: "Guest" })).toBeEnabled();
-  expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue as guest" }),
+  ).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Continue with email" }),
+  ).toBeEnabled();
   expect(screen.getByTestId("recovery")).not.toHaveTextContent("Old Guest");
 });
 
@@ -546,6 +565,7 @@ test("late or aborted email denial cannot expire a newly established booking ses
 test("expired navigation redirects on forward and back steps while local edits and renewed entry remain free", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   const start = Date.now();
+  let restoredMember: ReturnType<typeof verified> | null = null;
   const fetcher = vi.fn<typeof fetch>(async (input) =>
     String(input) === "/api/access"
       ? Response.json(
@@ -556,7 +576,9 @@ test("expired navigation redirects on forward and back steps while local edits a
             },
           },
         )
-      : Response.json(null),
+      : Response.json(
+          String(input) === "/api/identity" ? restoredMember : null,
+        ),
   );
   const identity = await identityWith(fetcher);
   for (const [origin, destination] of [
@@ -588,7 +610,7 @@ test("expired navigation redirects on forward and back steps while local edits a
     navigation.path = destination;
     view.rerender(
       <BookingProvider bookingService={service} identityService={identity}>
-        <Probe />
+        <Probe visiting={destination.split("/")[2]} />
       </BookingProvider>,
     );
     expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
@@ -611,7 +633,7 @@ test("expired navigation redirects on forward and back steps while local edits a
       </BookingProvider>,
     );
     expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Guest" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
     expect(navigation.push).toHaveBeenCalledWith("/book/session/");
     expect(screen.getByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
     navigation.replace.mockClear();
@@ -643,13 +665,36 @@ test("expired navigation redirects on forward and back steps while local edits a
         <Probe />
       </BookingProvider>,
     );
-    expect(await screen.findByRole("button", { name: "Guest" })).toBeEnabled();
+    expect(
+      await screen.findByRole("button", { name: "Continue as guest" }),
+    ).toBeEnabled();
     expect(screen.queryByText(BOOKING_SESSION_EXPIRED)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Guest" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
     expect(navigation.push).toHaveBeenCalledWith("/book/session/");
     expect(accessCalls()).toBe(beforeEntry + 1);
     expect(navigation.replace).not.toHaveBeenCalled();
     view.unmount();
   }
+  // Remembered sign-in can be restored after booking access expires.
+  // That must not hide the reason the visitor was returned to Step 1.
+  restoredMember = verified();
+  establishedProfileAccess(String(Date.now() - 1));
+  navigation.path = "/book/details/";
+  const restoredView = render(
+    <BookingProvider bookingService={service} identityService={identity}>
+      <Probe />
+    </BookingProvider>,
+  );
+  expect(navigation.replace).toHaveBeenCalledWith("/book/account/");
+  navigation.path = "/book/account/";
+  restoredView.rerender(
+    <BookingProvider bookingService={service} identityService={identity}>
+      <BookingPage step="account" />
+      <Probe />
+    </BookingProvider>,
+  );
+  await waitFor(() => expect(identity.current()?.email).toBe(email));
+  expect(await screen.findByText(BOOKING_SESSION_EXPIRED)).toBeVisible();
+  restoredView.unmount();
   rememberBookingAccessExpiry(null);
 });

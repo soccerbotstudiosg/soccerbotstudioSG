@@ -28,7 +28,14 @@ beforeEach(() => {
 test("guest selection creates a guest contact and continues to the session", async () => {
   const user = userEvent.setup();
   render(<AccountStep />);
-  await user.click(screen.getByRole("button", { name: "Guest" }));
+  const guest = screen.getByRole("button", { name: "Continue as guest" });
+  expect(guest).toHaveAccessibleDescription("No account needed.");
+  expect(
+    screen.getByRole("button", { name: "Continue with email" }),
+  ).toHaveAccessibleDescription(
+    "New or returning? We’ll email you a verification code.",
+  );
+  await user.click(guest);
   expect(mocks.update).toHaveBeenCalledWith(
     expect.objectContaining({ mode: "guest", accountEmail: "" }),
   );
@@ -37,7 +44,7 @@ test("guest selection creates a guest contact and continues to the session", asy
 test("email form rejects a wrong verification code and accepts the corrected code", async () => {
   const user = userEvent.setup();
   render(<AccountStep />);
-  await user.click(screen.getByRole("button", { name: "Sign in" }));
+  await user.click(screen.getByRole("button", { name: "Continue with email" }));
   expect(
     screen
       .getByRole("heading", { name: "Sign in" })
@@ -58,9 +65,7 @@ test("email form rejects a wrong verification code and accepts the corrected cod
   expect(screen.getByText("Enter a valid email address.")).toBeVisible();
   await user.clear(screen.getByLabelText("Email address"));
   await user.type(screen.getByLabelText("Email address"), "demo@example.com");
-  await user.click(
-    screen.getByRole("button", { name: "Get Verification Code" }),
-  );
+  await user.click(screen.getByRole("button", { name: "Email me a code" }));
   await user.type(screen.getByLabelText("Verification code"), "000000");
   await user.click(screen.getByRole("button", { name: "Verify and continue" }));
   expect(screen.getByRole("alert")).toHaveTextContent("incorrect");
@@ -83,7 +88,7 @@ test("email form rejects a wrong verification code and accepts the corrected cod
 test("remember me is explicit default off and opted in preview expiry stays ninety days from verification", async () => {
   const user = userEvent.setup();
   render(<AccountStep />);
-  await user.click(screen.getByRole("button", { name: "Sign in" }));
+  await user.click(screen.getByRole("button", { name: "Continue with email" }));
   const remember = screen.getByRole("checkbox", {
     name: "Remember me",
   });
@@ -93,9 +98,7 @@ test("remember me is explicit default off and opted in preview expiry stays nine
     screen.getByLabelText("Email address"),
     "remember@example.invalid",
   );
-  await user.click(
-    screen.getByRole("button", { name: "Get Verification Code" }),
-  );
+  await user.click(screen.getByRole("button", { name: "Email me a code" }));
   await user.type(screen.getByLabelText("Verification code"), "360360");
   const before = Date.now();
   await user.click(screen.getByRole("button", { name: "Verify and continue" }));

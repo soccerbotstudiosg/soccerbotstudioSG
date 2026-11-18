@@ -22,6 +22,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/icon";
 import { blankContact, validEmail, EMAIL_MAX_LENGTH } from "@/domain/contact";
+import { BOOKING_SESSION_EXPIRED } from "@/domain/booking-messages";
 import { DEMO_CODE } from "@/services/demo/identity";
 import {
   customerMessage,
@@ -376,13 +377,15 @@ export function AccountStep({
         <p className="lead">
           {verifiedIdentity
             ? "Continue with your signed-in email."
-            : "Continue as a guest or sign in."}
+            : "Choose how to continue."}
         </p>
-        {profileAccessRevision > 0 && !verifiedIdentity && (
-          <p className="alert" role="alert">
-            {profileAccessNotice}
-          </p>
-        )}
+        {profileAccessRevision > 0 &&
+          (!verifiedIdentity ||
+            profileAccessNotice === BOOKING_SESSION_EXPIRED) && (
+            <p className="alert" role="alert">
+              {profileAccessNotice}
+            </p>
+          )}
         {signOutNotice}
         {rebookingError && (
           <div className="alert" role="alert">
@@ -409,23 +412,31 @@ export function AccountStep({
         >
           {!verifiedIdentity && (
             <>
-              <button
-                className="button booking-entry-action"
-                aria-label="Guest"
-                disabled={busy}
-                onClick={() => {
-                  update({
-                    mode: "guest",
-                    accountEmail: "",
-                    contact: blankContact(),
-                  });
-                  router.push("/book/session/");
-                }}
-              >
-                <Icon name="users" />
-                <span>{busy ? "Preparing…" : "Guest"}</span>
-                <Icon name="chevron" />
-              </button>
+              <div className="access-choice">
+                <button
+                  className="button booking-entry-action"
+                  aria-describedby="guest-choice-description"
+                  disabled={busy}
+                  onClick={() => {
+                    update({
+                      mode: "guest",
+                      accountEmail: "",
+                      contact: blankContact(),
+                    });
+                    router.push("/book/session/");
+                  }}
+                >
+                  <Icon name="users" />
+                  <span>{busy ? "Preparing…" : "Continue as guest"}</span>
+                  <Icon name="chevron" />
+                </button>
+                <p
+                  id="guest-choice-description"
+                  className="access-choice-description"
+                >
+                  No account needed.
+                </p>
+              </div>
               <span className="access-choice-divider">or</span>
             </>
           )}
@@ -435,29 +446,48 @@ export function AccountStep({
               <p className="signed-in-email">{verifiedIdentity.email}</p>
             </>
           )}
-          <button
-            className="button wide booking-entry-action"
-            disabled={busy}
-            onClick={() => {
-              if (verifiedIdentity)
-                void perform(async (signal) => {
-                  const current = identityService.current();
-                  if (signal.aborted) return;
-                  setIdentity(current);
-                  if (!current)
-                    throw new CustomerMessageError("Verify your email again.");
-                  await proceed(signal, current.email);
-                }, true);
-              else {
-                setError("");
-                setView("email");
+          <div className="access-choice">
+            <button
+              className="button wide booking-entry-action"
+              aria-describedby={
+                verifiedIdentity ? undefined : "email-choice-description"
               }
-            }}
-          >
-            <Icon name="mail" />
-            <span>{verifiedIdentity ? "Continue signed in" : "Sign in"}</span>
-            <Icon name="chevron" />
-          </button>
+              disabled={busy}
+              onClick={() => {
+                if (verifiedIdentity)
+                  void perform(async (signal) => {
+                    const current = identityService.current();
+                    if (signal.aborted) return;
+                    setIdentity(current);
+                    if (!current)
+                      throw new CustomerMessageError(
+                        "Verify your email again.",
+                      );
+                    await proceed(signal, current.email);
+                  }, true);
+                else {
+                  setError("");
+                  setView("email");
+                }
+              }}
+            >
+              <Icon name="mail" />
+              <span>
+                {verifiedIdentity
+                  ? "Continue signed in"
+                  : "Continue with email"}
+              </span>
+              <Icon name="chevron" />
+            </button>
+            {!verifiedIdentity && (
+              <p
+                id="email-choice-description"
+                className="access-choice-description"
+              >
+                New or returning? We’ll email you a verification code.
+              </p>
+            )}
+          </div>
           {verifiedIdentity && (
             <div className="account-actions">
               {verifiedIdentity.remember === true && (
@@ -687,7 +717,7 @@ export function AccountStep({
           <button
             type="submit"
             className="button"
-            aria-label={view === "email" ? "Get Verification Code" : undefined}
+            aria-label={view === "email" ? "Email me a code" : undefined}
             disabled={
               busy || waitingForProof || (view === "email" && resendSeconds > 0)
             }
@@ -707,9 +737,7 @@ export function AccountStep({
               </span>
             ) : (
               <>
-                {view === "email"
-                  ? "Get Verification Code"
-                  : "Verify and continue"}
+                {view === "email" ? "Email me a code" : "Verify and continue"}
                 <Icon name="chevron" />
               </>
             )}

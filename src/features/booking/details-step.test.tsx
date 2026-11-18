@@ -337,7 +337,11 @@ test("verified details saves only on explicit action and ignores completion afte
   expect(screen.getByLabelText(/Full name/)).toBeEnabled();
   await user.type(screen.getByLabelText(/Full name/), " Edited");
   expect(saveProfile.mock.calls[0][1].aborted).toBe(true);
-  await act(async () => finish());
+  await act(async () => {
+    const pendingSave = saveProfile.mock.results.at(-1)!.value;
+    finish();
+    await pendingSave;
+  });
   expect(screen.queryByText("Details saved.")).not.toBeInTheDocument();
   expect(screen.getByLabelText(/Full name/)).toHaveValue(
     "First Contact Edited",
@@ -353,7 +357,11 @@ test("verified details saves only on explicit action and ignores completion afte
   await user.click(
     screen.getByRole("button", { name: "Save contact details" }),
   );
-  await act(async () => finish());
+  await act(async () => {
+    const pendingSave = saveProfile.mock.results.at(-1)!.value;
+    finish();
+    await pendingSave;
+  });
   const notice = screen.getByText("Details saved.");
   expect(notice).toHaveClass("notice", "success");
   expect(notice).toHaveFocus();

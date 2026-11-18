@@ -435,7 +435,7 @@ test("calendar and basket share delayed availability once and preserve selection
   expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(
     screen.getAllByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeDisabled();
   expect(loadBooking().draft.slots).toHaveLength(1);
@@ -449,7 +449,7 @@ test("calendar and basket share delayed availability once and preserve selection
   );
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Edit name" }));
@@ -488,7 +488,7 @@ test("availability failure is not no slots and an explicit retry retains the bas
   expect(screen.queryByText(/synthetic private/)).not.toBeInTheDocument();
   expect(
     screen.getAllByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -498,7 +498,7 @@ test("availability failure is not no slots and an explicit retry retains the bas
   });
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeVisible();
   expect(loadBooking().draft.slots).toHaveLength(1);
@@ -876,7 +876,7 @@ test("a changed booking session invalidates availability even if the old date re
   expect(screen.getByText("No sessions available on this date.")).toBeVisible();
   expect(
     screen.getAllByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeDisabled();
   expect(loadBooking().draft.accountEmail).toBe("changed@example.com");
@@ -1023,7 +1023,7 @@ test("replacing an adapter with the same mode invalidates its completed availabi
   await act(async () => {});
   expect(
     screen.getAllByRole("link", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeVisible();
   view.rerender(
@@ -1036,7 +1036,7 @@ test("replacing an adapter with the same mode invalidates its completed availabi
   expect(screen.getByRole("status", { name: "Checking times…" })).toBeVisible();
   expect(
     screen.getAllByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeDisabled();
   await act(async () => {
@@ -1122,7 +1122,7 @@ test("a checkout capacity conflict invalidates shared availability before return
   await act(async () => {});
   expect(
     screen.getAllByRole("button", {
-      name: /^Enter Booking Details(?: \$[\d,.]+)?$/,
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
     })[0],
   ).toBeDisabled();
   expect(screen.getByRole("button", { name: /12:00–12:40/ })).toHaveTextContent(
@@ -1300,7 +1300,7 @@ test("expiry after checkout resumes day reads and replacement navigation while t
   fireEvent.click(screen.getByText("Select replacement"));
   await waitFor(() =>
     expect(
-      screen.getAllByRole("link", { name: /^Enter Booking Details/ })[0],
+      screen.getAllByRole("link", { name: /^Enter contact details/ })[0],
     ).toBeVisible(),
   );
   expect(

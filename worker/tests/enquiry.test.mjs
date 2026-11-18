@@ -164,7 +164,8 @@ function gate() {
 
 test("public enquiry sends fixed staff recipients and customer reply-to without creating booking access", async () => {
   const input = enquiry();
-  input.values.message = "Synthetic enquiry: " + "球".repeat(1800);
+  input.values.message =
+    'Synthetic enquiry: <script>alert("test")</script> & ' + "球".repeat(1800);
   input.botToken = "synthetic-token-" + "a".repeat(2000);
   assert.ok(Buffer.byteLength(JSON.stringify(input)) > 4096);
   const response = await submit(input);
@@ -182,7 +183,15 @@ test("public enquiry sends fixed staff recipients and customer reply-to without 
     "glenna@soccerbotsg.com",
   ]);
   assert.equal(mail.body.reply_to, input.values.email);
-  assert.equal(mail.body.html, undefined);
+  assert.match(mail.body.html, /New website enquiry/);
+  assert.doesNotMatch(mail.body.html, /<script>/);
+  assert.match(
+    mail.body.html,
+    /&lt;script&gt;alert\(&quot;test&quot;\)&lt;\/script&gt; &amp;/,
+  );
+  assert.match(mail.body.html, /Synthetic School/);
+  assert.match(mail.body.html, /Reply to enquiry/);
+  assert.ok(mail.body.html.includes(`mailto:${input.values.email}`));
   assert.match(mail.body.text, /Synthetic Enquirer/);
   assert.match(mail.body.text, /Synthetic School/);
   assert.ok(mail.body.text.includes(input.values.message));
@@ -195,7 +204,11 @@ test("public enquiry sends fixed staff recipients and customer reply-to without 
     acknowledgement.body.subject,
     "We’ve received your SoccerBotStudio enquiry",
   );
-  assert.equal(acknowledgement.body.html, undefined);
+  assert.match(acknowledgement.body.html, /Hello Synthetic Enquirer,/);
+  assert.match(acknowledgement.body.html, /Enquiry received/);
+  assert.match(acknowledgement.body.html, /Academy, school or organisation/);
+  assert.match(acknowledgement.body.html, /WhatsApp us/);
+  assert.equal(acknowledgement.body.attachments, undefined);
   assert.match(acknowledgement.body.text, /will reach out as soon as we can/);
   assert.ok(acknowledgement.body.text.includes(mail.body.text));
   for (const value of Object.values(input.values))
@@ -483,6 +496,18 @@ test("public enquiry stops uncertain retries before the provider idempotency win
     .bind(oldKey)
     .first();
   assert.deepEqual(retained, { created_ms: created, state: "pending" });
+  const legacyKey = crypto.randomUUID();
+  await db
+    .prepare(
+      "INSERT INTO enquiry_requests(request_key,input_hash,created_ms,state) VALUES(?,?,?,'pending')",
+    )
+    .bind(legacyKey, original.input_hash, Date.now() - 1000)
+    .run();
+  botResult = null;
+  assert.equal((await submit({ ...input, key: legacyKey })).status, 200);
+  assert.equal(calls.at(-2).body.html, undefined);
+  assert.equal(calls.at(-1).body.html, undefined);
+  assert.match(calls.at(-1).body.text, /^Thank you for contacting/);
 });
 
 test("public enquiry shares the existing hourly email budget and rejects before Resend dispatch when exhausted", async () => {
