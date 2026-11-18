@@ -447,7 +447,7 @@ export function DetailsStep({
                 ? "Checking email…"
                 : emailChecked
                   ? "You’ve checked your email address."
-                  : "Select the blue circle to check your email address."}
+                  : "Select blue circle to confirm email."}
             </p>
           )}
         {errors[key] && (

@@ -209,8 +209,19 @@ async function details(page: Page) {
   const controlBox = await emailControl.boundingBox();
   expect(controlBox!.height).toBeCloseTo(emailBox!.height - 2, 0);
   await expect(page.locator("#email-check-help")).toHaveText(
-    "Select the blue circle to check your email address.",
+    "Select blue circle to confirm email.",
   );
+  if (page.viewportSize()!.width <= 700) {
+    const helper = page.locator("#email-check-help");
+    const dimensions = await helper.evaluate((element) => ({
+      height: element.getBoundingClientRect().height,
+      lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+      width: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }));
+    expect(dimensions.height).toBeLessThanOrEqual(dimensions.lineHeight + 1);
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.width);
+  }
   await expect(
     emailControl.locator(".email-transfer-particles circle"),
   ).toHaveCount(3);
