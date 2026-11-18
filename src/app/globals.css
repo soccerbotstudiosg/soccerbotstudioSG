@@ -4870,6 +4870,26 @@
   input.field-control:is([type="date"], [type="time"]) {
     appearance: none;
   }
+  .enquiry-input-wrap {
+    position: relative;
+    min-width: 0;
+  }
+  .native-field-hint {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-muted);
+    font-size: var(--text-field);
+    pointer-events: none;
+  }
+  .enquiry-input-wrap:focus-within .native-field-hint {
+    visibility: hidden;
+  }
+  .enquiry-input-wrap[data-empty="true"]:not(:focus-within)
+    input::-webkit-datetime-edit {
+    color: transparent;
+  }
   input.field-control::-webkit-date-and-time-value {
     min-height: 1em;
     text-align: left;

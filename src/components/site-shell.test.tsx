@@ -161,6 +161,11 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
     behavior: "instant",
   });
   expect(top).toBe(116);
+  // Safari may finish its document scroll after the viewport resize has settled.
+  top = 20;
+  fireEvent.scroll(window);
+  flush();
+  expect(top).toBe(116);
   scroll.mockClear();
   top = 160;
   fireEvent.focusIn(field);
@@ -172,6 +177,22 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   resize(window.innerHeight / 2);
   fireEvent.touchMove(document);
   resize(window.innerHeight);
+  expect(scroll).not.toHaveBeenCalled();
+  // Some iPad layouts shrink both viewport measurements while editing.
+  scroll.mockClear();
+  const fullHeight = window.innerHeight;
+  fireEvent.focusIn(field);
+  vi.stubGlobal("innerHeight", fullHeight / 2);
+  resize(fullHeight / 2);
+  expect(scroll).not.toHaveBeenCalled();
+  vi.stubGlobal("innerHeight", fullHeight);
+  resize(fullHeight);
+  expect(top).toBe(116);
+  scroll.mockClear();
+  fireEvent.pointerDown(document);
+  top = 20;
+  fireEvent.scroll(window);
+  flush();
   expect(scroll).not.toHaveBeenCalled();
   keyboardView.unmount();
   vi.unstubAllGlobals();

@@ -1743,6 +1743,18 @@ test("enquiry remains available without external submission or a mock assistant"
     "Select a time (SGT).",
   );
 
+  for (const key of ["date", "time"]) {
+    const input = page.locator(`#enquiry-${key}`);
+    const hint = page.locator(`#enquiry-${key}-hint`);
+    await expect(hint).toBeVisible();
+    const fieldBox = await input.boundingBox();
+    const hintBox = await hint.boundingBox();
+    expect(hintBox!.y).toBeGreaterThan(fieldBox!.y);
+    expect(hintBox!.y + hintBox!.height).toBeLessThan(
+      fieldBox!.y + fieldBox!.height,
+    );
+  }
+
   await expect(page.getByText("Enter 1–2,000 characters.")).toHaveCount(0);
   await expect(page.locator('.enquiry-form [aria-invalid="true"]')).toHaveCount(
     0,

@@ -76,6 +76,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
     let keyboardOpen = false;
     let closing = false;
     let width = window.innerWidth;
+    let fullHeight = Math.max(viewport.height, window.innerHeight);
     let frame = 0;
     /** Abandon correction when the visitor intentionally scrolls or changes orientation. */
     const cancel = () => {
@@ -106,19 +107,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
       if (bounds.top < top)
         window.scrollBy({ top: bounds.top - top, behavior: "instant" });
     };
-    const resize = () => {
-      if (window.innerWidth !== width || viewport.scale !== 1) {
-        width = window.innerWidth;
-        keyboardOpen = false;
-        cancel();
-        return;
-      }
-      const reduced = viewport.height < window.innerHeight * 0.75;
-      if (reduced && field) keyboardOpen = true;
-      if (!reduced && keyboardOpen) {
-        keyboardOpen = false;
-        closing = true;
-      }
+    /** Follow late browser scrolling until the visitor resumes interacting. */
+    const schedule = () => {
       if (!closing) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
@@ -126,6 +116,37 @@ export function SiteShell({ children }: { children: ReactNode }) {
         frame = requestAnimationFrame(correct);
       });
     };
+    const interact = () => {
+      if (closing) cancel();
+    };
+    const resize = () => {
+      if (window.innerWidth !== width || viewport.scale !== 1) {
+        width = window.innerWidth;
+        fullHeight = Math.max(viewport.height, window.innerHeight);
+        keyboardOpen = false;
+        cancel();
+        return;
+      }
+      fullHeight = Math.max(fullHeight, viewport.height);
+      const reduced = viewport.height < fullHeight * 0.75;
+      if (reduced && field) keyboardOpen = true;
+      if (!reduced && keyboardOpen) {
+        keyboardOpen = false;
+        closing = true;
+      }
+      schedule();
+    };
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(schedule);
+    for (const element of document.querySelectorAll(
+      ".site-header, .booking-navigation",
+    ))
+      observer?.observe(element);
+    window.addEventListener("scroll", schedule, { passive: true });
+    document.addEventListener("pointerdown", interact);
+    document.addEventListener("keydown", interact);
     document.addEventListener("focusin", focus);
     document.addEventListener("touchmove", cancel, { passive: true });
     document.addEventListener("wheel", cancel, { passive: true });
@@ -133,6 +154,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
     viewport.addEventListener("scroll", resize);
     return () => {
       cancel();
+      observer?.disconnect();
+      window.removeEventListener("scroll", schedule);
+      document.removeEventListener("pointerdown", interact);
+      document.removeEventListener("keydown", interact);
       document.removeEventListener("focusin", focus);
       document.removeEventListener("touchmove", cancel);
       document.removeEventListener("wheel", cancel);

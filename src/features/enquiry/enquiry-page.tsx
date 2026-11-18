@@ -93,43 +93,49 @@ export function EnquiryPage() {
           <span className="font-normal text-muted">Optional</span>
         )}
       </label>
-      <input
-        id={`enquiry-${key}`}
-        placeholder={
-          type === "date" || type === "time" ? undefined : placeholders[key]
-        }
-        aria-describedby={
-          [
-            type === "date" || type === "time" ? `enquiry-${key}-hint` : "",
-            errorFor(key) ? `enquiry-${key}-error` : "",
-          ]
-            .filter(Boolean)
-            .join(" ") || undefined
-        }
-        aria-invalid={!!errorFor(key)}
-        className="field-control"
-        value={value[key]}
-        type={type}
-        required={required}
-        min={type === "date" ? todaySG() : type === "number" ? 1 : undefined}
-        max={type === "number" ? 999 : undefined}
-        maxLength={
-          key === "email"
-            ? EMAIL_MAX_LENGTH
-            : key === "name"
-              ? 80
-              : key === "organisation"
-                ? 120
-                : 160
-        }
-        onChange={(e) => change(key, e.target.value)}
-        onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
-      />
-      {(type === "date" || type === "time") && (
-        <p className="hint" id={`enquiry-${key}-hint`}>
-          {type === "date" ? "Select a date." : "Select a time (SGT)."}
-        </p>
-      )}
+      <div className="enquiry-input-wrap" data-empty={!value[key]}>
+        <input
+          id={`enquiry-${key}`}
+          placeholder={
+            type === "date" || type === "time" ? undefined : placeholders[key]
+          }
+          aria-describedby={
+            [
+              type === "date" || type === "time" ? `enquiry-${key}-hint` : "",
+              errorFor(key) ? `enquiry-${key}-error` : "",
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
+          aria-invalid={!!errorFor(key)}
+          className="field-control"
+          value={value[key]}
+          type={type}
+          required={required}
+          min={type === "date" ? todaySG() : type === "number" ? 1 : undefined}
+          max={type === "number" ? 999 : undefined}
+          maxLength={
+            key === "email"
+              ? EMAIL_MAX_LENGTH
+              : key === "name"
+                ? 80
+                : key === "organisation"
+                  ? 120
+                  : 160
+          }
+          onChange={(e) => change(key, e.target.value)}
+          onBlur={() => setTouched((current) => ({ ...current, [key]: true }))}
+        />
+        {(type === "date" || type === "time") && (
+          <span
+            className="native-field-hint"
+            id={`enquiry-${key}-hint`}
+            hidden={!!value[key]}
+          >
+            {type === "date" ? "Select a date." : "Select a time (SGT)."}
+          </span>
+        )}
+      </div>
       {feedback(key)}
     </div>
   );
