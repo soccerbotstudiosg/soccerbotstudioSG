@@ -112,22 +112,6 @@ export function PromotionPanel({
           {activeTitle[0]}
           <span>{activeTitle[1]}</span>
         </span>
-        {href && (
-          <span className="feature-arrow" aria-hidden="true">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path className="feature-corner" d="M5 19V5h14" />
-              <g className="feature-chevron">
-                <path d="m4 5 7 7-7 7" />
-                <path d="m12 5 7 7-7 7" />
-              </g>
-            </svg>
-          </span>
-        )}
       </h2>
       <p className="feature-description">
         <span className="feature-teaser" aria-hidden={active}>
@@ -138,6 +122,19 @@ export function PromotionPanel({
         </span>
       </p>
       {children}
+      {href && (
+        <span className="feature-action-cue" aria-hidden="true">
+          <span>{actionLabel}</span>
+          <span className="feature-arrow">
+            <svg viewBox="0 0 25 18" fill="currentColor">
+              <g className="feature-chevron">
+                <path d="M0 0h3l8 9-8 9H0l8-9Z" />
+                <path d="M14 0h3l8 9-8 9h-3l8-9Z" />
+              </g>
+            </svg>
+          </span>
+        </span>
+      )}
       {!href && (
         <svg
           className="feature-circuits"
@@ -182,6 +179,7 @@ export function PromotionPanel({
       className={`${className} interactive-promotion`}
       aria-labelledby={id}
       data-active={active ? "true" : "false"}
+      data-clickable={href ? "true" : undefined}
       style={{ "--stack-index": index } as CSSProperties}
       tabIndex={href ? undefined : 0}
       onPointerEnter={(event) => {

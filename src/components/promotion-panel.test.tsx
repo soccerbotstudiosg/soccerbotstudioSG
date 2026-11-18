@@ -162,8 +162,13 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
       Array.from(panel.querySelectorAll(".feature-chevron path"), (path) =>
         path.getAttribute("d"),
       ),
-    ).toEqual(["m4 5 7 7-7 7", "m12 5 7 7-7 7"]);
+    ).toEqual(["M0 0h3l8 9-8 9H0l8-9Z", "M14 0h3l8 9-8 9h-3l8-9Z"]);
     expect(panel.querySelector(".feature-circuits")).toBeNull();
+    expect(panel.querySelector(".feature-heading .feature-arrow")).toBeNull();
+    expect(panel.querySelector(".feature-action-cue")).toHaveTextContent(
+      actionLabel,
+    );
+    expect(panel).toHaveAttribute("data-clickable", "true");
     expect(link).toContainElement(
       screen.getByRole("heading", { name: "Inside the arena." }),
     );

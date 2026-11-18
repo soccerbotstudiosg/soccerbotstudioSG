@@ -800,7 +800,7 @@ export function TimeStep({
                       </button>
                       {selected && (
                         <button
-                          className="basket-remove time-remove"
+                          className="time-remove"
                           aria-label={`Remove selected session ${slot.date} at ${slot.start}`}
                           onClick={() => {
                             update({

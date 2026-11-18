@@ -528,7 +528,7 @@ test("public routes remove staff access and fit the viewport", async ({
       );
       await expect(panel.locator(".feature-copy")).toHaveCSS(
         "padding-bottom",
-        "32px",
+        "80px",
       );
     }
     expect((await photo.boundingBox())!.height).toBeGreaterThanOrEqual(360);
@@ -598,6 +598,20 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(chevron).toHaveCSS("animation-name", "feature-chevron-nudge");
   await expect(chevron).toHaveCSS("animation-iteration-count", "infinite");
   await expect(chevron.locator(".feature-chevron path")).toHaveCount(2);
+  await expect(
+    firstPanel.locator(".feature-heading .feature-arrow"),
+  ).toHaveCount(0);
+  const cueBounds = await firstPanel.locator(".feature-arrow").boundingBox();
+  const copyBounds = await firstPanel.locator(".feature-copy").boundingBox();
+  expect(cueBounds!.width).toBe(25);
+  expect(cueBounds!.height).toBe(18);
+  expect(
+    copyBounds!.y + copyBounds!.height - cueBounds!.y - cueBounds!.height,
+  ).toBeGreaterThanOrEqual(24);
+  expect(
+    copyBounds!.x + copyBounds!.width - cueBounds!.x - cueBounds!.width,
+  ).toBeGreaterThanOrEqual(24);
+
   await expect(chevron.locator(".feature-chevron path").first()).toHaveCSS(
     "animation-name",
     "feature-chevron-light",
@@ -3985,12 +3999,27 @@ test("per-slot trainer dropdowns show unique trainer biographies and retain chan
   await expect(
     page.getByRole("combobox", { name: `Trainer for ${date} at 15:20` }),
   ).toHaveValue(`${date}|15:20|demo|daniel`);
-  await page
-    .getByRole("button", {
-      name: `Remove selected session ${date} at 15:20`,
-      exact: true,
-    })
-    .click();
+  const removeAfternoon = page.getByRole("button", {
+    name: `Remove selected session ${date} at 15:20`,
+    exact: true,
+  });
+  await expect(removeAfternoon).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+  await expect(removeAfternoon).toHaveCSS("border-top-width", "0px");
+  await expect(removeAfternoon).toHaveCSS("color", "rgb(0, 0, 0)");
+  await expect(removeAfternoon).toHaveCSS("width", "44px");
+  await expect(removeAfternoon).toHaveCSS("height", "44px");
+  const removeBounds = await removeAfternoon.boundingBox();
+  const rateBounds = await selectedAfternoon
+    .locator(".time-rate")
+    .boundingBox();
+  expect(rateBounds!.y).toBeGreaterThanOrEqual(
+    removeBounds!.y + removeBounds!.height,
+  );
+  expect(rateBounds!.x + rateBounds!.width).toBeGreaterThan(removeBounds!.x);
+  await removeAfternoon.click();
   await openBookingPanel(page, "trainers");
   await expect(cards.getByRole("article")).toHaveCount(1);
   await expect(
