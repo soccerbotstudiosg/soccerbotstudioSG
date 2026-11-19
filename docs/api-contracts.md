@@ -85,6 +85,8 @@ Current local candidate: successful identity challenge responses include `expire
 
 Customer new-checkout preparation accepts ephemeral `X-Booking-Bot-Proof` for the `create-checkout` Turnstile action. The header is excluded from checkout intent hashes and browser persistence. Missing/expired/mismatched proof returns `checkout_verification_required`; failed verification transport returns `checkout_verification_unavailable`. Existing authenticated attempt recovery and callbacks retain their original contracts without proof headers. Review prepares proof before the user submits; only an explicit checkout action may create reservations.
 
+Live verification code requests and resends check the email domain after bot proof and before reserving a challenge. A domain without mail routing returns `email_domain_invalid` (422). A failed lookup returns `email_domain_unavailable` (503) and the visitor can retry. The shared domain cache stores conclusive results only.
+
 ## 3. Identity and profile contracts
 
 | Method and path                    | Request                              | Success body / status                                                              | Guard, effect and failure owner                                                                                                   |

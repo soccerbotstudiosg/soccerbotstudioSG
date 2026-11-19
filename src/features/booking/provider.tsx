@@ -63,6 +63,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
@@ -111,6 +112,7 @@ import {
   calendarRecoveryNoticeDismissed,
   liveCheckoutAttemptId,
   markSubmittedCheckout,
+  rememberPaymentContinuation,
   submittedCheckoutId,
   hasSeenConfirmation,
   saveLiveDraft,
@@ -122,7 +124,7 @@ type Action = Exclude<BookingOperation, "availability"> | "reserve" | "review";
 type BookingRequest = {
   controller: AbortController;
   operation: Action;
-  submission?: { id: string; detached: boolean; originPath: string | null };
+  submission?: { id: string; detached: boolean };
 };
 type ActionState = {
   status:
@@ -174,12 +176,13 @@ interface BookingContextValue extends StoredBooking {
   resetIdentityDraft: () => void;
   saveContact: () => Promise<boolean>;
   profileSaveError: string;
-  leave: () => void;
-  restartAfterExpiry: (attemptId: string) => void;
+  leave: { (): void; (verifiedAttemptId: string): void };
+  restartAfterExpiry: (attemptId: string) => boolean;
   browseAfterChecking: (attemptId: string, unresolved?: boolean) => boolean;
   clearReviewConsent: () => void;
   detachCheckout: () => void;
   browsingCheckout: boolean;
+  resumeSubmittedCheckout: () => void;
   resumePaymentStatus: (attemptId: string) => void;
   rejectRecoveredSelection: (
     attemptId: string,
@@ -190,6 +193,31 @@ interface BookingContextValue extends StoredBooking {
   rebookingError: string | null;
   retryRebooking: () => void;
 }
+/** Mark the exact source entry so Back from the provider first returns to Payment. */
+function openHostedPayment(id: string, url: string) {
+  window.history.replaceState(
+    { ...window.history.state, soccerbotHostedPayment: id },
+    "",
+  );
+  location.assign(url);
+}
+
+/** Read the navigation hint from the current browser history entry. */
+function hostedPaymentEntry() {
+  const id = window.history.state?.soccerbotHostedPayment;
+  return typeof id === "string" ? id : null;
+}
+
+/** Observe entry changes even when consecutive history entries share a pathname. */
+function subscribeHostedPaymentEntry(refresh: () => void) {
+  window.addEventListener("popstate", refresh);
+  window.addEventListener("pageshow", refresh);
+  return () => {
+    window.removeEventListener("popstate", refresh);
+    window.removeEventListener("pageshow", refresh);
+  };
+}
+
 // Match protected checkout recovery's bounded read and conservative retry cadence.
 const CONFLICT_READ_TIMEOUT_MS = 10_000;
 // Allow fifteen seconds each for provider admission and availability transport.
@@ -313,6 +341,27 @@ async function readConflictSelections(
     await waitForConflictRead(signal);
   }
   return null;
+}
+/** Restore only the service and party size needed to browse after a discarded cart. */
+function calendarDraft(
+  draft: BookingDraft,
+  original: BookingDraft,
+): BookingDraft {
+  if (draft.mode) return draft;
+  return {
+    ...draft,
+    mode: "guest",
+    players: original.players,
+    nativeServiceId: original.nativeServiceId,
+    nativeServiceName: original.nativeServiceName,
+  };
+}
+
+/** Resolve a complete, validated rejection index list against its original submission. */
+function rejectedSlots(draft: BookingDraft, indices?: number[]) {
+  return indices?.length && indices.every((index) => draft.slots[index])
+    ? indices.map((index) => draft.slots[index])
+    : undefined;
 }
 const Context = createContext<BookingContextValue | null>(null);
 /** Coordinate draft, identity and checkout state across the booking flow. */
@@ -558,8 +607,18 @@ export function BookingProvider({
   const [detachedCheckout, setDetachedCheckout] = useState<string | null>(() =>
     bookingService.mode === "live" ? submittedCheckoutId() : null,
   );
+  const hostedReturnId = useSyncExternalStore(
+    subscribeHostedPaymentEntry,
+    hostedPaymentEntry,
+    () => null,
+  );
+  const returningFromHostedPayment =
+    !!hostedReturnId && hostedReturnId === submittedCheckoutId();
   const browsingCheckout =
     !!detachedCheckout &&
+    !returningFromHostedPayment &&
+    !profileAccessRevision &&
+    value.attempt?.status !== "paid" &&
     !action.calendarRecovery &&
     !isCalendarRecovery(detachedCheckout) &&
     (value.attempt?.id === detachedCheckout ||
@@ -571,7 +630,18 @@ export function BookingProvider({
     settled: Promise<void>;
   } | null>(null);
   const [entryChecked, setEntryChecked] = useState<string | null>(null);
-  const [detachedFrom, setDetachedFrom] = useState<string | null>(null);
+  const [requestedEntry, setRequestedEntry] = useState<string | null>(null);
+  const entryRead = useRef<AbortController | null>(null);
+  const restoredExpiryRead = useRef<AbortController | null>(null);
+  const [historyBrowsing, setHistoryBrowsing] = useState(
+    () =>
+      !!pathname?.includes("/book/") &&
+      typeof performance !== "undefined" &&
+      (
+        performance.getEntriesByType?.("navigation")[0] as
+          PerformanceNavigationTiming | undefined
+      )?.type === "back_forward",
+  );
   const releasedReservation = useRef<string | null>(null);
   const queueRetry = useRef<{ id: string; revision: number } | null>(null);
   const mounted = useRef(false);
@@ -884,7 +954,6 @@ export function BookingProvider({
     }
     request.submission.detached = true;
     active.current = null;
-    setDetachedFrom(request.submission.originPath);
     setDetachedCheckout(request.submission.id);
     const current = latest.current;
     if (
@@ -959,11 +1028,16 @@ export function BookingProvider({
     }
     const changed = previousNoticePath.current !== pathname;
     previousNoticePath.current = pathname;
-    if (changed) setDetachedFrom(null);
+    if (changed) {
+      entryRead.current?.abort();
+      restoredExpiryRead.current?.abort();
+      setRequestedEntry(null);
+      setEntryChecked(null);
+    }
     if (pathname && !/\/(?:book\/|confirmation)/.test(pathname)) {
       if (changed) {
+        setHistoryBrowsing(false);
         detachCheckout();
-        setEntryChecked(null);
       }
       const current = latest.current;
       const id = submittedCheckoutId();
@@ -1017,6 +1091,7 @@ export function BookingProvider({
       parentSignal?: AbortSignal,
       provenAffected?: BookingDraft["slots"],
       reason?: PendingConflict["reason"],
+      stayOnStep = false,
     ): Promise<boolean> => {
       const notice =
         reason === "checkout_already_active"
@@ -1051,6 +1126,7 @@ export function BookingProvider({
         indexed,
         provenAffected,
         reason,
+        stayOnStep,
         identityService.current(),
       ]);
       if (
@@ -1206,7 +1282,7 @@ export function BookingProvider({
         setPendingConflict(null);
         setAction({
           status: "idle",
-          returnToCalendar: !action.calendarRecovery,
+          returnToCalendar: !stayOnStep && !action.calendarRecovery,
         });
         return true;
       })();
@@ -1265,10 +1341,7 @@ export function BookingProvider({
         rejection.state === "selection_unavailable"
           ? rejection.rejectedSessionIndices
           : undefined;
-      const provenAffected =
-        indices?.length && indices.every((index) => draft.slots[index])
-          ? indices.map((index) => draft.slots[index])
-          : undefined;
+      const provenAffected = rejectedSlots(draft, indices);
       return returnRejectedSelection(
         draft,
         indexed,
@@ -1281,7 +1354,11 @@ export function BookingProvider({
   );
   /** Clear only the owned attempt after authenticated terminal no-creation proof. */
   const resolveUncreatedBooking = useCallback(
-    (id: string, sessions?: CheckoutContext["summary"]["sessions"]) => {
+    (
+      id: string,
+      sessions?: CheckoutContext["summary"]["sessions"],
+      stayOnStep = false,
+    ) => {
       const current = latest.current;
       if (
         service.mode !== "live" ||
@@ -1320,7 +1397,7 @@ export function BookingProvider({
         : {
             ...current.draft,
             slots:
-              action.calendarRecovery || browsingCheckout
+              stayOnStep || action.calendarRecovery || browsingCheckout
                 ? current.draft.slots.filter(
                     (slot) =>
                       !hiddenOriginals.some(
@@ -1335,7 +1412,7 @@ export function BookingProvider({
       saveLiveDraft(draft, false, null);
       setAction({
         status: "idle",
-        returnToCalendar: !left && !action.calendarRecovery,
+        returnToCalendar: !stayOnStep && !left && !action.calendarRecovery,
       });
       const notice =
         left || (action.calendarRecovery && !noticeShownOnCalendar.current)
@@ -1393,8 +1470,6 @@ export function BookingProvider({
       }),
     [service.mode, identityService.mode, cancel, commit],
   );
-  const checkoutEntry =
-    !!pathname && /\/book\/(?:review|payment)\/?$/.test(pathname);
   const paymentEntry = /\/book\/payment\/?$/.test(pathname ?? "");
   const entryId =
     liveCheckoutAttemptId() ?? (browsingCheckout ? value.attempt?.id : null);
@@ -1405,13 +1480,30 @@ export function BookingProvider({
     !bookingAccessExpired() &&
     !profileAccessRevision &&
     !pendingConflict &&
-    (isBookingDeparture(entryId) ||
-      (browsingCheckout &&
-        !(paymentEntry && restorationPending) &&
-        (checkoutEntry ||
-          (/\/book\/account\/?$/.test(pathname) && !value.draft.mode)) &&
-        detachedFrom !== pathname)) &&
+    (requestedEntry === pathname ||
+      (!historyBrowsing &&
+        isBookingDeparture(entryId) &&
+        mayRestoreLiveCheckout(entryId) &&
+        (!isCalendarRecovery(entryId) ||
+          /\/book\/account\/?$/.test(pathname))) ||
+      (returningFromHostedPayment &&
+        !restorationPending &&
+        !paymentLocked(value.attempt)) ||
+      (paymentEntry &&
+        browsingCheckout &&
+        !restorationPending &&
+        !paymentLocked(value.attempt))) &&
     entryChecked !== pathname;
+  /** Reopen the submitted attempt only on a deliberate booking action. */
+  function resumeSubmittedCheckout() {
+    if (!browsingCheckout || !entryId || !pathname) return;
+    if (bookingAccessExpired()) {
+      reportProfileAccessLoss(profileAccessGeneration(), "session");
+      return;
+    }
+    setEntryChecked(null);
+    setRequestedEntry(pathname);
+  }
   const recoverEntry = useEffectEvent(
     (id: string, path: string, controller: AbortController) => {
       const generation = profileAccessGeneration();
@@ -1470,8 +1562,18 @@ export function BookingProvider({
               ? context.selectionRejection
               : { state: context.selectionRejection.state };
           setEntryChecked(path);
-          // Classification has its own cancellable read and remains active while its calendar handoff renders.
-          await rejectRecoveredSelection(id, rejection);
+          // The entry loader ends as classification starts. Navigation can still cancel its reads.
+          const classification = new AbortController();
+          entryRead.current = classification;
+          try {
+            await rejectRecoveredSelection(
+              id,
+              rejection,
+              classification.signal,
+            );
+          } finally {
+            if (entryRead.current === classification) entryRead.current = null;
+          }
           return;
         }
         if (
@@ -1486,7 +1588,8 @@ export function BookingProvider({
       };
       void recover()
         .catch((error: unknown) => {
-          if (!current() || submittedCheckoutId() !== id) return;
+          if (!current() || (submittedCheckoutId() !== id && !browsingCheckout))
+            return;
           if (error instanceof ConfirmationError && error.kind === "denied") {
             reportProfileAccessLoss(generation, "session");
             return;
@@ -1503,8 +1606,12 @@ export function BookingProvider({
   useEffect(() => {
     if (!needsEntryCheck || !entryId || !pathname) return;
     const controller = new AbortController();
+    entryRead.current = controller;
     recoverEntry(entryId, pathname, controller);
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (entryRead.current === controller) entryRead.current = null;
+    };
   }, [
     entryId,
     accessRevision,
@@ -1626,8 +1733,79 @@ export function BookingProvider({
       }
     },
   );
+  /** Rebuild only the editable cart after server-confirmed unpaid release. */
+  const restartReleasedReservation = useCallback(
+    (id: string, recoveredSlots?: BookingDraft["slots"]) => {
+      if (releasedReservation.current === id) return;
+      releasedReservation.current = id;
+      const noticeDismissed = calendarRecoveryNoticeDismissed(id);
+      // Reads made while the original attempt was locked cannot release slots.
+      freshChecks.current.delete(service);
+      cancel();
+      const previousSlots =
+        recoveredSlots ??
+        (latest.current.attempt?.id === id
+          ? latest.current.attempt.draft.slots
+          : latest.current.draft.slots);
+      const nextDraft = {
+        ...latest.current.draft,
+        accepted: false,
+        slots: latest.current.draft.slots.filter(
+          (slot) =>
+            !previousSlots.some(
+              (expired) => slotKey(expired) === slotKey(slot),
+            ),
+        ),
+      };
+      setSuppressedSlots([
+        ...suppressedSlots.filter(
+          (slot) => !previousSlots.some((expired) => overlaps(slot, expired)),
+        ),
+        ...previousSlots,
+      ]);
+      setRestoredOwner({ service, identityService });
+      commit({ ...latest.current, attempt: null, draft: nextDraft });
+      if (service.mode === "live") saveLiveDraft(nextDraft, false, null);
+      setAction({
+        status: "idle",
+        returnToCalendar: !recoveredSlots && !action.calendarRecovery,
+      });
+      pauseCalendar(false);
+      if (
+        !noticeDismissed &&
+        (!recoveredSlots ||
+          /\/book\/time\/?$/.test(previousNoticePath.current ?? "")) &&
+        (!action.calendarRecovery || noticeShownOnCalendar.current)
+      )
+        setSelectionNotice(PAYMENT_WINDOW_ENDED, previousSlots);
+    },
+    [
+      action.calendarRecovery,
+      cancel,
+      commit,
+      identityService,
+      service,
+      setAction,
+      setSuppressedSlots,
+      suppressedSlots,
+      setSelectionNotice,
+    ],
+  );
   const recoverRejectedTab = useEffectEvent(
     async (id: string, controller: AbortController) => {
+      const expiryRead = isCalendarRecovery(id) ? new AbortController() : null;
+      if (expiryRead) restoredExpiryRead.current = expiryRead;
+      const signal = expiryRead
+        ? AbortSignal.any([controller.signal, expiryRead.signal])
+        : controller.signal;
+      const generation = profileAccessGeneration();
+      const ownsExpiry = () =>
+        !signal.aborted &&
+        profileAccessGeneration() === generation &&
+        liveCheckoutAttemptId() === id &&
+        isCalendarRecovery(id) &&
+        !latest.current.attempt &&
+        !active.current;
       try {
         const context = await conflictRead(
           (signal) =>
@@ -1636,8 +1814,39 @@ export function BookingProvider({
               mode: "live",
               signal,
             }),
-          controller.signal,
+          signal,
         );
+        if (context.attemptId !== id || signal.aborted) return;
+        if (
+          expiryRead &&
+          context.expired &&
+          !context.payment &&
+          !context.confirmation &&
+          !context.customerConfirmation &&
+          ownsExpiry()
+        ) {
+          // Current excludes an archived grant. Replaying the protected release checks
+          // both active and archived grants, including any intervening payment.
+          await conflictRead(
+            (readSignal) => expireBooking(id, readSignal),
+            signal,
+          );
+          if (!ownsExpiry()) return;
+          const starts = new Set(
+            context.summary.sessions.map((session) => session.startMs),
+          );
+          const slots = new Map<string, BookingDraft["slots"][number]>();
+          for (const slot of [
+            ...loadDepartureSlots(id),
+            ...suppression.current.slots,
+            ...latest.current.draft.slots,
+          ]) {
+            if (starts.has(Date.parse(`${slot.date}T${slot.start}:00+08:00`)))
+              slots.set(slotKey(slot), slot);
+          }
+          restartReleasedReservation(id, [...slots.values()]);
+          return;
+        }
         if (
           !controller.signal.aborted &&
           (context.selectionRejection || context.creationResolution) &&
@@ -1666,6 +1875,9 @@ export function BookingProvider({
           }
       } catch {
         /* Unknown reads cannot discard a pending attempt. */
+      } finally {
+        if (restoredExpiryRead.current === expiryRead)
+          restoredExpiryRead.current = null;
       }
     },
   );
@@ -1757,7 +1969,10 @@ export function BookingProvider({
                       sessionPrice(slot) === sessionPrice(other),
                   ),
                 );
-              if (isBookingDeparture(attempt.id)) {
+              if (
+                isBookingDeparture(attempt.id) &&
+                !isCalendarRecovery(attempt.id)
+              ) {
                 commit({ version: 2, draft, attempt }, true);
               } else if (
                 mayRestoreLiveCheckout(attempt.id) &&
@@ -1767,7 +1982,14 @@ export function BookingProvider({
                 commit({ version: 2, draft: attempt.draft, attempt }, true);
                 setAction({ status: "idle" });
               } else if (isCalendarRecovery(attempt.id)) {
-                commit({ version: 2, draft, attempt }, true);
+                commit(
+                  {
+                    version: 2,
+                    draft: calendarDraft(draft, attempt.draft),
+                    attempt,
+                  },
+                  true,
+                );
                 if (!calendarRecoveryNoticeDismissed(attempt.id))
                   setSelectionNotice(
                     isUnresolvedCheckout(attempt.id)
@@ -1849,74 +2071,42 @@ export function BookingProvider({
       // never start another checkout or discard its identity.
       if (event.persisted && active.current?.operation === "checkout") {
         detachCheckout();
-        setDetachedFrom(null);
         setEntryChecked(null);
       }
     };
     const leaving = () => {
-      if (active.current?.submission) detachCheckout();
+      entryRead.current?.abort();
+      restoredExpiryRead.current?.abort();
+      setRequestedEntry(null);
+      if (
+        active.current?.submission ||
+        (active.current?.operation === "checkout" && !latest.current.attempt)
+      )
+        detachCheckout();
     };
-    window.addEventListener("popstate", leaving);
+    const traverseHistory = () => {
+      leaving();
+      if (active.current?.operation === "checkout") detachCheckout();
+      // The Home hero creates a same-URL history entry while its animation runs.
+      // Back there cancels only that entry; the next Book click is still deliberate.
+      const bookingRoute = /\/(?:book\/|confirmation)/;
+      setHistoryBrowsing(
+        bookingRoute.test(previousNoticePath.current ?? "") ||
+          bookingRoute.test(window.location.pathname),
+      );
+      setProtectedConflictRedirect(null);
+      const id = submittedCheckoutId();
+      if (id) setDetachedCheckout(id);
+    };
+    window.addEventListener("popstate", traverseHistory);
     window.addEventListener("pagehide", leaving);
     window.addEventListener("pageshow", resume);
     return () => {
-      window.removeEventListener("popstate", leaving);
+      window.removeEventListener("popstate", traverseHistory);
       window.removeEventListener("pagehide", leaving);
       window.removeEventListener("pageshow", resume);
     };
   }, [detachCheckout]);
-  /** Rebuild only the editable cart after server-confirmed unpaid release. */
-  const restartReleasedReservation = useCallback(
-    (id: string) => {
-      if (releasedReservation.current === id) return;
-      releasedReservation.current = id;
-      const noticeDismissed = calendarRecoveryNoticeDismissed(id);
-      // Reads made while the original attempt was locked cannot release slots.
-      freshChecks.current.delete(service);
-      cancel();
-      const previous =
-        latest.current.attempt?.id === id
-          ? latest.current.attempt.draft
-          : latest.current.draft;
-      const nextDraft = {
-        ...latest.current.draft,
-        accepted: false,
-        slots: latest.current.draft.slots.filter(
-          (slot) =>
-            !previous.slots.some(
-              (expired) => slotKey(expired) === slotKey(slot),
-            ),
-        ),
-      };
-      setSuppressedSlots([
-        ...suppressedSlots.filter(
-          (slot) => !previous.slots.some((expired) => overlaps(slot, expired)),
-        ),
-        ...previous.slots,
-      ]);
-      setRestoredOwner({ service, identityService });
-      commit({ ...latest.current, attempt: null, draft: nextDraft });
-      if (service.mode === "live") saveLiveDraft(nextDraft, false);
-      setAction({ status: "idle", returnToCalendar: !action.calendarRecovery });
-      pauseCalendar(false);
-      if (
-        !noticeDismissed &&
-        (!action.calendarRecovery || noticeShownOnCalendar.current)
-      )
-        setSelectionNotice(PAYMENT_WINDOW_ENDED, previous.slots);
-    },
-    [
-      action.calendarRecovery,
-      cancel,
-      commit,
-      identityService,
-      service,
-      setAction,
-      setSuppressedSlots,
-      suppressedSlots,
-      setSelectionNotice,
-    ],
-  );
   // Fresh availability can restore pre-link creation recovery's display while
   // its original financial attempt stays locked. Issued-link expiry retains
   // suppression until authoritative release; warm caches cannot restore either.
@@ -2265,7 +2455,6 @@ export function BookingProvider({
             request.submission = {
               id: attempt.id,
               detached: false,
-              originPath: pathname,
             };
             markSubmittedCheckout(attempt.id, true);
           }
@@ -2333,8 +2522,7 @@ export function BookingProvider({
             isHitpayCheckoutUrl(handoff.url)
           ) {
             request.submission = undefined;
-            markSubmittedCheckout(attempt.id, false);
-            location.assign(handoff.url);
+            openHostedPayment(attempt.id, handoff.url);
             checkoutNavigationStarted = true;
             return false;
           }
@@ -2374,8 +2562,7 @@ export function BookingProvider({
             // assign starts navigation asynchronously. Keep the overlay and
             // one-operation guard until this document is replaced.
             request.submission = undefined;
-            markSubmittedCheckout(attempt.id, false);
-            location.assign(context.checkout.url);
+            openHostedPayment(attempt.id, context.checkout.url);
             checkoutNavigationStarted = true;
             // Do not also navigate to the intermediate SoccerBot route.
             return false;
@@ -2394,24 +2581,55 @@ export function BookingProvider({
           profileAccessGeneration() === accessGeneration
         ) {
           const id = request.submission.id;
+          if (!(error instanceof BookingServiceError)) return false;
+          const conflict =
+            error.code === "checkout_already_active" ||
+            error.code === "checkout_window_blocked" ||
+            error.code === "selection_unavailable" ||
+            error.code === "selection_changed";
           if (
-            error instanceof BookingServiceError &&
-            error.code === "booking_not_created"
-          ) {
-            resolveUncreatedBooking(id);
-          } else if (
-            error instanceof BookingServiceError &&
-            [
+            !conflict &&
+            ![
+              "booking_not_created",
               "checkout_not_started",
               "reservation_blocked",
               "queue_busy",
               "checkout_verification_required",
             ].includes(error.code)
-          ) {
+          )
+            return false;
+
+          const original = latest.current.attempt.draft;
+          const classify =
+            conflict &&
+            !isBookingDeparture(id) &&
+            /\/book\//.test(previousNoticePath.current ?? "");
+          // A definitive response supersedes a pending protected read of this rejected ID.
+          entryRead.current?.abort();
+          setRequestedEntry(null);
+          setProtectedConflictRedirect((checked) =>
+            checked === id ? null : checked,
+          );
+          setDetachedCheckout(null);
+          if (error.code === "booking_not_created") {
+            resolveUncreatedBooking(id, undefined, true);
+          } else {
             markSubmittedCheckout(id, false);
-            setDetachedCheckout(null);
             commit({ ...latest.current, attempt: null });
             saveLiveDraft(latest.current.draft, false, null);
+            if (classify) {
+              await returnRejectedSelection(
+                original,
+                original.slots[error.rejectedSessionIndex ?? -1],
+                id,
+                undefined,
+                rejectedSlots(original, error.rejectedSessionIndices),
+                error.code === "checkout_already_active"
+                  ? error.code
+                  : undefined,
+                true,
+              );
+            }
           }
           return false;
         }
@@ -2577,14 +2795,7 @@ export function BookingProvider({
             current.draft.slots[known.rejectedSessionIndex ?? -1],
             latest.current.attempt?.id ?? null,
             undefined,
-            known.rejectedSessionIndices?.length &&
-              known.rejectedSessionIndices.every(
-                (index) => current.draft.slots[index],
-              )
-              ? known.rejectedSessionIndices.map(
-                  (index) => current.draft.slots[index],
-                )
-              : undefined,
+            rejectedSlots(current.draft, known.rejectedSessionIndices),
           );
           return false;
         } else if (known.code === "conflict") invalidateAvailability();
@@ -2625,7 +2836,6 @@ export function BookingProvider({
       action.calendarRecovery,
       action.unresolvedCheckout,
       browsingCheckout,
-      pathname,
       profileSaveError,
     ],
   );
@@ -2743,6 +2953,7 @@ export function BookingProvider({
         clearReviewConsent,
         detachCheckout,
         browsingCheckout,
+        resumeSubmittedCheckout,
         rejectRecoveredSelection,
         resumePaymentStatus(id) {
           if (latest.current.attempt?.id !== id) return;
@@ -2765,13 +2976,14 @@ export function BookingProvider({
           if (unresolved && !action.unresolvedCheckout)
             freshChecks.current.delete(service);
           pauseCalendar(false);
+          if (service.mode === "live")
+            saveCalendarRecovery(id, unresolved || isUnresolvedCheckout(id));
           if (action.calendarRecovery && unresolved) {
             if (!calendarRecoveryNoticeDismissed(id))
               setSelectionNotice(
                 CHECKOUT_UNRESOLVED,
                 current.attempt.draft.slots,
               );
-            if (service.mode === "live") saveCalendarRecovery(id, true);
             setAction({
               status: "idle",
               returnToCalendar: true,
@@ -2797,11 +3009,14 @@ export function BookingProvider({
             commit(
               {
                 ...current,
-                draft: { ...current.draft, accepted: false, slots: [] },
+                draft: {
+                  ...calendarDraft(current.draft, current.attempt.draft),
+                  accepted: false,
+                  slots: [],
+                },
               },
               true,
             );
-            if (service.mode === "live") saveCalendarRecovery(id, unresolved);
             setAction({
               status: "idle",
               returnToCalendar: true,
@@ -2813,17 +3028,26 @@ export function BookingProvider({
         },
         /** Restart the draft flow after an eligible attempt expiry. */
         restartAfterExpiry(id) {
+          const attempt = latest.current.attempt;
+          const storedId =
+            service.mode === "live" ? liveCheckoutAttemptId() : null;
           if (
             active.current ||
-            latest.current.attempt?.status === "paid" ||
-            (latest.current.attempt && latest.current.attempt.id !== id)
+            attempt?.status === "paid" ||
+            (attempt && attempt.id !== id) ||
+            (storedId && storedId !== id)
           )
-            return;
+            return false;
           restartReleasedReservation(id);
+          return true;
         },
         async restartAfterConfirmation(id) {
           if (active.current) throw new Error("booking_exit_changed");
           const current = latest.current;
+          const storedId =
+            service.mode === "live" ? liveCheckoutAttemptId() : null;
+          // The visible receipt can belong to an earlier booking while this tab restores its checkout.
+          if (storedId && storedId !== (current.attempt?.id ?? id)) return;
           if (current.attempt && current.attempt.id !== id) {
             if (service.mode !== "live") return;
             const otherId = current.attempt.id;
@@ -2935,7 +3159,10 @@ export function BookingProvider({
         pay: (outcome) => run("pay", outcome),
         check: () => run("check"),
         resolve: () => run("resolve"),
-        leave() {
+        leave(verifiedAttemptId?: string) {
+          entryRead.current?.abort();
+          setRequestedEntry(null);
+          setHistoryBrowsing(false);
           // The outgoing booking step can still render before the destination commits.
           setEntryChecked(pathname);
           // Access recovery belongs to the departed journey, not the next entry.
@@ -2952,6 +3179,14 @@ export function BookingProvider({
           showDate(null);
           setCalendarBrowsing(false);
           const attempt = latest.current.attempt;
+          const retainedId = attempt?.id ?? liveCheckoutAttemptId();
+          const departedSlots =
+            attempt?.draft.slots ??
+            (retainedId && isBookingDeparture(retainedId)
+              ? loadDepartureSlots(retainedId)
+              : retainedId
+                ? latest.current.draft.slots
+                : []);
           commit({
             version: 2,
             draft:
@@ -2963,8 +3198,16 @@ export function BookingProvider({
           // A held attempt's immutable snapshot remains usable for recovery;
           // the separately persisted editable live draft is still discarded.
           if (service.mode === "live") {
+            const verified =
+              typeof verifiedAttemptId === "string" &&
+              (!retainedId || retainedId === verifiedAttemptId) &&
+              rememberPaymentContinuation(verifiedAttemptId)
+                ? verifiedAttemptId
+                : null;
+            if (verified) setDetachedCheckout(verified);
             saveLiveDraft(blankDraft());
-            if (attempt) markBookingDeparture(attempt.id, attempt.draft.slots);
+            const id = verified ?? retainedId;
+            if (id) markBookingDeparture(id, departedSlots);
           }
         },
         reset() {

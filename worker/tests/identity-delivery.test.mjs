@@ -15,7 +15,16 @@ const config = ts.parseConfigFileTextToJson(
 const origin = "https://soccerbot.test",
   revision = "a".repeat(40),
   email = "sheng@app404.ai";
-let script, mf, db, root, calls, botResult, mailResult, dnsResult, bindings;
+let script,
+  mf,
+  db,
+  root,
+  calls,
+  dnsCalls,
+  botResult,
+  mailResult,
+  dnsResult,
+  bindings;
 before(async () => {
   script = (
     await build({
@@ -54,7 +63,7 @@ async function start() {
       outboundService: async (request) => {
         if (new URL(request.url).origin === "https://cloudflare-dns.com") {
           assert.equal(request.method, "GET");
-          calls.push({
+          dnsCalls.push({
             url: request.url,
             body: null,
             headers: request.headers,
@@ -96,6 +105,7 @@ async function start() {
 beforeEach(async () => {
   root = mkdtempSync(path.join(tmpdir(), "soccerbot-delivery-"));
   calls = [];
+  dnsCalls = [];
   botResult = null;
   mailResult = null;
   dnsResult = null;
@@ -1555,7 +1565,7 @@ test("customer booking help is owned deduplicated and sends staff and customer a
 test("guest email domain endpoint authenticates caches by domain and leaves DNS outages retryable", async () => {
   const cookie = await guest();
   assert.equal((await request("", {}, "email-domain")).status, 401);
-  assert.equal(calls.length, 0);
+  assert.equal(dnsCalls.length, 0);
   assert.deepEqual(
     await (
       await request(cookie, { email: "first@example.com" }, "email-domain")
@@ -1568,8 +1578,8 @@ test("guest email domain endpoint authenticates caches by domain and leaves DNS 
     ).json(),
     { status: "valid" },
   );
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].url.includes("first"), false);
+  assert.equal(dnsCalls.length, 1);
+  assert.equal(dnsCalls[0].url.includes("first"), false);
   dnsResult = () => Response.json({ Status: 3 });
   assert.deepEqual(
     await (
@@ -1578,7 +1588,7 @@ test("guest email domain endpoint authenticates caches by domain and leaves DNS 
     { status: "invalid" },
   );
   dnsResult = () => new Response(null, { status: 503 });
-  const before = calls.length;
+  const before = dnsCalls.length;
   for (let i = 0; i < 2; i++)
     assert.equal(
       (
@@ -1590,5 +1600,33 @@ test("guest email domain endpoint authenticates caches by domain and leaves DNS 
       ).status,
       503,
     );
-  assert.equal(calls.length, before + 2);
+  assert.equal(dnsCalls.length, before + 2);
+});
+
+test("domain rejection blocks code issuance and delivery before a challenge is reserved", async () => {
+  await open();
+  const cookie = await guest();
+  for (const [dns, status, error] of [
+    [
+      () => new Response(null, { status: 503 }),
+      503,
+      "email_domain_unavailable",
+    ],
+    [() => Response.json({ Status: 3 }), 422, "email_domain_invalid"],
+  ]) {
+    dnsResult = dns;
+    const response = await challenge(cookie);
+    assert.equal(response.status, status);
+    assert.equal((await response.json()).error, error);
+    assert.equal(await count("email"), 0);
+    assert.equal(
+      (
+        await db
+          .prepare("SELECT COUNT(*) AS n FROM identity_challenges")
+          .first()
+      ).n,
+      0,
+    );
+  }
+  assert.equal(dnsCalls.length, 2);
 });

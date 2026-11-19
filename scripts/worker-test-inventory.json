@@ -912,6 +912,10 @@
     "title": "guest email domain endpoint authenticates caches by domain and leaves DNS outages retryable"
   },
   {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "domain rejection blocks code issuance and delivery before a challenge is reserved"
+  },
+  {
     "file": "worker/tests/identity.test.mjs",
     "title": "identity stores no plaintext code and consumes one concurrent redemption without renewing guest expiry"
   },

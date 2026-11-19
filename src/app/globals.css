@@ -3847,8 +3847,11 @@
   .auth-code-feedback .text-link {
     min-height: 44px;
   }
+  .auth-code-panel .booking-action-anchor {
+    padding: 16px 0 0;
+  }
   .auth-code-help {
-    margin-top: 36px;
+    margin-top: 8px;
   }
   .auth-code-help p,
   .auth-code-help .text-link {

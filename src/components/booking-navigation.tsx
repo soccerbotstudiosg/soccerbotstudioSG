@@ -13,6 +13,7 @@ import {
 import { ArenaEntry } from "./arena-entry";
 import { BrandLoading, FULL_PAGE_LOADING_MIN_MS } from "./brand-loading";
 import { services } from "@/services";
+import { submittedCheckoutId } from "@/services/storage";
 import {
   prepareIdentityEntry,
   clearIdentityEntry,
@@ -97,7 +98,8 @@ export function BookingNavigation({ children }: { children: ReactNode }) {
     setIdentityReady(true);
     if (
       /^\/book\/account\/?$/.test(to) &&
-      services.customerIdentity.mode === "live"
+      services.customerIdentity.mode === "live" &&
+      !submittedCheckoutId()
     ) {
       preparation.current = prepareIdentityEntry(services.customerIdentity);
       const pending = preparation.current;

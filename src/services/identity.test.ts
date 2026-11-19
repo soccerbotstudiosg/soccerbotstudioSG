@@ -316,6 +316,21 @@ it("identity failures distinguish throttling expired access bad codes and securi
       "synthetic-token",
     ),
   ).rejects.toThrow("Complete the security check");
+  for (const [status, error, message] of [
+    [422, "email_domain_invalid", "This email domain cannot receive email"],
+    [503, "email_domain_unavailable", "Couldn’t check your email domain"],
+  ] as const) {
+    request
+      .mockResolvedValueOnce(Response.json({ access: "guest" }))
+      .mockResolvedValueOnce(Response.json({ error }, { status }));
+    await expect(
+      createLiveIdentityService().challenge(
+        identity.email,
+        signal,
+        "synthetic-token",
+      ),
+    ).rejects.toThrow(message);
+  }
   request.mockResolvedValueOnce(Response.json({}, { status: 401 }));
   await expect(
     createLiveIdentityService().signOut(signal, true),

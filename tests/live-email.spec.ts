@@ -1,3 +1,4 @@
+import { bookingSequenceRandom } from "./booking-sequence-random";
 import { sitePath } from "../src/content/site-path";
 import { createHash } from "node:crypto";
 import { isHitPayApiCall } from "../worker/tests/provider-url-fixture.mjs";
@@ -3863,6 +3864,30 @@ async function optimisticHold(page: Page, failReadback: boolean) {
           exact: true,
         }),
       ).toBeVisible();
+      await expect(continuation).toHaveAttribute(
+        "data-payment-continuation",
+        attemptId,
+      );
+      await page
+        .getByRole("link", { name: "Privacy Policy", exact: true })
+        .click();
+      const leavePrompt = page.getByRole("dialog", {
+        name: "Leave this booking?",
+      });
+      await expect(leavePrompt).toBeVisible();
+      await leavePrompt.getByRole("button", { name: "Stay" }).click();
+      await expect(leavePrompt).toHaveCount(0);
+      await expect(continuation).toHaveAttribute("href", mechanism.checkoutUrl);
+      await continuation.click();
+      await expect(page).toHaveURL(mechanism.checkoutUrl);
+      // Native Back after resuming the hosted checkout must recover that same handoff again.
+      await page.goBack();
+      await expect(continuation).toHaveAttribute("href", mechanism.checkoutUrl);
+      await expect(continuation).toHaveAttribute(
+        "data-payment-continuation",
+        attemptId,
+      );
+      await expect(page.getByRole("timer")).toBeVisible();
       await continuation.click();
       await expect(page).toHaveURL(mechanism.checkoutUrl);
       expect(page.context().pages()).toHaveLength(pagesBefore);
@@ -4421,8 +4446,31 @@ test("email account actions return through booking options and sign in again wit
   expect(evidence.unexpected).toEqual([]);
 });
 
+/** Choose the complete itinerary before executing any booking operation. */
+function paidSequencePlan(seed: number) {
+  const draw = bookingSequenceRandom(seed);
+  return Array.from({ length: 3 }, (_, index) => {
+    const choices = [
+      "reload",
+      "resume and back",
+      "stay on checkout",
+      "open confirmation",
+    ];
+    if (index > 0) choices.push("visit paid receipt");
+    return {
+      size: 1 + draw(2),
+      actions: Array.from({ length: 3 }, () => choices[draw(choices.length)]),
+      receipt: draw(index || 1),
+    };
+  });
+}
+
 /** Exercise complete consecutive journeys in one browser and one real Worker runtime. */
-async function consecutivePaidJourneys(page: Page, sizes: number[]) {
+async function consecutivePaidJourneys(
+  page: Page,
+  sizes: number[],
+  plan?: ReturnType<typeof paidSequencePlan>,
+) {
   let completed = Promise.withResolvers<void>();
   const mechanism = await createBookingSequence(sizes, {
     checkoutBotProof: false,
@@ -4476,7 +4524,7 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
       expect(ids).not.toContain(attemptId);
       ids.push(attemptId);
       await expect(page).toHaveURL(journey.checkoutUrl);
-      if (index === 1) {
+      if (index === 1 || plan) {
         const originalPayment = await mechanism.db
           .prepare(
             "SELECT request_id,reference,expires_ms,created_ms FROM hitpay_payments WHERE attempt_id=?",
@@ -4490,21 +4538,94 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
         });
         await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
         await expect(page.getByRole("timer")).toBeVisible();
-        await page.reload();
-        await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
-        // Reopen A while B is unpaid, then restore B without borrowing A's proof.
-        await page.goto(`/confirmation/?attempt=${ids[0]}`);
-        await expect(
-          page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
-        ).toBeVisible();
-        await expect(
-          page.getByRole("link", { name: "Continue payment", exact: true }),
-        ).toHaveCount(0);
-        await page.goto("/book/payment/");
-        await expect(
-          page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
-        ).toHaveCount(0);
-        await expect(continuation).toHaveAttribute("href", journey.checkoutUrl);
+        if (plan) {
+          for (const action of plan[index].actions) {
+            await test.step(`Booking ${index + 1}: ${action}`, async () => {
+              if (action === "reload") {
+                await page.reload();
+              } else if (action === "resume and back") {
+                await continuation.click();
+                await expect(page).toHaveURL(journey.checkoutUrl);
+                await page.goBack();
+              } else if (action === "stay on checkout") {
+                await page
+                  .getByRole("link", { name: "Privacy Policy", exact: true })
+                  .click();
+                const prompt = page.getByRole("dialog", {
+                  name: "Leave this booking?",
+                });
+                await expect(prompt).toBeVisible();
+                await prompt.getByRole("button", { name: "Stay" }).click();
+                await expect(prompt).toHaveCount(0);
+              } else if (action === "open confirmation") {
+                await page.goto(`/confirmation/?attempt=${attemptId}`);
+              } else {
+                const old = plan[index].receipt;
+                await page.goto(`/confirmation/?attempt=${ids[old]}`);
+                await expect(
+                  page.getByRole("heading", {
+                    name: "Booking Confirmed",
+                    exact: true,
+                  }),
+                ).toBeVisible();
+                await expect(
+                  page.getByText(`Sequence Guest ${old + 1}`, { exact: true }),
+                ).toBeVisible();
+                await expect(continuation).toHaveCount(0);
+                await page.goBack();
+              }
+              await expect(continuation).toHaveAttribute(
+                "href",
+                journey.checkoutUrl,
+              );
+              await expect(continuation).toHaveAttribute(
+                "data-payment-continuation",
+                attemptId,
+              );
+              expect(
+                await mechanism.db
+                  .prepare(
+                    "SELECT request_id,reference,expires_ms,created_ms FROM hitpay_payments WHERE attempt_id=?",
+                  )
+                  .bind(attemptId)
+                  .first(),
+              ).toEqual(originalPayment);
+              expect(
+                mechanism.calls.filter(
+                  (c) => isHitPayApiCall(c) && c.method === "POST",
+                ),
+              ).toHaveLength(index + 1);
+            });
+          }
+        } else {
+          await page.reload();
+          await expect(continuation).toHaveAttribute(
+            "href",
+            journey.checkoutUrl,
+          );
+          // Reopen A while B is unpaid, then restore B without borrowing A's proof.
+          await page.goto(`/confirmation/?attempt=${ids[0]}`);
+          await expect(
+            page.getByRole("heading", {
+              name: "Booking Confirmed",
+              exact: true,
+            }),
+          ).toBeVisible();
+          await expect(
+            page.getByRole("link", { name: "Continue payment", exact: true }),
+          ).toHaveCount(0);
+          await page.goto("/book/payment/");
+          await expect(
+            page.getByRole("heading", {
+              name: "Booking Confirmed",
+              exact: true,
+            }),
+          ).toHaveCount(0);
+          await expect(continuation).toHaveAttribute(
+            "href",
+            journey.checkoutUrl,
+          );
+        }
         await continuation.click();
         expect(
           await mechanism.db
@@ -4580,7 +4701,16 @@ async function consecutivePaidJourneys(page: Page, sizes: number[]) {
     expect(transport.unexpected).toEqual([]);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
-    await stopMechanism(page, mechanism, transport);
+    // Disposing the isolated page releases WebKit route replies orphaned by Back.
+    // Still drain every dispatched Worker request before disposing its runtime.
+    try {
+      await test.step("Close booking sequence page", () => page.close());
+      await test.step("Drain booking sequence requests", () =>
+        transport.drain());
+    } finally {
+      await test.step("Dispose booking sequence Worker", () =>
+        mechanism.close());
+    }
   }
 }
 
@@ -4596,6 +4726,47 @@ test("complete multi-session then two single-booking browser journeys reset sele
 }) => {
   test.setTimeout(90000);
   await consecutivePaidJourneys(page, [2, 1, 1]);
+});
+
+async function runPaidSequence(page: Page, seed: number) {
+  const plan = paidSequencePlan(seed);
+  await test.info().attach("booking-sequence", {
+    body: JSON.stringify({ seed, plan }, null, 2),
+    contentType: "application/json",
+  });
+  // Three complete bookings, each with three additional same-tab operations.
+  test.setTimeout(120000);
+  await consecutivePaidJourneys(
+    page,
+    plan.map((item) => item.size),
+    plan,
+  );
+}
+
+test("Seed 1410623169 exercises three consecutive bookings with randomized payment history", async ({
+  page,
+}) => {
+  await runPaidSequence(page, 1410623169);
+});
+test("Seed 2074234898 exercises three consecutive bookings with randomized payment history", async ({
+  page,
+}) => {
+  await runPaidSequence(page, 2074234898);
+});
+test("Seed 2147764897 exercises three consecutive bookings with randomized payment history", async ({
+  page,
+}) => {
+  await runPaidSequence(page, 2147764897);
+});
+test("Seed 300840851 exercises three consecutive bookings with randomized payment history", async ({
+  page,
+}) => {
+  await runPaidSequence(page, 300840851);
+});
+test("Seed 3567871321 exercises three consecutive bookings with randomized payment history", async ({
+  page,
+}) => {
+  await runPaidSequence(page, 3567871321);
 });
 
 test("hidden enquiry proof preserves the shared action gap", async ({

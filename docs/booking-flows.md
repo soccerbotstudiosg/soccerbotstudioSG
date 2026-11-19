@@ -23,7 +23,7 @@ Booking headings use shared deliberate two-line text at widths up to700px, with3
 
 Account screens—Start your booking, Continue with email, Verify your email and Saved contact details—retain the top navigation/title row but show no progress bar or numbered step counter. The four numbered booking stages are Session, Time, Details and Review. Session Back returns to Account; Account Home and nested Back retain their existing destinations. Desktop/iPad titles remain centred above content; mobile retains its heading placement.
 
-Verification centres the recipient and code label, places the expiry/expired message6px below the input, and groups the Spam/Junk hint with Request another code36px below. These body labels use16px; the code field retains its larger digits. Expired copy uses the danger colour. Challenge expiry, resend limits and verification authority are unchanged.
+Verification centres the recipient and code label, places the expiry message 6px below the input, then shows Verify and continue. The Spam/Junk hint and Request another code sit together 8px below the action. Sending or resending a live code requires a successful domain mail-routing check. These body labels use16px; the code field retains its larger digits. Expired copy uses the danger colour. Challenge expiry, resend limits and verification authority are unchanged.
 
 ## 1. Guest entry
 
@@ -169,7 +169,11 @@ flowchart TD
 
 ## 8. Back and Continue payment
 
-Leaving Review before the checkout POST cancels preparation. Once the original submission starts, an in-site Back leaves the customer on the previous step and keeps the original attempt. They may browse availability and edit an independent cart; returning to Review or re-entering after Home checks the same attempt. A late reply does not redirect the customer to HitPay. The protected page offers the original eligible unpaid link, checks uncertain booking creation, or shows the existing payment/confirmation state. Explicit Home departure discards the editable cart. A newly established guest owner cannot inherit the former owner's attempt.
+Leaving Review before the checkout POST cancels preparation. Once checkout has been submitted, browser Back can traverse earlier steps or leave for Home. On an earlier step, the site’s Back or Continue checks the original attempt before changing steps, validating an editable draft or requesting consent again. Deliberate booking re-entry from Home also checks the original attempt. On the unpaid continuation screen, site departures offer Stay or Leave booking. Continue payment opens the protected payment link directly. A late reply does not redirect the customer to HitPay. The protected page offers the original eligible unpaid link, checks uncertain booking creation, or shows the existing payment/confirmation state. Explicit Home departure discards the editable cart. A newly established guest owner cannot inherit the former owner's attempt.
+
+When the payment and reconciliation windows have elapsed, Calendar can take over the existing attempt. Its own recovery check must be able to run without routing back to Confirmation on every render. Only a protected result can establish the outcome or release the held selection. If a release completed during a refresh, the server may already have archived the attempt. Calendar checks the original protected release and preserves any replacement selection.
+
+When switching between confirmation links, provider return hints belong to the attempt in that link. An older expired confirmation cannot clear a different checkout or its cart while that checkout is restoring.
 
 Refreshing Payment after a lost checkout reply restores the original current attempt. When that attempt is still checking, Payment reads its protected checkout and payment status in place. A recorded Home departure continues through the existing re-entry flow.
 

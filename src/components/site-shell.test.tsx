@@ -24,7 +24,9 @@ vi.mock("next/link", () => ({
 vi.mock("./booking-navigation", () => ({
   useBookingNavigation: () => ({ enter: navigation.push }),
   useBookingEntryTransition: () => false,
-  BookingLink: (props: React.ComponentProps<"a">) => <a {...props} />,
+  BookingLink: ({ href, ...props }: React.ComponentProps<"a">) => (
+    <a href={href && sitePath(href)} {...props} />
+  ),
 }));
 vi.mock("./section-reveals", () => ({
   SectionReveals: () => null,
@@ -196,4 +198,66 @@ test("nested booking 404 bypasses departure prompts and restores the guard only 
   expect(scroll).not.toHaveBeenCalled();
   keyboardView.unmount();
   vi.unstubAllGlobals();
+});
+
+test("unpaid continuation guards site departures and releases links after payment", () => {
+  navigation.path = "/confirmation/";
+  const pay = vi.fn();
+  const paymentLink = (
+    <a
+      href="https://checkout.sandbox.hit-pay.com/"
+      data-payment-continuation="00000000-0000-4000-8000-000000000107"
+      data-booking-continuation
+      onClick={(event) => {
+        event.preventDefault();
+        pay();
+      }}
+    >
+      Continue payment
+    </a>
+  );
+  const view = render(<SiteShell>{paymentLink}</SiteShell>);
+  for (const name of [
+    "SOCCERBOTSTUDIO Singapore home",
+    "The studio",
+    "Book now",
+    "Terms and Condition",
+    "Privacy Policy",
+    /WhatsApp:/,
+    /Instagram:/,
+  ]) {
+    fireEvent.click(screen.getByRole("link", { name }));
+    expect(
+      screen.getByRole("dialog", { name: "Leave this booking?" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Stay" }));
+  }
+  fireEvent.click(screen.getByRole("link", { name: "Continue payment" }));
+  expect(pay).toHaveBeenCalledOnce();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  fireEvent.click(screen.getByRole("link", { name: "Book now" }));
+  fireEvent.click(screen.getByRole("button", { name: "Leave booking" }));
+  expect(booking.leave).toHaveBeenCalledWith(
+    "00000000-0000-4000-8000-000000000107",
+  );
+  expect(navigation.push).toHaveBeenCalledWith("/book/account/");
+  view.unmount();
+
+  const done = vi.fn();
+  render(
+    <SiteShell>
+      <a
+        href="/studio/"
+        onClick={(event) => {
+          event.preventDefault();
+          done();
+        }}
+      >
+        Finished booking link
+      </a>
+    </SiteShell>,
+  );
+  fireEvent.click(screen.getByRole("link", { name: "Finished booking link" }));
+  expect(done).toHaveBeenCalledOnce();
+  expect(screen.queryByRole("dialog")).toBeNull();
 });

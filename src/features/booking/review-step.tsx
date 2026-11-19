@@ -3,6 +3,7 @@ import { BookingHeading } from "./booking-heading";
 import { CheckoutBotProof } from "./email-bot-proof";
 import {
   BookingPrimaryAction,
+  ContinuePaymentAction,
   BookingActionTotal,
 } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -75,6 +76,7 @@ export function ReviewStep({
       now,
       action,
       detachCheckout,
+      browsingCheckout,
       conflictLoadingLabel,
       clearReviewConsent,
       ready,
@@ -106,7 +108,10 @@ export function ReviewStep({
   const busy = action.status === "loading" || navigating;
   const checkingProof =
     draft.accepted && needsProof && !botToken && proofPending && !busy;
-  const locked = verifying || (!action.calendarRecovery && attempt?.held);
+  const locked =
+    browsingCheckout ||
+    verifying ||
+    (!action.calendarRecovery && attempt?.held === true);
   const canProceed =
     !action.calendarRecovery &&
     !verifying &&
@@ -114,14 +119,14 @@ export function ReviewStep({
     (!needsProof || !!botToken) &&
     draft.accepted &&
     selectionErrors(draft.slots, now).length === 0;
-  return (
+  const reviewSummary = (
     <>
       <BookingHeading lines={["Review", "Booking"]} />
       <p className="lead booking-step-instruction">
         Review your booking before payment.
       </p>
       <section className="surface booking-document">
-        <ReviewSessions part="heading" verifying={verifying} />
+        <ReviewSessions part="heading" locked={locked} />
         <div className="review-block">
           <div className="review-head">
             <h2>Booking Contact</h2>
@@ -133,9 +138,21 @@ export function ReviewStep({
           </div>
           <ClientDetails contact={draft.contact} />
         </div>
-        <ReviewSessions part="order" verifying={verifying} />
+        <ReviewSessions part="order" locked={locked} />
         <Arrival />
       </section>
+    </>
+  );
+  if (browsingCheckout)
+    return (
+      <>
+        {reviewSummary}
+        <ContinuePaymentAction />
+      </>
+    );
+  return (
+    <>
+      {reviewSummary}
       <label className="check-label review-terms">
         <input
           type="checkbox"
@@ -271,13 +288,12 @@ export function ReviewStep({
 /** Reuse review selections and their existing edit locks in inline and phone-panel layouts. */
 function ReviewSessions({
   part,
-  verifying = false,
+  locked,
 }: {
   part?: "heading" | "order";
-  verifying?: boolean;
+  locked: boolean;
 }) {
-  const { draft, attempt, now, action } = useBooking();
-  const locked = verifying || (!action.calendarRecovery && attempt?.held);
+  const { draft, now } = useBooking();
   const cartHeading = (
     <div className="review-block">
       <SessionSummaryHeading

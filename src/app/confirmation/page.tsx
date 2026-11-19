@@ -4,22 +4,45 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useBooking } from "@/features/booking/provider";
 import { ProtectedConfirmation } from "@/features/booking/protected-confirmation";
-/** Resolve the attempt parameter into a protected confirmation view. */
+/** Keep return hints with the corresponding attempt when history changes only the query. */
 function ConfirmationRoute() {
   const params = useSearchParams();
-  const [providerReturn] = useState(
-    () => params.has("reference") && params.has("status"),
+  const id = params.get("attempt") || "";
+  return (
+    <AttemptConfirmation
+      key={id}
+      attemptId={id}
+      status={params.get("status")}
+      hasReference={params.has("reference")}
+    />
   );
-  const [paymentContinuation] = useState(
-    () => params.get("status") !== "completed",
-  );
+}
+
+/** Retain this attempt's return presentation after cleaning the provider parameters. */
+function AttemptConfirmation({
+  attemptId,
+  status,
+  hasReference,
+}: {
+  attemptId: string;
+  status: string | null;
+  hasReference: boolean;
+}) {
+  const [hint, setHint] = useState({ status, hasReference });
+  if (
+    status !== null &&
+    (hint.status !== status || hint.hasReference !== hasReference)
+  )
+    setHint({ status, hasReference });
+  const providerReturn = hint.status !== null && hint.hasReference;
+  const paymentContinuation = hint.status !== "completed";
   useEffect(() => {
-    if (!providerReturn) return;
+    if (status === null || !hasReference) return;
     const url = new URL(window.location.href);
     url.searchParams.delete("status");
     url.searchParams.delete("reference");
     window.history.replaceState(window.history.state, "", url);
-  }, [providerReturn]);
+  }, [status, hasReference]);
   const {
     reset,
     restartAfterConfirmation,
@@ -32,7 +55,7 @@ function ConfirmationRoute() {
   } = useBooking();
   return (
     <ProtectedConfirmation
-      attemptId={params.get("attempt") || ""}
+      attemptId={attemptId}
       // Provider return hints may suppress payment, never establish paid status.
       allowPaymentContinuation={paymentContinuation}
       providerReturn={providerReturn}

@@ -100,6 +100,7 @@ export function TimeStep({
   const {
     selectionNotice,
     selectionNoticeSlots,
+    browsingCheckout,
     suppressedSlots,
     action,
     attempt,
@@ -404,7 +405,13 @@ export function TimeStep({
           </button>
         </div>
       );
-    return <BrandLoading label="Checking dates…" />;
+    return (
+      <BrandLoading
+        label="Checking dates…"
+        overlay={!browsingCheckout}
+        compact={browsingCheckout}
+      />
+    );
   }
   const selectionNoticeContent = (
     <div className="booking-help-content">

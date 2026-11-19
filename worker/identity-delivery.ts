@@ -10,6 +10,7 @@ import {
   verifyIdentityChallenge,
 } from "./identity";
 import { identityRequest } from "./provider-transport";
+import { cachedEmailDomainStatus } from "./email-domain";
 import { edgeAddress } from "./reservation-abuse";
 
 const unavailable = () => new ApiError(503, "identity_unavailable");
@@ -250,6 +251,7 @@ export async function identityDelivery(
     pepper,
     source,
     hostname: new URL(window.origin).hostname,
+    checkDomain: cachedEmailDomainStatus,
     verifyBot: async (token, signal) => {
       if (window.singleton === 0) {
         const now = Date.now();

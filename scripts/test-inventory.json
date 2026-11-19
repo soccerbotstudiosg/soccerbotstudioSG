@@ -13,6 +13,10 @@
   },
   {
     "file": "src/components/booking-navigation.test.tsx",
+    "title": "Home booking entry keeps the submitted checkout owner for the protected read"
+  },
+  {
+    "file": "src/components/booking-navigation.test.tsx",
     "title": "a changed motion preference finishes an active entry and removes its scroll lock"
   },
   {
@@ -102,6 +106,10 @@
   {
     "file": "src/components/site-shell.test.tsx",
     "title": "nested booking 404 bypasses departure prompts and restores the guard only on valid booking pages"
+  },
+  {
+    "file": "src/components/site-shell.test.tsx",
+    "title": "unpaid continuation guards site departures and releases links after payment"
   },
   {
     "file": "src/components/studio-hero-video.test.tsx",
@@ -725,11 +733,35 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "seeded booking sequence 10 resumes a delayed submission after repeated interrupted protected reads"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "cancelling the Home entry animation leaves the next deliberate checkout entry recoverable"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "access denial during conflict classification stops recovery and keeps the original cart without calendar navigation"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "detached predispatch conflicts preserve newer edits and never take over Home or resume the rejected checkout"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "seeded indexed selection conflict retains the other session through Calendar edits and refresh"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "seeded browser traversal and edits survive a delayed active-checkout refusal and stale original read"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "active checkout rejection keeps its own notice instead of an availability warning"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "archived expiry replay preserves replacements and requires current original unpaid release proof"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -813,6 +845,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "direct expiry cannot clear a different submitted checkout while its restoration is pending"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "editing a new selection retains the unpaid reservation notice until navigation"
   },
   {
@@ -893,6 +929,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "an expired payment window after a submitted checkout departure returns once to an editable calendar without repeating protected reads"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "mock unavailable payment status cannot masquerade as expiry or clear the original attempt"
   },
   {
@@ -938,6 +978,14 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "saved URL from checkout navigates once without a context request"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "seeded expiry journey 8 preserves original checkout until late payment"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "seeded expiry journey 9 preserves replacements across authoritative unpaid release"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -994,6 +1042,22 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "Back before dispatch cancels preparation and after dispatch preserves the original checkout through calendar and Home returns"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "native Back traverses every submitted booking step to Home and deliberate entry resumes the original checkout"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "on-site Back and Continue payment immediately recover the original submitted checkout from each previous step"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "leaving during a protected checkout read suppresses its late redirect and keeps the original ID"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "leaving a directly opened verified payment continuation preserves recovery through Home and re-entry"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
@@ -1062,6 +1126,10 @@
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "Back to home starts the shared background exit and navigates without awaiting dismissal"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "a completed provider return stays with its own attempt across confirmation history"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1722,6 +1790,26 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "email account actions return through booking options and sign in again with either remember choice"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "Seed 1410623169 exercises three consecutive bookings with randomized payment history"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "Seed 2074234898 exercises three consecutive bookings with randomized payment history"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "Seed 2147764897 exercises three consecutive bookings with randomized payment history"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "Seed 300840851 exercises three consecutive bookings with randomized payment history"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "Seed 3567871321 exercises three consecutive bookings with randomized payment history"
   },
   {
     "file": "tests/live-email.spec.ts",

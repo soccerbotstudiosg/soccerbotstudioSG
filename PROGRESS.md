@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Verify the bounded settings read after deployment. Cloudflare confirmed the expected production binding and traffic allocation for the merged Payment refresh fix.
+Stage the consolidated checkout recovery and email verification changes in PR #106 after the deployment verifier in PR #105.
 
 ## Next actions
 
-Review the verifier correction in CI.
+Verify the combined revision in CI and on staging. Physical device and live-provider acceptance remain pending.
 
 ## Ordered work after this slice
 

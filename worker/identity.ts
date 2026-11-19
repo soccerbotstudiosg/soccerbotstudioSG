@@ -10,6 +10,7 @@ import {
   rememberedConsentSql,
 } from "./remembered-identity";
 import { emailSchema } from "../src/domain/contact";
+import type { EmailDomainStatus } from "./email-domain";
 const challengeInput = z.strictObject({
   email: emailSchema,
   botToken: z.string().min(1).max(2048),
@@ -27,6 +28,7 @@ export type IdentityDelivery = {
   pepper: string;
   source: string;
   hostname: string;
+  checkDomain(email: string): Promise<EmailDomainStatus>;
   verifyBot(
     token: string,
     signal: AbortSignal,
@@ -196,16 +198,21 @@ export async function requestIdentityChallenge(
   const proof = await bounded((signal) =>
     delivery.verifyBot(input.data.botToken, signal),
   );
-  const now = clock();
+  const proofTime = clock();
   if (
     !proof.success ||
     proof.hostname !== delivery.hostname ||
     proof.action !== purpose ||
     !Number.isSafeInteger(proof.challengeAtMs) ||
-    proof.challengeAtMs > now ||
-    now - proof.challengeAtMs >= 300000
+    proof.challengeAtMs > proofTime ||
+    proofTime - proof.challengeAtMs >= 300000
   )
     throw denied();
+  const domain = await delivery.checkDomain(input.data.email);
+  if (domain === "invalid") throw new ApiError(422, "email_domain_invalid");
+  if (domain !== "valid") throw new ApiError(503, "email_domain_unavailable");
+  const now = clock();
+  if (now - proof.challengeAtMs >= 300000) throw denied();
   const id = crypto.randomUUID(),
     code = randomCode();
   const expires = Math.min(now + 120000, access.expires_ms);

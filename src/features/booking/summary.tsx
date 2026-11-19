@@ -1,6 +1,7 @@
 "use client";
 import {
   BookingPrimaryAction,
+  ContinuePaymentAction,
   BookingActionTotal,
 } from "./booking-primary-action";
 import Link from "next/link";
@@ -228,8 +229,16 @@ export function Summary({
 
 /** Retain calendar continuation and fresh-availability guards outside mobile popups. */
 export function BasketContinue() {
-  const { draft, now, availability, suppressedSlots, action, attempt } =
-    useBooking();
+  const {
+    draft,
+    now,
+    availability,
+    suppressedSlots,
+    action,
+    attempt,
+    browsingCheckout,
+  } = useBooking();
+  if (browsingCheckout) return <ContinuePaymentAction />;
   const unresolvedCreation =
     action.calendarRecovery &&
     attempt &&

@@ -29,6 +29,8 @@ import {
   saveLiveDraft,
   liveCheckoutAttemptId,
   markConfirmationSeen,
+  markSubmittedCheckout,
+  submittedCheckoutId,
 } from "@/services/storage";
 import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
@@ -337,23 +339,32 @@ test("reload resumes an interrupted completed exit without restoring that confir
   await act(async () => {});
   expect(screen.getByTestId("restored-attempt")).toHaveTextContent("none");
   view.unmount();
-  restore.mockResolvedValueOnce({
-    ...restored,
-    id: "00000000-0000-4000-8000-000000000002",
-  });
+  const retainedId = "00000000-0000-4000-8000-000000000002";
+  const restoring = deferred<Attempt>();
+  restore.mockReturnValueOnce(restoring.promise);
   // This newer attempt was created in the same tab. The cookie/identical
   // contact alone must not authorize automatic navigation to another checkout.
-  saveLiveDraft(nativeDraft, true, "00000000-0000-4000-8000-000000000002");
+  navigation.path = "/confirmation/";
+  saveLiveDraft(nativeDraft, true, retainedId);
+  markSubmittedCheckout(retainedId, true);
   const restartFailure = vi.fn();
   render(
     <BookingProvider bookingService={service} identityService={identity}>
       <RebookingProbe onRestartFailure={restartFailure} />
     </BookingProvider>,
   );
-  await act(async () => {});
-  expect(screen.getByTestId("restored-attempt")).toHaveTextContent(
-    "00000000-0000-4000-8000-000000000002",
+  expect(screen.getByTestId("restored-attempt")).toHaveTextContent("none");
+  // Both receipt exit buttons share this handler and can run before hydration finishes.
+  await act(async () =>
+    fireEvent.click(screen.getByRole("button", { name: "Restart completed" })),
   );
+  expect(submittedCheckoutId()).toBe(retainedId);
+  expect(
+    JSON.parse(sessionStorage.getItem("soccerbot-live-draft")!).slots,
+  ).toEqual(nativeDraft.slots);
+  expect(restartFailure).not.toHaveBeenCalled();
+  await act(async () => restoring.resolve({ ...restored, id: retainedId }));
+  expect(screen.getByTestId("restored-attempt")).toHaveTextContent(retainedId);
   const context = {
     attemptId: "00000000-0000-4000-8000-000000000002",
     mode: "live" as const,

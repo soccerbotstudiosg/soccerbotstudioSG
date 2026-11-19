@@ -60,6 +60,7 @@ export default {
             source: input.source ?? "synthetic-source",
             hostname: "soccerbot.test",
             now: () => input.now,
+            checkDomain: async () => "valid",
             verifyBot: async () => ({
               success: input.bot !== "denied",
               hostname: "soccerbot.test",

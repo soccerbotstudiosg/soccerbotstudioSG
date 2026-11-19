@@ -1,5 +1,6 @@
 "use client";
 import { totalCents } from "@/domain/booking";
+import { Icon } from "@/components/icon";
 import { money } from "@/domain/dates";
 import { useBooking } from "./provider";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -125,6 +126,26 @@ export function BookingPrimaryAction({
         </div>
       </div>
     </>
+  );
+}
+
+/** Resume the original submitted checkout without validating the editable draft. */
+export function ContinuePaymentAction({
+  submit = false,
+}: {
+  submit?: boolean;
+}) {
+  const { resumeSubmittedCheckout } = useBooking();
+  return (
+    <BookingPrimaryAction className="actions" ready>
+      <button
+        className="button"
+        type={submit ? "submit" : "button"}
+        onClick={submit ? undefined : resumeSubmittedCheckout}
+      >
+        Continue payment <Icon name="chevron" />
+      </button>
+    </BookingPrimaryAction>
   );
 }
 

@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
 import { BookingLink, BookingNavigation } from "./booking-navigation";
+import { blankDraft } from "@/domain/booking";
+import { markSubmittedCheckout, saveLiveDraft } from "@/services/storage";
 import { takeIdentityEntry } from "@/services/identity";
 import type { CustomerIdentityService } from "@/services/contracts";
 import { Arena } from "./arena";
@@ -370,6 +372,22 @@ test("all four booking entry surfaces prepare fresh access on each return from h
       act(() => vi.advanceTimersByTime(1180));
       expect(screen.queryByRole("status")).toBeNull();
     }
+    view.unmount();
+  }
+});
+
+test("Home booking entry keeps the submitted checkout owner for the protected read", () => {
+  identity.mode = "live";
+  reduced = true;
+  const id = "00000000-0000-4000-8000-000000000106";
+  saveLiveDraft(blankDraft(), true, id);
+  markSubmittedCheckout(id, true);
+  for (const arena of [false, true]) {
+    navigation.push.mockClear();
+    const view = render(<App arena={arena} />);
+    fireEvent.click(screen.getByRole("link", { name: /^Book now/ }));
+    expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/account/");
+    expect(identity.refresh).not.toHaveBeenCalled();
     view.unmount();
   }
 });
