@@ -4701,7 +4701,16 @@ async function consecutivePaidJourneys(
     expect(transport.unexpected).toEqual([]);
     expect(mechanism.unexpected).toEqual([]);
   } finally {
-    await stopMechanism(page, mechanism, transport);
+    // Disposing the isolated page releases WebKit route replies orphaned by Back.
+    // Still drain every dispatched Worker request before disposing its runtime.
+    try {
+      await test.step("Close booking sequence page", () => page.close());
+      await test.step("Drain booking sequence requests", () =>
+        transport.drain());
+    } finally {
+      await test.step("Dispose booking sequence Worker", () =>
+        mechanism.close());
+    }
   }
 }
 
