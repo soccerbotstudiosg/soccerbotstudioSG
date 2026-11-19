@@ -1123,7 +1123,7 @@ test("pre-checkout recovery hides the original time until verified release then 
     screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
   ).toBeDisabled();
   expect(screen.getByRole("alert")).toHaveTextContent(
-    "Starting another now could create a duplicate booking.",
+    "Checkout paused to prevent a duplicate booking.",
   );
   await act(async () => fireEvent.click(screen.getByText("Try Review")));
   expect(reviewResult).toBe(false);

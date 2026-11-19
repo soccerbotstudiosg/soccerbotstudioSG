@@ -488,6 +488,14 @@
     "title": "background checkout recovery distinguishes a completed book error from a lost response across fresh original slot reports"
   },
   {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "overlapping customer checkouts retain a partial batch without adopting the first customer's booking or payment"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "a second selection under the same checkout cookie preserves the original booking payment and deadline"
+  },
+  {
     "file": "worker/tests/enquiry.test.mjs",
     "title": "public enquiry sends fixed staff recipients and customer reply-to without creating booking access"
   },
@@ -930,6 +938,10 @@
   {
     "file": "worker/tests/identity-delivery.test.mjs",
     "title": "customer booking help is owned deduplicated and sends staff and customer acknowledgements with retry-safe content"
+  },
+  {
+    "file": "worker/tests/identity-delivery.test.mjs",
+    "title": "released email rejection help uses only original owner and contact and succeeds after staff acceptance"
   },
   {
     "file": "worker/tests/identity-delivery.test.mjs",

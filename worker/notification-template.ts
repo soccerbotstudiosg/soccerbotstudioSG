@@ -104,6 +104,9 @@ export function enquiryHtml(
   });
 }
 
+export const rejectedBookingEmailNotice =
+  "The booking service rejected the email address submitted for this attempt. No booking was created and no payment was requested.";
+
 /** Render one retained support category without inferring failure or nonpayment. */
 export function bookingHelpHtml(
   origin: string,
@@ -113,11 +116,13 @@ export function bookingHelpHtml(
   team: boolean,
 ) {
   const introduction =
-    category === "payment_confirmation_pending"
-      ? "Payment received. We are still confirming your booking."
-      : category === "checkout_unconfirmed"
-        ? "We could not confirm your checkout status."
-        : "We could not confirm your booking status.";
+    category === "contact_email_rejected"
+      ? rejectedBookingEmailNotice
+      : category === "payment_confirmation_pending"
+        ? "Payment received. We are still confirming your booking."
+        : category === "checkout_unconfirmed"
+          ? "We could not confirm your checkout status."
+          : "We could not confirm your booking status.";
   const message = [
     "Please help with my booking.",
     introduction,
@@ -129,9 +134,14 @@ export function bookingHelpHtml(
     name: team ? "SoccerBotStudio team" : name,
     introduction,
     fields,
-    note: team
-      ? "Check the original booking and payment records before making changes or asking for another payment."
-      : "We will get back as soon as we can. Please do not pay again. This acknowledgement does not confirm a booking, cancellation or refund.",
+    note:
+      category === "contact_email_rejected"
+        ? team
+          ? "Please help the customer check their original booking email before they try again."
+          : "We’ve received your help request and will help you check the email address before trying again."
+        : team
+          ? "Check the original booking and payment records before making changes or asking for another payment."
+          : "We will get back as soon as we can. Please do not pay again. This acknowledgement does not confirm a booking, cancellation or refund.",
     ...(team
       ? {}
       : {

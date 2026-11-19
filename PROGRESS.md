@@ -6,7 +6,7 @@ The local booking recovery candidate covers interrupted checkout, proven rejecti
 
 ## Next actions
 
-Verify the consolidated revision through the PR gates, including the browser suite. Live provider and physical-device acceptance remain pending. A direct email-correction route and DNS typo suggestions remain proposals.
+Verify the consolidated revision through the PR gates, including the browser suite. Live provider and physical-device acceptance remain pending. The candidate includes an email-correction route for authenticated provider rejections; optional DNS typo suggestions remain a proposal.
 
 ## Ordered work after this slice
 

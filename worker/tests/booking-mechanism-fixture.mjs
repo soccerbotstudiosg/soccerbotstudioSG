@@ -34,7 +34,8 @@ export async function createBookingMechanism(options = {}) {
   const day = new Date(Date.now() + 3 * 86400000);
   while (day.getUTCDay() !== 3) day.setUTCDate(day.getUTCDate() + 1);
   const date = day.toISOString().slice(0, 10);
-  const startMs = Date.parse(date + "T12:00:00+08:00");
+  const startMs =
+    Date.parse(date + "T12:00:00+08:00") + (options.startSlot ?? 0) * 3000000;
   const fixtures = JSON.parse(
     readFileSync("worker/tests/native-fixtures.json", "utf8"),
   ).responses;
@@ -380,7 +381,7 @@ export async function createBookingMechanism(options = {}) {
                         wall(startMs + i * 3000000).slice(11),
                       ).slice(batchBooks)
                     : !booked
-                      ? ["12:00:00"]
+                      ? [wall(startMs).slice(11)]
                       : []
                   : [];
             }
@@ -492,7 +493,8 @@ export async function createBookingMechanism(options = {}) {
         throw new Error("Unexpected simulated provider request");
       },
     }),
-    unsafeInspectDurableObjects: options.displayWarming === true,
+    unsafeInspectDurableObjects:
+      options.displayWarming === true || options.inspectCoordinator === true,
   });
   const mf = new Miniflare(runtimeOptions());
   bot.attach(mf);

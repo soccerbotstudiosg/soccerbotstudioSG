@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { build } from "esbuild";
 import { createBookingMechanism } from "./booking-mechanism-fixture.mjs";
+import { createBookingCollision } from "./booking-collision-fixture.mjs";
 
 /** Consume each checkout response before waiting for competing requests. */
 async function checkoutResult(pending, expectedStatus) {
@@ -5997,7 +5998,9 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
                 ? "-32054"
                 : scenario === "internal"
                   ? -32603
-                  : scenario === "email-rejection"
+                  : ["email-rejection", "foreign", "ambiguous"].includes(
+                        scenario,
+                      )
                     ? -32062
                     : scenario === "date-rejection"
                       ? -32053
@@ -6041,13 +6044,17 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
         c.input.key,
       );
       assert.equal(staleAccess.resolved_checkout, 0);
-      const send = () =>
-        scenario === "direct-rejection"
+      const emailRecoveryHeaders = {
+        ...c.headers,
+        "X-Booking-Email-Recovery": "1",
+      };
+      const send = (headers = emailRecoveryHeaders) =>
+        scenario === "direct-rejection" || scenario === "email-rejection"
           ? m.mf.dispatchFetch(
               m.origin + `/api/booking/checkout/${c.input.key}`,
               {
                 method: "POST",
-                headers: c.headers,
+                headers,
                 body: JSON.stringify({ ...c.input, accepted: true }),
               },
             )
@@ -6060,10 +6067,13 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
         "email-rejection",
         "direct-rejection",
       ].includes(scenario);
-      assert.deepEqual(
-        result.creationResolution,
-        rejected ? { state: "not_created" } : undefined,
-      );
+      const expectedResolution =
+        scenario === "email-rejection"
+          ? { state: "not_created", reason: "contact_email_rejected" }
+          : rejected
+            ? { state: "not_created" }
+            : undefined;
+      assert.deepEqual(result.creationResolution, expectedResolution);
       const retained = await m.db
         .prepare(
           "SELECT result_json FROM native_checkout_grants WHERE attempt_id=?",
@@ -6079,6 +6089,16 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
           .bind(c.input.key)
           .first();
         assert.equal(proof.evidence_source, "correlated_rpc_rejection");
+        const archive = await m.db
+          .prepare(
+            "SELECT result_json FROM rejected_native_checkout_grants WHERE attempt_id=?",
+          )
+          .bind(c.input.key)
+          .first();
+        assert.deepEqual(
+          JSON.parse(archive.result_json).creationResolution,
+          expectedResolution,
+        );
         assert.match(
           proof.evidence_reference,
           /^book:-320(?:5[34]|62):[a-f0-9-]+$/,
@@ -6124,14 +6144,26 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
       }
       const contextResponse = await m.mf.dispatchFetch(
         m.origin + `/api/attempts/${c.input.key}/checkout`,
-        { headers: c.headers },
+        { headers: emailRecoveryHeaders },
       );
       const context = await contextResponse.json();
       assert.equal(context.bookingIssue, rejected ? undefined : "incomplete");
-      assert.deepEqual(
-        context.creationResolution,
-        rejected ? { state: "not_created" } : undefined,
-      );
+      assert.deepEqual(context.creationResolution, expectedResolution);
+      if (rejected) {
+        const status = await checkoutResult(
+          m.mf.dispatchFetch(
+            m.origin + `/api/attempts/${c.input.key}/confirmation`,
+            { headers: emailRecoveryHeaders },
+          ),
+          200,
+        );
+        assert.equal(status.status, "invalid");
+        assert.deepEqual(status.creationResolution, expectedResolution);
+        assert.doesNotMatch(
+          JSON.stringify([result, context, status]),
+          /book:-320|rpcCode|evidence_reference|private-provider|private-customer/,
+        );
+      }
       assert.equal(context.checkout.state, "unavailable");
       assert.doesNotMatch(
         JSON.stringify(context),
@@ -6184,6 +6216,19 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
           1,
         );
         if (scenario === "email-rejection") {
+          assert.deepEqual(await checkoutResult(send(c.headers), 409), replay);
+          for (const operation of ["checkout", "confirmation"]) {
+            const legacyRead = await checkoutResult(
+              m.mf.dispatchFetch(
+                m.origin + `/api/attempts/${c.input.key}/${operation}`,
+                { headers: c.headers },
+              ),
+              200,
+            );
+            assert.deepEqual(legacyRead.creationResolution, {
+              state: "not_created",
+            });
+          }
           const freshOffers = await checkoutResult(
             m.mf.dispatchFetch(
               m.origin + `/api/booking/availability/2/${m.date}?refresh=1`,
@@ -6201,9 +6246,20 @@ test("provider RPC errors retain numeric diagnostics without treating uncertaint
             }),
             200,
           );
+          // The legacy POST still archives full evidence for a later capable reader.
           assert.deepEqual(secondFailure.creationResolution, {
             state: "not_created",
           });
+          const secondArchive = await m.db
+            .prepare(
+              "SELECT result_json FROM rejected_native_checkout_grants WHERE attempt_id=?",
+            )
+            .bind(retry)
+            .first();
+          assert.deepEqual(
+            JSON.parse(secondArchive.result_json).creationResolution,
+            expectedResolution,
+          );
           assert.equal(
             await m.db
               .prepare("SELECT COUNT(*) AS n FROM no_creation_resolutions")
@@ -6667,5 +6723,227 @@ test("background checkout recovery distinguishes a completed book error from a l
     } finally {
       await m.close();
     }
+  }
+});
+
+/** Submit a real customer checkout through the Worker for the specified original sessions. */
+function collisionCheckout(m, customer, key, starts, status = 200) {
+  return checkoutResult(
+    m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${key}`, {
+      method: "POST",
+      headers: {
+        ...customer.headers,
+        "X-Booking-Bot-Proof": `synthetic-checkout-${crypto.randomUUID()}`,
+      },
+      body: JSON.stringify({
+        ...customer.input,
+        key,
+        accepted: true,
+        sessions: starts.map((startMs) => ({
+          ...customer.input.sessions[0],
+          startMs,
+        })),
+      }),
+    }),
+    status,
+  );
+}
+
+function collisionContext(m, customer, key, status = 200) {
+  return checkoutResult(
+    m.mf.dispatchFetch(m.origin + `/api/attempts/${key}/checkout`, {
+      headers: customer.headers,
+    }),
+    status,
+  );
+}
+
+/** Read the first checkout's immutable evidence and current persisted provider references together. */
+function collisionOriginalProof(m, key) {
+  return m.db
+    .prepare(
+      `SELECT a.intent_hash,a.association_json,a.deadline_ms,d.fence,d.outcome,
+    c.booking_created_ms,c.payment_window_ms,h.expires_ms,p.reference,p.request_id,p.checkout_url
+    FROM attempts a JOIN dispatches d ON d.attempt_id=a.id AND d.operation='booking.create'
+    JOIN checkout_progress c ON c.attempt_id=a.id JOIN hitpay_holds h ON h.attempt_id=a.id
+    JOIN hitpay_payments p ON p.attempt_id=a.id WHERE a.id=?`,
+    )
+    .bind(key)
+    .first();
+}
+
+test("overlapping customer checkouts retain a partial batch without adopting the first customer's booking or payment", async () => {
+  const m = await createBookingCollision({ checkoutBotProof: false });
+  try {
+    const first = await customer(m);
+    const second = await customer(m);
+    assert.notEqual(first.headers.cookie, second.headers.cookie);
+    second.input.contact.email = "second@example.test";
+    const a = first.input.key,
+      b = second.input.key;
+    const paidLink = await collisionCheckout(m, first, a, [m.heldStartMs]);
+    assert.equal(paidLink.paymentAvailable, true);
+    const proof = await collisionOriginalProof(m, a);
+    assert.ok(proof?.request_id);
+    assert.deepEqual(JSON.parse(proof.association_json).bookingIds, ["701"]);
+    const pending = collisionCheckout(m, second, b, m.batchStarts);
+    await Promise.race([
+      m.secondAttemptReached,
+      pending.then((result) => {
+        throw new Error(
+          "Partial checkout exited before the second booking: " +
+            JSON.stringify(result),
+        );
+      }),
+    ]);
+    assert.deepEqual(m.providerBookings(), [
+      { startMs: m.heldStartMs, bookingId: "701" },
+      { startMs: m.batchStarts[0], bookingId: "702" },
+    ]);
+    const firstItem = await m.db
+      .prepare(
+        "SELECT outcome,reference_id FROM session_effects WHERE attempt_id=? AND step='session:0'",
+      )
+      .bind(b)
+      .first();
+    assert.deepEqual(firstItem, { outcome: "observed", reference_id: "702" });
+    assert.deepEqual(await collisionOriginalProof(m, a), proof);
+    m.releaseSecondAttempt();
+    const incomplete = await pending;
+    assert.equal(incomplete.state, "recovery_required");
+    assert.equal(incomplete.paymentAvailable, false);
+    assert.equal(incomplete.creationResolution, undefined);
+    const observed = await m.db
+      .prepare(
+        "SELECT step,outcome,reference_id FROM session_effects WHERE attempt_id=? AND step IN ('native-batch','session:0','session:1') ORDER BY step",
+      )
+      .bind(b)
+      .all();
+    assert.deepEqual(observed.results, [
+      { step: "native-batch", outcome: "observed", reference_id: "601" },
+      { step: "session:0", outcome: "observed", reference_id: "702" },
+      { step: "session:1", outcome: "unknown", reference_id: null },
+    ]);
+    for (let pass = 0; pass < 2; pass++) {
+      const context = await collisionContext(m, second, b);
+      assert.equal(context.attemptId, b);
+      assert.deepEqual(
+        context.summary.sessions.map((item) => item.startMs),
+        m.batchStarts,
+      );
+      assert.equal(context.bookingIssue, "incomplete");
+      assert.deepEqual(context.checkout, { state: "unavailable" });
+      assert.equal(context.creationResolution, undefined);
+      assert.equal(context.payment, undefined);
+      assert.equal(
+        (await collisionContext(m, first, a)).checkout.url,
+        proof.checkout_url,
+      );
+    }
+    await collisionContext(m, second, a, 404);
+    await collisionContext(m, first, b, 404);
+    const replay = await collisionCheckout(m, second, b, m.batchStarts);
+    assert.equal(replay.paymentAvailable, false);
+    assert.deepEqual(await collisionOriginalProof(m, a), proof);
+    assert.deepEqual(
+      (await m.db.prepare("SELECT attempt_id FROM hitpay_payments").all())
+        .results,
+      [{ attempt_id: a }],
+    );
+    assert.deepEqual(
+      (await m.db.prepare("SELECT attempt_id FROM hitpay_holds").all()).results,
+      [{ attempt_id: a }],
+    );
+    assert.equal(
+      await m.db
+        .prepare("SELECT 1 FROM no_creation_resolutions WHERE attempt_id=?")
+        .bind(b)
+        .first(),
+      null,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      3,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "createBatch").length,
+      1,
+    );
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "closeBatch").length,
+      0,
+    );
+    assert.equal(
+      m.calls.filter((call) => isHitPayApiCall(call) && call.method === "POST")
+        .length,
+      1,
+    );
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    m.releaseSecondAttempt();
+    await m.close();
+  }
+});
+
+test("a second selection under the same checkout cookie preserves the original booking payment and deadline", async () => {
+  const m = await createBookingCollision({ checkoutBotProof: false });
+  try {
+    const owner = await customer(m);
+    const a = owner.input.key,
+      b = crypto.randomUUID();
+    assert.equal(
+      (await collisionCheckout(m, owner, a, [m.heldStartMs])).paymentAvailable,
+      true,
+    );
+    const proof = await collisionOriginalProof(m, a);
+    assert.ok(proof?.request_id);
+    const originalContext = await collisionContext(m, owner, a);
+    const callsBefore = m.calls.length;
+    const denied = await collisionCheckout(
+      m,
+      owner,
+      b,
+      [m.batchStarts[0]],
+      503,
+    );
+    assert.deepEqual(denied, { error: "checkout_already_active" });
+    const restored = await checkoutResult(
+      m.mf.dispatchFetch(m.origin + "/api/booking/current", {
+        headers: owner.headers,
+      }),
+      200,
+    );
+    assert.equal(restored.attemptId, a);
+    const current = await collisionContext(m, owner, a);
+    assert.deepEqual(current.summary.sessions, [
+      { startMs: m.heldStartMs, players: 2 },
+    ]);
+    assert.deepEqual(current.checkout, originalContext.checkout);
+    assert.equal(
+      current.checking.paymentExpiresAtMs,
+      originalContext.checking.paymentExpiresAtMs,
+    );
+    assert.equal(
+      current.checking.holdExpiresAtMs,
+      originalContext.checking.holdExpiresAtMs,
+    );
+    assert.equal(current.checkout.url, proof.checkout_url);
+    assert.deepEqual(await collisionOriginalProof(m, a), proof);
+    assert.deepEqual(
+      (await m.db.prepare("SELECT id FROM attempts").all()).results,
+      [{ id: a }],
+    );
+    assert.deepEqual(
+      (await m.db.prepare("SELECT attempt_id FROM hitpay_payments").all())
+        .results,
+      [{ attempt_id: a }],
+    );
+    assert.deepEqual(m.providerBookings(), [
+      { startMs: m.heldStartMs, bookingId: "701" },
+    ]);
+    assert.equal(m.calls.length, callsBefore);
+    assert.deepEqual(m.unexpected, []);
+  } finally {
+    await m.close();
   }
 });

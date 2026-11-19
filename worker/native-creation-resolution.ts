@@ -66,6 +66,19 @@ type Authority =
       dispatchFence: number;
     };
 
+/** Project only the actionable contact rejection from an immutable, correlated single-book proof. */
+function publicCreationResolution(source: string, reference: string) {
+  if (
+    source === "correlated_rpc_rejection" &&
+    reference.length === "book:-32062:".length + 36 &&
+    /^book:-32062:[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
+      reference,
+    )
+  )
+    return { state: "not_created", reason: "contact_email_rejected" } as const;
+  return { state: "not_created" } as const;
+}
+
 /** Atomically retire one exact attempt only after explicit no-creation evidence. */
 export async function recordNoCreation(
   env: Env,
@@ -75,7 +88,7 @@ export async function recordNoCreation(
   const proof = proofSchema.parse(input);
   const now = Date.now();
   if (proof.verifiedMs > now || proof.dispatchFence > proof.version)
-    return false;
+    return undefined;
   const operator = authority.kind === "operator";
   if (
     !operator &&
@@ -83,7 +96,7 @@ export async function recordNoCreation(
       (authority.kind === "correlated_rpc_rejection" &&
         !isSingleBookPrecondition(authority.rpcCode)))
   )
-    return false;
+    return undefined;
   const source = operator
     ? "operator_verified_provider"
     : "correlated_rpc_rejection";
@@ -92,7 +105,7 @@ export async function recordNoCreation(
     : authority.kind === "correlated_rpc_search"
       ? `book-search:${authority.rpcCode}:${authority.requestId}`
       : `book:${authority.rpcCode}:${proof.evidenceReference}`;
-  if (reference.length > 128) return false;
+  if (reference.length > 128) return undefined;
   const db = env.STATE.withSession("first-primary");
   const guard = `a.id=? AND a.intent_hash=? AND a.version=? AND a.state IN ('dispatching','recovery_required')
     AND a.association_json IS NULL AND a.observation_json IS NULL
@@ -110,10 +123,11 @@ export async function recordNoCreation(
         ? "AND EXISTS(SELECT 1 FROM developer_operations o WHERE o.capability_hash=? AND o.operation='native_creation_resolution' AND o.state='granted' AND o.expires_ms>? AND o.result_json=?)"
         : "AND json_array_length(a.intent_json,'$.sessions')=1 AND EXISTS(SELECT 1 FROM session_effects e WHERE e.attempt_id=a.id AND e.step='session:0' AND e.outcome='unknown' AND e.reference_id IS NULL) AND NOT EXISTS(SELECT 1 FROM session_effects e WHERE e.attempt_id=a.id AND e.step!='session:0')"
     }`;
+  const creationResolution = publicCreationResolution(source, reference);
   const terminal = JSON.stringify({
     state: "recovery_required",
     paymentAvailable: false,
-    creationResolution: { state: "not_created" },
+    creationResolution,
   });
   const results = await db.batch([
     db
@@ -194,7 +208,7 @@ export async function recordNoCreation(
         ]
       : []),
   ]);
-  return results[1].meta.changes === 1;
+  return results[1].meta.changes === 1 ? creationResolution : undefined;
 }
 
 /** Consume only a pre-scoped private operator attestation, never customer input. */
@@ -222,7 +236,7 @@ export async function operatorCreationResolution(
     result: {
       attemptId: parsed.data.attemptId,
       ...(resolved
-        ? { creationResolution: { state: "not_created" } }
+        ? { creationResolution: resolved }
         : { reason: "creation_resolution_not_permitted" }),
     },
   };
@@ -236,9 +250,11 @@ export async function retainedCreationResolution(
 ) {
   const found = await env.STATE.withSession("first-primary")
     .prepare(
-      "SELECT 1 FROM no_creation_resolutions n JOIN attempts a ON a.id=n.attempt_id WHERE a.id=? AND a.owner_id=? AND a.intent_hash=n.intent_hash AND a.version=n.attempt_version AND a.association_json IS NULL AND a.observation_json IS NULL",
+      "SELECT n.evidence_source,n.evidence_reference FROM no_creation_resolutions n JOIN attempts a ON a.id=n.attempt_id WHERE a.id=? AND a.owner_id=? AND a.intent_hash=n.intent_hash AND a.version=n.attempt_version AND a.association_json IS NULL AND a.observation_json IS NULL",
     )
     .bind(id, owner)
-    .first();
-  return found ? { state: "not_created" as const } : undefined;
+    .first<{ evidence_source: string; evidence_reference: string }>();
+  return found
+    ? publicCreationResolution(found.evidence_source, found.evidence_reference)
+    : undefined;
 }

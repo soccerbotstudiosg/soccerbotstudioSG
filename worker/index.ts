@@ -162,6 +162,16 @@ export default {
         },
       });
     };
+    // Older open tabs strictly decode the original no-creation result.
+    const checkoutJson = (body: object) => {
+      if (
+        request.headers.get("X-Booking-Email-Recovery") !== "1" &&
+        "creationResolution" in body &&
+        body.creationResolution
+      )
+        return json({ ...body, creationResolution: { state: "not_created" } });
+      return json(body);
+    };
     return traced(correlationId, "http", async () => {
       try {
         if (!url.pathname.startsWith("/api")) {
@@ -314,7 +324,7 @@ export default {
             checkingHeaders["Server-Timing"] =
               outcome.serverTiming +
               `, checkout_http;dur=${Math.max(0, performance.now() - requestStarted).toFixed(2)}`;
-          return json(unwrapRpcOutcome(outcome));
+          return checkoutJson(unwrapRpcOutcome(outcome));
         }
         if (url.pathname === "/api/booking/prepare") {
           if (request.method !== "POST")
@@ -551,7 +561,7 @@ export default {
           if (request.method !== "POST")
             throw new ApiError(405, "operation_unavailable");
           await authenticate(request, env, Date.now());
-          return json(
+          return checkoutJson(
             unwrapRpcOutcome(
               await coordinatorStub(env).nativeCheckout(
                 {
@@ -690,7 +700,7 @@ export default {
           url.pathname,
         );
         if (match && request.method === "GET")
-          return json(
+          return checkoutJson(
             await confirmationRead(match[1], "status", () =>
               confirmation(request, env, match[1], now, (window) => {
                 checkingHeaders["X-Checking-Deadline"] = String(
@@ -726,7 +736,7 @@ export default {
           url.pathname,
         );
         if (checkout && request.method === "GET")
-          return json(
+          return checkoutJson(
             await confirmationRead(checkout[1], "context", () =>
               checkoutContext(request, env, checkout[1], now),
             ),

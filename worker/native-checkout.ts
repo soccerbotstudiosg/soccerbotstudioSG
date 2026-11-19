@@ -56,6 +56,7 @@ import {
   nativeCustomerHours,
 } from "./prebooking";
 import {
+  type CreationResolution,
   type hitpayHandoffSchema,
   nativeAvailabilitySchema,
   nativePrepareSchema,
@@ -595,7 +596,7 @@ export async function executeNativeCheckout(options: {
     state: string;
     paymentAvailable: boolean;
     rejectedSessionIndex?: number;
-    creationResolution?: { state: "not_created" };
+    creationResolution?: CreationResolution;
     checkout?: z.infer<typeof hitpayHandoffSchema>;
   } = {
     state: "recovery_required",
@@ -941,8 +942,9 @@ export async function executeNativeCheckout(options: {
     if (
       result.state === "recovery_required" &&
       singleBookRejection &&
-      (!consolidated || stagedVersion !== undefined) &&
-      (await recordNoCreation(
+      (!consolidated || stagedVersion !== undefined)
+    ) {
+      const creationResolution = await recordNoCreation(
         env,
         {
           attemptId,
@@ -959,14 +961,15 @@ export async function executeNativeCheckout(options: {
           rpcCode: singleBookRejection.rejectionCode,
           dispatchFence: (stagedVersion ?? row.version) + 1,
         },
-      ))
-    )
-      return {
-        attemptId,
-        state: "recovery_required",
-        paymentAvailable: false,
-        creationResolution: { state: "not_created" as const },
-      };
+      );
+      if (creationResolution)
+        return {
+          attemptId,
+          state: "recovery_required",
+          paymentAvailable: false,
+          creationResolution,
+        };
+    }
     if (rawEvidence.statement) {
       const retained = await rawEvidence.statement.run();
       if (retained.meta.changes !== 1)

@@ -193,6 +193,7 @@ function ProtectedConfirmationBody({
   onCreationResolved?: (
     attemptId: string,
     sessions?: CheckoutContext["summary"]["sessions"],
+    reason?: "contact_email_rejected",
   ) => boolean;
   onSelectionRejected?: (
     attemptId: string,
@@ -885,12 +886,18 @@ function ProtectedConfirmationBody({
       statusCreationResolution ??
       (contextMatches ? context.value.creationResolution : undefined)
     );
-  const finishCreationResolution = useEffectEvent((id: string) =>
-    onCreationResolved?.(
-      id,
-      contextMatches ? context.value.summary.sessions : undefined,
-    ),
-  );
+  const finishCreationResolution = useEffectEvent((id: string) => {
+    const sessions = contextMatches
+      ? context.value.summary.sessions
+      : undefined;
+    const reason = (
+      statusCreationResolution ??
+      (contextMatches ? context.value.creationResolution : undefined)
+    )?.reason;
+    return reason
+      ? onCreationResolved?.(id, sessions, reason)
+      : onCreationResolved?.(id, sessions);
+  });
   useEffect(() => {
     if (
       creationResolved &&

@@ -144,6 +144,9 @@ async function protectedRead(
       signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
       headers: {
         Accept: "application/json",
+        ...(operation === "checkout" || operation === "confirmation"
+          ? { "X-Booking-Email-Recovery": "1" }
+          : {}),
         ...(displayDetails ? { "X-Booking-Details": "1" } : {}),
         ...(refreshReceipt ? { "X-Booking-Refresh": "1" } : {}),
       },

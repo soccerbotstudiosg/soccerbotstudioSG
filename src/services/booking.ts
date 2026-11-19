@@ -410,6 +410,10 @@ async function nativeRequest(
     redirect: "error",
     headers: {
       Accept: "application/json",
+      ...(path.startsWith("/api/booking/checkout/") ||
+      path.startsWith("/api/booking/native/")
+        ? { "X-Booking-Email-Recovery": "1" }
+        : {}),
       ...(botToken ? { "X-Booking-Bot-Proof": botToken } : {}),
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
     },
@@ -896,7 +900,10 @@ export const liveBookingService: BookingService = defineBookingService({
         result.rejectedSessionIndex !== undefined
       )
         throw invalidResponse();
-      throw new BookingServiceError("booking_not_created", BOOKING_NOT_CREATED);
+      throw new BookingServiceError(
+        result.creationResolution.reason ?? "booking_not_created",
+        BOOKING_NOT_CREATED,
+      );
     }
     if (
       result.state === "restart_required" ||

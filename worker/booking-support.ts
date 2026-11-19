@@ -1,7 +1,16 @@
 import { ADDRESS, CONTACT_METHODS } from "../src/domain/catalog";
-import { bookingHelpHtml } from "./notification-template";
+import {
+  bookingHelpHtml,
+  rejectedBookingEmailNotice,
+} from "./notification-template";
 import { authenticate } from "./access";
-import { ApiError, identitySenderSchema, liveCustomerAccess } from "./policy";
+import { retainedCreationResolution } from "./native-creation-resolution";
+import {
+  ApiError,
+  digest,
+  identitySenderSchema,
+  liveCustomerAccess,
+} from "./policy";
 import { intentSchema } from "./journal";
 import { identityRequest } from "./provider-transport";
 import { z } from "zod";
@@ -19,21 +28,36 @@ export async function requestBookingHelp(
   const db = env.STATE.withSession("first-primary");
   const attempt = await db
     .prepare(
-      "SELECT intent_json,association_json,state,created_ms,EXISTS(SELECT 1 FROM hitpay_payments p WHERE p.attempt_id=a.id AND p.paid_ms IS NOT NULL) AS paid FROM attempts a WHERE id=? AND owner_id=? AND NOT EXISTS(SELECT 1 FROM no_creation_resolutions r WHERE r.attempt_id=a.id)",
+      "SELECT a.intent_json,a.intent_hash,a.association_json,a.state,a.created_ms,EXISTS(SELECT 1 FROM no_creation_resolutions n WHERE n.attempt_id=a.id) AS has_resolution,EXISTS(SELECT 1 FROM hitpay_payments p WHERE p.attempt_id=a.id AND p.paid_ms IS NOT NULL) AS paid FROM attempts a WHERE a.id=? AND a.owner_id=?",
     )
     .bind(attemptId, access.owner_id)
     .first<{
       intent_json: string;
+      intent_hash: string;
+      has_resolution: number;
       association_json: string | null;
       state: string;
       created_ms: number;
       paid: number;
     }>();
   if (!attempt) throw new ApiError(404, "support_unavailable");
+  const resolved = attempt.has_resolution === 1;
+  if (
+    resolved &&
+    (await retainedCreationResolution(env, attemptId, access.owner_id))
+      ?.reason !== "contact_email_rejected"
+  )
+    throw new ApiError(404, "support_unavailable");
   const intent = intentSchema.parse(JSON.parse(attempt.intent_json));
   if (
     !intent.contact ||
-    now < attempt.created_ms + 30000 ||
+    (resolved
+      ? intent.customerMode !== "booking-contact" ||
+        intent.customerId !== access.owner_id ||
+        intent.accountId !== env.DEPLOYMENT_ACCOUNT_ID ||
+        intent.environmentId !== env.ENVIRONMENT ||
+        (await digest(attempt.intent_json)) !== attempt.intent_hash
+      : now < attempt.created_ms + 30000) ||
     !["dispatching", "observed", "recovery_required"].includes(attempt.state)
   )
     throw new ApiError(409, "support_unavailable");
@@ -48,19 +72,21 @@ export async function requestBookingHelp(
     /\s/.test(key)
   )
     throw new ApiError(503, "support_unavailable");
+  // A pre-resolution report for an ultimately uncreated booking can only have been
+  // booking_unconfirmed. Any observed association or payment permanently excludes
+  // no-creation. Keep new checkout-level help distinct so retries need no clock ordering.
+  const category = attempt.paid
+    ? "payment_confirmation_pending"
+    : resolved || attempt.association_json
+      ? "checkout_unconfirmed"
+      : "booking_unconfirmed";
+  const sameResolution =
+    "EXISTS(SELECT 1 FROM no_creation_resolutions WHERE attempt_id=?)=?";
   await db
     .prepare(
-      "INSERT OR IGNORE INTO booking_support_reports(attempt_id,created_ms,category,state,next_ms,notification_version) VALUES(?,?,?,'pending',0,1)",
+      `INSERT OR IGNORE INTO booking_support_reports(attempt_id,created_ms,category,state,next_ms,notification_version) SELECT ?,?,?,'pending',0,1 WHERE ${sameResolution}`,
     )
-    .bind(
-      attemptId,
-      now,
-      attempt.paid
-        ? "payment_confirmation_pending"
-        : attempt.association_json
-          ? "checkout_unconfirmed"
-          : "booking_unconfirmed",
-    )
+    .bind(attemptId, now, category, attemptId, attempt.has_resolution)
     .run();
   const report = await db
     .prepare(
@@ -81,18 +107,21 @@ export async function requestBookingHelp(
     throw new ApiError(503, "support_unavailable");
   const claim = await db
     .prepare(
-      "UPDATE booking_support_reports SET next_ms=? WHERE attempt_id=? AND state='pending' AND next_ms<=? RETURNING attempt_id",
+      `UPDATE booking_support_reports SET next_ms=? WHERE attempt_id=? AND state='pending' AND next_ms<=? AND ${sameResolution} RETURNING attempt_id`,
     )
-    .bind(now + 30000, attemptId, now)
+    .bind(now + 30000, attemptId, now, attemptId, attempt.has_resolution)
     .first();
   if (!claim) throw new ApiError(429, "support_retry_later", undefined, 30);
   const contact = intent.contact;
+  const rejectionReport =
+    resolved && report.category === "checkout_unconfirmed";
+  const stage = rejectionReport ? "contact_email_rejected" : report.category;
   // Build report content from retained evidence; callers cannot choose recipients.
   const text = [
     "Customer requested booking help",
     "",
     `Attempt: ${attemptId}`,
-    `Stage: ${report.category}`,
+    `Stage: ${stage}`,
     `Requested: ${new Date(report.created_ms).toISOString()}`,
     `Name: ${contact.name}`,
     `Email: ${contact.email}`,
@@ -107,7 +136,10 @@ export async function requestBookingHelp(
     }),
     "",
     `Booking amount: SGD ${money(intent.totalMinor)}`,
-    "Check the original attempt and provider records before making changes. This report does not prove failure or nonpayment.",
+    rejectionReport
+      ? rejectedBookingEmailNotice +
+        " Please help the customer check their booking email."
+      : "Check the original attempt and provider records before making changes. This report does not prove failure or nonpayment.",
   ].join("\n");
   const acknowledgement = [
     `${report.notification_version === 1 ? "Hello" : "Hi"} ${contact.name},`,
@@ -123,7 +155,10 @@ export async function requestBookingHelp(
     "",
     `Booking amount: SGD ${money(intent.totalMinor)}`,
     "",
-    "This email acknowledges your help request, not a confirmed booking. Please do not pay again while we check your original booking and payment status.",
+    rejectionReport
+      ? rejectedBookingEmailNotice +
+        " The studio will help you check the email address before trying again."
+      : "This email acknowledges your help request, not a confirmed booking. Please do not pay again while we check your original booking and payment status.",
     "You can reply to this email to contact the studio.",
     "",
     "SoccerBotStudio Singapore",
@@ -172,7 +207,7 @@ export async function requestBookingHelp(
             ? {
                 html: bookingHelpHtml(
                   env.APP_ORIGIN,
-                  report.category,
+                  stage,
                   contact.name,
                   [...fields, ["Internal attempt", attemptId]],
                   true,
@@ -186,30 +221,35 @@ export async function requestBookingHelp(
     );
     // Both messages keep distinct stable keys. A partial/uncertain send retries
     // the original payloads within the existing bounded idempotency window.
-    z.object({ id: z.string().uuid() }).parse(
-      await identityRequest(
-        "support-acknowledgement",
-        key,
-        {
-          sender: sender.data,
-          recipient: contact.email,
-          text: acknowledgement,
-          ...(report.notification_version === 1
-            ? {
-                html: bookingHelpHtml(
-                  env.APP_ORIGIN,
-                  report.category,
-                  contact.name,
-                  fields,
-                  false,
-                ),
-              }
-            : {}),
-          idempotencyKey: `booking-support-acknowledgement/${attemptId}`,
-        },
-        controller.signal,
-      ),
-    );
+    try {
+      z.object({ id: z.string().uuid() }).parse(
+        await identityRequest(
+          "support-acknowledgement",
+          key,
+          {
+            sender: sender.data,
+            recipient: contact.email,
+            text: acknowledgement,
+            ...(report.notification_version === 1
+              ? {
+                  html: bookingHelpHtml(
+                    env.APP_ORIGIN,
+                    stage,
+                    contact.name,
+                    fields,
+                    false,
+                  ),
+                }
+              : {}),
+            idempotencyKey: `booking-support-acknowledgement/${attemptId}`,
+          },
+          controller.signal,
+        ),
+      );
+    } catch (error) {
+      // Staff already has the request. Its booking contact may also be unreachable by email.
+      if (!resolved) throw error;
+    }
     await db
       .prepare(
         "UPDATE booking_support_reports SET state='sent',sent_ms=? WHERE attempt_id=? AND state='pending'",

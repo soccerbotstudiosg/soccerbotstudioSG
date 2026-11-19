@@ -80,6 +80,7 @@ export type BookingErrorCode =
   | "reservation_expired"
   | "checkout_window_blocked"
   | "checkout_already_active"
+  | "contact_email_rejected"
   | "booking_not_created"
   | "checkout_not_started"
   | "checkout_timeout"

@@ -1,6 +1,9 @@
 "use client";
-import { BookingHelp } from "./booking-help";
-import { CHECKOUT_UNRESOLVED } from "@/domain/booking-messages";
+import { BookingHelp, RejectedEmailHelp } from "./booking-help";
+import {
+  CHECKOUT_UNRESOLVED,
+  CALENDAR_CHECKOUT_PAUSED,
+} from "@/domain/booking-messages";
 import { useMobileBooking } from "./booking-tools";
 import { BookingHeading } from "./booking-heading";
 import Link from "next/link";
@@ -97,6 +100,7 @@ export function TimeStep({
   const {
     selectionNotice,
     selectionNoticeSlots,
+    emailRejection,
     browsingCheckout,
     suppressedSlots,
     action,
@@ -400,17 +404,11 @@ export function TimeStep({
     <div className="booking-help-content">
       <p>
         {selectionNotice === CHECKOUT_UNRESOLVED ? (
-          <strong>{selectionNotice}</strong>
+          <strong>{CALENDAR_CHECKOUT_PAUSED}</strong>
         ) : (
           selectionNotice
         )}
       </p>
-      {selectionNotice === CHECKOUT_UNRESOLVED && (
-        <p>
-          You can continue once we know what happened to your first checkout.
-          Starting another now could create a duplicate booking.
-        </p>
-      )}
       {selectionNoticeSlots.length > 0 && (
         <ul>
           {selectionNoticeSlots.map((slot) => (
@@ -433,6 +431,13 @@ export function TimeStep({
   const notices = (
     <Fragment key="booking-notices">
       {recoveryNotice}
+      {emailRejection && (
+        <RejectedEmailHelp
+          attemptId={emailRejection.id}
+          email={emailRejection.email}
+          availability={emailRejection.phase}
+        />
+      )}
       {selectionNotice &&
         (selectionNotice === CHECKOUT_UNRESOLVED && attempt ? (
           <BookingHelp

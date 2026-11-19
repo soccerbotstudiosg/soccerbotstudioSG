@@ -1,5 +1,6 @@
 "use client";
-import { focusFormError } from "@/components/form-focus";
+import { RejectedEmailHelp } from "./booking-help";
+import { focusField, focusFormError } from "@/components/form-focus";
 import {
   profileAccessGeneration,
   reportProfileAccessLoss,
@@ -49,6 +50,7 @@ export function DetailsStep({
       saveContact,
       action,
       selectionNotice,
+      emailRejection,
       cancel,
     } = useBooking(),
     router = useRouter(),
@@ -163,6 +165,12 @@ export function DetailsStep({
   const [checkedEmail, setCheckedEmail] = useState<string | null>(null);
   const [emailChecking, setEmailChecking] = useState(false);
   const [failedEmail, setFailedEmail] = useState<string | null>(null);
+  const rejectionId = !profileOnly ? emailRejection?.id : undefined;
+  useEffect(() => {
+    if (!rejectionId || (needsProfile && !profileRead.ready)) return;
+    setCheckedEmail(null);
+    focusField(document.getElementById("email"));
+  }, [rejectionId, needsProfile, profileRead.ready]);
   const emailWork = useRef<AbortController | null>(null);
   useEffect(
     () => () => {
@@ -358,6 +366,7 @@ export function DetailsStep({
           {key === "email" && draft.mode === "member" ? (
             <div
               id={key}
+              tabIndex={rejectionId ? -1 : undefined}
               className="verified-email-value"
               aria-labelledby="verified-email-label"
             >
@@ -563,6 +572,12 @@ export function DetailsStep({
           ? "Update your saved contact."
           : "Enter your contact details."}
       </p>
+      {!profileOnly && emailRejection && (
+        <RejectedEmailHelp
+          attemptId={emailRejection.id}
+          email={emailRejection.email}
+        />
+      )}
       <form
         id="details-form"
         noValidate
