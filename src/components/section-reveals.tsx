@@ -127,11 +127,10 @@ function ScrollTopControl() {
   };
   useEffect(() => {
     const update = () => {
-      setActivity({
-        visible:
-          window.scrollY > 0 ||
-          Object.values(interaction.current).some(Boolean),
-      });
+      const visible = window.scrollY > 0;
+      if (!visible)
+        interaction.current = { focus: false, hover: false, press: false };
+      setActivity({ visible });
       scheduleHide();
     };
     const release = () => {

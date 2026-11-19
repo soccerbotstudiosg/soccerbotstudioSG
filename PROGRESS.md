@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-19 November2026: PR101 follow-up on `fix/booking-status-alignment`, based on9e57f88. Preserve its approved media/location/loader changes. Add visible disabled outlet/session Continue, clickable details/enquiry validation with first-invalid-field focus, interaction-preserving Back-to-top, and enabled email-check hover/focus cues. Repair the stale live-email refresh-message selector and CodeQL53's lowercase-only test assertion. User authorizes consolidated checks and staging CI push; no merge. iPad keyboard-dismiss behavior remains deferred.
+19 November2026: repair PR101's Back-to-top regression on `fix/booking-status-alignment`, based onc7a4af5. The hover retention must not keep the circle visible at scrollY0. Clear interaction state at the top so later scrolling retains normal idle expiry. Preserve the existing browser guards and all prior approved changes. User authorizes repair/check/push for staging CI; no merge. iPad keyboard-dismiss behavior remains deferred.
 
 ## Next actions
 
-Focused component checks passed16 cases and isolated enquiry Worker checks passed12. Complete full non-browser verification, review changes, push existing PR101 and inspect exact-head CI/staging. CodeQL closure and browser/device acceptance remain pending. Failure evidence and scope are retained in [Journey](docs/journey.md). No local browser or live provider execution.
+The expanded local component regression failed against the old implementation as expected. Run affected checks and full local non-browser verification, then push existing PR101 and inspect final-head CI/staging. Prior run44441916819's frontend/backend browser failures share this one cause; Worker gate and both live-email browser shards passed. Evidence is retained in [Journey](docs/journey.md). No local browser or live provider execution.
 
 ## Ordered work after this slice
 
