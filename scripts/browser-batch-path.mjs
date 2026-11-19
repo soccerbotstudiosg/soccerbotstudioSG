@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-export const batchCount = 54;
+export const batchCount = 57;
 export const shardCount = 2;
 /** Keep each short-lived browser batch's original evidence separate. */
 export function browserEvidenceDirectory(env = process.env) {
