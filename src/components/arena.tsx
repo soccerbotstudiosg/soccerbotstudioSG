@@ -73,6 +73,8 @@ export function Arena() {
           <div className="arena-photograph" aria-hidden="true">
             <img
               src={studioMedia[0].src}
+              srcSet={studioMedia[0].srcSet}
+              sizes="104vw"
               width={2560}
               height={1707}
               alt=""

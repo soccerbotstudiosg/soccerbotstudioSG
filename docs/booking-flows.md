@@ -776,3 +776,7 @@ Verification-code help above Request another code: **Can’t find the email? Che
 Copied confirmed-booking summaries use labelled Date, Time, Session and Trainer lines. A single session has no numbered-list prefix; multiple sessions use standalone Session1/Session2 headings to avoid WhatsApp list indentation. Location appears once, followed by street/unit and postal code on separate lines. This changes clipboard presentation only.
 
 Enquiry date/time inputs keep native pickers and optional status, with visible accessible guidance: “Select a date.” and “Select a time (SGT).” Errors remain tied to blur/submission; hints do not change validation or submission rules.
+
+### Location popup copy (19 November 2026)
+
+Approved popup order: full address and postal code → daily opening hours → lift/unit diagram → “If coming up from the food court at #03-18, take the lift to Level 5 and turn left as you exit the lift lobby. Follow the blue route to #05-01.” → “Open in Google Maps” text link. Opening hours are not repeated on the hero. The map retains all three lift-bank markers; the curved-side bank has no guessed identifier.

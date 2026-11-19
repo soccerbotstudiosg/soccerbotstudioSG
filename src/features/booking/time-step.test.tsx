@@ -107,7 +107,7 @@ async function calendarScenario(mobile: boolean) {
     view.container.querySelector(".time-heading .calendar-context-cards"),
   ).toHaveTextContent("Apex @ Henderson");
   expect(
-    view.container.querySelector(".calendar-panel .calendar-duration-note"),
+    view.container.querySelector(".time-heading .calendar-duration-note"),
   ).toHaveTextContent("*40-min session · 10-min changeover.");
   fireEvent.click(
     screen.getByRole("button", { name: dateLabel(restoredDate) }),
@@ -135,6 +135,19 @@ async function calendarScenario(mobile: boolean) {
   const crossing = times().getByRole("button", { name: /14:30–15:10/ });
   expect(crossing).toHaveAttribute("aria-pressed", "true");
   expect(crossing).toHaveTextContent("Faisal Shahril");
+  const selectedWrap = crossing.closest(".time-choice-wrap")!;
+  expect(selectedWrap.querySelector(".time-slot-cue")).toBeNull();
+  expect(
+    selectedWrap.previousElementSibling?.querySelector(".time-slot-cue"),
+  ).toBeNull();
+  const nextWrap = times()
+    .getByRole("button", { name: /15:20–16:00/ })
+    .closest(".time-choice-wrap")!;
+  expect(nextWrap.querySelector(".time-slot-cue")).toBeNull();
+  const firstWrap = times()
+    .getByRole("button", { name: /12:00–12:40/ })
+    .closest(".time-choice-wrap")!;
+  expect(firstWrap.querySelector(".time-slot-cue")).not.toBeNull();
   expect(crossing).not.toHaveTextContent("instructor rotation");
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   const continues = screen.getAllByRole("link", {
@@ -156,6 +169,7 @@ async function calendarScenario(mobile: boolean) {
       screen.getByLabelText(`Trainer for ${restoredDate} at 15:20`),
       `${restoredDate}|15:20|demo|daniel`,
     );
+    expect(nextWrap.querySelector(".time-slot-cue")).toBeNull();
     const instructors = screen.getByRole("region", {
       name: "Your instructors",
     });
@@ -197,6 +211,7 @@ async function calendarScenario(mobile: boolean) {
       screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
       `${restoredDate}|12:00|demo|faisal`,
     );
+    expect(firstWrap.querySelector(".time-slot-cue")).toBeNull();
     expect(within(instructors).getAllByRole("article")).toHaveLength(2);
     expect(
       within(instructors)
@@ -224,7 +239,9 @@ async function calendarScenario(mobile: boolean) {
       }),
     );
     expect(within(instructors).getAllByRole("article")).toHaveLength(1);
+    expect(nextWrap.querySelector(".time-slot-cue")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(firstWrap.querySelector(".time-slot-cue")).not.toBeNull();
     expect(
       screen.queryByRole("region", { name: "Your instructors" }),
     ).not.toBeInTheDocument();

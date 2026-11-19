@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-19 November2026: PR100 merged as4a6444ec2944293dfb75b4ac87cbf2cbea34b1b2 after all required CI passed and staging servedf5e73aa. Current local branch `fix/booking-status-alignment` starts from that merged main revision.
+19 November 2026: consolidate on `fix/booking-status-alignment`, based on a2ad527 / PR101. Existing PR101 includes identity/Studio Back alignment and compact verification emails. This slice adds responsive WebP/initial mobile hero coverage, approved slot direction cues, the branded location diagram/popup and full-page loader message typography (timing unchanged). User authorised one full local non-browser test/guard pass then push for staging CI. No merge requested. Physical iPad keyboard-dismiss issue is explicitly deferred, not fixed by this slice.
 
 ## Next actions
 
-User requested aligned Studio Back icon/text, removal of the decorative Booking label and right-aligned guest/verified identity with exactly two verified lines. Local source now removes the label, removes the180px desktop badge cap, applies complete-email fitting on all widths and explicitly aligns the Studio Back text/icon. Focused component tests33/33, source guards, types and affected lint passed. Browser assertions cover the icon/text centre and email fitting; execution remains CI-owned. The location popup now includes the approved food-court lift and left-turn directions. Owner subsequently paused publication to address phone email readability. The first full check caught a duplicate browser-test variable; that naming issue is fixed, and the subsequent run was stopped at the owner pause. Owner has now resumed staging: finish consolidated verification, publish a new PR and verify actual staging deployment. Verification email now omits hero/background spacing, uses a160px logo with12px padding and keeps the code44px on mobile; compact body spacing puts the code upfront. Focused isolated email checks passed33/33 in /tmp/email-compact-tests-fixed.log. No booking access/payment/expiry behavior changed.
+Complete the local non-browser verification, review the full diff, publish to existing PR101 and check exact-head CI/staging. All three lift banks are shown, but curved-side lift identifiers remain unreadable and are not guessed. Real-device/wayfinding acceptance stays pending. No browser or live provider execution locally.
 
 ## Ordered work after this slice
 

@@ -22,6 +22,7 @@ type Props = {
   description: string;
   photo: {
     src: string;
+    srcSet: string;
     alt: string;
     width: number;
     height: number;
@@ -211,6 +212,8 @@ export function PromotionPanel({
             >
               <img
                 src={photo.src}
+                srcSet={photo.srcSet}
+                sizes={`(max-width: 700px) ${(photo.zoom || 1) * 100}vw, ${(photo.zoom || 1) * 50}vw`}
                 alt={photo.alt}
                 width={photo.width}
                 height={photo.height}
@@ -221,6 +224,8 @@ export function PromotionPanel({
           ) : (
             <img
               src={photo.src}
+              srcSet={photo.srcSet}
+              sizes={`(max-width: 700px) ${(photo.zoom || 1) * 100}vw, ${(photo.zoom || 1) * 50}vw`}
               alt={photo.alt}
               width={photo.width}
               height={photo.height}

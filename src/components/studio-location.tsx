@@ -1,11 +1,19 @@
 "use client";
 import { useState } from "react";
 import { ADDRESS, LOCATION } from "@/domain/catalog";
+import { CLOSING_MINUTE, OPENING_MINUTE } from "@/domain/booking-policy";
+import { StudioDirections } from "./studio-directions";
 import { Dialog } from "./dialog";
 import { Icon } from "./icon";
 const mapQuery = encodeURIComponent(
   `${LOCATION.building}, ${LOCATION.street}, ${LOCATION.postal}`,
 );
+/** Format the shared daily opening window for the location popup. */
+function openingTime(minutes: number) {
+  const hour = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return `${hour % 12 || 12}${remainder ? `:${String(remainder).padStart(2, "0")}` : ""}${hour >= 12 ? "pm" : "am"}`;
+}
 /** Present the studio address and on-demand location dialog. */
 export function StudioLocation() {
   const [open, setOpen] = useState(false);
@@ -21,27 +29,29 @@ export function StudioLocation() {
         <Icon name="location" />
       </button>
       {open && (
-        <Dialog title="Find the studio" onClose={() => setOpen(false)}>
+        <Dialog
+          title="Find the studio"
+          variant="location"
+          onClose={() => setOpen(false)}
+        >
           <p className="studio-location-address">{ADDRESS}</p>
-          <div className="studio-map-frame">
-            <iframe
-              title="Satellite map of Apex at Henderson and surrounding roads"
-              src={`https://www.google.com/maps?q=${mapQuery}&t=k&z=18&output=embed`}
-              referrerPolicy="no-referrer"
-              allowFullScreen
-            />
-          </div>
+          <p className="studio-location-hours">
+            Open daily · {openingTime(OPENING_MINUTE)}–
+            {openingTime(CLOSING_MINUTE)}
+          </p>
+          <StudioDirections />
           <p className="studio-map-help">
-            Take the lift from the food court to Level 5. Turn left as you exit
-            the lift lobby.
+            If coming up from the food court at #03-18, take the lift to Level 5
+            and turn left as you exit the lift lobby. Follow the blue route to
+            #05-01.
           </p>
           <a
-            className="button wide"
+            className="text-link studio-map-link"
             href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
             target="_blank"
             rel="noreferrer"
           >
-            Open Google Maps <Icon name="chevron" />
+            Open in Google Maps <Icon name="external" />
           </a>
         </Dialog>
       )}

@@ -677,11 +677,6 @@ export function TimeStep({
             <BrandLoading overlay={false} compact label="Checking dates…" />
           </div>
         )}
-        {!mobile && (
-          <p className="calendar-duration-note">
-            *40-min session · 10-min changeover.
-          </p>
-        )}
         <span className="sr-only" id={bookingLegendId}>
           In your booking
         </span>
@@ -690,6 +685,11 @@ export function TimeStep({
         <>
           <div className="time-heading" ref={headingRef}>
             <h2>{dateLabel(date)}</h2>
+            {!mobile && (
+              <p className="calendar-duration-note">
+                *40-min session · 10-min changeover.
+              </p>
+            )}
             {!mobile && calendarContext}
           </div>
           <div
@@ -737,7 +737,7 @@ export function TimeStep({
                   </span>
                   <span>Select to view trainers available</span>
                 </p>
-                {groups.map((offers) => {
+                {groups.map((offers, index) => {
                   const first =
                     offers.find((offer) => offer.available) ?? offers[0];
                   const selected = draft.slots.find(
@@ -767,114 +767,132 @@ export function TimeStep({
                       setChoosing(choosing === key ? null : key);
                     }
                   };
+                  const next = groups[index + 1]?.[0];
+                  const showCue =
+                    !!next &&
+                    !selected &&
+                    !draft.slots.some(
+                      (item) => slotKey(item) === slotKey(next),
+                    ) &&
+                    (mobile || index !== Math.ceil(groups.length / 2) - 1);
                   return (
-                    <div
-                      className="time-choice"
-                      key={key}
-                      onClick={(event) => {
-                        if (
-                          !(event.target instanceof Element) ||
-                          event.target.closest("button, select")
-                        )
-                          return;
-                        toggle();
-                      }}
-                    >
-                      <button
-                        className={`time${selected ? " selected" : ""}`}
-                        aria-pressed={!!selected}
-                        aria-expanded={choosing === key}
-                        disabled={disabled}
-                        onClick={toggle}
+                    <div className="time-choice-wrap" key={key}>
+                      <div
+                        className="time-choice"
+                        onClick={(event) => {
+                          if (
+                            !(event.target instanceof Element) ||
+                            event.target.closest("button, select")
+                          )
+                            return;
+                          toggle();
+                        }}
                       >
-                        <span className="time-details">
-                          <span className="time-range">
-                            {slot.start}–{endTime(slot.start)}
-                          </span>
-                          <span className="time-rate">
-                            {elapsed ? (
-                              "Session has started"
-                            ) : slot.available ? (
-                              <>
-                                <strong>{money(sessionPrice(slot))}</strong>
-                              </>
-                            ) : (
-                              "Unavailable"
-                            )}
-                          </span>
-                          <span className="time-instructor">
-                            {selected
-                              ? `Trainer: ${sessionInstructorName(selected)}`
-                              : available
-                                ? `${offers
-                                    .filter((offer) => offer.available)
-                                    .map(sessionInstructorName)
-                                    .join(" / ")}`
-                                : "No instructor available"}
-                          </span>
-                        </span>
-                      </button>
-                      {selected && (
                         <button
-                          className="time-remove"
-                          aria-label={`Remove selected session ${slot.date} at ${slot.start}`}
-                          onClick={() => {
-                            update({
-                              slots: draft.slots.filter(
-                                (item) => slotKey(item) !== key,
-                              ),
-                            });
-                            if (choosing === key) setChoosing(null);
-                          }}
+                          className={`time${selected ? " selected" : ""}`}
+                          aria-pressed={!!selected}
+                          aria-expanded={choosing === key}
+                          disabled={disabled}
+                          onClick={toggle}
                         >
-                          <Icon name="close" />
+                          <span className="time-details">
+                            <span className="time-range">
+                              {slot.start}–{endTime(slot.start)}
+                            </span>
+                            <span className="time-rate">
+                              {elapsed ? (
+                                "Session has started"
+                              ) : slot.available ? (
+                                <>
+                                  <strong>{money(sessionPrice(slot))}</strong>
+                                </>
+                              ) : (
+                                "Unavailable"
+                              )}
+                            </span>
+                            <span className="time-instructor">
+                              {selected
+                                ? `Trainer: ${sessionInstructorName(selected)}`
+                                : available
+                                  ? `${offers
+                                      .filter((offer) => offer.available)
+                                      .map(sessionInstructorName)
+                                      .join(" / ")}`
+                                  : "No instructor available"}
+                            </span>
+                          </span>
                         </button>
-                      )}
-                      {choosing === key && (
-                        <div className="trainer-choice">
-                          <span>Trainer</span>
-                          <select
-                            aria-label={`Trainer for ${slot.date} at ${slot.start}`}
-                            value={selected ? sessionOfferKey(selected) : ""}
-                            disabled={
-                              elapsed ||
-                              !available ||
-                              result?.status !== "success"
-                            }
-                            onPointerDown={() => {
-                              trainerPointer.current = true;
-                            }}
-                            onKeyDown={() => {
-                              trainerPointer.current = false;
-                            }}
-                            onBlur={() => {
-                              trainerPointer.current = false;
-                            }}
-                            onChange={(event) => {
-                              const pointerSelection = trainerPointer.current;
-                              const offer = offers.find(
-                                (item) =>
-                                  sessionOfferKey(item) === event.target.value,
-                              );
-                              if (offer) select(offer);
-                              if (pointerSelection) event.currentTarget.blur();
+                        {selected && (
+                          <button
+                            className="time-remove"
+                            aria-label={`Remove selected session ${slot.date} at ${slot.start}`}
+                            onClick={() => {
+                              update({
+                                slots: draft.slots.filter(
+                                  (item) => slotKey(item) !== key,
+                                ),
+                              });
+                              if (choosing === key) setChoosing(null);
                             }}
                           >
-                            <option value="" disabled>
-                              Choose a trainer to add this session
-                            </option>
-                            {offers.map((offer) => (
-                              <option
-                                key={sessionOfferKey(offer)}
-                                value={sessionOfferKey(offer)}
-                                disabled={!offer.available}
-                              >
-                                {sessionInstructorName(offer)}
-                                {!offer.available ? " — unavailable" : ""}
+                            <Icon name="close" />
+                          </button>
+                        )}
+                        {choosing === key && (
+                          <div className="trainer-choice">
+                            <span>Trainer</span>
+                            <select
+                              aria-label={`Trainer for ${slot.date} at ${slot.start}`}
+                              value={selected ? sessionOfferKey(selected) : ""}
+                              disabled={
+                                elapsed ||
+                                !available ||
+                                result?.status !== "success"
+                              }
+                              onPointerDown={() => {
+                                trainerPointer.current = true;
+                              }}
+                              onKeyDown={() => {
+                                trainerPointer.current = false;
+                              }}
+                              onBlur={() => {
+                                trainerPointer.current = false;
+                              }}
+                              onChange={(event) => {
+                                const pointerSelection = trainerPointer.current;
+                                const offer = offers.find(
+                                  (item) =>
+                                    sessionOfferKey(item) ===
+                                    event.target.value,
+                                );
+                                if (offer) select(offer);
+                                if (pointerSelection)
+                                  event.currentTarget.blur();
+                              }}
+                            >
+                              <option value="" disabled>
+                                Choose a trainer to add this session
                               </option>
-                            ))}
-                          </select>
-                        </div>
+                              {offers.map((offer) => (
+                                <option
+                                  key={sessionOfferKey(offer)}
+                                  value={sessionOfferKey(offer)}
+                                  disabled={!offer.available}
+                                >
+                                  {sessionInstructorName(offer)}
+                                  {!offer.available ? " — unavailable" : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                      {showCue && (
+                        <span className="time-slot-cue" aria-hidden="true">
+                          <span>
+                            {slot.start}–{endTime(slot.start)}
+                          </span>
+                        </span>
                       )}
                     </div>
                   );

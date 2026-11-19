@@ -5,9 +5,23 @@ export const singaporeFlag = sitePath("/assets/singapore-flag.svg");
 // Official horizontal artwork: hit-pay/orchid@2881280, public/icons/orchidui/hitPay.svg.
 export const hitpayLogo = sitePath("/assets/hitpay-horizontal.svg");
 export const logo = sitePath("/assets/c275ccd87afb.svg");
+/** Serve pre-encoded photo widths without a runtime image optimiser. */
+function responsivePhoto(asset: string, width: number) {
+  const widths = [
+    ...new Set(
+      [640, 960, 1280, 1920].filter((size) => size < width).concat(width),
+    ),
+  ];
+  return {
+    src: sitePath(`/assets/${asset}-${width}.webp`),
+    srcSet: widths
+      .map((size) => `${sitePath(`/assets/${asset}-${size}.webp`)} ${size}w`)
+      .join(", "),
+  };
+}
 export const studioMedia = [
   {
-    src: sitePath("/assets/6cd9490f80ba.jpg"),
+    ...responsivePhoto("6cd9490f80ba", 2560),
     source: "https://soccerbot360.com/en/buchung",
     alt: "Wide view inside the circular SOCCERBOTSTUDIO arena, with green turf, illuminated targets and a player facing away.",
     title: "Inside the arena.",
@@ -21,7 +35,7 @@ export const studioMedia = [
     height: 1707,
   },
   {
-    src: sitePath("/assets/09c58bd19cf8.jpg"),
+    ...responsivePhoto("09c58bd19cf8", 1080),
     source: "https://soccerbot360.com/en/anwendungen",
     alt: "Inside the SOCCERBOTSTUDIO studio, a football match is projected across the curved arena wall.",
     title: "Football, all around.",
@@ -35,7 +49,7 @@ export const studioMedia = [
     height: 675,
   },
   {
-    src: sitePath("/assets/ef029624c918.jpg"),
+    ...responsivePhoto("ef029624c918", 1280),
     source: "https://soccerbot360.com/en",
     sourceAsset: "https://assets.soccerbot360.com/assets/videos/hero-loop.mp4",
     sourceTimeSeconds: 11.85,
@@ -51,7 +65,7 @@ export const studioMedia = [
     height: 720,
   },
   {
-    src: sitePath("/assets/ba35618aca17.jpg"),
+    ...responsivePhoto("ba35618aca17", 1920),
     zoom: 1.34,
     source: "https://soccerbot360.com/en/produkt",
     sourceAsset:
@@ -69,7 +83,7 @@ export const studioMedia = [
     height: 1080,
   },
   {
-    src: sitePath("/assets/fe13b3c27b10.jpg"),
+    ...responsivePhoto("fe13b3c27b10", 1920),
     zoom: 1.34,
     source: "https://soccerbot360.com/en/produkt",
     sourceAsset:
@@ -89,7 +103,7 @@ export const studioMedia = [
 ];
 export const homeMedia = {
   studio: {
-    src: sitePath("/assets/91d938ee515c.jpg"),
+    ...responsivePhoto("91d938ee515c", 1080),
     position: "50% 80%",
     width: 1080,
     height: 608,
@@ -98,7 +112,7 @@ export const homeMedia = {
     sourceAsset: "https://soccerbot360.com/studio/sb-players.jpg",
   },
   kickoff: {
-    src: sitePath("/assets/2be37f98cb23.jpg"),
+    ...responsivePhoto("2be37f98cb23", 1920),
     zoom: 1.1,
     width: 1920,
     height: 890,

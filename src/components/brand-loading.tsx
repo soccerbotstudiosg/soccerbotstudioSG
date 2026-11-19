@@ -72,7 +72,15 @@ export function BrandLoading({
         />
         {!compact && <span className="page-loading-track" aria-hidden="true" />}
         {message && (
-          <span className="block mt-5 text-sm text-muted">{message}</span>
+          <span
+            className={
+              overlay && !compact
+                ? "page-loading-message"
+                : "block mt-5 text-sm text-muted"
+            }
+          >
+            {message}
+          </span>
         )}
       </span>
     </Container>

@@ -11,7 +11,7 @@ export function Dialog({
   title: string;
   onClose: () => void;
   children: ReactNode;
-  variant?: "player-app" | "booking-panel";
+  variant?: "player-app" | "booking-panel" | "location";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -66,7 +66,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className={`fixed ${variant === "booking-panel" ? "overflow-hidden" : "overflow-auto"} rounded-2xl border border-line shadow-2xl ${variant === "booking-panel" ? "" : `m-auto max-h-[85dvh] w-[calc(100%-32px)] ${variant === "player-app" ? "" : "p-6"}`} ${variant === "player-app" ? "player-app-dialog" : variant === "booking-panel" ? "booking-panel-dialog text-ink backdrop:bg-navy/40" : "max-w-xl text-ink backdrop:bg-navy/65"}`}
+      className={`${variant === "location" ? "studio-location-dialog" : ""} fixed ${variant === "booking-panel" ? "overflow-hidden" : "overflow-auto"} rounded-2xl border border-line shadow-2xl ${variant === "booking-panel" ? "" : `m-auto max-h-[85dvh] w-[calc(100%-32px)] ${variant === "player-app" ? "" : "p-6"}`} ${variant === "player-app" ? "player-app-dialog" : variant === "booking-panel" ? "booking-panel-dialog text-ink backdrop:bg-navy/40" : `${variant === "location" ? "" : "max-w-xl"} text-ink backdrop:bg-navy/65`}`}
       aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(event) => {
@@ -85,7 +85,10 @@ export function Dialog({
       <div
         className={`${variant === "booking-panel" ? "booking-panel-header" : variant === "player-app" ? "player-app-header" : "mb-5"} flex ${variant === "player-app" ? "" : "items-center"} justify-between gap-4`}
       >
-        <h2 className="dialog-title" id={titleId}>
+        <h2
+          className={variant === "location" ? "sr-only" : "dialog-title"}
+          id={titleId}
+        >
           {title}
         </h2>
         <button

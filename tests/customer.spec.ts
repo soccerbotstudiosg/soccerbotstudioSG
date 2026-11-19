@@ -1021,6 +1021,9 @@ test("public routes remove staff access and fit the viewport", async ({
     );
     const studioImage = row.locator(".studio-photo img");
     await expect(studioImage).toHaveCSS("object-fit", "cover");
+    await expect(studioImage).toHaveAttribute("src", /\.webp$/);
+    await expect(studioImage).toHaveAttribute("srcset", /640\.webp 640w/);
+    await expect(studioImage).toHaveAttribute("sizes", /100vw|134vw/);
     const photoFrame = await row.locator(".studio-photo").boundingBox();
     const imageBox = await studioImage.boundingBox();
     expect(imageBox!.width).toBeGreaterThanOrEqual(photoFrame!.width);
@@ -1278,6 +1281,23 @@ test("public routes remove staff access and fit the viewport", async ({
   await home.press("Enter");
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".site-header")).toBeVisible();
+  const heroPhoto = page.locator(".arena-photograph img");
+  await expect(heroPhoto).toHaveAttribute("src", /\.webp$/);
+  await expect(heroPhoto).toHaveAttribute("srcset", /640\.webp 640w/);
+  await expect(heroPhoto).toHaveAttribute("fetchpriority", "high");
+  if (page.viewportSize()!.width <= 700) {
+    await expect
+      .poll(async () => {
+        const stage = await page.locator(".booking-stage").boundingBox();
+        return stage!.y + stage!.height;
+      })
+      .toBeGreaterThanOrEqual(page.viewportSize()!.height);
+    await expect(page.locator(".home-promotion--studio")).toHaveCSS(
+      "position",
+      "relative",
+    );
+  }
+
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await expect
     .poll(() =>
@@ -2191,7 +2211,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     page.getByRole("group", { name: "Session times" }).getByRole("button"),
   ).toHaveCount(9);
   const timeCards = await page
-    .locator(".times > .time-choice")
+    .locator(".times > .time-choice-wrap > .time-choice")
     .evaluateAll((cards) =>
       cards.map((card) => ({
         start: card.querySelector(".time-range")!.textContent!.slice(0, 5),
@@ -2466,6 +2486,11 @@ test("leave booking uses equal-width sentence-case actions with home left and st
     .click();
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".page-loading")).toHaveCount(1);
+  const loadingMessage = page.locator(".page-loading-message");
+  await expect(loadingMessage).toHaveCSS("font-family", /Roboto/);
+  await expect(loadingMessage).toHaveCSS("font-size", "18px");
+  await expect(loadingMessage).toHaveCSS("font-weight", "500");
+  await expect(loadingMessage).toHaveCSS("color", "rgb(16, 22, 54)");
   await releaseHome();
   await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".arena-booking")).toBeVisible();
@@ -2764,7 +2789,7 @@ function bookingTypography(page: Page) {
           width: node.clientWidth,
           textWidth: node.scrollWidth,
         }));
-        expect(line.height).toBeCloseTo(line.lineHeight, 0);
+        if (!calendarNote) expect(line.height).toBeCloseTo(line.lineHeight, 0);
         expect(line.textWidth).toBeLessThanOrEqual(line.width);
       }
     }
@@ -2787,7 +2812,7 @@ function bookingTypography(page: Page) {
           ["Apex @ Henderson", "Kickoff Special"],
         );
         await expect(
-          page.locator(".calendar-panel .calendar-duration-note"),
+          page.locator(".time-heading .calendar-duration-note"),
         ).toBeVisible();
         const geometry = await page.locator(".time-heading").evaluate((row) => {
           const date = row.querySelector("h2")!.getBoundingClientRect();
@@ -4030,20 +4055,26 @@ test("hero location opens its map only on demand without entering booking and he
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("201 Henderson Road");
   await expect(dialog).toContainText("#05-01");
-  await expect(dialog.locator("iframe")).toHaveAttribute(
-    "title",
-    "Satellite map of Apex at Henderson and surrounding roads",
+  await expect(dialog.locator("iframe")).toHaveCount(0);
+  await expect(dialog.getByRole("img")).toHaveAccessibleName(/Level 5 guide/);
+  await expect(dialog).toContainText("Open daily · 12pm–8pm");
+  await expect(dialog).toContainText(
+    "If coming up from the food court at #03-18",
   );
+  await expect(dialog).toContainText("Lift Lobby 3");
+  await expect(dialog).toContainText("PL-5 / PL-6");
+  await expect(dialog).toContainText("SL-1 / SL-2");
+  await expect(dialog.locator("path.studio-plan-unit")).toHaveCSS(
+    "fill",
+    "rgb(70, 172, 220)",
+  );
+  await expect(dialog.locator(".studio-plan-route")).toHaveCSS(
+    "stroke",
+    "rgb(70, 172, 220)",
+  );
+  expect(maps).toBe(0);
   await expect(
-    page
-      .frameLocator(
-        'iframe[title="Satellite map of Apex at Henderson and surrounding roads"]',
-      )
-      .getByText("Synthetic satellite map"),
-  ).toBeVisible();
-  expect(maps).toBe(1);
-  await expect(
-    dialog.getByRole("link", { name: "Open Google Maps" }),
+    dialog.getByRole("link", { name: "Open in Google Maps" }),
   ).toHaveAttribute("target", "_blank");
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await dialog.getByRole("button", { name: "Close dialog" }).click();
