@@ -1445,7 +1445,7 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   }
   await expect(
     page.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await page.getByLabel("Full name", { exact: false }).blur();
   await expect(page.locator("#name")).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#details-form input")).toHaveCount(4);
@@ -1786,7 +1786,11 @@ test("enquiry remains available without external submission or a mock assistant"
   await expect(page.locator('.enquiry-form [aria-invalid="true"]')).toHaveCount(
     0,
   );
-  await expect(enquiryAction).toHaveAttribute("data-valid", "false");
+  await expect(enquiryAction).toBeEnabled();
+  await expect(enquiryAction).toHaveCSS(
+    "background-color",
+    "rgb(70, 172, 220)",
+  );
   await page.getByLabel("Your requirements").focus();
   await page.getByLabel("Your requirements").blur();
   await expect(page.locator("#enquiry-message-error")).toHaveText(
@@ -1809,7 +1813,7 @@ test("enquiry remains available without external submission or a mock assistant"
   await page
     .getByLabel("Your requirements")
     .fill("A group session for our team.");
-  await expect(enquiryAction).toHaveAttribute("data-valid", "true");
+  await expect(enquiryAction).toBeEnabled();
   await expect(page.locator("#enquiry-message-error")).toHaveCount(0);
   await page.getByRole("button", { name: "Send enquiry" }).click();
   await expect(page).toHaveURL(new RegExp(`${sitePath("/enquiry/")}$`));

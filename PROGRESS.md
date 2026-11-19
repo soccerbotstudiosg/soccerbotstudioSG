@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-19 November 2026: consolidate on `fix/booking-status-alignment`, based on a2ad527 / PR101. Existing PR101 includes identity/Studio Back alignment and compact verification emails. This slice adds responsive WebP/initial mobile hero coverage, approved slot direction cues, the branded location diagram/popup and full-page loader message typography (timing unchanged). User authorised one full local non-browser test/guard pass then push for staging CI. No merge requested. Physical iPad keyboard-dismiss issue is explicitly deferred, not fixed by this slice.
+19 November2026: PR101 follow-up on `fix/booking-status-alignment`, based on9e57f88. Preserve its approved media/location/loader changes. Add visible disabled outlet/session Continue, clickable details/enquiry validation with first-invalid-field focus, interaction-preserving Back-to-top, and enabled email-check hover/focus cues. Repair the stale live-email refresh-message selector and CodeQL53's lowercase-only test assertion. User authorizes consolidated checks and staging CI push; no merge. iPad keyboard-dismiss behavior remains deferred.
 
 ## Next actions
 
-Complete the local non-browser verification, review the full diff, publish to existing PR101 and check exact-head CI/staging. All three lift banks are shown, but curved-side lift identifiers remain unreadable and are not guessed. Real-device/wayfinding acceptance stays pending. No browser or live provider execution locally.
+Focused component checks passed16 cases and isolated enquiry Worker checks passed12. Complete full non-browser verification, review changes, push existing PR101 and inspect exact-head CI/staging. CodeQL closure and browser/device acceptance remain pending. Failure evidence and scope are retained in [Journey](docs/journey.md). No local browser or live provider execution.
 
 ## Ordered work after this slice
 

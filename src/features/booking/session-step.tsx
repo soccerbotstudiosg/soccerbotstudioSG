@@ -109,6 +109,13 @@ export function SessionStep() {
             <SessionPresentation {...presentation} />
           ))}
       </div>
+      {(!outletSelected || !sessionChoices.session) && (
+        <BookingPrimaryAction className="actions" ready={false}>
+          <button className="button" disabled>
+            Choose sessions <Icon name="chevron" />
+          </button>
+        </BookingPrimaryAction>
+      )}
     </>
   );
 }

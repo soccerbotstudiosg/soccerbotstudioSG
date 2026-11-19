@@ -2,6 +2,10 @@
 
 This document owns source-specific assessments, confirmed repairs, regression evidence and remaining proof. [Security infrastructure](security-infrastructure.md) owns controls and trust boundaries. An assessment is not an alert dismissal, scanner suppression, penetration test or universal safety claim. Reassess when the source, dependency, caller or trust boundary changes.
 
+## CodeQL53: enquiry HTML assertion
+
+The19 November2026 alert points to `worker/tests/enquiry.test.mjs`, where a lowercase-only negative assertion failed to detect uppercase script tags. This is a weak test assertion, not the production HTML escaping mechanism. `worker/notification-template.ts` escapes all five HTML-sensitive characters in interpolated customer fields. The assertion now detects script tags case-insensitively, including attribute-bearing tags, and the same intercepted-provider case supplies lowercase, uppercase and mixed-case inputs and checks escaped output. All12 enquiry Worker tests passed locally. Fresh CodeQL acceptance remains pending; no dismissal or suppression was applied.
+
 ## CodeQL52: dependency-review comment boundaries
 
 On9 November2026, PR49’s separate CodeQL findings check reported `js/incomplete-multi-character-sanitization` in `scripts/dependency-review.mjs`. This string is CI review text, not rendered customer HTML. The source still had a real validation weakness: comment deletion could join fragments, and an unclosed comment left hidden evidence visible to the validator. Comments now become line boundaries; unclosed tails are excluded. Existing regression cases cover hidden, nested and split-marker content; a pre-fix probe accepts the hidden assessment and the repaired parser rejects it. Fresh CodeQL confirmation is pending; the alert is not dismissed or suppressed.

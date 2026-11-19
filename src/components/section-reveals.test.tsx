@@ -70,6 +70,18 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
     );
     expect(button.className).toBe("back-to-top");
     expect(button.style.top).toBe("");
+    fireEvent.focus(button);
+    act(() => vi.advanceTimersByTime(5000));
+    expect(button).toBeVisible();
+    fireEvent.blur(button);
+    fireEvent.pointerEnter(button, { pointerType: "mouse" });
+    act(() => vi.advanceTimersByTime(5000));
+    expect(button).toBeVisible();
+    fireEvent.pointerDown(button);
+    fireEvent.pointerLeave(button);
+    act(() => vi.advanceTimersByTime(5000));
+    expect(button).toBeVisible();
+    fireEvent.pointerUp(window);
     act(() => vi.advanceTimersByTime(2999));
     expect(screen.getByRole("button", { name: "Back to top" })).toBeVisible();
     fireEvent.scroll(window);

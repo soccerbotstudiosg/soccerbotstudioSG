@@ -1,5 +1,11 @@
 "use client";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "./icon";
 
@@ -107,22 +113,41 @@ export function SectionReveals() {
 function ScrollTopControl() {
   const control = useRef<HTMLButtonElement>(null);
   const [activity, setActivity] = useState({ visible: false });
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const interaction = useRef({ focus: false, hover: false, press: false });
+  const scheduleHide = useCallback(() => {
+    clearTimeout(timer.current);
+    if (Object.values(interaction.current).some(Boolean)) return;
+    timer.current = setTimeout(() => setActivity({ visible: false }), 3000);
+  }, []);
+  /** Pause expiry during interaction and restart a full idle interval after leaving. */
+  const interact = (kind: "focus" | "hover" | "press", active: boolean) => {
+    interaction.current[kind] = active;
+    scheduleHide();
+  };
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
     const update = () => {
-      clearTimeout(timer);
-      setActivity({ visible: window.scrollY > 0 });
-      timer = setTimeout(
-        () => setActivity((current) => ({ ...current, visible: false })),
-        3000,
-      );
+      setActivity({
+        visible:
+          window.scrollY > 0 ||
+          Object.values(interaction.current).some(Boolean),
+      });
+      scheduleHide();
+    };
+    const release = () => {
+      interaction.current.press = false;
+      scheduleHide();
     };
     window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
     return () => {
-      clearTimeout(timer);
+      clearTimeout(timer.current);
       window.removeEventListener("scroll", update);
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
     };
-  }, []);
+  }, [scheduleHide]);
   useLayoutEffect(() => {
     const circle = control.current;
     if (!activity.visible || !circle) return;
@@ -167,6 +192,13 @@ function ScrollTopControl() {
       className="back-to-top"
       aria-label="Back to top"
       title="Back to top"
+      onFocus={() => interact("focus", true)}
+      onBlur={() => interact("focus", false)}
+      onPointerEnter={(event) => {
+        if (event.pointerType !== "touch") interact("hover", true);
+      }}
+      onPointerLeave={() => interact("hover", false)}
+      onPointerDown={() => interact("press", true)}
       onClick={() => {
         document
           .querySelector<HTMLElement>(".site-header .brand")

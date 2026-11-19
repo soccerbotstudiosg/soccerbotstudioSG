@@ -124,6 +124,10 @@ test("live session selection uses client prices while demo retains its own rates
   fireEvent.click(choice);
   expect(choice).toHaveAttribute("aria-pressed", "false");
   expect(
+    screen.getByRole("button", { name: "Choose sessions" }),
+  ).toBeDisabled();
+  expect(document.querySelectorAll(".booking-primary-action")).toHaveLength(1);
+  expect(
     screen.queryByRole("button", { name: "Add one player" }),
   ).not.toBeInTheDocument();
   expect(
@@ -137,6 +141,10 @@ test("live session selection uses client prices while demo retains its own rates
   expect(
     screen.queryByRole("region", { name: "Kickoff Special" }),
   ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Choose sessions" }),
+  ).toBeDisabled();
+  expect(document.querySelectorAll(".booking-action-position")).toHaveLength(1);
   fireEvent.click(
     screen.getByRole("button", { name: "Select Apex @ Henderson outlet" }),
   );

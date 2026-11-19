@@ -59,10 +59,7 @@ test("enquiry waits for hydration then preserves entered details through submiss
       target: { value: "A group session for our team." },
     },
   );
-  expect(screen.getByRole("button", { name: "Send enquiry" })).toHaveAttribute(
-    "data-valid",
-    "true",
-  );
+  expect(screen.getByRole("button", { name: "Send enquiry" })).toBeEnabled();
   const submit = vi
     .spyOn(services.enquiry, "submit")
     .mockRejectedValueOnce(
@@ -106,11 +103,16 @@ test("enquiry waits for hydration then preserves entered details through submiss
 });
 
 test("enquiry reveals errors after blur or submission and blocks invalid service submission", () => {
+  const frames: FrameRequestCallback[] = [];
+  const raf = vi
+    .spyOn(window, "requestAnimationFrame")
+    .mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+  const scroll = vi.spyOn(window, "scrollBy").mockImplementation(() => {});
   render(<EnquiryPage />);
-  expect(screen.getByRole("button", { name: "Send enquiry" })).toHaveAttribute(
-    "data-valid",
-    "false",
-  );
+  expect(screen.getByRole("button", { name: "Send enquiry" })).toBeEnabled();
   const submit = vi.spyOn(services.enquiry, "submit");
   expect(screen.getByRole("link", { name: /^Home$/ })).toHaveAttribute(
     "href",
@@ -174,6 +176,20 @@ test("enquiry reveals errors after blur or submission and blocks invalid service
     screen.getByRole("button", { name: "Send enquiry" }).closest("form")!,
   );
   expect(submit).not.toHaveBeenCalled();
+  expect(
+    screen.getByLabelText("Email address", { exact: false }),
+  ).toHaveFocus();
+  const email = screen.getByLabelText("Email address", { exact: false });
+  const box = vi.spyOn(email, "getBoundingClientRect").mockReturnValue({
+    top: -120,
+    bottom: -76,
+    height: 44,
+  } as DOMRect);
+  act(() => frames.splice(0).forEach((callback) => callback(0)));
+  expect(scroll).toHaveBeenCalledWith({ top: -136, behavior: "instant" });
+  box.mockRestore();
+  raf.mockRestore();
+  scroll.mockRestore();
   expect(screen.getByText("Please tell us what you need.")).toBeVisible();
   const requirements = screen.getByLabelText("Your requirements", {
     exact: false,

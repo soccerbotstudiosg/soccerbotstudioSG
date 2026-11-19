@@ -1,4 +1,5 @@
 "use client";
+import { focusField, focusFormError } from "@/components/form-focus";
 import {
   profileAccessGeneration,
   reportProfileAccessLoss,
@@ -231,7 +232,10 @@ export function DetailsStep({
     setErrors(next);
     const first = Object.keys(next)[0];
     if (first) {
-      document.getElementById(first)?.focus();
+      focusFormError(
+        document.getElementById("details-form") as HTMLFormElement,
+        Object.keys(next),
+      );
       return false;
     }
     const controller = new AbortController();
@@ -548,12 +552,18 @@ export function DetailsStep({
           );
           setErrors(next);
           const first = Object.keys(next)[0];
-          if (first) document.getElementById(first)?.focus();
+          if (first)
+            focusFormError(
+              document.getElementById("details-form") as HTMLFormElement,
+              Object.keys(next),
+            );
           else {
             if (!emailChecked) {
-              document
-                .querySelector<HTMLButtonElement>(".email-confirm-control")
-                ?.focus();
+              focusField(
+                document.querySelector<HTMLButtonElement>(
+                  ".email-confirm-control",
+                ),
+              );
               return;
             }
             if (submitting.current) return;
@@ -631,7 +641,7 @@ export function DetailsStep({
               <button
                 type="submit"
                 className="button"
-                disabled={saving || checking || !contactValid}
+                disabled={saving || checking}
               >
                 {saving ? (
                   <span className="button-loading">
@@ -666,12 +676,12 @@ export function DetailsStep({
           <BookingPrimaryAction
             loading={saving}
             className="actions"
-            ready={contactValid && !saving}
+            ready={contactValid && !saving && !checking}
           >
             <button
               className="button"
               type="submit"
-              disabled={saving || checking || !contactValid}
+              disabled={saving || checking}
             >
               {saving && <Icon name="spinner" className="spinner" />}
               {saving ? "Saving details…" : "Review Booking"}{" "}

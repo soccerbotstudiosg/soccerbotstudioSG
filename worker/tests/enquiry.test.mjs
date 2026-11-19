@@ -165,7 +165,8 @@ function gate() {
 test("public enquiry sends fixed staff recipients and customer reply-to without creating booking access", async () => {
   const input = enquiry();
   input.values.message =
-    'Synthetic enquiry: <script>alert("test")</script> & ' + "球".repeat(1800);
+    'Synthetic enquiry: <script>alert("test")</script> & <SCRIPT>alert("upper")</SCRIPT> <ScRiPt src="bad">x</ScRiPt> ' +
+    "球".repeat(1800);
   input.botToken = "synthetic-token-" + "a".repeat(2000);
   assert.ok(Buffer.byteLength(JSON.stringify(input)) > 4096);
   const response = await submit(input);
@@ -184,7 +185,17 @@ test("public enquiry sends fixed staff recipients and customer reply-to without 
   ]);
   assert.equal(mail.body.reply_to, input.values.email);
   assert.match(mail.body.html, /New website enquiry/);
-  assert.doesNotMatch(mail.body.html, /<script>/);
+  assert.doesNotMatch(mail.body.html, /<\s*script\b/i);
+  assert.ok(
+    mail.body.html.includes(
+      "&lt;SCRIPT&gt;alert(&quot;upper&quot;)&lt;/SCRIPT&gt;",
+    ),
+  );
+  assert.ok(
+    mail.body.html.includes(
+      "&lt;ScRiPt src=&quot;bad&quot;&gt;x&lt;/ScRiPt&gt;",
+    ),
+  );
   assert.match(
     mail.body.html,
     /&lt;script&gt;alert\(&quot;test&quot;\)&lt;\/script&gt; &amp;/,

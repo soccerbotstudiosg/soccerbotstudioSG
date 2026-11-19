@@ -563,23 +563,12 @@
     box-shadow: none;
     transform: none;
   }
-  .enquiry-page .booking-primary-action > .button[data-valid="false"] {
-    background: var(--color-disabled);
-    border-color: var(--color-disabled);
-    color: var(--color-disabled-ink);
-    box-shadow: none;
-  }
-  .enquiry-page .booking-primary-action > .button[data-valid="false"]::before {
-    display: none;
-  }
-  .enquiry-page
-    .booking-primary-action
-    > .button[data-valid="true"]:not(:disabled) {
+  .enquiry-page .booking-primary-action > .button:not(:disabled) {
     background: var(--color-logo-blue);
     border-color: var(--color-logo-blue);
     color: var(--color-navy);
   }
-  .enquiry-page .booking-primary-action > .button[data-valid="true"]::before {
+  .enquiry-page .booking-primary-action > .button::before {
     display: none;
   }
   .button.secondary {
@@ -5195,6 +5184,23 @@
     color: var(--color-brand);
     font-weight: 700;
     text-decoration: none;
+  }
+  .email-confirm-control:enabled:focus-visible {
+    outline: 2px solid var(--color-logo-blue);
+    outline-offset: -3px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .email-confirm-control:enabled:hover {
+      box-shadow: inset 0 0 0 2px var(--color-logo-blue);
+    }
+    .email-confirm-control:enabled:hover .email-check-icon {
+      transform: scale(1.06);
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .email-confirm-control .email-check-icon {
+      transition: transform 150ms ease;
+    }
   }
   .email-confirm-control[aria-pressed="true"] {
     color: var(--color-success);
