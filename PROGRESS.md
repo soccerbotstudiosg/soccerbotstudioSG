@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Stage the public policy pages, website and email policy links, approved lift map, and guest email validation cues together with checkout recovery (#103) and the Payment refresh correction (#104).
+Verify the bounded settings read after deployment. Cloudflare confirmed the expected production binding and traffic allocation for the merged Payment refresh fix.
 
 ## Next actions
 
-Review the policy pages, lift diagram and guest email focus on staging. End-to-end checkout with the staging SimplyBook account remains unverified because it requires paid activation.
+Review the verifier correction in CI.
 
 ## Ordered work after this slice
 
