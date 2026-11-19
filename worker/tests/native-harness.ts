@@ -36,14 +36,15 @@ import { ProviderSession, type ProviderControl } from "../provider-session";
 import { decideStoredConfirmation, checkoutContext } from "../confirmation";
 import { runNativeReadback } from "../recovery";
 import { recoverNativeResidual } from "../native-residual";
+import { lookupUnknownCreationEvidence } from "../native-creation-lookup-evidence";
 import { policy, rpcOutcome } from "../policy";
 import { orchestrateBooking, prepareAttempt } from "../index";
 import worker from "../index";
 export { SoccerBotAccountCoordinator } from "../coordinator";
 const harness = {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     if (new URL(request.url).pathname.startsWith("/api/"))
-      return worker.fetch(request, env);
+      return worker.fetch(request, env, ctx);
     const input = (await request.json()) as {
       action: string;
       scope: NativeScope;
@@ -68,6 +69,12 @@ const harness = {
       batchReceipt?: unknown;
       batchReceipts?: unknown[];
       batchClosure?: unknown;
+      lookupPages?: Record<string, unknown[]>;
+      markerPages?: Record<string, unknown[]>;
+      lookupMarker?: { field: string; values: string[] };
+      lookupIntervals?: Record<string, unknown>;
+      abortLookupOn?: NativeRequest["kind"];
+      staleLookupOn?: NativeRequest["kind"];
     };
     let authorityReads = 0;
     let reserved = 0,
@@ -358,6 +365,39 @@ const harness = {
             exchange,
             signingSecret: "synthetic-signing-secret",
             signal: new AbortController().signal,
+          });
+          break;
+        }
+        case "lookup-unknown-creation": {
+          const lookup = new AbortController();
+          result = await lookupUnknownCreationEvidence({
+            intent: input.scope.intent,
+            marker: input.lookupMarker,
+            signal: lookup.signal,
+            exchange: async (operation, signal) => {
+              if (signal !== lookup.signal)
+                throw new Error("lookup signal missing");
+              sent.push(operation);
+              if (input.abortLookupOn === operation.kind) lookup.abort();
+              const body =
+                operation.kind === "booking-list"
+                  ? (operation.marker
+                      ? input.markerPages
+                      : input.lookupPages)?.[operation.date]?.[
+                      operation.page - 1
+                    ]
+                  : operation.kind === "availability"
+                    ? input.lookupIntervals?.[operation.date]
+                    : undefined;
+              if (body === undefined)
+                throw new Error("unexpected lookup request");
+              return {
+                body,
+                receivedAtMs:
+                  Date.now() -
+                  (input.staleLookupOn === operation.kind ? 60000 : 0),
+              };
+            },
           });
           break;
         }

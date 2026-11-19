@@ -39,6 +39,7 @@ export function checkWorker(root) {
             "https://user-api.simplybook.me/login",
             "https://user-api.simplybook.me/",
             "https://user-api-v2.simplybook.me/admin/invoices/",
+            "https://user-api-v2.simplybook.me/admin/bookings",
             "https://user-api-v2.simplybook.me/admin/bookings/",
             "https://user-api-v2.simplybook.me/admin/webhooks",
             "https://user-api-v2.simplybook.me/admin/webhooks",

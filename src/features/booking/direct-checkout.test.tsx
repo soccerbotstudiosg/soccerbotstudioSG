@@ -12,7 +12,7 @@ import {
 } from "@/components/booking-navigation";
 import { dateLabel } from "@/domain/dates";
 import {
-  CHECKOUT_UNRESOLVED,
+  CALENDAR_CHECKOUT_PAUSED,
   PAYMENT_WINDOW_ENDED,
 } from "@/domain/booking-messages";
 import { useEffect, useState } from "react";
@@ -3205,7 +3205,9 @@ async function verifyMockPaymentExpiry(
     expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
     view.rerender(tree("time"));
     await act(async () => {});
-    expect(screen.getByRole("alert")).toHaveTextContent(CHECKOUT_UNRESOLVED);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      CALENDAR_CHECKOUT_PAUSED,
+    );
     expect(screen.getByTestId("mock-expiry-attempt")).toHaveTextContent(id);
     expect(
       requests.filter((request) => request.path.endsWith("/expire")),
@@ -3934,6 +3936,7 @@ it("mock conflict refresh keeps the rejected tab on calendar without adopting an
   ).toBe(false);
 });
 
+const noCreationDraft = draft;
 /** Verify one isolated scenario with its real foreground loading lifecycle. */
 async function verifyNoCreationRecovery(
   route:
@@ -3944,11 +3947,23 @@ async function verifyNoCreationRecovery(
     | "home"
     | "home-refresh"
     | "immediate",
+  emailOutcome?: "available" | "taken" | "unknown",
+  member = false,
 ) {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const draft = {
+    ...noCreationDraft,
+    ...(member
+      ? { mode: "member" as const, accountEmail: noCreationDraft.contact.email }
+      : {}),
+  };
+  const resolution = {
+    state: "not_created",
+    ...(emailOutcome ? { reason: "contact_email_rejected" } : {}),
+  };
   const notice =
-    "Some sessions may no longer be available. Please check again.";
+    "Nothing was booked or charged. Your details are saved; please choose your sessions again.";
 
   cleanup();
   sessionStorage.clear();
@@ -3967,12 +3982,14 @@ async function verifyNoCreationRecovery(
   };
   const fetcher = vi.fn<typeof globalThis.fetch>(async (input) => {
     const path = String(input);
+    if (path === "/api/identity/email-domain")
+      return Response.json({ status: "valid" });
     if (path === `/api/booking/checkout/${id}`)
       return Response.json({
         attemptId: id,
         state: "recovery_required",
         paymentAvailable: false,
-        creationResolution: { state: "not_created" },
+        creationResolution: resolution,
       });
     if (path === `/api/attempts/${id}/checkout`)
       return Response.json({
@@ -3982,7 +3999,7 @@ async function verifyNoCreationRecovery(
         ...(route === "status"
           ? {}
           : resolved
-            ? { creationResolution: { state: "not_created" } }
+            ? { creationResolution: resolution }
             : { bookingIssue: "incomplete" }),
         summary: {
           players: draft.players,
@@ -4007,7 +4024,7 @@ async function verifyNoCreationRecovery(
           ? {
               status: "invalid",
               reason: "booking_not_created",
-              creationResolution: { state: "not_created" },
+              creationResolution: resolution,
             }
           : { status: "pending", reason: "payment_verification_pending" },
       );
@@ -4025,7 +4042,8 @@ async function verifyNoCreationRecovery(
       dates: [{ date: draft.slots[0].date, available: true }],
     }),
     availability: vi.fn(async ({ fresh }) => {
-      if (fresh && !freshAvailable)
+      if (fresh && emailOutcome === "taken") return [];
+      if (fresh && !freshAvailable && emailOutcome !== "available")
         throw new Error("Synthetic fresh availability outage");
       return [
         ...draft.slots.map((slot) => ({ ...slot, available: true })),
@@ -4041,7 +4059,19 @@ async function verifyNoCreationRecovery(
       ];
     }),
   };
-  const identity = { ...demoCustomerIdentity, mode: "live" as const };
+  const identity = {
+    ...demoCustomerIdentity,
+    mode: "live" as const,
+    ...(member
+      ? {
+          current: () => ({
+            email: draft.contact.email,
+            expiresAt: Date.now() + 1800000,
+          }),
+          profile: async () => draft.contact,
+        }
+      : {}),
+  };
   function Probe() {
     const state = useBooking();
     return (
@@ -4074,6 +4104,7 @@ async function verifyNoCreationRecovery(
   }
   const tree = (
     step:
+      | "details"
       | "payment"
       | "time"
       | "account"
@@ -4179,6 +4210,77 @@ async function verifyNoCreationRecovery(
     );
     navigation.path = "/book/time/";
     view.rerender(tree("time"));
+    if (emailOutcome) {
+      if (emailOutcome === "available") {
+        await waitFor(() =>
+          expect(navigation.replace).toHaveBeenCalledWith("/book/details/"),
+        );
+        navigation.path = "/book/details/";
+        view.rerender(tree("details"));
+        if (member) {
+          const lockedEmail = await screen.findByText(draft.contact.email, {
+            selector: ".verified-email-value",
+          });
+          await waitFor(() => expect(lockedEmail).toHaveFocus());
+          expect(
+            screen.queryByRole("textbox", { name: /Email address/i }),
+          ).toBeNull();
+          expect(
+            screen.getByRole("button", {
+              name: "Ask the studio to contact me",
+            }),
+          ).toBeVisible();
+          return;
+        }
+        const email = await screen.findByRole("textbox", {
+          name: /Email address/i,
+        });
+        await waitFor(() => expect(email).toHaveFocus());
+        expect(email).toHaveValue(draft.contact.email);
+        expect(
+          JSON.parse(screen.getByTestId("creation-draft").textContent!).slots,
+        ).toEqual(draft.slots);
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "Nothing was booked or charged.",
+        );
+        expect(
+          screen.getByRole("button", { name: "Ask the studio to contact me" }),
+        ).toBeVisible();
+        expect(
+          screen.getByRole("button", {
+            name: "Confirm email address is correct",
+          }),
+        ).toHaveAttribute("aria-pressed", "false");
+        fireEvent.change(email, { target: { value: "corrected@example.com" } });
+        expect(
+          screen.queryByText(/The booking provider didn’t accept/),
+        ).toBeNull();
+        const checkEmail = screen.getByRole("button", {
+          name: "Confirm email address is correct",
+        });
+        fireEvent.click(checkEmail);
+        await waitFor(() =>
+          expect(checkEmail).toHaveAttribute("aria-pressed", "true"),
+        );
+        fireEvent.click(
+          screen.getByRole("button", { name: /Review Booking/i }),
+        );
+        await waitFor(() =>
+          expect(navigation.push).toHaveBeenCalledWith("/book/review/"),
+        );
+      } else {
+        await screen.findByText(
+          emailOutcome === "taken"
+            ? /Your selected session is no longer available/
+            : /We couldn’t verify the session’s availability/,
+        );
+        expect(
+          screen.getByRole("button", { name: "Ask the studio to contact me" }),
+        ).toBeVisible();
+        expect(navigation.replace).not.toHaveBeenCalledWith("/book/details/");
+      }
+      return;
+    }
     const recoveryNotice = await screen.findByRole("alert");
     expect(recoveryNotice).toHaveTextContent(notice);
     expect(within(recoveryNotice).getAllByRole("listitem")).toHaveLength(1);
@@ -7152,4 +7254,18 @@ it("lost checkout response ends at thirty seconds without retrying or inventing 
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(restore).toHaveBeenCalledTimes(1);
   expect(fetch).toHaveBeenCalledTimes(2);
+});
+
+it("guest email rejection restores an available session and focuses email correction", async () => {
+  await verifyNoCreationRecovery("immediate", "available");
+});
+it("email rejection explains a taken session after protected recovery", async () => {
+  await verifyNoCreationRecovery("confirmation", "taken");
+});
+it("email rejection keeps help available when capacity cannot be read", async () => {
+  await verifyNoCreationRecovery("status", "unknown");
+});
+
+it("verified members retain their identity and can request help after email rejection", async () => {
+  await verifyNoCreationRecovery("immediate", "available", true);
 });

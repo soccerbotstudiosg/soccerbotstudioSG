@@ -347,6 +347,7 @@ export class ProviderSession {
       throw new ApiError(503, "provider_identity_expired");
     const family =
       request.kind === "invoice-read" ||
+      request.kind === "booking-list" ||
       request.kind === "webhook-subscriptions"
         ? "admin"
         : "public";

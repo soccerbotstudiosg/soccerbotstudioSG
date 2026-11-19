@@ -34,7 +34,8 @@ export async function createBookingMechanism(options = {}) {
   const day = new Date(Date.now() + 3 * 86400000);
   while (day.getUTCDay() !== 3) day.setUTCDate(day.getUTCDate() + 1);
   const date = day.toISOString().slice(0, 10);
-  const startMs = Date.parse(date + "T12:00:00+08:00");
+  const startMs =
+    Date.parse(date + "T12:00:00+08:00") + (options.startSlot ?? 0) * 3000000;
   const fixtures = JSON.parse(
     readFileSync("worker/tests/native-fixtures.json", "utf8"),
   ).responses;
@@ -175,7 +176,7 @@ export async function createBookingMechanism(options = {}) {
     }))
   ).outputFiles[0].text;
   mark("compile");
-  const mf = new Miniflare({
+  const runtimeOptions = (overrides) => ({
     ...convertV4MiniflareOptions({
       name: "booking-mechanism",
       modules: true,
@@ -233,6 +234,7 @@ export async function createBookingMechanism(options = {}) {
             }
           : {}),
         ...options.bindings,
+        ...overrides,
       },
       d1Databases: { STATE: "synthetic-state" },
       durableObjects: {
@@ -356,7 +358,10 @@ export async function createBookingMechanism(options = {}) {
             return Response.json(invoice);
           }
           if (url.pathname === "/admin/invoices/901")
-            return Response.json(invoice);
+            return Response.json(
+              options.nativeRead?.("invoice", structuredClone(invoice)) ??
+                invoice,
+            );
           const matrix = {};
           if (
             ["getStartTimeMatrix", "getAvailableTimeIntervals"].includes(
@@ -376,7 +381,7 @@ export async function createBookingMechanism(options = {}) {
                         wall(startMs + i * 3000000).slice(11),
                       ).slice(batchBooks)
                     : !booked
-                      ? ["12:00:00"]
+                      ? [wall(startMs).slice(11)]
                       : []
                   : [];
             }
@@ -474,7 +479,13 @@ export async function createBookingMechanism(options = {}) {
             return Response.json({
               jsonrpc: "2.0",
               id: body.id,
-              result: results[body.method],
+              result:
+                body.method === "getBookingDetails" && options.nativeRead
+                  ? options.nativeRead(
+                      "booking",
+                      structuredClone(results[body.method]),
+                    )
+                  : results[body.method],
             });
           }
         }
@@ -482,8 +493,10 @@ export async function createBookingMechanism(options = {}) {
         throw new Error("Unexpected simulated provider request");
       },
     }),
-    unsafeInspectDurableObjects: options.displayWarming === true,
+    unsafeInspectDurableObjects:
+      options.displayWarming === true || options.inspectCoordinator === true,
   });
+  const mf = new Miniflare(runtimeOptions());
   bot.attach(mf);
   try {
     await mf.ready;
@@ -534,6 +547,7 @@ export async function createBookingMechanism(options = {}) {
         });
       },
       recover: async () => (await mf.getWorker()).scheduled(),
+      updateBindings: (bindings) => mf.setOptions(runtimeOptions(bindings)),
       close: async () => {
         const started = performance.now();
         try {

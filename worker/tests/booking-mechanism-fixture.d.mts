@@ -1,5 +1,6 @@
 import type { Miniflare } from "miniflare";
 export function createBookingMechanism(options?: {
+  startSlot?: number;
   observationMaxAgeMs?: number;
   checkoutBotProof?: boolean;
   botResult?: (body: {
@@ -10,9 +11,14 @@ export function createBookingMechanism(options?: {
   batchSize?: number;
   missingCreationDeadline?: boolean;
   creationPriceDrift?: boolean;
+  nativeRead?: (
+    kind: "invoice" | "booking",
+    value: Record<string, unknown>,
+  ) => Record<string, unknown>;
   onTiming?: (timing: { phase: string; durationMs: number }) => void;
   onLog?: (message: string) => void;
   displayWarming?: boolean;
+  inspectCoordinator?: boolean;
   respond?: (call: {
     url: string;
     method: string;

@@ -24,6 +24,7 @@ export const hitpayHandoffSchema = z.strictObject({
 
 export const creationResolutionSchema = z.strictObject({
   state: z.literal("not_created"),
+  reason: z.literal("contact_email_rejected").optional(),
 });
 export type CreationResolution = z.infer<typeof creationResolutionSchema>;
 

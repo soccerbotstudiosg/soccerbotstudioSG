@@ -1,5 +1,9 @@
 import { verificationHtml } from "./notification-template";
 import {
+  recoveryMarker,
+  type NativeCreationMarker,
+} from "./native-creation-marker";
+import {
   confirmationMetric,
   confirmationTransport,
 } from "./confirmation-tracing";
@@ -200,14 +204,34 @@ export class ProviderRpcError extends ApiError {
     super(503, "provider_rpc_failed");
   }
 }
-/** A correlated single-book precondition rejection, never an authentication error. */
-export class ProviderBookRejectedError extends ProviderRpcError {
+/** Retain completion of one correlated book RPC without asserting whether it created anything. */
+export class CompletedBookRpcError extends ProviderRpcError {
   constructor(
-    readonly rejectionCode: -32053 | -32054,
+    rpcCode: number,
     readonly requestId: string,
     readonly receivedAtMs: number,
   ) {
-    super(rejectionCode);
+    super(rpcCode);
+  }
+}
+// Documented service/provider, date/time, admission and submitted-field preconditions.
+const singleBookPreconditions = [
+  -32051, -32052, -32053, -32054, -32056, -32061, -32062, -32063, -32070,
+] as const;
+export type SingleBookPrecondition = (typeof singleBookPreconditions)[number];
+export function isSingleBookPrecondition(
+  code: number,
+): code is SingleBookPrecondition {
+  return singleBookPreconditions.some((candidate) => candidate === code);
+}
+/** A correlated single-book precondition rejection, never an authentication error. */
+export class ProviderBookRejectedError extends CompletedBookRpcError {
+  constructor(
+    readonly rejectionCode: SingleBookPrecondition,
+    requestId: string,
+    receivedAtMs: number,
+  ) {
+    super(rejectionCode, requestId, receivedAtMs);
   }
 }
 export type ProviderFamily = "public" | "admin";
@@ -261,6 +285,8 @@ export type NativeExchange = (
   request: NativeRequest,
   signal?: AbortSignal,
 ) => Promise<{ body: unknown; receivedAtMs: number }>;
+export const BOOKING_LOOKUP_PAGE_SIZE = 20;
+export const BOOKING_LOOKUP_MAX_PAGES = 3;
 export type NativeRequest =
   | { kind: "webhook-subscriptions" }
   | { kind: "webhook-create"; origin: string; event: WebhookEvent }
@@ -306,9 +332,18 @@ export type NativeRequest =
       time: string;
       client: z.infer<typeof nativeClientSchema>;
       additional: z.infer<typeof nativeAdditionalSchema>;
+      marker?: NativeCreationMarker;
       batchId?: string;
     }
   | { kind: "booking-read"; bookingId: string; signature: string }
+  | {
+      kind: "booking-list";
+      date: string;
+      serviceId: string;
+      instructorId: string;
+      page: number;
+      marker?: NativeCreationMarker;
+    }
   | {
       kind: "booking-cancel";
       bookingId: string;
@@ -324,6 +359,7 @@ export type ProviderSecrets = {
   login: string;
   publicKey: string;
   adminKey: string;
+  recoveryIntakeField?: string;
 };
 /** Validate provider credentials and forbidden-account protections. */
 export function providerSecrets(env: Env): ProviderSecrets {
@@ -339,6 +375,7 @@ export function providerSecrets(env: Env): ProviderSecrets {
     return value;
   };
   const company = read(providerCredentialName(env, "COMPANY_LOGIN"));
+  const field: unknown = Reflect.get(env, "SIMPLYBOOK_RECOVERY_INTAKE_FIELD");
   if (
     z.enum(["developer", "production"]).parse(env.ENVIRONMENT) ===
       "production" &&
@@ -350,6 +387,7 @@ export function providerSecrets(env: Env): ProviderSecrets {
     login: read(providerCredentialName(env, "ADMIN_LOGIN")),
     publicKey: read(providerCredentialName(env, "API_KEY")),
     adminKey: read(providerCredentialName(env, "ADMIN_API_USER_KEY")),
+    ...(typeof field === "string" ? { recoveryIntakeField: field } : {}),
   };
 }
 
@@ -396,6 +434,7 @@ export async function providerRequest(
         "required-fields",
         "availability",
         "booking-read",
+        "booking-list",
         "invoice-read",
       ].includes(native.kind));
   const rpcId = crypto.randomUUID();
@@ -445,6 +484,40 @@ export async function providerRequest(
       break;
     case "native": {
       if (!native) throw new ApiError(503, "provider_operation_unavailable");
+      if (native.kind === "booking-list") {
+        const report = new URL(
+          "https://user-api-v2.simplybook.me/admin/bookings",
+        );
+        const page = z
+          .int()
+          .min(1)
+          .max(BOOKING_LOOKUP_MAX_PAGES)
+          .parse(native.page);
+        report.searchParams.set("page", String(page));
+        report.searchParams.set("on_page", String(BOOKING_LOOKUP_PAGE_SIZE));
+        report.searchParams.set(
+          "filter[date]",
+          z.iso.date().parse(native.date),
+        );
+        report.searchParams.set(
+          "filter[services][]",
+          providerId(native.serviceId),
+        );
+        report.searchParams.set(
+          "filter[providers][]",
+          providerId(native.instructorId),
+        );
+        if (native.marker !== undefined) {
+          const marker = recoveryMarker.parse(native.marker);
+          report.searchParams.set(
+            `filter[additional_fields][${marker.field}]`,
+            marker.value,
+          );
+        }
+        url = report.href;
+        method = "GET";
+        break;
+      }
       if (native.kind === "booking-comment") {
         url =
           "https://user-api-v2.simplybook.me/admin/bookings/" +
@@ -611,6 +684,9 @@ export async function providerRequest(
             if (!/^([01]\d|2[0-3]):[0-5]\d:00$/.test(native.time))
               throw new ApiError(503, "provider_time_invalid");
             const fields = nativeBookFields(native.client, native.additional);
+            const marker = recoveryMarker.optional().parse(native.marker);
+            if (marker && marker.field !== secrets.recoveryIntakeField)
+              throw new ApiError(503, "native_recovery_field_unavailable");
             rpcMethod = "book";
             params = [
               service,
@@ -618,7 +694,9 @@ export async function providerRequest(
               native.date,
               native.time,
               fields.client,
-              fields.additional,
+              marker
+                ? { ...fields.additional, [marker.field]: marker.value }
+                : fields.additional,
               1,
               native.batchId === undefined
                 ? null
@@ -817,16 +895,28 @@ export async function providerRequest(
           typeof value.error.code === "number" &&
           Number.isSafeInteger(value.error.code)
         ) {
-          // Official book contract: unavailable date/time throws before this
-          // single, non-recurring booking is created. Batch errors are ambiguous.
+          // A malformed error may carry a diagnostic code but cannot complete our dispatch.
+          if (
+            !("message" in value.error) ||
+            typeof value.error.message !== "string"
+          )
+            throw new ProviderRpcError(value.error.code);
+          // The documented input preconditions reject a single non-recurring
+          // book request. Batch and partial-result errors remain ambiguous.
           // Provider references: docs/api-contracts.md, verified no-creation resolution.
           if (
             operation === "native" &&
             native?.kind === "book" &&
             native.batchId === undefined &&
-            (value.error.code === -32053 || value.error.code === -32054)
+            isSingleBookPrecondition(value.error.code)
           )
             throw new ProviderBookRejectedError(
+              value.error.code,
+              rpcId,
+              Date.now(),
+            );
+          if (operation === "native" && native?.kind === "book")
+            throw new CompletedBookRpcError(
               value.error.code,
               rpcId,
               Date.now(),
@@ -847,7 +937,8 @@ export async function providerRequest(
       return value;
     } catch (error) {
       confirmationFailed = true;
-      cooldown = 60000;
+      // A completed single-book input rejection leaves the account healthy for fresh reads.
+      cooldown = error instanceof ProviderBookRejectedError ? 0 : 60000;
       console.log(
         JSON.stringify({
           event: "provider_failure",

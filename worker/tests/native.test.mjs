@@ -3795,3 +3795,264 @@ test("rejected ongoing preflight grants are archived without reopening finite or
     }
   }
 });
+
+function unknownCreationFixture(dateCount = 1) {
+  const values = input();
+  const { intent } = values.scope;
+  intent.customerMode = "booking-contact";
+  const template = intent.sessions[0];
+  intent.sessions = [];
+  intent.totalMinor = 0;
+  const dates = [];
+  const lookupPages = {};
+  const lookupIntervals = {};
+  for (let day = 1; day <= dateCount; day++) {
+    const date = new Date(Date.now() + day * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    dates.push(date);
+    intent.sessions.push({
+      ...template,
+      startMs: Date.parse(date + "T12:00:00+08:00"),
+    });
+    intent.totalMinor += template.totalMinor;
+    lookupPages[date] = [reportPage([])];
+    lookupIntervals[date] = { [date]: { 14: [] } };
+  }
+  return { ...values, dates, lookupPages, lookupIntervals };
+}
+
+function reportPage(data, page = 1, itemsCount = data.length) {
+  return {
+    data,
+    metadata: {
+      page,
+      on_page: 20,
+      items_count: itemsCount,
+      pages_count: Math.ceil(itemsCount / 20),
+    },
+  };
+}
+
+function reportBooking(date, fields = {}) {
+  return {
+    id: 701,
+    service_id: 12,
+    provider_id: 14,
+    client: { id: 51, email: "guest@example.invalid" },
+    duration: 40,
+    start_datetime: date + " 12:00:00",
+    end_datetime: date + " 12:50:00",
+    ...fields,
+  };
+}
+
+test("unknown creation report classifies an exact booking only as a candidate and independently checks each original window", async () => {
+  const values = unknownCreationFixture(2);
+  const [first, second] = values.dates;
+  for (const [index, date] of values.dates.entries()) {
+    values.lookupPages[date] = [
+      reportPage([reportBooking(date, { id: 701 + index })]),
+    ];
+  }
+  const candidate = await call("lookup-unknown-creation", values);
+  assert.equal(candidate.status, 200);
+  assert.deepEqual(candidate.result, {
+    match: "candidate",
+    windowsAvailable: false,
+  });
+
+  // Full 40-minute sessions also need the original 10-minute changeover.
+  for (const date of values.dates) {
+    values.lookupPages[date] = [reportPage([])];
+    values.lookupIntervals[date][date][14] = [
+      { from: "12:00:00", to: "12:50:00" },
+    ];
+  }
+  const empty = await call("lookup-unknown-creation", values);
+  assert.deepEqual(empty.result, { match: "empty", windowsAvailable: true });
+  assert.deepEqual(
+    empty.sent.filter(({ kind }) => kind === "booking-list"),
+    values.dates.map((date) => ({
+      kind: "booking-list",
+      date,
+      serviceId: "12",
+      instructorId: "14",
+      page: 1,
+    })),
+  );
+  assert.deepEqual(
+    empty.sent.filter(({ kind }) => kind === "availability"),
+    values.dates.map((date) => ({
+      kind: "availability",
+      date,
+      serviceId: "12",
+      instructorId: "14",
+      intervals: true,
+    })),
+  );
+  assert.equal(empty.sent.length, 4);
+  values.lookupIntervals[second][second][14][0].to = "12:40:00";
+  assert.deepEqual((await call("lookup-unknown-creation", values)).result, {
+    match: "empty",
+    windowsAvailable: false,
+  });
+  values.lookupPages[first] = [reportPage([reportBooking(first)])];
+  assert.deepEqual((await call("lookup-unknown-creation", values)).result, {
+    match: "ambiguous",
+    windowsAvailable: false,
+  });
+});
+
+test("unknown creation report preserves ambiguity for duplicate and overlapping bookings with incomplete original correlation", async () => {
+  const values = unknownCreationFixture();
+  const [date] = values.dates;
+  const exact = reportBooking(date);
+  for (const rows of [
+    [exact, { ...exact, id: 702 }],
+    [{ ...exact, client: {} }],
+    [{ ...exact, end_datetime: date + " 12:40:00" }],
+    [{ ...exact, duration: 30 }],
+    [
+      reportBooking(date, {
+        start_datetime: date + " 11:40:00",
+        end_datetime: date + " 12:30:00",
+      }),
+    ],
+  ]) {
+    values.lookupPages[date] = [reportPage(rows)];
+    const reply = await call("lookup-unknown-creation", values);
+    assert.deepEqual(reply.result, {
+      match: "ambiguous",
+      windowsAvailable: false,
+    });
+  }
+  // Another verified contact at the original time is unrelated, even if the
+  // provider correctly reports that the occupied window is unavailable.
+  values.lookupPages[date] = [
+    reportPage([{ ...exact, client: { email: "other@example.invalid" } }]),
+  ];
+  assert.deepEqual((await call("lookup-unknown-creation", values)).result, {
+    match: "empty",
+    windowsAvailable: false,
+  });
+  // Touching the end of the original window is also outside the booking.
+  values.lookupPages[date] = [
+    reportPage([
+      reportBooking(date, {
+        start_datetime: date + " 12:50:00",
+        end_datetime: date + " 13:40:00",
+      }),
+    ]),
+  ];
+  assert.deepEqual((await call("lookup-unknown-creation", values)).result, {
+    match: "empty",
+    windowsAvailable: false,
+  });
+  const marker = { field: "a".repeat(32), values: ["b".repeat(64)] };
+  const markerLookup = async (rows) =>
+    call("lookup-unknown-creation", {
+      ...values,
+      lookupMarker: marker,
+      markerPages: { [date]: [reportPage(rows)] },
+    });
+  // A provider can ignore a mutable filter. Such a result supplies no signing key.
+  const ignored = await markerLookup([exact]);
+  assert.deepEqual(ignored.result, {
+    match: "ambiguous",
+    windowsAvailable: false,
+  });
+  assert.deepEqual(ignored.sent.find((req) => req.marker)?.marker, {
+    field: marker.field,
+    value: marker.values[0],
+  });
+  values.lookupPages[date] = [reportPage([exact])];
+  for (const filtered of [[exact], []]) {
+    assert.deepEqual((await markerLookup(filtered)).result, {
+      match: "candidate",
+      windowsAvailable: false,
+    });
+  }
+  const invalid = await call("lookup-unknown-creation", {
+    ...values,
+    lookupMarker: { ...marker, values: [] },
+  });
+  assert.deepEqual(invalid.result, {
+    match: "unavailable",
+    windowsAvailable: null,
+  });
+  assert.deepEqual(invalid.sent, []);
+});
+
+test("unknown creation report rejects partial pages malformed evidence changed totals and out-of-scope rows", async () => {
+  const values = unknownCreationFixture();
+  const [date] = values.dates;
+  const otherBookings = Array.from({ length: 20 }, (_, index) =>
+    reportBooking(date, {
+      id: index + 1,
+      start_datetime: date + " 13:40:00",
+      end_datetime: date + " 14:30:00",
+    }),
+  );
+  const last = reportBooking(date);
+  const first = reportPage(otherBookings, 1, 21);
+  values.lookupPages[date] = [first, reportPage([last], 2, 21)];
+  const full = await call("lookup-unknown-creation", values);
+  assert.deepEqual(full.result, {
+    match: "candidate",
+    windowsAvailable: false,
+  });
+  assert.deepEqual(
+    full.sent
+      .filter(({ kind }) => kind === "booking-list")
+      .map(({ page }) => page),
+    [1, 2],
+  );
+  for (const [reason, pages] of [
+    ["malformed data", [{ data: {}, metadata: first.metadata }]],
+    ["truncated report", [first]],
+    ["changed total", [first, reportPage([last], 2, 22)]],
+    ["wrong requested page", [first, reportPage([last], 1, 21)]],
+    ["filtered service changed", [reportPage([{ ...last, service_id: 13 }])]],
+    ["filtered trainer changed", [reportPage([{ ...last, provider_id: 15 }])]],
+    ["filtered date changed", [reportPage([reportBooking("2000-01-01")])]],
+  ]) {
+    values.lookupPages[date] = pages;
+    assert.deepEqual(
+      (await call("lookup-unknown-creation", values)).result,
+      { match: "unavailable", windowsAvailable: null },
+      reason,
+    );
+  }
+  values.lookupPages[date] = [reportPage([])];
+  for (const kind of ["booking-list", "availability"]) {
+    const stale = await call("lookup-unknown-creation", {
+      ...values,
+      staleLookupOn: kind,
+    });
+    assert.deepEqual(stale.result, {
+      match: "unavailable",
+      windowsAvailable: null,
+    });
+  }
+  values.lookupIntervals[date] = { wrongDate: [] };
+  assert.deepEqual((await call("lookup-unknown-creation", values)).result, {
+    match: "unavailable",
+    windowsAvailable: null,
+  });
+});
+
+test("unknown creation report discards a late provider reply after its owner aborts the lookup", async () => {
+  const values = unknownCreationFixture();
+  const [date] = values.dates;
+  values.lookupPages[date] = [reportPage([reportBooking(date)])];
+  for (const kind of ["booking-list", "availability"]) {
+    const result = await call("lookup-unknown-creation", {
+      ...values,
+      abortLookupOn: kind,
+    });
+    assert.equal(result.status, 409);
+    assert.equal(result.result, undefined);
+    assert.equal(result.sent.at(-1).kind, kind);
+  }
+});

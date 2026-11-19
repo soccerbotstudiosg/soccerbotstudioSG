@@ -1,4 +1,8 @@
 import { studioStartsFromIntervals } from "./native-grid";
+import {
+  recoveryIntakeField,
+  supportsRecoveryField,
+} from "./native-creation-marker";
 import { parallelReads } from "./parallel-reads";
 import { z } from "zod";
 import { sessionPrices, sessionRate } from "../src/domain/session-pricing";
@@ -89,6 +93,7 @@ export const nativeAccountContractSchema = z
     bufferAfterMinutes: z.literal(10),
     clientLoginRequired: z.literal(false),
     providerSchedules: z.enum(["non-overlapping", "customer-choice"]),
+    recoveryIntakeField: recoveryIntakeField.optional(),
     bookingLeadMinutes: z
       .union([z.literal(150), z.literal(BOOKING_LEAD_MINUTES)])
       .optional(),
@@ -281,7 +286,12 @@ export class NativePrebooking {
       : undefined;
     const fields = parallel ? parallel[0] : await readFields();
     if (parallel) this.observeRead?.("required-fields", fields.body);
-    if (!Array.isArray(fields.body) || fields.body.length !== 0)
+    if (
+      !supportsRecoveryField(
+        fields.body,
+        this.accountContract?.recoveryIntakeField,
+      )
+    )
       return {
         state: "unavailable" as const,
         reasons: ["native_required_fields_unsupported"],

@@ -4639,6 +4639,14 @@ test("operator no-creation proof retires only its exact attempt and preserves te
   });
   try {
     const a = await unresolvedCreation(f);
+    // A verified operator may cite a provider request reference, but cannot assign its RPC classification.
+    a.proof.evidenceReference = `book:-32062:${crypto.randomUUID()}`;
+    await f.db
+      .prepare(
+        "UPDATE developer_operations SET result_json=? WHERE capability_hash=?",
+      )
+      .bind(JSON.stringify(a.proof), a.operatorHash)
+      .run();
     assert.equal(
       (await resolveCreation(f, a, { attemptId: crypto.randomUUID() })).status,
       413,
@@ -4759,6 +4767,46 @@ test("operator no-creation proof retires only its exact attempt and preserves te
       /creation already resolved/,
     );
     assert.equal(f.calls.length, 0);
+    // Older immutable rows may have generic archived grant results. Only their exact proof can add a reason.
+    const rpcId = crypto.randomUUID();
+    for (const [reference, expected] of [
+      [
+        `book:-32062:${rpcId}`,
+        { state: "not_created", reason: "contact_email_rejected" },
+      ],
+      [`book-search:-32062:${rpcId}`, { state: "not_created" }],
+      [`book:-32062:${rpcId.slice(1)}`, { state: "not_created" }],
+    ]) {
+      const historical = await unresolvedCreation(f);
+      await f.db
+        .prepare(
+          "INSERT INTO no_creation_resolutions(attempt_id,intent_hash,attempt_version,dispatch_fence,evidence_source,evidence_reference,verified_ms,resolved_ms) SELECT id,intent_hash,version,?,'correlated_rpc_rejection',?,?,? FROM attempts WHERE id=?",
+        )
+        .bind(
+          historical.proof.dispatchFence,
+          reference,
+          historical.proof.verifiedMs,
+          historical.proof.verifiedMs,
+          historical.id,
+        )
+        .run();
+      for (const version of ["0", "1"]) {
+        const owned = await f.mf.dispatchFetch(
+          origin + `/api/attempts/${historical.id}/checkout`,
+          {
+            headers: {
+              cookie: historical.cookie,
+              "X-Booking-Email-Recovery": version,
+            },
+          },
+        );
+        assert.equal(owned.status, 200);
+        assert.deepEqual(
+          (await owned.json()).creationResolution,
+          version === "1" ? expected : { state: "not_created" },
+        );
+      }
+    }
   } finally {
     await f.mf.dispose();
   }
@@ -4774,6 +4822,7 @@ test("operator no-creation proof rejects stale partial paid held and unverified 
       "stale",
       "unfinished",
       "before-dispatch",
+      "retained-provider-response",
       "observed",
       "reference",
       "association",
@@ -4787,6 +4836,24 @@ test("operator no-creation proof rejects stale partial paid held and unverified 
       if (scenario === "stale") proof.version = 1;
       if (scenario === "unfinished") proof.processingFinished = false;
       if (scenario === "before-dispatch") proof.verifiedMs = 1;
+      if (scenario === "retained-provider-response")
+        await f.db
+          .prepare(
+            "UPDATE native_checkout_grants SET result_json=? WHERE attempt_id=?",
+          )
+          .bind(
+            JSON.stringify({
+              holdEvidence: [
+                {
+                  operation: "book",
+                  bookings: [{ id: "701" }],
+                  invoice: { id: "901" },
+                },
+              ],
+            }),
+            a.id,
+          )
+          .run();
       if (scenario === "observed")
         await f.db
           .prepare(

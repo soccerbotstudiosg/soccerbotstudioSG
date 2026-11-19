@@ -159,6 +159,7 @@ export async function prepareHitpay(
   assertGranted: () => Promise<void>,
   consolidated?: {
     access: Access;
+    chainedReservation?: boolean;
     finish?: (save: D1PreparedStatement) => Promise<void>;
     reserve?: (statement: D1PreparedStatement) => Promise<void>;
   },
@@ -192,6 +193,7 @@ export async function prepareHitpay(
         (consolidated
           ? "SELECT ?,?,?,?,?,?,'due','creation_unknown',? WHERE EXISTS(SELECT 1 FROM guest_access c JOIN attempts a ON a.owner_id=c.owner_id JOIN hitpay_holds h ON h.attempt_id=a.id JOIN checkout_progress p ON p.attempt_id=a.id JOIN checkout_payment_routes r ON r.attempt_id=a.id WHERE c.capability_hash=? AND c.owner_id=? AND c.revoked_ms IS NULL AND c.issued_ms<=? AND c.expires_ms>? AND a.id=? AND a.state='observed' AND a.association_json=? AND a.intent_hash=? AND h.association_json=a.association_json AND h.intent_hash=a.intent_hash AND r.route='hitpay' AND MIN(h.expires_ms,p.booking_created_ms+p.payment_window_ms)>=? AND ?>?)"
           : "VALUES(?,?,?,?,?,?,'due','creation_unknown',?)") +
+        (consolidated?.chainedReservation ? " AND changes()=1" : "") +
         " ON CONFLICT(attempt_id) DO NOTHING",
     ).bind(
       scope.attemptId,
@@ -335,6 +337,7 @@ export async function recordedHitpayPayment(
 }
 
 export type PaymentReadSnapshot = {
+  nativeCreationReview?: boolean;
   route: string | null;
   payment: HitpayRow | null;
 };
@@ -456,14 +459,16 @@ export async function hitpayConfirmationGuard(
   const row = snapshot
     ? {
         route: snapshot.route,
-        state: snapshot.payment?.state ?? null,
+        state:
+          snapshot.payment?.state ??
+          (snapshot.nativeCreationReview ? "manual_review" : null),
         paid_ms: snapshot.payment?.paid_ms ?? null,
         payment_id: snapshot.payment?.payment_id ?? null,
         external_state: snapshot.payment?.external_state ?? null,
       }
     : await env.STATE.withSession("first-primary")
         .prepare(
-          "SELECT r.route,p.state,p.paid_ms,p.payment_id,p.external_state FROM checkout_payment_routes r LEFT JOIN hitpay_payments p ON p.attempt_id=r.attempt_id WHERE r.attempt_id=?",
+          "SELECT r.route,COALESCE(p.state,w.state) AS state,p.paid_ms,p.payment_id,p.external_state FROM checkout_payment_routes r LEFT JOIN hitpay_payments p ON p.attempt_id=r.attempt_id LEFT JOIN recovery_work w ON w.attempt_id=r.attempt_id AND w.state='manual_review' AND w.reason IN ('native_booking_paid_review','native_booking_cancelled_review','creation_lookup_exhausted') WHERE r.attempt_id=?",
         )
         .bind(id)
         .first<{

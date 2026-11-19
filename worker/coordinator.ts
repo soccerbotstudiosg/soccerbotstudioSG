@@ -35,6 +35,12 @@ import { hitpayRecoveryEnabled } from "./hitpay-contract";
 import { recoverHitpay } from "./hitpay-recovery";
 import { ongoingReadbackDue } from "./ongoing-readback";
 import {
+  armUnknownCreation,
+  claimUnknownCreation,
+  finishUnknownCreation,
+} from "./creation-recovery-schedule";
+import { reconcileUnknownCreation } from "./native-creation-lookup";
+import {
   authorizeCustomerCheckout,
   rejectedCheckoutReadback,
 } from "./customer-authority";
@@ -140,6 +146,9 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     );
     ctx.storage.sql.exec(
       "CREATE TABLE IF NOT EXISTS payment_wakeups(attempt_id TEXT PRIMARY KEY, correlation_id TEXT NOT NULL, generation INTEGER NOT NULL)",
+    );
+    ctx.storage.sql.exec(
+      "CREATE TABLE IF NOT EXISTS creation_wakeups(attempt_id TEXT PRIMARY KEY,correlation_id TEXT NOT NULL,ready_ms INTEGER NOT NULL)",
     );
     if (
       !ctx.storage.sql
@@ -1509,7 +1518,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
               rejected.selectionRejection,
             );
           });
-          return executeNativeCheckout({
+          const result = await executeNativeCheckout({
             request,
             env,
             attemptId,
@@ -1551,13 +1560,39 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
               );
             await this.refreshDisplayAfterWrite(attemptId, access.owner_id);
           });
+          if (
+            result.state === "recovery_required" &&
+            !("creationResolution" in result && result.creationResolution)
+          ) {
+            // The dispatch journal survives a missed alarm; never invalidate the original reply.
+            try {
+              const wake = await armUnknownCreation(
+                this.env,
+                attemptId,
+                Date.now(),
+              );
+              if (wake)
+                await this.setCreationWake(
+                  attemptId,
+                  correlationId,
+                  wake.ready_ms,
+                );
+            } catch {
+              console.error(
+                JSON.stringify({ event: "creation_wakeup_deferred" }),
+              );
+            }
+          }
+          return result;
         }),
       ),
     );
     let serverTiming: string | undefined;
-    const outcome = await rpcOutcome(() => pending).finally(() => {
+    const result = rpcOutcome(() => pending).finally(() => {
       serverTiming = finishCheckoutTrace(checkoutTrace);
     });
+    if (scope.checkout) this.ctx.waitUntil(result.then(() => undefined));
+    const outcome = await result;
     return { ...outcome, serverTiming };
   }
   async bookingComments(attemptId?: string) {
@@ -1649,6 +1684,71 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     );
     await this.schedulePaymentAlarm();
   }
+  /** Retain the account alarm for an already scheduled original-attempt read. */
+  private async setCreationWake(
+    attemptId: string,
+    correlationId: string,
+    readyMs: number,
+  ) {
+    this.sql.exec(
+      "INSERT INTO creation_wakeups(attempt_id,correlation_id,ready_ms) VALUES(?,?,?) ON CONFLICT(attempt_id) DO UPDATE SET correlation_id=excluded.correlation_id,ready_ms=excluded.ready_ms",
+      attemptId,
+      correlationId,
+      readyMs,
+    );
+    await this.schedulePaymentAlarm();
+  }
+  /** Coalesce cron and alarm invocations under a bounded D1 claim and the shared account queue. */
+  async recoverUnknownCreation(attemptId: string, correlationId: string) {
+    z.string().uuid().parse(attemptId);
+    z.string().uuid().parse(correlationId);
+    return this.providerQueue.run("recovery", () =>
+      traced(correlationId, "coordinator", async () => {
+        await armUnknownCreation(this.env, attemptId, Date.now(), {
+          sql: this.sql,
+          instanceId: this.instanceId,
+        });
+        const claim = await claimUnknownCreation(
+          this.env,
+          attemptId,
+          Date.now(),
+        );
+        if (!claim) return;
+        let resolved = false;
+        try {
+          const result = await reconcileUnknownCreation(
+            this.env,
+            attemptId,
+            this.provider,
+            this.providerControl(true, true),
+            claim,
+          );
+          resolved = result.state === "resolved";
+        } catch {
+          // An unavailable/rate-limited provider has given no terminal evidence.
+          console.error(JSON.stringify({ event: "creation_lookup_deferred" }));
+        }
+        const next = await finishUnknownCreation(
+          this.env,
+          claim,
+          resolved,
+          Date.now(),
+        );
+        if (next?.state === "due")
+          await this.setCreationWake(attemptId, correlationId, next.ready_ms);
+        if (
+          resolved &&
+          (await this.env.STATE.withSession("first-primary")
+            .prepare(
+              "SELECT 1 FROM hitpay_payments WHERE attempt_id=? AND state IN ('due','claimed')",
+            )
+            .bind(attemptId)
+            .first())
+        )
+          await this.wakeCreatedPayment(attemptId, correlationId);
+      }),
+    );
+  }
   /** Process retained payment wakeups without discarding newer generations. */
   async alarm() {
     const wake = this.sql
@@ -1670,6 +1770,17 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
         wake.generation,
       );
     }
+    const creation = this.sql
+      .exec<{ attempt_id: string; correlation_id: string }>(
+        "DELETE FROM creation_wakeups WHERE attempt_id=(SELECT attempt_id FROM creation_wakeups WHERE ready_ms<=? ORDER BY ready_ms,attempt_id LIMIT 1) RETURNING attempt_id,correlation_id",
+        Date.now(),
+      )
+      .toArray()[0];
+    if (creation)
+      await this.recoverUnknownCreation(
+        creation.attempt_id,
+        creation.correlation_id,
+      );
     await this.refreshReleasedDay();
     await this.schedulePaymentAlarm();
   }
@@ -1679,7 +1790,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     const pending = this.paymentAlarmSchedule.then(async () => {
       const next = this.sql
         .exec<{ ready_ms: number }>(
-          "SELECT ready_ms FROM payment_wakeups ORDER BY ready_ms LIMIT 1",
+          "SELECT ready_ms FROM payment_wakeups UNION ALL SELECT ready_ms FROM creation_wakeups ORDER BY ready_ms LIMIT 1",
         )
         .toArray()[0];
       const release = liveCustomerAccess(this.env)

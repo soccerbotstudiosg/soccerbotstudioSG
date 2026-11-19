@@ -684,6 +684,13 @@ test("ended provider transports release capacity without replaying uncertain wri
       { kind: "catalogue-services" },
       { kind: "catalogue-instructors" },
       { kind: "booking-read", bookingId: "701", signature: "a".repeat(32) },
+      {
+        kind: "booking-list",
+        serviceId: "12",
+        instructorId: "14",
+        date: "2026-10-16",
+        page: 1,
+      },
       { kind: "invoice-read", invoiceId: "901" },
       { kind: "webhook-subscriptions" },
       { kind: "required-fields", serviceId: "12" },
@@ -2128,6 +2135,7 @@ test("provider identity renewal keeps native reads valid across token retention 
     let reserved = 0;
     let finished = 0;
     let slowIdentity = false;
+    const bookingQueries = [];
     const control = {
       reserve: async () => String(++reserved),
       finish: () => finished++,
@@ -2145,6 +2153,14 @@ test("provider identity renewal keeps native reads valid across token retention 
         return Response.json({ token: "synthetic-admin-token" });
       if (path === "/admin/company/info")
         return Response.json({ login: "synthetic-company" });
+      if (path === "/admin/bookings") {
+        assert.equal(new URL(url).origin, "https://user-api-v2.simplybook.me");
+        assert.equal(options.method, "GET");
+        assert.equal(options.body, undefined);
+        assert.equal(options.headers["X-Token"], "synthetic-admin-token");
+        bookingQueries.push(Object.fromEntries(new URL(url).searchParams));
+        return Response.json({ data: [] });
+      }
       if (path === "/admin/tariff/current") {
         if (slowIdentity) now += 2000;
         return Response.json({ limits: [] });
@@ -2176,6 +2192,55 @@ test("provider identity renewal keeps native reads valid across token retention 
       kind: "catalogue-services",
     });
     assert.deepEqual(response.body, fixtures().services);
+    const lookup = {
+      kind: "booking-list",
+      date: "2026-10-16",
+      serviceId: "12",
+      instructorId: "14",
+      page: 3,
+    };
+    const list = await session.nativeRead(env, control, lookup);
+    assert.deepEqual(list.body, { data: [] });
+    const marker = { field: "a".repeat(32), value: "c".repeat(64) };
+    await session.nativeRead(env, control, { ...lookup, marker });
+    const filters = {
+      page: "3",
+      on_page: "20",
+      "filter[date]": "2026-10-16",
+      "filter[services][]": "12",
+      "filter[providers][]": "14",
+    };
+    assert.deepEqual(bookingQueries, [
+      filters,
+      {
+        ...filters,
+        [`filter[additional_fields][${marker.field}]`]: marker.value,
+      },
+    ]);
+    const beforeInvalid = reserved;
+    for (const invalid of [
+      { page: 0 },
+      { page: 4 },
+      { page: 1.5 },
+      { date: "2026-02-30" },
+      { date: "2026-1-16" },
+      { serviceId: "0" },
+      { instructorId: "14&filter[search]=anything" },
+      { marker: null },
+      { marker: { ...marker, field: "a".repeat(31) } },
+      { marker: { ...marker, field: "A".repeat(32) } },
+      { marker: { ...marker, field: "][search]" } },
+      { marker: { ...marker, value: "c".repeat(63) } },
+      { marker: { ...marker, value: "C".repeat(64) } },
+    ])
+      await assert.rejects(
+        session.nativeRead(env, control, { ...lookup, ...invalid }),
+      );
+    await assert.rejects(
+      session.nativeRead(env, { ...control, financialRecovery: true }, lookup),
+      /provider_operation_unavailable/,
+    );
+    assert.equal(reserved, beforeInvalid);
     assert.equal(calls.filter((path) => path === "/login").length, 1);
     assert.equal(calls.filter((path) => path === "/admin/auth").length, 1);
     assert.equal(reserved, calls.length);

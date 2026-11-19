@@ -66,7 +66,7 @@ test("browser shards preserve complete demo and live inventories and reject gaps
     [...batchesForShard(1), ...batchesForShard(2)].sort((a, b) => a - b),
     Array.from({ length: batchCount }, (_, i) => i + 1),
   );
-  assert.equal(batchCount, 54);
+  assert.equal(batchCount, 57);
   for (const suite of ["demo", "live-email"]) {
     const reports = reportsFor(suite);
     assert.deepEqual(
@@ -147,13 +147,13 @@ test("browser shards reject foreign builds, mixed attempts, failed receipts and 
   const failed = structuredClone(receipts);
   failed[1].status = "running";
   assert.throws(() => validateShards(failed, build));
-  for (const value of ["0", "55", "../1", "1/54"])
+  for (const value of ["0", "58", "../1", "1/57"])
     assert.throws(() =>
       browserEvidenceDirectory({ SOCCERBOT_BROWSER_BATCH: value }),
     );
   assert.equal(
-    browserEvidenceDirectory({ SOCCERBOT_BROWSER_BATCH: "54" }),
-    "test-results/browser-batches/54",
+    browserEvidenceDirectory({ SOCCERBOT_BROWSER_BATCH: "57" }),
+    "test-results/browser-batches/57",
   );
 });
 

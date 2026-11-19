@@ -733,6 +733,18 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "email rejection explains a taken session after protected recovery"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "email rejection keeps help available when capacity cannot be read"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "guest email rejection restores an available session and focuses email correction"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "seeded booking sequence 10 resumes a delayed submission after repeated interrupted protected reads"
   },
   {
@@ -1033,6 +1045,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "verified members retain their identity and can request help after email rejection"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "verified no-creation permits Back with replacement selections without replaying payment"
   },
   {
@@ -1249,6 +1265,10 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "reopens the internal payment continuation when Calendar recovers an unpaid checkout"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "routes only authenticated no-effect selection rejections to the calendar"
   },
   {
@@ -1305,6 +1325,10 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
+    "title": "checkout recovery stays mounted when the public calendar fails to load"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
     "title": "confirmation places three retained actions below the summary with complete details visible"
   },
   {
@@ -1325,7 +1349,7 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
-    "title": "pre-checkout recovery restores fresh display times without releasing the original attempt"
+    "title": "pre-checkout recovery hides the original time until verified release then enables contact details"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
@@ -1785,6 +1809,10 @@
   },
   {
     "file": "tests/live-email.spec.ts",
+    "title": "a fresh same-cookie tab can back through checkout rejection without adopting the first tab's payment"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
     "title": "concurrent browser tabs reuse one hold and payment and reject revoked access"
   },
   {
@@ -1922,5 +1950,9 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "three complete single-booking browser journeys preserve independent confirmations through Back reload and old links"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "two customers overlapping at the second batch slot preserve the first checkout and recover the partial attempt after two native Backs"
   }
 ]

@@ -235,6 +235,257 @@ test("recovery scheduling is atomic with dispatch and duplicate logical intent s
     1,
   );
 });
+test("unknown native creation checks coalesce by original dispatch, recheck at five seconds and fence every delayed claim", async () => {
+  const schedule = (scenario, at, recoveryClaim, id = a.id) =>
+    result("creation-schedule", { id, scenario, now: at, recoveryClaim });
+  async function runningCheckout() {
+    const a = await dispatched();
+    await db.batch([
+      db
+        .prepare(
+          "INSERT INTO native_checkout_grants(attempt_id,capability_hash,intent_hash,source_revision,contract_json,not_before_ms,expires_ms,starting_used,maximum_used,state,ongoing) SELECT id,?,intent_hash,?,'{}',?,?,0,40,'running',1 FROM attempts WHERE id=?",
+        )
+        .bind(a.hash, "d".repeat(40), now, now + 600000, a.id),
+      db
+        .prepare(
+          "INSERT INTO checkout_payment_routes(attempt_id,route) VALUES(?,'hitpay')",
+        )
+        .bind(a.id),
+      db
+        .prepare(
+          "INSERT OR IGNORE INTO session_effects(attempt_id,step,outcome) VALUES(?,'session:0','unknown')",
+        )
+        .bind(a.id),
+    ]);
+    return a;
+  }
+  const a = await runningCheckout();
+  assert.equal(
+    await schedule("arm", now),
+    null,
+    "an in-flight foreground dispatch owns its fence",
+  );
+  await db.batch([
+    db
+      .prepare("UPDATE attempts SET state='recovery_required' WHERE id=?")
+      .bind(a.id),
+    db
+      .prepare(
+        "UPDATE native_checkout_grants SET state='blocked' WHERE attempt_id=?",
+      )
+      .bind(a.id),
+  ]);
+  assert.equal(await schedule("disabled", now), null);
+  assert.deepEqual(
+    await schedule("due", now),
+    { id: a.id },
+    "cron discovers a missed original wake",
+  );
+  assert.deepEqual(await schedule("arm", now), { ready_ms: now });
+  assert.equal(
+    await schedule("arm", now + 1),
+    null,
+    "duplicate wake cannot postpone the first check",
+  );
+  const competitors = await Promise.all([
+    schedule("claim", now),
+    schedule("claim", now),
+  ]);
+  const claimed = competitors.filter(Boolean);
+  assert.equal(claimed.length, 1);
+  const [first] = claimed;
+  assert.equal(first.tries, 1);
+  const firstRetry = await schedule("pending", now + 1, first);
+  assert.deepEqual(firstRetry, { state: "due", ready_ms: now + 5001 });
+  assert.equal(await schedule("claim", firstRetry.ready_ms - 1), null);
+  const second = await schedule("claim", firstRetry.ready_ms);
+  assert.equal(second.generation, first.generation + 1);
+  assert.equal(second.attempt_version, first.attempt_version + 1);
+  assert.equal(
+    await schedule("resolved", firstRetry.ready_ms + 1, first),
+    null,
+  );
+  const retry = await schedule("pending", firstRetry.ready_ms + 1, second);
+  assert.equal(retry.ready_ms - firstRetry.ready_ms - 1, 30000);
+  const third = await schedule("claim", retry.ready_ms);
+  // Two unavailable passes precede the first qualifying empty lookup.
+  const emptyAt = retry.ready_ms + 600;
+  await db
+    .prepare(
+      "INSERT INTO native_creation_checks(attempt_id,intent_hash,dispatch_fence,first_empty_ms,checked_ms,list_result,windows_available) SELECT a.id,a.intent_hash,d.fence,?,?,'empty',1 FROM attempts a JOIN dispatches d ON d.attempt_id=a.id WHERE a.id=?",
+    )
+    .bind(emptyAt, emptyAt, a.id)
+    .run();
+  const secondProof = await schedule("pending", emptyAt + 1, third);
+  assert.equal(secondProof.ready_ms, emptyAt + 5000);
+  assert.equal(await schedule("claim", emptyAt + 4999), null);
+  const fourth = await schedule("claim", secondProof.ready_ms);
+  // Model process loss immediately after its leased read. A stale positive cannot settle.
+  const expires = (await row(a)).ready_ms;
+  assert.equal(await schedule("resolved", expires, fourth), null);
+  const fifth = await schedule("claim", expires);
+  assert.equal(fifth.tries, 5);
+  assert.equal(fifth.attempt_version, fourth.attempt_version + 1);
+  assert.equal(await schedule("resolved", expires + 1, fourth), null);
+  assert.equal(
+    (await schedule("pending", expires + 1, fifth)).state,
+    "manual_review",
+  );
+  assert.equal(await schedule("claim", expires + 180000), null);
+  assert.equal(await schedule("due", expires + 180000), null);
+  assert.equal(
+    (
+      await db
+        .prepare(
+          "SELECT count(*) n FROM dispatches WHERE attempt_id=? AND operation='booking.create'",
+        )
+        .bind(a.id)
+        .first()
+    ).n,
+    1,
+  );
+  assert.equal(
+    (
+      await db
+        .prepare("SELECT count(*) n FROM hitpay_payments WHERE attempt_id=?")
+        .bind(a.id)
+        .first()
+    ).n,
+    0,
+  );
+
+  const orphan = await runningCheckout();
+  const boundary = now + 60_000;
+  const adopt = (target, at) => schedule("adopt", at, undefined, target.id);
+  assert.equal(await schedule("due", boundary - 1), null);
+  assert.equal(await adopt(orphan, boundary - 1), null);
+  assert.equal(await schedule("arm", boundary, undefined, orphan.id), null);
+  const storage = await mf.unsafeGetDurableObjectStorage(
+    "soccerbot-recovery-test",
+    "SoccerBotAccountCoordinator",
+    { name: "synthetic-account" },
+  );
+  await storage.exec(
+    "INSERT INTO admissions VALUES('book-in-flight',?,?,0)",
+    config.vars.CAMPAIGN_ID,
+    now,
+  );
+  await storage.exec(
+    "INSERT INTO provider_request_admissions VALUES('book-in-flight','book',0,'fixture-current-instance',?)",
+    boundary - 1,
+  );
+  assert.equal(
+    await adopt(orphan, boundary),
+    null,
+    "the current instance still owns this physical write",
+  );
+  await storage.exec(
+    "UPDATE provider_request_admissions SET instance_id='previous-instance',expires_ms=? WHERE id='book-in-flight'",
+    boundary + 1,
+  );
+  assert.equal(
+    await adopt(orphan, boundary),
+    null,
+    "another instance's unexpired transport still owns this write",
+  );
+  assert.deepEqual(await schedule("due", boundary), { id: orphan.id });
+  await mf.dispose();
+  await start();
+  assert.deepEqual(await adopt(orphan, boundary + 1), {
+    ready_ms: boundary + 1,
+  });
+  const adopted = await schedule("claim", boundary + 1, undefined, orphan.id);
+  assert.equal(adopted.attempt_version, 3);
+  assert.equal(
+    await result("recovery", { id: orphan.id, fence: 1 }),
+    false,
+    "the original foreground fence is retired",
+  );
+  const unresolved = await db
+    .prepare(
+      `SELECT a.state,a.observation_json,d.outcome,
+     (SELECT COUNT(*) FROM no_creation_resolutions WHERE attempt_id=a.id) AS no_creation,
+     (SELECT COUNT(*) FROM hitpay_payments WHERE attempt_id=a.id) AS payments
+     FROM attempts a JOIN dispatches d ON d.attempt_id=a.id WHERE a.id=?`,
+    )
+    .bind(orphan.id)
+    .all();
+  assert.deepEqual(unresolved.results, [
+    {
+      state: "recovery_required",
+      observation_json: null,
+      outcome: "unknown",
+      no_creation: 0,
+      payments: 0,
+    },
+  ]);
+
+  // The process-restart case exercised a physical lease that expires just past
+  // the cutoff. Release it before testing the separate, earlier cutoff below.
+  const restartedStorage = await mf.unsafeGetDurableObjectStorage(
+    "soccerbot-recovery-test",
+    "SoccerBotAccountCoordinator",
+    { name: "synthetic-account" },
+  );
+  await restartedStorage.exec(
+    "UPDATE admissions SET finished=1 WHERE id='book-in-flight'",
+  );
+  const associated = await runningCheckout();
+  await associate(associated);
+  assert.equal(await result("recovery", { id: associated.id, fence: 2 }), true);
+  assert.equal(
+    (await row(associated)).ready_ms,
+    0,
+    "the foreground transition expedited the generic wake",
+  );
+  assert.equal(
+    await adopt(associated, boundary),
+    null,
+    "association alone does not identify every signed original key",
+  );
+  await db
+    .prepare(
+      "INSERT INTO session_effects VALUES(?,'native-booking-key','observed','retained-signed-original')",
+    )
+    .bind(associated.id)
+    .run();
+  assert.equal(
+    await adopt(associated, boundary - 1),
+    null,
+    "expedited recovery still honors the original 60s crash window",
+  );
+  const grantDeadline = boundary + 7000;
+  await db
+    .prepare(
+      "UPDATE native_checkout_grants SET expires_ms=? WHERE attempt_id=?",
+    )
+    .bind(grantDeadline, associated.id)
+    .run();
+  assert.deepEqual(await adopt(associated, boundary), { ready_ms: boundary });
+  assert.equal(
+    (await schedule("claim", boundary, undefined, associated.id))
+      .attempt_version,
+    5,
+  );
+  assert.equal(
+    (await row(associated)).ready_ms,
+    grantDeadline,
+    "a read cannot retain its claim beyond the original grant deadline",
+  );
+  const original = await db
+    .prepare(
+      "SELECT association_json,outcome FROM attempts a JOIN dispatches d ON d.attempt_id=a.id WHERE a.id=?",
+    )
+    .bind(associated.id)
+    .all();
+  assert.equal(original.results.length, 1);
+  assert.deepEqual(JSON.parse(original.results[0].association_json), {
+    invoiceId: "invoice-1",
+    bookingIds: ["booking-1"],
+  });
+  assert.equal(original.results[0].outcome, "observed");
+});
+
 test("concurrent recovery workers acquire one claim and advance the original attempt fence", async () => {
   const a = await dispatched();
   const claims = await Promise.all([

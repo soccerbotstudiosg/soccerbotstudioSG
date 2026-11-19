@@ -6,6 +6,8 @@ export const BOOKING_SIGNED_OUT =
 export const SESSION_UNAVAILABLE = "Session no longer available.";
 export const AVAILABILITY_LOAD_FAILED = "Unable to Load.";
 export const NO_SESSIONS_ON_DATE = "No sessions available on this date.";
+export const CALENDAR_CHECKOUT_PAUSED =
+  "Checkout paused to prevent a duplicate booking.";
 export const CHECKOUT_UNRESOLVED = "We couldn’t confirm your booking status.";
 
 export const CONFLICT_NOTICE =

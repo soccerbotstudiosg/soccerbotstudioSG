@@ -137,6 +137,12 @@ type ActionState = {
   unresolvedCheckout?: boolean;
   resumeAttemptId?: string;
 };
+type EmailRejection = {
+  id: string;
+  email: string;
+  original?: BookingDraft["slots"][number];
+  phase: "checking" | "unavailable" | "unknown" | "details";
+};
 type SessionChoices = { outlet: boolean; session: boolean };
 interface BookingContextValue extends StoredBooking {
   profileAccessRevision: number;
@@ -151,7 +157,9 @@ interface BookingContextValue extends StoredBooking {
   resolveUncreatedBooking: (
     id: string,
     sessions?: CheckoutContext["summary"]["sessions"],
+    reason?: "contact_email_rejected",
   ) => boolean;
+  emailRejection: EmailRejection | null;
   conflictLoadingLabel: string | null;
   selectionNotice: string | null;
   selectionNoticeSlots: NoticeSlot[];
@@ -184,6 +192,7 @@ interface BookingContextValue extends StoredBooking {
   browsingCheckout: boolean;
   resumeSubmittedCheckout: () => void;
   resumePaymentStatus: (attemptId: string) => void;
+  resumeRecoveredCheckout: (attemptId: string) => void;
   rejectRecoveredSelection: (
     attemptId: string,
     rejection: CheckoutSelectionRejection,
@@ -381,6 +390,9 @@ export function BookingProvider({
     bookingAccessNotice() === "session"
       ? BOOKING_SESSION_EXPIRED
       : BOOKING_SIGNED_OUT,
+  );
+  const [emailRejection, setEmailRejection] = useState<EmailRejection | null>(
+    null,
   );
   const [profileSaveError, setProfileSaveError] = useState("");
   const profileSave = useRef<{
@@ -1036,6 +1048,7 @@ export function BookingProvider({
     }
     if (pathname && !/\/(?:book\/|confirmation)/.test(pathname)) {
       if (changed) {
+        setEmailRejection(null);
         setHistoryBrowsing(false);
         detachCheckout();
       }
@@ -1357,6 +1370,7 @@ export function BookingProvider({
     (
       id: string,
       sessions?: CheckoutContext["summary"]["sessions"],
+      reason?: "contact_email_rejected",
       stayOnStep = false,
     ) => {
       const current = latest.current;
@@ -1373,23 +1387,24 @@ export function BookingProvider({
         : left
           ? loadDepartureSlots(id)
           : current.draft.slots;
-      // Non-creation releases this attempt, not provider capacity. Calendar
-      // recovery may already have restored an original time through a fresh
-      // availability read; preserve any deliberate selection of that time.
-      const hiddenOriginals =
-        action.calendarRecovery &&
-        (action.unresolvedCheckout || isUnresolvedCheckout(id))
-          ? originalSlots.filter((original) =>
-              suppression.current.slots.some((slot) =>
-                overlaps(slot, original),
-              ),
-            )
-          : originalSlots;
+      const rejectedEmail = reason === "contact_email_rejected" && !left;
+      setEmailRejection(
+        rejectedEmail
+          ? {
+              id,
+              email: current.draft.contact.email,
+              original: originalSlots[0],
+              phase: originalSlots.length === 1 ? "checking" : "unknown",
+            }
+          : null,
+      );
+      // Older tabs can retain an offered time after losing its suppression marker.
+      // Require a fresh capacity read after release for every original window.
       setSuppressedSlots([
         ...suppression.current.slots.filter(
           (slot) => !originalSlots.some((original) => overlaps(slot, original)),
         ),
-        ...hiddenOriginals,
+        ...originalSlots,
       ]);
       freshChecks.current.delete(service);
       const draft = left
@@ -1400,8 +1415,8 @@ export function BookingProvider({
               stayOnStep || action.calendarRecovery || browsingCheckout
                 ? current.draft.slots.filter(
                     (slot) =>
-                      !hiddenOriginals.some(
-                        (original) => slotKey(original) === slotKey(slot),
+                      !originalSlots.some((original) =>
+                        overlaps(original, slot),
                       ),
                   )
                 : [],
@@ -1412,10 +1427,13 @@ export function BookingProvider({
       saveLiveDraft(draft, false, null);
       setAction({
         status: "idle",
-        returnToCalendar: !stayOnStep && !left && !action.calendarRecovery,
+        returnToCalendar:
+          (!stayOnStep || rejectedEmail) && !left && !action.calendarRecovery,
       });
       const notice =
-        left || (action.calendarRecovery && !noticeShownOnCalendar.current)
+        left ||
+        rejectedEmail ||
+        (action.calendarRecovery && !noticeShownOnCalendar.current)
           ? null
           : BOOKING_NOT_CREATED;
       const noticeSlots = sessions
@@ -1439,7 +1457,6 @@ export function BookingProvider({
     [
       service,
       action.calendarRecovery,
-      action.unresolvedCheckout,
       browsingCheckout,
       cancel,
       commit,
@@ -1541,7 +1558,11 @@ export function BookingProvider({
         }
         if (!current() || context.attemptId !== id) return;
         if (context.creationResolution) {
-          resolveUncreatedBooking(id, context.summary.sessions);
+          resolveUncreatedBooking(
+            id,
+            context.summary.sessions,
+            context.creationResolution.reason,
+          );
           return;
         }
         if (context.selectionRejection) {
@@ -1693,6 +1714,7 @@ export function BookingProvider({
               return resolveUncreatedBooking(
                 pending.attemptId,
                 context.summary.sessions,
+                context.creationResolution.reason,
               );
             if (context.selectionRejection) {
               const sameSnapshot =
@@ -1853,7 +1875,11 @@ export function BookingProvider({
           liveCheckoutAttemptId() === id
         )
           if (context.creationResolution)
-            resolveUncreatedBooking(id, context.summary.sessions);
+            resolveUncreatedBooking(
+              id,
+              context.summary.sessions,
+              context.creationResolution.reason,
+            );
           else if (context.selectionRejection) {
             const original =
               latest.current.attempt?.id === id
@@ -2107,22 +2133,20 @@ export function BookingProvider({
       window.removeEventListener("pageshow", resume);
     };
   }, [detachCheckout]);
-  // Fresh availability can restore pre-link creation recovery's display while
-  // its original financial attempt stays locked. Issued-link expiry retains
-  // suppression until authoritative release; warm caches cannot restore either.
+  // Keep the original windows hidden while their attempt still owns the reservation.
   const { reconcile } = calendar;
   const retainedAttempt = value.attempt;
-  const creationRecovery =
-    service.mode === "live" &&
-    action.calendarRecovery &&
-    !!retainedAttempt &&
-    (action.unresolvedCheckout || isUnresolvedCheckout(retainedAttempt.id));
+  const openEmailCorrection = useEffectEvent(() =>
+    router.replace("/book/details/"),
+  );
   useEffect(() => {
     if (
       !value.ready ||
       restorationPending ||
       pendingConflict ||
       !calendarBrowsing ||
+      (emailRejection?.phase === "checking" &&
+        !/\/book\/time\/?$/.test(pathname ?? "")) ||
       !suppressedSlots.length
     )
       return;
@@ -2182,10 +2206,7 @@ export function BookingProvider({
         }
       }
       const remaining = suppressedSlots.filter((slot) => {
-        if (
-          !creationRecovery &&
-          retainedAttempt?.draft.slots.some((held) => overlaps(slot, held))
-        )
+        if (retainedAttempt?.draft.slots.some((held) => overlaps(slot, held)))
           return true;
         const result = results[dates.indexOf(slot.date)];
         return (
@@ -2245,12 +2266,56 @@ export function BookingProvider({
           true,
         );
       }
+      const original = emailRejection?.original;
+      if (
+        emailRejection &&
+        original &&
+        (emailRejection.phase === "checking" ||
+          emailRejection.phase === "unknown") &&
+        !retainedAttempt &&
+        !latest.current.draft.slots.length &&
+        latest.current.draft.contact.email === emailRejection.email &&
+        /^\/book\/time\/?$/.test(previousNoticePath.current ?? "")
+      ) {
+        const answer = results[dates.indexOf(original.date)];
+        if (answer?.status === "fulfilled") {
+          const offered = answer.value.find(
+            (slot) =>
+              slot.available &&
+              sessionOfferKey(slot) === sessionOfferKey(original) &&
+              slot.instructor === original.instructor &&
+              sessionPrice(slot) === sessionPrice(original) &&
+              !selectionErrors([slot], Date.now()).length,
+          );
+          setEmailRejection({
+            ...emailRejection,
+            phase: offered ? "details" : "unavailable",
+          });
+          if (offered) {
+            const draft = {
+              ...latest.current.draft,
+              slots: [original],
+              accepted: false,
+            };
+            commit({ ...latest.current, draft });
+            saveLiveDraft(draft, false, null);
+            setAction({ status: "idle" });
+            setSelectionNotice(null);
+            openEmailCorrection();
+          }
+        } else if (answer && emailRejection.phase !== "unknown") {
+          setEmailRejection({ ...emailRejection, phase: "unknown" });
+        }
+      }
       if (remaining.length !== suppressedSlots.length)
         setSuppressedSlots(remaining);
     });
     return () => controller.abort();
   }, [
     setSelectionNotice,
+    emailRejection,
+    setAction,
+    pathname,
     service,
     value.ready,
     value.draft.players,
@@ -2258,7 +2323,6 @@ export function BookingProvider({
     value.draft.mode,
     restorationPending,
     calendarBrowsing,
-    creationRecovery,
     suppressedSlots,
     pendingConflict,
     retainedAttempt,
@@ -2452,6 +2516,7 @@ export function BookingProvider({
           const startCheckout = operation === "checkout" && !attempt.held;
           holdDispatched = operation === "reserve" || startCheckout;
           if (operation === "checkout") {
+            setEmailRejection(null);
             request.submission = {
               id: attempt.id,
               detached: false,
@@ -2552,7 +2617,11 @@ export function BookingProvider({
           ]).finally(() => clearTimeout(contextTimer));
           if (!isCurrent()) return false;
           if (context.creationResolution) {
-            resolveUncreatedBooking(attempt.id, context.summary.sessions);
+            resolveUncreatedBooking(
+              attempt.id,
+              context.summary.sessions,
+              context.creationResolution.reason,
+            );
             return false;
           }
           if (
@@ -2591,6 +2660,7 @@ export function BookingProvider({
             !conflict &&
             ![
               "booking_not_created",
+              "contact_email_rejected",
               "checkout_not_started",
               "reservation_blocked",
               "queue_busy",
@@ -2611,8 +2681,16 @@ export function BookingProvider({
             checked === id ? null : checked,
           );
           setDetachedCheckout(null);
-          if (error.code === "booking_not_created") {
-            resolveUncreatedBooking(id, undefined, true);
+          if (
+            error.code === "booking_not_created" ||
+            error.code === "contact_email_rejected"
+          ) {
+            resolveUncreatedBooking(
+              id,
+              undefined,
+              error.code === "contact_email_rejected" ? error.code : undefined,
+              true,
+            );
           } else {
             markSubmittedCheckout(id, false);
             commit({ ...latest.current, attempt: null });
@@ -2637,10 +2715,15 @@ export function BookingProvider({
         request.submission = undefined;
         if (
           error instanceof BookingServiceError &&
-          error.code === "booking_not_created" &&
+          (error.code === "booking_not_created" ||
+            error.code === "contact_email_rejected") &&
           latest.current.attempt
         ) {
-          resolveUncreatedBooking(latest.current.attempt.id);
+          resolveUncreatedBooking(
+            latest.current.attempt.id,
+            undefined,
+            error.code === "contact_email_rejected" ? error.code : undefined,
+          );
           return false;
         }
         if (
@@ -2932,6 +3015,10 @@ export function BookingProvider({
             : CONFLICT_CHECKING
           : null,
         resolveUncreatedBooking,
+        emailRejection:
+          !value.attempt && emailRejection?.email === value.draft.contact.email
+            ? emailRejection
+            : null,
         now,
         bookingService: service,
         identityService,
@@ -2955,6 +3042,19 @@ export function BookingProvider({
         browsingCheckout,
         resumeSubmittedCheckout,
         rejectRecoveredSelection,
+        resumeRecoveredCheckout(id) {
+          if (
+            latest.current.attempt?.id !== id ||
+            !action.calendarRecovery ||
+            !(action.unresolvedCheckout || isUnresolvedCheckout(id))
+          )
+            return;
+          clearCalendarRecovery(id);
+          setSelectionNotice(null);
+          setProtectedConflictRedirect(id);
+          setAction({ status: "idle" });
+          router.replace(`/confirmation/?attempt=${encodeURIComponent(id)}`);
+        },
         resumePaymentStatus(id) {
           if (latest.current.attempt?.id !== id) return;
           completedPaymentReturn(id, true);
@@ -3136,6 +3236,13 @@ export function BookingProvider({
             (active.current && active.current.operation !== "checkout")
           )
             return;
+          if (
+            emailRejection &&
+            ((change.contact &&
+              change.contact.email !== emailRejection.email) ||
+              (change.mode && change.mode !== current.draft.mode))
+          )
+            setEmailRejection(null);
           cancel();
           if (action.returnToCalendar) setAction({ status: "idle" });
           if (
@@ -3160,6 +3267,7 @@ export function BookingProvider({
         check: () => run("check"),
         resolve: () => run("resolve"),
         leave(verifiedAttemptId?: string) {
+          setEmailRejection(null);
           entryRead.current?.abort();
           setRequestedEntry(null);
           setHistoryBrowsing(false);

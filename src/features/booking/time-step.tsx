@@ -1,9 +1,8 @@
 "use client";
-import { BookingHelp } from "./booking-help";
+import { BookingHelp, RejectedEmailHelp } from "./booking-help";
 import {
-  BOOKING_NOT_CREATED,
   CHECKOUT_UNRESOLVED,
-  CONFLICT_NOTICE,
+  CALENDAR_CHECKOUT_PAUSED,
 } from "@/domain/booking-messages";
 import { useMobileBooking } from "./booking-tools";
 import { BookingHeading } from "./booking-heading";
@@ -14,6 +13,7 @@ import {
 } from "@/domain/booking-messages";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import {
+  Fragment,
   type ReactNode,
   type CSSProperties,
   useEffect,
@@ -100,6 +100,7 @@ export function TimeStep({
   const {
     selectionNotice,
     selectionNoticeSlots,
+    emailRejection,
     browsingCheckout,
     suppressedSlots,
     action,
@@ -119,6 +120,12 @@ export function TimeStep({
   const trainerPointer = useRef(false);
   const [choosing, setChoosing] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<"week" | "month">("month");
+  const hasSelections = draft.slots.length > 0;
+  const [hadSelections, setHadSelections] = useState(hasSelections);
+  if (hadSelections !== hasSelections) {
+    setHadSelections(hasSelections);
+    if (!hasSelections) setChoosing(null);
+  }
   const [weekStart, setWeekStart] = useState<string | null>(null);
   const today = todaySG(new Date(now));
   const live = bookingService.mode === "live";
@@ -339,13 +346,18 @@ export function TimeStep({
         : undefined,
     );
   }, [live, result, date, now, reconcile]);
+  // Older tabs may already have cleared display suppression before checkout settled.
+  const hiddenSlots =
+    action.calendarRecovery && attempt
+      ? [...suppressedSlots, ...attempt.draft.slots]
+      : suppressedSlots;
   const slots =
     displayResult?.status === "success"
       ? displayResult.slots.filter(
           (slot) =>
             slot.date === date &&
             (!slot.native || !pastSelectionCutoff(slot, now)) &&
-            !suppressedSlots.some(
+            !hiddenSlots.some(
               (hidden) =>
                 hidden.date === slot.date &&
                 Math.abs(
@@ -388,38 +400,11 @@ export function TimeStep({
       ],
     });
   }
-  if (
-    publicCalendarReady &&
-    (!calendar.initialReady || (findingInitialDay && calendarBusy))
-  ) {
-    if (calendar.failed.length)
-      return (
-        <div className="alert availability-alert" role="alert">
-          <span>{AVAILABILITY_LOAD_FAILED}</span>{" "}
-          <button
-            className="text-link"
-            aria-label="Try again"
-            onClick={() => calendar.retry(calendar.failed)}
-          >
-            Try again.
-          </button>
-        </div>
-      );
-    return (
-      <BrandLoading
-        label="Checking dates…"
-        overlay={!browsingCheckout}
-        compact={browsingCheckout}
-      />
-    );
-  }
   const selectionNoticeContent = (
     <div className="booking-help-content">
       <p>
         {selectionNotice === CHECKOUT_UNRESOLVED ? (
-          <strong>{selectionNotice}</strong>
-        ) : selectionNotice === BOOKING_NOT_CREATED ? (
-          CONFLICT_NOTICE
+          <strong>{CALENDAR_CHECKOUT_PAUSED}</strong>
         ) : (
           selectionNotice
         )}
@@ -443,6 +428,60 @@ export function TimeStep({
       )}
     </div>
   );
+  const notices = (
+    <Fragment key="booking-notices">
+      {recoveryNotice}
+      {emailRejection && (
+        <RejectedEmailHelp
+          attemptId={emailRejection.id}
+          email={emailRejection.email}
+          availability={emailRejection.phase}
+        />
+      )}
+      {selectionNotice &&
+        (selectionNotice === CHECKOUT_UNRESOLVED && attempt ? (
+          <BookingHelp
+            key={attempt.id}
+            attemptId={attempt.id}
+            className="calendar-recovery-notice"
+          >
+            {selectionNoticeContent}
+          </BookingHelp>
+        ) : (
+          <div className="alert" role="alert">
+            {selectionNoticeContent}
+          </div>
+        ))}
+    </Fragment>
+  );
+  if (
+    publicCalendarReady &&
+    (!calendar.initialReady || (findingInitialDay && calendarBusy))
+  ) {
+    return (
+      <>
+        {notices}
+        {calendar.failed.length ? (
+          <div className="alert availability-alert" role="alert">
+            <span>{AVAILABILITY_LOAD_FAILED}</span>{" "}
+            <button
+              className="text-link"
+              aria-label="Try again"
+              onClick={() => calendar.retry(calendar.failed)}
+            >
+              Try again.
+            </button>
+          </div>
+        ) : (
+          <BrandLoading
+            label="Checking dates…"
+            overlay={!browsingCheckout && !recoveryNotice}
+            compact={browsingCheckout || !!recoveryNotice}
+          />
+        )}
+      </>
+    );
+  }
   const contextContent = (sessionName: string) =>
     mobile ? (
       <p className="calendar-selection-context">
@@ -486,21 +525,7 @@ export function TimeStep({
           <p className="lead">40-min session · 10-min changeover.</p>
         </>
       )}
-      {recoveryNotice}
-      {selectionNotice &&
-        (selectionNotice === CHECKOUT_UNRESOLVED && attempt ? (
-          <BookingHelp
-            key={attempt.id}
-            attemptId={attempt.id}
-            className="calendar-recovery-notice"
-          >
-            {selectionNoticeContent}
-          </BookingHelp>
-        ) : (
-          <div className="alert" role="alert">
-            {selectionNoticeContent}
-          </div>
-        ))}
+      {notices}
       <section
         className="calendar-panel"
         aria-label="Booking calendar"

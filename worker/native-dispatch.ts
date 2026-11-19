@@ -20,6 +20,7 @@ export async function claimNativeDispatch(
   availability: string,
   firstStep = "session:0",
   preparation: D1PreparedStatement[] = [],
+  markersJson: string | null = null,
 ) {
   const now = Date.now();
   const all = await db.batch([
@@ -42,10 +43,11 @@ export async function claimNativeDispatch(
       .bind(id),
     db
       .prepare(
-        `UPDATE native_checkout_grants SET state='running',availability_json=? WHERE attempt_id=? AND capability_hash=? AND state='granted' AND source_revision=? AND intent_hash=? AND contract_json=? AND expires_ms>? AND EXISTS(SELECT 1 FROM attempts a JOIN guest_access c ON c.owner_id=a.owner_id WHERE a.id=? AND a.version=? AND a.state='prepared' AND a.intent_hash=native_checkout_grants.intent_hash AND a.deadline_ms>? AND c.capability_hash=? AND c.revoked_ms IS NULL AND c.issued_ms<=? AND c.expires_ms>?) AND EXISTS(SELECT 1 FROM checkout_payment_routes WHERE attempt_id=? AND route='hitpay') AND (ongoing=0 OR EXISTS(SELECT 1 FROM reservation_sources admission WHERE admission.attempt_id=native_checkout_grants.attempt_id AND ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now), "(SELECT owner_id FROM attempts WHERE id=admission.attempt_id)")}<=${now}))`,
+        `UPDATE native_checkout_grants SET state='running',availability_json=?,creation_markers_json=?,result_json=json_set(COALESCE(result_json,'{}'),'$.hostedCheckoutRequested',json('true')) WHERE attempt_id=? AND capability_hash=? AND state='granted' AND source_revision=? AND intent_hash=? AND contract_json=? AND expires_ms>? AND EXISTS(SELECT 1 FROM attempts a JOIN guest_access c ON c.owner_id=a.owner_id WHERE a.id=? AND a.version=? AND a.state='prepared' AND a.intent_hash=native_checkout_grants.intent_hash AND a.deadline_ms>? AND c.capability_hash=? AND c.revoked_ms IS NULL AND c.issued_ms<=? AND c.expires_ms>?) AND EXISTS(SELECT 1 FROM checkout_payment_routes WHERE attempt_id=? AND route='hitpay') AND (ongoing=0 OR EXISTS(SELECT 1 FROM reservation_sources admission WHERE admission.attempt_id=native_checkout_grants.attempt_id AND ${reservationBlockedUntilSql("admission.customer_hash", "admission.ip_hash", String(now), "(SELECT owner_id FROM attempts WHERE id=admission.attempt_id)")}<=${now}))`,
       )
       .bind(
         availability,
+        markersJson,
         id,
         access.capability_hash,
         grant.source_revision,

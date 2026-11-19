@@ -20,12 +20,13 @@ export function hitpayHoldStatement(
   hash: string,
   expires: number,
   fence?: number,
+  state: "dispatching" | "observed" = "dispatching",
 ) {
   return env.STATE.prepare(
     "INSERT INTO hitpay_holds(attempt_id,scope_json,association_json,intent_hash,expires_ms) SELECT ?,?,?,?,MIN(?,COALESCE((SELECT booking_created_ms+hold_window_ms FROM checkout_progress WHERE attempt_id=?),?))" +
       (fence === undefined
         ? ""
-        : " WHERE changes()=1 AND EXISTS(SELECT 1 FROM attempts WHERE id=? AND version=? AND association_json=? AND state='dispatching')"),
+        : " WHERE changes()=1 AND EXISTS(SELECT 1 FROM attempts WHERE id=? AND version=? AND association_json=? AND state=?)"),
   ).bind(
     scope.attemptId,
     JSON.stringify({
@@ -38,7 +39,9 @@ export function hitpayHoldStatement(
     expires,
     scope.attemptId,
     expires,
-    ...(fence === undefined ? [] : [scope.attemptId, fence, association]),
+    ...(fence === undefined
+      ? []
+      : [scope.attemptId, fence, association, state]),
   );
 }
 

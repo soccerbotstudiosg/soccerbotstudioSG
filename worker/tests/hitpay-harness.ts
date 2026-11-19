@@ -31,7 +31,7 @@ export class SoccerBotAccountCoordinator extends ProductionCoordinator {
   }
 }
 const harness = {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/test/request-start/")) {
       const read = url.pathname.endsWith("/confirmation")
@@ -146,7 +146,7 @@ const harness = {
           Date.now(),
         ),
       );
-    return worker.fetch(request, env);
+    return worker.fetch(request, env, ctx);
   },
 };
 

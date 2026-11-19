@@ -1,5 +1,6 @@
 import { test, before, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -1305,7 +1306,8 @@ test("client email delivery fails closed for missing sender or production bot se
   assert.equal(calls.length, 0);
 });
 
-test("customer booking help is owned deduplicated and sends staff and customer acknowledgements with retry-safe content", async () => {
+/** Install full-schema booking-help fixtures and two independent guest capabilities. */
+async function bookingHelpFixture() {
   await mf.dispose();
   rmSync(root, { recursive: true, force: true });
   root = mkdtempSync(path.join(tmpdir(), "soccerbot-support-"));
@@ -1321,14 +1323,11 @@ test("customer booking help is owned deduplicated and sends staff and customer a
     await db.prepare("SELECT owner_id FROM guest_access LIMIT 1").first()
   ).owner_id;
   const foreign = await guest();
-  const id = crypto.randomUUID(),
-    retryId = crypto.randomUUID(),
-    partialId = crypto.randomUUID(),
-    now = Date.now();
+  const now = Date.now();
   const intent = {
     accountId: bindings.DEPLOYMENT_ACCOUNT_ID,
     environmentId: "developer",
-    customerId: "synthetic",
+    customerId: owner,
     customerMode: "booking-contact",
     contact: {
       name: "Synthetic Customer",
@@ -1351,6 +1350,13 @@ test("customer booking help is owned deduplicated and sends staff and customer a
       },
     ],
   };
+  return { cookie, owner, foreign, intent, now };
+}
+test("customer booking help is owned deduplicated and sends staff and customer acknowledgements with retry-safe content", async () => {
+  const { cookie, owner, foreign, intent, now } = await bookingHelpFixture();
+  const id = crypto.randomUUID(),
+    retryId = crypto.randomUUID(),
+    partialId = crypto.randomUUID();
   for (const attemptId of [id, retryId, partialId])
     await db
       .prepare(
@@ -1559,6 +1565,185 @@ test("customer booking help is owned deduplicated and sends staff and customer a
         .first()
     ).paid_ms,
     now,
+  );
+});
+
+test("released email rejection help uses only original owner and contact and succeeds after staff acceptance", async () => {
+  const { cookie, owner, foreign, intent, now } = await bookingHelpFixture();
+  const direct = () => `book:-32062:${crypto.randomUUID()}`;
+  async function prepare(reference, options = {}) {
+    const id = crypto.randomUUID();
+    const original = JSON.stringify(options.intent ?? intent);
+    const hash = createHash("sha256").update(original).digest("hex");
+    await db
+      .prepare(
+        "INSERT INTO attempts(id,owner_id,idempotency_key,intent_json,intent_hash,created_ms,deadline_ms,state,version) VALUES(?,?,?,?,?,?,?,'recovery_required',2)",
+      )
+      .bind(
+        id,
+        owner,
+        id,
+        original,
+        hash,
+        options.created ?? now - 3000,
+        now + 600000,
+      )
+      .run();
+    await db
+      .prepare(
+        "INSERT INTO dispatches(id,attempt_id,operation,fence,started_ms,outcome) VALUES(?,?,'booking.create',1,?,'unknown')",
+      )
+      .bind(crypto.randomUUID(), id, now - 2000)
+      .run();
+    await db
+      .prepare(
+        "INSERT INTO session_effects(attempt_id,step,outcome) VALUES(?,'session:0','unknown')",
+      )
+      .bind(id)
+      .run();
+    const resolve = (resolvedAt = Date.now()) =>
+      db
+        .prepare(
+          "INSERT INTO no_creation_resolutions(attempt_id,intent_hash,attempt_version,dispatch_fence,evidence_source,evidence_reference,verified_ms,resolved_ms,operator_capability_hash) VALUES(?,?,2,1,?,?,?,?,?)",
+        )
+        .bind(
+          id,
+          hash,
+          options.operator
+            ? "operator_verified_provider"
+            : "correlated_rpc_rejection",
+          reference,
+          now - 1000,
+          resolvedAt,
+          options.operator ? "a".repeat(64) : null,
+        )
+        .run();
+    if (!options.defer) await resolve();
+    return { id, resolve };
+  }
+  const send = (id, access = cookie) =>
+    mf.dispatchFetch(`${origin}/api/attempts/${id}/support`, {
+      method: "POST",
+      headers: { origin, cookie: access, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipient: "substitute@example.invalid",
+        subject: "Untrusted message",
+        description: "Untrusted message",
+        reason: "contact_email_rejected",
+      }),
+    });
+  const { id } = await prepare(direct());
+  assert.equal((await send(id, foreign)).status, 404);
+  assert.equal((await send(id, "")).status, 401);
+  for (const [reference, options] of [
+    [`book:-32053:${crypto.randomUUID()}`, {}],
+    [`book-search:-32062:${crypto.randomUUID()}`, {}],
+    [direct(), { operator: true }],
+    ["book:-32062:bad-reference", {}],
+    [direct(), { intent: { ...intent, customerId: "unrelated-owner" } }],
+  ]) {
+    const other = await prepare(reference, options);
+    const response = await send(other.id);
+    assert.ok([404, 409].includes(response.status));
+  }
+  assert.equal(calls.length, 0);
+  const key = (call) => call.headers.get("Idempotency-Key");
+  mailResult = () =>
+    key(calls.at(-1)).startsWith("booking-support-acknowledgement/")
+      ? new Response(null, { status: 422 })
+      : Response.json({ id: crypto.randomUUID() });
+  assert.deepEqual(await (await send(id)).json(), { status: "sent" });
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].body.text, /Stage: contact_email_rejected/);
+  assert.deepEqual(calls[1].body.to, [intent.contact.email]);
+  for (const call of calls) {
+    for (const value of [call.body.text, call.body.html]) {
+      assert.match(value, /booking service rejected the email address/i);
+      assert.match(
+        value,
+        /No booking was created and no payment was requested/,
+      );
+      assert.doesNotMatch(
+        value,
+        /do not pay again|Untrusted message|substitute@example/,
+      );
+    }
+  }
+  assert.ok(!JSON.stringify(calls[1].body).includes(id));
+  assert.equal((await send(id)).status, 200);
+  assert.equal(calls.length, 2);
+  const retry = await prepare(direct());
+  mailResult = () => new Response(null, { status: 503 });
+  assert.equal((await send(retry.id)).status, 503);
+  assert.equal(calls.length, 3);
+  assert.equal((await send(retry.id)).status, 429);
+  await db
+    .prepare("UPDATE booking_support_reports SET next_ms=0 WHERE attempt_id=?")
+    .bind(retry.id)
+    .run();
+  mailResult = null;
+  assert.equal((await send(retry.id)).status, 200);
+  assert.deepEqual(calls[2].body, calls[3].body);
+  assert.equal(key(calls[2]), key(calls[3]));
+  assert.equal(calls.length, 5);
+  assert.equal((await send(retry.id)).status, 200);
+  assert.equal(calls.length, 5);
+  const prior = await prepare(direct(), { defer: true, created: now - 60000 });
+  mailResult = () =>
+    key(calls.at(-1)).startsWith("booking-support-acknowledgement/")
+      ? new Response(null, { status: 503 })
+      : Response.json({ id: crypto.randomUUID() });
+  assert.equal((await send(prior.id)).status, 503);
+  const old = calls
+    .slice(-2)
+    .map((call) => ({ body: call.body, key: key(call) }));
+  // Resolution captured its timestamp before the first support send, but committed after it.
+  const report = await db
+    .prepare(
+      "SELECT created_ms,category FROM booking_support_reports WHERE attempt_id=?",
+    )
+    .bind(prior.id)
+    .first();
+  assert.equal(report.category, "booking_unconfirmed");
+  const captured = now - 500;
+  assert.ok(captured < report.created_ms);
+  await prior.resolve(captured);
+  const freshReport = await db
+    .prepare("SELECT category FROM booking_support_reports WHERE attempt_id=?")
+    .bind(id)
+    .first();
+  assert.equal(freshReport.category, "checkout_unconfirmed");
+  await db
+    .prepare("UPDATE booking_support_reports SET next_ms=0 WHERE attempt_id=?")
+    .bind(prior.id)
+    .run();
+  assert.equal((await send(prior.id)).status, 200);
+  assert.deepEqual(
+    calls.slice(-2).map((call) => ({ body: call.body, key: key(call) })),
+    old,
+  );
+  assert.equal(
+    (await db.prepare("SELECT COUNT(*) AS count FROM hitpay_payments").first())
+      .count,
+    0,
+  );
+  assert.equal(
+    (
+      await db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM attempts WHERE association_json IS NOT NULL OR state!='recovery_required'",
+        )
+        .first()
+    ).count,
+    0,
+  );
+  assert.equal(
+    (await db.prepare("SELECT COUNT(*) AS count FROM dispatches").first())
+      .count,
+    8,
+  );
+  assert.ok(
+    calls.every((call) => call.url === "https://api.resend.com/emails"),
   );
 });
 

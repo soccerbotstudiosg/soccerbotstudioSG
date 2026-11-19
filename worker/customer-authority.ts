@@ -163,6 +163,7 @@ export async function authorizeCustomerCheckout(
     accountId: p.DEPLOYMENT_ACCOUNT_ID,
     environmentId: p.ENVIRONMENT,
     companyLogin: providerSecrets(env).company,
+    recoveryIntakeField: Reflect.get(env, "SIMPLYBOOK_RECOVERY_INTAKE_FIELD"),
     serviceId: services.primary,
     priceMinor: sessionPrices(p.ENVIRONMENT).ordinary,
     ...(p.PREMIUM_SERVICE_ID ? { premiumServiceId: p.PREMIUM_SERVICE_ID } : {}),

@@ -1927,6 +1927,75 @@ it("incomplete provider booking shows reservation recovery without a payment spi
   payment.unmount();
 });
 
+it("reopens the internal payment continuation when Calendar recovers an unpaid checkout", async () => {
+  vi.useFakeTimers();
+  for (const originalIssue of [
+    { bookingIssue: "incomplete" },
+    { paymentIssue: "link_recovering" },
+  ]) {
+    let checkoutReady = false;
+    const recovered = vi.fn();
+    const paid = vi.fn();
+    const start = Date.now();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (!url.endsWith("/checkout"))
+          return Response.json({
+            status: "pending",
+            reason: "payment_verification_pending",
+          });
+        return Response.json(
+          {
+            attemptId: first,
+            mode: "live",
+            ...(checkoutReady ? {} : originalIssue),
+            checkout: checkoutReady
+              ? {
+                  state: "available",
+                  url: `https://checkout.sandbox.hit-pay.com/payment-request/@test/${first}/checkout`,
+                  expiresAtMs: start + 60000,
+                }
+              : { state: "unavailable" },
+            summary: {
+              players: 1,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [{ startMs: start + 86400000, players: 1 }],
+            },
+            checking: {
+              deadlineMs: start + 120000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+            },
+          },
+          { headers: { Date: new Date().toUTCString() } },
+        );
+      }),
+    );
+    const view = render(
+      <ProtectedConfirmation
+        attemptId={first}
+        checkoutMode="live"
+        calendarRecovery
+        silent
+        onCheckoutRecovered={recovered}
+        onPaymentDetected={paid}
+      />,
+    );
+    await act(async () => {});
+    expect(recovered).not.toHaveBeenCalled();
+    checkoutReady = true;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    expect(recovered).toHaveBeenCalledWith(first);
+    expect(paid).not.toHaveBeenCalled();
+    expect(view.container).toBeEmptyDOMElement();
+    view.unmount();
+  }
+});
+
 it("routes only authenticated no-effect selection rejections to the calendar", async () => {
   const rejection = {
     state: "selection_unavailable" as const,
@@ -2951,6 +3020,9 @@ it("payment return stops foreground waiting at thirty seconds retains Pending ac
   ).toBeVisible();
   expect(screen.getByRole("alert")).toHaveTextContent(
     "We couldn’t confirm your booking status.",
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Your first payment may have gone through.",
   );
   expect(
     screen.queryByRole("status", { name: "Checking payment…" }),

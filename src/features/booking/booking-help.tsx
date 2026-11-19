@@ -110,3 +110,44 @@ export function BookingHelp({
     </div>
   );
 }
+
+/** Explain a verified provider rejection without claiming the mailbox is invalid. */
+export function RejectedEmailHelp({
+  attemptId,
+  email,
+  availability,
+}: {
+  attemptId: string;
+  email: string;
+  availability?: "unavailable" | "checking" | "unknown" | "details";
+}) {
+  return (
+    <BookingHelp key={attemptId} attemptId={attemptId}>
+      <div className="booking-help-content">
+        <p>
+          <strong>The booking provider didn’t accept {email}.</strong> Nothing
+          was booked or charged.
+        </p>
+        {availability === "unavailable" && (
+          <p>
+            Your selected session is no longer available. Choose another
+            session, then check your email in Contact details.
+          </p>
+        )}
+        {availability === "checking" && (
+          <p>Checking whether your selected session is still available.</p>
+        )}
+        {availability === "unknown" && (
+          <p>
+            We couldn’t verify the session’s availability. Check your email when
+            you enter Contact details.
+          </p>
+        )}
+        <p>
+          Check the spelling. If the address is correct, ask the studio for
+          help.
+        </p>
+      </div>
+    </BookingHelp>
+  );
+}

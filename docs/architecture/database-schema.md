@@ -1,6 +1,6 @@
 # Database schema
 
-Source inventory:42 application D1 tables from migrations0001–0051 in the local candidate (0049 adds booking_support_reports; earlier inventory verified through isolated SQLite and D1 upgrade checks), and13 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
+Source inventory:43 application D1 tables from migrations 0001–0052 and 14 application SQLite tables inside the account Durable Object. Platform, migration bookkeeping and test-only tables are excluded.
 
 - Migration0039 adds reservation source/expiry records. Migration0040 adds nullable `hitpay_payments.checkout_expires_ms`; apply it before the candidate Worker. Existing rows remain unknown until authenticated provider recovery supplies the hosted-link deadline; no financial window is backfilled or extended.
 - Migration0041 adds immutable no-creation proof and extends the existing operator-operation constraint through a preserving table rebuild. Apply it before code using terminal creation resolution. It does not resolve or backfill historical uncertainty.
@@ -50,6 +50,7 @@ erDiagram
   attempts ||--o{ session_effects : attempt_id
   attempts ||--o| recovery_work : attempt_id
   attempts ||--o| no_creation_resolutions : attempt_id
+  attempts ||--o| native_creation_checks : attempt_id
   attempts o|--o| native_checkout_grants : nullable_attempt_id
   guest_access ||--o| native_checkout_grants : capability_hash
   attempts { TEXT id PK }
@@ -91,18 +92,19 @@ flowchart LR
 
 The three archive tables use `CREATE TABLE AS SELECT`: they **do not inherit primary keys, foreign keys, NOT NULL or CHECK constraints**. Each has an explicitly created unique `attempt_id` index and update/delete-preservation triggers. `native_checkout_grants.attempt_id` is nullable until association; its active primary key is the capability hash.
 
-| Table                              | Key                               | Purpose                                                                                  |
-| ---------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
-| `attempts`                         | PK: `id`                          | Original booking intent, idempotency identity, provider associations and observed state. |
-| `dispatches`                       | PK: `id`                          | Durable record of a dispatched operation, including an unknown result.                   |
-| `session_effects`                  | PK: `attempt_id, step`            | Per-attempt operation steps and their retained provider references.                      |
-| `recovery_work`                    | PK: `attempt_id`                  | Bounded recovery scheduling, claim generation and retry state.                           |
-| `no_creation_resolutions`          | PK/FK: `attempt_id → attempts.id` | Immutable provider-backed terminal noncreation proof for one exact attempt.              |
-| `checkout_preparation_rejections`  | PK: `attempt_id` (no attempt FK)  | Immutable no-dispatch rejection proof for a key that never became an attempt.            |
-| `native_checkout_grants`           | PK: `capability_hash`             | Current capability-bound checkout authority and availability snapshots.                  |
-| `rejected_native_checkout_grants`  | No PK; unique index: `attempt_id` | Preserved grant history after preflight rejection or verified no-creation resolution.    |
-| `completed_native_checkout_grants` | No PK; unique index: `attempt_id` | Preserved grant history after leaving a completed booking.                               |
-| `expired_native_checkout_grants`   | No PK; unique index: `attempt_id` | Preserved grant history after an eligible reservation expires.                           |
+| Table                              | Key                               | Purpose                                                                                                 |
+| ---------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `attempts`                         | PK: `id`                          | Original booking intent, idempotency identity, provider associations and observed state.                |
+| `dispatches`                       | PK: `id`                          | Durable record of a dispatched operation, including an unknown result.                                  |
+| `session_effects`                  | PK: `attempt_id, step`            | Per-attempt operation steps and their retained provider references.                                     |
+| `recovery_work`                    | PK: `attempt_id`                  | Bounded recovery scheduling, claim generation and retry state.                                          |
+| `native_creation_checks`           | PK/FK: `attempt_id → attempts.id` | Records the exact booking dispatch, correlated RPC completion and fresh lookup evidence across retries. |
+| `no_creation_resolutions`          | PK/FK: `attempt_id → attempts.id` | Immutable provider-backed terminal noncreation proof for one exact attempt.                             |
+| `checkout_preparation_rejections`  | PK: `attempt_id` (no attempt FK)  | Immutable no-dispatch rejection proof for a key that never became an attempt.                           |
+| `native_checkout_grants`           | PK: `capability_hash`             | Current capability-bound checkout authority and availability snapshots.                                 |
+| `rejected_native_checkout_grants`  | No PK; unique index: `attempt_id` | Preserved grant history after preflight rejection or verified no-creation resolution.                   |
+| `completed_native_checkout_grants` | No PK; unique index: `attempt_id` | Preserved grant history after leaving a completed booking.                                              |
+| `expired_native_checkout_grants`   | No PK; unique index: `attempt_id` | Preserved grant history after an eligible reservation expires.                                          |
 
 - `checkout_preparation_rejections` (migration0042): owner link, canonical input hash, bounded summary/rejection JSON and recording time. No attempt FK because the original attempt must not exist. Update/delete triggers retain proof; reciprocal insert guards forbid an attempt and rejection for the same key. The owner index supports protected recovery.
 - `reservation_sources`: PK/FK `attempt_id → attempts.id`; required64-character customer/IP hashes and nonnegative creation time. Indexes `(customer_hash,attempt_id)` and `(ip_hash,attempt_id)`; updates rejected by trigger.
@@ -274,12 +276,15 @@ flowchart LR
 | `admissions`                  | `id`         | Reserved provider-call accounting and completion state.                           |
 | `admission_releases`          | `id`         | Evidence for releasing a read admission.                                          |
 | `financial_releases`          | `id`         | Attempt-bound financial admission release evidence.                               |
+| `creation_wakeups`            | `attempt_id` | Next due booking-creation lookup on the shared account alarm.                     |
 | `payment_wakeups`             | `attempt_id` | Durable payment-recovery wakeup, correlation, generation and `ready_ms` deadline. |
 | `provider_request_admissions` | `id`         | Active transport claims, operation, instance, read-only flag and expiry.          |
 | `provider_transport_releases` | `id`         | Recorded transport completion/release evidence.                                   |
 | `provider_token_cache`        | `family`     | Token family, scope/expiry, encryption IV and ciphertext.                         |
 
 `refreshes` governs general refresh claims; `display_refresh` below governs public display snapshots. Their similar names do not mean shared rows or a foreign-key relationship. Token plaintext is not a schema field; tokens are encrypted before storage.
+
+Migration 0052 adds `creation_markers_json` to active, completed, expired and rejected native checkout grants. The original per-session markers follow the grant through archival. Unmarked grants retain their original evidence.
 
 The coordinator adds `payment_wakeups.ready_ms` to existing DO SQLite tables at initialization (default0 preserves immediate legacy wakeups). No D1 migration is required. `provider_token_cache` keeps its existing columns; its encrypted admin payload now includes rotating refresh material. Legacy access-only rows remain readable at their original expiry. Older binaries cannot restore the new encrypted payload and will fall back to authentication; do not restore a pre-consumption token-cache backup.
 

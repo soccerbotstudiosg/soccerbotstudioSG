@@ -115,7 +115,11 @@ export default {
     }
   },
   /** Route requests through environment, origin and operation-authority checks. */
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
     const requestStarted = performance.now();
     const correlationId = crypto.randomUUID(),
       url = new URL(request.url),
@@ -157,6 +161,16 @@ export default {
           ...extra,
         },
       });
+    };
+    // Older open tabs strictly decode the original no-creation result.
+    const checkoutJson = (body: object) => {
+      if (
+        request.headers.get("X-Booking-Email-Recovery") !== "1" &&
+        "creationResolution" in body &&
+        body.creationResolution
+      )
+        return json({ ...body, creationResolution: { state: "not_created" } });
+      return json(body);
     };
     return traced(correlationId, "http", async () => {
       try {
@@ -291,7 +305,7 @@ export default {
               renewed.expiresMs,
             );
           }
-          const outcome = await coordinatorStub(env).holdCustomer(
+          const submission = coordinatorStub(env).holdCustomer(
             {
               attemptId: holdMatch[2],
               sourceIp: request.headers.get("CF-Connecting-IP") || "",
@@ -303,11 +317,14 @@ export default {
             },
             correlationId,
           );
+          // Keep the original RPC alive when the customer navigates away mid-checkout.
+          if (checkoutAccess) ctx.waitUntil(submission.then(() => undefined));
+          const outcome = await submission;
           if (outcome.serverTiming)
             checkingHeaders["Server-Timing"] =
               outcome.serverTiming +
               `, checkout_http;dur=${Math.max(0, performance.now() - requestStarted).toFixed(2)}`;
-          return json(unwrapRpcOutcome(outcome));
+          return checkoutJson(unwrapRpcOutcome(outcome));
         }
         if (url.pathname === "/api/booking/prepare") {
           if (request.method !== "POST")
@@ -544,7 +561,7 @@ export default {
           if (request.method !== "POST")
             throw new ApiError(405, "operation_unavailable");
           await authenticate(request, env, Date.now());
-          return json(
+          return checkoutJson(
             unwrapRpcOutcome(
               await coordinatorStub(env).nativeCheckout(
                 {
@@ -683,7 +700,7 @@ export default {
           url.pathname,
         );
         if (match && request.method === "GET")
-          return json(
+          return checkoutJson(
             await confirmationRead(match[1], "status", () =>
               confirmation(request, env, match[1], now, (window) => {
                 checkingHeaders["X-Checking-Deadline"] = String(
@@ -719,7 +736,7 @@ export default {
           url.pathname,
         );
         if (checkout && request.method === "GET")
-          return json(
+          return checkoutJson(
             await confirmationRead(checkout[1], "context", () =>
               checkoutContext(request, env, checkout[1], now),
             ),

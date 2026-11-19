@@ -3,6 +3,7 @@ import { sitePath } from "../src/content/site-path";
 import { createHash } from "node:crypto";
 import { isHitPayApiCall } from "../worker/tests/provider-url-fixture.mjs";
 import { createBookingSequence } from "../worker/tests/booking-sequence-fixture.mjs";
+import { createBookingCollision } from "../worker/tests/booking-collision-fixture.mjs";
 import { createBookingMechanism as createIsolatedMechanism } from "../worker/tests/booking-mechanism-fixture.mjs";
 import {
   expect,
@@ -843,6 +844,11 @@ async function mechanismTransport(
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
   beforeDispatch?: (path: string) => Promise<void>,
   dropResponse?: (path: string) => boolean,
+  beforeDelivery?: (
+    path: string,
+    status: number,
+    body: string,
+  ) => Promise<void>,
 ) {
   let attemptId = "";
   const calls: { path: string; method: string; body: unknown }[] = [];
@@ -940,6 +946,7 @@ async function mechanismTransport(
       ]);
     }
     const responseBody = await response.text();
+    await beforeDelivery?.(url.pathname, response.status, responseBody);
     if (dropResponse?.(url.pathname)) {
       try {
         await route.abort("connectionclosed");
@@ -2286,6 +2293,55 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
 
 // Failure journeys use the real Worker/API/storage implementation. Only provider
 // replies or the delivery of an already-completed HTTP response are faulted.
+/** Choose the requested times through Calendar and open the actual Details route. */
+async function enterSessionDetails(
+  page: Page,
+  mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
+  starts: number[],
+) {
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const offset =
+    (+mechanism.date.slice(0, 4) - +today.slice(0, 4)) * 12 +
+    +mechanism.date.slice(5, 7) -
+    +today.slice(5, 7);
+  await page
+    .getByLabel("Calendar month", { exact: true })
+    .selectOption(String(offset));
+  const label = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${mechanism.date}T04:00:00Z`));
+  await page.getByRole("button", { name: label, exact: true }).click();
+  for (const startMs of starts) {
+    const start = new Date(startMs + 28800000).toISOString().slice(11, 16);
+    await page
+      .getByRole("group", { name: "Session times" })
+      .getByRole("button", { name: new RegExp(`${start}–`) })
+      .click();
+    await page
+      .getByRole("combobox", { name: new RegExp(`Trainer for .* at ${start}`) })
+      .selectOption({ index: 1 });
+  }
+  await page
+    .getByRole("link", {
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
+      exact: true,
+    })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Your details", exact: true }),
+  ).toBeVisible();
+}
+
 async function guestDetails(
   page: Page,
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
@@ -2309,51 +2365,11 @@ async function guestDetails(
   await page
     .getByRole("link", { name: "Choose sessions", exact: true })
     .click();
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Singapore",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-  const offset =
-    (+mechanism.date.slice(0, 4) - +today.slice(0, 4)) * 12 +
-    +mechanism.date.slice(5, 7) -
-    +today.slice(5, 7);
-  await page
-    .getByLabel("Calendar month", { exact: true })
-    .selectOption(String(offset));
-  const label = new Intl.DateTimeFormat("en-SG", {
-    timeZone: "Asia/Singapore",
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${mechanism.date}T04:00:00Z`));
-  await page.getByRole("button", { name: label, exact: true }).click();
   const starts = journey?.starts ?? [
     mechanism.startMs,
     ...(batch ? [mechanism.startMs + 3000000] : []),
   ];
-  for (const startMs of starts) {
-    const start = new Date(startMs + 28800000).toISOString().slice(11, 16);
-    await page
-      .getByRole("group", { name: "Session times" })
-      .getByRole("button", { name: new RegExp(`${start}–`) })
-      .click();
-    await page
-      .getByRole("combobox", { name: new RegExp(`Trainer for .* at ${start}`) })
-      .selectOption({ index: 1 });
-  }
-  await page
-    .getByRole("link", {
-      name: /^Enter contact details(?: \$[\d,.]+)?$/,
-      exact: true,
-    })
-    .first()
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Your details", exact: true }),
-  ).toBeVisible();
+  await enterSessionDetails(page, mechanism, starts);
   await page.getByLabel("Full name", { exact: false }).fill("Synthetic Guest");
   await page
     .getByRole("textbox", { name: /^Email address/ })
@@ -2529,6 +2545,7 @@ async function uncertainHolding(
   }[fault];
   const mechanism = await createBookingMechanism({
     displayWarming: fault === "preflight",
+    inspectCoordinator: fault === "creation",
     missingCreationDeadline: fault === "readback",
     respond: async (call) =>
       enabled && call.body?.method === method
@@ -2638,7 +2655,7 @@ async function uncertainHolding(
     if (fault === "creation") {
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
-        page.getByText("We couldn’t confirm your booking status.", {
+        page.getByText("Checkout paused to prevent a duplicate booking.", {
           exact: true,
         }),
       ).toBeVisible();
@@ -2835,18 +2852,49 @@ async function uncertainHolding(
       );
       expect(resolved.status).toBe(200);
       expect(await resolved.json()).toMatchObject({ state: "complete" });
+      // The 503 on book opened the account's one-minute transport cooldown.
+      // Operator proof retires the booking. Model the end of that separate
+      // outage before asking the real Worker to verify the original capacity.
+      const account = await mechanism.mf.unsafeGetDurableObjectStorage(
+        "booking-mechanism",
+        "SoccerBotAccountCoordinator",
+        { name: "simplybook-developer-account" },
+      );
+      const [budget] = await account.exec<{ cooldown_ms: number }>(
+        "SELECT cooldown_ms FROM budget WHERE cooldown_ms>?",
+        Date.now(),
+      );
+      expect(budget).toBeDefined();
+      await account.exec(
+        "UPDATE budget SET cooldown_ms=0 WHERE cooldown_ms=?",
+        budget.cooldown_ms,
+      );
+      const verifiedCapacity = page.waitForResponse(async (response) => {
+        const url = new URL(response.url());
+        if (
+          response.status() !== 200 ||
+          url.pathname !== `/api/booking/availability/2/${mechanism.date}` ||
+          url.searchParams.get("refresh") !== "1"
+        )
+          return false;
+        const day = await response.json();
+        return day.offers.some(
+          (offer: { startMs: number; instructorId: string }) =>
+            offer.startMs === mechanism.startMs && offer.instructorId === "14",
+        );
+      });
       // A normal reload observes the operator's new authority immediately;
       // it does not renew the expired foreground wait or replay the write.
       const resolvedNotice = page.getByRole("alert").filter({
         hasText:
-          "Some sessions may no longer be available. Please check again.",
+          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
       });
       await page.reload();
-      await observedResolution;
+      await Promise.all([observedResolution, verifiedCapacity]);
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
         page.getByText(
-          "Some sessions may no longer be available. Please check again.",
+          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
           { exact: true },
         ),
       ).toBeVisible();
@@ -2896,10 +2944,19 @@ async function uncertainHolding(
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Some sessions may no longer be available. Please check again.",
+          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
           { exact: true },
         ),
       ).toHaveCount(0);
+      // A failed checkout must leave a genuinely bookable route for the same time.
+      await enterSessionDetails(page, mechanism, [mechanism.startMs]);
+      await expect(page).toHaveURL(/\/book\/details\/$/);
+      await expect(
+        page.getByRole("heading", { name: "Booking Contact" }),
+      ).toBeVisible();
+      expect(
+        mechanism.calls.filter((call) => call.body?.method === "book"),
+      ).toHaveLength(1);
     }
   } finally {
     await stopMechanism(page, mechanism, transport);
@@ -3545,6 +3602,223 @@ test("real API unknown second batch creation retains both effect outcomes across
   page,
 }) => {
   await failedBatch(page, true);
+});
+
+test("two customers overlapping at the second batch slot preserve the first checkout and recover the partial attempt after two native Backs", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  const mechanism = await createBookingCollision({ checkoutBotProof: false });
+  const firstContext = await browser.newContext({ baseURL });
+  const first = await firstContext.newPage();
+  const firstTransport = await mechanismTransport(first, mechanism);
+  const secondCheckoutFinished = Promise.withResolvers<void>();
+  const secondTransport = await mechanismTransport(
+    page,
+    mechanism,
+    undefined,
+    (path) => {
+      if (path.startsWith("/api/booking/checkout/"))
+        secondCheckoutFinished.resolve();
+      return false;
+    },
+  );
+  const payments = async () =>
+    (
+      await mechanism.db
+        .prepare(
+          "SELECT attempt_id,request_id,reference,checkout_url,expires_ms,paid_ms FROM hitpay_payments ORDER BY attempt_id",
+        )
+        .all()
+    ).results;
+  const holds = async () =>
+    (
+      await mechanism.db
+        .prepare(
+          "SELECT attempt_id,intent_hash,association_json,expires_ms FROM hitpay_holds ORDER BY attempt_id",
+        )
+        .all()
+    ).results;
+  try {
+    // Both customers select from genuinely available studio inventory. B keeps that selection on Review while A books X.
+    await guestDetails(page, mechanism, true, {
+      starts: mechanism.batchStarts,
+      enter: true,
+    });
+    await page.getByLabel("Full name", { exact: false }).fill("Second Guest");
+    await page
+      .getByLabel("Mobile number", { exact: false })
+      .fill("+6592234567");
+    await page
+      .getByRole("textbox", { name: /^Email address/ })
+      .fill("second@example.test");
+    await reviewResponse(page);
+    await guestDetails(first, mechanism, false, {
+      starts: [mechanism.heldStartMs],
+      enter: true,
+    });
+    const a = firstTransport.json(await checkoutHoldResponse(first));
+    expect(a).toMatchObject({ state: "associated", paymentAvailable: true });
+    await expect(first).toHaveURL(mechanism.checkoutUrl);
+    expect(mechanism.providerBookings()).toEqual([
+      { startMs: mechanism.heldStartMs, bookingId: "701" },
+    ]);
+    const originalHolds = await holds();
+    const originalPayments = await payments();
+    expect(originalHolds).toEqual([
+      expect.objectContaining({ attempt_id: a.attemptId }),
+    ]);
+    expect(originalPayments).toEqual([
+      expect.objectContaining({
+        attempt_id: a.attemptId,
+        checkout_url: mechanism.checkoutUrl,
+        paid_ms: null,
+      }),
+    ]);
+
+    await page.getByRole("checkbox").check();
+    const checkoutRequest = page.waitForRequest(
+      (r) =>
+        r.method() === "POST" &&
+        new URL(r.url()).pathname.startsWith("/api/booking/checkout/"),
+    );
+    await page
+      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .click();
+    const b = (await checkoutRequest).postDataJSON().key as string;
+    expect(b).toBeTruthy();
+    expect(b).not.toBe(a.attemptId);
+    expect(
+      await Promise.race([
+        mechanism.secondAttemptReached.then(() => "occupied second slot"),
+        secondCheckoutFinished.promise.then(
+          () => "checkout ended before collision",
+        ),
+      ]),
+    ).toBe("occupied second slot");
+    const expectedBookings = [
+      { startMs: mechanism.heldStartMs, bookingId: "701" },
+      { startMs: mechanism.batchStarts[0], bookingId: "702" },
+    ];
+    expect(mechanism.providerBookings()).toEqual(expectedBookings);
+    await expect(page).toHaveURL(/\/book\/review\/$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/book\/details\/$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    mechanism.releaseSecondAttempt();
+    // Drain the actual worker response, including the case where Back canceled its browser request.
+    await secondTransport.settle();
+    await expect(page).toHaveURL(/\/book\/time\/$/);
+    const attempts = (
+      await mechanism.db
+        .prepare("SELECT id,owner_id,state,association_json FROM attempts")
+        .all()
+    ).results;
+    expect(attempts).toHaveLength(2);
+    expect(
+      new Set(attempts.map((row: { owner_id: string }) => row.owner_id)).size,
+    ).toBe(2);
+    expect(attempts).toContainEqual(
+      expect.objectContaining({
+        id: b,
+        state: "recovery_required",
+        association_json: null,
+      }),
+    );
+
+    const read = page.waitForResponse(
+      (r) =>
+        r.request().method() === "GET" &&
+        new URL(r.url()).pathname === `/api/attempts/${b}/checkout`,
+    );
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    const recovered = secondTransport.json(await read);
+    expect(recovered).toMatchObject({
+      attemptId: b,
+      bookingIssue: "incomplete",
+      checkout: { state: "unavailable" },
+    });
+    expect(recovered.creationResolution).toBeUndefined();
+    expect(recovered.selectionRejection).toBeUndefined();
+    expect(
+      recovered.summary.sessions.map((s: { startMs: number }) => s.startMs),
+    ).toEqual(mechanism.batchStarts);
+    await expect(page).toHaveURL(new RegExp(`/confirmation/\\?attempt=${b}$`));
+    await expect(
+      page.getByRole("status", {
+        name: "Checking whether your booking was created…",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Continue payment", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Booking Confirmed", exact: true }),
+    ).toHaveCount(0);
+
+    await first.goBack();
+    const originalLink = first.getByRole("link", {
+      name: "Continue payment",
+      exact: true,
+    });
+    await expect(originalLink).toHaveAttribute("href", mechanism.checkoutUrl);
+    await expect(originalLink).toHaveAttribute(
+      "data-payment-continuation",
+      a.attemptId,
+    );
+    expect(await holds()).toEqual(originalHolds);
+    expect(await payments()).toEqual(originalPayments);
+    expect(mechanism.providerBookings()).toEqual(expectedBookings);
+    expect(
+      (
+        await mechanism.db
+          .prepare(
+            "SELECT step,outcome,reference_id FROM session_effects WHERE attempt_id=? AND step LIKE 'session:%' ORDER BY step",
+          )
+          .bind(b)
+          .all()
+      ).results,
+    ).toEqual([
+      { step: "session:0", outcome: "observed", reference_id: "702" },
+      { step: "session:1", outcome: "unknown", reference_id: null },
+    ]);
+    expect(
+      secondTransport.calls.filter(
+        (r) =>
+          r.method === "POST" &&
+          /^\/api\/booking\/(checkout|hold|hitpay)\//.test(r.path),
+      ),
+    ).toHaveLength(1);
+    expect(
+      mechanism.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST"),
+    ).toHaveLength(1);
+    expect(
+      mechanism.calls
+        .filter((c) =>
+          ["book", "createBatch", "closeBatch", "cancelBooking"].includes(
+            String(c.body?.method),
+          ),
+        )
+        .map((c) => c.body?.method),
+    ).toEqual(["book", "createBatch", "book", "book"]);
+    expect([
+      ...mechanism.unexpected,
+      ...firstTransport.unexpected,
+      ...secondTransport.unexpected,
+    ]).toEqual([]);
+  } finally {
+    mechanism.releaseSecondAttempt();
+    try {
+      await Promise.all([first.goto("about:blank"), page.goto("about:blank")]);
+      await Promise.all([firstTransport.drain(), secondTransport.drain()]);
+    } finally {
+      await firstContext.close();
+      await mechanism.close();
+    }
+  }
 });
 
 test("real API exhausted browser checking window retains the original deadline and uncertain booking without payment", async ({
@@ -4283,6 +4557,166 @@ test("real API failed identity warming stays on Review without booking or paymen
     expect(current.body.state).toBe("empty");
   } finally {
     await stopMechanism(page, mechanism, transport);
+  }
+});
+
+test("a fresh same-cookie tab can back through checkout rejection without adopting the first tab's payment", async ({
+  page,
+}) => {
+  const mechanism = await createBookingCollision({ checkoutBotProof: false });
+  const firstTransport = await mechanismTransport(page, mechanism);
+  const rejected = Promise.withResolvers<{
+    id: string;
+    status: number;
+    body: string;
+  }>();
+  const delivery = Promise.withResolvers<void>();
+  const second = await page.context().newPage();
+  const secondTransport = await mechanismTransport(
+    second,
+    mechanism,
+    undefined,
+    undefined,
+    async (path, status, body) => {
+      if (path.startsWith("/api/booking/checkout/")) {
+        rejected.resolve({ id: path.split("/").at(-1)!, status, body });
+        await delivery.promise;
+      }
+    },
+  );
+  try {
+    await guestDetails(page, mechanism, false, {
+      starts: [mechanism.heldStartMs],
+      enter: true,
+    });
+    const original = firstTransport.json(await checkoutHoldResponse(page));
+    expect(original).toMatchObject({
+      state: "associated",
+      paymentAvailable: true,
+    });
+    await expect(page).toHaveURL(mechanism.checkoutUrl);
+    const originalCheckout = () =>
+      mechanism.db
+        .prepare(
+          "SELECT a.id,a.intent_hash,a.association_json,h.expires_ms AS hold_expires,p.request_id,p.reference,p.expires_ms AS payment_expires,p.checkout_expires_ms FROM attempts a JOIN hitpay_holds h ON h.attempt_id=a.id JOIN hitpay_payments p ON p.attempt_id=a.id WHERE a.id=?",
+        )
+        .bind(original.attemptId)
+        .first();
+    const before = await originalCheckout();
+    expect(before).toMatchObject({
+      id: original.attemptId,
+      request_id: expect.any(String),
+      reference: expect.any(String),
+      hold_expires: expect.any(Number),
+      payment_expires: expect.any(Number),
+    });
+
+    // This tab has the existing cookie and a fresh session storage namespace.
+    // Its first actual visit occurs after A has a usable hosted checkout.
+    await second.goto("/book/account/");
+    await guestDetails(second, mechanism, false, {
+      starts: [mechanism.batchStarts[0]],
+      enter: false,
+    });
+    await reviewResponse(second);
+    await second.getByRole("checkbox").check();
+    await second
+      .getByRole("button", { name: /^Proceed to Payment \$[\d,.]+$/ })
+      .click();
+    const denied = await rejected.promise;
+    expect(denied.id).not.toBe(original.attemptId);
+    expect(denied.status).toBe(503);
+    expect(JSON.parse(denied.body)).toMatchObject({
+      error: "checkout_already_active",
+    });
+
+    // The real rejection is durable, but the submitting browser has not received it.
+    for (const step of ["details", "time", "session"]) {
+      await second.goBack();
+      await expect(second).toHaveURL(sitePath(`/book/${step}/`));
+    }
+    delivery.resolve();
+    await secondTransport.settle();
+    await expect(second).toHaveURL(sitePath("/book/session/"));
+    await second
+      .getByRole("link", { name: "Choose sessions", exact: true })
+      .click();
+    await expect(second).toHaveURL(sitePath("/book/time/"));
+    await expect(
+      second.getByRole("heading", {
+        name: "Select dates and times",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      second.getByRole("link", { name: "Continue payment", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      second.getByRole("link", { name: "View existing checkout", exact: true }),
+    ).toHaveCount(0);
+    expect(
+      secondTransport.calls.filter((call) =>
+        call.path.startsWith("/api/booking/checkout/"),
+      ),
+    ).toHaveLength(1);
+    expect(
+      secondTransport.calls.some((call) =>
+        call.path.startsWith(`/api/attempts/${original.attemptId}/`),
+      ),
+    ).toBe(false);
+
+    await page.goBack();
+    const resume = page.getByRole("link", {
+      name: "Continue payment",
+      exact: true,
+    });
+    await expect(resume).toHaveAttribute(
+      "data-payment-continuation",
+      original.attemptId,
+    );
+    await expect(resume).toHaveAttribute("href", mechanism.checkoutUrl);
+    expect(await originalCheckout()).toEqual(before);
+    expect(
+      await mechanism.db.prepare("SELECT COUNT(*) AS n FROM attempts").first(),
+    ).toEqual({ n: 1 });
+    expect(
+      await mechanism.db
+        .prepare("SELECT COUNT(*) AS n FROM hitpay_payments")
+        .first(),
+    ).toEqual({ n: 1 });
+    expect(
+      await mechanism.db
+        .prepare(
+          "SELECT r.attempt_id FROM checkout_preparation_rejections r JOIN attempts a ON a.owner_id=r.owner_id WHERE r.attempt_id=? AND a.id=?",
+        )
+        .bind(denied.id, original.attemptId)
+        .first(),
+    ).toEqual({ attempt_id: denied.id });
+    expect(mechanism.providerBookings()).toEqual([
+      { startMs: mechanism.heldStartMs, bookingId: "701" },
+    ]);
+    expect(
+      mechanism.calls.filter((call) => call.body?.method === "book"),
+    ).toHaveLength(1);
+    expect(
+      mechanism.calls.filter(
+        (call) => isHitPayApiCall(call) && call.method === "POST",
+      ),
+    ).toHaveLength(1);
+    expect([
+      ...firstTransport.unexpected,
+      ...secondTransport.unexpected,
+      ...mechanism.unexpected,
+    ]).toEqual([]);
+  } finally {
+    delivery.resolve();
+    try {
+      await Promise.all([page, second].map((tab) => tab.goto("about:blank")));
+      await Promise.all([firstTransport.drain(), secondTransport.drain()]);
+    } finally {
+      await second.close();
+      await mechanism.close();
+    }
   }
 });
 

@@ -23,7 +23,7 @@ const html = (value: string) =>
     },
   });
 const experimentHarness = {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url),
       now = Date.now();
     try {
@@ -59,7 +59,7 @@ const experimentHarness = {
             },
           );
         }
-        return worker.fetch(request, env);
+        return worker.fetch(request, env, ctx);
       }
       if (
         url.search ||

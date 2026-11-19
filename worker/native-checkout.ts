@@ -15,7 +15,10 @@ import {
 } from "../src/domain/booking-policy";
 import { studioStartsFromIntervals } from "./native-grid";
 import { claimNativeDispatch, claimNativeEffect } from "./native-dispatch";
-import { recordNoCreation } from "./native-creation-resolution";
+import {
+  recordNoCreation,
+  retainCompletedBookRpc,
+} from "./native-creation-resolution";
 import type { Grant } from "./customer-authority";
 import type { CustomerCatalogue } from "../src/domain/catalog";
 import {
@@ -53,6 +56,7 @@ import {
   nativeCustomerHours,
 } from "./prebooking";
 import {
+  type CreationResolution,
   type hitpayHandoffSchema,
   nativeAvailabilitySchema,
   nativePrepareSchema,
@@ -60,6 +64,11 @@ import {
   type nativeOfferSchema,
 } from "../src/domain/native-checkout";
 import { freshReceipt } from "./catalogue";
+import {
+  nativeCreationMarker,
+  nativeCreationMarkerSecret,
+  supportsRecoveryField,
+} from "./native-creation-marker";
 import { orchestrateBooking } from "./orchestration";
 import {
   nativeCheckoutDeadline,
@@ -73,6 +82,7 @@ import {
 import { ProviderSession, type ProviderControl } from "./provider-session";
 import {
   ProviderRpcError,
+  CompletedBookRpcError,
   ProviderBookRejectedError,
   providerSecrets,
   type NativeExchange,
@@ -208,6 +218,7 @@ export async function executeNativeCheckout(options: {
   const contract = nativeAccountContractSchema.parse(
     JSON.parse(grant.contract_json),
   );
+  const markerField = contract.recoveryIntakeField;
   const initial = options.accounting(),
     company = providerSecrets(env).company;
   // Two sessions are the finite trial maximum, not the product cart limit.
@@ -221,6 +232,8 @@ export async function executeNativeCheckout(options: {
     contract.accountId !== p.DEPLOYMENT_ACCOUNT_ID ||
     contract.environmentId !== p.ENVIRONMENT ||
     contract.companyLogin !== company ||
+    (markerField !== undefined &&
+      markerField !== Reflect.get(env, "SIMPLYBOOK_RECOVERY_INTAKE_FIELD")) ||
     contract.confirmedAtMs > now ||
     contract.expiresAtMs < grant.expires_ms ||
     intent.sessions.some(
@@ -261,12 +274,35 @@ export async function executeNativeCheckout(options: {
     : await selectPaymentRoute(env, attemptId);
   if ((paymentRoute === "hitpay") !== (options.holding === true))
     throw new ApiError(409, "booking_hold_required");
+  const markers = markerField
+    ? await Promise.all(
+        intent.sessions.map((_, index) =>
+          nativeCreationMarker(
+            nativeCreationMarkerSecret(env),
+            {
+              accountId: intent.accountId,
+              environmentId: intent.environmentId,
+              companyLogin: company,
+              attemptId,
+              intentHash: row.intent_hash,
+            },
+            index,
+          ),
+        ),
+      )
+    : undefined;
+  const markersJson = markers ? JSON.stringify(markers) : null;
   const claimed = consolidated
     ? undefined
     : await env.STATE.prepare(
-        "UPDATE native_checkout_grants SET state='running' WHERE attempt_id=? AND capability_hash=? AND state='granted' AND expires_ms>?",
+        "UPDATE native_checkout_grants SET state='running',creation_markers_json=? WHERE attempt_id=? AND capability_hash=? AND state='granted' AND expires_ms>?",
       )
-        .bind(attemptId, access.capability_hash, Date.now() + 180000)
+        .bind(
+          markersJson,
+          attemptId,
+          access.capability_hash,
+          Date.now() + 180000,
+        )
         .run();
   if (claimed && claimed.meta.changes !== 1)
     return nativeCheckoutStatus(request, env, attemptId);
@@ -327,6 +363,7 @@ export async function executeNativeCheckout(options: {
           selectionSnapshot,
           step,
           options.prepared?.preparation,
+          markersJson,
         );
       claimedDispatch = true;
       if (lastOperation === "book") claimedBookings++;
@@ -496,7 +533,21 @@ export async function executeNativeCheckout(options: {
           undefined,
           !!options.creationOnly && !cleanupMode,
         )
-        .catch((error: unknown) => {
+        .catch(async (error: unknown) => {
+          if (
+            ongoing &&
+            !cleanupMode &&
+            operation.kind === "book" &&
+            error instanceof CompletedBookRpcError &&
+            (!consolidated || (claimedDispatch && stagedVersion !== undefined))
+          )
+            await retainCompletedBookRpc(
+              env,
+              attemptId,
+              row.intent_hash,
+              (stagedVersion ?? row.version) + 1,
+              error,
+            );
           if (
             error instanceof ProviderBookRejectedError &&
             !cleanupMode &&
@@ -545,7 +596,7 @@ export async function executeNativeCheckout(options: {
     state: string;
     paymentAvailable: boolean;
     rejectedSessionIndex?: number;
-    creationResolution?: { state: "not_created" };
+    creationResolution?: CreationResolution;
     checkout?: z.infer<typeof hitpayHandoffSchema>;
   } = {
     state: "recovery_required",
@@ -588,6 +639,10 @@ export async function executeNativeCheckout(options: {
       scope,
       exchange,
       additional: { handle_invoice: true },
+      recoveryMarker:
+        markerField && markers
+          ? (index) => ({ field: markerField, value: markers[index] })
+          : undefined,
       db: env.STATE,
       hasRecoveryCapacity: async () =>
         (ongoing || grant.maximum_used <= p.PROVIDER_CALL_CEILING - 16) &&
@@ -607,6 +662,23 @@ export async function executeNativeCheckout(options: {
               const sessions = first
                 ? value.sessions
                 : [value.sessions[index ?? 0]];
+              if (first && markerField) {
+                stage = "prebooking";
+                for (const serviceId of new Set(
+                  sessions.map((session) => session.serviceId),
+                )) {
+                  const fields = await exchange({
+                    kind: "required-fields",
+                    serviceId,
+                  });
+                  freshReceipt(fields.receivedAtMs, Date.now());
+                  if (!supportsRecoveryField(fields.body, markerField))
+                    throw new ApiError(
+                      503,
+                      "native_required_fields_unsupported",
+                    );
+                }
+              }
               for (const session of sessions) {
                 const selection = nativeContractSelection(
                   contract,
@@ -870,8 +942,9 @@ export async function executeNativeCheckout(options: {
     if (
       result.state === "recovery_required" &&
       singleBookRejection &&
-      (!consolidated || stagedVersion !== undefined) &&
-      (await recordNoCreation(
+      (!consolidated || stagedVersion !== undefined)
+    ) {
+      const creationResolution = await recordNoCreation(
         env,
         {
           attemptId,
@@ -888,14 +961,15 @@ export async function executeNativeCheckout(options: {
           rpcCode: singleBookRejection.rejectionCode,
           dispatchFence: (stagedVersion ?? row.version) + 1,
         },
-      ))
-    )
-      return {
-        attemptId,
-        state: "recovery_required",
-        paymentAvailable: false,
-        creationResolution: { state: "not_created" as const },
-      };
+      );
+      if (creationResolution)
+        return {
+          attemptId,
+          state: "recovery_required",
+          paymentAvailable: false,
+          creationResolution,
+        };
+    }
     if (rawEvidence.statement) {
       const retained = await rawEvidence.statement.run();
       if (retained.meta.changes !== 1)
