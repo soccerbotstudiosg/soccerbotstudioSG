@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Recover interrupted checkout and confirmation for the original customer attempt on the independent checkout-recovery branch based on main c57040c. Preserve the approved payment presentation, booking access rules and four-hour availability cutoff.
+Repair Payment refresh on merged main revision `9632b0c`. In live-email tablet WebKit, the original unpaid attempt restored successfully after a lost response and the page switched from Payment to Confirmation.
 
 ## Next actions
 
-Verify the branch, publish the separate draft PR, and review its CI evidence. Owner staging/browser and provider acceptance remain pending. The companion policy, email and directions work has its own PR.
+Verify the corrective PR and its original browser case on CI. Production release of the merged recovery change awaits successful verification. The companion policy, email and directions work has its own PR and staging review.
 
 ## Ordered work after this slice
 
