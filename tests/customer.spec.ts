@@ -854,7 +854,7 @@ test("public routes remove staff access and fit the viewport", async ({
           }),
         );
       });
-    expect(informationRows.map((group) => group.length)).toEqual([3, 3, 4]);
+    expect(informationRows.map((group) => group.length)).toEqual([2, 3, 4]);
     for (const group of informationRows) {
       for (const [index, top] of group.entries()) {
         expect(
@@ -1346,18 +1346,21 @@ test("guest multi-date booking survives reload without retired export actions", 
   await details(page);
   const policyLinks = page.locator(".review-terms").getByRole("link");
   await expect(policyLinks).toHaveText(["Terms and Conditions"]);
-  const popupEvent = page.waitForEvent("popup");
-  await policyLinks.click();
-  const policyPage = await popupEvent;
-  await expect(
-    policyPage.getByRole("heading", {
-      name: "Terms and Conditions",
-      exact: true,
-    }),
-  ).toBeVisible();
-  await policyPage.close();
-  await expect(page.getByRole("checkbox")).not.toBeChecked();
-  await page.getByRole("checkbox").check();
+  const consent = page.getByRole("checkbox", { name: /I’ve reviewed/ });
+  for (const checked of [false, true]) {
+    await consent.setChecked(checked);
+    const popupEvent = page.waitForEvent("popup");
+    await policyLinks.click();
+    const policyPage = await popupEvent;
+    await expect(
+      policyPage.getByRole("heading", {
+        name: "Terms and Conditions",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await policyPage.close();
+    await expect(consent).toBeChecked({ checked });
+  }
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Review Booking", exact: true }),
