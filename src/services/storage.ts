@@ -261,7 +261,7 @@ export function markSubmittedCheckout(id: string, submitted: boolean) {
     });
 }
 
-/** Recover only a write sent by this tab under its original checkout identity. */
+/** Return this tab's submitted or protected unpaid checkout correlation. */
 export function submittedCheckoutId() {
   const stored = record(safeRead("soccerbot-live-draft"));
   return stored?.submittedCheckout === true &&
@@ -269,6 +269,23 @@ export function submittedCheckoutId() {
     typeof stored.checkoutAttemptId === "string"
     ? stored.checkoutAttemptId
     : null;
+}
+
+/** Retain a protected unpaid handoff for this tab's next deliberate booking action. */
+export function rememberPaymentContinuation(id: string) {
+  const original = liveCheckoutAttemptId();
+  if (
+    (original && original !== id) ||
+    isCalendarRecovery(id) ||
+    hasSeenConfirmation(id) ||
+    completedPaymentReturn(id)
+  )
+    return false;
+  if (submittedCheckoutId() !== id) {
+    saveLiveDraft(loadLiveDraft(), true, id);
+    markSubmittedCheckout(id, true);
+  }
+  return true;
 }
 
 /** Retain display-only affected slots across refresh without granting booking authority. */
@@ -290,6 +307,7 @@ export function saveCalendarRecovery(attemptId: string, unresolved = false) {
     safeWrite("soccerbot-live-draft", {
       ...stored,
       calendarRecovery: true,
+      leftBookingFlow: false,
       unresolvedCheckout: unresolved,
       calendarNoticeDismissed:
         stored.calendarRecovery === true &&

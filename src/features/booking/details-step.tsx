@@ -13,6 +13,7 @@ import { BookingHeading } from "./booking-heading";
 import {
   BookingPrimaryAction,
   BookingActionTotal,
+  ContinuePaymentAction,
 } from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -43,6 +44,8 @@ export function DetailsStep({
       identityService,
       bookingService,
       review,
+      browsingCheckout,
+      resumeSubmittedCheckout,
       saveContact,
       action,
       selectionNotice,
@@ -51,6 +54,7 @@ export function DetailsStep({
     router = useRouter(),
     c = draft.contact;
   const needsProfile =
+    !browsingCheckout &&
     !profileOnly &&
     bookingService.mode === "live" &&
     identityService.mode === "live" &&
@@ -198,7 +202,8 @@ export function DetailsStep({
       }));
     }
   }
-  const needsEmailCheck = !profileOnly && draft.mode !== "member";
+  const needsEmailCheck =
+    !profileOnly && !browsingCheckout && draft.mode !== "member";
   const emailChecked = !needsEmailCheck || checkedEmail === c.email;
   const [emailCheckRequested, requestEmailCheck] = useState(false);
   const uncheckedEmail =
@@ -523,6 +528,7 @@ export function DetailsStep({
   }
   if (
     !profileOnly &&
+    !browsingCheckout &&
     !action.calendarRecovery &&
     (attempt?.verifying || attempt?.held)
   )
@@ -564,6 +570,10 @@ export function DetailsStep({
           event.preventDefault();
           if (profileOnly) {
             void save();
+            return;
+          }
+          if (browsingCheckout) {
+            resumeSubmittedCheckout();
             return;
           }
           const next = contactErrors(
@@ -686,7 +696,8 @@ export function DetailsStep({
             {action.error}
           </p>
         )}
-        {!profileOnly && (
+        {!profileOnly && browsingCheckout && <ContinuePaymentAction submit />}
+        {!profileOnly && !browsingCheckout && (
           <BookingPrimaryAction
             loading={saving}
             className="actions"

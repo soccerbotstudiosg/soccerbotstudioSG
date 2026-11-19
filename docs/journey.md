@@ -2,6 +2,12 @@
 
 This document owns retained milestones, dated decisions, implementation history and verification evidence. [Progress](../PROGRESS.md) contains only the latest checkpoint and immediate tasks. [Booking scenarios and messages](booking-flows.md) owns customer flow diagrams and copy; [role UAT](uat/simulated-user.md), [Admin UAT](uat/admin.md) and [Trainers UAT](uat/trainers.md) own acceptance; [Runbook](runbook.md) owns deployment and operational procedures. Current rules and contracts remain in their existing owners.
 
+## 19 November 2026 — Navigation after a submitted checkout
+
+The quick-back captures showed a successful protected lookup on initial Review recovery and later visits to Review without a new checkout lookup. Review could display an editable-looking consent box even though the retained attempt prevented changes to consent. The unpaid continuation also rendered outside the booking routes covered by the leave prompt. Earlier booking steps now distinguish browser history traversal from an explicit booking navigation action. The confirmed unpaid link supplies a tab-local recovery hint for direct returns. Payment and booking status still come from authenticated reads.
+
+A subsequent capture recorded 11 trips between Confirmation and Calendar in 11 seconds after the payment and recovery deadlines. All 22 protected checkout reads succeeded and returned an unavailable link, no confirmation evidence and no verified expiry. This exposed a collision between Calendar expiry reconciliation and the stored booking departure used for re-entry. A passed deadline alone cannot authorize releasing a session.
+
 ## 19 November 2026 — Keep a refreshed Payment page on its original attempt
 
 PR 103 passed PR verification and deployed to staging. On merged main revision `9632b0c`, verification run `44467464133` failed in tablet WebKit, live-email shard 2, job `135369181003`. The trace recorded a lost successful checkout response, normal navigation to Payment, then a reload. Protected current-attempt and checkout reads returned the original checking attempt. Booking re-entry consumed the submitted marker on refresh and changed the URL to Confirmation. The repair waits for current-attempt restoration on Payment and keeps a matching financial attempt with Payment’s existing protected route. A component regression holds the current-attempt response until the competing context could otherwise have redirected. The original browser assertions and single-write checks remain in the suite.

@@ -7,6 +7,7 @@ import {
   saveLiveDraft,
   expiryReconciliationDeadline,
   markConfirmationSeen,
+  submittedCheckoutId,
 } from "@/services/storage";
 import { liveBookingService } from "@/services/booking";
 import { demoCustomerIdentity } from "@/services/demo/identity";
@@ -1544,6 +1545,8 @@ it("shows payment received feedback with details while current booking evidence 
   expect(screen.queryByText("SGD · Final total")).not.toBeInTheDocument();
   const timer = screen.getByRole("timer");
   const continuation = screen.getByRole("link", { name: "Continue payment" });
+  expect(continuation).toHaveAttribute("data-payment-continuation", first);
+  expect(submittedCheckoutId()).toBe(first);
   const message = screen.getByText(/Continue to pay/);
   expect(
     message.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING,

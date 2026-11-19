@@ -13,6 +13,10 @@
   },
   {
     "file": "src/components/booking-navigation.test.tsx",
+    "title": "Home booking entry keeps the submitted checkout owner for the protected read"
+  },
+  {
+    "file": "src/components/booking-navigation.test.tsx",
     "title": "a changed motion preference finishes an active entry and removes its scroll lock"
   },
   {
@@ -102,6 +106,10 @@
   {
     "file": "src/components/site-shell.test.tsx",
     "title": "nested booking 404 bypasses departure prompts and restores the guard only on valid booking pages"
+  },
+  {
+    "file": "src/components/site-shell.test.tsx",
+    "title": "unpaid continuation guards site departures and releases links after payment"
   },
   {
     "file": "src/components/studio-hero-video.test.tsx",
@@ -893,6 +901,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "an expired payment window after a submitted checkout departure returns once to an editable calendar without repeating protected reads"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "mock unavailable payment status cannot masquerade as expiry or clear the original attempt"
   },
   {
@@ -994,6 +1006,22 @@
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "Back before dispatch cancels preparation and after dispatch preserves the original checkout through calendar and Home returns"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "native Back traverses every submitted booking step to Home and deliberate entry resumes the original checkout"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "on-site Back and Continue payment immediately recover the original submitted checkout from each previous step"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "leaving during a protected checkout read suppresses its late redirect and keeps the original ID"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "leaving a directly opened verified payment continuation preserves recovery through Home and re-entry"
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",

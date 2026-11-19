@@ -37,13 +37,15 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const { enter } = useBookingNavigation();
   const [errorPage, setErrorPage] = useState(false);
   const [dialog, setDialog] = useState<{
+    from: string;
     href: string;
     local: boolean;
     newTab: boolean;
   } | null>(null);
   const [leavingFrom, setLeavingFrom] = useState<string | null>(null);
   if (leavingFrom && pathname !== leavingFrom) setLeavingFrom(null);
-  if (errorPage && dialog) setDialog(null);
+  if (dialog && (errorPage || dialog.from !== pathname)) setDialog(null);
+  const confirmation = /^\/confirmation\/?$/.test(pathname);
   useEffect(() => {
     const header = document.querySelector(".site-header");
     if (!header) return;
@@ -168,13 +170,18 @@ export function SiteShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (
       errorPage ||
-      !pathname.startsWith("/book/") ||
-      booking.attempt?.status === "paid"
+      (!confirmation &&
+        (!pathname.startsWith("/book/") || booking.attempt?.status === "paid"))
     )
       return;
     /** Confirm site-link departures before Link or booking-entry handlers run. */
     function leaveLink(event: MouseEvent) {
       if (event.button > 1 || event.defaultPrevented) return;
+      if (
+        confirmation &&
+        !document.querySelector("#main [data-payment-continuation]")
+      )
+        return;
       const link =
         event.target instanceof Element
           ? event.target.closest("a[href]")
@@ -194,7 +201,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
       if (
         sameDocument ||
         link.hasAttribute("data-booking-continuation") ||
-        (!link.closest(".site-footer") &&
+        (!confirmation &&
+          !link.closest(".site-footer") &&
           local &&
           (url.pathname.startsWith(sitePath("/book/")) ||
             url.pathname === sitePath("/confirmation/")))
@@ -203,6 +211,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       event.preventDefault();
       event.stopPropagation();
       setDialog({
+        from: pathname,
         href: link.href,
         local,
         newTab:
@@ -219,7 +228,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       document.removeEventListener("click", leaveLink, true);
       document.removeEventListener("auxclick", leaveLink, true);
     };
-  }, [pathname, booking.attempt?.status, errorPage]);
+  }, [pathname, booking.attempt?.status, errorPage, confirmation]);
   return (
     <ErrorPage.Provider value={setErrorPage}>
       <a
@@ -403,7 +412,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <p className="mb-5 text-muted">
             Your selections and changes will not be saved.
           </p>
-          {(booking.attempt || booking.action.status === "loading") && (
+          {(booking.attempt ||
+            booking.action.status === "loading" ||
+            confirmation) && (
             <p className="mb-5 text-muted">
               Leaving does not cancel a reservation or payment. Any unpaid
               reservation remains held until expiry; payment recovery is
@@ -427,7 +438,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 );
                 if (dialog.newTab)
                   window.open(dialog.href, "_blank", "noopener,noreferrer");
-                booking.leave();
+                const continuationId = document.querySelector<HTMLElement>(
+                  "#main [data-payment-continuation]",
+                )?.dataset.paymentContinuation;
+                if (continuationId) booking.leave(continuationId);
+                else booking.leave();
                 setDialog(null);
                 if (dialog.newTab) router.push("/");
                 else if (route) enter(route);

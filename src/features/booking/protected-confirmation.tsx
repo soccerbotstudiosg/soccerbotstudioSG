@@ -15,6 +15,7 @@ import {
   checkoutRecoveryDeadline,
   completedPaymentReturn,
   liveCheckoutAttemptId,
+  rememberPaymentContinuation,
 } from "@/services/storage";
 import { SessionList, SessionSummaryHeading } from "./summary";
 import { BookingLoading as BrandLoading } from "./booking-loading";
@@ -76,16 +77,20 @@ export function useRepaymentSuppression(attemptId?: string) {
 }
 /** Reopen only the retained handoff within its original payment deadline. */
 function PaymentContinuation({
+  attemptId,
   url,
   expiresAtMs,
   clock,
 }: {
+  attemptId?: string;
   url: string;
   expiresAtMs: number;
   clock: NonNullable<CheckoutContext["clock"]>;
 }) {
   const [now, setNow] = useState(() => checkoutNow(clock, true));
   useEffect(() => {
+    if (attemptId && checkoutNow(clock, true) < expiresAtMs)
+      rememberPaymentContinuation(attemptId);
     const refresh = () => setNow(checkoutNow(clock, true));
     const timer = setInterval(refresh, 1000);
     window.addEventListener("focus", refresh);
@@ -95,7 +100,7 @@ function PaymentContinuation({
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, [clock]);
+  }, [attemptId, clock, expiresAtMs]);
   const seconds = Math.max(0, Math.ceil((expiresAtMs - now) / 1000));
   if (!seconds) return null;
   return (
@@ -103,6 +108,7 @@ function PaymentContinuation({
       <a
         className="button wide booking-entry-action checkout-payment-button"
         href={url}
+        data-payment-continuation={attemptId}
         data-booking-continuation
         referrerPolicy="no-referrer"
         onClick={(event) => {
@@ -1279,6 +1285,7 @@ function ProtectedConfirmationBody({
       isHitpayCheckoutUrl(link.url) ? (
         <PaymentContinuation
           key={link.url}
+          attemptId={current.mode === "live" ? current.attemptId : undefined}
           clock={current.clock}
           url={link.url}
           expiresAtMs={link.expiresAtMs}

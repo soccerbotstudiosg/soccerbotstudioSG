@@ -3863,6 +3863,20 @@ async function optimisticHold(page: Page, failReadback: boolean) {
           exact: true,
         }),
       ).toBeVisible();
+      await expect(continuation).toHaveAttribute(
+        "data-payment-continuation",
+        attemptId,
+      );
+      await page
+        .getByRole("link", { name: "Privacy Policy", exact: true })
+        .click();
+      const leavePrompt = page.getByRole("dialog", {
+        name: "Leave this booking?",
+      });
+      await expect(leavePrompt).toBeVisible();
+      await leavePrompt.getByRole("button", { name: "Stay" }).click();
+      await expect(leavePrompt).toHaveCount(0);
+      await expect(continuation).toHaveAttribute("href", mechanism.checkoutUrl);
       await continuation.click();
       await expect(page).toHaveURL(mechanism.checkoutUrl);
       expect(page.context().pages()).toHaveLength(pagesBefore);

@@ -1,7 +1,10 @@
 "use client";
 import { useMobileBooking } from "./booking-tools";
 import { BookingHeading } from "./booking-heading";
-import { BookingPrimaryAction } from "./booking-primary-action";
+import {
+  BookingPrimaryAction,
+  ContinuePaymentAction,
+} from "./booking-primary-action";
 import { BookingLoading as BrandLoading } from "./booking-loading";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
@@ -14,7 +17,12 @@ import { LiveCatalogue } from "./live-catalogue";
 import { useBooking } from "./provider";
 /** Select the live or demo session presentation. */
 export function SessionStep() {
-  const { bookingService, sessionChoices, setSessionChoices } = useBooking();
+  const {
+    bookingService,
+    sessionChoices,
+    setSessionChoices,
+    browsingCheckout,
+  } = useBooking();
   const outletSelected = sessionChoices.outlet;
   const mobile = useMobileBooking();
   const sessions = useRef<HTMLDivElement>(null);
@@ -109,12 +117,16 @@ export function SessionStep() {
             <SessionPresentation {...presentation} />
           ))}
       </div>
-      {(!outletSelected || !sessionChoices.session) && (
-        <BookingPrimaryAction className="actions" ready={false}>
-          <button className="button" disabled>
-            Choose sessions <Icon name="chevron" />
-          </button>
-        </BookingPrimaryAction>
+      {browsingCheckout ? (
+        <ContinuePaymentAction />
+      ) : (
+        (!outletSelected || !sessionChoices.session) && (
+          <BookingPrimaryAction className="actions" ready={false}>
+            <button className="button" disabled>
+              Choose sessions <Icon name="chevron" />
+            </button>
+          </BookingPrimaryAction>
+        )
       )}
     </>
   );
@@ -253,7 +265,7 @@ function SessionPresentation({
   environment?: "developer" | "production";
   pending?: boolean;
 }) {
-  const { draft, update } = useBooking();
+  const { draft, update, browsingCheckout } = useBooking();
   const prices = sessionPrices(environment);
   const mobile = useMobileBooking();
   if (mobile && !expanded)
@@ -363,7 +375,7 @@ function SessionPresentation({
           )}
         </section>
       </div>
-      {expanded && (
+      {expanded && !browsingCheckout && (
         <BookingPrimaryAction className="actions" ready={!pending}>
           {pending ? (
             <button className="button" disabled>

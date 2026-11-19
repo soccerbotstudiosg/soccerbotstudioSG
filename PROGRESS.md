@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Stage the public policy pages, website and email policy links, approved lift map, and guest email validation cues together with checkout recovery (#103) and the Payment refresh correction (#104).
+Consolidate checkout navigation recovery with the email verification updates in draft PR #106. Keep the candidate off staging until owner review.
 
 ## Next actions
 
-Review the policy pages, lift diagram and guest email focus on staging. End-to-end checkout with the staging SimplyBook account remains unverified because it requires paid activation.
+Check the combined candidate in CI. Physical browser and provider acceptance remain pending.
 
 ## Ordered work after this slice
 

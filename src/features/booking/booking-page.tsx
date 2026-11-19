@@ -106,6 +106,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
       setCalendarBrowsing,
       visitBookingStep,
       browsingCheckout,
+      resumeSubmittedCheckout,
       detachCheckout,
       action,
       confirmationRevision,
@@ -119,6 +120,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
   const [identity, setIdentity] = useState(() => identityService.current());
   useEffect(() => {
     if (
+      browsingCheckout ||
       step === "account" ||
       hasIdentityEntry(identityService, true) ||
       identityService.mode !== "live"
@@ -133,7 +135,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
       active = false;
       entry.cancel();
     };
-  }, [identityService, step]);
+  }, [browsingCheckout, identityService, step]);
   const verifiedIdentity =
     identity &&
     identity.expiresAt > now &&
@@ -161,11 +163,15 @@ export function BookingPage({ step }: { step: BookingStep }) {
     step === "details" &&
     action.operation === "reserve" &&
     action.status === "loading";
+  const browsingStep =
+    browsingCheckout && step !== "payment" && step !== "confirmation";
   const pendingReview =
+    !browsingStep &&
     !action.calendarRecovery &&
     step === "details" &&
     attempt?.verifying === true;
   const displayStep =
+    !browsingStep &&
     !action.calendarRecovery &&
     step === "details" &&
     (attempt?.verifying || attempt?.held)
@@ -181,7 +187,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
         : action.returnToCalendar &&
             ["time", "details", "review", "payment"].includes(step)
           ? "time"
-          : handingOff || reserving
+          : browsingStep || handingOff || reserving
             ? step
             : bookingService.mode === "live" &&
                 bookingService.operations.availability === "unavailable" &&
@@ -198,18 +204,18 @@ export function BookingPage({ step }: { step: BookingStep }) {
                       ["details", "review"].includes(step))
                     ? guardedStep(step, draft, null, now)
                     : "time"
-                  : guardedStep(
-                      step,
-                      draft,
-                      browsingCheckout ? null : attempt,
-                      now,
-                    ),
+                  : guardedStep(step, draft, attempt, now),
     current = progress.findIndex(([id]) => id === displayStep);
   const retainingReview =
     !action.calendarRecovery &&
     step === "details" &&
     actual === "review" &&
     attempt?.held === true;
+  const backAction = browsingStep
+    ? resumeSubmittedCheckout
+    : step === "account"
+      ? accountBack
+      : null;
   const retainedAttemptId = attempt?.id ?? liveCheckoutAttemptId();
   const suppressRepayment = useRepaymentSuppression(
     retainedAttemptId ?? undefined,
@@ -299,8 +305,8 @@ export function BookingPage({ step }: { step: BookingStep }) {
           {(current >= 0 || displayStep === "account") && (
             <BookingProgressHeader>
               <div className="booking-top">
-                {step === "account" && accountBack ? (
-                  <button type="button" className="back" onClick={accountBack}>
+                {backAction ? (
+                  <button type="button" className="back" onClick={backAction}>
                     <Icon name="back" />
                     <span className="back-label">Back</span>
                   </button>
@@ -373,12 +379,20 @@ export function BookingPage({ step }: { step: BookingStep }) {
                           index + 1
                         )}
                       </span>
-                      {index < current && !pendingReview ? (
+                      {index >= current || pendingReview ? (
+                        label
+                      ) : browsingStep ? (
+                        <button
+                          type="button"
+                          className="hover:underline"
+                          onClick={resumeSubmittedCheckout}
+                        >
+                          {label}
+                        </button>
+                      ) : (
                         <Link href={`/book/${id}/`} className="hover:underline">
                           {label}
                         </Link>
-                      ) : (
-                        label
                       )}
                     </li>
                   ))}

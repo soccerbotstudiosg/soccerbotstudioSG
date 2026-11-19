@@ -1,7 +1,10 @@
 "use client";
 import { focusField } from "@/components/form-focus";
 import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
-import { BookingPrimaryAction } from "./booking-primary-action";
+import {
+  BookingPrimaryAction,
+  ContinuePaymentAction,
+} from "./booking-primary-action";
 import { BookingLoading } from "./booking-loading";
 import { useBookingEntryTransition } from "@/components/booking-navigation";
 import {
@@ -46,6 +49,7 @@ export function AccountStep({
   onIdentityChange?: (identity: VerifiedIdentity | null) => void;
 } = {}) {
   const {
+      browsingCheckout,
       now,
       profileAccessRevision,
       profileAccessNotice,
@@ -178,6 +182,7 @@ export function AccountStep({
   const refreshing = useRef<IdentityEntryPreparation | null>(null);
   const active = useRef<AbortController | null>(null);
   useEffect(() => {
+    if (browsingCheckout) return;
     let activeEntry = true;
     const preparation = takeIdentityEntry(identityService);
     refreshing.current = {
@@ -197,7 +202,7 @@ export function AccountStep({
       preparation.cancel();
       active.current?.abort();
     };
-  }, [identityService]);
+  }, [browsingCheckout, identityService]);
   const cancel = useCallback(() => {
     active.current?.abort();
     active.current = null;
@@ -353,6 +358,13 @@ export function AccountStep({
     identityService.current()?.email === identity.email
       ? identity
       : null;
+  if (browsingCheckout)
+    return (
+      <>
+        <BookingHeading lines={["Start your", "booking"]} />
+        <ContinuePaymentAction />
+      </>
+    );
   if ((view === "choice" && restoring) || preparingPage || departing)
     return entryTransition ? null : <BookingLoading label="Opening booking" />;
   if (view === "profile")

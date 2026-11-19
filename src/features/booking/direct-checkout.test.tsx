@@ -21,7 +21,11 @@ import { afterEach, expect, it, vi } from "vitest";
 import { BookingProvider, useBooking } from "./provider";
 import { BookingPage } from "./booking-page";
 import { ReviewStep } from "./review-step";
-import { BookingServiceError, type BookingService } from "@/services/contracts";
+import {
+  BookingServiceError,
+  type BookingService,
+  type CheckoutContext,
+} from "@/services/contracts";
 import { liveBookingService as liveTransport } from "@/services/booking";
 // These isolated recovery cases inject their own per-day/month reads. The
 // full snapshot transport is exercised by calendar and live browser suites.
@@ -40,9 +44,13 @@ import {
   markSubmittedCheckout,
   markBookingDeparture,
   completedPaymentReturn,
+  expiryReconciliationDeadline,
 } from "@/services/storage";
 import { demoBookingService } from "@/services/demo/booking";
-import { expireBooking } from "@/services/confirmation";
+import {
+  expireBooking,
+  protectedCheckoutService,
+} from "@/services/confirmation";
 import {
   beginIdentitySignOut,
   createLiveIdentityService,
@@ -139,6 +147,7 @@ afterEach(() => {
   sessionStorage.removeItem(`soccerbot-payment-return:${id}`);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  window.history.replaceState(null, "");
   vi.useRealTimers();
   navigation.path = "/";
   navigation.push.mockReset();
@@ -299,6 +308,203 @@ it("Back before dispatch cancels preparation and after dispatch preserves the or
     expect(navigation.push).not.toHaveBeenCalled();
     view.unmount();
   }
+});
+
+const previousBookingSteps = [
+  "review",
+  "details",
+  "time",
+  "session",
+  "account",
+] as const;
+type PreviousBookingStep = (typeof previousBookingSteps)[number];
+
+/** Exercise the visible controls with an empty editable draft and a separate retained payment. */
+function renderCheckoutHistory({ direct = false } = {}) {
+  navigation.path = "/confirmation/";
+  if (!direct) {
+    saveLiveDraft(blankDraft(), true, id);
+    markSubmittedCheckout(id, true);
+  }
+  const checkout = vi.fn<BookingService["checkout"]>();
+  const pay = vi.fn<BookingService["pay"]>();
+  const service = {
+    ...liveBookingService,
+    publicCalendar: undefined,
+    calendar: undefined,
+    restore: undefined,
+    availability: vi.fn(async () => []),
+    checkout,
+    pay,
+  };
+  const guest = vi.fn(demoCustomerIdentity.guest);
+  const saveProfile = vi.fn(demoCustomerIdentity.saveProfile);
+  const refresh = vi.fn(demoCustomerIdentity.refresh);
+  const readCurrent = vi.fn(async () => null);
+  const identity = {
+    ...demoCustomerIdentity,
+    mode: "live" as const,
+    guest,
+    saveProfile,
+    refresh,
+    readCurrent,
+  };
+  const read = vi.spyOn(protectedCheckoutService, "context");
+  const response = Promise.withResolvers<CheckoutContext>();
+  read.mockReturnValue(response.promise);
+  const context: CheckoutContext = {
+    attemptId: id,
+    mode: "live",
+    checkout: { state: "available", url, expiresAtMs: Date.now() + 60000 },
+    summary: {
+      players: 1,
+      totalMinor: 8800,
+      currency: "SGD",
+      sessions: [{ startMs: 1, players: 1 }],
+    },
+    checking: {
+      deadlineMs: Date.now() + 120000,
+      nextCheckMs: 0,
+      pollAfterMs: 5000,
+    },
+  };
+  /** Model the shell's explicit departure from an already verified continuation. */
+  function LeaveContinuation() {
+    const booking = useBooking();
+    return (
+      <button onClick={() => booking.leave(id)}>
+        Leave verified continuation
+      </button>
+    );
+  }
+  const tree = (step: PreviousBookingStep | null) => (
+    <BookingProvider bookingService={service} identityService={identity}>
+      {step ? <BookingPage step={step} /> : <LeaveContinuation />}
+    </BookingProvider>
+  );
+  const view = render(tree(null));
+  function visit(step: PreviousBookingStep | null, traverse: boolean) {
+    navigation.path = step ? `/book/${step}/` : "/";
+    if (traverse)
+      act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+    view.rerender(tree(step));
+  }
+  function assertNoWrites() {
+    expect(checkout).not.toHaveBeenCalled();
+    expect(pay).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(guest).not.toHaveBeenCalled();
+    expect(saveProfile).not.toHaveBeenCalled();
+  }
+  return {
+    visit,
+    read,
+    assertNoWrites,
+    unmount: view.unmount,
+    settle: () => act(async () => response.resolve(context)),
+  };
+}
+
+it("native Back traverses every submitted booking step to Home and deliberate entry resumes the original checkout", async () => {
+  const history = renderCheckoutHistory();
+  for (const step of previousBookingSteps) {
+    history.visit(step, true);
+    expect(
+      await screen.findByRole("button", { name: "Continue payment" }),
+    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Back" })).toBeEnabled();
+    if (step === "review") {
+      expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: "Edit" }),
+      ).not.toBeInTheDocument();
+    }
+    expect(history.read).not.toHaveBeenCalled();
+    expect(navigation.replace).not.toHaveBeenCalled();
+  }
+  history.visit(null, true);
+  expect(isBookingDeparture(id)).toBe(true);
+  expect(history.read).not.toHaveBeenCalled();
+  history.visit("account", false);
+  await waitFor(() => expect(history.read).toHaveBeenCalledOnce());
+  expect(history.read).toHaveBeenCalledWith(
+    expect.objectContaining({ attemptId: id, mode: "live" }),
+  );
+  expect(navigation.replace).not.toHaveBeenCalled();
+  await history.settle();
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+    `/confirmation/?attempt=${id}`,
+  );
+  history.assertNoWrites();
+});
+
+it("on-site Back and Continue payment immediately recover the original submitted checkout from each previous step", async () => {
+  for (const step of previousBookingSteps) {
+    const actions =
+      step === "review"
+        ? ["Back", "Continue payment", "Time"]
+        : ["Back", "Continue payment"];
+    for (const name of actions) {
+      navigation.replace.mockClear();
+      const history = renderCheckoutHistory();
+      history.visit(step, true);
+      const control = await screen.findByRole("button", { name });
+      await act(async () => fireEvent.click(control));
+      expect(history.read).toHaveBeenCalledOnce();
+      expect(history.read).toHaveBeenCalledWith(
+        expect.objectContaining({ attemptId: id, mode: "live" }),
+      );
+      expect(navigation.replace).not.toHaveBeenCalled();
+      await history.settle();
+      expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+        `/confirmation/?attempt=${id}`,
+      );
+      expect(navigation.push).not.toHaveBeenCalled();
+      history.assertNoWrites();
+      history.unmount();
+      history.read.mockRestore();
+    }
+  }
+});
+
+it("leaving during a protected checkout read suppresses its late redirect and keeps the original ID", async () => {
+  const history = renderCheckoutHistory();
+  history.visit("details", true);
+  const control = await screen.findByRole("button", {
+    name: "Continue payment",
+  });
+  await act(async () => fireEvent.click(control));
+  expect(history.read).toHaveBeenCalledOnce();
+  const { signal } = history.read.mock.calls[0][0];
+  history.visit(null, true);
+  expect(signal.aborted).toBe(true);
+  await history.settle();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(submittedCheckoutId()).toBe(id);
+  history.assertNoWrites();
+});
+
+it("leaving a directly opened verified payment continuation preserves recovery through Home and re-entry", async () => {
+  const history = renderCheckoutHistory({ direct: true });
+  expect(submittedCheckoutId()).toBeNull();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Leave verified continuation" }),
+  );
+  history.visit(null, false);
+  expect(submittedCheckoutId()).toBe(id);
+  expect(isBookingDeparture(id)).toBe(true);
+  expect(history.read).not.toHaveBeenCalled();
+  history.visit("account", false);
+  await waitFor(() => expect(history.read).toHaveBeenCalledOnce());
+  expect(history.read).toHaveBeenCalledWith(
+    expect.objectContaining({ attemptId: id, mode: "live" }),
+  );
+  await history.settle();
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+    `/confirmation/?attempt=${id}`,
+  );
+  history.assertNoWrites();
 });
 
 it("refreshing Payment after a lost checkout reply keeps the restored unpaid attempt on Payment", async () => {
@@ -491,6 +697,7 @@ it("restored editable Review avoids background catalogue and calendar reads", as
 });
 async function directCase(scenario: string) {
   navigation.path = "/book/review/";
+  window.history.replaceState({ route: "synthetic-review-entry" }, "");
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   let finish!: (attempt: Attempt) => void;
@@ -626,6 +833,11 @@ async function directCase(scenario: string) {
   );
   if (scenario === "success" || scenario === "handoff") {
     expect(assign).toHaveBeenCalledExactlyOnceWith(url);
+    expect(submittedCheckoutId()).toBe(id);
+    expect(window.history.state).toEqual({
+      route: "synthetic-review-entry",
+      soccerbotHostedPayment: id,
+    });
     // assign() starts navigation; the current document can still paint while
     // the checkout destination loads. Never reveal the review form here.
     expect(screen.getByTestId("action")).toHaveTextContent("loading");
@@ -669,6 +881,7 @@ it("cancelled direct checkout never navigates", () => directCase("cancel"));
 it("direct checkout rejects an untrusted destination", () =>
   directCase("wrong_host"));
 it("explicit reservation reuses its hold for payment without preparing or checking availability again", async () => {
+  navigation.path = "/book/review/";
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const checkout = vi.fn<BookingService["checkout"]>(
@@ -693,26 +906,25 @@ it("explicit reservation reuses its hold for payment without preparing or checki
   const availability = vi.fn<BookingService["availability"]>(async () => []);
   const assign = vi.fn();
   vi.stubGlobal("location", { assign });
+  const context: CheckoutContext = {
+    attemptId: id,
+    mode: "live",
+    checkout: { state: "available", url, expiresAtMs: Date.now() + 60000 },
+    summary: {
+      players: 1,
+      totalMinor: 8800,
+      currency: "SGD",
+      sessions: [{ startMs: 1, players: 1 }],
+    },
+    checking: {
+      deadlineMs: Date.now() + 120000,
+      nextCheckMs: 0,
+      pollAfterMs: 5000,
+    },
+  };
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () =>
-      Response.json({
-        attemptId: id,
-        mode: "live",
-        checkout: { state: "available", url, expiresAtMs: Date.now() + 60000 },
-        summary: {
-          players: 1,
-          totalMinor: 8800,
-          currency: "SGD",
-          sessions: [{ startMs: 1, players: 1 }],
-        },
-        checking: {
-          deadlineMs: Date.now() + 120000,
-          nextCheckMs: 0,
-          pollAfterMs: 5000,
-        },
-      }),
-    ),
+    vi.fn(async () => Response.json(context)),
   );
   function Hold() {
     const { update, reserve, attempt } = useBooking();
@@ -728,20 +940,20 @@ it("explicit reservation reuses its hold for payment without preparing or checki
       </>
     );
   }
-  render(
-    <BookingProvider
-      bookingService={{
-        ...liveBookingService,
-        restore: undefined,
-        checkout,
-        pay,
-        availability,
-      }}
-    >
+  const service = {
+    ...liveBookingService,
+    restore: undefined,
+    checkout,
+    pay,
+    availability,
+  };
+  const tree = (step: "review" | "payment" | "details") => (
+    <BookingProvider bookingService={service}>
       <Hold />
-      <BookingPage step="review" />
-    </BookingProvider>,
+      <BookingPage step={step} />
+    </BookingProvider>
   );
+  const view = render(tree("review"));
   fireEvent.click(screen.getByText("Fill details"));
   await act(async () =>
     fireEvent.click(screen.getByText("Reserve for review")),
@@ -768,15 +980,50 @@ it("explicit reservation reuses its hold for payment without preparing or checki
   expect(availability).toHaveBeenCalledTimes(readsAtHold);
   expect(assign).toHaveBeenCalledWith(url);
   expect(navigation.replace).not.toHaveBeenCalledWith("/book/payment/");
-  await act(async () =>
+  await act(async () => {
     window.dispatchEvent(
       new PageTransitionEvent("pageshow", { persisted: true }),
-    ),
-  );
+    );
+    window.dispatchEvent(
+      new PopStateEvent("popstate", { state: window.history.state }),
+    );
+  });
   expect(navigation.replace).toHaveBeenCalledWith("/book/payment/");
   expect(checkout).toHaveBeenCalledTimes(1);
   expect(pay).toHaveBeenCalledTimes(2);
   expect(availability).toHaveBeenCalledTimes(readsAtHold);
+
+  // Payment's protected read may still be pending when the visitor presses Back again.
+  const paymentRead = vi.spyOn(protectedCheckoutService, "context");
+  const response = Promise.withResolvers<CheckoutContext>();
+  paymentRead.mockReturnValue(response.promise);
+  navigation.path = "/book/payment/";
+  view.rerender(tree("payment"));
+  await waitFor(() => expect(paymentRead).toHaveBeenCalledOnce());
+  expect(screen.queryByRole("link", { name: "Continue payment" })).toBeNull();
+  navigation.replace.mockClear();
+  window.history.replaceState(null, "");
+  navigation.path = "/book/details/";
+  act(() => {
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    view.rerender(tree("details"));
+  });
+  const resume = await screen.findByRole("button", {
+    name: "Continue payment",
+  });
+  expect(paymentRead.mock.calls[0][0].signal.aborted).toBe(true);
+  expect(paymentRead).toHaveBeenCalledTimes(1);
+  expect(navigation.replace).not.toHaveBeenCalled();
+  await act(async () => fireEvent.click(resume));
+  expect(paymentRead).toHaveBeenCalledTimes(2);
+  expect(paymentRead.mock.calls[1][0].attemptId).toBe(id);
+  await act(async () => response.resolve(context));
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+    `/confirmation/?attempt=${id}`,
+  );
+  expect(checkout).toHaveBeenCalledOnce();
+  expect(pay).toHaveBeenCalledTimes(2);
+  expect(assign).toHaveBeenCalledOnce();
 });
 
 it("live reservation response distinguishes a rejected selection from an uncertain write", async () => {
@@ -2324,10 +2571,15 @@ it("expiry callback cannot clear a paid or different current attempt (different)
 });
 
 /** Exercise provider restoration, route guards and expiry recovery through protected reads. */
-async function verifyMockPaymentExpiry(expired: boolean) {
+async function verifyMockPaymentExpiry(
+  scenario: "expired" | "unavailable" | "departed",
+) {
+  const expired = scenario === "expired";
+  const departed = scenario === "departed";
   vi.useFakeTimers(expired ? { toFake: ["Date"] } : undefined);
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   localStorage.clear();
+  const paymentCutoff = Date.now() - 24 * 60_000;
   const retained: Attempt = {
     id,
     draft,
@@ -2377,29 +2629,46 @@ async function verifyMockPaymentExpiry(expired: boolean) {
         { status: 409 },
       );
     if (path === `/api/attempts/${id}/checkout`)
-      return Response.json({
-        attemptId: id,
-        mode: "live",
-        expired: expired && !paid,
-        checkout: { state: "unavailable" },
-        summary: {
-          players: draft.players,
-          totalMinor: 8800,
-          currency: "SGD",
-          sessions: [
-            {
-              startMs: Date.parse("2026-10-20T12:00:00+08:00"),
-              players: draft.players,
-            },
-          ],
+      return Response.json(
+        {
+          attemptId: id,
+          mode: "live",
+          expired: expired && !paid,
+          checkout: { state: "unavailable" },
+          summary: {
+            players: draft.players,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [
+              {
+                startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+                players: draft.players,
+              },
+            ],
+          },
+          checking: {
+            deadlineMs: departed
+              ? paymentCutoff + 2 * 60_000
+              : Date.parse("2026-10-15T00:10:00Z"),
+            ...(departed
+              ? {
+                  paymentExpiresAtMs: paymentCutoff,
+                  holdExpiresAtMs: paymentCutoff + 3 * 60_000,
+                  recoveryEndsAtMs: paymentCutoff + 5 * 60_000,
+                }
+              : {}),
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
         },
-        checking: {
-          deadlineMs: Date.parse("2026-10-15T00:10:00Z"),
-          nextCheckMs: 0,
-          pollAfterMs: 5000,
-        },
-      });
+        departed ? { headers: { Date: new Date().toUTCString() } } : undefined,
+      );
     if (path === `/api/attempts/${id}/confirmation`) {
+      if (departed)
+        return Response.json({
+          status: "unresolved",
+          reason: "checking_window_ended",
+        });
       if (confirmed)
         return Response.json({
           status: "confirmed",
@@ -2497,6 +2766,63 @@ async function verifyMockPaymentExpiry(expired: boolean) {
       </BookingProvider>
     );
   };
+  if (departed) {
+    saveLiveDraft(blankDraft(), true, id);
+    markSubmittedCheckout(id, true);
+    markBookingDeparture(id, draft.slots);
+    // This tab already waited through expiry reconciliation before leaving for Home.
+    expiryReconciliationDeadline(id, paymentCutoff, paymentCutoff);
+    const confirmation = `/confirmation/?attempt=${id}`;
+    const view = render(tree("account"));
+    await act(async () => {});
+    expect(navigation.replace.mock.calls).toEqual([[confirmation]]);
+    view.rerender(tree("confirmation"));
+    await act(async () => {});
+    expect(navigation.replace.mock.calls).toEqual([
+      [confirmation],
+      ["/book/time/"],
+    ]);
+    view.rerender(tree("time"));
+    await act(async () => vi.advanceTimersByTimeAsync(11000));
+    expect(navigation.replace.mock.calls).toEqual([
+      [confirmation],
+      ["/book/time/"],
+    ]);
+    expect(screen.getByTestId("mock-expiry-attempt")).toHaveTextContent(id);
+    expect(
+      screen.queryByRole("button", { name: "Continue payment" }),
+    ).toBeNull();
+    const replacement = screen.getByRole("button", { name: /12:50–13:30/ });
+    fireEvent.click(replacement);
+    fireEvent.change(
+      screen.getByLabelText(`Trainer for ${other.date} at 12:50`),
+      {
+        target: { value: `${other.date}|12:50|2|4` },
+      },
+    );
+    expect(
+      JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots,
+    ).toEqual([other]);
+    expect(
+      requests.filter(({ path }) => path === `/api/attempts/${id}/checkout`)
+        .length,
+    ).toBeLessThanOrEqual(3);
+    // Refresh the recovered Calendar after a real replacement selection. Its retained
+    // financial correlation must not restart the departure handoff on hydration.
+    navigation.replace.mockClear();
+    view.unmount();
+    render(tree("time"));
+    await act(async () => vi.advanceTimersByTimeAsync(11000));
+    expect(navigation.replace).not.toHaveBeenCalled();
+    expect(
+      JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots,
+    ).toEqual([other]);
+    expect(screen.getByTestId("mock-expiry-recovery")).toHaveTextContent(
+      "true",
+    );
+    expect(requests.filter(({ method }) => method !== "GET")).toEqual([]);
+    return;
+  }
   saveLiveDraft(draft, true, id);
   let view = render(tree("payment"));
   if (!expired) {
@@ -2725,10 +3051,14 @@ async function verifyMockPaymentExpiry(expired: boolean) {
 }
 
 it("mock payment expiry returns to calendar preserves recovery across refresh and honours late payment", async () => {
-  await verifyMockPaymentExpiry(true);
+  await verifyMockPaymentExpiry("expired");
 });
 it("mock unavailable payment status cannot masquerade as expiry or clear the original attempt", async () => {
-  await verifyMockPaymentExpiry(false);
+  await verifyMockPaymentExpiry("unavailable");
+});
+
+it("an expired payment window after a submitted checkout departure returns once to an editable calendar without repeating protected reads", async () => {
+  await verifyMockPaymentExpiry("departed");
 });
 
 it("mock conflict refresh keeps the rejected tab on calendar without adopting an identical-contact checkout", async () => {
