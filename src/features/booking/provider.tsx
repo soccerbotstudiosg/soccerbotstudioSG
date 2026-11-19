@@ -1,6 +1,7 @@
 "use client";
 import {
   onProfileAccessLoss,
+  onBookingAccessEstablished,
   profileAccessGeneration,
   reportProfileAccessLoss,
   bookingAccessExpired,
@@ -109,12 +110,20 @@ import {
   dismissCalendarRecoveryNotice,
   calendarRecoveryNoticeDismissed,
   liveCheckoutAttemptId,
+  markSubmittedCheckout,
+  submittedCheckoutId,
+  hasSeenConfirmation,
   saveLiveDraft,
   saveBooking,
   type StoredBooking,
 } from "@/services/storage";
 import { useBookingAvailability } from "./availability";
 type Action = Exclude<BookingOperation, "availability"> | "reserve" | "review";
+type BookingRequest = {
+  controller: AbortController;
+  operation: Action;
+  submission?: { id: string; detached: boolean; originPath: string | null };
+};
 type ActionState = {
   status:
     "idle" | "loading" | "success" | "failure" | "unavailable" | "cancelled";
@@ -169,6 +178,8 @@ interface BookingContextValue extends StoredBooking {
   restartAfterExpiry: (attemptId: string) => void;
   browseAfterChecking: (attemptId: string, unresolved?: boolean) => boolean;
   clearReviewConsent: () => void;
+  detachCheckout: () => void;
+  browsingCheckout: boolean;
   resumePaymentStatus: (attemptId: string) => void;
   rejectRecoveredSelection: (
     attemptId: string,
@@ -544,10 +555,23 @@ export function BookingProvider({
       service.mode,
     ],
   );
-  const active = useRef<{
-    controller: AbortController;
-    operation: Action;
+  const [detachedCheckout, setDetachedCheckout] = useState<string | null>(() =>
+    bookingService.mode === "live" ? submittedCheckoutId() : null,
+  );
+  const browsingCheckout =
+    !!detachedCheckout &&
+    !action.calendarRecovery &&
+    !isCalendarRecovery(detachedCheckout) &&
+    (value.attempt?.id === detachedCheckout ||
+      submittedCheckoutId() === detachedCheckout);
+  const active = useRef<BookingRequest | null>(null);
+  const pendingSubmission = useRef<{
+    request: BookingRequest;
+    id: string;
+    settled: Promise<void>;
   } | null>(null);
+  const [entryChecked, setEntryChecked] = useState<string | null>(null);
+  const [detachedFrom, setDetachedFrom] = useState<string | null>(null);
   const releasedReservation = useRef<string | null>(null);
   const queueRetry = useRef<{ id: string; revision: number } | null>(null);
   const mounted = useRef(false);
@@ -614,35 +638,6 @@ export function BookingProvider({
     /\/(?:book\/)?confirmation\/?$/.test(pathname)
   )
     setProtectedConflictRedirect(null);
-  const previousNoticePath = useRef(pathname);
-  const noticeRoute = useEffectEvent(() => {
-    if (pathname) clearDepartedBookingHelpNotice(pathname);
-    // A full-document departure must dismiss persisted display state too.
-    if (pathname && !/\/book\/time\/?$/.test(pathname)) {
-      saveConflictNotice(null, "no-creation");
-      saveConflictNotice(null, "expiry");
-      saveConflictNotice(null, "active-checkout");
-      const retained = liveCheckoutAttemptId();
-      if (retained && isCalendarRecovery(retained))
-        dismissCalendarRecoveryNotice(retained);
-    }
-    const changed = previousNoticePath.current !== pathname;
-    previousNoticePath.current = pathname;
-    if (
-      changed &&
-      pathname &&
-      !/\/book\//.test(pathname) &&
-      (noticeShownOnCalendar.current ||
-        noticeCurrent.current.message === SESSION_UNAVAILABLE)
-    ) {
-      if (action.calendarRecovery && value.attempt)
-        dismissCalendarRecoveryNotice(value.attempt.id);
-      setSelectionNotice(null);
-    }
-  });
-  useEffect(() => {
-    noticeRoute();
-  }, [pathname]);
   // The route is known before the streamed page mounts. A page effect alone
   // can briefly enable display reads while restoring an editable Review.
   const calendarBrowsing =
@@ -689,14 +684,14 @@ export function BookingProvider({
       !calendarBrowsing ||
       calendarPaused ||
       !!pendingConflict ||
-      (!!value.attempt && !action.calendarRecovery),
+      (!!value.attempt && !action.calendarRecovery && !browsingCheckout),
     calendarThrough,
     now,
     !!pathname && /\/book\//.test(pathname),
   );
   const availability = useBookingAvailability(
     service,
-    (value.attempt && !action.calendarRecovery) ||
+    (value.attempt && !action.calendarRecovery && !browsingCheckout) ||
       !calendarBrowsing ||
       calendarPaused ||
       !!pendingConflict ||
@@ -880,6 +875,30 @@ export function BookingProvider({
     },
     [setAction, clearPendingConflict],
   );
+  /** Stop foreground handoff while a submitted checkout finishes under its original ID. */
+  const detachCheckout = useCallback(() => {
+    const request = active.current;
+    if (!request?.submission) {
+      cancel();
+      return;
+    }
+    request.submission.detached = true;
+    active.current = null;
+    setDetachedFrom(request.submission.originPath);
+    setDetachedCheckout(request.submission.id);
+    const current = latest.current;
+    if (
+      current.attempt?.id === request.submission.id &&
+      current.attempt.status === "ready"
+    )
+      commit(
+        { ...current, attempt: { ...current.attempt, status: "checking" } },
+        true,
+        true,
+      );
+    pauseCalendar(false);
+    setAction({ status: "cancelled", operation: "checkout" });
+  }, [cancel, commit, setAction]);
   useLayoutEffect(
     () =>
       onProfileAccessLoss((reason) => {
@@ -888,6 +907,7 @@ export function BookingProvider({
         clearIdentityEntry(identityService);
         if (!pathname || !/\/(?:book\/|confirmation)/.test(pathname)) return;
         rememberBookingAccessNotice(reason);
+        pendingSubmission.current = null;
         cancel(false);
         profileSave.current?.controller.abort();
         profileSave.current = null;
@@ -919,18 +939,59 @@ export function BookingProvider({
       pathname?.startsWith("/book/") &&
       (!latest.current.attempt ||
         isCalendarRecovery(latest.current.attempt.id) ||
-        isBookingDeparture(latest.current.attempt.id)) &&
+        isBookingDeparture(latest.current.attempt.id) ||
+        latest.current.attempt.id === submittedCheckoutId()) &&
       bookingAccessExpired()
     )
       reportProfileAccessLoss(profileAccessGeneration(), "session");
   }, [service.mode, identityService.mode, pathname]);
-  const conflictPath = useRef(pathname);
+  const previousNoticePath = useRef(pathname);
+  const noticeRoute = useEffectEvent(() => {
+    if (pathname) clearDepartedBookingHelpNotice(pathname);
+    // A full-document departure must dismiss persisted display state too.
+    if (pathname && !/\/book\/time\/?$/.test(pathname)) {
+      saveConflictNotice(null, "no-creation");
+      saveConflictNotice(null, "expiry");
+      saveConflictNotice(null, "active-checkout");
+      const retained = liveCheckoutAttemptId();
+      if (retained && isCalendarRecovery(retained))
+        dismissCalendarRecoveryNotice(retained);
+    }
+    const changed = previousNoticePath.current !== pathname;
+    previousNoticePath.current = pathname;
+    if (changed) setDetachedFrom(null);
+    if (pathname && !/\/(?:book\/|confirmation)/.test(pathname)) {
+      if (changed) {
+        detachCheckout();
+        setEntryChecked(null);
+      }
+      const current = latest.current;
+      const id = submittedCheckoutId();
+      if (id && !isBookingDeparture(id)) {
+        const slots =
+          current.attempt?.id === id
+            ? current.attempt.draft.slots
+            : loadLiveDraft().slots;
+        markBookingDeparture(id, slots);
+        commit({ ...current, draft: blankDraft() });
+      }
+    }
+
+    if (
+      changed &&
+      pathname &&
+      !/\/book\//.test(pathname) &&
+      (noticeShownOnCalendar.current ||
+        noticeCurrent.current.message === SESSION_UNAVAILABLE)
+    ) {
+      if (action.calendarRecovery && value.attempt)
+        dismissCalendarRecoveryNotice(value.attempt.id);
+      setSelectionNotice(null);
+    }
+  });
   useEffect(() => {
-    const changed = conflictPath.current !== pathname;
-    conflictPath.current = pathname;
-    if (changed && pathname && !/\/(?:book\/|confirmation)/.test(pathname))
-      cancel();
-  }, [pathname, cancel]);
+    noticeRoute();
+  }, [pathname]);
   const freshChecks = useRef(
     new WeakMap<BookingService, Map<string, number>>(),
   );
@@ -1258,14 +1319,15 @@ export function BookingProvider({
         ? blankDraft()
         : {
             ...current.draft,
-            slots: action.calendarRecovery
-              ? current.draft.slots.filter(
-                  (slot) =>
-                    !hiddenOriginals.some(
-                      (original) => slotKey(original) === slotKey(slot),
-                    ),
-                )
-              : [],
+            slots:
+              action.calendarRecovery || browsingCheckout
+                ? current.draft.slots.filter(
+                    (slot) =>
+                      !hiddenOriginals.some(
+                        (original) => slotKey(original) === slotKey(slot),
+                      ),
+                  )
+                : [],
             accepted: false,
           };
       cancel();
@@ -1301,6 +1363,7 @@ export function BookingProvider({
       service,
       action.calendarRecovery,
       action.unresolvedCheckout,
+      browsingCheckout,
       cancel,
       commit,
       setAction,
@@ -1308,32 +1371,146 @@ export function BookingProvider({
       setSuppressedSlots,
     ],
   );
-  const [entryChecked, setEntryChecked] = useState<string | null>(null);
+  const [accessRevision, observeAccess] = useReducer(
+    (revision: number) => revision + 1,
+    0,
+  );
+  useLayoutEffect(
+    () =>
+      onBookingAccessEstablished((newOwner) => {
+        if (service.mode !== "live" || identityService.mode !== "live") return;
+        if (newOwner && (latest.current.attempt || liveCheckoutAttemptId())) {
+          // HTTP 201 explicitly creates a different guest owner. Only discard this tab's correlation.
+          cancel();
+          pendingSubmission.current = null;
+          setDetachedCheckout(null);
+          pauseCalendar(false);
+          commit({ ...latest.current, attempt: null, draft: blankDraft() });
+          saveLiveDraft(blankDraft(), false, null);
+        }
+        setEntryChecked(null);
+        observeAccess();
+      }),
+    [service.mode, identityService.mode, cancel, commit],
+  );
+  const checkoutEntry =
+    !!pathname && /\/book\/(?:review|payment)\/?$/.test(pathname);
+  const entryId =
+    liveCheckoutAttemptId() ?? (browsingCheckout ? value.attempt?.id : null);
   const needsEntryCheck =
     service.mode === "live" &&
+    !!entryId &&
     !!pathname?.includes("/book/") &&
-    isBookingDeparture(liveCheckoutAttemptId()) &&
+    !bookingAccessExpired() &&
+    !profileAccessRevision &&
+    !pendingConflict &&
+    (isBookingDeparture(entryId) ||
+      (browsingCheckout &&
+        (checkoutEntry ||
+          (/\/book\/account\/?$/.test(pathname) && !value.draft.mode)) &&
+        detachedFrom !== pathname)) &&
     entryChecked !== pathname;
-  useEffect(() => {
-    if (!pathname?.includes("/book/")) return;
-    if (!needsEntryCheck) return;
-    const id = liveCheckoutAttemptId();
-    if (!id) return;
-    const controller = new AbortController();
-    void protectedCheckoutService
-      .context({ attemptId: id, mode: "live", signal: controller.signal })
-      .then((context) => {
-        if (!controller.signal.aborted && context.creationResolution)
+  const recoverEntry = useEffectEvent(
+    (id: string, path: string, controller: AbortController) => {
+      const generation = profileAccessGeneration();
+      const current = () =>
+        !controller.signal.aborted &&
+        generation === profileAccessGeneration() &&
+        (liveCheckoutAttemptId() ?? latest.current.attempt?.id) === id;
+      const recover = async () => {
+        const pending = pendingSubmission.current;
+        const read = () =>
+          conflictRead(
+            (signal) =>
+              protectedCheckoutService.context({
+                attemptId: id,
+                mode: "live",
+                signal,
+              }),
+            controller.signal,
+          );
+        let context: CheckoutContext;
+        try {
+          context = await read();
+        } catch (error) {
+          // The original write can still be queued before its first durable claim.
+          // If evidence already exists (including a saved link), use it immediately.
+          if (!(
+            error instanceof ConfirmationError &&
+            error.kind === "missing" &&
+            pending?.id === id
+          ))
+            throw error;
+          await pending.settled;
+          if (!current()) return;
+          context = await read();
+        }
+        if (!current() || context.attemptId !== id) return;
+        if (context.creationResolution) {
           resolveUncreatedBooking(id, context.summary.sessions);
-      })
-      .catch(() => {
-        /* Unknown reads retain the original attempt and financial lock. */
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setEntryChecked(pathname);
-      });
+          return;
+        }
+        if (context.selectionRejection) {
+          const original =
+            latest.current.attempt?.id === id
+              ? latest.current.attempt.draft.slots
+              : loadDepartureSlots(id);
+          const same =
+            original.length === context.summary.sessions.length &&
+            context.summary.players === latest.current.attempt?.draft.players &&
+            original.every(
+              (slot, i) =>
+                Date.parse(`${slot.date}T${slot.start}:00+08:00`) ===
+                context.summary.sessions[i].startMs,
+            );
+          const rejection =
+            same && latest.current.attempt?.id === id
+              ? context.selectionRejection
+              : { state: context.selectionRejection.state };
+          setEntryChecked(path);
+          // Classification has its own cancellable read and remains active while its calendar handoff renders.
+          await rejectRecoveredSelection(id, rejection);
+          return;
+        }
+        if (
+          !submittedCheckoutId() &&
+          (hasSeenConfirmation(id) || completedPaymentReturn(id))
+        )
+          return;
+        // This existing route handles unpaid links, incomplete creation, paid evidence and receipts.
+        // It performs its own protected checks and never creates a replacement checkout.
+        setProtectedConflictRedirect(id);
+        router.replace(`/confirmation/?attempt=${encodeURIComponent(id)}`);
+      };
+      void recover()
+        .catch((error: unknown) => {
+          if (!current() || submittedCheckoutId() !== id) return;
+          if (error instanceof ConfirmationError && error.kind === "denied") {
+            reportProfileAccessLoss(generation, "session");
+            return;
+          }
+          // The protected screen owns bounded retry, missing-attempt privacy and support.
+          setProtectedConflictRedirect(id);
+          router.replace(`/confirmation/?attempt=${encodeURIComponent(id)}`);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setEntryChecked(path);
+        });
+    },
+  );
+  useEffect(() => {
+    if (!needsEntryCheck || !entryId || !pathname) return;
+    const controller = new AbortController();
+    recoverEntry(entryId, pathname, controller);
     return () => controller.abort();
-  }, [pathname, needsEntryCheck, resolveUncreatedBooking]);
+  }, [
+    entryId,
+    accessRevision,
+    needsEntryCheck,
+    pathname,
+    service,
+    identityService,
+  ]);
   /** Revalidate a persisted conflict against its original protected attempt before classification. */
   const recoverPendingConflict = useEffectEvent(
     async (
@@ -1657,11 +1834,24 @@ export function BookingProvider({
       // Browser Back may restore this document with its handoff loader intact.
       // Release that UI operation so the retained attempt routes to recovery;
       // never start another checkout or discard its identity.
-      if (event.persisted && active.current?.operation === "checkout") cancel();
+      if (event.persisted && active.current?.operation === "checkout") {
+        detachCheckout();
+        setDetachedFrom(null);
+        setEntryChecked(null);
+      }
     };
+    const leaving = () => {
+      if (active.current?.submission) detachCheckout();
+    };
+    window.addEventListener("popstate", leaving);
+    window.addEventListener("pagehide", leaving);
     window.addEventListener("pageshow", resume);
-    return () => window.removeEventListener("pageshow", resume);
-  }, [cancel]);
+    return () => {
+      window.removeEventListener("popstate", leaving);
+      window.removeEventListener("pagehide", leaving);
+      window.removeEventListener("pageshow", resume);
+    };
+  }, [detachCheckout]);
   /** Rebuild only the editable cart after server-confirmed unpaid release. */
   const restartReleasedReservation = useCallback(
     (id: string) => {
@@ -1885,6 +2075,8 @@ export function BookingProvider({
       if (
         pendingConflict ||
         protectedConflictRedirect ||
+        (browsingCheckout &&
+          ["reserve", "checkout", "pay"].includes(operation)) ||
         (action.calendarRecovery &&
           latest.current.attempt &&
           (["reserve", "checkout", "pay"].includes(operation) ||
@@ -1914,7 +2106,17 @@ export function BookingProvider({
       // Review uses the editable replacement draft while retaining the original financial attempt.
       if (operation === "review" && action.calendarRecovery && current.attempt)
         return selectionErrors(current.draft.slots, Date.now()).length === 0;
-      const request = { controller: new AbortController(), operation };
+      if (
+        operation === "checkout" &&
+        submittedCheckoutId() &&
+        !current.attempt?.held &&
+        !queueRetry.current
+      )
+        return false;
+      const request: BookingRequest = {
+        controller: new AbortController(),
+        operation,
+      };
       let checkoutNavigationStarted = false;
       let holdDispatched = false;
       active.current = request; // Synchronous guard also catches same-turn double clicks.
@@ -1923,6 +2125,7 @@ export function BookingProvider({
         pauseCalendar(true);
       const identity = () =>
         current.draft.mode === "member" ? identityService.current() : null;
+      const accessGeneration = profileAccessGeneration();
       const session = identity();
       const sessionKey = JSON.stringify(session);
       const isCurrent = () =>
@@ -2045,8 +2248,16 @@ export function BookingProvider({
           // A missing reply must never cause a new preparation or payment.
           const startCheckout = operation === "checkout" && !attempt.held;
           holdDispatched = operation === "reserve" || startCheckout;
+          if (operation === "checkout") {
+            request.submission = {
+              id: attempt.id,
+              detached: false,
+              originPath: pathname,
+            };
+            markSubmittedCheckout(attempt.id, true);
+          }
           let handoff: { url: string; expiresAtMs: number } | undefined;
-          attempt = await service.pay({
+          const payment = service.pay({
             attempt,
             botToken,
             outcome: "pending",
@@ -2066,6 +2277,26 @@ export function BookingProvider({
                   }
                 : undefined,
           });
+          if (request.submission)
+            pendingSubmission.current = {
+              request,
+              id: attempt.id,
+              settled: payment.then(
+                () => {},
+                () => {},
+              ),
+            };
+          attempt = await payment;
+          if (request.submission?.detached) {
+            if (
+              mounted.current &&
+              latest.current.attempt?.id === attempt.id &&
+              pendingSubmission.current?.id === attempt.id &&
+              profileAccessGeneration() === accessGeneration
+            )
+              commit({ ...latest.current, attempt }, true);
+            return false;
+          }
           if (!isCurrent()) return false;
           // Consent may change while the created hold is being verified.
           // Carry it forward without canceling or recreating the reservation.
@@ -2088,6 +2319,8 @@ export function BookingProvider({
             handoff.expiresAtMs > Date.now() &&
             isHitpayCheckoutUrl(handoff.url)
           ) {
+            request.submission = undefined;
+            markSubmittedCheckout(attempt.id, false);
             location.assign(handoff.url);
             checkoutNavigationStarted = true;
             return false;
@@ -2127,6 +2360,8 @@ export function BookingProvider({
           ) {
             // assign starts navigation asynchronously. Keep the overlay and
             // one-operation guard until this document is replaced.
+            request.submission = undefined;
+            markSubmittedCheckout(attempt.id, false);
             location.assign(context.checkout.url);
             checkoutNavigationStarted = true;
             // Do not also navigate to the intermediate SoccerBot route.
@@ -2138,7 +2373,37 @@ export function BookingProvider({
         setAction({ status: "success", operation });
         return true;
       } catch (error) {
+        if (
+          request.submission?.detached &&
+          mounted.current &&
+          latest.current.attempt?.id === request.submission.id &&
+          pendingSubmission.current?.id === request.submission.id &&
+          profileAccessGeneration() === accessGeneration
+        ) {
+          const id = request.submission.id;
+          if (
+            error instanceof BookingServiceError &&
+            error.code === "booking_not_created"
+          ) {
+            resolveUncreatedBooking(id);
+          } else if (
+            error instanceof BookingServiceError &&
+            [
+              "checkout_not_started",
+              "reservation_blocked",
+              "queue_busy",
+              "checkout_verification_required",
+            ].includes(error.code)
+          ) {
+            markSubmittedCheckout(id, false);
+            setDetachedCheckout(null);
+            commit({ ...latest.current, attempt: null });
+            saveLiveDraft(latest.current.draft, false, null);
+          }
+          return false;
+        }
         if (!isCurrent()) return false;
+        request.submission = undefined;
         if (
           error instanceof BookingServiceError &&
           error.code === "booking_not_created" &&
@@ -2154,6 +2419,8 @@ export function BookingProvider({
         ) {
           // Admission/proof failed before this request dispatched a booking.
           // Keep the same prepared identity for an explicit fresh-proof retry.
+          if (latest.current.attempt)
+            markSubmittedCheckout(latest.current.attempt.id, false);
           if (latest.current.attempt)
             queueRetry.current = {
               id: latest.current.attempt.id,
@@ -2215,6 +2482,8 @@ export function BookingProvider({
           (error.code === "checkout_not_started" ||
             error.code === "reservation_blocked")
         ) {
+          if (latest.current.attempt)
+            markSubmittedCheckout(latest.current.attempt.id, false);
           commit({ ...latest.current, attempt: null });
           setAction({ status: "failure", operation, error: error.message });
           return false;
@@ -2319,6 +2588,8 @@ export function BookingProvider({
         });
         return false;
       } finally {
+        if (pendingSubmission.current?.request === request)
+          pendingSubmission.current = null;
         if (active.current === request && !checkoutNavigationStarted)
           active.current = null;
         if (mounted.current && !latest.current.attempt) pauseCalendar(false);
@@ -2340,6 +2611,8 @@ export function BookingProvider({
       protectedConflictRedirect,
       action.calendarRecovery,
       action.unresolvedCheckout,
+      browsingCheckout,
+      pathname,
       profileSaveError,
     ],
   );
@@ -2455,6 +2728,8 @@ export function BookingProvider({
           if (exitWork.current) void finishExit(exitWork.current.id);
         },
         clearReviewConsent,
+        detachCheckout,
+        browsingCheckout,
         rejectRecoveredSelection,
         resumePaymentStatus(id) {
           if (latest.current.attempt?.id !== id) return;
@@ -2577,7 +2852,14 @@ export function BookingProvider({
             setProfileSaveError("");
           }
           const current = latest.current;
-          if (action.calendarRecovery && current.attempt && !active.current) {
+          if (active.current?.submission) return;
+          if (
+            (action.calendarRecovery ||
+              browsingCheckout ||
+              isBookingDeparture(current.attempt?.id ?? null)) &&
+            current.attempt &&
+            !active.current
+          ) {
             // Editable new selections are separate from the retained recovery attempt.
             commit(
               {
@@ -2641,14 +2923,16 @@ export function BookingProvider({
         check: () => run("check"),
         resolve: () => run("resolve"),
         leave() {
-          setEntryChecked(null);
+          // The outgoing booking step can still render before the destination commits.
+          setEntryChecked(pathname);
           // Access recovery belongs to the departed journey, not the next entry.
           clearBookingAccessNotice();
           setProfileAccessRevision(0);
           setProfileAccessNotice(BOOKING_SIGNED_OUT);
-          // Discard editable data without erasing a dispatched attempt or its
-          // server-owned payment recovery. Cancellation invalidates late UI replies.
-          cancel();
+          // Detach the editable cart from the original financial submission.
+          detachCheckout();
+          if (latest.current.attempt?.id === submittedCheckoutId())
+            setDetachedCheckout(latest.current.attempt?.id ?? null);
           setAction({ status: "idle" });
           setSelectionNotice(null);
           setSessionChoices({ outlet: true, session: true });
@@ -2657,7 +2941,10 @@ export function BookingProvider({
           const attempt = latest.current.attempt;
           commit({
             version: 2,
-            draft: attempt?.draft ?? blankDraft(),
+            draft:
+              service.mode === "live"
+                ? blankDraft()
+                : (attempt?.draft ?? blankDraft()),
             attempt,
           });
           // A held attempt's immutable snapshot remains usable for recovery;

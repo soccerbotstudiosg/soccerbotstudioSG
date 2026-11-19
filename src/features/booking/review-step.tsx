@@ -74,7 +74,7 @@ export function ReviewStep({
       profileSaveError,
       now,
       action,
-      cancel,
+      detachCheckout,
       conflictLoadingLabel,
       clearReviewConsent,
       ready,
@@ -95,9 +95,9 @@ export function ReviewStep({
       mounted.current = false;
       window.removeEventListener("pagehide", clearReviewConsent);
       clearReviewConsent();
-      cancel();
+      detachCheckout();
     };
-  }, [cancel, clearReviewConsent]);
+  }, [detachCheckout, clearReviewConsent]);
   useEffect(() => {
     if (ready) clearReviewConsent();
   }, [ready, clearReviewConsent]);

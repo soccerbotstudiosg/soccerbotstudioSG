@@ -105,6 +105,8 @@ export function BookingPage({ step }: { step: BookingStep }) {
       bookingService,
       setCalendarBrowsing,
       visitBookingStep,
+      browsingCheckout,
+      detachCheckout,
       action,
       confirmationRevision,
       restartAfterExpiry,
@@ -196,7 +198,12 @@ export function BookingPage({ step }: { step: BookingStep }) {
                       ["details", "review"].includes(step))
                     ? guardedStep(step, draft, null, now)
                     : "time"
-                  : guardedStep(step, draft, attempt, now),
+                  : guardedStep(
+                      step,
+                      draft,
+                      browsingCheckout ? null : attempt,
+                      now,
+                    ),
     current = progress.findIndex(([id]) => id === displayStep);
   const retainingReview =
     !action.calendarRecovery &&
@@ -305,6 +312,11 @@ export function BookingPage({ step }: { step: BookingStep }) {
                 ) : (
                   <Link
                     className="back"
+                    onNavigate={
+                      step === "review" && action.operation === "checkout"
+                        ? detachCheckout
+                        : undefined
+                    }
                     href={
                       current > 0
                         ? `/book/${progress[current - 1][0]}/`

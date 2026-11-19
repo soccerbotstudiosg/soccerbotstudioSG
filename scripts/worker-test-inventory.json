@@ -357,6 +357,10 @@
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
+    "title": "original checkout recovers during booking and payment creation and after its successful reply is discarded"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
     "title": "five-call speculative preparation cannot change a colliding foreign attempt"
   },
   {

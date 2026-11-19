@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-19 November 2026: publish the supplied Terms and Condition and Privacy Policy documents, link them from website and email, apply the approved lift map, and highlight unchecked guest email on blur and submission. Checkout recovery has a separate branch and PR.
+Stage the public policy pages, website and email policy links, approved lift map, and guest email validation cues on top of the merged checkout recovery change (#103).
 
 ## Next actions
 
-Review the public policy pages, lift diagram and guest email focus on the staging candidate after CI.
+Review the policy pages, lift diagram and guest email focus on staging. End-to-end checkout with the staging SimplyBook account remains unverified because it requires paid activation.
 
 ## Ordered work after this slice
 

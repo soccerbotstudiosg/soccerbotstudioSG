@@ -36,11 +36,17 @@ import {
   savePendingConflict,
   isCalendarRecovery,
   isBookingDeparture,
+  submittedCheckoutId,
+  markSubmittedCheckout,
+  markBookingDeparture,
   completedPaymentReturn,
 } from "@/services/storage";
 import { demoBookingService } from "@/services/demo/booking";
 import { expireBooking } from "@/services/confirmation";
-import { beginIdentitySignOut } from "@/services/identity";
+import {
+  beginIdentitySignOut,
+  createLiveIdentityService,
+} from "@/services/identity";
 import { demoCustomerIdentity } from "@/services/demo/identity";
 import { blankDraft, type Attempt } from "@/domain/booking";
 
@@ -138,6 +144,229 @@ afterEach(() => {
   navigation.push.mockReset();
   navigation.replace.mockReset();
 });
+it("Back before dispatch cancels preparation and after dispatch preserves the original checkout through calendar and Home returns", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const prepared: Attempt = {
+    id,
+    draft,
+    status: "ready",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  };
+  for (const timing of [
+    "before POST",
+    "during creation",
+    "before acknowledgement",
+  ] as const) {
+    sessionStorage.clear();
+    navigation.push.mockClear();
+    navigation.replace.mockClear();
+    navigation.path = "/book/review/";
+    const preparing = Promise.withResolvers<Attempt>();
+    const creating = Promise.withResolvers<Attempt>();
+    const checkout = vi.fn<BookingService["checkout"]>(() => preparing.promise);
+    const pay = vi.fn<BookingService["pay"]>(() => creating.promise);
+    const assign = vi.fn();
+    vi.stubGlobal("location", { assign });
+    const fetch = vi.fn(async () =>
+      Response.json({
+        attemptId: id,
+        mode: "live",
+        checkout: { state: "available", url, expiresAtMs: Date.now() + 60000 },
+        summary: {
+          players: 1,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [{ startMs: 1, players: 1 }],
+        },
+        checking: {
+          deadlineMs: Date.now() + 120000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      }),
+    );
+    if (timing === "during creation")
+      fetch.mockResolvedValueOnce(
+        Response.json({ error: "attempt_unavailable" }, { status: 404 }),
+      );
+    vi.stubGlobal("fetch", fetch);
+    const availability = vi.fn<BookingService["availability"]>(async () => []);
+    const service = {
+      ...liveBookingService,
+      restore: undefined,
+      publicCalendar: undefined,
+      calendar: undefined,
+      availability,
+      checkout,
+      pay,
+    };
+    function Journey() {
+      const booking = useBooking();
+      return (
+        <>
+          <Seed />
+          <button onClick={() => booking.showDate(draft.slots[0].date)}>
+            Open calendar day
+          </button>
+          <button onClick={() => booking.update({ players: 2, slots: [] })}>
+            Change editable cart
+          </button>
+          <button onClick={booking.leave}>Leave for Home</button>
+          <output data-testid="cart-players">{booking.draft.players}</output>
+          <output data-testid="original-players">
+            {booking.attempt?.draft.players}
+          </output>
+          {navigation.path === "/book/review/" && <ReviewStep />}
+        </>
+      );
+    }
+    const tree = () => (
+      <BookingProvider bookingService={service}>
+        <Journey />
+      </BookingProvider>
+    );
+    const view = render(tree());
+    fireEvent.click(screen.getByText("Seed"));
+    await act(async () =>
+      fireEvent.click(
+        screen.getByRole("button", { name: /^Proceed to Payment/ }),
+      ),
+    );
+    expect(checkout).toHaveBeenCalledTimes(1);
+    if (timing !== "before POST") {
+      await act(async () => preparing.resolve(prepared));
+      expect(pay).toHaveBeenCalledTimes(1);
+      expect(submittedCheckoutId()).toBe(id);
+      if (timing === "before acknowledgement")
+        pay.mock.calls[0][0].onCheckoutReady?.({
+          url,
+          expiresAtMs: Date.now() + 60000,
+        });
+    }
+    navigation.path = "/book/details/";
+    view.rerender(tree());
+    navigation.path = "/book/time/";
+    view.rerender(tree());
+    if (timing === "before POST") {
+      await act(async () => preparing.resolve(prepared));
+      expect(pay).not.toHaveBeenCalled();
+      expect(submittedCheckoutId()).toBeNull();
+    } else {
+      expect(pay.mock.calls[0][0].signal?.aborted).toBe(false);
+      fireEvent.click(screen.getByText("Open calendar day"));
+      await waitFor(() => expect(availability).toHaveBeenCalled());
+      fireEvent.click(screen.getByText("Change editable cart"));
+      expect(screen.getByTestId("cart-players")).toHaveTextContent("2");
+      expect(screen.getByTestId("original-players")).toHaveTextContent("1");
+      await act(async () =>
+        fireEvent.click(screen.getByText("Repeat checkout")),
+      );
+      expect(checkout).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByText("Leave for Home"));
+      navigation.path = "/";
+      view.rerender(tree());
+      expect(isBookingDeparture(id)).toBe(true);
+      expect(screen.getByTestId("cart-players")).toHaveTextContent("1");
+      expect(navigation.replace).not.toHaveBeenCalled();
+      navigation.path = "/book/account/";
+      view.rerender(tree());
+      if (timing === "during creation") {
+        await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+        expect(navigation.replace).not.toHaveBeenCalled();
+        await act(async () =>
+          creating.resolve({ ...prepared, status: "checking" }),
+        );
+      }
+      await waitFor(() =>
+        expect(navigation.replace).toHaveBeenCalledWith(
+          `/confirmation/?attempt=${id}`,
+        ),
+      );
+      expect(fetch.mock.calls).toHaveLength(
+        timing === "during creation" ? 2 : 1,
+      );
+      if (timing === "before acknowledgement")
+        await act(async () =>
+          creating.resolve({ ...prepared, status: "checking" }),
+        );
+      expect(pay).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId("retained")).toHaveTextContent(id);
+    }
+    expect(assign).not.toHaveBeenCalled();
+    expect(navigation.push).not.toHaveBeenCalled();
+    view.unmount();
+  }
+});
+
+it("renewed guest access preserves interrupted checkout while a new guest owner cannot inherit it", async () => {
+  const identity = createLiveIdentityService();
+  const original: Attempt = {
+    id,
+    draft,
+    status: "checking",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  };
+  saveLiveDraft(draft, true, id);
+  markSubmittedCheckout(id, true);
+  markBookingDeparture(id, draft.slots);
+  navigation.path = "/";
+  const fetch = vi.fn<typeof globalThis.fetch>();
+  vi.stubGlobal("fetch", fetch);
+  render(
+    <BookingProvider
+      bookingService={{
+        ...liveBookingService,
+        publicCalendar: undefined,
+        restore: async () => original,
+      }}
+      identityService={identity}
+    >
+      <Seed />
+    </BookingProvider>,
+  );
+  await waitFor(() =>
+    expect(screen.getByTestId("retained")).toHaveTextContent(id),
+  );
+  for (const status of [200, 201]) {
+    fetch.mockResolvedValueOnce(
+      Response.json(
+        { access: "guest" },
+        {
+          status,
+          headers: {
+            "X-Booking-Access-Expires-At": String(Date.now() + 1800000),
+          },
+        },
+      ),
+    );
+    await act(async () => identity.guest(new AbortController().signal));
+    if (status === 200) {
+      expect(submittedCheckoutId()).toBe(id);
+      expect(screen.getByTestId("retained")).toHaveTextContent(id);
+    } else {
+      expect(submittedCheckoutId()).toBeNull();
+      expect(screen.getByTestId("retained")).toBeEmptyDOMElement();
+    }
+  }
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(
+    fetch.mock.calls.filter(
+      ([url, options]) =>
+        String(url) === "/api/access" && options?.method === "POST",
+    ),
+  ).toHaveLength(2);
+  expect(
+    fetch.mock.calls.filter(([url]) =>
+      String(url).includes(`/api/attempts/${id}`),
+    ),
+  ).toHaveLength(0);
+});
+
 it("restored editable Review avoids background catalogue and calendar reads", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
