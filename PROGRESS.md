@@ -2,7 +2,7 @@
 
 ## Active outcome
 
-Stage the public policy pages, website and email policy links, approved lift map, and guest email validation cues on top of the merged checkout recovery change (#103).
+Stage the public policy pages, website and email policy links, approved lift map, and guest email validation cues together with checkout recovery (#103) and the Payment refresh correction (#104).
 
 ## Next actions
 

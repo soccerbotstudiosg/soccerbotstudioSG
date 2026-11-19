@@ -2,6 +2,10 @@
 
 This document owns retained milestones, dated decisions, implementation history and verification evidence. [Progress](../PROGRESS.md) contains only the latest checkpoint and immediate tasks. [Booking scenarios and messages](booking-flows.md) owns customer flow diagrams and copy; [role UAT](uat/simulated-user.md), [Admin UAT](uat/admin.md) and [Trainers UAT](uat/trainers.md) own acceptance; [Runbook](runbook.md) owns deployment and operational procedures. Current rules and contracts remain in their existing owners.
 
+## 19 November 2026 — Keep a refreshed Payment page on its original attempt
+
+PR 103 passed PR verification and deployed to staging. On merged main revision `9632b0c`, verification run `44467464133` failed in tablet WebKit, live-email shard 2, job `135369181003`. The trace recorded a lost successful checkout response, normal navigation to Payment, then a reload. Protected current-attempt and checkout reads returned the original checking attempt. Booking re-entry consumed the submitted marker on refresh and changed the URL to Confirmation. The repair waits for current-attempt restoration on Payment and keeps a matching financial attempt with Payment’s existing protected route. A component regression holds the current-attempt response until the competing context could otherwise have redirected. The original browser assertions and single-write checks remain in the suite.
+
 ## 19 November 2026 — Recover checkout across Back and Home
 
 A production quick-Back trace recorded ten checkout keys for the same selection, six aborted browser requests and four preparation rejections. The first time-correlated booking transport reported a provider error; the trace does not establish a booking or a payment for that attempt. Review unmount cancelled the submitted browser request, and re-entry acted only on a no-creation result. The fix keeps submission and navigation ownership separate and uses the existing protected payment and confirmation flow. The four-hour availability cutoff remains in force.

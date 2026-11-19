@@ -301,6 +301,87 @@ it("Back before dispatch cancels preparation and after dispatch preserves the or
   }
 });
 
+it("refreshing Payment after a lost checkout reply keeps the restored unpaid attempt on Payment", async () => {
+  const attemptId = "00000000-0000-4000-8000-000000000103";
+  const checkoutUrl = `https://checkout.sandbox.hit-pay.com/payment-request/@soccerbot/${attemptId}/checkout`;
+  navigation.path = "/book/payment/";
+  saveLiveDraft(draft, true, attemptId);
+  markSubmittedCheckout(attemptId, true);
+  const current = Promise.withResolvers<Attempt>();
+  const restore = vi.fn(() => current.promise);
+  const checkout = vi.fn(liveBookingService.checkout);
+  const pay = vi.fn(liveBookingService.pay);
+  const fetch = vi.fn(async (input: string) =>
+    input.endsWith("/checkout")
+      ? Response.json(
+          {
+            attemptId,
+            mode: "live",
+            checkout: {
+              state: "available",
+              url: checkoutUrl,
+              expiresAtMs: Date.now() + 60000,
+            },
+            summary: {
+              players: 1,
+              totalMinor: 8800,
+              currency: "SGD",
+              sessions: [{ startMs: 1, players: 1 }],
+            },
+            checking: {
+              deadlineMs: Date.now() + 120000,
+              nextCheckMs: 0,
+              pollAfterMs: 5000,
+            },
+          },
+          { headers: { Date: new Date().toUTCString() } },
+        )
+      : Response.json({ status: "pending", reason: "invoice_pending" }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  const tree = (
+    <BookingProvider
+      bookingService={{ ...liveBookingService, restore, checkout, pay }}
+      identityService={{ ...demoCustomerIdentity, mode: "live" }}
+    >
+      <BookingPage step="payment" />
+    </BookingProvider>
+  );
+  const view = render(tree);
+  await act(async () => {});
+  expect(restore).toHaveBeenCalledOnce();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  await act(async () =>
+    current.resolve({
+      id: attemptId,
+      draft,
+      status: "checking",
+      outcome: "pending",
+      checkUntil: 0,
+      booking: null,
+    }),
+  );
+  expect(
+    await screen.findByRole("link", { name: "Continue payment" }),
+  ).toHaveAttribute("href", checkoutUrl);
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(submittedCheckoutId()).toBe(attemptId);
+  view.unmount();
+
+  // An unresponsive current-attempt read still recovers the original protected context.
+  vi.useFakeTimers();
+  restore.mockImplementationOnce(() => new Promise<Attempt>(() => {}));
+  render(tree);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10000);
+  });
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+    `/confirmation/?attempt=${attemptId}`,
+  );
+  expect(checkout).not.toHaveBeenCalled();
+  expect(pay).not.toHaveBeenCalled();
+});
+
 it("renewed guest access preserves interrupted checkout while a new guest owner cannot inherit it", async () => {
   const identity = createLiveIdentityService();
   const original: Attempt = {

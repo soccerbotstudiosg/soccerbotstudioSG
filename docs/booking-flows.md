@@ -171,6 +171,8 @@ flowchart TD
 
 Leaving Review before the checkout POST cancels preparation. Once the original submission starts, an in-site Back leaves the customer on the previous step and keeps the original attempt. They may browse availability and edit an independent cart; returning to Review or re-entering after Home checks the same attempt. A late reply does not redirect the customer to HitPay. The protected page offers the original eligible unpaid link, checks uncertain booking creation, or shows the existing payment/confirmation state. Explicit Home departure discards the editable cart. A newly established guest owner cannot inherit the former owner's attempt.
 
+Refreshing Payment after a lost checkout reply restores the original current attempt. When that attempt is still checking, Payment reads its protected checkout and payment status in place. A recorded Home departure continues through the existing re-entry flow.
+
 Payment and confirmation routes may reopen only the same server-authorized, unexpired unpaid HitPay link in the same tab. A completed return hint suppresses continuation immediately, but does not prove payment. Paid evidence, expiry and unresolved/denied states must not expose continuation.
 
 ```mermaid

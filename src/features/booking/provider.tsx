@@ -1395,6 +1395,7 @@ export function BookingProvider({
   );
   const checkoutEntry =
     !!pathname && /\/book\/(?:review|payment)\/?$/.test(pathname);
+  const paymentEntry = /\/book\/payment\/?$/.test(pathname ?? "");
   const entryId =
     liveCheckoutAttemptId() ?? (browsingCheckout ? value.attempt?.id : null);
   const needsEntryCheck =
@@ -1406,6 +1407,7 @@ export function BookingProvider({
     !pendingConflict &&
     (isBookingDeparture(entryId) ||
       (browsingCheckout &&
+        !(paymentEntry && restorationPending) &&
         (checkoutEntry ||
           (/\/book\/account\/?$/.test(pathname) && !value.draft.mode)) &&
         detachedFrom !== pathname)) &&
@@ -1679,6 +1681,18 @@ export function BookingProvider({
       saveConflictNotice(null);
     }
   });
+  const restoreMatchedCheckout = useEffectEvent(
+    (attempt: NonNullable<StoredBooking["attempt"]>) => {
+      // On refresh, let Payment resume its protected context and confirmation reads in place.
+      if (
+        paymentEntry &&
+        paymentLocked(attempt) &&
+        submittedCheckoutId() === attempt.id
+      )
+        setDetachedCheckout(null);
+      commit({ version: 2, draft: attempt.draft, attempt }, true);
+    },
+  );
   useEffect(() => {
     mounted.current = true;
     const sameSession =
@@ -1707,7 +1721,7 @@ export function BookingProvider({
       service.restore
     ) {
       const restore = () =>
-        loadPendingConflict()
+        loadPendingConflict() || submittedCheckoutId()
           ? conflictRead(
               (signal) => service.restore!(signal),
               controller.signal,
@@ -1779,8 +1793,7 @@ export function BookingProvider({
                   status: "idle",
                   returnToCalendar: true,
                 });
-              } else
-                commit({ version: 2, draft: attempt.draft, attempt }, true);
+              } else restoreMatchedCheckout(attempt);
             }
           },
           () => {
