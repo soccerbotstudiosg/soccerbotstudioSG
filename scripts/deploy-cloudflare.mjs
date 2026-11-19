@@ -367,6 +367,32 @@ export function verifySandboxSettings(settings, config) {
     );
   }
 }
+/** Wait only while settings still identify the captured predecessor. */
+export async function awaitDeploymentSettings({
+  revision,
+  previousRevision,
+  read,
+  pause,
+}) {
+  const observedSettingsRevisions = [];
+  for (let observation = 0; observation < 16; observation++) {
+    const settings = await read();
+    const observed = settings.bindings.find(
+      (binding) =>
+        binding.name === "SOURCE_REVISION" && binding.type === "plain_text",
+    )?.text;
+    assert.match(
+      observed,
+      /^[a-f0-9]{40}$/,
+      "Invalid deployed SOURCE_REVISION",
+    );
+    observedSettingsRevisions.push(observed);
+    if (observed === revision) return { settings, observedSettingsRevisions };
+    assert.equal(observed, previousRevision, "Unexpected settings revision");
+    if (observation < 15) await pause(2000);
+  }
+  throw new Error("Deployed settings did not propagate within 16 observations");
+}
 /** Deploy the verified main artifact and record its observed revision. */
 async function deploy() {
   assert.equal(process.env.GITHUB_REF, "refs/heads/main");
@@ -527,25 +553,39 @@ async function deploy() {
     read: () => readHealth(config.vars.APP_ORIGIN),
     pause: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   });
-  const settingsResponse = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${config.account_id}/workers/scripts/${config.name}/settings`,
+  const { settings, observedSettingsRevisions } = await awaitDeploymentSettings(
     {
-      headers: {
-        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-        Accept: "application/json",
+      revision,
+      previousRevision: previous?.revision,
+      pause: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+      read: async () => {
+        const settingsResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${config.account_id}/workers/scripts/${config.name}/settings`,
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+              Accept: "application/json",
+            },
+            redirect: "error",
+            signal: AbortSignal.timeout(15000),
+          },
+        );
+        assert.equal(
+          settingsResponse.status,
+          200,
+          "Deployed settings read failed",
+        );
+        const payload = await settingsResponse.json();
+        assert.equal(payload.success, true);
+        return payload.result;
       },
-      redirect: "error",
-      signal: AbortSignal.timeout(15000),
     },
   );
-  assert.equal(settingsResponse.status, 200, "Deployed settings read failed");
-  const settings = await settingsResponse.json();
-  assert.equal(settings.success, true);
-  if (!closed) verifySandboxSettings(settings.result, config);
+  if (!closed) verifySandboxSettings(settings, config);
   else
     for (const [name, value] of Object.entries(config.vars))
       assert.equal(
-        settings.result.bindings.find(
+        settings.bindings.find(
           (b) => b.name === name && b.type === "plain_text",
         )?.text,
         value,
@@ -557,6 +597,7 @@ async function deploy() {
         sourceRevision: revision,
         status: "deployed",
         observedRevisions,
+        observedSettingsRevisions,
         versionId: health.versionId,
         origin: config.vars.APP_ORIGIN,
         liveCustomerAccess: closed ? "disabled" : "enabled",

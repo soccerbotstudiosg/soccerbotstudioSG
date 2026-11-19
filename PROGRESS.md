@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Repair Payment refresh on merged main revision `9632b0c`. In live-email tablet WebKit, the original unpaid attempt restored successfully after a lost response and the page switched from Payment to Confirmation.
+Verify the bounded settings read after deployment. Cloudflare confirmed the expected production binding and traffic allocation for the merged Payment refresh fix.
 
 ## Next actions
 
-Verify the corrective PR and its original browser case on CI. Production release of the merged recovery change awaits successful verification. The companion policy, email and directions work has its own PR and staging review.
+Review the verifier correction in CI. PR #102 retains its separate staging review.
 
 ## Ordered work after this slice
 
