@@ -14,6 +14,10 @@ Ten OS-drawn seeds were retained before execution. Five browser sequences each p
 
 On revision 302f3dd, seeded phone WebKit sequence 2147764897 completed every customer, receipt and write-count assertion. Its trace retained an unanswered Playwright route.fulfill after navigation and timed out in teardown. Consecutive-booking fixtures now close their isolated page before draining dispatched requests and disposing the Worker. The seed, actions, assertions and deadlines remain intact.
 
+## 19 November 2026 — Production settings propagation after checkout recovery
+
+Deployment run 44474143257 uploaded Worker version `318af358-ef72-4a40-9a23-f1fa6c6ba225`. Health reached `406a345` while the first settings snapshot still identified `c57040c`. A later read from the production Cloudflare API confirmed all 36 expected variable values, all 10 required secret binding names, and 100% allocation to the uploaded version. The historical failed run remains evidence. The deployment verifier now observes the known predecessor for a bounded period before validating the target settings snapshot.
+
 ## 19 November 2026 — Keep a refreshed Payment page on its original attempt
 
 PR 103 passed PR verification and deployed to staging. On merged main revision `9632b0c`, verification run `44467464133` failed in tablet WebKit, live-email shard 2, job `135369181003`. The trace recorded a lost successful checkout response, normal navigation to Payment, then a reload. Protected current-attempt and checkout reads returned the original checking attempt. Booking re-entry consumed the submitted marker on refresh and changed the URL to Confirmation. The repair waits for current-attempt restoration on Payment and keeps a matching financial attempt with Payment’s existing protected route. A component regression holds the current-attempt response until the competing context could otherwise have redirected. The original browser assertions and single-write checks remain in the suite.

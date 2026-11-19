@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Consolidate checkout navigation recovery with the email verification updates in draft PR #106. Keep the candidate off staging until owner review.
+Stage the consolidated checkout recovery and email verification changes in PR #106 after the deployment verifier in PR #105.
 
 ## Next actions
 
-Check the combined candidate in CI. Physical browser and provider acceptance remain pending.
+Verify the combined revision in CI and on staging. Physical device and live-provider acceptance remain pending.
 
 ## Ordered work after this slice
 

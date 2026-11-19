@@ -21,6 +21,7 @@ import {
   validateDeployment,
   verifySandboxSettings,
   awaitDeploymentHealth,
+  awaitDeploymentSettings,
   readDeploymentPredecessor,
   verifySaasResources,
   verifyCustomDomainResources,
@@ -842,4 +843,61 @@ test("only closed first installation permits a missing predecessor; failed or ma
     readDeploymentPredecessor("https://worker.example", true),
     /transport failed/,
   );
+});
+
+test("settings wait only for the known predecessor and return the exact matching snapshot", async () => {
+  const old = "b".repeat(40);
+  const snapshot = (text) => ({
+    bindings: [{ name: "SOURCE_REVISION", type: "plain_text", text }],
+  });
+  const target = snapshot(revision);
+  const snapshots = [snapshot(old), target];
+  const pauses = [];
+  const observed = await awaitDeploymentSettings({
+    revision,
+    previousRevision: old,
+    read: async () => snapshots.shift(),
+    pause: async (ms) => pauses.push(ms),
+  });
+  assert.equal(observed.settings, target);
+  assert.deepEqual(observed.observedSettingsRevisions, [old, revision]);
+  assert.deepEqual(pauses, [2000]);
+  let reads = 0;
+  await assert.rejects(
+    awaitDeploymentSettings({
+      revision,
+      previousRevision: old,
+      read: async () => {
+        reads++;
+        return snapshot(old);
+      },
+      pause: async () => {},
+    }),
+    /16 observations/,
+  );
+  assert.equal(reads, 16);
+  for (const [previousRevision, read] of [
+    [undefined, async () => snapshot(old)],
+    [old, async () => snapshot("c".repeat(40))],
+    [old, async () => ({ bindings: [] })],
+    [
+      old,
+      async () => {
+        throw new Error("API rejected read");
+      },
+    ],
+  ]) {
+    let pauses = 0;
+    await assert.rejects(
+      awaitDeploymentSettings({
+        revision,
+        previousRevision,
+        read,
+        pause: async () => {
+          pauses++;
+        },
+      }),
+    );
+    assert.equal(pauses, 0);
+  }
 });
