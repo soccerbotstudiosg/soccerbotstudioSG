@@ -263,6 +263,7 @@ async function identityRequest(
     const access = accessSchema.parse(value);
     establishedProfileAccess(
       response.headers.get("X-Booking-Access-Expires-At"),
+      response.status === 201,
     );
     return access;
   } catch (error) {

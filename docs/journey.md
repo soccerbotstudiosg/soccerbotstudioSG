@@ -2,6 +2,12 @@
 
 This document owns retained milestones, dated decisions, implementation history and verification evidence. [Progress](../PROGRESS.md) contains only the latest checkpoint and immediate tasks. [Booking scenarios and messages](booking-flows.md) owns customer flow diagrams and copy; [role UAT](uat/simulated-user.md), [Admin UAT](uat/admin.md) and [Trainers UAT](uat/trainers.md) own acceptance; [Runbook](runbook.md) owns deployment and operational procedures. Current rules and contracts remain in their existing owners.
 
+## 19 November 2026 — Recover checkout across Back and Home
+
+A production quick-Back trace recorded ten checkout keys for the same selection, six aborted browser requests and four preparation rejections. The first time-correlated booking transport reported a provider error; the trace does not establish a booking or a payment for that attempt. Review unmount cancelled the submitted browser request, and re-entry acted only on a no-creation result. The fix keeps submission and navigation ownership separate and uses the existing protected payment and confirmation flow. The four-hour availability cutoff remains in force.
+
+An isolated Worker test paused the original booking and payment writes, discarded the successful response and recovered the saved link twice. Both provider call counts remained one. Component regression coverage includes pre-dispatch departure, Back through Details and Calendar, Home/re-entry, and guest renewal versus replacement. Provider, browser and staging acceptance remain separate.
+
 ## 18 November 2026 — PR97 staged and merged; fresh-main WebKit clearance repair
 
 PR97 candidate953e0b226e4878e042545836bd2281639f3069e8 passed all gates in run44282704763. Staging deployment44284854739 applied migration0051 and verified the exact deployed revision/health. Owner-authorized squash merge produced22b98e097dea53f8d3a891728cf328ddde0aa694. Fresh-main run44285376012 then exposed a phone-WebKit clearance failure in backend shard2/job134737626045, customer test at line3894; production remains blocked by that failed gate. Other server groups and browser shards passed, as did the frontend gate.

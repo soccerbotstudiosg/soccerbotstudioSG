@@ -224,6 +224,11 @@ export function saveLiveDraft(
     accepted: false,
     resumeCheckout,
     ...(checkoutAttemptId ? { checkoutAttemptId } : {}),
+    submittedCheckout:
+      resumeCheckout &&
+      !!checkoutAttemptId &&
+      previous?.checkoutAttemptId === checkoutAttemptId &&
+      previous?.submittedCheckout === true,
     leftBookingFlow:
       !!checkoutAttemptId &&
       previous?.checkoutAttemptId === checkoutAttemptId &&
@@ -244,6 +249,26 @@ export function saveLiveDraft(
       previous?.checkoutAttemptId === checkoutAttemptId &&
       previous?.unresolvedCheckout === true,
   });
+}
+
+/** Remember that this tab sent a checkout write, without storing payment authority. */
+export function markSubmittedCheckout(id: string, submitted: boolean) {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  if (stored?.checkoutAttemptId === id)
+    safeWrite("soccerbot-live-draft", {
+      ...stored,
+      submittedCheckout: submitted,
+    });
+}
+
+/** Recover only a write sent by this tab under its original checkout identity. */
+export function submittedCheckoutId() {
+  const stored = record(safeRead("soccerbot-live-draft"));
+  return stored?.submittedCheckout === true &&
+    stored.resumeCheckout !== false &&
+    typeof stored.checkoutAttemptId === "string"
+    ? stored.checkoutAttemptId
+    : null;
 }
 
 /** Retain display-only affected slots across refresh without granting booking authority. */

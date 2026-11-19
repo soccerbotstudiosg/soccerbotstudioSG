@@ -173,6 +173,8 @@ The hosted-link deadline is persisted separately as `hitpay_payments.checkout_ex
 - Admission is rechecked atomically at the first dispatch claim. A refusal with no financial effects permits the browser to clear only its preparation and retain selections/contact. An uncertain or started effect stays under original recovery authority.
 - The router forwards trusted edge `CF-Connecting-IP` internally; arbitrary forwarded headers and submitted contact email cannot establish admission identity. Missing valid source/pepper fails closed.
 
+A submitted live checkout retains its original tab-local correlation when the customer navigates away. Back cancels automatic handoff. A same-tab return reads protected checkout context using the original key and existing access, payment and recovery deadlines. A renewed valid capability can still recover its authorized attempt. HTTP 201 from explicit guest establishment creates a different owner and clears the old browser correlation. The browser never replays an uncertain provider write or uses its correlation to authorize payment.
+
 ## 6. Protected confirmation, receipt and recovery
 
 | Method and path                             | Input                                    | Output / effect                                             | Guard                                                                                                                     |
