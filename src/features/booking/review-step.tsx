@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Icon } from "@/components/icon";
 import { hitpayLogo } from "@/content/media";
-import { Dialog } from "@/components/dialog";
 import { money } from "@/domain/dates";
 import { totalCents, selectionErrors } from "@/domain/booking";
 import { CONTACT_METHODS } from "@/domain/catalog";
@@ -82,7 +81,6 @@ export function ReviewStep({
       bookingService,
     } = useBooking(),
     router = useRouter();
-  const [policy, setPolicy] = useState(false);
   const [botToken, setBotToken] = useState("");
   const [proofPending, setProofPending] = useState(false);
   const [botGeneration, setBotGeneration] = useState(0);
@@ -145,10 +143,16 @@ export function ReviewStep({
           onChange={(e) => update({ accepted: e.target.checked })}
         />
         <span>
-          I’ve reviewed all selected dates and times and the{" "}
-          <button className="text-link" onClick={() => setPolicy(true)}>
-            booking information
-          </button>
+          I’ve reviewed all selected options. I accept the{" "}
+          <Link
+            className="text-link"
+            href="/terms-of-service/"
+            data-booking-continuation
+            target="_blank"
+            rel="noopener"
+          >
+            Terms and Conditions
+          </Link>
           .
         </span>
       </label>
@@ -259,26 +263,6 @@ export function ReviewStep({
         <p className="notice" role="status">
           Reservation checking. Please do not close or refresh.
         </p>
-      )}
-      {policy && (
-        <Dialog title="Booking information" onClose={() => setPolicy(false)}>
-          <div className="space-y-4">
-            <p>
-              Each session is 40 minutes for 1–4 players with one instructor in
-              the shared studio. Start times are 50 minutes apart.
-            </p>
-            <p>
-              {!action.calendarRecovery &&
-                attempt?.held &&
-                "Your Sessions are temporarily reserved. Complete payment before the reservation expires. "}
-              Follow the instructor’s safety guidance.
-            </p>
-            <p>
-              Contact the studio for changes, cancellations and applicable
-              refund policies. Cancellation and refund are separate actions.
-            </p>
-          </div>
-        </Dialog>
       )}
     </>
   );

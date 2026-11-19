@@ -185,6 +185,16 @@ test("details contains only the five contact fields and validates them before re
     screen.getByLabelText(/Email address/),
     "customer@example.com",
   );
+  await user.tab();
+  const checkControl = screen.getByRole("button", {
+    name: "Confirm email address is correct",
+  });
+  expect(checkControl).toHaveAttribute("data-needs-check", "true");
+  expect(document.getElementById("email-check-help")).toHaveClass(
+    "field-error",
+  );
+  await user.click(screen.getByRole("button", { name: "Review Booking" }));
+  expect(checkControl).toHaveFocus();
   await user.type(screen.getByLabelText(/Mobile number/), "+65 8123 4567");
   await user.selectOptions(
     screen.getByLabelText(/Preferred contact method/),

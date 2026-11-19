@@ -1,81 +1,87 @@
 import { useId } from "react";
 
-/** Render the supplied building layout with a shared-colour route and readable lift labels. */
+/** Show the Level 5 route from Lift Lobby 3 to the studio. */
 export function StudioDirections() {
   const title = useId();
   return (
     <svg
       className="studio-directions"
-      viewBox="0 0 760 450"
+      viewBox="12 8 644 440"
       role="img"
       aria-labelledby={title}
     >
       <title id={title}>
-        Level 5 guide: exit Lift Lobby 3, PL-5 or PL-6, turn left and follow the
-        blue route to SoccerBotStudio, unit #05-01. Other lifts are marked for
-        orientation.
+        Level 5 guide. Exit Lift Lobby 3 facing south, turn left and follow the
+        corridor to unit 05-01.
       </title>
-      <g
-        className="studio-plan-outline"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      >
-        <path d="M30 425V55Q30 25 60 25H300Q440 25 510 100Q590 175 620 355L640 425Z" />
-        <path d="M50 405V65Q50 45 70 45H300Q425 45 490 110L455 170L385 132L270 115V90H160V125H90V330H255V405Z" />
-        <path d="M270 45V115M315 47L305 120M360 57L340 130M400 71L375 145M440 91L410 155M475 115L443 173" />
-        <path d="M470 215L530 160L552 204L490 250ZM490 250L552 204L570 245L510 285ZM510 285L570 245L588 288L530 325ZM530 325L588 288L603 330L550 365Z" />
+      <g strokeLinejoin="round">
+        <path
+          fill="#fafbfd"
+          stroke="#bcc2d4"
+          strokeWidth="2"
+          d="M30 425V55Q30 25 60 25H300Q440 25 510 100Q590 175 620 355L640 425Z"
+        />
+        <g fill="#e9ebf2" stroke="#d2d6e2" strokeWidth="1.5">
+          <path d="M50 116V63Q50 45 69 45H300Q422 45 490 110L455 170L385 132L270 115V90H160V116Z" />
+          <path d="M470 215L530 160Q569 232 603 330L550 365Z" />
+          <path d="M50 338H255V405H50Z" />
+          <path d="M270 405V320H290V290H330V320H350V370H330V405Z" />
+        </g>
+        <path
+          fill="none"
+          stroke="#d2d6e2"
+          d="M270 45V90M360 55L340 124M440 91L414 148M490 250L552 204M510 285L570 245M530 325L587 289"
+        />
         <path
           className="studio-plan-unit"
           d="M550 365L603 330L615 372Q620 405 590 405H568Z"
         />
-        <path d="M270 405V320H290V290H330V320H350V370H330V405Z" />
-        <path d="M413 145L437 123L464 145L440 177Z" />
-        <path d="M102 180H245V202H102ZM275 183L300 192L291 213L266 204ZM315 198L338 209L327 231L304 220Z" />
-        <path d="M100 235H125V260H100ZM145 235H190V260H145ZM210 235H245V260H210ZM100 290H150V315H100ZM170 290H220V315H170ZM385 285H410V305H385ZM395 322H420V342H395Z" />
+        <path
+          fill="none"
+          className="studio-plan-route"
+          strokeWidth="7"
+          strokeLinecap="round"
+          d="M90 116V147Q90 165 108 165H330Q375 165 375 210V353Q375 380 402 380H558"
+        />
+        <path
+          fill="var(--color-logo-blue)"
+          d="m227 155 13 10-13 10zM365 250l10 13 10-13zM542 370l13 10-13 10z"
+        />
+        <circle
+          cx="90"
+          cy="116"
+          r="7"
+          fill="white"
+          stroke="var(--color-logo-blue)"
+          strokeWidth="4"
+        />
       </g>
-      <g
-        className="studio-plan-route"
-        fill="none"
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M90 146V151Q90 165 108 165H325Q375 165 375 220V350Q375 380 410 380H551" />
-      </g>
-      <g className="studio-plan-unit">
-        <path d="m229 157 12 8-12 8zM367 252l8 12 8-12zM541 372l12 8-12 8z" />
-      </g>
-      <g className="studio-plan-label">
-        <rect x="55" y="101" width="155" height="45" rx="6" />
-        <text x="67" y="119">
+      <g fill="var(--color-brand)">
+        <text x="64" y="75" fontSize="23" fontWeight="700">
           Lift Lobby 3
         </text>
-        <text x="67" y="137">
+        <text x="64" y="101" fontSize="19">
           PL-5 / PL-6
         </text>
-        <rect x="45" y="337" width="175" height="62" rx="6" />
-        <text x="57" y="356">
+        <text x="393" y="214" fontSize="18" fill="#545d74">
           Lifts
         </text>
-        <text x="57" y="374">
+        <path d="M417 193l24-37" fill="none" stroke="#8890a5" />
+        <circle cx="441" cy="156" r="4" fill="#78829a" />
+        <text x="63" y="365" fontSize="18" fill="#545d74">
           PL-3 / PL-4
         </text>
-        <text x="57" y="392">
+        <text x="63" y="390" fontSize="18" fill="#545d74">
           SL-1 / SL-2
         </text>
-        <path d="M440 150L524 100" />
-        <rect x="515" y="72" width="72" height="32" rx="6" />
-        <text x="528" y="94">
-          Lifts
-        </text>
-        <path d="M590 374L645 327" />
-        <rect x="583" y="280" width="170" height="46" rx="6" />
-        <text x="595" y="300">
+        <text x="397" y="323" fontSize="17" fontWeight="700">
           SoccerBotStudio
         </text>
-        <text x="595" y="319">
+        <text x="397" y="356" fontSize="31" fontWeight="700">
           #05-01
         </text>
+        <circle cx="587" cy="375" r="8" fill="var(--color-brand)" />
+        <circle cx="587" cy="375" r="3" fill="white" />
       </g>
     </svg>
   );

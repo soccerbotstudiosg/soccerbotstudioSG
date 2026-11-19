@@ -777,7 +777,7 @@ test("public routes remove staff access and fit the viewport", async ({
   await expect(page.locator(".footer-apps .footer-app-link")).toHaveCount(3);
   await expect(
     page.locator(".footer-contact-row").first().getByRole("link"),
-  ).toHaveText(["Terms of Service", "Privacy Policy", "Refund Policy"]);
+  ).toHaveText(["Terms and Condition", "Privacy Policy"]);
   await expect(
     page.locator(".footer-contact-grid > .footer-contact-row"),
   ).toHaveCount(4);
@@ -1187,19 +1187,25 @@ test("public routes remove staff access and fit the viewport", async ({
   const stickyHeaderBox = await page.locator(".site-header").boundingBox();
   expect(stickyHeaderBox!.y).toBeCloseTo(0, 0);
   for (const [label, route] of [
-    ["Terms of Service", "/terms-of-service/"],
+    ["Terms and Condition", "/terms-of-service/"],
     ["Privacy Policy", "/privacy-policy/"],
-    ["Refund Policy", "/refund-policy/"],
   ]) {
     await page
       .locator(".site-footer")
       .getByRole("link", { name: label, exact: true })
       .click();
     await expect(page).toHaveURL(new RegExp(route + "$"));
-    await expect(page.locator(".legal-placeholder")).toBeEmpty();
-    await expect(page.locator(".legal-placeholder")).toHaveCSS(
-      "background-color",
-      "rgb(255, 255, 255)",
+    await expect(
+      page.getByRole("heading", {
+        name:
+          label === "Privacy Policy"
+            ? "1. Personal data we collect"
+            : "1. About us",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.locator(".legal-document h2")).toHaveCount(
+      label === "Privacy Policy" ? 11 : 13,
     );
   }
   await page.goto(sitePath("/"));
@@ -1338,6 +1344,19 @@ test("guest multi-date booking survives reload without retired export actions", 
 }) => {
   await chooseSlots(page, true);
   await details(page);
+  const policyLinks = page.locator(".review-terms").getByRole("link");
+  await expect(policyLinks).toHaveText(["Terms and Conditions"]);
+  const popupEvent = page.waitForEvent("popup");
+  await policyLinks.click();
+  const policyPage = await popupEvent;
+  await expect(
+    policyPage.getByRole("heading", {
+      name: "Terms and Conditions",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await policyPage.close();
+  await expect(page.getByRole("checkbox")).not.toBeChecked();
   await page.getByRole("checkbox").check();
   await page.reload();
   await expect(
