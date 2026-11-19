@@ -175,7 +175,7 @@ export async function createBookingMechanism(options = {}) {
     }))
   ).outputFiles[0].text;
   mark("compile");
-  const mf = new Miniflare({
+  const runtimeOptions = (overrides) => ({
     ...convertV4MiniflareOptions({
       name: "booking-mechanism",
       modules: true,
@@ -233,6 +233,7 @@ export async function createBookingMechanism(options = {}) {
             }
           : {}),
         ...options.bindings,
+        ...overrides,
       },
       d1Databases: { STATE: "synthetic-state" },
       durableObjects: {
@@ -356,7 +357,10 @@ export async function createBookingMechanism(options = {}) {
             return Response.json(invoice);
           }
           if (url.pathname === "/admin/invoices/901")
-            return Response.json(invoice);
+            return Response.json(
+              options.nativeRead?.("invoice", structuredClone(invoice)) ??
+                invoice,
+            );
           const matrix = {};
           if (
             ["getStartTimeMatrix", "getAvailableTimeIntervals"].includes(
@@ -474,7 +478,13 @@ export async function createBookingMechanism(options = {}) {
             return Response.json({
               jsonrpc: "2.0",
               id: body.id,
-              result: results[body.method],
+              result:
+                body.method === "getBookingDetails" && options.nativeRead
+                  ? options.nativeRead(
+                      "booking",
+                      structuredClone(results[body.method]),
+                    )
+                  : results[body.method],
             });
           }
         }
@@ -484,6 +494,7 @@ export async function createBookingMechanism(options = {}) {
     }),
     unsafeInspectDurableObjects: options.displayWarming === true,
   });
+  const mf = new Miniflare(runtimeOptions());
   bot.attach(mf);
   try {
     await mf.ready;
@@ -534,6 +545,7 @@ export async function createBookingMechanism(options = {}) {
         });
       },
       recover: async () => (await mf.getWorker()).scheduled(),
+      updateBindings: (bindings) => mf.setOptions(runtimeOptions(bindings)),
       close: async () => {
         const started = performance.now();
         try {

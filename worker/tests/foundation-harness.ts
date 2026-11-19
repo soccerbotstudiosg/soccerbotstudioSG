@@ -1,7 +1,7 @@
 import worker from "../index";
 export { SoccerBotAccountCoordinator } from "../coordinator";
 const harness = {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const input = (await request.json()) as {
       path?: string;
       method?: string;
@@ -61,6 +61,7 @@ const harness = {
         },
       ),
       selected,
+      ctx,
     );
     return Response.json({
       status: response.status,

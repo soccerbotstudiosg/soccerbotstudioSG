@@ -17,10 +17,10 @@ const pepper = "SYNTHETIC_PRIVATE_PEPPER_FOR_IDENTITY_123456789";
 let releaseHeldDelivery: (() => void) | undefined;
 let observeHeldDelivery: (() => void) | undefined;
 export default {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const path = new URL(request.url).pathname;
     if (!path.startsWith("/synthetic-identity/"))
-      return app.fetch(request, env);
+      return app.fetch(request, env, ctx);
     const input = (await request.json()) as {
       action:
         | "challenge"

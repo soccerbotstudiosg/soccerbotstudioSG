@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Stage the consolidated checkout recovery and email verification changes in PR #106 after the deployment verifier in PR #105.
+The local booking recovery candidate covers interrupted checkout, proven rejection, uncertain provider writes and late payment-link recovery. Calendar keeps recovery available during a date-loading failure and requires fresh capacity after a proven rejection. Publication is on hold.
 
 ## Next actions
 
-Verify the combined revision in CI and on staging. Physical device and live-provider acceptance remain pending.
+Before publication, run the complete Worker and browser gates on the consolidated revision. Live provider and physical-device acceptance remain pending. A direct email-correction route and DNS typo suggestions remain proposals.
 
 ## Ordered work after this slice
 

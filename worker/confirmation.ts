@@ -1,6 +1,7 @@
 import { retainedCreationResolution } from "./native-creation-resolution";
 import { preparationRejectionContext } from "./checkout-preparation-rejection";
 import { confirmationSnapshot } from "./confirmation-snapshot";
+import { ongoingReadbackEnabled } from "./ongoing-readback";
 import { customerConfirmation, checkoutExpired } from "./checkout-progress";
 import {
   storedHitpayCheckout,
@@ -422,10 +423,17 @@ export async function checkoutContext(
     confirmation: savedConfirmation,
     details,
     ...(!creationResolution &&
+    !snapshot.payment.nativeCreationReview &&
     row.state === "recovery_required" &&
     !row.association_json &&
     !snapshot.payment.payment
       ? { bookingIssue: "incomplete" as const }
+      : {}),
+    // A signed association can be committed one step before the verified hold and hosted link.
+    ...(row.recovering_hosted_checkout === 1 &&
+    row.hold_expires_ms === null &&
+    ongoingReadbackEnabled(env)
+      ? { paymentIssue: "link_recovering" as const }
       : {}),
     ...(snapshot.payment.payment &&
     !snapshot.payment.payment.request_id &&

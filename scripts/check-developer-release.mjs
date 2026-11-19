@@ -879,6 +879,39 @@ try {
       /notification_version_immutable/,
     );
   }
+  await migrate("0052_native_creation_checks.sql");
+  assert.equal(
+    await db
+      .prepare("SELECT COUNT(*) AS n FROM native_creation_checks")
+      .first("n"),
+    0,
+    "A migration must never infer completion for an earlier booking dispatch",
+  );
+  for (const table of [
+    "native_checkout_grants",
+    "completed_native_checkout_grants",
+    "expired_native_checkout_grants",
+    "rejected_native_checkout_grants",
+  ]) {
+    assert.equal(
+      await db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM ${table} WHERE creation_markers_json IS NOT NULL`,
+        )
+        .first("n"),
+      0,
+      "Installing the marker feature cannot assign a provider identity to a historical attempt",
+    );
+  }
+  await assert.rejects(
+    db
+      .prepare(
+        "INSERT INTO native_creation_checks(attempt_id,intent_hash,dispatch_fence,book_rpc_code,book_rpc_ended_ms) SELECT id,intent_hash,1,-32062,? FROM attempts WHERE id=?",
+      )
+      .bind(now, id)
+      .run(),
+    /CHECK constraint/,
+  );
   for (const table of ["reservation_sources", "reservation_expiries"])
     assert.equal(
       (await db.prepare(`SELECT count(*) n FROM ${table}`).first()).n,

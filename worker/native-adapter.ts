@@ -1,4 +1,5 @@
 import { parallelReads } from "./parallel-reads";
+import type { NativeCreationMarker } from "./native-creation-marker";
 import {
   SESSION_MINUTES,
   START_INTERVAL_MINUTES,
@@ -65,6 +66,7 @@ export function nativeBookingOperations(options: {
   scope: NativeScope;
   exchange: NativeExchange;
   additional: unknown;
+  recoveryMarker?: (index: number) => NativeCreationMarker;
   // Required fields, eligibility/shared availability, current price/tax and
   // customer association remain trusted pre-write checks, not response guesses.
   prebooking: Pick<NativePrebooking, "revalidate" | "invalidate">;
@@ -171,6 +173,9 @@ export function nativeBookingOperations(options: {
       )
         throw new ApiError(409, "native_write_not_replayable");
       dispatched.add(context.sessionIndex);
+      const marker = options.recoveryMarker
+        ? options.recoveryMarker(context.sessionIndex)
+        : undefined;
       if (intent.sessions.length > 1 && context.sessionIndex === 0) {
         const reserved = options.transportClaims
           ? undefined
@@ -217,6 +222,7 @@ export function nativeBookingOperations(options: {
           time: wall.slice(11, 19),
           client,
           additional: fields.additional,
+          ...(marker ? { marker } : {}),
           ...(batchId ? { batchId } : {}),
         })
         .finally(() => options.prebooking.invalidate());
@@ -829,20 +835,21 @@ export async function storedNativeSignature(
 // A lost finalization reply can be reconciled only from every retained new
 // booking key. No email lookup, batch replay, invoice creation or payment write.
 /** Recover booking associations from retained provider references. */
-export async function recoverNativeAssociation(options: {
+export async function readRecoverableNativeAssociation(options: {
   db: D1Database;
   scope: NativeScope;
   exchange: NativeExchange;
   signingSecret: string;
   signal: AbortSignal;
+  existingAssociation?: string | null;
 }) {
   const intent = validateScope(options.scope);
   const row = await options.db
     .withSession("first-primary")
     .prepare(
-      "SELECT version,intent_json FROM attempts WHERE id=? AND association_json IS NULL AND state='recovery_required'",
+      "SELECT version,intent_json FROM attempts WHERE id=? AND association_json IS ? AND state='recovery_required'",
     )
-    .bind(options.scope.attemptId)
+    .bind(options.scope.attemptId, options.existingAssociation ?? null)
     .first<{ version: number; intent_json: string }>();
   if (
     !row ||
@@ -870,10 +877,23 @@ export async function recoverNativeAssociation(options: {
   });
   if (new Set(keys.map((key) => key.bookingId)).size !== keys.length)
     throw new ApiError(409, "native_duplicate_booking");
-  const { association, observation, observedAtMs } = await readNativeKeySet({
-    ...options,
-    keys,
-  });
+  const verified = await readNativeKeySet({ ...options, keys });
+  if (
+    options.existingAssociation &&
+    JSON.stringify(
+      associationSchema.parse(JSON.parse(options.existingAssociation)),
+    ) !== JSON.stringify(verified.association)
+  )
+    throw new ApiError(409, "native_recovery_association_conflict");
+  return { ...verified, version: row.version, reads: keys.length + 1 };
+}
+
+/** Bind a verified retained provider key set under the original recovery fence. */
+export async function recoverNativeAssociation(
+  options: Parameters<typeof readRecoverableNativeAssociation>[0],
+) {
+  const verified = await readRecoverableNativeAssociation(options);
+  const { association, observation, observedAtMs } = verified;
   const result = await options.db
     .prepare(
       "UPDATE attempts SET association_json=?,observation_json=?,observation_ms=?,state='observed',version=version+1 WHERE id=? AND version=? AND state='recovery_required' AND association_json IS NULL",
@@ -883,12 +903,12 @@ export async function recoverNativeAssociation(options: {
       JSON.stringify(observation),
       observedAtMs,
       options.scope.attemptId,
-      row.version,
+      verified.version,
     )
     .run();
   if (result.meta.changes !== 1)
     throw new ApiError(409, "native_recovery_fence_lost");
-  return { state: "associated" as const, reads: keys.length + 1 };
+  return { state: "associated" as const, reads: verified.reads };
 }
 
 // Read only retained new-booking keys. The same strict association/money
@@ -972,6 +992,7 @@ async function readNativeKeySet(options: {
     association,
     observation,
     observedAtMs: Math.min(bookingObservedAtMs, invoice.receivedAtMs),
+    dueDatetime: nativeRecord(invoice.body, "invoice").due_datetime,
   };
 }
 

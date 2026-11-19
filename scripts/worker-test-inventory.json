@@ -245,6 +245,14 @@
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
+    "title": "configured intake marker binds each original session and checks its service before any creation write"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "configured intake marker refuses missing mismatched or unsupported definitions before booking creation"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
     "title": "checkout reuses complete creation evidence for one HitPay request without redundant reads"
   },
   {
@@ -325,6 +333,14 @@
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
+    "title": "original signed booking recovery preserves consent and creates at most one hosted payment"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "signed nonpayable booking observations stay protected through transient rereads and terminal review"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
     "title": "consolidated single checkout guards failed transactions and retained references across restart"
   },
   {
@@ -354,6 +370,10 @@
   {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "five-call fresh snapshots cannot duplicate checkout across overlapping requests"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "accepted checkout finishes once after the caller disconnects during booking or payment creation"
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
@@ -462,6 +482,10 @@
   {
     "file": "worker/tests/combined-hold.test.mjs",
     "title": "checkout bot proof binds one intent and leaves existing checkout callbacks and recovery challenge-free"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "background checkout recovery distinguishes a completed book error from a lost response across fresh original slot reports"
   },
   {
     "file": "worker/tests/enquiry.test.mjs",
@@ -1320,6 +1344,22 @@
     "title": "rejected ongoing preflight grants are archived without reopening finite or uncertain writes"
   },
   {
+    "file": "worker/tests/native.test.mjs",
+    "title": "unknown creation report classifies an exact booking only as a candidate and independently checks each original window"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "unknown creation report preserves ambiguity for duplicate and overlapping bookings with incomplete original correlation"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "unknown creation report rejects partial pages malformed evidence changed totals and out-of-scope rows"
+  },
+  {
+    "file": "worker/tests/native.test.mjs",
+    "title": "unknown creation report discards a late provider reply after its owner aborts the lookup"
+  },
+  {
     "file": "worker/tests/pages.test.mjs",
     "title": "Pages service binding reaches the actual Worker with guest cookie continuity and origin enforcement"
   },
@@ -1710,6 +1750,10 @@
   {
     "file": "worker/tests/recovery.test.mjs",
     "title": "recovery scheduling is atomic with dispatch and duplicate logical intent stays unique"
+  },
+  {
+    "file": "worker/tests/recovery.test.mjs",
+    "title": "unknown native creation checks coalesce by original dispatch, recheck at five seconds and fence every delayed claim"
   },
   {
     "file": "worker/tests/recovery.test.mjs",

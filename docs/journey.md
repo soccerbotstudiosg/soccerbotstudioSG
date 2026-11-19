@@ -7255,3 +7255,9 @@ PR101 headc7a4af5 target run44441916819 failed13 browser cases in frontend and t
 ## 19 November 2026 — Published policy content, wayfinding and email acknowledgement
 
 The owner supplied both legal PDFs. Their website versions retain the original wording. Earlier refund links resolve to the terms containing the cancellation section. Review links open independently of consent and navigation. The shared notification footer uses the same policy destinations. The approved Level 5 diagram retains all three lift banks and the route from Lobby 3 to #05-01. Guest email acknowledgement participates in DOM-order validation and highlights on blur. Six focused contact cases passed locally. Provider checkout recovery is reviewed separately.
+
+### Interrupted booking recovery and calendar continuation — 19 November 2026
+
+The supplied quick-back captures showed repeated checkout-status polls followed by an availability cooldown. The correlated provider response was a documented invalid-email rejection. The previous single-book rejection mapping left the attempt unresolved and all upstream errors applied an account-wide cooldown. The local candidate separates completed input rejections from uncertain writes, retains the original worker operation across disconnects and reconciles interrupted creation under its existing attempt. Calendar keeps affected times hidden during uncertainty and rechecks its protected context as the background result arrives. [Recovery contract](api-contracts.md#verified-no-creation-resolution) · [Customer flow](booking-flows.md)
+
+Isolated Worker tests exercised disconnects during SimplyBook booking and HitPay creation, a second explicit rejection of the same eligible time, a completed error with repeated provider readback and lost transport. A serial local run passed all 421 frontend unit and component cases. These tests used synthetic providers. Publication is on hold at the owner's request.

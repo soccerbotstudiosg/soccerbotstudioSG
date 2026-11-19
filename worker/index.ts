@@ -115,7 +115,11 @@ export default {
     }
   },
   /** Route requests through environment, origin and operation-authority checks. */
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
     const requestStarted = performance.now();
     const correlationId = crypto.randomUUID(),
       url = new URL(request.url),
@@ -291,7 +295,7 @@ export default {
               renewed.expiresMs,
             );
           }
-          const outcome = await coordinatorStub(env).holdCustomer(
+          const submission = coordinatorStub(env).holdCustomer(
             {
               attemptId: holdMatch[2],
               sourceIp: request.headers.get("CF-Connecting-IP") || "",
@@ -303,6 +307,9 @@ export default {
             },
             correlationId,
           );
+          // Keep the original RPC alive when the customer navigates away mid-checkout.
+          if (checkoutAccess) ctx.waitUntil(submission.then(() => undefined));
+          const outcome = await submission;
           if (outcome.serverTiming)
             checkingHeaders["Server-Timing"] =
               outcome.serverTiming +

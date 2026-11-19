@@ -1249,6 +1249,10 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
+    "title": "reopens the internal payment continuation when Calendar recovers an unpaid checkout"
+  },
+  {
+    "file": "src/features/booking/protected-confirmation.test.tsx",
     "title": "routes only authenticated no-effect selection rejections to the calendar"
   },
   {
@@ -1305,6 +1309,10 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
+    "title": "checkout recovery stays mounted when the public calendar fails to load"
+  },
+  {
+    "file": "src/features/booking/time-step.test.tsx",
     "title": "confirmation places three retained actions below the summary with complete details visible"
   },
   {
@@ -1325,7 +1333,7 @@
   },
   {
     "file": "src/features/booking/time-step.test.tsx",
-    "title": "pre-checkout recovery restores fresh display times without releasing the original attempt"
+    "title": "pre-checkout recovery hides the original time until verified release then enables contact details"
   },
   {
     "file": "src/features/booking/time-step.test.tsx",

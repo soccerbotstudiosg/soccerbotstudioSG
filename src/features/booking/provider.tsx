@@ -184,6 +184,7 @@ interface BookingContextValue extends StoredBooking {
   browsingCheckout: boolean;
   resumeSubmittedCheckout: () => void;
   resumePaymentStatus: (attemptId: string) => void;
+  resumeRecoveredCheckout: (attemptId: string) => void;
   rejectRecoveredSelection: (
     attemptId: string,
     rejection: CheckoutSelectionRejection,
@@ -1373,23 +1374,13 @@ export function BookingProvider({
         : left
           ? loadDepartureSlots(id)
           : current.draft.slots;
-      // Non-creation releases this attempt, not provider capacity. Calendar
-      // recovery may already have restored an original time through a fresh
-      // availability read; preserve any deliberate selection of that time.
-      const hiddenOriginals =
-        action.calendarRecovery &&
-        (action.unresolvedCheckout || isUnresolvedCheckout(id))
-          ? originalSlots.filter((original) =>
-              suppression.current.slots.some((slot) =>
-                overlaps(slot, original),
-              ),
-            )
-          : originalSlots;
+      // Older tabs can retain an offered time after losing its suppression marker.
+      // Require a fresh capacity read after release for every original window.
       setSuppressedSlots([
         ...suppression.current.slots.filter(
           (slot) => !originalSlots.some((original) => overlaps(slot, original)),
         ),
-        ...hiddenOriginals,
+        ...originalSlots,
       ]);
       freshChecks.current.delete(service);
       const draft = left
@@ -1400,8 +1391,8 @@ export function BookingProvider({
               stayOnStep || action.calendarRecovery || browsingCheckout
                 ? current.draft.slots.filter(
                     (slot) =>
-                      !hiddenOriginals.some(
-                        (original) => slotKey(original) === slotKey(slot),
+                      !originalSlots.some((original) =>
+                        overlaps(original, slot),
                       ),
                   )
                 : [],
@@ -1439,7 +1430,6 @@ export function BookingProvider({
     [
       service,
       action.calendarRecovery,
-      action.unresolvedCheckout,
       browsingCheckout,
       cancel,
       commit,
@@ -2107,16 +2097,9 @@ export function BookingProvider({
       window.removeEventListener("pageshow", resume);
     };
   }, [detachCheckout]);
-  // Fresh availability can restore pre-link creation recovery's display while
-  // its original financial attempt stays locked. Issued-link expiry retains
-  // suppression until authoritative release; warm caches cannot restore either.
+  // Keep the original windows hidden while their attempt still owns the reservation.
   const { reconcile } = calendar;
   const retainedAttempt = value.attempt;
-  const creationRecovery =
-    service.mode === "live" &&
-    action.calendarRecovery &&
-    !!retainedAttempt &&
-    (action.unresolvedCheckout || isUnresolvedCheckout(retainedAttempt.id));
   useEffect(() => {
     if (
       !value.ready ||
@@ -2182,10 +2165,7 @@ export function BookingProvider({
         }
       }
       const remaining = suppressedSlots.filter((slot) => {
-        if (
-          !creationRecovery &&
-          retainedAttempt?.draft.slots.some((held) => overlaps(slot, held))
-        )
+        if (retainedAttempt?.draft.slots.some((held) => overlaps(slot, held)))
           return true;
         const result = results[dates.indexOf(slot.date)];
         return (
@@ -2258,7 +2238,6 @@ export function BookingProvider({
     value.draft.mode,
     restorationPending,
     calendarBrowsing,
-    creationRecovery,
     suppressedSlots,
     pendingConflict,
     retainedAttempt,
@@ -2955,6 +2934,19 @@ export function BookingProvider({
         browsingCheckout,
         resumeSubmittedCheckout,
         rejectRecoveredSelection,
+        resumeRecoveredCheckout(id) {
+          if (
+            latest.current.attempt?.id !== id ||
+            !action.calendarRecovery ||
+            !(action.unresolvedCheckout || isUnresolvedCheckout(id))
+          )
+            return;
+          clearCalendarRecovery(id);
+          setSelectionNotice(null);
+          setProtectedConflictRedirect(id);
+          setAction({ status: "idle" });
+          router.replace(`/confirmation/?attempt=${encodeURIComponent(id)}`);
+        },
         resumePaymentStatus(id) {
           if (latest.current.attempt?.id !== id) return;
           completedPaymentReturn(id, true);

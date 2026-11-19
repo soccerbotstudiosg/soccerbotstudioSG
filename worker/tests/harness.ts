@@ -1,4 +1,10 @@
 // Local workerd test driver; never the deployment entry point.
+import {
+  armUnknownCreation,
+  dueUnknownCreation,
+  claimUnknownCreation,
+  finishUnknownCreation,
+} from "../creation-recovery-schedule";
 import { bookingReceipt } from "../receipt";
 import { ApiError } from "../policy";
 import worker, {
@@ -14,7 +20,24 @@ import worker, {
   runRecoveryBatch,
   retentionPreview,
 } from "../index";
+function creationScheduleEnv(env: Env) {
+  // Runtime bindings vary by target; the generated type describes the disabled default.
+  const synthetic = { ...env };
+  Object.assign(synthetic, {
+    LIVE_READBACK: "enabled",
+    LIVE_CUSTOMER_ACCESS: "enabled",
+    PROVIDER_ACCESS: "trusted-reads",
+    SOURCE_REVISION: "d".repeat(40),
+  });
+  return synthetic;
+}
 export class SoccerBotAccountCoordinator extends ProductionCoordinator {
+  armInterruptedFixture(id: string, now: number) {
+    return armUnknownCreation(creationScheduleEnv(this.env), id, now, {
+      sql: this.ctx.storage.sql,
+      instanceId: "fixture-current-instance",
+    });
+  }
   // Test-only metrics; never exported by the deployment entry point.
   admissionQueryMetrics(now: number) {
     return [
@@ -36,9 +59,9 @@ export class SoccerBotAccountCoordinator extends ProductionCoordinator {
   }
 }
 const harness = {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const p = new URL(request.url).pathname;
-    if (!p.startsWith("/test/")) return worker.fetch(request, env);
+    if (!p.startsWith("/test/")) return worker.fetch(request, env, ctx);
     const input = (await request.json()) as {
       owner: string;
       key: string;
@@ -116,6 +139,29 @@ const harness = {
             coordinator as DurableObjectStub<SoccerBotAccountCoordinator>
           ).admissionQueryMetrics(input.now);
           break;
+        case "/test/creation-schedule": {
+          const synthetic = creationScheduleEnv(env);
+          if (input.scenario === "arm")
+            result = await armUnknownCreation(synthetic, input.id, input.now);
+          else if (input.scenario === "adopt")
+            result = await (
+              coordinator as DurableObjectStub<SoccerBotAccountCoordinator>
+            ).armInterruptedFixture(input.id, input.now);
+          else if (input.scenario === "disabled")
+            result = await armUnknownCreation(env, input.id, input.now);
+          else if (input.scenario === "claim")
+            result = await claimUnknownCreation(synthetic, input.id, input.now);
+          else if (input.scenario === "due")
+            result = await dueUnknownCreation(synthetic, input.now);
+          else
+            result = await finishUnknownCreation(
+              synthetic,
+              input.recoveryClaim,
+              input.scenario === "resolved",
+              input.now,
+            );
+          break;
+        }
         case "/test/recovery-claim":
           result = await claimRecovery(
             env.STATE,

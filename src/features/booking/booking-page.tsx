@@ -114,6 +114,7 @@ export function BookingPage({ step }: { step: BookingStep }) {
       rejectRecoveredSelection,
       resolveUncreatedBooking,
       resumePaymentStatus,
+      resumeRecoveredCheckout,
       browseAfterChecking,
     } = useBooking(),
     router = useRouter();
@@ -292,6 +293,9 @@ export function BookingPage({ step }: { step: BookingStep }) {
       onSelectionRejected={rejectRecoveredSelection}
       onCreationResolved={resolveUncreatedBooking}
       onPaymentDetected={resumePaymentStatus}
+      onCheckoutRecovered={
+        unresolvedCreation ? resumeRecoveredCheckout : undefined
+      }
     />
   );
   return (

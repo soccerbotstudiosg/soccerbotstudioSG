@@ -3948,7 +3948,7 @@ async function verifyNoCreationRecovery(
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
   const notice =
-    "Some sessions may no longer be available. Please check again.";
+    "Nothing was booked or charged. Your details are saved; please choose your sessions again.";
 
   cleanup();
   sessionStorage.clear();

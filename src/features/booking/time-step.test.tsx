@@ -16,6 +16,7 @@ import { BasketContinue, Summary } from "./summary";
 import { Arrival, ReviewStep } from "./review-step";
 import { BookingProvider, useBooking } from "./provider";
 import { demoSession } from "@/services/demo/schedule";
+import { ProtectedConfirmation } from "./protected-confirmation";
 import { ConfirmationStep } from "./confirmation-step";
 import { TimeStep } from "./time-step";
 import { demoBookingService, demoBookingModel } from "@/services/demo/booking";
@@ -54,6 +55,33 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
+test("checkout recovery stays mounted when the public calendar fails to load", async () => {
+  let rejectRead!: (error: Error) => void;
+  const calendarRead = new Promise<never>((_, reject) => {
+    rejectRead = reject;
+  });
+  const publicCalendar = vi.fn(() => calendarRead);
+  const service: BookingService = {
+    ...demoBookingService,
+    mode: "live",
+    operations: { ...demoBookingService.operations, availability: "live" },
+    publicCalendar,
+    restore: async () => null,
+  };
+  render(
+    <BookingProvider bookingService={service}>
+      <TimeStep recoveryNotice={<p>Original checkout recovery</p>} />
+    </BookingProvider>,
+  );
+  const recovery = screen.getByText("Original checkout recovery");
+  await waitFor(() => expect(publicCalendar).toHaveBeenCalled());
+  await act(async () => rejectRead(new Error("Calendar unavailable")));
+  expect(
+    await screen.findByRole("button", { name: "Try again" }),
+  ).toBeVisible();
+  expect(screen.getByText("Original checkout recovery")).toBe(recovery);
+});
+
 /** Exercise calendar restoration with separate desktop and mobile interaction budgets. */
 async function calendarScenario(mobile: boolean) {
   const user = userEvent.setup();
@@ -872,7 +900,7 @@ test("calendar back preserves player count with the outlet session and action im
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 
-test("pre-checkout recovery restores fresh display times without releasing the original attempt", async () => {
+test("pre-checkout recovery hides the original time until verified release then enables contact details", async () => {
   const original = {
     date: restoredDate,
     start: "12:00",
@@ -949,9 +977,39 @@ test("pre-checkout recovery restores fresh display times without releasing the o
     checkout,
     pay,
   };
+  let verified = false;
+  let contextReads = 0;
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => new Response(null, { status: 503 })),
+    vi.fn(async (url: string) => {
+      if (!url.endsWith("/checkout"))
+        return new Response(null, { status: 503 });
+      contextReads++;
+      return Response.json({
+        attemptId: retained.id,
+        mode: "live",
+        checkout: { state: "unavailable" },
+        ...(verified
+          ? { creationResolution: { state: "not_created" } }
+          : { bookingIssue: "incomplete" }),
+        summary: {
+          players: 1,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [
+            {
+              startMs: Date.parse(restoredDate + "T12:00:00+08:00"),
+              players: 1,
+            },
+          ],
+        },
+        checking: {
+          deadlineMs: retained.checkUntil,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    }),
   );
   function Recovery() {
     const state = useBooking();
@@ -973,9 +1031,15 @@ test("pre-checkout recovery restores fresh display times without releasing the o
         >
           Try Review
         </button>
-        <button onClick={() => state.resolveUncreatedBooking(retained.id)}>
-          Verified no creation
-        </button>
+        {state.action.calendarRecovery && state.attempt && (
+          <ProtectedConfirmation
+            attemptId={state.attempt.id}
+            checkoutMode="live"
+            calendarRecovery
+            silent
+            onCreationResolved={state.resolveUncreatedBooking}
+          />
+        )}
         <output data-testid="creation-attempt">
           {JSON.stringify(state.attempt)}
         </output>
@@ -988,7 +1052,7 @@ test("pre-checkout recovery restores fresh display times without releasing the o
         <output data-testid="creation-suppressed">
           {JSON.stringify(state.suppressedSlots)}
         </output>
-        {state.ready && state.action.calendarRecovery ? (
+        {state.ready && (state.action.calendarRecovery || !state.attempt) ? (
           <>
             <TimeStep />
             <BasketContinue />
@@ -1037,16 +1101,35 @@ test("pre-checkout recovery restores fresh display times without releasing the o
     JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
   ).toEqual([original]);
   await act(async () => reads[4].resolve(offers));
-  await waitFor(() =>
-    expect(screen.getByRole("button", { name: /12:00–12:40/ })).toBeEnabled(),
+  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  expect(screen.getByRole("button", { name: /12:50–13:30/ })).toBeEnabled();
+  expect(
+    JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
+  ).toEqual([original]);
+  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  expect(
+    screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
+  ).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Starting another now could create a duplicate booking.",
   );
+  await act(async () => fireEvent.click(screen.getByText("Try Review")));
+  expect(reviewResult).toBe(false);
+  fireEvent.click(screen.getByText("Try checkout"));
+  expect(checkout).not.toHaveBeenCalled();
+  expect(pay).not.toHaveBeenCalled();
   expect(
     JSON.parse(screen.getByTestId("creation-attempt").textContent!),
   ).toEqual(retained);
-  expect(
-    JSON.parse(screen.getByTestId("creation-suppressed").textContent!),
-  ).toEqual([]);
-  expect(document.querySelector(".booking-flow-overlay")).toBeNull();
+  const previousReads = contextReads;
+  verified = true;
+  vi.setSystemTime(Date.now() + 5000);
+  await act(async () => fireEvent.focus(window));
+  expect(contextReads).toBeGreaterThan(previousReads);
+  expect(reads).toHaveLength(7);
+  expect(reads[5].signal.aborted).toBe(true);
+  expect(screen.queryByRole("button", { name: /12:00–12:40/ })).toBeNull();
+  await act(async () => reads[6].resolve(offers));
   fireEvent.click(screen.getByRole("button", { name: /12:00–12:40/ }));
   fireEvent.change(
     screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`),
@@ -1057,18 +1140,10 @@ test("pre-checkout recovery restores fresh display times without releasing the o
   expect(JSON.parse(screen.getByTestId("creation-cart").textContent!)).toEqual([
     original,
   ]);
-  expect(
-    screen.getAllByRole("button", { name: /^Enter contact details/ })[0],
-  ).toBeDisabled();
-  await act(async () => fireEvent.click(screen.getByText("Try Review")));
-  expect(reviewResult).toBe(false);
-  fireEvent.click(screen.getByText("Try checkout"));
-  expect(checkout).not.toHaveBeenCalled();
-  expect(pay).not.toHaveBeenCalled();
-  expect(
-    JSON.parse(screen.getByTestId("creation-attempt").textContent!),
-  ).toEqual(retained);
-  fireEvent.click(screen.getByText("Verified no creation"));
+  const continuation = await screen.findByRole("link", {
+    name: /^Enter contact details/,
+  });
+  expect(continuation).toHaveAttribute("href", "/book/details");
   expect(
     JSON.parse(screen.getByTestId("creation-attempt").textContent!),
   ).toBeNull();

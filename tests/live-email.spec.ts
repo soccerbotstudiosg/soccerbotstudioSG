@@ -2286,6 +2286,55 @@ test("concurrent browser tabs reuse one hold and payment and reject revoked acce
 
 // Failure journeys use the real Worker/API/storage implementation. Only provider
 // replies or the delivery of an already-completed HTTP response are faulted.
+/** Choose the requested times through Calendar and open the actual Details route. */
+async function enterSessionDetails(
+  page: Page,
+  mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
+  starts: number[],
+) {
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const offset =
+    (+mechanism.date.slice(0, 4) - +today.slice(0, 4)) * 12 +
+    +mechanism.date.slice(5, 7) -
+    +today.slice(5, 7);
+  await page
+    .getByLabel("Calendar month", { exact: true })
+    .selectOption(String(offset));
+  const label = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${mechanism.date}T04:00:00Z`));
+  await page.getByRole("button", { name: label, exact: true }).click();
+  for (const startMs of starts) {
+    const start = new Date(startMs + 28800000).toISOString().slice(11, 16);
+    await page
+      .getByRole("group", { name: "Session times" })
+      .getByRole("button", { name: new RegExp(`${start}–`) })
+      .click();
+    await page
+      .getByRole("combobox", { name: new RegExp(`Trainer for .* at ${start}`) })
+      .selectOption({ index: 1 });
+  }
+  await page
+    .getByRole("link", {
+      name: /^Enter contact details(?: \$[\d,.]+)?$/,
+      exact: true,
+    })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Your details", exact: true }),
+  ).toBeVisible();
+}
+
 async function guestDetails(
   page: Page,
   mechanism: Awaited<ReturnType<typeof createBookingMechanism>>,
@@ -2309,51 +2358,11 @@ async function guestDetails(
   await page
     .getByRole("link", { name: "Choose sessions", exact: true })
     .click();
-  const today = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Singapore",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-  const offset =
-    (+mechanism.date.slice(0, 4) - +today.slice(0, 4)) * 12 +
-    +mechanism.date.slice(5, 7) -
-    +today.slice(5, 7);
-  await page
-    .getByLabel("Calendar month", { exact: true })
-    .selectOption(String(offset));
-  const label = new Intl.DateTimeFormat("en-SG", {
-    timeZone: "Asia/Singapore",
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${mechanism.date}T04:00:00Z`));
-  await page.getByRole("button", { name: label, exact: true }).click();
   const starts = journey?.starts ?? [
     mechanism.startMs,
     ...(batch ? [mechanism.startMs + 3000000] : []),
   ];
-  for (const startMs of starts) {
-    const start = new Date(startMs + 28800000).toISOString().slice(11, 16);
-    await page
-      .getByRole("group", { name: "Session times" })
-      .getByRole("button", { name: new RegExp(`${start}–`) })
-      .click();
-    await page
-      .getByRole("combobox", { name: new RegExp(`Trainer for .* at ${start}`) })
-      .selectOption({ index: 1 });
-  }
-  await page
-    .getByRole("link", {
-      name: /^Enter contact details(?: \$[\d,.]+)?$/,
-      exact: true,
-    })
-    .first()
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Your details", exact: true }),
-  ).toBeVisible();
+  await enterSessionDetails(page, mechanism, starts);
   await page.getByLabel("Full name", { exact: false }).fill("Synthetic Guest");
   await page
     .getByRole("textbox", { name: /^Email address/ })
@@ -2839,14 +2848,14 @@ async function uncertainHolding(
       // it does not renew the expired foreground wait or replay the write.
       const resolvedNotice = page.getByRole("alert").filter({
         hasText:
-          "Some sessions may no longer be available. Please check again.",
+          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
       });
       await page.reload();
       await observedResolution;
       await expect(page).toHaveURL(/\/book\/time\/$/);
       await expect(
         page.getByText(
-          "Some sessions may no longer be available. Please check again.",
+          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
           { exact: true },
         ),
       ).toBeVisible();
@@ -2896,10 +2905,19 @@ async function uncertainHolding(
       ).toBeVisible();
       await expect(
         page.getByText(
-          "Some sessions may no longer be available. Please check again.",
+          "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
           { exact: true },
         ),
       ).toHaveCount(0);
+      // A failed checkout must leave a genuinely bookable route for the same time.
+      await enterSessionDetails(page, mechanism, [mechanism.startMs]);
+      await expect(page).toHaveURL(/\/book\/details\/$/);
+      await expect(
+        page.getByRole("heading", { name: "Booking Contact" }),
+      ).toBeVisible();
+      expect(
+        mechanism.calls.filter((call) => call.body?.method === "book"),
+      ).toHaveLength(1);
     }
   } finally {
     await stopMechanism(page, mechanism, transport);

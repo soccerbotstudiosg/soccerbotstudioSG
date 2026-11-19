@@ -22,9 +22,16 @@ export async function confirmationSnapshot(
       `
     SELECT a.id,a.created_ms,a.deadline_ms,a.state,a.intent_json,a.intent_hash,
       a.association_json,a.observation_json,a.confirmation_next_ms,
+      CASE WHEN a.association_json IS NOT NULL AND a.state='recovery_required' AND a.observation_json IS NULL AND r.route='hitpay' AND p.attempt_id IS NULL
+        THEN EXISTS(SELECT 1 FROM native_checkout_grants g JOIN recovery_work w ON w.attempt_id=g.attempt_id
+          WHERE g.attempt_id=a.id AND g.intent_hash=a.intent_hash AND min(g.expires_ms,a.deadline_ms)>?
+          AND g.ongoing=1 AND g.state IN ('running','blocked') AND json_type(g.result_json,'$.hostedCheckoutRequested')='true'
+          AND w.state IN ('due','claimed') AND w.reason IN ('interrupted','creation_lookup'))
+        ELSE 0 END AS recovering_hosted_checkout,
       CASE WHEN d.attempt_id IS NULL THEN NULL ELSE json_object('order_number',d.order_number,'document_number',d.document_number) END AS invoice_document_json,
       r.route,c.booking_created_ms,c.payment_window_ms,c.checking_buffer_ms,c.recovery_buffer_ms,c.confirmation_json,
       (SELECT expires_ms FROM hitpay_holds WHERE attempt_id=a.id) AS hold_expires_ms,
+      EXISTS(SELECT 1 FROM recovery_work w WHERE w.attempt_id=a.id AND w.state='manual_review' AND w.reason IN ('native_booking_paid_review','native_booking_cancelled_review','creation_lookup_exhausted')) AS native_creation_review,
       CASE WHEN p.attempt_id IS NULL THEN NULL ELSE json_object(
         'attempt_id',p.attempt_id,'scope_json',p.scope_json,'reference',p.reference,
         'request_id',p.request_id,'checkout_url',p.checkout_url,'expires_ms',p.expires_ms,
@@ -45,9 +52,10 @@ export async function confirmationSnapshot(
     WHERE a.id=? AND a.owner_id=?
   `,
     )
-    .bind(id, owner)
+    .bind(Date.now(), id, owner)
     .first<
       StoredAttempt & {
+        recovering_hosted_checkout: number;
         invoice_document_json: string | null;
         intent_hash: string;
         confirmation_next_ms: number;
@@ -59,6 +67,7 @@ export async function confirmationSnapshot(
         hold_expires_ms: number | null;
         confirmation_json: string | null;
         payment_json: string | null;
+        native_creation_review: number;
         availability_json: string | null;
       }
     >();
@@ -68,7 +77,11 @@ export async function confirmationSnapshot(
     : null;
   return {
     row,
-    payment: { route: row.route, payment },
+    payment: {
+      route: row.route,
+      payment,
+      nativeCreationReview: row.native_creation_review === 1,
+    },
     deadline:
       row.booking_created_ms === null
         ? row.deadline_ms

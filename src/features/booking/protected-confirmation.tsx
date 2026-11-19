@@ -172,6 +172,7 @@ function ProtectedConfirmationBody({
   calendarRecovery = false,
   silent = false,
   onPaymentDetected,
+  onCheckoutRecovered,
   onSelectionRejected,
   onCreationResolved,
 }: {
@@ -188,6 +189,7 @@ function ProtectedConfirmationBody({
   /** Continue protected recovery without rendering status on other draft steps. */
   silent?: boolean;
   onPaymentDetected?: (attemptId: string) => void;
+  onCheckoutRecovered?: (attemptId: string) => void;
   onCreationResolved?: (
     attemptId: string,
     sessions?: CheckoutContext["summary"]["sessions"],
@@ -649,9 +651,12 @@ function ProtectedConfirmationBody({
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
+        const pollingDeadline = calendarRecovery
+          ? value.checking.deadlineMs
+          : checkoutRecoveryDeadline(attemptId);
         pollAfterMs = Math.max(
           value.checking.pollAfterMs,
-          Date.now() >= checkoutRecoveryDeadline(attemptId) ? 30000 : 5000,
+          Date.now() >= pollingDeadline ? 30000 : 5000,
         );
         setContext({ value, revision: sessionRevision });
       } catch (error) {
@@ -693,7 +698,14 @@ function ProtectedConfirmationBody({
       window.removeEventListener("focus", resume);
       document.removeEventListener("visibilitychange", resume);
     };
-  }, [incomplete, linkRecovering, checkoutMode, attemptId, sessionRevision]);
+  }, [
+    incomplete,
+    linkRecovering,
+    checkoutMode,
+    attemptId,
+    sessionRevision,
+    calendarRecovery,
+  ]);
   const selectionRejection =
     view === "denied"
       ? undefined
@@ -983,6 +995,16 @@ function ProtectedConfirmationBody({
         router.replace(
           `/confirmation/?attempt=${encodeURIComponent(attemptId)}`,
         );
+      } else if (
+        link &&
+        isHitpayCheckoutUrl(link.url) &&
+        !paymentWindowEnded &&
+        !wantsExpiry &&
+        showLink &&
+        !rejectionState &&
+        !creationResolved
+      ) {
+        onCheckoutRecovered?.(attemptId);
       }
       return;
     }
@@ -1021,6 +1043,10 @@ function ProtectedConfirmationBody({
     attemptId,
     onAwaitingExpiry,
     onPaymentDetected,
+    onCheckoutRecovered,
+    link,
+    showLink,
+    creationResolved,
     router,
   ]);
   const receiptUnavailable =
@@ -1186,6 +1212,12 @@ function ProtectedConfirmationBody({
                 : CHECKOUT_UNRESOLVED}
             </strong>
           </p>
+          {!paymentReceived && !recordedPayment && (
+            <p>
+              Please wait before paying again. Your first payment may have gone
+              through.
+            </p>
+          )}
         </div>
       </BookingHelp>
     );

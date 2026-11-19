@@ -4774,6 +4774,7 @@ test("operator no-creation proof rejects stale partial paid held and unverified 
       "stale",
       "unfinished",
       "before-dispatch",
+      "retained-provider-response",
       "observed",
       "reference",
       "association",
@@ -4787,6 +4788,24 @@ test("operator no-creation proof rejects stale partial paid held and unverified 
       if (scenario === "stale") proof.version = 1;
       if (scenario === "unfinished") proof.processingFinished = false;
       if (scenario === "before-dispatch") proof.verifiedMs = 1;
+      if (scenario === "retained-provider-response")
+        await f.db
+          .prepare(
+            "UPDATE native_checkout_grants SET result_json=? WHERE attempt_id=?",
+          )
+          .bind(
+            JSON.stringify({
+              holdEvidence: [
+                {
+                  operation: "book",
+                  bookings: [{ id: "701" }],
+                  invoice: { id: "901" },
+                },
+              ],
+            }),
+            a.id,
+          )
+          .run();
       if (scenario === "observed")
         await f.db
           .prepare(

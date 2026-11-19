@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { ApiError } from "./policy";
+import {
+  isSingleBookPrecondition,
+  type CompletedBookRpcError,
+  type SingleBookPrecondition,
+} from "./provider-transport";
 
 const proofSchema = z.strictObject({
   attemptId: z.string().uuid(),
@@ -12,11 +17,52 @@ const proofSchema = z.strictObject({
   noBookingCreated: z.literal(true),
 });
 type Proof = z.infer<typeof proofSchema>;
+export type CreationLookupClaim = {
+  claimant: string;
+  generation: number;
+  attempt_version: number;
+};
+export const creationLookupLease =
+  "EXISTS(SELECT 1 FROM recovery_work r WHERE r.attempt_id=a.id AND r.attempt_version=a.version AND r.state='claimed' AND r.claimant=? AND r.generation=? AND r.ready_ms>?)";
+/** Bind a completed provider error to its exact outstanding dispatch before readback. */
+export async function retainCompletedBookRpc(
+  env: Env,
+  id: string,
+  hash: string,
+  fence: number,
+  error: CompletedBookRpcError,
+) {
+  await env.STATE.withSession("first-primary")
+    .prepare(
+      `INSERT INTO native_creation_checks(attempt_id,intent_hash,dispatch_fence,book_rpc_id,book_rpc_code,book_rpc_ended_ms)
+       SELECT a.id,a.intent_hash,d.fence,?,?,? FROM attempts a JOIN dispatches d ON d.attempt_id=a.id
+       WHERE a.id=? AND a.intent_hash=? AND d.operation='booking.create' AND d.outcome='unknown' AND d.fence=? AND d.started_ms<=?
+       ON CONFLICT(attempt_id) DO UPDATE SET book_rpc_id=excluded.book_rpc_id,book_rpc_code=excluded.book_rpc_code,book_rpc_ended_ms=excluded.book_rpc_ended_ms,first_empty_ms=NULL
+       WHERE native_creation_checks.intent_hash=excluded.intent_hash AND native_creation_checks.dispatch_fence=excluded.dispatch_fence AND native_creation_checks.book_rpc_id IS NULL`,
+    )
+    .bind(
+      error.requestId,
+      error.rpcCode,
+      error.receivedAtMs,
+      id,
+      hash,
+      fence,
+      error.receivedAtMs,
+    )
+    .run();
+}
 type Authority =
+  | {
+      kind: "correlated_rpc_search";
+      rpcCode: number;
+      dispatchFence: number;
+      requestId: string;
+      claim: CreationLookupClaim;
+    }
   | { kind: "operator"; capabilityHash: string; grantJson: string }
   | {
       kind: "correlated_rpc_rejection";
-      rpcCode: -32053 | -32054;
+      rpcCode: SingleBookPrecondition;
       dispatchFence: number;
     };
 
@@ -34,7 +80,8 @@ export async function recordNoCreation(
   if (
     !operator &&
     (authority.dispatchFence !== proof.dispatchFence ||
-      ![-32053, -32054].includes(authority.rpcCode))
+      (authority.kind === "correlated_rpc_rejection" &&
+        !isSingleBookPrecondition(authority.rpcCode)))
   )
     return false;
   const source = operator
@@ -42,19 +89,22 @@ export async function recordNoCreation(
     : "correlated_rpc_rejection";
   const reference = operator
     ? proof.evidenceReference
-    : `book:${authority.rpcCode}:${proof.evidenceReference}`;
+    : authority.kind === "correlated_rpc_search"
+      ? `book-search:${authority.rpcCode}:${authority.requestId}`
+      : `book:${authority.rpcCode}:${proof.evidenceReference}`;
   if (reference.length > 128) return false;
   const db = env.STATE.withSession("first-primary");
   const guard = `a.id=? AND a.intent_hash=? AND a.version=? AND a.state IN ('dispatching','recovery_required')
     AND a.association_json IS NULL AND a.observation_json IS NULL
     AND EXISTS(SELECT 1 FROM dispatches d WHERE d.attempt_id=a.id AND d.operation='booking.create' AND d.outcome='unknown' AND d.fence=? AND d.started_ms<=?)
-    AND EXISTS(SELECT 1 FROM native_checkout_grants g WHERE g.attempt_id=a.id AND g.intent_hash=a.intent_hash)
+    AND EXISTS(SELECT 1 FROM native_checkout_grants g WHERE g.attempt_id=a.id AND g.intent_hash=a.intent_hash AND COALESCE(json_array_length(g.result_json,'$.holdEvidence'),0)=0)
     AND NOT EXISTS(SELECT 1 FROM no_creation_resolutions n WHERE n.attempt_id=a.id)
     AND NOT EXISTS(SELECT 1 FROM session_effects e WHERE e.attempt_id=a.id AND (e.outcome='observed' OR e.reference_id IS NOT NULL))
     AND NOT EXISTS(SELECT 1 FROM hitpay_payments p WHERE p.attempt_id=a.id)
     AND NOT EXISTS(SELECT 1 FROM hitpay_holds h WHERE h.attempt_id=a.id)
     AND NOT EXISTS(SELECT 1 FROM checkout_progress c WHERE c.attempt_id=a.id)
     AND NOT EXISTS(SELECT 1 FROM invoice_documents i WHERE i.attempt_id=a.id)
+    ${authority.kind === "correlated_rpc_search" ? `AND EXISTS(SELECT 1 FROM native_creation_checks c WHERE c.attempt_id=a.id AND c.intent_hash=a.intent_hash AND c.dispatch_fence=? AND c.book_rpc_id=? AND c.book_rpc_code=? AND c.book_rpc_ended_ms<=c.first_empty_ms AND c.list_result='empty' AND c.windows_available IS NOT NULL AND c.checked_ms=? AND c.checked_ms-c.first_empty_ms>=5000) AND ${creationLookupLease}` : ""}
     ${
       operator
         ? "AND EXISTS(SELECT 1 FROM developer_operations o WHERE o.capability_hash=? AND o.operation='native_creation_resolution' AND o.state='granted' AND o.expires_ms>? AND o.result_json=?)"
@@ -76,6 +126,17 @@ export async function recordNoCreation(
         proof.version,
         proof.dispatchFence,
         proof.verifiedMs,
+        ...(authority.kind === "correlated_rpc_search"
+          ? [
+              proof.dispatchFence,
+              authority.requestId,
+              authority.rpcCode,
+              proof.verifiedMs,
+              authority.claim.claimant,
+              authority.claim.generation,
+              now,
+            ]
+          : []),
         ...(operator
           ? [authority.capabilityHash, now, authority.grantJson]
           : []),

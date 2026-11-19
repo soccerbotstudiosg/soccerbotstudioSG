@@ -119,6 +119,10 @@ test("rejects provider redirects alternate hosts and unreserved dispatch", () =>
       'https://other.invalid/invoices/"',
     ],
     [
+      'https://user-api-v2.simplybook.me/admin/bookings"',
+      'https://other.invalid/bookings"',
+    ],
+    [
       'https://user-api-v2.simplybook.me/admin/bookings/"',
       'https://other.invalid/bookings/"',
     ],

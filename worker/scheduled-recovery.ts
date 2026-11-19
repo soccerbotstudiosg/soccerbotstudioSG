@@ -1,4 +1,5 @@
 import { hitpayRecoveryEnabled } from "./hitpay-contract";
+import { dueUnknownCreation } from "./creation-recovery-schedule";
 import { ongoingReadbackDue, ongoingReadbackEnabled } from "./ongoing-readback";
 import { z } from "zod";
 import { coordinatorStub, verifyBindings } from "./bindings";
@@ -50,8 +51,14 @@ export async function runScheduledRecovery(
   }
   if (capabilityHash === undefined && ongoingReadbackEnabled(env)) {
     await verifyBindings(env);
+    const creation = await dueUnknownCreation(env, now);
+    if (creation)
+      await coordinatorStub(env).recoverUnknownCreation(
+        creation.id,
+        crypto.randomUUID(),
+      );
     const due = await ongoingReadbackDue(env, now);
-    if (!due) return { state: "idle" };
+    if (!due) return { state: creation ? "complete" : "idle" };
     await coordinatorStub(env).ongoingRecovery(due.id, crypto.randomUUID());
     return { state: "complete" };
   }
