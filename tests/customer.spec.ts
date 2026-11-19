@@ -978,6 +978,13 @@ test("public routes remove staff access and fit the viewport", async ({
   expect(contentBox).not.toBeNull();
   expect(heroBox!.width).toBeCloseTo(page.viewportSize()!.width, 0);
   expect(contentBox!.y).toBeCloseTo(heroBox!.y + heroBox!.height + 12, 0);
+  const studioBackAlignment = page.locator(".studio-back");
+  const backIcon = await studioBackAlignment.locator("svg").boundingBox();
+  const backLabel = await studioBackAlignment.locator("span").boundingBox();
+  expect(backIcon!.y + backIcon!.height / 2).toBeCloseTo(
+    backLabel!.y + backLabel!.height / 2,
+    0,
+  );
   const signatureBox = await page.locator(".studio-signature").boundingBox();
   const studioHeaderBox = await page.locator(".site-header").boundingBox();
   expect(signatureBox).not.toBeNull();
@@ -1014,6 +1021,9 @@ test("public routes remove staff access and fit the viewport", async ({
     );
     const studioImage = row.locator(".studio-photo img");
     await expect(studioImage).toHaveCSS("object-fit", "cover");
+    await expect(studioImage).toHaveAttribute("src", /\.webp$/);
+    await expect(studioImage).toHaveAttribute("srcset", /640\.webp 640w/);
+    await expect(studioImage).toHaveAttribute("sizes", /100vw|134vw/);
     const photoFrame = await row.locator(".studio-photo").boundingBox();
     const imageBox = await studioImage.boundingBox();
     expect(imageBox!.width).toBeGreaterThanOrEqual(photoFrame!.width);
@@ -1271,6 +1281,23 @@ test("public routes remove staff access and fit the viewport", async ({
   await home.press("Enter");
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".site-header")).toBeVisible();
+  const heroPhoto = page.locator(".arena-photograph img");
+  await expect(heroPhoto).toHaveAttribute("src", /\.webp$/);
+  await expect(heroPhoto).toHaveAttribute("srcset", /640\.webp 640w/);
+  await expect(heroPhoto).toHaveAttribute("fetchpriority", "high");
+  if (page.viewportSize()!.width <= 700) {
+    await expect
+      .poll(async () => {
+        const stage = await page.locator(".booking-stage").boundingBox();
+        return stage!.y + stage!.height;
+      })
+      .toBeGreaterThanOrEqual(page.viewportSize()!.height);
+    await expect(page.locator(".home-promotion--studio")).toHaveCSS(
+      "position",
+      "relative",
+    );
+  }
+
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await expect
     .poll(() =>
@@ -1418,7 +1445,7 @@ test("50-minute cadence, chosen instructors, contact validation and final-slot c
   }
   await expect(
     page.getByRole("button", { name: /^Review Booking \$[\d,.]+$/ }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await page.getByLabel("Full name", { exact: false }).blur();
   await expect(page.locator("#name")).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#details-form input")).toHaveCount(4);
@@ -1759,7 +1786,11 @@ test("enquiry remains available without external submission or a mock assistant"
   await expect(page.locator('.enquiry-form [aria-invalid="true"]')).toHaveCount(
     0,
   );
-  await expect(enquiryAction).toHaveAttribute("data-valid", "false");
+  await expect(enquiryAction).toBeEnabled();
+  await expect(enquiryAction).toHaveCSS(
+    "background-color",
+    "rgb(70, 172, 220)",
+  );
   await page.getByLabel("Your requirements").focus();
   await page.getByLabel("Your requirements").blur();
   await expect(page.locator("#enquiry-message-error")).toHaveText(
@@ -1782,7 +1813,7 @@ test("enquiry remains available without external submission or a mock assistant"
   await page
     .getByLabel("Your requirements")
     .fill("A group session for our team.");
-  await expect(enquiryAction).toHaveAttribute("data-valid", "true");
+  await expect(enquiryAction).toBeEnabled();
   await expect(page.locator("#enquiry-message-error")).toHaveCount(0);
   await page.getByRole("button", { name: "Send enquiry" }).click();
   await expect(page).toHaveURL(new RegExp(`${sitePath("/enquiry/")}$`));
@@ -2184,7 +2215,7 @@ test("oracle booking sizing and crossing sessions persist through checkout", asy
     page.getByRole("group", { name: "Session times" }).getByRole("button"),
   ).toHaveCount(9);
   const timeCards = await page
-    .locator(".times > .time-choice")
+    .locator(".times > .time-choice-wrap > .time-choice")
     .evaluateAll((cards) =>
       cards.map((card) => ({
         start: card.querySelector(".time-range")!.textContent!.slice(0, 5),
@@ -2459,6 +2490,11 @@ test("leave booking uses equal-width sentence-case actions with home left and st
     .click();
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await expect(page.locator(".page-loading")).toHaveCount(1);
+  const loadingMessage = page.locator(".page-loading-message");
+  await expect(loadingMessage).toHaveCSS("font-family", /Roboto/);
+  await expect(loadingMessage).toHaveCSS("font-size", "18px");
+  await expect(loadingMessage).toHaveCSS("font-weight", "500");
+  await expect(loadingMessage).toHaveCSS("color", "rgb(16, 22, 54)");
   await releaseHome();
   await expect(page.locator("#page-refresh")).toHaveCount(0);
   await expect(page.locator(".arena-booking")).toBeVisible();
@@ -2757,7 +2793,7 @@ function bookingTypography(page: Page) {
           width: node.clientWidth,
           textWidth: node.scrollWidth,
         }));
-        expect(line.height).toBeCloseTo(line.lineHeight, 0);
+        if (!calendarNote) expect(line.height).toBeCloseTo(line.lineHeight, 0);
         expect(line.textWidth).toBeLessThanOrEqual(line.width);
       }
     }
@@ -2780,7 +2816,7 @@ function bookingTypography(page: Page) {
           ["Apex @ Henderson", "Kickoff Special"],
         );
         await expect(
-          page.locator(".calendar-panel .calendar-duration-note"),
+          page.locator(".time-heading .calendar-duration-note"),
         ).toBeVisible();
         const geometry = await page.locator(".time-heading").evaluate((row) => {
           const date = row.querySelector("h2")!.getBoundingClientRect();
@@ -4023,20 +4059,26 @@ test("hero location opens its map only on demand without entering booking and he
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("201 Henderson Road");
   await expect(dialog).toContainText("#05-01");
-  await expect(dialog.locator("iframe")).toHaveAttribute(
-    "title",
-    "Satellite map of Apex at Henderson and surrounding roads",
+  await expect(dialog.locator("iframe")).toHaveCount(0);
+  await expect(dialog.getByRole("img")).toHaveAccessibleName(/Level 5 guide/);
+  await expect(dialog).toContainText("Open daily · 12pm–8pm");
+  await expect(dialog).toContainText(
+    "If coming up from the food court at #03-18",
   );
+  await expect(dialog).toContainText("Lift Lobby 3");
+  await expect(dialog).toContainText("PL-5 / PL-6");
+  await expect(dialog).toContainText("SL-1 / SL-2");
+  await expect(dialog.locator("path.studio-plan-unit")).toHaveCSS(
+    "fill",
+    "rgb(70, 172, 220)",
+  );
+  await expect(dialog.locator(".studio-plan-route")).toHaveCSS(
+    "stroke",
+    "rgb(70, 172, 220)",
+  );
+  expect(maps).toBe(0);
   await expect(
-    page
-      .frameLocator(
-        'iframe[title="Satellite map of Apex at Henderson and surrounding roads"]',
-      )
-      .getByText("Synthetic satellite map"),
-  ).toBeVisible();
-  expect(maps).toBe(1);
-  await expect(
-    dialog.getByRole("link", { name: "Open Google Maps" }),
+    dialog.getByRole("link", { name: "Open in Google Maps" }),
   ).toHaveAttribute("target", "_blank");
   await expect(page).toHaveURL(new RegExp(sitePath("/") + "$"));
   await dialog.getByRole("button", { name: "Close dialog" }).click();
@@ -4442,6 +4484,21 @@ async function expectCalendarHeadingLayout(page: Page) {
         .locator(width > 700 ? ".booking-top-title" : ".booking-main")
         .getByRole("heading", { name: "Select dates and times", exact: true }),
     ).toBeVisible();
+    await expect(page.locator(".booking-top .eyebrow")).toHaveCount(0);
+    const verified = page.locator(".booking-verified-status");
+    if (await verified.count()) {
+      await expect(verified.locator("strong")).toHaveCSS(
+        "white-space",
+        "nowrap",
+      );
+      await expect(verified.locator("span")).toHaveCSS("white-space", "nowrap");
+      const fits = await verified.locator("span").evaluate((node) => {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        return range.getBoundingClientRect().width <= node.clientWidth + 1;
+      });
+      expect(fits).toBe(true);
+    }
     const geometry = await calendarTitle.evaluate((node) => {
       const title = node.getBoundingClientRect();
       const badge = document

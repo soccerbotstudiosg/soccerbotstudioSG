@@ -1,4 +1,5 @@
 "use client";
+import { focusFormError } from "@/components/form-focus";
 import { BookingPrimaryAction } from "@/features/booking/booking-primary-action";
 import { PhoneInput } from "@/features/booking/phone-input";
 import { EnquiryBotProof } from "@/features/booking/email-bot-proof";
@@ -170,7 +171,16 @@ export function EnquiryPage() {
           setTouched(
             Object.fromEntries(Object.keys(blank).map((key) => [key, true])),
           );
-          if (Object.keys(validation).length || (live && !botToken)) return;
+          if (Object.keys(validation).length) {
+            focusFormError(
+              event.currentTarget,
+              Object.keys(validation).map((key) =>
+                key === "phone" ? "phone" : `enquiry-${key}`,
+              ),
+            );
+            return;
+          }
+          if (live && !botToken) return;
           sending.current = true;
           setBusy(true);
           setError("");
@@ -301,10 +311,11 @@ export function EnquiryPage() {
         >
           <button
             className="button wide"
-            data-valid={
-              ready && !Object.keys(validation).length ? "true" : "false"
+            disabled={
+              !ready ||
+              busy ||
+              (live && !botToken && !Object.keys(validation).length)
             }
-            disabled={!ready || busy || (live && !botToken)}
           >
             {(busy ||
               (live && proofPending && !Object.keys(validation).length)) && (

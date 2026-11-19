@@ -1,4 +1,5 @@
 "use client";
+import { focusField } from "@/components/form-focus";
 import { BookingHeading, VerifiedEmailStatus } from "./booking-heading";
 import { BookingPrimaryAction } from "./booking-primary-action";
 import { BookingLoading } from "./booking-loading";
@@ -321,7 +322,7 @@ export function AccountStep({
     const normalizedEmail = email.trim();
     if (!validEmail(normalizedEmail)) {
       setError("Enter a valid email address.");
-      document.getElementById("auth-email")?.focus();
+      focusField(document.getElementById("auth-email"));
       return;
     }
     void perform(async (signal) => {
@@ -570,6 +571,11 @@ export function AccountStep({
       )}
       <form
         className="surface auth-panel"
+        onInvalidCapture={(event) => {
+          focusField(
+            event.currentTarget.querySelector<HTMLElement>("input:invalid"),
+          );
+        }}
         onSubmit={(event) => {
           event.preventDefault();
           if (view === "email") request();

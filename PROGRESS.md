@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-19 November2026: PR100 on `fix/confirmation-copy-layout` remains open. Candidate0201099 passed all three required gates in run44403603895 and staged successfully in run44406162259 attempt2. Main remains860cfcf6a9a6237205cd063f80066c937148836a. No merge; physical iPad acceptance remains pending.
+19 November2026: repair PR101's Back-to-top regression on `fix/booking-status-alignment`, based onc7a4af5. The hover retention must not keep the circle visible at scrollY0. Clear interaction state at the top so later scrolling retains normal idle expiry. Preserve the existing browser guards and all prior approved changes. User authorizes repair/check/push for staging CI; no merge. iPad keyboard-dismiss behavior remains deferred.
 
 ## Next actions
 
-The owner requested a follow-up for delayed iPad page scrolling after keyboard dismissal and date/time hints inside enquiry inputs. The shell now follows late document scroll/header resize until deliberate visitor interaction, detecting keyboard reduction against the unobscured viewport baseline. Native date/time controls retain native pickers, with inside-field empty-state hints. A pre-fix focused regression failed as expected (/tmp/ipad-before.log). Two complete non-browser rounds passed on the unchanged candidate (400 unit/component cases each, all guards and production build/export); receipts are /tmp/ipad-round-a.json and /tmp/ipad-round-b.json. Push the same PR, monitor exact-head gates and confirm actual staging health. Owner/CI owns browser execution; request physical iPad acceptance after staging, before merge. Preserve all consolidated booking/expiry/navigation rules. See Journey for prior CI and deployment evidence.
+The expanded local component regression failed against the old implementation as expected. Run affected checks and full local non-browser verification, then push existing PR101 and inspect final-head CI/staging. Prior run44441916819's frontend/backend browser failures share this one cause; Worker gate and both live-email browser shards passed. Evidence is retained in [Journey](docs/journey.md). No local browser or live provider execution.
 
 ## Ordered work after this slice
 

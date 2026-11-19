@@ -70,6 +70,18 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
     );
     expect(button.className).toBe("back-to-top");
     expect(button.style.top).toBe("");
+    fireEvent.focus(button);
+    act(() => vi.advanceTimersByTime(5000));
+    expect(button).toBeVisible();
+    fireEvent.blur(button);
+    fireEvent.pointerEnter(button, { pointerType: "mouse" });
+    act(() => vi.advanceTimersByTime(5000));
+    expect(button).toBeVisible();
+    fireEvent.pointerDown(button);
+    fireEvent.pointerLeave(button);
+    act(() => vi.advanceTimersByTime(5000));
+    expect(button).toBeVisible();
+    fireEvent.pointerUp(window);
     act(() => vi.advanceTimersByTime(2999));
     expect(screen.getByRole("button", { name: "Back to top" })).toBeVisible();
     fireEvent.scroll(window);
@@ -78,7 +90,12 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
     act(() => vi.advanceTimersByTime(1));
     expect(screen.queryByRole("button", { name: "Back to top" })).toBeNull();
     fireEvent.scroll(window);
-    fireEvent.click(screen.getByRole("button", { name: "Back to top" }));
+    const returning = screen.getByRole("button", { name: "Back to top" });
+    fireEvent.pointerEnter(returning, { pointerType: "mouse" });
+    act(() => returning.focus());
+    fireEvent.pointerDown(returning);
+    fireEvent.pointerUp(window);
+    fireEvent.click(returning);
     expect(scroll).toHaveBeenLastCalledWith({
       top: 0,
       behavior: reduced ? "auto" : "smooth",
@@ -88,6 +105,12 @@ test("all routes show one chevron on scroll and hide after three idle seconds wi
       position = 0;
       fireEvent.scroll(window);
     });
+    expect(screen.queryByRole("button", { name: "Back to top" })).toBeNull();
+    // A removed hovered control must not retain interaction in the next scroll.
+    position = 100;
+    fireEvent.scroll(window);
+    expect(screen.getByRole("button", { name: "Back to top" })).toBeVisible();
+    act(() => vi.advanceTimersByTime(3000));
     expect(screen.queryByRole("button", { name: "Back to top" })).toBeNull();
     reduced = !reduced;
   }

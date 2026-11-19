@@ -54,7 +54,13 @@ test("promotion cards reveal on pointer focus and touch without inventing studio
     activeTitle: ["Step into", "the game."] as const,
     teaser: "A real ball. A whole new world.",
     description: "Full instructor guidance surrounds your group.",
-    photo: { src: "/photo.jpg", alt: "Studio arena", width: 800, height: 600 },
+    photo: {
+      src: "/photo.webp",
+      srcSet: "/photo.webp 800w",
+      alt: "Studio arena",
+      width: 800,
+      height: 600,
+    },
   };
   const view = render(<PromotionPanel {...props} />);
   const panel = screen.getByRole("region", { name: "Inside the arena." });

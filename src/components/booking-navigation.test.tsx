@@ -311,7 +311,13 @@ test("all four booking entry surfaces prepare fresh access on each return from h
       activeTitle={["Ready for", "kickoff?"]}
       teaser="Your game."
       description="A studio session."
-      photo={{ src: "/photo.jpg", alt: "Studio", width: 800, height: 600 }}
+      photo={{
+        src: "/photo.webp",
+        srcSet: "/photo.webp 800w",
+        alt: "Studio",
+        width: 800,
+        height: 600,
+      }}
       href="/book/account/"
       actionLabel="Book now"
     />,

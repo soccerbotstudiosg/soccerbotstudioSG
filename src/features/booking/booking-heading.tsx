@@ -58,13 +58,9 @@ export function VerifiedEmailStatus({ email }: { email: string }) {
     const badge = element?.parentElement;
     if (!element || !badge) return;
     let active = true;
-    /** Fit the complete mobile address inside the existing badge width. */
+    /** Fit the complete address inside the available badge width. */
     const fit = () => {
       if (!active) return;
-      if (window.innerWidth > 700) {
-        element.style.removeProperty("font-size");
-        return;
-      }
       const range = document.createRange();
       range.selectNodeContents(element);
       const width = range.getBoundingClientRect?.().width ?? 0;

@@ -129,7 +129,7 @@ test("details contains only the five contact fields and validates them before re
       <DetailsStep />
     </BookingProvider>,
   );
-  expect(screen.getByRole("button", { name: "Review Booking" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Review Booking" })).toBeEnabled();
   for (const label of [/Full name/, /Email address/, /Mobile number/])
     expect(screen.getByLabelText(label)).toHaveAttribute(
       "aria-invalid",
@@ -177,7 +177,8 @@ test("details contains only the five contact fields and validates them before re
   fireEvent.blur(method);
   expect(screen.getByText("Select a contact method.")).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Review Booking" }));
-  expect(screen.getByRole("button", { name: "Review Booking" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Review Booking" })).toBeEnabled();
+  expect(screen.getByLabelText(/Full name/)).toHaveFocus();
   expect(mocks.push).not.toHaveBeenCalled();
   await user.type(screen.getByLabelText(/Full name/), "Demo Customer");
   await user.type(
@@ -200,7 +201,7 @@ test("details contains only the five contact fields and validates them before re
   expect(
     confirmEmail.querySelectorAll(".email-transfer-particles circle"),
   ).toHaveLength(3);
-  expect(reviewButton).toBeDisabled();
+  expect(reviewButton).toBeEnabled();
   fireEvent.submit(document.getElementById("details-form")!);
   expect(mocks.push).not.toHaveBeenCalled();
   await user.click(confirmEmail);
@@ -238,7 +239,7 @@ test("details contains only the five contact fields and validates them before re
     target: { value: "changed@example.com" },
   });
   expect(confirmEmail).toHaveAttribute("aria-pressed", "false");
-  expect(reviewButton).toBeDisabled();
+  expect(reviewButton).toBeEnabled();
   expect(action).not.toHaveAttribute("data-halo");
   act(() =>
     notify(
@@ -255,7 +256,7 @@ test("details contains only the five contact fields and validates them before re
   fireEvent.change(screen.getByLabelText(/Email address/), {
     target: { value: "customer@example.com" },
   });
-  expect(reviewButton).toBeDisabled();
+  expect(reviewButton).toBeEnabled();
   await user.click(confirmEmail);
   expect(reviewButton).toBeEnabled();
   expect(

@@ -1958,7 +1958,9 @@ test("real payment recovery confirms the browser return from verified provider s
         if (!cover && seenCover) return;
         if (cover) {
           seenCover = true;
-          const message = cover.querySelector<HTMLElement>(".text-muted");
+          const message = cover.querySelector<HTMLElement>(
+            ".page-loading-message",
+          );
           if (message?.innerText.trim() !== "Refreshing…")
             document.documentElement.dataset.unexpectedRefreshMessage =
               message?.innerText ?? "missing";
