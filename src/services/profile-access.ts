@@ -6,16 +6,30 @@ let rememberedExpiry: number | null = null;
 let generation = 0;
 let denied = false;
 type AccessLoss = "profile" | "session";
+const accessEstablished = new Set<(newOwner: boolean) => void>();
 const listeners = new Set<(reason: AccessLoss) => void>();
 /** Capture the credential generation before dispatching a protected request. */
 export function profileAccessGeneration() {
   return generation;
 }
 /** Fence old denials after a successful explicit access establishment. */
-export function establishedProfileAccess(expiryHeader: string | null = null) {
+export function establishedProfileAccess(
+  expiryHeader: string | null = null,
+  newOwner = false,
+) {
   generation += 1;
   denied = false;
   rememberBookingAccessExpiry(expiryHeader);
+  for (const listener of accessEstablished) listener(newOwner);
+}
+/** Notify mounted booking state when the server renews access or establishes a new owner. */
+export function onBookingAccessEstablished(
+  listener: (newOwner: boolean) => void,
+) {
+  accessEstablished.add(listener);
+  return () => {
+    accessEstablished.delete(listener);
+  };
 }
 /** Notify once for the current credential generation, never for stale requests. */
 export function reportProfileAccessLoss(

@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-19 November2026: repair PR101's Back-to-top regression on `fix/booking-status-alignment`, based onc7a4af5. The hover retention must not keep the circle visible at scrollY0. Clear interaction state at the top so later scrolling retains normal idle expiry. Preserve the existing browser guards and all prior approved changes. User authorizes repair/check/push for staging CI; no merge. iPad keyboard-dismiss behavior remains deferred.
+Recover interrupted checkout and confirmation for the original customer attempt on the independent checkout-recovery branch based on main c57040c. Preserve the approved payment presentation, booking access rules and four-hour availability cutoff.
 
 ## Next actions
 
-The expanded local component regression failed against the old implementation as expected. Run affected checks and full local non-browser verification, then push existing PR101 and inspect final-head CI/staging. Prior run44441916819's frontend/backend browser failures share this one cause; Worker gate and both live-email browser shards passed. Evidence is retained in [Journey](docs/journey.md). No local browser or live provider execution.
+Verify the branch, publish the separate draft PR, and review its CI evidence. Owner staging/browser and provider acceptance remain pending. The companion policy, email and directions work has its own PR.
 
 ## Ordered work after this slice
 

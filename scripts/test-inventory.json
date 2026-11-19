@@ -992,6 +992,14 @@
     "title": "verified rejection permits Back and edits during classification without replaying payment"
   },
   {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "Back before dispatch cancels preparation and after dispatch preserves the original checkout through calendar and Home returns"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "renewed guest access preserves interrupted checkout while a new guest owner cannot inherit it"
+  },
+  {
     "file": "src/features/booking/email-bot-proof.test.tsx",
     "title": "email bot widget binds purpose clears expired proof and ignores callbacks after disposal"
   },

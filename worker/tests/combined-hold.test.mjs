@@ -3476,6 +3476,76 @@ test("five-call fresh snapshots cannot duplicate checkout across overlapping req
   }
 });
 
+test("original checkout recovers during booking and payment creation and after its successful reply is discarded", async () => {
+  const booking = Promise.withResolvers();
+  const finishBooking = Promise.withResolvers();
+  const payment = Promise.withResolvers();
+  const finishPayment = Promise.withResolvers();
+  const m = await createBookingMechanism({
+    respond: async (call) => {
+      if (call.body?.method === "book") {
+        booking.resolve();
+        await finishBooking.promise;
+      }
+      if (isHitPayApiCall(call) && call.method === "POST") {
+        payment.resolve();
+        await finishPayment.promise;
+      }
+    },
+  });
+  try {
+    const c = await customer(m);
+    const id = c.input.key;
+    const context = async () =>
+      checkoutResult(
+        m.mf.dispatchFetch(m.origin + `/api/attempts/${id}/checkout`, {
+          headers: c.headers,
+        }),
+        200,
+      );
+    const original = m.mf.dispatchFetch(
+      m.origin + `/api/booking/checkout/${id}`,
+      {
+        headers: c.headers,
+        method: "POST",
+        body: JSON.stringify({ ...c.input, accepted: true }),
+      },
+    );
+    await booking.promise;
+    const creatingBooking = await context();
+    assert.equal(creatingBooking.attemptId, id);
+    assert.equal(creatingBooking.checkout.state, "unavailable");
+    assert.equal(creatingBooking.confirmation, undefined);
+    finishBooking.resolve();
+    await payment.promise;
+    const creatingPayment = await context();
+    assert.equal(creatingPayment.attemptId, id);
+    assert.equal(creatingPayment.checkout.state, "unavailable");
+    assert.equal(creatingPayment.payment, undefined);
+    finishPayment.resolve();
+    const reply = await original;
+    assert.equal(reply.status, 200);
+    await reply.body.cancel();
+    const recovered = await context();
+    assert.equal(recovered.attemptId, id);
+    assert.equal(recovered.checkout.state, "available");
+    assert.equal((await context()).checkout.url, recovered.checkout.url);
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      1,
+    );
+    assert.equal(
+      m.calls.filter((call) => isHitPayApiCall(call) && call.method === "POST")
+        .length,
+      1,
+    );
+  } finally {
+    finishBooking.resolve();
+    finishPayment.resolve();
+    await m.close();
+  }
+});
+
 test("five-call speculative preparation cannot change a colliding foreign attempt", async () => {
   for (const [state, version] of [
     ["prepared", 0],
