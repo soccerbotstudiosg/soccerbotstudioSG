@@ -2308,7 +2308,7 @@ it("retries unavailable checkout context silently and returns expired checkout t
     monotonic = 24001;
     await vi.advanceTimersByTimeAsync(20000);
   });
-  expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
+  expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first, true);
   expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
   expect(
     JSON.parse(localStorage.getItem(`soccerbot-checking:${first}`)!).deadline,
@@ -2401,7 +2401,7 @@ it("retries unavailable checkout context silently and returns expired checkout t
         monotonic += 20000;
         await vi.advanceTimersByTimeAsync(20000);
       });
-      expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first);
+      expect(onAwaitingExpiry).toHaveBeenCalledExactlyOnceWith(first, true);
       expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
       expect(
         document.querySelector(
@@ -2566,7 +2566,7 @@ it("expiry reconciliation keeps one twenty-second foreground budget across refre
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1);
   });
-  expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+  expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
   expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
   view.rerender(tree(true));
   expect(
@@ -2778,7 +2778,7 @@ it("late unpaid-release acknowledgement cannot override newer payment evidence a
   for (let refresh = 0; refresh < 2; refresh++) {
     const remount = render(tree());
     await act(async () => {});
-    expect(awaiting).toHaveBeenCalledWith(first);
+    expect(awaiting).toHaveBeenCalledWith(first, true);
     if (vi.isFakeTimers())
       await act(async () => vi.advanceTimersByTimeAsync(1000));
     expect(document.querySelector(".booking-flow-overlay")).toBeNull();
@@ -2850,7 +2850,12 @@ it("repeat provider returns and direct revisits retain verified confirmation wit
 });
 
 it("expiry waits for the first paced post-expiry status response without extending recovery indefinitely", async () => {
-  for (const outcome of ["paid", "pending", "stalled"] as const) {
+  for (const outcome of [
+    "paid",
+    "pending",
+    "stalled",
+    "inconclusive",
+  ] as const) {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-09T00:00:00Z"));
     const started = Date.now();
@@ -2887,7 +2892,13 @@ it("expiry waits for the first paced post-expiry status response without extendi
           if (reads.length === 1)
             return Response.json(
               { status: "pending", reason: "payment_verification_pending" },
-              { headers: { "X-Next-Check": String(started + 21500) } },
+              {
+                headers: {
+                  "X-Next-Check": String(
+                    started + (outcome === "inconclusive" ? 10500 : 21500),
+                  ),
+                },
+              },
             );
           if (outcome === "stalled") return new Promise<Response>(() => {});
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -2896,7 +2907,9 @@ it("expiry waits for the first paced post-expiry status response without extendi
             reason:
               outcome === "paid"
                 ? "payment_received_booking_pending"
-                : "payment_verification_pending",
+                : outcome === "inconclusive"
+                  ? "payment_expiry_checks_inconclusive"
+                  : "payment_verification_pending",
           });
         }
         throw new Error(`Unexpected expiry request ${path}`);
@@ -2915,6 +2928,17 @@ it("expiry waits for the first paced post-expiry status response without extendi
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
+    if (outcome === "inconclusive") {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10500);
+      });
+      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
+      expect(navigation.replace).toHaveBeenLastCalledWith("/book/time/");
+      cleanup();
+      localStorage.clear();
+      sessionStorage.clear();
+      continue;
+    }
     await act(async () => {
       await vi.advanceTimersByTimeAsync(20000);
     });
@@ -2928,13 +2952,13 @@ it("expiry waits for the first paced post-expiry status response without extendi
     });
     expect(reads).toEqual([started, started + 21500]);
     if (outcome === "pending")
-      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
     else expect(awaiting).not.toHaveBeenCalled();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(9000);
     });
     if (outcome === "stalled")
-      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first);
+      expect(awaiting).toHaveBeenCalledExactlyOnceWith(first, true);
     if (outcome === "paid")
       expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
     cleanup();

@@ -428,16 +428,20 @@ export function TimeStep({
       )}
     </div>
   );
+  if (emailRejection?.phase === "checking")
+    return <BrandLoading label="Checking session availability…" />;
   const notices = (
     <Fragment key="booking-notices">
       {recoveryNotice}
-      {emailRejection && (
-        <RejectedEmailHelp
-          attemptId={emailRejection.id}
-          email={emailRejection.email}
-          availability={emailRejection.phase}
-        />
-      )}
+      {emailRejection &&
+        (emailRejection.phase === "unavailable" ||
+          emailRejection.phase === "unknown") && (
+          <RejectedEmailHelp
+            attemptId={emailRejection.id}
+            email={emailRejection.email}
+            availability={emailRejection.phase}
+          />
+        )}
       {selectionNotice &&
         (selectionNotice === CHECKOUT_UNRESOLVED && attempt ? (
           <BookingHelp
@@ -872,7 +876,6 @@ export function TimeStep({
                         )}
                         {choosing === key && (
                           <div className="trainer-choice">
-                            <span>Trainer</span>
                             <select
                               aria-label={`Trainer for ${slot.date} at ${slot.start}`}
                               value={selected ? sessionOfferKey(selected) : ""}
@@ -903,7 +906,7 @@ export function TimeStep({
                               }}
                             >
                               <option value="" disabled>
-                                Choose a trainer to add this session
+                                Choose a trainer
                               </option>
                               {offers.map((offer) => (
                                 <option

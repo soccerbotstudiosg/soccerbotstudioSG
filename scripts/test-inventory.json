@@ -889,6 +889,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "inconclusive payment checks return acknowledged replacement Review to Calendar help until the original payment resolves"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "explicit reservation reuses its hold for payment without preparing or checking availability again"
   },
   {

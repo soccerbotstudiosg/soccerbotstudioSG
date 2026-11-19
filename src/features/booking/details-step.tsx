@@ -572,7 +572,7 @@ export function DetailsStep({
           ? "Update your saved contact."
           : "Enter your contact details."}
       </p>
-      {!profileOnly && emailRejection && (
+      {!profileOnly && emailRejection?.phase === "details" && (
         <RejectedEmailHelp
           attemptId={emailRejection.id}
           email={emailRejection.email}

@@ -18,7 +18,7 @@ On9 November2026, PR49’s separate CodeQL findings check reported `js/incomplet
 | Minimatch advisory                                                   | Modern scoped dependency updated; legacy v3 was reported on4 November. The5 November npm audit reports zero findings. See the detailed disposition below.                                                                                                                                                                                                                                                                            | GitHub alert closure remains unverified. No audit suppression, alert dismissal or global incompatible override.                                                                                                                                                                    |
 | Cache diagnostic metadata                                            | PR26's original logger spread all supplied details into console output. A synthetic payload could add customer/token/URL fields and overwrite event identity. Current call sites supply controlled metadata; no observed customer leak is claimed. Runtime field/value allowlisting now rejects that unsafe extension path.                                                                                                          | Confirmed hardening gap, not a false positive. Unknown error codes lose specificity rather than exporting unreviewed text. Extend the reviewed vocabulary only with corresponding evidence.                                                                                        |
 
-### Minimatch advisory disposition (4 November 2026)
+### Minimatch advisory disposition
 
 [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) reports versions below 11.0.1. The lint dependency tree contained 10.2.6 under typescript-estree and 3.1.5 under ESLint/plugins. The scoped manifest override upgrades only typescript-estree to 11.0.4, whose named `minimatch()` API matches that caller. Remove the override when its upstream dependency range includes the reviewed fixed release.
 
@@ -47,7 +47,7 @@ Do not manufacture local tests for external settings. Current-account secret sca
 
 PR26's first follow-up CI passed browser execution but failed report aggregation because Playwright's truncated diagnostic Git-diff preview differed in Unicode replacement characters. The combiner compares substantive configuration while retaining the original preview as evidence; only `metadata.gitDiff` is excluded. [Regression tests](../../scripts/browser-shards.test.mjs) prove that changed commit identity, worker count, retries and other configuration remain rejected. Exact source/export/run binding remains independently required. Saved-report replay proves the aggregation repair, not acceptance of a new source head; see [Journey](../journey.md) for the failed run and replay counts.
 
-## Temporary picomatch risk acceptance (18 November 2026)
+## Temporary picomatch risk acceptance
 
 This is a genuine vulnerability accepted temporarily, **not a false positive or a fix**. Owner authorized the proposed bounded exception in this session on18 November2026. It covers only [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf), plus npm meta-vulnerabilities whose every root cause resolves to that advisory. Owner: repository maintainer. Expiry: **25 November2026,00:00 Singapore time**; remove earlier when a verified upstream fix is adopted. Reassess rather than automatically extend.
 

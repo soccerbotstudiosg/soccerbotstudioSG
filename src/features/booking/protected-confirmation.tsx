@@ -811,11 +811,16 @@ function ProtectedConfirmationBody({
     sessionRevision,
     recoveryTimedOut,
   ]);
+  const expiryChecksInconclusive =
+    !!responseEvidence &&
+    "reason" in responseEvidence &&
+    responseEvidence.reason === "payment_expiry_checks_inconclusive";
   const needsExpiryReconciliation =
     checkoutMode === "live" &&
     !calendarRecovery &&
     !postPayment &&
     paymentWindowEnded &&
+    !expiryChecksInconclusive &&
     !wantsExpiry &&
     !hasPaymentEvidence &&
     !rejectionState &&
@@ -987,7 +992,11 @@ function ProtectedConfirmationBody({
             ? bookingFromReceipt(current.details)
             : null;
   const returnExpiredCheckout = useEffectEvent(() => {
-    if (onAwaitingExpiry?.(attemptId)) {
+    const returned =
+      (expiryWaitEnded || expiryChecksInconclusive) && !wantsExpiry
+        ? onAwaitingExpiry?.(attemptId, true)
+        : onAwaitingExpiry?.(attemptId);
+    if (returned) {
       calendarReturned.current = attemptId;
       router.replace("/book/time/");
     } else if (confirmationRoute) {
@@ -1002,14 +1011,27 @@ function ProtectedConfirmationBody({
         router.replace(
           `/confirmation/?attempt=${encodeURIComponent(attemptId)}`,
         );
+        return;
+      }
+      if (
+        wantsExpiry ||
+        rejectionState ||
+        creationResolved ||
+        view === "denied"
+      )
+        return;
+      if (
+        expiryChecksInconclusive ||
+        (view === "unresolved" &&
+          current?.checking.recoveryEndsAtMs !== undefined &&
+          checkoutNow(current.clock) >= current.checking.recoveryEndsAtMs)
+      ) {
+        onAwaitingExpiry?.(attemptId, true);
       } else if (
         link &&
         isHitpayCheckoutUrl(link.url) &&
         !paymentWindowEnded &&
-        !wantsExpiry &&
-        showLink &&
-        !rejectionState &&
-        !creationResolved
+        showLink
       ) {
         onCheckoutRecovered?.(attemptId);
       }
@@ -1044,6 +1066,7 @@ function ProtectedConfirmationBody({
     wantsExpiry,
     paymentWindowEnded,
     reconcilingExpiry,
+    expiryChecksInconclusive,
     awaitingCreation,
     sessionRevision,
     rejectionState,

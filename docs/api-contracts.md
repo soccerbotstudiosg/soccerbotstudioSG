@@ -1,6 +1,8 @@
 # Domain operation inventory and API contracts
 
-This is the implementation contract for the current repository revision, not a public third-party API or proof that a route is enabled in client production. [Business rules](business-rules.md) owns invariants; [Complete journey](journey.md) owns sequencing and history. [Code owners](code-owners/index.md) expands the modules. When changing an operation, update its schemas, server owner, browser adapter, tests and this inventory together. Source links below are the exact validation/behavior owners, not alternative implementations.
+- This is the implementation contract for the current repository revision, not a public third-party API or proof that a route is enabled in client production. [Business rules](business-rules.md) owns invariants; [Complete journey](journey.md) owns sequencing and history. [Code owners](code-owners/index.md) expands the modules.
+- When changing an operation, update its schemas, server owner, browser adapter, tests and this inventory together.
+- Source links below are the exact validation/behavior owners, not alternative implementations.
 
 ## 1. Domain operation inventory
 
@@ -8,7 +10,11 @@ This is the implementation contract for the current repository revision, not a p
 
 Each operation records its name, source status, permission policy and evidence owners. The rows below describe the current source, **not a new all-tests-passed or production-acceptance count**. Tests linked are relevant evidence owners; current run outcomes belong in Progress. Worker tests use isolated workerd/D1/DO and synthetic provider interception, not real SimplyBook/HitPay payment execution.
 
-[Composition](../src/services/index.ts) selects booking/customerIdentity at build time; failed live requests never switch to demo. The separate `services.identity` remains local demo; enquiry selects its live or preview adapter at build time. The mock assistant and its reply contract are retired. The active public catalogue is `customerCatalogueService`; the unused legacy catalogue adapter has been removed. The protected confirmation service handles live checks instead of the disabled generic booking check/resolve methods.
+- [Composition](../src/services/index.ts) selects booking/customerIdentity at build time; failed live requests never switch to demo.
+- The separate `services.identity` remains local demo; enquiry selects its live or preview adapter at build time.
+- The mock assistant and its reply contract are retired.
+- The active public catalogue is `customerCatalogueService`; the unused legacy catalogue adapter has been removed.
+- The protected confirmation service handles live checks instead of the disabled generic booking check/resolve methods.
 
 | Named operation                         | Source status                   | Permission / policy                                                  | Implementation and API mapping                                                                           | Test evidence owners                                                                                                                                                                                                    |
 | --------------------------------------- | ------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -35,7 +41,7 @@ Each operation records its name, source status, permission policy and evidence o
 | `readBookingReceipt`                    | Server-connected implementation | Current access and verified receipt                                  | [confirmation service](../src/services/confirmation.ts); GET attempts/:id/receipt                        | [adapter](../src/services/confirmation.test.ts); [Worker runtime](../worker/tests/runtime.test.mjs); [HitPay](../worker/tests/hitpay.test.mjs); [protected UI](../src/features/booking/protected-confirmation.test.tsx) |
 | `expireBooking`                         | Server-connected implementation | Owned attempt and authoritative release evidence                     | [confirmation service](../src/services/confirmation.ts); POST attempts/:id/expire                        | [adapter](../src/services/confirmation.test.ts); [Worker runtime](../worker/tests/runtime.test.mjs); [HitPay](../worker/tests/hitpay.test.mjs); [protected UI](../src/features/booking/protected-confirmation.test.tsx) |
 | `dismissCompletedBooking`               | Server-connected implementation | Owned completed attempt; repeatable acknowledgement                  | [confirmation service](../src/services/confirmation.ts); POST attempts/:id/dismiss                       | [adapter](../src/services/confirmation.test.ts); [Worker runtime](../worker/tests/runtime.test.mjs); [HitPay](../worker/tests/hitpay.test.mjs); [protected UI](../src/features/booking/protected-confirmation.test.tsx) |
-| `startSyntheticCheckout`                | Preview only                    | Isolated synthetic server; no real payment/booking                   | [confirmation service](../src/services/confirmation.ts); POST /__experiment/attempts                     | [experiment browser](../tests/experiment.spec.ts)                                                                                                                                                                       |
+| `startSyntheticCheckout`                | Preview only                    | Isolated synthetic server; no real payment/booking                   | [confirmation service](../src/services/confirmation.ts); POST /__experiment/attempts                     | [experiment browser](../tests/customer.spec.ts)                                                                                                                                                                         |
 | `bookingFromReceipt`                    | Local conversion                | Caller supplies validated protected receipt                          | [confirmation service](../src/services/confirmation.ts)                                                  | [confirmation adapter](../src/services/confirmation.test.ts)                                                                                                                                                            |
 | `services.enquiry.submit`               | Live and demo adapters          | Validated enquiry, purpose-bound proof, durable send key             | [enquiry adapters](../src/services/enquiry.ts); [endpoint](../worker/enquiry.ts)                         | [enquiry service tests](../src/services/enquiry.test.ts); [Worker enquiry tests](../worker/tests/enquiry.test.mjs); [customer browser](../tests/customer.spec.ts)                                                       |
 | `services.identity.read`                | Legacy local demo adapter       | Not the live customerIdentity authority                              | [demo identity](../src/services/demo/identity.ts)                                                        | [service tests](../src/services/booking.test.ts)                                                                                                                                                                        |
@@ -69,7 +75,11 @@ Rule numbers resolve through [the stable rule index](code-owners/index.md#11-bus
 
 ## 2. Common HTTP boundary
 
-Access creation/renewal (`POST /api/access`) and authenticated checkout renewal expose `X-Booking-Access-Expires-At`, the server capability expiry in epoch milliseconds. This response metadata is only a navigation hint and grants no authority. The client uses it when moving between booking steps; confirmed `401 access_denied` on pre-payment/identity operations also returns to step1. Idle time and local card/player edits do not trigger navigation. Retained payment/confirmation recovery uses its existing independent authority.
+- Access creation/renewal (`POST /api/access`) and authenticated checkout renewal expose `X-Booking-Access-Expires-At`, the server capability expiry in epoch milliseconds.
+- This response metadata is only a navigation hint and grants no authority.
+- The client uses it when moving between booking steps; confirmed `401 access_denied` on pre-payment/identity operations also returns to step1.
+- Idle time and local card/player edits do not trigger navigation.
+- Retained payment/confirmation recovery uses its existing independent authority.
 
 [worker/index.ts](../worker/index.ts) owns route matching, guards, response envelopes and dispatch. API requests require HTTPS and the configured `APP_ORIGIN`; a supplied Origin must match. Non-GET browser operations require the matching Origin. Signed webhook paths are dispatched before the browser mutation-Origin requirement, while retaining protocol/host and supplied-Origin checks. There is no general cross-origin API/CORS contract.
 
@@ -81,7 +91,15 @@ JSON body operations using `inputBody` require `application/json`, at most 4096 
 
 Access and remembered cookies are Secure, HttpOnly, SameSite=Strict, Path=/; access uses `__Host-soccerbot-access`. Cookies are server-issued capabilities, never values to log or embed in links. Browser adapters use same-origin credentials, no-store and reject redirects. Foundation/account/environment verification and configured operation windows apply in addition to the per-route guards.
 
-Current local candidate: successful identity challenge responses include `expiresAt = min(issuedAt + 120000, accessExpiry)`, `resendAfter = issuedAt` and `requestLimited: false`. Another explicit request is permitted while a previous code is valid, subject to session/IP/normalized-email and service limits; no timer sends automatically. The third admitted request starts the fixed600-second block, but only a subsequent denied request reveals the red block notice. Known429 responses carry bounded numeric `Retry-After` for the actual remaining wait; clients never invent a deadline when it is absent. A verification request uses the supplied challenge as an authenticated same-capability/email anchor and may match another still-valid unconsumed code for that same scope. The matched code retains its own expiry; another email, owner or consumed code cannot be borrowed. Wrong guesses charge the eligible live candidate budgets, preventing a newer anchor from resetting attempts. Legacy issued challenges retain stored validity during upgrade. Migration0047 and this contract are candidate behavior, not a deployment receipt.
+- Successful identity challenge responses include `expiresAt = min(issuedAt + 120000, accessExpiry)`, `resendAfter = issuedAt` and `requestLimited: false`.
+- Another explicit request is permitted while a previous code is valid, subject to session/IP/normalized-email and service limits; no timer sends automatically.
+- The third admitted request starts the fixed600-second block, but only a subsequent denied request reveals the red block notice.
+- Known429 responses carry bounded numeric `Retry-After` for the actual remaining wait; clients never invent a deadline when it is absent.
+- A verification request uses the supplied challenge as an authenticated same-capability/email anchor and may match another still-valid unconsumed code for that same scope.
+- The matched code retains its own expiry; another email, owner or consumed code cannot be borrowed.
+- Wrong guesses charge the eligible live candidate budgets, preventing a newer anchor from resetting attempts.
+- Legacy issued challenges retain stored validity during upgrade.
+- Migration0047 and this contract are candidate behavior, not a deployment receipt.
 
 Customer new-checkout preparation accepts ephemeral `X-Booking-Bot-Proof` for the `create-checkout` Turnstile action. The header is excluded from checkout intent hashes and browser persistence. Missing/expired/mismatched proof returns `checkout_verification_required`; failed verification transport returns `checkout_verification_unavailable`. Existing authenticated attempt recovery and callbacks retain their original contracts without proof headers. Review prepares proof before the user submits; only an explicit checkout action may create reservations.
 
@@ -101,9 +119,23 @@ Live verification code requests and resends check the email domain after bot pro
 | GET `/api/identity/contact`        | No body                              | `{email,contact:null\|{name,phone}}` / 200                                         | [Profile](../worker/contact-profile.ts); verified identity, account/origin and consent scope                                      |
 | POST `/api/identity/contact`       | `{email,name,phone}`                 | `{email,saved:true}` / 200                                                         | Same-email current authority; consent predicates rechecked at storage boundary                                                    |
 
-Challenge email is trimmed/lowercased, valid and at most 254 characters; botToken is 1–2048 characters. Contact-profile names are trimmed 2–80 characters with letters/attached accents, decimal digits, spaces, hyphens and straight/curly apostrophes only (at least one letter or digit); name/email/phone reject embedded control characters. New contact/profile writes enforce Singapore mobile numbers of eight digits starting with 8 or 9; overseas numbers require an explicit country calling code and a recognized calling code and 7–15 digits internationally; exact national lengths or mobile prefixes are not required. Ordinary spaces, parentheses and hyphens are accepted, then valid numbers are normalized to E.164. The shared validated contact schema also enforces an own-property contact-method allow-list before native booking preparation. Retained journal contacts use their original read protocol so stricter new-write validation does not prevent recovery of historical bookings. This profile payload is deliberately smaller than booking contact. Verification uses generic failure messaging; `verification_request_limited` is 429 and disabled delivery is 503. Do not infer a provider customer exists from a challenge response.
+- Challenge email is trimmed/lowercased, valid and at most 254 characters; botToken is 1–2048 characters.
+- Contact-profile names are trimmed 2–80 characters with letters/attached accents, decimal digits, spaces, hyphens and straight/curly apostrophes only (at least one letter or digit); name/email/phone reject embedded control characters.
+- New contact/profile writes enforce Singapore mobile numbers of eight digits starting with 8 or 9; overseas numbers require an explicit country calling code and a recognized calling code and 7–15 digits internationally; exact national lengths or mobile prefixes are not required.
+- Ordinary spaces, parentheses and hyphens are accepted, then valid numbers are normalized to E.164.
+- The shared validated contact schema also enforces an own-property contact-method allow-list before native booking preparation.
+- Retained journal contacts use their original read protocol so stricter new-write validation does not prevent recovery of historical bookings.
+- This profile payload is deliberately smaller than booking contact.
+- Verification uses generic failure messaging; `verification_request_limited` is 429 and disabled delivery is 503.
+- Do not infer a provider customer exists from a challenge response.
 
-Admin authentication uses the fixed `POST /admin/auth/refresh-token` endpoint with the provider-returned refresh token. It shares the existing account admission and authentication claim. The refresh token is encrypted at rest and consumed durably before transport; a lost response never reuses it. No browser response exposes access or refresh credentials. Authentication repair does not replay a financial operation. Payment recovery persists the next alarm deadline from its committed D1 state, without changing retry budgets or leases. Nonessential booking comments become eligible only after payment recovery records complete/observed accounting, retaining their original effect fences.
+- Admin authentication uses the fixed `POST /admin/auth/refresh-token` endpoint with the provider-returned refresh token.
+- It shares the existing account admission and authentication claim.
+- The refresh token is encrypted at rest and consumed durably before transport; a lost response never reuses it.
+- No browser response exposes access or refresh credentials.
+- Authentication repair does not replay a financial operation.
+- Payment recovery persists the next alarm deadline from its committed D1 state, without changing retry budgets or leases.
+- Nonessential booking comments become eligible only after payment recovery records complete/observed accounting, retaining their original effect fences.
 
 ## 4. Catalogue and selection contracts
 
@@ -123,15 +155,53 @@ Admin authentication uses the fixed `POST /admin/auth/refresh-token` endpoint wi
 
 The public customer catalogue accepts the supported `developer` and `production` environment labels; it retains strict public-only fields, complete-data and expiry validation. Unknown environment labels remain invalid.
 
-Production calendar selection requires explicit, distinct primary/premium service IDs from the sealed target mapping and an expected company login; it never defaults to staging service 2. Provider authentication selects production secret names and rejects a company mismatch. Developer selection retains service 2. Native grants and payment scopes can retain production identity for the explicitly configured client guest sandbox. Client grants require the S$108 base price, premium mapping, customer-choice scheduling and four-hour notice, without historical trial exceptions. This schema support does not authorize customer operations: production access remains disabled in target rendering/artifact validation.
+- Production calendar selection requires explicit, distinct primary/premium service IDs from the sealed target mapping and an expected company login; it never defaults to staging service 2.
+- Provider authentication selects production secret names and rejects a company mismatch.
+- Developer selection retains service 2.
+- Native grants and payment scopes can retain production identity for the explicitly configured client guest sandbox.
+- Client grants require the S$108 base price, premium mapping, customer-choice scheduling and four-hour notice, without historical trial exceptions.
+- This schema support does not authorize customer operations: production access remains disabled in target rendering/artifact validation.
 
-Public browsing and warming share `BOOKING_MONTH_COUNT=3`: current Singapore month plus the next two. The fourth month is rejected even if a legacy snapshot remains. Warming claims one due month per minute using persisted per-month attempts. Missing months precede older valid months; failures rotate rather than aborting the entire three-month pass. A successful month becomes due after15 minutes; failed attempts wait at least one minute. Warming reuses range reads only while their independent60-second deadline remains valid; known changes still invalidate affected dates. Provider queries cover at most15 consecutive approved days per trainer/service, and no change feed is assumed for manual admin edits.
+- Public browsing and warming share `BOOKING_MONTH_COUNT=3`: current Singapore month plus the next two.
+- The fourth month is rejected even if a legacy snapshot remains.
+- Warming claims one due month per minute using persisted per-month attempts.
+- Missing months precede older valid months; failures rotate rather than aborting the entire three-month pass.
+- A successful month becomes due after15 minutes; failed attempts wait at least one minute.
+- Warming reuses range reads only while their independent60-second deadline remains valid; known changes still invalidate affected dates.
+- Provider queries cover at most15 consecutive approved days per trainer/service, and no change feed is assumed for manual admin edits.
 
-Ongoing public/protected availability and prebooking use SimplyBook `getAvailableTimeIntervals(dateFrom,dateTo,eventId,unitId,1)`, through the existing scoped availability transport. The response is date → provider ID → arrays of free intervals. A bounded read-only developer-account probe on5 November2026 returned named boundaries (`{"from":"14:00:00","to":"16:00:00"}`); the official reference illustrates two-item `[from,to]` arrays. Both strict forms normalize into the same wall-clock boundaries. This probe establishes the provider representation, not production capacity acceptance. `studioStartsFromIntervals` merges touching/overlapping free intervals, never bridges a gap, and emits only BR-001 grid starts whose complete50 minutes fit within one continuous free interval. Each trainer/day is bounded to288 free intervals; endpoints use HH:mm:ss, with24:00:00 accepted only as an end boundary by interval ordering. Malformed boundaries, reversed intervals or a foreign trainer reject the read. Explicit empty intervals mean unavailable and can form a valid cached month. A missing date, malformed interval or unexpected trainer remains an error; it is never converted to an empty/free result. Legacy finite experiments retain the generated-start matrix contract. Public calendar responses include `X-Request-ID`, `X-Calendar-Observed-At` and, when persisted expiry is present, `X-Calendar-Expires-At`; these identify the served evidence, not browser rendering. Request budgets, provider auth, two-lane admission, original freshness and generation fencing are unchanged; this substitution adds no provider call per trainer/range. New checkout also checks grid alignment locally; direct creation still relies on provider booking authority without an extra availability preflight.
+- Ongoing public/protected availability and prebooking use SimplyBook `getAvailableTimeIntervals(dateFrom,dateTo,eventId,unitId,1)`, through the existing scoped availability transport.
+- The response is date → provider ID → arrays of free intervals.
+- A bounded read-only developer-account probe on5 November2026 returned named boundaries (`{"from":"14:00:00","to":"16:00:00"}`); the official reference illustrates two-item `[from,to]` arrays.
+- Both strict forms normalize into the same wall-clock boundaries.
+- This probe establishes the provider representation, not production capacity acceptance. `studioStartsFromIntervals` merges touching/overlapping free intervals, never bridges a gap, and emits only BR-001 grid starts whose complete50 minutes fit within one continuous free interval.
+- Each trainer/day is bounded to288 free intervals; endpoints use HH:mm:ss, with24:00:00 accepted only as an end boundary by interval ordering.
+- Malformed boundaries, reversed intervals or a foreign trainer reject the read.
+- Explicit empty intervals mean unavailable and can form a valid cached month.
+- A missing date, malformed interval or unexpected trainer remains an error; it is never converted to an empty/free result.
+- Legacy finite experiments retain the generated-start matrix contract.
+- Public calendar responses include `X-Request-ID`, `X-Calendar-Observed-At` and, when persisted expiry is present, `X-Calendar-Expires-At`; these identify the served evidence, not browser rendering.
+- Request budgets, provider auth, two-lane admission, original freshness and generation fencing are unchanged; this substitution adds no provider call per trainer/range.
+- New checkout also checks grid alignment locally; direct creation still relies on provider booking authority without an extra availability preflight.
 
 This adapter follows the [official SimplyBook API contract](https://simplybook.me/en/api/developer-api/tab/doc_api), but production response shape and its treatment of manual bookings, buffer and account-wide capacity are not yet accepted. The connector exposes generated timelines, not this raw interval operation. Do not infer live acceptance from the synthetic tests. External admin edits refresh through authoritative day reads or scheduled warming, not an implemented push-invalidation hook.
 
-Customer grants declare `providerSchedules: "customer-choice"`; prebooking validates the selected eligible trainer without picking one by order. Legacy finite trial contracts retain `"non-overlapping"` and reject simultaneous eligibility. Calendar reads include every active linked instructor in the validated catalogue. Work is limited to 96 instructor/range reads per service/calendar request (ranges contain at most 15 consecutive authorized dates); oversize work fails before availability dispatch. Ongoing customer reads use two lanes with serialized admission; finite experiments remain sequential. Responses allow at most 2,000 offers/day, 6,000 offers/calendar and 1,500,000 UTF-8 bytes/calendar, below durable snapshot row limits. Exceeding a bound, a missing trainer/date response or a failed sibling rejects the read without a partial cache entry. Explicit empty intervals remain valid closed-day evidence; missing requested dates are unknown. Shared pending reads, 60-second freshness, account/revision isolation and invalidation fencing remain enforced. These short provider-read caches are separate from the shared display snapshots (30-minute original lifetime, approximately 15-minute scheduled refresh). Journalled booking dispatch removes only overlapping studio offers from the display snapshot. A pre-dispatch selection rejection conservatively removes overlapping50-minute studio offers across trainers and invalidates that date in the short read cache; price or transient-provider errors do not imply occupancy. Fresh authoritative day responses update that day without rebuilding the month or extending its lifetime. Cache maintenance cannot change a durable financial result. These are operational bounds, not unlimited roster capacity; a 31-day month permits at most 32 trainers by request count, and offer/payload/freshness limits can be tighter. Provider shared-resource capacity must be configured and owner-tested before enabling overlapping schedules.
+- Customer grants declare `providerSchedules: "customer-choice"`; prebooking validates the selected eligible trainer without picking one by order.
+- Legacy finite trial contracts retain `"non-overlapping"` and reject simultaneous eligibility.
+- Calendar reads include every active linked instructor in the validated catalogue.
+- Work is limited to 96 instructor/range reads per service/calendar request (ranges contain at most 15 consecutive authorized dates); oversize work fails before availability dispatch.
+- Ongoing customer reads use two lanes with serialized admission; finite experiments remain sequential.
+- Responses allow at most 2,000 offers/day, 6,000 offers/calendar and 1,500,000 UTF-8 bytes/calendar, below durable snapshot row limits.
+- Exceeding a bound, a missing trainer/date response or a failed sibling rejects the read without a partial cache entry.
+- Explicit empty intervals remain valid closed-day evidence; missing requested dates are unknown.
+- Shared pending reads, 60-second freshness, account/revision isolation and invalidation fencing remain enforced.
+- These short provider-read caches are separate from the shared display snapshots (30-minute original lifetime, approximately 15-minute scheduled refresh).
+- Journalled booking dispatch removes only overlapping studio offers from the display snapshot.
+- A pre-dispatch selection rejection conservatively removes overlapping50-minute studio offers across trainers and invalidates that date in the short read cache; price or transient-provider errors do not imply occupancy.
+- Fresh authoritative day responses update that day without rebuilding the month or extending its lifetime.
+- Cache maintenance cannot change a durable financial result.
+- These are operational bounds, not unlimited roster capacity; a 31-day month permits at most 32 trainers by request count, and offer/payload/freshness limits can be tighter.
+- Provider shared-resource capacity must be configured and owner-tested before enabling overlapping schedules.
 
 ## 5. Attempt preparation and booking/payment writes
 
@@ -160,22 +230,44 @@ Customer grants declare `providerSchedules: "customer-choice"`; prebooking valid
 }
 ```
 
-The object and nested selection/contact objects are strict. New checkout sessions contain1–5 items; historical restoration/receipt schemas retain1–12. Players 1–4; timestamps positive safe integers; totals nonnegative safe integers. `accepted` must be true unless `holding:true`. Combined checkout further requires consent true and key equal to the UUID path. Domain validation additionally checks contact, lead time, account, selection and price; schema-valid JSON alone is not authorized. [Contact owner](../src/domain/contact.ts) defines business validation rather than implying the plain string schema is sufficient.
+- The object and nested selection/contact objects are strict.
+- New checkout sessions contain1–5 items; historical restoration/receipt schemas retain1–12.
+- Players 1–4; timestamps positive safe integers; totals nonnegative safe integers. `accepted` must be true unless `holding:true`.
+- Combined checkout further requires consent true and key equal to the UUID path.
+- Domain validation additionally checks contact, lead time, account, selection and price; schema-valid JSON alone is not authorized. [Contact owner](../src/domain/contact.ts) defines business validation rather than implying the plain string schema is sufficient.
 
 **Native execution result read by the browser:** `{attemptId,state,paymentAvailable,checkout?,rejectedSessionIndex?}`. `attemptId` must match the original request; `rejectedSessionIndex`, when supplied, is an integer 0–11 and must reference the submitted selection. `selection_unavailable` and `restart_required` carry the rejected index; an `associated` result may carry a validated handoff. A payment still being checked can return `{attemptId,state:"checking",paymentAvailable:false}`. See [browser decoder](../src/services/booking.ts).
 
-Native execution results are state-dependent saved results, not a guarantee that HTTP 200 means paid or confirmed. [executeNativeCheckout / nativeCheckoutStatus](../worker/native-checkout.ts), [coordinator composition](../worker/coordinator.ts) and the [service adapters](../src/services) own exact result branches. Read the protected context/status/receipt contracts for customer progression. Browser abort or response loss cannot roll back a provider effect. An undispatched start failure may return to editable Review; a verified selection rejection returns to Calendar. Dispatched uncertainty retains original attempt/grant/reference evidence unless the separate [verified no-creation contract](#verified-no-creation-resolution) establishes a terminal outcome.
+- Native execution results are state-dependent saved results, not a guarantee that HTTP 200 means paid or confirmed. [executeNativeCheckout / nativeCheckoutStatus](../worker/native-checkout.ts), [coordinator composition](../worker/coordinator.ts) and the [service adapters](../src/services) own exact result branches.
+- Read the protected context/status/receipt contracts for customer progression.
+- Browser abort or response loss cannot roll back a provider effect.
+- An undispatched start failure may return to editable Review; a verified selection rejection returns to Calendar.
+- Dispatched uncertainty retains original attempt/grant/reference evidence unless the separate [verified no-creation contract](#verified-no-creation-resolution) establishes a terminal outcome.
 
-**HitPay handoff value:** `{url,expiresAtMs}` with URL at most 2048 characters and positive safe-integer expiry. Current [URL validator](../src/domain/native-checkout.ts) accepts the configured sandbox checkout host/path patterns; this is not a claim that production merchant URLs are enabled. Server stores and validates merchant/request/invoice/amount/currency association before handoff. Only the original booking payment step opts into Continue payment using this same URL and original expiry. The hosted-provider `/confirmation/` return route is confirmation-only and never displays a payment continuation button or timer, even while payment evidence is pending; this presentation restriction is not proof of payment. For an eligible original-page continuation, clicking adds no provider read or payment-creation request. The browser derives a client-only monotonic clock from the protected response Date header, conservatively accounting for second precision and request elapsed time. Countdown and click expiry use its conservative upper bound, while polling uses the arrival-based lower bound to avoid early requests; stored budget timestamps remain integer milliseconds. missing/invalid server time suppresses HitPay continuation. A countdown is advisory, not settlement proof; payment detection or expiry removes the action. The URL is sensitive checkout capability data and must not enter telemetry.
+**HitPay handoff**
 
-The hosted-link deadline is persisted separately as `hitpay_payments.checkout_expires_ms` (migration0040). Creation and protected context use the earlier of this authenticated provider expiry and the immutable internal payment deadline. Recovery may shorten but never extend the saved hosted deadline. Expired links and authenticated failed/expired/canceled request states suppress continuation while financial reconciliation continues under its original windows. Historical rows with no provider expiry fail closed for continuation until an authenticated read supplies it; migration does not invent or backfill a link deadline. Browser countdown expiry is never proof of unpaid release.
+- Return `{url,expiresAtMs}` only for the verified original merchant, payment request, invoice, amount and currency. The URL is sensitive and at most 2048 characters.
+- [URL validation](../src/domain/native-checkout.ts) enforces the configured checkout destination. Click and countdown use the protected response’s server time. Missing or invalid server time suppresses continuation.
+- [Booking scenarios](booking-flows.md) owns the customer route, countdown and return behavior.
+
+- The hosted-link deadline is persisted separately as `hitpay_payments.checkout_expires_ms` (migration0040).
+- Creation and protected context use the earlier of this authenticated provider expiry and the immutable internal payment deadline.
+- Recovery may shorten but never extend the saved hosted deadline.
+- Expired links and authenticated failed/expired/canceled request states suppress continuation while financial reconciliation continues under its original windows.
+- Historical rows with no provider expiry fail closed for continuation until an authenticated read supplies it; migration does not invent or backfill a link deadline.
+- Browser countdown expiry is never proof of unpaid release.
 
 - New-checkout validation rejects more than5 sessions with HTTP400 `session_limit_exceeded` before provider writes.
 - Reservation admission rejects an active customer, shared-IP or retained observed cooldown with HTTP429 `reservation_blocked`. Migration0043 retains the same original deadline against the authenticated owner/customer, without using booking contact details or adding an expiry strike; network/identity changes retaining the same owner or verified customer cannot bypass an observed denial. HTTP admission and atomic dispatch both enforce it; [BR-011](business-rules.md#br-011) owns strike/reset/window rules.
 - Admission is rechecked atomically at the first dispatch claim. A refusal with no financial effects permits the browser to clear only its preparation and retain selections/contact. An uncertain or started effect stays under original recovery authority.
 - The router forwards trusted edge `CF-Connecting-IP` internally; arbitrary forwarded headers and submitted contact email cannot establish admission identity. Missing valid source/pepper fails closed.
 
-A submitted live checkout retains its original tab-local correlation when the customer navigates away. Back cancels automatic handoff. A same-tab return reads protected checkout context using the original key and existing access, payment and recovery deadlines. A renewed valid capability can still recover its authorized attempt. HTTP 201 from explicit guest establishment creates a different owner and clears the old browser correlation. The browser never replays an uncertain provider write or uses its correlation to authorize payment.
+- A submitted live checkout retains its original tab-local correlation when the customer navigates away.
+- Back cancels automatic handoff.
+- A same-tab return reads protected checkout context using the original key and existing access, payment and recovery deadlines.
+- A renewed valid capability can still recover its authorized attempt.
+- HTTP 201 from explicit guest establishment creates a different owner and clears the old browser correlation.
+- The browser never replays an uncertain provider write or uses its correlation to authorize payment.
 
 ## 6. Protected confirmation, receipt and recovery
 
@@ -210,25 +302,55 @@ A submitted live checkout retains its original tab-local correlation when the cu
 }
 ```
 
-`checking.paymentExpiresAtMs` is optional display-only evidence for an associated HitPay booking with a verified retained hold or payment journal: the earliest retained payment/provider deadline, bounded by the original checking deadline. The client uses the authenticated server clock to return the owned attempt immediately to the calendar at expiry, including after focus/resume; it does not infer financial release or cancel from a local timer. Missing/unknown deadlines and known payment evidence do not trigger this optimistic handoff.
+- `checking.paymentExpiresAtMs` is optional display-only evidence for an associated HitPay booking with a verified retained hold or payment journal: the earliest retained payment/provider deadline, bounded by the original checking deadline.
+- The client uses the authenticated server clock to start bounded expiry verification, including after focus/resume.
+- Verified payment continues to confirmation checks.
+- Verified unpaid release or exhaustion of the foreground wait leads to Calendar; it does not infer financial release or cancel from a local timer.
+- Missing/unknown deadlines and known payment evidence do not trigger this optimistic handoff.
 
-Checkout context may include `paymentIssue: "link_recovering" | "link_unavailable"`. It is derived from the retained HitPay journal only when no request/link or paid evidence exists. The first state polls protected context without creating another request; after five total link attempts (one POST and four read-only original-reference recovery attempts), the second shows a dedicated payment-provider-unavailable screen. Refresh cannot reset the durable count. This limit does not replace payment settlement/reconciliation limits; a novel authenticated receipt may reopen bounded recovery. Scope/money/security mismatches still stop immediately. No retry of an ambiguous POST is authorized: the reviewed [HitPay create contract](https://docs.hitpayapp.com/apis/payment-request/create-request) does not establish idempotent replay for this integration.
+- Checkout context may include `paymentIssue: "link_recovering" | "link_unavailable"`.
+- It is derived from the retained HitPay journal only when no request/link or paid evidence exists.
+- The first state polls protected context without creating another request; after five total link attempts (one POST and four read-only original-reference recovery attempts), the journal reports link recovery exhausted.
+- The original pre-handoff wait leads to Calendar with the duplicate-booking notice and studio help if the outcome remains uncertain.
+- Refresh cannot reset the durable count.
+- This limit does not replace payment settlement/reconciliation limits; a novel authenticated receipt may reopen bounded recovery.
+- Scope/money/security mismatches still stop immediately.
+- No retry of an ambiguous POST is authorized: the reviewed [HitPay create contract](https://docs.hitpayapp.com/apis/payment-request/create-request) does not establish idempotent replay for this integration.
 
 `pollAfterMs` is 1000–30000 in the response schema; this validation range does not override the tighter server checking policy. Summary has 1–12 sessions and 1–4 players. Client verifies the requested attempt/mode and accepted destination, not just JSON shape. `payment.status:"recorded"` alone does not imply a valid confirmed booking.
 
-Verified terminal nonpayment may be recorded at the checking deadline so the hold-expiry status read can observe it; release still waits for the original hold deadline. Automatic background rechecks retain the original polling budget; no Check Status button is exposed.
+- Checkout context exposes optional `checking.recoveryEndsAtMs` and the provider hold deadline in `checking.holdExpiresAtMs`. Existing attempts retain their recorded deadlines.
+- A known payment request is eligible for verified release at its actual deadline under [BR-011](business-rules.md#br-011). A missing payment row retains the conservative recovery and provider hold deadlines.
+- `bookingIssue: "incomplete"` identifies a recovery-required attempt without a completed association or payment dispatch. It stays in creation recovery.
+- The Worker reads the original request up to three times within the expiry verification window. It records `payment_expiry_checks_inconclusive` for customer help when the protected outcome remains uncertain. A matching signed receipt can reopen an incomplete paid result.
+- On a qualifying expiry, the release transaction rechecks payment and receipt evidence before archiving the active grant.
 
-New attempts persist8-minute payment,1-minute checking-buffer,3-minute recovery-buffer and10-minute provider hold windows. Grant release waits for both recovery and actual provider hold deadlines; payment expiry is unchanged. Checkout context adds optional `checking.recoveryEndsAtMs`; `checking.holdExpiresAtMs` retains its original meaning. Undispatched prepared checkouts retain their existing-checkout classification without capacity reads; the missing-association conflict read applies only to recovery-required attempts. `bookingIssue: "incomplete"` identifies a recovery-required attempt with no completed association and no payment dispatch; it never authorizes replay. Such incomplete attempts do not automatically release through the completed-hold expiry path. Existing attempts retain their original values. Release requires no dispatched request, or an authenticated matching expired/canceled request with explicit `payments: []` or exclusively `requires_payment_method` entries whose amount/currency match and explicit refunded amount is zero, past provider expiry, no known paid/accounting evidence and no unprocessed receipt. Release archives only the active grant. The immutable payment journal remains eligible for bounded late-webhook reconciliation. The expired/canceled semantics follow [HitPay's authoritative status contract](https://docs.hitpayapp.com/apis/payment-request/get-payment-status); missing payment lists remain unresolved. A release then refreshes each affected day only in retained backend months; display failures do not roll back release or fabricate free slots. Journalled holds also persist affected-date probes at their original hold deadline, then at +10/30/60/120/300/600/900 seconds. Alarms and minute warming share this bounded, read-only work; concurrent turns coalesce, restarts retain deadlines, overdue offsets are skipped, and successful availability or known money stops probing. Exhaustion returns to ordinary warming; no probe cancels a provider booking or authorizes payment/release. Other dates and the original month expiry stay unchanged. The browser drops affected month entries and fetches the updated snapshot while preserving other months.
+- A release then refreshes each affected day only in retained backend months; display failures do not roll back release or fabricate free slots.
+- Journalled holds also persist affected-date probes at their original hold deadline, then at +10/30/60/120/300/600/900 seconds.
+- Alarms and minute warming share this bounded, read-only work; concurrent turns coalesce, restarts retain deadlines, overdue offsets are skipped, and successful availability or known money stops probing.
+- Exhaustion returns to ordinary warming; no probe cancels a provider booking or authorizes payment/release.
+- Other dates and the original month expiry stay unchanged.
+- The browser drops affected month entries and fetches the updated snapshot while preserving other months.
 
 **Decision:** `{status:"confirmed",reason:"verified"}`, `{status:"pending"|"unresolved",reason,customerConfirmation?,expired?}`, `{status:"invalid",reason,creationResolution?}`, or `{status:"denied",reason:"access_denied"}`. Verified no-creation uses `status:"invalid"`, `reason:"booking_not_created"` and `creationResolution:{state:"not_created"}`. Authentication can also fail at HTTP level. Check responses can expose `X-Checking-Deadline`, `X-Next-Check`, `X-Checks-Remaining`; protected reads attach `X-Recovery-Trace` and `Server-Timing`. A 429 with remaining zero is exhausted, otherwise throttled; use supplied schedule without resetting the original window. No timeout/absence of webhook proves nonpayment.
 
 **BookingDetails:** `{providerReferences?,attemptId,createdAtMs,totalMinor,taxMinor,contact,sessions}`; sessions are 1–12 Offers extended with players. Sum of session prices must equal total; tax cannot exceed total. **Receipt** adds `verifiedAtMs`. See [receipt schema](../src/domain/native-checkout.ts) and [provider-reference schema](../src/domain/provider-references.ts). Browser receipt validation compares protected evidence with the server clock when supplied; receipt exports never rely solely on a previous browser snapshot.
 
-Export clicks send `X-Booking-Refresh: 1`; ordinary receipt display reads do not. When retained proof is stale, the coordinator admits read-only known-booking/invoice verification within the original checking deadline, sharing the durable 120-check ceiling and a minimum 10-second admission interval. The read has a 15-second bound shortened by the remaining window. Fresh stored proof needs no provider read. The response uses freshly validated proof without persisting it over the financial journal. Access, association, retained observation, payment state and deadline are rechecked after refresh. No historical saved receipt authorizes export. Errors include 409 `receipt_not_verified` / `receipt_verification_expired`, 429 `checking_throttled`, and provider-unavailable failures; none grants another payment or resets a deadline.
+- Export clicks send `X-Booking-Refresh: 1`; ordinary receipt display reads do not.
+- When retained proof is stale, the coordinator admits read-only known-booking/invoice verification within the original checking deadline, sharing the durable 120-check ceiling and a minimum 10-second admission interval.
+- The read has a 15-second bound shortened by the remaining window.
+- Fresh stored proof needs no provider read.
+- The response uses freshly validated proof without persisting it over the financial journal.
+- Access, association, retained observation, payment state and deadline are rechecked after refresh.
+- No historical saved receipt authorizes export.
+- Errors include 409 `receipt_not_verified` / `receipt_verification_expired`, 429 `checking_throttled`, and provider-unavailable failures; none grants another payment or resets a deadline.
 
 ### Verified no-creation resolution
 
-[native-creation-resolution.ts](../worker/native-creation-resolution.ts) records terminal evidence in `no_creation_resolutions` under the original attempt, immutable intent hash, current version and dispatch fence. This is distinct from a prepared `selectionRejection`, unpaid expiry and successful payment. The original attempt/dispatch/effect history remains; the persisted attempt state stays `recovery_required`, while the immutable resolution supplies the terminal customer outcome. The active grant is archived into `rejected_native_checkout_grants`, recovery work completes and later writes against that attempt are fenced.
+- [native-creation-resolution.ts](../worker/native-creation-resolution.ts) records terminal evidence in `no_creation_resolutions` under the original attempt, immutable intent hash, current version and dispatch fence.
+- This is distinct from a prepared `selectionRejection`, unpaid expiry and successful payment.
+- The original attempt/dispatch/effect history remains; the persisted attempt state stays `recovery_required`, while the immutable resolution supplies the terminal customer outcome.
+- The active grant is archived into `rejected_native_checkout_grants`, recovery work completes and later writes against that attempt are fenced.
 
 The Worker evaluates the original booking dispatch through the following evidence paths.
 
@@ -238,9 +360,20 @@ The Worker evaluates the original booking dispatch through the following evidenc
 - Recovery of an existing booking uses its validated original provider reference and retained account, service, time and customer evidence before opening checkout. Admin search results may help investigate a lost original response. Any missing verification material keeps the financial attempt protected.
 - **Restricted operator verification:** a finite `native_creation_resolution` grant contains the exact `attemptId`, `intentHash`, current `version`, original `dispatchFence`, `verifiedMs`, restricted `evidenceReference`, `processingFinished:true` and `noBookingCreated:true`. An authorized operator must first obtain provider confirmation that the original processing ended and created no intended booking. The endpoint consumes this stored attestation; it does not itself query SimplyBook or accept customer-submitted proof. See the [operator procedure](runbook.md#verified-no-creation-recovery).
 
-All no-creation paths reject existing booking references, observed session effects, association/observation, payment/hold/progress or invoice evidence, and stale proof. The automatic path additionally excludes every other session effect. No new booking or payment is sent during resolution. Empty booking searches, current availability, missing local/payment records, absent webhooks and elapsed time cannot prove terminal noncreation. The documented administrative booking-list filters provide no request-completion guarantee; genuinely lost responses without such proof stay protected.
+- All no-creation paths reject existing booking references, observed session effects, association/observation, payment/hold/progress or invoice evidence, and stale proof.
+- The automatic path additionally excludes every other session effect.
+- No new booking or payment is sent during resolution.
+- Empty booking searches, current availability, missing local/payment records, absent webhooks and elapsed time cannot prove terminal noncreation.
+- The documented administrative booking-list filters provide no request-completion guarantee; genuinely lost responses without such proof stay protected.
 
-The initial checkout execution result and exact-owner protected checkout context/confirmation status expose only `creationResolution:{state:"not_created"}`; private proof and operator credentials are not customer data. The same result survives reload and leaving/re-entering booking. A client clears only its matching retained attempt and requires a new explicit checkout action. Its original affected time windows remain hidden across trainers until a fresh provider availability read confirms they are available; verified non-creation is not availability proof. An open recovery page returns to Calendar; re-entry after leaving for Home opens normal fresh booking entry. Another tab's current attempt is never adopted. This is not an expiry strike and does not bypass existing reservation admission limits. Migrations 0041 and 0052 must be applied before code using this contract; source implementation and synthetic checks do not establish deployment or provider acceptance.
+- The initial checkout execution result and exact-owner protected checkout context/confirmation status expose only `creationResolution:{state:"not_created"}`; private proof and operator credentials are not customer data.
+- The same result survives reload and leaving/re-entering booking.
+- A client clears only its matching retained attempt and requires a new explicit checkout action.
+- Its original affected time windows remain hidden across trainers until a fresh provider availability read confirms they are available; verified non-creation is not availability proof.
+- An open recovery page returns to Calendar; re-entry after leaving for Home opens normal fresh booking entry.
+- Another tab's current attempt is never adopted.
+- This is not an expiry strike and does not bypass existing reservation admission limits.
+- Migrations 0041 and 0052 must be applied before code using this contract; source implementation and synthetic checks do not establish deployment or provider acceptance.
 
 ## 7. Webhooks, operator routes and scheduled work
 
@@ -273,11 +406,18 @@ The account coordinator serializes workflows; queue priorities/capacity and sepa
 
 ## 9. Verification ownership
 
-[Worker tests](../worker/tests) cover access, identity, catalogue, combined hold, provider writes, recovery and signature boundaries with isolated synthetic providers. [Service tests](../src/services) cover parsing and browser adapter failure mapping. [Customer browser tests](../tests/customer.spec.ts) and [synthetic checkout tests](../tests/experiment.spec.ts) cover UI state/navigation under owner/CI browser execution. UAT is separated into [Admin](uat/admin.md), [Trainers](uat/trainers.md) and [Simulated user](uat/simulated-user.md). Green synthetic tests are not evidence of client configuration, live provider capacity or deployed acceptance.
+- [Worker tests](../worker/tests) cover access, identity, catalogue, combined hold, provider writes, recovery and signature boundaries with isolated synthetic providers. [Service tests](../src/services) cover parsing and browser adapter failure mapping. [Customer browser tests](../tests/customer.spec.ts) and [synthetic checkout tests](../tests/customer.spec.ts) cover UI state/navigation under owner/CI browser execution.
+- UAT is separated into [Admin](uat/admin.md), [Trainers](uat/trainers.md) and [Simulated user](uat/simulated-user.md).
+- Green synthetic tests are not evidence of client configuration, live provider capacity or deployed acceptance.
 
 ## 10. Worked requests, responses and recovery decisions
 
-These examples are fictional documentation fixtures, not captured traffic or instructions to send requests. IDs, names, amounts and timestamps illustrate the contract; they do not authorize a customer/provider operation. Cookies, bot tokens, signatures and payment URLs are deliberately omitted. Examples show relevant headers only; common response headers from section 2 still apply. All timestamps are epoch milliseconds unless a header says otherwise. Non-GET browser requests require the configured same-origin Origin, and JSON requests require `Content-Type: application/json`.
+- These examples are fictional documentation fixtures, not captured traffic or instructions to send requests.
+- IDs, names, amounts and timestamps illustrate the contract; they do not authorize a customer/provider operation.
+- Cookies, bot tokens, signatures and payment URLs are deliberately omitted.
+- Examples show relevant headers only; common response headers from section 2 still apply.
+- All timestamps are epoch milliseconds unless a header says otherwise.
+- Non-GET browser requests require the configured same-origin Origin, and JSON requests require `Content-Type: application/json`.
 
 ### A. Create guest access, then request email verification
 
@@ -366,7 +506,12 @@ Retain the original attempt/key and protected recovery state. An HTTP 503 `tempo
 
 #### Conflict recovery decision contract
 
-Rejected keys without an attempt now have a dedicated immutable `checkout_preparation_rejections` record (migration 0042). The owner-authenticated `/api/attempts/:id/checkout` context consults this only when the normal attempt snapshot is absent, then returns the no-payment context/summary plus `selectionRejection`. The exact input hash and reciprocal insert fences make rejection permanent for that key; a later explicit submission uses a new key. The protected summary binds the affected indices to the submitted session order, start times and player counts. Raw 404, proof-storage failure, auth failure and a prepared existing attempt do not grant rejection authority. Initial indexed conflict responses and restored contexts use the same validated rejection shape; inconsistent singular/array indices are rejected.
+- Rejected keys without an attempt now have a dedicated immutable `checkout_preparation_rejections` record (migration 0042).
+- The owner-authenticated `/api/attempts/:id/checkout` context consults this only when the normal attempt snapshot is absent, then returns the no-payment context/summary plus `selectionRejection`.
+- The exact input hash and reciprocal insert fences make rejection permanent for that key; a later explicit submission uses a new key.
+- The protected summary binds the affected indices to the submitted session order, start times and player counts.
+- Raw 404, proof-storage failure, auth failure and a prepared existing attempt do not grant rejection authority.
+- Initial indexed conflict responses and restored contexts use the same validated rejection shape; inconsistent singular/array indices are rejected.
 
 Apply [BR-001](business-rules.md#br-001) independently of HTTP status; a 409/503 alone does not identify the safe recovery action.
 
@@ -379,7 +524,11 @@ Apply [BR-001](business-rules.md#br-001) independently of HTTP status; a 409/503
 | Owned active checkout is unrelated, or its write has no observed association                      | `checkout_already_active`; retain the requested draft on Calendar without an other-checkout payment link. Never automatically adopt the other attempt.                                                                                                                                                                                                                                                                                                                                                                                           |
 | Read fails, is incomplete, or still offers the selection                                          | Keep the appropriate unresolved/recovery classification. Do not report proven occupancy, manufacture available slots or replay a possible write.                                                                                                                                                                                                                                                                                                                                                                                                 |
 
-Fresh affected-day reads update that day in the shared display snapshot while retaining its original expiry; browser reconciliation retains other valid cached dates/months. The local cache path adds no full calendar rebuild or mandatory warm wait. This is not an SLA for the provider read. Pending/in-flight data must remain scoped and must not overwrite newer invalidation evidence. Provider rejection during creation remains a separate guarded execution outcome, with no payment handoff for an unverified booking.
+- Fresh affected-day reads update that day in the shared display snapshot while retaining its original expiry; browser reconciliation retains other valid cached dates/months.
+- The local cache path adds no full calendar rebuild or mandatory warm wait.
+- This is not an SLA for the provider read.
+- Pending/in-flight data must remain scoped and must not overwrite newer invalidation evidence.
+- Provider rejection during creation remains a separate guarded execution outcome, with no payment handoff for an unverified booking.
 
 ### D. Checkout context without payment authority
 
@@ -407,7 +556,10 @@ Fresh affected-day reads update that day in the shared display snapshot while re
 
 Show protected summary/checking state, keep checkout unavailable and do not fabricate a payment URL. A later valid available context can expose its saved URL, but merely opening that URL does not confirm payment. The original server clocks remain in force across refreshes/tabs.
 
-Return and receipt recovery: a completed provider-return hint suppresses payment continuation only; server evidence remains mandatory for confirmation. Leaving an older receipt may dismiss a newer attempt only after protected confirmation proof and server dismissal, with revision checks around awaits. Explicit checkout-window rejection returns the requested draft to Calendar while affected selections are classified silently; it does not offer another checkout link. Same studio start across different trainers receives fresh availability classification rather than being treated as an unrelated checkout.
+- Return and receipt recovery: a completed provider-return hint suppresses payment continuation only; server evidence remains mandatory for confirmation.
+- Leaving an older receipt may dismiss a newer attempt only after protected confirmation proof and server dismissal, with revision checks around awaits.
+- Explicit checkout-window rejection returns the requested draft to Calendar while affected selections are classified silently; it does not offer another checkout link.
+- Same studio start across different trainers receives fresh availability classification rather than being treated as an unrelated checkout.
 
 ### E. Paid, but booking confirmation still pending
 
@@ -493,33 +645,62 @@ This is a cross-operation interpretation, not a replacement for individual persi
 
 ### Closed-install management service contract
 
-`FoundationManagement` (`worker/foundation-management.ts`) is an internal named Worker entrypoint reachable only through explicitly granted service bindings; the public HTTP router exposes none of these methods. All methods require production, all eight external-effect switches disabled, and exact expected account/database/coordinator name/location hint/source revision. `inspect` derives the real namespace ID without obtaining a stub and returns pending or matching registered state; foreign identity fails. `register` additionally requires that exact derived ID, inserts only an absent singleton and verifies the immutable winner after concurrent/repeated calls. `initialize` requires matching registration and invokes only the coordinator's `inspectFoundation` diagnostic through `coordinatorStub`. The diagnostic checks its own identity and returns ID, alarm, pending-wakeup count and unknown location; it performs no provider operations. Registration is management-owned and is never inferred from a public health request.
+- `FoundationManagement` (`worker/foundation-management.ts`) is an internal named Worker entrypoint reachable only through explicitly granted service bindings; the public HTTP router exposes none of these methods.
+- All methods require production, all eight external-effect switches disabled, and exact expected account/database/coordinator name/location hint/source revision. `inspect` derives the real namespace ID without obtaining a stub and returns pending or matching registered state; foreign identity fails. `register` additionally requires that exact derived ID, inserts only an absent singleton and verifies the immutable winner after concurrent/repeated calls. `initialize` requires matching registration and invokes only the coordinator's `inspectFoundation` diagnostic through `coordinatorStub`.
+- The diagnostic checks its own identity and returns ID, alarm, pending-wakeup count and unknown location; it performs no provider operations.
+- Registration is management-owned and is never inferred from a public health request.
 
 ### Paid response confirmation evidence
 
-After verified HitPay payment and current booking/invoice checks, recovery may use the authenticated SimplyBook accept-payment response as final evidence only when the existing invoice validator accepts the exact invoice, customer, currency, totals, processor, complete booking set, trainer/time/duration and confirmed nested bookings. The result is committed under the existing claim generation/version predicates before customer success. Incomplete or inconsistent response bodies retain the known-ID readback path; lost responses remain unknown and never trigger a duplicate write. The confirmed status DTO may include attempt-bound `customerConfirmation`; the UI can render it while the separate receipt request is pending. Export authorization and fresh-read requirements remain unchanged. Production response-shape and latency acceptance require an owner checkout; synthetic fixtures alone do not establish the fast path is used by the provider.
+- After verified HitPay payment and current booking/invoice checks, recovery may use the authenticated SimplyBook accept-payment response as final evidence only when the existing invoice validator accepts the exact invoice, customer, currency, totals, processor, complete booking set, trainer/time/duration and confirmed nested bookings.
+- The result is committed under the existing claim generation/version predicates before customer success.
+- Incomplete or inconsistent response bodies retain the known-ID readback path; lost responses remain unknown and never trigger a duplicate write.
+- The confirmed status DTO may include attempt-bound `customerConfirmation`; the UI can render it while the separate receipt request is pending.
+- Export authorization and fresh-read requirements remain unchanged.
+- Production response-shape and latency acceptance require an owner checkout; synthetic fixtures alone do not establish the fast path is used by the provider.
 
 ### Optional invoice document display metadata
 
-Normalized observations retain optional bounded `documentNumber` from SimplyBook `number`. For HitPay recovery, the authenticated unpaid read records its original number in `invoice_documents` before accounting. This display-only row is bound to the attempt's immutable association. A paid number must differ from that original number; no prefix is assumed or rewritten. Missing/invalid metadata and historical records without a baseline omit the customer label. Invoice identity and payment authority remain unchanged.
+- Normalized observations retain optional bounded `documentNumber` from SimplyBook `number`.
+- For HitPay recovery, the authenticated unpaid read records its original number in `invoice_documents` before accounting.
+- This display-only row is bound to the attempt's immutable association.
+- A paid number must differ from that original number; no prefix is assumed or rewritten.
+- Missing/invalid metadata and historical records without a baseline omit the customer label.
+- Invoice identity and payment authority remain unchanged.
 
-Receipt enrichment uses the existing authenticated `X-Booking-Refresh: 1` read-only coordinator path for confirmed as well as stale evidence. It retains original checking expiry, durable quota (at least10seconds apart), ownership, complete booking/payment verification and post-read scope checks. The frontend makes at most six receipt reads,10seconds apart after the initial read, within the original server checking window. It stops on a final number or unmount and correlates results to attempt/session revision. Provider failures do not undo an independently verified confirmation.
+- Receipt enrichment uses the existing authenticated `X-Booking-Refresh: 1` read-only coordinator path for confirmed as well as stale evidence.
+- It retains original checking expiry, durable quota (at least10seconds apart), ownership, complete booking/payment verification and post-read scope checks.
+- The frontend makes at most six receipt reads,10seconds apart after the initial read, within the original server checking window.
+- It stops on a final number or unmount and correlates results to attempt/session revision.
+- Provider failures do not undo an independently verified confirmation.
 
-A refreshed, verified number is retained separately from immutable confirmation JSON under association/proof/access predicates. Saved confirmation reads project that metadata; a matching newer receipt takes precedence in the UI. Metadata updates neither restart the main confirmation animation nor authorize another booking/payment/accounting action. Internal invoice/booking IDs remain protocol-only. Late numbers beyond the original window and historical records without baseline evidence remain omitted; no historical repair is inferred from a prefix.
+- A refreshed, verified number is retained separately from immutable confirmation JSON under association/proof/access predicates.
+- Saved confirmation reads project that metadata; a matching newer receipt takes precedence in the UI.
+- Metadata updates neither restart the main confirmation animation nor authorize another booking/payment/accounting action.
+- Internal invoice/booking IDs remain protocol-only.
+- Late numbers beyond the original window and historical records without baseline evidence remain omitted; no historical repair is inferred from a prefix.
 
 Invoice presentation: while bounded enrichment is active, the confirmed card shows a16px general spinner in the invoice value position. A final number uses the same380ms pop as the confirmation checkmark, under the existing reduced-motion preference. The checkmark does not remount. Exhaustion, checking expiry or unmount stops the loader; no provisional number is displayed.
 
-Protected checkout context and confirmation decisions can include `selectionRejection: { state: "selection_unavailable" | "restart_required", rejectedSessionIndex?: number }` for the exact authenticated attempt. This is emitted only for a retained active/archived blocked grant matching the immutable intent, with no association, dispatch, observation, hold, session effects or HitPay payment. A foreign owner is denied; unknown provider writes cannot produce this field. This recovers a lost rejection response without using `/api/booking/current` or generic503 as no-booking proof. The client applies an indexed unavailable result only to the original matching attempt snapshot; otherwise it uses fresh availability and keeps unclassified selections.
+- Protected checkout context and confirmation decisions can include `selectionRejection: { state: "selection_unavailable" | "restart_required", rejectedSessionIndex?: number }` for the exact authenticated attempt.
+- This is emitted only for a retained active/archived blocked grant matching the immutable intent, with no association, dispatch, observation, hold, session effects or HitPay payment.
+- A foreign owner is denied; unknown provider writes cannot produce this field.
+- This recovers a lost rejection response without using `/api/booking/current` or generic503 as no-booking proof.
+- The client applies an indexed unavailable result only to the original matching attempt snapshot; otherwise it uses fresh availability and keeps unclassified selections.
 
 HitPay request `purpose` uses retained server-matched service/trainer labels, canonical outlet, player/session counts and Singapore date/time ranges. It is bounded to the provider’s documented255-character maximum, preserves complete session entries and explicitly counts omitted sessions. Missing display labels use the booking details already known from immutable intent; no extra provider read or change to payment amount/reference is introduced.
 
 Public calendar month coverage: the existing calendar response may include bounded `monthCoverage` entries for the three policy months. Each is `available`, `empty`, or `unknown`; known entries retain their source observation/expiry times, while unknown carries no false timestamp proof. Metadata reads retained sibling snapshots only and adds no provider request. It governs month navigation presentation only, never reservation authority; warming retains the full policy horizon.
 
-Early unpaid-expiry resolution: successful payment creation bootstraps the governed Durable Object alarm; a failed wake leaves the durable payment intact and minute cron remains the fallback. Governed HitPay recovery schedules a read at the earlier of the immutable internal payment deadline and authenticated provider deadline. Matching authenticated terminal-unpaid evidence can make the existing expiry operation eligible then, rather than waiting the historical checking/recovery buffers. Pending, malformed, mismatched, paid, unknown-accounting or unprocessed-receipt evidence keeps the original lock. Eligibility is rechecked at the atomic grant/archive/strike boundary; a new receipt invalidates stale proof. The no-payment-row path retains conservative deadlines. Releasing customer checkout authority is not proof that the old studio capacity is available; fresh availability still governs its return.
+## Public calendar snapshot
 
-## Public calendar snapshot — 12 November 2026 follow-up
-
-`GET /api/calendar/snapshot` returns `{ "months": [ /* current Singapore month and the next two */ ] }`. Each item retains the existing public calendar schema, service ID, dates/offers, coverage, observation time and display expiry. The bounded response requires exactly the configured booking-window month count with unique months and one product service. It contains no identity, customer or payment data. Existing month endpoints remain compatible; the website uses this single endpoint for display preparation and replacement. The account coordinator serves warmed snapshots and builds missing months through the existing bounded read controls; it does not renew fresh snapshot deadlines or grant booking authority. A failed month fails the complete response rather than presenting partial data as a ready window.
+- `GET /api/calendar/snapshot` returns `{ "months": [ /* current Singapore month and the next two */ ] }`.
+- Each item retains the existing public calendar schema, service ID, dates/offers, coverage, observation time and display expiry.
+- The bounded response requires exactly the configured booking-window month count with unique months and one product service.
+- It contains no identity, customer or payment data.
+- Existing month endpoints remain compatible; the website uses this single endpoint for display preparation and replacement.
+- The account coordinator serves warmed snapshots and builds missing months through the existing bounded read controls; it does not renew fresh snapshot deadlines or grant booking authority.
+- A failed month fails the complete response rather than presenting partial data as a ready window.
 
 Identity restoration is flow-local once-per-entry presentation work. Fresh Book now starts a new preparation; returning to Account reads the adapter's latest current state without network restoration. Explicit code verification/sign-out and protected contact/checkout APIs retain their authentication, expiry and concurrency checks. Direct later-route entry can perform one read-only identity inspection; it does not create guest access or restore revoked identity.
 
@@ -527,33 +708,76 @@ Background sign-out changes presentation immediately but retains server authorit
 
 ### Profile-entry revocation boundary
 
-Saved contacts are read on entry to Booking Details or Manage saved contact. A revoked profile read returns the user to guest/email choices; already-entered booking details remain usable at checkout after remote email sign-out. DELETE `/api/identity/all-devices` revokes verified and remembered email authority and older challenges, but preserves remote guest booking capabilities. The caller still clears its cookies. Optional booking-profile persistence may skip401 `identity_unavailable`; actual booking capability denial and unrelated transport errors retain their existing guards. Explicit profile-editor writes never claim success after revocation.
+- Saved contacts are read on entry to Booking Details or Manage saved contact.
+- A revoked profile read returns the user to guest/email choices; already-entered booking details remain usable at checkout after remote email sign-out.
+- DELETE `/api/identity/all-devices` revokes verified and remembered email authority and older challenges, but preserves remote guest booking capabilities.
+- The caller still clears its cookies.
+- Optional booking-profile persistence may skip401 `identity_unavailable`; actual booking capability denial and unrelated transport errors retain their existing guards.
+- Explicit profile-editor writes never claim success after revocation.
 
 ### Guest domain checks and customer-requested help
 
-`POST /api/identity/email-domain` requires valid guest access and the normal same-origin guard. Strict JSON accepts only a syntactically valid email; only its domain is sent to the fixed Cloudflare DNS resolver. MX is preferred, null MX is rejected, and missing MX falls back to A/AAAA. NXDOMAIN/no mail routing is invalid; malformed, truncated or failed DNS is unavailable and retryable. The server bounds lookup time to5 seconds and response bytes to65,536; conclusive results cache by domain for60 seconds. UI aborts at7 seconds. Verified contact does not require this interaction. This is not mailbox-existence validation or an exact replica of SimplyBook's unpublished validator.
+- `POST /api/identity/email-domain` requires valid guest access and the normal same-origin guard.
+- Strict JSON accepts only a syntactically valid email; only its domain is sent to the fixed Cloudflare DNS resolver.
+- MX is preferred, null MX is rejected, and missing MX falls back to A/AAAA.
+- NXDOMAIN/no mail routing is invalid; malformed, truncated or failed DNS is unavailable and retryable.
+- The server bounds lookup time to5 seconds and response bytes to65,536; conclusive results cache by domain for60 seconds.
+- UI aborts at7 seconds.
+- Verified contact does not require this interaction.
+- This is not mailbox-existence validation or an exact replica of SimplyBook's unpublished validator.
 
-`POST /api/attempts/{uuid}/support` requires same-origin valid access, original attempt ownership, retained contact, an attempt at least30 seconds old, and dispatching/observed/recovery-required state. A no-creation resolution is ineligible. Paid attempts remain eligible for confirmation assistance. Request data cannot supply recipient or report text. The Worker derives fixed-recipient staff text and a customer acknowledgement from the immutable intent and first report timestamp. The acknowledgement recipient is only the original contact email; Reply-To is the studio. It includes original session times/players and amount, no claim of booking confirmation. Both sequential Resend sends share an8-second bound and a30-second retry admission, with distinct stable per-attempt staff/acknowledgement idempotency keys; uncertain sends cannot replay beyond23 hours. Pending persists if either send fails; retry reuses both original payloads/keys. The customer receives sent only after provider acceptance of both messages, not proof of inbox delivery. Previously sent reports are not resent/backfilled. No booking/payment write is retried by this endpoint.
+- `POST /api/attempts/{uuid}/support` requires same-origin valid access, original attempt ownership, retained contact, an attempt at least30 seconds old, and dispatching/observed/recovery-required state.
+- A no-creation resolution is ineligible.
+- Paid attempts remain eligible for confirmation assistance.
+- Request data cannot supply recipient or report text.
+- The Worker derives fixed-recipient staff text and a customer acknowledgement from the immutable intent and first report timestamp.
+- The acknowledgement recipient is only the original contact email; Reply-To is the studio.
+- It includes original session times/players and amount, no claim of booking confirmation.
+- Both sequential Resend sends share an8-second bound and a30-second retry admission, with distinct stable per-attempt staff/acknowledgement idempotency keys; uncertain sends cannot replay beyond23 hours.
+- Pending persists if either send fails; retry reuses both original payloads/keys.
+- The customer receives sent only after provider acceptance of both messages, not proof of inbox delivery.
+- Previously sent reports are not resent/backfilled.
+- No booking/payment write is retried by this endpoint.
 
 ### Bounded recovery presentation boundary
 
-The30-second creation budget and post-payment foreground budget are presentation bounds, not proof of a failed provider operation or permission to replay writes. The confirmation budget starts only with authenticated payment evidence or a completed-return display hint and retains its original deadline across reload. Its expired deadline is insufficient to display a dead end before the current protected context/status read cycle settles. Authenticated saved confirmation takes precedence over a transient receipt409; a browser hint alone never supplies that proof. Before checkout handoff, unresolved creation or booking-created/checkout-failed outcomes return to Calendar with the standardized help notice; authenticated no-creation proof retains its safe retry notice. After payment, genuinely exhausted recovery uses the existing confirmation details/Order Summary with an amber Pending status and the same red help notice above it. Ordinary refresh, receipt revalidation and unpaid continuation do not enter either dead-end presentation. No standalone Pending or booking-status-error page is part of this contract.
-
-Authenticated late payment discovered during Calendar recovery moves the exact owned original attempt to the dedicated confirmation route. Clearing that attempt’s Calendar presentation marker does not clear its financial journal or create new authority. A retained completed-return hint suppresses repayment only; protected status/receipt evidence remains necessary for Paid and Booking Confirmed.
-
-A fresh availability result reconciles Calendar display in the current service/player/identity scope. Affected studio windows remain suppressed until the original attempt has terminal evidence. Protected checkout context supplies that evidence; Calendar follows server polling cadence in the background after its foreground wait. A subsequent fresh eligible offer restores selection. The customer must explicitly submit a new checkout.
-
-A lost checkout-write response and its current-attempt readback share the remaining original creation foreground budget; readback cannot create an extra unbounded wait or replay the write. A later explicit retry after a matched authoritative no-dispatch rejection (`queue_busy` or `checkout_verification_required`) may start a fresh display budget for the same prepared identity/revision. Only that proven-safe retry renews presentation waiting; uncertain effects, financial deadlines and server authority are unchanged.
+- The server returns protected evidence for the original attempt. Its creation result, payment-link state, expiry reason and confirmation status have separate meanings.
+- A signed receipt can admit another bounded lookup of an incomplete paid result. A receipt alone cannot supply the missing verified payment ID.
+- The [customer flow](booking-flows.md) owns display timing and routing. [BR-008 and BR-011](business-rules.md#br-008) own release and duplicate-write protection.
 
 ## Public enquiry delivery
 
-`POST /api/enquiry` accepts same-origin JSON `{ key, botToken, values }`, where key is a UUID, botToken is a fresh `send-enquiry` Turnstile proof and values follows the shared Enquiry validation. It returns `{ status: "sent" }` only after mail-provider acceptance of both the staff enquiry and customer acknowledgement. The server fixes staff recipients to contact@soccerbotsg.com and glenna@soccerbotsg.com, uses the configured authenticated sender and places the validated customer email in Reply-To. After staff acceptance, a separate acknowledgement goes to the validated customer email, with Reply-To set to the studio contact. Its subject is “We’ve received your SoccerBotStudio enquiry”; its text thanks the sender and says the studio will reach out as soon as it can. New enquiries include branded HTML and a plain-text copy of every submitted enquiry field and the message. Legacy version0 retries retain their original text-only payload. No file attachment is generated. No booking session or customer identity is minted.
+- `POST /api/enquiry` accepts same-origin JSON `{ key, botToken, values }`, where key is a UUID, botToken is a fresh `send-enquiry` Turnstile proof and values follows the shared Enquiry validation.
+- It returns `{ status: "sent" }` only after mail-provider acceptance of both the staff enquiry and customer acknowledgement.
+- The server fixes staff recipients to contact@soccerbotsg.com and glenna@soccerbotsg.com, uses the configured authenticated sender and places the validated customer email in Reply-To.
+- After staff acceptance, a separate acknowledgement goes to the validated customer email, with Reply-To set to the studio contact.
+- Its subject is “We’ve received your SoccerBotStudio enquiry”; its text thanks the sender and says the studio will reach out as soon as it can.
+- New enquiries include branded HTML and a plain-text copy of every submitted enquiry field and the message.
+- Legacy version0 retries retain their original text-only payload.
+- No file attachment is generated.
+- No booking session or customer identity is minted.
 
-Invalid fields/proof return400, changed values under an existing key409, admission limits429 and provider/configuration uncertainty503. The browser retains the same key when retrying unchanged values and has a15-second request deadline. Migration0050 persists only request/proof hashes, state and timing; concurrent sends share one30-second claim. Provider retries retain separate original keys (`enquiry/<key>` for staff and `enquiry-acknowledgement/<key>` for the customer) and stop before the24-hour provider window (23-hour application cutoff). If the second send is uncertain, the request stays pending; retries reuse both keys rather than sending a new staff enquiry. Completed historical keys remain completed and are not replayed. Each physical email request consumes the existing shared email budget; source/bot controls remain unchanged. Acknowledgement means provider acceptance, not confirmed inbox delivery. Preview remains explicitly no-send. Owners: `src/services/enquiry.ts`, `worker/enquiry.ts`, `worker/provider-transport.ts`; tests: `src/services/enquiry.test.ts` and `worker/tests/enquiry.test.mjs`.
+- Invalid fields/proof return400, changed values under an existing key409, admission limits429 and provider/configuration uncertainty503.
+- The browser retains the same key when retrying unchanged values and has a15-second request deadline.
+- Migration0050 persists only request/proof hashes, state and timing; concurrent sends share one30-second claim.
+- Provider retries retain separate original keys (`enquiry/<key>` for staff and `enquiry-acknowledgement/<key>` for the customer) and stop before the24-hour provider window (23-hour application cutoff).
+- If the second send is uncertain, the request stays pending; retries reuse both keys rather than sending a new staff enquiry.
+- Completed historical keys remain completed and are not replayed.
+- Each physical email request consumes the existing shared email budget; source/bot controls remain unchanged.
+- Acknowledgement means provider acceptance, not confirmed inbox delivery.
+- Preview remains explicitly no-send.
+- Owners: `src/services/enquiry.ts`, `worker/enquiry.ts`, `worker/provider-transport.ts`; tests: `src/services/enquiry.test.ts` and `worker/tests/enquiry.test.mjs`.
 
 ### App notification presentation
 
-`worker/notification-template.ts` renders nine branded HTML variants alongside plain text: verification; enquiry customer/team; booking-help customer/team for booking-unconfirmed, checkout-unconfirmed and payment-confirmation-pending. The existing send triggers, fixed recipients, reply-to, quotas and idempotency keys remain authoritative. Enquiry includes all nine submitted website fields. Customer enquiry/help greetings use the submitted or retained contact name; verification uses “Hello human,” without an unverified account lookup. Escaping applies to customer values and link attributes. Support uses the retained report category/time and known session data; internal attempt IDs are staff-only. No attachments or script-based Copy controls are included. These application templates do not change SimplyBook-owned confirmation, invoice, reminder or staff notification emails.
+- `worker/notification-template.ts` renders nine branded HTML variants alongside plain text: verification; enquiry customer/team; booking-help customer/team for booking-unconfirmed, checkout-unconfirmed and payment-confirmation-pending.
+- The existing send triggers, fixed recipients, reply-to, quotas and idempotency keys remain authoritative.
+- Enquiry includes all nine submitted website fields.
+- Customer enquiry/help greetings use the submitted or retained contact name; verification uses “Hello human,” without an unverified account lookup.
+- Escaping applies to customer values and link attributes.
+- Support uses the retained report category/time and known session data; internal attempt IDs are staff-only.
+- No attachments or script-based Copy controls are included.
+- These application templates do not change SimplyBook-owned confirmation, invoice, reminder or staff notification emails.
 
 Absolute asset/policy links use the configured application origin. Images use the actual venue/wordmark; email clients may suppress images or advanced backgrounds, while live text remains readable. Synthetic dispatch tests verify HTML, fallback text, dynamic names and escaping; CI does not establish real inbox rendering.
 

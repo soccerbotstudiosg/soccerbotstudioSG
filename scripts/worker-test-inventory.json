@@ -789,7 +789,7 @@
   },
   {
     "file": "worker/tests/hitpay.test.mjs",
-    "title": "terminal payment requests require explicit empty or unstarted evidence for release"
+    "title": "verified expiry accepts omitted payment details and rejects conflicting evidence"
   },
   {
     "file": "worker/tests/hitpay.test.mjs",
@@ -798,6 +798,26 @@
   {
     "file": "worker/tests/hitpay.test.mjs",
     "title": "verified nonpayment releases checkout before the original hold ends"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "authenticated expiry with omitted optional details releases the customer checkout"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "contradictory payment evidence remains locked across signed receipt rechecks until verified payment"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "completed payment missing its transaction reconciles after a signed receipt without duplicate accounting"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "incomplete cancellation keeps sampling the original request and prioritizes verified payment"
+  },
+  {
+    "file": "worker/tests/hitpay.test.mjs",
+    "title": "expired provider evidence returned after the reconciliation deadline cannot release checkout"
   },
   {
     "file": "worker/tests/hitpay.test.mjs",

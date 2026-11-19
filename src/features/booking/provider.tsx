@@ -1769,15 +1769,19 @@ export function BookingProvider({
         (latest.current.attempt?.id === id
           ? latest.current.attempt.draft.slots
           : latest.current.draft.slots);
+      const editable = latest.current.draft;
+      const slots = editable.slots.filter(
+        (slot) =>
+          !previousSlots.some((expired) => slotKey(expired) === slotKey(slot)),
+      );
       const nextDraft = {
-        ...latest.current.draft,
-        accepted: false,
-        slots: latest.current.draft.slots.filter(
-          (slot) =>
-            !previousSlots.some(
-              (expired) => slotKey(expired) === slotKey(slot),
-            ),
-        ),
+        ...editable,
+        accepted:
+          action.calendarRecovery === true &&
+          slots.length > 0 &&
+          slots.length === editable.slots.length &&
+          editable.accepted,
+        slots,
       };
       setSuppressedSlots([
         ...suppressedSlots.filter(
@@ -3201,7 +3205,16 @@ export function BookingProvider({
             commit(
               {
                 ...current,
-                draft: { ...current.draft, ...change, accepted: false },
+                draft: {
+                  ...current.draft,
+                  ...change,
+                  accepted:
+                    action.calendarRecovery === true &&
+                    !action.unresolvedCheckout &&
+                    !isUnresolvedCheckout(current.attempt.id) &&
+                    Object.keys(change).length === 1 &&
+                    change.accepted === true,
+                },
               },
               true,
             );

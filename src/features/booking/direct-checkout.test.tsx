@@ -46,9 +46,11 @@ import {
   saveBooking,
   saveSuppressedSlots,
   saveCalendarRecovery,
+  dismissCalendarRecoveryNotice,
   loadLiveDraft,
   savePendingConflict,
   isCalendarRecovery,
+  isUnresolvedCheckout,
   isBookingDeparture,
   submittedCheckoutId,
   markSubmittedCheckout,
@@ -2921,6 +2923,7 @@ async function verifyMockPaymentExpiry(
   const departed = scenario === "departed";
   vi.useFakeTimers(expired ? { toFake: ["Date"] } : undefined);
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  sessionStorage.clear();
   localStorage.clear();
   const paymentCutoff = Date.now() - 24 * 60_000;
   const retained: Attempt = {
@@ -3147,6 +3150,10 @@ async function verifyMockPaymentExpiry(
     expect(
       screen.queryByRole("button", { name: "Continue payment" }),
     ).toBeNull();
+    expect(isUnresolvedCheckout(id)).toBe(true);
+    expect(
+      screen.getByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeVisible();
     const replacement = screen.getByRole("button", { name: /12:50–13:30/ });
     fireEvent.click(replacement);
     fireEvent.change(
@@ -3982,6 +3989,8 @@ async function verifyNoCreationRecovery(
   };
   const fetcher = vi.fn<typeof globalThis.fetch>(async (input) => {
     const path = String(input);
+    if (path === `/api/attempts/${id}/support`)
+      return Response.json({ status: "sent" });
     if (path === "/api/identity/email-domain")
       return Response.json({ status: "valid" });
     if (path === `/api/booking/checkout/${id}`)
@@ -4035,17 +4044,33 @@ async function verifyNoCreationRecovery(
     ...liveBookingService,
     checkout: async () => ({ ...retained, status: "ready" }),
     restore: async () => (route === "immediate" || refreshed ? null : retained),
-    publicCalendar: undefined,
+    publicCalendar:
+      emailOutcome === "taken" || emailOutcome === "unknown"
+        ? async ({ month }) => ({
+            month,
+            serviceId: "2",
+            observedAtMs: Date.now(),
+            dates: [{ date: draft.slots[0].date, available: true }],
+          })
+        : undefined,
     calendar: async ({ month }) => ({
       month,
       observedAtMs: Date.now(),
       dates: [{ date: draft.slots[0].date, available: true }],
     }),
     availability: vi.fn(async ({ fresh }) => {
-      if (fresh && emailOutcome === "taken") return [];
+      const replacement = {
+        ...draft.slots[0],
+        start: "12:50",
+        available: true,
+      };
+      if (fresh && emailOutcome === "taken") return [replacement];
       if (fresh && !freshAvailable && emailOutcome !== "available")
         throw new Error("Synthetic fresh availability outage");
       return [
+        ...(emailOutcome === "taken" || emailOutcome === "unknown"
+          ? [replacement]
+          : []),
         ...draft.slots.map((slot) => ({ ...slot, available: true })),
         {
           ...draft.slots[0],
@@ -4215,6 +4240,9 @@ async function verifyNoCreationRecovery(
         await waitFor(() =>
           expect(navigation.replace).toHaveBeenCalledWith("/book/details/"),
         );
+        expect(
+          screen.queryByText(/The booking provider didn’t accept/),
+        ).toBeNull();
         navigation.path = "/book/details/";
         view.rerender(tree("details"));
         if (member) {
@@ -4278,6 +4306,60 @@ async function verifyNoCreationRecovery(
           screen.getByRole("button", { name: "Ask the studio to contact me" }),
         ).toBeVisible();
         expect(navigation.replace).not.toHaveBeenCalledWith("/book/details/");
+        const support = { name: "Ask the studio to contact me" };
+        if (emailOutcome === "taken") {
+          fireEvent.click(screen.getByRole("button", support));
+          await screen.findByText(
+            "Help has been requested. We will get back as soon as we can.",
+          );
+        }
+        fireEvent.click(
+          await screen.findByRole("button", { name: /12:50–13:30/ }),
+        );
+        fireEvent.change(
+          await screen.findByLabelText(
+            `Trainer for ${draft.slots[0].date} at 12:50`,
+          ),
+          {
+            target: { value: `${draft.slots[0].date}|12:50|2|4` },
+          },
+        );
+        const detailsLink = screen.getByRole("link", {
+          name: /^Enter contact details/,
+        });
+        expect(detailsLink).toHaveAttribute("href", "/book/details");
+        navigation.path = "/book/details/";
+        view.rerender(tree("details"));
+        const email = await screen.findByRole("textbox", {
+          name: /Email address/i,
+        });
+        await waitFor(() => expect(email).toHaveFocus());
+        expect(email).toHaveValue(draft.contact.email);
+        expect(
+          screen.queryByText(/The booking provider didn’t accept/),
+        ).toBeNull();
+        expect(screen.queryByRole("button", support)).toBeNull();
+
+        navigation.path = "/book/time/";
+        view.rerender(tree("time"));
+        if (emailOutcome === "taken") {
+          expect(
+            await screen.findByText(
+              "Help has been requested. We will get back as soon as we can.",
+            ),
+          ).toBeVisible();
+          expect(screen.queryByRole("button", support)).toBeNull();
+        } else {
+          fireEvent.click(await screen.findByRole("button", support));
+          await screen.findByText(
+            "Help has been requested. We will get back as soon as we can.",
+          );
+        }
+        expect(
+          fetcher.mock.calls.filter(
+            ([path]) => String(path) === `/api/attempts/${id}/support`,
+          ),
+        ).toHaveLength(1);
       }
       return;
     }
@@ -6030,6 +6112,7 @@ async function expectRecoveryReleaseNavigation(
   destination: "details" | "session",
   resolution: "expiry" | "not_created" | "rejected",
   checkReviewGuard = false,
+  consentChange?: "withdraw" | "edit",
 ) {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
@@ -6245,10 +6328,49 @@ async function expectRecoveryReleaseNavigation(
       JSON.parse(screen.getByTestId("original-recovery-draft").textContent!),
     ).toEqual(draft);
   }
+  const reviewingReplacement =
+    resolution === "expiry" && destination === "details";
+  if (reviewingReplacement) {
+    navigation.path = "/book/review/";
+    view.rerender(tree("review"));
+    const consent = await screen.findByRole("checkbox");
+    fireEvent.click(consent);
+    expect(consent).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: /^Proceed to Payment/ }),
+    ).toBeDisabled();
+    if (consentChange === "edit") {
+      expect(screen.getByTestId("replacement-players")).toHaveTextContent("1");
+      fireEvent.click(screen.getByText("Edit replacement players"));
+      expect(screen.getByTestId("replacement-players")).toHaveTextContent("2");
+    } else if (consentChange === "withdraw") {
+      fireEvent.click(consent);
+    }
+    if (consentChange) {
+      expect(consent).not.toBeChecked();
+      expect(
+        screen.getByRole("button", { name: /^Proceed to Payment/ }),
+      ).toBeDisabled();
+    }
+    expect(
+      JSON.parse(screen.getByTestId("original-recovery-draft").textContent!),
+    ).toEqual(draft);
+  }
   classify = true;
   await act(async () => {
     fireEvent.click(screen.getByText("Verified release"));
   });
+  if (reviewingReplacement) {
+    const consent = screen.getByRole("checkbox");
+    const proceed = screen.getByRole("button", { name: /^Proceed to Payment/ });
+    if (consentChange) {
+      expect(consent).not.toBeChecked();
+      expect(proceed).toBeDisabled();
+      fireEvent.click(consent);
+    }
+    expect(consent).toBeChecked();
+    expect(proceed).toBeEnabled();
+  }
   if (resolution === "rejected") {
     expect(finishClassification).toBeDefined();
     expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
@@ -6334,6 +6456,8 @@ async function expectRecoveryReleaseNavigation(
 
 it("expiry release permits Continue with replacement selections without replaying payment", async () => {
   await expectRecoveryReleaseNavigation("details", "expiry");
+  await expectRecoveryReleaseNavigation("details", "expiry", false, "withdraw");
+  await expectRecoveryReleaseNavigation("details", "expiry", false, "edit");
 });
 
 it("expiry release permits Back with replacement selections without replaying payment", async () => {
@@ -7268,4 +7392,179 @@ it("email rejection keeps help available when capacity cannot be read", async ()
 
 it("verified members retain their identity and can request help after email rejection", async () => {
   await verifyNoCreationRecovery("immediate", "available", true);
+});
+
+it("inconclusive payment checks return acknowledged replacement Review to Calendar help until the original payment resolves", async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const start = Date.now();
+  const replacement = { ...draft.slots[0], start: "13:40" };
+  const base = `/api/attempts/${id}`;
+  for (const outcome of ["paid", "released"] as const) {
+    saveLiveDraft({ ...draft, slots: [replacement] }, true, id);
+    saveCalendarRecovery(id);
+    dismissCalendarRecoveryNotice(id);
+    saveSuppressedSlots(draft.slots);
+    const status = Promise.withResolvers<Response>();
+    let answered = false;
+    let resolveOriginal = false;
+    const calls: { path: string; method: string }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input),
+          method = init?.method ?? "GET";
+        calls.push({ path, method });
+        if (path === base + "/checkout" && method === "GET")
+          return Response.json(
+            {
+              attemptId: id,
+              mode: "live",
+              checkout: { state: "unavailable" },
+              summary: {
+                players: draft.players,
+                totalMinor: 8800,
+                currency: "SGD",
+                sessions: [
+                  {
+                    startMs: Date.parse("2026-10-20T12:00:00+08:00"),
+                    players: draft.players,
+                  },
+                ],
+              },
+              checking: {
+                paymentExpiresAtMs: start - 1000,
+                deadlineMs: start + 120000,
+                recoveryEndsAtMs: start + 300000,
+                nextCheckMs: 0,
+                pollAfterMs: 5000,
+              },
+            },
+            { headers: { Date: new Date().toUTCString() } },
+          );
+        if (path === base + "/confirmation" && method === "GET") {
+          if (!answered) return status.promise;
+          return Response.json(
+            resolveOriginal
+              ? outcome === "paid"
+                ? {
+                    status: "pending",
+                    reason: "payment_received_booking_pending",
+                  }
+                : {
+                    status: "unresolved",
+                    reason: "payment_expired",
+                    expired: true,
+                  }
+              : {
+                  status: "pending",
+                  reason: "payment_expiry_checks_inconclusive",
+                },
+          );
+        }
+        if (
+          path === base + "/expire" &&
+          method === "POST" &&
+          resolveOriginal &&
+          outcome === "released"
+        )
+          return Response.json({ expired: true });
+        throw new Error(`Unexpected protected request ${method} ${path}`);
+      },
+    );
+    const retained: Attempt = {
+      id,
+      draft,
+      status: "checking",
+      outcome: "pending",
+      checkUntil: start + 120000,
+      booking: null,
+    };
+    const service: BookingService = {
+      ...liveBookingService,
+      restore: async () => retained,
+      calendar: undefined,
+      publicCalendar: undefined,
+      availability: async () => [{ ...replacement, available: true }],
+      checkout: vi.fn(),
+      pay: vi.fn(),
+    };
+    const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    const tree = (step: "review" | "time") => {
+      navigation.path = `/book/${step}/`;
+      return (
+        <BookingProvider bookingService={service} identityService={identity}>
+          <ConflictHandoffProbe />
+          <BookingPage step={step} />
+        </BookingProvider>
+      );
+    };
+    const view = render(tree("review"));
+    await act(async () => {});
+    const consent = screen.getByRole("checkbox");
+    fireEvent.click(consent);
+    expect(consent).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: /^Proceed to Payment/ }),
+    ).toBeDisabled();
+    expect(navigation.replace).not.toHaveBeenCalled();
+    expect(calls).toContainEqual({
+      path: base + "/confirmation",
+      method: "GET",
+    });
+    await act(async () => {
+      answered = true;
+      status.resolve(
+        Response.json({
+          status: "pending",
+          reason: "payment_expiry_checks_inconclusive",
+        }),
+      );
+    });
+    expect(navigation.replace).toHaveBeenCalledWith("/book/time/");
+    view.rerender(tree("time"));
+    await act(async () => {});
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      CALENDAR_CHECKOUT_PAUSED,
+    );
+    expect(
+      screen.getByRole("button", { name: "Ask the studio to contact me" }),
+    ).toBeVisible();
+    expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+    expect(JSON.parse(screen.getByTestId("handoff-cart").textContent!)).toEqual(
+      [replacement],
+    );
+    expect(isUnresolvedCheckout(id)).toBe(true);
+    expect(calls.every(({ method }) => method === "GET")).toBe(true);
+    resolveOriginal = true;
+    await act(async () => vi.advanceTimersByTimeAsync(5000));
+    if (outcome === "paid") {
+      expect(navigation.replace).toHaveBeenLastCalledWith(
+        `/confirmation/?attempt=${id}`,
+      );
+      expect(screen.getByTestId("handoff-attempt")).toHaveTextContent(id);
+      expect(completedPaymentReturn(id)).toBe(true);
+      expect(calls.every(({ method }) => method === "GET")).toBe(true);
+    } else {
+      expect(screen.getByTestId("handoff-attempt")).toHaveTextContent("none");
+      expect(
+        JSON.parse(screen.getByTestId("handoff-cart").textContent!),
+      ).toEqual([replacement]);
+      expect(calls.filter(({ method }) => method !== "GET")).toEqual([
+        { path: base + "/expire", method: "POST" },
+      ]);
+      view.rerender(tree("review"));
+      await act(async () => {});
+      expect(screen.getByRole("checkbox")).not.toBeChecked();
+      expect(
+        screen.getByRole("button", { name: /^Proceed to Payment/ }),
+      ).toBeDisabled();
+    }
+    expect(service.checkout).not.toHaveBeenCalled();
+    expect(service.pay).not.toHaveBeenCalled();
+    view.unmount();
+    localStorage.clear();
+    sessionStorage.clear();
+    navigation.replace.mockClear();
+  }
 });

@@ -2,9 +2,10 @@
 
 [Database schema](architecture/database-schema.md) owns the D1 and Durable Object table diagrams and keys; this document owns lifecycle and retention.
 
-**Draft for client policy mapping, 28 October 2026.** This document describes what the application currently stores, how access expires and where physical cleanup exists. It does not approve retention periods, authorize deletion or certify compliance. Before implementing cleanup or publishing customer promises, map the client’s PDPA/privacy clauses to these records, resolve exceptions and approve the resulting rules. No customer data, provider settings or cleanup behavior was changed to prepare this draft.
-
-Original policy-review baseline: application code at `dffb24a`, carried unchanged through documentation branch `b137a79`. Later storage changes are reconciled below, including local migration0041. All41 migrations were applied to an empty in-memory SQLite database for the current schema review; no deployed database was queried by that check. Account-level backup, log and provider retention settings have not been verified. [Business rules](business-rules.md) own invariants, [API contracts](api-contracts.md) own interfaces, [technical behavior](code-owners/technical-behavior.md) maps functions and [runbook](runbook.md) owns recovery procedures.
+- **Draft for client policy mapping, 28 October 2026.** This document describes what the application currently stores, how access expires and where physical cleanup exists.
+- It does not approve retention periods, authorize deletion or certify compliance.
+- Before implementing cleanup or publishing customer promises, map the client’s PDPA/privacy clauses to these records, resolve exceptions and approve the resulting rules.
+- No customer data, provider settings or cleanup behavior was changed to prepare this draft.
 
 ## 1. Lifecycle and evidence boundaries
 
@@ -49,7 +50,12 @@ All rows below need an approved disposal rule even where expiry is already enfor
 | DL-04 | `soccerbot-player-app-prompt` localStorage preference; demo draft, identity, profiles and receipt fixtures | [Prompt](../src/components/player-app-prompt.tsx), [storage](../src/services/storage.ts) and [demo adapters](../src/services/demo) use different keys/stores. Demo sign-out removes its identity keys, not a system-wide customer erasure.                                                                                                                                                                                                      | Preference lifetime and test-data hygiene; do not enter real customer data into demo fixtures.                                      |
 | DL-05 | Secure HttpOnly access/remembered cookies; downloaded PDF/calendar files                                   | Cookie expiry/revocation is enforced by [access](../worker/access.ts) and [remembered identity](../worker/remembered-identity.ts). Customer PDF/calendar generation is retired; previously downloaded files remain customer-held.                                                                                                                                                                                                               | Explain cookies and downloads appropriately. Server deletion does not recall downloaded files or recipient inbox copies.            |
 
-The tab-local `soccerbot-expiry-reconciliation:<attemptId>` sessionStorage record stores the original payment deadline and a display-only twenty-second reconciliation deadline. Reload resumes that original display window, with at most ten additional seconds when the first post-expiry status read has not returned. The optional settlement window is derived from the same stored deadline and cannot renew on refresh. It cannot authorize payment or release a reservation. Records last for the browser session (including possible session restoration); there is no separate age purge. If storage is unavailable, skip this optional foreground wait rather than restarting it on every reload; the original financial lock and background recovery remain intact.
+- The tab-local `soccerbot-expiry-reconciliation:<attemptId>` sessionStorage record stores the original payment deadline and a display-only twenty-second reconciliation deadline.
+- Reload resumes that original display window, with at most ten additional seconds when the first post-expiry status read has not returned.
+- The optional settlement window is derived from the same stored deadline and cannot renew on refresh.
+- It cannot authorize payment or release a reservation.
+- Records last for the browser session (including possible session restoration); there is no separate age purge.
+- If storage is unavailable, skip this optional foreground wait rather than restarting it on every reload; the original financial lock and background recovery remain intact.
 
 The tab-local `soccerbot-suppressed-slots` sessionStorage entry contains validated affected session display data for conflict/expiry hiding. It grants no booking/payment authority. Successful fresh availability removes released entries; failed/stale reads retain them, and browser session lifetime applies. No independent age-based purge is implemented.
 
@@ -83,7 +89,17 @@ Migration 0052 adds `native_creation_checks` for the original attempt, intent ha
 
 Migration0041 adds `no_creation_resolutions`: original attempt/intent hash/version/dispatch fence, bounded evidence reference, verification/resolution times, evidence source and an operator-capability hash only for operator verification. The reference identifies restricted evidence; raw provider messages, customer contact details and operator credentials are not copied into this table. It remains linked to the original attempt and is not anonymous.
 
-[Resolution](../worker/native-creation-resolution.ts) archives the exact active grant into `rejected_native_checkout_grants`, preserves attempts/dispatches/session effects, completes recovery and prevents later writes on that attempt. Resolution is neither data erasure nor unpaid expiry and creates no reservation-expiry strike. Browser cleanup removes the resolved attempt's recovery identity. The tab-local `leftBookingFlow` marker retains deliberate departure with the original attempt ID until exact protected re-entry readback: terminal proof starts fresh entry, while an unknown read retains the lock. Active recovery preserves contact/session preferences; deliberate Home departure instead starts a blank draft after resolution. The resolved no-creation notice stores validated date/start pairs in tab-local `soccerbot-no-creation-notice` sessionStorage, separate from the cleared attempt marker. Calendar reload restores its message and bullets; leaving Calendar or replacing/clearing the notice removes that display record. It grants no booking/payment authority and otherwise follows browser session lifetime. The restricted `developer_operations` grant stores its scoped proof until consumption, then its bounded result; the terminal table retains the evidence reference. No automatic purge or disposal period is introduced. Immutable triggers and replay protection must be included in any future authorized retention design.
+- [Resolution](../worker/native-creation-resolution.ts) archives the exact active grant into `rejected_native_checkout_grants`, preserves attempts/dispatches/session effects, completes recovery and prevents later writes on that attempt.
+- Resolution is neither data erasure nor unpaid expiry and creates no reservation-expiry strike.
+- Browser cleanup removes the resolved attempt's recovery identity.
+- The tab-local `leftBookingFlow` marker retains deliberate departure with the original attempt ID until exact protected re-entry readback: terminal proof starts fresh entry, while an unknown read retains the lock.
+- Active recovery preserves contact/session preferences; deliberate Home departure instead starts a blank draft after resolution.
+- The resolved no-creation notice stores validated date/start pairs in tab-local `soccerbot-no-creation-notice` sessionStorage, separate from the cleared attempt marker.
+- Calendar reload restores its message and bullets; leaving Calendar or replacing/clearing the notice removes that display record.
+- It grants no booking/payment authority and otherwise follows browser session lifetime.
+- The restricted `developer_operations` grant stores its scoped proof until consumption, then its bounded result; the terminal table retains the evidence reference.
+- No automatic purge or disposal period is introduced.
+- Immutable triggers and replay protection must be included in any future authorized retention design.
 
 ### Durable Object, caches and external copies
 
@@ -164,7 +180,7 @@ Start with explicit rules and modest bounded jobs when approved; introduce queue
 
 ## 8. Review checklist and handover
 
-- [ ] Client clauses/version received; purposes, periods and exceptions mapped and approved.
+- [ ] Published client clauses mapped to purposes, periods and exceptions, with approval recorded.
 - [ ] Source inventory reconciled with actual client accounts/resources and provider settings.
 - [ ] Browser storage, downloaded files, nested JSON and archives included—not only obvious profile tables.
 - [ ] No promise equates sign-out, expiry, archive or cancellation with deletion/refund.
@@ -173,52 +189,18 @@ Start with explicit rules and modest bounded jobs when approved; introduce queue
 - [ ] Operational owner and review cadence assigned; alert responders remain separate and currently unassigned.
 - [ ] Implemented revision, CI evidence and owner acceptance recorded only after actual execution.
 
-Current status: **source-based draft complete; policy mapping, external-account verification and cleanup implementation pending**. Review when client clauses arrive and whenever storage schemas, identity behavior, provider integrations or retention settings change. This document owns lifecycle policy mapping; the [runbook’s restore procedure](runbook.md#7-data-protection-and-restore) owns operational recovery execution.
+### Additional storage and retention boundaries
 
-Browser confirmation timing retains response timestamps in a WeakMap and a bounded set of emitted stage keys within the mounted view. It adds no local/session storage or database records. Performance holds the latest diagnostic mark per stage; console retention depends on browser tooling and owner export. Exported diagnostic captures include pseudonymous correlation and must follow the same controlled handling as HAR evidence; the app does not upload them automatically.
+| Record                              | Purpose and lifecycle                                                                                                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Invoice documents                   | Retain optional original and paid invoice numbers under the immutable attempt association.                                                                                            |
+| Unpaid release                      | Archive the customer grant. Keep the payment journal, verified provider association and receipts for late reconciliation.                                                             |
+| Pending conflict and expiry display | Validated tab-local snapshots identify affected times and remember dismissal. Navigation, replacement or clearing the draft retires its display state.                                |
+| Verification challenges             | Each code retains its own validity and consumption state. Issuance limits, challenge rows and blocked requests have separate retention from code expiry.                              |
+| Preparation rejection               | Immutable owner/key and input-hash evidence prevents a rejected key from being reused. The bounded affected-session summary contains personal booking metadata.                       |
+| Checkout bot proof                  | Store token and intent hashes, verification time and expiry. Retain no raw Turnstile token.                                                                                           |
+| Help report                         | Retain original attempt, category, send state and retry admission. Staff mail derives contact from the existing booking. The notice key tracks presentation, never payment authority. |
+| Confirmation navigation             | A bounded last-seen attempt and tab-local return hints support safe navigation. A hint cannot unlock a receipt or authorize repayment.                                                |
+| All-device sign-out                 | Revoke verified profile access. Preserve other devices’ guest booking authority where allowed by revocation scope.                                                                    |
 
-Invoice display metadata: optional provider numbers remain in observations and saved confirmation JSON. Migration0036 adds `invoice_documents`, keyed by attempt and immutable association, containing the original unpaid number, optional paid document number and observation time. It contains no new contact fields, has no automatic expiry/deletion and follows the pending attempt-record retention policy; cleanup remains unapproved. Only authenticated verified receipt enrichment updates the paid display value. Old records are not backfilled by inference. Customer PDF/calendar generation remains retired; historical files may retain earlier data outside server revocation. Email drafts create no delivery store.
-
-### Verified unpaid release and warming claims
-
-Migration0037 adds immutable per-attempt checking-buffer timing. Verified unpaid release moves the active grant to its existing archive; it deletes neither the payment request journal nor webhook/booking evidence. Later payment remains associated with the original attempt. DO `display_warm_month` stores only scope/month/last-attempt time, with no customer or financial data. Snapshot expiry and affected-day replacement retain the existing original deadline.
-
-Guest capability expiry now renews for the configured lifetime on valid explicit access entry and checkout POST. Issuance identity, revocation, related grants and financial deadlines remain unchanged; expiry/revocation prevents renewal. No new storage table or purge behavior.
-
-The tab-local `soccerbot-conflict-notice` sessionStorage date/start array retains the approved conflict notice and its affected-session bullets across calendar reloads. It carries only validated display dates/times, no contact/payment data and no authority. Leaving the calendar step, leaving the booking, or resetting clears it; background availability and other-tab checkout reads do not recreate it after dismissal.
-
-A deliberate departure from an unresolved booking retains only the original attempt-bound session snapshot needed to suppress affected times after verified non-creation. It is display/recovery correlation, not booking authority or an editable cart. Terminal handling retires the attempt/departure marker; affected-time suppression persists until fresh availability confirms release.
-
-The tab-local `soccerbot-pending-conflict` sessionStorage entry retains a validated original rejected draft and optional exact attempt/index correlation while initial availability classification is pending. It includes the same contact/selection display data as the live draft, never payment or booking authority. It survives refresh, is rejected when its attempt marker differs, and is cleared after completed classification or deliberate cancellation/departure. Protected server evidence is required before replaying an indexed rejection after reload. Browser session lifetime applies; no independent age-based purge is introduced.
-
-Migration 0042 adds `checkout_preparation_rejections` for checkout keys rejected before an attempt exists. It retains the original owner/key, a hash of validated input, bounded session-time/player/total summary, affected-index proof and timestamp. The table does not copy contact details or provider/payment URLs. These links remain personal booking metadata, not anonymous data. Immutable triggers and replay fences preserve this evidence; no automatic purge is introduced. It is distinct from provider-backed `no_creation_resolutions` for an already-dispatched uncertain attempt.
-
-The tab-local live draft stores `calendarNoticeDismissed` only alongside its matching checkout attempt. It records the first Calendar departure so refresh and later financial resolution cannot recreate the expiry notice. It conveys no payment or booking authority; draft cleanup removes it.
-
-Checkout bot-proof receipts (`checkout_bot_proofs`, migration0045) retain attempt keys, capability links, intent/token hashes and verification/expiry timestamps. They contain no raw Turnstile token. Their five-minute logical proof validity bounds new creation; existing owned attempts retain separate recovery authority. No general physical purge is introduced; expiry is not deletion. Preserve replay/ownership evidence when defining any future retention policy.
-
-### Local overlapping-code candidate — 12 November 2026
-
-New challenges retain independent120-second validity, capped by access expiry; requesting another code does not rewrite earlier expiry/state. Successful verification consumes the matched same-capability/email challenge, while wrong guesses charge eligible live candidates. Historical issued rows retain their original stored expiry. Migration0047 replaces only the request-admission trigger: it removes normal inter-request spacing while preserving third-request600-second blocks, counters, observed denials and challenge history. No new store, plaintext code, retention cleanup or data deletion is introduced. Application expiry prevents use; it does not remove retained rows. Deployment and physical acceptance remain separate.
-
-The `soccerbot-confirmation-seen` localStorage entry stores only the last displayed attempt ID as a navigation hint; each new confirmation overwrites it (one bounded value). Displaying confirmation also sets the existing tab-local payment-return hint for that attempt, preventing repayment during protected history recovery. Explicit Book another session clears the live-draft navigation correlation while retaining those per-attempt hints and the separately gated completed-exit intent. Neither hint holds contact, receipt, token or paid authority. It persists until overwritten or browser storage is cleared; blocked storage retains normal protected confirmation behavior.
-
-### Revoked-session profile presentation — 12 November 2026
-
-Saved name/phone are fetched at Booking Details or Manage saved contact, before reveal. A denied profile entry clears editable draft and local identity. Already displayed/user-entered contacts can continue through checkout after remote email sign-out; existing draft reset/exit retention remains unchanged. No new browser storage key is introduced.
-
-Migration0048 adds `remembered_identity.revocation_scope` with default `booking`. All-device email sign-out explicitly records `profile`, revoking email/remembered authority and older challenges while retaining other devices’ booking access. The revised family trigger retains booking revocation for local logout/token replay. Existing revoked rows remain revoked; no historical rows are restored or deleted and no retention deadline changes.
-
-The existing `soccerbot-pending-conflict` snapshot may additionally retain the optional enum reason `checkout_already_active` so interrupted classification preserves accurate guidance. No additional identity/contact data, storage key, expiry or server retention policy changes.
-
-Customer help reports (migration0049) retain attempt ID, first request/category, send state, retry admission and sent time. They do not duplicate customer contact; staff email content is derived from the original attempt and delivered to the studio inbox. No automatic report cleanup or inbox retention policy is introduced. DNS lookups disclose only the email domain to the fixed resolver; conclusive domain results cache for60 seconds. Browser confirmation wait/return markers are presentation hints, never payment or ownership authority.
-
-The tab-local `soccerbot-active-checkout-notice` stores the same validated bounded date/start-only array, including an empty array for generic active-checkout guidance. It preserves the complete notice on Calendar refresh and same-page edits, and clears on departure/reset. It stores no checkout capability and never changes server admission or payment authority.
-
-The tab-local `soccerbot-expiry-notice` stores the same validated, bounded date/start-only array as the other calendar notices. It preserves unpaid-expiry text and affected-session bullets after the original attempt is released and across reloads; Calendar departure, reset, or verified payment recovery clears it. It grants no payment, release, availability or rebooking authority. Same-page selection edits retain the notice.
-
-The tab-local `soccerbot-help-notice` stores only a validated attempt UUID, pathname and open/sent/dismissed display state. It preserves red/green presentation on same-page refresh and records dismissal when the root booking provider observes a different route, so Back cannot recreate the notice. It has no financial authority or customer contact data. In-flight replies after departure do not write it. The existing booking_support_reports row now reaches sent only after both staff and customer messages are accepted; partial sends retain pending under the same bounded retry policy. This notice-display change adds no server table, retention period or historical backfill. Separately, notification presentation migration0051 adds immutable version markers to existing enquiry/support rows to preserve legacy retry payloads.
-
-The tab-local `soccerbot-booking-access-notice` holds only a validated `session` or `profile` reason for Step1 recovery. It survives refresh and is cleared on renewed onward booking navigation or explicit journey exit. It contains no customer data and grants no access or payment authority; browser session lifetime applies if the journey is abandoned.
-
-Migration0051 retains one immutable notification-format integer on each enquiry/help request, defaulting existing rows to0 and new requests to1. It preserves payload identity during the provider retry window, adds no customer fields or retention extension, and does not resend completed messages.
+The supplied policies are published on the site. Clause-to-store mapping, provider retention verification and any physical cleanup policy still need owner review.

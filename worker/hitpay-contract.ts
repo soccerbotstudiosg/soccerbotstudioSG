@@ -106,10 +106,18 @@ const requestSchema = z.object({
   allow_repeated_payments: z.literal(false),
   is_currency_editable: z.literal(false),
   business_id: hitpayId.optional(),
-  expiry_date: z.string().nullable().optional(),
+  expiry_date: z.unknown().optional(),
   url: z.string().max(2048),
-  payments: z.array(payment).max(20).optional(),
+  payments: z.unknown().optional(),
 });
+const paymentList = z.array(payment).max(20).optional();
+
+/** The request identity matched, but its transaction evidence cannot establish settlement. */
+export class HitpayPaymentEvidenceError extends ApiError {
+  constructor(readonly requestId: string) {
+    super(409, "hitpay_payment_unverified");
+  }
+}
 /** Report association mismatches using field names without provider values. */
 export class HitpayAssociationError extends ApiError {
   constructor(
@@ -160,32 +168,52 @@ export function verifyHitpayRequest(
     `/payment-request/@${scope.merchant}/${value.id}/checkout`
   )
     throw new HitpayAssociationError("checkout_path");
+  const entries = paymentList.safeParse(value.payments);
+  if (!entries.success) throw new HitpayPaymentEvidenceError(value.id);
+  const payments = entries.data;
+  const matchingAmount = (amount: unknown, expected: number) => {
+    try {
+      return minorAmount(amount) === expected;
+    } catch {
+      return false;
+    }
+  };
+  const matchingEntry = (p: z.infer<typeof payment>) =>
+    p.currency.toUpperCase() === scope.currency &&
+    matchingAmount(p.amount, scope.totalMinor) &&
+    (p.refunded_amount === undefined || matchingAmount(p.refunded_amount, 0));
   let paymentId: string | null = null;
   if (value.status === "completed") {
-    const successful = (value.payments || []).filter(
-      (p) => p.status === "succeeded",
-    );
-    if (
-      successful.length !== 1 ||
-      successful[0].currency.toUpperCase() !== scope.currency ||
-      minorAmount(successful[0].amount) !== scope.totalMinor ||
-      (successful[0].refunded_amount !== undefined &&
-        minorAmount(successful[0].refunded_amount) !== 0)
-    )
-      throw new ApiError(409, "hitpay_payment_unverified");
+    const successful = (payments ?? []).filter((p) => p.status === "succeeded");
+    if (successful.length !== 1 || !matchingEntry(successful[0]))
+      throw new HitpayPaymentEvidenceError(value.id);
     paymentId = successful[0].id;
   }
+  const terminal = value.status === "expired" || value.status === "canceled";
+  const conflictingPayment =
+    !paymentId &&
+    (payments ?? []).some(
+      (p) =>
+        !matchingEntry(p) ||
+        ["succeeded", "refunded", "partially_refunded"].includes(p.status) ||
+        (terminal && p.status !== "requires_payment_method"),
+    );
   let expiresAtMs: number | null = null;
-  if (value.expiry_date) {
-    const local = value.expiry_date.replace(" ", "T");
-    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(local))
-      throw new ApiError(409, "hitpay_expiry_unverified");
+  if (value.expiry_date != null) {
+    const local =
+      typeof value.expiry_date === "string"
+        ? value.expiry_date.replace(" ", "T")
+        : "";
     const parsed = Date.parse(local + "+08:00");
     if (
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(local) ||
       !Number.isFinite(parsed) ||
       new Date(parsed + 28800000).toISOString().slice(0, 19) !== local
-    )
+    ) {
+      if (paymentId || conflictingPayment)
+        throw new HitpayPaymentEvidenceError(value.id);
       throw new ApiError(409, "hitpay_expiry_unverified");
+    }
     expiresAtMs = parsed;
   }
   return {
@@ -194,18 +222,14 @@ export function verifyHitpayRequest(
     status: value.status,
     paymentId,
     expiresAtMs,
+    conflictingPayment,
     // An expired request may retain an unstarted payment-method entry.
-    // Missing, processing, refunded or inconsistent evidence is never nonpayment.
+    // HitPay can omit optional payment details. Contradictory entries still block release.
     unpaidTerminal:
-      (value.status === "expired" || value.status === "canceled") &&
-      value.payments !== undefined &&
-      value.payments.every(
-        (p) =>
-          p.status === "requires_payment_method" &&
-          p.currency.toUpperCase() === scope.currency &&
-          minorAmount(p.amount) === scope.totalMinor &&
-          p.refunded_amount !== undefined &&
-          minorAmount(p.refunded_amount) === 0,
-      ),
+      terminal &&
+      !conflictingPayment &&
+      (payments !== undefined || value.status === "expired") &&
+      (value.status === "expired" ||
+        (payments ?? []).every((p) => p.refunded_amount !== undefined)),
   };
 }

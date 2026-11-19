@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ApiError, digest } from "./policy";
 import {
   HITPAY_LINK_ATTEMPTS,
+  HitpayPaymentEvidenceError,
   assertHitpayCreation,
   hitpayFailureReason,
   assertPaymentScope,
@@ -271,11 +272,17 @@ export async function prepareHitpay(
       },
     );
     verified = verifyHitpayRequest(raw, paymentScope, reference);
+    if (verified.conflictingPayment || verified.paymentId)
+      throw new HitpayPaymentEvidenceError(verified.id);
   } catch (error) {
     await env.STATE.prepare(
-      "UPDATE hitpay_payments SET reason=? WHERE attempt_id=? AND request_id IS NULL AND generation=0",
+      "UPDATE hitpay_payments SET reason=?,request_id=? WHERE attempt_id=? AND request_id IS NULL AND generation=0",
     )
-      .bind(hitpayFailureReason(error), scope.attemptId)
+      .bind(
+        hitpayFailureReason(error),
+        error instanceof HitpayPaymentEvidenceError ? error.requestId : null,
+        scope.attemptId,
+      )
       .run();
     throw error;
   }
@@ -369,6 +376,7 @@ export async function storedHitpayCheckout(
       "hitpay_payment_expired",
       "hitpay_payment_failed",
       "hitpay_payment_canceled",
+      "hitpay_payment_unverified",
     ].includes(row.reason) ||
     hitpaySetting(env, "HITPAY_CHECKOUT") !== "enabled"
   )
@@ -389,7 +397,7 @@ export function hitpayClaimStatements(env: Env, id: string, now: number) {
   // Exhaustion and its permitted wake-up must commit before selecting new work.
   return [
     env.STATE.prepare(
-      "UPDATE hitpay_payments SET state='manual_review',reason=CASE WHEN request_id IS NULL AND checkout_url IS NULL AND paid_ms IS NULL AND tries>=? THEN 'payment_link_unavailable' ELSE 'recovery_exhausted' END WHERE attempt_id=? AND state IN ('due','claimed') AND ready_ms<=? AND (tries>=retry_limit OR recovery_end_ms<=? OR (request_id IS NULL AND checkout_url IS NULL AND paid_ms IS NULL AND tries>=? AND reason!='webhook_recheck_pending')) RETURNING reason",
+      "UPDATE hitpay_payments SET state='manual_review',reason=CASE WHEN reason='hitpay_payment_unverified' THEN reason WHEN request_id IS NULL AND checkout_url IS NULL AND paid_ms IS NULL AND tries>=? THEN 'payment_link_unavailable' ELSE 'recovery_exhausted' END WHERE attempt_id=? AND state IN ('due','claimed') AND ready_ms<=? AND (tries>=retry_limit OR recovery_end_ms<=? OR (request_id IS NULL AND checkout_url IS NULL AND paid_ms IS NULL AND tries>=? AND reason NOT IN ('webhook_recheck_pending','hitpay_payment_unverified'))) RETURNING reason",
     ).bind(HITPAY_LINK_ATTEMPTS - 1, id, now, now, HITPAY_LINK_ATTEMPTS - 1),
     reopenHitpayReview(env.STATE, id, now),
     env.STATE.prepare(
@@ -407,6 +415,7 @@ export async function findHitpayRequest(
   env: Env,
   row: HitpayRow,
   reserve: () => Promise<void>,
+  deadlineMs?: number,
 ) {
   const scope = paymentScopeSchema.parse(JSON.parse(row.scope_json));
   await assertPaymentScope(env, scope);
@@ -419,6 +428,7 @@ export async function findHitpayRequest(
         key,
         { kind: "search", reference: row.reference, page },
         reserve,
+        deadlineMs,
       );
       const list = z
         .object({
@@ -442,7 +452,7 @@ export async function findHitpayRequest(
     id = [...candidates][0];
   }
   const verified = verifyHitpayRequest(
-    await hitpayRequest(key, { kind: "read", id }, reserve),
+    await hitpayRequest(key, { kind: "read", id }, reserve, deadlineMs),
     scope,
     row.reference,
     id,
@@ -459,6 +469,14 @@ export async function hitpayConfirmationGuard(
   const row = snapshot
     ? {
         route: snapshot.route,
+        reason: snapshot.payment?.reason,
+        expiry_ms: snapshot.payment
+          ? Math.min(
+              snapshot.payment.expires_ms,
+              snapshot.payment.checkout_expires_ms ??
+                snapshot.payment.expires_ms,
+            )
+          : null,
         state:
           snapshot.payment?.state ??
           (snapshot.nativeCreationReview ? "manual_review" : null),
@@ -468,11 +486,13 @@ export async function hitpayConfirmationGuard(
       }
     : await env.STATE.withSession("first-primary")
         .prepare(
-          "SELECT r.route,COALESCE(p.state,w.state) AS state,p.paid_ms,p.payment_id,p.external_state FROM checkout_payment_routes r LEFT JOIN hitpay_payments p ON p.attempt_id=r.attempt_id LEFT JOIN recovery_work w ON w.attempt_id=r.attempt_id AND w.state='manual_review' AND w.reason IN ('native_booking_paid_review','native_booking_cancelled_review','creation_lookup_exhausted') WHERE r.attempt_id=?",
+          "SELECT r.route,p.reason,MIN(p.expires_ms,COALESCE(p.checkout_expires_ms,p.expires_ms)) AS expiry_ms,COALESCE(p.state,w.state) AS state,p.paid_ms,p.payment_id,p.external_state FROM checkout_payment_routes r LEFT JOIN hitpay_payments p ON p.attempt_id=r.attempt_id LEFT JOIN recovery_work w ON w.attempt_id=r.attempt_id AND w.state='manual_review' AND w.reason IN ('native_booking_paid_review','native_booking_cancelled_review','creation_lookup_exhausted') WHERE r.attempt_id=?",
         )
         .bind(id)
         .first<{
           route: string;
+          reason: string | null;
+          expiry_ms: number | null;
           state: string | null;
           paid_ms: number | null;
           payment_id: string | null;
@@ -491,7 +511,13 @@ export async function hitpayConfirmationGuard(
     reason:
       row?.paid_ms !== null && row?.paid_ms !== undefined
         ? "payment_received_booking_pending"
-        : "payment_verification_pending",
+        : row?.reason === "payment_expiry_checks_inconclusive" ||
+            (row?.state === "manual_review" &&
+              row.reason === "hitpay_payment_unverified" &&
+              row.expiry_ms != null &&
+              row.expiry_ms <= Date.now())
+          ? "payment_expiry_checks_inconclusive"
+          : "payment_verification_pending",
   };
 }
 
@@ -501,7 +527,7 @@ export async function hitpayConfirmationGuard(
 export function reopenHitpayReview(db: D1Database, id: string, now: number) {
   return db
     .prepare(
-      "UPDATE hitpay_payments SET state='due',reason='webhook_recheck_pending',ready_ms=?,retry_limit=MIN(16,MAX(retry_limit,tries+1)),receipt_checkpoint=(SELECT MAX(rowid) FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id) WHERE attempt_id=? AND state IN ('manual_review','due') AND reason IN ('hitpay_payment_failed','hitpay_payment_expired','hitpay_payment_canceled','hitpay_unpaid_verified','recovery_exhausted','payment_link_unavailable') AND tries<16 AND recovery_end_ms>? AND EXISTS(SELECT 1 FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id AND rowid>hitpay_payments.receipt_checkpoint)",
+      "UPDATE hitpay_payments SET state='due',reason=CASE WHEN reason='hitpay_payment_unverified' THEN reason ELSE 'webhook_recheck_pending' END,ready_ms=?,retry_limit=MIN(16,MAX(retry_limit,tries+1)),receipt_checkpoint=(SELECT MAX(rowid) FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id) WHERE attempt_id=? AND state IN ('manual_review','due') AND reason IN ('hitpay_payment_failed','hitpay_payment_expired','hitpay_payment_canceled','hitpay_unpaid_verified','hitpay_payment_unverified','payment_expiry_checks_inconclusive','recovery_exhausted','payment_link_unavailable') AND tries<16 AND recovery_end_ms>? AND EXISTS(SELECT 1 FROM hitpay_receipts WHERE attempt_id=hitpay_payments.attempt_id AND rowid>hitpay_payments.receipt_checkpoint)",
     )
     .bind(now, id, now);
 }

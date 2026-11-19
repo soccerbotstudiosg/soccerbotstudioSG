@@ -784,11 +784,6 @@ test("each time requires an independent trainer choice and changing it preserves
   expect(openedPicker).not.toBeInTheDocument();
   expect(loadBooking().draft.slots).toHaveLength(1);
   await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
-  await user.click(screen.getByText("Trainer", { exact: true }));
-  expect(
-    screen.queryByLabelText(`Trainer for ${restoredDate} at 12:00`),
-  ).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: /12:00–12:40/ }));
   const picker = screen.getByLabelText(`Trainer for ${restoredDate} at 12:00`);
   await user.selectOptions(picker, `${restoredDate}|12:00|demo|daniel`);
   expect(
