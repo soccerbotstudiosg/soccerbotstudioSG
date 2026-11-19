@@ -997,6 +997,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "refreshing Payment after a lost checkout reply keeps the restored unpaid attempt on Payment"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "renewed guest access preserves interrupted checkout while a new guest owner cannot inherit it"
   },
   {
