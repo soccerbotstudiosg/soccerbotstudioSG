@@ -570,7 +570,7 @@ export function AccountStep({
         />
       )}
       <form
-        className="surface auth-panel"
+        className={`surface auth-panel${view === "code" ? " auth-code-panel" : ""}`}
         onInvalidCapture={(event) => {
           focusField(
             event.currentTarget.querySelector<HTMLElement>("input:invalid"),
@@ -706,33 +706,17 @@ export function AccountStep({
             {error}
           </p>
         )}
-        {view === "code" || resendSeconds > 0 ? (
+        {resendSeconds > 0 && (
           <div
-            className={`auth-code-feedback${view === "code" && resendSeconds === 0 ? " auth-code-help" : ""}${requestBlockedUntil > resendNow ? " alert" : ""}`}
+            className={`auth-code-feedback${requestBlockedUntil > resendNow ? " alert" : ""}`}
           >
             {requestBlockedUntil > resendNow && <p>{EMAIL_REQUEST_LIMITED}</p>}
-            {resendSeconds > 0 ? (
-              <p role="timer" aria-live="off">
-                {String(Math.floor(resendSeconds / 60)).padStart(2, "0")}:
-                {String(resendSeconds % 60).padStart(2, "0")}
-              </p>
-            ) : (
-              <>
-                <p className="text-muted">
-                  Can’t find the email? Check Spam or Junk.
-                </p>
-                <button
-                  type="button"
-                  disabled={busy}
-                  className="text-link"
-                  onClick={request}
-                >
-                  Request another code
-                </button>
-              </>
-            )}
+            <p role="timer" aria-live="off">
+              {String(Math.floor(resendSeconds / 60)).padStart(2, "0")}:
+              {String(resendSeconds % 60).padStart(2, "0")}
+            </p>
           </div>
-        ) : null}
+        )}
         {identityService.mode === "live" && resendSeconds === 0 && (
           <EmailBotProof
             key={botGeneration}
@@ -778,6 +762,21 @@ export function AccountStep({
             )}
           </button>
         </BookingPrimaryAction>
+        {view === "code" && resendSeconds === 0 && (
+          <div className="auth-code-feedback auth-code-help">
+            <p className="text-muted">
+              Can’t find the email? Check Spam or Junk.
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              className="text-link"
+              onClick={request}
+            >
+              Request another code
+            </button>
+          </div>
+        )}
         {view === "email" && identityService.mode === "demo" && (
           <p className="auth-demo">
             Email sign-in preview · No email will be sent.

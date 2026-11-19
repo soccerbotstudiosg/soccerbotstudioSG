@@ -1664,7 +1664,9 @@ test("email verification rejects an incorrect code and continues after correctio
   ]) {
     await expect(page.locator(selector)).toHaveCSS("font-size", "16px");
   }
-  await expect(page.locator(".auth-code-help")).toHaveCSS("margin-top", "36px");
+  const resendHelp = page.locator(".booking-action-anchor + .auth-code-help");
+  await expect(resendHelp).toBeVisible();
+  await expect(resendHelp).toHaveCSS("margin-top", "8px");
   await page.getByLabel("Verification code", { exact: true }).fill("000000");
   await expect(
     page.getByLabel("Verification code", { exact: true }),

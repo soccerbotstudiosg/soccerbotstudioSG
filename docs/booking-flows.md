@@ -23,7 +23,7 @@ Booking headings use shared deliberate two-line text at widths up to700px, with3
 
 Account screens—Start your booking, Continue with email, Verify your email and Saved contact details—retain the top navigation/title row but show no progress bar or numbered step counter. The four numbered booking stages are Session, Time, Details and Review. Session Back returns to Account; Account Home and nested Back retain their existing destinations. Desktop/iPad titles remain centred above content; mobile retains its heading placement.
 
-Verification centres the recipient and code label, places the expiry/expired message6px below the input, and groups the Spam/Junk hint with Request another code36px below. These body labels use16px; the code field retains its larger digits. Expired copy uses the danger colour. Challenge expiry, resend limits and verification authority are unchanged.
+Verification centres the recipient and code label, places the expiry message 6px below the input, then shows Verify and continue. The Spam/Junk hint and Request another code sit together 8px below the action. Sending or resending a live code requires a successful domain mail-routing check. These body labels use16px; the code field retains its larger digits. Expired copy uses the danger colour. Challenge expiry, resend limits and verification authority are unchanged.
 
 ## 1. Guest entry
 

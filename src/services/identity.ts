@@ -239,6 +239,20 @@ async function identityRequest(
       );
     if (path === "/api/identity/verify" && response.status === 400)
       throw new CustomerMessageError("Check your code or request a new one.");
+    if (
+      path === "/api/identity/challenges" &&
+      [422, 503].includes(response.status)
+    ) {
+      const rejection = await response.json().catch(() => null);
+      if (rejection?.error === "email_domain_invalid")
+        throw new CustomerMessageError(
+          "This email domain cannot receive email. Check your email address.",
+        );
+      if (rejection?.error === "email_domain_unavailable")
+        throw new CustomerMessageError(
+          "Couldn’t check your email domain. Please try again.",
+        );
+    }
     if (path === "/api/identity/challenges" && response.status === 400)
       throw new CustomerMessageError(EMAIL_SECURITY_CHECK_REQUIRED);
     throw unavailable();
