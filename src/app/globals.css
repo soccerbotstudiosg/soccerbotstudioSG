@@ -241,6 +241,7 @@
   }
   .booking-document .arrival-information h3,
   .session-product-name,
+  .legal-document h2,
   .section-title,
   .review-head h2,
   .access-option h2,
@@ -1259,29 +1260,11 @@
     height: auto;
     font-family: var(--font-sans);
   }
-  .studio-plan-outline {
-    fill: var(--color-paper);
-    stroke: var(--color-ink);
-  }
   .studio-plan-route {
     stroke: var(--color-logo-blue);
   }
   .studio-plan-unit {
     fill: var(--color-logo-blue);
-  }
-  .studio-plan-label rect {
-    fill: var(--color-surface);
-    stroke: var(--color-ink);
-  }
-  .studio-plan-label path {
-    fill: none;
-    stroke: var(--color-ink);
-    stroke-width: 1.5;
-  }
-  .studio-plan-label text {
-    fill: var(--color-ink);
-    font-size: 16px;
-    font-weight: var(--weight-heading);
   }
   .studio-map-help {
     margin: 16px 0;
@@ -2012,9 +1995,46 @@
       opacity: 1;
     }
   }
-  .legal-placeholder {
-    min-height: 65vh;
+  .legal-document {
+    --color-brand: #242424;
+    --color-ink: #2d2d2d;
+    --color-line: #dedede;
+    --color-focus: #404040;
+    max-width: 76ch;
+    margin: 0 auto;
+    padding: clamp(24px, 4vw, 56px) clamp(18px, 4vw, 40px) 64px;
+    color: var(--color-ink);
     background: var(--color-surface);
+    font-size: var(--text-body);
+    line-height: 1.65;
+  }
+  .legal-heading {
+    background: #f3f3f3;
+    color: #515151;
+    padding: clamp(20px, 4vw, 32px);
+    margin-bottom: 24px;
+    border-radius: 12px;
+    font-size: var(--text-meta);
+  }
+  .legal-heading .page-title {
+    color: var(--color-brand);
+  }
+  .legal-document h2 {
+    margin: 1.5em 0 0.4em;
+    border-top: 1px solid var(--color-line);
+    padding-top: 1em;
+  }
+  .legal-document p,
+  .legal-document dl {
+    margin-block: 0.6em;
+  }
+  .legal-document ul {
+    list-style: disc;
+    padding-inline-start: 1.5em;
+  }
+  .legal-document dt {
+    font-weight: 700;
+    margin-top: 0.65em;
   }
   .studio-intro {
     display: block;
@@ -5184,6 +5204,9 @@
     color: var(--color-brand);
     font-weight: 700;
     text-decoration: none;
+  }
+  .email-confirm-control[data-needs-check="true"] {
+    box-shadow: inset 0 0 0 2px var(--color-danger);
   }
   .email-confirm-control:enabled:focus-visible {
     outline: 2px solid var(--color-logo-blue);

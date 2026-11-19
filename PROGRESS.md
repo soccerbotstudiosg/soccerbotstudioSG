@@ -2,11 +2,11 @@
 
 ## Active outcome
 
-Repair Payment refresh on merged main revision `9632b0c`. In live-email tablet WebKit, the original unpaid attempt restored successfully after a lost response and the page switched from Payment to Confirmation.
+Stage the public policy pages, website and email policy links, approved lift map, and guest email validation cues together with checkout recovery (#103) and the Payment refresh correction (#104).
 
 ## Next actions
 
-Verify the corrective PR and its original browser case on CI. Production release of the merged recovery change awaits successful verification. The companion policy, email and directions work has its own PR and staging review.
+Review the policy pages, lift diagram and guest email focus on staging. End-to-end checkout with the staging SimplyBook account remains unverified because it requires paid activation.
 
 ## Ordered work after this slice
 
