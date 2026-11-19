@@ -1,7 +1,15 @@
 vi.mock("@/services/email-domain", () => ({
   checkEmailDomain: vi.fn(async () => "valid"),
 }));
+import {
+  bookingSequenceRandom,
+  bookingSequenceSeed,
+} from "../../../tests/booking-sequence-random";
 import ConfirmationPage from "@/app/confirmation/page";
+import {
+  BookingLink,
+  BookingNavigation,
+} from "@/components/booking-navigation";
 import { dateLabel } from "@/domain/dates";
 import {
   CHECKOUT_UNRESOLVED,
@@ -37,6 +45,8 @@ import {
   saveLiveDraft,
   saveBooking,
   saveSuppressedSlots,
+  saveCalendarRecovery,
+  loadLiveDraft,
   savePendingConflict,
   isCalendarRecovery,
   isBookingDeparture,
@@ -49,6 +59,7 @@ import {
 import { demoBookingService } from "@/services/demo/booking";
 import {
   expireBooking,
+  ConfirmationError,
   protectedCheckoutService,
 } from "@/services/confirmation";
 import {
@@ -438,6 +449,26 @@ it("native Back traverses every submitted booking step to Home and deliberate en
   history.assertNoWrites();
 });
 
+it("cancelling the Home entry animation leaves the next deliberate checkout entry recoverable", async () => {
+  const history = renderCheckoutHistory();
+  history.visit(null, true);
+  expect(isBookingDeparture(id)).toBe(true);
+  // The hero adds a same-URL entry before animation. Back cancels it on Home.
+  history.visit(null, true);
+  expect(history.read).not.toHaveBeenCalled();
+  history.visit("account", false);
+  await waitFor(() =>
+    expect(history.read).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ attemptId: id, mode: "live" }),
+    ),
+  );
+  await history.settle();
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+    `/confirmation/?attempt=${id}`,
+  );
+  history.assertNoWrites();
+});
+
 it("on-site Back and Continue payment immediately recover the original submitted checkout from each previous step", async () => {
   for (const step of previousBookingSteps) {
     const actions =
@@ -505,6 +536,228 @@ it("leaving a directly opened verified payment continuation preserves recovery t
     `/confirmation/?attempt=${id}`,
   );
   history.assertNoWrites();
+});
+
+it("seeded booking sequence 10 resumes a delayed submission after repeated interrupted protected reads", async () => {
+  const seed = bookingSequenceSeed(10, 777783650);
+  const next = bookingSequenceRandom(seed);
+  const trace: string[] = [];
+  const routes = [
+    "home",
+    "account",
+    "session",
+    "time",
+    "details",
+    "review",
+  ] as const;
+  const go = (direction: string) => trace.push(direction);
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const prepared: Attempt = {
+    id,
+    draft,
+    status: "ready",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  };
+  const write = Promise.withResolvers<Attempt>();
+  const checkout = vi.fn<BookingService["checkout"]>(async () => prepared);
+  const pay = vi.fn<BookingService["pay"]>(() => write.promise);
+  const service = {
+    ...liveBookingService,
+    checkout,
+    pay,
+    restore: undefined,
+    calendar: undefined,
+    publicCalendar: undefined,
+    availability: async () => [],
+  };
+  const context: CheckoutContext = {
+    attemptId: id,
+    mode: "live",
+    checkout: { state: "available", url, expiresAtMs: Date.now() + 60000 },
+    clock: {
+      epochMs: Date.now(),
+      monotonicMs: performance.now(),
+      uncertaintyMs: 0,
+    },
+    summary: {
+      players: draft.players,
+      totalMinor: 8800,
+      currency: "SGD",
+      sessions: [{ startMs: 1, players: 1 }],
+    },
+    checking: {
+      deadlineMs: Date.now() + 120000,
+      pollAfterMs: 5000,
+      nextCheckMs: 0,
+    },
+  };
+  const reads: Array<{
+    signal: AbortSignal;
+    reply: ReturnType<typeof Promise.withResolvers<CheckoutContext>>;
+  }> = [];
+  const protectedRead = vi
+    .spyOn(protectedCheckoutService, "context")
+    .mockImplementation(async (request) => {
+      if (navigation.path === "/confirmation/") return context;
+      const reply = Promise.withResolvers<CheckoutContext>();
+      reads.push({ signal: request.signal, reply });
+      return reply.promise;
+    });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      Response.json({ status: "pending", reason: "invoice_pending" }),
+    ),
+  );
+  let position = routes.length - 1;
+  navigation.path = "/book/review/";
+  saveLiveDraft(draft);
+  const tree = () => {
+    const step = routes[position];
+    return (
+      <BookingProvider
+        bookingService={service}
+        identityService={demoCustomerIdentity}
+      >
+        {navigation.path === "/confirmation/" ? (
+          <ConfirmationPage />
+        ) : step === "home" ? (
+          <BookingNavigation>
+            <BookingLink href="/book/account/">Book now</BookingLink>
+          </BookingNavigation>
+        ) : (
+          <BookingPage step={step} />
+        )}
+      </BookingProvider>
+    );
+  };
+  const view = render(tree());
+  const invariant = () => {
+    expect(submittedCheckoutId()).toBe(id);
+    expect(checkout).toHaveBeenCalledTimes(1);
+    expect(pay).toHaveBeenCalledTimes(1);
+    expect(pay.mock.calls[0][0].attempt).toMatchObject({
+      id,
+      draft: { players: draft.players, slots: draft.slots, accepted: true },
+    });
+    expect(
+      protectedRead.mock.calls.every(([request]) => request.attemptId === id),
+    ).toBe(true);
+  };
+  const visit = (index: number, viaHistory: boolean) => {
+    position = index;
+    const step = routes[index];
+    navigation.path = step === "home" ? "/" : `/book/${step}/`;
+    window.history.replaceState(null, "", navigation.path);
+    if (viaHistory)
+      act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+    view.rerender(tree());
+  };
+  const move = (index: number) => {
+    invariant();
+    go(`browser ${index < position ? "Back" : "Forward"} to ${routes[index]}`);
+    visit(index, true);
+    invariant();
+    expect(navigation.replace).not.toHaveBeenCalled();
+  };
+  const moveAmongSteps = () => {
+    const adjacent = [position - 1, position + 1].filter(
+      (index) => index >= 1 && index < routes.length,
+    );
+    move(adjacent[next(adjacent.length)]);
+  };
+  try {
+    go("Review accepts booking and submits original checkout");
+    fireEvent.click(await screen.findByRole("checkbox"));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /^Proceed to Payment/ }),
+    );
+    await waitFor(() => expect(pay).toHaveBeenCalledTimes(1));
+    invariant();
+    move(position - 1);
+    for (let visitIndex = 0; visitIndex < 4; visitIndex++) {
+      const hops = 1 + next(3);
+      for (let hop = 0; hop < hops; hop++) moveAmongSteps();
+      const labels = ["Back", "Continue payment"];
+      const step = routes[position];
+      if (step === "time" || step === "details" || step === "review")
+        labels.push("Session");
+      const label = labels[next(labels.length)];
+      const before = reads.length;
+      invariant();
+      go(`${step} selects ${label}`);
+      const control = await screen.findByRole("button", { name: label });
+      fireEvent.click(control);
+      await waitFor(() => expect(reads).toHaveLength(before + 1));
+      invariant();
+      const read = reads[before];
+      const missing = next(2) === 0;
+      if (missing) {
+        go("protected read reports missing while the write is pending");
+        await act(async () =>
+          read.reply.reject(new ConfirmationError("missing")),
+        );
+        invariant();
+        expect(navigation.replace).not.toHaveBeenCalled();
+      }
+      moveAmongSteps();
+      if (!missing) {
+        expect(read.signal.aborted).toBe(true);
+        go("abandoned protected read returns the original unpaid link");
+        await act(async () => read.reply.resolve(context));
+        invariant();
+        expect(navigation.replace).not.toHaveBeenCalled();
+      }
+    }
+    while (position > 0) move(position - 1);
+    expect(isBookingDeparture(id)).toBe(true);
+    go("Book now from Home");
+    fireEvent.click(screen.getByRole("link", { name: "Book now" }));
+    expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/account/");
+    const beforeEntry = reads.length;
+    visit(1, false);
+    invariant();
+    await waitFor(() => expect(reads).toHaveLength(beforeEntry + 1));
+    go("committed Home entry waits for the original missing attempt");
+    await act(async () =>
+      reads[beforeEntry].reply.reject(new ConfirmationError("missing")),
+    );
+    invariant();
+    expect(navigation.replace).not.toHaveBeenCalled();
+    go("original write acknowledges and the protected read retries");
+    await act(async () => write.resolve({ ...prepared, status: "checking" }));
+    await waitFor(() => expect(reads).toHaveLength(beforeEntry + 2));
+    invariant();
+    go("owner-authorized context opens the protected confirmation");
+    await act(async () => reads[beforeEntry + 1].reply.resolve(context));
+    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+      `/confirmation/?attempt=${id}`,
+    );
+    navigation.path = "/confirmation/";
+    view.rerender(tree());
+    expect(
+      await screen.findByRole("link", { name: "Continue payment" }),
+    ).toHaveAttribute("href", url);
+    invariant();
+    console.info(
+      JSON.stringify({
+        event: "booking_sequence",
+        scenario: 10,
+        seed,
+        steps: trace,
+      }),
+    );
+  } catch (cause) {
+    throw new Error(`Booking sequence 10, seed ${seed}: ${trace.join(" → ")}`, {
+      cause,
+    });
+  } finally {
+    view.unmount();
+    window.history.replaceState(null, "", "/");
+  }
 });
 
 it("refreshing Payment after a lost checkout reply keeps the restored unpaid attempt on Payment", async () => {
@@ -2570,9 +2823,99 @@ it("expiry callback cannot clear a paid or different current attempt (different)
   await verifyExpiryAttemptGuard("different");
 });
 
+it("direct expiry cannot clear a different submitted checkout while its restoration is pending", async () => {
+  const retained: Attempt = {
+    id: "00000000-0000-4000-8000-000000000002",
+    draft,
+    status: "checking",
+    outcome: "pending",
+    checkUntil: 0,
+    booking: null,
+  };
+  const originalUrl = window.location.href;
+  for (const leaveBeforeRelease of [false, true]) {
+    navigation.path = "/confirmation/";
+    window.history.replaceState(null, "", `/confirmation/?attempt=${id}`);
+    navigation.replace.mockClear();
+    saveLiveDraft(draft, true, retained.id);
+    markSubmittedCheckout(retained.id, true);
+    // An earlier provider return keeps A on protected reconciliation until the release settles.
+    completedPaymentReturn(id, true);
+    const restore = Promise.withResolvers<Attempt>();
+    const release = Promise.withResolvers<Response>();
+    const service = {
+      ...liveBookingService,
+      publicCalendar: undefined,
+      availability: vi.fn(async () => []),
+      restore: () => restore.promise,
+    };
+    const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.endsWith("/expire")) return release.promise;
+      if (input === `/api/attempts/${id}/checkout`)
+        return Response.json({
+          mode: "live",
+          attemptId: id,
+          expired: true,
+          checkout: { state: "unavailable" },
+          summary: {
+            players: 1,
+            totalMinor: 8800,
+            currency: "SGD",
+            sessions: [{ startMs: 1, players: 1 }],
+          },
+          checking: {
+            deadlineMs: Date.now() + 60000,
+            nextCheckMs: 0,
+            pollAfterMs: 5000,
+          },
+        });
+      return Response.json({
+        status: "pending",
+        reason: "payment_verification_pending",
+      });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const tree = (showConfirmation: boolean) => (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Seed />
+        {showConfirmation && <ConfirmationPage />}
+      </BookingProvider>
+    );
+    const view = render(tree(true));
+    await waitFor(() =>
+      expect(
+        fetcher.mock.calls.some(([input]) => input.endsWith("/expire")),
+      ).toBe(true),
+    );
+    expect(submittedCheckoutId()).toBe(retained.id);
+    if (leaveBeforeRelease) {
+      // Browser traversal commits the URL before React unmounts the previous screen.
+      navigation.path = "/book/details/";
+      window.history.replaceState(null, "", navigation.path);
+    }
+    await act(async () => release.resolve(Response.json({ expired: true })));
+    expect(submittedCheckoutId()).toBe(retained.id);
+    expect(
+      JSON.parse(sessionStorage.getItem("soccerbot-live-draft")!).slots,
+    ).toEqual(draft.slots);
+    expect(navigation.replace).not.toHaveBeenCalledWith("/book/time/");
+    if (leaveBeforeRelease) {
+      expect(navigation.replace).not.toHaveBeenCalled();
+      view.rerender(tree(false));
+    } else expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
+    await act(async () => restore.resolve(retained));
+    expect(screen.getByTestId("retained")).toHaveTextContent(retained.id);
+    expect(service.availability).not.toHaveBeenCalled();
+    view.unmount();
+  }
+  window.history.replaceState(null, "", originalUrl);
+});
+
 /** Exercise provider restoration, route guards and expiry recovery through protected reads. */
 async function verifyMockPaymentExpiry(
   scenario: "expired" | "unavailable" | "departed",
+  sequence?: { seed: number; resolution: "late payment" | "unpaid release" },
 ) {
   const expired = scenario === "expired";
   const departed = scenario === "departed";
@@ -2595,6 +2938,8 @@ async function verifyMockPaymentExpiry(
     other,
   ].map((slot) => ({ ...slot, available: true }));
   let paid = false;
+  let allowRelease = false;
+  let released = false;
   let confirmed = false;
   let deferStatus = false;
   let finishStatus!: (response: Response) => void;
@@ -2623,6 +2968,10 @@ async function verifyMockPaymentExpiry(
   const fetch = vi.fn<typeof globalThis.fetch>(async (input, options) => {
     const path = String(input);
     requests.push({ path, method: options?.method ?? "GET" });
+    if (path === `/api/attempts/${id}/expire` && allowRelease) {
+      released = true;
+      return Response.json({ expired: true });
+    }
     if (path === `/api/attempts/${id}/expire`)
       return Response.json(
         { error: "checkout_expiry_unresolved" },
@@ -2703,7 +3052,7 @@ async function verifyMockPaymentExpiry(
   );
   const service: BookingService = {
     ...liveBookingService,
-    restore: async () => retained,
+    restore: async () => (released ? null : retained),
     availability,
     publicCalendar: async ({ month }) => ({
       month,
@@ -2751,18 +3100,24 @@ async function verifyMockPaymentExpiry(
       | "details"
       | "review"
       | "payment"
-      | "confirmation",
+      | "confirmation"
+      | "home",
   ) => {
     navigation.path =
-      step === "confirmation" ? "/confirmation/" : `/book/${step}/`;
+      step === "home"
+        ? "/"
+        : step === "confirmation"
+          ? "/confirmation/"
+          : `/book/${step}/`;
     return (
       <BookingProvider bookingService={service} identityService={identity}>
         <Probe />
-        {step === "confirmation" ? (
-          <ConfirmationPage />
-        ) : (
-          <BookingPage step={step} />
-        )}
+        {step !== "home" &&
+          (step === "confirmation" ? (
+            <ConfirmationPage />
+          ) : (
+            <BookingPage step={step} />
+          ))}
       </BookingProvider>
     );
   };
@@ -2824,6 +3179,7 @@ async function verifyMockPaymentExpiry(
     return;
   }
   saveLiveDraft(draft, true, id);
+  if (sequence) markSubmittedCheckout(id, true);
   let view = render(tree("payment"));
   if (!expired) {
     await act(async () => {});
@@ -2879,6 +3235,183 @@ async function verifyMockPaymentExpiry(
     ).toBeNull(),
   );
   expect(screen.queryByRole("button", { name: "Check status" })).toBeNull();
+  if (sequence) {
+    const random = bookingSequenceRandom(sequence.seed);
+    const trace: string[] = [];
+    const number = sequence.resolution === "late payment" ? 8 : 9;
+    const receipt = () =>
+      `Booking sequence ${number}, seed ${sequence.seed}: ${trace.join(" → ")}`;
+    let page: "time" | "session" | "home" = "time";
+    let selected = false;
+    const cart = () =>
+      JSON.parse(screen.getByTestId("mock-expiry-draft").textContent!).slots;
+    const chooseReplacement = () => {
+      fireEvent.click(screen.getByRole("button", { name: /12:50–13:30/ }));
+      fireEvent.change(
+        screen.getByLabelText(`Trainer for ${other.date} at 12:50`),
+        {
+          target: { value: `${other.date}|12:50|2|4` },
+        },
+      );
+      selected = true;
+    };
+    const assertOriginal = () => {
+      expect(submittedCheckoutId()).toBe(id);
+      expect(
+        JSON.parse(screen.getByTestId("mock-expiry-attempt").textContent!),
+      ).toEqual(retained);
+      expect(cart()).toEqual(selected ? [other] : []);
+      expect(
+        screen.queryByRole("link", { name: "Continue payment" }),
+      ).toBeNull();
+      expect(
+        requests
+          .filter(({ method }) => method !== "GET")
+          .every(({ path }) => path === `/api/attempts/${id}/expire`),
+      ).toBe(true);
+      expect(
+        requests.some(({ path }) => path.startsWith("/api/booking/checkout/")),
+      ).toBe(false);
+    };
+    const returnFromHome = async () => {
+      navigation.replace.mockClear();
+      view.rerender(tree("account"));
+      await waitFor(() =>
+        expect(navigation.replace).toHaveBeenCalledWith(
+          `/confirmation/?attempt=${id}`,
+        ),
+      );
+      view.rerender(tree("confirmation"));
+      await waitFor(() =>
+        expect(navigation.replace).toHaveBeenCalledWith("/book/time/"),
+      );
+      page = "time";
+      view.rerender(tree(page));
+      await screen.findByRole("button", { name: /12:50–13:30/ });
+    };
+    const backToCalendar = async () => {
+      page = "time";
+      act(() => {
+        window.dispatchEvent(new PopStateEvent("popstate"));
+        view.rerender(tree(page));
+      });
+      await screen.findByRole("button", { name: /12:50–13:30/ });
+    };
+    try {
+      for (let index = 0; index < 18; index++) {
+        assertOriginal();
+        const choices =
+          page === "home"
+            ? ["re-enter from Home"]
+            : page === "session"
+              ? ["browser Back to Calendar", "leave for Home"]
+              : [
+                  selected ? "remove replacement" : "select replacement",
+                  "Back to Session",
+                  "refresh Calendar",
+                  "leave for Home",
+                ];
+        const action = choices[random(choices.length)];
+        trace.push(action);
+        switch (action) {
+          case "select replacement":
+            chooseReplacement();
+            break;
+          case "remove replacement":
+            fireEvent.click(
+              screen.getByRole("button", {
+                name: `Remove selected session ${other.date} at 12:50`,
+              }),
+            );
+            selected = false;
+            break;
+          case "Back to Session":
+            expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute(
+              "href",
+              "/book/session",
+            );
+            page = "session";
+            view.rerender(tree(page));
+            await screen.findByRole("heading", { name: "Your session" });
+            break;
+          case "browser Back to Calendar":
+            await backToCalendar();
+            break;
+          case "refresh Calendar":
+            view.unmount();
+            view = render(tree("time"));
+            await screen.findByRole("button", { name: /12:50–13:30/ });
+            break;
+          case "leave for Home":
+            fireEvent.click(
+              screen.getByRole("button", { name: "Leave recovery" }),
+            );
+            page = "home";
+            selected = false;
+            view.rerender(tree(page));
+            expect(isBookingDeparture(id)).toBe(true);
+            break;
+          case "re-enter from Home":
+            await returnFromHome();
+            break;
+        }
+        assertOriginal();
+      }
+      if (page === "home") {
+        trace.push("re-enter from Home");
+        await returnFromHome();
+      } else if (page === "session") {
+        trace.push("browser Back to Calendar");
+        await backToCalendar();
+      }
+      assertOriginal();
+      navigation.replace.mockClear();
+      if (sequence.resolution === "unpaid release" && !selected) {
+        trace.push("select replacement before release");
+        chooseReplacement();
+        assertOriginal();
+      }
+      trace.push(sequence.resolution);
+      if (sequence.resolution === "late payment") {
+        paid = true;
+        confirmed = true;
+        vi.setSystemTime(Date.now() + 31000);
+        fireEvent.focus(window);
+        await waitFor(() =>
+          expect(navigation.replace).toHaveBeenCalledWith(
+            `/confirmation/?attempt=${id}`,
+          ),
+        );
+        view.rerender(tree("confirmation"));
+        expect(
+          await screen.findByRole("heading", { name: "Booking Confirmed" }),
+        ).toBeVisible();
+        expect(completedPaymentReturn(id)).toBe(true);
+      } else {
+        allowRelease = true;
+        view.unmount();
+        view = render(tree("time"));
+        await waitFor(() => expect(submittedCheckoutId()).toBeNull());
+        expect(released).toBe(true);
+        expect(screen.getByTestId("mock-expiry-attempt")).toHaveTextContent(
+          "null",
+        );
+        expect(cart()).toEqual(selected ? [other] : []);
+      }
+      expect(
+        screen.queryByRole("link", { name: "Continue payment" }),
+      ).toBeNull();
+      expect(
+        requests
+          .filter(({ method }) => method !== "GET")
+          .every(({ path }) => path === `/api/attempts/${id}/expire`),
+      ).toBe(true);
+      console.info(receipt());
+    } catch (cause) {
+      throw new Error(receipt(), { cause });
+    }
+    return;
+  }
   const assertBackgroundOnly = () => {
     expect(
       document.querySelector(
@@ -3059,6 +3592,122 @@ it("mock unavailable payment status cannot masquerade as expiry or clear the ori
 
 it("an expired payment window after a submitted checkout departure returns once to an editable calendar without repeating protected reads", async () => {
   await verifyMockPaymentExpiry("departed");
+});
+
+it("archived expiry replay preserves replacements and requires current original unpaid release proof", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const replacement = { ...draft.slots[0], start: "12:50" };
+  const editable = { ...draft, accepted: false, slots: [replacement] };
+  const otherId = "00000000-0000-4000-8000-000000000002";
+  for (const outcome of [
+    "uncertain",
+    "paid",
+    "denied",
+    "departed",
+    "different",
+    "released",
+  ]) {
+    navigation.path = "/book/time/";
+    saveLiveDraft(editable, true, id);
+    markSubmittedCheckout(id, true);
+    saveCalendarRecovery(id);
+    saveSuppressedSlots(draft.slots);
+    const release = Promise.withResolvers<Response>();
+    const expire = vi.fn<typeof globalThis.fetch>(() => release.promise);
+    vi.stubGlobal("fetch", expire);
+    const context = vi
+      .spyOn(protectedCheckoutService, "context")
+      .mockResolvedValue({
+        attemptId: id,
+        mode: "live",
+        checkout: { state: "unavailable" },
+        expired: outcome !== "uncertain",
+        ...(outcome === "paid"
+          ? { payment: { status: "recorded" as const, paidAtMs: Date.now() } }
+          : {}),
+        summary: {
+          players: 1,
+          totalMinor: 8800,
+          currency: "SGD",
+          sessions: [
+            {
+              players: 1,
+              startMs: Date.parse(
+                `${draft.slots[0].date}T${draft.slots[0].start}:00+08:00`,
+              ),
+            },
+          ],
+        },
+        checking: {
+          deadlineMs: Date.now() - 60000,
+          nextCheckMs: 0,
+          pollAfterMs: 5000,
+        },
+      });
+    const service = {
+      ...liveBookingService,
+      publicCalendar: undefined,
+      calendar: undefined,
+      availability: vi.fn(async () => []),
+      restore: async () => null,
+    };
+    const identity = { ...demoCustomerIdentity, mode: "live" as const };
+    const tree = () => (
+      <BookingProvider bookingService={service} identityService={identity}>
+        <Seed />
+      </BookingProvider>
+    );
+    const view = render(tree());
+    await act(async () => {});
+    expect(context).toHaveBeenCalledWith(
+      expect.objectContaining({ attemptId: id, mode: "live" }),
+    );
+    expect(submittedCheckoutId()).toBe(id);
+    if (outcome === "uncertain" || outcome === "paid") {
+      expect(expire).not.toHaveBeenCalled();
+    } else {
+      expect(expire).toHaveBeenCalledExactlyOnceWith(
+        `/api/attempts/${id}/expire`,
+        expect.objectContaining({ method: "POST" }),
+      );
+      if (outcome === "departed") {
+        navigation.path = "/book/details/";
+        view.rerender(tree());
+        expect(expire.mock.calls[0][1]?.signal?.aborted).toBe(true);
+      } else if (outcome === "different") {
+        saveLiveDraft(editable, true, otherId);
+        markSubmittedCheckout(otherId, true);
+      }
+      await act(async () =>
+        release.resolve(
+          outcome === "denied"
+            ? new Response(null, { status: 409 })
+            : Response.json({ expired: true }),
+        ),
+      );
+    }
+    expect(submittedCheckoutId()).toBe(
+      outcome === "released" ? null : outcome === "different" ? otherId : id,
+    );
+    expect(loadLiveDraft().slots).toEqual([replacement]);
+    expect(navigation.replace).not.toHaveBeenCalled();
+    view.unmount();
+    context.mockRestore();
+  }
+});
+
+it("seeded expiry journey 8 preserves original checkout until late payment", async () => {
+  await verifyMockPaymentExpiry("expired", {
+    seed: bookingSequenceSeed(8, 2448545082),
+    resolution: "late payment",
+  });
+});
+it("seeded expiry journey 9 preserves replacements across authoritative unpaid release", async () => {
+  await verifyMockPaymentExpiry("expired", {
+    seed: bookingSequenceSeed(9, 1852968729),
+    resolution: "unpaid release",
+  });
 });
 
 it("mock conflict refresh keeps the rejected tab on calendar without adopting an identical-contact checkout", async () => {
@@ -4189,6 +4838,470 @@ it("completed conflict classification preserves all available selections without
   );
   expect(availability).toHaveBeenCalledTimes(1);
   expect(checkout).toHaveBeenCalledTimes(1);
+});
+
+it("detached predispatch conflicts preserve newer edits and never take over Home or resume the rejected checkout", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const conflictNotice =
+    "Some sessions may no longer be available. Please check again.";
+  for (const [body, notice] of [
+    [
+      { error: "checkout_already_active" },
+      "You already have an active checkout. Return to your existing checkout to complete payment, or wait for it to expire before starting another.",
+    ],
+    [{ error: "checkout_window_unresolved" }, conflictNotice],
+    [
+      {
+        error: "checkout_selection_unavailable",
+        selectionRejection: {
+          state: "selection_unavailable",
+          rejectedSessionIndices: [0],
+        },
+      },
+      conflictNotice,
+    ],
+    [
+      {
+        state: "recovery_required",
+        paymentAvailable: false,
+        creationResolution: { state: "not_created" },
+      },
+      "Nothing was booked or charged. Your details are saved; please choose your sessions again.",
+    ],
+    [
+      {
+        state: "restart_required",
+        paymentAvailable: false,
+        rejectedSessionIndex: 0,
+      },
+      conflictNotice,
+    ],
+  ] as const) {
+    for (const home of [false, true]) {
+      sessionStorage.clear();
+      navigation.path = "/book/review/";
+      const write = Promise.withResolvers<Response>();
+      const recovery = Promise.withResolvers<Response>();
+      const fetcher = vi.fn<typeof fetch>((input, options) => {
+        if (options?.method === "POST") return write.promise;
+        if (String(input).endsWith("/checkout")) return recovery.promise;
+        throw new Error("Unexpected request");
+      });
+      vi.stubGlobal("fetch", fetcher);
+      const available = { ...draft.slots[0], available: true };
+      const service = {
+        ...liveBookingService,
+        publicCalendar: undefined,
+        calendar: undefined,
+        restore: undefined,
+        availability: vi.fn(async () => [available]),
+      };
+      const edited = { ...draft.slots[0], start: "12:50" };
+      let state!: ReturnType<typeof useBooking>;
+      function Probe() {
+        const booking = useBooking();
+        useEffect(() => {
+          state = booking;
+        }, [booking]);
+        return <Seed />;
+      }
+      const tree = () => (
+        <BookingProvider bookingService={service}>
+          <Probe />
+        </BookingProvider>
+      );
+      const view = render(tree());
+      fireEvent.click(screen.getByText("Seed"));
+      await act(async () =>
+        fireEvent.click(screen.getByText("Repeat checkout")),
+      );
+      const originalId = submittedCheckoutId();
+      expect(originalId).toMatch(/^[0-9a-f-]{36}$/);
+      navigation.path = home ? "/" : "/book/details/";
+      act(() => window.dispatchEvent(new PopStateEvent("popstate")));
+      view.rerender(tree());
+      if (!home) {
+        act(() => state.update({ slots: [edited] }));
+        await act(async () => state.resumeSubmittedCheckout());
+        expect(
+          fetcher.mock.calls.some(
+            ([url]) => String(url) === `/api/attempts/${originalId}/checkout`,
+          ),
+        ).toBe(true);
+      }
+      const response =
+        "error" in body
+          ? Response.json(body, { status: 503 })
+          : Response.json({ attemptId: originalId, ...body });
+      await act(async () => write.resolve(response));
+      expect(submittedCheckoutId()).toBeNull();
+      expect(state.attempt).toBeNull();
+      expect(state.draft.slots).toEqual(home ? [] : [edited]);
+      expect(state.action.returnToCalendar).not.toBe(true);
+      expect(state.selectionNotice).toBe(home ? null : notice);
+      if (home) {
+        navigation.path = "/book/account/";
+        view.rerender(tree());
+        expect(state.ready).toBe(true);
+        expect(fetcher.mock.calls).toHaveLength(1);
+      }
+      await act(async () =>
+        recovery.resolve(
+          Response.json({ error: "attempt_unavailable" }, { status: 404 }),
+        ),
+      );
+      expect(navigation.replace).not.toHaveBeenCalled();
+      expect(navigation.push).not.toHaveBeenCalled();
+      expect(
+        fetcher.mock.calls.filter(([, options]) => options?.method === "POST"),
+      ).toHaveLength(1);
+      view.unmount();
+    }
+  }
+});
+
+/** Replay seeded customer edits and history traversal around one real checkout request. */
+async function verifyConflictSequence(scenario: 6 | 7, originalSeed: number) {
+  const seed = bookingSequenceSeed(scenario, originalSeed);
+  const random = bookingSequenceRandom(seed);
+  const trace: string[] = [];
+  const choose = <T,>(values: readonly T[]) => values[random(values.length)];
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const date = draft.slots[0].date;
+  const times = ["12:00", "12:50", "13:40", "14:30"];
+  const offers = times.map((start) => ({
+    ...draft.slots[0],
+    start,
+    available: true,
+  }));
+  const model = {
+    name: draft.contact.name,
+    academy: "",
+    slots: times.slice(0, 2),
+  };
+  saveLiveDraft({
+    ...draft,
+    slots: model.slots.map((start) => ({ ...draft.slots[0], start })),
+  });
+  const checkoutReply = Promise.withResolvers<Response>();
+  const recoveryReply = Promise.withResolvers<Response>();
+  const fetcher = vi.fn<typeof fetch>((input, options) => {
+    if (
+      String(input).startsWith("/api/booking/checkout/") &&
+      options?.method === "POST"
+    )
+      return checkoutReply.promise;
+    if (/^\/api\/attempts\/[^/]+\/checkout$/.test(String(input)))
+      return recoveryReply.promise;
+    throw new Error(
+      `Unexpected sequence request ${options?.method ?? "GET"} ${input}`,
+    );
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const unavailable = new Set<string>();
+  const service: BookingService = {
+    ...liveBookingService,
+    restore: undefined,
+    calendar: undefined,
+    availability: async () =>
+      offers.map((slot) => ({
+        ...slot,
+        available: !unavailable.has(slot.start),
+      })),
+    publicCalendar: async ({ month }) => ({
+      serviceId: "2",
+      month,
+      observedAtMs: Date.now(),
+      dates: [
+        {
+          date,
+          available: true,
+          offers: offers
+            .filter((slot) => !unavailable.has(slot.start))
+            .map((slot) => ({
+              ...slot.native,
+              instructorId: slot.instructor,
+              startMs: Date.parse(`${date}T${slot.start}:00+08:00`),
+            })),
+        },
+      ],
+    }),
+  };
+  const history = ["time", "details", "review"] as const;
+  let index = 2;
+  let booking!: ReturnType<typeof useBooking>;
+  function Observe() {
+    const current = useBooking();
+    useEffect(() => {
+      booking = current;
+    }, [current]);
+    return <BookingPage step={history[index]} />;
+  }
+  const content = () => (
+    <BookingProvider
+      bookingService={service}
+      identityService={demoCustomerIdentity}
+    >
+      <Observe />
+    </BookingProvider>
+  );
+  function Route() {
+    const [, renderRoute] = useState(0);
+    useEffect(() => {
+      navigation.replace.mockImplementation((path: string) => {
+        const next = history.findIndex((step) => path === `/book/${step}/`);
+        if (next < 0) throw new Error(`Unexpected redirect to ${path}`);
+        index = next;
+        navigation.path = path;
+        renderRoute((revision) => revision + 1);
+      });
+    }, []);
+    return content();
+  }
+  const tree = () => <Route />;
+  navigation.path = "/book/review/";
+  const view = render(tree());
+  let expectedWrites = 0;
+  let retained: string | null = null;
+  let originalContact = "";
+  const writes = () =>
+    fetcher.mock.calls.filter(([, options]) => options?.method === "POST");
+  function check() {
+    expect(writes()).toHaveLength(expectedWrites);
+    expect(booking.draft.contact.name).toBe(model.name);
+    expect(booking.draft.contact.academy).toBe(model.academy);
+    expect(booking.draft.slots.map(({ start }) => start).sort()).toEqual(
+      [...model.slots].sort(),
+    );
+    expect(submittedCheckoutId()).toBe(retained);
+    if (retained) {
+      expect(booking.attempt?.id).toBe(retained);
+      expect(booking.attempt?.draft.contact.name).toBe(originalContact);
+      expect(booking.attempt?.draft.slots.map(({ start }) => start)).toEqual(
+        times.slice(0, 2),
+      );
+    } else expect(booking.attempt).toBeNull();
+    expect(navigation.push).not.toHaveBeenCalled();
+  }
+  type Work = () => void | Promise<void>;
+  async function transition(label: string, work: Work) {
+    check();
+    trace.push(label);
+    await work();
+    check();
+  }
+  async function click(element: HTMLElement) {
+    await act(async () => {
+      fireEvent.click(element);
+    });
+  }
+  async function move(next: number) {
+    await transition(
+      `browser ${next < index ? "Back" : "Forward"} to ${history[next]}`,
+      async () => {
+        index = next;
+        navigation.path = `/book/${history[index]}/`;
+        await act(async () => {
+          window.dispatchEvent(new PopStateEvent("popstate"));
+          view.rerender(tree());
+        });
+      },
+    );
+  }
+  async function editContact(field: "name" | "academy") {
+    const values =
+      field === "name"
+        ? ["Alicia Tan", "Jamie Lee", "Amelia Wong"]
+        : ["North School", "West School", "East School"];
+    const value = choose(
+      values.filter((candidate) => candidate !== model[field]),
+    );
+    await transition(`edit ${field} to ${value}`, async () => {
+      model[field] = value;
+      fireEvent.change(
+        screen.getByRole("textbox", {
+          name: field === "name" ? /Full name/ : /Academy/,
+        }),
+        { target: { value } },
+      );
+    });
+  }
+  async function editCalendar() {
+    const start = choose(times.filter((time) => !unavailable.has(time)));
+    if (model.slots.includes(start)) {
+      await transition(`remove ${start}`, async () => {
+        model.slots = model.slots.filter((time) => time !== start);
+        await click(
+          screen.getByRole("button", { name: `Remove ${date} at ${start}` }),
+        );
+      });
+    } else {
+      await transition(`select trainer 4 at ${start}`, async () => {
+        const label = `Trainer for ${date} at ${start}`;
+        if (!screen.queryByRole("combobox", { name: label }))
+          await click(
+            screen.getByRole("button", { name: new RegExp(`^${start}–`) }),
+          );
+        fireEvent.change(screen.getByRole("combobox", { name: label }), {
+          target: { value: `${date}|${start}|2|4` },
+        });
+        model.slots.push(start);
+      });
+    }
+  }
+  try {
+    // Start with actual Review consent, draft validation and one combined checkout.
+    for (let i = 0; i < 6; i++) {
+      const actions: Work[] =
+        index === 2
+          ? [
+              () => move(1),
+              () =>
+                transition("toggle Review consent", () =>
+                  click(screen.getByRole("checkbox")),
+                ),
+            ]
+          : [
+              () => editContact("name"),
+              () => editContact("academy"),
+              () => move(2),
+            ];
+      await choose(actions)();
+    }
+    if (index === 1) await move(2);
+    const consent = screen.getByRole("checkbox");
+    if (!booking.draft.accepted)
+      await transition("accept Review", () => click(consent));
+    await transition("submit original booking", async () => {
+      originalContact = model.name;
+      await click(screen.getByRole("button", { name: /^Proceed to Payment/ }));
+      expectedWrites = 1;
+      retained = String(writes()[0][0]).split("/").pop()!;
+      const body = JSON.parse(String(writes()[0][1]?.body));
+      expect(body.key).toBe(retained);
+      expect(body.contact.name).toBe(originalContact);
+      expect(body.sessions).toHaveLength(2);
+    });
+    if (scenario === 6) {
+      const rejectedIndex = random(2);
+      const rejectedStart = model.slots[rejectedIndex];
+      await transition(
+        `receive indexed conflict for ${rejectedStart}`,
+        async () => {
+          unavailable.add(rejectedStart);
+          model.slots.splice(rejectedIndex, 1);
+          retained = null;
+          await act(async () =>
+            checkoutReply.resolve(
+              Response.json(
+                {
+                  error: "checkout_selection_unavailable",
+                  selectionRejection: {
+                    state: "selection_unavailable",
+                    rejectedSessionIndices: [rejectedIndex],
+                  },
+                },
+                { status: 503 },
+              ),
+            ),
+          );
+          expect(navigation.replace).toHaveBeenCalledExactlyOnceWith(
+            "/book/time/",
+          );
+          expect(index).toBe(0);
+        },
+      );
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Some sessions may no longer be available.",
+      );
+      await transition("refresh recovered Calendar", async () => {
+        view.unmount();
+        await act(async () => {
+          render(tree());
+        });
+      });
+      for (let i = 0; i < 11; i++) await editCalendar();
+      expect(
+        screen.queryByRole("button", {
+          name: new RegExp(`^${rejectedStart}–`),
+        }),
+      ).toBeNull();
+      expect(navigation.replace).toHaveBeenCalledTimes(1);
+    } else {
+      await move(1);
+      await editContact("name");
+      // Traverse only actual entries and use controls available on the current page.
+      for (let i = 0; i < 12; i++) {
+        const actions: Work[] =
+          index === 2
+            ? [() => move(1)]
+            : index === 0
+              ? model.slots.length
+                ? [editCalendar, () => move(1)]
+                : [editCalendar]
+              : [
+                  () => editContact("name"),
+                  () => editContact("academy"),
+                  () => move(0),
+                  () => move(2),
+                ];
+        await choose(actions)();
+      }
+      const control = choose(["Back", "Continue payment"]);
+      await transition(`request original checkout via ${control}`, async () => {
+        await click(screen.getByRole("button", { name: control }));
+        expect(
+          fetcher.mock.calls.filter(
+            ([input]) => String(input) === `/api/attempts/${retained}/checkout`,
+          ),
+        ).toHaveLength(1);
+      });
+      await transition(
+        "receive active-checkout refusal before pending protected response",
+        async () => {
+          retained = null;
+          await act(async () =>
+            checkoutReply.resolve(
+              Response.json(
+                { error: "checkout_already_active" },
+                { status: 503 },
+              ),
+            ),
+          );
+          expect(booking.selectionNotice).toMatch(
+            /^You already have an active checkout/,
+          );
+          expect(booking.action.returnToCalendar).not.toBe(true);
+        },
+      );
+      await transition("settle stale protected response", async () => {
+        await act(async () =>
+          recoveryReply.resolve(
+            Response.json({ error: "attempt_unavailable" }, { status: 404 }),
+          ),
+        );
+      });
+      expect(navigation.replace).not.toHaveBeenCalled();
+    }
+    // Every network mutation in the sequence belongs to the single original request.
+    expect(writes()).toHaveLength(1);
+    console.info(
+      `Booking sequence ${scenario}, seed ${seed}: ${trace.join(" → ")}`,
+    );
+  } catch (error) {
+    throw new Error(
+      `Booking sequence ${scenario}, seed ${seed}: ${trace.join(" → ")}`,
+      { cause: error },
+    );
+  }
+}
+it("seeded indexed selection conflict retains the other session through Calendar edits and refresh", async () => {
+  await verifyConflictSequence(6, 755340338);
+});
+it("seeded browser traversal and edits survive a delayed active-checkout refusal and stale original read", async () => {
+  await verifyConflictSequence(7, 3600727856);
 });
 
 it("active checkout rejection keeps its own notice instead of an availability warning", async () => {

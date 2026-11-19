@@ -8,6 +8,7 @@ import {
   expiryReconciliationDeadline,
   markConfirmationSeen,
   submittedCheckoutId,
+  completedPaymentReturn,
 } from "@/services/storage";
 import { liveBookingService } from "@/services/booking";
 import { demoCustomerIdentity } from "@/services/demo/identity";
@@ -59,6 +60,7 @@ afterEach(() => {
   ).toBeNull();
   expect(document.querySelector(".payment-check-feedback")).toBeNull();
   cleanup();
+  navigation.attempt = first;
   navigation.status = "canceled";
   navigation.reference = "";
   vi.useRealTimers();
@@ -369,6 +371,7 @@ it("verified live receipt shows provider invoice number without internal IDs or 
 const navigation = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
+  attempt: "00000000-0000-4000-8000-000000000001",
   status: "canceled",
   reference: "",
 }));
@@ -377,10 +380,51 @@ vi.mock("next/navigation", () => ({
   useRouter: () => navigation,
   useSearchParams: () =>
     new URLSearchParams(
-      `attempt=00000000-0000-4000-8000-000000000001&status=${navigation.status}` +
+      `attempt=${navigation.attempt}&status=${navigation.status}` +
         (navigation.reference ? `&reference=${navigation.reference}` : ""),
     ),
 }));
+it("a completed provider return stays with its own attempt across confirmation history", async () => {
+  navigation.status = "completed";
+  navigation.reference = "synthetic-payment";
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(null, { status: 503 })),
+  );
+  const service = {
+    ...liveBookingService,
+    restore: undefined,
+    publicCalendar: undefined,
+    calendar: undefined,
+  };
+  const page = () => (
+    <BookingProvider
+      bookingService={service}
+      identityService={demoCustomerIdentity}
+    >
+      <ConfirmationPage />
+    </BookingProvider>
+  );
+  const view = render(page());
+  await act(async () => {});
+  expect(completedPaymentReturn(first)).toBe(true);
+  navigation.attempt = second;
+  navigation.reference = "";
+  navigation.status = "canceled";
+  view.rerender(page());
+  await act(async () => {});
+  expect(completedPaymentReturn(second)).toBe(false);
+  expect(completedPaymentReturn(first)).toBe(true);
+  navigation.reference = "second-payment";
+  navigation.status = "completed";
+  view.rerender(page());
+  await act(async () => {});
+  expect(completedPaymentReturn(second)).toBe(true);
+  expect(
+    screen.queryByRole("heading", { name: "Booking Confirmed" }),
+  ).toBeNull();
+});
+
 it("booking restoration does not restart a protected confirmation read", async () => {
   let finishRestore!: (attempt: Attempt | null) => void;
   const restore = vi.fn(

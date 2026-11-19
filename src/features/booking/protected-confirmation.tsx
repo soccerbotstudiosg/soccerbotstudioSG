@@ -182,7 +182,7 @@ function ProtectedConfirmationBody({
   confirmationRoute?: boolean;
   sessionRevision?: number;
   onAgain?: () => void;
-  onExpired?: (attemptId: string) => void;
+  onExpired?: (attemptId: string) => boolean | void;
   onAwaitingExpiry?: (attemptId: string, unresolved?: boolean) => boolean;
   calendarRecovery?: boolean;
   /** Continue protected recovery without rendering status on other draft steps. */
@@ -292,8 +292,10 @@ function ProtectedConfirmationBody({
       homeFallback === id
     )
       return;
-    onExpired?.(attemptId);
-    if (!calendarRecovery) router.replace("/book/time/");
+    const released = onExpired?.(attemptId);
+    if (calendarRecovery) return;
+    if (released === false) setHomeFallback(attemptId);
+    else router.replace("/book/time/");
   });
   const wantsExpiry =
     view !== "denied" &&
@@ -314,25 +316,31 @@ function ProtectedConfirmationBody({
     failedExpiry?.id === attemptId && failedExpiry.revision === sessionRevision;
   useEffect(() => {
     if (!wantsExpiry) return;
+    const { pathname, search } = window.location;
     let active = true;
+    // Browser traversal can precede React's cleanup of the previous attempt.
+    const currentVisit = () =>
+      active &&
+      window.location.pathname === pathname &&
+      window.location.search === search;
     let busy = false;
     let finished = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | undefined;
     /** Retry only the same unpaid-release operation, without changing displayed recovery. */
     async function release() {
-      if (!active || busy || finished || document.hidden) return;
+      if (!currentVisit() || busy || finished || document.hidden) return;
       busy = true;
       controller = new AbortController();
       const timeout = setTimeout(() => controller?.abort(), 10000);
       try {
         await expireBooking(attemptId, controller.signal);
-        if (active) {
+        if (currentVisit()) {
           finished = true;
           finishExpiry(attemptId, sessionRevision);
         }
       } catch (error) {
-        if (!active) return;
+        if (!currentVisit()) return;
         setFailedExpiry({ id: attemptId, revision: sessionRevision });
         if (
           error instanceof ConfirmationError &&
