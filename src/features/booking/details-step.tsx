@@ -1,5 +1,5 @@
 "use client";
-import { focusField, focusFormError } from "@/components/form-focus";
+import { focusFormError } from "@/components/form-focus";
 import {
   profileAccessGeneration,
   reportProfileAccessLoss,
@@ -200,6 +200,11 @@ export function DetailsStep({
   }
   const needsEmailCheck = !profileOnly && draft.mode !== "member";
   const emailChecked = !needsEmailCheck || checkedEmail === c.email;
+  const [emailCheckRequested, requestEmailCheck] = useState(false);
+  const uncheckedEmail =
+    needsEmailCheck && !currentErrors.email && !emailChecked;
+  const highlightEmailCheck =
+    uncheckedEmail && emailCheckRequested && !emailChecking;
   const contactValid = Object.keys(currentErrors).length === 0 && emailChecked;
   const [saveState, setSaveState] = useState({
     key: "",
@@ -285,6 +290,7 @@ export function DetailsStep({
     if (key === "email") {
       emailWork.current?.abort();
       emailWork.current = null;
+      requestEmailCheck(false);
       setEmailChecking(false);
       setCheckedEmail(null);
       setFailedEmail(null);
@@ -303,6 +309,7 @@ export function DetailsStep({
     );
   }
   function validateField(key: keyof ContactDetails) {
+    if (key === "email" && uncheckedEmail) requestEmailCheck(true);
     const next = contactErrors(
       c,
       draft.mode === "member" ? draft.accountEmail : undefined,
@@ -393,7 +400,16 @@ export function DetailsStep({
           {key === "email" && needsEmailCheck && (
             <button
               type="button"
+              id="confirm-email"
               className="email-confirm-control"
+              data-needs-check={highlightEmailCheck || undefined}
+              aria-describedby={
+                errors.email
+                  ? "email-error"
+                  : !currentErrors.email
+                    ? "email-check-help"
+                    : undefined
+              }
               aria-label="Confirm email address is correct"
               aria-pressed={emailChecked}
               disabled={!!currentErrors.email || emailChecking}
@@ -443,7 +459,11 @@ export function DetailsStep({
           !currentErrors.email &&
           !errors.email && (
             <p
-              className="email-check-help"
+              className={
+                highlightEmailCheck
+                  ? "email-check-help field-error"
+                  : "email-check-help"
+              }
               id="email-check-help"
               aria-live="polite"
             >
@@ -551,21 +571,15 @@ export function DetailsStep({
             draft.mode === "member" ? draft.accountEmail : undefined,
           );
           setErrors(next);
-          const first = Object.keys(next)[0];
-          if (first)
-            focusFormError(
-              document.getElementById("details-form") as HTMLFormElement,
-              Object.keys(next),
-            );
-          else {
-            if (!emailChecked) {
-              focusField(
-                document.querySelector<HTMLButtonElement>(
-                  ".email-confirm-control",
-                ),
-              );
-              return;
-            }
+          const invalidControls = Object.keys(next);
+          if (uncheckedEmail) {
+            requestEmailCheck(true);
+            invalidControls.push("confirm-email");
+          }
+          if (invalidControls.length || emailChecking) {
+            focusFormError(event.currentTarget, invalidControls);
+            return;
+          } else {
             if (submitting.current) return;
             submitting.current = true;
             setChecking(true);

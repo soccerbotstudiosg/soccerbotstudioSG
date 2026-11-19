@@ -295,9 +295,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
                   Services
                 </h2>
                 <div className="footer-contact-detail footer-direct-links">
-                  <Link href="/terms-of-service/">Terms of Service</Link>
+                  <Link href="/terms-of-service/">Terms and Condition</Link>
                   <Link href="/privacy-policy/">Privacy Policy</Link>
-                  <Link href="/refund-policy/">Refund Policy</Link>
                 </div>
               </div>
             </section>

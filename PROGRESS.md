@@ -6,7 +6,7 @@ Verify the bounded settings read after deployment. Cloudflare confirmed the expe
 
 ## Next actions
 
-Review the verifier correction in CI. PR #102 retains its separate staging review.
+Review the verifier correction in CI.
 
 ## Ordered work after this slice
 
