@@ -268,7 +268,19 @@ async function calendarScenario(mobile: boolean) {
     );
     expect(within(instructors).getAllByRole("article")).toHaveLength(1);
     expect(nextWrap.querySelector(".time-slot-cue")).toBeNull();
+    const selectedSlot = times().getByRole("button", {
+      name: /12:00–12:40/,
+      pressed: true,
+    });
+    if (selectedSlot.getAttribute("aria-expanded") !== "true")
+      await user.click(selectedSlot);
+    expect(selectedSlot).toHaveAttribute("aria-expanded", "true");
     await user.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(times().queryAllByRole("button", { pressed: true })).toHaveLength(0);
+    expect(times().queryAllByRole("button", { expanded: true })).toHaveLength(
+      0,
+    );
+    expect(times().queryByRole("combobox")).toBeNull();
     expect(firstWrap.querySelector(".time-slot-cue")).not.toBeNull();
     expect(
       screen.queryByRole("region", { name: "Your instructors" }),

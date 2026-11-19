@@ -116,6 +116,12 @@ export function TimeStep({
   const trainerPointer = useRef(false);
   const [choosing, setChoosing] = useState<string | null>(null);
   const [calendarView, setCalendarView] = useState<"week" | "month">("month");
+  const hasSelections = draft.slots.length > 0;
+  const [hadSelections, setHadSelections] = useState(hasSelections);
+  if (hadSelections !== hasSelections) {
+    setHadSelections(hasSelections);
+    if (!hasSelections) setChoosing(null);
+  }
   const [weekStart, setWeekStart] = useState<string | null>(null);
   const today = todaySG(new Date(now));
   const live = bookingService.mode === "live";
