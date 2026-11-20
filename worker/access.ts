@@ -83,14 +83,19 @@ export async function renewAccess(
     .bind(now + duration, access.capability_hash, now, now)
     .run();
   if (result.meta.changes !== 1) throw new ApiError(401, "access_denied");
+  return {
+    cookie: renewedAccessCookie(request, duration),
+    expiresMs: Math.max(access.expires_ms, now + duration),
+  };
+}
+
+/** Refresh the presented cookie only after the server commits its renewal. */
+export function renewedAccessCookie(request: Request, duration: number) {
   const cookie = (request.headers.get("cookie") || "")
     .split(";")
     .map((value) => value.trim())
     .find((value) => value.startsWith(cookieName + "="));
-  return {
-    cookie: `${cookie}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(duration / 1000)}`,
-    expiresMs: Math.max(access.expires_ms, now + duration),
-  };
+  return `${cookie}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(duration / 1000)}`;
 }
 
 /** Revoke the retained access capability. */

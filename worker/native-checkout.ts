@@ -354,7 +354,7 @@ export async function executeNativeCheckout(options: {
           step,
         );
       } else
-        await claimNativeDispatch(
+        access.expires_ms = await claimNativeDispatch(
           env.STATE,
           attemptId,
           stagedVersion,
@@ -364,6 +364,7 @@ export async function executeNativeCheckout(options: {
           step,
           options.prepared?.preparation,
           markersJson,
+          p.ACCESS_LIFETIME_MS,
         );
       claimedDispatch = true;
       if (lastOperation === "book") claimedBookings++;

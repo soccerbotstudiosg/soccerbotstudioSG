@@ -52,7 +52,7 @@ import {
   windowCalendar,
   windowAvailability,
 } from "./public-calendar";
-import { authenticate, renewAccess } from "./access";
+import { authenticate } from "./access";
 import { NativeCalendarReads } from "./native-calendar";
 import { manageWebhookSubscription } from "./webhook-subscriptions";
 import {
@@ -1435,7 +1435,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     const checkoutTrace = scope.checkout
       ? createCheckoutTrace(correlationId)
       : undefined;
-    let renewedAccess: Awaited<ReturnType<typeof renewAccess>> | undefined;
+    const originalExpiry = scope.checkoutAccess?.expires_ms;
     const pending = this.providerQueue.run("foreground", () =>
       runCheckoutTrace(checkoutTrace, () =>
         traced(correlationId, "coordinator", async () => {
@@ -1519,11 +1519,6 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
               rejected.selectionRejection,
             );
           });
-          if (scope.checkout) {
-            // Only an admitted preparation can extend this browser's booking access.
-            renewedAccess = await renewAccess(request, env, access, Date.now());
-            access.expires_ms = renewedAccess.expiresMs;
-          }
           const result = await executeNativeCheckout({
             request,
             env,
@@ -1599,7 +1594,12 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     });
     if (scope.checkout) this.ctx.waitUntil(result.then(() => undefined));
     const outcome = await result;
-    return { ...outcome, serverTiming, renewedAccess };
+    const expiresMs = scope.checkoutAccess?.expires_ms;
+    return {
+      ...outcome,
+      serverTiming,
+      renewedUntil: expiresMs !== originalExpiry ? expiresMs : undefined,
+    };
   }
   async bookingComments(attemptId?: string) {
     return this.providerQueue.run("display", () =>

@@ -255,4 +255,4 @@ Retained milestone ID/title; PDF/calendar actions were retired by owner decision
 
 ### 20 November 2026 — Rejected checkout extended guest access
 
-A competing selection renewed guest access before checkout preparation rejected it. The focused Worker regression reproduced the deadline change with one minute remaining. Renewal now follows successful preparation and rechecks the original capability before booking execution.
+A competing selection renewed guest access before checkout preparation rejected it. The focused Worker regression reproduced the deadline change with one minute remaining. The transaction that claims the first booking write now renews valid guest access. The change preserves the measured database round-trip budget for single and batch checkouts.

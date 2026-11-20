@@ -21,6 +21,7 @@ export async function claimNativeDispatch(
   firstStep = "session:0",
   preparation: D1PreparedStatement[] = [],
   markersJson: string | null = null,
+  accessLifetimeMs: number,
 ) {
   const now = Date.now();
   const all = await db.batch([
@@ -77,6 +78,11 @@ export async function claimNativeDispatch(
         "INSERT INTO session_effects(attempt_id,step,outcome) SELECT id,?,'unknown' FROM attempts WHERE id=? AND version=? AND state='dispatching' AND changes()=1",
       )
       .bind(firstStep, id, version + 1),
+    db
+      .prepare(
+        "UPDATE guest_access SET expires_ms=MAX(expires_ms,?) WHERE capability_hash=? AND changes()=1 AND revoked_ms IS NULL AND issued_ms<=? AND expires_ms>? RETURNING expires_ms",
+      )
+      .bind(now + accessLifetimeMs, access.capability_hash, now, now),
   ]);
   const results = all.slice(preparation.length + 1);
   if (results[2].meta.changes !== 1 && grant.ongoing === 1) {
@@ -108,7 +114,9 @@ export async function claimNativeDispatch(
     results[5].meta.changes !== 1
   )
     throw new ApiError(409, "dispatch_not_claimed");
-  return version + 1;
+  const renewed = results[6].results[0] as { expires_ms: number } | undefined;
+  if (!renewed) throw new ApiError(401, "access_denied");
+  return renewed.expires_ms;
 }
 
 // Every later batch effect combines fresh authority and one durable reservation.

@@ -35,6 +35,7 @@ import { identityDelivery, assertIdentityProofOpen } from "./identity-delivery";
 import {
   createAccess,
   renewAccess,
+  renewedAccessCookie,
   authenticateCheckout,
   authenticate,
   revokeAccess,
@@ -307,10 +308,13 @@ export default {
           // Keep the original RPC alive when the customer navigates away mid-checkout.
           if (checkoutAccess) ctx.waitUntil(submission.then(() => undefined));
           const outcome = await submission;
-          if (outcome.renewedAccess) {
-            checkingHeaders["Set-Cookie"] = outcome.renewedAccess.cookie;
+          if (outcome.renewedUntil) {
+            checkingHeaders["Set-Cookie"] = renewedAccessCookie(
+              request,
+              Math.max(0, outcome.renewedUntil - Date.now()),
+            );
             checkingHeaders["X-Booking-Access-Expires-At"] = String(
-              outcome.renewedAccess.expiresMs,
+              outcome.renewedUntil,
             );
           }
           if (outcome.serverTiming)
