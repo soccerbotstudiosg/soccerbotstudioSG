@@ -5145,6 +5145,173 @@ it("detached predispatch conflicts preserve newer edits and never take over Home
   }
 });
 
+it("Review from Details after quick Back shows the classified conflict once on Calendar and keeps both surviving sessions", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-15T00:00:00Z"));
+  const slots = ["12:00", "12:50", "13:40"].map((start) => ({
+    ...draft.slots[0],
+    start,
+  }));
+  const [first, lost, last] = slots;
+  const survivors = [first, last];
+  saveLiveDraft({ ...draft, slots });
+  const write = Promise.withResolvers<Response>();
+  const fetcher = vi.fn<typeof globalThis.fetch>((path, init) => {
+    if (
+      init?.method === "POST" &&
+      String(path).startsWith("/api/booking/checkout/")
+    )
+      return write.promise;
+    throw new Error(`Unexpected request ${init?.method ?? "GET"} ${path}`);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  let occupied = false;
+  const service = {
+    ...liveBookingService,
+    restore: undefined,
+    publicCalendar: undefined,
+    calendar: undefined,
+    availability: vi.fn(async () =>
+      (occupied ? survivors : slots).map((slot) => ({
+        ...slot,
+        available: true,
+      })),
+    ),
+  };
+  type Step = "review" | "details" | "time";
+  let visit!: (step: Step) => void;
+  function Route({ initial }: { initial: Step }) {
+    const [step, setStep] = useState(initial);
+    useEffect(() => {
+      visit = (next) => {
+        navigation.path = `/book/${next}/`;
+        setStep(next);
+      };
+      function navigate(href: string) {
+        const next = (["time", "details", "review"] as const).find(
+          (candidate) => href === `/book/${candidate}/`,
+        );
+        if (!next) throw new Error(`Unexpected destination ${href}`);
+        visit(next);
+      }
+      navigation.push.mockImplementation(navigate);
+      navigation.replace.mockImplementation(navigate);
+    }, []);
+    return (
+      <BookingProvider
+        bookingService={service}
+        identityService={demoCustomerIdentity}
+      >
+        <BookingPage step={step} />
+      </BookingProvider>
+    );
+  }
+  async function confirmDetails() {
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Confirm email address is correct",
+      }),
+    );
+    const review = screen.getByRole("button", { name: /^Review Booking/ });
+    await waitFor(() => expect(review).toBeEnabled());
+    await act(async () => fireEvent.click(review));
+  }
+  function expectConflictNotice() {
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(
+      "Some sessions may no longer be available.",
+    );
+    const rows = within(alert).getAllByRole("listitem");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveTextContent(`${dateLabel(lost.date)}, 12:50–13:30.`);
+    expect(loadLiveDraft().slots).toEqual(survivors);
+  }
+  navigation.path = "/book/review/";
+  const view = render(<Route initial="review" />);
+  fireEvent.click(await screen.findByRole("checkbox"));
+  const proceed = screen.getByRole("button", { name: /^Proceed to Payment/ });
+  expect(proceed).toBeEnabled();
+  await act(async () => fireEvent.click(proceed));
+  const id = submittedCheckoutId();
+  expect(id).toMatch(/^[0-9a-f-]{36}$/);
+  const [path, init] = fetcher.mock.calls[0];
+  expect(path).toBe(`/api/booking/checkout/${id}`);
+  expect(init?.credentials).toBe("same-origin");
+  expect(
+    JSON.parse(String(init?.body)).sessions.map(
+      (slot: { startMs: number }) => slot.startMs,
+    ),
+  ).toEqual(
+    slots.map((slot) => Date.parse(`${slot.date}T${slot.start}:00+08:00`)),
+  );
+  act(() => {
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    visit("details");
+  });
+  expect(
+    await screen.findByRole("button", { name: "Continue payment" }),
+  ).toBeEnabled();
+  occupied = true;
+  await act(async () =>
+    write.resolve(
+      Response.json(
+        {
+          error: "checkout_selection_unavailable",
+          selectionRejection: {
+            state: "selection_unavailable",
+            rejectedSessionIndices: [1],
+          },
+        },
+        { status: 503 },
+      ),
+    ),
+  );
+  await waitFor(() => expect(loadLiveDraft().slots).toEqual(survivors));
+  expect(submittedCheckoutId()).toBeNull();
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  await confirmDetails();
+  expect([
+    ...navigation.push.mock.calls,
+    ...navigation.replace.mock.calls,
+  ]).toEqual([["/book/time/"]]);
+  expect(navigation.path).toBe("/book/time/");
+  expectConflictNotice();
+  view.unmount();
+  render(<Route initial="time" />);
+  await act(async () => {});
+  expectConflictNotice();
+  async function enterDetails() {
+    const link = (
+      await screen.findAllByRole("link", { name: /^Enter contact details/ })
+    )[0];
+    expect(link).toHaveAttribute("href", "/book/details");
+    act(() => visit("details"));
+    expect(
+      await screen.findByRole("heading", { name: "Your details" }),
+    ).toBeVisible();
+  }
+  await enterDetails();
+  act(() => {
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    visit("time");
+  });
+  await act(async () => {});
+  expect(screen.queryByRole("alert")).toBeNull();
+  await enterDetails();
+  navigation.push.mockClear();
+  navigation.replace.mockClear();
+  await confirmDetails();
+  expect(navigation.push).toHaveBeenCalledExactlyOnceWith("/book/review/");
+  expect(navigation.path).toBe("/book/review/");
+  expect(
+    await screen.findByRole("heading", { name: "Review Booking" }),
+  ).toBeVisible();
+  expect(navigation.replace).not.toHaveBeenCalled();
+  expect(loadLiveDraft().slots).toEqual(survivors);
+  expect(fetcher.mock.calls.map(([url, init]) => [init?.method ?? "GET", String(url)])).toEqual([["POST", path]]);
+});
+
 /** Replay seeded customer edits and history traversal around one real checkout request. */
 async function verifyConflictSequence(scenario: 6 | 7, originalSeed: number) {
   const seed = bookingSequenceSeed(scenario, originalSeed);

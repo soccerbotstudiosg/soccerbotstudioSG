@@ -2434,6 +2434,18 @@ export function BookingProvider({
           const errors = selectionErrors(current.draft.slots, Date.now());
           if (errors.length)
             throw new BookingServiceError("conflict", errors[0]);
+          // Back can leave the customer on Details while checkout removes a
+          // rejected session. Show the affected times on their next Review.
+          if (
+            service.mode === "live" &&
+            !current.attempt &&
+            noticeCurrent.current.message === CONFLICT_NOTICE &&
+            noticeCurrent.current.slots.length > 0 &&
+            !noticeShownOnCalendar.current
+          ) {
+            setAction({ status: "idle", returnToCalendar: true });
+            return false;
+          }
           setAction({ status: "success", operation });
           return true;
         }

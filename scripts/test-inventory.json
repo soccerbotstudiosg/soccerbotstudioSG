@@ -761,6 +761,10 @@
   },
   {
     "file": "src/features/booking/direct-checkout.test.tsx",
+    "title": "Review from Details after quick Back shows the classified conflict once on Calendar and keeps both surviving sessions"
+  },
+  {
+    "file": "src/features/booking/direct-checkout.test.tsx",
     "title": "seeded indexed selection conflict retains the other session through Calendar edits and refresh"
   },
   {

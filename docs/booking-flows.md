@@ -42,6 +42,8 @@ flowchart TD
 | Back, refresh, Home and re-entry                  | Recover using the same attempt, link and deadlines. A verified active checkout in a different tab remains separate from a rejected tab’s draft.                                                                                                       |
 | Ask the studio to contact me                      | Send the report for the original attempt and show the acknowledgement. A help request does not release the booking.                                                                                                                                   |
 
+After browser Back to Contact details, a conflict can finish checking while the customer edits. The next valid Review Booking action opens Calendar with one notice listing the affected sessions. Refresh keeps the notice. Once the customer leaves Calendar, the surviving sessions can proceed to Review.
+
 The [business rules](business-rules.md#br-008) own read limits and release authority. The [API proof contract](api-contracts.md#verified-no-creation-resolution) describes what the server can conclude after a completed error or lost transport.
 
 ## Continue to pay, expiry and confirmation

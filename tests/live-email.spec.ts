@@ -5424,42 +5424,35 @@ test("one browser recovers rejected email, unpaid expiry, overlapping tabs and t
       .click();
     await review(page).click();
     const details = page.getByRole("link", { name: /^Enter contact details/ });
-    await expect(page).toHaveURL(/\/book\/(time|review)\/$/, {
-      timeout: 45000,
-    });
-    if (new URL(page.url()).pathname === "/book/review/") {
-      test.info().annotations.push({
-        type: "temporary acceptance",
-        description:
-          "Review with the two surviving sessions. Calendar conflict notice and its refresh lifecycle were not exercised.",
-      });
-      const rows = page
-        .getByRole("list", { name: "Selected sessions" })
-        .getByRole("listitem");
-      await expect(rows).toHaveCount(remaining.starts.length);
-      for (const start of remaining.starts)
-        await expect(rows.filter({ hasText: slotName(start) })).toHaveCount(1);
-    } else {
-      await expect(
-        page.getByRole("group", { name: "Session times" }),
-      ).toBeVisible({
-        timeout: 45000,
-      });
+    await expect(page).toHaveURL(/\/book\/time\/$/, { timeout: 45000 });
+    async function expectConflictNotice() {
+      await expect(alert(page)).toHaveCount(1);
       await expect(alert(page)).toContainText(
         "Some sessions may no longer be available",
       );
-      await page.reload();
-      await expect(alert(page)).toContainText(
-        "Some sessions may no longer be available",
-      );
-      await back(page).click();
-      await page
-        .getByRole("link", { name: "Choose sessions", exact: true })
-        .click();
-      await expect(alert(page)).toHaveCount(0);
-      await details.click();
-      await reviewResponse(page);
+      const affected = alert(page).getByRole("listitem");
+      await expect(affected).toHaveCount(1);
+      await expect(affected).toContainText(slotName(winner.starts[0]));
     }
+    await expectConflictNotice();
+    await page.reload();
+    await expectConflictNotice();
+    await page.getByRole("link", { name: "Back", exact: true }).click();
+    await page
+      .getByRole("link", { name: "Choose sessions", exact: true })
+      .click();
+    await expect(
+      page.getByRole("group", { name: "Session times" }),
+    ).toBeVisible();
+    await expect(alert(page)).toHaveCount(0);
+    await details.click();
+    await reviewResponse(page);
+    const rows = page
+      .getByRole("list", { name: "Selected sessions" })
+      .getByRole("listitem");
+    await expect(rows).toHaveCount(remaining.starts.length);
+    for (const start of remaining.starts)
+      await expect(rows.filter({ hasText: slotName(start) })).toHaveCount(1);
     await checkoutHoldResponse(page, undefined, true);
     await expect(alert(page)).toHaveCount(1);
     await expect(alert(page)).toContainText("active checkout");
