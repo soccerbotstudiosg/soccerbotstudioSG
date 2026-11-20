@@ -2582,76 +2582,163 @@ test("expired identified write transports free capacity after reset without auth
   }
 });
 
-test("failed identity warming proves checkout never started and permits a fresh explicit attempt", async () => {
-  let denied = true;
+test("failed identity warming or first-write cooldown permits a fresh explicit checkout", async () => {
+  for (const mode of ["warmup", "cooldown"]) {
+    let denied = true;
+    const m = await createBookingMechanism({
+      displayWarming: true,
+      respond: async (call) =>
+        denied &&
+        (mode === "warmup"
+          ? call.body?.method === "getToken"
+          : ["getStartTimeMatrix", "getAvailableTimeIntervals"].includes(
+              call.body?.method,
+            ))
+          ? new Response(null, { status: mode === "warmup" ? 403 : 502 })
+          : undefined,
+    });
+    try {
+      const c = await customer(m);
+      const send = (key) =>
+        m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${key}`, {
+          method: "POST",
+          headers: c.headers,
+          body: JSON.stringify({ ...c.input, key, accepted: true }),
+        });
+      if (mode === "cooldown") {
+        const read = await m.mf.dispatchFetch(
+          m.origin + "/api/booking/availability/2/" + m.date + "?refresh=1",
+          { headers: c.headers },
+        );
+        await read.text();
+        assert.equal(read.status, 503);
+      }
+      const failed = await send(c.input.key);
+      assert.equal(failed.status, 503);
+      assert.equal((await failed.json()).error, "checkout_not_started");
+      if (mode === "cooldown") {
+        const context = await collisionContext(m, c, c.input.key);
+        assert.equal(context.selectionRejection?.state, "restart_required");
+        assert.equal(
+          (await (await send(c.input.key)).json()).error,
+          "checkout_not_started",
+        );
+        assert.equal(
+          (
+            await m.db
+              .prepare(
+                "SELECT count(*) AS n FROM recovery_work WHERE attempt_id=?",
+              )
+              .bind(c.input.key)
+              .first()
+          ).n,
+          0,
+        );
+      }
+      for (const table of [
+        "dispatches",
+        "session_effects",
+        "hitpay_payments",
+        "hitpay_holds",
+      ])
+        assert.equal(
+          (await m.db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first()).n,
+          0,
+          table,
+        );
+      assert.equal(
+        (
+          await (
+            await m.mf.dispatchFetch(m.origin + "/api/booking/current", {
+              headers: c.headers,
+            })
+          ).json()
+        ).state,
+        "empty",
+      );
+      assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 0);
+      // Simulate the existing cooldown/refresh lease elapsing, not a retry bypass.
+      const storage = await m.mf.unsafeGetDurableObjectStorage(
+        "booking-mechanism",
+        "SoccerBotAccountCoordinator",
+        { name: "simplybook-developer-account" },
+      );
+      await storage.exec("UPDATE budget SET cooldown_ms=0");
+      await storage.exec("UPDATE refreshes SET expires_ms=0");
+      denied = false;
+      const next = crypto.randomUUID();
+      const response = await send(next);
+      assert.equal(response.status, 200);
+      assert.equal((await response.json()).paymentAvailable, true);
+      assert.equal(
+        (
+          await m.db
+            .prepare(
+              "SELECT COUNT(*) AS n FROM rejected_native_checkout_grants WHERE attempt_id=?",
+            )
+            .bind(c.input.key)
+            .first()
+        ).n,
+        1,
+      );
+      if (mode === "cooldown")
+        assert.equal(
+          (await (await send(c.input.key)).json()).error,
+          "checkout_not_started",
+        );
+      await send(next);
+      assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
+      assert.equal(
+        m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
+        1,
+      );
+    } finally {
+      await m.close();
+    }
+  }
+});
+
+test("cooldown after a batch booking preserves prior effects under the original attempt", async () => {
+  let account;
   const m = await createBookingMechanism({
-    displayWarming: true,
-    respond: async (call) =>
-      denied && call.body?.method === "getToken"
-        ? new Response(null, { status: 403 })
-        : undefined,
+    batch: true,
+    inspectCoordinator: true,
+    async respond(call) {
+      if (call.body?.method === "book")
+        await account.exec(
+          "UPDATE budget SET cooldown_ms=" + (Date.now() + 60000),
+        );
+    },
   });
   try {
-    const c = await customer(m);
-    const send = (key) =>
-      m.mf.dispatchFetch(m.origin + `/api/booking/checkout/${key}`, {
-        method: "POST",
-        headers: c.headers,
-        body: JSON.stringify({ ...c.input, key, accepted: true }),
-      });
-    const failed = await send(c.input.key);
-    assert.equal(failed.status, 503);
-    assert.equal((await failed.json()).error, "checkout_not_started");
-    for (const table of [
-      "dispatches",
-      "session_effects",
-      "hitpay_payments",
-      "hitpay_holds",
-    ])
-      assert.equal(
-        (await m.db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first()).n,
-        0,
-        table,
-      );
-    assert.equal(
-      (
-        await (
-          await m.mf.dispatchFetch(m.origin + "/api/booking/current", {
-            headers: c.headers,
-          })
-        ).json()
-      ).state,
-      "empty",
-    );
-    assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 0);
-    // Simulate the existing cooldown/refresh lease elapsing, not a retry bypass.
-    const storage = await m.mf.unsafeGetDurableObjectStorage(
+    account = await m.mf.unsafeGetDurableObjectStorage(
       "booking-mechanism",
       "SoccerBotAccountCoordinator",
       { name: "simplybook-developer-account" },
     );
-    await storage.exec("UPDATE budget SET cooldown_ms=0");
-    await storage.exec("UPDATE refreshes SET expires_ms=0");
-    denied = false;
-    const next = crypto.randomUUID();
-    const response = await send(next);
-    assert.equal(response.status, 200);
-    assert.equal((await response.json()).paymentAvailable, true);
+    const c = await customer(m);
+    const starts = [m.startMs, m.startMs + 3000000];
+    const result = await collisionCheckout(m, c, c.input.key, starts);
+    assert.equal(result.state, "recovery_required");
+    const current = await collisionContext(m, c, c.input.key);
+    assert.equal(current.selectionRejection, undefined);
+    assert.equal(current.checkout.state, "unavailable");
+    assert.equal(
+      m.calls.filter((call) => call.body?.method === "book").length,
+      1,
+    );
+    assert.equal(
+      m.calls.filter((call) => isHitPayApiCall(call) && call.method === "POST")
+        .length,
+      0,
+    );
     assert.equal(
       (
         await m.db
-          .prepare(
-            "SELECT COUNT(*) AS n FROM rejected_native_checkout_grants WHERE attempt_id=?",
-          )
+          .prepare("SELECT count(*) AS n FROM dispatches WHERE attempt_id=?")
           .bind(c.input.key)
           .first()
       ).n,
-      1,
-    );
-    await send(next);
-    assert.equal(m.calls.filter((c) => c.body?.method === "book").length, 1);
-    assert.equal(
-      m.calls.filter((c) => isHitPayApiCall(c) && c.method === "POST").length,
       1,
     );
   } finally {
@@ -6922,14 +7009,34 @@ test("a second selection under the same checkout cookie preserves the original b
     assert.ok(proof?.request_id);
     const originalContext = await collisionContext(m, owner, a);
     const callsBefore = m.calls.length;
-    const denied = await collisionCheckout(
-      m,
-      owner,
-      b,
-      [m.batchStarts[0]],
-      503,
-    );
-    assert.deepEqual(denied, { error: "checkout_already_active" });
+    const accessDeadline = Date.now() + 60000;
+    await m.db
+      .prepare(
+        "UPDATE guest_access SET expires_ms=? WHERE owner_id=(SELECT owner_id FROM attempts WHERE id=?)",
+      )
+      .bind(accessDeadline, a)
+      .run();
+    for (const key of [b, crypto.randomUUID()]) {
+      const denied = await collisionCheckout(
+        m,
+        owner,
+        key,
+        [m.batchStarts[0]],
+        503,
+      );
+      assert.deepEqual(denied, { error: "checkout_already_active" });
+      assert.equal(
+        (
+          await m.db
+            .prepare(
+              "SELECT expires_ms FROM guest_access WHERE owner_id=(SELECT owner_id FROM attempts WHERE id=?)",
+            )
+            .bind(a)
+            .first()
+        ).expires_ms,
+        accessDeadline,
+      );
+    }
     const restored = await checkoutResult(
       m.mf.dispatchFetch(m.origin + "/api/booking/current", {
         headers: owner.headers,
@@ -6964,6 +7071,20 @@ test("a second selection under the same checkout cookie preserves the original b
     assert.deepEqual(m.providerBookings(), [
       { startMs: m.heldStartMs, bookingId: "701" },
     ]);
+    await m.db
+      .prepare(
+        "UPDATE guest_access SET expires_ms=? WHERE owner_id=(SELECT owner_id FROM attempts WHERE id=?)",
+      )
+      .bind(Date.now(), a)
+      .run();
+    const expired = await collisionCheckout(
+      m,
+      owner,
+      crypto.randomUUID(),
+      [m.batchStarts[0]],
+      401,
+    );
+    assert.deepEqual(expired, { error: "access_denied" });
     assert.equal(m.calls.length, callsBefore);
     assert.deepEqual(m.unexpected, []);
   } finally {

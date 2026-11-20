@@ -421,7 +421,7 @@ The account coordinator serializes workflows; queue priorities/capacity and sepa
 
 ### A. Create guest access, then request email verification
 
-An authenticated `POST /api/access` renews only an unexpired, unrevoked guest capability for the configured access lifetime, retaining the same owner/token/grants and refreshing its secure cookie. Initial checkout POST also renews valid access before coordination so browsing does not consume the payment window. Expired/revoked access cannot be revived or inherit previous attempts. Neither renewal extends payment/hold/checking deadlines or email identity.
+An authenticated `POST /api/access` renews only an unexpired, unrevoked guest capability for the configured access lifetime, retaining the same owner/token/grants and refreshing its secure cookie. Combined checkout reserves provider capacity before the transaction that claims the first write and renews guest access. If cooldown prevents that first write, an authenticated, matching checkout receives `checkout_not_started` (503). The original key remains fenced on replay, including after a new checkout. Protected readback returns a restartable selection without a payment link. A later partial batch or a lost provider response retains the original recovery protections. A preparation rejection preserves the existing access deadline and sends no renewal cookie. Expired/revoked access cannot be revived or inherit previous attempts. Neither renewal extends payment/hold/checking deadlines or email identity.
 
 `POST /api/access` has **no body**. A newly issued capability returns HTTP 201:
 

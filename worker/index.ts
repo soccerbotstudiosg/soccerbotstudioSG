@@ -35,6 +35,7 @@ import { identityDelivery, assertIdentityProofOpen } from "./identity-delivery";
 import {
   createAccess,
   renewAccess,
+  renewedAccessCookie,
   authenticateCheckout,
   authenticate,
   revokeAccess,
@@ -292,19 +293,6 @@ export default {
               ...env,
               STATE: instrumentStorage(env.STATE, "d1"),
             });
-          if (checkoutAccess) {
-            const renewed = await renewAccess(
-              request,
-              env,
-              checkoutAccess,
-              Date.now(),
-            );
-            checkoutAccess.expires_ms = renewed.expiresMs;
-            checkingHeaders["Set-Cookie"] = renewed.cookie;
-            checkingHeaders["X-Booking-Access-Expires-At"] = String(
-              renewed.expiresMs,
-            );
-          }
           const submission = coordinatorStub(env).holdCustomer(
             {
               attemptId: holdMatch[2],
@@ -320,6 +308,15 @@ export default {
           // Keep the original RPC alive when the customer navigates away mid-checkout.
           if (checkoutAccess) ctx.waitUntil(submission.then(() => undefined));
           const outcome = await submission;
+          if (outcome.renewedUntil) {
+            checkingHeaders["Set-Cookie"] = renewedAccessCookie(
+              request,
+              Math.max(0, outcome.renewedUntil - Date.now()),
+            );
+            checkingHeaders["X-Booking-Access-Expires-At"] = String(
+              outcome.renewedUntil,
+            );
+          }
           if (outcome.serverTiming)
             checkingHeaders["Server-Timing"] =
               outcome.serverTiming +

@@ -153,6 +153,7 @@ export async function executeNativeCheckout(options: {
   holding?: boolean;
   combinedHold?: boolean;
   creationOnly?: boolean;
+  checkoutInput?: z.infer<typeof nativePrepareSchema>;
   displayCatalogue?: CustomerCatalogue;
   prepared?: PreparedCheckout;
   access?: Access;
@@ -312,6 +313,7 @@ export async function executeNativeCheckout(options: {
     ((statement: D1PreparedStatement) => Promise<void>) | undefined;
   let stagedVersion: number | undefined;
   let claimedDispatch = false;
+  let firstWriteOnCooldown = false;
   let claimedBookings = 0;
   let singleBookRejection: ProviderBookRejectedError | undefined;
   let selectionSnapshot = "{}";
@@ -354,7 +356,7 @@ export async function executeNativeCheckout(options: {
           step,
         );
       } else
-        await claimNativeDispatch(
+        access.expires_ms = await claimNativeDispatch(
           env.STATE,
           attemptId,
           stagedVersion,
@@ -364,6 +366,7 @@ export async function executeNativeCheckout(options: {
           step,
           options.prepared?.preparation,
           markersJson,
+          p.ACCESS_LIFETIME_MS,
         );
       claimedDispatch = true;
       if (lastOperation === "book") claimedBookings++;
@@ -520,6 +523,8 @@ export async function executeNativeCheckout(options: {
         "booking-cancel",
       ].includes(operation.kind)
     ) {
+      const claimAfterAdmission =
+        consolidated && !cleanupMode && !claimedDispatch;
       const response = await provider
         .nativeWrite(
           env,
@@ -528,12 +533,20 @@ export async function executeNativeCheckout(options: {
           {
             beforeIdentity: async () =>
               cleanupMode ? assertGranted() : assertWindow(),
-            beforeWrite: () => assertGranted(true),
+            beforeWrite: async () =>
+              claimAfterAdmission ? assertWindow() : assertGranted(true),
           },
-          undefined,
+          claimAfterAdmission ? () => assertGranted(true) : undefined,
           !!options.creationOnly && !cleanupMode,
         )
         .catch(async (error: unknown) => {
+          if (
+            claimAfterAdmission &&
+            !claimedDispatch &&
+            error instanceof ApiError &&
+            error.code === "cooldown"
+          )
+            firstWriteOnCooldown = true;
           if (
             ongoing &&
             !cleanupMode &&
@@ -1162,6 +1175,18 @@ export async function executeNativeCheckout(options: {
       await requireRecovery(env.STATE, attemptId, dispatchFence);
     result = { state: "recovery_required", paymentAvailable: false };
   }
+  if (firstWriteOnCooldown && !claimedDispatch && options.checkoutInput) {
+    const stopped = await stopUnsentCheckout(
+      env,
+      access,
+      attemptId,
+      row.intent_hash,
+      options.checkoutInput,
+      options.prepared?.preparation,
+    );
+    if (stopped) throw new ApiError(503, "checkout_not_started");
+    throw new ApiError(409, "native_attempt_unavailable");
+  }
   // A speculative snapshot is not ownership of an existing colliding ID.
   // Without our own committed claim, do not mutate its recovery/grant state.
   if (options.prepared?.preparation && !claimedDispatch) {
@@ -1310,6 +1335,39 @@ async function customerNativeWindow(
     companyLogin: contract.companyLogin,
   };
   return { p, access, grant, contract, dates, binding };
+}
+/** Fence a rejected first write under its exact grant before reporting that checkout can restart. */
+async function stopUnsentCheckout(
+  env: Env,
+  access: Access,
+  id: string,
+  intentHash: string,
+  input?: z.infer<typeof nativePrepareSchema>,
+  preparation: D1PreparedStatement[] = [],
+) {
+  const stopped = env.STATE.prepare(
+    `UPDATE native_checkout_grants SET state='blocked',result_json=?
+     WHERE attempt_id=? AND intent_hash=? AND capability_hash=? AND ongoing=1 AND state='granted'
+     AND EXISTS(SELECT 1 FROM attempts a WHERE a.id=native_checkout_grants.attempt_id AND a.owner_id=? AND a.intent_hash=native_checkout_grants.intent_hash AND a.state='prepared' AND a.association_json IS NULL)
+     AND NOT EXISTS(SELECT 1 FROM dispatches WHERE attempt_id=native_checkout_grants.attempt_id)
+     AND NOT EXISTS(SELECT 1 FROM session_effects WHERE attempt_id=native_checkout_grants.attempt_id)
+     AND NOT EXISTS(SELECT 1 FROM hitpay_holds WHERE attempt_id=native_checkout_grants.attempt_id)
+     AND NOT EXISTS(SELECT 1 FROM hitpay_payments WHERE attempt_id=native_checkout_grants.attempt_id)`,
+  ).bind(
+    JSON.stringify({
+      state: input ? "restart_required" : "checkout_not_started",
+      paymentAvailable: false,
+      ...(input
+        ? { stoppedInputHash: await digest(JSON.stringify(input)) }
+        : {}),
+    }),
+    id,
+    intentHash,
+    access.capability_hash,
+    access.owner_id,
+  );
+  const results = await env.STATE.batch([...preparation, stopped]);
+  return results.at(-1)?.meta.changes === 1;
 }
 /** Prepare protected native checkout authority for validated selections. */
 export async function prepareCustomerNative(
@@ -1569,19 +1627,7 @@ export async function prepareCustomerNative(
   if (results[1].status === "rejected") {
     // Identity warming contains reads only. Expose a retryable result only
     // after durable proof that no booking/payment effect was dispatched.
-    const stopped = await env.STATE.prepare(
-      "UPDATE native_checkout_grants SET state='blocked',result_json=? WHERE attempt_id=? AND capability_hash=? AND ongoing=1 AND state='granted' AND EXISTS(SELECT 1 FROM attempts a WHERE a.id=native_checkout_grants.attempt_id AND a.state='prepared' AND a.association_json IS NULL) AND NOT EXISTS(SELECT 1 FROM dispatches d WHERE d.attempt_id=native_checkout_grants.attempt_id) AND NOT EXISTS(SELECT 1 FROM session_effects e WHERE e.attempt_id=native_checkout_grants.attempt_id) AND NOT EXISTS(SELECT 1 FROM hitpay_payments p WHERE p.attempt_id=native_checkout_grants.attempt_id)",
-    )
-      .bind(
-        JSON.stringify({
-          state: "checkout_not_started",
-          paymentAvailable: false,
-        }),
-        results[0].value.attemptId,
-        access.capability_hash,
-      )
-      .run();
-    if (stopped.meta.changes === 1)
+    if (await stopUnsentCheckout(env, access, results[0].value.attemptId, hash))
       throw new ApiError(503, "checkout_not_started");
     throw results[1].reason;
   }

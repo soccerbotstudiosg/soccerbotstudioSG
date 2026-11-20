@@ -105,7 +105,7 @@ Owner-confirmed rule (31 October 2026): both staging and client production allow
 - Existing owned idempotency keys (including permanently rejected preparation keys), payment continuation, callbacks and recovery do not require another interactive challenge, and all existing authentication/signature/state checks remain mandatory.
 - Proof cannot replace availability, payment or booking authority.
 
-Access lifetime: explicit access entry and checkout POST may renew an authenticated unexpired guest capability for the configured duration, preserving its owner. Expired/revoked capabilities never regain their grants. Checkout, hold, checking and verified-email lifetimes remain separately bounded. A browser return marked completed suppresses payment links but is never payment evidence.
+Access lifetime: explicit access entry and an admitted checkout may renew an authenticated unexpired guest capability for the configured duration, preserving its owner. Expired/revoked capabilities never regain their grants. Checkout, hold, checking and verified-email lifetimes remain separately bounded. A browser return marked completed suppresses payment links but is never payment evidence.
 
 <a id="br-004"></a>
 

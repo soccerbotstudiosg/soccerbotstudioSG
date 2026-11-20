@@ -14,6 +14,7 @@ export type Access = {
   checkout_key?: string;
   resolved_checkout?: number;
   preparation_rejected?: number;
+  stopped_input_hash?: string | null;
 };
 /** Validate the presented access capability against retained server state. */
 export async function authenticate(
@@ -42,11 +43,19 @@ export async function authenticate(
           ? ", NOT EXISTS(SELECT 1 FROM native_checkout_grants g WHERE g.capability_hash=guest_access.capability_hash) AS fresh_checkout"
           : "") +
         (checkoutKey
-          ? ", EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=guest_access.owner_id AND a.idempotency_key=?) AS resolved_checkout, EXISTS(SELECT 1 FROM checkout_preparation_rejections r WHERE r.attempt_id=?) AS preparation_rejected"
+          ? ", EXISTS(SELECT 1 FROM attempts a JOIN no_creation_resolutions n ON n.attempt_id=a.id WHERE a.owner_id=guest_access.owner_id AND a.idempotency_key=?) AS resolved_checkout, EXISTS(SELECT 1 FROM checkout_preparation_rejections r WHERE r.attempt_id=?) AS preparation_rejected," +
+            " (SELECT json_extract(g.result_json,'$.stoppedInputHash') FROM (SELECT attempt_id,capability_hash,result_json FROM native_checkout_grants WHERE attempt_id=? UNION ALL SELECT attempt_id,capability_hash,result_json FROM rejected_native_checkout_grants WHERE attempt_id=?) g WHERE g.capability_hash=guest_access.capability_hash LIMIT 1) AS stopped_input_hash"
           : "") +
         " FROM guest_access WHERE capability_hash = ? AND revoked_ms IS NULL AND issued_ms <= ? AND expires_ms > ?",
     )
-    .bind(...(checkoutKey ? [checkoutKey, checkoutKey] : []), hash, now, now);
+    .bind(
+      ...(checkoutKey
+        ? [checkoutKey, checkoutKey, checkoutKey, checkoutKey]
+        : []),
+      hash,
+      now,
+      now,
+    );
   const results = preceding.length
     ? await db.batch([...preceding, statement])
     : undefined;
@@ -83,14 +92,19 @@ export async function renewAccess(
     .bind(now + duration, access.capability_hash, now, now)
     .run();
   if (result.meta.changes !== 1) throw new ApiError(401, "access_denied");
+  return {
+    cookie: renewedAccessCookie(request, duration),
+    expiresMs: Math.max(access.expires_ms, now + duration),
+  };
+}
+
+/** Refresh the presented cookie only after the server commits its renewal. */
+export function renewedAccessCookie(request: Request, duration: number) {
   const cookie = (request.headers.get("cookie") || "")
     .split(";")
     .map((value) => value.trim())
     .find((value) => value.startsWith(cookieName + "="));
-  return {
-    cookie: `${cookie}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(duration / 1000)}`,
-    expiresMs: Math.max(access.expires_ms, now + duration),
-  };
+  return `${cookie}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(duration / 1000)}`;
 }
 
 /** Revoke the retained access capability. */

@@ -309,7 +309,11 @@
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",
-    "title": "failed identity warming proves checkout never started and permits a fresh explicit attempt"
+    "title": "failed identity warming or first-write cooldown permits a fresh explicit checkout"
+  },
+  {
+    "file": "worker/tests/combined-hold.test.mjs",
+    "title": "cooldown after a batch booking preserves prior effects under the original attempt"
   },
   {
     "file": "worker/tests/combined-hold.test.mjs",

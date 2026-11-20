@@ -1435,6 +1435,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     const checkoutTrace = scope.checkout
       ? createCheckoutTrace(correlationId)
       : undefined;
+    const originalExpiry = scope.checkoutAccess?.expires_ms;
     const pending = this.providerQueue.run("foreground", () =>
       runCheckoutTrace(checkoutTrace, () =>
         traced(correlationId, "coordinator", async () => {
@@ -1525,6 +1526,7 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
             holding: true,
             combinedHold: true,
             creationOnly,
+            checkoutInput: scope.checkout ? input : undefined,
             displayCatalogue: creationOnly
               ? this.snapshots().read("catalogue", "catalogue")
               : undefined,
@@ -1593,7 +1595,12 @@ export class SoccerBotAccountCoordinator extends DurableObject<Env> {
     });
     if (scope.checkout) this.ctx.waitUntil(result.then(() => undefined));
     const outcome = await result;
-    return { ...outcome, serverTiming };
+    const expiresMs = scope.checkoutAccess?.expires_ms;
+    return {
+      ...outcome,
+      serverTiming,
+      renewedUntil: expiresMs !== originalExpiry ? expiresMs : undefined,
+    };
   }
   async bookingComments(attemptId?: string) {
     return this.providerQueue.run("display", () =>
