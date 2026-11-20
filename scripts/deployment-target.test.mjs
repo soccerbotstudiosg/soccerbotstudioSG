@@ -345,6 +345,18 @@ test("target workflows isolate PR credentials and deploy through trusted main af
       (s) => !s.if && s.run === "node scripts/browser-shards.mjs master",
     ),
   );
+  assert.equal(master.if, undefined);
+  const masterDownload = verify.jobs["live-email"].steps.find(
+    (step) =>
+      step.with?.name ===
+      "master-booking-regression-${{ github.run_id }}-${{ github.run_attempt }}",
+  );
+  assert.match(
+    masterDownload.uses,
+    /^actions\/download-artifact@[a-f0-9]{40}$/,
+  );
+  assert.equal(masterDownload.if, undefined);
+  assert.equal(masterDownload.with.path, "test-results/master-input");
   const shards = verify.jobs["browser-shards"];
   assert.deepEqual(shards.strategy.matrix, {
     profile: ["backend", "live-email"],
