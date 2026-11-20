@@ -158,7 +158,13 @@ export async function authorizeCustomerCheckout(
     throw new ApiError(409, "native_selection_changed");
   const now = Date.now();
   if (!verifiedAccess) await authenticate(request, env, now);
-  const expires = Math.min(now + 1200000, access.expires_ms);
+  if (now >= access.expires_ms) throw new ApiError(401, "access_denied");
+  // Combined checkout sizes the grant for admission. Renewal still rechecks
+  // the original capability before booking or payment writes.
+  const expires = Math.min(
+    now + 1200000,
+    retainGrant ? now + p.ACCESS_LIFETIME_MS : access.expires_ms,
+  );
   if (expires <= now + 180000) throw new ApiError(401, "access_expiring");
   const contract = nativeAccountContractSchema.parse({
     accountId: p.DEPLOYMENT_ACCOUNT_ID,

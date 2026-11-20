@@ -252,3 +252,7 @@ Retained milestone ID/title; PDF/calendar actions were retired by owner decision
 - Independent isolated reproductions found that later empty expiry responses could mask an earlier successful payment line, and a signed notification could fail to reopen an incomplete paid result. Isolated regressions now verify retention of the payment warning, webhook recovery and continued sampling of an inconclusive cancellation.
 - A later production trace recorded a fresh return from HitPay followed by four aborted expiry requests and repeated Home re-entry. The previous component test expected Home while release was pending. The local fix lets the protected release finish when Calendar cannot yet take over. [Physical retest](uat/simulated-user.md#two-tab-master-booking-check)
 - Open acceptance includes a real provider expiry and second checkout in one tab, physical iPad keyboard dismissal, native trainer selection and final notification rendering. [Current checkpoint](../PROGRESS.md) · [Customer UAT](uat/simulated-user.md)
+
+### 20 November 2026 — Rejected checkout extended guest access
+
+A competing selection renewed guest access before checkout preparation rejected it. The focused Worker regression reproduced the deadline change with one minute remaining. Renewal now follows successful preparation and rechecks the original capability before booking execution.

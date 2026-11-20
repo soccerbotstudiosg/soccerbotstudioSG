@@ -11,7 +11,7 @@
 | 3 · Details         | Guest contact details require confirmation of the current email address. After blur or attempted submission, invalid fields show feedback. Review Booking focuses the first invalid control, including the email-check button when applicable.        |
 | 4 · Review          | Review the selected sessions, contact, price and arrival information. The Terms and Conditions link works independently of consent. Acknowledgement and valid checkout proof are required to submit.                                                  |
 
-- Expired booking access returns the customer to Start your booking with the red notice. An explicit fresh guest entry clears the notice and establishes new access. The original financial attempt retains its own evidence.
+- A checkout blocked by an existing attempt preserves the original booking access deadline. Expired booking access returns the customer to Start your booking with the red notice. An explicit fresh guest entry clears the notice and establishes new access. The original financial attempt retains its own evidence.
 - On desktop and iPad the booking heading sits above progress, between Back and the right-aligned identity. Calendar shows the date beside the outlet and session type. On phone, controls and sticky actions retain their compact layout.
 - During ordinary editing, the customer can navigate Back. After a financial submission, explicit booking navigation and re-entry check the original attempt. A stale cart or checkbox cannot authorize another submission.
 

@@ -6922,14 +6922,34 @@ test("a second selection under the same checkout cookie preserves the original b
     assert.ok(proof?.request_id);
     const originalContext = await collisionContext(m, owner, a);
     const callsBefore = m.calls.length;
-    const denied = await collisionCheckout(
-      m,
-      owner,
-      b,
-      [m.batchStarts[0]],
-      503,
-    );
-    assert.deepEqual(denied, { error: "checkout_already_active" });
+    const accessDeadline = Date.now() + 60000;
+    await m.db
+      .prepare(
+        "UPDATE guest_access SET expires_ms=? WHERE owner_id=(SELECT owner_id FROM attempts WHERE id=?)",
+      )
+      .bind(accessDeadline, a)
+      .run();
+    for (const key of [b, crypto.randomUUID()]) {
+      const denied = await collisionCheckout(
+        m,
+        owner,
+        key,
+        [m.batchStarts[0]],
+        503,
+      );
+      assert.deepEqual(denied, { error: "checkout_already_active" });
+      assert.equal(
+        (
+          await m.db
+            .prepare(
+              "SELECT expires_ms FROM guest_access WHERE owner_id=(SELECT owner_id FROM attempts WHERE id=?)",
+            )
+            .bind(a)
+            .first()
+        ).expires_ms,
+        accessDeadline,
+      );
+    }
     const restored = await checkoutResult(
       m.mf.dispatchFetch(m.origin + "/api/booking/current", {
         headers: owner.headers,
@@ -6964,6 +6984,20 @@ test("a second selection under the same checkout cookie preserves the original b
     assert.deepEqual(m.providerBookings(), [
       { startMs: m.heldStartMs, bookingId: "701" },
     ]);
+    await m.db
+      .prepare(
+        "UPDATE guest_access SET expires_ms=? WHERE owner_id=(SELECT owner_id FROM attempts WHERE id=?)",
+      )
+      .bind(Date.now(), a)
+      .run();
+    const expired = await collisionCheckout(
+      m,
+      owner,
+      crypto.randomUUID(),
+      [m.batchStarts[0]],
+      401,
+    );
+    assert.deepEqual(expired, { error: "access_denied" });
     assert.equal(m.calls.length, callsBefore);
     assert.deepEqual(m.unexpected, []);
   } finally {

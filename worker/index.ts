@@ -292,19 +292,6 @@ export default {
               ...env,
               STATE: instrumentStorage(env.STATE, "d1"),
             });
-          if (checkoutAccess) {
-            const renewed = await renewAccess(
-              request,
-              env,
-              checkoutAccess,
-              Date.now(),
-            );
-            checkoutAccess.expires_ms = renewed.expiresMs;
-            checkingHeaders["Set-Cookie"] = renewed.cookie;
-            checkingHeaders["X-Booking-Access-Expires-At"] = String(
-              renewed.expiresMs,
-            );
-          }
           const submission = coordinatorStub(env).holdCustomer(
             {
               attemptId: holdMatch[2],
@@ -320,6 +307,12 @@ export default {
           // Keep the original RPC alive when the customer navigates away mid-checkout.
           if (checkoutAccess) ctx.waitUntil(submission.then(() => undefined));
           const outcome = await submission;
+          if (outcome.renewedAccess) {
+            checkingHeaders["Set-Cookie"] = outcome.renewedAccess.cookie;
+            checkingHeaders["X-Booking-Access-Expires-At"] = String(
+              outcome.renewedAccess.expiresMs,
+            );
+          }
           if (outcome.serverTiming)
             checkingHeaders["Server-Timing"] =
               outcome.serverTiming +
