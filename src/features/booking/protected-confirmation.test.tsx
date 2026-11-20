@@ -3672,7 +3672,7 @@ it("inaccessible expiry checks go home without releasing or retrying the booking
   }
 });
 
-it("an expired checkout with no accepted calendar handoff returns home without claiming release", async () => {
+it("a fresh confirmation return waits for authenticated unpaid release before opening Calendar", async () => {
   navigation.replace.mockReset();
   const handoff = vi.fn(() => false);
   const expired = vi.fn();
@@ -3706,7 +3706,7 @@ it("an expired checkout with no accepted calendar handoff returns home without c
     });
   });
   vi.stubGlobal("fetch", fetcher);
-  const page = render(
+  render(
     <ProtectedConfirmation
       attemptId={first}
       checkoutMode="live"
@@ -3716,17 +3716,16 @@ it("an expired checkout with no accepted calendar handoff returns home without c
     />,
   );
   await waitFor(() =>
-    expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/"),
+    expect(fetcher.mock.calls.some(([url]) => url.endsWith("/expire"))).toBe(
+      true,
+    ),
   );
-  await act(async () => finishRelease(Response.json({ expired: true })));
-  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/");
-  expect(handoff).toHaveBeenCalledExactlyOnceWith(first);
+  expect(navigation.replace).not.toHaveBeenCalled();
   expect(expired).not.toHaveBeenCalled();
-  expect(page.container.querySelector('[role="status"]')).toHaveAttribute(
-    "aria-label",
-    "Opening booking",
-  );
-  expect(page.container).toHaveTextContent(/^Loading\.\.\.$/);
+  await act(async () => finishRelease(Response.json({ expired: true })));
+  expect(expired).toHaveBeenCalledExactlyOnceWith(first);
+  expect(navigation.replace).toHaveBeenCalledExactlyOnceWith("/book/time/");
+  expect(handoff).toHaveBeenCalledWith(first);
 });
 
 it("explicit receipt access denial returns home instead of retaining protected details", async () => {

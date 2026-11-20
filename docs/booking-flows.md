@@ -42,21 +42,23 @@ flowchart TD
 | Back, refresh, Home and re-entry                  | Recover using the same attempt, link and deadlines. A verified active checkout in a different tab remains separate from a rejected tab’s draft.                                                                                                       |
 | Ask the studio to contact me                      | Send the report for the original attempt and show the acknowledgement. A help request does not release the booking.                                                                                                                                   |
 
+Edits made after Back affect the editable draft. When an unpaid checkout already exists, navigation recovers its original contact details, sessions, amount, payment link and deadline. After verified rejection with no booking, a corrected submission uses a new attempt.
+
 After browser Back to Contact details, a conflict can finish checking while the customer edits. The next valid Review Booking action opens Calendar with one notice listing the affected sessions. Refresh keeps the notice. Once the customer leaves Calendar, the surviving sessions can proceed to Review.
 
 The [business rules](business-rules.md#br-008) own read limits and release authority. The [API proof contract](api-contracts.md#verified-no-creation-resolution) describes what the server can conclude after a completed error or lost transport.
 
 ## Continue to pay, expiry and confirmation
 
-| Event                                    | Customer outcome                                                                                                                                                                                                    |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Eligible unpaid link                     | Continue payment reopens the original hosted checkout in the same tab. Show its original countdown. Site departures offer Stay or Leave. Browser Back may traverse history.                                         |
-| Payment deadline reached                 | Hide Continue payment and show the expiry loader. A verified unpaid release returns to Calendar. An inconclusive result retains the original attempt and shows studio help.                                         |
-| Replacement after expiry                 | The old cart clears. The customer can select eligible replacements, enter Details and acknowledge Review. Actual checkout waits for safe release. Restore a previous time only after fresh SimplyBook availability. |
-| Payment arrives during recovery          | Open the original confirmation flow. When payment is known but the booking or invoice remains unresolved, show Pending and studio help after bounded checking.                                                      |
-| Confirmed                                | Show Your booking, Location, session details, invoice number when supplied, amount, paid status and copy action. The customer can contact the studio through WhatsApp, book another session or go Home.             |
-| Receipt temporarily unavailable          | Keep confirmed status and offer to load the details again. Browser hints cannot establish paid or confirmed status.                                                                                                 |
-| Invalid or inaccessible confirmation URL | Return Home. Old authorized confirmations show their own booking and preserve any newer active attempt.                                                                                                             |
+| Event                                    | Customer outcome                                                                                                                                                                                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Eligible unpaid link                     | Continue payment reopens the original hosted checkout in the same tab. Show its original countdown. Site departures offer Stay or Leave. Browser Back may traverse history.                                                        |
+| Payment deadline reached                 | Hide Continue payment and show the expiry loader. A verified unpaid release returns to Calendar, including after returning from HitPay in a fresh page. An inconclusive result retains the original attempt and shows studio help. |
+| Replacement after expiry                 | The old cart clears. The customer can select eligible replacements, enter Details and acknowledge Review. Actual checkout waits for safe release. Restore a previous time only after fresh SimplyBook availability.                |
+| Payment arrives during recovery          | Open the original confirmation flow. When payment is known but the booking or invoice remains unresolved, show Pending and studio help after bounded checking.                                                                     |
+| Confirmed                                | Show Your booking, Location, session details, invoice number when supplied, amount, paid status and copy action. The customer can contact the studio through WhatsApp, book another session or go Home.                            |
+| Receipt temporarily unavailable          | Keep confirmed status and offer to load the details again. Browser hints cannot establish paid or confirmed status.                                                                                                                |
+| Invalid or inaccessible confirmation URL | Return Home. Old authorized confirmations show their own booking and preserve any newer active attempt.                                                                                                                            |
 
 - Review and Confirmation share the arrival note, followed by four bullets in two columns. The copy action labels each session’s date, time, type and trainer. A single session has no numbered-list prefix.
 - The original confirmation access window applies across reload. Leaving an old confirmation never dismisses a newer unresolved checkout.
@@ -72,6 +74,37 @@ The [business rules](business-rules.md#br-008) own read limits and release autho
 <a id="copy-review-baseline-and-disposition"></a>
 
 ## Customer message inventory
+
+### Leaving a booking
+
+The [leave dialog](../src/components/site-shell.tsx) opens with **Leave this booking?**
+
+> Your selections and changes will not be saved.
+
+When a booking attempt exists, a booking action is loading, or the customer is on confirmation, the dialog adds this paragraph:
+
+> Any time slots we’re holding for you stay reserved until the payment timer ends. If you’ve already paid, leaving won’t cancel your booking.
+
+**Leave booking** continues to the selected destination. **Stay** closes the dialog.
+
+### Rejected contact email
+
+The [email rejection notice](../src/features/booking/booking-help.tsx) shows the email used for the checkout attempt in place of `{email}`:
+
+> **We couldn’t book your session using {email}.** Nothing was booked or charged.
+
+If the session is still available, Contact details focuses the rejected address. A guest can correct it. A verified member sees their read-only address and can request studio help. On Calendar, one additional sentence pair appears before the spelling guidance, depending on the availability check:
+
+| Session availability | Additional wording                                                                                              |
+| -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Unavailable          | Your selected session is no longer available. Choose another session, then check your email in Contact details. |
+| Unknown              | We couldn’t verify the session’s availability. Check your email when you enter Contact details.                 |
+
+All three versions end with:
+
+> Check the spelling. If the address is correct, ask the studio for help.
+
+The help action is **Ask the studio to contact me**.
 
 ### Conflict, expiry and payment
 

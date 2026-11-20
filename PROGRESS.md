@@ -2,14 +2,12 @@
 
 ## Active outcome
 
-- The candidate combines the expired-payment, replacement Review, trainer card and rejected-email fixes with the documentation reconciliation.
-- The local isolated tests exercise contradictory payment evidence across claims, a later signed notification after incomplete paid evidence, inconclusive cancellation, blocked and released Review, and email correction with a replacement slot.
-- The master browser sequence follows one shared browser through expiry, competing carts, confirmation re-entry and a fresh checkout. After a conflict on Contact details, the next Review action must show Calendar with the affected session listed. Refresh retains the notice, and the two surviving sessions can proceed after leaving Calendar.
-- [Release and CI](docs/runbook.md#6-deployments-and-rollback) · [Customer acceptance](docs/uat/simulated-user.md)
+- Local candidate fixes the Home loop on unpaid expiry after returning from HitPay and updates the [leave dialog and rejected-email notices](docs/booking-flows.md#customer-message-inventory).
+- The three individual edit-after-Back cases and the expanded master passed locally in desktop Chromium with isolated providers. The master covers expiry on both sides of the hosted-payment return. [Physical master checklist](docs/uat/simulated-user.md#two-tab-master-booking-check)
 
 ## Next actions
 
-Verify the combined revision in CI. Physical iPad keyboard dismissal, trainer geometry and real provider outcomes require checks on the deployed revision.
+Run the candidate through CI and staging. Physical verification of the repaired return remains pending, along with iPad keyboard dismissal and trainer-field geometry.
 
 ## Ordered work after this slice
 

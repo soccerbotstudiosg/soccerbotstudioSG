@@ -4241,7 +4241,7 @@ async function verifyNoCreationRecovery(
           expect(navigation.replace).toHaveBeenCalledWith("/book/details/"),
         );
         expect(
-          screen.queryByText(/The booking provider didn’t accept/),
+          screen.queryByText(/We couldn’t book your session using/),
         ).toBeNull();
         navigation.path = "/book/details/";
         view.rerender(tree("details"));
@@ -4269,7 +4269,7 @@ async function verifyNoCreationRecovery(
           JSON.parse(screen.getByTestId("creation-draft").textContent!).slots,
         ).toEqual(draft.slots);
         expect(screen.getByRole("alert")).toHaveTextContent(
-          "Nothing was booked or charged.",
+          `We couldn’t book your session using ${draft.contact.email}. Nothing was booked or charged.`,
         );
         expect(
           screen.getByRole("button", { name: "Ask the studio to contact me" }),
@@ -4281,7 +4281,7 @@ async function verifyNoCreationRecovery(
         ).toHaveAttribute("aria-pressed", "false");
         fireEvent.change(email, { target: { value: "corrected@example.com" } });
         expect(
-          screen.queryByText(/The booking provider didn’t accept/),
+          screen.queryByText(/We couldn’t book your session using/),
         ).toBeNull();
         const checkEmail = screen.getByRole("button", {
           name: "Confirm email address is correct",
@@ -4336,7 +4336,7 @@ async function verifyNoCreationRecovery(
         await waitFor(() => expect(email).toHaveFocus());
         expect(email).toHaveValue(draft.contact.email);
         expect(
-          screen.queryByText(/The booking provider didn’t accept/),
+          screen.queryByText(/We couldn’t book your session using/),
         ).toBeNull();
         expect(screen.queryByRole("button", support)).toBeNull();
 

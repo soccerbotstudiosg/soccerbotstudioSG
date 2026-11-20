@@ -39,7 +39,7 @@ export async function createBookingSequence(sizes, options = {}) {
           j.reference = body.reference_number;
           j.deadline =
             Date.now() +
-            (j === journeys[0] ? (options.firstLinkMs ?? 180000) : 180000);
+            (options.linkWindowsMs?.[journeys.indexOf(j)] ?? 180000);
         }
         return Response.json({
           id: j.requestId,
@@ -281,6 +281,9 @@ export async function createBookingSequence(sizes, options = {}) {
       return (journeys.findLast((j) => j.reference) ?? journeys[0]).checkoutUrl;
     },
     journeys: journeys.map((j) => ({
+      get expiresAtMs() {
+        return j.deadline;
+      },
       starts: j.sessions.map((s) => s.startMs),
       checkoutUrl: j.checkoutUrl,
       invoiceId: String(j.invoice.id),

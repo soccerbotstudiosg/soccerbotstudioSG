@@ -1137,7 +1137,7 @@
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
-    "title": "an expired checkout with no accepted calendar handoff returns home without claiming release"
+    "title": "a fresh confirmation return waits for authenticated unpaid release before opening Calendar"
   },
   {
     "file": "src/features/booking/protected-confirmation.test.tsx",
@@ -1826,6 +1826,18 @@
   {
     "file": "tests/live-email.spec.ts",
     "title": "concurrent browser tabs reuse one hold and payment and reject revoked access"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "editing a rejected booking after Back creates a distinct corrected checkout"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "editing contact details after Back preserves the submitted checkout"
+  },
+  {
+    "file": "tests/live-email.spec.ts",
+    "title": "editing session selections after Back preserves the submitted checkout"
   },
   {
     "file": "tests/live-email.spec.ts",
